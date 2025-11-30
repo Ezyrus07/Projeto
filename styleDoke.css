@@ -44,7 +44,7 @@ h2 {
 .navbar {
   background-color: white;
   display: flex;
-  justify-content: space-between; /* Logo esquerda | Botões direita */
+  justify-content: space-between;
   align-items: center;
   padding: 13px 40px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -56,14 +56,14 @@ h2 {
   cursor: pointer;
 }
 
-/* ===== MENU (agora cresce e distribui espaço) ===== */
+
 .menu {
   display: flex;
   align-items: center;
-  gap: 35px; /* Espaço entre os links */
+  gap: 35px; 
   flex-grow: 1;  
   justify-content: center; 
-  margin: 0 40px;   /* Espaço entre logo e menu | menu e botões */
+  margin: 0 40px;   
 }
 
 .menu a {
@@ -71,7 +71,7 @@ h2 {
   color: var(--cor1);
   font-weight: 500;
   transition: 0.3s ease;
-  white-space: nowrap; /* Evita quebra de linha */
+  white-space: nowrap;
 }
 
 .menu a:hover {
@@ -105,8 +105,8 @@ nav > .cep {
   align-items: center;
   gap: 15px;
   border-left: 1px solid #e5e5e5;
-  padding-left: 25px; /* Agora é só o espaço interno, não empurra tudo */
-  flex-shrink: 0; /* Garante que não encolha */
+  padding-left: 25px; 
+  flex-shrink: 0; 
 }
 
 /* BOTÃO CRIAR CONTA */
@@ -152,10 +152,10 @@ nav > .cep {
 /* MENU DO LADO */
 .sidebar-icones {
   position: fixed;
-  top: 170px;
-  left: 55px;
-  width: 70px;
-  height: 400px;
+  top: 120px;
+  left: 35px;
+  width: 208px;
+  height: 445px;
   background-color: white;
   padding: 25px 0;
   border-radius: 45px;
@@ -163,17 +163,13 @@ nav > .cep {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 40px;
+  gap: 32px;
   overflow: hidden;
-  transition: width 0.4s cubic-bezier(0.4, 0.8, 0.2, 1); /* mais suave */
+  transition: width 0.4s cubic-bezier(0.4, 0.8, 0.2, 1);
   z-index: 100;
 }
 
-.sidebar-icones:hover {
-  width: 225px;
-}
-
-/* Ícones + Texto (container do item) */
+/* Ícones + Texto do item */
 .sidebar-icones .item {
   display: flex;
   align-items: center;
@@ -183,52 +179,40 @@ nav > .cep {
   transition: transform 0.2s ease;
 }
 
-/* Efeito hover no item inteiro (ícone + texto) */
+/* Hover SÓ NO ITEM (ícone + texto) */
 .sidebar-icones .item:hover {
-  transform: translateX(8px); 
+  transform: translateX(8px);
 }
 
 .sidebar-icones .item:hover .icon {
   transform: scale(1.2);
 }
 
-.sidebar-icones .item:hover span  {
+.sidebar-icones .item:hover span {
   transform: translateX(5px) scale(1.05);
 }
 
 /* Ícones */
 .sidebar-icones .icon {
-  width: 33px;
+  width: 27px;
   flex-shrink: 0;
   transition: transform 0.3s ease, filter 0.3s ease;
 }
 
-/* Texto */
+
 .sidebar-icones span {
   font-family: var(--fonte-padrao);
   font-size: 18px;
   font-weight: 600;
   color: var(--cor1);
   white-space: nowrap;
-  
-  /* Estado escondido */
-  opacity: 0;
-  transform: translateX(-20px);
-  
-  /* Transições suaves */
-  transition: 
-    opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1),
-    color 0.3s ease;
+
+  opacity: 1 !important;    
+  transform: translateX(0) !important;
+  transition: color 0.3s ease, transform 0.2s ease;
 }
 
-/* Mostrar texto no hover do sidebar */
-.sidebar-icones:hover span {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-/* Cores dos ícones (exemplo) */
+/* Cores dos ícones */
 .icon.verde {
   filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
 }
@@ -242,7 +226,7 @@ nav > .cep {
 /* ===== ÁREA DE BUSCA ===== */
 .secao-busca {
     width: 100%;
-    max-width: 800px;
+    max-width: 850px;
     margin: 120px auto 0 auto;
     background-color: white;
     padding: 60px 40px;
@@ -250,40 +234,50 @@ nav > .cep {
     border-radius: 4px;
 }
 
+/* CONTAINER DO INPUT */
 .busca {
-    display: flex; /* ← ESSA LINHA TAMBÉM É OBRIGATÓRIA */
+    display: flex;
     width: 80%;
     margin: 0 auto 20px auto;
-    border: 2px solid #ccc;
-    border-radius: 10px;
+    position: relative;
     overflow: hidden;
     margin-bottom: 20px;
 }
 
+/* INPUT - estilo igual da primeira foto */
 .busca input {
-    flex: 1;
-    border: none;
-    padding: 15px 42px;
-    font-size: 16px;
-    background-image: url('https://cdn-icons-png.flaticon.com/512/622/622669.png');
-    background-size: 20px;
-    background-repeat: no-repeat;
-    background-position: 15px center;
-    outline: none;
-    color: #333;
-    text-align: left;
     width: 100%;
-    box-sizing: border-box; /* ← ESSA LINHA É OBRIGATÓRIA */
+    padding: 18px 20px 18px 55px;
+    font-size: 16px;
+    color: #444;
+    border-radius: 40px;
+    border: 3px solid transparent; /* borda invisível */
+    background: 
+        linear-gradient(#fff, #fff) padding-box,
+        linear-gradient(90deg, #5647ff, #ff2e63) border-box;
+    outline: none;
+    box-sizing: border-box;
 }
 
-
+/* ÍCONE DENTRO DO INPUT */
+.busca::before {
+    content: "";
+    position: absolute;
+    left: 18px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 22px;
+    height: 22px;
+    background-image: url('https://cdn-icons-png.flaticon.com/512/535/535239.png');
+    background-size: cover;
+    opacity: 0.8;
+}
 
 .busca input::placeholder {
-    color: #999;
-    text-align: left;
-    opacity: 1;
+    color: #a3a3a3;
 }
 
+/* BOTÕES */
 .botoes-busca {
     display: flex;
     gap: 20px;
@@ -297,7 +291,6 @@ nav > .cep {
     background-color: var(--cor2);
     color: white;
     font-weight: 600;
-    font-family: var(--fonte-padrao);
     border: none;
     border-radius: 25px;
     padding: 12px 20px;
@@ -315,39 +308,36 @@ nav > .cep {
 .btn-procurar:hover,
 .btn-anunciar:hover {
     opacity: 0.8;
-} 
+}
 
 /* ===== PONTOS PROPAGANDA ===== */
+
 .banner-pontos {
-    text-decoration: none;
-    font-size: 1em;
-    text-align: center;
-    color: var(--cor0);
-    font-weight: bold;
-    margin-bottom: 25px;
-    
+  text-decoration: none;
+  font-size: 1em;
+  text-align: center;
+  color: var(--cor0);
+  font-weight: bold;
+  margin-bottom: 25px;
 }
+
 .banner-pontos a {
-    color: var(--cor2);
-    font-weight: 600;
-    text-decoration: none;
+  color: var(--cor2);
+  font-weight: bold;
+  text-decoration: none;
 }
 
 .banner-pontos a:hover {
-    text-decoration: underline;
+  text-decoration: underline;
 }
-
 
 /* ===== ÁREA DE CATEGORIAS ===== */
 
 .categorias-container {
     width: 100%;
-    max-width: 800px;
-    background-color: white;
+    max-width: 850px;
     margin: 80px auto 0 auto;
     padding: 30px 40px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
-    border-radius: 4px;
 }
 
 #categorias-title {
@@ -394,7 +384,7 @@ nav > .cep {
 
 .videos-container {
     width: 100%;
-    max-width: 800px;
+    max-width: 850px;
     background-color: var(--cor2);
     margin: 80px auto 0 auto;
     padding: 30px 40px;
@@ -402,30 +392,11 @@ nav > .cep {
     border-radius: 4px;
 }
 
-.btn-videos {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    background: var(--cor4); /* igual aos outros */
-    color: var(--cor0);
-    font-family: var(--fonte-padrao);
-    font-size: 1rem;
-    font-weight: 600; 
-    padding: 8px 20px;
-    border-radius: 30px;
-    border: none;
-    cursor: pointer;
-    transition: 0.2s ease;
-    font-size: 22px;
-}
-
-.btn-videos .seta {
-    font-size: 0.8rem;
-}
-
-/* Hover leve */
-.btn-videos:hover {
-    background: #e2e5ee;
+#categorias-title2 {
+    font-family: "Poppins", sans-serif;
+    color: white;
+    font-weight: bold;
+    margin: 0;
 }
 
 
@@ -491,7 +462,7 @@ button {
 /* CONTAINER */
 .anuncio-container {
     width: 100%;
-    max-width: 800px;
+    max-width: 850px;
     background-color: white;
     margin: 80px auto 0 auto;
     padding: 30px 40px;
@@ -598,6 +569,8 @@ button {
     display: flex;
     flex-direction: column;
     gap: 15px;
+    padding-left: 50px;
+    margin-top: -70px;
 }
 
 .filtros label {
@@ -656,6 +629,80 @@ button {
 .paginacao button:hover {
     background: #0b7768;
     color: #fff;
+}
+
+/* ======== NOTÍCIAS ======== */
+
+.noticias-container {
+    background-color: var(--cor2);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
+    margin: 80px auto 0 auto;
+    padding: 10px 40px;
+    max-width: 850px;
+    margin: 80px auto 0 auto;
+    padding: 10px 40px;
+}
+
+.noticias-container2 {
+    background-color: white;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
+    padding: 30px 40px;
+    max-width: 850px;
+    margin: 0px auto 0 auto;
+    padding: 30px 40px;
+}
+
+#categorias-title3 {
+    font-family: "Poppins", sans-serif;
+    color: white;
+    font-weight: normal;
+    margin: 0;
+    text-align: center;
+}
+
+.clique {
+    color: var(--cor4);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+
+.rodape {
+  background: #e2e2e2;
+  color: var(--cor2);
+  padding: 50px 5%;
+  font-family: Arial, sans-serif;
+  max-width: 850px;
+  margin: 0px auto 0 auto;
+  padding: 30px 40px;
+}
+.colunas {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  max-width: 1400px;
+  margin: auto;
+}
+.coluna h3 {
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: var(--cor0);
+}
+.coluna a {
+  display: block;
+  color: var(--cor2);
+  margin: 6px 0;
+  font-size: 14px;
+  text-decoration: none;
+}
+.coluna a:hover {
+  color: #fff;
+}
+.rodape-base {
+  margin-top: 40px;
+  text-align: center;
+  padding-top: 20px;
+  border-top: 1px solid #adadad;
 }
 
 
@@ -903,4 +950,3 @@ button {
     text-align: center;
   }
 }
-
