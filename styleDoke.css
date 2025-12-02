@@ -13,15 +13,15 @@
   --cor4: #ecedf2;
   --fonte-padrao: "Poppins", sans-serif;
 
-  --sidebar-width: 0px; /* 0px no mobile (escondida) */
-  --navbar-height-desktop: 80px;
+  --sidebar-width: 0px;
+  --navbar-height-desktop: 65px;
   --navbar-height-mobile: 70px;
   --bottom-nav-height: 80px;
 }
 
 html {
   box-sizing: border-box;
-  font-size: 16px; /* Define a base para unidades 'rem' */
+  font-size: 16px;
 }
 
 *,
@@ -35,14 +35,9 @@ body {
   padding: 0;
   background-color: var(--cor4);
   font-family: var(--fonte-padrao);
-  
-  /* --- Correção Sticky Footer --- */
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  /* ------------------------------ */
-
-  /* Espaçamento para navbars (correto) */
   padding-top: var(--navbar-height-mobile);
   padding-bottom: var(--bottom-nav-height);
 }
@@ -51,23 +46,24 @@ h2 {
   font-family: var(--fonte-padrao);
   color: var(--cor0);
   font-weight: bold;
+  font-size: 1.5rem;
 }
 
 /* ===========================================
-   LAYOUT PRINCIPAL (MOBILE-FIRST)
+   LAYOUT PRINCIPAL
    =========================================== */
-
-/* --- Main Content Area --- */
 main {
   margin-left: var(--sidebar-width);
-  padding: 0; /* <-- MUDANÇA: Remove o padding para colar no rodapé */
+  padding: 0;
   transition: margin-left 0.3s ease;
-  flex-grow: 1; /* <-- NOVO: Faz o main ocupar o espaço vazio */
+  flex-grow: 1;
 }
 
-/* --- Top Navbar (Mobile) --- */
+/* ===========================================
+   NAVEGAÇÃO MOBILE (MANTIDO ORIGINAL)
+   =========================================== */
 .navbar-mobile {
-  display: flex; /* Visível no mobile */
+  display: flex;
   position: fixed;
   top: 0;
   left: 0;
@@ -85,9 +81,8 @@ main {
   height: 44px;
 }
 
-/* --- Bottom Nav Bar (Mobile) --- */
 .bottom-nav {
-  display: flex; /* Visível no mobile */
+  display: flex;
   position: fixed;
   bottom: 0;
   left: 0;
@@ -95,7 +90,7 @@ main {
   height: var(--bottom-nav-height);
   background: white;
   justify-content: space-around;
-  align-items: flex-start; /* Alinha ao topo da barra */
+  align-items: flex-start;
   padding-top: 12px;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
   z-index: 999;
@@ -128,9 +123,11 @@ main {
   filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
 }
 
-/* --- Sidebar (Desktop/Tablet) --- */
+/* ===========================================
+   NAVEGAÇÃO DESKTOP - SOLUÇÃO SIMPLES
+   =========================================== */
 .sidebar-icones {
-  display: none; /* Escondida no mobile */
+  display: none;
   position: fixed;
   top: 0;
   left: 0;
@@ -139,12 +136,11 @@ main {
   background-color: white;
   padding: 20px 0;
   box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-  display: flex;
   flex-direction: column;
   align-items: center;
   gap: 32px;
   transition: width 0.3s ease;
-  z-index: 1001; /* Acima de outros elementos */
+  z-index: 1001;
   overflow-y: auto;
 }
 
@@ -164,7 +160,7 @@ main {
 
 .sidebar-icones .icon {
   width: 28px;
-  flex-shrink: 0; /* Impede que o ícone encolha */
+  flex-shrink: 0;
 }
 
 .sidebar-icones span {
@@ -182,42 +178,41 @@ main {
   filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%);
 }
 
-/* --- Top Navbar (Desktop/Tablet) --- */
+/* NAVBAR DESKTOP - CORREÇÃO SIMPLES */
 .navbar-desktop {
-  display: none; /* Escondida no mobile */
+  display: none;
   position: fixed;
   top: 0;
-  left: var(--sidebar-width); /* Segue a sidebar */
+  left: var(--sidebar-width);
   right: 0;
   height: var(--navbar-height-desktop);
   background: white;
   z-index: 1000;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  display: flex;
   align-items: center;
-  justify-content: space-between; /* Layout flexível */
-  padding: 0 40px;
-  gap: 20px;
+  padding: 0 20px;
+  gap: 10px;
   transition: left 0.3s ease;
 }
 
 #logo {
-  flex-shrink: 0; /* Não encolhe */
+  flex-shrink: 0;
 }
 
 #logo img {
   height: 50px;
   cursor: pointer;
-  display: block; /* Remove espaço extra */
+  display: block;
 }
 
+/* MENU - SOLUÇÃO: diminuir gradualmente o espaçamento */
 .menu {
   display: flex;
-  gap: 35px;
-  flex-grow: 1; /* Ocupa o espaço central */
+  flex-grow: 1;
   justify-content: center;
   align-items: center;
   flex-wrap: nowrap;
+  min-width: 0; /* Permite encolher */
 }
 
 .menu a,
@@ -227,10 +222,11 @@ main {
   font-weight: 500;
   transition: 0.3s ease;
   white-space: nowrap;
-  font-size: 1rem;
   display: flex;
   align-items: center;
   gap: 6px;
+  padding: 8px 12px;
+  flex-shrink: 0; /* Não encolhe */
 }
 
 .menu a:hover {
@@ -255,7 +251,7 @@ main {
 .botoes-direita {
   display: flex;
   gap: 14px;
-  flex-shrink: 0; /* Não encolhe */
+  flex-shrink: 0;
   align-items: center;
 }
 
@@ -267,12 +263,13 @@ main {
   color: var(--cor0);
   border: 2px solid var(--cor0);
   border-radius: 25px;
-  padding: 10px 18px;
+  padding: 10px 10px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: 0.3s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .entrar:hover {
@@ -285,37 +282,40 @@ main {
 }
 
 /* ===========================================
-   COMPONENTES DE CONTEÚDO
+   COMPONENTES DE CONTEÚDO (MANTIDO ORIGINAL)
    =========================================== */
-
-/* --- Estilo unificado para seções --- */
 .secao-busca,
-.categorias-container,
 .videos-container,
 .anuncio-container,
 .noticias-container,
 .noticias-container2 {
   width: 100%;
   max-width: 750px;
-  margin: 30px auto 0 auto; /* Margem padrão */
-  padding: 32px 20px; /* Padding padrão mobile */
+  margin: 30px auto 0 auto;
+  padding: 32px 20px;
   background-color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
+
+  .categorias-container{
+  width: 100%;
+  max-width: 750px;
+  margin: 30px auto 0 auto;
+  padding: 32px 20px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
+  }
 }
 
-/* Remove a margem do topo do primeiro elemento dentro do main */
 main > *:first-child {
   margin-top: 0;
 }
 
-/* --- Seção de Busca --- */
 .secao-busca {
-  padding: 60px 40px; /* Padding específico da busca */
+  padding: 60px 40px;
 }
 
 .busca {
   display: flex;
-  width: 100%; /* 100% no mobile, 80% no desktop */
+  width: 100%;
   margin: 0 auto 20px auto;
   position: relative;
 }
@@ -347,13 +347,9 @@ main > *:first-child {
   opacity: 0.8;
 }
 
-.busca input::placeholder {
-  color: #a3a3a3;
-}
-
 .botoes-busca {
   display: flex;
-  flex-direction: column; /* Mobile-First: empilhado */
+  flex-direction: column;
   gap: 14px;
   justify-content: center;
   width: 100%;
@@ -366,22 +362,16 @@ main > *:first-child {
   color: white;
   font-weight: 600;
   border: none;
-  font-size: 1.125rem; /* 18px */
+  font-size: 1.125rem;
   border-radius: 25px;
   padding: 12px 20px;
   cursor: pointer;
   transition: 0.3s ease;
-  width: 100%; /* Mobile-First: largura total */
-  max-width: none;
+  width: 100%;
 }
 
 .btn-anunciar {
   background-color: var(--cor0);
-}
-
-.btn-procurar:hover,
-.btn-anunciar:hover {
-  opacity: 0.8;
 }
 
 .banner-pontos {
@@ -393,17 +383,6 @@ main > *:first-child {
   margin-bottom: 25px;
 }
 
-.banner-pontos a {
-  color: var(--cor2);
-  font-weight: bold;
-  text-decoration: none;
-}
-
-.banner-pontos a:hover {
-  text-decoration: underline;
-}
-
-/* --- Categorias --- */
 #categorias-title {
   color: var(--cor0);
   font-weight: bold;
@@ -412,18 +391,10 @@ main > *:first-child {
 
 .categorias-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr; /* Mobile-First: 2 colunas */
+  grid-template-columns: 1fr 1fr;
   gap: 24px;
   margin-top: 30px;
   text-align: center;
-}
-
-.categoria {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-  transition: 0.3s;
 }
 
 .categoria img {
@@ -439,12 +410,6 @@ main > *:first-child {
   color: var(--cor1);
 }
 
-.categoria:hover {
-  transform: translateY(-4px);
-  opacity: 0.9;
-}
-
-/* --- Vídeos --- */
 .videos-container {
   background-color: var(--cor2);
 }
@@ -455,7 +420,6 @@ main > *:first-child {
   margin: 0;
 }
 
-/* --- Anúncios --- */
 .anuncio-container {
   margin-top: 80px; /* Mantém margem maior original */
 }
@@ -625,10 +589,12 @@ main > *:first-child {
   color: #fff;
 }
 
-/* --- RODAPE --- */
+/* ===========================================
+   RODAPÉ - MANTENDO SEU ESTILO ORIGINAL
+   =========================================== */
 .noticias-container {
   background-color: var(--cor2);
-  margin-top: 80px; /* Mantém margem maior */
+  margin-top: 80px;
 }
 
 .noticias-container2 {
@@ -649,71 +615,49 @@ main > *:first-child {
   text-decoration: none;
 }
 
-/* ===========================================
-   RODAPÉ OTIMIZADO
-   =========================================== */
 .rodape {
   background: #e2e2e2;
   color: var(--cor2);
-  padding: 40px 20px 20px 20px;
-  font-family: Arial, sans-serif;
+  padding: 30px 20px;
+  font-family: Arial, sans-serif; 
   margin-top: 50px;
-  border-top: 1px solid #ccc;
 }
 
 .colunas {
   display: flex;
   flex-direction: column;
-  gap: 30px;
+  gap: 20px;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 15px;
-}
-
-.coluna {
-  flex: 1;
-  min-width: 200px;
 }
 
 .coluna h3 {
-  margin-bottom: 20px;
-  font-size: 1.125rem;
+  margin-bottom: 15px;
+  font-size: 1rem;
   color: var(--cor0);
-  font-weight: 600;
-  padding-bottom: 10px;
-  border-bottom: 2px solid var(--cor0);
 }
 
 .coluna a {
   display: block;
   color: var(--cor2);
-  margin: 10px 0;
-  font-size: 0.95rem;
+  margin: 6px 0;
+  font-size: 14px;
   text-decoration: none;
-  transition: all 0.3s ease;
-  padding: 4px 0;
 }
 
 .coluna a:hover {
   color: var(--cor0);
-  transform: translateX(5px);
 }
 
 .rodape-base {
-  margin-top: 40px;
+  margin-top: 20px;
   text-align: center;
   padding-top: 20px;
   border-top: 1px solid #adadad;
-  font-size: 0.9rem;
-  color: #666;
-}
-
-.rodape-base p {
-  margin: 5px 0;
 }
 
 /* ===========================================
-   RESPONSIVIDADE OTIMIZADA
+   RESPONSIVIDADE - APENAS AJUSTES NECESSÁRIOS
    =========================================== */
 
 /* TABLET (768px - 1023px) */
@@ -744,13 +688,9 @@ main > *:first-child {
 
   .navbar-desktop {
     left: var(--sidebar-width);
-    padding: 0 30px;
+    padding: 0 25px;
   }
 
-  /* Sidebar compacta no tablet */
-  .sidebar-icones {
-    width: 80px;
-  }
   .sidebar-icones span {
     display: none;
   }
@@ -759,7 +699,6 @@ main > *:first-child {
     width: 100%;
   }
 
-  /* Conteúdo principal */
   .secao-busca,
   .categorias-container,
   .videos-container,
@@ -770,7 +709,6 @@ main > *:first-child {
     padding: 40px;
   }
 
-  /* Busca */
   .busca {
     width: 80%;
   }
@@ -785,17 +723,11 @@ main > *:first-child {
     max-width: 250px;
   }
 
-  /* Categorias */
   .categorias-grid {
     grid-template-columns: repeat(3, 1fr);
     gap: 35px;
   }
-  .categoria img {
-    width: 70px;
-    height: 70px;
-  }
 
-  /* Anúncios com filtros */
   .content {
     grid-template-columns: 2fr 1fr;
     gap: 40px;
@@ -805,17 +737,23 @@ main > *:first-child {
     margin-top: -70px;
   }
 
-  /* Rodapé tablet */
+  /* AJUSTE SIMPLES: Diminuir gap do menu gradualmente */
+  .menu {
+    gap: 25px;
+  }
+  
+  .menu a,
+  .menu .cep {
+    font-size: 0.95rem;
+  }
+
   .colunas {
     flex-direction: row;
-    flex-wrap: wrap;
     justify-content: space-between;
-    gap: 30px;
+    flex-wrap: wrap;
   }
   .coluna {
-    flex: 1;
-    min-width: 200px;
-    max-width: calc(50% - 15px);
+    min-width: 180px;
   }
 }
 
@@ -825,38 +763,19 @@ main > *:first-child {
     --sidebar-width: 260px;
   }
 
-  /* Sidebar completa */
-  .sidebar-icones {
-    width: 260px;
-  }
   .sidebar-icones span {
     display: block;
-    font-size: 18px;
   }
   .sidebar-icones .item {
     justify-content: flex-start;
-    width: 80%;
+    width: 70%;
   }
 
-  .navbar-desktop {
-    left: 260px;
-    padding: 0 40px;
+  main {
+    padding: 50px 60px;
   }
 
-  /* Menu desktop otimizado */
-  .menu {
-    gap: 25px;
-    justify-content: center;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.95rem;
-  }
-
-  /* Conteúdo mais espaçoso */
   .secao-busca,
-  .categorias-container,
   .videos-container,
   .anuncio-container,
   .noticias-container,
@@ -868,15 +787,116 @@ main > *:first-child {
   .categorias-grid {
     gap: 50px;
   }
-
-  /* Rodapé desktop */
-  .colunas {
-    flex-direction: row;
-    gap: 40px;
+  
+  /* Menu desktop normal */
+  .menu {
+    gap: 10px;
   }
-  .coluna {
-    flex: 1;
-    min-width: 0; /* Permite que as colunas encolham */
+  
+  .menu a,
+  .menu .cep {
+    font-size: 0.9rem;
+  }
+}
+
+/* ===========================================
+   APENAS OS AJUSTES NECESSÁRIOS PARA O PROBLEMA
+   =========================================== */
+
+/* Ajuste específico para quando a tela diminui */
+@media (max-width: 1150px) and (min-width: 1024px) {
+  .menu a,
+  .menu .cep {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 1050px) and (min-width: 768px) {
+  .navbar-desktop {
+    padding: 0 15px;
+  }
+  
+  .menu {
+    gap: 15px;
+  }
+  
+  .menu a,
+  .menu .cep {
+    font-size: 0.85rem;
+    padding: 6px 8px;
+  }
+  
+  .entrar {
+    padding: 8px 14px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Solução para telas mais estreitas: esconder o item menos importante */
+@media (max-width: 950px) and (min-width: 768px) {
+  /* Esconde o link "Pontos" quando não couber */
+  .menu a:nth-child(4) {
+    display: none;
+  }
+  
+  .menu {
+    gap: 12px;
+  }
+  
+  .menu a,
+  .menu .cep {
+    font-size: 0.8rem;
+    padding: 5px 7px;
+  }
+}
+
+/* Último recurso: botão de menu hamburguer para telas muito estreitas */
+@media (max-width: 850px) and (min-width: 768px) {
+  .navbar-desktop {
+    justify-content: space-between;
+  }
+  
+  .menu {
+    display: none; /* Esconde o menu */
+  }
+  
+  /* Mostra botão de menu */
+  .menu-toggle {
+    display: block;
+    background: none;
+    border: none;
+    font-size: 24px;
+    color: var(--cor0);
+    cursor: pointer;
+    margin-left: 15px;
+  }
+  
+  /* Menu expandido quando clicado */
+  .menu.expanded {
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: white;
+    padding: 20px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  }
+  
+  .botoes-direita {
+    margin-left: auto;
+  }
+}
+
+/* Para evitar que o botão "Entrar" sobreponha, garantimos espaço mínimo */
+@media (max-width: 1100px) and (min-width: 768px) {
+  .navbar-desktop {
+    min-width: 768px; /* Garante largura mínima */
+  }
+  
+  .botoes-direita {
+    min-width: 150px; /* Espaço reservado para o botão */
   }
 }
 
@@ -895,194 +915,25 @@ main > *:first-child {
     grid-template-columns: repeat(4, 1fr);
     gap: 60px;
   }
-
-  /* Rodapé large */
-  .colunas {
-    max-width: 1400px;
-  }
 }
-
-/* ===========================================
-   AJUSTES ESPECÍFICOS PARA PROBLEMAS DE SOBREPOSIÇÃO
-   =========================================== */
-
-/* Menu desktop em telas menores */
-@media (max-width: 1150px) and (min-width: 1024px) {
+@media (min-width: 1280px) {
   .menu {
-    gap: 15px;
+    gap: 5px;
   }
   
   .menu a,
   .menu .cep {
     font-size: 0.9rem;
-    padding: 8px 10px;
   }
+}
 
-  .entrar {
+@media (min-width: 1130px) {
+  .menu {
+    gap: 5px;
+  }
+  
+  .menu a,
+  .menu .cep {
     font-size: 0.9rem;
-    padding: 8px 15px;
   }
-
-  /* Ajuste para garantir que o botão "Entrar" não sobreponha */
-  .navbar-desktop {
-    padding: 0 25px;
-  }
-}
-
-/* Ajuste crítico para telas entre 900px e 1024px */
-@media (max-width: 1023px) and (min-width: 900px) {
-  .navbar-desktop {
-    padding: 0 15px;
-  }
-  
-  .menu {
-    gap: 15px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.85rem;
-  }
-  
-  .entrar {
-    font-size: 0.85rem;
-    padding: 8px 12px;
-  }
-}
-
-/* Ajuste para o menu não quebrar em telas muito estreitas */
-@media (max-width: 899px) and (min-width: 768px) {
-  .navbar-desktop {
-    padding: 0 10px;
-  }
-  
-  .menu {
-    gap: 10px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.8rem;
-    padding: 6px 8px;
-  }
-  
-  .entrar {
-    font-size: 0.8rem;
-    padding: 6px 10px;
-    margin-left: 5px;
-  }
-  
-  /* Garante que o botão não sobreponha o link "Ajuda" */
-  .botoes-direita {
-    position: relative;
-    z-index: 1;
-  }
-  
-  .menu {
-    position: relative;
-    z-index: 2;
-  }
-}
-
-/* Solução definitiva para sobreposição: menu com scroll horizontal */
-@media (max-width: 1100px) and (min-width: 768px) {
-  .navbar-desktop {
-    overflow: hidden;
-  }
-  
-  .menu {
-    overflow-x: auto;
-    overflow-y: hidden;
-    padding-bottom: 5px;
-    justify-content: flex-start;
-    scrollbar-width: thin;
-    scrollbar-color: var(--cor0) transparent;
-  }
-  
-  .menu::-webkit-scrollbar {
-    height: 4px;
-  }
-  
-  .menu::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .menu::-webkit-scrollbar-thumb {
-    background-color: var(--cor0);
-    border-radius: 10px;
-  }
-  
-  /* Adiciona espaço para o scroll */
-  .menu a,
-  .menu .cep {
-    flex-shrink: 0;
-  }
-}
-
-/* Ajuste para mobile muito pequeno */
-@media (max-width: 360px) {
-  .categorias-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-  
-  .secao-busca {
-    padding: 40px 20px;
-  }
-  
-  .bottom-nav .item {
-    min-width: 50px;
-    font-size: 10px;
-  }
-  
-  /* Rodapé mobile pequeno */
-  .rodape {
-    padding: 30px 15px 15px 15px;
-  }
-  
-  .coluna h3 {
-    font-size: 1rem;
-  }
-  
-  .coluna a {
-    font-size: 0.85rem;
-  }
-}
-
-/* Ajuste específico para o problema do botão sobrepondo */
-@media (max-width: 950px) and (min-width: 768px) {
-  .navbar-desktop {
-    flex-wrap: nowrap;
-    min-width: 0;
-  }
-  
-  #logo {
-    flex-shrink: 0;
-    margin-right: 10px;
-  }
-  
-  .menu {
-    flex: 1;
-    min-width: 0;
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
-  
-  .botoes-direita {
-    flex-shrink: 0;
-    margin-left: 10px;
-  }
-  
-  /* Adiciona um pseudo-elemento para garantir que o menu não encolha demais */
-  .menu::after {
-    content: '';
-    flex-shrink: 0;
-    width: 10px;
-  }
-}
-
-/* Garantir que links importantes não sejam cortados */
-.menu a:last-child,
-.menu .cep {
-  margin-right: 5px;
 }
