@@ -15,13 +15,14 @@
 
   --sidebar-width: 0px;
   --navbar-height-desktop: 80px;
-  --navbar-height-mobile: 70px;
+  --navbar-height-mobile: 80px;
   --bottom-nav-height: 80px;
 }
 
 html {
   box-sizing: border-box;
   font-size: 16px;
+  height: 100%;
 }
 
 *,
@@ -42,6 +43,14 @@ body {
   padding-bottom: var(--bottom-nav-height);
 }
 
+body > main {
+  flex: 1;
+}
+
+body > footer {
+  margin-top: auto;
+}
+
 h2 {
   font-family: var(--fonte-padrao);
   color: var(--cor0);
@@ -56,7 +65,7 @@ main {
   margin-left: var(--sidebar-width);
   padding: 0;
   transition: margin-left 0.3s ease;
-  flex-grow: 1;
+  flex: 1;
 }
 
 /* ===========================================
@@ -190,8 +199,8 @@ main {
   z-index: 1000;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
   align-items: center;
-  padding: 0 20px;
-  gap: 10px;
+  padding: 0 15px;
+  gap: 8px;
   transition: left 0.3s ease;
 }
 
@@ -202,6 +211,18 @@ main {
 #logo img {
   height: 50px;
   cursor: pointer;
+  display: block;
+}
+
+/* Desktop logo inside navbar (hidden by default) */
+#logo-desktop {
+  display: none;
+  flex-shrink: 0;
+  margin-right: 12px;
+}
+
+#logo-desktop img {
+  height: 50px;
   display: block;
 }
 
@@ -225,7 +246,7 @@ main {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 8px 12px;
+  padding: 6px 10px;
   flex-shrink: 0; /* Não encolhe */
 }
 
@@ -250,7 +271,7 @@ main {
 
 .botoes-direita {
   display: flex;
-  gap: 14px;
+  gap: 8px;
   flex-shrink: 0;
   align-items: center;
 }
@@ -263,13 +284,14 @@ main {
   color: var(--cor0);
   border: 2px solid var(--cor0);
   border-radius: 25px;
-  padding: 10px 10px;
+  padding: 8px 16px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
   transition: 0.3s;
   white-space: nowrap;
   flex-shrink: 0;
+  font-size: 0.95rem;
 }
 
 .entrar:hover {
@@ -287,8 +309,8 @@ main {
 .secao-busca,
 .videos-container,
 .anuncio-container,
-.noticias-container,
-.noticias-container2 {
+.rodape-container,
+.rodape-container2 {
   width: 100%;
   max-width: 750px;
   margin: 30px auto 0 auto;
@@ -300,6 +322,9 @@ main {
   width: 100%;
   max-width: 750px;
   margin: 30px auto 0 auto;
+  padding: 20px;
+  background-color: white;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
   }
 
 
@@ -353,6 +378,21 @@ main > *:first-child {
   width: 100%;
   margin-top: 10px;
 }
+
+#categorias-title {
+  color: var(--cor0);
+  font-weight: bold;
+  margin: 0;
+}
+
+.info-btn {
+  color: var(--cor2);
+  text-decoration: none;
+}
+
+.info-btn:hover {
+  opacity: 80%;
+} 
 
 .btn-procurar,
 .btn-anunciar {
@@ -432,16 +472,26 @@ main > *:first-child {
 
 .novos-anuncios {
   display: flex;
+  font-family: var(--fonte-padrao);
+  font-weight: bold;
   align-items: center;
   gap: 8px;
   background: var(--cor4);
   padding: 8px 20px;
   /* margin-left: -40px; (Removido, causava overflow) */
   border-radius: 30px;
-  font-weight: 600;
   color: var(--cor2);
   transition: 0.2s;
-  font-size: 1.25rem; /* 22px */
+  font-size: 1.45rem; /* 22px */
+}
+
+/* Remove default browser border/outline for this pill/button */
+.novos-anuncios,
+.novos-anuncios:focus,
+.novos-anuncios:active {
+  border: none;
+  outline: none;
+  box-shadow: none;
 }
 
 .novos-anuncios:hover {
@@ -492,18 +542,19 @@ main > *:first-child {
 .badge {
   background: var(--cor2);
   color: #fff;
-  padding: 4px 6px;
+  padding: 12px 13px;
   border-radius: 50%;
 }
 
 .stars {
   color: #ffcc00;
-  font-size: 1rem;
+  font-size: 1.5rem;
 }
 
 .preco {
   color: var(--cor0);
   font-weight: 700;
+    font-size: 1.16rem;
 }
 
 .status {
@@ -568,14 +619,15 @@ main > *:first-child {
 /* --- Paginação --- */
 .paginacao {
   display: flex;
-  gap: 8px;
+  gap: 5px;
   margin-top: 5px;
+  padding-left: 80px;
 }
 
 .paginacao button {
   border: 2px solid #0b7768;
   border-radius: 50%;
-  padding: 1px 8px;
+  padding: 1px 5px;
   font-size: 14px;
   transition: 0.2s;
   background: none;
@@ -590,12 +642,12 @@ main > *:first-child {
 /* ===========================================
    RODAPÉ - MANTENDO SEU ESTILO ORIGINAL
    =========================================== */
-.noticias-container {
+.rodape-container {
   background-color: var(--cor2);
   margin-top: 80px;
 }
 
-.noticias-container2 {
+.rodape-container2 {
   background-color: white;
   margin-top: 0;
 }
@@ -616,9 +668,11 @@ main > *:first-child {
 .rodape {
   background: #e2e2e2;
   color: var(--cor2);
-  padding: 30px 20px;
-  font-family: Arial, sans-serif; 
-  margin-top: 50px;
+  padding: 30px 20px 30px 20px;
+  font-family: Arial, sans-serif;
+  width: 100%;
+  box-sizing: border-box;
+  margin: 0;
 }
 
 .colunas {
@@ -701,10 +755,10 @@ main > *:first-child {
   .categorias-container,
   .videos-container,
   .anuncio-container,
-  .noticias-container,
-  .noticias-container2 {
-    max-width: 900px;
-    padding: 40px;
+  .rodape-container,
+  .rodape-container2 {
+    max-width: 1100px; /* card maior como na sua captura */
+    padding: 50px 60px;
   }
 
   .busca {
@@ -733,6 +787,7 @@ main > *:first-child {
   .filtros {
     display: flex;
     margin-top: -70px;
+    /* remover largura fixa para deixar proporcional */
   }
 
   /* AJUSTE SIMPLES: Diminuir gap do menu gradualmente */
@@ -752,6 +807,64 @@ main > *:first-child {
   }
   .coluna {
     min-width: 180px;
+  }
+}
+
+/* RESPONSIVIDADE ADICIONAL PARA A ABA DE ANÚNCIOS */
+/* Médio: 900px - 1023px — manter sidebar/filters, ajustar proporções */
+@media (min-width: 900px) and (max-width: 1023px) {
+  .content {
+    grid-template-columns: 1.6fr 1fr; /* dá mais espaço para lista */
+    gap: 28px;
+  }
+
+  .filtros {
+    display: flex;
+    flex-direction: column;
+    width: 300px;
+    margin-top: 0;
+  }
+
+  .anuncio-container {
+    padding: 36px;
+  }
+
+  .secao-busca {
+    padding: 36px 24px;
+  }
+}
+
+/* Pequeno / Tablet estreito: <900px — empilha conteúdo, esconde filtros laterais e mostra botão de filtros */
+@media (max-width: 899px) {
+  .content {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .filtros {
+    display: none; /* ocultar sidebar de filtros em telas pequenas */
+  }
+
+  .anuncio-container {
+    padding: 20px;
+  }
+
+  .secao-busca {
+    padding: 20px 16px;
+  }
+
+  .btn-filtros {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  .top-bar {
+    gap: 10px;
+  }
+
+  .anuncio-header {
+    font-size: 0.95rem;
   }
 }
 
@@ -776,8 +889,8 @@ main > *:first-child {
   .secao-busca,
   .videos-container,
   .anuncio-container,
-  .noticias-container,
-  .noticias-container2 {
+  .rodape-container,
+  .rodape-container2 {
     max-width: 1100px;
     padding: 50px 60px;
   }
@@ -795,6 +908,133 @@ main > *:first-child {
   .menu .cep {
     font-size: 0.9rem;
   }
+  
+  /* On desktop (>=1024px) show the sidebar logo and hide the navbar logo */
+  #logo-desktop {
+    display: none;
+  }
+  
+  .sidebar-icones #logo {
+    display: block;
+  }
+}
+
+/* Tablet range: show navbar logo inside the top menu and hide sidebar logo
+   (tablets: 768px - 1020px) */
+@media (min-width: 768px) and (max-width: 1020px) {
+  #logo-desktop {
+    display: block;
+  }
+
+  .sidebar-icones #logo {
+    display: none;
+  }
+}
+
+/* Reduce logo size and font at ~1010px (tablet) - anticipate the reduction */
+@media (max-width: 1010px) and (min-width: 768px) {
+  #logo-desktop img {
+    height: 40px;
+  }
+
+  /* Increase gap between menu links at 1010px */
+  .menu {
+    gap: 12px;
+  }
+  
+  .menu a,
+  .menu .cep {
+    font-size: 0.8rem;
+    padding: 4px 6px;
+  }
+  
+  .entrar {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+}
+
+/* Ajuste para 1120px para evitar wrapping */
+@media (max-width: 1200px) and (min-width: 1024px) {
+  .menu {
+    gap: 8px;
+  }
+  
+  .menu a,
+  .menu .cep {
+    font-size: 0.88rem;
+    padding: 5px 8px;
+  }
+  
+  .entrar {
+    padding: 7px 12px;
+    font-size: 0.88rem;
+  }
+  
+  .botoes-direita {
+    gap: 6px;
+  }
+}
+
+/* Specific fix at ~1120px to avoid overlapping/wrapping of menu links */
+@media (max-width: 1120px) and (min-width: 1024px) {
+  .navbar-desktop {
+    padding: 0 10px;
+  }
+
+  /* left-align links so the right-side buttons (Entrar) stay separate */
+  .menu {
+    justify-content: flex-start;
+    gap: 6px;
+    overflow-x: auto; /* allow horizontal scroll instead of wrapping */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .menu::-webkit-scrollbar { display: none; }
+
+  .menu a,
+  .menu .cep {
+    font-size: 0.84rem;
+    padding: 4px 6px;
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
+  /* push buttons to the far right so they don't collide with menu */
+  .botoes-direita {
+    margin-left: auto;
+    gap: 6px;
+  }
+
+  .entrar {
+    padding: 6px 10px;
+    font-size: 0.86rem;
+  }
+}
+
+/* Precise tweak at ~1100px to prevent the 'Entrar' button wrapping */
+@media (max-width: 1100px) and (min-width: 1024px) {
+  .menu {
+    gap: 6px;
+  }
+
+  /* allow menu items to shrink so the layout doesn't wrap */
+  .menu a,
+  .menu .cep {
+    font-size: 0.86rem;
+    padding: 4px 6px;
+    flex-shrink: 1; /* permit shrink at this width */
+    min-width: 0;
+  }
+
+  .entrar {
+    padding: 6px 10px;
+    font-size: 0.86rem;
+  }
+
+  .botoes-direita {
+    gap: 5px;
+  }
 }
 
 /* ===========================================
@@ -811,22 +1051,26 @@ main > *:first-child {
 
 @media (max-width: 1050px) and (min-width: 768px) {
   .navbar-desktop {
-    padding: 0 15px;
+    padding: 0 12px;
   }
   
   .menu {
-    gap: 15px;
+    gap: 10px;
   }
   
   .menu a,
   .menu .cep {
     font-size: 0.85rem;
-    padding: 6px 8px;
+    padding: 5px 8px;
   }
   
   .entrar {
-    padding: 8px 14px;
+    padding: 7px 12px;
     font-size: 0.9rem;
+  }
+  
+  .botoes-direita {
+    gap: 6px;
   }
 }
 
@@ -838,13 +1082,22 @@ main > *:first-child {
   }
   
   .menu {
-    gap: 12px;
+    gap: 8px;
   }
   
   .menu a,
   .menu .cep {
     font-size: 0.8rem;
-    padding: 5px 7px;
+    padding: 4px 6px;
+  }
+  
+  .entrar {
+    padding: 6px 10px;
+    font-size: 0.85rem;
+  }
+  
+  .botoes-direita {
+    gap: 5px;
   }
 }
 
@@ -904,8 +1157,8 @@ main > *:first-child {
   .categorias-container,
   .videos-container,
   .anuncio-container,
-  .noticias-container,
-  .noticias-container2 {
+  .rodape-container,
+  .rodape-container2 {
     max-width: 1200px;
   }
 
