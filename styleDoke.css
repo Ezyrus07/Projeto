@@ -406,6 +406,10 @@ main > *:first-child {
   width: 100%;
 }
 
+.botoes-busca :hover{
+  opacity: 90%;
+}
+
 .btn-anunciar {
   background-color: var(--cor0);
 }
@@ -624,6 +628,7 @@ main > *:first-child {
 
 .paginacao button {
   border: 2px solid #0b7768;
+  color: var(--cor-texto);
   border-radius: 50%;
   padding: 1px 5px;
   font-size: 14px;
@@ -634,7 +639,6 @@ main > *:first-child {
 
 .paginacao button:hover {
   background: #0b7768;
-  color: #fff;
 }
 
 /* ===========================================
@@ -1198,25 +1202,26 @@ main > *:first-child {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    /* Redefinindo variáveis para tons escuros */
-    --cor0: #0e9683; /* Verde um pouco mais brilhante para contraste */
-    --cor1: #e0e0e0; /* Texto claro (quase branco) */
-    --cor2: #4a8ac4; /* Azul mais claro para ler no escuro */
-    --cor4: #121212; /* Fundo geral muito escuro (quase preto) */
+    /* Tons fixos e unificados */
+    --cor-verde: #0e9683;   /* verde padrão */
+    --cor-azul: #4a8ac4;    /* azul padrão */
+
+    --cor-texto: #e0e0e0;
+    --cor-bg: #121212;
+    --cor-bg-card: #202024;
   }
 
-  /* 1. Backgrounds Gerais */
-  body, 
-  .navbar-mobile, 
-  .bottom-nav, 
+  /* ======== FUNDOS ======== */
+  body,
+  .navbar-mobile,
+  .bottom-nav,
   .navbar-desktop {
-    background-color: #121212;
-    color: var(--cor1);
-    border-color: #333; /* Bordas mais suaves */
+    background-color: var(--cor-bg);
+    color: var(--cor-texto);
+    border-color: #333;
   }
 
-  /* 2. Containers e Cartões (Cards) */
-  /* Mudamos de branco para um cinza escuro (superfície elevada) */
+  /* ======== CARDS E SEÇÕES ======== */
   .secao-busca,
   .categorias-container,
   .anuncio-container,
@@ -1224,118 +1229,139 @@ main > *:first-child {
   .navbar-desktop,
   .rodape-container2,
   .videos-container {
-    background-color: #1e1e1e;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Sombra mais forte */
+    background-color: var(--cor-bg-card);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
   }
 
-  /* 3. Inputs e Campos de Busca */
+  .banner-pontos {
+    color: var(--cor-verde);
+  }
+
+  .info-btn {
+    color: var(--cor-azul);
+  }
+
+  .item a {
+    color: var(--cor-texto);
+  }
+
+  /* ======== INPUTS ======== */
   .busca input {
-    background: #2c2c2c;
-    color: white;
-    border: 1px solid #444;
-  }
-  
-  /* Ajuste do gradiente da borda no input para ficar sutil */
-  .busca input:focus {
-    border-color: var(--cor0);
+    background:
+    linear-gradient(#2c2c2c, #2c2c2c) padding-box,
+    linear-gradient(90deg, #5647ff, #ff2e63) border-box;
   }
 
-  /* 4. Títulos e Textos */
-  h2, #categorias-title, #categorias-title3 {
-    color: var(--cor1);
+  /* ======== TEXTOS ======== */
+  h2,
+  #categorias-title,
+  #categorias-title3 {
+    color: var(--cor-texto);
   }
 
-  .categoria p, 
-  .filtros label, 
+  .categoria p,
+  .filtros label,
   .coluna a {
     color: #b0b0b0;
   }
-  
+
   .coluna a:hover {
-    color: var(--cor0);
+    color: var(--cor-verde);
   }
 
-  /* 5. Selects e Filtros */
+  /* ======== SELECTS ======== */
   .select {
     background: #2c2c2c;
     color: #fff;
   }
-  
+
   .select:hover {
     background: #383838;
   }
 
-  /* 6. Botões e Elementos de Navegação */
+  /* ======== BOTÕES ======== */
   .entrar {
     background-color: transparent;
     color: #fff;
-    border-color: var(--cor0);
+    border-color: var(--cor-verde);
   }
-  
+
   .entrar:hover {
-    background-color: var(--cor0);
+    background-color: var(--cor-verde);
     color: #000;
   }
 
-  .menu a, .menu .cep {
-    color: #e0e0e0;
-  }
-  
+  .menu a,
   .menu .cep {
-    color: var(--cor0);
+    color: var(--cor-texto);
   }
-  
-  .menu a:hover, .cep:hover {
+
+  .menu .cep {
+    color: var(--cor-verde);
+  }
+
+  .menu a:hover,
+  .cep:hover {
     background-color: rgba(255, 255, 255, 0.1);
     border-radius: 5px;
   }
 
   .novos-anuncios {
     background-color: #2c2c2c;
-    color: var(--cor1);
+    color: var(--cor-texto);
   }
-  
+
   .novos-anuncios:hover {
     background-color: #3d3d3d;
   }
 
-  /* 7. Anúncios Específicos */
+  /* ======== PREÇO (mantido verde neon ou pode unificar?) ======== */
   .preco {
-    color: #4fffc8; /* Verde neon para destacar preço no escuro */
+    color: var(--cor-verde);
   }
-  
+
+  /* ======== STATUS ======== */
   .status {
     background: #333;
     color: #ccc;
   }
 
-  /* 8. Rodapé */
+  /* ======== RODAPÉ ======== */
   .rodape {
     background: #0a0a0a;
     color: #888;
     border-top: 1px solid #333;
   }
-  
+
   .rodape-base {
     border-top: 1px solid #333;
   }
 
-  /* 9. Ícones e Imagens */
-  /* Inverte a cor do ícone de busca para ficar branco */
+  /* ======== ÍCONES ======== */
   .busca::before {
     filter: invert(1);
   }
 
-  /* Ajuste para ícones da sidebar ficarem visíveis */
   .sidebar-icones .icon {
-    /* Se os ícones forem pretos por padrão, inverte para branco.
-       Se já forem coloridos, talvez não precise dessa linha. */
-    filter: invert(0.9); 
+    filter: invert(0.9);
   }
-  
-  /* Mantém as cores dos ícones que já têm classe de cor */
-  .icon.verde {
-     /* Recalcula o filtro para manter verde sobre fundo escuro */
-     filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(130deg) brightness(95%) contrast(80%);
+
+  /* Ícones com classe .verde sempre usam o mesmo tom */
+.icon.verde {
+  filter: brightness(0) saturate(100%) invert(43%) sepia(48%) saturate(715%) 
+          hue-rotate(125deg) brightness(96%) contrast(85%);
+}
+
+
+  /* Ícones azuis usando o mesmo tom */
+.icon.azul {
+  filter: brightness(0) saturate(100%) invert(57%) sepia(22%) saturate(1085%) 
+          hue-rotate(177deg) brightness(90%) contrast(85%);
+}
+
+  .logo img,
+  #logo-desktop img {
+    filter: brightness(0) saturate(100%) invert(57%) sepia(22%) saturate(1085%) 
+          hue-rotate(177deg) brightness(90%) contrast(85%);
   }
 }
