@@ -323,8 +323,6 @@ main {
   max-width: 750px;
   margin: 30px auto 0 auto;
   padding: 20px;
-  background-color: white;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
   }
 
 
@@ -1157,10 +1155,14 @@ main > *:first-child {
   .categorias-container,
   .videos-container,
   .anuncio-container,
-  .rodape-container,
   .rodape-container2 {
     max-width: 1200px;
   }
+
+    .rodape-container {
+      max-width: 1200px;
+      padding: 10px 10px;
+    }
 
   .categorias-grid {
     grid-template-columns: repeat(4, 1fr);
@@ -1186,5 +1188,154 @@ main > *:first-child {
   .menu a,
   .menu .cep {
     font-size: 0.9rem;
+  }
+}
+
+/* ===========================================
+   MODO ESCURO (DARK MODE)
+   Adicione isso ao final do seu arquivo CSS
+   =========================================== */
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    /* Redefinindo variáveis para tons escuros */
+    --cor0: #0e9683; /* Verde um pouco mais brilhante para contraste */
+    --cor1: #e0e0e0; /* Texto claro (quase branco) */
+    --cor2: #4a8ac4; /* Azul mais claro para ler no escuro */
+    --cor4: #121212; /* Fundo geral muito escuro (quase preto) */
+  }
+
+  /* 1. Backgrounds Gerais */
+  body, 
+  .navbar-mobile, 
+  .bottom-nav, 
+  .navbar-desktop {
+    background-color: #121212;
+    color: var(--cor1);
+    border-color: #333; /* Bordas mais suaves */
+  }
+
+  /* 2. Containers e Cartões (Cards) */
+  /* Mudamos de branco para um cinza escuro (superfície elevada) */
+  .secao-busca,
+  .categorias-container,
+  .anuncio-container,
+  .sidebar-icones,
+  .navbar-desktop,
+  .rodape-container2,
+  .videos-container {
+    background-color: #1e1e1e;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Sombra mais forte */
+  }
+
+  /* 3. Inputs e Campos de Busca */
+  .busca input {
+    background: #2c2c2c;
+    color: white;
+    border: 1px solid #444;
+  }
+  
+  /* Ajuste do gradiente da borda no input para ficar sutil */
+  .busca input:focus {
+    border-color: var(--cor0);
+  }
+
+  /* 4. Títulos e Textos */
+  h2, #categorias-title, #categorias-title3 {
+    color: var(--cor1);
+  }
+
+  .categoria p, 
+  .filtros label, 
+  .coluna a {
+    color: #b0b0b0;
+  }
+  
+  .coluna a:hover {
+    color: var(--cor0);
+  }
+
+  /* 5. Selects e Filtros */
+  .select {
+    background: #2c2c2c;
+    color: #fff;
+  }
+  
+  .select:hover {
+    background: #383838;
+  }
+
+  /* 6. Botões e Elementos de Navegação */
+  .entrar {
+    background-color: transparent;
+    color: #fff;
+    border-color: var(--cor0);
+  }
+  
+  .entrar:hover {
+    background-color: var(--cor0);
+    color: #000;
+  }
+
+  .menu a, .menu .cep {
+    color: #e0e0e0;
+  }
+  
+  .menu .cep {
+    color: var(--cor0);
+  }
+  
+  .menu a:hover, .cep:hover {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+  }
+
+  .novos-anuncios {
+    background-color: #2c2c2c;
+    color: var(--cor1);
+  }
+  
+  .novos-anuncios:hover {
+    background-color: #3d3d3d;
+  }
+
+  /* 7. Anúncios Específicos */
+  .preco {
+    color: #4fffc8; /* Verde neon para destacar preço no escuro */
+  }
+  
+  .status {
+    background: #333;
+    color: #ccc;
+  }
+
+  /* 8. Rodapé */
+  .rodape {
+    background: #0a0a0a;
+    color: #888;
+    border-top: 1px solid #333;
+  }
+  
+  .rodape-base {
+    border-top: 1px solid #333;
+  }
+
+  /* 9. Ícones e Imagens */
+  /* Inverte a cor do ícone de busca para ficar branco */
+  .busca::before {
+    filter: invert(1);
+  }
+
+  /* Ajuste para ícones da sidebar ficarem visíveis */
+  .sidebar-icones .icon {
+    /* Se os ícones forem pretos por padrão, inverte para branco.
+       Se já forem coloridos, talvez não precise dessa linha. */
+    filter: invert(0.9); 
+  }
+  
+  /* Mantém as cores dos ícones que já têm classe de cor */
+  .icon.verde {
+     /* Recalcula o filtro para manter verde sobre fundo escuro */
+     filter: invert(48%) sepia(79%) saturate(2476%) hue-rotate(130deg) brightness(95%) contrast(80%);
   }
 }
