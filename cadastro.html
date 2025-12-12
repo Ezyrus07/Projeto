@@ -1,107 +1,280 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doke - Cadastro</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Doke - Cadastro</title>
 
-    <style>
-            :root {
-  --cor0: #0b7768;
-  --cor1: #737373;
-  --cor2: #2a5f90;
+<style>
+    :root {
+        --cor0: #0b7768;
+        --cor1: #737373;
+        --cor2: #2a5f90;
+        --sidebar-width: 0px;
+        --navbar-height-desktop: 80px;
+        --navbar-height-mobile: 80px;
+        --bottom-nav-height: 80px;
     }
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: var(--cor2);
-            display: flex;
-            justify-content: center;
+
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: "Poppins", sans-serif;
+        background: linear-gradient(90deg, var(--cor2), var(--cor0)) border-box;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .login-container {
+        width: 900px;
+        display: flex;
+        background: white;
+        padding: 40px;
+        gap: 40px;
+        border-radius: 12px;
+        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    }
+
+    /* ESQUERDA */
+    .left {
+        width: 45%;
+    }
+
+    .left h2 {
+        font-size: 26px;
+        margin-bottom: 25px;
+        color: #222;
+    }
+
+    .btn-social {
+        width: 100%;
+        padding: 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 15px;
+        border: none;
+        cursor: pointer;
+    }
+
+    .btn-social img {
+        width: 22px;
+    }
+
+    .facebook { background: #1877F2; color: #fff; }
+    .google { background: #fff; border: 1px solid #ccc; color: #444; }
+    .apple { background: #1a1a1a; color: #fff; }
+
+    button {
+        cursor: pointer;
+        transition: 0.3s ease;
+    }
+
+    button:hover {
+        opacity: 80%;
+        transform: scale(1.03);
+    }
+
+    input {
+        transition: 0.3s ease;
+    }
+
+    input:hover,
+    input:focus {
+        border-color: #000;
+        box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    }
+
+    /* DIVISÃO */
+    .divider {
+        width: 1px;
+        background: #ddd;
+    }
+
+    /* DIREITA */
+    .right {
+        width: 45%;
+    }
+
+    .right h2 {
+        font-size: 26px;
+        margin-bottom: 25px;
+        color: #222;
+        line-height: 32px;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        margin-bottom: 15px;
+        border-radius: 8px;
+        border: 1px solid #ccc;
+        font-size: 15px;
+    }
+
+    .btn-login {
+        width: 140px;
+        padding: 12px;
+        background: var(--cor2);
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    /* Rodapé */
+    .footer {
+        margin-top: 25px;
+        text-align: center;
+        font-size: 14px;
+        color: white;
+    }
+
+    .footer a {
+        color: black;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.3s ease;
+    }
+
+    .footer a:hover {
+        text-decoration: underline;
+    }
+
+    /* ===========================
+       RESPONSIVIDADE
+    =========================== */
+    @media (max-width: 900px) {
+        .login-container {
+            width: 95%;
+            flex-direction: column;
             align-items: center;
-            height: 100vh;
+            padding: 25px;
         }
 
-        .container {
-            background: white;
-            width: 350px;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        .left, .right {
+            width: 100%;
             text-align: center;
         }
 
-        h2 {
-            color: #003f70;
-            margin-bottom: 20px;
+        .divider {
+            display: none;
+        }
+
+        .btn-social {
+            justify-content: center;
+        }
+
+        .right h2, .left h2 {
+            font-size: 22px;
+        }
+
+        .btn-login {
+            width: 100%;
+            margin-top: 10px;
         }
 
         input {
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border-radius: 8px;
-            border: 1px solid #ccc;
-            font-size: 15px;
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #0f8a64;
-            color: white;
-            border: none;
-            border-radius: 8px;
             font-size: 16px;
-            cursor: pointer;
+        }
+    }
+
+    @media (max-width: 500px) {
+        .login-container {
+            padding: 20px;
         }
 
-        button:hover {
-            background: #0c6b4f;
+        .right h2, .left h2 {
+            font-size: 20px;
         }
 
-        .login-link {
-            margin-top: 15px;
-            font-size: 14px;
+        .btn-social img {
+            width: 20px;
         }
 
-        .login-link a {
-            color: #0f5a97;
-            font-weight: bold;
-            text-decoration: none;
+        body {
+            padding: 10px;
+            height: auto;
         }
-    </style>
+
+        .footer {
+            width: 90%;
+            font-size: 13px;
+        }
+    }
+</style>
 </head>
-
 <body>
 
-    <div class="container">
-        <h2>Criar sua conta</h2>
+<div class="login-container">
 
-        <input type="text" id="nome" placeholder="Seu nome completo">
-        <input type="email" id="email" placeholder="Seu e-mail">
-        <input type="password" id="senha" placeholder="Crie uma senha">
+    <!-- ESQUERDA -->
+    <div class="left">
+        <h2>Crie sua conta com redes sociais</h2>
 
-        <button onclick="cadastrar()">Cadastrar</button>
+        <button class="btn-social facebook">
+            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/facebook/facebook-original.svg">
+            Cadastrar com Facebook
+        </button>
 
-        <p class="login-link">
-            Já possui conta?
-            <a href="login.html">Entrar</a>
-        </p>
+        <button class="btn-social google">
+            <img src="https://upload.wikimedia.org/wikipedia/commons/5/53/Google_%22G%22_Logo.svg">
+            Cadastrar com Google
+        </button>
+
+        <button class="btn-social apple">
+            <img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/apple/apple-original.svg">
+            Cadastrar com Apple
+        </button>
     </div>
+
+    <!-- DIVISÃO -->
+    <div class="divider"></div>
+
+    <!-- DIREITA -->
+    <div class="right">
+        <h2>Preencha seus<br>dados abaixo</h2>
+
+        <input type="text" id="nome" placeholder="Nome completo">
+        <input type="email" id="email" placeholder="E-mail">
+        <input type="password" id="senha" placeholder="Senha">
+        <input type="password" id="confirmar" placeholder="Confirmar senha">
+
+        <button class="btn-login" onclick="cadastrar()">Cadastrar</button>
+    </div>
+
+</div>
+
+<div class="footer">
+    Já tem uma conta? <a href="login.html">Entre aqui</a>
+</div>
 
 <script>
 function cadastrar() {
     let nome = document.getElementById("nome").value;
     let email = document.getElementById("email").value;
     let senha = document.getElementById("senha").value;
+    let confirmar = document.getElementById("confirmar").value;
 
-    if(nome === "" || email === "" || senha === ""){
+    if (nome === "" || email === "" || senha === "" || confirmar === "") {
         alert("Preencha todos os campos!");
         return;
     }
 
-    alert("Conta criada com sucesso!");
-    window.location.href = "login.html"; // REDIRECIONA PARA O LOGIN
+    if (senha !== confirmar) {
+        alert("As senhas não coincidem!");
+        return;
+    }
+
+    alert("Cadastro realizado com sucesso!");
 }
 </script>
 
