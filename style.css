@@ -148,90 +148,102 @@ h2 {
 }
 
 /* --- CSS DO BANNER DE COOKIES --- */
-        .cookie-banner {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            width: 122%;
-            background-color: #e2e2e2; /* Cor de fundo cinza escuro */
-            color: #ffffff;
-            padding: 20px 40px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-            z-index: 1000;
-            box-sizing: border-box;
-            
-            /* Oculto por padrão se o JS detectar que já foi aceito */
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
+.cookie-banner {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    /* CORREÇÃO IMPORTANTE: Usar 100% para não vazar da tela */
+    width: 100%; 
+    background-color: #e2e2e2; 
+    color: var(--cor-texto, #333); /* Adicionei fallback caso a variavel falhe */
+    padding: 20px; /* Reduzi um pouco o padding lateral base */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+    z-index: 1000;
+    box-sizing: border-box;
+    
+    /* Animação */
+    opacity: 1;
+    transition: opacity 0.5s ease;
+}
 
-        .cookie-container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            max-width: 1080px;
-            width: 100%;
-            gap: 20px;
-        }
+.cookie-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1080px;
+    width: 100%;
+    gap: 30px; /* Espaço entre o texto e o botão no Desktop */
+}
 
-        .cookie-text {
-            font-size: 14px;
-            line-height: 1.5;
-            color: var(--cor-texto);
-        }
+.cookie-text {
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--cor-texto);
+    flex: 1; /* Garante que o texto ocupe o espaço disponível */
+}
 
-        .cookie-text strong {
-            font-weight: 700;
-            cursor: pointer;
-        }
+.cookie-text strong {
+    font-weight: 700;
+    cursor: pointer;
+}
 
-        .cookie-text a {
-            color: var(--cor3); /* Cor rosada dos links */
-            text-decoration: none;
-            font-weight: 600;
-        }
+.cookie-text a {
+    color: var(--cor3);
+    text-decoration: none;
+    font-weight: 600;
+}
 
-        .cookie-text a:hover {
-            text-decoration: underline;
-        }
+.cookie-text a:hover {
+    text-decoration: underline;
+}
 
-        .cookie-btn {
-            background-color: var(--cor3); /* Vermelho Webmotors */
-            color: white;
-            border: none;
-            padding: 12px 32px;
-            border-radius: 8px;
-            font-weight: 700;
-            font-size: 15px;
-            cursor: pointer;
-            white-space: nowrap;
-            transition: background-color 0.2s;
-        }
+.cookie-btn {
+    background-color: var(--cor3);
+    color: white;
+    border: none;
+    padding: 12px 32px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 0.2s;
+    /* Garante que o botão não encolha se o texto for grande */
+    flex-shrink: 0; 
+}
 
-        .cookie-btn:hover {
-            background-color: #c00e2e; /* Vermelho um pouco mais escuro no hover */
-        }
+.cookie-btn:hover {
+    /* Opção de escurecer levemente a cor base usando filtro, caso não saiba o Hex exato */
+    filter: brightness(0.9); 
+}
 
-        /* Responsividade para celulares */
-        @media (max-width: 768px) {
-            .cookie-container {
-                flex-direction: column;
-                text-align: left;
-                align-items: flex-start;
-            }
-            
-            .cookie-btn {
-                width: 100%; /* Botão largura total no mobile */
-                text-align: center;
-            }
-            
-            .cookie-banner {
-                padding: 20px;
-            }
-        }
+/* --- RESPONSIVIDADE (CELULARES E TABLETS) --- */
+@media (max-width: 768px) {
+    .cookie-banner {
+        padding: 20px; /* Padding confortável para toque */
+    }
+
+    .cookie-container {
+        flex-direction: column; /* Empilha um em cima do outro */
+        align-items: stretch; /* Estica os itens para ocupar a largura */
+        gap: 20px; /* Espaço entre o texto e o botão */
+        text-align: left; /* Ou center, dependendo do gosto */
+    }
+
+    .cookie-text {
+        font-size: 13px; /* Leve redução para caber mais texto se necessário */
+        padding-right: 0;
+    }
+    
+    .cookie-btn {
+        width: 100%; /* Botão ocupa toda a largura */
+        padding: 14px; /* Área de toque maior para dedos */
+        font-size: 16px;
+    }
+}
 
 
 /* ===========================================
