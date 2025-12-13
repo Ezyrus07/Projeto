@@ -346,19 +346,121 @@ h2 {
   overflow-y: auto;
 }
 
-.sidebar-icones .item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 15px;
-  width: 70%;
-  cursor: pointer;
-  transition: transform 0.2s ease;
+/* ===========================================
+   NAVEGAÇÃO DESKTOP - SIDEBAR ICONES
+   (ESTILOS BASE PARA HOVER E ATIVO)
+   =========================================== */
+.sidebar-icones {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: white;
+    padding: 20px 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+    flex-direction: column;
+    align-items: center;
+    gap: 32px; /* Padrão Mobile/Tablet/Sidebar Fechada */
+    transition: width 0.3s ease;
+    z-index: 1001;
+    overflow-y: auto;
 }
 
-.sidebar-icones .item:hover {
-  transform: translateX(4px);
+/* Estilo BASE do ITEM (para o efeito de hover arredondado) */
+.sidebar-icones .item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    width: 90%; /* Define a largura da "pílula" de fundo */
+    max-width: 230px; 
+    cursor: pointer;
+    transition: background-color 0.2s, color 0.2s;
+    
+    /* Padding padrão, ajustado para telas grandes abaixo */
+    padding: 12px 10px; 
+    border-radius: 999px; /* Efeito de pílula arredondada */
+    margin-left: auto;
+    margin-right: auto;
 }
+
+.sidebar-icones .icon {
+    width: 28px;
+    flex-shrink: 0;
+}
+
+.sidebar-icones span {
+    font-family: var(--fonte-padrao);
+    font-size: 19px;
+    font-weight: 600;
+    color: var(--cor1);
+}
+
+/* EFEITO DE HOVER (X/Twitter) */
+.sidebar-icones .item:hover {
+    background-color: var(--cor4); 
+    transform: none; /* Garante que o item não se mova */
+}
+
+/* Efeito de HOVER no ícone e texto para destacar */
+.sidebar-icones .item:hover span {
+    color: var(--cor-texto); /* Usa a cor escura do texto padrão */
+}
+
+
+/* ESTADO ATIVO/SELECIONADO */
+.sidebar-icones .item.active {
+    background-color: var(--cor4); 
+}
+
+.sidebar-icones .item.active span {
+    color: var(--cor-texto); 
+    font-weight: 700;
+}
+
+/* ===========================================
+   RESPONSIVIDADE DA SIDEBAR
+   =========================================== */
+
+/* Tablet (Sidebar Fechada: 768px - 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+    .sidebar-icones span {
+        display: none;
+    }
+    .sidebar-icones .item {
+        justify-content: center;
+        width: 100%; /* Ocupa a largura da sidebar fechada */
+        padding: 12px;
+        border-radius: 999px; /* Mantém o efeito de pílula */
+    }
+}
+
+/* Desktop (Sidebar Aberta: >= 1024px) - CORREÇÕES APLICADAS AQUI */
+@media (min-width: 1024px) {
+    /* 1. Correção do espaçamento vertical (estava em 32px) */
+    .sidebar-icones {
+        gap: 15px; /* Reduz o espaçamento entre os links */
+    }
+
+    .sidebar-icones span {
+        display: block; /* Mostra o texto */
+    }
+    
+    /* 2. Correção do padding para envolver textos longos (ex: 'Comunidades') */
+    .sidebar-icones .item {
+        justify-content: flex-start;
+        /* Aumenta o padding horizontal para o hover envolver toda a palavra */
+        padding: 12px 20px 12px 15px; /* Ajuste sutil no padding esquerdo */
+        width: 90%; 
+        max-width: 230px; 
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+
 
 .sidebar-icones .icon {
   width: 28px;
@@ -614,7 +716,20 @@ main > *:first-child {
   opacity: 80%;
 } 
 
-.btn-procurar,
+
+ .btn-procurar{
+  background-color: var(--cor2);
+  color: white;
+  font-weight: 600;
+  border: none;
+  font-size: 1.125rem;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: 0.3s ease;
+  width: 100%;
+}
+
 .btn-anunciar {
   background-color: var(--cor2);
   color: white;
