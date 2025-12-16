@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Avaliação do Usuário - Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script> 
+    <style>
+        /* ===========================================
+   ESTILOS DA PÁGINA PERFIL / AVALIAÇÃO
+   =========================================== */
+
+/* Ajuste do Título */
+.perfil-titulo {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.perfil-titulo h2 {
+    color: var(--cor2); /* Azul escuro do tema */
+    font-size: 1.8rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.bolinha-preta {
+    width: 20px;
+    height: 20px;
+    background-color: #000;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* Container Branco Principal */
+.avaliacao-container {
+    background: #fff;
+    padding: 30px 40px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    max-width: 900px;
+    margin: 0 auto;
+    font-family: var(--fonte-padrao);
+}
+
+/* Cabeçalho (Pílulas) */
+.avaliacao-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 30px;
+    gap: 20px;
+}
+
+.criterios-badge {
+    background-color: #e0f2f1; /* Fundo verde claro */
+    color: var(--cor0);
+    font-weight: 800;
+    padding: 8px 25px;
+    border-radius: 30px;
+    font-size: 1.1rem;
+    flex-shrink: 0;
+    width: 200px; /* Largura fixa para alinhar com coluna da esquerda */
+}
+
+.notas-header {
+    background-color: #ecedf2; /* Fundo cinza */
+    color: var(--cor2);
+    font-weight: 700;
+    padding: 8px 20px;
+    border-radius: 30px;
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+}
+
+.notas-header span {
+    flex: 1;
+    text-align: left; /* Alinha labels com as barras */
+    padding-left: 10px;
+}
+
+/* Linhas de Avaliação */
+.avaliacao-row {
+    display: flex;
+    align-items: center;
+    padding: 15px 0;
+    gap: 20px;
+}
+
+.criterio-nome {
+    width: 200px; /* Mesma largura do badge 'Critérios' */
+    color: var(--cor2);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+.icon-criterio {
+    width: 20px;
+    height: 20px;
+    stroke: #999; /* Cor cinza do ícone */
+}
+
+/* Grupo das 5 Barras */
+.barras-grupo {
+    flex-grow: 1;
+    display: flex;
+    justify-content: space-between;
+}
+
+.barra-item {
+    flex: 1; /* Ocupa espaço igual */
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-right: 15px; /* Espaço entre colunas */
+}
+
+.barra-item .num {
+    color: var(--cor2);
+    font-weight: 600;
+    min-width: 20px;
+}
+
+/* Design da Barra de Progresso */
+.progress {
+    background-color: #f0f0f0;
+    height: 10px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 60px; /* Tamanho máximo da barra visual */
+    position: relative;
+    overflow: hidden;
+}
+
+.progress .fill {
+    background-color: var(--cor0); /* Verde do tema */
+    height: 100%;
+    border-radius: 10px;
+}
+
+/* Linha Divisória */
+.divisor-suave {
+    border: 0;
+    height: 1px;
+    background-color: #eee;
+    margin: 0;
+}
+
+/* Galeria de Posts (Rodapé) */
+.galeria-posts {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    margin-top: 40px;
+}
+
+.post-card {
+    background-color: #ececec; /* Cinza dos cards vazios */
+    border-radius: 15px;
+    height: 180px;
+    flex: 1;
+    position: relative;
+}
+
+.heart-icon {
+    position: absolute;
+    bottom: 10px;
+    right: 15px;
+    font-size: 24px;
+    color: var(--cor0);
+    cursor: pointer;
+}
+
+/* Responsividade Mobile para a Tabela */
+@media (max-width: 768px) {
+    .perfil-main {
+        padding: 20px 10px;
+    }
+
+    .avaliacao-container {
+        padding: 20px;
+    }
+    
+    .avaliacao-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .criterios-badge {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .notas-header {
+        width: 100%;
+        font-size: 0.8rem;
+        padding: 8px 10px;
+    }
+
+    .avaliacao-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+        border-bottom: 1px solid #eee;
+    }
+
+    .criterio-nome {
+        width: 100%;
+        font-weight: bold;
+    }
+
+    .barras-grupo {
+        width: 100%;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
+    
+    .barra-item {
+        min-width: 80px; /* Garante que não quebre feio no mobile */
+    }
+    
+    .galeria-posts {
+        flex-direction: column;
+    }
+    
+    .post-card {
+        width: 100%;
+        height: 150px;
+    }
+}
+    </style>
+</head>
+<body>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'">
+            </a>           
+        </div>
+        <nav class="menu">
+            <div class="item">
+                <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+            </div>
+            <div class="botoes">
+                <a href="login.html" class="entrar">Entrar</a>
+            </div>
+        </nav>
+    </header>
+
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/120x50?text=Doke'">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html">
+                <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+                <span>Início</span>
+            </a>
+        </div>
+        <div class="item">
+            <a href="#">
+                <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+                <span>Explorar</span>
+            </a>
+        </div>
+        <div class="item">
+            <a href="#">
+                <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+                <span>Notificações</span>
+            </a>
+        </div>
+        <div class="item">
+            <a href="chat.html">
+                <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+                <span>Mensagens</span>
+            </a>
+        </div>
+        <div class="item">
+            <a href="#">
+                <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
+                <span>Comunidades</span>
+            </a>
+        </div>
+        <div class="item active">
+            <a href="perfil.html">
+                <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
+                <span>Perfil</span>
+            </a>
+        </div>
+        <div class="item">
+            <a href="#">
+                <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+                <span>Mais</span>
+            </a>
+        </div>
+    </aside>
+
+    <main class="perfil-main">
+        
+        <div class="perfil-titulo">
+            <h2>Avaliação de <span class="bolinha-preta"></span> @usuario23</h2>
+        </div>
+
+        <div class="avaliacao-container">
+            
+            <div class="avaliacao-header">
+                <div class="criterios-badge">Critérios:</div>
+                <div class="notas-header">
+                    <span>Ótimo</span>
+                    <span>Bom</span>
+                    <span>Regular</span>
+                    <span>Ruim</span>
+                    <span>Péssimo</span>
+                </div>
+            </div>
+
+            <div class="avaliacao-row">
+                <div class="criterio-nome">
+                    <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                    Pontualidade
+                </div>
+                <div class="barras-grupo">
+                    <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+                    <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+                    <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+                    <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+                    <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+                </div>
+            </div>
+
+            <hr class="divisor-suave">
+
+            <div class="avaliacao-row">
+                <div class="criterio-nome">
+                    <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+                    Profissionalismo
+                </div>
+                <div class="barras-grupo">
+                    <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+                    <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+                    <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+                    <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+                    <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+                </div>
+            </div>
+
+            <hr class="divisor-suave">
+
+            <div class="avaliacao-row">
+                <div class="criterio-nome">
+                    <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>
+                    Qualidade d/ serviço
+                </div>
+                <div class="barras-grupo">
+                    <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+                    <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+                    <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+                    <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+                    <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+                </div>
+            </div>
+
+            <hr class="divisor-suave">
+
+            <div class="avaliacao-row">
+                <div class="criterio-nome">
+                    <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                    Valor do preço
+                </div>
+                <div class="barras-grupo">
+                    <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+                    <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+                    <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+                    <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+                    <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+                </div>
+            </div>
+
+            <hr class="divisor-suave">
+
+            <div class="avaliacao-row">
+                <div class="criterio-nome">
+                    <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
+                    Atendimento
+                </div>
+                <div class="barras-grupo">
+                    <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+                    <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+                    <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+                    <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+                    <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+                </div>
+            </div>
+
+            <div class="galeria-posts">
+                <div class="post-card">
+                    <div class="heart-icon">♡</div>
+                </div>
+                <div class="post-card">
+                    <div class="heart-icon">♡</div>
+                </div>
+                <div class="post-card">
+                    <div class="heart-icon">♡</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span>
+        </a>
+        <a href="#" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span>
+        </a>
+        <a href="#" class="item">
+            <img src="" class="icon azul" alt="Anunciar"> <span>Anunciar</span>
+        </a>
+        <a href="#" class="item active">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
+            <span>Perfil</span>
+        </a>
+    </nav>
+</body>
+</html>

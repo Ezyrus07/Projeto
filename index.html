@@ -90,8 +90,8 @@
             <span>Notificações</span>
         </div>
         <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <span>Mensagens</span>
+            <a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <span>Mensagens</span></a>
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
@@ -161,14 +161,36 @@
 
         <!-- SEÇÃO DE BUSCA -->
         <section class="secao-busca">
-            <div class="banner-pontos">
-                <span>Acumule e troque pontos por benefícios!</span>
-                <a href="#" class="info-btn">Veja detalhes</a>
-                <span class="badge-novo">NOVO</span>
+        <div class="typing-container">
+            <span class="static-text">Busque por</span>
+            <span class="icon">✨</span>
+            <span class="dynamic-text" id="typewriter"></span>
+            <span class="cursor">&nbsp;</span>
+        </div>
+    <div class="busca-wrapper" id="buscaWrapper">
+        <div class="busca-input-container">
+        <span class="search-icon">✨</span>
+        <input type="text" id="inputBusca" placeholder="Descreva o que você está procurando" autocomplete="off">
+    </div>
+
+    <div class="busca-dropdown" id="buscaDropdown">
+        
+        <div class="busca-hint">
+            Busque por <i>marca, modelo, opcionais ou uma descrição detalhada</i>
+        </div>
+
+        <div class="recentes-container" id="containerHistorico" style="display: none;">
+            <h4>Buscas recentes</h4>
+            <div id="listaRecentes"></div>
+            
+            <div class="limpar-historico" onclick="limparHistorico(event)">
+                Limpar histórico
             </div>
-            <div class="busca">
-                <input type="text" placeholder="Descreva o que você está procurando!">
-            </div>
+        </div>
+
+    </div>
+</div>
+            
             <div class="botoes-busca">
                 <button class="btn-procurar">Procurar serviços</button>
                 <a href="anunciar.html" target="_blank"><button class="btn-anunciar">Anunciar meu serviço</button>
@@ -176,23 +198,54 @@
         </section>
 
         <!-- CATEGORIAS -->
-        <section class="categorias-container">
-            <h2 id="categorias-title">CATEGORIAS EM DESTAQUE:</h2>
-            <div class="categorias-grid">
-                <div class="categoria">
-                    <img src="assets/Imagens/eletricista.png" alt="Eletricista">
-                    <p>Eletricista</p>
-                </div>
-                <div class="categoria">
-                    <img src="assets/Imagens/encanador.png" alt="Encanador(a)">
-                    <p>Encanador(a)</p>
-                </div>
-                <div class="categoria">
-                    <img src="assets/Imagens/pintor.png" alt="Pintor(a)">
-                    <p>Pintor(a)</p>
-                </div>
+<section class="categorias-container estilo-lojas">
+    <h2 id="categorias-title">Categorias em destaque</h2>
+    
+    <div class="categoria-scroll">
+        
+        <div class="categoria-item">
+            <div class="categoria-circle">
+                <img src="https://cdn-icons-png.flaticon.com/512/741/741400.png" alt="BMW">
             </div>
-        </section>
+        </div>
+
+        <div class="categoria-item">
+            <div class="categoria-circle">
+                <img src="https://cdn-icons-png.flaticon.com/512/825/825584.png" alt="Movida">
+            </div>
+        </div>
+
+        <div class="categoria-item">
+            <div class="categoria-circle">
+                <img src="https://cdn-icons-png.flaticon.com/512/5977/5977591.png" alt="Localiza">
+            </div>
+        </div>
+
+        <div class="categoria-item">
+            <div class="categoria-circle">
+                <img src="https://cdn-icons-png.flaticon.com/512/6007/6007003.png" alt="Chery">
+            </div>
+        </div>
+
+        <div class="categoria-item">
+            <div class="categoria-circle">
+                <img src="https://cdn-icons-png.flaticon.com/512/732/732221.png" alt="BYD">
+            </div>
+        </div>
+
+        <div class="categoria-item">
+            <div class="categoria-circle">
+                <img src="https://cdn-icons-png.flaticon.com/512/2645/2645897.png" alt="Omoda">
+            </div>
+        </div>
+
+    </div>
+
+    <div class="indicadores-paginacao">
+        <span class="dot ativo"></span>
+        <span class="dot"></span>
+    </div>
+</section>
 
         <!-- VÍDEOS -->
         <section class="videos-container">
@@ -205,31 +258,74 @@
         <button class="novos-anuncios">Novos anúncios <i class="arrow">▼</i></button>
     </div>
 
-    <div class="filtros-container">
-        <div class="filtros-linha">
-            <div class="filtro-group">
-                <label>Estado:</label>
-                <button class="select">Selecionar<i>▼</i></button>
-            </div>
-
-            <div class="filtro-group">
-                <label>Cidade:</label>
-                <button class="select">Selecionar <i>▼</i></button>
-            </div>
-
-            <div class="filtro-group">
-                <label>Bairro:</label>
-                <button class="select">Selecionar <i>▼</i></button>
-            </div>
-
-            <div class="filtro-group botao-container">
-                <button class="btn-filtros">
-                    <span class="icon"></span> Mais filtros
-                </button>
+<div class="filtros-container">
+    <div class="filtros-linha">
+        <div class="filtro-group">
+            <label for="selectEstado">Estado:</label>
+            <div class="select-wrapper">
+                <select id="selectEstado" onchange="carregarCidades()">
+                    <option value="" disabled selected>Selecionar UF</option>
+                    </select>
             </div>
         </div>
+
+        <div class="filtro-group">
+            <label for="selectCidade">Cidade:</label>
+            <div class="select-wrapper">
+                <select id="selectCidade" onchange="carregarBairros()" disabled>
+                    <option value="" disabled selected>Selecione o Estado...</option>
+                </select>
+            </div>
         </div>
 
+        <div class="filtro-group">
+            <label for="selectBairro">Bairro:</label>
+            <div class="select-wrapper">
+                <select id="selectBairro" disabled>
+                    <option value="" disabled selected>Selecione a Cidade...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filtro-group botao-container">
+            <button class="btn-filtros" onclick="toggleMaisFiltros()">
+                <span id="iconFiltro"></span> Mais filtros
+            </button>
+        </div>
+    </div>
+
+    <div id="areaMaisFiltros" class="filtros-extras">
+        <div class="extras-grid">
+            
+            <div class="extra-item">
+                <label>Faixa de Preço:</label>
+                <div class="range-group">
+                    <input type="number" placeholder="Mín R$" class="input-pequeno">
+                    <span>até</span>
+                    <input type="number" placeholder="Máx R$" class="input-pequeno">
+                </div>
+            </div>
+
+            <div class="extra-item">
+                <label>Ordenar por:</label>
+                <div class="radio-group">
+                    <label><input type="radio" name="ordem" checked> Mais Recentes</label>
+                    <label><input type="radio" name="ordem"> Menor Preço</label>
+                    <label><input type="radio" name="ordem"> Melhores Avaliações</label>
+                </div>
+            </div>
+
+            <div class="extra-item acao">
+                <button class="btn-aplicar">Aplicar Filtros</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="filtros-tags" id="tagsContainer" style="display:none;">
+        <span class="tag">Bahia <span onclick="removerTag(this)">×</span></span>
+        <span class="tag limpar" onclick="limparFiltros()">Limpar tudo</span>
+    </div>
+</div>
     <div class="content">
         <div class="lista-anuncios">
             <div class="anuncio">

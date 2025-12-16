@@ -24,7 +24,7 @@
 }
 
 html {
-  background: #ecedf2;
+background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
   background-repeat: no-repeat;
   min-height: 100%;
   box-sizing: border-box;
@@ -571,7 +571,7 @@ h2 {
   left: 0;
   width: 0%;
   height: 1.4px;
-  background: var(--cor3);
+  background: linear-gradient(90deg, #6a11cb, #ff2e63);
   transition: width .25s ease;
 }
 
@@ -659,6 +659,8 @@ h2 {
   }
 
 
+
+
 main > *:first-child {
   margin-top: 0;
 }
@@ -667,38 +669,215 @@ main > *:first-child {
   padding: 60px 40px;
 }
 
-.busca {
-  display: flex;
-  width: 100%;
-  margin: 0 auto 20px auto;
-  position: relative;
+/* === ESTILOS DA BUSCA FUNCIONAL === */
+.busca-wrapper {
+    position: relative;
+    width: 100%;
+    margin: 0 auto 20px auto;
 }
 
-.busca input {
-  width: 100%;
-  padding: 18px 20px 18px 55px;
-  font-size: 1rem;
-  color: #444;
-  border-radius: 40px;
-  border: 3px solid transparent;
-  background:
-    linear-gradient(#fff, #fff) padding-box,
-    linear-gradient(90deg, #5647ff, #ff2e63) border-box;
-  outline: none;
-  box-sizing: border-box;
+.busca-input-container {
+    position: relative;
+    background: linear-gradient(90deg, #6a11cb, #ff2e63);
+    padding: 2px;
+    border-radius: 40px;
+    box-shadow: 0 0 0 1px #e0e0e0; /* Borda sutil inicial */
+    transition: all 0.3s ease;
 }
 
-.busca::before {
-  content: "";
-  position: absolute;
-  left: 18px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 22px;
-  height: 22px;
-  background-image: url('https://cdn-icons-png.flaticon.com/512/535/535239.png');
-  background-size: cover;
-  opacity: 0.8;
+/* Estado Ativo (Borda Colorida) */
+.busca-wrapper.active .busca-input-container {
+    background: linear-gradient(90deg, #6a11cb, #ff2e63);
+    border-radius: 20px 20px 0 0;
+    box-shadow: none;
+}
+
+.busca-input-container input {
+    width: 100%;
+    padding: 18px 20px 18px 50px;
+    border: none;
+    outline: none;
+    font-size: 1.1rem;
+    border-radius: 38px;
+    background: white;
+    color: #444;
+}
+
+/* Ajuste do input quando ativo */
+.busca-wrapper.active input {
+    border-radius: 18px 18px 0 0;
+}
+
+.search-icon {
+    position: absolute;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-size: 20px;
+    z-index: 10;
+}
+
+/* Dropdown */
+.busca-dropdown {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    z-index: 1000;
+    padding: 20px;
+    border-radius: 0 0 20px 20px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    
+    /* Bordas coloridas laterais e inferior simuladas */
+    background: 
+        linear-gradient(white, white) padding-box,
+        linear-gradient(90deg, #6a11cb, #ff2e63) border-box;
+    border: 2px solid transparent;
+    border-top: none;
+    margin-top: -2px;
+}
+
+.busca-wrapper.active .busca-dropdown {
+    display: block;
+}
+
+.busca-hint {
+    background: #fff0f3;
+    color: #666;
+    padding: 10px 15px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+}
+
+/* Itens do Histórico */
+.recentes-container h4 {
+    font-size: 0.9rem;
+    color: #333;
+    margin: 10px 0;
+    font-weight: 700;
+}
+
+.recent-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 0;
+    color: #555;
+    cursor: pointer;
+    border-bottom: 1px solid #f0f0f0;
+    transition: 0.2s;
+}
+
+.recent-item:hover {
+    color: #6a11cb;
+    padding-left: 5px;
+}
+
+.history-icon {
+    font-size: 16px;
+    color: #999;
+}
+
+.limpar-historico {
+    font-size: 12px;
+    color: #999;
+    text-align: right;
+    margin-top: 10px;
+    cursor: pointer;
+    text-decoration: underline;
+}
+.limpar-historico:hover { color: #ff2e63; }
+#categorias-title {
+  color: var(--cor0);
+  font-weight: bold;
+  margin: 0;
+}
+
+
+
+.info-btn {
+  color: var(--cor2);
+  text-decoration: none;
+}
+
+.info-btn:hover {
+  opacity: 80%;
+} 
+
+/* Container do Título */
+.typing-container {
+    font-family: var(--fonte-padrao);
+    font-size: 24px; /* Tamanho da fonte */
+    font-weight: 700; /* Negrito */
+    color: #333;
+    margin-bottom: 25px; /* Espaço até a barra de busca */
+    display: flex;
+    align-items: center;
+    justify-content: center; /* Centralizado (mude para flex-start se quiser à esquerda) */
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+/* Texto Fixo "Busque por" */
+.static-text {
+    color: var(--cor2);
+}
+
+/* Ícone de Brilho */
+.icon {
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    /* Se quiser a cor do ícone igual ao texto gradiente: */
+    background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Texto que muda (Gradiente) */
+.dynamic-text {
+    /* Cor roxa sólida primeiro (para garantir que aparece) */
+    color: #6a11cb;
+    font-weight: 700;
+    
+    /* Tenta aplicar o gradiente por cima */
+    background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    
+    /* IMPORTANTE: Garante que o span não "colapse" quando vazio */
+    display: inline-block;
+    min-width: 10px; 
+    white-space: nowrap; /* Impede que quebre linha */
+}
+
+/* Cursor piscando */
+.cursor {
+    display: inline-block;
+    width: 2px;
+    background-color: #6a11cb;
+    animation: piscar 0.8s infinite;
+    margin-left: 2px;
+}
+
+@keyframes piscar {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+}
+
+/* Ajuste para Mobile */
+@media (max-width: 600px) {
+    .typing-container {
+        font-size: 18px;
+        justify-content: center;
+    }
 }
 
 .botoes-busca {
@@ -724,6 +903,7 @@ main > *:first-child {
 .info-btn:hover {
   opacity: 80%;
 } 
+
 
 
  .btn-procurar{
@@ -794,6 +974,118 @@ main > *:first-child {
   font-size: 1rem;
   font-weight: 500;
   color: var(--cor1);
+}
+
+/* ===========================================
+   ESTILO LOJAS OFICIAIS (CARROSSEL)
+   =========================================== */
+
+/* Removemos o fundo branco e sombra padrão apenas para este estilo se quiser igual a imagem,
+   ou mantemos se você quiser dentro do card branco. 
+   O código abaixo ajusta para ficar mais limpo. */
+.categorias-container.estilo-lojas {
+    background-color: transparent; /* Fundo transparente para mesclar com o site */
+    box-shadow: none; /* Remove a sombra do container principal */
+    padding: 20px 0; /* Remove padding lateral para o scroll ir até a borda se quiser */
+    overflow: hidden; /* Garante que nada vaze */
+}
+
+.categorias-container.estilo-lojas h2 {
+    color: var(--cor1); /* Cinza escuro */
+    font-size: 1.2rem;
+    margin-bottom: 25px;
+    margin-left: 20px; /* Alinha o título com o conteúdo */
+}
+
+/* Container de Rolagem */
+.categoria-scroll {
+    display: flex;
+    gap: 20px; /* Espaço entre as bolinhas */
+    overflow-x: auto; /* Permite rolar para o lado */
+    padding: 36px 20px 30px 20px; /* Espaço interno + espaço para a sombra não cortar */
+    scroll-behavior: smooth;
+    
+    /* Esconde a barra de rolagem (Estético) */
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+}
+
+/* Esconde barra de rolagem no Chrome/Safari */
+.categoria-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.categoria-item {
+    flex: 0 0 auto; /* Impede que os itens encolham */
+}
+
+/* O Círculo Branco */
+.categoria-circle {
+    width: 110px;  /* Tamanho do círculo */
+    height: 110px;
+    background-color: white;
+    border-radius: 50%; /* Faz ficar redondo */
+    border: 1px solid #e0e0e0; /* Borda cinza suave */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+}
+
+/* Efeito ao passar o mouse */
+.categoria-circle:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    border-color: var(--cor0);
+}
+
+/* Imagem dentro do círculo */
+.categoria-circle img {
+    width: 60%;      /* A logo ocupa 60% do círculo */
+    height: auto;
+    object-fit: contain;
+    filter: grayscale(100%); /* Opcional: deixa cinza igual na imagem até passar o mouse */
+    opacity: 0.7;
+    transition: 0.3s;
+}
+
+.categoria-circle:hover img {
+    filter: grayscale(0%); /* Fica colorido no hover */
+    opacity: 1;
+}
+
+/* --- Indicadores (Pontinhos) --- */
+.indicadores-paginacao {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.dot {
+    width: 6px;
+    height: 6px;
+    background-color: #ccc;
+    border-radius: 50%;
+    display: inline-block;
+}
+
+/* O pontinho ativo (o traço vermelho) */
+.dot.ativo {
+    width: 25px; /* Mais largo */
+    height: 6px;
+    background-color: var(--cor0); /* Sua cor vermelha/rosa do tema */
+    border-radius: 10px;
+}
+
+/* Responsividade para celular */
+@media (max-width: 768px) {
+    .loja-circle {
+        width: 85px;
+        height: 85px;
+    }
 }
 
 .videos-container {
@@ -1005,6 +1297,161 @@ main > *:first-child {
     border-radius: 4px;
     font-size: 0.85rem;
     font-weight: bold;
+    cursor: pointer;
+}
+
+/* ==================== MELHORIAS NOS FILTROS ==================== */
+
+/* 1. Wrapper para estilizar o Select nativo */
+.select-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.select-wrapper::after {
+    content: '▼';
+    font-size: 0.8rem;
+    color: var(--cor0);
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    pointer-events: none; /* Permite clicar no select através do ícone */
+}
+
+/* O Select em si */
+.filtros-container select {
+    width: 100%;
+    appearance: none; /* Remove estilo padrão do navegador */
+    -webkit-appearance: none;
+    background: #fff;
+    border: 1px solid var(--cor-borda);
+    padding: 12px 35px 12px 16px; /* Espaço na direita para a seta */
+    border-radius: 8px;
+    font-family: var(--fonte-padrao);
+    font-size: 1rem;
+    color: var(--cor-texto);
+    cursor: pointer;
+    outline: none;
+    transition: all 0.2s;
+}
+
+.filtros-container select:disabled {
+    background-color: #f5f5f5;
+    color: #999;
+    cursor: not-allowed;
+    border-color: #eee;
+}
+
+.filtros-container select:hover:not(:disabled),
+.filtros-container select:focus {
+    border-color: var(--cor0);
+    box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.1);
+}
+
+/* 2. Área Expansível (Mais Filtros) */
+.filtros-extras {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.4s ease-in-out, padding 0.4s ease;
+    background-color: #fafafa;
+    border-radius: 8px;
+    margin-top: 0;
+}
+
+/* Classe que será adicionada via JS para abrir */
+.filtros-extras.aberto {
+    max-height: 300px; /* Altura suficiente para o conteúdo */
+    margin-top: 20px;
+    padding: 20px;
+    border: 1px solid #eee;
+}
+
+.extras-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    align-items: start;
+}
+
+/* Inputs de Preço */
+.range-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-pequeno {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+/* Radio Buttons */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.radio-group label {
+    font-size: 0.9rem;
+    cursor: pointer;
+    color: #555;
+}
+
+/* Botão Aplicar */
+.btn-aplicar {
+    background-color: var(--cor0);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    width: 100%;
+    font-weight: bold;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.btn-aplicar:hover {
+    opacity: 0.9;
+}
+
+/* Tags de Filtros Ativos */
+.filtros-tags {
+    margin-top: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.tag {
+    background: #e0f2f1;
+    color: var(--cor0);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tag span {
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 0.8;
+}
+
+.tag span:hover {
+    color: #ff2e63;
+}
+
+.tag.limpar {
+    background: transparent;
+    color: #666;
+    text-decoration: underline;
     cursor: pointer;
 }
 
