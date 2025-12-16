@@ -34,3 +34,7 @@ document.addEventListener("DOMContentLoaded", function() {
                 localStorage.setItem('cookiesAceitos', 'true');
             });
         });
+
+        //ESTADO, CIDADE, BAIRRO 
+
+        
