@@ -1,10 +1,9 @@
 @charset "UTF-8";
-
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
 
-/* ===========================================
-   VARIÁVEIS GLOBAIS E DE LAYOUT
-   =========================================== */
+/* ==========================================================================
+   1. VARIÁVEIS & CONFIGURAÇÕES GLOBAIS
+   ========================================================================== */
 :root {
   --cor0: #0b7768;
   --cor1: #737373;
@@ -24,16 +23,14 @@
 }
 
 html {
-background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
+  background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
   background-repeat: no-repeat;
   min-height: 100%;
   box-sizing: border-box;
   font-size: 16px;
 }
 
-*,
-*:before,
-*:after {
+*, *:before, *:after {
   box-sizing: inherit;
 }
 
@@ -52,6 +49,10 @@ body > main {
   flex: 1;
 }
 
+body > *:first-child {
+  margin-top: 0;
+}
+
 body > footer {
   margin-top: auto;
 }
@@ -63,552 +64,47 @@ h2 {
   font-size: 1.5rem;
 }
 
-/* POPUP- CRIAR CONTA */
-/* Container invisível, apenas para segurar o popup */
-.popup {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    display: none;
-}
+/* ==========================================================================
+   2. COMPONENTES UI GLOBAIS (Botões, Inputs, Badges, Links)
+   ========================================================================== */
 
-/* Caixinha do alerta */
-.popup-content {
-    width: 240px;
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
-    position: relative;
-    animation: aparecer 0.3s ease;
-}
-
-/* Animação suave */
-@keyframes aparecer {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* Botão X */
-.close-btn {
-    position: absolute;
-    top: 8px;
-    right: 10px;
-    font-size: 20px;
-    cursor: pointer;
-    color: #666;
-}
-
-.close-btn:hover {
-  opacity: 80%;
-}
-
-.titulo {
-    font-size: 15px;
-    color: #333;
-    margin-bottom: 15px;
-}
-
+/* Botões Gerais */
 .btn-login {
-    width: 100%;
-    padding: 10px;
-    background: var(--cor0);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    font-size: 15px;
-    cursor: pointer;
-    margin-bottom: 15px;
-    transition: 0.3s ease;
-}
-
-.btn-login:hover {
-    opacity: 80%;
-}
-
-.criar {
-    font-size: 14px;
-    color: #666;
-}
-
-.criar a {
-    color: var(--cor2);
-    font-weight: bold;
-    text-decoration: none;
-}
-
-.criar a:hover {
-  text-decoration: underline;
-}
-
-/* --- CSS DO BANNER DE COOKIES --- */
-.cookie-banner {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    /* CORREÇÃO IMPORTANTE: Usar 100% para não vazar da tela */
-    width: 100%; 
-    background-color: #e2e2e2; 
-    color: var(--cor-texto, #333); /* Adicionei fallback caso a variavel falhe */
-    padding: 20px; /* Reduzi um pouco o padding lateral base */
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
-    z-index: 1002;
-    box-sizing: border-box;
-    
-    /* Animação */
-    opacity: 1;
-    transition: opacity 0.5s ease;
-}
-
-.cookie-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    max-width: 1080px;
-    width: 100%;
-    gap: 30px; /* Espaço entre o texto e o botão no Desktop */
-}
-
-.cookie-text {
-    font-size: 14px;
-    line-height: 1.5;
-    color: var(--cor-texto);
-    flex: 1; /* Garante que o texto ocupe o espaço disponível */
-}
-
-.cookie-text strong {
-    font-weight: 700;
-    cursor: pointer;
-}
-
-.cookie-text a {
-    color: var(--cor2);
-    text-decoration: none;
-    font-weight: 600;
-}
-
-.cookie-text a:hover {
-    text-decoration: underline;
-}
-
-.cookie-btn {
-    background-color: var(--cor2);
-    color: white;
-    border: none;
-    padding: 12px 32px;
-    border-radius: 8px;
-    font-weight: 700;
-    font-size: 15px;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: background-color 0.2s;
-    /* Garante que o botão não encolha se o texto for grande */
-    flex-shrink: 0; 
-}
-
-.cookie-btn:hover {
-    /* Opção de escurecer levemente a cor base usando filtro, caso não saiba o Hex exato */
-    filter: brightness(0.9); 
-}
-
-/* --- RESPONSIVIDADE (CELULARES E TABLETS) --- */
-@media (max-width: 768px) {
-    .cookie-banner {
-        padding: 20px; /* Padding confortável para toque */
-    }
-
-    .cookie-container {
-        flex-direction: column; /* Empilha um em cima do outro */
-        align-items: stretch; /* Estica os itens para ocupar a largura */
-        gap: 20px; /* Espaço entre o texto e o botão */
-        text-align: left; /* Ou center, dependendo do gosto */
-    }
-
-    .cookie-text {
-        font-size: 13px; /* Leve redução para caber mais texto se necessário */
-        padding-right: 0;
-    }
-    
-    .cookie-btn {
-        width: 100%; /* Botão ocupa toda a largura */
-        padding: 14px; /* Área de toque maior para dedos */
-        font-size: 16px;
-    }
-}
-
-
-/* ===========================================
-   NAVEGAÇÃO MOBILE (MANTIDO ORIGINAL)
-   =========================================== */
-.navbar-mobile {
-  display: flex;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--navbar-height-mobile);
-  background: white;
-  padding: 14px 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  align-items: center;
-  justify-content: space-between;
-}
-
-#logo-mobile img {
-  height: 40px;
-}
-
-.menu .cep {
-  display: none;
-}
-
-.bottom-nav {
-  display: flex;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--bottom-nav-height);
-  background: white;
-  justify-content: space-around;
-  align-items: flex-start;
-  padding-top: 12px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 999;
-  border-top: 1px solid #eee;
-}
-
-.item img{
-  width: 26px;
-  height: 26px;
-}
-
-
-.bottom-nav .item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: var(--cor1);
-  font-size: 11px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.bottom-nav .item:active,
-.bottom-nav .item.active {
-  color: var(--cor0);
-}
-
-.menu::after {
-  display: none;
-}
-
-.bottom-nav .icon {
-  width: 26px;
-  height: 26px;
-}
-
-.bottom-nav .item.active .icon.verde {
-  filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
-}
-
-
-/* ===========================================
-   NAVEGAÇÃO DESKTOP - SOLUÇÃO SIMPLES
-   =========================================== */
-.sidebar-icones {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: var(--sidebar-width);
-  height: 100vh;
-  background-color: white;
-  padding: 20px 0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-  flex-direction: column;
-  align-items: center;
-  gap: 32px;
-  transition: width 0.3s ease;
-  z-index: 1001;
-  overflow-y: auto;
-}
-
-/* ===========================================
-   NAVEGAÇÃO DESKTOP - SIDEBAR ICONES
-   (ESTILOS BASE PARA HOVER E ATIVO)
-   =========================================== */
-.sidebar-icones {
-    display: none;
-    position: fixed;
-    top: 0; left: 0;
-    width: var(--sidebar-width);
-    height: 100vh;
-    background-color: white;
-    padding: 20px 0;
-    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-    flex-direction: column;
-    align-items: center;
-    gap: 32px; 
-    z-index: 1001;
-    overflow-y: auto;
-}
-.sidebar-icones #logo img { height: 50px; display: block; margin-bottom: 20px; }
-.sidebar-icones .item {
-    display: flex; align-items: center; justify-content: flex-start;
-    gap: 15px; width: 90%; max-width: 230px; cursor: pointer;
-    padding: 12px 10px; border-radius: 999px; margin: 0 auto;
-}
-.sidebar-icones .item a { text-decoration: none; display: flex; align-items: center; gap: 15px; width: 100%; color: inherit; }
-.sidebar-icones .item:hover { background-color: var(--cor4); }
-.sidebar-icones .icon { width: 28px; height: 28px; flex-shrink: 0; }
-.sidebar-icones span { font-size: 19px; font-weight: 600; color: var(--cor1); }
-.sidebar-icones .item:hover span { color: var(--cor-texto); }
-.sidebar-icones .item.active { background-color: var(--cor4); }
-.sidebar-icones .item.active span { color: var(--cor-texto); font-weight: 700; }
-.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
-.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
-/* ===========================================
-   RESPONSIVIDADE DA SIDEBAR
-   =========================================== */
-
-/* Tablet (Sidebar Fechada: 768px - 1023px) */
-@media (min-width: 768px) and (max-width: 1023px) {
-    .sidebar-icones span {
-        display: none;
-    }
-    .sidebar-icones .item {
-        justify-content: center;
-        width: 100%; /* Ocupa a largura da sidebar fechada */
-        padding: 12px;
-        border-radius: 999px; /* Mantém o efeito de pílula */
-    }
-}
-
-/* Desktop (Sidebar Aberta: >= 1024px) - CORREÇÕES APLICADAS AQUI */
-@media (min-width: 1024px) {
-    /* 1. Correção do espaçamento vertical (estava em 32px) */
-    .sidebar-icones {
-        gap: 15px; /* Reduz o espaçamento entre os links */
-    }
-
-    .sidebar-icones span {
-        display: block; /* Mostra o texto */
-    }
-    
-    /* 2. Correção do padding para envolver textos longos (ex: 'Comunidades') */
-    .sidebar-icones .item {
-        justify-content: flex-start;
-        /* Aumenta o padding horizontal para o hover envolver toda a palavra */
-        padding: 12px 20px 12px 15px; /* Ajuste sutil no padding esquerdo */
-        width: 90%; 
-        max-width: 230px; 
-        margin-left: auto;
-        margin-right: auto;
-    }
-}
-
-
-
-
-/* NAVBAR DESKTOP - CORREÇÃO SIMPLES */
-.navbar-desktop {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: var(--sidebar-width);
-  right: 0;
-  height: var(--navbar-height-desktop);
-  background: white;
-  z-index: 1000;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  align-items: center;
-  padding: 0 15px;
-  gap: 8px;
-  transition: left 0.3s ease;
-}
-
-#logo {
-  flex-shrink: 0;
-}
-
-#logo img {
-  height: 50px;
+  width: 100%;
+  padding: 10px;
+  background: var(--cor0);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
   cursor: pointer;
-  display: block;
-}
-
-/* Desktop logo inside navbar (hidden by default) */
-#logo-desktop {
-  display: none;
-  flex-shrink: 0;
-  margin-right: 12px;
-}
-
-#logo-desktop img {
-  height: 50px;
-  display: block;
-}
-
-/* MENU - SOLUÇÃO: diminuir gradualmente o espaçamento */
-.menu {
-  display: flex;
-  flex-grow: 1;
-  justify-content: center;
-  align-items: center;
-  flex-wrap: nowrap;
-  min-width: 0; /* Permite encolher */
-}
-
-/* LINKS DO MENU */
-.menu a,
-.menu .cep {
-  text-decoration: none;
-  color: var(--cor1);
-  font-weight: 500;
+  margin-bottom: 15px;
   transition: 0.3s ease;
-  white-space: nowrap;
-  display: inline-block;
-  padding: 4px 10px;
-  flex-shrink: 1;
-  line-height: 4.9;            /* garante que a linha encoste na borda */
-  position: relative;        /* necessário para o ::after */
 }
+.btn-login:hover { opacity: 80%; }
 
-/* Container pai: segura o link e o popup juntos */
-.cep-wrapper {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    height: 100%; /* Garante altura total da navbar */
-    margin-right: 15px; /* Espaço extra para não grudar no próximo item */
-}
-
-/* O Popup (Caixa Branca) */
-.cep-popup {
-    display: none; /* Escondido por padrão */
-    position: absolute;
-    top: 0%; /* Posiciona logo abaixo do link */
-    left: 50%;
-    transform: translateX(-50%); /* Centraliza */
-    
-    background: white;
-    width: 190px;
-    padding: 9px;
-    z-index: 9999; /* Força ficar na frente de tudo */
-}
-
-
-/* Ponte Invisível: Cria uma área transparente para o mouse não "cair" entre o link e a caixa */
-.cep-wrapper::after {
-    content: '';
-    position: absolute;
-    bottom: -20px;
-    left: 0;
-    width: 100%;
-    height: 30px;
-    background: transparent;
-}
-
-/* Estilos internos da caixa */
-.cep-popup p {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    color: #666;
-    text-align: center;
-}
-
-.cep-input-group {
-    display: flex;
-    gap: 5px;
-}
-
-.cep-popup input {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    font-size: 14px;
-    outline: none;
-}
-
-.cep-popup input:focus {
-    border-color: var(--cor0);
-}
-
-.cep-popup button {
-    background: var(--cor0);
-    color: white;
-    border: none;
-    padding: 0 12px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-weight: bold;
-}
-.cep-popup button:hover { opacity: 0.9; }
-
-/* === LÓGICA DE HOVER VIA CSS (Opcional, mas o JS abaixo garante melhor controle) === */
-/* .cep-wrapper:hover .cep-popup { display: block; } */
-
-/* LINHA AZUL ANIMADA */
-.menu a::after {
-  content: "";
-  position: absolute;
-  bottom: 0;                 /* encosta exatamente na borda inferior */
-  left: 0;
-  width: 0%;
-  height: 1.4px;
-  background: linear-gradient(90deg, #6a11cb, #ff2e63);
-  transition: width .25s ease;
-}
-
-/* ANIMAÇÃO APENAS NO ITEM HOVER */
-.menu a:hover::after {
+.btn-procurar, .btn-anunciar {
+  background-color: var(--cor2);
+  color: white;
+  font-weight: 600;
+  border: none;
+  font-size: 1.125rem;
+  border-radius: 8px;
+  padding: 12px 20px;
+  cursor: pointer;
+  transition: 0.3s ease;
   width: 100%;
 }
+.btn-anunciar { background-color: var(--cor0); }
+.botoes-busca :hover { opacity: 90%; }
 
-/* COR DO LINK CEP */
-.menu .cep {
-  color: var(--cor0);
+.info-btn {
+  color: var(--cor2);
+  text-decoration: none;
 }
+.info-btn:hover { opacity: 80%; }
 
-/* REMOVE A LINHA DO LINK CEP */
-.menu a.cep::after {
-  display: none !important;
-}
-
-
-.badge-novo {
-  background: var(--cor3);
-  color: white;
-  font-size: 0.65rem;
-  font-weight: 700;
-  padding: 2px 6px;
-  border-radius: 4px;
-  margin-left: 6px;
-  vertical-align: middle;
-}
-
-.botoes-direita {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-  align-items: center;
-}
-
+/* Botão Header "Entrar" */
 .entrar {
   display: flex;
   align-items: center;
@@ -626,19 +122,328 @@ h2 {
   flex-shrink: 0;
   font-size: 0.95rem;
 }
-
 .entrar:hover {
   background-color: var(--cor0);
   color: white;
 }
+.entrar:hover svg path { fill: #fff; }
 
-.entrar:hover svg path {
-  fill: #fff;
+/* Badges e Labels */
+.badge-novo {
+  background: var(--cor3);
+  color: white;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 6px;
+  vertical-align: middle;
 }
 
-/* ===========================================
-   COMPONENTES DE CONTEÚDO (MANTIDO ORIGINAL)
-   =========================================== */
+.novos-anuncios {
+  display: flex;
+  font-family: var(--fonte-padrao);
+  font-weight: bold;
+  align-items: center;
+  gap: 8px;
+  background: var(--cor4);
+  padding: 8px 20px;
+  border-radius: 30px;
+  color: var(--cor2);
+  transition: 0.2s;
+  font-size: 1.45rem;
+  border: none;
+  outline: none;
+  box-shadow: none;
+}
+.novos-anuncios:hover { background: #e0e4ed; }
+
+/* Ícones Gerais */
+.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
+.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
+
+/* ==========================================================================
+   3. POPUPS & MODAIS
+   ========================================================================== */
+
+/* Popup Criar Conta */
+.popup {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 9999;
+  display: none;
+}
+.popup-content {
+  width: 240px;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 20px rgba(0,0,0,0.2);
+  position: relative;
+  animation: aparecer 0.3s ease;
+}
+@keyframes aparecer {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.close-btn {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+}
+.close-btn:hover { opacity: 80%; }
+.titulo { font-size: 15px; color: #333; margin-bottom: 15px; }
+.criar { font-size: 14px; color: #666; }
+.criar a { color: var(--cor2); font-weight: bold; text-decoration: none; }
+.criar a:hover { text-decoration: underline; }
+
+/* Banner de Cookies */
+.cookie-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%; 
+  background-color: #e2e2e2; 
+  color: var(--cor-texto, #333);
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+  z-index: 1002;
+  box-sizing: border-box;
+  opacity: 1;
+  transition: opacity 0.5s ease;
+}
+.cookie-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  max-width: 1080px;
+  width: 100%;
+  gap: 30px;
+}
+.cookie-text {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--cor-texto);
+  flex: 1;
+}
+.cookie-text strong { font-weight: 700; cursor: pointer; }
+.cookie-text a { color: var(--cor2); text-decoration: none; font-weight: 600; }
+.cookie-text a:hover { text-decoration: underline; }
+.cookie-btn {
+  background-color: var(--cor2);
+  color: white;
+  border: none;
+  padding: 12px 32px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 15px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+  flex-shrink: 0; 
+}
+.cookie-btn:hover { filter: brightness(0.9); }
+
+/* ==========================================================================
+   4. NAVEGAÇÃO MOBILE
+   ========================================================================== */
+.navbar-mobile {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--navbar-height-mobile);
+  background: white;
+  padding: 14px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-between;
+}
+#logo-mobile img { height: 40px; }
+
+.bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background: white;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding-top: 12px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  border-top: 1px solid #eee;
+}
+.bottom-nav .item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--cor1);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+.bottom-nav .item img, .bottom-nav .icon { width: 26px; height: 26px; }
+.bottom-nav .item:active, .bottom-nav .item.active { color: var(--cor0); }
+.bottom-nav .item.active .icon.verde {
+  filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
+}
+
+/* ==========================================================================
+   5. NAVEGAÇÃO DESKTOP & SIDEBAR
+   ========================================================================== */
+
+/* Sidebar Lateral */
+.sidebar-icones {
+  display: none; /* Ativado via media queries */
+  position: fixed;
+  top: 0; left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  background-color: white;
+  padding: 20px 0;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+  flex-direction: column;
+  align-items: center;
+  gap: 32px; 
+  transition: width 0.3s ease;
+  z-index: 1001;
+  overflow-y: auto;
+}
+.sidebar-icones #logo img { height: 50px; display: block; margin-bottom: 20px; }
+.sidebar-icones .item {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 15px; width: 90%; max-width: 230px; cursor: pointer;
+  padding: 12px 10px; border-radius: 999px; margin: 0 auto;
+}
+.sidebar-icones .item a { text-decoration: none; display: flex; align-items: center; gap: 15px; width: 100%; color: inherit; }
+.sidebar-icones .item:hover, .sidebar-icones .item.active { background-color: var(--cor4); }
+.sidebar-icones .icon { width: 28px; height: 28px; flex-shrink: 0; }
+.sidebar-icones span { font-size: 19px; font-weight: 600; color: var(--cor1); }
+.sidebar-icones .item:hover span { color: var(--cor-texto); }
+.sidebar-icones .item.active span { color: var(--cor-texto); font-weight: 700; }
+
+/* Navbar Superior Desktop */
+.navbar-desktop {
+  display: none; /* Ativado via media queries */
+  position: fixed;
+  top: 0;
+  left: var(--sidebar-width);
+  right: 0;
+  height: var(--navbar-height-desktop);
+  background: white;
+  z-index: 1000;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  align-items: center;
+  padding: 0 15px;
+  gap: 8px;
+  transition: left 0.3s ease;
+}
+#logo, #logo-desktop { flex-shrink: 0; }
+#logo img, #logo-desktop img { height: 50px; cursor: pointer; display: block; }
+#logo-desktop { display: none; margin-right: 12px; }
+
+/* Menu da Navbar */
+.menu {
+  display: flex;
+  flex-grow: 1;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+.menu::after { display: none; }
+.menu a, .menu .cep {
+  text-decoration: none;
+  color: var(--cor1);
+  font-weight: 500;
+  transition: 0.3s ease;
+  white-space: nowrap;
+  display: inline-block;
+  padding: 4px 10px;
+  flex-shrink: 1;
+  line-height: 4.9;
+  position: relative;
+}
+.menu .cep { color: var(--cor0); }
+
+/* Efeito Hover do Menu */
+.menu a::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0%;
+  height: 1.4px;
+  background: linear-gradient(90deg, #6a11cb, #ff2e63);
+  transition: width .25s ease;
+}
+.menu a:hover::after { width: 100%; }
+.menu a.cep::after { display: none !important; }
+
+/* Popup de CEP */
+.cep-wrapper {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
+  margin-right: 15px;
+}
+.cep-wrapper::after {
+  content: '';
+  position: absolute;
+  bottom: -20px; left: 0;
+  width: 100%; height: 30px;
+  background: transparent;
+}
+.cep-popup {
+  display: none;
+  position: absolute;
+  top: 0%; left: 50%;
+  transform: translateX(-50%);
+  background: white;
+  width: 190px;
+  padding: 9px;
+  z-index: 9999;
+}
+.cep-popup p { margin: 0 0 8px 0; font-size: 13px; color: #666; text-align: center; }
+.cep-input-group { display: flex; gap: 5px; }
+.cep-popup input {
+  width: 100%; padding: 8px; border: 1px solid #ccc;
+  border-radius: 4px; font-size: 14px; outline: none;
+}
+.cep-popup input:focus { border-color: var(--cor0); }
+.cep-popup button {
+  background: var(--cor0); color: white; border: none;
+  padding: 0 12px; border-radius: 4px; cursor: pointer; font-weight: bold;
+}
+.cep-popup button:hover { opacity: 0.9; }
+
+.botoes-direita {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+/* ==========================================================================
+   6. CONTEÚDO PRINCIPAL (Busca, Categorias, Anúncios)
+   ========================================================================== */
+
+/* Containers Gerais */
 .secao-busca,
 .videos-container,
 .anuncio-container,
@@ -651,1553 +456,578 @@ h2 {
   background-color: white;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
 }
-  .categorias-container{
-  width: 100%;
-  max-width: 750px;
-  margin: 30px auto 0 auto;
-  padding: 20px;
-  }
+.secao-busca { padding: 60px 40px; }
 
-
-
-
-main > *:first-child {
-  margin-top: 0;
+/* --- Seção de Busca --- */
+.typing-container {
+  font-family: var(--fonte-padrao);
+  font-size: 24px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
 }
-
-.secao-busca {
-  padding: 60px 40px;
+.static-text { color: var(--cor2); }
+.typing-container .icon {
+  font-size: 24px; display: flex; align-items: center;
+  background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
 }
-
-/* === ESTILOS DA BUSCA FUNCIONAL === */
-.busca-wrapper {
-    position: relative;
-    width: 100%;
-    margin: 0 auto 20px auto;
+.dynamic-text {
+  color: #6a11cb; font-weight: 700;
+  background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: inline-block; min-width: 10px; white-space: nowrap;
 }
+.cursor {
+  display: inline-block; width: 2px;
+  background-color: #6a11cb;
+  animation: piscar 0.8s infinite; margin-left: 2px;
+}
+@keyframes piscar { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
 
+/* Input de Busca */
+.busca-wrapper { position: relative; width: 100%; margin: 0 auto 20px auto; }
 .busca-input-container {
-    position: relative;
-    background: linear-gradient(90deg, #6a11cb, #ff2e63);
-    padding: 2px;
-    border-radius: 40px;
-    box-shadow: 0 0 0 1px #e0e0e0; /* Borda sutil inicial */
-    transition: all 0.3s ease;
+  position: relative;
+  background: linear-gradient(90deg, #6a11cb, #ff2e63);
+  padding: 2px;
+  border-radius: 40px;
+  box-shadow: 0 0 0 px #e0e0e0;
+  transition: all 0.3s ease;
 }
-
-/* Estado Ativo (Borda Colorida) */
 .busca-wrapper.active .busca-input-container {
-    background: linear-gradient(90deg, #6a11cb, #ff2e63);
-    border-radius: 20px 20px 0 0;
-    box-shadow: none;
+  background: linear-gradient(90deg, #6a11cb, #ff2e63);
+  border-radius: 20px 20px 0 0; box-shadow: none;
 }
-
 .busca-input-container input {
-    width: 100%;
-    padding: 18px 20px 18px 50px;
-    border: none;
-    outline: none;
-    font-size: 1.1rem;
-    border-radius: 38px;
-    background: white;
-    color: #444;
+  width: 100%; padding: 18px 20px 18px 50px;
+  border: none; outline: none; font-size: 1.1rem;
+  border-radius: 38px; background: white; color: #444;
 }
-
-/* Ajuste do input quando ativo */
-.busca-wrapper.active input {
-    border-radius: 18px 18px 0 0;
-}
-
+.busca-wrapper.active input { border-radius: 18px 18px 0 0; }
 .search-icon {
-    position: absolute;
-    left: 20px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    font-size: 20px;
-    z-index: 10;
+  position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+  background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  font-size: 20px; z-index: 10;
 }
 
-/* Dropdown */
+/* Dropdown de Histórico */
 .busca-dropdown {
-    display: none;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    width: 100%;
-    background: white;
-    z-index: 1000;
-    padding: 20px;
-    border-radius: 0 0 20px 20px;
-    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    
-    /* Bordas coloridas laterais e inferior simuladas */
-    background: 
-        linear-gradient(white, white) padding-box,
-        linear-gradient(90deg, #6a11cb, #ff2e63) border-box;
-    border: 2px solid transparent;
-    border-top: none;
-    margin-top: -2px;
+  display: none; position: absolute; top: 100%; left: 0; width: 100%;
+  background: white; z-index: 1000; padding: 20px;
+  border-radius: 0 0 20px 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+  background: linear-gradient(white, white) padding-box, linear-gradient(90deg, #6a11cb, #ff2e63) border-box;
+  border: 2px solid transparent; border-top: none; margin-top: -2px;
 }
-
-.busca-wrapper.active .busca-dropdown {
-    display: block;
-}
-
+.busca-wrapper.active .busca-dropdown { display: block; }
 .busca-hint {
-    background: #fff0f3;
-    color: #666;
-    padding: 10px 15px;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    margin-bottom: 15px;
+  background: #fff0f3; color: #666; padding: 10px 15px;
+  border-radius: 8px; font-size: 0.9rem; margin-bottom: 15px;
 }
-
-/* Itens do Histórico */
-.recentes-container h4 {
-    font-size: 0.9rem;
-    color: #333;
-    margin: 10px 0;
-    font-weight: 700;
-}
-
+.recentes-container h4 { font-size: 0.9rem; color: #333; margin: 10px 0; font-weight: 700; }
 .recent-item {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 0;
-    color: #555;
-    cursor: pointer;
-    border-bottom: 1px solid #f0f0f0;
-    transition: 0.2s;
+  display: flex; align-items: center; gap: 10px; padding: 12px 0;
+  color: #555; cursor: pointer; border-bottom: 1px solid #f0f0f0; transition: 0.2s;
 }
-
-.recent-item:hover {
-    color: #6a11cb;
-    padding-left: 5px;
-}
-
-.history-icon {
-    font-size: 16px;
-    color: #999;
-}
-
+.recent-item:hover { color: #6a11cb; padding-left: 5px; }
+.history-icon { font-size: 16px; color: #999; }
 .limpar-historico {
-    font-size: 12px;
-    color: #999;
-    text-align: right;
-    margin-top: 10px;
-    cursor: pointer;
-    text-decoration: underline;
+  font-size: 12px; color: #999; text-align: right; margin-top: 10px;
+  cursor: pointer; text-decoration: underline;
 }
 .limpar-historico:hover { color: #ff2e63; }
-#categorias-title {
-  color: var(--cor0);
-  font-weight: bold;
-  margin: 0;
-}
-
-
-
-.info-btn {
-  color: var(--cor2);
-  text-decoration: none;
-}
-
-.info-btn:hover {
-  opacity: 80%;
-} 
-
-/* Container do Título */
-.typing-container {
-    font-family: var(--fonte-padrao);
-    font-size: 24px; /* Tamanho da fonte */
-    font-weight: 700; /* Negrito */
-    color: #333;
-    margin-bottom: 25px; /* Espaço até a barra de busca */
-    display: flex;
-    align-items: center;
-    justify-content: center; /* Centralizado (mude para flex-start se quiser à esquerda) */
-    flex-wrap: wrap;
-    gap: 8px;
-}
-
-/* Texto Fixo "Busque por" */
-.static-text {
-    color: var(--cor2);
-}
-
-/* Ícone de Brilho */
-.icon {
-    font-size: 24px;
-    display: flex;
-    align-items: center;
-    /* Se quiser a cor do ícone igual ao texto gradiente: */
-    background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
-/* Texto que muda (Gradiente) */
-.dynamic-text {
-    /* Cor roxa sólida primeiro (para garantir que aparece) */
-    color: #6a11cb;
-    font-weight: 700;
-    
-    /* Tenta aplicar o gradiente por cima */
-    background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-    
-    /* IMPORTANTE: Garante que o span não "colapse" quando vazio */
-    display: inline-block;
-    min-width: 10px; 
-    white-space: nowrap; /* Impede que quebre linha */
-}
-
-/* Cursor piscando */
-.cursor {
-    display: inline-block;
-    width: 2px;
-    background-color: #6a11cb;
-    animation: piscar 0.8s infinite;
-    margin-left: 2px;
-}
-
-@keyframes piscar {
-    0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
-}
-
-/* Ajuste para Mobile */
-@media (max-width: 600px) {
-    .typing-container {
-        font-size: 18px;
-        justify-content: center;
-    }
-}
-
 .botoes-busca {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  justify-content: center;
-  width: 100%;
-  margin-top: 10px;
+  display: flex; flex-direction: column; gap: 14px;
+  justify-content: center; width: 100%; margin-top: 10px;
 }
 
-#categorias-title {
-  color: var(--cor0);
-  font-weight: bold;
-  margin: 0;
+/* --- Categorias --- */
+.categorias-container {
+  width: 100%; max-width: 750px;
+  margin: 30px auto 0 auto; padding: 20px;
 }
-
-.info-btn {
-  color: var(--cor2);
-  text-decoration: none;
-}
-
-.info-btn:hover {
-  opacity: 80%;
-} 
-
-
-
- .btn-procurar{
-  background-color: var(--cor2);
-  color: white;
-  font-weight: 600;
-  border: none;
-  font-size: 1.125rem;
-  border-radius: 8px;
-  padding: 12px 20px;
-  cursor: pointer;
-  transition: 0.3s ease;
-  width: 100%;
-}
-
-.btn-anunciar {
-  background-color: var(--cor2);
-  color: white;
-  font-weight: 600;
-  border: none;
-  font-size: 1.125rem;
-  border-radius: 8px;
-  padding: 12px 20px;
-  cursor: pointer;
-  transition: 0.3s ease;
-  width: 100%;
-}
-
-.botoes-busca :hover{
-  opacity: 90%;
-}
-
-.btn-anunciar {
-  background-color: var(--cor0);
-}
-
-.banner-pontos {
-  text-decoration: none;
-  font-size: 1em;
-  text-align: center;
-  color: var(--cor0);
-  font-weight: bold;
-  margin-bottom: 25px;
-}
-
-#categorias-title {
-  color: var(--cor0);
-  font-weight: bold;
-  margin: 0;
-}
+#categorias-title, #categorias-title2, #categorias-title3 { font-weight: bold; margin: 0; }
+#categorias-title { color: var(--cor0); }
+#categorias-title2, #categorias-title3 { color: white; }
+#categorias-title3 { font-weight: normal; text-align: center; }
 
 .categorias-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 24px;
-  margin-top: 30px;
-  text-align: center;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 24px; margin-top: 30px; text-align: center;
 }
+.categoria img { width: 56px; height: 56px; object-fit: contain; margin-bottom: -12px; }
+.categoria p { font-size: 1rem; font-weight: 500; color: var(--cor1); }
 
-.categoria img {
-  width: 56px;
-  height: 56px;
-  object-fit: contain;
-  margin-bottom: -12px;
-}
-
-.categoria p {
-  font-size: 1rem;
-  font-weight: 500;
-  color: var(--cor1);
-}
-
-/* ===========================================
-   ESTILO LOJAS OFICIAIS (CARROSSEL)
-   =========================================== */
-
-/* Removemos o fundo branco e sombra padrão apenas para este estilo se quiser igual a imagem,
-   ou mantemos se você quiser dentro do card branco. 
-   O código abaixo ajusta para ficar mais limpo. */
+/* Carrossel de Lojas (Estilo Lojas Oficiais) */
 .categorias-container.estilo-lojas {
-    background-color: transparent; /* Fundo transparente para mesclar com o site */
-    box-shadow: none; /* Remove a sombra do container principal */
-    padding: 20px 0; /* Remove padding lateral para o scroll ir até a borda se quiser */
-    overflow: hidden; /* Garante que nada vaze */
+  background-color: transparent; box-shadow: none;
+  padding: 20px 0; overflow: hidden;
 }
-
 .categorias-container.estilo-lojas h2 {
-    color: var(--cor1); /* Cinza escuro */
-    font-size: 1.2rem;
-    margin-bottom: 25px;
-    margin-left: 20px; /* Alinha o título com o conteúdo */
+  color: var(--cor1); font-size: 1.2rem; margin-bottom: 25px; margin-left: 20px;
 }
-
-/* Container de Rolagem */
 .categoria-scroll {
-    display: flex;
-    gap: 20px; /* Espaço entre as bolinhas */
-    overflow-x: auto; /* Permite rolar para o lado */
-    padding: 36px 20px 30px 20px; /* Espaço interno + espaço para a sombra não cortar */
-    scroll-behavior: smooth;
-    
-    /* Esconde a barra de rolagem (Estético) */
-    -ms-overflow-style: none;  /* IE and Edge */
-    scrollbar-width: none;  /* Firefox */
+  display: flex; gap: 20px; overflow-x: auto;
+  padding: 36px 20px 30px 20px; scroll-behavior: smooth;
+  -ms-overflow-style: none; scrollbar-width: none;
 }
-
-/* Esconde barra de rolagem no Chrome/Safari */
-.categoria-scroll::-webkit-scrollbar {
-    display: none;
-}
-
-.categoria-item {
-    flex: 0 0 auto; /* Impede que os itens encolham */
-}
-
-/* O Círculo Branco */
+.categoria-scroll::-webkit-scrollbar { display: none; }
+.categoria-item { flex: 0 0 auto; }
 .categoria-circle {
-    width: 110px;  /* Tamanho do círculo */
-    height: 110px;
-    background-color: white;
-    border-radius: 50%; /* Faz ficar redondo */
-    border: 1px solid #e0e0e0; /* Borda cinza suave */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
+  width: 110px; height: 110px; background-color: white;
+  border-radius: 50%; border: 1px solid #e0e0e0;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform 0.2s ease, box-shadow 0.2s ease; cursor: pointer;
 }
-
-/* Efeito ao passar o mouse */
 .categoria-circle:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    border-color: var(--cor0);
+  transform: translateY(-5px); box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  border-color: var(--cor0);
 }
-
-/* Imagem dentro do círculo */
 .categoria-circle img {
-    width: 60%;      /* A logo ocupa 60% do círculo */
-    height: auto;
-    object-fit: contain;
-    filter: grayscale(100%); /* Opcional: deixa cinza igual na imagem até passar o mouse */
-    opacity: 0.7;
-    transition: 0.3s;
+  width: 60%; height: auto; object-fit: contain;
+  filter: grayscale(100%); opacity: 0.7; transition: 0.3s;
 }
-
-.categoria-circle:hover img {
-    filter: grayscale(0%); /* Fica colorido no hover */
-    opacity: 1;
-}
-
-/* --- Indicadores (Pontinhos) --- */
+.categoria-circle:hover img { filter: grayscale(0%); opacity: 1; }
 .indicadores-paginacao {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 8px;
-    margin-top: 10px;
+  display: flex; justify-content: center; align-items: center; gap: 8px; margin-top: 10px;
 }
+.dot { width: 6px; height: 6px; background-color: #ccc; border-radius: 50%; display: inline-block; }
+.dot.ativo { width: 25px; height: 6px; background-color: var(--cor0); border-radius: 10px; }
 
-.dot {
-    width: 6px;
-    height: 6px;
-    background-color: #ccc;
-    border-radius: 50%;
-    display: inline-block;
+/* --- Anúncios --- */
+.videos-container { background-color: var(--cor2); }
+.anuncio-container { margin-top: 80px; }
+.banner-pontos {
+  text-decoration: none; font-size: 1em; text-align: center;
+  color: var(--cor0); font-weight: bold; margin-bottom: 25px;
 }
-
-/* O pontinho ativo (o traço vermelho) */
-.dot.ativo {
-    width: 25px; /* Mais largo */
-    height: 6px;
-    background-color: var(--cor0); /* Sua cor vermelha/rosa do tema */
-    border-radius: 10px;
-}
-
-/* Responsividade para celular */
-@media (max-width: 768px) {
-    .loja-circle {
-        width: 85px;
-        height: 85px;
-    }
-}
-
-.videos-container {
-  background-color: var(--cor2);
-}
-
-#categorias-title2 {
-  color: white;
-  font-weight: bold;
-  margin: 0;
-}
-
-.anuncio-container {
-  margin-top: 80px; /* Mantém margem maior original */
-}
-
 .top-bar {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-  margin-bottom: 25px;
-  flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+  display: flex; align-items: center; gap: 20px;
+  margin-bottom: 25px; flex-wrap: wrap;
 }
-
-.novos-anuncios {
-  display: flex;
-  font-family: var(--fonte-padrao);
-  font-weight: bold;
-  align-items: center;
-  gap: 8px;
-  background: var(--cor4);
-  padding: 8px 20px;
-  /* margin-left: -40px; (Removido, causava overflow) */
-  border-radius: 30px;
-  color: var(--cor2);
-  transition: 0.2s;
-  font-size: 1.45rem; /* 22px */
-}
-
-/* Remove default browser border/outline for this pill/button */
-.novos-anuncios,
-.novos-anuncios:focus,
-.novos-anuncios:active {
-  border: none;
-  outline: none;
-  box-shadow: none;
-}
-
-.novos-anuncios:hover {
-  background: #e0e4ed;
-}
-
 .cep {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--cor0);
-  font-weight: 500;
-  padding: 6px 10px;
-  border-radius: 8px;
-  transition: 0.2s;
-  text-decoration: none;
+  display: flex; align-items: center; gap: 6px;
+  color: var(--cor0); font-weight: 500; padding: 6px 10px;
+  border-radius: 8px; transition: 0.2s; text-decoration: none;
 }
 
 .content {
-  display: grid;
-  grid-template-columns: 1fr; /* Mobile-First: 1 coluna */
+  display: grid; grid-template-columns: 1fr;
   gap: 30px;
 }
-
-.anuncio {
-  margin-bottom: 40px;
-}
-
+.anuncio { margin-bottom: 40px; }
 .anuncio-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 1rem;
-  flex-wrap: wrap; /* Permite quebrar em telas menores */
+  display: flex; align-items: center; gap: 10px;
+  font-size: 1rem; flex-wrap: wrap;
 }
+.foto-perfil { width: 28px; height: 28px; background: #000; border-radius: 4px; }
+.badge { background: var(--cor2); color: #fff; padding: 12px 13px; border-radius: 50%; }
+.stars { color: #ffcc00; font-size: 1.5rem; }
+.preco { color: var(--cor0); font-weight: 700; font-size: 1.16rem; }
+.status { background: #eee; padding: 4px 10px; border-radius: 4px; font-size: 12px; }
 
-.foto-perfil {
-  width: 28px;
-  height: 28px;
-  background: #000;
-  border-radius: 4px;
-}
-
-.badge {
-  background: var(--cor2);
-  color: #fff;
-  padding: 12px 13px;
-  border-radius: 50%;
-}
-
-.stars {
-  color: #ffcc00;
-  font-size: 1.5rem;
-}
-
-.preco {
-  color: var(--cor0);
-  font-weight: 700;
-    font-size: 1.16rem;
-}
-
-.status {
-  background: #eee;
-  padding: 4px 10px;
-  border-radius: 4px;
-  font-size: 12px;
-}
-
-/* Container Principal (O cartão branco) */
+/* --- Filtros --- */
 .filtros-container {
-    background: #fff;
-    padding: 20px;
-    border-radius: 12px;
-
-    font-family: sans-serif;
-    margin-bottom: 20px;
-    width: 100%;
-    box-sizing: border-box;
+  background: #fff; padding: 20px; border-radius: 12px;
+  font-family: sans-serif; margin-bottom: 20px; width: 100%; box-sizing: border-box;
 }
-
-/* A linha que segura os inputs */
 .filtros-linha {
-    display: flex;
-    align-items: flex-end; /* Alinha tudo pela base */
-    gap: 20px; /* Espaço entre os campos */
-    flex-wrap: wrap; /* Permite quebrar linha em telas menores */
+  display: flex; align-items: flex-end; gap: 20px; flex-wrap: wrap;
 }
-
-/* O grupo individual (Label + Input) */
 .filtro-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    flex: 1; /* Faz os campos ocuparem larguras iguais */
-    min-width: 150px;
+  display: flex; flex-direction: column; gap: 8px; flex: 1; min-width: 150px;
 }
-
-/* Labels */
-.filtro-group label {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 500;
-}
-
-/* O input estilo Select */
-.select {
-    background: #fff;
-    border: 1px solid var(--cor-borda);
-    padding: 12px 16px;
-    border-radius: 8px; /* Cantos arredondados iguais da imagem */
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    color: var(--cor-texto);
-    font-size: 1rem;
-    cursor: pointer;
-    transition: 0.2s;
-}
-
-.select:hover {
-    border-color: var(--cor-primary);
-}
-
-/* Botão Mais Filtros */
-.botao-container {
-    flex: 0 0 auto; /* Não estica esse container */
-}
-
+.filtro-group label { font-size: 0.9rem; color: #666; font-weight: 500; }
+.botao-container { flex: 0 0 auto; }
 .btn-filtros {
-    background: #fff;
-    color: var(--cor-primary);
-    border: 1px solid var(--cor-primary);
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 1rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: 0.2s;
-    height: 46px; /* Para ficar na mesma altura dos inputs visualmente */
+  background: #fff; color: var(--cor-primary); border: 1px solid var(--cor-primary);
+  padding: 12px 20px; border-radius: 8px; font-weight: bold; font-size: 1rem;
+  cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+  height: 46px;
 }
+.btn-filtros:hover { background: var(--cor-primary); color: #fff; }
 
-.btn-filtros:hover {
-    background: var(--cor-primary);
-    color: #fff;
-}
-
-/* --- Parte inferior (Tags e Limpar) --- */
-.filtros-tags {
-    margin-top: 15px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-}
-
-
-.tag {
-    background: #e0f2f1; /* Verde bem claro */
-    color: var(--cor-primary);
-    padding: 5px 10px;
-    border-radius: 4px;
-    font-size: 0.85rem;
-    font-weight: bold;
-    cursor: pointer;
-}
-
-/* ==================== MELHORIAS NOS FILTROS ==================== */
-
-/* 1. Wrapper para estilizar o Select nativo */
-.select-wrapper {
-    position: relative;
-    width: 100%;
-}
-
+/* Select Customizado */
+.select-wrapper { position: relative; width: 100%; }
 .select-wrapper::after {
-    content: '▼';
-    font-size: 0.8rem;
-    color: var(--cor0);
-    position: absolute;
-    right: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    pointer-events: none; /* Permite clicar no select através do ícone */
+  content: '▼'; font-size: 0.8rem; color: var(--cor0);
+  position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+  pointer-events: none;
 }
-
-/* O Select em si */
-.filtros-container select {
-    width: 100%;
-    appearance: none; /* Remove estilo padrão do navegador */
-    -webkit-appearance: none;
-    background: #fff;
-    border: 1px solid var(--cor-borda);
-    padding: 12px 35px 12px 16px; /* Espaço na direita para a seta */
-    border-radius: 8px;
-    font-family: var(--fonte-padrao);
-    font-size: 1rem;
-    color: var(--cor-texto);
-    cursor: pointer;
-    outline: none;
-    transition: all 0.2s;
+.filtros-container select, .select {
+  width: 100%; appearance: none; -webkit-appearance: none;
+  background: #fff; border: 1px solid var(--cor-borda);
+  padding: 12px 35px 12px 16px; border-radius: 8px;
+  font-family: var(--fonte-padrao); font-size: 1rem;
+  color: var(--cor-texto); cursor: pointer; outline: none; transition: all 0.2s;
 }
-
-.filtros-container select:disabled {
-    background-color: #f5f5f5;
-    color: #999;
-    cursor: not-allowed;
-    border-color: #eee;
+.select { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; }
+.select:hover, .filtros-container select:hover:not(:disabled), .filtros-container select:focus {
+  border-color: var(--cor0); box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.1);
 }
+.filtros-container select:disabled { background-color: #f5f5f5; color: #999; cursor: not-allowed; border-color: #eee; }
 
-.filtros-container select:hover:not(:disabled),
-.filtros-container select:focus {
-    border-color: var(--cor0);
-    box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.1);
-}
-
-/* 2. Área Expansível (Mais Filtros) */
+/* Filtros Extras (Expansíveis) */
 .filtros-extras {
-    max-height: 0;
-    overflow: hidden;
-    transition: max-height 0.4s ease-in-out, padding 0.4s ease;
-    background-color: #fafafa;
-    border-radius: 8px;
-    margin-top: 0;
+  max-height: 0; overflow: hidden; transition: max-height 0.4s ease-in-out, padding 0.4s ease;
+  background-color: #fafafa; border-radius: 8px; margin-top: 0;
 }
-
-/* Classe que será adicionada via JS para abrir */
 .filtros-extras.aberto {
-    max-height: 300px; /* Altura suficiente para o conteúdo */
-    margin-top: 20px;
-    padding: 20px;
-    border: 1px solid #eee;
+  max-height: 300px; margin-top: 20px; padding: 20px; border: 1px solid #eee;
 }
-
-.extras-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    align-items: start;
-}
-
-/* Inputs de Preço */
-.range-group {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.input-pequeno {
-    width: 100%;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-}
-
-/* Radio Buttons */
-.radio-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.radio-group label {
-    font-size: 0.9rem;
-    cursor: pointer;
-    color: #555;
-}
-
-/* Botão Aplicar */
+.extras-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; align-items: start; }
+.range-group { display: flex; align-items: center; gap: 10px; }
+.input-pequeno { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+.radio-group { display: flex; flex-direction: column; gap: 8px; }
+.radio-group label { font-size: 0.9rem; cursor: pointer; color: #555; }
 .btn-aplicar {
-    background-color: var(--cor0);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
-    width: 100%;
-    font-weight: bold;
-    cursor: pointer;
-    transition: 0.2s;
+  background-color: var(--cor0); color: white; border: none;
+  padding: 10px 20px; border-radius: 6px; width: 100%; font-weight: bold;
+  cursor: pointer; transition: 0.2s;
 }
+.btn-aplicar:hover { opacity: 0.9; }
 
-.btn-aplicar:hover {
-    opacity: 0.9;
-}
-
-/* Tags de Filtros Ativos */
-.filtros-tags {
-    margin-top: 15px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
+/* Tags de Filtro */
+.filtros-tags { margin-top: 15px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 .tag {
-    background: #e0f2f1;
-    color: var(--cor0);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.85rem;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  background: #e0f2f1; color: var(--cor0); padding: 6px 12px;
+  border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+  display: flex; align-items: center; gap: 8px; cursor: pointer;
 }
-
-.tag span {
-    cursor: pointer;
-    font-size: 1.1rem;
-    line-height: 0.8;
-}
-
-.tag span:hover {
-    color: #ff2e63;
-}
-
+.tag span { cursor: pointer; font-size: 1.1rem; line-height: 0.8; }
+.tag span:hover { color: #ff2e63; }
 .tag.limpar {
-    background: transparent;
-    color: #666;
-    text-decoration: underline;
-    cursor: pointer;
+  background: transparent; color: #666; text-decoration: underline; cursor: pointer;
 }
 
-/* ===========================================
-   RODAPÉ - MANTENDO SEU ESTILO ORIGINAL
-   =========================================== */
-.rodape-container {
-  background-color: var(--cor2);
-  margin-top: 80px;
-}
-
-.rodape-container2 {
-  background-color: white;
-  margin-top: 0;
-}
-
-#categorias-title3 {
-  color: white;
-  font-weight: normal;
-  margin: 0;
-  text-align: center;
-}
-
-.clique {
-  color: var(--cor4);
-  font-weight: bold;
-  text-decoration: none;
-}
-
+/* ==========================================================================
+   7. RODAPÉ
+   ========================================================================== */
+.rodape-container { background-color: var(--cor2); margin-top: 80px; }
+.rodape-container2 { background-color: white; margin-top: 0; }
+.clique { color: var(--cor4); font-weight: bold; text-decoration: none; }
 .rodape {
-  background: #e2e2e2;
-  color: var(--cor2);
-  padding: 30px 20px 30px 20px;
-  font-family: Arial, sans-serif;
-  width: 101%;
-  box-sizing: border-box;
-  margin: 0;
+  background: #e2e2e2; color: var(--cor2); padding: 30px 20px 30px 20px;
+  font-family: Arial, sans-serif; width: 101%; box-sizing: border-box; margin: 0;
 }
-
 .colunas {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  display: flex; flex-direction: column; gap: 20px;
+  max-width: 1200px; margin: 0 auto;
 }
-
-.coluna h3 {
-  margin-bottom: 15px;
-  font-size: 1rem;
-  color: var(--cor0);
-}
-
+.coluna h3 { margin-bottom: 15px; font-size: 1rem; color: var(--cor0); }
 .coluna a {
-  display: block;
-  color: var(--cor2);
-  margin: 6px 0;
-  font-size: 14px;
-  text-decoration: none;
+  display: block; color: var(--cor2); margin: 6px 0; font-size: 14px; text-decoration: none;
 }
-
-.coluna a:hover {
-  color: var(--cor0);
-}
-
+.coluna a:hover { color: var(--cor0); }
 .rodape-base {
-  margin-top: 20px;
-  text-align: center;
-  padding-top: 20px;
-  border-top: 1px solid #adadad;
+  margin-top: 20px; text-align: center; padding-top: 20px; border-top: 1px solid #adadad;
 }
 
+/* ==========================================================================
+   8. RESPONSIVIDADE (MEDIA QUERIES)
+   ========================================================================== */
 
-
-/* ===========================================
-   RESPONSIVIDADE - APENAS AJUSTES NECESSÁRIOS
-   =========================================== */
-
-/* TABLET (768px - 1023px) */
+/* --- TABLETS (768px até 1023px) e Base Desktop --- */
 @media (min-width: 768px) {
-  :root {
-    --sidebar-width: 80px;
-  }
+  :root { --sidebar-width: 80px; }
+  body { padding-top: var(--navbar-height-desktop); padding-bottom: 0; }
+  
+  /* Exibe desktop, esconde mobile */
+  .navbar-mobile, .bottom-nav { display: none; }
+  .sidebar-icones, .navbar-desktop { display: flex; }
+  
+  main { margin-left: var(--sidebar-width); padding: 40px; }
+  .navbar-desktop { left: var(--sidebar-width); padding: 0 25px; }
 
-  body {
-    padding-top: var(--navbar-height-desktop);
-    padding-bottom: 0;
-  }
+  /* Sidebar fechada */
+  .sidebar-icones span { display: none; }
+  .sidebar-icones .item { justify-content: center; width: 100%; padding: 12px; border-radius: 999px; }
+  .loja-circle { width: 85px; height: 85px; }
 
-  .navbar-mobile,
-  .bottom-nav {
-    display: none;
-  }
-
-  .sidebar-icones,
-  .navbar-desktop {
-    display: flex;
-  }
-
-  main {
-    margin-left: var(--sidebar-width);
-    padding: 40px;
-  }
-
-  .navbar-desktop {
-    left: var(--sidebar-width);
-    padding: 0 25px;
-  }
-
-  .sidebar-icones span {
-    display: none;
-  }
-  .sidebar-icones .item {
-    justify-content: center;
-    width: 100%;
-  }
-
-  .secao-busca,
-  .categorias-container,
-  .videos-container,
-  .anuncio-container,
-  .rodape-container,
-  .rodape-container2 {
-    max-width: 1100px; /* card maior como na sua captura */
-    padding: 50px 60px;
-  }
-
-  .busca {
-    width: 80%;
-  }
-  .botoes-busca {
-    flex-direction: row;
-    gap: 20px;
-  }
-  .btn-procurar,
-  .btn-anunciar {
-    width: auto;
-    flex: 1;
-    max-width: 250px;
-  }
-
-  .categorias-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 35px;
-  }
-
-  .content {
-    grid-template-columns: 2fr 1fr;
-    gap: 40px;
-  }
-  .filtros {
-    display: flex;
-    margin-top: -70px;
-    /* remover largura fixa para deixar proporcional */
-  }
-
-  /* AJUSTE SIMPLES: Diminuir gap do menu gradualmente */
-  .menu {
-    gap: 25px;
+  /* Ajuste de containers */
+  .secao-busca, .categorias-container, .videos-container, .anuncio-container, 
+  .rodape-container, .rodape-container2 {
+    max-width: 1100px; padding: 50px 60px;
   }
   
-  .menu a,
-  .menu .cep {
-    font-size: 0.95rem;
-  }
+  /* Busca */
+  .busca { width: 80%; }
+  .botoes-busca { flex-direction: row; gap: 20px; }
+  .btn-procurar, .btn-anunciar { width: auto; flex: 1; max-width: 250px; }
 
-  .colunas {
-    flex-direction: row;
-    justify-content: space-between;
-    flex-wrap: wrap;
-  }
-  .coluna {
-    min-width: 180px;
-  }
+  /* Grids e Layout */
+  .categorias-grid { grid-template-columns: repeat(3, 1fr); gap: 35px; }
+  .content { grid-template-columns: 2fr 1fr; gap: 40px; }
+  .filtros { display: flex; margin-top: -70px; }
 
+  /* Menu */
+  .menu { gap: 25px; }
+  .menu a, .menu .cep { font-size: 0.95rem; }
 
+  /* Footer */
+  .colunas { flex-direction: row; justify-content: space-between; flex-wrap: wrap; }
+  .coluna { min-width: 180px; }
 }
 
-/* RESPONSIVIDADE ADICIONAL PARA A ABA DE ANÚNCIOS */
-/* Médio: 900px - 1023px — manter sidebar/filters, ajustar proporções */
-@media (min-width: 900px) and (max-width: 1024px) {
-  .content {
-    grid-template-columns: 1.6fr 1fr; /* dá mais espaço para lista */
-    gap: 28px;
-  }
-
-  .filtros {
-    display: flex;
-    flex-direction: column;
-    width: 300px;
-    margin-top: 0;
-  }
-
-  .anuncio-container {
-    padding: 36px;
-  }
-
-  .secao-busca {
-    padding: 36px 24px;
-  }
+/* --- TABLETS RANGE ESPECÍFICO (768px - 1023px) --- */
+@media (min-width: 768px) and (max-width: 1023px) {
+  /* Logo adjustments */
+  #logo-desktop { display: block; }
+  .sidebar-icones #logo { display: none; }
 }
 
-/* Pequeno / Tablet estreito: <900px — empilha conteúdo, esconde filtros laterais e mostra botão de filtros */
-@media (max-width: 899px) {
-  .content {
-    grid-template-columns: 1fr;
-    gap: 20px;
-  }
-
-  .filtros-container{
-    align-items: center;
-  }
-
-  .filtros {
-    display: none; /* ocultar sidebar de filtros em telas pequenas */
-  }
-
-  .anuncio-container {
-    padding: 20px;
-  }
-
-  .secao-busca {
-    padding: 20px 16px;
-  }
-
-  .btn-filtros {
-    display: block;
-    width: 100%;
-    box-sizing: border-box;
-  }
-
-  .top-bar {
-    gap: 10px;
-  }
-
-  .anuncio-header {
-    font-size: 0.95rem;
-  }
-}
-
-/* DESKTOP (1024px - 1279px) */
-@media (min-width: 1024px) {
-  :root {
-    --sidebar-width: 260px;
-  }
-
-  .sidebar-icones span {
-    display: block;
-  }
-  .sidebar-icones .item {
-    justify-content: flex-start;
-    width: 70%;
-  }
-
-  main {
-    padding: 120px 60px;
-  }
-
-  .secao-busca,
-  .videos-container,
-  .anuncio-container,
-  .rodape-container,
-  .rodape-container2 {
-    max-width: 1100px;
-    padding: 50px 60px;
-  }
-
-  .categorias-grid {
-    gap: 50px;
-  }
-  
-  /* Menu desktop normal */
-  .menu {
-    gap: 10px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.9rem;
-  }
-  
-  /* On desktop (>=1024px) show the sidebar logo and hide the navbar logo */
-  #logo-desktop {
-    display: none;
-  }
-  
-  .sidebar-icones #logo {
-    display: block;
-  }
-}
-
-/* Tablet range: show navbar logo inside the top menu and hide sidebar logo
-   (tablets: 768px - 1020px) */
-@media (min-width: 768px) and (max-width: 1020px) {
-  #logo-desktop {
-    display: block;
-  }
-
-  .sidebar-icones #logo {
-    display: none;
-  }
-}
-
-/* Reduce logo size and font at ~1010px (tablet) - anticipate the reduction */
-@media (max-width: 1010px) and (min-width: 768px) {
-  #logo-desktop img {
-    height: 40px;
-  }
-
-  /* Increase gap between menu links at 1010px */
-  .menu {
-    gap: 12px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.8rem;
-    padding: 4px 6px;
-  }
-  
-}
-
-/* Ajuste para 1120px para evitar wrapping */
-@media (max-width: 1200px) and (min-width: 1024px) {
-  .menu {
-    gap: 8px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.88rem;
-    padding: 5px 8px;
-  }
-  
-  .entrar {
-    padding: 7px 12px;
-    font-size: 0.88rem;
-  }
-  
-  .botoes-direita {
-    gap: 6px;
-  }
-}
-
-/* Specific fix at ~1120px to avoid overlapping/wrapping of menu links */
-@media (max-width: 1120px) and (min-width: 1024px) {
-  .navbar-desktop {
-    padding: 0 10px;
-  }
-
-  /* left-align links so the right-side buttons (Entrar) stay separate */
-  .menu {
-    justify-content: flex-start;
-    gap: 6px;
-    overflow-x: auto; /* allow horizontal scroll instead of wrapping */
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .menu::-webkit-scrollbar { display: none; }
-
-  .menu a,
-  .menu .cep {
-    font-size: 0.84rem;
-    padding: 4.8px 6px;
-    flex-shrink: 1;
-    min-width: 0;
-  }
-
-  /* push buttons to the far right so they don't collide with menu */
-  .botoes-direita {
-    margin-left: auto;
-    gap: 6px;
-  }
-
-  .entrar {
-    padding: 6px 10px;
-    font-size: 0.86rem;
-  }
-}
-
-/* Precise tweak at ~1100px to prevent the 'Entrar' button wrapping */
-@media (max-width: 1100px) and (min-width: 1024px) {
-  .menu {
-    gap: 6px;
-  }
-
-  /* allow menu items to shrink so the layout doesn't wrap */
-  .menu a,
-  .menu .cep {
-    font-size: 0.86rem;
-    padding: 4px 6px;
-    flex-shrink: 1; /* permit shrink at this width */
-    min-width: 0;
-  }
-
-  .entrar {
-    padding: 6px 10px;
-    font-size: 0.86rem;
-  }
-
-  .botoes-direita {
-    gap: 5px;
-  }
-}
-
-/* ===========================================
-   APENAS OS AJUSTES NECESSÁRIOS PARA O PROBLEMA
-   =========================================== */
-
-/* Ajuste específico para quando a tela diminui */
-@media (max-width: 1150px) and (min-width: 1024px) {
-  .menu a,
-  .menu .cep {
-    font-size: 0.9rem;
-  }
-}
-
+/* --- TABLETS / DESKTOPS PEQUENOS (Ajustes finos de Menu) --- */
 @media (max-width: 1050px) and (min-width: 768px) {
-  .navbar-desktop {
-    padding: 0 12px;
-  }
-  
-  .menu {
-    gap: 10px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.85rem;
-    padding: 6.4px 8px;
-  }
-  
-  
-  .botoes-direita {
-    gap: 6px;
-  }
+  .navbar-desktop { padding: 0 12px; }
+  .menu { gap: 10px; }
+  .menu a, .menu .cep { font-size: 0.85rem; padding: 6.4px 8px; }
+  .botoes-direita { gap: 6px; }
 }
 
-/* Solução para telas mais estreitas: esconder o item menos importante */
+@media (max-width: 1010px) and (min-width: 768px) {
+  #logo-desktop img { height: 40px; }
+  .menu { gap: 12px; }
+  .menu a, .menu .cep { font-size: 0.8rem; padding: 4px 6px; }
+}
+
 @media (max-width: 950px) and (min-width: 768px) {
-  /* Esconde o link "Pontos" quando não couber */
-  .menu a:nth-child(4) {
-    display: none;
-  }
-  
-  .menu {
-    gap: 8px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.8rem;
-    padding: 7.9px 6px;
-  }
-  
-  .entrar {
-    padding: 6px 10px;
-    font-size: 0.85rem;
-  }
-  
-  .botoes-direita {
-    gap: 5px;
-  }
+  .menu a:nth-child(4) { display: none; } /* Esconde "Pontos" */
+  .menu { gap: 8px; }
+  .menu a, .menu .cep { font-size: 0.8rem; padding: 7.9px 6px; }
+  .entrar { padding: 6px 10px; font-size: 0.85rem; }
+  .botoes-direita { gap: 5px; }
 }
 
-/* Último recurso: botão de menu hamburguer para telas muito estreitas */
+/* --- MOBILE & TABLET SMALL (< 900px) --- */
+@media (max-width: 899px) {
+  .content { grid-template-columns: 1fr; gap: 20px; }
+  .filtros-container { align-items: center; }
+  .filtros { display: none; }
+  .anuncio-container { padding: 20px; }
+  .secao-busca { padding: 20px 16px; }
+  .btn-filtros { display: block; width: 100%; box-sizing: border-box; }
+  .top-bar { gap: 10px; }
+  .anuncio-header { font-size: 0.95rem; }
+}
+
 @media (max-width: 850px) and (min-width: 768px) {
-  .navbar-desktop {
-    justify-content: space-between;
-  }
-  
-  .menu {
-    display: none; /* Esconde o menu */
-  }
-  
-  /* Mostra botão de menu */
-  .menu-toggle {
-    display: block;
-    background: none;
-    border: none;
-    font-size: 24px;
-    color: var(--cor0);
-    cursor: pointer;
-    margin-left: 15px;
-  }
-  
-  /* Menu expandido quando clicado */
+  .navbar-desktop { justify-content: space-between; }
+  .menu { display: none; }
+  .menu-toggle { display: block; background: none; border: none; font-size: 24px; color: var(--cor0); cursor: pointer; margin-left: 15px; }
   .menu.expanded {
-    display: flex;
-    flex-direction: column;
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
-    background: white;
-    padding: 20px;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    display: flex; flex-direction: column; position: absolute; top: 100%;
+    left: 0; right: 0; background: white; padding: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);
   }
-  
-  .botoes-direita {
-    margin-left: auto;
-  }
+  .botoes-direita { margin-left: auto; }
 }
 
-/* Para evitar que o botão "Entrar" sobreponha, garantimos espaço mínimo */
+@media (max-width: 600px) {
+  .typing-container { font-size: 18px; justify-content: center; }
+}
+
+/* --- DESKTOP PADRÃO (1024px+) --- */
+@media (min-width: 1024px) {
+  :root { --sidebar-width: 260px; }
+
+  /* Sidebar aberta */
+  .sidebar-icones { gap: 15px; }
+  .sidebar-icones span { display: block; }
+  .sidebar-icones .item {
+    justify-content: flex-start; padding: 12px 20px 12px 15px;
+    width: 90%; max-width: 230px; margin-left: auto; margin-right: auto;
+  }
+  
+  main { padding: 120px 60px; }
+
+  .secao-busca, .videos-container, .anuncio-container, 
+  .rodape-container, .rodape-container2 {
+    max-width: 1100px; padding: 50px 60px;
+  }
+  .categorias-grid { gap: 50px; }
+  
+  /* Navbar */
+  .menu { gap: 10px; }
+  .menu a, .menu .cep { font-size: 0.9rem; }
+  #logo-desktop { display: none; }
+  .sidebar-icones #logo { display: block; }
+}
+
+/* --- ADJUSTES ESPECÍFICOS DE DESKTOP (Ranges Intermediários) --- */
+@media (min-width: 900px) and (max-width: 1024px) {
+  .content { grid-template-columns: 1.6fr 1fr; gap: 28px; }
+  .filtros { display: flex; flex-direction: column; width: 300px; margin-top: 0; }
+  .anuncio-container { padding: 36px; }
+  .secao-busca { padding: 36px 24px; }
+}
+
+@media (max-width: 1200px) and (min-width: 1024px) {
+  .menu { gap: 8px; }
+  .menu a, .menu .cep { font-size: 0.88rem; padding: 5px 8px; }
+  .entrar { padding: 7px 12px; font-size: 0.88rem; }
+  .botoes-direita { gap: 6px; }
+}
+
+@media (max-width: 1150px) and (min-width: 1024px) {
+  .menu a, .menu .cep { font-size: 0.9rem; }
+}
+
+@media (max-width: 1120px) and (min-width: 1024px) {
+  .navbar-desktop { padding: 0 10px; }
+  .menu { justify-content: flex-start; gap: 6px; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .menu::-webkit-scrollbar { display: none; }
+  .menu a, .menu .cep { font-size: 0.84rem; padding: 4.8px 6px; flex-shrink: 1; min-width: 0; }
+  .botoes-direita { margin-left: auto; gap: 6px; }
+  .entrar { padding: 6px 10px; font-size: 0.86rem; }
+}
+
+@media (max-width: 1100px) and (min-width: 1024px) {
+  .menu { gap: 6px; }
+  .menu a, .menu .cep { font-size: 0.86rem; padding: 4px 6px; flex-shrink: 1; min-width: 0; }
+  .entrar { padding: 6px 10px; font-size: 0.86rem; }
+  .botoes-direita { gap: 5px; }
+}
+
 @media (max-width: 1100px) and (min-width: 768px) {
-  .navbar-desktop {
-    min-width: 768px; /* Garante largura mínima */
-  }
-  
-  .botoes-direita {
-    min-width: 150px; /* Espaço reservado para o botão */
-  }
-}
-
-/* DESKTOP LARGE (1280px e acima) */
-@media (min-width: 1280px) {
-  .secao-busca,
-  .categorias-container,
-  .videos-container,
-  .anuncio-container,
-  .rodape-container2 {
-    max-width: 1200px;
-  }
-
-    .rodape-container {
-      max-width: 1200px;
-      padding: 10px 10px;
-    }
-
-  .categorias-grid {
-    grid-template-columns: repeat(4, 1fr);
-    gap: 60px;
-  }
-}
-@media (min-width: 1280px) {
-  .menu {
-    gap: 5px;
-  }
-  
-  .menu a,
-  .menu .cep {
-    font-size: 0.9rem;
-  }
+  .navbar-desktop { min-width: 768px; }
+  .botoes-direita { min-width: 150px; }
 }
 
 @media (min-width: 1130px) {
-  .menu {
-    gap: 5px;
+  .menu { gap: 5px; }
+  .menu a, .menu .cep { font-size: 0.9rem; line-height: 5; }
+}
+
+/* --- TELAS GRANDES (1280px+) --- */
+@media (min-width: 1280px) {
+  .secao-busca, .categorias-container, .videos-container, 
+  .anuncio-container, .rodape-container2 { max-width: 1200px; }
+  .rodape-container { max-width: 1200px; padding: 10px 10px; }
+  .categorias-grid { grid-template-columns: repeat(4, 1fr); gap: 60px; }
+  .menu { gap: 5px; }
+  .menu a, .menu .cep { font-size: 0.9rem; }
+}
+
+/* ==========================================================================
+   9. DARK MODE
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cor-verde: #0e9683;
+    --cor-azul: #4a8ac4;
+    --cor-texto: #e0e0e0;
+    --cor-bg: #1f1e1e;
+    --cor-bg-card: #2a2a2d;
+  }
+  body, .navbar-mobile, .bottom-nav, .navbar-desktop {
+    background-color: var(--cor-bg); color: var(--cor-texto); border-color: #333;
+  }
+  .secao-busca, .anuncio-container, .sidebar-icones, 
+  .navbar-desktop, .rodape-container2, .videos-container, .popup-content {
+    background-color: var(--cor-bg-card); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  }
+.categoria-circle {
+  background-color: var(--cor-bg-card); border-color: var(--cor-bg-card);}
+
+.filtros-container select, .select,.busca-input-container input  {
+    background-color: var(--cor-bg);
+    border-color: var(--cor-bg);
   }
   
-  .menu a,
-  .menu .cep {
-    font-size: 0.9rem;
-    line-height: 5;
+.busca-dropdown{
+  background: var(--cor-bg);
+}
+
+.busca-hint{
+  background-color: #152738;
+}
+  .filtros-container select:disabled{
+    background-color: #272626;
+    border-color: #272626;
+  }
+
+  .filtros-container{
+    background: var(--cor-bg-card);
+  }
+
+  .banner-pontos, .rodape h3, .dot.ativo { color: var(--cor-verde); }
+  .info-btn, .criar a, .static-text { color: var(--cor-azul); }
+  .item a, h2, #categorias-title, #categorias-title3, .titulo, .criar, .menu a { color: var(--cor-texto); }
+  
+  .busca input {
+    background: linear-gradient(#2c2c2c, #2c2c2c) padding-box, linear-gradient(90deg, #5647ff, #ff2e63) border-box;
+    color: #fff;
+  }
+  .close-btn { color: white; }
+  .btn-login { background: var(--cor-verde); color: #fff; }
+  
+  .categoria p, .filtros label, .coluna a { color: #b0b0b0; }
+  .coluna a:hover { color: var(--cor-verde); }
+
+  .select { background: var(--cor-bg); color: #fff; border-color: #444; }
+  .btn-filtros { background-color: var(--cor-bg); color: var(--cor-texto); border-color: #555; }
+  
+  .entrar { border-color: var(--cor-verde); color: #fff; background: transparent; }
+  .entrar:hover { background-color: var(--cor-verde); color: #000; }
+  
+  .novos-anuncios { background-color: var(--cor-bg); color: var(--cor-texto); }
+  .preco { color: var(--cor-verde); }
+  .status { background: var(--cor-bg); color: #ccc; }
+  
+  .rodape, .rodape-base { background: #0a0a0a; color: #888; border-color: #333; }
+  .busca::before, .sidebar-icones .icon { filter: invert(0.9); }
+  
+  .icon.verde, .icon.azul, .logo img, #logo-desktop img {
+    filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(120deg) brightness(100%) contrast(100%);
   }
 }
 
-/* ===========================================
-   MODO ESCURO (DARK MODE) - CORRIGIDO
-   =========================================== */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --cor-verde: #0e9683;
-        --cor-azul: #4a8ac4;
-        --cor-texto: #e0e0e0;
-        --cor-bg: #1f1e1e;
-        --cor-bg-card: #2a2a2d;
-    }
-
-    body, .navbar-mobile, .bottom-nav, .navbar-desktop {
-        background-color: var(--cor-bg);
-        color: var(--cor-texto);
-        border-color: #333;
-    }
-
-    .secao-busca, .anuncio-container, .sidebar-icones, 
-   .navbar-desktop, .rodape-container2, 
-    .videos-container, .popup-content {
-        background-color: var(--cor-bg-card);
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-    }
-
-    .filtros-container {
-       background-color: var(--cor-bg-card);
-    }
-
-    .banner-pontos, .rodape h3 { color: var(--cor-verde); }
-    .info-btn, .criar a { color: var(--cor-azul); }
-    .item a, h2, #categorias-title, #categorias-title3, .titulo, .criar, .menu a { color: var(--cor-texto); }
-    
-    .busca input {
-        background: linear-gradient(#2c2c2c, #2c2c2c) padding-box, linear-gradient(90deg, #5647ff, #ff2e63) border-box;
-        color: #fff;
-    }
-
-    .close-btn { color: white; }
-    .btn-login { background: var(--cor-verde); color: #fff; }
-    
-    .categoria p, .filtros label, .coluna a { color: #b0b0b0; }
-    .coluna a:hover { color: var(--cor-verde); }
-
-    .select { background: var(--cor-bg); color: #fff; border-color: #444; }
-    .btn-filtros { background-color: var(--cor-bg); color: var(--cor-texto); border-color: #555; }
-    
-    .entrar { border-color: var(--cor-verde); color: #fff; background: transparent; }
-    .entrar:hover { background-color: var(--cor-verde); color: #000; }
-    
-    .novos-anuncios { background-color: var(--cor-bg); color: var(--cor-texto); }
-    .preco { color: var(--cor-verde); }
-    .status { background: var(--cor-bg); color: #ccc; }
-    
-    .rodape, .rodape-base { background: #0a0a0a; color: #888; border-color: #333; }
-    
-    .busca::before, .sidebar-icones .icon { filter: invert(0.9); }
-    
-    .icon.verde, .icon.azul, .logo img, #logo-desktop img {
-        filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(120deg) brightness(100%) contrast(100%);
-    }
-}
-
-/* ===========================================
-   CORREÇÃO FINA DE RESPONSIVIDADE (MOBILE)
-   Cole isso DEPOIS do Dark Mode para garantir prioridade
-   =========================================== */
-
+/* ==========================================================================
+   10. CORREÇÃO FINA DE RESPONSIVIDADE (MOBILE)
+   (Prioridade sobre Dark Mode e outros estilos)
+   ========================================================================== */
 @media (max-width: 767px) {
-    /* 1. Ajuste geral de containeres para ganhar espaço */
-    .secao-busca,
-    .videos-container,
-    .anuncio-container,
-    .rodape-container,
-    .rodape-container2,
-    .filtros-container {
-        padding: 24px 20px; /* Reduzido de 60px/40px */
-        width: 94%; /* Deixa uma margem pequena lateral */
-        margin-left: auto;
-        margin-right: auto;
-    }
+  /* 1. Ajuste geral de containeres */
+  .secao-busca, .videos-container, .anuncio-container, .rodape-container, .rodape-container2, .filtros-container {
+    padding: 24px 20px; width: 94%; margin-left: auto; margin-right: auto;
+  }
+  /* 2. Seção de Busca Específica */
+  .secao-busca { padding: 30px 20px; }
+  .busca input { font-size: 0.95rem; padding-left: 45px; }
+  .busca::before { left: 15px; }
 
-    /* 2. Seção de Busca Específica */
-    .secao-busca {
-        padding: 30px 20px; /* Muito menos padding para caber na tela */
-    }
+  /* Navbar */
+  .navbar-mobile {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 20px; height: 60px;
+  }
+  #logo-mobile img { height: 32px; }
+  .icon-mail { font-size: 22px; margin-right: 5px; }
 
-    .busca input {
-        font-size: 0.95rem; /* Fonte levemente menor */
-        padding-left: 45px; /* Ajuste ícone */
-    }
-    
-    .busca::before {
-        left: 15px; /* Ajuste ícone */
-    }
+  /* 3. Títulos e Texto */
+  .novos-anuncios { font-size: 1.1rem; width: 100%; justify-content: center; margin-bottom: 15px; }
+  .top-bar { justify-content: center; gap: 10px; }
+  .menu a { line-height: 1.9; gap: 10px; }
 
-    /* Ajusta o container do header para alinhar tudo no centro verticalmente */
-    .navbar-mobile {
-        display: flex;
-        align-items: center; /* Isso impede que o botão estique para cima e para baixo */
-        justify-content: space-between;
-        padding: 10px 20px; /* Reduzi um pouco a altura geral da barra */
-        height: 60px; /* Define uma altura fixa menor para o header */
-    }
+  /* 4. Filtros */
+  .filtros-linha { flex-direction: column; align-items: stretch; gap: 15px; }
+  .filtro-group, .select, .btn-filtros { width: 100%; min-width: 0; }
+  .btn-filtros { justify-content: center; margin-top: 10px; }
 
-    /* O logo precisa caber na nova altura */
-    #logo-mobile img {
-        height: 32px; /* Reduz levemente o logo */
-    }
+  /* 5. Ação */
+  .botoes-busca { gap: 10px; }
+  .btn-procurar, .btn-anunciar { font-size: 1rem; padding: 14px; }
 
-
-    /* Ícone de carta (email) */
-    .icon-mail {
-        font-size: 22px;
-        margin-right: 5px;
-    }
-
-    /* 3. Título "Novos Anúncios" muito grande no mobile */
-    .novos-anuncios {
-        font-size: 1.1rem;
-        width: 100%;
-        justify-content: center;
-        margin-bottom: 15px;
-    }
-    
-    .top-bar {
-        justify-content: center;
-        gap: 10px;
-    }
-
-    .menu a {
-      line-height: 1.9;
-       gap: 10px;
-    }
-
-    /* 4. Filtros: Empilhar inputs para não quebrar */
-    .filtros-linha {
-        flex-direction: column; /* Um embaixo do outro */
-        align-items: stretch;
-        gap: 15px;
-    }
-
-    .filtro-group {
-        width: 100%;
-        min-width: 0;
-    }
-    
-    .select {
-        width: 100%; /* Input ocupa largura total */
-    }
-    
-    .btn-filtros {
-        width: 100%;
-        justify-content: center;
-        margin-top: 10px;
-    }
-
-    /* 5. Ajuste dos botões de ação */
-    .botoes-busca {
-        gap: 10px;
-    }
-    
-    .btn-procurar, .btn-anunciar {
-        font-size: 1rem;
-        padding: 14px;
-    }
-
-    /* 6. Grid de Categorias */
-    .categorias-grid {
-        gap: 15px; /* Menos espaço entre itens */
-    }
-    
-    .categoria p {
-        font-size: 0.9rem;
-    }
-
-    /* 7. Popup Mobile */
-    .popup {
-        width: 90%;
-        left: 5%;
-        right: auto;
-    }
-    .popup-content {
-        width: 100%;
-    }
-
-    
+  /* 6. Grid e Popup */
+  .categorias-grid { gap: 15px; }
+  .categoria p { font-size: 0.9rem; }
+  .popup { width: 90%; left: 5%; right: auto; }
+  .popup-content { width: 100%; }
 }
-
-
-

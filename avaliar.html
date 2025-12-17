@@ -234,6 +234,166 @@ input:checked + .slider:before { transform: translateX(22px); }
     .btn-toggle-comment { margin-left: auto; }
 }
 
+/* ==========================================================================
+   NAVBAR SUPERIOR (MOBILE)
+   ========================================================================== */
+.navbar-mobile {
+  display: flex;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--navbar-height-mobile);
+  background: white;
+  padding: 14px 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  z-index: 1000;
+  align-items: center;
+  justify-content: space-between;
+}
+
+#logo-mobile img {
+  height: 40px;
+}
+
+/* Ajustes específicos para telas menores que 767px */
+@media (max-width: 767px) {
+  .navbar-mobile {
+    padding: 10px 20px;
+    height: 60px;
+  }
+  #logo-mobile img {
+    height: 32px;
+  }
+}
+
+/* Botão Entrar */
+.entrar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #fff;
+  color: var(--cor0);
+  border: 2px solid var(--cor0);
+  border-radius: 25px;
+  padding: 6px 10px; /* Ajustado conforme seu CSS mobile */
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition: 0.3s;
+  white-space: nowrap;
+  font-size: 0.85rem;
+}
+
+.entrar:hover {
+  background-color: var(--cor0);
+  color: white;
+}
+.entrar:hover svg path { fill: #fff; }
+
+/* ==========================================================================
+   NAVBAR INFERIOR (BOTTOM NAV)
+   ========================================================================== */
+.bottom-nav {
+  display: flex;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: var(--bottom-nav-height);
+  background: white;
+  justify-content: space-around;
+  align-items: flex-start;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  border-top: 1px solid #eee;
+}
+
+.bottom-nav .item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: var(--cor1);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.bottom-nav .item img, 
+.bottom-nav .icon { 
+  width: 26px; 
+  height: 26px; 
+}
+
+/* Estado Ativo e Hover */
+.bottom-nav .item:active, 
+.bottom-nav .item.active { 
+  color: var(--cor0); 
+}
+
+/* Filtros de cores dos ícones */
+.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
+.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
+
+.bottom-nav .item.active .icon.verde,
+.bottom-nav .item.active .icon.azul {
+    /* Deixa o ícone ativo com a cor padrão verde */
+    filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
+}
+
+/* ==========================================================================
+   RESPONSIVIDADE: ESCONDER NO DESKTOP
+   ========================================================================== */
+@media (min-width: 768px) {
+  .navbar-mobile, 
+  .bottom-nav { 
+    display: none; 
+  }
+  
+  body {
+    padding-top: 80px; /* Altura da navbar desktop padrão */
+    padding-bottom: 0;
+  }
+}
+
+/* ==========================================================================
+   DARK MODE
+   ========================================================================== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --cor-verde: #0e9683;
+    --cor-texto: #e0e0e0;
+    --cor-bg: #1f1e1e;
+    --cor-bg-card: #2a2a2d;
+  }
+
+  body, .navbar-mobile, .bottom-nav {
+    background-color: var(--cor-bg);
+    color: var(--cor-texto);
+    border-color: #333;
+  }
+
+  /* Botão entrar no dark mode */
+  .entrar {
+    border-color: var(--cor-verde);
+    color: #fff;
+    background: transparent;
+  }
+  .entrar:hover {
+    background-color: var(--cor-verde);
+    color: #000;
+  }
+
+  /* Ícones e logo invertidos para contraste */
+  .icon.verde, .icon.azul, #logo-mobile img {
+    filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(120deg) brightness(100%) contrast(100%);
+  }
+}
+
 </style>
 </head>
 <body>
@@ -390,6 +550,27 @@ input:checked + .slider:before { transform: translateX(22px); }
                 </form>
             </div>
         </div>
+
+        <nav class="bottom-nav">
+    <a href="index.html" class="item active"> <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+        <span>Início</span>
+    </a>
+    <a href="#" class="item">
+        <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+        <span>Explorar</span>
+    </a>
+    <a href="anunciar.html" class="item">
+        <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar"> <span>Anunciar</span>
+    </a>
+    <a href="#" class="item">
+        <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+        <span>Notificações</span>
+    </a>
+    <a href="perfil.html" class="item">
+        <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
+        <span>Perfil</span>
+    </a>
+</nav>
     </main>
 
     <script>
