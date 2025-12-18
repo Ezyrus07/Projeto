@@ -439,10 +439,18 @@ textarea { resize: vertical; min-height: 100px; }
 }
 
 /* --- Estilo de Erro (Borda Vermelha + Tremida) --- */
+/* Erro nos Inputs normais */
 .input-error {
-    border-color: var(--cor3) !important; /* Vermelho */
-    background-color: #fff0f0 !important; /* Fundo levemente avermelhado */
+    border-color: var(--cor3) !important;
+    background-color: #fff0f0 !important;
     box-shadow: 0 0 0 3px rgba(243, 91, 91, 0.15) !important;
+    animation: shake 0.3s ease-in-out;
+}
+
+/* Erro na Zona de Upload (Novo) */
+.upload-zone.input-error {
+    border: 2px dashed var(--cor3) !important; /* Borda tracejada vermelha */
+    background-color: #fff0f0 !important;
     animation: shake 0.3s ease-in-out;
 }
 
@@ -908,19 +916,17 @@ let currentStep = 1;
             }
         }
 
-        const currentDiv = document.getElementById(`step-${currentStep}`);
-        
-        // Pequeno efeito de saída (opcional, apenas remove a classe)
-        currentDiv.classList.remove('active');
+        // Remove classe ativa do passo atual
+        document.getElementById(`step-${currentStep}`).classList.remove('active');
 
         currentStep += direction;
         
-        // Limites
+        // Limites de passos
         if (currentStep < 1) currentStep = 1;
         if (currentStep > totalSteps) currentStep = totalSteps;
         
-        const nextDiv = document.getElementById(`step-${currentStep}`);
-        nextDiv.classList.add('active');
+        // Ativa o novo passo
+        document.getElementById(`step-${currentStep}`).classList.add('active');
 
         atualizarInterface();
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -928,48 +934,63 @@ let currentStep = 1;
 
     function validarPassoAtual() {
         const stepDiv = document.getElementById(`step-${currentStep}`);
-        // Pega inputs, selects e textareas obrigatórios
         const camposObrigatorios = stepDiv.querySelectorAll('[required]');
         let isValid = true;
         let firstInvalid = null;
 
         camposObrigatorios.forEach(campo => {
             if (!campo.checkValidity()) {
-                // ADICIONA O ERRO VISUAL
-                campo.classList.add('input-error');
                 
-                // Adiciona um "ouvinte" para limpar o erro assim que o usuário mexer
-                campo.addEventListener('input', limparErro);
-                campo.addEventListener('change', limparErro);
+                // LÓGICA ESPECIAL PARA UPLOAD (Se o input estiver dentro de uma upload-zone)
+                if (campo.type === 'file' && campo.parentElement.classList.contains('upload-zone')) {
+                    const uploadBox = campo.parentElement;
+                    uploadBox.classList.add('input-error');
+                    
+                    // Remove o erro quando o usuário escolhe um arquivo
+                    campo.addEventListener('change', () => {
+                        if(campo.files.length > 0) uploadBox.classList.remove('input-error');
+                    }, {once: true});
+                    
+                    if (!firstInvalid) firstInvalid = uploadBox; // Foca na caixa, não no input
+                } 
+                else {
+                    // Lógica padrão para campos de texto/select
+                    campo.classList.add('input-error');
+                    campo.addEventListener('input', limparErro);
+                    campo.addEventListener('change', limparErro);
+                    
+                    if (!firstInvalid) firstInvalid = campo;
+                }
 
-                if (!firstInvalid) firstInvalid = campo;
                 isValid = false;
             } else {
+                // Remove erro caso esteja válido agora
                 campo.classList.remove('input-error');
+                if (campo.type === 'file' && campo.parentElement.classList.contains('upload-zone')) {
+                    campo.parentElement.classList.remove('input-error');
+                }
             }
         });
 
         if (!isValid) {
-            // Foca no primeiro campo errado e dá uma tremidinha
-            firstInvalid.focus();
-            
-            // Opcional: Se quiser manter o balão nativo junto com o vermelho, descomente abaixo:
-            // firstInvalid.reportValidity(); 
+            // Rola a tela até o primeiro erro e dá foco (se possível)
+            if(firstInvalid) {
+                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                if(firstInvalid.tagName !== 'DIV') firstInvalid.focus(); 
+            }
         }
 
         return isValid;
     }
 
-    // Função auxiliar para tirar o vermelho
     function limparErro(e) {
         e.target.classList.remove('input-error');
-        // Remove os ouvintes para não pesar a memória (limpeza)
         e.target.removeEventListener('input', limparErro);
         e.target.removeEventListener('change', limparErro);
     }
 
     function atualizarInterface() {
-        // Atualiza bolinhas (indicadores)
+        // Atualiza indicadores (bolinhas)
         for(let i=1; i<=totalSteps; i++) {
             const el = document.getElementById(`p-${i}`);
             el.classList.remove('active', 'completed');
@@ -994,7 +1015,6 @@ let currentStep = 1;
         }
     }
 
-    // Funções lógicas do form
     function togglePriceInput() {
         const isFixo = document.getElementById('fixo').checked;
         const priceWrapper = document.getElementById('price-input-wrapper');
@@ -1006,7 +1026,7 @@ let currentStep = 1;
             priceInput.setAttribute('required', 'true');
         } else {
             priceInput.removeAttribute('required');
-            priceInput.classList.remove('input-error'); // Limpa erro se ocultar
+            priceInput.classList.remove('input-error'); 
             priceInput.value = '';
         }
     }
@@ -1017,7 +1037,6 @@ let currentStep = 1;
         document.getElementById('lbl-doc').innerText = isPJ ? "CNPJ" : "CPF";
     }
 
-    // Inicializa
     atualizarInterface();
     </script>
 
