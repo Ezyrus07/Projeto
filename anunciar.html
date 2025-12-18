@@ -22,6 +22,7 @@
   --sidebar-width-desktop: 260px;
 }
 
+
 *{box-sizing:border-box;font-family:Poppins,system-ui,sans-serif}
 body{
   margin:0;
@@ -36,7 +37,7 @@ body{
 
 .container-anuncio {
     max-width: 900px; /* Aumentei um pouco */
-    margin: 40px auto;
+    margin: 10px auto 40px auto;
     padding: 20px;
 }
 
@@ -322,6 +323,135 @@ textarea { resize: vertical; min-height: 100px; }
     filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
 }
 
+/* ===========================================
+   HOVER EFFECTS - FORMULÁRIO (ATUALIZADO)
+   =========================================== */
+
+/* Animação suave padrão para tudo interativo */
+.btn-prev, .btn-next, .btn-submit, 
+.radio-card label, .checkbox-card label, 
+.upload-zone, .question-builder button {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* --- Botões de Navegação (Voltar / Próximo) --- */
+.form-nav {
+    display: flex; justify-content: space-between; margin-top: 40px;
+    padding-top: 20px; border-top: 1px solid var(--cor-borda);
+}
+
+.btn-prev {
+    background: #fff; color: var(--cor1); border: 1px solid var(--cor1);
+    padding: 12px 24px; border-radius: 8px; cursor: pointer; font-weight: 600;
+}
+.btn-prev:hover {
+    background: var(--cor1); color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+}
+
+.btn-next, .btn-submit {
+    background: var(--cor0); color: white; border: 0; padding: 12px 30px;
+    border-radius: 8px; cursor: pointer; font-weight: 600;
+    box-shadow: 0 4px 6px rgba(11, 119, 104, 0.2); /* Sombra verde inicial */
+}
+
+.btn-next:hover, .btn-submit:hover {
+    transform: translateY(-3px); /* Sobe um pouco mais */
+    box-shadow: 0 8px 20px rgba(11, 119, 104, 0.35); /* Sombra brilha */
+    filter: brightness(1.05);
+}
+
+.btn-next:active, .btn-submit:active {
+    transform: translateY(-1px);
+    box-shadow: 0 3px 5px rgba(0,0,0,0.1);
+}
+
+/* --- Cartões de Seleção (Radio Cards) --- */
+.radio-card label {
+    /* (Seus estilos base mantidos...) */
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    padding: 15px; border: 1px solid var(--cor-borda);
+    border-radius: 8px; text-align: center; cursor: pointer;
+    font-weight: 600; color: var(--cor1); height: 100%;
+    position: relative; top: 0;
+}
+
+.radio-card label:hover {
+    border-color: var(--cor0);
+    color: var(--cor0);
+    background: #fff;
+    transform: translateY(-4px); /* Flutua bem */
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08); /* Sombra elegante */
+}
+
+/* Estado Selecionado (ajuste para combinar com o hover) */
+.radio-card input:checked + label {
+    border-color: var(--cor0); 
+    background: rgba(11, 119, 104, 0.08); 
+    color: var(--cor0);
+    box-shadow: 0 4px 10px rgba(11, 119, 104, 0.15); /* Sombra verde leve */
+    transform: translateY(0); /* Volta pro lugar quando clicado/marcado */
+}
+
+/* --- Checkboxes Pequenos --- */
+.checkbox-card label {
+    display: block; padding: 10px; border: 1px solid var(--cor-borda);
+    border-radius: 6px; text-align: center; cursor: pointer; font-size: 14px;
+    background: white;
+}
+
+.checkbox-card label:hover {
+    border-color: var(--cor2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(42, 95, 144, 0.15); /* Sombra azulada */
+    color: var(--cor2);
+}
+
+.checkbox-card input:checked + label {
+    background: var(--cor2); color: white; border-color: var(--cor2);
+    transform: translateY(0);
+    box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); /* Profundidade interna */
+}
+
+/* --- Upload Zone --- */
+.upload-zone {
+    border: 2px dashed var(--cor2); border-radius: 12px;
+    padding: 30px; text-align: center; background: #f0f4f8;
+    cursor: pointer; position: relative;
+}
+
+.upload-zone:hover {
+    background: #eef2f6;
+    border-color: var(--cor0); /* Muda de azul para verde no hover */
+    transform: scale(1.01); /* Leve zoom */
+    box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* --- Botões pequenos (Adicionar Pergunta) --- */
+.question-builder button {
+    opacity: 0.8;
+}
+.question-builder button:hover {
+    opacity: 1;
+    background-color: #f9f9f9 !important;
+    transform: translateX(2px); /* Move levemente para direita */
+}
+
+/* --- Estilo de Erro (Borda Vermelha + Tremida) --- */
+.input-error {
+    border-color: var(--cor3) !important; /* Vermelho */
+    background-color: #fff0f0 !important; /* Fundo levemente avermelhado */
+    box-shadow: 0 0 0 3px rgba(243, 91, 91, 0.15) !important;
+    animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-4px); }
+    75% { transform: translateX(4px); }
+}
+
 /* ==========================================================================
    RESPONSIVIDADE: ESCONDER NO DESKTOP
    ========================================================================== */
@@ -332,7 +462,7 @@ textarea { resize: vertical; min-height: 100px; }
   }
   
   body {
-    padding-top: 80px; /* Altura da navbar desktop padrão */
+    padding-top: 0; /* Altura da navbar desktop padrão */
     padding-bottom: 0;
   }
 }
@@ -425,243 +555,243 @@ textarea { resize: vertical; min-height: 100px; }
                 <div class="step-indicator" id="p-4">4</div>
             </div>
 
-            <form id="formAnuncio" onsubmit="event.preventDefault(); alert('Enviado!');">
+<form id="formAnuncio" onsubmit="event.preventDefault(); alert('Enviado!');">
 
-                <div class="form-step active" id="step-1">
-                    <h3>1. Detalhes do Serviço</h3>
-                    
-                    <div class="form-group">
-                        <label>Título do Anúncio</label>
-                        <input type="text" placeholder="Ex: Manutenção Elétrica Residencial e Predial" required>
-                    </div>
-
-                    <div class="row-inputs">
-                        <div class="form-group">
-                            <label>Categoria</label>
-                            <select required>
-                                <option value="">Selecione...</option>
-                                <option>Reforma e Construção</option>
-                                <option>Assistência Técnica</option>
-                                <option>Aulas Particulares</option>
-                                <option>Beleza e Estética</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Palavras-chave / Tags</label>
-                            <input type="text" placeholder="Ex: eletricista, reparo, fiação (separar por vírgula)">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Tipo de Atendimento</label>
-                        <div class="toggle-wrapper">
-                            <div class="radio-card">
-                                <input type="radio" name="modo_atend" id="presencial" checked>
-                                <label for="presencial">Presencial 🏠</label>
-                            </div>
-                            <div class="radio-card">
-                                <input type="radio" name="modo_atend" id="online">
-                                <label for="online">Online 💻</label>
-                            </div>
-                            <div class="radio-card">
-                                <input type="radio" name="modo_atend" id="ambos">
-                                <label for="ambos">Ambos 🔄</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Modelo de Cobrança</label>
-                        <div class="toggle-wrapper" style="margin-bottom: 10px;">
-                            <div class="radio-card">
-                                <input type="radio" name="tipo_preco" id="orcamento" value="orcamento" checked onchange="togglePriceInput()">
-                                <label for="orcamento">Sob Orçamento</label>
-                            </div>
-                            <div class="radio-card">
-                                <input type="radio" name="tipo_preco" id="fixo" value="fixo" onchange="togglePriceInput()">
-                                <label for="fixo">Preço Fixo</label>
-                            </div>
-                        </div>
-                        <div id="price-input-wrapper" style="display:none;">
-                            <input type="text" placeholder="R$ 0,00 (Valor do serviço)" style="border-color:var(--cor0);">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Descrição Detalhada</label>
-                        <textarea placeholder="Descreva o que está incluso, etapas do serviço, equipamentos utilizados..."></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Fotos do Trabalho</label>
-                        <div class="upload-zone" onclick="document.getElementById('file-work').click()">
-                            <span style="font-size:30px">📷</span>
-                            <p>Adicionar fotos do serviço</p>
-                            <input type="file" id="file-work" multiple style="display: none;">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-step" id="step-2">
-                    <h3>2. Qualificações e Políticas</h3>
-                    
-                    <div class="row-inputs">
-                        <div class="form-group">
-                            <label>Experiência</label>
-                            <input type="text" placeholder="Ex: 5 anos ou +100 projetos">
-                        </div>
-                        <div class="form-group">
-                            <label>Prazo Médio (Opcional)</label>
-                            <input type="text" placeholder="Ex: 2 dias úteis">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Certificados / Diplomas (opcional)</label>
-                        <div class="upload-zone" style="padding: 15px;" onclick="document.getElementById('file-cert').click()">
-                            <span style="font-size:20px">📜</span> <span style="font-size:14px">Clique para anexar PDF ou Imagem</span>
-                            <input type="file" id="file-cert" multiple style="display: none;">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Garantia do Serviço</label>
-                        <textarea style="min-height: 60px;" placeholder="Oferece garantia? Se sim, de quanto tempo e cobrindo o que?"></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Política de Cancelamento</label>
-                        <select>
-                            <option>Flexível (Cancelamento grátis até 24h antes)</option>
-                            <option>Moderada (Multa de 50% em cima da hora)</option>
-                            <option>Rígida (Sem reembolso de sinal)</option>
-                            <option>A combinar</option>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
-                            <input type="checkbox" style="width:auto;"> 
-                            <span style="font-weight:600; color:var(--cor3);">Atendo Emergências / 24 Horas</span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-step" id="step-3">
-                    <h3>3. Dados e Verificação</h3>
-
-                    <div class="form-group">
-                        <label>Você atua como:</label>
-                        <div class="toggle-wrapper">
-                            <div class="radio-card">
-                                <input type="radio" name="tipo_pessoa" id="pf" checked onchange="toggleCNPJ()">
-                                <label for="pf">Pessoa Física</label>
-                            </div>
-                            <div class="radio-card">
-                                <input type="radio" name="tipo_pessoa" id="pj" onchange="toggleCNPJ()">
-                                <label for="pj">Empresa (CNPJ)</label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="row-inputs">
-                        <div class="form-group">
-                            <label id="lbl-nome">Nome Completo</label>
-                            <input type="text" placeholder="Nome igual ao documento">
-                        </div>
-                        <div class="form-group">
-                            <label id="lbl-doc">CPF</label>
-                            <input type="text" placeholder="000.000.000-00">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Foto do Documento (RG ou CNH) <span style="color:var(--cor2);">*Segurança</span></label>
-                        <div class="upload-zone security" onclick="document.getElementById('file-rg').click()">
-                            <span style="font-size:30px">🔒</span>
-                            <p>Sua foto e documento não serão exibidos publicamente.</p>
-                            <input type="file" id="file-rg" style="display: none;">
-                        </div>
-                    </div>
-
-                    <div class="row-inputs">
-                        <div class="form-group">
-                            <label>Telefone / WhatsApp (Confirmar)</label>
-                            <input type="tel" placeholder="(00) 00000-0000">
-                        </div>
-                        <div class="form-group">
-                            <label>Localização (CEP)</label>
-                            <input type="text" placeholder="00000-000">
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Formas de Pagamento Aceitas</label>
-                        <div class="checkbox-grid">
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="pg-pix"> <label for="pg-pix">Pix</label>
-                            </div>
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="pg-din"> <label for="pg-din">Dinheiro</label>
-                            </div>
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="pg-cd"> <label for="pg-cd">Cartão Débito</label>
-                            </div>
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="pg-cc"> <label for="pg-cc">Cartão Crédito</label>
-                            </div>
-                            <div class="checkbox-card">
-                                <input type="checkbox" id="pg-bol"> <label for="pg-bol">Boleto</label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="form-step" id="step-4">
-                    <h3>4. Disponibilidade e Triagem</h3>
-                    
-                    <div class="form-group">
-                        <label>Dias de Trabalho</label>
-                        <div class="checkbox-grid">
-                            <div class="checkbox-card"><input type="checkbox" id="d-seg" checked><label for="d-seg">Segunda</label></div>
-                            <div class="checkbox-card"><input type="checkbox" id="d-ter" checked><label for="d-ter">Terça</label></div>
-                            <div class="checkbox-card"><input type="checkbox" id="d-qua" checked><label for="d-qua">Quarta</label></div>
-                            <div class="checkbox-card"><input type="checkbox" id="d-qui" checked><label for="d-qui">Quinta</label></div>
-                            <div class="checkbox-card"><input type="checkbox" id="d-sex" checked><label for="d-sex">Sexta</label></div>
-                            <div class="checkbox-card"><input type="checkbox" id="d-sab"><label for="d-sab">Sábado</label></div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label>Questionário de Triagem (Opcional)</label>
-                        <p style="font-size:13px; color:var(--cor1); margin-bottom:10px;">Perguntas que o cliente deve responder ao solicitar orçamento.</p>
-                        
-                        <div class="question-builder">
-                            <div style="font-weight:600; color:var(--cor2); margin-bottom:10px;">Pergunta Exemplo</div>
-                            <input type="text" value="Qual a voltagem da tomada?" style="margin-bottom:10px;">
-                            <input type="text" placeholder="Opção 1 (ex: 110v)" style="margin-bottom:5px; font-size:13px;">
-                            <input type="text" placeholder="Opção 2 (ex: 220v)" style="margin-bottom:5px; font-size:13px;">
-                            <button type="button" style="background:none; border:none; color:var(--cor0); cursor:pointer; font-size:12px;">+ Adicionar opção</button>
-                        </div>
-                        <button type="button" style="width:100%; padding:10px; border:1px dashed var(--cor2); color:var(--cor2); background:white; border-radius:8px; cursor:pointer;">+ Nova Pergunta</button>
-                    </div>
-
-                    <div class="terms-box">
-                        <input type="checkbox" id="termos" required style="width:auto; margin-top:3px;">
-                        <label for="termos">
-                            Declaro que as informações são verdadeiras. Aceito os <a href="#" style="color:var(--cor2);">Termos de Uso</a> e a <a href="#" style="color:var(--cor2);">Política de Privacidade</a> da plataforma. Entendo que meu documento será usado apenas para verificação de segurança.
-                        </label>
-                    </div>
-                </div>
-
-                <div class="form-nav">
-                    <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)">Voltar</button>
-                    <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
-                    <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">Publicar Anúncio</button>
-                </div>
-
-            </form>
+    <div class="form-step active" id="step-1">
+        <h3>1. Detalhes do Serviço</h3>
+        
+        <div class="form-group">
+            <label>Título do Anúncio</label>
+            <input type="text" placeholder="Ex: Manutenção Elétrica Residencial e Predial" required>
         </div>
+
+        <div class="row-inputs">
+            <div class="form-group">
+                <label>Categoria</label>
+                <select required>
+                    <option value="">Selecione...</option>
+                    <option>Reforma e Construção</option>
+                    <option>Assistência Técnica</option>
+                    <option>Aulas Particulares</option>
+                    <option>Beleza e Estética</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Palavras-chave / Tags</label>
+                <input type="text" placeholder="Ex: eletricista, reparo, fiação (separar por vírgula)" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Tipo de Atendimento</label>
+            <div class="toggle-wrapper">
+                <div class="radio-card">
+                    <input type="radio" name="modo_atend" id="presencial" checked>
+                    <label for="presencial">Presencial 🏠</label>
+                </div>
+                <div class="radio-card">
+                    <input type="radio" name="modo_atend" id="online">
+                    <label for="online">Online 💻</label>
+                </div>
+                <div class="radio-card">
+                    <input type="radio" name="modo_atend" id="ambos">
+                    <label for="ambos">Ambos 🔄</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Modelo de Cobrança</label>
+            <div class="toggle-wrapper" style="margin-bottom: 10px;">
+                <div class="radio-card">
+                    <input type="radio" name="tipo_preco" id="orcamento" value="orcamento" checked onchange="togglePriceInput()">
+                    <label for="orcamento">Sob Orçamento</label>
+                </div>
+                <div class="radio-card">
+                    <input type="radio" name="tipo_preco" id="fixo" value="fixo" onchange="togglePriceInput()">
+                    <label for="fixo">Preço Fixo</label>
+                </div>
+            </div>
+            <div id="price-input-wrapper" style="display:none;">
+                <input type="text" placeholder="R$ 0,00 (Valor do serviço)" style="border-color:var(--cor0);">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Descrição Detalhada</label>
+            <textarea placeholder="Descreva o que está incluso, etapas do serviço, equipamentos utilizados..." required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Fotos do Trabalho</label>
+            <div class="upload-zone" onclick="document.getElementById('file-work').click()">
+                <span style="font-size:30px">📷</span>
+                <p>Adicionar fotos do serviço</p>
+                <input type="file" id="file-work" multiple style="display: none;" required>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-step" id="step-2">
+        <h3>2. Qualificações e Políticas</h3>
+        
+        <div class="row-inputs">
+            <div class="form-group">
+                <label>Experiência</label>
+                <input type="text" placeholder="Ex: 5 anos ou +100 projetos" required>
+            </div>
+            <div class="form-group">
+                <label>Prazo Médio (Opcional)</label>
+                <input type="text" placeholder="Ex: 2 dias úteis">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Certificados / Diplomas (opcional)</label>
+            <div class="upload-zone" style="padding: 15px;" onclick="document.getElementById('file-cert').click()">
+                <span style="font-size:20px">📜</span> <span style="font-size:14px">Clique para anexar PDF ou Imagem</span>
+                <input type="file" id="file-cert" multiple style="display: none;">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Garantia do Serviço</label>
+            <textarea style="min-height: 60px;" placeholder="Oferece garantia? Se sim, de quanto tempo e cobrindo o que?" required></textarea>
+        </div>
+
+        <div class="form-group">
+            <label>Política de Cancelamento</label>
+            <select required>
+                <option value="">Selecione...</option>
+                <option>Flexível (Cancelamento grátis até 24h antes)</option>
+                <option>Moderada (Multa de 50% em cima da hora)</option>
+                <option>Rígida (Sem reembolso de sinal)</option>
+                <option>A combinar</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label style="display:flex; align-items:center; gap:10px; cursor:pointer;">
+                <input type="checkbox" style="width:auto;"> 
+                <span style="font-weight:600; color:var(--cor3);">Atendo Emergências / 24 Horas</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="form-step" id="step-3">
+        <h3>3. Dados e Verificação</h3>
+
+        <div class="form-group">
+            <label>Você atua como:</label>
+            <div class="toggle-wrapper">
+                <div class="radio-card">
+                    <input type="radio" name="tipo_pessoa" id="pf" checked onchange="toggleCNPJ()">
+                    <label for="pf">Pessoa Física</label>
+                </div>
+                <div class="radio-card">
+                    <input type="radio" name="tipo_pessoa" id="pj" onchange="toggleCNPJ()">
+                    <label for="pj">Empresa (CNPJ)</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="row-inputs">
+            <div class="form-group">
+                <label id="lbl-nome">Nome Completo</label>
+                <input type="text" placeholder="Nome igual ao documento" required>
+            </div>
+            <div class="form-group">
+                <label id="lbl-doc">CPF</label>
+                <input type="text" placeholder="000.000.000-00" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Foto do Documento (RG ou CNH) <span style="color:var(--cor2);">*Segurança</span></label>
+            <div class="upload-zone security" onclick="document.getElementById('file-rg').click()">
+                <span style="font-size:30px">🔒</span>
+                <p>Sua foto e documento não serão exibidos publicamente.</p>
+                <input type="file" id="file-rg" style="display: none;" required>
+            </div>
+        </div>
+
+        <div class="row-inputs">
+            <div class="form-group">
+                <label>Telefone / WhatsApp (Confirmar)</label>
+                <input type="tel" placeholder="(00) 00000-0000" required>
+            </div>
+            <div class="form-group">
+                <label>Localização (CEP)</label>
+                <input type="text" placeholder="00000-000" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Formas de Pagamento Aceitas</label>
+            <div class="checkbox-grid">
+                <div class="checkbox-card">
+                    <input type="checkbox" id="pg-pix"> <label for="pg-pix">Pix</label>
+                </div>
+                <div class="checkbox-card">
+                    <input type="checkbox" id="pg-din"> <label for="pg-din">Dinheiro</label>
+                </div>
+                <div class="checkbox-card">
+                    <input type="checkbox" id="pg-cd"> <label for="pg-cd">Cartão Débito</label>
+                </div>
+                <div class="checkbox-card">
+                    <input type="checkbox" id="pg-cc"> <label for="pg-cc">Cartão Crédito</label>
+                </div>
+                <div class="checkbox-card">
+                    <input type="checkbox" id="pg-bol"> <label for="pg-bol">Boleto</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-step" id="step-4">
+        <h3>4. Disponibilidade e Triagem</h3>
+        
+        <div class="form-group">
+            <label>Dias de Trabalho</label>
+            <div class="checkbox-grid">
+                <div class="checkbox-card"><input type="checkbox" id="d-seg" checked><label for="d-seg">Segunda</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="d-ter" checked><label for="d-ter">Terça</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="d-qua" checked><label for="d-qua">Quarta</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="d-qui" checked><label for="d-qui">Quinta</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="d-sex" checked><label for="d-sex">Sexta</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="d-sab"><label for="d-sab">Sábado</label></div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Questionário de Triagem (Opcional)</label>
+            <p style="font-size:13px; color:var(--cor1); margin-bottom:10px;">Perguntas que o cliente deve responder ao solicitar orçamento.</p>
+            
+            <div class="question-builder">
+                <div style="font-weight:600; color:var(--cor2); margin-bottom:10px;">Pergunta Exemplo</div>
+                <input type="text" value="Qual a voltagem da tomada?" style="margin-bottom:10px;">
+                <input type="text" placeholder="Opção 1 (ex: 110v)" style="margin-bottom:5px; font-size:13px;">
+                <input type="text" placeholder="Opção 2 (ex: 220v)" style="margin-bottom:5px; font-size:13px;">
+                <button type="button" style="background:none; border:none; color:var(--cor0); cursor:pointer; font-size:12px;">+ Adicionar opção</button>
+            </div>
+            <button type="button" style="width:100%; padding:10px; border:1px dashed var(--cor2); color:var(--cor2); background:white; border-radius:8px; cursor:pointer;">+ Nova Pergunta</button>
+        </div>
+
+        <div class="terms-box">
+            <input type="checkbox" id="termos" required style="width:auto; margin-top:3px;">
+            <label for="termos">
+                Declaro que as informações são verdadeiras. Aceito os <a href="#" style="color:var(--cor2);">Termos de Uso</a> e a <a href="#" style="color:var(--cor2);">Política de Privacidade</a> da plataforma. Entendo que meu documento será usado apenas para verificação de segurança.
+            </label>
+        </div>
+    </div>
+
+    <div class="form-nav">
+        <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)">Voltar</button>
+        <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
+        <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">Publicar Anúncio</button>
+    </div>
+
+</form>
 
         <header class="navbar-mobile">
     <div id="logo-mobile">
@@ -710,8 +840,7 @@ textarea { resize: vertical; min-height: 100px; }
     </main>
 
     <script>
-        let currentStep = 1;
-        const totalSteps = 4;
+
 
         function changeStep(direction) {
             document.getElementById(`step-${currentStep}`).classList.remove('active');
@@ -768,7 +897,128 @@ textarea { resize: vertical; min-height: 100px; }
         }
 
         // Inicializa botões
-        document.getElementById('btn-prev').style.display = 'none';
+let currentStep = 1;
+    const totalSteps = 4;
+
+    function changeStep(direction) {
+        // Se for avançar (1), valida antes
+        if (direction === 1) {
+            if (!validarPassoAtual()) {
+                return; // Bloqueia se tiver erro
+            }
+        }
+
+        const currentDiv = document.getElementById(`step-${currentStep}`);
+        
+        // Pequeno efeito de saída (opcional, apenas remove a classe)
+        currentDiv.classList.remove('active');
+
+        currentStep += direction;
+        
+        // Limites
+        if (currentStep < 1) currentStep = 1;
+        if (currentStep > totalSteps) currentStep = totalSteps;
+        
+        const nextDiv = document.getElementById(`step-${currentStep}`);
+        nextDiv.classList.add('active');
+
+        atualizarInterface();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function validarPassoAtual() {
+        const stepDiv = document.getElementById(`step-${currentStep}`);
+        // Pega inputs, selects e textareas obrigatórios
+        const camposObrigatorios = stepDiv.querySelectorAll('[required]');
+        let isValid = true;
+        let firstInvalid = null;
+
+        camposObrigatorios.forEach(campo => {
+            if (!campo.checkValidity()) {
+                // ADICIONA O ERRO VISUAL
+                campo.classList.add('input-error');
+                
+                // Adiciona um "ouvinte" para limpar o erro assim que o usuário mexer
+                campo.addEventListener('input', limparErro);
+                campo.addEventListener('change', limparErro);
+
+                if (!firstInvalid) firstInvalid = campo;
+                isValid = false;
+            } else {
+                campo.classList.remove('input-error');
+            }
+        });
+
+        if (!isValid) {
+            // Foca no primeiro campo errado e dá uma tremidinha
+            firstInvalid.focus();
+            
+            // Opcional: Se quiser manter o balão nativo junto com o vermelho, descomente abaixo:
+            // firstInvalid.reportValidity(); 
+        }
+
+        return isValid;
+    }
+
+    // Função auxiliar para tirar o vermelho
+    function limparErro(e) {
+        e.target.classList.remove('input-error');
+        // Remove os ouvintes para não pesar a memória (limpeza)
+        e.target.removeEventListener('input', limparErro);
+        e.target.removeEventListener('change', limparErro);
+    }
+
+    function atualizarInterface() {
+        // Atualiza bolinhas (indicadores)
+        for(let i=1; i<=totalSteps; i++) {
+            const el = document.getElementById(`p-${i}`);
+            el.classList.remove('active', 'completed');
+            if(i < currentStep) { el.classList.add('completed'); el.innerHTML = '✓'; }
+            else if(i === currentStep) { el.classList.add('active'); el.innerHTML = i; }
+            else { el.innerHTML = i; }
+        }
+
+        // Atualiza botões
+        const btnPrev = document.getElementById('btn-prev');
+        const btnNext = document.getElementById('btn-next');
+        const btnSubmit = document.getElementById('btn-submit');
+
+        btnPrev.style.display = (currentStep === 1) ? 'none' : 'block';
+        
+        if (currentStep === totalSteps) {
+            btnNext.style.display = 'none';
+            btnSubmit.style.display = 'block';
+        } else {
+            btnNext.style.display = 'block';
+            btnSubmit.style.display = 'none';
+        }
+    }
+
+    // Funções lógicas do form
+    function togglePriceInput() {
+        const isFixo = document.getElementById('fixo').checked;
+        const priceWrapper = document.getElementById('price-input-wrapper');
+        const priceInput = priceWrapper.querySelector('input');
+        
+        priceWrapper.style.display = isFixo ? 'block' : 'none';
+        
+        if(isFixo) {
+            priceInput.setAttribute('required', 'true');
+        } else {
+            priceInput.removeAttribute('required');
+            priceInput.classList.remove('input-error'); // Limpa erro se ocultar
+            priceInput.value = '';
+        }
+    }
+
+    function toggleCNPJ() {
+        const isPJ = document.getElementById('pj').checked;
+        document.getElementById('lbl-nome').innerText = isPJ ? "Razão Social" : "Nome Completo";
+        document.getElementById('lbl-doc').innerText = isPJ ? "CNPJ" : "CPF";
+    }
+
+    // Inicializa
+    atualizarInterface();
     </script>
 
 </body>
