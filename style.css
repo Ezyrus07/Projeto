@@ -364,7 +364,73 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 .bottom-nav .item:active, .bottom-nav .item.active { color: var(--cor0); }
 .bottom-nav .item.active .icon.verde {
   filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
+/* ===========================================
+   MENU MOBILE (SIDEBAR SLIDE)
+   =========================================== */
 
+/* Estilo do botão hambúrguer */
+#btn-menu-mobile {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Fundo escuro atrás do menu */
+#overlay-menu {
+    display: none; /* Escondido por padrão */
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 1000; /* Abaixo do menu, acima do resto */
+    backdrop-filter: blur(2px);
+}
+
+/* Comportamento da Sidebar no Mobile quando ATIVA */
+@media (max-width: 768px) {
+    .sidebar-icones {
+        display: flex; /* Garante que exista */
+        position: fixed;
+        left: -100%; /* Começa escondido fora da tela */
+        top: 0;
+        bottom: 0;
+        width: 280px; /* Largura do menu */
+        z-index: 1001; /* Acima de tudo */
+        transition: left 0.3s ease-in-out; /* Animação de deslize */
+        align-items: flex-start; /* Alinha itens no topo */
+        padding-top: 20px;
+        background-color: #fff;
+    }
+
+    /* Classe que o JS vai adicionar para abrir */
+    .sidebar-icones.menu-aberto {
+        left: 0; /* Traz para a tela */
+        box-shadow: 5px 0 15px rgba(0,0,0,0.1);
+    }
+    
+    /* Mostrar overlay quando menu aberto */
+    body.menu-ativo #overlay-menu {
+        display: block;
+    }
+
+    /* Ajuste visual dos itens dentro do menu mobile */
+    .sidebar-icones .item {
+        width: 90%;
+        margin-left: 5%;
+        justify-content: flex-start;
+        padding: 15px;
+        border-radius: 10px;
+    }
+    
+    .sidebar-icones span {
+        display: inline-block !important; /* Força mostrar texto no mobile */
+        font-size: 1rem;
+        margin-left: 15px;
+    }
+}
 }
 
 /* ==========================================================================
@@ -380,7 +446,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   height: 100vh;
   background-color: white;
   padding: 20px 0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
   flex-direction: column;
   align-items: center;
   gap: 32px; 
@@ -1191,6 +1257,119 @@ body.dark-mode {
     color: #888; 
     border-top: 1px solid #333; 
   }
+
+  /* ===========================================
+   CORREÇÃO LAYOUT AVALIAÇÃO (MOBILE)
+   =========================================== */
+
+@media (max-width: 768px) {
+    
+    /* 1. Ajuste Geral do Container */
+    .perfil-main {
+        padding: 20px 15px; /* Mais espaço nas laterais */
+        margin-left: 0; /* Remove margem da sidebar desktop */
+    }
+
+    .categorias-title {
+      font-size: 20px;
+    }
+
+    .avaliacao-container {
+        padding: 20px 15px;
+        width: 100%;
+        box-sizing: border-box; /* Impede que o padding estoure a tela */
+    }
+
+    /* 2. Título Centralizado */
+    .perfil-titulo h2 {
+        flex-direction: column;
+        text-align: center;
+        font-size: 1.4rem;
+        gap: 5px;
+    }
+    .bolinha-preta { display: none; } /* Remove a bolinha no mobile */
+
+    /* 3. Esconde o Cabeçalho antigo (Ótimo, Bom...) */
+    .avaliacao-header {
+        display: none; 
+    }
+
+    /* 4. Transforma cada linha em um "Card" */
+    .avaliacao-row {
+        display: flex;
+        flex-direction: column; /* Tudo um embaixo do outro */
+        background: #fff;
+        border: 1px solid #eee;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+    }
+
+    /* Nome do Critério (ex: Pontualidade) */
+    .criterio-nome {
+        width: 100%;
+        margin-bottom: 15px;
+        font-size: 1.1rem;
+        font-weight: 700;
+        border-bottom: 1px solid #f0f0f0;
+        padding-bottom: 10px;
+        color: var(--cor0); /* Verde Doke */
+    }
+
+    /* 5. Grade para as notas (2 colunas) */
+    .barras-grupo {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* Duas colunas */
+        gap: 15px;
+        width: 100%;
+    }
+
+    .barra-item {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+        min-width: 0; /* Evita estouro */
+        padding: 0;
+    }
+
+    /* Traz os labels (Ótimo, Bom) para junto da barra via CSS */
+    .barra-item:nth-child(1)::before { content: "🤩 Ótimo"; color: #0b7768; font-weight: bold; font-size: 0.8rem; margin-bottom: 4px; }
+    .barra-item:nth-child(2)::before { content: "🙂 Bom"; color: #2a5f90; font-weight: bold; font-size: 0.8rem; margin-bottom: 4px; }
+    .barra-item:nth-child(3)::before { content: "😐 Regular"; color: #f9a825; font-weight: bold; font-size: 0.8rem; margin-bottom: 4px; }
+    .barra-item:nth-child(4)::before { content: "😕 Ruim"; color: #ef6c00; font-weight: bold; font-size: 0.8rem; margin-bottom: 4px; }
+    .barra-item:nth-child(5)::before { content: "😫 Péssimo"; color: #c62828; font-weight: bold; font-size: 0.8rem; margin-bottom: 4px; }
+
+    /* O péssimo ocupa a linha inteira pra ficar bonito */
+    .barra-item:nth-child(5) {
+        grid-column: span 2;
+    }
+
+    /* Ajuste da barra visual */
+    .progress {
+        width: 100%;
+        max-width: 100%;
+        height: 8px;
+    }
+    
+    .barra-item .num {
+        align-self: flex-end; /* Número alinhado à direita */
+        font-size: 0.8rem;
+        margin-top: -18px; /* Truque visual pra ficar ao lado do label */
+    }
+
+    /* Remove os divisores (hr) antigos */
+    .divisor-suave { display: none; }
+    
+    /* Galeria no fundo */
+    .galeria-posts {
+        flex-direction: column;
+    }
+    .post-card {
+        width: 100%;
+        margin-bottom: 15px;
+    }
+}
 }
 
 /* ==========================================================================

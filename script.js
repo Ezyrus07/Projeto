@@ -56,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function() {
             "Chefes de cozinha próximos",
             "Eletricistas na pituba",
             "Aulas de Inglês Online",
-            "Manutenção de Ar-condicionado",
+            "Manutenção de Ar condicionado",
             "Designers Freelancers"
         ];
         
@@ -383,3 +383,24 @@ function toggleMaisFiltros() {
         btn.style.color = "#fff";
     }
 }
+
+document.addEventListener("DOMContentLoaded", () => {
+    const btnMenu = document.getElementById('btn-menu-mobile');
+    const sidebar = document.querySelector('.sidebar-icones');
+    const overlay = document.getElementById('overlay-menu');
+
+    // Função para abrir/fechar
+    function toggleMenu() {
+        sidebar.classList.toggle('menu-aberto');
+        document.body.classList.toggle('menu-ativo'); // Para controlar o overlay
+    }
+
+    if(btnMenu) {
+        btnMenu.addEventListener('click', toggleMenu);
+    }
+    
+    // Fechar ao clicar no fundo escuro (se você adicionou o overlay)
+    if(overlay) {
+        overlay.addEventListener('click', toggleMenu);
+    }
+});

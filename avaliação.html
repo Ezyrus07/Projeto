@@ -127,6 +127,177 @@
     min-width: 20px;
 }
 
+/* ===========================================
+   TOOLTIP DE MENSAGENS (NOVO)
+   =========================================== */
+
+/* Torna a linha a referência para o posicionamento da caixa */
+.avaliacao-row {
+    position: relative; 
+    cursor: help; /* Muda o cursor para indicar que tem info extra */
+    transition: background-color 0.2s;
+}
+
+.avaliacao-row:hover {
+    background-color: #f9f9f9; /* Leve destaque na linha ao passar o mouse */
+}
+
+/* A caixa de mensagens (escondida por padrão) */
+.tooltip-msgs {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 90%; /* Começa um pouco acima da linha */
+    left: 50px;  /* Alinhado perto do ícone */
+    width: 320px; /* Largura da caixa */
+    background-color: #fff;
+    border-left: 5px solid var(--cor0); /* Detalhe verde na borda */
+    box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 1000; /* Garante que fique por cima de tudo */
+    transition: all 0.3s ease-in-out;
+    pointer-events: none; /* O mouse ignora a caixa, foca na linha */
+}
+
+/* Título dentro da caixa */
+.tooltip-msgs h4 {
+    margin: 0 0 10px 0;
+    font-size: 0.95rem;
+    color: var(--cor2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+/* Estilo de cada comentário individual */
+.msg-item {
+    font-size: 0.85rem;
+    color: #555;
+    background: #f4f4f4;
+    padding: 8px;
+    border-radius: 6px;
+    margin-bottom: 8px;
+    border: 1px solid #eee;
+}
+
+.msg-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Onde a mágica acontece: mostra a caixa ao passar o mouse */
+.avaliacao-row:hover .tooltip-msgs {
+    visibility: visible;
+    opacity: 1;
+    bottom: 110%; /* Sobe um pouquinho suavemente */
+}
+
+/* Setinha indicando a caixa (triângulo CSS) */
+.tooltip-msgs::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: #fff transparent transparent transparent;
+}
+
+/* Ajuste para Mobile: Esconder ou adaptar */
+@media (max-width: 768px) {
+    .tooltip-msgs {
+        display: none; /* Desativa no mobile pois não tem "mouse hover" */
+    }
+}
+
+/* ===========================================
+   CSS ATUALIZADO (MOBILE FRIENDLY)
+   =========================================== */
+
+.avaliacao-row {
+    position: relative;
+    cursor: pointer; /* Indica que é clicável */
+    transition: background-color 0.2s;
+}
+
+/* Onde a mágica acontece (Hover Desktop OU Classe Ativa Mobile) */
+.avaliacao-row:hover .tooltip-msgs,
+.avaliacao-row.ativa .tooltip-msgs {
+    visibility: visible;
+    opacity: 1;
+    bottom: 110%; /* Posição padrão */
+}
+
+/* Estilos base da caixa (Desktop) */
+.tooltip-msgs {
+    visibility: hidden;
+    opacity: 0;
+    position: absolute;
+    bottom: 90%;
+    left: 50px;
+    width: 300px;
+    background-color: #fff;
+    border-left: 5px solid var(--cor0);
+    box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+    padding: 15px;
+    border-radius: 8px;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    pointer-events: none; /* Desktop: mouse ignora a caixa */
+}
+
+/* Setinha */
+.tooltip-msgs::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 20px;
+    border-width: 8px;
+    border-style: solid;
+    border-color: #fff transparent transparent transparent;
+}
+
+/* ===========================================
+   AJUSTES ESPECÍFICOS PARA MOBILE
+   =========================================== */
+@media (max-width: 768px) {
+    /* No mobile, a caixa precisa aceitar toque (selecionar texto, etc) */
+    .tooltip-msgs {
+        pointer-events: auto; 
+        left: 0; 
+        right: 0; 
+        margin: 0 auto; /* Centraliza */
+        width: 90%; /* Ocupa quase toda a largura */
+        bottom: auto; /* Reseta a posição de baixo */
+        top: 100%; /* Joga para BAIXO da linha ao invés de cima */
+        transform: translateY(10px);
+    }
+    
+    /* Ajusta a setinha para apontar para cima, já que a caixa vai ficar embaixo */
+    .tooltip-msgs::after {
+        bottom: 100%; /* Fica no topo da caixa */
+        top: auto;
+        left: 50%; /* Centraliza a setinha */
+        transform: translateX(-50%);
+        border-color: transparent transparent #fff transparent; /* Inverte o triângulo */
+    }
+
+    /* Adiciona um ícone visual de "+" ou "?" para o usuário saber que pode clicar */
+    .criterio-nome::after {
+        content: "?";
+        display: inline-block;
+        margin-left: 8px;
+        font-size: 0.7rem;
+        background: #eee;
+        color: #999;
+        width: 16px;
+        height: 16px;
+        line-height: 16px;
+        text-align: center;
+        border-radius: 50%;
+    }
+}
+
 /* Design da Barra de Progresso */
 .progress {
     background-color: #f0f0f0;
@@ -177,62 +348,101 @@
     cursor: pointer;
 }
 
-/* Responsividade Mobile para a Tabela */
+/* =======================================================
+   CORREÇÃO DE LAYOUT MOBILE (RESPONSIVO AVANÇADO)
+   ======================================================= */
+
 @media (max-width: 768px) {
-    .perfil-main {
-        padding: 20px 10px;
-    }
 
-    .avaliacao-container {
-        padding: 20px;
+    /* 1. Ajuste do Título Principal */
+    .perfil-titulo h2 {
+        flex-direction: column; /* Coloca o @usuario embaixo do texto */
+        gap: 5px;
+        font-size: 1.5rem;
     }
     
+    .perfil-titulo .bolinha-preta {
+        display: none; /* Remove a bolinha que ficou solta no meio */
+    }
+
+    /* 2. Remove o cabeçalho antigo (aquela pílula gigante que atrapalha) */
     .avaliacao-header {
-        flex-direction: column;
-        align-items: flex-start;
-        gap: 10px;
-    }
-    
-    .criterios-badge {
-        width: 100%;
-        text-align: center;
-    }
-    
-    .notas-header {
-        width: 100%;
-        font-size: 0.8rem;
-        padding: 8px 10px;
+        display: none; 
     }
 
+    /* 3. Transforma a linha em um "Card" bonito */
     .avaliacao-row {
-        flex-direction: column;
+        flex-direction: column; /* Um item embaixo do outro */
         align-items: flex-start;
-        gap: 10px;
-        border-bottom: 1px solid #eee;
+        background-color: #fff;
+        border: 1px solid #e0e0e0;
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        gap: 15px; /* Espaço entre o título e as barras */
     }
 
+    /* Título do critério (ex: Pontualidade) */
     .criterio-nome {
         width: 100%;
-        font-weight: bold;
+        font-size: 1.2rem;
+        color: var(--cor2); /* Azul escuro */
+        border-bottom: 1px solid #eee;
+        padding-bottom: 10px;
+        margin-bottom: 5px;
     }
 
+    /* 4. A mágica: Grade para as barras de progresso */
     .barras-grupo {
+        display: grid;
+        grid-template-columns: 1fr 1fr; /* 2 colunas */
+        gap: 15px 20px; /* Espaçamento vertical e horizontal */
         width: 100%;
-        flex-wrap: wrap;
-        gap: 10px;
     }
-    
+
+    /* Estilo de cada item individual */
     .barra-item {
-        min-width: 80px; /* Garante que não quebre feio no mobile */
+        flex-direction: column; /* Label em cima, barra embaixo */
+        align-items: flex-start;
+        padding: 0;
+        gap: 5px;
+        min-width: auto;
     }
-    
-    .galeria-posts {
-        flex-direction: column;
-    }
-    
-    .post-card {
+
+    .barra-item .num {
+        font-size: 0.9rem;
+        color: #333;
+        font-weight: 700;
+        display: flex;
+        justify-content: space-between;
         width: 100%;
-        height: 150px;
+    }
+
+    /* Barra de progresso ocupando a largura da coluna */
+    .progress {
+        width: 100%; 
+        max-width: 100%;
+        height: 8px;
+    }
+
+    /* 5. Inserir os nomes (Ótimo, Bom...) via CSS para não mexer no HTML */
+    /* Isso garante que o usuário saiba o que é cada nota sem subir a tela */
+    
+    .barra-item:nth-child(1)::before { content: " Ótimo"; color: #2e7d32; font-size: 0.75rem; font-weight: bold; }
+    .barra-item:nth-child(2)::before { content: " Bom"; color: #1565c0; font-size: 0.75rem; font-weight: bold; }
+    .barra-item:nth-child(3)::before { content: " Regular"; color: #f9a825; font-size: 0.75rem; font-weight: bold; }
+    .barra-item:nth-child(4)::before { content: " Ruim"; color: #ef6c00; font-size: 0.75rem; font-weight: bold; }
+    .barra-item:nth-child(5)::before { content: " Péssimo"; color: #c62828; font-size: 0.75rem; font-weight: bold; }
+
+    /* Faz o "Péssimo" ocupar a linha inteira se sobrar espaço (estética) */
+    .barra-item:nth-child(5) {
+        grid-column: span 2; 
+    }
+    
+    /* Remove as linhas divisórias antigas (<hr>) pois agora usamos Cards */
+    .divisor-suave {
+        display: none;
     }
 }
 
@@ -323,19 +533,49 @@
                 </div>
             </div>
 
-            <div class="avaliacao-row">
-                <div class="criterio-nome">
-                    <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-                    Pontualidade
-                </div>
-                <div class="barras-grupo">
-                    <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
-                    <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
-                    <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
-                    <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
-                    <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
-                </div>
-            </div>
+<div class="avaliacao-row">
+    
+    <div class="tooltip-msgs">
+        <h4>💬 O que dizem sobre Pontualidade:</h4>
+        <div class="msg-item">"Sempre chega 10 minutos antes, excelente!"</div>
+        <div class="msg-item">"Cumpriu o horário combinado perfeitamente."</div>
+        <div class="msg-item">"Teve um pequeno atraso, mas avisou antes."</div>
+    </div>
+    <div class="criterio-nome">
+        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+        Pontualidade
+    </div>
+    <div class="barras-grupo">
+        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+    </div>
+</div>
+
+<hr class="divisor-suave">
+
+<div class="avaliacao-row">
+
+    <div class="tooltip-msgs">
+        <h4>💬 Sobre Profissionalismo:</h4>
+        <div class="msg-item">"Muito educado e focado no trabalho."</div>
+        <div class="msg-item">"Trouxe todos os equipamentos necessários."</div>
+    </div>
+
+    <div class="criterio-nome">
+        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        Profissionalismo
+    </div>
+    <div class="barras-grupo">
+        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
+        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
+        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
+        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
+        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
+    </div>
+</div>
 
             <hr class="divisor-suave">
 
@@ -434,5 +674,32 @@
             <span>Perfil</span>
         </a>
     </nav>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+    const rows = document.querySelectorAll('.avaliacao-row');
+
+    rows.forEach(row => {
+        row.addEventListener('click', (e) => {
+            // Verifica se a largura da tela é mobile (menor que 768px)
+            // Se for Desktop, deixamos o CSS :hover cuidar disso, não fazemos nada no clique
+            if (window.innerWidth > 768) return;
+
+            // Se clicou na própria caixa de mensagem, não fecha (opcional, para permitir copiar texto)
+            if (e.target.closest('.tooltip-msgs')) return;
+
+            // Fecha todas as outras linhas antes de abrir a atual
+            rows.forEach(r => {
+                if (r !== row) {
+                    r.classList.remove('ativa');
+                }
+            });
+
+            // Alterna (abre ou fecha) a linha clicada
+            row.classList.toggle('ativa');
+        });
+    });
+});
+    </script>
 </body>
 </html>
