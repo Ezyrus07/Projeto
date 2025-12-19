@@ -1,0 +1,324 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meu Perfil - Doke</title>
+<style>
+:root{
+  /* CORES BASE DO PROJETO */
+  --cor0: #0b7768; 
+  --cor1: #737373;
+  --cor2: #2a5f90;
+  --cor3: #f35b5b;
+  --cor4: #ecedf2;
+  --fonte-padrao: "Poppins", sans-serif;
+  --cor-texto: #333;
+
+  /* SIDEBAR VARS */
+  --sidebar-width: 0px; 
+  --sidebar-width-tablet: 80px; 
+  --sidebar-width-desktop: 260px;
+}
+
+*{box-sizing:border-box;font-family:Poppins,system-ui,sans-serif}
+
+body{
+  margin:0;
+  background:#fff;
+  color:var(--cor-texto);
+  padding-left: var(--sidebar-width); 
+  /* Espaço para navbar mobile se necessário */
+  padding-bottom: 70px; 
+}
+
+/* ===========================================
+   ESTILOS DO HEADER DO PERFIL (ADAPTADO)
+   =========================================== */
+.perfil-wrap{
+  background:linear-gradient(180deg,var(--cor2) 0%,#fff 200px);
+  padding:18px;
+}
+
+.perfil{
+  background:var(--cor4);
+  border-radius:14px;
+  padding:14px 16px;
+  display:grid;
+  grid-template-columns:64px 1fr auto;
+  gap:14px;
+  align-items:center;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+}
+
+.avatar{
+  width:64px;
+  height:64px;
+  border-radius:50%;
+  background-color: #ddd;
+  background-image: url('https://cdn-icons-png.flaticon.com/512/3135/3135715.png'); /* Avatar padrão */
+  background-size: cover;
+  flex-shrink: 0;
+  border: 2px solid #fff;
+}
+
+.info{
+  display:flex;
+  flex-direction:column;
+  gap:4px;
+}
+
+.user{ font-weight:600; color:var(--cor0); font-size: 1.1rem; }
+.profissao{ font-weight:600; font-size: 0.9rem; }
+.local{ font-size:13px; color:var(--cor1); }
+
+/* Botão de Editar Perfil */
+.btn-editar{
+  padding:6px 16px;
+  border-radius:999px;
+  border: 1px solid var(--cor0);
+  background:transparent;
+  color:var(--cor0);
+  font-weight:600;
+  cursor:pointer;
+  transition: all 0.2s;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  width: fit-content;
+}
+
+.btn-editar:hover {
+  background: var(--cor0);
+  color: #fff;
+}
+
+.icons-config{
+  display:flex;
+  gap:10px;
+  flex-shrink: 0;
+  align-self: flex-start;
+}
+
+.icons-config button{
+  background:transparent;
+  border:0;
+  cursor:pointer;
+  font-size:20px;
+  color:var(--cor1);
+  transition: color 0.2s;
+}
+.icons-config button:hover{ color: var(--cor2); }
+
+/* ===========================================
+   NOVOS BOTÕES DE POSTAGEM
+   =========================================== */
+.painel-criacao {
+    display: flex;
+    gap: 15px;
+    margin-top: 25px;
+    margin-bottom: 25px;
+}
+
+.btn-postar {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 15px;
+    border-radius: 12px;
+    border: 2px dashed #ccc;
+    background: #f9f9f9;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.btn-postar:hover {
+    border-color: var(--cor0);
+    background: #eefcf9;
+    transform: translateY(-2px);
+}
+
+.btn-postar span {
+    font-weight: 600;
+    color: var(--cor1);
+    font-size: 0.9rem;
+}
+
+.btn-postar svg {
+    width: 32px;
+    height: 32px;
+    fill: var(--cor0);
+}
+
+/* ===========================================
+   GALERIA (PREVIEW)
+   =========================================== */
+.titulo-secao {
+    font-size: 1.1rem;
+    font-weight: 700;
+    margin-bottom: 15px;
+    color: var(--cor-texto);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.titulo-secao span {
+    font-size: 0.8rem;
+    color: var(--cor2);
+    cursor: pointer;
+}
+
+.galeria-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.grid-item {
+    aspect-ratio: 1 / 1;
+    background-color: #eee;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.grid-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* ===========================================
+   SIDEBAR & NAV (MANTIDOS)
+   =========================================== */
+.sidebar-icones {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: var(--sidebar-width);
+    height: 100vh;
+    background-color: white;
+    padding: 20px 0;
+    box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
+    flex-direction: column;
+    gap: 32px; 
+    z-index: 1001;
+    overflow-y: auto;
+}
+.sidebar-icones #logo img { height: 50px; display: block; margin: 0 auto 20px; }
+.sidebar-icones .item {
+    display: flex; align-items: center; justify-content: flex-start;
+    gap: 15px; width: 90%; max-width: 230px; 
+    cursor: pointer; padding: 12px 10px; border-radius: 999px; margin: 0 auto;
+}
+.sidebar-icones .item a { text-decoration: none; display: flex; align-items: center; gap: 15px; width: 100%; color: inherit; }
+.sidebar-icones .item:hover, .sidebar-icones .item.active { background-color: var(--cor4); }
+.sidebar-icones .icon { width: 28px; height: 28px; flex-shrink: 0; }
+.sidebar-icones span { font-size: 19px; font-weight: 600; color: var(--cor1); }
+.sidebar-icones .item.active span { color: var(--cor-texto); font-weight: 700; }
+/* Filtros Icons */
+.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
+.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
+
+/* Bottom Nav */
+.bottom-nav {
+  display: flex; position: fixed; bottom: 0; left: 0; right: 0;
+  height: 60px; background: white; justify-content: space-around;
+  align-items: flex-start; padding-top: 10px;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1); z-index: 999;
+  border-top: 1px solid #eee;
+}
+.bottom-nav .item {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; color: var(--cor1); font-size: 11px; font-weight: 600; text-decoration: none;
+}
+.bottom-nav .item img { width: 24px; height: 24px; }
+.bottom-nav .item.active { color: var(--cor0); }
+
+/* RESPONSIVIDADE */
+@media(max-width:600px){
+  .perfil{ grid-template-columns:56px 1fr; }
+  .icons-config{ grid-column:1/3; justify-content:flex-end; margin-top: -30px; }
+}
+
+@media (min-width: 768px) {
+  .bottom-nav { display: none; }
+  .sidebar-icones { display: flex; }
+  body { padding-top: 0; }
+  
+  /* Tablet tweaks */
+  @media (max-width: 1023px) {
+      :root{ --sidebar-width: var(--sidebar-width-tablet); }
+      .sidebar-icones span { display: none; }
+      .sidebar-icones .item { justify-content: center; }
+  }
+  /* Desktop tweaks */
+  @media (min-width: 1024px) {
+      :root{ --sidebar-width: var(--sidebar-width-desktop); }
+  }
+}
+</style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke Logo"></a>
+        </div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="#"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="#"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="#"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item active"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png" class="icon verde"><span>Meu Perfil</span></a></div>
+    </aside>
+
+    <main>
+      <div class="perfil-wrap">
+        
+        <div class="perfil">
+          <div class="avatar"></div> <div class="info">
+            <div class="user">Anderson Silva</div>
+            <div class="profissao">Marceneiro Premium</div>
+            <div class="local">São Paulo / SP</div>
+            
+            <button class="btn-editar" onclick="alert('Ir para tela de edição')">✎ Editar Perfil</button>
+          </div>
+
+          <div class="icons-config">
+            <button title="Configurações">⚙</button>
+          </div>
+        </div>
+
+        <div class="painel-criacao">
+            <button class="btn-postar" onclick="alert('Abrir seletor de fotos')">
+                <svg viewBox="0 0 24 24"><path d="M4 4h3l2-2h6l2 2h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm10 7a2 2 0 1 0-4 0 2 2 0 0 0 4 0zm2 0a4 4 0 1 1-8 0 4 4 0 0 1 8 0z"/></svg>
+                <span>Postar Foto</span>
+            </button>
+
+            <button class="btn-postar" onclick="alert('Abrir seletor de vídeos')">
+                <svg viewBox="0 0 24 24"><path d="M17 10.5V7c0-.55-.45-1-1-1H4c-.55 0-1 .45-1 1v10c0 .55.45 1 1 1h12c.55 0 1-.45 1-1v-3.5l4 4v-11l-4 4z"/></svg>
+                <span>Postar Vídeo</span>
+            </button>
+        </div>
+
+        <div class="titulo-secao">
+            Suas Publicações
+            <span>Ver tudo</span>
+        </div>
+
+      </div>
+
+      <nav class="bottom-nav">
+        <a href="index.html" class="item"> <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="#" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"> <span>Anunciar</span></a>
+        <a href="#" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a>
+        <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+      </nav>
+    </main>
+</body>
+</html>

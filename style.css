@@ -1071,73 +1071,109 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 
 /* ==========================================================================
-   9. DARK MODE
+   9. DARK MODE (Ativado por Classe)
    ========================================================================== */
-@media (prefers-color-scheme: dark) {
-  :root {
-    --cor-verde: #0e9683;
-    --cor-azul: #4a8ac4;
-    --cor-texto: #e0e0e0;
-    --cor-bg: #1f1e1e;
-    --cor-bg-card: #2a2a2d;
-  }
-  body, .navbar-mobile, .bottom-nav, .navbar-desktop {
-    background-color: var(--cor-bg); color: var(--cor-texto); border-color: #333;
-  }
+body.dark-mode {
+  /* Redefinição de Variáveis para o Tema Escuro */
+  --cor-verde: #0e9683;
+  --cor-azul: #4a8ac4;
+  --cor-texto: #e0e0e0;
+  --cor-bg: #1f1e1e;
+  --cor-bg-card: #2a2a2d;
+  --cor-bg-input: #2a2a2d; /* Adicionado para inputs */
+  --cor-botton-azul: linear-gradient(90deg, #4a8ac4, #7ca0c3);
+  --cor-botton-verde: linear-gradient(90deg, #0e9683, #6caea6);
+
+  /* Aplicação de Cores Globais */
+  background-color: var(--cor-bg);
+  background: var(--cor-bg); /* Remove o gradiente do modo claro */
+  color: var(--cor-texto);
+  border-color: #333;
+
+  /* --- Regras Específicas Aninhadas --- */
+
+  /* Containers e Cards */
   .secao-busca, .anuncio-container, .sidebar-icones, 
-  .navbar-desktop, .rodape-container2, .videos-container, .popup-content {
-    background-color: var(--cor-bg-card); box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  }
-  
-  .categoria-circle {
-    background-color: var(--cor-bg-card); border-color: var(--cor-bg-card);
+  .navbar-desktop, .rodape-container2, .videos-container, 
+  .popup-content, .cep-popup, .filtros-container, 
+  .navbar-mobile, .bottom-nav {
+    background-color: var(--cor-bg-card);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    border: 1px solid #333; /* Borda sutil para separar do fundo */
   }
 
-  .filtros-container select, .select {
-    background-color: var(--cor-bg);
-    border-color: var(--cor-bg);
+  /* Inputs e Selects */
+  .busca-input-container {
+    background: #363639;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.4);
+    border: 1px solid #444;
   }
-  
-  /* Ajustes do Novo Input para Dark Mode */
-  .busca-input-container { background: #2a2a2d; box-shadow: 0 8px 30px rgba(0,0,0,0.4); }
   .busca-input-container input { color: #fff; }
   .busca-dropdown { background: #2a2a2d; border-color: #333; }
   .busca-hint { background: #1f1e1e; color: #bbb; }
-
+  
+  .filtros-container select, .select {
+    background-color: #363639;
+    border-color: #444;
+    color: #fff;
+  }
   .filtros-container select:disabled {
     background-color: #272626;
     border-color: #272626;
+    color: #666;
   }
-
-  .filtros-container {
-    background: var(--cor-bg-card);
+  
+  /* Textos e Títulos */
+  h2, #categorias-title, #categorias-title3, .titulo, .criar, .menu a, .item a {
+    color: var(--cor-texto);
   }
-
   .banner-pontos, .rodape h3, .dot.ativo { color: var(--cor-verde); }
   .info-btn, .criar a, .static-text { color: var(--cor-azul); }
-  .item a, h2, #categorias-title, #categorias-title3, .titulo, .criar, .menu a { color: var(--cor-texto); }
-  
-  .close-btn { color: white; }
-  .btn-login { background: var(--cor-verde); color: #fff; }
-  
   .categoria p, .filtros label, .coluna a { color: #b0b0b0; }
   .coluna a:hover { color: var(--cor-verde); }
-
-  .select { background: var(--cor-bg); color: #fff; border-color: #444; }
-  .btn-filtros { background-color: var(--cor-bg); color: var(--cor-texto); border-color: #555; }
   
+  /* Botões e Elementos Interativos */
+  .btn-login { background: var(--cor-verde); color: #fff; }
+  .close-btn { color: white; }
+  .btn-filtros {
+    background-color: #363639;
+    color: var(--cor-verde);
+    border-color: #555;
+  }
+  
+  /* Navbar e Header */
   .entrar { border-color: var(--cor-verde); color: #fff; background: transparent; }
   .entrar:hover { background-color: var(--cor-verde); color: #000; }
-  
-  .novos-anuncios { background-color: var(--cor-bg); color: var(--cor-texto); }
+  .novos-anuncios { background-color: #363639; color: var(--cor-texto); border: 1px solid #444; }
+  .novos-anuncios:hover { background-color: #444; }
+
+  /* Anúncios e Listas */
   .preco { color: var(--cor-verde); }
-  .status { background: var(--cor-bg); color: #ccc; }
+  .status { background: #363639; color: #ccc; }
+  .cep-input-group { color: var(--cor-verde); }
   
-  .rodape, .rodape-base { background: #0a0a0a; color: #888; border-color: #333; }
+  /* Categorias (Círculos) */
+  .categoria-circle {
+    background-color: #363639;
+    border-color: #444;
+  }
+  /* Inverte cores de imagens pretas para branco */
+  .categoria-circle img {
+    filter: invert(1) grayscale(100%) brightness(1.5);
+    opacity: 0.9;
+  }
+
+  /* Ícones e Logos */
   .sidebar-icones .icon { filter: invert(0.9); }
-  
-  .icon.verde, .icon.azul, .logo img, #logo-desktop img {
-    filter: brightness(0) saturate(100%) invert(80%) sepia(10%) saturate(100%) hue-rotate(120deg) brightness(100%) contrast(100%);
+  .icon.verde, .icon.azul, .logo img, #logo-desktop img, #logo-mobile img {
+    filter: brightness(0) saturate(100%) invert(90%) sepia(10%) saturate(100%) hue-rotate(120deg) brightness(100%) contrast(100%);
+  }
+
+  /* Rodapé */
+  .rodape, .rodape-base { 
+    background: #0a0a0a; 
+    color: #888; 
+    border-top: 1px solid #333; 
   }
 }
 
