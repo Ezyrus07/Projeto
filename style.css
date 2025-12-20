@@ -46,7 +46,6 @@ body {
   padding-top: var(--navbar-height-mobile);
   padding-bottom: var(--bottom-nav-height);
   
-  /* ADICIONE ESTAS DUAS LINHAS: */
   overflow-x: hidden; 
   width: 100%;
 }
@@ -55,7 +54,6 @@ body {
 html, body {
   overflow-x: hidden; /* Impede rolagem horizontal indesejada */
   max-width: 100%;
-  /* ... mantenha o resto do código que já existe aqui ... */
 }
 
 body > main {
@@ -362,8 +360,12 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 .bottom-nav .item img, .bottom-nav .icon { width: 26px; height: 26px; }
 .bottom-nav .item:active, .bottom-nav .item.active { color: var(--cor0); }
+
+/* CORREÇÃO IMPORTANTE AQUI: Faltava o fechamento '}' */
 .bottom-nav .item.active .icon.verde {
   filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
+}
+
 /* ===========================================
    MENU MOBILE (SIDEBAR SLIDE)
    =========================================== */
@@ -431,7 +433,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
         margin-left: 15px;
     }
 }
-}
+
 
 /* ==========================================================================
    5. NAVEGAÇÃO DESKTOP & SIDEBAR
@@ -660,85 +662,6 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   transform: translateY(-2px);
   box-shadow: 0 12px 40px rgba(106, 17, 203, 0.15);
   border-color: #f0f0f0;
-}
-
-/* ==========================================================================
-   7. RODAPÉ
-   ========================================================================== */
-.rodape-container {
-    background-color: var(--cor2);
-    margin-top: 80px;
-}
-
-.rodape-container2 {
-    background-color: white;
-    margin-top: 0;
-}
-
-.clique {
-    color: var(--cor4);
-    font-weight: bold;
-    text-decoration: none;
-}
-
-.rodape {
-    background: #e2e2e2;
-    color: var(--cor2);
-    padding: 40px 20px;
-    font-family: var(--fonte-padrao, Arial, sans-serif);
-    width: 100%;
-    box-sizing: border-box;
-    position: relative;
-    z-index: 10;
-}
-
-/* Container Flexível das Colunas */
-.colunas {
-    display: flex;
-    flex-wrap: wrap; /* Permite quebrar linha se faltar espaço */
-    justify-content: space-between;
-    gap: 30px;
-    max-width: 1200px;
-    margin: 0 auto;
-}
-
-/* Configuração Inteligente da Coluna */
-.coluna {
-    flex: 1 1 200px; /* Cresce, Encolhe, Base de 200px */
-    min-width: 200px; /* Impede que fique muito espremido */
-    margin-bottom: 20px;
-}
-
-.coluna h3 {
-    margin-bottom: 15px;
-    font-size: 1.1rem;
-    color: var(--cor0);
-    font-weight: 700;
-}
-
-.coluna a {
-    display: block;
-    color: var(--cor2);
-    margin: 8px 0;
-    font-size: 14px;
-    text-decoration: none;
-    transition: color 0.2s ease;
-}
-
-.coluna a:hover {
-    color: var(--cor0);
-    transform: translateX(5px); /* Efeitinho visual ao passar o mouse */
-}
-
-/* Parte inferior do rodapé */
-.rodape-base {
-    margin-top: 40px;
-    text-align: center;
-    padding-top: 20px;
-    border-top: 1px solid #c0c0c0;
-    font-size: 0.9rem;
-    color: #666;
-    width: 100%;
 }
 
 /* O Input de Texto */
@@ -1146,32 +1069,99 @@ body.dark-mode .input-pequeno.full-width {
     border-color: #444;
 }
 
+
 /* ==========================================================================
-   7. RODAPÉ
+   7. RODAPÉ (CORRIGIDO E CENTRALIZADO)
    ========================================================================== */
-.rodape-container { background-color: var(--cor2); margin-top: 80px; }
-.rodape-container2 { background-color: white; margin-top: 0; }
-.clique { color: var(--cor4); font-weight: bold; text-decoration: none; }
+.rodape-container {
+    background-color: var(--cor2);
+    margin-top: 80px;
+}
+
+.rodape-container2 {
+    background-color: white;
+    margin-top: 0;
+}
+
+.clique {
+    color: var(--cor4);
+    font-weight: bold;
+    text-decoration: none;
+}
+
 .rodape {
-  background: #e2e2e2; 
-  color: var(--cor2); 
-  padding: 30px 20px 30px 20px;
-  font-family: Arial, sans-serif; 
-  width: 100%; /* Corrigido */
-  box-sizing: border-box; 
-  margin: 0;
+    background: #e2e2e2;
+    color: var(--cor2);
+    padding: 50px 20px;
+    font-family: var(--fonte-padrao, Arial, sans-serif);
+    width: 100%;
+    box-sizing: border-box;
+    position: relative;
+    z-index: 10;
 }
+
+/* Container das Colunas */
 .colunas {
-  display: flex; flex-direction: column; gap: 20px;
-  max-width: 1200px; margin: 0 auto;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center; /* Centraliza o grupo de colunas na tela */
+    gap: 60px; /* Aumenta o espaço entre as colunas para não ficarem grudadas */
+    max-width: 1200px;
+    margin: 0 auto; /* Garante que o container fique no meio */
+    text-align: center; /* Centraliza o texto dentro de cada coluna */
 }
-.coluna h3 { margin-bottom: 15px; font-size: 1rem; color: var(--cor0); }
+
+/* Configuração Individual da Coluna */
+.coluna {
+    flex: 0 1 auto; /* Impede que estiquem demais */
+    min-width: 180px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center; /* Alinha os itens no centro da coluna */
+}
+
+.coluna h3 {
+    margin-bottom: 15px;
+    font-size: 1.1rem;
+    color: var(--cor0);
+    font-weight: 700;
+    text-transform: uppercase; /* Fica mais bonito no design centralizado */
+    letter-spacing: 1px;
+}
+
 .coluna a {
-  display: block; color: var(--cor2); margin: 6px 0; font-size: 14px; text-decoration: none;
+    display: block;
+    color: var(--cor2);
+    margin: 8px 0;
+    font-size: 14px;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    width: fit-content; /* O link ocupa apenas o tamanho do texto */
 }
-.coluna a:hover { color: var(--cor0); }
+
+.coluna a:hover {
+    color: var(--cor0);
+    transform: scale(1.05); /* Efeito de zoom leve ao passar o mouse */
+}
+
+/* Parte inferior do rodapé */
 .rodape-base {
-  margin-top: 20px; text-align: center; padding-top: 20px; border-top: 1px solid #adadad;
+    margin-top: 40px;
+    text-align: center;
+    padding-top: 20px;
+    border-top: 1px solid #c0c0c0;
+    font-size: 0.9rem;
+    color: #666;
+    width: 100%;
+}
+
+/* Ajuste para celular (opcional, para garantir que empilhe bonito) */
+@media (max-width: 768px) {
+    .colunas {
+        flex-direction: column;
+        gap: 30px;
+    }
 }
 
 /* ==========================================================================
@@ -1215,7 +1205,7 @@ body.dark-mode .input-pequeno.full-width {
   .menu a, .menu .cep { font-size: 0.95rem; }
 
   /* Footer */
-  .colunas { flex-direction: row; justify-content: space-between; flex-wrap: wrap; }
+  .colunas { flex-direction: row; justify-content: center; flex-wrap: wrap; }
   .coluna { min-width: 180px; }
 }
 
@@ -1461,8 +1451,9 @@ body.dark-mode {
     color: #888; 
     border-top: 1px solid #333; 
   }
+}
 
-  /* ===========================================
+/* ===========================================
    CORREÇÃO LAYOUT AVALIAÇÃO (MOBILE)
    =========================================== */
 
@@ -1573,7 +1564,6 @@ body.dark-mode {
         width: 100%;
         margin-bottom: 15px;
     }
-}
 }
 
 /* ==========================================================================

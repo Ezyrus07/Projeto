@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Menu e Configurações | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        .container-mais {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Cartão de Perfil no Topo */
+        .profile-card {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            padding: 20px;
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s;
+            border: 1px solid transparent;
+        }
+        .profile-card:hover {
+            transform: translateY(-3px);
+            border-color: var(--cor0);
+            box-shadow: 0 8px 25px rgba(11, 119, 104, 0.1);
+        }
+        .profile-avatar {
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background-color: #eee;
+            object-fit: cover;
+            border: 2px solid var(--cor4);
+        }
+        .profile-info h3 { margin: 0; color: var(--cor2); font-size: 1.2rem; font-weight: 700; }
+        .profile-info p { margin: 0; color: var(--cor1); font-size: 0.9rem; }
+
+        /* Seções do Menu */
+        .settings-section { margin-bottom: 25px; }
+        .section-title {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--cor1);
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding-left: 10px;
+        }
+
+        /* Lista de Itens */
+        .settings-list {
+            background: #fff;
+            border-radius: 16px;
+            overflow: hidden;
+            border: 1px solid var(--cor-borda);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .settings-item {
+            display: flex;
+            align-items: center;
+            padding: 18px;
+            border-bottom: 1px solid #f5f5f5;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            color: inherit;
+        }
+        .settings-item:last-child { border-bottom: none; }
+        .settings-item:hover { background: #f9fbfb; }
+        
+        /* Ícones Coloridos */
+        .item-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: var(--cor4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            font-size: 20px;
+            transition: 0.3s;
+        }
+        .settings-item:hover .item-icon {
+            background: var(--cor0);
+            color: white;
+        }
+        
+        .item-text { flex: 1; font-weight: 500; color: var(--cor-texto); font-size: 1rem; }
+        .item-arrow { color: #ccc; font-size: 14px; font-weight: bold; }
+
+        /* Toggle Dark Mode dentro da lista */
+        .toggle-container-row {
+            display: flex; justify-content: space-between; align-items: center; width: 100%;
+        }
+
+        /* Botão Sair */
+        .logout-btn {
+            color: var(--cor3);
+            font-weight: 600;
+            text-align: center;
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #fff;
+            border-radius: 12px;
+            border: 1px solid #ffecec;
+            margin-top: 30px;
+            margin-bottom: 50px;
+            cursor: pointer;
+            transition: 0.2s;
+            font-size: 1rem;
+        }
+        .logout-btn:hover {
+            background: #fff5f5;
+            border-color: var(--cor3);
+        }
+
+        /* Ajustes Dark Mode para esta página */
+        body.dark-mode .profile-card, 
+        body.dark-mode .settings-list, 
+        body.dark-mode .logout-btn {
+            background: #2a2a2d;
+            border-color: #444;
+        }
+        body.dark-mode .profile-info h3, body.dark-mode .item-text { color: #fff; }
+        body.dark-mode .item-icon { background: #333; color: #fff; }
+        body.dark-mode .settings-item { border-bottom-color: #333; }
+        body.dark-mode .settings-item:hover { background: #333; }
+        body.dark-mode .settings-item:hover .item-icon { background: var(--cor0); }
+        body.dark-mode .section-title { color: #888; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a>
+        </div>
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        </div>
+        <div class="item">
+            <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        </div>
+        <div class="item">
+            <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="#"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+        </div>
+        <div class="item active"> <a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a>
+        </div>
+    </aside>
+
+    <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="#">Novidades</a>
+            <a href="#">Ajuda</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
+
+    <main>
+        <div class="container-mais">
+            
+            <div class="profile-card" onclick="window.location.href='meuperfil.html'">
+                <img src="https://i.pravatar.cc/150?img=12" class="profile-avatar" alt="Foto">
+                <div class="profile-info">
+                    <h3>Matheus Silva</h3>
+                    <p>Ver seu perfil completo</p>
+                </div>
+                <div style="margin-left:auto; color:var(--cor2); font-size:20px;">❯</div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-title">Configurações da Conta</div>
+                <div class="settings-list">
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">👤</div>
+                        <div class="item-text">Dados Pessoais</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">🔒</div>
+                        <div class="item-text">Segurança e Senha</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">💳</div>
+                        <div class="item-text">Pagamentos e Planos</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                    <a href="anunciar.html" class="settings-item">
+                        <div class="item-icon">📢</div>
+                        <div class="item-text">Meus Anúncios</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-title">Preferências</div>
+                <div class="settings-list">
+                    
+                    <div class="settings-item">
+                        <div class="item-icon">🌙</div>
+                        <div class="item-text toggle-container-row">
+                            Modo Escuro
+                            <label class="switch">
+                                <input type="checkbox" id="darkModeSwitch">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">🔔</div>
+                        <div class="item-text">Notificações</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">🌐</div>
+                        <div class="item-text">Idioma</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="section-title">Suporte e Sobre</div>
+                <div class="settings-list">
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">❓</div>
+                        <div class="item-text">Central de Ajuda</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">📄</div>
+                        <div class="item-text">Termos e Privacidade</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                    <a href="#" class="settings-item">
+                        <div class="item-icon">ℹ️</div>
+                        <div class="item-text">Sobre a Doke</div>
+                        <div class="item-arrow">❯</div>
+                    </a>
+                </div>
+            </div>
+
+            <button class="logout-btn" onclick="alert('Você saiu da conta!')">Sair da Conta</button>
+            
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul">
+            <span>Início</span>
+        </a>
+        <a href="#" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde">
+            <span>Explorar</span>
+        </a>
+        <a href="anunciar.html" class="item">
+            <img src="assets/Imagens/icone-anunciar.png" class="icon azul" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">
+            <span>Anunciar</span>
+        </a>
+        <a href="#" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul">
+            <span>Notif.</span>
+        </a>
+        <a href="mais.html" class="item active">
+            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul">
+            <span>Mais</span>
+        </a>
+    </nav>
+
+    <script src="script.js"></script>
+    <script>
+        // Lógica simples para ativar o Dark Mode
+        const toggle = document.getElementById('darkModeSwitch');
+        
+        // Verifica se já estava ativo antes
+        if(localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            toggle.checked = true;
+        }
+
+        toggle.addEventListener('change', () => {
+            if(toggle.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'true');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'false');
+            }
+        });
+    </script>
+</body>
+</html>
