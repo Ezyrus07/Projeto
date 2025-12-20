@@ -838,10 +838,12 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   width: 100%; max-width: 750px;
   margin: 30px auto 0 auto; padding: 20px;
 }
-#categorias-title, #categorias-title2, #categorias-title3 { font-weight: bold; margin: 0; }
-#categorias-title { color: var(--cor0); }
+
+#categorias-title2, #categorias-title3 { font-weight: bold; margin: 0; }
 #categorias-title2, #categorias-title3 { color: white; }
 #categorias-title3 { font-weight: normal; text-align: center; }
+
+#categorias-title {font-weight: 900; margin: 0; color: var(--cor0); }
 
 .categorias-grid {
   display: grid; grid-template-columns: 1fr 1fr;
@@ -1019,6 +1021,129 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 .tag span:hover { color: #ff2e63; }
 .tag.limpar {
   background: transparent; color: #666; text-decoration: underline; cursor: pointer;
+}
+
+/* ===========================================
+   NOVOS FILTROS (TOGGLES E LAYOUT)
+   =========================================== */
+
+/* Ajuste do Grid para caber os novos itens */
+.extras-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 25px;
+  align-items: start;
+}
+
+/* Input de Preço ocupando largura total da coluna */
+.input-pequeno.full-width {
+  width: 100%;
+  padding: 12px;
+  font-size: 1rem;
+  border: 1px solid var(--cor-borda);
+  border-radius: 8px;
+  outline: none;
+  transition: border 0.3s;
+}
+.input-pequeno.full-width:focus {
+  border-color: var(--cor0);
+}
+
+/* Container dos Toggles (Avaliação e Disponibilidade) */
+.toggles-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  background: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #eee;
+}
+
+.toggle-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+}
+
+.toggle-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--cor-texto);
+}
+
+.toggle-desc {
+  font-size: 0.75rem;
+  color: var(--cor1);
+}
+
+/* --- ESTILO DO SWITCH (BOTÃO ON/OFF) --- */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.switch input { 
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0;
+  right: 0; bottom: 0;
+  background-color: #ccc; /* Cor quando desligado */
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Quando ativado (checked) */
+input:checked + .slider {
+  background-color: var(--cor0); /* Verde do seu tema */
+}
+
+input:checked + .slider:before {
+  transform: translateX(22px);
+}
+
+/* Efeito de foco para acessibilidade */
+input:focus + .slider {
+  box-shadow: 0 0 1px var(--cor0);
+}
+
+/* Ajuste Dark Mode (Se estiver usando) */
+body.dark-mode .toggles-wrapper {
+    background: #2a2a2d;
+    border-color: #444;
+}
+body.dark-mode .input-pequeno.full-width {
+    background: #363639;
+    color: #fff;
+    border-color: #444;
 }
 
 /* ==========================================================================
@@ -1285,7 +1410,7 @@ body.dark-mode {
   }
   
   /* Textos e Títulos */
-  h2, #categorias-title, #categorias-title3, .titulo, .criar, .menu a, .item a {
+  h2, #categorias-title3, .titulo, .criar, .menu a, .item a {
     color: var(--cor-texto);
   }
   .banner-pontos, .rodape h3, .dot.ativo { color: var(--cor-verde); }

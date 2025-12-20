@@ -36,7 +36,7 @@ body{
    =========================================== */
 
 .container-anuncio {
-    max-width: 900px; /* Aumentei um pouco */
+    max-width: 900px;
     margin: 10px auto 40px auto;
     padding: 20px;
 }
@@ -92,11 +92,11 @@ body{
 }
 
 /* Inputs e Labels */
-.form-group { margin-bottom: 20px; }
+.form-group { margin-bottom: 20px; position: relative; }
 .form-group label { display: block; margin-bottom: 8px; font-weight: 500; color: var(--cor-texto); }
 .form-group span.optional { color: var(--cor1); font-size: 0.85em; font-weight: 400; }
 
-input[type="text"], input[type="number"], input[type="tel"], input[type="email"], input[type="url"], select, textarea {
+input[type="text"], input[type="number"], input[type="tel"], input[type="email"], input[type="url"], input[type="time"], select, textarea {
     width: 100%; padding: 12px 15px;
     border: 1px solid var(--cor-borda);
     border-radius: 8px; background: var(--cor-bg-input);
@@ -179,6 +179,104 @@ textarea { resize: vertical; min-height: 100px; }
     margin-top: 20px; font-size: 14px; display: flex; gap: 10px; align-items: flex-start;
 }
 
+/* ===========================================
+   NOVO CSS: MULTI-SELECT CATEGORIA
+   =========================================== */
+.multi-select-container {
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    background: var(--cor-bg-input);
+    padding: 5px;
+    position: relative;
+}
+.tags-wrapper {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 5px;
+}
+.tag-item {
+    background: var(--cor0);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 20px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.tag-item span { cursor: pointer; font-weight: bold; }
+.tag-item span:hover { color: #ffcccc; }
+
+#cat-search {
+    border: none;
+    background: transparent;
+    padding: 8px;
+    outline: none;
+    min-width: 150px;
+    flex: 1;
+}
+.cat-dropdown {
+    position: absolute;
+    top: 100%; left: 0; width: 100%;
+    max-height: 200px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid var(--cor0);
+    border-radius: 0 0 8px 8px;
+    z-index: 10;
+    display: none;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
+.cat-option {
+    padding: 10px 15px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 14px;
+}
+.cat-option:hover { background-color: rgba(11, 119, 104, 0.1); }
+.cat-option.selected { background-color: #eee; color: #999; cursor: not-allowed; }
+
+/* ===========================================
+   NOVO CSS: AGENDA DETALHADA
+   =========================================== */
+.agenda-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+.agenda-item {
+    background: #fff;
+    border: 1px solid var(--cor-borda);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.3s;
+}
+.agenda-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    cursor: pointer;
+}
+.agenda-header label { margin: 0; cursor: pointer; flex: 1; font-weight: 600; }
+.agenda-times {
+    display: none; /* Escondido por padrão */
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #eee;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+.agenda-times.show { display: flex; }
+.time-group {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.time-group label { font-size: 12px; color: var(--cor1); margin-bottom: 2px; }
+.time-separator { color: var(--cor1); font-weight: bold; align-self: center; padding-top: 15px; }
+
 /* Sidebar CSS (Mantido) */
 .sidebar-icones {
     display: none; position: fixed; top: 0; left: 0;
@@ -234,7 +332,6 @@ textarea { resize: vertical; min-height: 100px; }
   height: 40px;
 }
 
-/* Ajustes específicos para telas menores que 767px */
 @media (max-width: 767px) {
   .navbar-mobile {
     padding: 10px 20px;
@@ -245,7 +342,6 @@ textarea { resize: vertical; min-height: 100px; }
   }
 }
 
-/* Botão Entrar */
 .entrar {
   display: flex;
   align-items: center;
@@ -254,7 +350,7 @@ textarea { resize: vertical; min-height: 100px; }
   color: var(--cor0);
   border: 2px solid var(--cor0);
   border-radius: 25px;
-  padding: 6px 10px; /* Ajustado conforme seu CSS mobile */
+  padding: 6px 10px;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
@@ -269,9 +365,6 @@ textarea { resize: vertical; min-height: 100px; }
 }
 .entrar:hover svg path { fill: #fff; }
 
-/* ==========================================================================
-   NAVBAR INFERIOR (BOTTOM NAV)
-   ========================================================================== */
 .bottom-nav {
   display: flex;
   position: fixed;
@@ -307,37 +400,23 @@ textarea { resize: vertical; min-height: 100px; }
   height: 26px; 
 }
 
-/* Estado Ativo e Hover */
 .bottom-nav .item:active, 
 .bottom-nav .item.active { 
   color: var(--cor0); 
 }
 
-/* Filtros de cores dos ícones */
-.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
-.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
-
 .bottom-nav .item.active .icon.verde,
 .bottom-nav .item.active .icon.azul {
-    /* Deixa o ícone ativo com a cor padrão verde */
     filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
 }
 
 /* ===========================================
-   HOVER EFFECTS - FORMULÁRIO (ATUALIZADO)
+   HOVER EFFECTS
    =========================================== */
-
-/* Animação suave padrão para tudo interativo */
 .btn-prev, .btn-next, .btn-submit, 
 .radio-card label, .checkbox-card label, 
 .upload-zone, .question-builder button {
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-}
-
-/* --- Botões de Navegação (Voltar / Próximo) --- */
-.form-nav {
-    display: flex; justify-content: space-between; margin-top: 40px;
-    padding-top: 20px; border-top: 1px solid var(--cor-borda);
 }
 
 .btn-prev {
@@ -353,12 +432,12 @@ textarea { resize: vertical; min-height: 100px; }
 .btn-next, .btn-submit {
     background: var(--cor0); color: white; border: 0; padding: 12px 30px;
     border-radius: 8px; cursor: pointer; font-weight: 600;
-    box-shadow: 0 4px 6px rgba(11, 119, 104, 0.2); /* Sombra verde inicial */
+    box-shadow: 0 4px 6px rgba(11, 119, 104, 0.2);
 }
 
 .btn-next:hover, .btn-submit:hover {
-    transform: translateY(-3px); /* Sobe um pouco mais */
-    box-shadow: 0 8px 20px rgba(11, 119, 104, 0.35); /* Sombra brilha */
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(11, 119, 104, 0.35);
     filter: brightness(1.05);
 }
 
@@ -367,79 +446,36 @@ textarea { resize: vertical; min-height: 100px; }
     box-shadow: 0 3px 5px rgba(0,0,0,0.1);
 }
 
-/* --- Cartões de Seleção (Radio Cards) --- */
-.radio-card label {
-    /* (Seus estilos base mantidos...) */
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    padding: 15px; border: 1px solid var(--cor-borda);
-    border-radius: 8px; text-align: center; cursor: pointer;
-    font-weight: 600; color: var(--cor1); height: 100%;
-    position: relative; top: 0;
-}
-
 .radio-card label:hover {
     border-color: var(--cor0);
     color: var(--cor0);
     background: #fff;
-    transform: translateY(-4px); /* Flutua bem */
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08); /* Sombra elegante */
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
 }
 
-/* Estado Selecionado (ajuste para combinar com o hover) */
 .radio-card input:checked + label {
     border-color: var(--cor0); 
     background: rgba(11, 119, 104, 0.08); 
     color: var(--cor0);
-    box-shadow: 0 4px 10px rgba(11, 119, 104, 0.15); /* Sombra verde leve */
-    transform: translateY(0); /* Volta pro lugar quando clicado/marcado */
-}
-
-/* --- Checkboxes Pequenos --- */
-.checkbox-card label {
-    display: block; padding: 10px; border: 1px solid var(--cor-borda);
-    border-radius: 6px; text-align: center; cursor: pointer; font-size: 14px;
-    background: white;
-}
-
-.checkbox-card label:hover {
-    border-color: var(--cor2);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(42, 95, 144, 0.15); /* Sombra azulada */
-    color: var(--cor2);
-}
-
-.checkbox-card input:checked + label {
-    background: var(--cor2); color: white; border-color: var(--cor2);
+    box-shadow: 0 4px 10px rgba(11, 119, 104, 0.15);
     transform: translateY(0);
-    box-shadow: inset 0 2px 5px rgba(0,0,0,0.2); /* Profundidade interna */
-}
-
-/* --- Upload Zone --- */
-.upload-zone {
-    border: 2px dashed var(--cor2); border-radius: 12px;
-    padding: 30px; text-align: center; background: #f0f4f8;
-    cursor: pointer; position: relative;
 }
 
 .upload-zone:hover {
     background: #eef2f6;
-    border-color: var(--cor0); /* Muda de azul para verde no hover */
-    transform: scale(1.01); /* Leve zoom */
+    border-color: var(--cor0);
+    transform: scale(1.01);
     box-shadow: 0 5px 15px rgba(0,0,0,0.05);
 }
 
-/* --- Botões pequenos (Adicionar Pergunta) --- */
-.question-builder button {
-    opacity: 0.8;
-}
+.question-builder button { opacity: 0.8; }
 .question-builder button:hover {
     opacity: 1;
     background-color: #f9f9f9 !important;
-    transform: translateX(2px); /* Move levemente para direita */
+    transform: translateX(2px);
 }
 
-/* --- Estilo de Erro (Borda Vermelha + Tremida) --- */
-/* Erro nos Inputs normais */
 .input-error {
     border-color: var(--cor3) !important;
     background-color: #fff0f0 !important;
@@ -447,9 +483,8 @@ textarea { resize: vertical; min-height: 100px; }
     animation: shake 0.3s ease-in-out;
 }
 
-/* Erro na Zona de Upload (Novo) */
 .upload-zone.input-error {
-    border: 2px dashed var(--cor3) !important; /* Borda tracejada vermelha */
+    border: 2px dashed var(--cor3) !important;
     background-color: #fff0f0 !important;
     animation: shake 0.3s ease-in-out;
 }
@@ -460,30 +495,24 @@ textarea { resize: vertical; min-height: 100px; }
     75% { transform: translateX(4px); }
 }
 
-/* ==========================================================================
-   RESPONSIVIDADE: ESCONDER NO DESKTOP
-   ========================================================================== */
 @media (min-width: 768px) {
   .navbar-mobile, 
   .bottom-nav { 
     display: none; 
   }
-  
-  body {
-    padding-top: 0; /* Altura da navbar desktop padrão */
-    padding-bottom: 0;
-  }
+  body { padding-top: 0; padding-bottom: 0; }
 }
-
-
 </style>
 </head>
 <body>
 
     <aside class="sidebar-icones">
         <div id="logo">
-            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logo"></a>
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
         </div>
+
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
             <span>Início</span>
@@ -497,8 +526,8 @@ textarea { resize: vertical; min-height: 100px; }
             <span>Notificações</span>
         </div>
         <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <span>Mensagens</span>
+            <a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <span>Mensagens</span></a>
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
@@ -506,7 +535,7 @@ textarea { resize: vertical; min-height: 100px; }
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <span>Perfil</span>
+            <a href="meuperfil.html"><span>Perfil<span></a>
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
@@ -521,8 +550,6 @@ textarea { resize: vertical; min-height: 100px; }
                 <h1>Anunciar Serviço</h1>
                 <p>Preencha os dados completos para passar credibilidade.</p>
             </div>
-
-            
 
             <div class="progress-bar">
                 <div class="step-indicator active" id="p-1">1</div>
@@ -543,15 +570,19 @@ textarea { resize: vertical; min-height: 100px; }
 
         <div class="row-inputs">
             <div class="form-group">
-                <label>Categoria</label>
-                <select required>
-                    <option value="">Selecione...</option>
-                    <option>Reforma e Construção</option>
-                    <option>Assistência Técnica</option>
-                    <option>Aulas Particulares</option>
-                    <option>Beleza e Estética</option>
-                </select>
+                <label>Categorias (Selecione uma ou mais)</label>
+                <div class="multi-select-container" onclick="document.getElementById('cat-search').focus()">
+                    <div class="tags-wrapper" id="tags-wrapper">
+                        </div>
+                    <input type="text" id="cat-search" placeholder="Selecione uma ou mais categoria " oninput="filtrarCategorias()" onfocus="mostrarDropdown()">
+                    
+                    <div class="cat-dropdown" id="cat-dropdown">
+                        </div>
+                </div>
+                <input type="text" id="categorias-validacao" required style="opacity: 0; position: absolute; height: 1px; width: 1px; bottom: 0;">
+                <span class="optional" style="font-size:12px">Clique nas opções para adicionar.</span>
             </div>
+
             <div class="form-group">
                 <label>Palavras-chave / Tags</label>
                 <input type="text" placeholder="Ex: eletricista, reparo, fiação (separar por vírgula)" required>
@@ -625,7 +656,7 @@ textarea { resize: vertical; min-height: 100px; }
         <div class="form-group">
             <label>Certificados / Diplomas (opcional)</label>
             <div class="upload-zone" style="padding: 15px;" onclick="document.getElementById('file-cert').click()">
-                <span style="font-size:20px"></span> <span style="font-size:14px">Clique para anexar PDF ou Imagem</span>
+                <span style="font-size:20px">📄</span> <span style="font-size:14px">Clique para anexar PDF ou Imagem</span>
                 <input type="file" id="file-cert" multiple style="display: none;">
             </div>
         </div>
@@ -685,7 +716,7 @@ textarea { resize: vertical; min-height: 100px; }
         <div class="form-group">
             <label>Foto do Documento (RG ou CNH) <span style="color:var(--cor2);">*Segurança</span></label>
             <div class="upload-zone security" onclick="document.getElementById('file-rg').click()">
-                <span style="font-size:30px"></span>
+                <span style="font-size:30px">🔒</span>
                 <p>Sua foto e documento não serão exibidos publicamente.</p>
                 <input type="file" id="file-rg" style="display: none;" required>
             </div>
@@ -705,21 +736,11 @@ textarea { resize: vertical; min-height: 100px; }
         <div class="form-group">
             <label>Formas de Pagamento Aceitas</label>
             <div class="checkbox-grid">
-                <div class="checkbox-card">
-                    <input type="checkbox" id="pg-pix"> <label for="pg-pix">Pix</label>
-                </div>
-                <div class="checkbox-card">
-                    <input type="checkbox" id="pg-din"> <label for="pg-din">Dinheiro</label>
-                </div>
-                <div class="checkbox-card">
-                    <input type="checkbox" id="pg-cd"> <label for="pg-cd">Cartão Débito</label>
-                </div>
-                <div class="checkbox-card">
-                    <input type="checkbox" id="pg-cc"> <label for="pg-cc">Cartão Crédito</label>
-                </div>
-                <div class="checkbox-card">
-                    <input type="checkbox" id="pg-bol"> <label for="pg-bol">Boleto</label>
-                </div>
+                <div class="checkbox-card"><input type="checkbox" id="pg-pix"> <label for="pg-pix">Pix</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="pg-din"> <label for="pg-din">Dinheiro</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="pg-cd"> <label for="pg-cd">Cartão Débito</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="pg-cc"> <label for="pg-cc">Cartão Crédito</label></div>
+                <div class="checkbox-card"><input type="checkbox" id="pg-bol"> <label for="pg-bol">Boleto</label></div>
             </div>
         </div>
     </div>
@@ -728,26 +749,143 @@ textarea { resize: vertical; min-height: 100px; }
         <h3>4. Disponibilidade e Triagem</h3>
         
         <div class="form-group">
-            <label>Dias de Trabalho</label>
-            <div class="checkbox-grid">
-                <div class="checkbox-card"><input type="checkbox" id="d-seg" checked><label for="d-seg">Segunda</label></div>
-                <div class="checkbox-card"><input type="checkbox" id="d-ter" checked><label for="d-ter">Terça</label></div>
-                <div class="checkbox-card"><input type="checkbox" id="d-qua" checked><label for="d-qua">Quarta</label></div>
-                <div class="checkbox-card"><input type="checkbox" id="d-qui" checked><label for="d-qui">Quinta</label></div>
-                <div class="checkbox-card"><input type="checkbox" id="d-sex" checked><label for="d-sex">Sexta</label></div>
-                <div class="checkbox-card"><input type="checkbox" id="d-sab"><label for="d-sab">Sábado</label></div>
+            <label>Agenda e Horários</label>
+            <p style="font-size:13px; color:var(--cor1); margin-bottom:10px;">Marque os dias e defina o horário de início e fim.</p>
+            
+            <div class="agenda-list">
+                <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-seg" onchange="toggleTime('seg')">
+                        <label for="chk-seg">Segunda-feira</label>
+                    </div>
+                    <div class="agenda-times" id="time-seg">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="seg-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="seg-fim">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-ter" onchange="toggleTime('ter')">
+                        <label for="chk-ter">Terça-feira</label>
+                    </div>
+                    <div class="agenda-times" id="time-ter">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="ter-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="ter-fim">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-qua" onchange="toggleTime('qua')">
+                        <label for="chk-qua">Quarta-feira</label>
+                    </div>
+                    <div class="agenda-times" id="time-qua">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="qua-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="qua-fim">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-qui" onchange="toggleTime('qui')">
+                        <label for="chk-qui">Quinta-feira</label>
+                    </div>
+                    <div class="agenda-times" id="time-qui">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="qui-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="qui-fim">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-sex" onchange="toggleTime('sex')">
+                        <label for="chk-sex">Sexta-feira</label>
+                    </div>
+                    <div class="agenda-times" id="time-sex">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="sex-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="sex-fim">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-sab" onchange="toggleTime('sab')">
+                        <label for="chk-sab">Sábado</label>
+                    </div>
+                    <div class="agenda-times" id="time-sab">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="sab-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="sab-fim">
+                        </div>
+                    </div>
+                </div>
+
+                 <div class="agenda-item">
+                    <div class="agenda-header">
+                        <input type="checkbox" id="chk-dom" onchange="toggleTime('dom')">
+                        <label for="chk-dom">Domingo</label>
+                    </div>
+                    <div class="agenda-times" id="time-dom">
+                        <div class="time-group">
+                            <label>Início</label>
+                            <input type="time" name="dom-inicio">
+                        </div>
+                        <span class="time-separator">até</span>
+                        <div class="time-group">
+                            <label>Fim</label>
+                            <input type="time" name="dom-fim">
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="form-group">
             <label>Questionário de Triagem (Opcional)</label>
-            <p style="font-size:13px; color:var(--cor1); margin-bottom:10px;">Perguntas que o cliente deve responder ao solicitar orçamento.</p>
-            
             <div class="question-builder">
                 <div style="font-weight:600; color:var(--cor2); margin-bottom:10px;">Pergunta Exemplo</div>
                 <input type="text" value="Qual a voltagem da tomada?" style="margin-bottom:10px;">
-                <input type="text" placeholder="Opção 1 (ex: 110v)" style="margin-bottom:5px; font-size:13px;">
-                <input type="text" placeholder="Opção 2 (ex: 220v)" style="margin-bottom:5px; font-size:13px;">
                 <button type="button" style="background:none; border:none; color:var(--cor0); cursor:pointer; font-size:12px;">+ Adicionar opção</button>
             </div>
             <button type="button" style="width:100%; padding:10px; border:1px dashed var(--cor2); color:var(--cor2); background:white; border-radius:8px; cursor:pointer;">+ Nova Pergunta</button>
@@ -756,7 +894,7 @@ textarea { resize: vertical; min-height: 100px; }
         <div class="terms-box">
             <input type="checkbox" id="termos" required style="width:auto; margin-top:3px;">
             <label for="termos">
-                Declaro que as informações são verdadeiras. Aceito os <a href="#" style="color:var(--cor2);">Termos de Uso</a> e a <a href="#" style="color:var(--cor2);">Política de Privacidade</a> da plataforma. Entendo que meu documento será usado apenas para verificação de segurança.
+                Declaro que as informações são verdadeiras. Aceito os <a href="#" style="color:var(--cor2);">Termos de Uso</a> e a <a href="#" style="color:var(--cor2);">Política de Privacidade</a>.
             </label>
         </div>
     </div>
@@ -780,120 +918,144 @@ textarea { resize: vertical; min-height: 100px; }
         <div class="espacador"></div>
         <div class="botoes">
             <a href="login.html" class="entrar">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 16 16">
-                    <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
-                    <path fill-rule="evenodd" d="M14 14s-1-1.5-6-1.5S2 14 2 14V15h12v-1z"/>
-                </svg>
                 Entrar
             </a>
         </div>
     </nav>
 </header>
 
-<main>
-    </main>
-
 <nav class="bottom-nav">
-    <a href="index.html" class="item active"> <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-        <span>Início</span>
-    </a>
-    <a href="#" class="item">
-        <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-        <span>Explorar</span>
-    </a>
-    <a href="anunciar.html" class="item">
-        <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar"> <span>Anunciar</span>
-    </a>
-    <a href="#" class="item">
-        <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-        <span>Notificações</span>
-    </a>
-    <a href="perfil.html" class="item">
-        <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
-        <span>Perfil</span>
-    </a>
+    <a href="index.html" class="item active"> <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início"> <span>Início</span> </a>
+    <a href="#" class="item"> <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar"> <span>Explorar</span> </a>
+    <a href="anunciar.html" class="item"> <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar"> <span>Anunciar</span> </a>
+    <a href="#" class="item"> <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil"> <span>Perfil</span> </a>
 </nav>
     </main>
 
     <script>
+    /* =========================================
+       DADOS E LÓGICA DE CATEGORIAS (TAGS)
+       ========================================= */
+    const todasCategorias = [
+        "Reforma e Construção", "Assistência Técnica", "Aulas Particulares", "Beleza e Estética",
+        "Eletricista", "Encanador", "Pintura Residencial", "Gesso e Drywall", "Marcenaria", "Serralheria", "Vidraçaria", "Impermeabilização",
+        "Limpeza Residencial", "Limpeza Pós-Obra", "Diarista", "Passadeira", "Organização de Ambientes", "Dedetização", "Jardinagem", "Piscineiro",
+        "Suporte Técnico", "Manutenção Computadores", "Manutenção Celulares", "Desenvolvimento Sites", "Design Gráfico", "Social Media", "Edição de Vídeo",
+        "Mecânico", "Auto Elétrica", "Lava Jato", "Polimento Automotivo", "Guincho",
+        "Reforço Escolar", "Aulas de Inglês", "Aulas de Música", "Personal Trainer",
+        "Cabeleireiro(a)", "Manicure", "Maquiagem", "Massagem", "Estética Facial",
+        "Fotografia", "Filmagem", "DJ", "Cerimonialista", "Buffet", "Decoração de Festas",
+        "Contabilidade", "Consultoria Financeira", "Advocacia", "Frete", "Mudança", "Motoboy", "Outros"
+    ];
 
+    let categoriasSelecionadas = [];
 
-        function changeStep(direction) {
-            document.getElementById(`step-${currentStep}`).classList.remove('active');
-            currentStep += direction;
-            if (currentStep < 1) currentStep = 1;
-            if (currentStep > totalSteps) currentStep = totalSteps;
-            document.getElementById(`step-${currentStep}`).classList.add('active');
+    function renderCategorias(filtro = "") {
+        const dropdown = document.getElementById('cat-dropdown');
+        dropdown.innerHTML = "";
+        
+        const filtradas = todasCategorias.filter(c => 
+            c.toLowerCase().includes(filtro.toLowerCase()) && 
+            !categoriasSelecionadas.includes(c)
+        );
 
-            // Atualiza indicadores e botões
-            for(let i=1; i<=totalSteps; i++) {
-                const el = document.getElementById(`p-${i}`);
-                el.classList.remove('active', 'completed');
-                if(i < currentStep) { el.classList.add('completed'); el.innerHTML = '✓'; }
-                else if(i === currentStep) { el.classList.add('active'); el.innerHTML = i; }
-                else { el.innerHTML = i; }
-            }
-
-            const btnPrev = document.getElementById('btn-prev');
-            const btnNext = document.getElementById('btn-next');
-            const btnSubmit = document.getElementById('btn-submit');
-
-            btnPrev.style.display = (currentStep === 1) ? 'none' : 'block';
-            
-            if (currentStep === totalSteps) {
-                btnNext.style.display = 'none';
-                btnSubmit.style.display = 'block';
-            } else {
-                btnNext.style.display = 'block';
-                btnSubmit.style.display = 'none';
-            }
-            
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (filtradas.length === 0) {
+            dropdown.innerHTML = '<div style="padding:10px; color:#999; font-size:13px;">Nenhuma categoria encontrada.</div>';
+            return;
         }
 
-        // Mostrar Input de Preço apenas se selecionado "Preço Fixo"
-        function togglePriceInput() {
-            const isFixo = document.getElementById('fixo').checked;
-            document.getElementById('price-input-wrapper').style.display = isFixo ? 'block' : 'none';
-        }
+        filtradas.forEach(cat => {
+            const div = document.createElement('div');
+            div.className = 'cat-option';
+            div.innerText = cat;
+            div.onclick = () => addCategoria(cat);
+            dropdown.appendChild(div);
+        });
+    }
 
-        // Alternar PF / PJ
-        function toggleCNPJ() {
-            const isPJ = document.getElementById('pj').checked;
-            const lblNome = document.getElementById('lbl-nome');
-            const lblDoc = document.getElementById('lbl-doc');
-            
-            if(isPJ) {
-                lblNome.innerText = "Razão Social / Nome Fantasia";
-                lblDoc.innerText = "CNPJ da Empresa";
-            } else {
-                lblNome.innerText = "Nome Completo";
-                lblDoc.innerText = "CPF";
-            }
+    function addCategoria(cat) {
+        if (!categoriasSelecionadas.includes(cat)) {
+            categoriasSelecionadas.push(cat);
+            atualizarTags();
+            document.getElementById('cat-search').value = "";
+            renderCategorias();
+            document.getElementById('cat-dropdown').style.display = 'none';
         }
+    }
 
-        // Inicializa botões
-let currentStep = 1;
+    function removeCategoria(cat) {
+        categoriasSelecionadas = categoriasSelecionadas.filter(c => c !== cat);
+        atualizarTags();
+    }
+
+    function atualizarTags() {
+        const wrapper = document.getElementById('tags-wrapper');
+        const inputValidacao = document.getElementById('categorias-validacao');
+        
+        wrapper.innerHTML = "";
+        categoriasSelecionadas.forEach(cat => {
+            const tag = document.createElement('div');
+            tag.className = 'tag-item';
+            tag.innerHTML = `${cat} <span onclick="removeCategoria('${cat}')">×</span>`;
+            wrapper.appendChild(tag);
+        });
+
+        // Atualiza input escondido para validação do form
+        inputValidacao.value = categoriasSelecionadas.length > 0 ? categoriasSelecionadas.join(',') : "";
+    }
+
+    function filtrarCategorias() {
+        const termo = document.getElementById('cat-search').value;
+        renderCategorias(termo);
+        document.getElementById('cat-dropdown').style.display = 'block';
+    }
+
+    function mostrarDropdown() {
+        renderCategorias();
+        document.getElementById('cat-dropdown').style.display = 'block';
+    }
+
+    // Fecha dropdown se clicar fora
+    document.addEventListener('click', function(e) {
+        const container = document.querySelector('.multi-select-container');
+        if (!container.contains(e.target)) {
+            document.getElementById('cat-dropdown').style.display = 'none';
+        }
+    });
+
+    /* =========================================
+       LÓGICA DA AGENDA (HORÁRIOS)
+       ========================================= */
+    function toggleTime(dia) {
+        const checkbox = document.getElementById(`chk-${dia}`);
+        const timeBox = document.getElementById(`time-${dia}`);
+        const inputs = timeBox.querySelectorAll('input');
+
+        if (checkbox.checked) {
+            timeBox.classList.add('show');
+            inputs.forEach(input => input.setAttribute('required', 'true'));
+        } else {
+            timeBox.classList.remove('show');
+            inputs.forEach(input => {
+                input.removeAttribute('required');
+                input.value = ''; // Limpa se desmarcar
+            });
+        }
+    }
+
+    /* =========================================
+       NAVEGAÇÃO E VALIDAÇÃO
+       ========================================= */
+    let currentStep = 1;
     const totalSteps = 4;
 
     function changeStep(direction) {
-        // Se for avançar (1), valida antes
-        if (direction === 1) {
-            if (!validarPassoAtual()) {
-                return; // Bloqueia se tiver erro
-            }
-        }
+        if (direction === 1 && !validarPassoAtual()) return;
 
-        // Remove classe ativa do passo atual
         document.getElementById(`step-${currentStep}`).classList.remove('active');
-
         currentStep += direction;
-        
-        // Limites de passos
         if (currentStep < 1) currentStep = 1;
         if (currentStep > totalSteps) currentStep = totalSteps;
-        
-        // Ativa o novo passo
         document.getElementById(`step-${currentStep}`).classList.add('active');
 
         atualizarInterface();
@@ -909,56 +1071,46 @@ let currentStep = 1;
         camposObrigatorios.forEach(campo => {
             if (!campo.checkValidity()) {
                 
-                // LÓGICA ESPECIAL PARA UPLOAD (Se o input estiver dentro de uma upload-zone)
-                if (campo.type === 'file' && campo.parentElement.classList.contains('upload-zone')) {
+                // Trata o campo oculto de categorias
+                if (campo.id === 'categorias-validacao') {
+                    const container = document.querySelector('.multi-select-container');
+                    container.style.border = "1px solid var(--cor3)";
+                    container.classList.add('input-error');
+                    setTimeout(() => container.style.border = "1px solid var(--cor-borda)", 2000);
+                    if (!firstInvalid) firstInvalid = container;
+                }
+                // Trata uploads
+                else if (campo.type === 'file' && campo.parentElement.classList.contains('upload-zone')) {
                     const uploadBox = campo.parentElement;
                     uploadBox.classList.add('input-error');
-                    
-                    // Remove o erro quando o usuário escolhe um arquivo
                     campo.addEventListener('change', () => {
                         if(campo.files.length > 0) uploadBox.classList.remove('input-error');
                     }, {once: true});
-                    
-                    if (!firstInvalid) firstInvalid = uploadBox; // Foca na caixa, não no input
+                    if (!firstInvalid) firstInvalid = uploadBox;
                 } 
                 else {
-                    // Lógica padrão para campos de texto/select
                     campo.classList.add('input-error');
                     campo.addEventListener('input', limparErro);
-                    campo.addEventListener('change', limparErro);
-                    
                     if (!firstInvalid) firstInvalid = campo;
                 }
-
                 isValid = false;
             } else {
-                // Remove erro caso esteja válido agora
                 campo.classList.remove('input-error');
-                if (campo.type === 'file' && campo.parentElement.classList.contains('upload-zone')) {
-                    campo.parentElement.classList.remove('input-error');
-                }
             }
         });
 
-        if (!isValid) {
-            // Rola a tela até o primeiro erro e dá foco (se possível)
-            if(firstInvalid) {
-                firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                if(firstInvalid.tagName !== 'DIV') firstInvalid.focus(); 
-            }
+        if (!isValid && firstInvalid) {
+            firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            if(firstInvalid.tagName !== 'DIV') firstInvalid.focus();
         }
-
         return isValid;
     }
 
     function limparErro(e) {
         e.target.classList.remove('input-error');
-        e.target.removeEventListener('input', limparErro);
-        e.target.removeEventListener('change', limparErro);
     }
 
     function atualizarInterface() {
-        // Atualiza indicadores (bolinhas)
         for(let i=1; i<=totalSteps; i++) {
             const el = document.getElementById(`p-${i}`);
             el.classList.remove('active', 'completed');
@@ -967,13 +1119,11 @@ let currentStep = 1;
             else { el.innerHTML = i; }
         }
 
-        // Atualiza botões
         const btnPrev = document.getElementById('btn-prev');
         const btnNext = document.getElementById('btn-next');
         const btnSubmit = document.getElementById('btn-submit');
 
         btnPrev.style.display = (currentStep === 1) ? 'none' : 'block';
-        
         if (currentStep === totalSteps) {
             btnNext.style.display = 'none';
             btnSubmit.style.display = 'block';
@@ -987,15 +1137,11 @@ let currentStep = 1;
         const isFixo = document.getElementById('fixo').checked;
         const priceWrapper = document.getElementById('price-input-wrapper');
         const priceInput = priceWrapper.querySelector('input');
-        
         priceWrapper.style.display = isFixo ? 'block' : 'none';
-        
-        if(isFixo) {
-            priceInput.setAttribute('required', 'true');
-        } else {
+        if(isFixo) priceInput.setAttribute('required', 'true');
+        else {
             priceInput.removeAttribute('required');
-            priceInput.classList.remove('input-error'); 
-            priceInput.value = '';
+            priceInput.classList.remove('input-error');
         }
     }
 
@@ -1007,6 +1153,5 @@ let currentStep = 1;
 
     atualizarInterface();
     </script>
-
 </body>
 </html>
