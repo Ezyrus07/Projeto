@@ -1,378 +1,322 @@
-<!doctype html>
-<html lang="pt-BR">
+<!DOCTYPE html>
+<html lang="pt-br">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Mensagens | Doke</title>
-<style>
-:root{
-  --cor0: #0b7768; /* Verde Doke */
-  --cor1: #737373; /* Cinza Texto */
-  --cor2: #2a5f90; /* Azul Escuro */
-  --cor4: #ecedf2; /* Fundo claro */
-  --cor-borda: #e0e0e0;
-  --bg-chat-bubble-in: #f2f2f2;
-  --bg-chat-bubble-out: #0b7768;
-  
-  --sidebar-width: 0px; 
-  --sidebar-width-tablet: 80px; 
-  --sidebar-width-desktop: 260px;
-}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensagens - Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>/* ======================================================
+   CHAT DOKE - DESIGN MODERNO (SEM CARA DE WHATSAPP)
+   ====================================================== */
 
-*{box-sizing:border-box;font-family:"Poppins",sans-serif}
-
-body{
-  margin:0;
-  background:#fff;
-  /* O padding-left empurra o conteúdo para não ficar embaixo da sidebar */
-  padding-left: var(--sidebar-width); 
-  height: 100vh;
-  overflow: hidden; /* Impede rolagem na página inteira, rolamos apenas as áreas de chat */
-}
-
-/* Sidebar Icones (Base para Desktop) */
-.sidebar-icones {
-  display: none;
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: var(--sidebar-width);
-  height: 100vh;
-  background-color: white;
-  padding: 20px 0;
-  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.08);
-  flex-direction: column;
-  align-items: center;
-  gap: 15px;
-  transition: width 0.3s ease;
-  z-index: 1001;
-  overflow-y: auto;
-}
-
-.sidebar-icones #logo img { height: 50px; display: block; margin-bottom: 20px; }
-
-.sidebar-icones .item {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 15px;
-  width: 90%;
-  max-width: 230px;
-  cursor: pointer;
-  padding: 12px 10px;
-  border-radius: 999px;
-  margin: 0 auto;
-}
-
-.sidebar-icones .item a { text-decoration: none; display: flex; align-items: center; gap: 15px; width: 100%; color: inherit; }
-.sidebar-icones .item:hover { background-color: var(--cor4); }
-.sidebar-icones .icon { width: 28px; height: 28px; flex-shrink: 0; }
-.sidebar-icones span { font-size: 19px; font-weight: 600; color: var(--cor1); }
-.sidebar-icones .item:hover span { color: var(--cor-texto); }
-.sidebar-icones .item.active { background-color: var(--cor4); }
-.sidebar-icones .item.active span { color: var(--cor-texto); font-weight: 700; }
-
-.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
-.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
-
-@media (min-width: 768px) {
-    :root { --sidebar-width: var(--sidebar-width-tablet); }
-    .sidebar-icones { display: flex; }
-    .sidebar-icones span { display: none; }
-    .sidebar-icones .item { justify-content: center; }
-}
-@media (min-width: 1024px) {
-    :root { --sidebar-width: var(--sidebar-width-desktop); }
-    .sidebar-icones span { display: block; }
-    .sidebar-icones .item { justify-content: flex-start; }
-}
-
-/* ================= LAYOUT DE CHAT (CORREÇÃO DO ESPAÇO) ================= */
-
-/* Container Principal que ocupa todo o espaço restante */
-.chat-layout {
-    display: grid;
-    /* Coluna 1: Lista de Contatos (350px) | Coluna 2: Chat (Restante) */
-    grid-template-columns: 350px 1fr; 
+/* 1. Ajuste Geral da Página */
+body.chat-page {
+    background-color: #f4f6f8; /* Fundo cinza suave */
     height: 100vh;
-    width: 100%;
+    display: flex;
+    flex-direction: row;
+    overflow: hidden; /* Remove rolagem da janela inteira */
 }
 
-/* --- COLUNA ESQUERDA: LISTA DE MENSAGENS --- */
-.msg-list-panel {
-    border-right: 1px solid var(--cor-borda);
+/* 2. Layout Principal (ocupa todo o espaço após sidebar) */
+/* 2. Layout Principal (CORRIGIDO) */
+.chat-layout {
+    display: flex;
+    height: 100vh;
+    width: auto; /* Deixa o width automático para respeitar a margem */
+    
+    /* O SEGREDO ESTÁ AQUI: Empurra o conteúdo para a direita */
+    margin-left: var(--sidebar-width); 
+    
+    padding: 0;
+    transition: margin-left 0.3s ease; /* Animação suave se a sidebar mudar */
+}
+
+/* Responsividade: No celular a sidebar some, então a margem zera */
+@media (max-width: 768px) {
+    .chat-layout {
+        margin-left: 0 !important;
+    }
+}
+
+/* --- COLUNA ESQUERDA: LISTA DE CONTATOS --- */
+.contacts-panel {
+    width: 380px;
+    background: white;
+    border-right: 1px solid #eef0f2;
     display: flex;
     flex-direction: column;
-    background: #fff;
+    z-index: 10;
 }
 
-.msg-header {
-    padding: 20px;
-    border-bottom: 1px solid var(--cor-borda);
-    display: flex; justify-content: space-between; align-items: center;
+.panel-header {
+    padding: 25px 20px 15px 20px;
+    border-bottom: 1px solid #f5f5f5;
 }
-.msg-header h2 { margin: 0; font-size: 20px; color: var(--cor2); }
-
-.btn-new-chat {
-    background: var(--cor0); color: white; border: none;
-    padding: 8px 15px; border-radius: 6px; font-size: 13px; cursor: pointer;
+.panel-header h2 {
+    font-size: 1.5rem; color: var(--cor2); margin: 0 0 15px 0;
 }
 
-.msg-scroll-area {
-    flex: 1; overflow-y: auto;
-}
-
-.contact-item {
-    padding: 15px 20px;
-    display: flex; align-items: center; gap: 15px;
-    cursor: pointer; border-bottom: 1px solid #f5f5f5;
-    transition: background 0.2s;
-}
-.contact-item:hover, .contact-item.active { background: #f0f8f7; }
-
-.avatar-circle {
-    width: 45px; height: 45px; border-radius: 50%;
-    background: #ccc; color: white;
-    display: flex; align-items: center; justify-content: center;
-    font-weight: 600; font-size: 18px; flex-shrink: 0;
-}
-.contact-info { flex: 1; min-width: 0; }
-.contact-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
-.contact-name { font-weight: 600; color: #333; font-size: 15px; }
-.contact-time { font-size: 12px; color: #999; }
-.contact-preview { font-size: 13px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.badge {
-    background: var(--cor0); color: white; font-size: 11px;
-    padding: 2px 6px; border-radius: 10px; margin-left: 5px;
-}
-
-/* --- COLUNA DIREITA: JANELA DE CONVERSA --- */
-.chat-window-panel {
-    display: flex; flex-direction: column;
-    background: #fff; /* Fundo branco para tirar o cinza */
-}
-
-.chat-header {
-    height: 70px; padding: 0 20px;
-    border-bottom: 1px solid var(--cor-borda);
-    display: flex; align-items: center; gap: 15px;
-}
-.status-indicator { font-size: 13px; color: var(--cor0); display: flex; align-items: center; gap: 5px; }
-.status-dot { width: 8px; height: 8px; background: var(--cor0); border-radius: 50%; }
-
-.chat-messages-area {
-    flex: 1; padding: 20px;
-    overflow-y: auto;
-    background: #fff; /* Garante que não tenha fundo cinza */
-    display: flex; flex-direction: column; gap: 15px;
-}
-
-/* Balões de Mensagem */
-.msg-bubble {
-    max-width: 70%;
-    padding: 12px 16px;
+.search-box {
+    background: #f4f6f8;
     border-radius: 12px;
-    font-size: 14px;
-    line-height: 1.4;
+    padding: 10px 15px;
+    display: flex; align-items: center; gap: 10px;
+    border: 1px solid transparent;
+    transition: 0.3s;
+}
+.search-box:focus-within {
+    background: white; border-color: var(--cor2); box-shadow: 0 4px 10px rgba(42,95,144,0.1);
+}
+.search-box input {
+    border: none; background: transparent; outline: none; width: 100%;
+    color: #333; font-weight: 500;
+}
+.search-box i { color: #999; font-size: 1.2rem; }
+
+/* Lista */
+.contacts-list {
+    flex: 1; overflow-y: auto;
+    padding: 10px;
+}
+
+.contact-card {
+    display: flex; align-items: center; gap: 15px;
+    padding: 15px; border-radius: 12px;
+    cursor: pointer; transition: 0.2s; margin-bottom: 5px;
+}
+.contact-card:hover { background-color: #f9fafb; }
+
+/* Contato Ativo (Estilo Doke) */
+.contact-card.active {
+    background-color: #eef6fc; /* Azul bem clarinho */
+}
+.contact-card.active h4 { color: var(--cor2); }
+
+/* Avatar */
+.img-wrap { position: relative; width: 50px; height: 50px; }
+.img-wrap img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.img-wrap .status {
+    position: absolute; bottom: 0; right: 0; width: 12px; height: 12px;
+    border-radius: 50%; border: 2px solid white;
+}
+.status.online { background: #00b894; }
+.status.offline { background: #b2bec3; }
+
+/* Info Texto */
+.info { flex: 1; min-width: 0; }
+.info .top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.info h4 { margin: 0; font-size: 1rem; color: #333; font-weight: 600; }
+.info .date { font-size: 0.75rem; color: #aaa; }
+.info .preview {
+    margin: 0; font-size: 0.85rem; color: #666;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.badge {
+    float: right; background: var(--cor3); color: white;
+    font-size: 0.7rem; padding: 2px 8px; border-radius: 10px; font-weight: 700;
+}
+
+
+/* --- COLUNA DIREITA: WORKSPACE DO CHAT --- */
+.chat-workspace {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background: white;
     position: relative;
 }
 
-/* Mensagem Recebida (Esquerda) */
-.msg-in {
-    align-self: flex-start;
-    background: var(--bg-chat-bubble-in);
-    color: #333;
-    border-top-left-radius: 2px;
+/* Header Superior (Topo) */
+.chat-topbar {
+    height: 80px; /* Mesma altura da navbar padrão */
+    padding: 0 30px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #f0f0f0;
+    background: white;
 }
 
-/* Mensagem Enviada (Direita) */
-.msg-out {
-    align-self: flex-end;
-    background: var(--bg-chat-bubble-out);
+.user-profile { display: flex; align-items: center; gap: 15px; }
+.user-profile img { width: 45px; height: 45px; border-radius: 50%; }
+.user-profile h3 { margin: 0; font-size: 1.1rem; color: #2d3436; }
+.status-text { font-size: 0.85rem; color: #00b894; font-weight: 500; }
+
+.chat-tools { display: flex; align-items: center; gap: 15px; }
+.btn-pay-header {
+    background: var(--cor0); /* Verde Doke */
+    color: white; border: none; padding: 10px 20px;
+    border-radius: 30px; font-weight: 600; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    box-shadow: 0 4px 12px rgba(11, 119, 104, 0.2);
+    transition: 0.2s;
+}
+.btn-pay-header:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3); }
+
+.icon-tool {
+    background: #f4f6f8; border: none; width: 40px; height: 40px;
+    border-radius: 50%; color: #666; font-size: 1.2rem; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; transition: 0.2s;
+}
+.icon-tool:hover { background: #e0e4e8; color: var(--cor2); }
+
+/* --- ÁREA DE MENSAGENS (Aqui acontece a mágica do design) --- */
+.messages-container {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); 
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.day-divider { text-align: center; margin: 10px 0; opacity: 0.8; }
+.day-divider span {
+    background: #eef2f5; color: #7f8c8d; padding: 5px 15px;
+    border-radius: 20px; font-size: 0.8rem; font-weight: 500;
+}
+
+/* Estilo dos Balões */
+.message { display: flex; width: 100%; margin-bottom: 5px; }
+.message.sent { justify-content: flex-end; }
+.message.received { justify-content: flex-start; }
+
+.msg-content {
+    max-width: 65%;
+    padding: 12px 18px;
+    position: relative;
+    font-size: 1rem;
+    line-height: 1.5;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+/* Balão Recebido (Branco) */
+.message.received .msg-content {
+    background: white;
+    color: #2d3436;
+    border-radius: 18px 18px 18px 4px; /* Canto quadrado embaixo na esq */
+    border: 1px solid #eee;
+}
+
+/* Balão Enviado (AZUL DOKE - Identidade Visual) */
+.message.sent .msg-content {
+    background: var(--cor2); /* Azul Doke */
     color: white;
-    border-top-right-radius: 2px;
+    border-radius: 18px 18px 4px 18px; /* Canto quadrado embaixo na dir */
+    box-shadow: 0 4px 10px rgba(42, 95, 144, 0.2);
 }
 
-.msg-time {
-    display: block; font-size: 10px; margin-top: 5px; opacity: 0.7; text-align: right;
+.timestamp {
+    display: block; font-size: 0.7rem; margin-top: 5px;
+    text-align: right; opacity: 0.8;
 }
 
-/* Input Area */
-.chat-input-area {
-    padding: 20px;
-    border-top: 1px solid var(--cor-borda);
-    display: flex; gap: 10px; align-items: center;
-}
-.chat-input-box {
-    flex: 1; padding: 12px 15px;
-    border: 1px solid var(--cor-borda);
-    border-radius: 25px; background: #f9f9f9;
-    outline: none;
-}
-.chat-input-box:focus { border-color: var(--cor0); background: #fff; }
-
-.btn-send {
-    width: 45px; height: 45px; border-radius: 50%;
-    background: var(--cor0); border: none; color: white;
-    cursor: pointer; display: flex; align-items: center; justify-content: center;
-    font-size: 18px;
+/* --- CARD DE PAGAMENTO (Estilo Widget) --- */
+.widget-payment { justify-content: center; }
+.payment-card {
+    background: white;
+    width: 280px;
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+    border: 1px solid #eef0f2;
 }
 
-.navbar-mobile {
-  display: flex;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: var(--navbar-height-mobile);
-  background: white;
-  padding: 14px 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  z-index: 1000;
-  align-items: center;
-  justify-content: space-between;
+.card-header {
+    background: linear-gradient(135deg, var(--cor0), #0e9683);
+    color: white; padding: 12px; font-size: 0.9rem; font-weight: 600;
+    display: flex; align-items: center; gap: 8px;
+}
+.card-body { padding: 20px; text-align: center; }
+.card-body h1 { margin: 0 0 5px 0; color: var(--cor2); font-size: 1.8rem; }
+.card-body p { color: #888; margin-bottom: 20px; font-size: 0.9rem; }
+.card-body button {
+    width: 100%; padding: 12px; background: var(--cor2);
+    color: white; border: none; border-radius: 8px; font-weight: 700;
+    cursor: pointer; transition: 0.2s;
+}
+.card-body button:hover { background: #1a4b7c; }
+
+.card-footer {
+    background: #f9fbfd; padding: 10px; border-top: 1px solid #eee;
+    font-size: 0.75rem; color: #999; display: flex; justify-content: space-between;
 }
 
-#logo-mobile img {
-  height: 40px;
+
+/* --- ÁREA DE INPUT --- */
+.input-area {
+    padding: 20px 30px;
+    background: white;
+    border-top: 1px solid #f0f0f0;
+    display: flex; align-items: center; gap: 15px;
 }
 
-/* Ajustes específicos para telas menores que 767px */
-@media (max-width: 767px) {
-  .navbar-mobile {
-    padding: 10px 20px;
-    height: 60px;
-  }
-  #logo-mobile img {
-    height: 32px;
-  }
+.input-wrapper {
+    flex: 1; position: relative;
+    background: #f4f6f8; border-radius: 30px;
+    display: flex; align-items: center;
+}
+.input-wrapper input {
+    flex: 1; background: transparent; border: none;
+    padding: 15px 20px; outline: none; font-family: var(--fonte-padrao);
 }
 
-/* Botão Entrar */
-.entrar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  background-color: #fff;
-  color: var(--cor0);
-  border: 2px solid var(--cor0);
-  border-radius: 25px;
-  padding: 6px 10px; /* Ajustado conforme seu CSS mobile */
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
-  transition: 0.3s;
-  white-space: nowrap;
-  font-size: 0.85rem;
+.attach-btn, .mic-btn, .send-btn {
+    border: none; cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
+.attach-btn { background: transparent; font-size: 1.4rem; color: #999; }
+.attach-btn:hover { color: var(--cor2); }
 
-.entrar:hover {
-  background-color: var(--cor0);
-  color: white;
+.mic-btn { background: transparent; font-size: 1.3rem; color: #999; padding-right: 15px; }
+
+.send-btn {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--cor2); color: white; font-size: 1.4rem;
+    box-shadow: 0 4px 10px rgba(42, 95, 144, 0.3);
+    transition: 0.2s;
 }
-.entrar:hover svg path { fill: #fff; }
-
-/* ==========================================================================
-   NAVBAR INFERIOR (BOTTOM NAV)
-   ========================================================================== */
-.bottom-nav {
-  display: flex;
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: var(--bottom-nav-height);
-  background: white;
-  justify-content: space-around;
-  align-items: flex-start;
-  padding-top: 12px;
-  padding-bottom: 12px;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-  z-index: 999;
-  border-top: 1px solid #eee;
-}
-
-.bottom-nav .item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  color: var(--cor1);
-  font-size: 11px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: all 0.2s ease;
-}
-
-.bottom-nav .item img, 
-.bottom-nav .icon { 
-  width: 26px; 
-  height: 26px; 
-}
-
-/* Estado Ativo e Hover */
-.bottom-nav .item:active, 
-.bottom-nav .item.active { 
-  color: var(--cor0); 
-}
-
-/* Filtros de cores dos ícones */
-.icon.verde { filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%); }
-.icon.azul { filter: invert(32%) sepia(32%) saturate(773%) hue-rotate(173deg) brightness(92%) contrast(90%); }
-
-.bottom-nav .item.active .icon.verde,
-.bottom-nav .item.active .icon.azul {
-    /* Deixa o ícone ativo com a cor padrão verde */
-    filter: invert(40%) sepia(92%) saturate(357%) hue-rotate(128deg) brightness(94%) contrast(93%);
-}
-
-/* ==========================================================================
-   RESPONSIVIDADE: ESCONDER NO DESKTOP
-   ========================================================================== */
-@media (min-width: 768px) {
-  .navbar-mobile, 
-  .bottom-nav { 
-    display: none; 
-  }
-  
-  body {
-    padding-top: 80px; /* Altura da navbar desktop padrão */
-    padding-bottom: 0;
-  }
-}
-
+.send-btn:hover { transform: scale(1.1); background: var(--cor0); }
 
 /* Responsividade Mobile */
-@media(max-width: 768px){
-    .chat-layout { grid-template-columns: 1fr; }
-    .chat-window-panel { display: none; } /* Em mobile, ou mostra lista ou chat. JS faria a troca */
-    /* Para demonstrar apenas a lista no mobile: */
-    /* .msg-list-panel { display: block; } */
-}
-</style>
-</head>
-<body>
-
+@media (max-width: 768px) {
+    .chat-layout { flex-direction: column; }
+    .contacts-panel {
+        display: none; /* Em mobile, faria lógica de troca de tela */
+        width: 100%; height: 100%;
+    }
+    .chat-workspace { width: 100%; height: 100%; }
+    .chat-topbar { padding: 0 15px; height: 70px; }
+    .messages-container { padding: 15px; }
+    .input-area { padding: 15px; }
     
+    /* Para mostrar a lista no mobile, você precisaria de um estado JS */
+}</style>
+</head>
+<body class="chat-page">
 
     <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logo"></a></div>
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
         <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span>
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span></a>
         </div>
         <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span>
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span></a>
         </div>
         <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span>
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span></a>
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <span>Mensagens</span>
+            <a href="chat.html"><span>Mensagens</span></a>
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
@@ -380,153 +324,208 @@ body{
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <span>Perfil</span>
+            <a href="meuperfil.html"><span>Perfil</span></a>
         </div>
         <div class="item">
             <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <span>Mais</span>
+            <a href="mais.html"><span>Mais</span></a>
         </div>
     </aside>
 
-    <main>
-        <div class="chat-layout">
-            
-            <div class="msg-list-panel">
-                <div class="msg-header">
-                    <h2>Mensagens</h2>
-                    <button class="btn-new-chat">+ Nova Conversa</button>
-                </div>
-                
-                <div class="msg-scroll-area">
-                    <div class="contact-item active">
-                        <div class="avatar-circle" style="background:#2a5f90">U2</div>
-                        <div class="contact-info">
-                            <div class="contact-top">
-                                <span class="contact-name">Usuario23</span>
-                                <span class="contact-time">15:30</span>
-                            </div>
-                            <div class="contact-preview">Ok, combinado para amanhã...</div>
-                        </div>
-                        <div class="badge">2</div>
-                    </div>
-
-                    <div class="contact-item">
-                        <div class="avatar-circle" style="background:#555">MS</div>
-                        <div class="contact-info">
-                            <div class="contact-top">
-                                <span class="contact-name">Maria Serviços</span>
-                                <span class="contact-time">Ontem</span>
-                            </div>
-                            <div class="contact-preview">Já estou a caminho!</div>
-                        </div>
-                    </div>
-
-                    <div class="contact-item">
-                        <div class="avatar-circle" style="background:#777">JP</div>
-                        <div class="contact-info">
-                            <div class="contact-top">
-                                <span class="contact-name">Eletricista JP</span>
-                                <span class="contact-time">Qui</span>
-                            </div>
-                            <div class="contact-preview">Preciso de mais informações sobre...</div>
-                        </div>
-                    </div>
-
-                    <div class="contact-item">
-                        <div class="avatar-circle" style="background:#888">ES</div>
-                        <div class="contact-info">
-                            <div class="contact-top">
-                                <span class="contact-name">Encanador Silva</span>
-                                <span class="contact-time">05/12</span>
-                            </div>
-                            <div class="contact-preview">Agradeço o contato, estou à dis...</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="chat-window-panel">
-                
-                <div class="chat-header">
-                    <div class="avatar-circle" style="background:#2a5f90">U2</div>
-                    <div>
-                        <div class="contact-name" style="font-size:16px;">Usuario23</div>
-                        <div class="status-indicator"><div class="status-dot"></div> Online</div>
-                    </div>
-                </div>
-
-                <div class="chat-messages-area">
-                    <div class="msg-bubble msg-in">
-                        Olá! Você tem disponibilidade para instalar uma tomada na próxima semana?
-                        <span class="msg-time">15:20</span>
-                    </div>
-
-                    <div class="msg-bubble msg-out">
-                        Sim, tenho alguns horários livres. Qual dia e período seria melhor para você?
-                        <span class="msg-time">15:22</span>
-                    </div>
-
-                    <div class="msg-bubble msg-in">
-                        Preferia na terça-feira à tarde, se possível.
-                        <span class="msg-time">15:25</span>
-                    </div>
-
-                    <div class="msg-bubble msg-out">
-                        Terça-feira à tarde eu tenho das 14h às 16h. Serve para você?
-                        <span class="msg-time">15:28</span>
-                    </div>
-
-                    <div class="msg-bubble msg-in">
-                        Perfeito! Pode ser às 14h então.
-                        <span class="msg-time">15:30</span>
-                    </div>
-
-                     <div class="msg-bubble msg-out">
-                        Ok, combinado para amanhã às 14h.
-                        <span class="msg-time">15:30</span>
-                    </div>
-                </div>
-
-                <div class="chat-input-area">
-                    <input type="text" class="chat-input-box" placeholder="Digite sua mensagem...">
-                    <button class="btn-send">➤</button>
-                </div>
-
-            </div>
-
+    <header class="navbar-desktop">
+        <nav class="menu">
+            <a href="index.html">Início</a>
+            <a href="feed.html">Explorar</a>
+        </nav>
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
         </div>
+    </header>
 
-        <nav class="navbar-mobile">
-    <div id="logo-mobile">
-        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke Logo"></a>
-    </div>
-    <div class="mobile-profile">
-        <div class="avatar-circle-small">U</div>
-    </div>
-</nav>
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <button id="btn-menu-mobile"><i class='bx bx-menu' style="font-size: 28px; color: var(--cor2);"></i></button>
+    </header>
+    <div id="overlay-menu"></div>
 
-<nav class="bottom-nav">
-    <a href="index.html" class="item active"> <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-        <span>Início</span>
-    </a>
-    <a href="#" class="item">
-        <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-        <span>Explorar</span>
-    </a>
-    <a href="anunciar.html" class="item">
-        <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar"> <span>Anunciar</span>
-    </a>
-    <a href="#" class="item">
-        <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-        <span>Notificações</span>
-    </a>
-    <a href="perfil.html" class="item">
-        <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
-        <span>Perfil</span>
-    </a>
-</nav>
+    <main class="chat-layout">
+        
+        <section class="contacts-panel">
+            <div class="panel-header">
+                <h2>Mensagens</h2>
+                <div class="search-box">
+                    <i class='bx bx-search'></i>
+                    <input type="text" placeholder="Pesquisar conversa...">
+                </div>
+            </div>
+
+            <div class="contacts-list">
+                <div class="contact-card active" onclick="selecionarContato(this, 'Marcos Pintor')">
+                    <div class="img-wrap">
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="User">
+                        <span class="status online"></span>
+                    </div>
+                    <div class="info">
+                        <div class="top">
+                            <h4>Marcos Pintor</h4>
+                            <span class="date">10:42</span>
+                        </div>
+                        <p class="preview">Combinado! Pode deixar que levo...</p>
+                    </div>
+                </div>
+
+                <div class="contact-card unread" onclick="selecionarContato(this, 'Ana Eletricista')">
+                    <div class="img-wrap">
+                        <img src="https://randomuser.me/api/portraits/women/44.jpg" alt="User">
+                        <span class="status online"></span>
+                    </div>
+                    <div class="info">
+                        <div class="top">
+                            <h4>Ana Eletricista</h4>
+                            <span class="date">Ontem</span>
+                        </div>
+                        <p class="preview"><i class='bx bx-microphone'></i> Áudio (0:15)</p>
+                        <span class="badge">2</span>
+                    </div>
+                </div>
+
+                <div class="contact-card" onclick="selecionarContato(this, 'Jorge Montador')">
+                    <div class="img-wrap">
+                        <img src="https://randomuser.me/api/portraits/men/85.jpg" alt="User">
+                        <span class="status offline"></span>
+                    </div>
+                    <div class="info">
+                        <div class="top">
+                            <h4>Jorge Montador</h4>
+                            <span class="date">Seg</span>
+                        </div>
+                        <p class="preview">Pagamento confirmado ✅</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="chat-workspace">
+            
+            <div class="chat-topbar">
+                <div class="user-profile">
+                    <img src="https://randomuser.me/api/portraits/men/32.jpg" id="chatAvatar">
+                    <div class="details">
+                        <h3 id="chatName">Marcos Pintor</h3>
+                        <span class="status-text">Online agora</span>
+                    </div>
+                </div>
+                <div class="chat-tools">
+                    <button class="btn-pay-header" onclick="abrirModalPagamento()">
+                        <i class='bx bx-dollar-circle'></i> Pagar
+                    </button>
+                    <button class="icon-tool"><i class='bx bx-phone'></i></button>
+                    <button class="icon-tool"><i class='bx bx-video'></i></button>
+                    <button class="icon-tool"><i class='bx bx-dots-vertical-rounded'></i></button>
+                </div>
+            </div>
+
+            <div class="messages-container" id="messagesArea">
+                <div class="day-divider"><span>Hoje</span></div>
+
+                <div class="message received">
+                    <div class="msg-content">
+                        Olá! Tudo bem? Sobre o orçamento da sala, fica em R$ 450,00 com o material incluso.
+                        <span class="timestamp">10:30</span>
+                    </div>
+                </div>
+
+                <div class="message sent">
+                    <div class="msg-content">
+                        Opa Marcos! O valor está ótimo. Você consegue vir amanhã?
+                        <span class="timestamp">10:32 <i class='bx bx-check-double'></i></span>
+                    </div>
+                </div>
+
+                <div class="message received widget-payment">
+                    <div class="payment-card">
+                        <div class="card-header">
+                            <i class='bx bx-wallet'></i> Solicitação de Pagamento
+                        </div>
+                        <div class="card-body">
+                            <h1>R$ 450,00</h1>
+                            <p>Serviço: Pintura Sala</p>
+                            <button onclick="abrirModalPagamento()">Pagar Agora</button>
+                        </div>
+                        <div class="card-footer">
+                            <span>Segurança Doke Pay 🔒</span>
+                            <span class="timestamp">10:40</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="message sent">
+                    <div class="msg-content">
+                        Combinado! Pode deixar que levo a tinta se precisar de algo específico.
+                        <span class="timestamp">10:42 <i class='bx bx-check-double'></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <button class="attach-btn"><i class='bx bx-paperclip'></i></button>
+                <div class="input-wrapper">
+                    <input type="text" id="msgInput" placeholder="Digite sua mensagem...">
+                    <button class="mic-btn"><i class='bx bx-microphone'></i></button>
+                </div>
+                <button class="send-btn" onclick="enviarMensagem()"><i class='bx bxs-send'></i></button>
+            </div>
+
+        </section>
     </main>
 
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="feed.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="#" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notif.</span></a>
+        <a href="#" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Msgs</span></a>
+        <a href="#" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
 
+    <script>
+        // JS Básico para enviar e simular interação
+        function enviarMensagem() {
+            const input = document.getElementById('msgInput');
+            const area = document.getElementById('messagesArea');
+            if(input.value.trim() !== "") {
+                const html = `
+                    <div class="message sent">
+                        <div class="msg-content">
+                            ${input.value}
+                            <span class="timestamp">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} <i class='bx bx-time'></i></span>
+                        </div>
+                    </div>`;
+                area.insertAdjacentHTML('beforeend', html);
+                input.value = "";
+                area.scrollTop = area.scrollHeight;
+            }
+        }
+        document.getElementById('msgInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarMensagem();
+        });
+        function selecionarContato(el, nome) {
+            document.querySelectorAll('.contact-card').forEach(c => c.classList.remove('active'));
+            el.classList.add('active');
+            document.getElementById('chatName').innerText = nome;
+        }
+        function abrirModalPagamento() { alert('Iniciando pagamento seguro...'); }
+        
+        // Menu Mobile Toggle
+        const btnMenu = document.getElementById('btn-menu-mobile');
+        const sidebar = document.querySelector('.sidebar-icones');
+        const overlay = document.getElementById('overlay-menu');
+        function toggleMenu() {
+            sidebar.classList.toggle('menu-aberto');
+            document.body.classList.toggle('menu-ativo');
+            overlay.style.display = sidebar.classList.contains('menu-aberto') ? 'block' : 'none';
+        }
+        if(btnMenu) btnMenu.addEventListener('click', toggleMenu);
+        if(overlay) overlay.addEventListener('click', toggleMenu);
+    </script>
 </body>
 </html>
