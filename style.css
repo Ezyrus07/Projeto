@@ -601,6 +601,195 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 .secao-busca { padding: 60px 40px; }
 
+/* ==========================================================================
+   VITRINE DE SERVIÇOS (ESTILO TIKTOK)
+   ========================================================================== */
+
+.videos-container {
+    background: #fff;
+    padding: 30px 20px;
+    overflow: hidden;
+}
+
+.videos-header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.videos-header-top h2 {
+    font-size: 1.3rem;
+    color: var(--cor-texto);
+    margin: 0;
+    font-weight: 700;
+}
+
+
+
+.ver-todos {
+    color: white; /* Verde do tema */
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-decoration: none;
+}
+
+/* Wrapper Horizontal */
+.tiktok-scroll-wrapper {
+    display: flex;
+    gap: 16px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+}
+.tiktok-scroll-wrapper::-webkit-scrollbar { display: none; }
+
+/* O CARD */
+.tiktok-card {
+    position: relative;
+    flex: 0 0 auto;
+    width: 210px;   /* Um pouco mais largo para caber o botão */
+    height: 360px;
+    border-radius: 12px;
+    overflow: hidden;
+    background-color: #000;
+    scroll-snap-align: start;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    transition: transform 0.3s ease;
+}
+.tiktok-card:hover { transform: translateY(-5px); }
+
+/* Badge de Status no Topo (ex: Antes & Depois) */
+.badge-status {
+    position: absolute;
+    top: 10px; left: 10px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+    z-index: 5;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255,255,255,0.2);
+}
+
+/* Imagem/Vídeo */
+.video-bg {
+    width: 100%; height: 100%; object-fit: cover;
+    opacity: 0.95; transition: 0.3s;
+}
+.tiktok-card:hover .video-bg { opacity: 0.8; transform: scale(1.05); }
+
+/* Play Icon */
+.play-icon {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px; height: 40px;
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(5px);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(255,255,255,0.8);
+    opacity: 0.8;
+    z-index: 2;
+    pointer-events: none; /* Deixa clicar no card através dele */
+}
+.play-icon svg { width: 18px; fill: #fff; margin-left: 2px; }
+
+/* UI Layer */
+.video-ui-layer {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.6) 70%, rgba(0,0,0,0.95) 100%);
+    z-index: 3;
+}
+
+/* Ações Laterais (Mudei para algo mais sutil) */
+.video-side-actions {
+    position: absolute;
+    right: 10px;
+    bottom: 160px; /* Mais alto para não cobrir texto */
+    display: flex; flex-direction: column; gap: 15px; align-items: center;
+}
+.action-item {
+    display: flex; flex-direction: column; align-items: center;
+    color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+.action-item .icon { font-size: 1.4rem; }
+.action-item .count { font-size: 0.6rem; margin-top: 2px; }
+
+/* Informações do Prestador */
+.provider-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+.provider-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+}
+.service-tag {
+    font-size: 0.65rem;
+    background: var(--cor0); /* Usa a cor do seu tema */
+    color: #fff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-top: 2px;
+}
+
+/* Descrição do Trabalho */
+.video-desc {
+    font-size: 0.8rem;
+    color: #eee;
+    margin: 0 0 12px 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* BOTÃO DE AÇÃO (Orçamento) */
+.btn-video-action {
+    width: 100%;
+    background: #fff;
+    color: var(--cor0); /* Texto verde */
+    border: none;
+    padding: 8px 0;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    transition: 0.2s;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+}
+
+.btn-video-action:hover {
+    background: var(--cor0);
+    color: #fff;
+    transform: translateY(-2px);
+}
+
+/* Responsivo */
+@media (max-width: 600px) {
+    .tiktok-card { width: 180px; height: 320px; }
+    .btn-video-action { font-size: 0.75rem; padding: 6px 0; }
+}
 /* --- 6.1 SEÇÃO DE BUSCA (Estilo Clean + Typing Effect) --- */
 
 /* Efeito de Digitação */
@@ -810,9 +999,11 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 .dot { width: 6px; height: 6px; background-color: #ccc; border-radius: 50%; display: inline-block; }
 .dot.ativo { width: 25px; height: 6px; background-color: var(--cor0); border-radius: 10px; }
+.dot2 { width: 6px; height: 6px; background-color: white; border-radius: 50%; display: inline-block; }
+.dot.ativo2 { width: 25px; height: 6px; background-color: #2a2a2d; border-radius: 10px; }
 
 /* --- Anúncios --- */
-.videos-container { background-color: var(--cor2); }
+.videos-container { background: var(--cor-botton-azul) }
 .anuncio-container { margin-top: 80px; }
 .banner-pontos {
   text-decoration: none; font-size: 1em; text-align: center;
