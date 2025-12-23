@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="style.css">
 <title>Anunciar Serviço Completo | Doke</title>
 <style>
 :root{
@@ -24,21 +25,55 @@
 
 
 *{box-sizing:border-box;font-family:Poppins,system-ui,sans-serif}
-body{
-  margin:0;
-  background:#fff;
-  color:var(--cor-texto);
-  padding-left: var(--sidebar-width); 
+/* 1. Atualize o BODY para dar espaço ao menu superior fixo */
+body {
+  margin: 0;
+  background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
+  background-repeat: no-repeat;
+  color: var(--cor-texto);
+  
+  /* ESTAS SÃO AS LINHAS IMPORTANTES: */
+  padding-left: var(--sidebar-width); /* Espaço da lateral */
+  padding-top: 100px; /* Espaço para o menu superior não cobrir o título */
+  min-height: 100vh;
 }
 
+/* 2. Atualize o MAIN para centralizar horizontalmente sem cortar o topo */
 /* ===========================================
-   ESTILOS ESPECÍFICOS DO FORMULÁRIO
+   CORREÇÃO DE ALINHAMENTO (CENTRALIZAR)
    =========================================== */
 
+main {
+    display: block !important;    /* Garante comportamento de bloco padrão */
+    width: auto;                  /* Deixa o navegador calcular a largura no espaço restante */
+    margin: 0;                    /* Remove margens extras que empurram p/ lado */
+    padding: 120px 20px 40px 20px; /* Espaço interno (Topo, Dir, Baixo, Esq) */
+    box-sizing: border-box;       /* Garante que o padding não estoure a largura */
+}
+
 .container-anuncio {
-    max-width: 900px;
-    margin: 10px auto 40px auto;
-    padding: 20px;
+    display: block;
+    width: 100%;
+    max-width: 800px;             /* Largura máxima do cartão */
+    margin-left: auto !important;  /* Força margem esquerda automática */
+    margin-right: auto !important; /* Força margem direita automática */
+    margin-top: 0;
+    margin-bottom: 0;
+    
+    /* Estilo Visual */
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+/* Ajuste para telas menores */
+@media (max-width: 768px) {
+    main {
+        padding-top: 90px;
+        padding-left: 15px;
+        padding-right: 15px;
+    }
 }
 
 .header-anuncio {
@@ -516,6 +551,43 @@ textarea { resize: vertical; min-height: 100px; }
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
         <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
+
+        <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+            <a href="ajuda.html">Ajuda</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
 
     
     <main>
