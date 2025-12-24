@@ -379,123 +379,144 @@
 <div class="anuncio-container" style="background: transparent; box-shadow: none; padding: 0;">
     
     <div class="top-bar">
-        <h2 id="categorias-title" style="color:var(--cor0);">EXPLORAR SERVIÇOS:</h2>
+        <h2 id="categorias-title" style="color:var(--cor0); margin-bottom: 20px;">NOVOS ANÚNCIOS:</h2>
     </div>
 
-    <div class="filtros-scroll-container">
-        <button class="filtro-chip active"><i class='bx bx-filter'></i> Todos</button>
-        <button class="filtro-chip"><i class='bx bx-trending-up'></i> Tendências</button>
-        <button class="filtro-chip"><i class='bx bx-map'></i> Perto de Você</button>
-        <button class="filtro-chip"><i class='bx bx-star'></i> Melhor Avaliados (5.0)</button>
-        <button class="filtro-chip"><i class='bx bx-badge-check'></i> Verificados</button>
-        <button class="filtro-chip"><i class='bx bx-dollar-circle'></i> Promoções</button>
-        <button class="filtro-chip"><i class='bx bx-time'></i> Novos</button>
+    <div class="filtros-container-premium">
         
-        <div class="select-wrapper" style="min-width: 150px;">
-            <select style="border-radius: 30px; padding: 10px 15px; border: 1px solid #e0e0e0;">
-                <option>Estado (UF)</option>
-                <option>Bahia</option>
-                <option>São Paulo</option>
-            </select>
+        <div class="filtros-header-row">
+            <h3 class="filtros-titulo"><i class='bx bx-filter'></i> Filtrar Resultados</h3>
+            <button class="btn-toggle-filtros" onclick="toggleFiltrosExtras()">
+                <i class='bx bx-slider-alt'></i> Filtros Avançados
+            </button>
         </div>
-        <div class="select-wrapper" style="min-width: 150px;">
-            <select style="border-radius: 30px; padding: 10px 15px; border: 1px solid #e0e0e0;">
-                <option>Cidade</option>
-            </select>
+
+        <div id="filtrosExtras" class="filtros-expandidos">
+            <div class="grid-extras">
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Preço Máximo</label>
+                    <input type="number" class="input-premium" placeholder="R$ 0,00">
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Ordenar Por</label>
+                    <select class="input-premium">
+                        <option>Mais Recentes</option>
+                        <option>Menor Preço</option>
+                        <option>Melhor Avaliação</option>
+                    </select>
+                </div>
+                <button class="btn-aplicar">Aplicar</button>
+            </div>
         </div>
+
+        <div class="filtros-localizacao">
+            <span class="label-loc">Localização</span>
+            <div class="grid-loc">
+                <select id="selectEstado" class="select-premium" onchange="carregarCidades()">
+                    <option value="" disabled selected>Selecionar UF</option>
+                    <option value="BA">Bahia</option>
+                    <option value="SP">São Paulo</option>
+                </select>
+                <select id="selectCidade" class="select-premium" onchange="carregarBairros()" disabled>
+                    <option value="" disabled selected>Cidade</option>
+                </select>
+                <select id="selectBairro" class="select-premium" disabled>
+                    <option value="" disabled selected>Bairro</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="filtros-chips-scroll">
+            <button class="chip-tag ativo" onclick="ativarChip(this)">Todos</button>
+            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-trending-up'></i> Tendências</button>
+            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-map'></i> Perto de você</button>
+            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-star'></i> Super Profissionais</button>
+            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-time'></i> Recém-chegados</button>
+            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-badge-check'></i> Verificados</button>
+        </div>
+
     </div>
 
-    <div class="lista-anuncios">
+    <div class="lista-cards-premium">
 
-        <div class="anuncio-card">
-            
-            <div class="card-header">
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <img src="https://i.pravatar.cc/150?img=60" class="prof-avatar" alt="Foto">
-                    <div class="prof-info">
-                        <h4>Marcos Pinturas <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
-                        <div class="prof-meta">@marcospinturas • Há 3 horas • Salvador, BA</div>
-                        
-                        <div class="badges-row">
-                            <span class="stars">★★★★★ (48)</span>
-                            <span class="cifrao active">$$<span style="color:#ddd">$$$</span></span>
-                            <a href="#" style="font-size:0.8rem; color:var(--cor1); text-decoration:underline;">Ver avaliações</a>
+        <div class="card-premium">
+            <div class="cp-header">
+                <div class="cp-perfil">
+                    <img src="https://i.pravatar.cc/150?img=11" class="cp-avatar" alt="Foto">
+                    <div>
+                        <h4 class="cp-nome">Carlos Elétrica <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
+                        <span class="cp-user">@carlos_eletrica</span>
+                        <div class="cp-badges">
+                            <span class="cp-stars">★★★★★</span>
+                            <span class="cp-cifrao on">$$<span style="color:#eee">$$$</span></span>
+                            <a href="#" class="cp-link">Avaliação completa</a>
                         </div>
                     </div>
                 </div>
                 <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; color:#ccc; cursor:pointer;"></i>
             </div>
 
-            <div class="card-body">
-                <h3 class="service-title">Pintura Geométrica e Texturizada</h3>
-                <p class="service-desc">
-                    Transforme sua sala ou quarto com uma pintura moderna! 🎨<br>
-                    Utilizo tintas de primeira linha (Suvinil/Coral), protejo todo o piso e móveis. Entrego o ambiente limpo e organizado. 
-                    Especialista em texturas, cimento queimado e formas geométricas.
+            <div class="cp-body">
+                <h3 class="cp-titulo">⚡ Instalação e Manutenção Elétrica Residencial</h3>
+                <p class="cp-desc">
+                    Problemas na fiação? Faço instalação completa de chuveiros, tomadas, luminárias e quadros de distribuição. Atendo emergências 24h com segurança e padrão ABNT.
                 </p>
             </div>
 
-            <div class="media-grid" onclick="abrirGaleria()">
-                
-                <div class="media-item-main">
-                    <img src="https://images.unsplash.com/photo-1562259949-e8e7689d7828?q=80&w=800&auto=format&fit=crop" class="media-img" alt="Pintura Sala">
+            <div class="cp-carousel" id="car-1">
+                <div class="cp-track">
+                    <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=800&auto=format&fit=crop" class="cp-slide">
+                    <img src="https://images.unsplash.com/photo-1558402529-d2638a7023e9?q=80&w=800&auto=format&fit=crop" class="cp-slide">
+                    <img src="https://plus.unsplash.com/premium_photo-1663045232934-2b634892c471?q=80&w=800&auto=format&fit=crop" class="cp-slide">
                 </div>
-
-                <div class="media-item-sub">
-                    <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=400&auto=format&fit=crop" class="media-img" alt="Detalhe">
-                </div>
-
-                <div class="media-item-sub">
-                    <img src="https://images.unsplash.com/photo-1595846519845-68e298c2edd8?q=80&w=400&auto=format&fit=crop" class="media-img" alt="Outro">
-                    <div class="more-photos-overlay">
-                        +3 fotos
-                    </div>
-                </div>
-
+                <button class="cp-btn-nav cp-prev" onclick="moverSlide('car-1', -1)">&#10094;</button>
+                <button class="cp-btn-nav cp-next" onclick="moverSlide('car-1', 1)">&#10095;</button>
+                <span class="cp-badge-count">1/3</span>
             </div>
 
-            <div class="card-footer">
-                <div class="price-display">
-                    R$ 350,00 <small>/ diária</small>
-                </div>
-                <div style="display:flex; gap:10px;">
-                    <button style="background:#f0f2f5; color:#333; border:none; padding:10px; border-radius:50%; cursor:pointer;">
-                        <i class='bx bx-heart' style="font-size:1.2rem;"></i>
-                    </button>
-                    <button class="btn-action-card">Solicitar Orçamento</button>
-                </div>
+            <div class="cp-footer">
+                <div class="cp-loc"><i class='bx bx-map'></i> Pituba, Salvador</div>
+                <button class="btn-premium">Solicitar Orçamento</button>
             </div>
         </div>
 
-        <div class="anuncio-card">
-            <div class="card-header">
-                <div style="display:flex; gap:15px; align-items:center;">
-                    <img src="https://i.pravatar.cc/150?img=11" class="prof-avatar">
-                    <div class="prof-info">
-                        <h4>Carlos Elétrica <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
-                        <div class="prof-meta">@carlos_eletrica • Ontem</div>
-                        <div class="badges-row">
-                            <span class="stars">★★★★☆ (12)</span>
-                            <span class="cifrao active">$$$<span style="color:#ddd">$$</span></span>
+        <div class="card-premium">
+            <div class="cp-header">
+                <div class="cp-perfil">
+                    <img src="https://i.pravatar.cc/150?img=5" class="cp-avatar" alt="Foto">
+                    <div>
+                        <h4 class="cp-nome">Ana Clean <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
+                        <span class="cp-user">@ana_limpeza</span>
+                        <div class="cp-badges">
+                            <span class="cp-stars">★★★★☆</span>
+                            <span class="cp-cifrao on">$$$<span style="color:#eee">$$</span></span>
+                            <a href="#" class="cp-link">Avaliação completa</a>
                         </div>
                     </div>
                 </div>
+                <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; color:#ccc; cursor:pointer;"></i>
             </div>
 
-            <div class="card-body">
-                <h3 class="service-title">Instalação de Lustres e Pendentes</h3>
-                <p class="service-desc">
-                    Instalação segura em tetos de gesso ou laje. Traga requinte para sua casa com a iluminação correta.
+            <div class="cp-body">
+                <h3 class="cp-titulo">🧹 Faxina Pós-Obra Especializada</h3>
+                <p class="cp-desc">
+                    Sua reforma acabou e a sujeira ficou? Deixe comigo! Equipe especializada em limpeza pesada. Levamos todos os produtos e equipamentos necessários.
                 </p>
             </div>
 
-            <div style="height: 300px; width:100%; overflow:hidden;">
-                <img src="https://images.unsplash.com/photo-1558402529-d2638a7023e9?q=80&w=1000&auto=format&fit=crop" style="width:100%; height:100%; object-fit:cover;">
+            <div class="cp-carousel" id="car-2">
+                <div class="cp-track">
+                    <img src="https://images.unsplash.com/photo-1581578731117-10d52143b0e8?q=80&w=800&auto=format&fit=crop" class="cp-slide">
+                    <img src="https://images.unsplash.com/photo-1527513913476-fa96011095d5?q=80&w=800&auto=format&fit=crop" class="cp-slide">
+                </div>
+                <button class="cp-btn-nav cp-prev" onclick="moverSlide('car-2', -1)">&#10094;</button>
+                <button class="cp-btn-nav cp-next" onclick="moverSlide('car-2', 1)">&#10095;</button>
+                <span class="cp-badge-count">1/2</span>
             </div>
 
-            <div class="card-footer">
-                <div class="price-display">A partir de R$ 80</div>
-                <button class="btn-action-card">Chamar no WhatsApp</button>
+            <div class="cp-footer">
+                <div class="cp-loc"><i class='bx bx-map'></i> Barra, Salvador</div>
+                <button class="btn-premium">Solicitar Orçamento</button>
             </div>
         </div>
 

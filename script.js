@@ -274,134 +274,62 @@ document.addEventListener("DOMContentLoaded", function() {
     };
 });
 
-/* ==================== LÓGICA DE FILTROS AVANÇADOS ==================== */
+/* ==================== LÓGICA NOVO CARD PREMIUM ==================== */
 
-// 1. "Banco de Dados" Simulado de Locais
-const dadosLocais = {
-    "BA": {
-        nome: "Bahia",
-        cidades: {
-            "Salvador": ["Barra", "Rio Vermelho", "Pituba", "Itapuã", "Caminho das Árvores"],
-            "Feira de Santana": ["Centro", "Tomba", "Kalilândia"],
-            "Lauro de Freitas": ["Vilas do Atlântico", "Buraquinho"]
-        }
-    },
-    "SP": {
-        nome: "São Paulo",
-        cidades: {
-            "São Paulo": ["Centro", "Paulista", "Pinheiros", "Moema"],
-            "Campinas": ["Cambuí", "Barão Geraldo"]
-        }
-    },
-    "RJ": {
-        nome: "Rio de Janeiro",
-        cidades: {
-            "Rio de Janeiro": ["Copacabana", "Ipanema", "Barra da Tijuca"],
-            "Niterói": ["Icaraí", "Centro"]
-        }
-    }
-};
-
-// Executar ao carregar a página
-document.addEventListener("DOMContentLoaded", function() {
-    preencherEstados();
-});
-
-// 2. Funções de Povoamento
-function preencherEstados() {
-    const selectEstado = document.getElementById("selectEstado");
-    if(!selectEstado) return;
-
-    // Limpa opções antigas (mantendo a primeira)
-    selectEstado.innerHTML = '<option value="" disabled selected>Selecionar UF</option>';
-
-    for (let sigla in dadosLocais) {
-        let option = document.createElement("option");
-        option.value = sigla;
-        option.text = dadosLocais[sigla].nome;
-        selectEstado.appendChild(option);
-    }
-}
-
-function carregarCidades() {
-    const estadoSigla = document.getElementById("selectEstado").value;
-    const selectCidade = document.getElementById("selectCidade");
-    const selectBairro = document.getElementById("selectBairro");
-
-    // Resetar Cidades e Bairros
-    selectCidade.innerHTML = '<option value="" disabled selected>Selecionar Cidade</option>';
-    selectBairro.innerHTML = '<option value="" disabled selected>Selecione a Cidade...</option>';
-    selectBairro.disabled = true;
-
-    if (estadoSigla && dadosLocais[estadoSigla]) {
-        const cidades = dadosLocais[estadoSigla].cidades;
-        
-        for (let cidadeNome in cidades) {
-            let option = document.createElement("option");
-            option.value = cidadeNome;
-            option.text = cidadeNome;
-            selectCidade.appendChild(option);
-        }
-        selectCidade.disabled = false;
-    }
-}
-
-function carregarBairros() {
-    const estadoSigla = document.getElementById("selectEstado").value;
-    const cidadeNome = document.getElementById("selectCidade").value;
-    const selectBairro = document.getElementById("selectBairro");
-
-    // Resetar Bairros
-    selectBairro.innerHTML = '<option value="" disabled selected>Selecionar Bairro</option>';
-
-    if (estadoSigla && cidadeNome) {
-        const bairros = dadosLocais[estadoSigla].cidades[cidadeNome];
-        
-        bairros.forEach(bairro => {
-            let option = document.createElement("option");
-            option.value = bairro;
-            option.text = bairro;
-            selectBairro.appendChild(option);
-        });
-        selectBairro.disabled = false;
-    }
-}
-
-// 3. Abrir/Fechar "Mais Filtros"
-function toggleMaisFiltros() {
-    const area = document.getElementById("areaMaisFiltros");
-    const btn = document.querySelector(".btn-filtros");
+// 1. Alternar Filtros Avançados
+function toggleFiltrosExtras() {
+    const area = document.getElementById("filtrosExtras");
+    const btn = document.querySelector(".btn-toggle-filtros");
     
-    // Alterna a classe 'aberto'
     if (area.classList.contains("aberto")) {
         area.classList.remove("aberto");
-        btn.style.backgroundColor = "#fff";
+        btn.style.background = "transparent";
         btn.style.color = "var(--cor0)";
     } else {
         area.classList.add("aberto");
-        btn.style.backgroundColor = "var(--cor0)";
-        btn.style.color = "#fff";
+        btn.style.background = "var(--cor0)";
+        btn.style.color = "white";
     }
 }
 
-document.addEventListener("DOMContentLoaded", () => {
-    const btnMenu = document.getElementById('btn-menu-mobile');
-    const sidebar = document.querySelector('.sidebar-icones');
-    const overlay = document.getElementById('overlay-menu');
-
-    // Função para abrir/fechar
-    function toggleMenu() {
-        sidebar.classList.toggle('menu-aberto');
-        document.body.classList.toggle('menu-ativo'); // Para controlar o overlay
-    }
-
-    if(btnMenu) {
-        btnMenu.addEventListener('click', toggleMenu);
-    }
+// 2. Ativar Chip de Filtro
+function ativarChip(elemento) {
+    // Remove ativo de todos os irmãos
+    const parent = elemento.parentElement;
+    const chips = parent.querySelectorAll('.chip-tag');
+    chips.forEach(c => c.classList.remove('ativo'));
     
-    // Fechar ao clicar no fundo escuro (se você adicionou o overlay)
-    if(overlay) {
-        overlay.addEventListener('click', toggleMenu);
-    }
-});
+    // Ativa o clicado
+    elemento.classList.add('ativo');
+}
 
+// 3. Lógica do Carrossel de Imagens
+function moverSlide(idCarousel, direcao) {
+    const carousel = document.getElementById(idCarousel);
+    if (!carousel) return;
+
+    const track = carousel.querySelector('.cp-track');
+    const slides = carousel.querySelectorAll('.cp-slide');
+    const badge = carousel.querySelector('.cp-badge-count');
+    const total = slides.length;
+
+    // Calcula índice atual baseado na translação CSS
+    // Se style.transform for "translateX(-100%)", o índice é 1.
+    let currentTransform = track.style.transform.match(/-?(\d+)/);
+    let indexAtual = currentTransform ? parseInt(currentTransform[0]) / 100 : 0;
+    
+    // Ajusta para números positivos se o match vier negativo
+    if (track.style.transform.includes('-')) indexAtual = Math.abs(indexAtual);
+
+    let novoIndex = indexAtual + direcao;
+
+    // Loop infinito
+    if (novoIndex < 0) novoIndex = total - 1;
+    if (novoIndex >= total) novoIndex = 0;
+
+    // Aplica movimento
+    track.style.transform = `translateX(-${novoIndex * 100}%)`;
+
+    // Atualiza contador (1/3)
+    if (badge) badge.innerText = `${novoIndex + 1}/${total}`;
+}
