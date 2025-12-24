@@ -709,6 +709,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     object-fit: cover; border: 3px solid #fff; background: #fff;
 }
 
+
 .story-name {
     font-size: 12px; color: white; margin-top: 5px;
     text-align: center; white-space: nowrap; width: 100%;
@@ -719,6 +720,194 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     background: #0095f6; color: white; width: 20px; height: 20px;
     border-radius: 50%; display: flex; align-items: center; justify-content: center;
     font-size: 16px; border: 2px solid #fff;
+}
+
+
+/* ==================== NOVOS FILTROS (BARRA DE ROLAGEM) ==================== */
+.filtros-scroll-container {
+    margin-bottom: 30px;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    overflow-x: auto;
+    padding-bottom: 10px;
+    /* Esconder barra de rolagem */
+    scrollbar-width: none; 
+    -ms-overflow-style: none;
+}
+.filtros-scroll-container::-webkit-scrollbar { display: none; }
+
+.filtro-chip {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 30px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--cor1);
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+}
+
+.filtro-chip:hover {
+    border-color: var(--cor0);
+    color: var(--cor0);
+    transform: translateY(-2px);
+}
+
+.filtro-chip.active {
+    background: var(--cor0);
+    color: white;
+    border-color: var(--cor0);
+    box-shadow: 0 4px 10px rgba(11, 119, 104, 0.3);
+}
+
+/* ==================== CARD DE ANÚNCIO (LAYOUT GALERIA) ==================== */
+
+.lista-anuncios {
+    display: flex;
+    flex-direction: column;
+    gap: 40px; /* Mais espaço entre os posts */
+}
+
+.anuncio-card {
+    background: white;
+    border-radius: 16px;
+    border: 1px solid #f0f0f0;
+    box-shadow: 0 2px 15px rgba(0,0,0,0.03);
+    padding: 0;
+    overflow: hidden;
+    transition: 0.3s;
+}
+
+.anuncio-card:hover {
+    box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+}
+
+/* 1. Cabeçalho (Perfil) */
+.card-header {
+    padding: 20px 25px 10px 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.prof-avatar {
+    width: 50px; height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f9f9f9;
+}
+
+.prof-info h4 {
+    margin: 0; font-size: 1rem; color: #333; font-weight: 700;
+    display: flex; align-items: center; gap: 5px;
+}
+
+.prof-meta { font-size: 0.8rem; color: #888; margin-top: 2px; }
+
+/* Avaliação e Preço */
+.badges-row {
+    display: flex; align-items: center; gap: 10px; margin-top: 5px;
+}
+.stars { color: #f1c40f; font-size: 0.9rem; letter-spacing: 1px; }
+.cifrao { color: #ddd; font-weight: 700; font-size: 0.9rem; }
+.cifrao.active { color: var(--cor0); }
+
+/* 2. Texto */
+.card-body { padding: 5px 25px 15px 25px; }
+.service-title { font-size: 1.1rem; color: var(--cor2); font-weight: 700; margin-bottom: 8px; }
+.service-desc { font-size: 0.95rem; color: #444; line-height: 1.6; }
+
+/* 3. GRID DE MÍDIA (MOSAICO) */
+.media-grid {
+    display: grid;
+    /* Grid Assimétrico: Esquerda Grande (2fr), Direita Pequena (1fr) */
+    grid-template-columns: 2fr 1fr; 
+    grid-template-rows: 150px 150px; /* Altura fixa das linhas */
+    gap: 4px;
+    padding-bottom: 10px;
+    cursor: pointer;
+}
+
+/* Primeira imagem ocupa a coluna da esquerda inteira (2 linhas) */
+.media-item-main {
+    grid-column: 1 / 2;
+    grid-row: 1 / 3;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Imagens da direita */
+.media-item-sub {
+    position: relative;
+    overflow: hidden;
+}
+
+.media-img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+.media-grid:hover .media-img { transform: scale(1.03); }
+
+/* Overlay "+3 fotos" */
+.more-photos-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* Escurecer */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 1.5rem;
+    font-weight: 700;
+    backdrop-filter: blur(2px);
+    transition: 0.3s;
+}
+.media-item-sub:hover .more-photos-overlay {
+    background: rgba(0, 0, 0, 0.7);
+}
+
+/* 4. Rodapé */
+.card-footer {
+    padding: 15px 25px;
+    border-top: 1px solid #f5f5f5;
+    display: flex; justify-content: space-between; align-items: center;
+    background: #fafafa;
+}
+
+.price-display {
+    font-size: 1.2rem; font-weight: 800; color: #333;
+}
+.price-display small { font-size: 0.8rem; font-weight: 400; color: #777; }
+
+.btn-action-card {
+    background: var(--cor0); color: white; border: none;
+    padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer;
+    transition: 0.2s;
+}
+.btn-action-card:hover { transform: translateY(-2px); background: #086659; }
+
+/* Ajuste Mobile para o Grid */
+@media (max-width: 600px) {
+    .media-grid {
+        grid-template-columns: 1fr 1fr; /* Divide igual no mobile */
+        grid-template-rows: 200px; /* Apenas uma linha alta */
+    }
+    .media-item-main { grid-column: 1; grid-row: 1; }
+    .media-item-sub:nth-child(2) { display: block; } /* Mostra a segunda */
+    .media-item-sub:nth-child(3) { display: none; } /* Esconde a terceira se precisar economizar espaço */
+    
+    /* Ou manter o layout original mas menor: */
+    .media-grid {
+        grid-template-rows: 100px 100px;
+    }
 }
 
 /* --- BOTÃO SETA (ACOMPANHA O CONTEÚDO) --- */
