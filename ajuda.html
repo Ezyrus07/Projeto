@@ -3,404 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Doke - Central de Ajuda</title>
+    <title>Central de Ajuda | Doke</title>
+    
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
     <style>
-    :root {
-  --cor0: #0b7768;
-  --cor1: #737373;
-  --cor2: #2a5f90;
-  --cor3: #f35b5b;
-  --cor4: #ecedf2;
-    }
-    
-    /* ======================================================
-   PÁGINA DE AJUDA (CENTRALIZADA + DEGRADÊ INDEX)
-   ====================================================== */
+        /* ================= ESTILOS LOCAIS ================= */
+        
+        /* Ajuste do Main */
+        main {
+            padding-bottom: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
 
-/* 1. Estrutura da Página (Sidebar Esquerda + Conteúdo Direita) */
-body.help-page {
-    display: flex;
-    flex-direction: row; /* Garante que fiquem lado a lado */
-    background-color: #f8f9fa;
-    min-height: 100vh;
-    background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
-    overflow-x: hidden;
-}
+        /* Topo da página */
+        .page-header {
+            width: 100%; max-width: 900px;
+            margin: 0 auto 25px auto;
+            display: flex; align-items: center; gap: 15px;
+        }
 
+        .btn-back {
+            background: rgba(255,255,255,0.25); border: 1px solid rgba(255,255,255,0.4);
+            width: 42px; height: 42px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.6rem; transition: 0.2s; text-decoration: none; flex-shrink: 0;
+        }
+        .btn-back:hover { background: white; color: var(--cor2); }
 
+        .page-header h1 { 
+            color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.15); 
+            font-size: 1.8rem; font-weight: 700; margin: 0;
+        }
 
-/* 2. Conteúdo Principal */
-.main-help {
-    flex: 1; /* Ocupa todo o espaço restante ao lado da sidebar */
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-}
+        /* Cartão Principal */
+        .help-card {
+            background: white; width: 100%; max-width: 900px; margin: 0 auto;
+            border-radius: 16px; box-shadow: 0 8px 25px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0; padding: 40px; box-sizing: border-box;
+        }
 
-/* 3. O TOPO COM DEGRADÊ (Igual Index) */
-.help-hero {
-    width: 100%;
-    padding: 60px 20px 100px 20px; /* Padding extra embaixo para os cards subirem */
-    display: flex;
-    justify-content: center; /* Centraliza horizontalmente */
-    align-items: center;
-    text-align: center;
-    position: relative;
-}
+        /* Área de Busca */
+        .search-section {
+            text-align: center; margin-bottom: 40px;
+        }
+        .search-section h2 { color: var(--cor2); margin-bottom: 15px; font-size: 1.5rem; }
+        
+        .search-box {
+            position: relative; max-width: 500px; margin: 0 auto;
+        }
+        .search-box input {
+            width: 100%; padding: 15px 20px 15px 50px;
+            border-radius: 50px; border: 1px solid #ddd;
+            font-size: 1rem; outline: none; transition: 0.3s;
+            background: #f9f9f9;
+        }
+        .search-box input:focus {
+            background: white; border-color: var(--cor0);
+            box-shadow: 0 4px 15px rgba(11, 119, 104, 0.1);
+        }
+        .search-box i {
+            position: absolute; left: 20px; top: 50%; transform: translateY(-50%);
+            color: var(--cor1); font-size: 1.2rem;
+        }
 
-.hero-content {
-    max-width: 700px;
-    width: 100%;
-    z-index: 2;
-}
+        /* Grid de Tópicos */
+        .section-label {
+            font-size: 0.9rem; font-weight: 700; color: var(--cor1);
+            text-transform: uppercase; margin-bottom: 15px; letter-spacing: 0.5px;
+        }
 
-.help-hero h1 {
-    color: white;
-    font-size: 2.2rem;
-    margin-bottom: 30px;
-    font-weight: 700;
-    text-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
+        .topics-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 15px; margin-bottom: 40px;
+        }
 
-/* Barra de Busca Flutuante */
-.help-search-box {
-    background: white;
-    border-radius: 50px;
-    padding: 15px 30px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: 0 10px 40px rgba(0,0,0,0.15); /* Sombra suave */
-    width: 100%;
-    transition: transform 0.3s;
-}
-.help-search-box:hover { transform: translateY(-2px); }
+        .topic-item {
+            background: white; border: 1px solid #eee; border-radius: 12px;
+            padding: 20px; text-align: center; cursor: pointer; transition: 0.3s;
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+        }
+        .topic-item:hover, .topic-item.active {
+            border-color: var(--cor0); box-shadow: 0 5px 15px rgba(11, 119, 104, 0.1);
+            transform: translateY(-3px);
+        }
+        .topic-item i { font-size: 2rem; color: var(--cor2); transition: 0.3s; }
+        .topic-item.active i { color: var(--cor0); }
+        .topic-item span { font-weight: 600; color: #555; font-size: 0.9rem; }
 
-.help-search-box i { font-size: 1.6rem; color: var(--cor0); }
-.help-search-box input {
-    border: none; outline: none; width: 100%;
-    font-size: 1.05rem; color: #333;
-}
+        /* Lista de FAQ (Accordion) */
+        .faq-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 40px; }
+        
+        .faq-item {
+            border: 1px solid #eee; border-radius: 10px; overflow: hidden;
+            transition: 0.3s;
+        }
+        .faq-item:hover { border-color: #ccc; }
+        
+        .faq-item summary {
+            padding: 18px 20px; cursor: pointer; background: white;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 600; color: #333; list-style: none;
+        }
+        .faq-item summary::-webkit-details-marker { display: none; }
+        .faq-item summary i { color: var(--cor1); transition: 0.3s; }
+        
+        .faq-item[open] summary { border-bottom: 1px solid #f0f0f0; color: var(--cor0); }
+        .faq-item[open] summary i { transform: rotate(180deg); color: var(--cor0); }
+        
+        .faq-item .answer {
+            padding: 20px; background: #fbfbfb; color: #666; font-size: 0.95rem; line-height: 1.6;
+        }
 
-/* 4. Container dos Itens (Sobe em cima do degradê) */
-.help-container {
-    width: 100%;
-    max-width: 900px; /* Largura máxima controlada para ficar no centro */
-    margin: -50px auto 50px auto; /* Sobe 50px para encavalar no degradê */
-    padding: 0 20px;
-    position: relative;
-    z-index: 3;
-}
+        /* Área de Contato */
+        .contact-area {
+            background: #f8fcfc; border-radius: 12px; padding: 30px;
+            text-align: center; border: 1px dashed #d0e2e0;
+        }
+        .contact-area h3 { color: var(--cor2); margin-bottom: 20px; font-size: 1.2rem; }
+        
+        .contact-buttons { display: flex; justify-content: center; gap: 15px; flex-wrap: wrap; }
+        
+        .btn-contact {
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 25px; border-radius: 30px; border: none;
+            font-weight: 600; cursor: pointer; transition: 0.3s;
+            text-decoration: none; font-size: 0.95rem;
+        }
+        
+        .btn-whatsapp { background: white; color: #25D366; border: 1px solid #25D366; }
+        .btn-whatsapp:hover { background: #25D366; color: white; }
+        
+        .btn-email { background: white; color: var(--cor2); border: 1px solid var(--cor2); }
+        .btn-email:hover { background: var(--cor2); color: white; }
 
-/* Cards de Tópicos (Centralizados) */
-.help-topics {
-    display: flex;
-    justify-content: center; /* Centraliza os cards */
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 40px;
-}
-
-.topic-card {
-    background: white;
-    width: 160px;
-    padding: 25px 15px;
-    border-radius: 16px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    border: 2px solid transparent;
-}
-
-.topic-card i { font-size: 2.2rem; color: var(--cor2); margin-bottom: 12px; display: block; }
-.topic-card span { font-weight: 600; color: #555; font-size: 0.95rem; }
-
-.topic-card:hover, .topic-card.active {
-    transform: translateY(-5px);
-    border-color: var(--cor0);
-    box-shadow: 0 10px 25px rgba(11, 119, 104, 0.15);
-}
-.topic-card.active i { color: var(--cor0); }
-
-
-/* FAQ List */
-.faq-list {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    margin-bottom: 60px;
-}
-.faq-item {
-    background: white; border-radius: 12px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    border: 1px solid #eee; overflow: hidden;
-}
-.faq-item summary {
-    padding: 22px 25px; cursor: pointer; display: flex;
-    justify-content: space-between; align-items: center;
-    font-weight: 600; color: #333; list-style: none;
-}
-.faq-item summary::-webkit-details-marker { display: none; }
-.faq-item .answer {
-    padding: 0 25px 25px 25px; color: #666; line-height: 1.6;
-    border-top: 1px solid #f5f5f5;
-}
-
-
-/* Área de Contato */
-.contact-support { text-align: center; }
-.contact-support h3 { color: var(--cor2); margin-bottom: 30px; font-size: 1.5rem; }
-
-.support-grid {
-    display: flex; justify-content: center; gap: 30px; flex-wrap: wrap;
-}
-.support-card {
-    background: white; padding: 30px; border-radius: 16px; width: 260px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.06);
-    display: flex; flex-direction: column; align-items: center; transition: 0.3s;
-}
-.support-card:hover { transform: translateY(-5px); }
-.icon-box {
-    width: 60px; height: 60px; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.8rem; color: white; margin-bottom: 15px;
-}
-.icon-box.verde { background: var(--cor0); box-shadow: 0 8px 20px rgba(11, 119, 104, 0.3); }
-.icon-box.azul { background: var(--cor2); box-shadow: 0 8px 20px rgba(42, 95, 144, 0.3); }
-
-.support-card h4 { margin: 0 0 15px 0; color: #333; font-size: 1.1rem; }
-.support-card button {
-    background: white; border: 2px solid #eee; padding: 10px 24px;
-    border-radius: 30px; color: #666; font-weight: 700; cursor: pointer; transition: 0.2s;
-}
-.support-card:hover button {
-    border-color: var(--cor0); color: var(--cor0);
-}
-
-/* ======================================================
-   PÁGINA DE AJUDA - VISUAL CORRIGIDO
-   ====================================================== */
-
-/* 1. Layout Principal */
-body.help-page {
-    background-color: #f8f9fa;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: row; /* Sidebar e Main lado a lado */
-}
-
-/* 2. Área de Conteúdo (Direita) */
-.main-help {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center; /* Centraliza tudo horizontalmente */
-    width: 100%; 
-    background-repeat: no-repeat;
-    min-height: 100%;
-    box-sizing: border-box;
-    font-size: 16px;
-}
-
-
-/* 3. HERO (O TOPO COM DEGRADÊ IGUAL AO INDEX) */
-.help-hero {
-    width: 100%;
-    /* Tamanho e espaçamento idêntico ao seu print */
-    padding: 0px 20px 100px 20px; 
-    
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    
-    /* Borda arredondada opcional se quiser parecer um "Banner" flutuante */
-    /* border-radius: 0 0 30px 30px; */ 
-}
-
-.hero-content {
-    width: 100%;
-    max-width: 700px; /* Limita a largura para não esticar demais */
-}
-
-.help-hero h1 {
-    color: var(--cor2);
-    font-size: 2rem;
-    font-weight: 700;
-    margin-bottom: 30px;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-/* 4. Barra de Busca (Pílula Branca) */
-.help-search-box {
-    background: white;
-    border-radius: 50px;
-    padding: 15px 25px;
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15); /* Sombra suave */
-    width: 100%;
-    transition: transform 0.2s;
-}
-
-.help-search-box:hover {
-    transform: translateY(-2px);
-}
-
-.help-search-box i {
-    font-size: 1.5rem;
-    color: var(--cor0); /* Verde Doke */
-}
-
-.help-search-box input {
-    border: none;
-    outline: none;
-    width: 100%;
-    font-size: 1rem;
-    color: #333;
-    font-family: var(--fonte-padrao);
-}
-
-/* 5. Container Centralizado (Sobe em cima do degradê) */
-.help-container {
-    width: 100%;
-    max-width: 900px;
-    padding: 0 20px;
-    margin-top: -50px; /* Sobe 50px para ficar em cima do azul */
-    margin-bottom: 50px;
-    z-index: 5;
-    position: relative;
-}
-
-/* Cards de Tópicos */
-.help-topics {
-    display: flex;
-    justify-content: center;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-bottom: 40px;
-}
-
-.topic-card {
-    background: white;
-    padding: 25px 20px;
-    width: 160px;
-    border-radius: 12px;
-    text-align: center;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    cursor: pointer;
-    transition: 0.3s;
-    border: 2px solid transparent;
-}
-
-.topic-card:hover, .topic-card.active {
-    border-color: var(--cor0);
-    transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(11, 119, 104, 0.15);
-}
-
-.topic-card i { font-size: 2rem; color: var(--cor2); margin-bottom: 10px; display: block; }
-.topic-card.active i { color: var(--cor0); }
-.topic-card span { font-weight: 600; color: #555; }
-
-/* Lista de FAQ (Acordeão) */
-.faq-list {
-    display: flex; flex-direction: column; gap: 15px;
-}
-
-.faq-item {
-    background: white;
-    border-radius: 10px;
-    border: 1px solid #eee;
-    overflow: hidden;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
-}
-
-.faq-item summary {
-    padding: 20px;
-    cursor: pointer;
-    display: flex; justify-content: space-between; align-items: center;
-    font-weight: 600; color: #333;
-    list-style: none;
-}
-.faq-item summary::-webkit-details-marker { display: none; }
-
-.faq-item .answer {
-    padding: 0 20px 20px 20px;
-    color: #666;
-    line-height: 1.5;
-    border-top: 1px solid #f9f9f9;
-}
-
-/* Responsividade Mobile */
-@media (max-width: 768px) {
-    body.help-page { flex-direction: column; }
-    .sidebar-icones { display: none; }
-    
-    .help-hero { padding: 60px 20px 80px 20px; }
-    .topic-card { width: 45%; padding: 15px; }
-    .help-search-box { padding: 12px 20px; }
-}
-
-
-/* Responsividade Mobile */
-@media (max-width: 768px) {
-    body.help-page { flex-direction: column; } /* Volta para coluna no celular */
-    .sidebar-icones { display: none; } /* Sidebar é controlada pelo JS no mobile */
-    
-    .help-hero { padding: 40px 20px 80px 20px; }
-    .help-hero h1 { font-size: 1.8rem; }
-    .help-topics { gap: 10px; }
-    .topic-card { width: 45%; padding: 15px; } /* Cards menores */
-    
-    .support-card { width: 100%; }
-}</style>
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .help-card { padding: 25px; }
+            .topics-grid { grid-template-columns: 1fr 1fr; }
+            main { padding-top: 100px; padding-left: 20px; padding-right: 20px; }
+        }
+    </style>
 </head>
-<body class="help-page">
+<body>
 
     <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
-        <div class="item">
-            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span></a>
-        </div>
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="meuperfil.html"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke Logo"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
+    <header class="navbar-mobile">
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a>
+        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
+    </header>
 
-    <header class="navbar-desktop">
+        <header class="navbar-desktop">
         <div id="logo-desktop">
             <a href="projeto.html">
                 <img src="assets/Imagens/doke-logo.png" alt="Doke">
@@ -436,143 +202,142 @@ body.help-page {
             </a>
         </div>
     </header>
-    <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <button id="btn-menu-mobile"><i class='bx bx-menu' style="font-size: 28px; color: var(--cor2);"></i></button>
-    </header>
-    <div id="overlay-menu"></div>
 
-    <main class="main-help">
+    <header class="navbar-mobile">
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a>
+        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
+    </header>
+
+    <main>
         
-        <section class="help-hero">
-            <div class="hero-content">
-                <h1>Como podemos ajudar?</h1>
-                
-                <div class="help-search-box">
-                    <i class='bx bx-search'></i> <input type="text" id="helpSearch" placeholder="Busque por dúvidas (ex: pagamento, cadastro)...">
+        <div class="page-header">
+            <a href="mais.html" class="btn-back"><i class='bx bx-chevron-left'></i></a>
+            <h1>Central de Ajuda</h1>
+        </div>
+
+        <div class="help-card">
+            
+            <div class="search-section">
+                <h2>Como podemos ajudar?</h2>
+                <div class="search-box">
+                    <i class='bx bx-search'></i>
+                    <input type="text" id="helpSearch" placeholder="Busque por dúvidas (ex: reembolso, cadastro)...">
                 </div>
             </div>
-        </section>
 
-        <div class="help-container">
-            
-            <div class="help-topics">
-                <div class="topic-card active" onclick="filtrarTopico('todos')">
+            <div class="section-label">Navegue por Tópicos</div>
+            <div class="topics-grid">
+                <div class="topic-item active" onclick="filtrar('todos', this)">
                     <i class='bx bx-grid-alt'></i>
                     <span>Todos</span>
                 </div>
-                <div class="topic-card" onclick="filtrarTopico('cliente')">
+                <div class="topic-item" onclick="filtrar('cliente', this)">
                     <i class='bx bx-user'></i>
                     <span>Para Clientes</span>
                 </div>
-                <div class="topic-card" onclick="filtrarTopico('profissional')">
+                <div class="topic-item" onclick="filtrar('profissional', this)">
                     <i class='bx bx-briefcase-alt-2'></i>
-                    <span>Para Profissionais</span>
+                    <span>Profissionais</span>
                 </div>
-                <div class="topic-card" onclick="filtrarTopico('financeiro')">
+                <div class="topic-item" onclick="filtrar('financeiro', this)">
                     <i class='bx bx-wallet'></i>
                     <span>Pagamentos</span>
                 </div>
             </div>
 
+            <div class="section-label">Perguntas Frequentes</div>
             <div class="faq-list">
-                <details class="faq-item" data-category="cliente">
+                
+                <details class="faq-item" data-cat="cliente">
                     <summary>
-                        <span class="question">Como contrato um serviço na Doke?</span>
-                        <i class='bx bx-chevron-down arrow'></i>
+                        Como contrato um serviço na Doke?
+                        <i class='bx bx-chevron-down'></i>
                     </summary>
                     <div class="answer">
-                        <p>Para contratar, basta pesquisar o serviço desejado na barra de busca, escolher um profissional baseado nas avaliações e clicar em "Solicitar Orçamento". O pagamento fica retido conosco até o serviço ser finalizado.</p>
+                        Para contratar, pesquise o serviço, escolha um profissional pelas avaliações e solicite um orçamento. O pagamento fica seguro conosco até a conclusão.
                     </div>
                 </details>
 
-                <details class="faq-item" data-category="financeiro">
+                <details class="faq-item" data-cat="financeiro">
                     <summary>
-                        <span class="question">Quais as formas de pagamento aceitas?</span>
-                        <i class='bx bx-chevron-down arrow'></i>
+                        Quais as formas de pagamento aceitas?
+                        <i class='bx bx-chevron-down'></i>
                     </summary>
                     <div class="answer">
-                        <p>Aceitamos Cartão de Crédito (até 12x), PIX e Boleto Bancário. Todas as transações são protegidas pelo nosso sistema de Pagamento Garantido.</p>
+                        Aceitamos Cartão de Crédito (até 12x), PIX e Boleto. Todas as transações são protegidas pelo sistema de Pagamento Garantido.
                     </div>
                 </details>
 
-                <details class="faq-item" data-category="profissional">
+                <details class="faq-item" data-cat="profissional">
                     <summary>
-                        <span class="question">Como faço para anunciar meus serviços?</span>
-                        <i class='bx bx-chevron-down arrow'></i>
+                        Como faço para anunciar meus serviços?
+                        <i class='bx bx-chevron-down'></i>
                     </summary>
                     <div class="answer">
-                        <p>Clique em "Anunciar" no menu, preencha seu cadastro profissional, envie os documentos necessários e crie seu portfólio. A aprovação leva até 24h úteis.</p>
+                        Clique em "Anuncie seu serviço" no menu, preencha o cadastro e envie seus documentos. A aprovação ocorre em até 24h úteis.
                     </div>
                 </details>
 
-                <details class="faq-item" data-category="cliente">
+                <details class="faq-item" data-cat="cliente">
                     <summary>
-                        <span class="question">O que fazer se o profissional não aparecer?</span>
-                        <i class='bx bx-chevron-down arrow'></i>
+                        O profissional não apareceu. E agora?
+                        <i class='bx bx-chevron-down'></i>
                     </summary>
                     <div class="answer">
-                        <p>Se o profissional não comparecer, você pode cancelar o serviço imediatamente pelo app e receberá o reembolso integral do valor pago.</p>
+                        Você pode cancelar o serviço imediatamente pelo app e receberá o reembolso integral do valor pago automaticamente.
                     </div>
                 </details>
+
             </div>
 
-            <section class="contact-support">
-                <h3>Ainda precisa de ajuda?</h3>
-                <div class="support-grid">
-                    <div class="support-card">
-                        <div class="icon-box verde"><i class='bx bxl-whatsapp'></i></div>
-                        <h4>WhatsApp</h4>
-                        <button>Iniciar Conversa</button>
-                    </div>
-                    <div class="support-card">
-                        <div class="icon-box azul"><i class='bx bx-envelope'></i></div>
-                        <h4>Email</h4>
-                        <button>Enviar Email</button>
-                    </div>
+            <div class="contact-area">
+                <h3>Ainda não encontrou a resposta?</h3>
+                <div class="contact-buttons">
+                    <a href="#" class="btn-contact btn-whatsapp">
+                        <i class='bx bxl-whatsapp' style="font-size:1.2rem;"></i> Falar no WhatsApp
+                    </a>
+                    <a href="#" class="btn-contact btn-email">
+                        <i class='bx bx-envelope' style="font-size:1.2rem;"></i> Enviar E-mail
+                    </a>
                 </div>
-            </section>
+            </div>
 
         </div>
     </main>
 
     <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
-        <a href="feed.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
-        <a href="#" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notif.</span></a>
-        <a href="#" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" width="24" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon verde" width="24"><span>Notif.</span></a>
+        <a href="mais.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" width="24"><span>Mais</span></a>
     </nav>
 
     <script>
-        // Menu Mobile
-        const btnMenu = document.getElementById('btn-menu-mobile');
-        const sidebar = document.querySelector('.sidebar-icones');
-        const overlay = document.getElementById('overlay-menu');
-        function toggleMenu() {
-            sidebar.classList.toggle('menu-aberto');
-            document.body.classList.toggle('menu-ativo');
-            overlay.style.display = sidebar.classList.contains('menu-aberto') ? 'block' : 'none';
-        }
-        if(btnMenu) btnMenu.addEventListener('click', toggleMenu);
-        if(overlay) overlay.addEventListener('click', toggleMenu);
-
-        // Busca
-        const searchInput = document.getElementById('helpSearch');
-        const faqItems = document.querySelectorAll('.faq-item');
-        searchInput.addEventListener('input', (e) => {
+        // Busca Simples
+        document.getElementById('helpSearch').addEventListener('input', function(e) {
             const term = e.target.value.toLowerCase();
-            faqItems.forEach(item => {
+            const items = document.querySelectorAll('.faq-item');
+            
+            items.forEach(item => {
                 const text = item.innerText.toLowerCase();
                 item.style.display = text.includes(term) ? 'block' : 'none';
             });
         });
 
         // Filtros
-        function filtrarTopico(categoria) {
-            document.querySelectorAll('.topic-card').forEach(card => card.classList.remove('active'));
-            event.currentTarget.classList.add('active');
-            faqItems.forEach(item => {
-                item.style.display = (categoria === 'todos' || item.dataset.category === categoria) ? 'block' : 'none';
+        function filtrar(categoria, element) {
+            // Atualiza classe active
+            document.querySelectorAll('.topic-item').forEach(el => el.classList.remove('active'));
+            element.classList.add('active');
+
+            const items = document.querySelectorAll('.faq-item');
+            items.forEach(item => {
+                if(categoria === 'todos' || item.dataset.cat === categoria) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
             });
         }
     </script>

@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segurança e Senha | Doke</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+    
+    <style>
+        /* ================= VARIÁVEIS E RESET ================= */
+        :root {
+            --cor0: #0b7768; /* Verde Principal */
+            --cor1: #737373; /* Cinza Texto */
+            --cor2: #2a5f90; /* Azul Títulos */
+            --cor3: #f35b5b; /* Vermelho/Alerta */
+            --cor4: #ecedf2; /* Cinza Fundo Claro */
+            --cor-bg: #f8f9fa;
+            --fonte-padrao: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
+
+        body {
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; }
+
+        /* ================= ÁREA PRINCIPAL ================= */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Topo */
+        .page-header {
+            width: 100%; max-width: 600px;
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 30px;
+        }
+        .btn-back {
+            background: white; border: 1px solid #eee;
+            width: 45px; height: 45px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: var(--cor2); font-size: 1.5rem;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s;
+        }
+        .btn-back:hover { transform: translateX(-3px); border-color: var(--cor2); }
+        .page-header h1 { color: var(--cor0);  font-size: 1.8rem; font-weight: 700; }
+
+        /* Container dos Formulários */
+        .security-container {
+            width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px;
+        }
+
+        /* Cards Genéricos */
+        .card-box {
+            background: white; padding: 30px; border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f0f0f0;
+        }
+        .card-title {
+            font-size: 1.1rem; color: var(--cor2); font-weight: 700;
+            margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* Inputs de Senha */
+        .input-group { margin-bottom: 15px; position: relative; }
+        .input-group label { display: block; margin-bottom: 8px; color: var(--cor1); font-size: 0.9rem; font-weight: 600; }
+        
+        .password-wrapper { position: relative; width: 100%; }
+        .password-wrapper input {
+            width: 100%; padding: 14px 45px 14px 16px;
+            border: 1px solid #eee; background: #fbfbfb; border-radius: 10px;
+            font-size: 1rem; color: #333; outline: none; transition: 0.3s;
+        }
+        .password-wrapper input:focus { background: #fff; border-color: var(--cor2); }
+        
+        .toggle-password {
+            position: absolute; right: 15px; top: 50%; transform: translateY(-50%);
+            color: #999; cursor: pointer; font-size: 1.2rem;
+        }
+
+        /* Barra de Força da Senha */
+        .password-strength {
+            height: 4px; background: #eee; margin-top: 5px; border-radius: 2px; overflow: hidden;
+            display: flex;
+        }
+        .strength-bar { width: 0%; height: 100%; transition: 0.3s; }
+
+        /* Botão Trigger (Abrir form) */
+        .btn-expandir {
+            width: 100%;
+            padding: 15px;
+            background: white;
+            border: 1px dashed var(--cor1);
+            color: var(--cor1);
+            border-radius: 12px;
+            cursor: pointer;
+            font-size: 0.95rem;
+            font-weight: 600;
+            display: flex; justify-content: center; align-items: center; gap: 8px;
+            transition: 0.3s;
+        }
+        .btn-expandir:hover {
+            border-color: var(--cor2);
+            color: var(--cor2);
+            background: #f9fbfd;
+        }
+
+        /* Botões de Ação do Form */
+        .form-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .btn-salvar {
+            flex: 1;
+            padding: 15px; background: var(--cor0); color: white;
+            border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+            transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-salvar:hover { background: #086659; transform: translateY(-2px); }
+
+        .btn-cancelar {
+            padding: 15px 20px;
+            background: white;
+            border: 1px solid #ddd;
+            color: #666;
+            border-radius: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-cancelar:hover { background: #f5f5f5; }
+
+        /* Toggle Switch (2FA) */
+        .toggle-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid #f5f5f5;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-text h4 { margin: 0; color: #333; font-size: 1rem; }
+        .toggle-text p { margin: 5px 0 0 0; color: var(--cor1); font-size: 0.85rem; }
+
+        .switch { position: relative; display: inline-block; width: 50px; height: 26px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 3px; bottom: 3px;
+            background-color: white; transition: .4s; border-radius: 50%;
+        }
+        input:checked + .slider { background-color: var(--cor0); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* Zona de Perigo */
+        .danger-zone { border-color: #ffecec; background: #fffcfc; }
+        .danger-zone .card-title { color: var(--cor3); }
+        .btn-danger {
+            background: white; color: var(--cor3); border: 1px solid var(--cor3);
+            width: 100%; padding: 12px; border-radius: 10px; font-weight: 600; cursor: pointer;
+            transition: 0.2s; margin-top: 10px;
+        }
+        .btn-danger:hover { background: var(--cor3); color: white; }
+
+        /* Responsividade */
+        .navbar-mobile, .bottom-nav { display: none; }
+
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-bottom: 80px; }
+            .sidebar-icones { display: none; }
+            
+            .main-content { padding: 20px; }
+            .card-box { padding: 20px; }
+            
+            .navbar-mobile {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 15px 20px; background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 99;
+            }
+            .bottom-nav {
+                display: flex; justify-content: space-around;
+                position: fixed; bottom: 0; left: 0; width: 100%;
+                background: white; border-top: 1px solid #eee; padding: 10px 0; z-index: 999;
+            }
+            .page-header h1 { color: white; } /* Ajuste de cor para mobile com gradiente */
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
+
+    <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+            <a href="ajuda.html">Ajuda</a>
+        </nav>
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        
+        <div class="page-header">
+            <a href="mais.html" class="btn-back"><i class='bx bx-chevron-left'></i></a>
+            <h1>Segurança e Senha</h1>
+        </div>
+
+        <div class="security-container">
+
+            <div class="card-box">
+                <div class="card-title"><i class='bx bx-lock-alt'></i> Alterar Senha</div>
+                
+                <button id="btn-abrir-form" class="btn-expandir" onclick="mostrarFormulario()">
+                    <i class='bx bx-edit'></i> Toque para redefinir sua senha
+                </button>
+
+                <form id="form-senha" style="display: none;" onsubmit="salvarSenha(event)">
+                    <div class="input-group">
+                        <label>Senha Atual</label>
+                        <div class="password-wrapper">
+                            <input type="password" placeholder="Digite sua senha atual">
+                            <i class='bx bx-show toggle-password' onclick="togglePass(this)"></i>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Nova Senha</label>
+                        <div class="password-wrapper">
+                            <input type="password" id="novaSenha" placeholder="Mínimo de 8 caracteres" onkeyup="checkStrength(this.value)">
+                            <i class='bx bx-show toggle-password' onclick="togglePass(this)"></i>
+                        </div>
+                        <div class="password-strength">
+                            <div class="strength-bar" id="strengthBar"></div>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label>Confirmar Nova Senha</label>
+                        <div class="password-wrapper">
+                            <input type="password" placeholder="Repita a nova senha">
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-cancelar" onclick="esconderFormulario()">Cancelar</button>
+                        <button type="submit" class="btn-salvar">Atualizar</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-box">
+                <div class="card-title"><i class='bx bx-shield-quarter'></i> Proteção Extra</div>
+                
+                <div class="toggle-row">
+                    <div class="toggle-text">
+                        <h4>Autenticação em Duas Etapas (2FA)</h4>
+                        <p>Receba um código via SMS/E-mail ao entrar.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox">
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+
+                <div class="toggle-row">
+                    <div class="toggle-text">
+                        <h4>Alertas de Login</h4>
+                        <p>Seja avisado sobre novos dispositivos.</p>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" checked>
+                        <span class="slider round"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="card-box danger-zone">
+                <div class="card-title"><i class='bx bx-error-circle'></i> Excluir Conta</div>
+                <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5;">
+                    Ao excluir sua conta, todos os seus dados, histórico de serviços e pontos serão perdidos permanentemente. Essa ação não pode ser desfeita.
+                </p>
+                <button class="btn-danger" onclick="confirmarExclusao()">Excluir Minha Conta</button>
+            </div>
+
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" width="24"><span>Anunciar</span></a>
+        <a href="mais.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" width="24"><span>Mais</span></a>
+    </nav>
+
+    <script>
+        // --- FUNÇÕES DE MOSTRAR/OCULTAR FORMULÁRIO ---
+        function mostrarFormulario() {
+            document.getElementById('btn-abrir-form').style.display = 'none'; // Esconde botão abrir
+            document.getElementById('form-senha').style.display = 'block'; // Mostra form
+            
+            // Opcional: Efeito suave (se quiser usar CSS animation)
+            // document.getElementById('form-senha').style.animation = 'fadeIn 0.3s';
+        }
+
+        function esconderFormulario() {
+            document.getElementById('form-senha').style.display = 'none'; // Esconde form
+            document.getElementById('btn-abrir-form').style.display = 'flex'; // Volta botão abrir
+            
+            // Limpa os campos por segurança
+            document.getElementById('form-senha').reset();
+            document.getElementById('strengthBar').style.width = '0%';
+        }
+        // ----------------------------------------------
+
+        // Função para mostrar/ocultar senha (Olhinho)
+        function togglePass(icon) {
+            const input = icon.previousElementSibling;
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('bx-show');
+                icon.classList.add('bx-hide');
+            } else {
+                input.type = "password";
+                icon.classList.remove('bx-hide');
+                icon.classList.add('bx-show');
+            }
+        }
+
+        // Verificação de Força
+        function checkStrength(password) {
+            const bar = document.getElementById('strengthBar');
+            let strength = 0;
+            if (password.length > 5) strength += 30;
+            if (password.length > 8) strength += 30;
+            if (/[A-Z]/.test(password)) strength += 20;
+            if (/[0-9]/.test(password)) strength += 20;
+
+            bar.style.width = strength + '%';
+
+            if (strength < 40) bar.style.backgroundColor = 'var(--cor3)'; // Vermelho
+            else if (strength < 80) bar.style.backgroundColor = '#f1c40f'; // Amarelo
+            else bar.style.backgroundColor = 'var(--cor0)'; // Verde
+        }
+
+        // Feedback Salvar
+        function salvarSenha(e) {
+            e.preventDefault();
+            const btn = document.querySelector('.btn-salvar');
+            const originalText = btn.innerText;
+
+            btn.innerText = "Atualizado!";
+            btn.style.background = "#28a745";
+            
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "var(--cor0)";
+                alert("Senha alterada com sucesso!");
+                esconderFormulario(); // Fecha o form após salvar
+            }, 1500);
+        }
+
+        function confirmarExclusao() {
+            if(confirm("Tem certeza absoluta? Essa ação é irreversível.")) {
+                alert("Solicitação enviada. Verifique seu e-mail.");
+            }
+        }
+    </script>
+</body>
+</html>

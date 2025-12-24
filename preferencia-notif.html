@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preferências de Notificação | Doke</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        /* ================= ESTILOS LOCAIS ================= */
+        
+        /* Ajuste fino para garantir que o conteúdo desça (caso o style.css não tenha padding suficiente no main) */
+        main {
+            padding-bottom: 10px;
+        }
+
+        /* Container do Título + Voltar */
+        .page-header {
+            width: 100%; 
+            max-width: 600px; /* Largura fixa para alinhar com o card */
+            margin: 0 auto 20px auto; /* Centraliza na tela */
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+        }
+
+        /* Botão Voltar Circular */
+        .btn-back {
+            background: rgba(255,255,255,0.25); 
+            border: 1px solid rgba(255,255,255,0.4);
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: white; 
+            font-size: 1.6rem; 
+            transition: 0.2s;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .btn-back:hover { 
+            background: white; 
+            color: var(--cor2); 
+        }
+
+        .page-header h1 { 
+            color: white; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15); 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            margin: 0;
+        }
+
+        /* Cartão Branco Central */
+        .settings-card {
+            background: white; 
+            width: 100%; 
+            max-width: 700px; /* Define a largura máxima */
+            margin: 0 auto;   /* CENTRALIZA O CARD */
+            border-radius: 16px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0; 
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        /* Títulos das Seções */
+        .section-title {
+            font-size: 1.1rem; 
+            color: var(--cor2); 
+            font-weight: 700;
+            margin-bottom: 25px; 
+            padding-bottom: 12px; 
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Linhas de Opção (Toggle) */
+        .toggle-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 18px 0; 
+            border-bottom: 1px solid #fbfbfb;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        
+        .toggle-info h4 { margin: 0; font-size: 1rem; color: #333; font-weight: 600; }
+        .toggle-info p { margin: 4px 0 0 0; font-size: 0.85rem; color: #888; }
+        
+        /* Botão Switch Personalizado */
+        .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e0e0e0; transition: .3s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+            background-color: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input:checked + .slider { background-color: var(--cor0); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* Espaçamento entre grupos */
+        .group-spacer { margin-top: 40px; }
+
+        /* Botão Salvar */
+        .btn-save {
+            width: 100%; 
+            padding: 16px; 
+            background: var(--cor0); 
+            color: white;
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            cursor: pointer;
+            margin-top: 30px; 
+            transition: 0.2s; 
+            font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-save:hover { 
+            background: #086659; 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(11, 119, 104, 0.2);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .page-header h1 { font-size: 1.5rem; }
+            .settings-card { padding: 25px; }
+            main { padding-top: 100px; padding-left: 20px; padding-right: 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
+
+        <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+            <a href="ajuda.html">Ajuda</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
+
+
+    <header class="navbar-mobile">
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a>
+        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
+    </header>
+
+    <main>
+        
+        <div class="page-header">
+            <a href="mais.html" class="btn-back"><i class='bx bx-chevron-left'></i></a>
+            <h1>Preferências de Notificação</h1>
+        </div>
+
+        <div class="settings-card">
+            
+            <div class="section-title">Canais de Comunicação</div>
+            
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Notificações Push</h4>
+                    <p>Receber alertas no celular e navegador.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>E-mail</h4>
+                    <p>Resumos semanais e avisos importantes.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>WhatsApp / SMS</h4>
+                    <p>Avisos urgentes sobre serviços e segurança.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="group-spacer"></div>
+
+            <div class="section-title">Tipos de Notificação</div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Mensagens e Chat</h4>
+                    <p>Quando alguém envia uma mensagem direta.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Atualizações de Pedidos</h4>
+                    <p>Mudanças de status, novos orçamentos, etc.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Dicas e Comunidade</h4>
+                    <p>Novidades nos grupos que você participa.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <div class="toggle-row">
+                <div class="toggle-info">
+                    <h4>Promoções e Ofertas</h4>
+                    <p>Descontos exclusivos e campanhas da Doke.</p>
+                </div>
+                <label class="switch">
+                    <input type="checkbox">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+
+            <button class="btn-save" onclick="salvarPreferencias()">Salvar Alterações</button>
+
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul" width="24" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon verde" width="24"><span>Notif.</span></a>
+        <a href="mais.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" width="24"><span>Mais</span></a>
+    </nav>
+
+    <script>
+        function salvarPreferencias() {
+            const btn = document.querySelector('.btn-save');
+            const originalText = btn.innerText;
+
+            btn.innerText = "Salvo com Sucesso!";
+            btn.style.background = "#28a745"; 
+
+            setTimeout(() => {
+                btn.innerText = originalText;
+                btn.style.background = "var(--cor0)";
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

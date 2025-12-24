@@ -561,9 +561,11 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   transform: translateX(-50%);
   background: white;
   width: 190px;
-  padding: 9px;
+  padding: 8px;
   z-index: 9999;
 }
+
+
 .cep-popup p { margin: 0 0 8px 0; font-size: 13px; color: #666; text-align: center; }
 .cep-input-group { display: flex; gap: 5px; }
 .cep-popup input {
@@ -639,29 +641,124 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 
 
-/* ==================== STORIES (ESTILO INSTAGRAM) ==================== */
+/* ==================== STORIES (DINÂMICOS E CENTRALIZADOS) ==================== */
 
 .stories-container {
-    width: 100%;
+    /* O SEGREDO: A caixa se adapta ao conteúdo, mas não passa de 750px */
+    width: fit-content; 
     max-width: 750px;
-    margin: 20px auto 10px auto; /* Espaçamento ajustado */
-    padding: 0 10px; /* Margem lateral para não colar na tela mobile */
-    box-sizing: border-box;
+    
+    /* Centraliza o bloco na tela */
+    margin: 20px auto 30px auto; 
+    
+    position: relative;
+    padding: 0; /* Remove padding lateral para o cálculo ficar exato */
+    display: flex;
+    align-items: center;
 }
 
 .stories-scroll {
     display: flex;
     gap: 16px;
     overflow-x: auto;
-    padding-bottom: 10px; /* Espaço para a rolagem não cortar a sombra */
+    padding: 10px 5px; /* Espaço para o efeito de hover não cortar */
     scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch; /* Rolagem suave no iOS */
     
     /* Esconder barra de rolagem */
     scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none;  /* IE and Edge */
+    -ms-overflow-style: none;  /* IE */
 }
 
+/* Esconder barra no Chrome */
+.stories-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    width: 74px;
+}
+
+/* Anel e Imagem (Mantive igual ao anterior) */
+.story-ring {
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    padding: 3px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.2s ease;
+}
+
+.story-item:hover .story-ring {
+    transform: scale(1.05);
+}
+
+.story-ring.unseen { background: var(--cor-botton-verde); } /* Ou seu gradiente */
+.story-ring.seen { background: #e0e0e0; }
+.story-ring.add-story { border: 2px dashed rgba(255,255,255,0.6); padding: 0; }
+
+.story-ring img {
+    width: 100%; height: 100%; border-radius: 50%;
+    object-fit: cover; border: 3px solid #fff; background: #fff;
+}
+
+.story-name {
+    font-size: 12px; color: white; margin-top: 5px;
+    text-align: center; white-space: nowrap; width: 100%;
+    font-weight: 600; }
+
+.plus-icon {
+    position: absolute; bottom: 0; right: 0;
+    background: #0095f6; color: white; width: 20px; height: 20px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 16px; border: 2px solid #fff;
+}
+
+/* --- BOTÃO SETA (ACOMPANHA O CONTEÚDO) --- */
+.btn-scroll-stories {
+    position: absolute;
+    
+    /* Pulo do gato 2: A seta fica fora da caixa, na direita */
+    right: -25px; 
+    top: 40%;
+    transform: translateY(-50%);
+    
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: white; border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    z-index: 20;
+    opacity: 0.9;
+    transition: all 0.2s ease;
+}
+
+.btn-scroll-stories:hover {
+    transform: translateY(-50%) scale(1.1);
+    opacity: 1;
+}
+
+/* Mobile: Ajustes para tela cheia */
+@media (max-width: 768px) {
+    .stories-container {
+        width: 100%; /* No mobile ocupa tudo */
+        padding-left: 15px; /* Espaço na esquerda */
+    }
+    .btn-scroll-stories {
+        display: none; /* Seta some no touch */
+    }
+    .stories-scroll {
+        padding-right: 20px; /* Espaço no final da rolagem */
+    }
+}
 /* Esconder barra de rolagem no Chrome/Safari */
 .stories-scroll::-webkit-scrollbar {
     display: none;
@@ -695,7 +792,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 
 /* Borda Gradiente (Não visto) */
 .story-ring.unseen {
-      background: linear-gradient(90deg, #6a11cb 0%, #ff2e63 100%);
+      background: var(--cor-botton-verde)
 }
 
 /* Borda Cinza (Já visto) */
@@ -765,6 +862,45 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     }
     .story-name {
         font-size: 11px;
+    }
+}
+
+/* Posicionamento relativo para a seta ficar dentro da caixa */
+.stories-container {
+    position: relative; 
+}
+
+/* Estilo do Botão Seta */
+.btn-scroll-stories {
+    position: absolute;
+    right: 10px; /* Distância da direita */
+    top: 40%;    /* Centralizado verticalmente na altura das bolinhas */
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: white;
+    border: none;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2); /* Sombra para destacar */
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10; /* Garante que fique por cima das fotos */
+    opacity: 0.9;
+    transition: all 0.2s ease;
+}
+
+.btn-scroll-stories:hover {
+    transform: translateY(-50%) scale(1.1); /* Efeito de zoom leve */
+    opacity: 1;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Esconder a seta em telas touch/mobile (pois usam o dedo) */
+@media (max-width: 768px) {
+    .btn-scroll-stories {
+        display: none;
     }
 }
 
@@ -843,7 +979,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     z-index: 2;
     pointer-events: none; /* Deixa clicar no card através dele */
 }
-.play-icon svg { width: 18px; fill: #fff; margin-left: 2px; }
+.play-icon svg { width: 18px; fill: #ffffff; margin-left: 2px; }
 
 /* UI Layer */
 .video-ui-layer {
@@ -1097,7 +1233,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 #categorias-title2, #categorias-title3 { color: white; }
 #categorias-title3 { font-weight: normal; text-align: center; }
 
-#categorias-title {font-weight: 900; margin: 0; color: var(--cor0); }
+#categorias-title {font-weight: 900; margin: 0; color: var(--cor0); padding: 0px; }
 
 .categorias-grid {
   display: grid; grid-template-columns: 1fr 1fr;
@@ -1407,7 +1543,7 @@ body.dark-mode .input-pequeno.full-width {
    7. RODAPÉ (CORRIGIDO E CENTRALIZADO)
    ========================================================================== */
 .rodape-container {
-    background-color: var(--cor2);
+    background: var(--cor-botton-azul);
     margin-top: 80px;
 }
 
@@ -1540,6 +1676,177 @@ body.dark-mode .input-pequeno.full-width {
   /* Footer */
   .colunas { flex-direction: row; justify-content: center; flex-wrap: wrap; }
   .coluna { min-width: 180px; }
+}
+
+/* ==================== RODAPÉ NOVO (DESIGN PREMIUM) ==================== */
+.main-footer {
+    background-color: #22394e; 
+    color: #b0b8c4;
+    padding: 60px 20px 20px 20px;
+    margin-top: 80px;
+    font-size: 0.9rem;
+    font-family: var(--fonte-padrao);
+    
+    /* --- A CORREÇÃO MÁGICA --- */
+    /* Isso faz o rodapé respeitar o espaço da sidebar automaticamente */
+    margin-left: var(--sidebar-width); 
+    width: auto; /* Garante que ele ocupe o espaço restante */
+    transition: margin-left 0.3s ease; /* Animação suave se a sidebar mudar de tamanho */
+}
+
+/* --- CORREÇÃO DO RODAPÉ EM PÁGINAS INTERNAS --- */
+/* Se o rodapé estiver dentro de uma tag <main>, ele perde a margem lateral para encaixar */
+main .main-footer, 
+.main-help .main-footer {
+    margin-left: 0 !important;
+    width: 100% !important;
+    margin-top: auto; /* Empurra para o fundo se a página for curta */
+}
+
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    /* Grid inteligente: Logo maior, colunas de links iguais */
+    grid-template-columns: 1.5fr 1fr 1fr 1fr; 
+    gap: 40px;
+    border-bottom: 1px solid #2c3e50;
+    padding-bottom: 40px;
+}
+
+/* Coluna da Marca */
+.footer-logo {
+    height: 40px;
+    margin-bottom: 20px;
+    filter: brightness(0) invert(1); /* Deixa o logo branco se for imagem */
+}
+
+.footer-desc {
+    line-height: 1.6;
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    max-width: 300px;
+}
+
+.footer-desc strong {
+    color: var(--cor0); /* Verde da marca */
+}
+
+/* Ícones Sociais */
+.social-links {
+    display: flex;
+    gap: 15px;
+}
+
+.social-links a {
+    color: #fff;
+    background: rgba(255,255,255,0.1);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.social-links a:hover {
+    background: var(--cor0);
+    transform: translateY(-3px);
+}
+
+/* Colunas de Links */
+.footer-col h4 {
+    color: #fff;
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    font-weight: 600;
+}
+
+.footer-col ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.footer-col ul li {
+    margin-bottom: 12px;
+}
+
+.footer-col ul li a {
+    text-decoration: none;
+    color: #b0b8c4;
+    transition: color 0.2s;
+}
+
+.footer-col ul li a:hover {
+    color: var(--cor0); /* Verde ao passar o mouse */
+    padding-left: 5px; /* Efeito de movimento sutil */
+}
+
+/* Botão de App (Fictício) */
+.btn-app {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    color: white;
+    padding: 8px 16px;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    cursor: pointer;
+    margin-top: 15px;
+    transition: 0.3s;
+}
+.btn-app:hover { background: rgba(255,255,255,0.2); }
+.small-text { font-size: 10px; opacity: 0.8; }
+.big-text { font-size: 14px; font-weight: bold; }
+
+/* Barra Inferior (Copyright) */
+.footer-bottom {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding-top: 25px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    color: #7f8c8d;
+}
+
+.payment-icons {
+    display: flex;
+    gap: 15px;
+    font-weight: 600;
+    color: #95a5a6;
+}
+
+/* --- RESPONSIVIDADE RODAPÉ --- */
+@media (max-width: 900px) {
+    .footer-content {
+        grid-template-columns: 1fr 1fr; /* 2 colunas no tablet */
+    }
+    .footer-col.brand-col {
+        grid-column: span 2; /* Logo ocupa a largura toda */
+    }
+}
+
+@media (max-width: 600px) {
+    .footer-content {
+        grid-template-columns: 1fr; /* 1 coluna no celular */
+        gap: 30px;
+        text-align: center;
+    }
+    .footer-col.brand-col { grid-column: auto; }
+    .social-links { justify-content: center; }
+    .footer-desc { margin: 0 auto 20px auto; }
+    .footer-col ul li a:hover { padding-left: 0; color: var(--cor0); }
+    
+    .footer-bottom {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
 }
 
 /* --- TABLETS RANGE ESPECÍFICO (768px - 1023px) --- */

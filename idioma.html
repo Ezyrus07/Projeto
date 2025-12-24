@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Idioma | Doke</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+        <link rel="stylesheet" href="style.css">
+    <style>
+        /* ================= VARIÁVEIS E RESET ================= */
+        :root {
+            --cor0: #0b7768; /* Verde Principal */
+            --cor1: #737373; /* Cinza Texto */
+            --cor2: #2a5f90; /* Azul Títulos */
+            --cor3: #f35b5b; /* Vermelho/Alerta */
+            --cor4: #ecedf2; /* Cinza Fundo Claro */
+            --fonte-padrao: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
+
+        body {
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 300px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; }
+
+
+        /* ================= CONTEÚDO PRINCIPAL ================= */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Topo */
+        .page-header {
+            width: 100%; max-width: 600px;
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 30px;
+        }
+        .btn-back {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem; transition: 0.2s;
+        }
+        .btn-back:hover { background: white; color: var(--cor2); }
+        .page-header h1 { color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2); font-size: 1.8rem; font-weight: 700; }
+
+        /* Card de Idiomas */
+        .lang-container { width: 100%; max-width: 600px; }
+        
+        .card-box {
+            background: white; padding: 30px; border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f0f0f0;
+        }
+
+        .description {
+            color: var(--cor1); font-size: 0.95rem; margin-bottom: 25px;
+        }
+
+        /* Lista de Opções */
+        .lang-option {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 18px;
+            border: 2px solid #eee;
+            border-radius: 12px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            transition: 0.2s;
+            background: white;
+        }
+
+        .lang-option:hover {
+            border-color: #ccc;
+            background: #fdfdfd;
+        }
+
+        /* Estado Selecionado */
+        .lang-option.active {
+            border-color: var(--cor0);
+            background-color: #f2fffd;
+        }
+        
+        .lang-info { display: flex; align-items: center; gap: 15px; }
+        .flag { font-size: 1.5rem; }
+        .lang-name { font-weight: 600; color: #333; font-size: 1rem; }
+        
+        .check-icon {
+            color: var(--cor0);
+            font-size: 1.5rem;
+            display: none; /* Escondido por padrão */
+        }
+        
+        .lang-option.active .check-icon {
+            display: block; /* Aparece quando ativo */
+        }
+
+        /* Botão Salvar */
+        .btn-save {
+            width: 100%; padding: 16px; background: var(--cor0); color: white;
+            border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
+            margin-top: 20px; transition: 0.2s; font-size: 1rem;
+        }
+        .btn-save:hover { background: #086659; transform: translateY(-2px); }
+
+
+        /* RESPONSIVIDADE */
+        .navbar-mobile, .bottom-nav { display: none; }
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-bottom: 80px; }
+            .sidebar-icones { display: none; }
+            .main-content { padding: 20px; }
+            
+            .navbar-mobile {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 15px 20px; background: white; position: sticky; top: 0; z-index: 99;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+            .bottom-nav {
+                display: flex; justify-content: space-around;
+                position: fixed; bottom: 0; left: 0; width: 100%;
+                background: white; border-top: 1px solid #eee; padding: 10px 0; z-index: 999;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notif.</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
+
+    <header class="navbar-mobile">
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a>
+        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
+    </header>
+
+        <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+            <a href="ajuda.html">Ajuda</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
+
+    <main class="main-content">
+        
+        <div class="page-header">
+            <a href="mais.html" class="btn-back"><i class='bx bx-chevron-left'></i></a>
+            <h1>Idioma / Language</h1>
+        </div>
+
+        <div class="lang-container">
+            <div class="card-box">
+                <p class="description">Selecione o idioma que você prefere usar na Doke. Isso afetará textos, menus e notificações.</p>
+
+                <div class="lang-option active" onclick="selectLang(this)">
+                    <div class="lang-info">
+                        <span class="flag">🇧🇷</span>
+                        <span class="lang-name">Português (Brasil)</span>
+                    </div>
+                    <i class='bx bx-check check-icon'></i>
+                </div>
+
+                <div class="lang-option" onclick="selectLang(this)">
+                    <div class="lang-info">
+                        <span class="flag">🇺🇸</span>
+                        <span class="lang-name">English (US)</span>
+                    </div>
+                    <i class='bx bx-check check-icon'></i>
+                </div>
+
+                <div class="lang-option" onclick="selectLang(this)">
+                    <div class="lang-info">
+                        <span class="flag">🇪🇸</span>
+                        <span class="lang-name">Español</span>
+                    </div>
+                    <i class='bx bx-check check-icon'></i>
+                </div>
+
+                <button class="btn-save" onclick="salvarIdioma()">Salvar Preferência</button>
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" width="24"><span>Anunciar</span></a>
+        <a href="mais.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" width="24"><span>Mais</span></a>
+    </nav>
+
+    <script>
+        // Função para selecionar o idioma
+        function selectLang(element) {
+            // Remove a classe 'active' de todos
+            document.querySelectorAll('.lang-option').forEach(el => el.classList.remove('active'));
+            // Adiciona a classe 'active' no clicado
+            element.classList.add('active');
+        }
+
+        // Função Fake de Salvar
+        function salvarIdioma() {
+            const btn = document.querySelector('.btn-save');
+            const originalText = btn.innerText;
+
+            btn.innerText = "Idioma Alterado!";
+            btn.style.background = "#28a745"; // Verde sucesso
+
+            setTimeout(() => {
+                alert("O idioma foi atualizado com sucesso!");
+                btn.innerText = originalText;
+                btn.style.background = "var(--cor0)";
+            }, 500);
+        }
+    </script>
+</body>
+</html>
