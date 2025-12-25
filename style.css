@@ -1108,6 +1108,74 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 .btn-premium:hover { background: #096356; transform: translateY(-2px); }
 
+/* ==================== NOVO: GRID MOSAICO DE FOTOS ==================== */
+
+.cp-media-grid {
+    display: grid;
+    /* Coluna 1 (Grande): 2.5 partes | Coluna 2 (Pequena): 1 parte */
+    grid-template-columns: 2.5fr 1fr; 
+    grid-template-rows: 1fr 1fr; /* Duas linhas iguais para a direita */
+    gap: 3px; /* Espacinho branco entre as fotos */
+    height: 350px; /* Altura fixa do bloco de mídia */
+    background: #fff;
+    cursor: pointer;
+    overflow: hidden;
+    position: relative;
+}
+
+/* Foto Principal (Esquerda) - Ocupa as 2 linhas */
+.cp-item-main {
+    grid-column: 1;
+    grid-row: 1 / 3;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Fotos Secundárias (Direita) */
+.cp-item-sub {
+    position: relative;
+    overflow: hidden;
+}
+
+/* Estilo Geral das Imagens */
+.cp-media-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Garante que a foto preencha sem distorcer */
+    transition: transform 0.4s ease;
+    display: block;
+}
+
+/* Efeito Hover: Zoom suave nas fotos */
+.cp-media-grid:hover img {
+    transform: scale(1.03);
+}
+
+/* --- OVERLAY DE CONTAGEM (+3, +5...) --- */
+.cp-overlay-count {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.6); /* Fundo escuro transparente */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    backdrop-filter: blur(2px); /* Efeito de vidro embaçado */
+    transition: background 0.2s;
+}
+
+.cp-item-sub:hover .cp-overlay-count {
+    background: rgba(0, 0, 0, 0.75); /* Escurece mais ao passar o mouse */
+}
+
+/* --- RESPONSIVIDADE (MOBILE) --- */
+@media (max-width: 600px) {
+    .cp-media-grid {
+        height: 240px; /* Altura menor no celular */
+    }
+}
 /* Responsividade */
 @media (max-width: 768px) {
     .grid-loc { grid-template-columns: 1fr; gap: 10px; }
@@ -1241,6 +1309,8 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     font-weight: bold;
     border: 2px solid #fff;
 }
+
+
 
 /* Ajuste Responsivo */
 @media (max-width: 600px) {
