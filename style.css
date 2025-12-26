@@ -687,8 +687,8 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 .story-ring {
     width: 70px;
     height: 70px;
-    border-radius: 50%;
-    padding: 3px;
+    border-radius: 18px; /* Alterado de 50% para 18px */
+    padding: 3px; 
     position: relative;
     display: flex;
     justify-content: center;
@@ -696,9 +696,19 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     transition: transform 0.2s ease;
 }
 
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 14px; /* Ajustado para encaixar dentro da borda de 18px */
+    object-fit: cover;
+    border: 3px solid #fff; 
+    background-color: #fff;
+}
+
 .story-item:hover .story-ring {
     transform: scale(1.05);
 }
+
 
 .story-ring.unseen { background: var(--cor-botton-verde); } /* Ou seu gradiente */
 .story-ring.seen { background: #e0e0e0; }
@@ -716,10 +726,42 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     font-weight: 600; }
 
 .plus-icon {
-    position: absolute; bottom: 0; right: 0;
-    background: #0095f6; color: white; width: 20px; height: 20px;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 16px; border: 2px solid #fff;
+    position: absolute;
+    bottom: -4px; /* Levemente para fora */
+    right: -4px;  /* Levemente para fora */
+    background: #0095f6;
+    color: white;
+    width: 24px;   /* Um pouco maior */
+    height: 24px;
+    border-radius: 8px; /* Quadrado arredondado também */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    border: 2px solid #fff;
+    z-index: 5;
+}
+
+/* Ajuste Responsivo */
+@media (max-width: 600px) {
+    .stories-container {
+        padding-left: 15px; 
+    }
+    .story-ring {
+        width: 62px;
+        height: 62px;
+        border-radius: 16px; /* Ajuste proporcional para mobile */
+    }
+    .story-ring img {
+        border-radius: 12px; /* Ajuste proporcional para a imagem interna */
+    }
+    .story-item {
+        width: 66px;
+    }
+    .story-name {
+        font-size: 11px;
+    }
 }
 
 
@@ -1270,14 +1312,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 
 /* A Imagem do Usuário */
-.story-ring img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #fff; /* Borda branca interna para separar da cor */
-    background-color: #fff;
-}
+
 
 /* Nome do Usuário */
 .story-name {
@@ -2709,3 +2744,40 @@ body.dark-mode {
   .popup { width: 90%; left: 5%; right: auto; }
   .popup-content { width: 100%; }
 }
+
+/* ==================== FORÇAR STORIES QUADRADOS ==================== */
+
+/* O Container do Story (Borda colorida) */
+.story-ring, 
+.story-ring.unseen, 
+.story-ring.seen, 
+.story-ring.add-story {
+    border-radius: 18px !important; /* !important obriga a mudar */
+    padding: 3px !important;
+}
+
+/* A Imagem de dentro */
+.story-ring img {
+    border-radius: 14px !important; /* Ajuste para encaixar na borda */
+}
+
+/* O ícone de "+" (se for o seu perfil) */
+.plus-icon {
+    border-radius: 8px !important;
+    width: 24px !important;
+    height: 24px !important;
+    bottom: -4px !important;
+    right: -4px !important;
+}
+
+/* Ajuste específico para Celular (para não ficar gigante) */
+@media (max-width: 600px) {
+    .story-ring, 
+    .story-ring.unseen, 
+    .story-ring.seen {
+        border-radius: 16px !important;
+    }
+    .story-ring img {
+        border-radius: 12px !important;
+    }
+} 
