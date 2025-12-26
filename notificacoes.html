@@ -4,335 +4,375 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notificações | Doke</title>
+    <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-            <link rel="stylesheet" href="style.css">
     <style>
-        /* ================= VARIÁVEIS E RESET (Padrão do Projeto) ================= */
-        :root {
-            --cor0: #0b7768; /* Verde Principal */
-            --cor1: #737373; /* Cinza Texto */
-            --cor2: #2a5f90; /* Azul Títulos */
-            --cor3: #f35b5b; /* Vermelho/Alerta */
-            --cor4: #ecedf2; /* Cinza Fundo Claro */
-            --cor-bg-unread: #f0f7ff; /* Fundo item não lido */
-            --fonte-padrao: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        /* ======================================================
+           ESTILOS ESPECÍFICOS DA PÁGINA NOTIFICAÇÕES
+           (Sidebar e Navbar herdam do style.css)
+           ====================================================== */
+        
+        /* Ajuste do Main para compensar Sidebar (Igual ao explorar.html) */
+        @media (min-width: 1024px) {
+            main {
+                margin-left: var(--sidebar-width);
+                padding: 30px 40px;
+                max-width: 1600px;
+            }
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
+        /* Container Central */
+        .notif-container {
 
-        body {
-            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 300px);
-            min-height: 100vh;
-            display: flex;
-            flex-direction: row;
-            overflow-x: hidden;
-            background-repeat: no-repeat;
+            margin: 0 auto;
         }
 
-        a { text-decoration: none; font-weight: bold;}
-
-
-
-        /* ================= CONTEÚDO PRINCIPAL ================= */
-        .main-content {
-            flex: 1;
+        /* --- HERO SECTION (Cabeçalho Azul) --- */
+        .notif-hero-container {
+            background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
             padding: 40px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            color: white;
+            box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative;
+            overflow: hidden;
             display: flex;
-            flex-direction: column;
-            align-items: center;
+            justify-content: space-between;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            gap: 20px;
         }
 
-        /* Topo (Título e Voltar) */
-        .page-header {
-            width: 100%; max-width: 700px; /* Mesma largura do container */
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 20px;
-        }
-        
-        .header-left { display: flex; align-items: center; gap: 15px; }
-
-
-        .btn-back:hover { background: white; color: var(--cor2); }
-
-        .page-header h1 { 
-            color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.2); 
-            font-size: 1.8rem; font-weight: 700; 
+        .notif-hero-container::before {
+            content: ''; position: absolute; top: -50px; right: -20px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
         }
 
-        /* Container Branco (Igual Idioma/Pagamentos) */
-        .card-box {
-            background: white; 
-            width: 100%; max-width: 700px; /* Largura padrão */
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.03); 
-            border: 1px solid #f0f0f0;
-            overflow: hidden; /* Para o header interno não vazar */
-            min-height: 500px;
+        .hero-content h1 {
+            font-size: 2rem; margin-bottom: 5px; font-weight: 700; color: white;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .badge-count {
+            background: #ff2e63; color: white; font-size: 0.8rem; 
+            padding: 3px 10px; border-radius: 12px; vertical-align: middle;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+        .hero-content p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
+
+        .hero-actions { display: flex; gap: 10px; }
+
+        .btn-hero-action {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 10px 18px; border-radius: 30px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; transition: 0.2s;
+            text-decoration: none; backdrop-filter: blur(5px);
+        }
+        .btn-hero-action:hover { background: white; color: var(--cor2); }
+
+        /* --- FILTROS (Chips) --- */
+        .filters-scroll {
+            display: flex; gap: 10px; margin-bottom: 30px; 
+            overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;
+        }
+        .filters-scroll::-webkit-scrollbar { display: none; }
+
+        .filter-chip {
+            background: white; border: 1px solid #e0e0e0; padding: 10px 24px;
+            border-radius: 30px; font-size: 0.9rem; font-weight: 600; color: #555;
+            cursor: pointer; white-space: nowrap; transition: 0.2s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .filter-chip:hover { border-color: var(--cor2); color: var(--cor2); transform: translateY(-2px); }
+        .filter-chip.active {
+            background: var(--cor2); color: white; border-color: var(--cor2);
+            box-shadow: 0 4px 10px rgba(42, 95, 144, 0.3);
         }
 
-        /* Header Interno do Card */
-        .card-header-inner {
-            padding: 20px 25px;
-            border-bottom: 1px solid #eee;
-            display: flex; justify-content: space-between; align-items: center;
+        /* --- GRUPOS DE NOTIFICAÇÃO --- */
+        .date-group { margin-bottom: 30px; }
+        .date-label {
+            font-size: 0.8rem; font-weight: 700; color: #888; 
+            margin-bottom: 15px; padding-left: 5px; text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* --- CARD DE NOTIFICAÇÃO --- */
+        .notif-card {
+            background: white; border-radius: 16px; padding: 20px;
+            margin-bottom: 15px; border: 1px solid #f0f0f0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+            display: flex; gap: 18px; align-items: flex-start;
+            position: relative; transition: 0.2s; cursor: pointer;
+        }
+        .notif-card:hover {
+            transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+            border-color: #e0e0e0;
+        }
+
+        .notif-card.unread {
             background: #fff;
+            border-left: 5px solid var(--cor0);
         }
-        
-        .notif-count {
-            background: var(--cor3); color: white; font-size: 0.75rem; 
-            padding: 2px 8px; border-radius: 10px; font-weight: 600;
-        }
-
-        .btn-mark-all {
-            background: none; border: none; color: var(--cor0); 
-            font-weight: 600; font-size: 0.9rem; cursor: pointer; text-decoration: underline;
+        .notif-card.unread::after {
+            content: ''; position: absolute; top: 20px; right: 20px;
+            width: 10px; height: 10px; background: #ff2e63; border-radius: 50%;
+            box-shadow: 0 0 5px rgba(255, 46, 99, 0.5);
         }
 
-        /* Filtros (Chips) */
-        .filters-row {
-            padding: 15px 25px; background: #f9f9f9;
-            border-bottom: 1px solid #eee; display: flex; gap: 10px; overflow-x: auto;
-        }
-        .chip {
-            padding: 6px 16px; border-radius: 20px; font-size: 0.9rem;
-            border: 1px solid #ddd; background: white; color: #666; 
-            cursor: pointer; transition: 0.2s; white-space: nowrap;
-        }
-        .chip.active {
-            background-color: var(--cor2); color: white; border-color: var(--cor2);
-        }
-        .chip:hover:not(.active) { background-color: #eee; }
-
-        /* Lista de Notificações */
-        .notif-list { display: flex; flex-direction: column; }
-
-        .notif-item {
-            display: flex; gap: 15px; padding: 20px 25px;
-            border-bottom: 1px solid #f0f0f0; cursor: pointer;
-            transition: 0.2s; position: relative;
-        }
-        .notif-item:hover { background-color: #fcfcfc; }
-        .notif-item:last-child { border-bottom: none; }
-
-        /* Estilo Não Lido */
-        .notif-item.unread { background-color: var(--cor-bg-unread); }
-        .notif-item.unread::after {
-            content: ''; position: absolute; top: 22px; right: 20px;
-            width: 8px; height: 8px; background: var(--cor0); border-radius: 50%;
-        }
-
-        /* Ícones */
-        .icon-box {
-            width: 45px; height: 45px; border-radius: 50%;
+        .notif-icon {
+            width: 50px; height: 50px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 1.4rem; flex-shrink: 0;
+            font-size: 1.5rem; flex-shrink: 0;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
-        .ib-pedido { background: #e0f2f1; color: var(--cor0); }
-        .ib-sistema { background: #e3f2fd; color: var(--cor2); }
-        .ib-promo { background: #fff8e1; color: #fbc02d; }
-        .ib-alerta { background: #ffebee; color: var(--cor3); }
+        .ni-pedido { background: #e0f2f1; color: var(--cor0); }
+        .ni-alerta { background: #fff0f0; color: #ff2e63; }
+        .ni-info { background: #eef4fc; color: var(--cor2); }
+        .ni-social { background: #f3e5f5; color: #9c27b0; }
 
-        /* Textos */
-        .item-content { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-        .item-title { font-weight: 700; color: #333; font-size: 0.95rem; margin-bottom: 4px; }
-        .unread .item-title { color: var(--cor2); }
-        .item-desc { font-size: 0.9rem; color: #666; line-height: 1.4; }
-        .item-time { font-size: 0.8rem; color: #999; margin-top: 6px; }
-
-        /* Botão Ação (Desktop) */
-        .item-action { align-self: center; display: none; }
-        .btn-small {
-            padding: 6px 14px; border: 1px solid var(--cor0); color: var(--cor0);
-            border-radius: 6px; background: transparent; font-weight: 600; font-size: 0.85rem; cursor: pointer;
+        .notif-content { flex: 1; padding-right: 25px; }
+        .notif-header { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
+        
+        .notif-title { font-size: 1rem; font-weight: 700; color: #333; }
+        .notif-time { font-size: 0.75rem; color: #999; font-weight: 500; }
+        
+        .notif-desc { font-size: 0.9rem; color: #666; line-height: 1.5; margin-bottom: 12px; }
+        
+        .notif-action-btn {
+            display: inline-block; font-size: 0.8rem; font-weight: 700;
+            color: var(--cor2); padding: 6px 15px; border-radius: 8px;
+            background: #eef4fc; transition: 0.2s; text-decoration: none;
         }
-        .btn-small:hover { background: var(--cor0); color: white; }
+        .notif-action-btn:hover { background: var(--cor2); color: white; }
 
-        @media (min-width: 768px) { .item-action { display: block; } }
+        .notif-options {
+            position: absolute; bottom: 15px; right: 15px;
+            color: #ccc; cursor: pointer; padding: 5px; font-size: 1.2rem;
+            transition: 0.2s;
+        }
+        .notif-options:hover { color: var(--cor2); }
 
-        /* RESPONSIVIDADE (Mobile) */
-        .navbar-mobile, .bottom-nav { display: none; }
+        /* Estado Vazio */
+        .empty-state {
+            text-align: center; padding: 80px 20px; display: none;
+            background: white; border-radius: 20px; border: 1px solid #f0f0f0;
+        }
+        .empty-state i { font-size: 4rem; color: #e0e0e0; margin-bottom: 20px; }
+        .empty-state h3 { color: #333; margin-bottom: 10px; font-size: 1.2rem; }
+        .empty-state p { color: #888; max-width: 400px; margin: 0 auto; font-size: 0.95rem; }
 
+        /* Responsividade Específica para o Hero */
         @media (max-width: 768px) {
-            body { flex-direction: column; padding-bottom: 80px; }
-            .sidebar-icones { display: none; }
-            .main-content { padding: 20px; }
-            
-            .navbar-mobile {
-                display: flex; align-items: center; justify-content: space-between;
-                padding: 15px 20px; background: white; position: sticky; top: 0; z-index: 99;
-                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            .notif-hero-container { 
+                padding: 25px 20px; 
+                flex-direction: column; 
+                align-items: flex-start;
+                border-radius: 0 0 20px 20px;
+                margin: -30px -30px 30px -30px; /* Expande para as bordas no mobile */
             }
-            .bottom-nav {
-                display: flex; justify-content: space-around;
-                position: fixed; bottom: 0; left: 0; width: 100%;
-                background: white; border-top: 1px solid #eee; padding: 10px 0; z-index: 999;
-            }
+            .hero-actions { width: 100%; flex-wrap: wrap; }
+            .btn-hero-action { flex: 1; justify-content: center; }
         }
     </style>
 </head>
 <body>
 
     <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
-        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
-        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início"><span>Início</span></a>
+        </div>
+        <div class="item">
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar"><span>Explorar</span></a>
+        </div>
+        <div class="item active">
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações"><span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades"><span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil"><span>Perfil</span></a>
+        </div>
+        <div class="item">
+            <a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais"><span>Mais</span></a>
+        </div>
     </aside>
 
-        <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
-
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
+            <div class="cep-wrapper"><a href="#" class="cep" onclick="toggleCep(event)"><span>Informe seu CEP</span></a></div>
+            <a href="anunciar.html">Anuncie</a>
             <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
         </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
+        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
     </header>
 
     <header class="navbar-mobile">
-        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a>
-        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="mobile-controls"><button id="btn-menu-mobile"><i class='bx bx-menu'></i></button></div>
     </header>
 
-    <main class="main-content">
+    <main>
         
-        <div class="page-header">
-            <div class="header-left">
-                <h1>Notificações</h1>
-            </div>
-        </div>
-
-        <div class="card-box">
+        <div class="notif-container">
             
-            <div class="card-header-inner">
-                <div style="font-weight: 700; color: #333; display: flex; align-items: center; gap: 8px;">
-                    Recentes <span class="notif-count">2 novas</span>
+            <div class="notif-hero-container">
+                <div class="hero-content">
+                    <h1>Notificações <span class="badge-count" id="badge-count">2</span></h1>
+                    <p>Acompanhe atualizações sobre seus pedidos e interações.</p>
                 </div>
-                <button class="btn-mark-all" onclick="marcarTudo()">Marcar todas como lidas</button>
+                <div class="hero-actions">
+                    <button class="btn-hero-action" onclick="marcarTodasLidas()">
+                        <i class='bx bx-check-double'></i> Marcar todas como lidas
+                    </button>
+                    <a href="#" class="btn-hero-action">
+                        <i class='bx bx-cog'></i> Configurar
+                    </a>
+                </div>
             </div>
 
-            <div class="filters-row">
-                <div class="chip active" onclick="filtrar('todas', this)">Todas</div>
-                <div class="chip" onclick="filtrar('nao-lidas', this)">Não Lidas</div>
-                <div class="chip" onclick="filtrar('pedidos', this)">Pedidos</div>
-                <div class="chip" onclick="filtrar('sistema', this)">Sistema</div>
+            <div class="filters-scroll">
+                <button class="filter-chip active" onclick="filtrar('todas', this)">Todas</button>
+                <button class="filter-chip" onclick="filtrar('nao-lidas', this)">Não Lidas</button>
+                <button class="filter-chip" onclick="filtrar('pedidos', this)">Pedidos</button>
+                <button class="filter-chip" onclick="filtrar('sistema', this)">Sistema</button>
             </div>
 
-            <div class="notif-list">
+            <div id="lista-notificacoes">
                 
-                <div class="notif-item unread" data-cat="pedidos">
-                    <div class="icon-box ib-pedido"><i class='bx bx-file'></i></div>
-                    <div class="item-content">
-                        <div class="item-title">Orçamento Aprovado!</div>
-                        <div class="item-desc">O cliente Marcos aprovou seu orçamento para "Pintura Residencial".</div>
-                        <div class="item-time">Há 15 minutos</div>
+                <div class="date-group" id="grupo-hoje">
+                    <div class="date-label">Hoje</div>
+
+                    <div class="notif-card unread" data-cat="pedidos">
+                        <div class="notif-icon ni-pedido"><i class='bx bx-file-blank'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-header">
+                                <span class="notif-title">Orçamento Aprovado!</span>
+                                <span class="notif-time">15 min</span>
+                            </div>
+                            <p class="notif-desc">O cliente Marcos aprovou seu orçamento para "Pintura Residencial". Prepare-se para começar o serviço.</p>
+                            <a href="#" class="notif-action-btn">Ver Detalhes do Pedido</a>
+                        </div>
+                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
                     </div>
-                    <div class="item-action">
-                        <button class="btn-small">Ver Detalhes</button>
+
+                    <div class="notif-card unread" data-cat="sistema">
+                        <div class="notif-icon ni-info"><i class='bx bx-user'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-header">
+                                <span class="notif-title">Dica para seu Perfil</span>
+                                <span class="notif-time">2h</span>
+                            </div>
+                            <p class="notif-desc">Adicione uma foto de capa para aumentar suas chances de ser contratado em até 40% na plataforma.</p>
+                            <a href="meuperfil.html" class="notif-action-btn">Editar Perfil</a>
+                        </div>
+                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
                     </div>
                 </div>
 
-                <div class="notif-item unread" data-cat="sistema">
-                    <div class="icon-box ib-sistema"><i class='bx bx-user-circle'></i></div>
-                    <div class="item-content">
-                        <div class="item-title">Complete seu Perfil</div>
-                        <div class="item-desc">Adicione uma foto de capa para aumentar suas chances de ser contratado.</div>
-                        <div class="item-time">Há 2 horas</div>
-                    </div>
-                    <div class="item-action">
-                        <button class="btn-small">Editar</button>
-                    </div>
-                </div>
+                <div class="date-group" id="grupo-ontem">
+                    <div class="date-label">Ontem</div>
 
-                <div class="notif-item" data-cat="sistema">
-                    <div class="icon-box ib-promo"><i class='bx bx-star'></i></div>
-                    <div class="item-content">
-                        <div class="item-title">Você ganhou 50 pontos Doke!</div>
-                        <div class="item-desc">Parabéns por completar seu 5º serviço na plataforma. Continue assim.</div>
-                        <div class="item-time">Ontem, 14:30</div>
+                    <div class="notif-card" data-cat="alerta">
+                        <div class="notif-icon ni-alerta"><i class='bx bx-error-circle'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-header">
+                                <span class="notif-title">Pagamento Recusado</span>
+                                <span class="notif-time">09:00</span>
+                            </div>
+                            <p class="notif-desc">Houve um problema com o cartão final 4242 na tentativa de destaque do anúncio. Atualize seu método.</p>
+                            <a href="#" class="notif-action-btn" style="background:#fff0f0; color:#ff2e63;">Resolver Agora</a>
+                        </div>
+                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
                     </div>
-                </div>
 
-                <div class="notif-item" data-cat="sistema">
-                    <div class="icon-box ib-alerta"><i class='bx bx-error-circle'></i></div>
-                    <div class="item-content">
-                        <div class="item-title">Pagamento Recusado</div>
-                        <div class="item-desc">Houve um problema com o cartão final 4242 na tentativa de destaque.</div>
-                        <div class="item-time">Ontem, 09:00</div>
-                    </div>
-                    <div class="item-action">
-                        <button class="btn-small" style="color:var(--cor3); border-color:var(--cor3)">Resolver</button>
-                    </div>
-                </div>
-
-                <div class="notif-item" data-cat="sistema">
-                    <div class="icon-box ib-sistema"><i class='bx bx-info-circle'></i></div>
-                    <div class="item-content">
-                        <div class="item-title">Bem-vindo à Doke!</div>
-                        <div class="item-desc">Ficamos felizes em ter você aqui. Explore as comunidades e anuncie.</div>
-                        <div class="item-time">20 Dez</div>
+                    <div class="notif-card" data-cat="pedidos">
+                        <div class="notif-icon ni-social"><i class='bx bx-star'></i></div>
+                        <div class="notif-content">
+                            <div class="notif-header">
+                                <span class="notif-title">Nova Avaliação 5 Estrelas</span>
+                                <span class="notif-time">14:30</span>
+                            </div>
+                            <p class="notif-desc">Ana Julia avaliou seu serviço: "Excelente profissional, muito pontual e organizado!"</p>
+                        </div>
+                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
                     </div>
                 </div>
 
             </div>
-        </div>
 
+            <div class="empty-state" id="empty-state">
+                <i class='bx bx-bell-off'></i>
+                <h3>Tudo limpo por aqui!</h3>
+                <p>Você não tem novas notificações no momento. Aproveite para explorar novos serviços.</p>
+                <button class="notif-action-btn" style="background:var(--cor2); color:white; margin-top:20px; padding:12px 25px;" onclick="window.location.href='explorar.html'">Explorar Doke</button>
+            </div>
+
+        </div>
     </main>
 
     <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
-        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
-        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" width="24"><span>Anunciar</span></a>
-        <a href="notificacoes.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" width="24"><span>Notif.</span></a>
-        <a href="mais.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" width="24"><span>Mais</span></a>
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" width="24"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notif.</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
     <script>
-        function marcarTudo() {
-            document.querySelectorAll('.notif-item.unread').forEach(el => el.classList.remove('unread'));
-            document.querySelector('.notif-count').style.display = 'none';
+        function marcarTodasLidas() {
+            const unreadItems = document.querySelectorAll('.notif-card.unread');
+            unreadItems.forEach(item => {
+                item.classList.remove('unread');
+            });
+            document.getElementById('badge-count').style.display = 'none';
         }
 
         function filtrar(tipo, btn) {
-            document.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
-            
-            document.querySelectorAll('.notif-item').forEach(item => {
-                if(tipo === 'todas') item.style.display = 'flex';
-                else if(tipo === 'nao-lidas') item.style.display = item.classList.contains('unread') ? 'flex' : 'none';
-                else item.style.display = (item.dataset.cat === tipo) ? 'flex' : 'none';
+
+            const lista = document.querySelectorAll('.notif-card');
+            let visiveis = 0;
+
+            lista.forEach(card => {
+                let mostrar = false;
+                if (tipo === 'todas') mostrar = true;
+                else if (tipo === 'nao-lidas') mostrar = card.classList.contains('unread');
+                else if (card.dataset.cat === tipo) mostrar = true;
+
+                if (mostrar) {
+                    card.style.display = 'flex';
+                    visiveis++;
+                } else {
+                    card.style.display = 'none';
+                }
             });
+
+            const emptyState = document.getElementById('empty-state');
+            const titulosData = document.querySelectorAll('.date-group'); 
+            
+            if (visiveis === 0) {
+                emptyState.style.display = 'block';
+                titulosData.forEach(t => t.style.display = 'none');
+            } else {
+                emptyState.style.display = 'none';
+                titulosData.forEach(t => t.style.display = 'block');
+            }
         }
     </script>
+
 </body>
 </html>
