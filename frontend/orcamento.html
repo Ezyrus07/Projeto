@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solicitar Orçamento | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="script.js"></script>
+    <style>/* ==========================================================================
+   PÁGINA DE ORÇAMENTO
+   ========================================================================== */
+
+/* Layout Grid Principal (2 Colunas) */
+.layout-orcamento {
+    display: grid;
+    grid-template-columns: 1.8fr 1fr; /* Esquerda maior, direita menor */
+    gap: 30px;
+    max-width: 1100px;
+    margin: 0 auto;
+}
+
+/* --- ESTILO DOS CARDS BRANCOS --- */
+.card-branco {
+    background: #fff;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+    margin-bottom: 25px;
+    border: 1px solid #f0f0f0;
+}
+
+.titulo-sessao {
+    color: var(--cor2); /* Azul */
+    font-size: 1.1rem;
+    margin-bottom: 20px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Inputs e Labels */
+.input-group {
+    margin-bottom: 20px;
+}
+.input-group label {
+    display: block;
+    font-size: 0.9rem;
+    color: #555;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+.area-texto {
+    min-height: 120px;
+    resize: vertical;
+    font-family: var(--fonte-padrao);
+}
+
+.grid-duplo {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+/* Botão Outline (Buscar CEP) */
+.btn-outline {
+    background: transparent;
+    border: 1px solid var(--cor0);
+    color: var(--cor0);
+    padding: 0 20px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.btn-outline:hover { background: var(--cor0); color: white; }
+
+/* --- ÁREA DE UPLOAD --- */
+.upload-area {
+    border: 2px dashed #ccc;
+    border-radius: 12px;
+    padding: 30px;
+    text-align: center;
+    cursor: pointer;
+    transition: 0.2s;
+    background: #fafafa;
+}
+.upload-area:hover {
+    border-color: var(--cor0);
+    background: #f0fdfa;
+}
+.upload-area i { font-size: 3rem; color: #ccc; margin-bottom: 10px; }
+.upload-area p { margin: 0; color: #666; font-weight: 500; }
+.upload-area span { font-size: 0.8rem; color: #999; }
+
+.preview-grid {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+    flex-wrap: wrap;
+}
+.preview-grid img {
+    width: 60px; height: 60px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid #ddd;
+}
+
+/* --- CARD RESUMO (STICKY) --- */
+.resumo-section {
+    position: relative;
+}
+
+.card-prestador-resumo {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 25px;
+    position: sticky;
+    top: 100px; /* Fica fixo ao rolar a tela */
+    box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+}
+
+.header-resumo {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+.header-resumo img {
+    width: 60px; height: 60px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+.header-resumo h4 { margin: 0; font-size: 1rem; color: #333; }
+.header-resumo span { font-size: 0.85rem; color: #777; }
+
+.stats-resumo {
+    display: flex; gap: 15px; font-size: 0.9rem; color: #555; font-weight: 600; margin-bottom: 15px;
+}
+.stats-resumo i { color: var(--cor0); }
+
+.divisor { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
+
+.lista-vantagens {
+    list-style: none; padding: 0; margin-bottom: 25px;
+}
+.lista-vantagens li {
+    font-size: 0.85rem; color: #666; margin-bottom: 12px; display: flex; gap: 8px; line-height: 1.4;
+}
+.lista-vantagens i { color: var(--cor0); font-size: 1.1rem; flex-shrink: 0; }
+
+/* Botão Principal */
+.btn-enviar-orcamento {
+    width: 100%;
+    padding: 15px;
+    background: var(--cor0);
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(11, 119, 104, 0.3);
+    transition: 0.3s;
+}
+.btn-enviar-orcamento:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(11, 119, 104, 0.4);
+}
+.aviso-legal {
+    font-size: 0.7rem; color: #999; text-align: center; margin-top: 10px;
+}
+
+/* Badge Header Desktop */
+.badge-seguranca {
+    background: #e0f2f1; color: var(--cor0);
+    padding: 6px 15px; border-radius: 30px;
+    font-size: 0.85rem; font-weight: 600;
+    display: flex; align-items: center; gap: 6px;
+}
+
+/* --- RESPONSIVIDADE ORÇAMENTO --- */
+@media (max-width: 900px) {
+    .layout-orcamento {
+        grid-template-columns: 1fr; /* Empilha tudo */
+    }
+    .card-prestador-resumo {
+        position: static; /* Remove o sticky no mobile */
+        order: -1; /* Coloca o resumo acima do formulário no mobile */
+        margin-bottom: 25px;
+    }
+    .grid-duplo { grid-template-columns: 1fr; }
+}</style>
+</head>
+<body>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'">
+            </a>           
+        </div>
+        <div class="mobile-controls" style="display: flex; align-items: center; gap: 15px;">
+            <button id="btn-menu-mobile" onclick="abrirMenuMobile()">
+                <i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i>
+            </button>
+        </div>
+    </header>
+
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+    
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span></a>
+        </div>
+        <div class="item">
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span></a>
+        </div>
+        <div class="item">
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <a href="chat.html"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
+            <span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
+            <a href="meuperfil.html"><span>Perfil</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+            <a href="mais.html"><span>Mais</span></a>
+        </div>
+    </aside>
+
+
+    <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
+
+    <main class="main-orcamento">
+        
+        <div class="layout-orcamento">
+            
+            <section class="form-section">
+                
+                <div class="card-branco">
+                    <h3 class="titulo-sessao">1. Detalhes do Pedido</h3>
+                    
+                    <div class="input-group">
+                        <label>O que você precisa?</label>
+                        <input type="text" class="input-premium" placeholder="Ex: Instalação de 3 tomadas e 1 chuveiro">
+                    </div>
+
+                    <div class="input-group">
+                        <label>Descrição detalhada</label>
+                        <textarea class="input-premium area-texto" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
+                    </div>
+
+                    <div class="grid-duplo">
+                        <div class="input-group">
+                            <label>Para quando?</label>
+                            <select class="input-premium">
+                                <option>O quanto antes</option>
+                                <option>Para esta semana</option>
+                                <option>Para o próximo mês</option>
+                                <option>Data específica</option>
+                            </select>
+                        </div>
+                        <div class="input-group">
+                            <label>Turno de preferência</label>
+                            <select class="input-premium">
+                                <option>Manhã (08h - 12h)</option>
+                                <option>Tarde (13h - 18h)</option>
+                                <option>Noite (após 18h)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card-branco">
+                    <h3 class="titulo-sessao">2. Localização</h3>
+                    <div class="input-group">
+                        <label>CEP do serviço</label>
+                        <div style="display:flex; gap:10px;">
+                            <input type="text" id="cepOrcamento" class="input-premium" placeholder="00000-000">
+                            <button class="btn-outline" onclick="buscarEndereco()">Buscar</button>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Endereço completo</label>
+                        <input type="text" class="input-premium" placeholder="Rua, Número, Complemento">
+                    </div>
+                </div>
+
+                <div class="card-branco">
+                    <h3 class="titulo-sessao">3. Fotos ou Vídeos (Opcional)</h3>
+                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+                        <i class='bx bx-cloud-upload'></i>
+                        <p>Clique para adicionar fotos do local ou do problema</p>
+                        <span>(Máx. 5 fotos)</span>
+                        <input type="file" id="fileInput" multiple hidden onchange="previewFiles()">
+                    </div>
+                    <div id="previewArea" class="preview-grid"></div>
+                </div>
+
+            </section>
+
+            <aside class="resumo-section">
+                <div class="card-prestador-resumo">
+                    <div class="header-resumo">
+                        <img src="https://i.pravatar.cc/150?img=11" alt="Prestador">
+                        <div>
+                            <h4>Carlos Elétrica <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
+                            <span>@carlos_eletrica</span>
+                        </div>
+                    </div>
+                    
+                    <div class="stats-resumo">
+                        <div><i class='bx bxs-star'></i> 5.0</div>
+                        <div><i class='bx bx-briefcase'></i> 142 Jobs</div>
+                    </div>
+
+                    <hr class="divisor">
+
+                    <ul class="lista-vantagens">
+                        <li><i class='bx bx-check-shield'></i> <strong>Garantia Doke:</strong> Só liberamos o pagamento quando você aprovar o serviço.</li>
+                        <li><i class='bx bx-time-five'></i> Resposta média em 20 min.</li>
+                    </ul>
+
+                    <button class="btn-enviar-orcamento" onclick="enviarOrcamento()">
+                        Enviar Solicitação
+                    </button>
+                    <p class="aviso-legal">Ao enviar, você concorda com nossos termos.</p>
+                </div>
+            </aside>
+
+        </div>
+    </main>
+
+        <nav class="bottom-nav">
+        <a href="index.html" class="item active">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span>
+        </a>
+        <a href="explorar.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span>
+        </a>
+        <a href="anunciar.html" class="item">
+            <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">
+            <span>Anunciar</span>
+        </a>
+        <a href="notificacoes.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span>
+        </a>
+        <a href="perfil.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
+            <span>Perfil</span>
+        </a>
+    </nav>
+
+    <script>
+        // Puxar CEP salvo no localStorage
+        window.addEventListener('DOMContentLoaded', () => {
+            const cepSalvo = localStorage.getItem('meu_cep_doke');
+            if(cepSalvo) document.getElementById('cepOrcamento').value = cepSalvo;
+        });
+
+        // Preview simples de imagens
+        function previewFiles() {
+            const preview = document.getElementById('previewArea');
+            const files = document.getElementById('fileInput').files;
+            
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const img = document.createElement('img');
+                    img.src = e.target.result;
+                    preview.appendChild(img);
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        // Simulação de Envio
+        function enviarOrcamento() {
+            const btn = document.querySelector('.btn-enviar-orcamento');
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
+            setTimeout(() => {
+                alert("Solicitação enviada com sucesso! O prestador responderá em breve.");
+                window.location.href = "chat.html"; // Redireciona para o chat
+            }, 2000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anunciar Serviço Completo | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        /* ======================================================
+           ESTILOS (PREMIUM & LARGO)
+           ====================================================== */
+        body { background-color: #f4f6f8; }
+
+        main {
+            padding: 30px 20px;
+            margin-top: 80px;
+            display: flex;
+            justify-content: center;
+        }
+
+        @media (min-width: 1024px) {
+            main {
+                margin-left: var(--sidebar-width);
+                margin-top: 0;
+                padding: 40px;
+                flex-direction: column;
+                align-items: center; 
+            }
+        }
+
+        .content-wrapper { width: 100%; max-width: 1200px; }
+
+        .anuncio-hero-container {
+            background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
+            padding: 40px; border-radius: 20px; margin-bottom: 30px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            text-align: center;
+        }
+        .anuncio-hero-container h1 { font-size: 2rem; margin-bottom: 10px; font-weight: 700; }
+
+        /* STEPS */
+        .progress-wrapper { display: flex; justify-content: center; margin-bottom: 30px; margin-top: 20px;}
+        .steps-container { display: flex; gap: 60px; position: relative; } 
+        .steps-container::before {
+            content: ''; position: absolute; top: 15px; left: 0; width: 100%; height: 2px;
+            background: rgba(255,255,255,0.2); z-index: 0;
+        }
+        .step-circle {
+            width: 35px; height: 35px; border-radius: 50%;
+            background: rgba(255,255,255,0.2); color: white;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 600; position: relative; z-index: 1; transition: 0.3s;
+        }
+        .step-circle.active { background: white; color: var(--cor2); transform: scale(1.1); }
+        .step-label {
+            position: absolute; top: 40px; font-size: 0.8rem; color: rgba(255,255,255,0.9);
+            width: 100px; text-align: center; margin-left: -32px; font-weight: 500;
+        }
+
+        .anuncio-card {
+            background: white; border-radius: 20px; padding: 50px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.05); border: 1px solid #eee;
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-bottom: 20px; }
+        .form-group { margin-bottom: 20px; position: relative; }
+        .form-group label { display: block; font-size: 0.95rem; font-weight: 600; color: #444; margin-bottom: 8px; }
+        
+        .input-modern, select, textarea {
+            width: 100%; padding: 14px 18px; border: 1px solid #ddd;
+            border-radius: 10px; background: #f9f9f9; font-size: 1rem;
+            color: #333; outline: none; transition: 0.3s; font-family: var(--fonte-padrao);
+        }
+        .input-modern:focus, select:focus, textarea:focus { border-color: var(--cor0); background: #fff; }
+        textarea { resize: vertical; min-height: 120px; }
+
+        /* UPLOAD ZONE (RESTAURADO) */
+        .upload-zone {
+            border: 2px dashed #ccc; border-radius: 15px; padding: 30px;
+            text-align: center; background: #fafafa; cursor: pointer; transition: 0.2s;
+            color: #777; position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center;
+        }
+        .upload-zone:hover { border-color: var(--cor0); background: #f0fdfa; color: var(--cor0); }
+        .upload-zone i { font-size: 2.5rem; margin-bottom: 10px; }
+        .upload-zone input[type="file"] {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
+        }
+        .file-name-display { font-size: 0.9rem; font-weight: 600; color: var(--cor2); margin-top: 10px; }
+
+        /* Multi-Select */
+        .multi-select-container {
+            border: 1px solid #ddd; border-radius: 10px; background: #f9f9f9;
+            padding: 8px; position: relative; min-height: 48px; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+        }
+        .tag-item {
+            background: var(--cor0); color: #fff; padding: 6px 14px;
+            border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
+        }
+        .cat-dropdown {
+            position: absolute; top: 105%; left: 0; width: 100%; max-height: 250px;
+            overflow-y: auto; background: #fff; border: 1px solid var(--cor0);
+            border-radius: 10px; z-index: 100; display: none;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .cat-option { padding: 12px 20px; cursor: pointer; border-bottom: 1px solid #f5f5f5; font-size: 0.95rem; }
+        .cat-option:hover { background-color: #f0fdfa; color: var(--cor0); }
+
+        /* Toggles */
+        .toggle-wrapper { display: flex; gap: 20px; flex-wrap: wrap; }
+        .radio-card { flex: 1; min-width: 160px; }
+        .radio-card input { display: none; }
+        .radio-card label {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            padding: 18px; border: 1px solid #ddd; border-radius: 12px; cursor: pointer;
+            background: #fff; font-weight: 600; color: #666; transition: 0.2s;
+        }
+        .radio-card input:checked + label {
+            border-color: var(--cor0); background: #f0fdfa; color: var(--cor0);
+        }
+
+        .checkbox-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+        .checkbox-card input { display: none; }
+        .checkbox-card label {
+            display: block; padding: 14px; border: 1px solid #ddd;
+            border-radius: 10px; text-align: center; cursor: pointer;
+            background: #fff; font-weight: 500;
+        }
+        .checkbox-card input:checked + label {
+            background: var(--cor2); color: white; border-color: var(--cor2);
+        }
+
+        .agenda-list { display: flex; flex-direction: column; gap: 15px; }
+        .agenda-item { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 18px; }
+        .agenda-header { display: flex; align-items: center; gap: 12px; }
+        .agenda-header input { width: 20px; height: 20px; accent-color: var(--cor0); }
+        .agenda-times { display: none; margin-top: 15px; gap: 20px; }
+        .agenda-times.show { display: flex; }
+
+        .form-nav {
+            display: flex; justify-content: space-between; margin-top: 50px;
+            padding-top: 30px; border-top: 1px solid #eee;
+        }
+        .btn-prev {
+            background: #fff; color: #666; border: 1px solid #ddd;
+            padding: 14px 30px; border-radius: 50px; font-weight: 600; cursor: pointer;
+        }
+        .btn-next, .btn-submit {
+            background: var(--cor0); color: white; border: none; padding: 14px 40px;
+            border-radius: 50px; font-weight: 600; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(11, 119, 104, 0.3);
+        }
+        .btn-submit { display: none; background: #0b7768; }
+
+        .form-step { display: none; animation: fadeIn 0.4s ease-out; }
+        .form-step.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            .form-row { grid-template-columns: 1fr; }
+            .agenda-times { flex-direction: column; align-items: flex-start; }
+            .steps-container { gap: 40px; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
+
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <nav class="menu">
+            <div class="cep-wrapper"><a href="#" class="cep"><span>Informe seu CEP</span></a></div>
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
+        </nav>
+        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
+    </header>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+    </header>
+
+    <main>
+        <div class="content-wrapper">
+            <div class="anuncio-hero-container">
+                <h1>Criar Anúncio</h1>
+                <p>Preencha os dados completos para garantir confiança e atrair mais clientes na plataforma Doke.</p>
+                <div class="progress-wrapper">
+                    <div class="steps-container">
+                        <div class="step-circle active" id="p-1">1 <div class="step-label">Detalhes</div></div>
+                        <div class="step-circle" id="p-2">2 <div class="step-label">Políticas</div></div>
+                        <div class="step-circle" id="p-3">3 <div class="step-label">Dados</div></div>
+                        <div class="step-circle" id="p-4">4 <div class="step-label">Agenda</div></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="anuncio-card">
+                <form id="formAnuncio" onsubmit="finalizarAnuncio(event)">
+
+                    <div class="form-step active" id="step-1">
+                        <h3>Detalhes do Serviço</h3>
+                        <div class="form-group">
+                            <label>Título do Anúncio</label>
+                            <input type="text" id="titulo" class="input-modern" placeholder="Ex: Manutenção Elétrica Residencial" required>
+                        </div>
+                        <div class="row-inputs">
+                            <div class="form-group">
+                                <label>Categorias</label>
+                                <div class="multi-select-container">
+                                    <div class="tags-wrapper" id="tags-wrapper"></div>
+                                    <input type="text" id="cat-search" placeholder="Buscar categoria..." oninput="filtrarCategorias()" onfocus="mostrarDropdown()" style="border:none; outline:none; flex:1; background:transparent;">
+                                    <div class="cat-dropdown" id="cat-dropdown"></div>
+                                </div>
+                                <input type="text" id="categorias-validacao" required style="opacity:0; position:absolute; height:1px;">
+                            </div>
+                            <div class="form-group">
+                                <label>Tags (Separadas por vírgula)</label>
+                                <input type="text" id="tags" class="input-modern" placeholder="Ex: eletricista, reparo, fiação">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Tipo de Atendimento</label>
+                            <div class="toggle-wrapper">
+                                <div class="radio-card"><input type="radio" name="modo_atend" id="presencial" value="Presencial" checked><label for="presencial">Presencial</label></div>
+                                <div class="radio-card"><input type="radio" name="modo_atend" id="online" value="Online"><label for="online">Online</label></div>
+                                <div class="radio-card"><input type="radio" name="modo_atend" id="ambos" value="Ambos"><label for="ambos">Ambos</label></div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Modelo de Cobrança</label>
+                            <div class="toggle-wrapper" style="margin-bottom: 15px;">
+                                <div class="radio-card"><input type="radio" name="tipo_preco" id="orcamento" value="Sob Orçamento" checked onchange="togglePriceInput()"><label for="orcamento">Sob Orçamento</label></div>
+                                <div class="radio-card"><input type="radio" name="tipo_preco" id="fixo" value="Preço Fixo" onchange="togglePriceInput()"><label for="fixo">Preço Fixo</label></div>
+                            </div>
+                            <div id="price-input-wrapper" style="display:none;">
+                                <input type="text" id="valor" class="input-modern" placeholder="R$ 0,00">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Descrição Detalhada</label>
+                            <textarea id="descricao" placeholder="Descreva seu serviço..." required></textarea>
+                        </div>
+                    </div>
+
+                    <div class="form-step" id="step-2">
+                        <h3>Qualificações</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Experiência</label>
+                                <input type="text" id="experiencia" class="input-modern" placeholder="Ex: 5 anos" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Prazo Médio</label>
+                                <input type="text" id="prazo" class="input-modern" placeholder="Ex: 2 dias">
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Diploma ou Certificado (Opcional)</label>
+                            <div class="upload-zone" onclick="document.getElementById('upload-diploma').click()">
+                                <i class='bx bx-cloud-upload'></i>
+                                <span>Clique para enviar PDF ou Imagem</span>
+                                <input type="file" id="upload-diploma" onchange="mostrarNomeArquivo(this)">
+                                <div class="file-name-display"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Garantia</label>
+                            <textarea id="garantia" style="min-height:80px;" placeholder="Detalhes da garantia..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label>Cancelamento</label>
+                            <select id="politica" class="input-modern">
+                                <option>Flexível</option>
+                                <option>Moderada</option>
+                                <option>Rígida</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label style="display:flex; gap:10px;"><input type="checkbox" id="emergencia"> Atendo Emergências (24h)</label>
+                        </div>
+                    </div>
+
+                    <div class="form-step" id="step-3">
+                        <h3>Seus Dados</h3>
+                        <div class="form-group">
+                            <div class="toggle-wrapper">
+                                <div class="radio-card"><input type="radio" name="tipo_pessoa" id="pf" value="PF" checked onchange="toggleCNPJ()"><label for="pf">Pessoa Física</label></div>
+                                <div class="radio-card"><input type="radio" name="tipo_pessoa" id="pj" value="PJ" onchange="toggleCNPJ()"><label for="pj">Empresa</label></div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Foto do Documento (RG/CNH)</label>
+                            <div class="upload-zone" onclick="document.getElementById('upload-doc').click()">
+                                <i class='bx bx-id-card'></i>
+                                <span>Clique para enviar foto legível</span>
+                                <input type="file" id="upload-doc" onchange="mostrarNomeArquivo(this)">
+                                <div class="file-name-display"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label id="lbl-nome">Nome Completo</label>
+                                <input type="text" id="nome_doc" class="input-modern" required>
+                            </div>
+                            <div class="form-group">
+                                <label id="lbl-doc">CPF</label>
+                                <input type="text" id="doc_num" class="input-modern" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Telefone</label>
+                                <input type="tel" id="telefone" class="input-modern" required placeholder="(00) 00000-0000">
+                            </div>
+                            <div class="form-group">
+                                <label>CEP</label>
+                                <input type="text" id="cep" class="input-modern" required placeholder="00000-000">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Pagamentos Aceitos</label>
+                            <div class="checkbox-grid">
+                                <div class="checkbox-card"><input type="checkbox" id="pg-pix" value="Pix"> <label for="pg-pix">Pix</label></div>
+                                <div class="checkbox-card"><input type="checkbox" id="pg-din" value="Dinheiro"> <label for="pg-din">Dinheiro</label></div>
+                                <div class="checkbox-card"><input type="checkbox" id="pg-cd" value="Débito"> <label for="pg-cd">Débito</label></div>
+                                <div class="checkbox-card"><input type="checkbox" id="pg-cc" value="Crédito"> <label for="pg-cc">Crédito</label></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-step" id="step-4">
+                        <h3>Agenda</h3>
+                        <div class="agenda-list">
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-seg" onchange="toggleTime('seg')"><label for="chk-seg">Segunda-feira</label></div>
+                                <div class="agenda-times" id="time-seg">
+                                    <input type="time" id="seg-inicio"> até <input type="time" id="seg-fim">
+                                </div>
+                            </div>
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-ter" onchange="toggleTime('ter')"><label for="chk-ter">Terça-feira</label></div>
+                                <div class="agenda-times" id="time-ter">
+                                    <input type="time" id="ter-inicio"> até <input type="time" id="ter-fim">
+                                </div>
+                            </div>
+                        </div>
+                        <div style="margin-top:20px; padding:15px; background:#eef6fc; border-radius:10px;">
+                            <label><input type="checkbox" id="termos" required> Declaro que as informações são verdadeiras.</label>
+                        </div>
+                    </div>
+
+                    <div class="form-nav">
+                        <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)">Voltar</button>
+                        <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
+                        <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">Publicar Anúncio</button>
+                    </div>
+
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <script>
+    // --- UPLOAD VISUAL HELPER ---
+    function mostrarNomeArquivo(input) {
+        if(input.files && input.files[0]) {
+            // Acha a div irmã para mostrar o nome
+            const display = input.parentElement.querySelector('.file-name-display');
+            display.innerText = "Arquivo selecionado: " + input.files[0].name;
+            display.style.display = 'block';
+        }
+    }
+
+    // --- CATEGORIAS ---
+    const todasCategorias = ["Eletricista", "Encanador", "Pintura", "Limpeza", "Frete", "Tecnologia", "Aulas", "Beleza", "Reforma"];
+    let categoriasSelecionadas = [];
+
+    function renderCategorias(filtro="") {
+        const dropdown = document.getElementById('cat-dropdown');
+        dropdown.innerHTML = "";
+        const filtradas = todasCategorias.filter(c => c.toLowerCase().includes(filtro.toLowerCase()) && !categoriasSelecionadas.includes(c));
+        
+        if (filtradas.length === 0) { dropdown.style.display = 'none'; return; }
+
+        filtradas.forEach(cat => {
+            const div = document.createElement('div');
+            div.className = 'cat-option'; div.innerText = cat;
+            div.onclick = (e) => { 
+                e.stopPropagation(); 
+                categoriasSelecionadas.push(cat); 
+                atualizarTags(); 
+                document.getElementById('cat-search').value = ""; 
+                dropdown.style.display = 'none'; 
+            };
+            dropdown.appendChild(div);
+        });
+        dropdown.style.display = 'block';
+    }
+
+    function atualizarTags() {
+        document.getElementById('tags-wrapper').innerHTML = categoriasSelecionadas.map(c => `<div class="tag-item">${c} <span onclick="removeCat('${c}')" style="cursor:pointer; margin-left:5px;">&times;</span></div>`).join('');
+        document.getElementById('categorias-validacao').value = categoriasSelecionadas.join(',');
+    }
+    window.removeCat = function(cat) { categoriasSelecionadas = categoriasSelecionadas.filter(c => c !== cat); atualizarTags(); };
+    window.filtrarCategorias = function() { renderCategorias(document.getElementById('cat-search').value); };
+    window.mostrarDropdown = function() { renderCategorias(); };
+    
+    document.addEventListener('click', function(e) {
+        if (!document.querySelector('.multi-select-container').contains(e.target)) {
+            document.getElementById('cat-dropdown').style.display = 'none';
+        }
+    });
+
+    // --- MÁSCARAS ---
+    document.getElementById('telefone').addEventListener('input', function (e) {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
+        e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
+    });
+    document.getElementById('cep').addEventListener('input', function (e) {
+        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,5})(\d{0,3})/);
+        e.target.value = !x[2] ? x[1] : x[1] + '-' + x[2];
+    });
+
+    // --- NAVEGAÇÃO E UI ---
+    window.toggleTime = function(dia) { document.getElementById(`time-${dia}`).classList.toggle('show'); }
+    window.togglePriceInput = function() {
+        const val = document.querySelector('input[name="tipo_preco"]:checked').value;
+        document.getElementById('price-input-wrapper').style.display = (val === 'Preço Fixo') ? 'block' : 'none';
+    }
+    window.toggleCNPJ = function() {
+        const val = document.querySelector('input[name="tipo_pessoa"]:checked').value;
+        document.getElementById('lbl-nome').innerText = (val === 'PJ') ? "Razão Social" : "Nome Completo";
+        document.getElementById('lbl-doc').innerText = (val === 'PJ') ? "CNPJ" : "CPF";
+    }
+
+    let step = 1;
+    window.changeStep = function(dir) {
+        // Validação obrigatória
+        if(dir === 1) {
+            const inputs = document.getElementById(`step-${step}`).querySelectorAll('input[required], select[required], textarea[required]');
+            let valid = true;
+            inputs.forEach(i => { 
+                if(!i.checkValidity()) { i.reportValidity(); valid = false; return; }
+            });
+            if(!valid) return;
+        }
+
+        document.getElementById(`step-${step}`).classList.remove('active');
+        document.getElementById(`p-${step}`).classList.remove('active');
+        step += dir;
+        document.getElementById(`step-${step}`).classList.add('active');
+        document.getElementById(`p-${step}`).classList.add('active');
+        
+        document.getElementById('btn-prev').style.display = step > 1 ? 'block' : 'none';
+        if(step === 4) {
+            document.getElementById('btn-next').style.display = 'none';
+            document.getElementById('btn-submit').style.display = 'block';
+        } else {
+            document.getElementById('btn-next').style.display = 'block';
+            document.getElementById('btn-submit').style.display = 'none';
+        }
+    }
+
+    // --- ENVIAR ---
+    window.finalizarAnuncio = async function(e) {
+        e.preventDefault();
+
+        const pags = [];
+        ['pg-pix','pg-din','pg-cd','pg-cc'].forEach(id => {
+            if(document.getElementById(id).checked) pags.push(document.getElementById(id).value);
+        });
+
+        const agenda = {};
+        if(document.getElementById('chk-seg').checked) agenda.seg = { ini: document.getElementById('seg-inicio').value, fim: document.getElementById('seg-fim').value };
+        if(document.getElementById('chk-ter').checked) agenda.ter = { ini: document.getElementById('ter-inicio').value, fim: document.getElementById('ter-fim').value };
+
+        const data = {
+            usuario_id: localStorage.getItem('usuarioLogado') ? 1 : 0, 
+            titulo: document.getElementById('titulo').value,
+            categorias: categoriasSelecionadas,
+            tags: document.getElementById('tags').value,
+            modo_atendimento: document.querySelector('input[name="modo_atend"]:checked').value,
+            tipo_preco: document.querySelector('input[name="tipo_preco"]:checked').value,
+            valor: document.getElementById('valor').value,
+            descricao: document.getElementById('descricao').value,
+            experiencia: document.getElementById('experiencia').value,
+            prazo: document.getElementById('prazo').value,
+            garantia: document.getElementById('garantia').value,
+            politica: document.getElementById('politica').value,
+            emergencia: document.getElementById('emergencia').checked,
+            tipo_pessoa: document.querySelector('input[name="tipo_pessoa"]:checked').value,
+            nome_documento: document.getElementById('nome_doc').value,
+            documento_numero: document.getElementById('doc_num').value,
+            telefone: document.getElementById('telefone').value,
+            cep: document.getElementById('cep').value,
+            pagamentos: pags,
+            agenda: agenda
+        };
+
+        try {
+            const res = await fetch('http://localhost:3000/api/anunciar', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(data)
+            });
+            const json = await res.json();
+            
+            if(json.success) {
+                window.location.href = "meuperfil.html?status=analise";
+            } else {
+                alert("Erro: " + json.msg);
+            }
+        } catch(err) {
+            console.error(err);
+            alert("Erro de conexão.");
+        }
+    }
+    
+    document.addEventListener("DOMContentLoaded", function() {
+        document.getElementById('btn-prev').style.display = 'none';
+        document.getElementById('btn-submit').style.display = 'none';
+    });
+    </script>
+</body>
+</html>

@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Finalizar Pagamento | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        /* ======================================================
+           ESTILOS ESPECÍFICOS DE PAGAMENTO
+           ====================================================== */
+        
+        body { background-color: #f4f6f8; }
+
+        /* Ajuste do Main para compensar Sidebar Desktop */
+        @media (min-width: 1024px) {
+            main { margin-left: var(--sidebar-width); padding: 40px; }
+        }
+
+        /* Botão de Voltar no Topo */
+        .header-actions {
+            max-width: 1100px; margin: 0 auto 20px auto;
+        }
+        .btn-back-top {
+            display: inline-flex; align-items: center; gap: 8px;
+            color: #666; text-decoration: none; font-weight: 600;
+            font-size: 0.95rem; transition: 0.2s;
+            padding: 8px 0;
+        }
+        .btn-back-top:hover { color: var(--cor2); transform: translateX(-5px); }
+
+        .checkout-layout {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 30px;
+        }
+
+        /* --- Coluna Esquerda: Métodos de Pagamento --- */
+        .payment-methods-card {
+            background: #fff;
+            border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 30px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .section-title {
+            font-size: 1.4rem; color: var(--cor2); 
+            margin-bottom: 20px; display: flex; align-items: center; gap: 10px;
+        }
+
+        /* Abas de Seleção */
+        .payment-tabs {
+            display: flex; gap: 15px; margin-bottom: 25px;
+        }
+        .tab-method {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            cursor: pointer;
+            display: flex; flex-direction: column; align-items: center; gap: 8px;
+            transition: 0.3s;
+            color: var(--cor1);
+        }
+        .tab-method i { font-size: 1.8rem; }
+        .tab-method span { font-weight: 600; font-size: 0.9rem; }
+        
+        /* Estado Ativo da Aba */
+        .tab-method.active {
+            border-color: var(--cor0);
+            background-color: #f0fdfa;
+            color: var(--cor0);
+        }
+
+        /* Formulário de Cartão */
+        .credit-card-form { display: none; animation: fadeIn 0.3s; }
+        .credit-card-form.active { display: block; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+
+        .input-group { margin-bottom: 15px; }
+        .input-group label { display: block; font-size: 0.85rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+        .input-payment {
+            width: 100%; padding: 12px; border: 1px solid #ccc;
+            border-radius: 8px; outline: none; font-size: 1rem;
+            transition: 0.3s;
+        }
+        .input-payment:focus { border-color: var(--cor0); }
+
+        /* Área PIX */
+        .pix-area {
+            display: none; text-align: center; padding: 20px;
+            background: #f9f9f9; border-radius: 12px;
+            animation: fadeIn 0.3s;
+        }
+        .pix-area.active { display: block; }
+        .qr-placeholder {
+            width: 180px; height: 180px; margin: 0 auto 20px;
+            background: #fff; border: 1px solid #ddd; padding: 10px;
+        }
+        .pix-copy-box {
+            display: flex; gap: 10px; margin-top: 15px;
+        }
+        .pix-code {
+            flex: 1; background: #fff; border: 1px solid #ddd;
+            padding: 10px; border-radius: 6px; font-family: monospace;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        /* --- Coluna Direita: Resumo --- */
+        .summary-card {
+            background: #fff; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 30px; border: 1px solid #e0e0e0;
+            height: fit-content;
+            position: sticky; top: 100px;
+        }
+
+        .order-item {
+            display: flex; gap: 15px; padding-bottom: 20px;
+            border-bottom: 1px solid #eee; margin-bottom: 20px;
+        }
+        .item-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; }
+        
+        .price-row {
+            display: flex; justify-content: space-between;
+            margin-bottom: 10px; color: #555; font-size: 0.95rem;
+        }
+        .price-total {
+            display: flex; justify-content: space-between;
+            margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;
+            font-size: 1.3rem; font-weight: 800; color: var(--cor2);
+        }
+
+        /* Garantia Doke */
+        .guarantee-box {
+            background: #e0f2f1; padding: 15px; border-radius: 8px;
+            margin: 20px 0; display: flex; gap: 12px; align-items: start;
+        }
+        .guarantee-box i { font-size: 1.5rem; color: var(--cor0); }
+        .guarantee-text h4 { margin: 0; font-size: 0.9rem; color: var(--cor0); }
+        .guarantee-text p { margin: 3px 0 0 0; font-size: 0.75rem; color: #444; }
+
+        /* Botão Finalizar */
+        .btn-checkout {
+            width: 100%; background: var(--cor0); color: white;
+            padding: 15px; border-radius: 50px; font-weight: 700;
+            border: none; cursor: pointer; font-size: 1.1rem;
+            transition: 0.3s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.3);
+        }
+        .btn-checkout:hover { background: #096356; transform: translateY(-2px); }
+
+
+
+        /* --- Políticas e Termos --- */
+        .policies-section {
+            grid-column: 1 / -1; /* Ocupa largura total */
+            background: #fff; padding: 30px; border-radius: 16px;
+            border: 1px solid #e0e0e0; margin-top: 10px;
+        }
+        .policy-item { margin-bottom: 20px; }
+        .policy-item h3 { font-size: 1.1rem; color: var(--cor2); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+        .policy-item p { font-size: 0.9rem; color: #666; line-height: 1.6; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            .checkout-layout { grid-template-columns: 1fr; }
+            .summary-card { order: -1; position: relative; top: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a>
+        </div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+    </aside>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><img src="assets/Imagens/doke-logo.png" alt="Doke"></div>
+    </header>
+
+    <main>
+        <div class="header-actions">
+            <a href="javascript:history.back()" class="btn-back-top">
+                <i class='bx bx-left-arrow-alt'></i> Voltar para a proposta
+            </a>
+        </div>
+
+        <div class="checkout-layout">
+            
+            <div class="left-col">
+                <div class="payment-methods-card">
+                    <h2 class="section-title"><i class='bx bx-credit-card'></i> Método de Pagamento</h2>
+                    
+                    <div class="payment-tabs">
+                        <div class="tab-method active" onclick="mudarMetodo('cartao', this)">
+                            <i class='bx bx-credit-card-front'></i>
+                            <span>Cartão de Crédito</span>
+                        </div>
+                        <div class="tab-method" onclick="mudarMetodo('pix', this)">
+                            <i class='bx bx-qr-scan'></i>
+                            <span>PIX (Aprovação Imediata)</span>
+                        </div>
+                    </div>
+
+                    <div id="form-cartao" class="credit-card-form active">
+                        <div class="form-grid">
+                            <div class="input-group full-width">
+                                <label>Nome impresso no cartão</label>
+                                <input type="text" class="input-payment" placeholder="COMO NO CARTÃO">
+                            </div>
+                            <div class="input-group full-width">
+                                <label>Número do cartão</label>
+                                <input type="text" class="input-payment" placeholder="0000 0000 0000 0000">
+                            </div>
+                            <div class="input-group">
+                                <label>Validade</label>
+                                <input type="text" class="input-payment" placeholder="MM/AA">
+                            </div>
+                            <div class="input-group">
+                                <label>CVV</label>
+                                <input type="text" class="input-payment" placeholder="123">
+                            </div>
+                            <div class="input-group full-width">
+                                <label>Parcelamento</label>
+                                <select class="input-payment">
+                                    <option>1x de R$ 450,00 (Sem juros)</option>
+                                    <option>2x de R$ 225,00 (Sem juros)</option>
+                                    <option>3x de R$ 150,00 (Sem juros)</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="area-pix" class="pix-area">
+                        <p style="color:#666; margin-bottom:15px;">Escaneie o QR Code ou copie o código abaixo para pagar.</p>
+                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" class="qr-placeholder">
+                        <div class="pix-copy-box">
+                            <div class="pix-code">00020126330014BR.GOV.BCB.PIX0111123456789...</div>
+                            <button class="btn-solid" style="padding: 8px 15px; font-size:0.8rem;">Copiar</button>
+                        </div>
+                        <p style="font-size:0.8rem; color:#888; margin-top:10px;"><i class='bx bx-time'></i> O código expira em 30 minutos.</p>
+                    </div>
+
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="summary-card">
+                    <h2 class="section-title" style="font-size:1.2rem;">Resumo do Pedido</h2>
+                    
+                    <div class="order-item">
+                        <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=200" class="item-img">
+                        <div>
+                            <h4 style="margin:0; color:#333;">Pintura Residencial (Sala)</h4>
+                            <span style="font-size:0.85rem; color:#666;">Profissional: <strong>Marcos Pinturas</strong></span>
+                        </div>
+                    </div>
+
+                    <div class="price-row">
+                        <span>Serviço (Mão de Obra)</span>
+                        <span>R$ 400,00</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Materiais (Adicional)</span>
+                        <span>R$ 50,00</span>
+                    </div>
+                    <div class="price-row">
+                        <span>Taxa de Serviço</span>
+                        <span>R$ 0,00</span>
+                    </div>
+
+                    <div class="price-total">
+                        <span>Total a pagar</span>
+                        <span>R$ 450,00</span>
+                    </div>
+
+                    <div class="guarantee-box">
+                        <i class='bx bx-shield-quarter'></i>
+                        <div class="guarantee-text">
+                            <h4>Pagamento Garantido Doke</h4>
+                            <p>O valor fica retido com segurança e só é liberado ao profissional após você confirmar que o serviço foi concluído.</p>
+                        </div>
+                    </div>
+
+                    <button class="btn-checkout">Confirmar Pagamento</button>
+
+                    
+                    <p style="text-align:center; font-size:0.75rem; color:#999; margin-top:10px;">Ambiente 100% Seguro <i class='bx bxs-lock-alt'></i></p>
+                </div>
+            </div>
+
+            <div class="policies-section">
+                <div class="policy-item">
+                    <h3><i class='bx bx-undo'></i> Política de Reembolso</h3>
+                    <p>Caso o profissional não compareça ou o serviço não seja realizado conforme o combinado, você tem direito a 100% de reembolso. O valor estornado retornará para o método de pagamento original em até 5 dias úteis.</p>
+                </div>
+                <div class="policy-item">
+                    <h3><i class='bx bx-check-shield'></i> Como funciona a Garantia?</h3>
+                    <p>A Doke atua como intermediária financeira. O seu pagamento não vai direto para a conta do prestador. Ele fica em uma "conta cofre" (Escrow) e só é transferido quando o serviço é finalizado. Isso evita golpes e garante sua satisfação.</p>
+                </div>
+                <div class="policy-item">
+                    <h3><i class='bx bx-file'></i> Termos de Serviço</h3>
+                    <p>Ao confirmar o pagamento, você concorda com os Termos de Uso da Doke. Cancelamentos feitos com menos de 24h de antecedência podem estar sujeitos a uma taxa de 10%.</p>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span></a>
+        </div>
+        <div class="item">
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span></a>
+        </div>
+        <div class="item">
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <a href="chat.html"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
+            <span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
+            <a href="meuperfil.html"><span>Perfil</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+            <a href="mais.html"><span>Mais</span></a>
+        </div>
+    </aside>
+
+
+    <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
+
+        <nav class="bottom-nav">
+        <a href="index.html" class="item active">
+            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span>
+        </a>
+        <a href="explorar.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span>
+        </a>
+        <a href="anunciar.html" class="item">
+            <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">
+            <span>Anunciar</span>
+        </a>
+        <a href="notificacoes.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span>
+        </a>
+        <a href="perfil.html" class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
+            <span>Perfil</span>
+        </a>
+    </nav>
+
+    <script>
+        function mudarMetodo(metodo, elemento) {
+            // Remove active de todas as abas
+            document.querySelectorAll('.tab-method').forEach(tab => tab.classList.remove('active'));
+            // Adiciona active na clicada
+            elemento.classList.add('active');
+
+            // Esconde todas as áreas
+            document.getElementById('form-cartao').classList.remove('active');
+            document.getElementById('area-pix').classList.remove('active');
+
+            // Mostra a correta
+            if(metodo === 'cartao') {
+                document.getElementById('form-cartao').classList.add('active');
+            } else {
+                document.getElementById('area-pix').classList.add('active');
+            }
+        }
+    </script>
+
+</body>
+</html>

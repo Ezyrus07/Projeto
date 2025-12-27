@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mensagens | Doke</title>
+    
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+    <style>
+        /* ======================================================
+           RESET TOTAL PARA A PÁGINA DE CHAT
+           (Isso impede que o style.css quebre o layout)
+           ====================================================== */
+        
+        /* 1. Força o corpo a não ter scroll e ocupar 100% */
+        body.chat-page {
+            padding: 0 !important;
+            margin: 0 !important;
+            height: 100vh;
+            overflow: hidden; /* Remove rolagem da página inteira */
+            background-color: #f0f2f5;
+            display: block; /* Garante bloco para posicionamento */
+        }
+
+        /* 2. Ajusta o container principal para ignorar paddings globais */
+        main.chat-main-container {
+            position: fixed; /* Fixa na tela */
+            top: 0; 
+            left: 0;
+            width: 100%;
+            height: 100%;
+            padding: 0 !important; /* Remove padding do style.css */
+            margin: 0 !important;
+            z-index: 1; /* Fica acima do fundo, mas abaixo de modais */
+            display: flex;
+        }
+
+        /* ======================================================
+           LAYOUT DO CHAT (RESPONSIVO)
+           ====================================================== */
+
+        /* Ajuste para Sidebar Desktop */
+        @media (min-width: 1024px) {
+            main.chat-main-container {
+                padding-left: var(--sidebar-width) !important; /* Respeita a sidebar */
+                width: 100%;
+            }
+        }
+
+        /* O Container Flex que segura Lista e Conversa */
+        .chat-interface {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background: white;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* --- LADO ESQUERDO: LISTA DE CONTATOS --- */
+        .contacts-sidebar {
+            width: 380px;
+            background: #fff;
+            border-right: 1px solid #e0e0e0;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            flex-shrink: 0; /* Não deixa encolher */
+        }
+
+        .contacts-header {
+            padding: 20px;
+            background: #fff;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .contacts-header h2 { font-size: 1.4rem; color: var(--cor2); margin-bottom: 15px; }
+
+        .search-wrapper {
+            position: relative;
+            background: #f5f7f9;
+            border-radius: 25px;
+            padding: 8px 15px;
+            display: flex; align-items: center;
+        }
+        .search-wrapper input {
+            border: none; background: transparent; width: 100%; outline: none;
+            padding-left: 10px; font-size: 0.95rem;
+        }
+        .search-wrapper i { color: #999; }
+
+        .contacts-list {
+            flex: 1; overflow-y: auto; padding: 10px;
+        }
+        .contact-item {
+            display: flex; align-items: center; gap: 15px;
+            padding: 15px; border-radius: 12px; cursor: pointer;
+            transition: 0.2s; border-bottom: 1px solid transparent;
+        }
+        .contact-item:hover { background-color: #f5f7f9; }
+        .contact-item.active { background-color: #eef6fc; border-left: 4px solid var(--cor2); }
+
+        .avatar-box { position: relative; }
+        .avatar-box img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .status-dot {
+            position: absolute; bottom: 2px; right: 2px; width: 12px; height: 12px;
+            background: #ccc; border: 2px solid white; border-radius: 50%;
+        }
+        .status-dot.online { background: #00b894; }
+
+        .contact-info { flex: 1; min-width: 0; }
+        .contact-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+        .contact-name { font-weight: 700; color: #333; font-size: 0.95rem; }
+        .contact-time { font-size: 0.75rem; color: #999; }
+        .contact-preview { font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        /* --- LADO DIREITO: ÁREA DE CONVERSA --- */
+        .chat-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #eef2f5;
+            position: relative;
+            height: 100%;
+        }
+
+        /* Estado Vazio (Sem conversa selecionada) */
+        .empty-state {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100%; text-align: center; color: #888;
+        }
+        .empty-state i { font-size: 4rem; color: #ccc; margin-bottom: 15px; }
+
+        /* Header da Conversa */
+        .chat-topbar {
+            height: 70px;
+            background: white;
+            border-bottom: 1px solid #e0e0e0;
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px;
+            flex-shrink: 0;
+        }
+        .chat-user { display: flex; align-items: center; gap: 12px; }
+        .chat-user img { width: 40px; height: 40px; border-radius: 50%; }
+        .chat-user h3 { font-size: 1rem; color: #333; margin: 0; }
+        .chat-user span { font-size: 0.75rem; color: #00b894; }
+        
+        .chat-actions i { 
+            font-size: 1.4rem; color: var(--cor2); margin-left: 15px; 
+            cursor: pointer; padding: 8px; border-radius: 50%; transition: 0.2s;
+        }
+        .chat-actions i:hover { background: #f0f2f5; }
+        .btn-back { display: none; font-size: 1.5rem; color: #555; margin-right: 10px; cursor: pointer; }
+
+        /* Mensagens */
+        .messages-scroll {
+            flex: 1;
+            padding: 20px;
+            overflow-y: auto;
+            background-image: radial-gradient(#cbd5e0 1px, transparent 1px);
+            background-size: 20px 20px;
+            display: flex; flex-direction: column; gap: 15px;
+        }
+
+        .message { display: flex; width: 100%; }
+        .message.sent { justify-content: flex-end; }
+        .message.received { justify-content: flex-start; }
+
+        .bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            position: relative;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .message.received .bubble {
+            background: white; color: #333;
+            border-top-left-radius: 0;
+        }
+        .message.sent .bubble {
+            background: var(--cor0); color: white;
+            border-top-right-radius: 0;
+        }
+        .msg-meta {
+            font-size: 0.65rem; text-align: right; margin-top: 5px; opacity: 0.7;
+        }
+
+        /* Input de Texto */
+        .chat-input-area {
+            background: white;
+            padding: 15px 20px;
+            border-top: 1px solid #e0e0e0;
+            display: flex; align-items: center; gap: 10px;
+            flex-shrink: 0;
+        }
+        .chat-input-area input {
+            flex: 1; padding: 12px 20px; border-radius: 30px;
+            border: 1px solid #ddd; background: #f9f9f9; outline: none;
+        }
+        .btn-send {
+            width: 45px; height: 45px; border-radius: 50%;
+            background: var(--cor2); color: white; border: none;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; cursor: pointer;
+        }
+
+        /* --- RESPONSIVIDADE MOBILE --- */
+        @media (max-width: 768px) {
+            main.chat-main-container {
+                padding-left: 0 !important;
+                padding-top: 0 !important; /* Ocupa tudo */
+                margin-top: 60px !important; /* Espaço para navbar mobile */
+                height: calc(100vh - 140px); /* Tira navbar topo (60) e bottom (80) */
+            }
+
+            .contacts-sidebar { width: 100%; position: absolute; z-index: 2; transition: 0.3s; }
+            .chat-area { width: 100%; position: absolute; z-index: 1; left: 100%; transition: 0.3s; }
+
+            /* Classe JS para trocar de tela */
+            .chat-interface.active-chat .contacts-sidebar { transform: translateX(-100%); }
+            .chat-interface.active-chat .chat-area { left: 0; z-index: 5; }
+
+            .btn-back { display: block; }
+        }
+    </style>
+</head>
+<body class="chat-page">
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item active"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <button id="btn-menu-mobile"><i class='bx bx-menu' style="font-size: 28px; color: var(--cor2);"></i></button>
+    </header>
+
+    <main class="chat-main-container">
+        
+        <div class="chat-interface" id="chatInterface">
+            
+            <div class="contacts-sidebar">
+                <div class="contacts-header">
+                    <h2>Mensagens</h2>
+                    <div class="search-wrapper">
+                        <i class='bx bx-search'></i>
+                        <input type="text" placeholder="Pesquisar conversa...">
+                    </div>
+                </div>
+
+                <div class="contacts-list">
+                    <div class="contact-item active" onclick="abrirChat('Marcos Pintor', 'Online', 'https://randomuser.me/api/portraits/men/32.jpg')">
+                        <div class="avatar-box">
+                            <img src="https://randomuser.me/api/portraits/men/32.jpg">
+                            <span class="status-dot online"></span>
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-top">
+                                <span class="contact-name">Marcos Pintor</span>
+                                <span class="contact-time">10:45</span>
+                            </div>
+                            <div class="contact-preview">Combinado! Até amanhã.</div>
+                        </div>
+                    </div>
+
+                    <div class="contact-item" onclick="abrirChat('Ana Eletricista', 'Visto por último às 09:00', 'https://randomuser.me/api/portraits/women/44.jpg')">
+                        <div class="avatar-box">
+                            <img src="https://randomuser.me/api/portraits/women/44.jpg">
+                            <span class="status-dot"></span>
+                        </div>
+                        <div class="contact-info">
+                            <div class="contact-top">
+                                <span class="contact-name">Ana Eletricista</span>
+                                <span class="contact-time">Ontem</span>
+                            </div>
+                            <div class="contact-preview">O orçamento ficou em R$ 200...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-area" id="chatArea">
+                
+                <div class="chat-topbar">
+                    <div class="chat-user">
+                        <i class='bx bx-arrow-back btn-back' onclick="voltarLista()"></i>
+                        <img src="https://randomuser.me/api/portraits/men/32.jpg" id="chatAvatar">
+                        <div>
+                            <h3 id="chatName">Marcos Pintor</h3>
+                            <span id="chatStatus">Online</span>
+                        </div>
+                    </div>
+                    <div class="chat-actions">
+                        <i class='bx bx-phone'></i>
+                        <i class='bx bx-video'></i>
+                        <i class='bx bx-dots-vertical-rounded'></i>
+                    </div>
+                </div>
+
+                <div class="messages-scroll" id="messagesArea">
+                    <div class="message received">
+                        <div class="bubble">
+                            Olá! Gostaria de saber o valor para pintar uma sala de 20m².
+                            <div class="msg-meta">10:30</div>
+                        </div>
+                    </div>
+                    <div class="message sent">
+                        <div class="bubble">
+                            Bom dia! Claro, preciso apenas ver algumas fotos para confirmar o estado das paredes.
+                            <div class="msg-meta">10:32 <i class='bx bx-check-double'></i></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <i class='bx bx-plus' style="font-size:1.5rem; color:#888; cursor:pointer;"></i>
+                    <input type="text" id="msgInput" placeholder="Digite sua mensagem...">
+                    <button class="btn-send" onclick="enviarMsg()"><i class='bx bxs-send'></i></button>
+                </div>
+
+            </div>
+
+        </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notif.</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
+
+    <script src="script.js"></script>
+    <script>
+        function enviarMsg() {
+            const input = document.getElementById('msgInput');
+            const area = document.getElementById('messagesArea');
+            if(input.value.trim() !== "") {
+                const html = `
+                    <div class="message sent">
+                        <div class="bubble">
+                            ${input.value}
+                            <div class="msg-meta">${new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} <i class='bx bx-time'></i></div>
+                        </div>
+                    </div>`;
+                area.insertAdjacentHTML('beforeend', html);
+                input.value = "";
+                area.scrollTop = area.scrollHeight;
+            }
+        }
+
+        document.getElementById('msgInput').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') enviarMsg();
+        });
+
+        // Mobile: Troca de tela
+        function abrirChat(nome, status, img) {
+            document.getElementById('chatName').innerText = nome;
+            document.getElementById('chatStatus').innerText = status;
+            document.getElementById('chatAvatar').src = img;
+            
+            // Só ativa a animação no mobile
+            if(window.innerWidth <= 768) {
+                document.getElementById('chatInterface').classList.add('active-chat');
+            }
+        }
+
+        function voltarLista() {
+            document.getElementById('chatInterface').classList.remove('active-chat');
+        }
+    </script>
+</body>
+</html>

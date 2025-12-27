@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Entrar | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        /* Estilos exclusivos para centralizar o Login */
+        body {
+            background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+            position: relative;
+            animation: subir 0.5s ease;
+        }
+
+        @keyframes subir { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+        .login-logo { width: 120px; margin-bottom: 20px; }
+        
+        .login-header h2 { color: var(--cor2); font-size: 1.8rem; margin-bottom: 5px; }
+        .login-header p { color: #666; font-size: 0.95rem; margin-bottom: 30px; }
+
+        .form-group { margin-bottom: 20px; text-align: left; }
+        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #444; margin-bottom: 8px; }
+        
+        .input-icon { position: relative; }
+        .input-icon i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; font-size: 1.2rem; }
+        .input-icon input {
+            width: 100%; padding: 12px 15px 12px 45px; border: 1px solid #ddd;
+            border-radius: 10px; font-size: 1rem; outline: none; transition: 0.3s;
+            font-family: var(--fonte-padrao); background: #f9f9f9;
+        }
+        .input-icon input:focus { border-color: var(--cor0); background: white; box-shadow: 0 0 0 4px rgba(11, 119, 104, 0.1); }
+
+        .btn-login-action {
+            width: 100%; padding: 14px; background: var(--cor0); color: white;
+            border: none; border-radius: 50px; font-size: 1rem; font-weight: 700;
+            cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 4px 15px rgba(11, 119, 104, 0.3);
+        }
+        .btn-login-action:hover { background: #096356; transform: translateY(-2px); }
+
+        .links-uteis {
+            display: flex; justify-content: space-between; align-items: center;
+            font-size: 0.85rem; margin-bottom: 20px; margin-top: 10px;
+        }
+        .links-uteis a { color: var(--cor2); text-decoration: none; font-weight: 600; }
+        .links-uteis a:hover { text-decoration: underline; }
+
+        .divider { margin: 30px 0; border-top: 1px solid #eee; position: relative; }
+        .divider span {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            background: white; padding: 0 10px; color: #999; font-size: 0.8rem;
+        }
+
+        .social-login { display: flex; gap: 15px; justify-content: center; }
+        .btn-social {
+            width: 50px; height: 50px; border-radius: 50%; border: 1px solid #ddd;
+            background: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; cursor: pointer; transition: 0.3s;
+        }
+        .btn-social:hover { background: #f0f0f0; transform: translateY(-3px); }
+        .google { color: #db4437; } .facebook { color: #4267B2; } .apple { color: #000; }
+
+        .footer-login { margin-top: 30px; font-size: 0.9rem; color: #666; }
+        .footer-login a { color: var(--cor0); font-weight: 700; text-decoration: none; }
+
+        .btn-voltar {
+            position: absolute; top: 20px; left: 20px; color: #999; font-size: 1.5rem; cursor: pointer;
+        }
+        .btn-voltar:hover { color: var(--cor2); }
+    </style>
+</head>
+<body>
+
+    <div class="login-card">
+        <a href="index.html" class="btn-voltar"><i class='bx bx-arrow-back'></i></a>
+        
+        <img src="assets/Imagens/doke-logo.png" alt="Doke" class="login-logo">
+        
+        <div class="login-header">
+            <h2>Bem-vindo de volta!</h2>
+            <p>Insira seus dados para acessar sua conta.</p>
+        </div>
+
+        <form id="formLogin" onsubmit="realizarLogin(event)">
+            <div class="form-group">
+                <label>E-mail</label>
+                <div class="input-icon">
+                    <i class='bx bx-envelope'></i>
+                    <input type="email" id="email" placeholder="seu@email.com" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Senha</label>
+                <div class="input-icon">
+                    <i class='bx bx-lock-alt'></i>
+                    <input type="password" id="senha" placeholder="********" required>
+                </div>
+            </div>
+
+            <div class="links-uteis">
+                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+                    <input type="checkbox"> Lembrar de mim
+                </label>
+                <a href="#">Esqueceu a senha?</a>
+            </div>
+
+            <button type="submit" class="btn-login-action">Entrar na Conta</button>
+        </form>
+
+        <div class="divider"><span>ou entre com</span></div>
+
+        <div class="social-login">
+            <button class="btn-social google"><i class='bx bxl-google'></i></button>
+            <button class="btn-social facebook"><i class='bx bxl-facebook'></i></button>
+            <button class="btn-social apple"><i class='bx bxl-apple'></i></button>
+        </div>
+
+        <div class="footer-login">
+            Não tem uma conta? <a href="cadastro.html">Cadastre-se</a>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
