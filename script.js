@@ -333,3 +333,44 @@ function moverSlide(idCarousel, direcao) {
     // Atualiza contador (1/3)
     if (badge) badge.innerText = `${novoIndex + 1}/${total}`;
 }
+
+/* ==================== SISTEMA DE LOGIN (SIMULAÇÃO) ==================== */
+
+// 1. Função para verificar se deve mostrar os Stories
+function verificarLoginUsuario() {
+    const stories = document.getElementById('secaoStories');
+    // Verifica se existe um item salvo como "logado" no navegador
+    const usuarioEstaLogado = localStorage.getItem('usuarioLogado');
+
+    if (usuarioEstaLogado === 'true') {
+        // Se estiver logado, mostra os stories (usamos flex para manter o layout)
+        if(stories) stories.style.display = 'flex'; 
+        
+        // Opcional: Esconde o botão de "Entrar" no topo se já estiver logado
+        const btnEntrar = document.querySelector('.entrar');
+        if(btnEntrar) btnEntrar.style.display = 'none';
+    } else {
+        // Se não, garante que está escondido
+        if(stories) stories.style.display = 'none';
+    }
+}
+
+function verificarLoginUsuario() {
+    const stories = document.getElementById('secaoStories');
+    const usuarioEstaLogado = localStorage.getItem('usuarioLogado');
+
+    if (usuarioEstaLogado === 'true') {
+        // Se logado, força aparecer sobrepondo o CSS
+        if(stories) stories.style.setProperty('display', 'flex', 'important');
+        
+        // Esconde botão entrar se quiser
+        const btnEntrar = document.querySelector('.entrar');
+        if(btnEntrar) btnEntrar.style.display = 'none';
+    } else {
+        // Se não logado, garante que suma
+        if(stories) stories.style.setProperty('display', 'none', 'important');
+    }
+}
+
+// Executa ao carregar
+window.addEventListener('load', verificarLoginUsuario);
