@@ -9,10 +9,9 @@
     <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS DA PÁGINA NOTIFICAÇÕES
-           (Sidebar e Navbar herdam do style.css)
            ====================================================== */
         
-        /* Ajuste do Main para compensar Sidebar (Igual ao explorar.html) */
+        /* Ajuste do Main para compensar Sidebar (Desktop) */
         @media (min-width: 1024px) {
             main {
                 margin-left: var(--sidebar-width);
@@ -23,8 +22,8 @@
 
         /* Container Central */
         .notif-container {
-
             margin: 0 auto;
+            width: 100%;
         }
 
         /* --- HERO SECTION (Cabeçalho Azul) --- */
@@ -163,86 +162,86 @@
         .empty-state h3 { color: #333; margin-bottom: 10px; font-size: 1.2rem; }
         .empty-state p { color: #888; max-width: 400px; margin: 0 auto; font-size: 0.95rem; }
 
-        /* Responsividade Específica para o Hero */
+        /* ======================================================
+           RESPONSIVIDADE MOBILE (CORRIGIDA E CENTRALIZADA)
+           ====================================================== */
         @media (max-width: 768px) {
+            
+            /* 1. Ajuste Global do Main */
+            main {
+                margin-left: 0 !important; /* Remove recuo da sidebar */
+                padding: 20px 20px !important; /* Espaçamento seguro */
+                width: 100% !important;
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* Centraliza o conteúdo */
+                box-sizing: border-box;
+            }
 
-            .btn-hero-action { flex: 1; justify-content: center; }
+            .notif-container {
+                width: 100%;
+                max-width: 100%;
+            }
+
+            /* 2. Card Azul (Hero) Centralizado e Solto */
+            .notif-hero-container {
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* Centraliza itens */
+                text-align: center; /* Centraliza texto */
+                
+                padding: 30px 20px;
+                margin: 0 auto 25px auto; /* Centraliza o bloco e dá espaço embaixo */
+                
+                border-radius: 20px; /* Bordas arredondadas completas */
+                width: 100%; /* Ocupa a largura disponível */
+                box-sizing: border-box;
+            }
+
+            .hero-content h1 {
+                justify-content: center; /* Centraliza título e badge */
+                width: 100%;
+            }
+
+            /* 3. Botões do Hero (Empilhados e Centralizados) */
+            .hero-actions {
+                width: 100%;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+                margin-top: 20px;
+            }
+
+            .btn-hero-action {
+                width: 100%;
+                justify-content: center;
+                background: rgba(255,255,255,0.2); /* Mais contraste */
+            }
+
+            /* 4. Lista de Notificações */
+            .notif-card {
+                flex-direction: column; /* Ícone em cima, texto embaixo */
+                gap: 15px;
+            }
+
+            .notif-header {
+                flex-direction: row;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .notif-content {
+                padding-right: 0;
+            }
+
+            /* 3 pontinhos no topo direito */
+            .notif-options {
+                top: 20px; 
+                right: 15px;
+                bottom: auto; 
+            }
         }
-
-        @media (max-width: 768px) {
-    /* ... outros estilos ... */
-
-    /* CORREÇÃO DO CARD AZUL (NOTIFICAÇÕES) */
-    .notif-hero-container {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 25px 20px;
-        
-        /* Removemos as margens negativas laterais */
-        margin: 0 0 20px 0; 
-        
-        /* Arredonda todas as pontas */
-        border-radius: 20px; 
-        
-        /* Garante que respeite o padding do main */
-        width: 100%; 
-    }
-
-    /* Ajuste dos botões para não ficarem colados demais no texto */
-    .hero-actions {
-        width: 100%;
-        margin-top: 20px;
-        gap: 10px;
-    }
-}
-
-        @media (max-width: 768px) {
-    /* Hero Section */
-    .notif-hero-container {
-        flex-direction: column;
-        align-items: flex-start;
-        padding: 30px 20px;
-        margin: -30px -15px 20px -15px;
-        border-radius: 0 0 20px 20px;
-    }
-
-    /* Botões de Ação no Topo */
-    .hero-actions {
-        width: 100%;
-        display: flex;
-        flex-direction: column; /* Botões um embaixo do outro */
-        gap: 10px;
-        margin-top: 15px;
-    }
-
-    .btn-hero-action {
-        width: 100%;
-        justify-content: center;
-        background: rgba(255,255,255,0.2); /* Mais contraste no mobile */
-    }
-
-    /* Card de Notificação */
-    .notif-card {
-        flex-direction: column; /* Ícone em cima, texto embaixo */
-        gap: 15px;
-    }
-
-    .notif-header {
-        flex-direction: row;
-        justify-content: space-between;
-        width: 100%;
-    }
-
-    .notif-content {
-        padding-right: 0;
-    }
-
-    .notif-options {
-        top: 20px; 
-        right: 10px;
-        bottom: auto; /* Move os 3 pontinhos para o topo */
-    }
-}
     </style>
 </head>
 <body>

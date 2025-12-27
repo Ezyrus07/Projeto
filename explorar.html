@@ -17,7 +17,7 @@
             main {
                 margin-left: var(--sidebar-width);
                 padding: 30px 40px;
-                            max-width: 1600px;
+                max-width: 1600px;
             }
         }
 
@@ -32,6 +32,8 @@
             position: relative;
             overflow: hidden;
             box-shadow: 0 10px 30px rgba(42, 95, 144, 0.2);
+            width: 100%;
+            box-sizing: border-box; /* Garante que padding não estoure */
         }
         
         /* Bolinhas decorativas no fundo */
@@ -52,12 +54,13 @@
 
         /* Barra de Busca Interna */
         .hero-search-box {
-            position: relative; max-width: 500px; margin: 0 auto; z-index: 2;
+            position: relative; max-width: 500px; margin: 0 auto; z-index: 2; width: 100%;
         }
         .hero-search-box input {
             width: 100%; padding: 15px 50px 15px 20px; border-radius: 50px;
             border: none; outline: none; font-size: 1rem;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            box-sizing: border-box;
         }
         .hero-search-box button {
             position: absolute; right: 5px; top: 5px; bottom: 5px;
@@ -94,7 +97,7 @@
         .cat-name { font-size: 0.85rem; font-weight: 600; color: #555; }
 
         /* 3. Tags de Tendência (Pílulas) */
-        .trending-section { margin-bottom: 30px; }
+        .trending-section { margin-bottom: 30px; width: 100%; }
         .section-title { font-size: 1.2rem; color: var(--cor2); margin-bottom: 15px; display: flex; align-items: center; gap: 8px; }
         
         .trending-tags {
@@ -163,7 +166,7 @@
         .map-section {
             background: #fff; padding: 10px; border-radius: 20px;
             box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 50px;
-            border: 1px solid #eee;
+            border: 1px solid #eee; width: 100%; box-sizing: border-box;
         }
         .map-banner {
             background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.6)), url('https://upload.wikimedia.org/wikipedia/commons/e/ec/Map_symbol.png');
@@ -181,7 +184,7 @@
         .btn-map:hover { transform: translateY(-3px); }
 
         /* 6. Top Profissionais (Cards Melhorados) */
-        .top-pros-section { margin-bottom: 50px; }
+        .top-pros-section { margin-bottom: 50px; width: 100%; }
         .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
         .see-all { color: var(--cor0); font-weight: 600; text-decoration: none; font-size: 0.9rem; }
         
@@ -223,53 +226,69 @@
         }
         .btn-pro-action:hover { background: var(--cor0); color: white; }
 
+        /* ======================================================
+           RESPONSIVIDADE MOBILE (CORRIGIDA - CENTRALIZADA)
+           ====================================================== */
         @media (max-width: 768px) {
-            .explore-hero h2 { font-size: 1.8rem; }
-            .inspiration-grid { grid-template-columns: 1fr; }
-            .categories-grid { grid-template-columns: repeat(3, 1fr); }
+            
+            /* 1. Ajuste do Main Container */
+            main {
+                margin-left: 0 !important; /* Remove sidebar */
+                padding: 20px 20px !important; /* Espaçamento lateral seguro */
+                width: 100% !important;
+                display: flex;
+                flex-direction: column;
+                align-items: center; /* Centraliza tudo */
+                box-sizing: border-box;
+            }
+
+            /* Container que limita a largura do conteúdo interno */
+            div[style*="max-width: 1100px"] {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+            }
+
+            /* 2. Hero Card (Descubra o melhor...) */
+            .explore-hero {
+                padding: 40px 20px;
+                margin: 0 auto 30px auto; /* Centralizado e solto das bordas */
+                border-radius: 20px;
+                width: 100%;
+                text-align: center;
+            }
+
+            .explore-hero h2 { 
+                font-size: 1.8rem; 
+                margin-bottom: 10px;
+            }
+
+            /* 3. Busca no Mobile (Fonte menor para não cortar) */
+            .hero-search-box input {
+                width: 100%;
+                padding-right: 50px;
+                font-size: 0.9rem; /* Reduz fonte no mobile */
+                text-overflow: ellipsis; /* Evita quebra feia */
+            }
+
+            /* 4. Categorias (3 colunas para caber melhor) */
+            .categories-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+                width: 100%;
+            }
+
+            /* 5. Inspiração (1 Coluna cheia) */
+            .inspiration-grid {
+                grid-template-columns: 1fr; /* Um card por linha */
+                width: 100%;
+            }
+
+            /* 6. Profissionais (Card levemente maior) */
+            .pro-card {
+                min-width: 260px;
+            }
         }
-
-        @media (max-width: 768px) {
-    /* Hero Section */
-.explore-hero {
-        padding: 40px 20px;
-        
-        /* Removemos as margens negativas */
-        margin: 0 0 30px 0; 
-        
-        /* Arredonda todas as pontas */
-        border-radius: 20px; 
-        
-        width: 100%;
-    }
-
-   /* Ajuste para o texto não ficar gigante */
-    .explore-hero h2 { 
-        font-size: 1.6rem; 
-    }
-
-    /* Barra de Busca dentro do Hero */
-    .hero-search-box input {
-        width: 100%;
-        padding-right: 50px; /* Espaço para o botão */
-    }
-
-    /* Grid de Categorias (ícones pequenos) */
-    .categories-grid {
-        grid-template-columns: repeat(3, 1fr); /* 3 por linha fica melhor no mobile */
-        gap: 10px;
-    }
-
-    /* Grid de Inspiração (Cards grandes) */
-    .inspiration-grid {
-        grid-template-columns: 1fr; /* Um embaixo do outro */
-    }
-
-    /* Cards de Profissionais (Horizontal Scroll) */
-    .pro-card {
-        min-width: 260px; /* Aumenta um pouco para ocupar melhor a tela */
-    }
-}
     </style>
 </head>
 <body>
@@ -284,7 +303,8 @@
         <div class="item">
             <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início"><span>Início</span></a>
         </div>
-        <div class="item active"> <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar"><span>Explorar</span></a>
+        <div class="item active"> 
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar"><span>Explorar</span></a>
         </div>
         <div class="item">
             <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações"><span>Notificações</span></a>
@@ -302,7 +322,6 @@
             <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais"><a href="mais.html"><span>Mais</span></a>
         </div>
     </aside>
-
 
     <header class="navbar-desktop">
         <div id="logo-desktop">
@@ -486,7 +505,6 @@
 
         </div>
         
-        <section class="rodape-container2"></section>
     </main>
 
     <footer class="main-footer">
