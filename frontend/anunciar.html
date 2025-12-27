@@ -76,7 +76,7 @@
         .input-modern:focus, select:focus, textarea:focus { border-color: var(--cor0); background: #fff; }
         textarea { resize: vertical; min-height: 120px; }
 
-        /* UPLOAD ZONE (RESTAURADO) */
+        /* UPLOAD ZONE & GALERIA */
         .upload-zone {
             border: 2px dashed #ccc; border-radius: 15px; padding: 30px;
             text-align: center; background: #fafafa; cursor: pointer; transition: 0.2s;
@@ -88,6 +88,11 @@
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer;
         }
         .file-name-display { font-size: 0.9rem; font-weight: 600; color: var(--cor2); margin-top: 10px; }
+        
+        /* Preview Galeria */
+        .galeria-preview-container { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
+        .foto-thumb { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; border: 1px solid #ddd; position: relative; }
+        .btn-remove-foto { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; }
 
         /* Multi-Select */
         .multi-select-container {
@@ -98,6 +103,7 @@
             background: var(--cor0); color: #fff; padding: 6px 14px;
             border-radius: 20px; font-size: 0.9rem; display: flex; align-items: center; gap: 8px;
         }
+        .tag-item span { margin-left: 5px; cursor: pointer; font-weight: bold; }
         .cat-dropdown {
             position: absolute; top: 105%; left: 0; width: 100%; max-height: 250px;
             overflow-y: auto; background: #fff; border: 1px solid var(--cor0);
@@ -215,6 +221,7 @@
                             <label>Título do Anúncio</label>
                             <input type="text" id="titulo" class="input-modern" placeholder="Ex: Manutenção Elétrica Residencial" required>
                         </div>
+
                         <div class="row-inputs">
                             <div class="form-group">
                                 <label>Categorias</label>
@@ -230,6 +237,7 @@
                                 <input type="text" id="tags" class="input-modern" placeholder="Ex: eletricista, reparo, fiação">
                             </div>
                         </div>
+
                         <div class="form-group">
                             <label>Tipo de Atendimento</label>
                             <div class="toggle-wrapper">
@@ -251,6 +259,16 @@
                         <div class="form-group">
                             <label>Descrição Detalhada</label>
                             <textarea id="descricao" placeholder="Descreva seu serviço..." required></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fotos do Trabalho (Máx 5)</label>
+                            <div class="upload-zone" onclick="document.getElementById('upload-galeria').click()">
+                                <i class='bx bx-images'></i>
+                                <span>Adicionar fotos da galeria</span>
+                                <input type="file" id="upload-galeria" multiple accept="image/*" onchange="processarFotos(this)">
+                            </div>
+                            <div id="preview-galeria" class="galeria-preview-container"></div>
                         </div>
                     </div>
 
@@ -377,14 +395,48 @@
     </main>
 
     <script>
-    // --- UPLOAD VISUAL HELPER ---
+    // --- UPLOAD VISUAL HELPER (Nomes de arquivos) ---
     function mostrarNomeArquivo(input) {
         if(input.files && input.files[0]) {
-            // Acha a div irmã para mostrar o nome
             const display = input.parentElement.querySelector('.file-name-display');
             display.innerText = "Arquivo selecionado: " + input.files[0].name;
             display.style.display = 'block';
         }
+    }
+
+    // --- LÓGICA DE FOTOS (BASE64) ---
+    let fotosParaEnviar = [];
+
+    function processarFotos(input) {
+        if (input.files) {
+            const files = Array.from(input.files);
+            const container = document.getElementById('preview-galeria');
+            
+            if (fotosParaEnviar.length + files.length > 5) {
+                alert("Máximo de 5 fotos permitidas.");
+                return;
+            }
+
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    fotosParaEnviar.push(e.target.result);
+                    const div = document.createElement('div');
+                    div.style.position = "relative";
+                    div.innerHTML = `
+                        <img src="${e.target.result}" class="foto-thumb">
+                        <div class="btn-remove-foto" onclick="removerFoto(this, '${e.target.result}')">×</div>
+                    `;
+                    container.appendChild(div);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    }
+
+    function removerFoto(elemento, fotoBase64) {
+        fotosParaEnviar = fotosParaEnviar.filter(f => f !== fotoBase64);
+        elemento.parentElement.remove();
     }
 
     // --- CATEGORIAS ---
@@ -493,6 +545,8 @@
         const data = {
             usuario_id: localStorage.getItem('usuarioLogado') ? 1 : 0, 
             titulo: document.getElementById('titulo').value,
+            // AQUI VÃO AS FOTOS
+            fotos: fotosParaEnviar,
             categorias: categoriasSelecionadas,
             tags: document.getElementById('tags').value,
             modo_atendimento: document.querySelector('input[name="modo_atend"]:checked').value,
