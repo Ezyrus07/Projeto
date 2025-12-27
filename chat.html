@@ -291,7 +291,51 @@ body.chat-page {
     .input-area { padding: 15px; }
     
     /* Para mostrar a lista no mobile, você precisaria de um estado JS */
-}</style>
+}
+
+@media (max-width: 768px) {
+    body.chat-page {
+        flex-direction: column;
+        height: 100vh; /* Ocupa altura total */
+    }
+
+    .chat-layout {
+        flex-direction: column;
+        margin-left: 0;
+        width: 100%;
+        padding: 0; /* Remove padding extra no chat */
+    }
+
+    /* LISTA DE CONTATOS (Visível por padrão no mobile) */
+    .contacts-panel {
+        display: flex; /* Força aparecer */
+        width: 100%;
+        height: 100%; /* Ocupa tudo se não tiver conversa aberta */
+        border-right: none;
+    }
+
+    /* ÁREA DE MENSAGENS (Escondida no mobile até clicar - Simulação) */
+    /* Se quiser mostrar a conversa, altere display para flex */
+    .chat-workspace {
+        display: none; /* Esconde a área de mensagens no mobile para focar na lista */
+        width: 100%;
+        height: 100%;
+        position: fixed;
+        top: 0; left: 0; z-index: 200; /* Fica por cima */
+    }
+    
+    /* Topbar do Chat */
+    .chat-topbar {
+        padding: 10px;
+    }
+    .chat-tools button {
+        display: none; /* Esconde botões extras para limpar a tela */
+    }
+    .chat-tools .btn-pay-header {
+        display: flex; /* Mantém só o botão de pagar */
+    }
+}
+</style>
 </head>
 <body class="chat-page">
 
