@@ -379,22 +379,24 @@ window.addEventListener('load', verificarLoginUsuario);
 
 // 1. Função de Login
 function realizarLogin(event) {
-    if(event) event.preventDefault(); // Não recarrega a página
+    if(event) event.preventDefault(); 
 
     const email = document.getElementById('email').value;
     const senha = document.getElementById('senha').value;
 
     if(email && senha) {
-        // Salva no navegador que está logado
         localStorage.setItem('usuarioLogado', 'true');
         
-        // Pega o nome antes do @ (Simulação)
-        const nomeUsuario = email.split('@')[0];
-        localStorage.setItem('nomeUsuario', nomeUsuario);
+        // Cria um perfil padrão se não existir, para não ficar sem foto
+        if (!localStorage.getItem('doke_usuario_perfil')) {
+            const perfilPadrao = {
+                nome: email.split('@')[0],
+                foto: 'https://i.pravatar.cc/150?img=11' // Foto inicial padrão
+            };
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilPadrao));
+        }
 
         alert("Login realizado com sucesso!");
-        
-        // Redireciona para a Home para ver o avatar aparecer
         window.location.href = "index.html"; 
     } else {
         alert("Preencha todos os campos!");
@@ -410,64 +412,76 @@ function realizarCadastro(event) {
 
     if(nome && email) {
         localStorage.setItem('usuarioLogado', 'true');
-        localStorage.setItem('nomeUsuario', nome);
+        
+        // Já salva o perfil inicial com o nome do cadastro
+        const perfilInicial = {
+            nome: nome,
+            bio: "Novo usuário na Doke.",
+            local: "Não informado",
+            foto: "https://i.pravatar.cc/150?img=11" // Foto padrão inicial
+        };
+        localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilInicial));
 
         alert("Conta criada! Bem-vindo(a).");
         window.location.href = "index.html";
     }
 }
 
-// --- FUNÇÃO PRINCIPAL QUE CONTROLA O VISUAL (HEADER/AVATAR) ---
+// --- FUNÇÃO PRINCIPAL: HEADER E AVATAR ---
 function verificarEstadoLogin() {
     const logado = localStorage.getItem('usuarioLogado') === 'true';
-    
-    // Seleciona TODOS os botões "Entrar" (Mobile e Desktop)
-    const btnsEntrar = document.querySelectorAll('.entrar'); 
     const containerBotoes = document.querySelector('.botoes-direita');
     const areaStories = document.getElementById('secaoStories'); 
 
     if (logado) {
         // >>> USUÁRIO LOGADO <<<
 
-        // 1. Garante que o botão continue escondido (já está display:none no CSS)
-        // Não precisamos fazer nada aqui para o botão.
+        if (containerBotoes) {
+            containerBotoes.innerHTML = ''; // Limpa o botão "Entrar"
 
-        // 2. Insere Avatar no Header (se ainda não existir)
-        if (containerBotoes && !document.getElementById('avatar-usuario-nav')) {
-            const linkPerfil = document.createElement('a');
-            linkPerfil.href = 'meuperfil.html';
-            linkPerfil.className = 'nav-avatar-profile';
-            linkPerfil.id = 'avatar-usuario-nav';
-            linkPerfil.innerHTML = '<img src="https://i.pravatar.cc/150?img=11" alt="Meu Perfil">';
-            containerBotoes.appendChild(linkPerfil);
+            // 1. TENTA PEGAR A FOTO SALVA NO PERFIL
+            const perfilSalvo = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+            
+            // Se tiver foto salva (Base64 ou URL), usa ela. Se não, usa a padrão.
+            const fotoUsuario = (perfilSalvo && perfilSalvo.foto) ? perfilSalvo.foto : 'https://i.pravatar.cc/150?img=11';
+
+            // 2. Cria o HTML com a FOTO CERTA
+            const divPerfil = document.createElement('div');
+            divPerfil.style.display = 'flex';
+            divPerfil.style.alignItems = 'center';
+            divPerfil.style.gap = '15px';
+
+            divPerfil.innerHTML = `
+                <a href="meuperfil.html" style="text-decoration:none;" title="Ir para meu perfil">
+                    <img src="${fotoUsuario}" alt="Perfil" 
+                         style="width:40px; height:40px; border-radius:50%; border:2px solid #eee; object-fit:cover;">
+                </a>
+            `;
+
+            containerBotoes.appendChild(divPerfil);
         }
 
-        // 3. Mostra Stories na Home
         if (areaStories) areaStories.style.display = 'flex';
 
     } else {
         // >>> USUÁRIO DESLOGADO <<<
-
-        // 1. FORÇA O BOTÃO A APARECER (Correção do CSS)
-        btnsEntrar.forEach(btn => btn.style.display = 'flex');
-        
-        // 2. Remove Avatar se existir
-        const avatarExistente = document.getElementById('avatar-usuario-nav');
-        if (avatarExistente) avatarExistente.remove();
-
-        // 3. Esconde Stories
+        if (containerBotoes) {
+            containerBotoes.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
+        }
         if (areaStories) areaStories.style.display = 'none';
     }
 }
-// 4. Função de Sair (Logout)
+
+// 4. Função de Sair
 function fazerLogout() {
-    localStorage.removeItem('usuarioLogado');
-    localStorage.removeItem('nomeUsuario');
-    alert("Você saiu da conta.");
-    window.location.href = 'index.html';
+    if(confirm("Tem certeza que deseja sair?")) {
+        localStorage.removeItem('usuarioLogado');
+        // Opcional: localStorage.removeItem('doke_usuario_perfil'); // Se quiser limpar os dados ao sair
+        alert("Você saiu da conta.");
+        window.location.href = 'index.html';
+    }
 }
 
-// Roda a verificação assim que a página carrega
 window.addEventListener('load', verificarEstadoLogin);
 
 /* ==========================================================================
@@ -596,20 +610,20 @@ async function carregarFeedPremium() {
 
             const cardHTML = `
             <div class="card-premium">
-                <div class="cp-header">
-                    <div class="cp-perfil">
-                        <img src="https://ui-avatars.com/api/?name=Profissional&background=random" class="cp-avatar" alt="Foto">
-                        <div>
-                            <h4 class="cp-nome">${anuncio.titulo} <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
-                            <span class="cp-user">Categoria: ${categoriaPrincipal}</span>
-                            <div class="cp-badges">
-                                <span class="cp-stars">★★★★★</span>
-                                <span class="cp-cifrao on">${preco}</span>
-                            </div>
-                        </div>
+        <div class="cp-header">
+            <div class="cp-perfil">
+                <img src="${fotoAutor}" class="cp-avatar" alt="Foto" style="object-fit:cover;">
+                <div>
+                    <h4 class="cp-nome">${nomeAutor} <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
+                    <span class="cp-user">${userHandle}</span>
+                    <div class="cp-badges">
+                        <span class="cp-stars">★★★★★</span>
+                        <span class="cp-cifrao" style="color:#2ecc71; font-weight:bold;">${anuncio.preco || anuncio.valor || 'A combinar'}</span>
                     </div>
-                    <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; color:#ccc; cursor:pointer;"></i>
                 </div>
+            </div>
+            <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; color:#ccc; cursor:pointer;"></i>
+        </div>
 
                 <div class="cp-body">
                     <h3 class="cp-titulo">${anuncio.titulo}</h3>
@@ -643,3 +657,130 @@ async function carregarFeedPremium() {
         console.error("Erro ao carregar feed:", erro);
     }
 }
+
+        // ===============================================
+        // LÓGICA PARA CARREGAR ANÚNCIOS NO FEED
+        // ===============================================
+        document.addEventListener("DOMContentLoaded", () => {
+            const feed = document.getElementById('feedAnuncios');
+            
+            // 1. Tenta pegar do LocalStorage
+            let anuncios = JSON.parse(localStorage.getItem('doke_anuncios')) || [];
+            // [NOVO] Carrega o Perfil do Usuário para usar o nome e foto dele
+const perfilUsuario = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+
+// 3. Renderiza os Cards
+// 3. Renderiza os Cards
+            if (anuncios.length > 0) {
+                feed.innerHTML = ''; 
+                
+                // MAPA DE ÍCONES (Adicione mais se precisar)
+                const iconesCategoria = {
+                    'Eletricista': 'bx-plug',
+                    'Encanador': 'bx-wrench',
+                    'Pintor': 'bx-paint-roll',
+                    'Pedreiro': 'bx-hard-hat',
+                    'Montador': 'bx-cabinet',
+                    'Limpeza': 'bx-spray-can',
+                    'Tecnologia': 'bx-laptop',
+                    'Outros': 'bx-briefcase-alt-2'
+                };
+
+                anuncios.forEach(anuncio => {
+                    if(anuncio.status === 'pausado') return; 
+
+                    // --- LÓGICA DE PERFIL (Foto e Nome reais) ---
+                    let nomeAutor = anuncio.categoria || 'Profissional';
+                    let fotoAutor = 'https://i.pravatar.cc/150?u=' + anuncio.id; 
+                    let userHandle = '@profissional';
+
+                    if (perfilUsuario) {
+                        nomeAutor = perfilUsuario.nome;
+                        fotoAutor = perfilUsuario.foto || fotoAutor;
+                        userHandle = '@' + perfilUsuario.nome.split(' ')[0].toLowerCase();
+                    }
+
+                    // 1. Ícone da Categoria
+                    let catChave = anuncio.categoria ? anuncio.categoria.split(' ')[0] : 'Outros';
+                    let iconeClass = iconesCategoria[catChave] || 'bx-briefcase-alt-2';
+
+                    // 2. Estrelas (Cinza se for novo)
+                    let classeEstrela = anuncio.views > 100 ? '' : 'gray'; 
+
+                    // 3. Imagens
+                    let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : (anuncio.img ? [anuncio.img] : []);
+                    if (fotos.length === 0) fotos = ['https://placehold.co/600x400?text=Sem+Foto'];
+
+                    let imagensHTML = '';
+                    if (fotos.length === 1) {
+                        imagensHTML = `<div class="cp-item-main" style="grid-column: span 2; height: 300px;"><img src="${fotos[0]}" style="width:100%; height:100%; object-fit:cover; border-radius:12px;"></div>`;
+                    } else if (fotos.length >= 3) {
+                        imagensHTML = `
+                            <div class="cp-item-main"><img src="${fotos[0]}"></div>
+                            <div class="cp-item-sub"><img src="${fotos[1]}"></div>
+                            <div class="cp-item-sub">
+                                <img src="${fotos[2]}">
+                                ${fotos.length > 3 ? `<div class="cp-overlay-count">+${fotos.length - 3}</div>` : ''}
+                            </div>
+                        `;
+                    } else { 
+                        imagensHTML = `<div class="cp-item-main"><img src="${fotos[0]}"></div><div class="cp-item-sub"><img src="${fotos[1]}"></div>`;
+                    }
+
+                    // --- HTML DO CARD CORRIGIDO ---
+                    const card = document.createElement('div');
+                    card.className = 'card-premium';
+                    card.innerHTML = `
+<div class="cp-header">
+                            <div class="cp-perfil">
+                                <img src="${fotoAutor}" class="cp-avatar" alt="Foto" style="object-fit:cover;">
+                                <div>
+                                    <h4 class="cp-nome">
+                                        ${nomeAutor} 
+                                        <i class='bx ${iconeClass}' style="color:var(--cor0); font-size:1.1rem; margin-left:5px;" title="${anuncio.categoria}"></i>
+                                    </h4>
+                                    <span class="cp-user">${userHandle}</span>
+                                    <div class="cp-badges">
+                                        <span class="cp-stars ${classeEstrela}">★★★★★</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; color:#ccc; cursor:pointer;"></i>
+                        </div>
+
+                        <div class="cp-body">
+                            <h3 class="cp-titulo">${anuncio.titulo}</h3>
+                            <p class="cp-desc">${anuncio.descricao || 'Sem descrição.'}</p>
+                        </div>
+
+                        <div class="cp-mid-actions">
+                            
+                            <div class="cp-mid-left">
+                                <button class="btn-mid-chamativo" onclick="location.href='meuperfil.html'">Ver Perfil</button>
+                                <button class="btn-mid-chamativo" onclick="location.href='avaliacoes.html'">Avaliação</button>
+                            </div>
+
+                            <div class="cp-mid-right">
+                                <i class='bx bx-heart icon-action-card' title="Salvar"></i>
+                                <i class='bx bx-share-alt icon-action-card' title="Compartilhar"></i>
+                            </div>
+
+                        </div>
+
+                        <div class="cp-media-grid" onclick="abrirGaleria()">
+                            ${imagensHTML}
+                        </div>
+                        
+                        <div class="cp-footer-right">
+                            <a href="orcamento.html">
+                                <button class="btn-orcamento-chamativo">Solicitar Orçamento</button>
+                            </a>
+                        </div>
+                    `;
+                    feed.appendChild(card);
+                });
+            } else {
+                feed.innerHTML = '<p style="padding:20px; text-align:center;">Nenhum anúncio disponível no momento.</p>';
+            }
+
+        });

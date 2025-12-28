@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Público | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="script.js"></script>
+    <style>
+        /* ==========================================================================
+           ESTILOS DO PERFIL PÚBLICO (DINÂMICO)
+           ========================================================================== */
+        
+        body { background-color: #f4f6f8; }
+
+        .public-profile-main {
+            margin-left: 270px;
+            margin-right: 20px;
+            max-width: 1200px;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+
+        /* --- HEADER --- */
+        .profile-hero {
+            background: #fff; border-radius: 16px; overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative;
+            margin-bottom: 20px;
+        }
+        .cover-photo {
+            height: 220px; background: linear-gradient(120deg, #2a5f90, #0b7768); position: relative;
+        }
+        .profile-content {
+            padding: 0 30px 30px 30px; position: relative; display: flex; flex-direction: column;
+        }
+        .profile-avatar-wrapper {
+            margin-top: -70px; margin-bottom: 15px; position: relative; width: 140px; align-self: flex-start;
+        }
+        .profile-avatar-img {
+            width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff;
+            object-fit: cover; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .status-badge {
+            position: absolute; bottom: 10px; right: 10px; background: #ccc; /* Cinza se offline/novo */
+            border: 3px solid #fff; width: 24px; height: 24px; border-radius: 50%;
+        }
+        .status-badge.online { background: #2ecc71; }
+
+        /* Infos */
+        .profile-info-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
+        .info-left h1 { margin: 0; font-size: 1.8rem; color: #333; display: flex; align-items: center; gap: 8px; }
+        .info-left .category { color: var(--cor0); font-weight: 600; font-size: 1rem; margin-top: 5px; }
+        .info-left .location { color: #777; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; margin-top: 5px; }
+
+        .profile-stats { display: flex; gap: 30px; margin-top: 15px; }
+        .stat-item { text-align: center; }
+        .stat-item strong { display: block; font-size: 1.2rem; color: #333; }
+        .stat-item span { font-size: 0.85rem; color: #888; }
+        
+        .rating-box { 
+            background: #f0f0f0; color: #888; padding: 5px 10px; 
+            border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px;
+        }
+        .rating-box.active { background: #fff8e1; color: #f1c40f; }
+
+        .profile-actions { display: flex; gap: 10px; margin-top: 10px; }
+        .btn-action-primary {
+            background: var(--cor0); color: white; border: none; padding: 12px 30px;
+            border-radius: 50px; font-weight: 700; cursor: pointer; text-decoration: none;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-action-secondary {
+            background: #fff; color: var(--cor2); border: 2px solid var(--cor2);
+            padding: 10px 20px; border-radius: 50px; font-weight: 700; cursor: pointer;
+            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
+        }
+
+        /* --- DESTAQUES (Stories) --- */
+        .area-destaques-container { 
+            padding: 15px 0 25px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; 
+            display: none; /* Escondido por padrão se não tiver */
+        }
+        .scroll-destaques { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .item-destaque { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 75px; }
+        .circulo-destaque {
+            width: 72px; height: 72px; border-radius: 50%; padding: 3px;
+            border: 2px solid #ddd; margin-bottom: 8px; 
+        }
+        .circulo-destaque img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+
+        /* --- LAYOUT GRID --- */
+        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
+        .card-content {
+            background: #fff; border-radius: 12px; padding: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 25px;
+        }
+        .card-title {
+            font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 15px;
+            border-left: 4px solid var(--cor0); padding-left: 10px;
+        }
+
+        /* --- ESTADOS VAZIOS (EMPTY STATES) --- */
+        .empty-state-box {
+            text-align: center; padding: 30px; color: #999;
+            border: 1px dashed #ddd; border-radius: 8px;
+        }
+        .empty-state-box i { font-size: 2.5rem; margin-bottom: 10px; display: block; opacity: 0.5; }
+        .empty-state-box p { font-size: 0.9rem; margin: 0; }
+
+        /* --- FEED --- */
+        .post-feed-card {
+            background: #fff; border: 1px solid #eee; border-radius: 12px;
+            margin-bottom: 25px; overflow: hidden;
+        }
+        .header-post { padding: 15px; display: flex; align-items: center; gap: 10px; }
+        .header-post img { width: 40px; height: 40px; border-radius: 50%; object-fit:cover; }
+        .header-post strong { display: block; font-size: 0.95rem; }
+        .midia-post img { width: 100%; display: block; }
+        
+        /* RESPONSIVIDADE */
+        @media (max-width: 1024px) {
+            .public-profile-main { margin-left: 0; margin-right: 0; padding: 15px; }
+            .content-grid { grid-template-columns: 1fr; }
+            .right-col { order: 2; } .left-col { order: 1; }
+        }
+        @media (max-width: 768px) {
+            .profile-info-row { flex-direction: column; align-items: center; text-align: center; }
+            .profile-avatar-wrapper { align-self: center; }
+            .info-left h1, .info-left .location { justify-content: center; }
+            .profile-stats { justify-content: center; }
+            .profile-actions { width: 100%; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="mobile-controls">
+            <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
+        </div>
+    </header>
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
+
+    <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
+    </header>
+
+    <main class="public-profile-main">
+        
+        <section class="profile-hero">
+            <div class="cover-photo">
+                </div>
+            
+            <div class="profile-content">
+                <div class="profile-avatar-wrapper">
+                    <img src="" alt="Prestador" class="profile-avatar-img" id="imgPrestador">
+                    <div class="status-badge" id="statusBadge"></div>
+                </div>
+
+                <div class="profile-info-row">
+                    <div class="info-left">
+                        <h1 id="nomePrestador">Carregando...</h1>
+                        <div class="category" id="categoriaPrestador">Prestador de Serviços</div>
+                        <div class="location" id="localPrestador"><i class='bx bx-map'></i> ...</div>
+                        
+                        <div class="profile-stats">
+                            <div class="rating-box" id="boxNota">Novo <i class='bx bx-star'></i></div>
+                            <div class="stat-item"><strong id="numAvaliacoes">0</strong><span>Avaliações</span></div>
+                            <div class="stat-item"><strong id="numServicos">0</strong><span>Serviços</span></div>
+                        </div>
+                    </div>
+
+                    <div class="profile-actions">
+                        <a href="chat.html" class="btn-action-secondary"><i class='bx bx-message-rounded-dots'></i> Chat</a>
+                        <a href="orcamento.html" class="btn-action-primary"><i class='bx bx-calendar-check'></i> Solicitar Orçamento</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="area-destaques-container" id="areaStories">
+                <div class="scroll-destaques" id="listaStories">
+                    </div>
+            </div>
+        </section>
+
+        <div class="content-grid">
+            
+            <div class="left-col">
+                <div class="card-content">
+                    <div class="card-title">Sobre</div>
+                    <p id="bioPrestador" style="color:#555; line-height:1.6;">Sem biografia informada.</p>
+                </div>
+
+                <h3 style="margin-bottom:15px; color:#444; font-size:1.1rem; font-weight:700;">Publicações</h3>
+                
+                <div id="feed-container">
+                    </div>
+
+                <div class="card-content">
+                    <div class="card-title">Avaliações Recentes</div>
+                    <div id="avaliacoes-container">
+                        </div>
+                </div>
+            </div>
+
+            <div class="right-col">
+                <div class="card-content">
+                    <div class="card-title">Verificação</div>
+                    <div style="display:flex; flex-direction:column; gap:10px;">
+                        <div style="display:flex; align-items:center; gap:10px; color:#555;"><i class='bx bxs-id-card' style="color:#2ecc71; font-size:1.2rem;"></i> Identidade (Pendente)</div>
+                        <div style="display:flex; align-items:center; gap:10px; color:#555;"><i class='bx bxs-phone' style="color:#2ecc71; font-size:1.2rem;"></i> Telefone (Pendente)</div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            carregarDadosPerfilPublico();
+        });
+
+        function carregarDadosPerfilPublico() {
+            // 1. TENTA PEGAR DADOS REAIS DO USUÁRIO LOGADO (Simulando que é este perfil)
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            
+            // Dados Básicos
+            const nome = perfil.nome || "Usuário Doke";
+            const foto = perfil.foto || "https://i.pravatar.cc/150?img=68"; // Foto genérica se não tiver
+            const bio = perfil.bio || "Este profissional ainda não adicionou uma biografia.";
+            const local = perfil.local || "Brasil";
+
+            // Preencher HTML
+            document.getElementById('nomePrestador').innerText = nome;
+            document.getElementById('imgPrestador').src = foto;
+            document.getElementById('bioPrestador').innerText = bio;
+            document.getElementById('localPrestador').innerHTML = `<i class='bx bx-map'></i> ${local}`;
+
+            // 2. LÓGICA DE CONTEÚDO VAZIO (ZERO STATE)
+            
+            // Stories (Supondo que não existe array de stories ainda)
+            const stories = []; // Array vazio
+            const areaStories = document.getElementById('areaStories');
+            
+            if (stories.length === 0) {
+                areaStories.style.display = 'none'; // Esconde a barra inteira
+            }
+
+            // Feed (Posts)
+            const posts = []; // Array vazio (Simulando conta nova)
+            const feedContainer = document.getElementById('feed-container');
+
+            if (posts.length === 0) {
+                feedContainer.innerHTML = `
+                    <div class="empty-state-box">
+                        <i class='bx bx-image'></i>
+                        <p>Nenhuma publicação ainda.</p>
+                    </div>
+                `;
+            }
+
+            // Avaliações
+            const avaliacoes = []; // Array vazio
+            const reviewContainer = document.getElementById('avaliacoes-container');
+
+            if (avaliacoes.length === 0) {
+                reviewContainer.innerHTML = `
+                    <div class="empty-state-box" style="border:none; padding:10px;">
+                        <i class='bx bx-star'></i>
+                        <p>Seja o primeiro a avaliar este profissional!</p>
+                    </div>
+                `;
+                // Zera nota
+                document.getElementById('boxNota').className = 'rating-box'; // Remove cor amarela
+                document.getElementById('boxNota').innerHTML = 'Novo';
+            }
+        }
+    </script>
+
+</body>
+</html>
