@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anunciar Serviço Completo | Doke</title>
     <link rel="stylesheet" href="style.css">
-    <script src="script.js"></script>
+    <script type="module" src="script.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         /* ======================================================
@@ -413,7 +413,9 @@
                     <div class="form-nav">
                         <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)">Voltar</button>
                         <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
-                        <button type="submit" class="btn-submit" id="btn-submit" style="display: none;">Publicar Anúncio</button>
+                        <button type="button" class="btn-submit" id="btn-submit" onclick="publicarAnuncio(event)">
+                            Publicar Anúncio
+                        </button>
                     </div>
 
                 </form>
@@ -432,7 +434,7 @@
     }
 
     // --- LÓGICA DE FOTOS (BASE64) ---
-    let fotosParaEnviar = [];
+    window.fotosParaEnviar = [];
 
     function processarFotos(input) {
         if (input.files) {
@@ -555,75 +557,7 @@
         }
     }
 
-    // =============================================================
-    // FUNÇÃO CORRIGIDA: SALVAR NO LOCALSTORAGE (SEM SERVIDOR)
-    // =============================================================
-    window.finalizarAnuncio = function(e) {
-        e.preventDefault();
-
-        // 1. Coletar dados da Agenda e Pagamentos
-        const pags = [];
-        ['pg-pix','pg-din','pg-cd','pg-cc'].forEach(id => {
-            if(document.getElementById(id).checked) pags.push(document.getElementById(id).value);
-        });
-
-        const agenda = {};
-        if(document.getElementById('chk-seg').checked) agenda.seg = { ini: document.getElementById('seg-inicio').value, fim: document.getElementById('seg-fim').value };
-        if(document.getElementById('chk-ter').checked) agenda.ter = { ini: document.getElementById('ter-inicio').value, fim: document.getElementById('ter-fim').value };
-
-        // 2. Criar objeto do Anúncio
-        // Recuperar o array atual do LocalStorage
-        let anuncios = JSON.parse(localStorage.getItem('doke_anuncios')) || [];
-        
-        // Gerar um novo ID (pega o maior ID existente + 1)
-        const newId = anuncios.length > 0 ? Math.max(...anuncios.map(a => a.id)) + 1 : 1;
-
-        // Definir preço (usa o valor se for fixo, ou "A combinar" se for orçamento)
-        const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked').value;
-        const valorFinal = tipoPreco === 'Preço Fixo' ? document.getElementById('valor').value : 'A combinar';
-
-        const novoAnuncio = {
-            id: newId,
-            titulo: document.getElementById('titulo').value,
-            img: fotosParaEnviar.length > 0 ? fotosParaEnviar[0] : 'https://placehold.co/200x200?text=Sem+Foto', // Pega a 1ª foto como capa
-            fotos: fotosParaEnviar,
-            categorias: categoriasSelecionadas,
-            tags: document.getElementById('tags').value,
-            modo_atendimento: document.querySelector('input[name="modo_atend"]:checked').value,
-            tipo_preco: tipoPreco,
-            preco: valorFinal, // IMPORTANTE: O campo 'preco' é o que o meuperfil.html lê
-            valor: valorFinal,
-            descricao: document.getElementById('descricao').value,
-            experiencia: document.getElementById('experiencia').value,
-            prazo: document.getElementById('prazo').value,
-            garantia: document.getElementById('garantia').value,
-            politica: document.getElementById('politica').value,
-            emergencia: document.getElementById('emergencia').checked,
-            tipo_pessoa: document.querySelector('input[name="tipo_pessoa"]:checked').value,
-            nome_documento: document.getElementById('nome_doc').value,
-            documento_numero: document.getElementById('doc_num').value,
-            telefone: document.getElementById('telefone').value,
-            cep: document.getElementById('cep').value,
-            pagamentos: pags,
-            agenda: agenda,
-            views: 0,
-            cliques: 0,
-            status: "analise" // Status inicial
-        };
-
-        // 3. Salvar no LocalStorage
-        anuncios.push(novoAnuncio);
-        localStorage.setItem('doke_anuncios', JSON.stringify(anuncios));
-
-        // 4. Redirecionar
-        // alert("Anúncio criado com sucesso!"); // Opcional
-        window.location.href = "meuperfil.html?status=analise";
-    }
-    
-    document.addEventListener("DOMContentLoaded", function() {
-        document.getElementById('btn-prev').style.display = 'none';
-        document.getElementById('btn-submit').style.display = 'none';
-    });
+ 
     </script>
 </body>
 </html>
