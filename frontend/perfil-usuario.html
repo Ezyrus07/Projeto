@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Perfil | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <style>
+        /* ==========================================================================
+           ESTILOS PADRONIZADOS (Idênticos ao meuperfil.html)
+           ========================================================================== */
+        .perfil-main { margin-left: 270px; margin-right: 20px; max-width: 1600px; padding-bottom: 60px; }
+        
+        .perfil-header-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; }
+        .capa-perfil { height: 180px; background: linear-gradient(120deg, var(--cor2), #8e44ad); position: relative; }
+        .btn-edit-capa { position: absolute; right: 20px; bottom: 20px; background: rgba(0,0,0,0.5); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        
+        .dados-perfil { padding: 0 30px 20px 30px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 30px; margin-top: -50px; }
+        
+        /* AVATAR */
+        .avatar-container { position: relative; flex-shrink: 0; }
+        .avatar-container img { width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; }
+
+        /* TEXTOS (Ajustado para igualar o Profissional) */
+        .info-texto { flex: 1; margin-top: 60px; min-width: 250px; }
+        
+        .nome-destaque-row { display: flex; flex-direction: column; gap: 2px; }
+        
+        /* O @usuario é o destaque principal (Azul/Roxo) */
+        .handle-principal { font-size: 1.6rem; color: var(--cor2); font-weight: 800; display: flex; align-items: center; gap: 8px; margin: 0; line-height: 1.2; }
+        
+        /* O Nome completo é secundário (Cinza) */
+        .nome-secundario { font-size: 1.05rem; color: #666; font-weight: 500; margin: 0; }
+
+        /* STATS */
+        .social-stats { display: flex; gap: 25px; margin: 15px 0 15px 0; }
+        .stat-social { display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; }
+        .stat-social strong { font-size: 1.1rem; color: #333; font-weight: 800; }
+        .stat-social span { font-size: 0.85rem; color: #777; }
+
+        .bio { color: #666; font-size: 0.95rem; margin: 8px 0 15px 0; line-height: 1.4; }
+        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85rem; color: #777; }
+
+        /* AÇÕES DIREITA */
+        .acoes-perfil { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 60px; }
+        
+        /* Botão Verde Padrão (Editar) */
+        .btn-padrao { background: var(--cor0); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; text-decoration: none; font-size: 0.9rem; }
+        .btn-padrao:hover { background: #096356; transform: translateY(-2px); }
+
+        /* Botão Upgrade (Destaque Especial) */
+        .btn-upgrade-top { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 8px 20px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); text-decoration: none; margin-bottom: 5px; }
+        .btn-upgrade-top:hover { transform: scale(1.05); }
+
+
+        /* Destaques (Stories) */
+        .area-destaques-container { padding: 10px 30px 30px 30px; border-top: 1px solid #f5f5f5; margin-top: 10px; }
+        .scroll-destaques { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        .item-destaque { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 70px; }
+        .circulo-destaque { width: 68px; height: 68px; border-radius: 50%; padding: 3px; border: 1px solid #ddd; margin-bottom: 8px; transition: transform 0.2s ease; display: flex; align-items: center; justify-content: center; background: #fafafa; }
+        .circulo-destaque.add { border: 2px dashed #ccc; color: #999; font-size: 1.5rem; }
+
+        /* ABAS */
+        .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; display: flex; gap: 30px; overflow-x: auto; }
+        .tab-btn { background: none; border: none; padding: 10px 5px; font-size: 1rem; color: #777; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; white-space: nowrap; }
+        .tab-btn.active { color: var(--cor2); border-bottom-color: var(--cor2); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* CARD DE UPGRADE BOTTOM */
+        .upgrade-card { background: linear-gradient(135deg, var(--cor0), #042e27); border-radius: 16px; padding: 30px; color: white; display: flex; align-items: center; justify-content: space-between; margin-top: 40px; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(11, 119, 104, 0.2); position: relative; overflow: hidden; }
+        .upgrade-content { z-index: 2; max-width: 70%; }
+        .btn-upgrade-card { background: white; color: var(--cor0); padding: 12px 30px; border-radius: 50px; font-weight: 800; text-decoration: none; display: inline-block; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
+        .upgrade-icon { position: absolute; right: -20px; bottom: -30px; font-size: 10rem; opacity: 0.1; transform: rotate(-15deg); }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 768px) {
+            .perfil-main { margin-left: 0; margin-right: 0; padding: 20px 0 80px 0; }
+            .perfil-header-card { border-radius: 0; width: 100%; margin: -20px 0 20px 0; box-shadow: none; border-bottom: 1px solid #eee; }
+            .dados-perfil { flex-direction: column; align-items: center; text-align: center; margin-top: -60px; }
+            .nome-destaque-row { align-items: center; }
+            .acoes-perfil { align-items: center; width: 100%; padding-top: 20px; }
+            .social-stats { justify-content: center; }
+            .meta-dados { justify-content: center; }
+            .upgrade-card { flex-direction: column; text-align: center; border-radius: 0; }
+            .upgrade-content { max-width: 100%; margin-bottom: 20px; }
+        }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .form-group { margin-bottom: 15px; } .form-group label { display: block; margin-bottom: 5px; font-weight: 600; } .input-modal { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; } .btn-save { background: var(--cor0); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
+    </header>
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a></div>
+    </aside>
+
+    <main class="perfil-main">
+        
+        <section class="perfil-header-card">
+            <div class="capa-perfil">
+                <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
+            </div>
+            <div class="dados-perfil">
+                <div class="avatar-container">
+                    <img src="https://placehold.co/150" alt="Perfil" id="fotoPerfilDisplay">
+                </div>
+                
+                <div class="info-texto">
+                    <div id="container-identidade" class="nome-destaque-row">
+                        <h1 id="handleDisplay" class="handle-principal">Carregando...</h1>
+                        <span id="nomeDisplay" class="nome-secundario">...</span>
+                    </div>
+                    
+                    <div class="social-stats">
+                        <div class="stat-social"><strong>0</strong><span>Seguidores</span></div>
+                        <div class="stat-social"><strong>0</strong><span>Seguindo</span></div>
+                        <div class="stat-social"><strong>0</strong><span>Avaliações</span></div>
+                    </div>
+
+                    <p class="bio" id="bioPerfilDisplay">Adicione uma biografia...</p>
+                    
+                    <div class="meta-dados">
+                        <span id="locPerfilDisplay"><i class='bx bx-map'></i> Brasil</span>
+                        <span id="membroDesdeDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
+                    </div>
+                </div>
+
+                <div class="acoes-perfil">
+                    <a href="tornar-profissional.html" class="btn-upgrade-top">
+                        <i class='bx bxs-briefcase'></i> Virar Profissional
+                    </a>
+
+                    <button class="btn-padrao" onclick="abrirModalEditar()">
+                        <i class='bx bx-pencil'></i> Editar Perfil
+                    </button>
+                    
+
+                </div>
+            </div>
+
+            <div class="area-destaques-container">
+                <div class="scroll-destaques">
+                    <div class="item-destaque">
+                        <div class="circulo-destaque add"><i class='bx bx-plus'></i></div>
+                        <span style="font-size:0.8rem; color:#666;">Novo</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <div class="tabs-container">
+            <button class="tab-btn active" onclick="abrirTab(event, 'tab-atividades')">Minhas Atividades</button>
+            <button class="tab-btn" onclick="abrirTab(event, 'tab-favoritos')">Favoritos</button>
+            <button class="tab-btn" onclick="abrirTab(event, 'tab-midia')">Minhas Publicações</button>
+        </div>
+
+        <div id="tab-atividades" class="tab-content active">
+            <div style="text-align:center; padding:50px; color:#999; border:1px dashed #ddd; border-radius:8px; margin-top:20px;">
+                <i class='bx bx-file-blank' style="font-size:3rem;"></i>
+                <p>Nenhuma atividade recente.</p>
+            </div>
+        </div>
+
+        <div id="tab-favoritos" class="tab-content">
+            <div style="text-align:center; padding:50px; color:#999; border:1px dashed #ddd; border-radius:8px; margin-top:20px;">
+                <i class='bx bx-heart' style="font-size:3rem;"></i>
+                <p>Você ainda não tem favoritos.</p>
+                <a href="explorar.html" style="color:var(--cor0); font-weight:bold;">Explorar</a>
+            </div>
+        </div>
+
+        <div id="tab-midia" class="tab-content">
+            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; display: flex; gap: 15px;">
+                <img src="" id="avatarPostMini" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background:#eee;">
+                <div style="flex: 1;">
+                    <textarea placeholder="No que você está pensando?" style="width: 100%; border: none; resize: none; outline: none; font-family: inherit; font-size: 1rem;"></textarea>
+                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                        <button style="background:var(--cor0); color:white; border:none; padding: 5px 20px; border-radius: 20px; cursor:pointer;">Publicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <section class="upgrade-card">
+            <div class="upgrade-content">
+                <h2>Você é um profissional?</h2>
+                <p>Anuncie seus serviços e alcance mais clientes.</p>
+                <a href="tornar-profissional.html" class="btn-upgrade-card">Quero ser um Prestador</a>
+            </div>
+            <i class='bx bxs-briefcase upgrade-icon'></i>
+        </section>
+
+    </main>
+
+    <div id="modalEditar" class="modal-overlay">
+        <div class="modal-card">
+            <h3 style="margin-bottom: 20px;">Editar Meus Dados</h3>
+            <div class="form-group"><label>Nome</label><input type="text" id="inputNome" class="input-modal"></div>
+            <div class="form-group"><label>Biografia</label><textarea id="inputBio" class="input-modal" rows="3"></textarea></div>
+            <div class="form-group"><label>Localização</label><input type="text" id="inputLocal" class="input-modal"></div>
+            <div class="form-group"><label>URL da Foto</label><input type="text" id="inputFoto" class="input-modal"></div>
+            <div class="modal-footer">
+                <button onclick="fecharModalEditar()" class="btn-cancel">Cancelar</button>
+                <button onclick="salvarPerfilUsuario()" class="btn-save">Salvar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // CONFIGURAÇÃO DO FIREBASE
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
+            authDomain: "doke-site.firebaseapp.com",
+            projectId: "doke-site",
+            storageBucket: "doke-site.firebasestorage.app",
+            messagingSenderId: "997098339190",
+            appId: "1:997098339190:web:a865b696278be21f069857"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                const docRef = doc(db, "usuarios", user.uid);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    const dados = docSnap.data();
+                    
+                    if (dados.isProfissional === true) {
+                        window.location.href = "meuperfil.html";
+                        return;
+                    }
+
+                    // PADRONIZAÇÃO VISUAL
+                    // Handle (h1) em AZUL e Nome (span) em CINZA
+                    const userHandle = dados.user || "@usuario";
+                    document.getElementById('handleDisplay').innerHTML = `${userHandle} <i class='bx bxs-check-circle' style="font-size:1.1rem; color:var(--cor0);"></i>`;
+                    document.getElementById('nomeDisplay').innerText = dados.nome || "Usuário";
+
+                    document.getElementById('bioPerfilDisplay').innerText = dados.bio || "Olá! Estou usando o Doke.";
+                    document.getElementById('membroDesdeDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${dados.membroDesde || "2024"}`;
+                    document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${dados.local || "Brasil"}`;
+                    
+                    const foto = dados.foto || "https://placehold.co/150";
+                    document.getElementById('fotoPerfilDisplay').src = foto;
+                    const miniAvatar = document.getElementById('avatarPostMini');
+                    if(miniAvatar) miniAvatar.src = foto;
+
+                    // Modal
+                    document.getElementById('inputNome').value = dados.nome;
+                    document.getElementById('inputBio').value = dados.bio;
+                    document.getElementById('inputLocal').value = dados.local || "";
+                    document.getElementById('inputFoto').value = dados.foto;
+                }
+            } else {
+                window.location.href = "login.html";
+            }
+        });
+
+        window.abrirTab = function(evt, tabName) {
+            document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
+            document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.classList.add("active");
+        }
+
+        window.abrirModalEditar = () => document.getElementById('modalEditar').style.display = 'flex';
+        window.fecharModalEditar = () => document.getElementById('modalEditar').style.display = 'none';
+
+        window.salvarPerfilUsuario = async function() {
+            const user = auth.currentUser;
+            if(!user) return;
+            const novosDados = {
+                nome: document.getElementById('inputNome').value,
+                bio: document.getElementById('inputBio').value,
+                local: document.getElementById('inputLocal').value,
+                foto: document.getElementById('inputFoto').value
+            };
+            try {
+                await updateDoc(doc(db, "usuarios", user.uid), novosDados);
+                location.reload();
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar.");
+            }
+        }
+
+        window.fazerLogout = function() {
+            signOut(auth).then(() => {
+                localStorage.removeItem('usuarioLogado');
+                window.location.href = 'index.html';
+            });
+        }
+    </script>
+</body>
+</html>

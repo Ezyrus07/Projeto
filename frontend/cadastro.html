@@ -40,6 +40,28 @@
         .footer-login { margin-top: 20px; font-size: 0.9rem; color: #666; }
         .footer-login a { color: var(--cor2); font-weight: 700; text-decoration: none; }
         .btn-voltar { position: absolute; top: 20px; left: 20px; color: #999; font-size: 1.5rem; cursor: pointer; }
+
+        /* --- ESTILOS DE VALIDAÇÃO --- */
+        .input-error {
+            border-color: #ff4444 !important;
+            background-color: #fff0f0 !important;
+            animation: shake 0.3s ease-in-out;
+        }
+        .input-sucesso {
+            border-color: #00C851 !important;
+            background-color: #f0fff4 !important;
+        }
+        .msg-erro-texto {
+            color: #ff4444; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block;
+        }
+        .msg-sucesso-texto {
+            color: #00C851; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block;
+        }
+        @keyframes shake {
+            0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); } 75% { transform: translateX(-5px); }
+            100% { transform: translateX(0); }
+        }
     </style>
 </head>
 <body>
@@ -97,97 +119,131 @@
         </div>
     </div>
 
-<script type="module">
-    import { collection, doc, setDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    <script type="module">
+        import { collection, doc, setDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    window.realizarCadastro = async function(event) {
-        event.preventDefault(); 
+        // Tornamos a função global anexando ao window
+        window.realizarCadastro = async function(event) {
+            event.preventDefault(); 
 
-        const nome = document.getElementById('nome').value;
-        const usuarioInput = document.getElementById('usuario').value;
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-        const btn = event.target.querySelector('button');
+            const nome = document.getElementById('nome').value;
+            const usuarioInput = document.getElementById('usuario').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const btn = event.target.querySelector('button');
 
-        // Validação básica antes de enviar
-        if(senha.length < 6) {
-            alert("A senha precisa ter pelo menos 6 caracteres.");
-            return;
-        }
-
-        if(btn) { btn.innerText = "Criando conta..."; btn.disabled = true; }
-
-        let userHandle = usuarioInput.trim().toLowerCase();
-        if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
-
-        try {
-            // 1. Verifica se o USERNAME (@) já existe no Firestore
-            // (O email o próprio Firebase Auth verifica sozinho)
-            const qUser = query(collection(window.db, "usuarios"), where("user", "==", userHandle));
-            const snapshotUser = await getDocs(qUser);
-
-            if (!snapshotUser.empty) {
-                throw new Error("username_exists");
+            // Validação básica antes de enviar
+            if(senha.length < 6) {
+                alert("A senha precisa ter pelo menos 6 caracteres.");
+                return;
             }
 
-            // 2. CRIA O LOGIN NO FIREBASE AUTH (Segurança real)
-            const userCredential = await createUserWithEmailAndPassword(window.auth, email, senha);
-            const user = userCredential.user; // Aqui temos o UID único
+            if(btn) { btn.innerText = "Criando conta..."; btn.disabled = true; }
 
-            // 3. PREPARA OS DADOS DO PERFIL
-            // NÃO SALVAMOS MAIS A SENHA AQUI!
-            const dataAtual = new Date();
-            const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            let userHandle = usuarioInput.trim().toLowerCase();
+            if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
+
+            try {
+                // 1. Verifica se o USERNAME (@) já existe no Firestore
+                const qUser = query(collection(window.db, "usuarios"), where("user", "==", userHandle));
+                const snapshotUser = await getDocs(qUser);
+
+                if (!snapshotUser.empty) {
+                    throw new Error("username_exists");
+                }
+
+                // 2. CRIA O LOGIN NO FIREBASE AUTH (Segurança real)
+                const userCredential = await createUserWithEmailAndPassword(window.auth, email, senha);
+                const user = userCredential.user; 
+
+                // 3. PREPARA OS DADOS DO PERFIL
+                const dataAtual = new Date();
+                const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                
+                const novoPerfil = {
+                    uid: user.uid,
+                    nome: nome,
+                    user: userHandle, 
+                    email: email,
+                    // Senha não é salva aqui por segurança
+                    bio: "Olá! Sou novo na comunidade Doke.",
+                    local: "Brasil",
+                    foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
+                    membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
+                    disponivel: true,
+                    stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
+                };
+
+                // 4. SALVA NO FIRESTORE
+                await setDoc(doc(window.db, "usuarios", user.uid), novoPerfil);
+
+                // 5. Sucesso e Redirecionamento
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
+                localStorage.setItem('usuarioLogado', 'true');
+                localStorage.setItem('doke_uid', user.uid);
+
+                if(window.mostrarToast) window.mostrarToast("Conta criada com sucesso!", "sucesso");
+                else alert("Conta criada com sucesso!");
+
+                window.location.href = "meuperfil.html";
+
+            } catch (error) {
+                console.error("Erro cadastro:", error);
+                let msg = "Erro ao criar conta.";
+                
+                if (error.message === "username_exists") {
+                    msg = "Este nome de usuário já está em uso.";
+                } else if (error.code === 'auth/email-already-in-use') {
+                    msg = "Este e-mail já está cadastrado.";
+                } else if (error.code === 'auth/weak-password') {
+                    msg = "A senha é muito fraca.";
+                } else if (error.code === 'auth/invalid-email') {
+                    msg = "E-mail inválido.";
+                } else if (error.code === 'permission-denied') {
+                    msg = "Erro de permissão: Verifique as Regras do Firestore no console.";
+                }
+
+                if(window.mostrarToast) window.mostrarToast(msg, "erro");
+                else alert(msg);
+
+                if(btn) { btn.innerText = "Criar Conta Grátis"; btn.disabled = false; }
+            }
+        }
+    </script>
+
+    <script>
+        // Esta função precisa estar fora do type="module" para ser vista pelo HTML
+        function validarSenhaTempoReal() {
+            const input = document.getElementById('senha');
+            const feedback = document.getElementById('feedback-senha');
             
-            const novoPerfil = {
-                uid: user.uid, // Vincula o ID do Auth
-                nome: nome,
-                user: userHandle, 
-                email: email,
-                // senha: senha,  <-- REMOVIDO POR SEGURANÇA
-                bio: "Olá! Sou novo na comunidade Doke.",
-                local: "Brasil",
-                foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
-                membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
-                disponivel: true,
-                stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
-            };
+            if(!input || !feedback) return;
 
-            // 4. SALVA NO FIRESTORE USANDO O UID COMO ID DO DOCUMENTO
-            // Usamos 'setDoc' em vez de 'addDoc' para definir o ID manualmente
-            await setDoc(doc(window.db, "usuarios", user.uid), novoPerfil);
+            const senha = input.value;
 
-            // 5. Sucesso
-            localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
-            localStorage.setItem('usuarioLogado', 'true');
-            localStorage.setItem('doke_uid', user.uid);
-
-            if(window.mostrarToast) window.mostrarToast("Conta criada com sucesso!", "sucesso");
-            else alert("Conta criada com sucesso!");
-
-            window.location.href = "meuperfil.html";
-
-        } catch (error) {
-            console.error("Erro cadastro:", error);
-            let msg = "Erro ao criar conta.";
-            
-            if (error.message === "username_exists") {
-                msg = "Este nome de usuário já está em uso.";
-            } else if (error.code === 'auth/email-already-in-use') {
-                msg = "Este e-mail já está cadastrado.";
-            } else if (error.code === 'auth/weak-password') {
-                msg = "A senha é muito fraca.";
-            } else if (error.code === 'auth/invalid-email') {
-                msg = "E-mail inválido.";
+            // Limpa tudo se estiver vazio
+            if (senha.length === 0) {
+                input.classList.remove('input-error', 'input-sucesso');
+                feedback.innerText = "";
+                return;
             }
 
-            if(window.mostrarToast) window.mostrarToast(msg, "erro");
-            else alert(msg);
-
-            if(btn) { btn.innerText = "Criar Conta Grátis"; btn.disabled = false; }
+            // Regra: Menor que 6 caracteres é FRACA
+            if (senha.length < 6) {
+                input.classList.add('input-error');
+                input.classList.remove('input-sucesso');
+                feedback.innerText = "Senha muito curta (mínimo 6 caracteres)";
+                feedback.className = "msg-erro-texto";
+            } 
+            // Regra: Maior ou igual a 6 é FORTE
+            else {
+                input.classList.remove('input-error');
+                input.classList.add('input-sucesso');
+                feedback.innerText = "Senha forte!";
+                feedback.className = "msg-sucesso-texto";
+            }
         }
-    }
-</script>
+    </script>
 </body>
 </html>
