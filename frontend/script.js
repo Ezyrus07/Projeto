@@ -18,6 +18,8 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
+
+// GARANTE QUE O DB ESTEJA ACESSÍVEL GLOBALMENTE
 window.db = db;
 
 // ============================================================
@@ -62,7 +64,6 @@ window.publicarAnuncio = async function(event) {
             fotos.push("https://placehold.co/600x400?text=Sem+Foto");
         }
 
-        // Pega dados do usuário logado para o autor do anúncio
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
         const nomeAutor = perfilLocal.nome || "Você";
         const fotoAutor = perfilLocal.foto || "https://i.pravatar.cc/150?img=12";
@@ -80,13 +81,13 @@ window.publicarAnuncio = async function(event) {
             dataCriacao: new Date().toISOString(),
             nomeAutor: nomeAutor,
             fotoAutor: fotoAutor,
-            // CORRIGIDO: Adicionada a vírgula que faltava aqui
             userHandle: "@" + nomeAutor.split(' ')[0].toLowerCase(),
             views: 0,
             cliques: 0
         };
 
-        await addDoc(collection(db, "anuncios"), novoAnuncio);
+        // Usa window.db para garantir acesso
+        await addDoc(collection(window.db, "anuncios"), novoAnuncio);
         
         alert("Anúncio publicado com sucesso!");
         window.location.href = "index.html";
@@ -112,7 +113,8 @@ async function carregarAnunciosDoFirebase() {
     feed.innerHTML = `<div style="padding:40px; text-align:center;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i><p>Carregando...</p></div>`;
 
     try {
-        const q = query(collection(db, "anuncios"));
+        // --- CORREÇÃO AQUI: USANDO window.db ---
+        const q = query(collection(window.db, "anuncios"));
         const querySnapshot = await getDocs(q);
         
         feed.innerHTML = "";
@@ -122,8 +124,10 @@ async function carregarAnunciosDoFirebase() {
             return;
         }
 
-        querySnapshot.forEach((doc) => {
-            const anuncio = doc.data();
+        querySnapshot.forEach((docSnap) => {
+            const anuncio = docSnap.data();
+            const id = docSnap.id; // ID do documento para o clique
+
             const titulo = anuncio.titulo || "Sem título";
             const preco = anuncio.preco || anuncio.valor || "A combinar";
             const descricao = anuncio.descricao || "Sem descrição.";
@@ -133,12 +137,10 @@ async function carregarAnunciosDoFirebase() {
             const card = document.createElement('div');
             card.className = 'card-premium';
             
-            // --- PASSO 3 APLICADO: REGISTRAR VIEW AO CLICAR ---
+            // Adiciona evento de clique para contar visualização
             card.onmousedown = function() {
-                // Chama a função que incrementa +1 no banco de dados
-                window.registrarVisualizacao(doc.id);
+                window.registrarVisualizacao(id);
             };
-            // --------------------------------------------------
 
             card.innerHTML = `
                 <div class="cp-header">
@@ -169,18 +171,119 @@ async function carregarAnunciosDoFirebase() {
 
     } catch (erro) {
         console.error("Erro Firebase:", erro);
-        feed.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar.</p>`;
+        feed.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar: ${erro.message}</p>`;
     }
 }
 
 // ============================================================
-// 4. INICIALIZAÇÃO GERAL E UI
+// 4. FUNÇÕES DE PROTEÇÃO E LOGIN
+// ============================================================
+
+// --- Função que protege páginas restritas ---
+function protegerPaginasRestritas() {
+    // Lista de páginas que só podem ser acessadas logado
+    const paginasRestritas = [
+        'meuperfil.html', 
+        'chat.html', 
+        'comunidade.html', 
+        'notificacoes.html', 
+        'mais.html'
+    ];
+
+    // Verifica o nome do arquivo atual na URL
+    const caminhoAtual = window.location.pathname;
+    const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
+
+    // Verifica se o usuário está logado
+    const estaLogado = localStorage.getItem('usuarioLogado') === 'true';
+
+    // Se a página atual está na lista E o usuário NÃO está logado
+    if (paginasRestritas.includes(paginaAtual) && !estaLogado) {
+        
+        // 1. Esconde o conteúdo principal (<main>) para não mostrar dados
+        const mainContent = document.querySelector('main');
+        if (mainContent) {
+            mainContent.style.display = 'none';
+        }
+
+        // 2. Cria a tela de bloqueio
+        const bloqueioDiv = document.createElement('div');
+        bloqueioDiv.className = 'bloqueio-container';
+        bloqueioDiv.innerHTML = `
+            <div class="bloqueio-card">
+                <div class="bloqueio-icon">
+                    <i class='bx bx-lock-alt'></i>
+                </div>
+                <h2 class="bloqueio-titulo">Acesso Restrito</h2>
+                <p class="bloqueio-texto">
+                    Esta área é exclusiva para membros da comunidade Doke. 
+                    Entre na sua conta ou cadastre-se gratuitamente para acessar.
+                </p>
+                <a href="login.html" class="btn-bloqueio-entrar">Entrar Agora</a>
+                <a href="cadastro.html" class="btn-bloqueio-criar">Criar Conta</a>
+            </div>
+        `;
+
+        // 3. Adiciona a tela de bloqueio APÓS o header
+        const header = document.querySelector('.navbar-desktop') || document.querySelector('.navbar-mobile');
+        if (header && header.nextSibling) {
+            header.parentNode.insertBefore(bloqueioDiv, header.nextSibling);
+        } else {
+            document.body.appendChild(bloqueioDiv);
+        }
+    }
+}
+
+// --- Função que controla o Header (Foto ou Botão Entrar) ---
+function verificarEstadoLogin() {
+    const logado = localStorage.getItem('usuarioLogado') === 'true';
+    
+    // Seleciona o container dos botões à direita no header
+    const container = document.querySelector('.botoes-direita');
+    
+    if(!container) return; // Se não achar o container, para.
+    
+    if (logado) {
+        // --- MODO LOGADO: MOSTRA A FOTO ---
+        const perfilSalvo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        const fotoUsuario = perfilSalvo.foto || 'https://i.pravatar.cc/150?img=12'; 
+
+        container.innerHTML = `
+            <div class="profile-container">
+                <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown()" alt="Perfil">
+                <div id="dropdownPerfil" class="dropdown-profile">
+                    <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user'></i> Ver Perfil</a>
+                    <a href="anunciar.html" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
+                    <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+                </div>
+            </div>`;
+    } else {
+        // --- MODO DESLOGADO: MOSTRA O BOTÃO ENTRAR ---
+        container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
+    }
+}
+
+// Função auxiliar para abrir/fechar o menu da foto
+window.toggleDropdown = function() {
+    const drop = document.getElementById('dropdownPerfil');
+    if(drop) drop.classList.toggle('show');
+}
+
+// ============================================================
+// 5. INICIALIZAÇÃO (Roda ao carregar a página)
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
-    carregarAnunciosDoFirebase();
-    verificarEstadoLogin();
     
-    // Cookies
+    // 1. Verifica se pode acessar a página
+    protegerPaginasRestritas();
+
+    // 2. Ajusta o Header (Foto ou Entrar)
+    verificarEstadoLogin();
+
+    // 3. Carrega anúncios (se tiver na home)
+    carregarAnunciosDoFirebase();
+    
+    // Outros scripts de UI
     const banner = document.getElementById('cookieBanner');
     const btnCookie = document.getElementById('acceptBtn');
     if (banner && btnCookie) {
@@ -310,28 +413,6 @@ window.ativarChip = function(el) {
 }
 window.abrirGaleria = function() { alert("Galeria em breve!"); }
 
-function verificarEstadoLogin() {
-    const logado = localStorage.getItem('usuarioLogado') === 'true';
-    const container = document.querySelector('.botoes-direita');
-    if(!container) return;
-    
-    if (logado) {
-        const perfilSalvo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        const fotoUsuario = perfilSalvo.foto || 'https://i.pravatar.cc/150?img=12'; 
-
-        container.innerHTML = `
-            <div style="position:relative; display:inline-block;">
-                <img src="${fotoUsuario}" class="profile-img-btn" onclick="document.getElementById('dropdownPerfil').classList.toggle('show')" style="width:40px; height:40px; border-radius:50%; object-fit:cover; cursor:pointer;">
-                <div id="dropdownPerfil" class="dropdown-profile">
-                    <a href="meuperfil.html" class="dropdown-item">Ver Perfil</a>
-                    <a href="#" onclick="fazerLogout()" class="dropdown-item">Sair</a>
-                </div>
-            </div>`;
-    } else {
-        container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
-    }
-}
-
 function salvarBusca(termo) {
     let h = JSON.parse(localStorage.getItem('doke_historico_busca') || '[]');
     h = h.filter(i => i.toLowerCase() !== termo.toLowerCase());
@@ -369,7 +450,7 @@ window.onclick = function(e) {
     if (p && w && !w.contains(e.target)) p.style.display = 'none';
 }
 
-// --- PASSO 3: FUNÇÃO PARA INCREMENTAR VISUALIZAÇÃO NO FIREBASE ---
+// --- FUNÇÃO PARA INCREMENTAR VISUALIZAÇÃO NO FIREBASE ---
 window.registrarVisualizacao = async function(idAnuncio) {
     if(!idAnuncio) return;
 

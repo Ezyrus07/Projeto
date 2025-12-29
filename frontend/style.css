@@ -169,7 +169,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 /* No seu style.css, procure por .entrar e deixe assim: */
 
 .entrar {
-  display: none; /* <--- MUDE ISSO (Estava flex) */
+  display: flex;
   /* Mantenha o resto igual: */
   align-items: center;
   gap: 8px;
@@ -3074,7 +3074,129 @@ body.dark-mode {
     color: #d9534f;
 }
 
+/* ==========================================================================
+   TELA DE BLOQUEIO (LOGIN NECESSÁRIO) - CORRIGIDO
+   ========================================================================== */
+.bloqueio-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    
+    /* 1. CENTRALIZAÇÃO CORRETA (Respeita a Sidebar e Header) */
+    margin-left: var(--sidebar-width, 0px); /* Empurra para o lado certo no Desktop */
+    width: auto; /* Ocupa o espaço restante */
+    min-height: calc(100vh - 80px); /* Altura total menos o header */
+    padding: 20px;
+    text-align: center;
+    
+    /* 2. DEGRADÊ AZUL (Igual ao Login) */
+    background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 100%);
+    background-size: cover;
+    background-attachment: fixed;
+    
+    animation: fadeIn 0.5s ease;
+}
 
+.bloqueio-card {
+    background: white;
+    padding: 50px 40px;
+    border-radius: 20px;
+    /* Sombra forte para destacar do fundo colorido */
+    box-shadow: 0 20px 50px rgba(0,0,0,0.15); 
+    max-width: 420px;
+    width: 100%;
+    position: relative;
+    animation: subir 0.4s ease;
+}
 
+@keyframes subir { 
+    from { opacity: 0; transform: translateY(20px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
 
+.bloqueio-icon {
+    font-size: 4rem;
+    color: var(--cor2); /* Azul */
+    margin-bottom: 25px;
+    background: #f0f8ff; /* Azul bem clarinho */
+    width: 100px;
+    height: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    margin-left: auto;
+    margin-right: auto;
+    box-shadow: 0 4px 15px rgba(42, 95, 144, 0.1);
+}
 
+.bloqueio-titulo {
+    font-size: 1.6rem;
+    color: #333;
+    margin-bottom: 12px;
+    font-weight: 800;
+}
+
+.bloqueio-texto {
+    color: #666;
+    margin-bottom: 30px;
+    line-height: 1.6;
+    font-size: 0.95rem;
+}
+
+/* Botão Entrar (Verde Sólido) */
+.btn-bloqueio-entrar {
+    width: 100%;
+    padding: 14px;
+    background: var(--cor0);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    margin-bottom: 15px;
+    transition: 0.3s;
+    box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
+}
+
+.btn-bloqueio-entrar:hover {
+    background: #086659;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3);
+}
+
+/* Botão Criar Conta (Borda Azul -> Hover Azul Sólido) */
+.btn-bloqueio-criar {
+    width: 100%;
+    padding: 14px;
+    background: transparent;
+    color: var(--cor2); /* Texto Azul */
+    border: 2px solid var(--cor2); /* Borda Azul */
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+    transition: all 0.3s ease;
+}
+
+/* 3. O HOVER QUE VOCÊ PEDIU (Azul com fundo branco) */
+.btn-bloqueio-criar:hover {
+    background-color: var(--cor2); /* Fundo vira Azul */
+    color: white;            /* Texto vira Branco */
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(42, 95, 144, 0.25);
+}
+
+/* Ajuste Mobile para garantir que ocupe a tela toda */
+@media (max-width: 768px) {
+    .bloqueio-container {
+        margin-left: 0; /* No mobile não tem sidebar, então margem é 0 */
+        min-height: calc(100vh - 60px); /* Ajuste para header menor */
+    }
+} 

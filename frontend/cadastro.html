@@ -9,7 +9,7 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         body {
-            background: linear-gradient(135deg, var(--cor0) 0%, #064e42 100%); /* Fundo Verde para diferenciar */
+            background: linear-gradient(135deg, var(--cor0) 0%, #064e42 100%);
             min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
         }
         .login-card {
@@ -19,7 +19,7 @@
         }
         @keyframes subir { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .login-logo { width: 120px; margin-bottom: 20px; }
-        .login-header h2 { color: var(--cor0); font-size: 1.8rem; margin-bottom: 5px; } /* Título verde */
+        .login-header h2 { color: var(--cor0); font-size: 1.8rem; margin-bottom: 5px; }
         .login-header p { color: #666; font-size: 0.95rem; margin-bottom: 30px; }
         .form-group { margin-bottom: 15px; text-align: left; }
         .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #444; margin-bottom: 8px; }
@@ -32,7 +32,7 @@
         }
         .input-icon input:focus { border-color: var(--cor0); background: white; box-shadow: 0 0 0 4px rgba(11, 119, 104, 0.1); }
         .btn-login-action {
-            width: 100%; padding: 14px; background: var(--cor2); /* Botão Azul */
+            width: 100%; padding: 14px; background: var(--cor2);
             color: white; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700;
             cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 4px 15px rgba(42, 95, 144, 0.3);
         }
@@ -55,6 +55,15 @@
         </div>
 
         <form id="formCadastro" onsubmit="realizarCadastro(event)">
+            
+            <div class="form-group">
+                <label>Nome de Usuário (@)</label>
+                <div class="input-icon">
+                    <i class='bx bx-at'></i>
+                    <input type="text" id="usuario" placeholder="ex: usuario123" required>
+                </div>
+            </div>
+
             <div class="form-group">
                 <label>Nome Completo</label>
                 <div class="input-icon">
@@ -87,6 +96,43 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        function realizarCadastro(event) {
+            event.preventDefault(); 
+
+            const nome = document.getElementById('nome').value;
+            const usuarioInput = document.getElementById('usuario').value;
+            const email = document.getElementById('email').value;
+
+            // Garante que o usuário comece com @
+            let userHandle = usuarioInput.trim();
+            if(!userHandle.startsWith('@')) {
+                userHandle = '@' + userHandle;
+            }
+
+            // Gera Data (Mês Ano)
+            const dataAtual = new Date();
+            const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+            const dataMembro = `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`;
+
+            const novoPerfil = {
+                nome: nome,
+                user: userHandle, // Salva o que a pessoa digitou
+                email: email,
+                bio: "Olá! Sou novo na comunidade Doke.",
+                local: "Brasil",
+                foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
+                membroDesde: dataMembro,
+                disponivel: true,
+                stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
+            };
+
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
+            localStorage.setItem('usuarioLogado', 'true');
+
+            alert(`Conta criada! Bem-vindo, ${userHandle}`);
+            window.location.href = "meuperfil.html";
+        }
+    </script>
 </body>
 </html>

@@ -394,11 +394,11 @@
         <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <script type="module">
-        // --- IMPORTAÇÃO DO FIREBASE (Igual ao script.js) ---
+<script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, getDocs, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+        // CONFIGURAÇÃO DO FIREBASE (Igual ao seu script.js)
         const firebaseConfig = {
             apiKey: "AIzaSyDBubOcA2HkCcPSSIi5RWO-dcduW6MiuMk",
             authDomain: "doke-final.firebaseapp.com",
@@ -412,145 +412,117 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ==========================================
-        // DADOS "ZERADOS" - ESTADO INICIAL DO PERFIL
-        // ==========================================
-        const dadosUsuario = {
-            perfil: {
+        // --- CARREGAR PERFIL COM O NOVO CAMPO 'USER' ---
+        window.carregarPerfil = function() {
+            const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {
                 nome: "Novo Usuário",
-                bio: "Escreva uma biografia para atrair clientes...",
+                user: "@usuario",
+                bio: "Edite seu perfil para adicionar uma biografia.",
                 local: "Brasil",
                 foto: "https://placehold.co/150x150?text=Foto",
-                membroDesde: "2024",
-                disponivel: true,
-                stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
-            },
-            kpis: { views: 0, cliques: 0, ctr: "0%" },
-            feed: [], 
-            portfolio: [],
-            avaliacoesCriterios: [
-                { nome: "Pontualidade", svg: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', scores: [0,0,0,0,0], comentarios: [] },
-                { nome: "Profissionalismo", svg: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>', scores: [0,0,0,0,0], comentarios: [] },
-                { nome: "Qualidade", svg: '<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>', scores: [0,0,0,0,0], comentarios: [] },
-                { nome: "Valor", svg: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', scores: [0,0,0,0,0], comentarios: [] },
-                { nome: "Atendimento", svg: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>', scores: [0,0,0,0,0], comentarios: [] }
-            ],
-            comentariosClientes: [] 
-        };
-
-        // ==========================================
-        // INICIALIZAÇÃO E RENDERIZAÇÃO
-        // ==========================================
-        document.addEventListener("DOMContentLoaded", () => {
-            carregarPerfil();
-            iniciarGraficos();
+                membroDesde: "2024"
+            };
             
-            renderizarAnuncios(); // Agora busca do Firebase
-            renderizarFeed();
-            renderizarPortfolio();
-            renderizarAvaliacoes();
-            renderizarComentariosClientes();
-        });
 
-        // 1. CARREGAR CABEÇALHO DO PERFIL
-        function carregarPerfil() {
-            const usuarioStorage = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-            const usuario = usuarioStorage || dadosUsuario.perfil;
-            const stats = usuario.stats || dadosUsuario.perfil.stats;
-            
-            document.getElementById('nomePerfilDisplay').innerHTML = usuario.nome;
-            document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
-            document.getElementById('locPerfilDisplay').innerHTML = "<i class='bx bx-map'></i> " + usuario.local;
-            document.getElementById('fotoPerfilDisplay').src = usuario.foto;
-            document.getElementById('avatar-criar-post').src = usuario.foto;
-            document.getElementById('dataMembroDisplay').innerHTML = "<i class='bx bx-calendar'></i> Membro desde " + (usuario.membroDesde || "2024");
-            
-            document.getElementById('stat-seguidores').innerText = stats.seguidores;
-            document.getElementById('stat-seguindo').innerText = stats.seguindo;
-            document.getElementById('stat-avaliacoes-count').innerText = stats.avaliacoes;
+// Exibe o USUÁRIO em Destaque e o Nome embaixo
+            if(document.getElementById('nomePerfilDisplay')) {
+                const containerNome = document.getElementById('nomePerfilDisplay');
+                
+                containerNome.innerHTML = `
+                    <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                        
+                        <span style="font-size: 1.6rem; color: var(--cor2); font-weight: 800; display:flex; align-items:center; gap:5px;">
+                            ${usuario.user || '@usuario'} 
+                            <i class='bx bxs-badge-check' style="color:#2ecc71; font-size: 1.2rem;"></i>
+                        </span>
 
-            // KPIs são atualizados pelo renderizarAnuncios agora
-            
-            const statusIndicator = document.getElementById('statusOnlineIndicator');
-            const checkDisp = document.getElementById('checkDisponivel');
-            if(usuario.disponivel) { statusIndicator.style.display = 'block'; checkDisp.checked = true; } 
-            else { statusIndicator.style.display = 'none'; checkDisp.checked = false; }
+                        <span style="font-size: 1.0rem; color: #666; font-weight: 500; margin-top: -2px;">
+                            ${usuario.nome}
+                        </span>
 
+                    </div>
+                `;
+            }
+
+            if(document.getElementById('bioPerfilDisplay')) 
+                document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
+            
+            if(document.getElementById('locPerfilDisplay')) 
+                document.getElementById('locPerfilDisplay').innerHTML = "<i class='bx bx-map'></i> " + usuario.local;
+            
+            if(document.getElementById('fotoPerfilDisplay')) 
+                document.getElementById('fotoPerfilDisplay').src = usuario.foto;
+            
+            // Exibe a Data de Membro
+            if(document.getElementById('dataMembroDisplay'))
+                document.getElementById('dataMembroDisplay').innerHTML = "<i class='bx bx-calendar'></i> Membro desde " + (usuario.membroDesde || "2024");
+
+            // Atualiza avatar do header
             const headerAvatar = document.getElementById('headerAvatar');
             if(headerAvatar) { headerAvatar.src = usuario.foto; headerAvatar.style.display = 'block'; }
 
-            document.getElementById('inputNome').value = usuario.nome;
-            document.getElementById('inputBio').value = usuario.bio;
-            document.getElementById('inputLoc').value = usuario.local;
-            document.getElementById('inputFotoBase64').value = usuario.foto;
-        }
-
-        // 2. RENDERIZAR FEED (VAZIO)
-        function renderizarFeed() {
-            const container = document.getElementById('container-feed-posts');
-            container.innerHTML = '';
-            if (dadosUsuario.feed.length === 0) {
-                container.innerHTML = `<div class="empty-state">Nenhuma publicação ainda. Compartilhe seu trabalho!</div>`;
-                return;
+            // Preenche modal de edição
+            if(document.getElementById('inputNome')) {
+                document.getElementById('inputNome').value = usuario.nome;
+                document.getElementById('inputBio').value = usuario.bio;
+                document.getElementById('inputLoc').value = usuario.local;
+                document.getElementById('inputFotoBase64').value = usuario.foto;
             }
         }
 
-        // 3. RENDERIZAR PORTFOLIO (VAZIO)
-        function renderizarPortfolio() {
-            const container = document.getElementById('container-portfolio');
-            const titulo = document.getElementById('titulo-portfolio');
-            container.innerHTML = '';
-            titulo.innerText = `Meus Projetos (${dadosUsuario.portfolio.length})`;
-            if (dadosUsuario.portfolio.length === 0) {
-                container.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Nenhum projeto adicionado ao portfólio.</div>`;
-                return;
-            }
+        window.salvarPerfil = function() {
+            // Mantém os dados antigos (como o user e a data) e atualiza só os editáveis
+            const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            
+            const novoPerfil = {
+                ...perfilAntigo, // Mantém user, membroDesde, etc
+                nome: document.getElementById('inputNome').value,
+                bio: document.getElementById('inputBio').value,
+                local: document.getElementById('inputLoc').value,
+                foto: document.getElementById('inputFotoBase64').value
+            };
+            
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
+            carregarPerfil();
+            fecharModalEditar();
+            alert("Perfil atualizado com sucesso!");
         }
 
-        // 4. RENDERIZAR ANÚNCIOS (DO FIREBASE)
-        async function renderizarAnuncios() {
+        // --- RENDERIZAR ANÚNCIOS (MANTIDO DO ANTERIOR) ---
+        window.renderizarAnuncios = async function() {
             const container = document.getElementById('lista-meus-anuncios');
-            container.innerHTML = '<div style="padding:20px; text-align:center;">Carregando seus anúncios...</div>'; 
+            if(!container) return;
+            
+            container.innerHTML = '<div style="padding:40px; text-align:center; color:#666;"><i class="bx bx-loader-alt bx-spin"></i> Carregando seus anúncios...</div>'; 
             
             try {
-                const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-                const nomeAutor = perfilLocal.nome || "Novo Usuário";
-
-                // Busca TODOS os anúncios para o teste (em produção, filtraria por nomeAutor)
                 const q = collection(db, "anuncios");
                 const querySnapshot = await getDocs(q);
                 
-                let meusAnuncios = [];
-                querySnapshot.forEach((doc) => {
-                    const dados = doc.data();
-                    meusAnuncios.push({ id: doc.id, ...dados }); 
-                });
+                container.innerHTML = ''; 
 
-                if (meusAnuncios.length === 0) {
+                if (querySnapshot.empty) {
                     container.innerHTML = `
                         <div class="empty-state">
                             <i class='bx bx-ghost' style="font-size: 40px; margin-bottom: 10px;"></i><br>
-                            Nenhum anúncio encontrado no sistema.<br>
+                            Nenhum anúncio encontrado.<br>
                             <a href="anunciar.html" style="color:var(--cor0); font-weight:bold;">Criar um agora</a>
                         </div>`;
-                    document.getElementById('kpi-views').innerText = "0";
-                    document.getElementById('kpi-cliques').innerText = "0";
-                    return; 
+                    atualizarKPIs(0, 0);
+                    return;
                 }
 
-                container.innerHTML = ''; 
-                // Se existir o dado 'views', usa ele. Se não, usa 0. Nada de aleatório.
-                const views = anuncio.views || 0; 
-                const cliques = anuncio.cliques || 0;
+                let totalViews = 0;
+                let totalCliques = 0;
 
-                meusAnuncios.forEach(anuncio => {
-  // Se existir o dado 'views', usa ele. Se não, usa 0. Nada de aleatório.
-                    const views = anuncio.views || 0; 
+                querySnapshot.forEach((docSnap) => {
+                    const anuncio = docSnap.data();
+                    const id = docSnap.id;
+                    const views = anuncio.views || 0;
                     const cliques = anuncio.cliques || 0;
                     totalViews += views;
                     totalCliques += cliques;
 
-                    let badgeClass = 'ativo';
                     let imgCapa = (anuncio.fotos && anuncio.fotos.length > 0) ? anuncio.fotos[0] : (anuncio.img || 'https://placehold.co/100?text=Sem+Foto');
                     
                     const html = `
@@ -559,7 +531,7 @@
                             <div class="info-anuncio-stats">
                                 <div class="topo-anuncio">
                                     <h4 style="margin:0; font-size:1rem;">${anuncio.titulo}</h4>
-                                    <span class="badge-status ${badgeClass}">ATIVO</span>
+                                    <span class="badge-status ativo">ATIVO</span>
                                 </div>
                                 <div class="grid-metricas-anuncio">
                                     <div class="metrica" title="Visualizações"><i class='bx bx-show'></i> <strong>${views}</strong></div>
@@ -567,83 +539,36 @@
                                 </div>
                             </div>
                             <div class="acoes-anuncio-stats">
-                                <button class="btn-icon-stats" title="Editar (Em breve)"><i class='bx bx-edit'></i></button>
-                                <button class="btn-icon-stats" title="Excluir (Em breve)" style="color:#e74c3c;"><i class='bx bx-trash'></i></button>
+                                <button class="btn-icon-stats" onclick="alert('Edição em breve!')"><i class='bx bx-edit'></i></button>
+                                <button class="btn-icon-stats" onclick="deletarAnuncio('${id}')" style="color:#e74c3c;"><i class='bx bx-trash'></i></button>
                             </div>
                         </div>`;
-                    container.innerHTML += html;
+                    container.insertAdjacentHTML('beforeend', html);
                 });
-
-                document.getElementById('kpi-views').innerText = totalViews > 1000 ? (totalViews/1000).toFixed(1) + 'k' : totalViews;
-                document.getElementById('kpi-cliques').innerText = totalCliques;
-                let ctr = totalViews > 0 ? ((totalCliques / totalViews) * 100).toFixed(1) : 0;
-                document.getElementById('kpi-ctr').innerText = ctr + "%";
-
+                atualizarKPIs(totalViews, totalCliques);
             } catch (error) {
-                console.error("Erro ao buscar anúncios:", error);
-                container.innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar anúncios do servidor.</p>';
+                console.error("Erro:", error);
+                container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar anúncios.</p>`;
             }
         }
 
-        // 5. RENDERIZAR AVALIAÇÕES (ZERADAS)
-        function renderizarAvaliacoes() {
-            const container = document.getElementById('container-lista-criterios');
-            container.innerHTML = '';
-            dadosUsuario.avaliacoesCriterios.forEach(criterio => {
-                const totalVotos = criterio.scores.reduce((a, b) => a + b, 0);
-                let barrasHtml = '';
-                criterio.scores.forEach(score => {
-                    const pct = totalVotos > 0 ? (score / totalVotos) * 100 : 0;
-                    barrasHtml += `<div class="barra-item"><span class="num">${score}</span><div class="progress"><div class="fill" style="width: ${pct}%"></div></div></div>`;
-                });
-                let tooltipHtml = '';
-                if (criterio.comentarios.length > 0) {
-                    const commentsList = criterio.comentarios.map(c => `<div class="msg-item">"${c}"</div>`).join('');
-                    tooltipHtml = `<div class="tooltip-msgs"><h4>💬 Sobre ${criterio.nome}:</h4>${commentsList}</div>`;
-                }
-                const html = `
-                <div class="avaliacao-row">
-                    ${tooltipHtml}
-                    <div class="criterio-nome"><svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${criterio.svg}</svg>${criterio.nome}</div>
-                    <div class="barras-grupo">${barrasHtml}</div>
-                </div>`;
-                container.innerHTML += html;
-            });
+        function atualizarKPIs(views, cliques) {
+            const elViews = document.querySelector('.card-kpi:nth-child(1) h3');
+            const elCliques = document.querySelector('.card-kpi:nth-child(2) h3');
+            const elCTR = document.querySelector('.card-kpi:nth-child(3) h3');
+            if(elViews) elViews.innerText = views > 1000 ? (views/1000).toFixed(1) + 'k' : views;
+            if(elCliques) elCliques.innerText = cliques;
+            if(elCTR) { let ctr = views > 0 ? ((cliques / views) * 100).toFixed(1) : 0; elCTR.innerText = ctr + "%"; }
         }
 
-        // 6. RENDERIZAR COMENTÁRIOS CLIENTES (VAZIO)
-        function renderizarComentariosClientes() {
-            const container = document.getElementById('container-comentarios-clientes');
-            container.innerHTML = '';
-            if (dadosUsuario.comentariosClientes.length === 0) {
-                container.innerHTML = `<div class="empty-state" style="flex:1;">Nenhuma avaliação recebida ainda.</div>`;
-                return;
+        window.deletarAnuncio = async function(id) {
+            if(confirm("Excluir este anúncio?")) {
+                try { await deleteDoc(doc(db, "anuncios", id)); alert("Excluído!"); renderizarAnuncios(); } 
+                catch (e) { alert("Erro ao excluir."); }
             }
         }
 
-        function iniciarGraficos() {
-            const ctx1 = document.getElementById('graficoDesempenho');
-            if(ctx1) {
-                new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-                        datasets: [{ label: 'Views', data: [0, 0, 0, 0, 0, 0, 0], borderColor: '#0095f6', tension: 0.4, fill: true }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 10 } } }
-                });
-            }
-            const ctx2 = document.getElementById('graficoOrigem');
-            if(ctx2) {
-                new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: { labels: ['Busca', 'Direto'], datasets: [{ data: [0, 0], backgroundColor: ['#e0e0e0', '#e0e0e0'] }] },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-        }
-
-        // Eventos de Interface
+        // FUNÇÕES DE UI
         window.abrirTab = function(evt, tabName) {
             document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
             document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
@@ -653,32 +578,90 @@
         window.abrirModalEditar = function() { document.getElementById('modalEditar').style.display = 'flex'; }
         window.fecharModalEditar = function() { document.getElementById('modalEditar').style.display = 'none'; }
         
-        // Upload Foto
-        document.getElementById('inputFotoFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if(file) {
-                document.getElementById('fotoFileName').innerText = file.name;
-                const reader = new FileReader();
-                reader.onload = function(evt) { document.getElementById('inputFotoBase64').value = evt.target.result; };
-                reader.readAsDataURL(file);
+        const fileInput = document.getElementById('inputFotoFile');
+        if(fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    const reader = new FileReader();
+                    reader.onload = function(evt) { document.getElementById('inputFotoBase64').value = evt.target.result; };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+document.addEventListener("DOMContentLoaded", () => {
+            
+            // --- 1. PROTEÇÃO DE ACESSO (O código novo começa aqui) ---
+            const logado = localStorage.getItem('usuarioLogado') === 'true';
+            
+            if (!logado) {
+                // Esconde todo o conteúdo da página
+                const main = document.querySelector('main');
+                if(main) main.style.display = 'none';
+
+                // Cria o alerta de bloqueio (Visualmente igual ao que fizemos no JS principal)
+                const bloqueioDiv = document.createElement('div');
+                bloqueioDiv.className = 'bloqueio-container';
+                bloqueioDiv.innerHTML = `
+                    <div class="bloqueio-card">
+                        <div class="bloqueio-icon"><i class='bx bx-lock-alt'></i></div>
+                        <h2 class="bloqueio-titulo">Acesso Restrito</h2>
+                        <p class="bloqueio-texto">Entre na sua conta ou cadastre-se para ver seu perfil.</p>
+                        <a href="login.html" class="btn-bloqueio-entrar">Entrar Agora</a>
+                        <a href="cadastro.html" class="btn-bloqueio-criar">Criar Conta</a>
+                    </div>
+                `;
+                
+                // Insere após o cabeçalho
+                const header = document.querySelector('.navbar-desktop');
+                if(header && header.nextSibling) {
+                    header.parentNode.insertBefore(bloqueioDiv, header.nextSibling);
+                } else {
+                    document.body.appendChild(bloqueioDiv);
+                }
+                
+                // Interrompe o resto do script (não carrega dados do perfil)
+                return; 
+            }
+            // --- FIM DA PROTEÇÃO ---
+
+            // Se chegou aqui, está logado: Carrega os dados normalmente
+            carregarPerfil();
+            renderizarAnuncios();
+            
+            // Gráficos (mantidos os mocks visuais)
+            const ctx1 = document.getElementById('graficoDesempenho');
+            if(ctx1) {
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                        datasets: [{ 
+                            label: 'Visualizações da Semana', 
+                            data: [0, 0, 0, 0, 0, 0, 0], // Dados zerados
+                            borderColor: '#e0e0e0', // Cor cinza (inativo)
+                            borderDash: [5, 5], // Linha tracejada
+                            tension: 0.4, 
+                            fill: false 
+                        }]
+                    },
+                    options: { 
+                        responsive: true, 
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, title: { display: true, text: 'Sem dados suficientes' } },
+                        scales: { y: { beginAtZero: true, max: 10 } }
+                    }
+                });
+            }
+            
+            const ctx2 = document.getElementById('graficoOrigem');
+            if(ctx2) {
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: { labels: ['Sem dados'], datasets: [{ data: [1], backgroundColor: ['#f0f0f0'] }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+                });
             }
         });
-
-        window.salvarPerfil = function() {
-            const novoPerfil = {
-                ...dadosUsuario.perfil, 
-                nome: document.getElementById('inputNome').value,
-                bio: document.getElementById('inputBio').value,
-                local: document.getElementById('inputLoc').value,
-                foto: document.getElementById('inputFotoBase64').value
-            };
-            localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
-            location.reload(); 
-        }
-
-        window.onclick = function(event) {
-            if (event.target == document.getElementById('modalEditar')) fecharModalEditar();
-        }
     </script>
-</body>
-</html>
