@@ -395,22 +395,34 @@
     </nav>
 
 <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, collection, getDocs, query, where, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// ============================================================
+// 1. IMPORTAÇÕES E CONFIGURAÇÃO
+// ============================================================
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
+// Adicionamos 'doc' e 'getDoc' e 'setDoc' aqui
+import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// --- NOVO: Importações do Auth ---
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // CONFIGURAÇÃO DO FIREBASE (Igual ao seu script.js)
-        const firebaseConfig = {
-            apiKey: "AIzaSyDBubOcA2HkCcPSSIi5RWO-dcduW6MiuMk",
-            authDomain: "doke-final.firebaseapp.com",
-            projectId: "doke-final",
-            storageBucket: "doke-final.firebasestorage.app",
-            messagingSenderId: "940604379398",
-            appId: "1:940604379398:web:b095bfa5193916aaad4e87",
-            measurementId: "G-Z2QECM66Y6"
-        };
+const firebaseConfig = {
+    apiKey: "AIzaSyDBubOcA2HkCcPSSIi5RWO-dcduW6MiuMk",
+    authDomain: "doke-final.firebaseapp.com",
+    projectId: "doke-final",
+    storageBucket: "doke-final.firebasestorage.app",
+    messagingSenderId: "940604379398",
+    appId: "1:940604379398:web:b095bfa5193916aaad4e87",
+    measurementId: "G-Z2QECM66Y6"
+};
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+const db = getFirestore(app);
+const auth = getAuth(app); // --- NOVO: Inicializa o Auth
+
+// GARANTE ACESSO GLOBAL
+window.db = db;
+window.auth = auth; // Disponibiliza o auth para outras páginas se precisar
 
         // --- CARREGAR PERFIL COM O NOVO CAMPO 'USER' ---
         window.carregarPerfil = function() {
@@ -489,14 +501,28 @@
         }
 
         // --- RENDERIZAR ANÚNCIOS (MANTIDO DO ANTERIOR) ---
-        window.renderizarAnuncios = async function() {
+window.renderizarAnuncios = async function() {
             const container = document.getElementById('lista-meus-anuncios');
             if(!container) return;
             
             container.innerHTML = '<div style="padding:40px; text-align:center; color:#666;"><i class="bx bx-loader-alt bx-spin"></i> Carregando seus anúncios...</div>'; 
             
             try {
-                const q = collection(db, "anuncios");
+                // 1. Pega os dados do usuário atual que está logado neste navegador
+                const usuarioLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+                const meuUserHandle = usuarioLocal ? usuarioLocal.user : null;
+
+                if (!meuUserHandle) {
+                    container.innerHTML = '<p style="text-align:center;">Erro: Usuário não identificado.</p>';
+                    return;
+                }
+
+                // 2. BUSCA COM FILTRO: Só traz anúncios onde o 'userHandle' é igual ao meu
+                const q = query(
+                    collection(db, "anuncios"), 
+                    where("userHandle", "==", meuUserHandle)
+                );
+                
                 const querySnapshot = await getDocs(q);
                 
                 container.innerHTML = ''; 
@@ -505,7 +531,7 @@
                     container.innerHTML = `
                         <div class="empty-state">
                             <i class='bx bx-ghost' style="font-size: 40px; margin-bottom: 10px;"></i><br>
-                            Nenhum anúncio encontrado.<br>
+                            Você ainda não tem anúncios ativos.<br>
                             <a href="anunciar.html" style="color:var(--cor0); font-weight:bold;">Criar um agora</a>
                         </div>`;
                     atualizarKPIs(0, 0);
@@ -547,8 +573,8 @@
                 });
                 atualizarKPIs(totalViews, totalCliques);
             } catch (error) {
-                console.error("Erro:", error);
-                container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar anúncios.</p>`;
+                console.error("Erro ao buscar anúncios:", error);
+                container.innerHTML = `<p style="color:red; text-align:center;">Erro de permissão ou conexão.</p>`;
             }
         }
 

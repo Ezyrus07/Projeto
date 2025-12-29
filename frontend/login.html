@@ -85,6 +85,28 @@
             position: absolute; top: 20px; left: 20px; color: #999; font-size: 1.5rem; cursor: pointer;
         }
         .btn-voltar:hover { color: var(--cor2); }
+
+        /* Estilo específico para o ícone do olho */
+.icon-eye {
+    position: absolute;
+    right: 15px;      /* Posiciona na direita */
+    left: auto !important; /* Garante que não pegue o estilo da esquerda */
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;  /* Mostra que é clicável */
+    color: #999;
+    font-size: 1.2rem;
+    z-index: 10;
+}
+
+.icon-eye:hover {
+    color: var(--cor0); /* Muda de cor ao passar o mouse (opcional) */
+}
+
+/* Ajuste no input para o texto não ficar por cima do olho */
+.input-icon input {
+    padding-right: 45px; /* Espaço extra na direita */
+}
     </style>
 </head>
 <body>
@@ -111,8 +133,8 @@
             <div class="form-group">
                 <label>Senha</label>
                 <div class="input-icon">
-                    <i class='bx bx-lock-alt'></i>
-                    <input type="password" id="senha" placeholder="********" required>
+                    <i class='bx bx-lock-alt'></i> <input type="password" id="senha" placeholder="********" required>
+                    <i class='bx bx-show icon-eye' id="btn-senha" onclick="mostrarSenha()"></i>
                 </div>
             </div>
 
@@ -140,5 +162,19 @@
     </div>
 
     <script src="script.js"></script>
+    <script>
+    function mostrarSenha() {
+        var inputPass = document.getElementById('senha');
+        var btnShowPass = document.getElementById('btn-senha');
+
+        if (inputPass.type === 'password') {
+            inputPass.setAttribute('type', 'text'); // Mostra a senha
+            btnShowPass.classList.replace('bx-show', 'bx-hide'); // Muda ícone para "olho fechado"
+        } else {
+            inputPass.setAttribute('type', 'password'); // Esconde a senha
+            btnShowPass.classList.replace('bx-hide', 'bx-show'); // Muda ícone para "olho aberto"
+        }
+    }
+</script>
 </body>
 </html>

@@ -84,8 +84,9 @@
                 <label>Senha</label>
                 <div class="input-icon">
                     <i class='bx bx-lock-alt'></i>
-                    <input type="password" id="senha" placeholder="Crie uma senha forte" required>
+                    <input type="password" id="senha" placeholder="Crie uma senha forte" required oninput="validarSenhaTempoReal()">
                 </div>
+                <span id="feedback-senha"></span>
             </div>
 
             <button type="submit" class="btn-login-action">Criar Conta Grátis</button>
@@ -96,43 +97,97 @@
         </div>
     </div>
 
-    <script>
-        function realizarCadastro(event) {
-            event.preventDefault(); 
+<script type="module">
+    import { collection, doc, setDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { createUserWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-            const nome = document.getElementById('nome').value;
-            const usuarioInput = document.getElementById('usuario').value;
-            const email = document.getElementById('email').value;
+    window.realizarCadastro = async function(event) {
+        event.preventDefault(); 
 
-            // Garante que o usuário comece com @
-            let userHandle = usuarioInput.trim();
-            if(!userHandle.startsWith('@')) {
-                userHandle = '@' + userHandle;
+        const nome = document.getElementById('nome').value;
+        const usuarioInput = document.getElementById('usuario').value;
+        const email = document.getElementById('email').value;
+        const senha = document.getElementById('senha').value;
+        const btn = event.target.querySelector('button');
+
+        // Validação básica antes de enviar
+        if(senha.length < 6) {
+            alert("A senha precisa ter pelo menos 6 caracteres.");
+            return;
+        }
+
+        if(btn) { btn.innerText = "Criando conta..."; btn.disabled = true; }
+
+        let userHandle = usuarioInput.trim().toLowerCase();
+        if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
+
+        try {
+            // 1. Verifica se o USERNAME (@) já existe no Firestore
+            // (O email o próprio Firebase Auth verifica sozinho)
+            const qUser = query(collection(window.db, "usuarios"), where("user", "==", userHandle));
+            const snapshotUser = await getDocs(qUser);
+
+            if (!snapshotUser.empty) {
+                throw new Error("username_exists");
             }
 
-            // Gera Data (Mês Ano)
+            // 2. CRIA O LOGIN NO FIREBASE AUTH (Segurança real)
+            const userCredential = await createUserWithEmailAndPassword(window.auth, email, senha);
+            const user = userCredential.user; // Aqui temos o UID único
+
+            // 3. PREPARA OS DADOS DO PERFIL
+            // NÃO SALVAMOS MAIS A SENHA AQUI!
             const dataAtual = new Date();
             const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-            const dataMembro = `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`;
-
+            
             const novoPerfil = {
+                uid: user.uid, // Vincula o ID do Auth
                 nome: nome,
-                user: userHandle, // Salva o que a pessoa digitou
+                user: userHandle, 
                 email: email,
+                // senha: senha,  <-- REMOVIDO POR SEGURANÇA
                 bio: "Olá! Sou novo na comunidade Doke.",
                 local: "Brasil",
                 foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
-                membroDesde: dataMembro,
+                membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
                 disponivel: true,
                 stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
             };
 
+            // 4. SALVA NO FIRESTORE USANDO O UID COMO ID DO DOCUMENTO
+            // Usamos 'setDoc' em vez de 'addDoc' para definir o ID manualmente
+            await setDoc(doc(window.db, "usuarios", user.uid), novoPerfil);
+
+            // 5. Sucesso
             localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
             localStorage.setItem('usuarioLogado', 'true');
+            localStorage.setItem('doke_uid', user.uid);
 
-            alert(`Conta criada! Bem-vindo, ${userHandle}`);
+            if(window.mostrarToast) window.mostrarToast("Conta criada com sucesso!", "sucesso");
+            else alert("Conta criada com sucesso!");
+
             window.location.href = "meuperfil.html";
+
+        } catch (error) {
+            console.error("Erro cadastro:", error);
+            let msg = "Erro ao criar conta.";
+            
+            if (error.message === "username_exists") {
+                msg = "Este nome de usuário já está em uso.";
+            } else if (error.code === 'auth/email-already-in-use') {
+                msg = "Este e-mail já está cadastrado.";
+            } else if (error.code === 'auth/weak-password') {
+                msg = "A senha é muito fraca.";
+            } else if (error.code === 'auth/invalid-email') {
+                msg = "E-mail inválido.";
+            }
+
+            if(window.mostrarToast) window.mostrarToast(msg, "erro");
+            else alert(msg);
+
+            if(btn) { btn.innerText = "Criar Conta Grátis"; btn.disabled = false; }
         }
-    </script>
+    }
+</script>
 </body>
 </html>

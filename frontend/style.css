@@ -3199,4 +3199,91 @@ body.dark-mode {
         margin-left: 0; /* No mobile não tem sidebar, então margem é 0 */
         min-height: calc(100vh - 60px); /* Ajuste para header menor */
     }
-} 
+}
+
+/* Classe para borda vermelha no input */
+.input-error {
+    border-color: #ff4444 !important;
+    background-color: #fff0f0 !important; /* Fundo levemente avermelhado */
+    animation: shake 0.3s ease-in-out; /* Efeito de tremedeira */
+}
+
+/* Texto de erro abaixo do input */
+.msg-erro-texto {
+    color: #ff4444;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 5px;
+    display: block;
+    text-align: left;
+}
+
+/* Animação de "Não" com a cabeça */
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    50% { transform: translateX(5px); }
+    75% { transform: translateX(-5px); }
+    100% { transform: translateX(0); }
+}
+
+/* Container das notificações */
+#toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* O card da notificação */
+.toast {
+    min-width: 250px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    background: white;
+    color: #333;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: slideIn 0.3s ease, fadeOut 0.5s ease 2.5s forwards;
+    /* A animação fadeOut faz ele sumir depois de 2.5s */
+}
+
+/* Tipos de Toast */
+.toast.sucesso { border-left: 5px solid #00C851; }
+.toast.sucesso i { color: #00C851; }
+
+.toast.erro { border-left: 5px solid #ff4444; }
+.toast.erro i { color: #ff4444; }
+
+.toast.aviso { border-left: 5px solid #ffbb33; }
+.toast.aviso i { color: #ffbb33; }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+@keyframes fadeOut {
+    to { opacity: 0; transform: translateY(-20px); pointer-events: none; }
+}
+
+/* Borda Verde para sucesso */
+.input-sucesso {
+    border-color: #00C851 !important;
+    background-color: #f0fff4 !important; /* Fundo levemente esverdeado */
+    box-shadow: 0 0 0 4px rgba(0, 200, 81, 0.1);
+}
+
+/* Texto Verde */
+.msg-sucesso-texto {
+    color: #00C851;
+    font-size: 0.8rem;
+    font-weight: 600;
+    margin-top: 5px;
+    display: block;
+    text-align: left;
+}

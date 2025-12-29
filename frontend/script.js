@@ -3,7 +3,10 @@
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs, addDoc, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// Adicionamos 'doc' e 'getDoc' e 'setDoc' aqui
+import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// --- NOVO: Importações do Auth ---
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBubOcA2HkCcPSSIi5RWO-dcduW6MiuMk",
@@ -18,9 +21,11 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
+const auth = getAuth(app); // --- NOVO: Inicializa o Auth
 
-// GARANTE QUE O DB ESTEJA ACESSÍVEL GLOBALMENTE
+// GARANTE ACESSO GLOBAL
 window.db = db;
+window.auth = auth; // Disponibiliza o auth para outras páginas se precisar
 
 // ============================================================
 // 2. FUNÇÃO DE PUBLICAR ANÚNCIO
@@ -384,10 +389,80 @@ window.atualizarTelaCep = function(cep) {
     if (i) i.value = cep;
 }
 
-window.realizarLogin = function(e) {
+// --- FUNÇÃO DE LOGIN REAL (COM VALIDAÇÃO) ---
+// --- FUNÇÃO DE LOGIN SEGURA (FIREBASE AUTH) ---
+window.realizarLogin = async function(e) {
     if(e) e.preventDefault();
-    localStorage.setItem('usuarioLogado', 'true');
-    window.location.href = "index.html";
+
+    const email = document.getElementById('email').value;
+    const senhaInput = document.getElementById('senha');
+    const senha = senhaInput.value;
+    const btn = e.target.querySelector('button');
+
+    // Limpa erros visuais anteriores
+    senhaInput.classList.remove('input-error');
+    const msgAntiga = document.getElementById('msg-erro-login');
+    if (msgAntiga) msgAntiga.remove();
+
+    if(btn) { btn.innerText = "Entrando..."; btn.disabled = true; }
+
+    try {
+        // 1. Tenta logar usando o sistema de segurança do Firebase
+        const userCredential = await signInWithEmailAndPassword(window.auth, email, senha);
+        const user = userCredential.user;
+
+        // 2. Se deu certo, buscamos os DADOS DO PERFIL no Firestore
+        // (Nome, foto, bio... coisas que o Auth não guarda)
+        const docRef = doc(window.db, "usuarios", user.uid);
+        const docSnap = await getDoc(docRef);
+
+        let dadosUsuario = {};
+        
+        if (docSnap.exists()) {
+            dadosUsuario = docSnap.data();
+        } else {
+            // Caso raro: Login existe no Auth, mas perfil não existe no banco
+            dadosUsuario = { nome: "Usuário", email: email };
+        }
+
+        // 3. Salva sessão e redireciona
+        localStorage.setItem('usuarioLogado', 'true');
+        localStorage.setItem('doke_usuario_perfil', JSON.stringify(dadosUsuario));
+        localStorage.setItem('doke_uid', user.uid); // Guardamos o UID também
+
+        // Feedback visual (Toast) se você já implementou, senão use alert
+        if(window.mostrarToast) window.mostrarToast("Login realizado com sucesso!", "sucesso");
+        
+        setTimeout(() => {
+            window.location.href = "index.html";
+        }, 1000);
+
+    } catch (error) {
+        console.error("Erro Auth:", error.code, error.message);
+        
+        // Tratamento de erros comuns para Português
+        let mensagemErro = "Ocorreu um erro ao entrar.";
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+            mensagemErro = "E-mail ou senha incorretos.";
+        } else if (error.code === 'auth/invalid-email') {
+            mensagemErro = "O formato do e-mail é inválido.";
+        } else if (error.code === 'auth/too-many-requests') {
+            mensagemErro = "Muitas tentativas. Tente mais tarde.";
+        }
+
+        // Aplica o erro visual (Borda vermelha e texto)
+        senhaInput.classList.add('input-error');
+        const spanErro = document.createElement('span');
+        spanErro.id = "msg-erro-login";
+        spanErro.className = "msg-erro-texto";
+        spanErro.innerText = mensagemErro;
+        senhaInput.parentElement.after(spanErro);
+
+        // Toast de erro
+        if(window.mostrarToast) window.mostrarToast(mensagemErro, "erro");
+
+        if(btn) { btn.innerText = "Entrar na Conta"; btn.disabled = false; }
+    }
 }
 window.fazerLogout = function() {
     if(confirm("Sair da conta?")) {
@@ -467,4 +542,33 @@ window.registrarVisualizacao = async function(idAnuncio) {
     } catch (error) {
         console.error("Erro ao registrar visualização:", error);
     }
+}
+
+window.mostrarToast = function(mensagem, tipo = 'sucesso') {
+    // Cria o container se não existir
+    let container = document.getElementById('toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'toast-container';
+        document.body.appendChild(container);
+    }
+
+    // Define o ícone baseado no tipo
+    let icone = '';
+    if (tipo === 'sucesso') icone = "<i class='bx bxs-check-circle'></i>";
+    else if (tipo === 'erro') icone = "<i class='bx bxs-error-circle'></i>";
+    else icone = "<i class='bx bxs-info-circle'></i>";
+
+    // Cria o elemento do toast
+    const toast = document.createElement('div');
+    toast.className = `toast ${tipo}`;
+    toast.innerHTML = `${icone} <span>${mensagem}</span>`;
+
+    // Adiciona na tela
+    container.appendChild(toast);
+
+    // Remove do DOM depois que a animação acabar (3s)
+    setTimeout(() => {
+        toast.remove();
+    }, 3000);
 }
