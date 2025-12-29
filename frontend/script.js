@@ -3,7 +3,7 @@
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs, addDoc, query, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, query, orderBy, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDBubOcA2HkCcPSSIi5RWO-dcduW6MiuMk",
@@ -80,7 +80,10 @@ window.publicarAnuncio = async function(event) {
             dataCriacao: new Date().toISOString(),
             nomeAutor: nomeAutor,
             fotoAutor: fotoAutor,
-            userHandle: "@" + nomeAutor.split(' ')[0].toLowerCase()
+            // CORRIGIDO: Adicionada a vírgula que faltava aqui
+            userHandle: "@" + nomeAutor.split(' ')[0].toLowerCase(),
+            views: 0,
+            cliques: 0
         };
 
         await addDoc(collection(db, "anuncios"), novoAnuncio);
@@ -129,6 +132,14 @@ async function carregarAnunciosDoFirebase() {
 
             const card = document.createElement('div');
             card.className = 'card-premium';
+            
+            // --- PASSO 3 APLICADO: REGISTRAR VIEW AO CLICAR ---
+            card.onmousedown = function() {
+                // Chama a função que incrementa +1 no banco de dados
+                window.registrarVisualizacao(doc.id);
+            };
+            // --------------------------------------------------
+
             card.innerHTML = `
                 <div class="cp-header">
                     <div class="cp-perfil">
@@ -167,7 +178,7 @@ async function carregarAnunciosDoFirebase() {
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
     carregarAnunciosDoFirebase();
-    verificarEstadoLogin(); // <--- Essa função foi corrigida abaixo
+    verificarEstadoLogin();
     
     // Cookies
     const banner = document.getElementById('cookieBanner');
@@ -299,16 +310,14 @@ window.ativarChip = function(el) {
 }
 window.abrirGaleria = function() { alert("Galeria em breve!"); }
 
-// --- FUNÇÃO CORRIGIDA PARA PEGAR FOTO DO LOCALSTORAGE ---
 function verificarEstadoLogin() {
     const logado = localStorage.getItem('usuarioLogado') === 'true';
     const container = document.querySelector('.botoes-direita');
     if(!container) return;
     
     if (logado) {
-        // TENTA PEGAR DADOS SALVOS
         const perfilSalvo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        const fotoUsuario = perfilSalvo.foto || 'https://i.pravatar.cc/150?img=12'; // Usa a foto salva ou padrão
+        const fotoUsuario = perfilSalvo.foto || 'https://i.pravatar.cc/150?img=12'; 
 
         container.innerHTML = `
             <div style="position:relative; display:inline-block;">
@@ -358,4 +367,23 @@ window.onclick = function(e) {
     const p = document.getElementById('boxCep');
     const w = document.querySelector('.cep-wrapper');
     if (p && w && !w.contains(e.target)) p.style.display = 'none';
+}
+
+// --- PASSO 3: FUNÇÃO PARA INCREMENTAR VISUALIZAÇÃO NO FIREBASE ---
+window.registrarVisualizacao = async function(idAnuncio) {
+    if(!idAnuncio) return;
+
+    try {
+        // Cria a referência ao documento específico do anúncio
+        const anuncioRef = doc(db, "anuncios", idAnuncio);
+
+        // Atualiza apenas o campo 'views' somando 1 Atomicamente
+        await updateDoc(anuncioRef, {
+            views: increment(1)
+        });
+        
+        console.log("Visualização registrada (+1) para o anúncio: " + idAnuncio);
+    } catch (error) {
+        console.error("Erro ao registrar visualização:", error);
+    }
 }

@@ -7,10 +7,9 @@
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="script.js"></script>
     <style>
         /* ==========================================================================
-           ESTILOS GERAIS
+           ESTILOS GERAIS (Mantidos do original)
            ========================================================================== */
         .perfil-main { margin-left: 270px; margin-right: 20px; max-width: 1600px; width: auto; padding-bottom: 60px; }
         .perfil-header-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; }
@@ -19,7 +18,7 @@
         .dados-perfil { padding: 0 30px 20px 30px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 30px; margin-top: -50px; }
         .avatar-container { position: relative; flex-shrink: 0; }
         .avatar-container img { width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; }
-        .status-online { width: 20px; height: 20px; background: #2ecc71; border: 3px solid #fff; border-radius: 50%; position: absolute; bottom: 15px; right: 10px; }
+        .status-online { width: 20px; height: 20px; background: #2ecc71; border: 3px solid #fff; border-radius: 50%; position: absolute; bottom: 15px; right: 10px; display: none; /* Controlado via JS */ }
         .info-texto { flex: 1; margin-top: 60px; min-width: 250px; }
         .nome-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
         .nome-row h1 { font-size: 1.6rem; color: #333; margin: 0; display:flex; align-items:center; gap:5px; }
@@ -72,7 +71,7 @@
         .btn-boost { background: linear-gradient(90deg, #ff9800, #f57c00); color: white; border: none; padding: 8px 15px; border-radius: 6px; font-weight: 600; cursor: pointer; font-size: 0.85rem; display: flex; gap: 5px; align-items: center; }
         .btn-icon-stats { background: #f5f5f5; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: #555; }
 
-        /* === ESTILOS RESTAURADOS: FEED (CRIAR POST) === */
+        /* FEED (CRIAR POST) */
         .box-criar-post { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
         .topo-criar { display: flex; gap: 15px; margin-bottom: 15px; }
         .avatar-mini { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
@@ -84,6 +83,7 @@
         .btn-midia.video { color: #e74c3c; }
         .btn-midia.story { color: #9b59b6; border: 1px dashed #9b59b6; padding: 5px 10px; border-radius: 20px; }
         .btn-publicar { background: var(--cor2); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+        
         .post-feed-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; margin-top: 20px; overflow: hidden; }
         .header-post { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
         .user-post { display: flex; gap: 10px; align-items: center; }
@@ -92,7 +92,7 @@
         .midia-post img { width: 100%; height: auto; display: block; }
         .stats-post { padding: 15px; border-top: 1px solid #f0f0f0; display: flex; gap: 20px; color: #666; font-size: 0.85rem; font-weight: 600; }
 
-        /* === ESTILOS RESTAURADOS: PORTFÓLIO === */
+        /* PORTFÓLIO */
         .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 10px 0; }
         .card-portfolio { background: #fff; border-radius: 12px; border: 1px solid #eee; overflow: hidden; transition: transform 0.3s, box-shadow 0.3s; cursor: pointer; }
         .card-portfolio:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
@@ -105,7 +105,7 @@
         .portfolio-footer { padding: 12px 15px; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; }
         .btn-ver-projeto { font-size: 0.8rem; font-weight: 700; color: var(--cor0); background: none; border: none; cursor: pointer; }
 
-        /* === ESTILOS RESTAURADOS: AVALIAÇÕES === */
+        /* AVALIAÇÕES */
         .avaliacao-container { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #f0f0f0; width: 100%; margin-top: 10px; }
         .avaliacao-header { display: flex; align-items: center; margin-bottom: 30px; gap: 20px; }
         .criterios-badge { background-color: #e0f2f1; color: var(--cor0); font-weight: 800; padding: 8px 25px; border-radius: 30px; font-size: 1rem; flex-shrink: 0; width: 200px; text-align: center; }
@@ -151,6 +151,14 @@
         .custom-file-label:hover { background-color: #e9ecef; border-color: #ccc; color: #333; }
         .custom-file-label i { font-size: 1.2rem; color: var(--cor0); }
         .file-name { font-size: 0.85rem; color: #888; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .galeria-modal-container { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+        .thumb-wrapper { position: relative; width: 80px; height: 80px; border-radius: 8px; border: 1px solid #ddd; overflow: hidden; }
+        .thumb-img { width: 100%; height: 100%; object-fit: cover; }
+        .btn-delete-img { position: absolute; top: 2px; right: 2px; background: rgba(231, 76, 60, 0.9); color: white; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: bold; border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.2); transition: 0.2s; }
+        .btn-delete-img:hover { background: red; transform: scale(1.1); }
+        
+        /* Estilo para mensagem de "Vazio" */
+        .empty-state { width: 100%; text-align: center; color: #888; padding: 40px; font-style: italic; background: #fafafa; border-radius: 8px; border: 1px dashed #ddd; }
 
         @media (max-width: 768px) {
             .perfil-main { margin-left: 0; margin-right: 0; padding: 0 0 60px 0; }
@@ -162,7 +170,6 @@
             .anuncio-stats-card { flex-direction: column; align-items: flex-start; }
             .img-anuncio-mini { width: 100%; height: 150px; }
             .acoes-anuncio-stats { flex-direction: row; width: 100%; justify-content: space-between; margin-top: 10px; }
-            
             .portfolio-grid { grid-template-columns: 1fr; }
             .avaliacao-header { display: none; }
             .avaliacao-row { flex-direction: column; align-items: flex-start; gap: 15px; padding: 20px; }
@@ -170,56 +177,6 @@
             .barras-grupo { display: grid; grid-template-columns: 1fr 1fr; width: 100%; gap: 10px; }
             .galeria-posts { flex-direction: column; }
         }
-
-        /* --- CSS GALERIA NO MODAL DE EDIÇÃO --- */
-.galeria-modal-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.thumb-wrapper {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-    overflow: hidden;
-}
-
-.thumb-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.btn-delete-img {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    background: rgba(231, 76, 60, 0.9); /* Vermelho */
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: bold;
-    border: none;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    transition: 0.2s;
-}
-
-.btn-delete-img:hover {
-    background: red;
-    transform: scale(1.1);
-}
-
-
     </style>
 </head>
 <body>
@@ -268,35 +225,34 @@
             <div class="dados-perfil">
                 <div class="avatar-container">
                     <img src="" alt="Perfil" id="fotoPerfilDisplay">
-                    <div class="status-online"></div>
+                    <div class="status-online" id="statusOnlineIndicator"></div>
                 </div>
                 <div class="info-texto">
                     <div class="nome-row">
-                        <h1 id="nomePerfilDisplay">Carregando...</h1>
+                        <h1 id="nomePerfilDisplay">...</h1>
                     </div>
                     <div class="social-stats">
-                        <div class="stat-social"><strong>12.5k</strong><span>Seguidores</span></div>
-                        <div class="stat-social"><strong>450</strong><span>Seguindo</span></div>
-                        <div class="stat-social"><strong>142</strong><span>Avaliações</span></div>
+                        <div class="stat-social"><strong id="stat-seguidores">0</strong><span>Seguidores</span></div>
+                        <div class="stat-social"><strong id="stat-seguindo">0</strong><span>Seguindo</span></div>
+                        <div class="stat-social"><strong id="stat-avaliacoes-count">0</strong><span>Avaliações</span></div>
                     </div>
                     <p class="bio" id="bioPerfilDisplay">...</p>
                     <div class="meta-dados">
                         <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
-                        <span><i class='bx bx-calendar'></i> Membro desde 2023</span>
+                        <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
                     </div>
                 </div>
                 <div class="acoes-perfil">
                     <div class="toggle-disponivel">
                         <span>Disponível</span>
-                        <label class="switch"><input type="checkbox" checked><span class="slider round"></span></label>
+                        <label class="switch"><input type="checkbox" id="checkDisponivel"><span class="slider round"></span></label>
                     </div>
                     <button class="btn-solid" onclick="abrirModalEditar()"><i class='bx bx-pencil'></i> Editar Perfil</button>
                 </div>
             </div>
             <div class="area-destaques-container">
-                <div class="scroll-destaques">
+                <div class="scroll-destaques" id="lista-destaques">
                     <div class="item-destaque"><div class="circulo-destaque add"><i class='bx bx-plus'></i></div><span>Novo</span></div>
-                    <div class="item-destaque"><div class="circulo-destaque"><img src="https://images.unsplash.com/photo-1581092921461-eab62e97a782?q=80&w=200"></div><span>Obras</span></div>
                 </div>
             </div>
         </section>
@@ -310,22 +266,23 @@
 
         <div id="tab-anuncios" class="tab-content active">
             <div class="painel-stats-geral">
-                <div class="card-kpi"><span>Visualizações Totais</span><h3>12.4K</h3></div>
-                <div class="card-kpi"><span>Cliques no Perfil</span><h3>850</h3></div>
-                <div class="card-kpi"><h3>4.2%</h3><small class="text-danger">-1%</small></div>
+                <div class="card-kpi"><span>Visualizações Totais</span><h3 id="kpi-views">0</h3></div>
+                <div class="card-kpi"><span>Cliques no Perfil</span><h3 id="kpi-cliques">0</h3></div>
+                <div class="card-kpi"><h3 id="kpi-ctr">0%</h3><small class="text-secondary">-</small></div>
             </div>
             <div class="charts-grid">
                 <div class="chart-card"><h4>Desempenho</h4><div class="canvas-container"><canvas id="graficoDesempenho"></canvas></div></div>
                 <div class="chart-card"><h4>Origem</h4><div class="canvas-container"><canvas id="graficoOrigem"></canvas></div></div>
             </div>
             <h3 class="titulo-sessao">Meus Anúncios Ativos</h3>
-            <div id="lista-meus-anuncios"></div>
+            <div id="lista-meus-anuncios">
+                </div>
         </div>
 
         <div id="tab-feed" class="tab-content">
             <div class="box-criar-post">
                 <div class="topo-criar">
-                    <img src="https://i.pravatar.cc/150?img=11" class="avatar-mini">
+                    <img src="" id="avatar-criar-post" class="avatar-mini">
                     <textarea placeholder="O que você realizou hoje? Compartilhe com seus clientes..."></textarea>
                 </div>
                 <div class="bottom-criar">
@@ -338,54 +295,21 @@
                 </div>
             </div>
             <h3 class="titulo-sessao" style="margin-top:30px;">Suas Publicações Recentes</h3>
-            <div class="post-feed-card">
-                <div class="header-post">
-                    <div class="user-post">
-                        <img src="https://i.pravatar.cc/150?img=11">
-                        <div><strong>Carlos Elétrica</strong><span>Publicado há 2 horas</span></div>
-                    </div>
-                    <i class='bx bx-dots-horizontal-rounded'></i>
+            
+            <div id="container-feed-posts">
                 </div>
-                <p class="legenda-post">Finalizando mais um quadro de distribuição no bairro Pituba. Segurança em primeiro lugar! ⚡ #eletrica #obra</p>
-                <div class="midia-post"><img src="https://images.unsplash.com/photo-1621905252507-b35492cc74b4?q=80&w=800"></div>
-                <div class="stats-post"><span><i class='bx bx-heart'></i> 45 curtidas</span><span><i class='bx bx-show'></i> 1.2k visualizações</span></div>
-            </div>
         </div>
 
         <div id="tab-portfolio" class="tab-content">
             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <h3 class="titulo-sessao" style="margin:0;">Meus Projetos (6)</h3>
+                <h3 class="titulo-sessao" style="margin:0;" id="titulo-portfolio">Meus Projetos (0)</h3>
                 <button class="btn-solid" style="padding: 8px 20px; font-size:0.85rem;"><i class='bx bx-plus'></i> Adicionar Projeto</button>
             </div>
-            <div class="portfolio-grid">
-                <div class="card-portfolio">
-                    <img src="https://images.unsplash.com/photo-1565514020125-3c3f25c898c5?q=80&w=400" class="portfolio-thumb">
-                    <div class="portfolio-body">
-                        <div class="portfolio-tags"><span class="tag-pf">Residencial</span><span class="tag-pf">Iluminação</span></div>
-                        <h4>Reforma Apto Jardins</h4><p>Troca completa de fiação e instalação de spots de LED inteligentes.</p>
-                    </div>
-                    <div class="portfolio-footer"><small><i class='bx bx-calendar'></i> Out 2023</small><button class="btn-ver-projeto">Ver Detalhes</button></div>
+            <div class="portfolio-grid" id="container-portfolio">
                 </div>
-                <div class="card-portfolio">
-                    <img src="https://images.unsplash.com/photo-1544724569-5f546fd6dd2d?q=80&w=400" class="portfolio-thumb">
-                    <div class="portfolio-body">
-                        <div class="portfolio-tags"><span class="tag-pf">Comercial</span><span class="tag-pf">Segurança</span></div>
-                        <h4>Quadro de Distribuição</h4><p>Organização e montagem de quadro industrial para padaria.</p>
-                    </div>
-                    <div class="portfolio-footer"><small><i class='bx bx-calendar'></i> Set 2023</small><button class="btn-ver-projeto">Ver Detalhes</button></div>
-                </div>
-                <div class="card-portfolio">
-                    <img src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=400" class="portfolio-thumb">
-                    <div class="portfolio-body">
-                        <div class="portfolio-tags"><span class="tag-pf">Reparo</span><span class="tag-pf">Urgência</span></div>
-                        <h4>Reparo Chuveiro Elétrico</h4><p>Instalação de chuveiro 220v com aterramento adequado.</p>
-                    </div>
-                    <div class="portfolio-footer"><small><i class='bx bx-calendar'></i> Ago 2023</small><button class="btn-ver-projeto">Ver Detalhes</button></div>
-                </div>
-            </div>
         </div>
         
-<div id="tab-avaliacoes" class="tab-content">
+        <div id="tab-avaliacoes" class="tab-content">
             <h3 class="titulo-sessao">Resumo das Avaliações</h3>
             <div class="avaliacao-container">
                 <div class="avaliacao-header">
@@ -393,131 +317,18 @@
                     <div class="notas-header"><span>Ótimo</span><span>Bom</span><span>Regular</span><span>Ruim</span><span>Péssimo</span></div>
                 </div>
 
-                <div class="avaliacao-row">
-                    <div class="tooltip-msgs">
-                        <h4>💬 Comentários sobre Pontualidade:</h4>
-                        <div class="msg-item">"Sempre chega 10 minutos antes, excelente!"</div>
-                        <div class="msg-item">"Cumpriu o horário combinado perfeitamente."</div>
-                        <div class="msg-item">"Teve um pequeno atraso, mas avisou antes."</div>
+                <div id="container-lista-criterios">
                     </div>
-                    <div class="criterio-nome">
-                        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Pontualidade
-                    </div>
-                    <div class="barras-grupo">
-                        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
-                        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
-                        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
-                        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
-                        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
-                    </div>
-                </div>
-
-                <div class="avaliacao-row">
-                    <div class="tooltip-msgs">
-                        <h4>💬 Sobre Profissionalismo:</h4>
-                        <div class="msg-item">"Muito educado e focado no trabalho."</div>
-                        <div class="msg-item">"Trouxe todos os equipamentos necessários."</div>
-                    </div>
-                    <div class="criterio-nome">
-                        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>Profissionalismo
-                    </div>
-                    <div class="barras-grupo">
-                        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
-                        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
-                        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
-                        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
-                        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
-                    </div>
-                </div>
-
-                <div class="avaliacao-row">
-                    <div class="tooltip-msgs">
-                        <h4>💬 Qualidade do Serviço:</h4>
-                        <div class="msg-item">"O acabamento ficou perfeito."</div>
-                        <div class="msg-item">"Material de primeira qualidade."</div>
-                    </div>
-                    <div class="criterio-nome">
-                        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/></svg>Qualidade
-                    </div>
-                    <div class="barras-grupo">
-                        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
-                        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
-                        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
-                        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
-                        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
-                    </div>
-                </div>
-
-                <div class="avaliacao-row">
-                    <div class="tooltip-msgs">
-                        <h4>💬 Sobre o Preço:</h4>
-                        <div class="msg-item">"Preço justo pelo serviço realizado."</div>
-                        <div class="msg-item">"Orçamento transparente, sem surpresas."</div>
-                    </div>
-                    <div class="criterio-nome">
-                        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>Valor
-                    </div>
-                    <div class="barras-grupo">
-                        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
-                        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
-                        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
-                        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
-                        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
-                    </div>
-                </div>
-
-                <div class="avaliacao-row">
-                    <div class="tooltip-msgs">
-                        <h4>💬 Sobre o Atendimento:</h4>
-                        <div class="msg-item">"Muito simpático e prestativo."</div>
-                        <div class="msg-item">"Respondeu minhas mensagens rapidamente."</div>
-                    </div>
-                    <div class="criterio-nome">
-                        <svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>Atendimento
-                    </div>
-                    <div class="barras-grupo">
-                        <div class="barra-item"><span class="num">34</span><div class="progress"><div class="fill" style="width: 80%"></div></div></div>
-                        <div class="barra-item"><span class="num">24</span><div class="progress"><div class="fill" style="width: 60%"></div></div></div>
-                        <div class="barra-item"><span class="num">6</span><div class="progress"><div class="fill" style="width: 20%"></div></div></div>
-                        <div class="barra-item"><span class="num">2</span><div class="progress"><div class="fill" style="width: 10%"></div></div></div>
-                        <div class="barra-item"><span class="num">0</span><div class="progress"><div class="fill" style="width: 0%"></div></div></div>
-                    </div>
-                </div>
 
                 <div id="box-detalhes-criterio">
                     <h4 id="titulo-detalhe">
                         <i class='bx bx-message-detail'></i> Comentários Selecionados
                     </h4>
-                    <div id="lista-comentarios-dinamica">
-                        </div>
+                    <div id="lista-comentarios-dinamica"></div>
                 </div>
 
-                <div class="galeria-posts">
-                    <div class="post-card">
-                        <div class="user-comment-header">
-                            <img src="https://i.pravatar.cc/150?img=32" class="avatar-comment" alt="Foto usuário">
-                            <div class="name-comment">Ana Julia<span>Cliente Verificado</span></div>
-                        </div>
-                        <p class="conteudo-post">"Excelente profissional! Resolveu o curto-circuito em menos de 1 hora. Recomendo muito."</p>
-                        <div class="heart-icon">♡</div>
+                <div class="galeria-posts" id="container-comentarios-clientes">
                     </div>
-                    <div class="post-card">
-                        <div class="user-comment-header">
-                            <img src="https://i.pravatar.cc/150?img=13" class="avatar-comment" alt="Foto usuário">
-                            <div class="name-comment">Roberto Lima<span>Cliente Verificado</span></div>
-                        </div>
-                        <p class="conteudo-post">"Preço justo e serviço limpo. Não deixou sujeira nenhuma após a instalação."</p>
-                        <div class="heart-icon">♡</div>
-                    </div>
-                    <div class="post-card">
-                        <div class="user-comment-header">
-                            <div class="avatar-comment avatar-anonimo"><i class='bx bx-user'></i></div>
-                            <div class="name-comment">Usuário Anônimo<span>14/10/2023</span></div>
-                        </div>
-                        <p class="conteudo-post">"Muito atencioso, explicou todo o processo da instalação do quadro novo."</p>
-                        <div class="heart-icon">♡</div>
-                    </div>
-                </div>
             </div>
         </div>
     </main>
@@ -543,73 +354,31 @@
         </div>
     </div>
 
-<div id="modalEditarAnuncio" class="modal-overlay">
+    <div id="modalEditarAnuncio" class="modal-overlay">
         <div class="modal-card" style="max-width: 600px; display: flex; flex-direction: column;">
-            
-            <div class="modal-header">
-                <h3>Gerenciar Anúncio</h3>
-                <button onclick="fecharModalAnuncio()" class="btn-close-modal">×</button>
-            </div>
-
+            <div class="modal-header"><h3>Gerenciar Anúncio</h3><button onclick="fecharModalAnuncio()" class="btn-close-modal">×</button></div>
             <div class="modal-body" style="overflow-y: auto; max-height: 70vh;">
-                <input type="hidden" id="editAnuncioId">
-                <input type="hidden" id="editImg"> <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label>Título</label>
-                        <input type="text" id="editTitulo" class="input-modal">
-                    </div>
-                    <div class="form-group">
-                        <label>Categoria</label>
-                        <select id="editCategoria" class="input-modal">
-                            <option>Eletricista</option>
-                            <option>Encanador</option>
-                            <option>Pedreiro</option>
-                            <option>Pintor</option>
-                            <option>Montador</option>
-                            <option>Outros</option>
-                        </select>
-                    </div>
-                </div>
-
+                <input type="hidden" id="editAnuncioId"><input type="hidden" id="editImg"> 
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-                    <div class="form-group">
-                        <label>Preço</label>
-                        <input type="text" id="editPreco" class="input-modal">
-                    </div>
-                    <div class="form-group">
-                        <label>Status</label>
-                        <select id="editStatus" class="input-modal">
-                            <option value="ativo">Ativo</option>
-                            <option value="pausado">Pausado</option>
-                        </select>
-                    </div>
+                    <div class="form-group"><label>Título</label><input type="text" id="editTitulo" class="input-modal"></div>
+                    <div class="form-group"><label>Categoria</label><select id="editCategoria" class="input-modal"><option>Eletricista</option><option>Encanador</option><option>Pedreiro</option><option>Pintor</option><option>Montador</option><option>Outros</option></select></div>
                 </div>
-
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                    <div class="form-group"><label>Preço</label><input type="text" id="editPreco" class="input-modal"></div>
+                    <div class="form-group"><label>Status</label><select id="editStatus" class="input-modal"><option value="ativo">Ativo</option><option value="pausado">Pausado</option></select></div>
+                </div>
                 <div class="form-group">
                     <label>Fotos do Serviço</label>
-                    
-                    <div id="previewGaleriaModal" class="galeria-modal-container">
-                        </div>
-
+                    <div id="previewGaleriaModal" class="galeria-modal-container"></div>
                     <div class="custom-file-wrapper">
-                        <label for="editImgInput" class="custom-file-label">
-                            <i class='bx bx-image-add'></i> Adicionar Foto
-                        </label>
+                        <label for="editImgInput" class="custom-file-label"><i class='bx bx-image-add'></i> Adicionar Foto</label>
                         <span id="fileNameDisplay" class="file-name">Adicione mais fotos...</span>
                         <input type="file" id="editImgInput" accept="image/*" style="display:none;">
                     </div>
                 </div>
-
-                <div class="form-group">
-                    <label>Local</label>
-                    <input type="text" id="editLocal" class="input-modal">
-                </div>
-                <div class="form-group">
-                    <label>Descrição</label>
-                    <textarea id="editDescricao" class="input-modal" rows="4"></textarea>
-                </div>
+                <div class="form-group"><label>Local</label><input type="text" id="editLocal" class="input-modal"></div>
+                <div class="form-group"><label>Descrição</label><textarea id="editDescricao" class="input-modal" rows="4"></textarea></div>
             </div>
-
             <div class="modal-footer" style="justify-content: space-between; align-items: center;">
                 <a href="editar-anuncio-completo.html" style="font-size:0.9rem; color:var(--cor0); margin-right:auto;">Mais opções</a>
                 <div style="display: flex; gap: 10px;">
@@ -625,39 +394,266 @@
         <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <script>
-        // --- 1. LÓGICA DO PERFIL ---
+    <script type="module">
+        // --- IMPORTAÇÃO DO FIREBASE (Igual ao script.js) ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDBubOcA2HkCcPSSIi5RWO-dcduW6MiuMk",
+            authDomain: "doke-final.firebaseapp.com",
+            projectId: "doke-final",
+            storageBucket: "doke-final.firebasestorage.app",
+            messagingSenderId: "940604379398",
+            appId: "1:940604379398:web:b095bfa5193916aaad4e87",
+            measurementId: "G-Z2QECM66Y6"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        // ==========================================
+        // DADOS "ZERADOS" - ESTADO INICIAL DO PERFIL
+        // ==========================================
+        const dadosUsuario = {
+            perfil: {
+                nome: "Novo Usuário",
+                bio: "Escreva uma biografia para atrair clientes...",
+                local: "Brasil",
+                foto: "https://placehold.co/150x150?text=Foto",
+                membroDesde: "2024",
+                disponivel: true,
+                stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
+            },
+            kpis: { views: 0, cliques: 0, ctr: "0%" },
+            feed: [], 
+            portfolio: [],
+            avaliacoesCriterios: [
+                { nome: "Pontualidade", svg: '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>', scores: [0,0,0,0,0], comentarios: [] },
+                { nome: "Profissionalismo", svg: '<rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>', scores: [0,0,0,0,0], comentarios: [] },
+                { nome: "Qualidade", svg: '<circle cx="12" cy="8" r="7"/><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"/>', scores: [0,0,0,0,0], comentarios: [] },
+                { nome: "Valor", svg: '<line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>', scores: [0,0,0,0,0], comentarios: [] },
+                { nome: "Atendimento", svg: '<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>', scores: [0,0,0,0,0], comentarios: [] }
+            ],
+            comentariosClientes: [] 
+        };
+
+        // ==========================================
+        // INICIALIZAÇÃO E RENDERIZAÇÃO
+        // ==========================================
         document.addEventListener("DOMContentLoaded", () => {
             carregarPerfil();
-            renderizarAnuncios();
             iniciarGraficos();
-            iniciarAvaliacoes(); // Nova função para interação
+            
+            renderizarAnuncios(); // Agora busca do Firebase
+            renderizarFeed();
+            renderizarPortfolio();
+            renderizarAvaliacoes();
+            renderizarComentariosClientes();
         });
 
+        // 1. CARREGAR CABEÇALHO DO PERFIL
         function carregarPerfil() {
-            const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {
-                nome: "Carlos Elétrica",
-                bio: "Especialista em instalações residenciais.",
-                local: "Salvador, BA",
-                foto: "https://i.pravatar.cc/150?img=11"
-            };
+            const usuarioStorage = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+            const usuario = usuarioStorage || dadosUsuario.perfil;
+            const stats = usuario.stats || dadosUsuario.perfil.stats;
             
-            document.getElementById('nomePerfilDisplay').innerHTML = usuario.nome + " <i class='bx bxs-badge-check'></i>";
+            document.getElementById('nomePerfilDisplay').innerHTML = usuario.nome;
             document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
             document.getElementById('locPerfilDisplay').innerHTML = "<i class='bx bx-map'></i> " + usuario.local;
             document.getElementById('fotoPerfilDisplay').src = usuario.foto;
+            document.getElementById('avatar-criar-post').src = usuario.foto;
+            document.getElementById('dataMembroDisplay').innerHTML = "<i class='bx bx-calendar'></i> Membro desde " + (usuario.membroDesde || "2024");
             
+            document.getElementById('stat-seguidores').innerText = stats.seguidores;
+            document.getElementById('stat-seguindo').innerText = stats.seguindo;
+            document.getElementById('stat-avaliacoes-count').innerText = stats.avaliacoes;
+
+            // KPIs são atualizados pelo renderizarAnuncios agora
+            
+            const statusIndicator = document.getElementById('statusOnlineIndicator');
+            const checkDisp = document.getElementById('checkDisponivel');
+            if(usuario.disponivel) { statusIndicator.style.display = 'block'; checkDisp.checked = true; } 
+            else { statusIndicator.style.display = 'none'; checkDisp.checked = false; }
+
             const headerAvatar = document.getElementById('headerAvatar');
             if(headerAvatar) { headerAvatar.src = usuario.foto; headerAvatar.style.display = 'block'; }
 
-            // Preenche modal
             document.getElementById('inputNome').value = usuario.nome;
             document.getElementById('inputBio').value = usuario.bio;
             document.getElementById('inputLoc').value = usuario.local;
             document.getElementById('inputFotoBase64').value = usuario.foto;
         }
 
-        // Upload Foto Perfil
+        // 2. RENDERIZAR FEED (VAZIO)
+        function renderizarFeed() {
+            const container = document.getElementById('container-feed-posts');
+            container.innerHTML = '';
+            if (dadosUsuario.feed.length === 0) {
+                container.innerHTML = `<div class="empty-state">Nenhuma publicação ainda. Compartilhe seu trabalho!</div>`;
+                return;
+            }
+        }
+
+        // 3. RENDERIZAR PORTFOLIO (VAZIO)
+        function renderizarPortfolio() {
+            const container = document.getElementById('container-portfolio');
+            const titulo = document.getElementById('titulo-portfolio');
+            container.innerHTML = '';
+            titulo.innerText = `Meus Projetos (${dadosUsuario.portfolio.length})`;
+            if (dadosUsuario.portfolio.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="grid-column: 1 / -1;">Nenhum projeto adicionado ao portfólio.</div>`;
+                return;
+            }
+        }
+
+        // 4. RENDERIZAR ANÚNCIOS (DO FIREBASE)
+        async function renderizarAnuncios() {
+            const container = document.getElementById('lista-meus-anuncios');
+            container.innerHTML = '<div style="padding:20px; text-align:center;">Carregando seus anúncios...</div>'; 
+            
+            try {
+                const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                const nomeAutor = perfilLocal.nome || "Novo Usuário";
+
+                // Busca TODOS os anúncios para o teste (em produção, filtraria por nomeAutor)
+                const q = collection(db, "anuncios");
+                const querySnapshot = await getDocs(q);
+                
+                let meusAnuncios = [];
+                querySnapshot.forEach((doc) => {
+                    const dados = doc.data();
+                    meusAnuncios.push({ id: doc.id, ...dados }); 
+                });
+
+                if (meusAnuncios.length === 0) {
+                    container.innerHTML = `
+                        <div class="empty-state">
+                            <i class='bx bx-ghost' style="font-size: 40px; margin-bottom: 10px;"></i><br>
+                            Nenhum anúncio encontrado no sistema.<br>
+                            <a href="anunciar.html" style="color:var(--cor0); font-weight:bold;">Criar um agora</a>
+                        </div>`;
+                    document.getElementById('kpi-views').innerText = "0";
+                    document.getElementById('kpi-cliques').innerText = "0";
+                    return; 
+                }
+
+                container.innerHTML = ''; 
+                // Se existir o dado 'views', usa ele. Se não, usa 0. Nada de aleatório.
+                const views = anuncio.views || 0; 
+                const cliques = anuncio.cliques || 0;
+
+                meusAnuncios.forEach(anuncio => {
+  // Se existir o dado 'views', usa ele. Se não, usa 0. Nada de aleatório.
+                    const views = anuncio.views || 0; 
+                    const cliques = anuncio.cliques || 0;
+                    totalViews += views;
+                    totalCliques += cliques;
+
+                    let badgeClass = 'ativo';
+                    let imgCapa = (anuncio.fotos && anuncio.fotos.length > 0) ? anuncio.fotos[0] : (anuncio.img || 'https://placehold.co/100?text=Sem+Foto');
+                    
+                    const html = `
+                        <div class="anuncio-stats-card">
+                            <img src="${imgCapa}" class="img-anuncio-mini">
+                            <div class="info-anuncio-stats">
+                                <div class="topo-anuncio">
+                                    <h4 style="margin:0; font-size:1rem;">${anuncio.titulo}</h4>
+                                    <span class="badge-status ${badgeClass}">ATIVO</span>
+                                </div>
+                                <div class="grid-metricas-anuncio">
+                                    <div class="metrica" title="Visualizações"><i class='bx bx-show'></i> <strong>${views}</strong></div>
+                                    <div class="metrica" title="Preço"><i class='bx bx-dollar-circle'></i> <strong>${anuncio.preco || 'A combinar'}</strong></div>
+                                </div>
+                            </div>
+                            <div class="acoes-anuncio-stats">
+                                <button class="btn-icon-stats" title="Editar (Em breve)"><i class='bx bx-edit'></i></button>
+                                <button class="btn-icon-stats" title="Excluir (Em breve)" style="color:#e74c3c;"><i class='bx bx-trash'></i></button>
+                            </div>
+                        </div>`;
+                    container.innerHTML += html;
+                });
+
+                document.getElementById('kpi-views').innerText = totalViews > 1000 ? (totalViews/1000).toFixed(1) + 'k' : totalViews;
+                document.getElementById('kpi-cliques').innerText = totalCliques;
+                let ctr = totalViews > 0 ? ((totalCliques / totalViews) * 100).toFixed(1) : 0;
+                document.getElementById('kpi-ctr').innerText = ctr + "%";
+
+            } catch (error) {
+                console.error("Erro ao buscar anúncios:", error);
+                container.innerHTML = '<p style="color:red; text-align:center;">Erro ao carregar anúncios do servidor.</p>';
+            }
+        }
+
+        // 5. RENDERIZAR AVALIAÇÕES (ZERADAS)
+        function renderizarAvaliacoes() {
+            const container = document.getElementById('container-lista-criterios');
+            container.innerHTML = '';
+            dadosUsuario.avaliacoesCriterios.forEach(criterio => {
+                const totalVotos = criterio.scores.reduce((a, b) => a + b, 0);
+                let barrasHtml = '';
+                criterio.scores.forEach(score => {
+                    const pct = totalVotos > 0 ? (score / totalVotos) * 100 : 0;
+                    barrasHtml += `<div class="barra-item"><span class="num">${score}</span><div class="progress"><div class="fill" style="width: ${pct}%"></div></div></div>`;
+                });
+                let tooltipHtml = '';
+                if (criterio.comentarios.length > 0) {
+                    const commentsList = criterio.comentarios.map(c => `<div class="msg-item">"${c}"</div>`).join('');
+                    tooltipHtml = `<div class="tooltip-msgs"><h4>💬 Sobre ${criterio.nome}:</h4>${commentsList}</div>`;
+                }
+                const html = `
+                <div class="avaliacao-row">
+                    ${tooltipHtml}
+                    <div class="criterio-nome"><svg class="icon-criterio" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">${criterio.svg}</svg>${criterio.nome}</div>
+                    <div class="barras-grupo">${barrasHtml}</div>
+                </div>`;
+                container.innerHTML += html;
+            });
+        }
+
+        // 6. RENDERIZAR COMENTÁRIOS CLIENTES (VAZIO)
+        function renderizarComentariosClientes() {
+            const container = document.getElementById('container-comentarios-clientes');
+            container.innerHTML = '';
+            if (dadosUsuario.comentariosClientes.length === 0) {
+                container.innerHTML = `<div class="empty-state" style="flex:1;">Nenhuma avaliação recebida ainda.</div>`;
+                return;
+            }
+        }
+
+        function iniciarGraficos() {
+            const ctx1 = document.getElementById('graficoDesempenho');
+            if(ctx1) {
+                new Chart(ctx1, {
+                    type: 'line',
+                    data: {
+                        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
+                        datasets: [{ label: 'Views', data: [0, 0, 0, 0, 0, 0, 0], borderColor: '#0095f6', tension: 0.4, fill: true }]
+                    },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 10 } } }
+                });
+            }
+            const ctx2 = document.getElementById('graficoOrigem');
+            if(ctx2) {
+                new Chart(ctx2, {
+                    type: 'doughnut',
+                    data: { labels: ['Busca', 'Direto'], datasets: [{ data: [0, 0], backgroundColor: ['#e0e0e0', '#e0e0e0'] }] },
+                    options: { responsive: true, maintainAspectRatio: false }
+                });
+            }
+        }
+
+        // Eventos de Interface
+        window.abrirTab = function(evt, tabName) {
+            document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
+            document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
+            document.getElementById(tabName).style.display = "block";
+            evt.currentTarget.classList.add("active");
+        }
+        window.abrirModalEditar = function() { document.getElementById('modalEditar').style.display = 'flex'; }
+        window.fecharModalEditar = function() { document.getElementById('modalEditar').style.display = 'none'; }
+        
+        // Upload Foto
         document.getElementById('inputFotoFile').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if(file) {
@@ -668,244 +664,21 @@
             }
         });
 
-        function salvarPerfil() {
+        window.salvarPerfil = function() {
             const novoPerfil = {
+                ...dadosUsuario.perfil, 
                 nome: document.getElementById('inputNome').value,
                 bio: document.getElementById('inputBio').value,
                 local: document.getElementById('inputLoc').value,
                 foto: document.getElementById('inputFotoBase64').value
             };
             localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
-            carregarPerfil();
-            fecharModalEditar();
-            alert("Perfil atualizado!");
-        }
-
-        // --- 2. GRÁFICOS ---
-        function iniciarGraficos() {
-            const ctx1 = document.getElementById('graficoDesempenho');
-            if(ctx1) {
-                new Chart(ctx1, {
-                    type: 'line',
-                    data: {
-                        labels: ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'],
-                        datasets: [{
-                            label: 'Views',
-                            data: [12, 19, 3, 5, 2, 3, 10],
-                            borderColor: '#0095f6',
-                            tension: 0.4,
-                            fill: true
-                        }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-            const ctx2 = document.getElementById('graficoOrigem');
-            if(ctx2) {
-                new Chart(ctx2, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Busca', 'Direto'],
-                        datasets: [{ data: [70, 30], backgroundColor: ['#0095f6', '#2ecc71'] }]
-                    },
-                    options: { responsive: true, maintainAspectRatio: false }
-                });
-            }
-        }
-
-        // --- 3. ANÚNCIOS ---
-        let meusAnuncios = JSON.parse(localStorage.getItem('doke_anuncios')) || [];
-        if(meusAnuncios.length === 0) {
-            meusAnuncios = [{id:1, titulo:"Instalação Elétrica", status:"ativo", views:"5k", cliques:300, preco:"150,00", img:"https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&w=200"}];
-            localStorage.setItem('doke_anuncios', JSON.stringify(meusAnuncios));
-        }
-
-        function renderizarAnuncios() {
-            const container = document.getElementById('lista-meus-anuncios');
-            container.innerHTML = ''; 
-            meusAnuncios.forEach(anuncio => {
-                let badgeClass = anuncio.status === 'ativo' ? 'ativo' : 'pausado';
-                let imgCapa = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos[0] : (anuncio.img || 'https://placehold.co/100');
-                
-                const html = `
-                    <div class="anuncio-stats-card">
-                        <img src="${imgCapa}" class="img-anuncio-mini">
-                        <div class="info-anuncio-stats">
-                            <div class="topo-anuncio"><h4>${anuncio.titulo}</h4><span class="badge-status ${badgeClass}">${anuncio.status.toUpperCase()}</span></div>
-                            <div class="grid-metricas-anuncio">
-                                <div class="metrica"><i class='bx bx-show'></i> <strong>${anuncio.views || 0}</strong></div>
-                                <div class="metrica"><i class='bx bx-dollar-circle'></i> <strong>${anuncio.preco || anuncio.valor}</strong></div>
-                            </div>
-                        </div>
-                        <div class="acoes-anuncio-stats">
-                            <button class="btn-icon-stats" onclick="abrirEditarAnuncio(${anuncio.id})"><i class='bx bx-edit'></i></button>
-                        </div>
-                    </div>`;
-                container.innerHTML += html;
-            });
-        }
-
-// --- VARIÁVEL GLOBAL PARA GERENCIAR FOTOS NA EDIÇÃO ---
-        let fotosAtuaisEdicao = [];
-
-        // 1. Função para Abrir o Modal e Carregar Fotos
-        function abrirEditarAnuncio(id) {
-            const anuncio = meusAnuncios.find(a => a.id === id);
-            if(anuncio) {
-                // Preenche campos de texto
-                document.getElementById('editAnuncioId').value = anuncio.id;
-                document.getElementById('editTitulo').value = anuncio.titulo;
-                document.getElementById('editPreco').value = anuncio.preco || anuncio.valor;
-                document.getElementById('editStatus').value = anuncio.status;
-                document.getElementById('editLocal').value = anuncio.local || "";
-                document.getElementById('editDescricao').value = anuncio.descricao || "";
-                document.getElementById('editCategoria').value = anuncio.categoria || 'Outros';
-
-                // CARREGA AS FOTOS
-                // Se tiver array de fotos, usa ele. Se não, usa a img única.
-                if (anuncio.fotos && anuncio.fotos.length > 0) {
-                    fotosAtuaisEdicao = [...anuncio.fotos]; // Cria uma cópia para não alterar direto
-                } else if (anuncio.img) {
-                    fotosAtuaisEdicao = [anuncio.img];
-                } else {
-                    fotosAtuaisEdicao = [];
-                }
-
-                // Renderiza as miniaturas
-                renderizarGaleriaEdicao();
-
-                document.getElementById('modalEditarAnuncio').style.display = 'flex';
-            }
-        }
-
-        // 2. Função para Desenhar as Miniaturas com o "X"
-        function renderizarGaleriaEdicao() {
-            const container = document.getElementById('previewGaleriaModal');
-            container.innerHTML = ''; // Limpa
-
-            fotosAtuaisEdicao.forEach((fotoBase64, index) => {
-                const div = document.createElement('div');
-                div.className = 'thumb-wrapper';
-                div.innerHTML = `
-                    <img src="${fotoBase64}" class="thumb-img">
-                    <button class="btn-delete-img" onclick="removerFotoEdicao(${index})">×</button>
-                `;
-                container.appendChild(div);
-            });
-        }
-
-        // 3. Função para Remover Foto da Lista
-        function removerFotoEdicao(index) {
-            fotosAtuaisEdicao.splice(index, 1); // Remove do array temporário
-            renderizarGaleriaEdicao(); // Atualiza visualmente
-        }
-
-        // 4. Listener do Input de Arquivo (Adicionar Nova Foto)
-        const fileInputAnuncio = document.getElementById('editImgInput');
-        if(fileInputAnuncio) {
-            fileInputAnuncio.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if(file) {
-                    const reader = new FileReader();
-                    reader.onload = function(evt) { 
-                        // Adiciona a nova foto ao array e renderiza
-                        fotosAtuaisEdicao.push(evt.target.result);
-                        renderizarGaleriaEdicao();
-                        // Reseta o input para poder selecionar a mesma foto se quiser
-                        fileInputAnuncio.value = ''; 
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // 5. Salvar Alterações (Atualizado para salvar o Array)
-        function salvarAlteracaoAnuncio() {
-            const id = parseInt(document.getElementById('editAnuncioId').value);
-            const index = meusAnuncios.findIndex(a => a.id === id);
-            
-            if(index !== -1) {
-                meusAnuncios[index].titulo = document.getElementById('editTitulo').value;
-                meusAnuncios[index].preco = document.getElementById('editPreco').value;
-                meusAnuncios[index].valor = document.getElementById('editPreco').value;
-                meusAnuncios[index].status = document.getElementById('editStatus').value;
-                meusAnuncios[index].local = document.getElementById('editLocal').value;
-                meusAnuncios[index].descricao = document.getElementById('editDescricao').value;
-                meusAnuncios[index].categoria = document.getElementById('editCategoria').value;
-                
-                // SALVA AS FOTOS
-                meusAnuncios[index].fotos = fotosAtuaisEdicao;
-                
-                // Atualiza a capa (pega a primeira foto ou placeholder)
-                if (fotosAtuaisEdicao.length > 0) {
-                    meusAnuncios[index].img = fotosAtuaisEdicao[0];
-                } else {
-                    meusAnuncios[index].img = 'https://placehold.co/200x200?text=Sem+Foto';
-                }
-
-                localStorage.setItem('doke_anuncios', JSON.stringify(meusAnuncios));
-                renderizarAnuncios();
-                fecharModalAnuncio();
-                alert("Anúncio atualizado!");
-            }
-        }
-
-        // Funções Auxiliares mantidas
-        function fecharModalAnuncio() { document.getElementById('modalEditarAnuncio').style.display = 'none'; }
-        
-        function excluirAnuncio() {
-            if(confirm("Excluir anúncio?")) {
-                const id = parseInt(document.getElementById('editAnuncioId').value);
-                meusAnuncios = meusAnuncios.filter(a => a.id !== id);
-                localStorage.setItem('doke_anuncios', JSON.stringify(meusAnuncios));
-                renderizarAnuncios();
-                fecharModalAnuncio();
-            }
-        }
-
-        // --- INTERAÇÃO ABAS ---
-        function abrirTab(evt, tabName) {
-            document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
-            document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.classList.add("active");
-        }
-        function abrirModalEditar() { document.getElementById('modalEditar').style.display = 'flex'; }
-        function fecharModalEditar() { document.getElementById('modalEditar').style.display = 'none'; }
-
-        // Interação de Clique nas Avaliações (Restaurado)
-        function iniciarAvaliacoes() {
-            const rows = document.querySelectorAll('.avaliacao-row');
-            rows.forEach(row => {
-                row.addEventListener('click', function() {
-                    rows.forEach(r => r.classList.remove('selecionado'));
-                    this.classList.add('selecionado');
-                    const conteudoOculto = this.querySelector('.tooltip-msgs');
-                    if (conteudoOculto) {
-                        const boxDetalhes = document.getElementById('box-detalhes-criterio');
-                        const containerLista = document.getElementById('lista-comentarios-dinamica');
-                        const tituloDetalhe = document.getElementById('titulo-detalhe');
-                        
-                        tituloDetalhe.innerHTML = `<i class='bx bx-comment-detail'></i> ${conteudoOculto.querySelector('h4').innerText}`;
-                        containerLista.innerHTML = ''; 
-                        conteudoOculto.querySelectorAll('.msg-item').forEach(msg => {
-                            const novoCard = document.createElement('div');
-                            novoCard.className = 'msg-destaque-item';
-                            novoCard.innerHTML = `<i class='bx bxs-quote-alt-left' style='color:#ddd; margin-right:5px;'></i> ${msg.innerText}`;
-                            containerLista.appendChild(novoCard);
-                        });
-                        boxDetalhes.style.display = 'block';
-                    }
-                });
-            });
+            location.reload(); 
         }
 
         window.onclick = function(event) {
             if (event.target == document.getElementById('modalEditar')) fecharModalEditar();
-            if (event.target == document.getElementById('modalEditarAnuncio')) fecharModalAnuncio();
         }
-
-        
     </script>
 </body>
 </html>
