@@ -573,3 +573,23 @@ window.mostrarToast = function(mensagem, tipo = 'sucesso') {
         toast.remove();
     }, 3000);
 }
+
+window.irParaMeuPerfil = function(event) {
+    if(event) event.preventDefault();
+
+    // Verifica se tem dados locais
+    const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+    
+    if (!perfilLocal) {
+        // Se não tem nada salvo, manda pro login
+        window.location.href = "login.html";
+        return;
+    }
+
+    // A LÓGICA MÁGICA
+    if (perfilLocal.isProfissional === true) {
+        window.location.href = "meuperfil.html"; // Painel Completo
+    } else {
+        window.location.href = "perfil-usuario.html"; // Perfil Básico
+    }
+}

@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Virar Profissional | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script type="module" src="script.js"></script>
+    <style>
+        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); display: flex; align-items: center; justify-content: center; min-height: 100vh; font-family: 'Poppins', sans-serif; padding: 20px; }
+        
+        .pro-card { 
+            background: white; padding: 40px; border-radius: 16px; 
+            max-width: 600px; width: 100%; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1); 
+        }
+        
+        .pro-header { text-align: center; margin-bottom: 30px; }
+        .pro-header h2 { color: var(--cor0); margin-bottom: 5px; font-size: 1.8rem; }
+        .pro-header p { color: #666; font-size: 0.95rem; }
+
+        .section-title {
+            font-size: 0.9rem; font-weight: 700; color: var(--cor2);
+            text-transform: uppercase; letter-spacing: 1px;
+            margin-top: 25px; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 5px;
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; font-size: 0.9rem; }
+        .form-group input, .form-group select { 
+            width: 100%; padding: 12px; border: 1px solid #ddd; 
+            border-radius: 8px; font-family: inherit; font-size: 0.95rem; outline: none; transition: 0.3s;
+        }
+        .form-group input:focus, .form-group select:focus { border-color: var(--cor0); box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.1); }
+
+        /* Estilo do Upload de Arquivo */
+        .file-upload-wrapper {
+            border: 2px dashed #ddd; border-radius: 8px; padding: 20px;
+            text-align: center; cursor: pointer; transition: 0.3s; background: #fafafa;
+        }
+        .file-upload-wrapper:hover { border-color: var(--cor0); background: #f0fff4; }
+        .file-upload-wrapper i { font-size: 2rem; color: #999; margin-bottom: 10px; }
+        .file-upload-text { color: #666; font-size: 0.9rem; }
+        .file-name-display { margin-top: 10px; font-weight: 600; color: var(--cor0); display: none; }
+
+        .btn-submit { 
+            width: 100%; padding: 15px; background: var(--cor0); color: white; 
+            border: none; border-radius: 8px; font-size: 1rem; font-weight: 700; 
+            cursor: pointer; transition: 0.3s; margin-top: 30px; display: flex; align-items: center; justify-content: center; gap: 10px;
+        }
+        .btn-submit:hover { background: #096356; transform: translateY(-2px); }
+        .btn-cancel { display: block; text-align: center; margin-top: 15px; color: #999; text-decoration: none; font-size: 0.9rem; }
+
+        @media (max-width: 500px) { .form-row { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="pro-card">
+        <div class="pro-header">
+            <div style="width: 60px; height: 60px; background: #e0f2f1; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 15px auto;">
+                <i class='bx bxs-id-card' style="font-size: 30px; color: var(--cor0);"></i>
+            </div>
+            <h2>Validação Profissional</h2>
+            <p>Precisamos de alguns dados para garantir a segurança da comunidade.</p>
+        </div>
+
+        <form id="formPro" onsubmit="virarProfissional(event)">
+            
+            <div class="section-title">Dados do Negócio</div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Categoria Principal</label>
+                    <select id="categoria" required>
+                        <option value="">Selecione...</option>
+                        <option>Eletricista</option>
+                        <option>Encanador</option>
+                        <option>Pedreiro</option>
+                        <option>Pintor</option>
+                        <option>Informática</option>
+                        <option>Aulas</option>
+                        <option>Beleza</option>
+                        <option>Limpeza</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Telefone Comercial (WhatsApp)</label>
+                    <input type="tel" id="telefone" placeholder="(00) 00000-0000" required>
+                </div>
+            </div>
+
+            <div class="section-title">Dados Pessoais</div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CPF ou CNPJ</label>
+                    <input type="text" id="documento" placeholder="000.000.000-00" required>
+                </div>
+                <div class="form-group">
+                    <label>Data de Nascimento</label>
+                    <input type="date" id="nascimento" required>
+                </div>
+            </div>
+
+            <div class="section-title">Endereço</div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>CEP</label>
+                    <input type="text" id="cep" placeholder="00000-000" onblur="buscarEndereco()" required>
+                </div>
+                <div class="form-group">
+                    <label>Número</label>
+                    <input type="text" id="numero" placeholder="Nº" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Rua / Logradouro</label>
+                <input type="text" id="rua" readonly style="background: #f9f9f9;">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Bairro</label>
+                    <input type="text" id="bairro" readonly style="background: #f9f9f9;">
+                </div>
+                <div class="form-group">
+                    <label>Cidade / UF</label>
+                    <input type="text" id="cidade" readonly style="background: #f9f9f9;">
+                </div>
+            </div>
+
+            <div class="section-title">Documentação</div>
+            
+            <div class="form-group">
+                <label>Foto do RG ou CNH (Frente)</label>
+                <label for="inputDocFoto" class="file-upload-wrapper">
+                    <i class='bx bx-camera'></i>
+                    <div class="file-upload-text">Clique para enviar uma foto legível</div>
+                    <div id="fileNameDisplay" class="file-name-display"></div>
+                </label>
+                <input type="file" id="inputDocFoto" accept="image/*" style="display:none;" onchange="previewArquivo()" required>
+                <input type="hidden" id="base64Doc">
+            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class='bx bx-check-shield'></i> Enviar e Ativar Conta
+            </button>
+            <a href="perfil-usuario.html" class="btn-cancel">Cancelar</a>
+        </form>
+    </div>
+
+    <script type="module">
+        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // --- FUNÇÃO PARA BUSCAR CEP AUTOMÁTICO ---
+        window.buscarEndereco = async function() {
+            const cep = document.getElementById('cep').value.replace(/\D/g, '');
+            if (cep.length === 8) {
+                try {
+                    const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                    const data = await response.json();
+                    if (!data.erro) {
+                        document.getElementById('rua').value = data.logradouro;
+                        document.getElementById('bairro').value = data.bairro;
+                        document.getElementById('cidade').value = `${data.localidade}/${data.uf}`;
+                        document.getElementById('numero').focus();
+                    } else {
+                        alert("CEP não encontrado.");
+                    }
+                } catch (e) {
+                    console.error("Erro no CEP:", e);
+                }
+            }
+        }
+
+        // --- FUNÇÃO PARA VISUALIZAR NOME DO ARQUIVO ---
+        window.previewArquivo = function() {
+            const fileInput = document.getElementById('inputDocFoto');
+            const display = document.getElementById('fileNameDisplay');
+            
+            if (fileInput.files && fileInput.files[0]) {
+                const arquivo = fileInput.files[0];
+                
+                // Validação de tamanho (Max 2MB para não travar o banco)
+                if(arquivo.size > 2 * 1024 * 1024) {
+                    alert("A foto é muito grande! Tente uma imagem menor que 2MB.");
+                    fileInput.value = ""; // Limpa
+                    return;
+                }
+
+                display.innerText = "Arquivo selecionado: " + arquivo.name;
+                display.style.display = "block";
+
+                // Converte para Base64
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('base64Doc').value = e.target.result;
+                };
+                reader.readAsDataURL(arquivo);
+            }
+        }
+
+        // --- FUNÇÃO PRINCIPAL DE ENVIO ---
+        window.virarProfissional = async function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const textoOriginal = btn.innerHTML;
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Validando...";
+            btn.disabled = true;
+
+            const auth = getAuth();
+            const user = auth.currentUser;
+
+            if(!user) {
+                alert("Sessão expirada. Faça login novamente.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                // Valida se enviou a foto
+                const fotoDoc = document.getElementById('base64Doc').value;
+                if(!fotoDoc) {
+                    throw new Error("Por favor, envie a foto do documento.");
+                }
+
+                const db = getFirestore();
+                const docRef = doc(db, "usuarios", user.uid);
+
+                // Monta o objeto de atualização
+                const dadosProfissionais = {
+                    isProfissional: true,
+                    status_verificacao: "pendente", // Pode usar isso para aprovação manual futura
+                    
+                    // Profissional
+                    categoria_profissional: document.getElementById('categoria').value,
+                    telefone_comercial: document.getElementById('telefone').value,
+                    
+                    // Pessoal
+                    cpf_cnpj: document.getElementById('documento').value,
+                    data_nascimento: document.getElementById('nascimento').value,
+                    
+                    // Endereço
+                    endereco: {
+                        cep: document.getElementById('cep').value,
+                        rua: document.getElementById('rua').value,
+                        numero: document.getElementById('numero').value,
+                        bairro: document.getElementById('bairro').value,
+                        cidade: document.getElementById('cidade').value
+                    },
+
+                    // Documento (Foto)
+                    foto_documento_url: fotoDoc, // Salva o Base64
+                    
+                    data_inicio_profissional: new Date().toISOString()
+                };
+
+                // ATUALIZA O USUÁRIO NO BANCO DE DADOS
+                await updateDoc(docRef, dadosProfissionais);
+
+                // Atualiza o localStorage para refletir a mudança instantaneamente
+                let perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                const perfilAtualizado = { ...perfilLocal, ...dadosProfissionais };
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilAtualizado));
+
+                alert("Cadastro profissional enviado com sucesso! Bem-vindo ao time.");
+                window.location.href = "meuperfil.html"; 
+
+            } catch (error) {
+                console.error("Erro:", error);
+                alert("Erro ao atualizar: " + error.message);
+                btn.innerHTML = textoOriginal;
+                btn.disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
