@@ -15,7 +15,7 @@
 
         main {
             padding: 30px 20px;
-                margin-top: 80px;
+            margin-top: 80px;
             display: flex;
             justify-content: center;
         }
@@ -137,12 +137,18 @@
             background: var(--cor2, #0095f6); color: white; border-color: var(--cor2, #0095f6);
         }
 
-        .agenda-list { display: flex; flex-direction: column; gap: 15px; }
-        .agenda-item { background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 18px; }
+        .agenda-list { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; padding-right: 5px; }
+        .agenda-item { 
+            background: #fff; border: 1px solid #eee; border-radius: 10px; padding: 15px; 
+            display: flex; justify-content: space-between; align-items: center; transition: 0.2s;
+        }
+        .agenda-item:hover { border-color: var(--cor0); background: #fafffb; }
         .agenda-header { display: flex; align-items: center; gap: 12px; }
-        .agenda-header input { width: 20px; height: 20px; accent-color: var(--cor0, #2ecc71); }
-        .agenda-times { display: none; margin-top: 15px; gap: 20px; }
+        .agenda-header label { font-weight: 600; color: #444; margin: 0; cursor: pointer; }
+        .agenda-header input { width: 18px; height: 18px; accent-color: var(--cor0, #2ecc71); cursor: pointer; }
+        .agenda-times { display: none; gap: 10px; align-items: center; }
         .agenda-times.show { display: flex; }
+        .agenda-times input { padding: 5px; border-radius: 5px; border: 1px solid #ccc; font-size: 0.9rem; }
 
         .form-nav {
             display: flex; justify-content: space-between; margin-top: 50px;
@@ -165,7 +171,7 @@
 
         @media (max-width: 768px) {
             .form-row { grid-template-columns: 1fr; }
-            .agenda-times { flex-direction: column; align-items: flex-start; }
+            .agenda-item { flex-direction: column; align-items: flex-start; gap: 10px; }
             .steps-container { gap: 40px; }
             main { margin-left: 0; }
         }
@@ -184,40 +190,24 @@
         <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-        <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <nav class="menu">
             <div class="cep-wrapper">
                 <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
                     <span id="textoCepSpan">Informe seu CEP</span>
                 </a>
-
                 <div class="cep-popup" id="boxCep">
                     <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
+                    <div class="cep-input-group"><input type="text" id="inputCep" placeholder="00000-000" maxlength="9"><button onclick="salvarCep()">OK</button></div>
                 </div>
             </div>
-            
             <a href="anunciar.html">Anuncie seu serviço</a>
             <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
+        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
     </header>
 
     <header class="navbar-mobile">
@@ -240,7 +230,7 @@
             </div>
 
             <div class="anuncio-card">
-                <form id="formAnuncio" onsubmit="finalizarAnuncio(event)">
+                <form id="formAnuncio" onsubmit="return false;">
 
                     <div class="form-step active" id="step-1">
                         <h3>Detalhes do Serviço</h3>
@@ -291,8 +281,7 @@
                         <div class="form-group">
                             <label>Fotos do Trabalho (Máx 5)</label>
                             <div class="upload-zone" onclick="document.getElementById('upload-galeria').click()">
-                                <i class='bx bx-images'></i>
-                                <span>Adicionar fotos da galeria</span>
+                                <i class='bx bx-images'></i><span>Adicionar fotos da galeria</span>
                                 <input type="file" id="upload-galeria" multiple accept="image/*" onchange="processarFotos(this)">
                             </div>
                             <div id="preview-galeria" class="galeria-preview-container"></div>
@@ -302,41 +291,22 @@
                     <div class="form-step" id="step-2">
                         <h3>Qualificações</h3>
                         <div class="form-row">
-                            <div class="form-group">
-                                <label>Experiência</label>
-                                <input type="text" id="experiencia" class="input-modern" placeholder="Ex: 5 anos">
-                            </div>
-                            <div class="form-group">
-                                <label>Prazo Médio</label>
-                                <input type="text" id="prazo" class="input-modern" placeholder="Ex: 2 dias">
-                            </div>
+                            <div class="form-group"><label>Experiência</label><input type="text" id="experiencia" class="input-modern" placeholder="Ex: 5 anos"></div>
+                            <div class="form-group"><label>Prazo Médio</label><input type="text" id="prazo" class="input-modern" placeholder="Ex: 2 dias"></div>
                         </div>
                         
                         <div class="form-group">
                             <label>Diploma ou Certificado (Opcional)</label>
                             <div class="upload-zone" onclick="document.getElementById('upload-diploma').click()">
-                                <i class='bx bx-cloud-upload'></i>
-                                <span>Clique para enviar PDF ou Imagem</span>
+                                <i class='bx bx-cloud-upload'></i><span>Clique para enviar PDF ou Imagem</span>
                                 <input type="file" id="upload-diploma" onchange="mostrarNomeArquivo(this)">
                                 <div class="file-name-display"></div>
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label>Garantia</label>
-                            <textarea id="garantia" style="min-height:80px;" placeholder="Detalhes da garantia..."></textarea>
-                        </div>
-                        <div class="form-group">
-                            <label>Cancelamento</label>
-                            <select id="politica" class="input-modern">
-                                <option>Flexível</option>
-                                <option>Moderada</option>
-                                <option>Rígida</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label style="display:flex; gap:10px;"><input type="checkbox" id="emergencia"> Atendo Emergências (24h)</label>
-                        </div>
+                        <div class="form-group"><label>Garantia</label><textarea id="garantia" style="min-height:80px;" placeholder="Detalhes da garantia..."></textarea></div>
+                        <div class="form-group"><label>Cancelamento</label><select id="politica" class="input-modern"><option>Flexível</option><option>Moderada</option><option>Rígida</option></select></div>
+                        <div class="form-group"><label style="display:flex; gap:10px;"><input type="checkbox" id="emergencia"> Atendo Emergências (24h)</label></div>
                     </div>
 
                     <div class="form-step" id="step-3">
@@ -351,33 +321,43 @@
                         <div class="form-group">
                             <label>Foto do Documento (RG/CNH)</label>
                             <div class="upload-zone" onclick="document.getElementById('upload-doc').click()">
-                                <i class='bx bx-id-card'></i>
-                                <span>Clique para enviar foto legível</span>
+                                <i class='bx bx-id-card'></i><span>Clique para enviar foto legível</span>
                                 <input type="file" id="upload-doc" onchange="mostrarNomeArquivo(this)">
                                 <div class="file-name-display"></div>
                             </div>
                         </div>
 
                         <div class="form-row">
-                            <div class="form-group">
-                                <label id="lbl-nome">Nome Completo</label>
-                                <input type="text" id="nome_doc" class="input-modern">
-                            </div>
-                            <div class="form-group">
-                                <label id="lbl-doc">CPF</label>
-                                <input type="text" id="doc_num" class="input-modern">
-                            </div>
+                            <div class="form-group"><label id="lbl-nome">Nome Completo</label><input type="text" id="nome_doc" class="input-modern"></div>
+                            <div class="form-group"><label id="lbl-doc">CPF</label><input type="text" id="doc_num" class="input-modern"></div>
                         </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label>Telefone</label>
-                                <input type="tel" id="telefone" class="input-modern" placeholder="(00) 00000-0000">
+                                <input type="tel" id="telefone" class="input-modern" placeholder="(00) 00000-0000" maxlength="15">
                             </div>
                             <div class="form-group">
-                                <label>CEP</label>
-                                <input type="text" id="cep" class="input-modern" placeholder="00000-000">
+                                <label>CEP (Digite para buscar)</label>
+                                <input type="text" id="cep" class="input-modern" placeholder="00000-000" maxlength="9" onblur="buscarEndereco(this.value)">
                             </div>
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Cidade</label>
+                                <input type="text" id="cidade" class="input-modern" readonly style="background-color: #f0f0f0;">
+                            </div>
+                            <div class="form-group">
+                                <label>Estado (UF)</label>
+                                <input type="text" id="uf" class="input-modern" readonly style="background-color: #f0f0f0;">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>Bairro</label>
+                            <input type="text" id="bairro" class="input-modern">
+                        </div>
+
                         <div class="form-group">
                             <label>Pagamentos Aceitos</label>
                             <div class="checkbox-grid">
@@ -390,30 +370,52 @@
                     </div>
 
                     <div class="form-step" id="step-4">
-                        <h3>Agenda</h3>
+                        <h3>Disponibilidade Semanal</h3>
+                        <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Marque os dias que você atende e defina o horário.</p>
+                        
                         <div class="agenda-list">
                             <div class="agenda-item">
                                 <div class="agenda-header"><input type="checkbox" id="chk-seg" onchange="toggleTime('seg')"><label for="chk-seg">Segunda-feira</label></div>
-                                <div class="agenda-times" id="time-seg">
-                                    <input type="time" id="seg-inicio"> até <input type="time" id="seg-fim">
-                                </div>
+                                <div class="agenda-times" id="time-seg"><input type="time" id="seg-inicio"> até <input type="time" id="seg-fim"></div>
                             </div>
                             <div class="agenda-item">
                                 <div class="agenda-header"><input type="checkbox" id="chk-ter" onchange="toggleTime('ter')"><label for="chk-ter">Terça-feira</label></div>
-                                <div class="agenda-times" id="time-ter">
-                                    <input type="time" id="ter-inicio"> até <input type="time" id="ter-fim">
-                                </div>
+                                <div class="agenda-times" id="time-ter"><input type="time" id="ter-inicio"> até <input type="time" id="ter-fim"></div>
+                            </div>
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-qua" onchange="toggleTime('qua')"><label for="chk-qua">Quarta-feira</label></div>
+                                <div class="agenda-times" id="time-qua"><input type="time" id="qua-inicio"> até <input type="time" id="qua-fim"></div>
+                            </div>
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-qui" onchange="toggleTime('qui')"><label for="chk-qui">Quinta-feira</label></div>
+                                <div class="agenda-times" id="time-qui"><input type="time" id="qui-inicio"> até <input type="time" id="qui-fim"></div>
+                            </div>
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-sex" onchange="toggleTime('sex')"><label for="chk-sex">Sexta-feira</label></div>
+                                <div class="agenda-times" id="time-sex"><input type="time" id="sex-inicio"> até <input type="time" id="sex-fim"></div>
+                            </div>
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-sab" onchange="toggleTime('sab')"><label for="chk-sab">Sábado</label></div>
+                                <div class="agenda-times" id="time-sab"><input type="time" id="sab-inicio"> até <input type="time" id="sab-fim"></div>
+                            </div>
+                            <div class="agenda-item">
+                                <div class="agenda-header"><input type="checkbox" id="chk-dom" onchange="toggleTime('dom')"><label for="chk-dom">Domingo</label></div>
+                                <div class="agenda-times" id="time-dom"><input type="time" id="dom-inicio"> até <input type="time" id="dom-fim"></div>
                             </div>
                         </div>
+
                         <div style="margin-top:20px; padding:15px; background:#eef6fc; border-radius:10px;">
-                            <label><input type="checkbox" id="termos" required> Declaro que as informações são verdadeiras.</label>
+                            <label style="cursor:pointer; display:flex; gap:10px; align-items:center;">
+                                <input type="checkbox" id="termos" required style="width:20px; height:20px;"> 
+                                Declaro que as informações são verdadeiras.
+                            </label>
                         </div>
                     </div>
 
                     <div class="form-nav">
-                        <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)">Voltar</button>
+                        <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)" style="display:none;">Voltar</button>
                         <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
-                        <button type="button" class="btn-submit" id="btn-submit" onclick="publicarAnuncio(event)">
+                        <button type="button" class="btn-submit" id="btn-submit" onclick="publicarAnuncio(event)" style="display:none;">
                             Publicar Anúncio
                         </button>
                     </div>
@@ -440,22 +442,17 @@
         if (input.files) {
             const files = Array.from(input.files);
             const container = document.getElementById('preview-galeria');
-            
             if (fotosParaEnviar.length + files.length > 5) {
                 alert("Máximo de 5 fotos permitidas.");
                 return;
             }
-
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
                     fotosParaEnviar.push(e.target.result);
                     const div = document.createElement('div');
                     div.style.position = "relative";
-                    div.innerHTML = `
-                        <img src="${e.target.result}" class="foto-thumb">
-                        <div class="btn-remove-foto" onclick="removerFoto(this, '${e.target.result}')">×</div>
-                    `;
+                    div.innerHTML = `<img src="${e.target.result}" class="foto-thumb"><div class="btn-remove-foto" onclick="removerFoto(this, '${e.target.result}')">×</div>`;
                     container.appendChild(div);
                 };
                 reader.readAsDataURL(file);
@@ -476,18 +473,13 @@
         const dropdown = document.getElementById('cat-dropdown');
         dropdown.innerHTML = "";
         const filtradas = todasCategorias.filter(c => c.toLowerCase().includes(filtro.toLowerCase()) && !categoriasSelecionadas.includes(c));
-        
         if (filtradas.length === 0) { dropdown.style.display = 'none'; return; }
-
         filtradas.forEach(cat => {
             const div = document.createElement('div');
             div.className = 'cat-option'; div.innerText = cat;
             div.onclick = (e) => { 
-                e.stopPropagation(); 
-                categoriasSelecionadas.push(cat); 
-                atualizarTags(); 
-                document.getElementById('cat-search').value = ""; 
-                dropdown.style.display = 'none'; 
+                e.stopPropagation(); categoriasSelecionadas.push(cat); atualizarTags(); 
+                document.getElementById('cat-search').value = ""; dropdown.style.display = 'none'; 
             };
             dropdown.appendChild(div);
         });
@@ -508,16 +500,21 @@
         }
     });
 
-    // --- MÁSCARAS E UI ---
+    // --- MÁSCARAS AUTOMÁTICAS (TELEFONE E CEP) ---
     document.getElementById('telefone').addEventListener('input', function (e) {
         let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
         e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
     });
+    
     document.getElementById('cep').addEventListener('input', function (e) {
-        let x = e.target.value.replace(/\D/g, '').match(/(\d{0,5})(\d{0,3})/);
-        e.target.value = !x[2] ? x[1] : x[1] + '-' + x[2];
+        let valor = e.target.value.replace(/\D/g, ""); // Remove tudo que não é número
+        if (valor.length > 5) {
+            valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
+        }
+        e.target.value = valor;
     });
 
+    // --- TOGGLES DE UI ---
     window.toggleTime = function(dia) { document.getElementById(`time-${dia}`).classList.toggle('show'); }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
@@ -529,6 +526,7 @@
         document.getElementById('lbl-doc').innerText = (val === 'PJ') ? "CNPJ" : "CPF";
     }
 
+    // --- NAVEGAÇÃO ENTRE PASSOS ---
     let step = 1;
     window.changeStep = function(dir) {
         // Validação simples
@@ -541,12 +539,14 @@
             if(!valid) return;
         }
 
+        // Troca visual
         document.getElementById(`step-${step}`).classList.remove('active');
         document.getElementById(`p-${step}`).classList.remove('active');
         step += dir;
         document.getElementById(`step-${step}`).classList.add('active');
         document.getElementById(`p-${step}`).classList.add('active');
         
+        // Controle dos botões
         document.getElementById('btn-prev').style.display = step > 1 ? 'block' : 'none';
         if(step === 4) {
             document.getElementById('btn-next').style.display = 'none';
@@ -557,7 +557,79 @@
         }
     }
 
- 
+    // --- BUSCA DE ENDEREÇO (VISUAL) ---
+    async function buscarEndereco(cep) {
+        let cepLimpo = cep.replace(/\D/g, '');
+        if (cepLimpo.length === 8) {
+            // Feedback visual
+            document.getElementById('cidade').value = "...";
+            document.getElementById('uf').value = "...";
+            
+            try {
+                const response = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`);
+                const data = await response.json();
+                if (!data.erro) {
+                    document.getElementById('cidade').value = data.localidade;
+                    document.getElementById('uf').value = data.uf;
+                    document.getElementById('bairro').value = data.bairro;
+                } else {
+                    alert("CEP não encontrado.");
+                    document.getElementById('cidade').value = "";
+                    document.getElementById('uf').value = "";
+                }
+            } catch (e) {
+                console.error("Erro ao buscar CEP:", e);
+            }
+        }
+    }
+
+    // --- AUTO-PREENCHIMENTO DOS DADOS DE PROFISSIONAL ---
+    document.addEventListener("DOMContentLoaded", function() {
+        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+        
+        if (perfilLocal) {
+            // Se o usuário tem nome, preenche
+            if (perfilLocal.nome) {
+                document.getElementById('nome_doc').value = perfilLocal.nome;
+            }
+
+            // Se tem CPF/CNPJ (vinda do cadastro de profissional)
+            if (perfilLocal.cpf_cnpj) {
+                const docVal = perfilLocal.cpf_cnpj;
+                document.getElementById('doc_num').value = docVal;
+                
+                // Inteligência: Se tiver mais de 11 números, marca como Empresa (PJ)
+                if (docVal.replace(/\D/g, '').length > 11) {
+                    document.getElementById('pj').checked = true;
+                    toggleCNPJ(); // Atualiza os labels
+                }
+            }
+
+            // Se tem telefone comercial
+            if (perfilLocal.telefone_comercial) {
+                document.getElementById('telefone').value = perfilLocal.telefone_comercial;
+            }
+
+            // Se tem endereço salvo
+            if (perfilLocal.endereco) {
+                const end = perfilLocal.endereco;
+                
+                if (end.cep) document.getElementById('cep').value = end.cep;
+                if (end.bairro) document.getElementById('bairro').value = end.bairro;
+                
+                // O cadastro salva Cidade como "Salvador/BA". Aqui separamos.
+                if (end.cidade && end.cidade.includes('/')) {
+                    const partes = end.cidade.split('/');
+                    if(partes.length === 2) {
+                        document.getElementById('cidade').value = partes[0].trim();
+                        document.getElementById('uf').value = partes[1].trim();
+                    }
+                } else if (end.cidade) {
+                    document.getElementById('cidade').value = end.cidade;
+                }
+            }
+        }
+    });
     </script>
 </body>
 </html>

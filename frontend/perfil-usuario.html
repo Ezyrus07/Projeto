@@ -6,9 +6,10 @@
     <title>Meu Perfil | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-        ESTILOS PADRONIZADOS (Idênticos ao meuperfil.html)
+        ESTILOS PADRONIZADOS
         ========================================================================== */
         .perfil-main { margin-left: 270px; margin-right: 20px; max-width: 1600px; padding-bottom: 60px; }
         
@@ -21,12 +22,12 @@
         /* AVATAR */
         .avatar-container { position: relative; flex-shrink: 0; }
         .avatar-container img { width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; }
+        .status-online { width: 20px; height: 20px; background: #2ecc71; border: 3px solid #fff; border-radius: 50%; position: absolute; bottom: 15px; right: 10px; display: none; }
 
         /* TEXTOS */
         .info-texto { flex: 1; margin-top: 60px; min-width: 250px; }
-        .nome-destaque-row { display: flex; flex-direction: column; gap: 2px; }
-        .handle-principal { font-size: 1.6rem; color: var(--cor2); font-weight: 800; display: flex; align-items: center; gap: 8px; margin: 0; line-height: 1.2; }
-        .nome-secundario { font-size: 1.05rem; color: #666; font-weight: 500; margin: 0; }
+        .nome-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .nome-row h1 { font-size: 1.6rem; color: #333; margin: 0; display:flex; align-items:center; gap:5px; }
 
         /* STATS */
         .social-stats { display: flex; gap: 25px; margin: 15px 0 15px 0; }
@@ -39,19 +40,17 @@
 
         /* AÇÕES DIREITA */
         .acoes-perfil { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 60px; }
-        .btn-padrao { background: var(--cor0); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; text-decoration: none; font-size: 0.9rem; }
-        .btn-padrao:hover { background: #096356; transform: translateY(-2px); }
-        .btn-upgrade-top { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 8px 20px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); text-decoration: none; margin-bottom: 5px; }
-        .btn-upgrade-top:hover { transform: scale(1.05); }
+        .btn-solid { background: var(--cor0); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
+        .btn-solid:hover { background: #096356; transform: translateY(-2px); }
+        .toggle-disponivel { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 5px; }
 
-        /* Destaques (Stories) */
+        /* DESTAQUES & ABAS */
         .area-destaques-container { padding: 10px 30px 30px 30px; border-top: 1px solid #f5f5f5; margin-top: 10px; }
         .scroll-destaques { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
         .item-destaque { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 70px; }
         .circulo-destaque { width: 68px; height: 68px; border-radius: 50%; padding: 3px; border: 1px solid #ddd; margin-bottom: 8px; transition: transform 0.2s ease; display: flex; align-items: center; justify-content: center; background: #fafafa; }
         .circulo-destaque.add { border: 2px dashed #ccc; color: #999; font-size: 1.5rem; }
 
-        /* ABAS */
         .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; display: flex; gap: 30px; overflow-x: auto; }
         .tab-btn { background: none; border: none; padding: 10px 5px; font-size: 1rem; color: #777; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; white-space: nowrap; }
         .tab-btn.active { color: var(--cor2); border-bottom-color: var(--cor2); }
@@ -59,54 +58,115 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* CARD DE UPGRADE BOTTOM */
-        .upgrade-card { background: linear-gradient(135deg, var(--cor0), #042e27); border-radius: 16px; padding: 30px; color: white; display: flex; align-items: center; justify-content: space-between; margin-top: 40px; margin-bottom: 30px; box-shadow: 0 10px 20px rgba(11, 119, 104, 0.2); position: relative; overflow: hidden; }
-        .upgrade-content { z-index: 2; max-width: 70%; }
-        .btn-upgrade-card { background: white; color: var(--cor0); padding: 12px 30px; border-radius: 50px; font-weight: 800; text-decoration: none; display: inline-block; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
-        .upgrade-icon { position: absolute; right: -20px; bottom: -30px; font-size: 10rem; opacity: 0.1; transform: rotate(-15deg); }
+        /* KPIS & GRÁFICOS */
+        .painel-stats-geral { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
+        .card-kpi { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; text-align: center; }
+        .card-kpi h3 { font-size: 1.8rem; color: #333; margin: 0; }
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px; }
+        .chart-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; height: 320px; display: flex; flex-direction: column; }
+        .canvas-container { flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; }
 
-        /* MODAL MODERNIZADO */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.3s; display: flex; flex-direction: column; }
-        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* LISTA DE ANÚNCIOS */
+        .anuncio-stats-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; display: flex; gap: 20px; margin-bottom: 15px; align-items: center; }
+        .img-anuncio-mini { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; }
+        .info-anuncio-stats { flex: 1; }
+        .topo-anuncio { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .badge-status { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+        .badge-status.ativo { background: #e8f5e9; color: #2e7d32; }
+        .grid-metricas-anuncio { display: flex; gap: 25px; }
+        .metrica { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
+        .acoes-anuncio-stats { display: flex; flex-direction: column; gap: 8px; }
+        .btn-icon-stats { background: #f5f5f5; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: #555; }
+
+        /* --- FEED (ESTILOS ATUALIZADOS) --- */
+        .box-criar-post { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); }
+        .topo-criar { display: flex; gap: 15px; margin-bottom: 15px; }
+        .avatar-mini { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
+        .topo-criar textarea { flex: 1; border: none; resize: none; outline: none; font-family: 'Poppins', sans-serif; font-size: 1rem; color: #333; padding-top: 10px; height: 60px; background: transparent; }
+        .bottom-criar { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 15px; }
+        .opcoes-midia { display: flex; gap: 15px; }
+        .btn-midia { background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; color: #666; transition: 0.2s; }
+        .btn-midia:hover { color: var(--cor0); background: #f0fdfa; padding: 5px 10px; border-radius: 20px; margin: -5px -10px; }
+        .btn-midia.foto i { color: #2ecc71; font-size: 1.2rem; }
+        .btn-publicar { background: var(--cor2); color: white; border: none; padding: 8px 25px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s; }
+        .btn-publicar:hover { background: var(--cor0); transform: translateY(-2px); }
         
+        /* CARD DA PUBLICAÇÃO */
+        .post-feed-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; margin-bottom: 25px; overflow: hidden; animation: fadeIn 0.5s; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+        .header-post { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+        .user-post { display: flex; gap: 12px; align-items: center; }
+        .user-post img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
+        .user-post h4 { margin: 0; font-size: 0.95rem; color: #333; font-weight: 700; }
+        .user-post span { font-size: 0.75rem; color: #999; display: block; margin-top: 2px; }
+        .legenda-post { padding: 0 15px 15px 15px; margin: 0; font-size: 0.95rem; color: #444; line-height: 1.5; }
+        .midia-post { width: 100%; background: #f9f9f9; display: flex; justify-content: center; align-items: center; overflow: hidden; max-height: 500px; }
+        .midia-post img { width: 100%; height: auto; object-fit: cover; display: block; }
+        .stats-post { padding: 12px 15px; border-top: 1px solid #f0f0f0; display: flex; gap: 20px; color: #666; font-size: 0.9rem; font-weight: 600; background: #fff; }
+        .action-post { display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; }
+        .action-post:hover { color: var(--cor0); }
+        .action-post i { font-size: 1.2rem; }
+
+        /* Preview de imagem no Criar Post */
+        .preview-area { margin-top: 10px; position: relative; display: inline-block; }
+        .preview-img-post { max-height: 150px; border-radius: 8px; border: 1px solid #ddd; }
+        .btn-remove-preview { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+
+        /* PORTFÓLIO */
+        .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 10px 0; }
+        .card-portfolio { background: #fff; border-radius: 12px; border: 1px solid #eee; overflow: hidden; transition: transform 0.3s; cursor: pointer; }
+        .card-portfolio:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.08); }
+        .portfolio-thumb { width: 100%; height: 180px; object-fit: cover; }
+        .portfolio-body { padding: 15px; }
+        .portfolio-body h4 { margin: 0 0 5px 0; font-size: 1.1rem; color: #333; }
+        .portfolio-body p { margin: 0; font-size: 0.85rem; color: #777; }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.3s; display:flex; flex-direction:column; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .modal-header { background: #f9f9f9; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .modal-header h3 { margin: 0; font-size: 1.1rem; color: #333; }
-        .btn-close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
-
-        .modal-body { padding: 20px; overflow-y: auto; max-height: 70vh; }
-        .form-group { margin-bottom: 15px; } 
-        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color:#555; font-size: 0.9rem; } 
+        .modal-body { padding: 20px; overflow-y:auto; max-height:70vh;}
+        .form-group { margin-bottom: 15px; }
         .input-modal { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
+        .modal-footer { padding: 15px 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-cancel { background: #f0f0f0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; color: #666; }
+        .btn-save { background: var(--cor0); color:white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        .btn-close-modal { border:none; background:transparent; font-size:1.5rem; cursor:pointer;}
 
-        /* Estilo para input desabilitado */
-        .input-modal:disabled { background-color: #f0f0f0; color: #999; cursor: not-allowed; }
-
-        /* Estilo do Input de Arquivo */
         .custom-file-wrapper { display: flex; align-items: center; gap: 10px; }
-        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; color: #555; font-size: 0.9rem; font-weight: 600; transition: 0.2s; }
-        .custom-file-label:hover { background-color: #e9ecef; border-color: #ccc; color: #333; }
-        .custom-file-label i { font-size: 1.2rem; color: var(--cor0); }
-        .file-name { font-size: 0.85rem; color: #888; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; color: #555; font-size: 0.9rem; font-weight: 600; }
+        .file-name { font-size: 0.85rem; color: #888; font-style: italic; }
 
-        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #eee; background: #fff; }
-        .btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; color:#555; } 
-        .btn-save { background: var(--cor0); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
-
-        h2 {color : white;}
-
-        /* RESPONSIVIDADE */
         @media (max-width: 768px) {
-            .perfil-main { margin-left: 0; margin-right: 0; padding: 20px 0 80px 0; }
-            .perfil-header-card { border-radius: 0; width: 100%; margin: -20px 0 20px 0; box-shadow: none; border-bottom: 1px solid #eee; }
+            .perfil-main { margin-left: 0; margin-right: 0; padding: 0 0 60px 0; }
+            .perfil-header-card { border-radius: 0; border: none; margin-bottom: 15px; }
             .dados-perfil { flex-direction: column; align-items: center; text-align: center; margin-top: -60px; }
-            .nome-destaque-row { align-items: center; }
-            .acoes-perfil { align-items: center; width: 100%; padding-top: 20px; }
-            .social-stats { justify-content: center; }
-            .meta-dados { justify-content: center; }
-            .upgrade-card { flex-direction: column; text-align: center; border-radius: 0; }
-            .upgrade-content { max-width: 100%; margin-bottom: 20px; }
+            .painel-stats-geral { grid-template-columns: 1fr; }
+            .charts-grid { display: flex; flex-direction: column; gap: 20px; height: auto; margin-bottom: 20px; }
+            .chart-card { width: 100%; height: auto; min-height: 320px; }
+            .portfolio-grid { grid-template-columns: 1fr; }
         }
+
+        /* Atualize ou adicione isto dentro da tag <style> */
+
+/* Container da mídia mais compacto */
+.midia-post { 
+    width: 100%; 
+    max-height: 350px; /* Reduzi de 500px para 350px */
+    background: #f8f9fa; 
+    display: flex; 
+    justify-content: center; 
+    align-items: center; 
+    overflow: hidden; 
+}
+
+/* Imagem se ajustando ao container menor */
+.midia-post img { 
+    width: 100%; 
+    height: 100%; /* Força ocupar a altura do pai */
+    object-fit: cover; /* Corta as bordas para preencher sem esticar */
+    /* Dica: Use 'contain' se quiser ver a foto inteira (com bordas laterais) */
+}
     </style>
 </head>
 <body>
@@ -140,379 +200,463 @@
             <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
-        <div class="botoes-direita" id="header-user-area">
-            </div>
-    </header>
+        <div class="botoes-direita" id="header-user-area"></div>
+    </header>   
 
     <main class="perfil-main">
-        
         <section class="perfil-header-card">
             <div class="capa-perfil">
                 <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
             </div>
             <div class="dados-perfil">
                 <div class="avatar-container">
-                    <img src="https://placehold.co/150" alt="Perfil" id="fotoPerfilDisplay">
+                    <img src="" alt="Perfil" id="fotoPerfilDisplay">
+                    <div class="status-online" id="statusOnlineIndicator"></div>
                 </div>
-                
                 <div class="info-texto">
-                    <div id="container-identidade" class="nome-destaque-row">
-                        <h1 id="handleDisplay" class="handle-principal">Carregando...</h1>
-                        <span id="nomeDisplay" class="nome-secundario">...</span>
+                    <div class="nome-row">
+                        <h1 id="nomePerfilDisplay">...</h1>
                     </div>
-                    
                     <div class="social-stats">
-                        <div class="stat-social"><strong>0</strong><span>Seguidores</span></div>
-                        <div class="stat-social"><strong>0</strong><span>Seguindo</span></div>
-                        <div class="stat-social"><strong>0</strong><span>Avaliações</span></div>
+                        <div class="stat-social"><strong id="stat-seguidores">0</strong><span>Seguidores</span></div>
+                        <div class="stat-social"><strong id="stat-seguindo">0</strong><span>Seguindo</span></div>
+                        <div class="stat-social"><strong id="stat-avaliacoes-count">0</strong><span>Avaliações</span></div>
                     </div>
-
-                    <p class="bio" id="bioPerfilDisplay">Adicione uma biografia...</p>
-                    
+                    <p class="bio" id="bioPerfilDisplay">...</p>
                     <div class="meta-dados">
-                        <span id="locPerfilDisplay"><i class='bx bx-map'></i> Brasil</span>
-                        <span id="membroDesdeDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
+                        <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
+                        <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
                     </div>
                 </div>
-
                 <div class="acoes-perfil">
-                    <a href="tornar-profissional.html" class="btn-upgrade-top">
-                        <i class='bx bxs-briefcase'></i> Virar Profissional
-                    </a>
-
-                    <button class="btn-padrao" onclick="abrirModalEditar()">
-                        <i class='bx bx-pencil'></i> Editar Perfil
-                    </button>
+                    <div class="toggle-disponivel">
+                        <span>Disponível</span>
+                        <label class="switch"><input type="checkbox" id="checkDisponivel"><span class="slider round"></span></label>
+                    </div>
+                    <button class="btn-solid" onclick="abrirModalEditar()"><i class='bx bx-pencil'></i> Editar Perfil</button>
                 </div>
             </div>
-
             <div class="area-destaques-container">
-                <div class="scroll-destaques">
-                    <div class="item-destaque">
-                        <div class="circulo-destaque add"><i class='bx bx-plus'></i></div>
-                        <span style="font-size:0.8rem; color:#666;">Novo</span>
-                    </div>
+                <div class="scroll-destaques" id="lista-destaques">
+                    <div class="item-destaque"><div class="circulo-destaque add"><i class='bx bx-plus'></i></div><span>Novo</span></div>
                 </div>
             </div>
         </section>
 
         <div class="tabs-container">
-            <button class="tab-btn active" onclick="abrirTab(event, 'tab-atividades')">Minhas Atividades</button>
-            <button class="tab-btn" onclick="abrirTab(event, 'tab-favoritos')">Favoritos</button>
-            <button class="tab-btn" onclick="abrirTab(event, 'tab-midia')">Minhas Publicações</button>
+            <button class="tab-btn" onclick="abrirTab(event, 'tab-anuncios')">Gerenciar Anúncios</button>
+            <button class="tab-btn active" onclick="abrirTab(event, 'tab-feed')">Criar Publicação</button>
+            <button class="tab-btn" onclick="abrirTab(event, 'tab-portfolio')">Portfólio</button>
+            <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
         </div>
 
-        <div id="tab-atividades" class="tab-content active">
-            <div style="text-align:center; padding:50px; color:#999; border:1px dashed #ddd; border-radius:8px; margin-top:20px;">
-                <i class='bx bx-file-blank' style="font-size:3rem;"></i>
-                <p>Nenhuma atividade recente.</p>
+        <div id="tab-anuncios" class="tab-content">
+            <div class="painel-stats-geral">
+                <div class="card-kpi"><span>Visualizações Totais</span><h3 id="kpi-views">0</h3></div>
+                <div class="card-kpi"><span>Cliques no Perfil</span><h3 id="kpi-cliques">0</h3></div>
+                <div class="card-kpi"><h3 id="kpi-ctr">0%</h3><small class="text-secondary">-</small></div>
             </div>
-        </div>
-
-        <div id="tab-favoritos" class="tab-content">
-            <div style="text-align:center; padding:50px; color:#999; border:1px dashed #ddd; border-radius:8px; margin-top:20px;">
-                <i class='bx bx-heart' style="font-size:3rem;"></i>
-                <p>Você ainda não tem favoritos.</p>
-                <a href="explorar.html" style="color:var(--cor0); font-weight:bold;">Explorar</a>
+            <div class="charts-grid">
+                <div class="chart-card"><h4>Desempenho</h4><div class="canvas-container"><canvas id="graficoDesempenho"></canvas></div></div>
+                <div class="chart-card"><h4>Origem</h4><div class="canvas-container"><canvas id="graficoOrigem"></canvas></div></div>
             </div>
+            <h3 class="titulo-sessao">Meus Anúncios Ativos</h3>
+            <div id="lista-meus-anuncios"></div>
         </div>
 
-        <div id="tab-midia" class="tab-content">
-            <div style="background: white; padding: 20px; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; display: flex; gap: 15px;">
-                <img src="" id="avatarPostMini" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; background:#eee;">
-                <div style="flex: 1;">
-                    <textarea placeholder="No que você está pensando?" style="width: 100%; border: none; resize: none; outline: none; font-family: inherit; font-size: 1rem;"></textarea>
-                    <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
-                        <button style="background:var(--cor0); color:white; border:none; padding: 5px 20px; border-radius: 20px; cursor:pointer;">Publicar</button>
+        <div id="tab-feed" class="tab-content active">
+            <div class="box-criar-post">
+                <div class="topo-criar">
+                    <img src="" id="avatar-criar-post" class="avatar-mini">
+                    <textarea id="textoPost" placeholder="O que você realizou hoje? Compartilhe com seus clientes..."></textarea>
+                </div>
+                
+                <div id="previewPostArea" class="preview-area" style="display:none; padding-left: 60px; margin-bottom: 10px;">
+                    <img id="imgPreviewPost" class="preview-img-post">
+                    <div class="btn-remove-preview" onclick="removerImagemPost()">×</div>
+                </div>
+
+                <div class="bottom-criar">
+                    <div class="opcoes-midia">
+                        <button class="btn-midia foto" onclick="document.getElementById('file-post-upload').click()">
+                            <i class='bx bx-image'></i> Foto
+                        </button>
+                        <input type="file" id="file-post-upload" hidden accept="image/*" onchange="previewImagemPost(this)">
+                        <input type="hidden" id="base64PostImage">
+                        
+                        <button class="btn-midia video"><i class='bx bx-video'></i> Vídeo</button>
                     </div>
+                    <button class="btn-publicar" onclick="publicarPost(event)">Publicar</button>
+                </div>
+            </div>
+            
+            <h3 class="titulo-sessao" style="margin-top:30px;">Suas Publicações Recentes</h3>
+            
+            <div id="container-feed-posts">
+                <div style="text-align:center; padding:30px; color:#999;">
+                    <i class='bx bx-loader-alt bx-spin'></i> Carregando feed...
                 </div>
             </div>
         </div>
 
-        <section class="upgrade-card">
-            <div class="upgrade-content">
-                <h2>Você é um profissional?</h2>
-                <p>Anuncie seus serviços e alcance mais clientes.</p>
-                <a href="tornar-profissional.html" class="btn-upgrade-card">Quero ser um Prestador</a>
+        <div id="tab-portfolio" class="tab-content">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <h3 class="titulo-sessao" style="margin:0;" id="titulo-portfolio">Meus Projetos (0)</h3>
+                <button class="btn-solid" style="padding: 8px 20px; font-size:0.85rem;"><i class='bx bx-plus'></i> Adicionar Projeto</button>
             </div>
-            <i class='bx bxs-briefcase upgrade-icon'></i>
-        </section>
-
+            <div class="portfolio-grid" id="container-portfolio"></div>
+        </div>
+        
+        <div id="tab-avaliacoes" class="tab-content">
+            <h3 class="titulo-sessao">Resumo das Avaliações</h3>
+            <div class="avaliacao-container">
+                <div class="avaliacao-header">
+                    <div class="criterios-badge">Critérios</div>
+                    <div class="notas-header"><span>Ótimo</span><span>Bom</span><span>Regular</span><span>Ruim</span><span>Péssimo</span></div>
+                </div>
+                <div id="container-lista-criterios"></div>
+                <div id="box-detalhes-criterio">
+                    <h4 id="titulo-detalhe"><i class='bx bx-message-detail'></i> Comentários Selecionados</h4>
+                    <div id="lista-comentarios-dinamica"></div>
+                </div>
+                <div class="galeria-posts" id="container-comentarios-clientes"></div>
+            </div>
+        </div>
     </main>
 
     <div id="modalEditar" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header">
-                <h3>Editar Meus Dados</h3>
-                <button onclick="fecharModalEditar()" class="btn-close-modal">×</button>
-            </div>
+            <div class="modal-header"><h3>Editar Perfil</h3><button onclick="fecharModalEditar()" class="btn-close-modal">×</button></div>
             <div class="modal-body">
-                
                 <div class="form-group">
                     <label>Nome de Usuário (@)</label>
                     <input type="text" id="inputUserHandle" class="input-modal" placeholder="@usuario">
                     <small id="msgTrocaUser" style="color:#e74c3c; font-size:0.8rem; display:none; margin-top:5px; font-weight:600;"></small>
                 </div>
-
-                <div class="form-group">
-                    <label>Nome Completo</label>
-                    <input type="text" id="inputNome" class="input-modal">
-                </div>
-                <div class="form-group">
-                    <label>Biografia</label>
-                    <textarea id="inputBio" class="input-modal" rows="3"></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Localização</label>
-                    <input type="text" id="inputLoc" class="input-modal">
-                </div>
+                <div class="form-group"><label>Nome de Exibição</label><input type="text" id="inputNome" class="input-modal"></div>
+                <div class="form-group"><label>Biografia</label><textarea id="inputBio" class="input-modal" rows="3"></textarea></div>
+                <div class="form-group"><label>Localização (Cidade/UF)</label><input type="text" id="inputLoc" class="input-modal"></div>
                 <div class="form-group">
                     <label>Foto de Perfil</label>
                     <div class="custom-file-wrapper">
-                        <label for="inputFotoFile" class="custom-file-label">
-                            <i class='bx bx-camera'></i> Trocar Foto
-                        </label>
+                        <label for="inputFotoFile" class="custom-file-label"><i class='bx bx-camera'></i> Trocar Foto</label>
                         <span id="fotoFileName" class="file-name">Nenhuma selecionada</span>
                         <input type="file" id="inputFotoFile" accept="image/*" style="display:none;">
                         <input type="hidden" id="inputFotoBase64">
                     </div>
                 </div>
             </div>
-            <div class="modal-footer">
-                <button onclick="fecharModalEditar()" class="btn-cancel">Cancelar</button>
-                <button onclick="salvarPerfilUsuario()" class="btn-save">Salvar Alterações</button>
-            </div>
+            <div class="modal-footer"><button onclick="fecharModalEditar()" class="btn-cancel">Cancelar</button><button onclick="salvarPerfil()" class="btn-save">Salvar Alterações</button></div>
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
 
-        // CONFIGURAÇÃO DO FIREBASE
-        const firebaseConfig = {
-            apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-            authDomain: "doke-site.firebaseapp.com",
-            projectId: "doke-site",
-            storageBucket: "doke-site.firebasestorage.app",
-            messagingSenderId: "997098339190",
-            appId: "1:997098339190:web:a865b696278be21f069857"
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
+    authDomain: "doke-site.firebaseapp.com",
+    projectId: "doke-site",
+    storageBucket: "doke-site.firebasestorage.app",
+    messagingSenderId: "997098339190",
+    appId: "1:997098339190:web:a865b696278be21f069857"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const auth = getAuth(app); 
+window.db = db;
+window.auth = auth;
+
+let userHandleOriginal = ""; 
+
+// ==========================================
+// FUNÇÕES DE FEED (PUBLICAR E CARREGAR)
+// ==========================================
+
+window.previewImagemPost = function(input) {
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('base64PostImage').value = e.target.result;
+            document.getElementById('imgPreviewPost').src = e.target.result;
+            document.getElementById('previewPostArea').style.display = 'block';
         };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+window.removerImagemPost = function() {
+    document.getElementById('base64PostImage').value = "";
+    document.getElementById('previewPostArea').style.display = 'none';
+    document.getElementById('file-post-upload').value = "";
+}
+
+// 1. PUBLICAR NO FIREBASE
+window.publicarPost = async function(event) {
+    const btn = event.target;
+    const texto = document.getElementById('textoPost').value;
+    const imagem = document.getElementById('base64PostImage').value;
+    const user = auth.currentUser;
+
+    if (!user) { alert("Faça login para publicar."); return; }
+    if (!texto && !imagem) { alert("Escreva algo ou adicione uma foto."); return; }
+
+    btn.innerText = "Publicando...";
+    btn.disabled = true;
+
+    try {
+        // Pega dados atuais do usuário para salvar no post
+        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
         
-        let userHandleOriginal = ""; 
-
-        // Função separada para preencher a tela, facilita o reuso
-        function preencherDadosTela(dados) {
-            // Guarda para comparar depois
-            userHandleOriginal = dados.user || "@usuario";
-
-            // Header e Cards
-            document.getElementById('handleDisplay').innerHTML = `${dados.user || "@usuario"} <i class='bx bxs-check-circle' style="font-size:1.1rem; color:var(--cor0);"></i>`;
-            document.getElementById('nomeDisplay').innerText = dados.nome || "Usuário";
-            document.getElementById('bioPerfilDisplay').innerText = dados.bio || "Olá! Estou usando o Doke.";
-            document.getElementById('membroDesdeDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${dados.membroDesde || "2024"}`;
-            document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${dados.local || "Brasil"}`;
-            
-            const foto = dados.foto || "https://placehold.co/150";
-            document.getElementById('fotoPerfilDisplay').src = foto;
-            const miniAvatar = document.getElementById('avatarPostMini');
-            if(miniAvatar) miniAvatar.src = foto;
-
-            // --- AQUI ESTÁ A MÁGICA DO MENU DROPDOWN ---
-            renderizarMenuDropdown(foto);
-
-            // Modal Inputs
-            document.getElementById('inputNome').value = dados.nome || "";
-            document.getElementById('inputBio').value = dados.bio || "";
-            document.getElementById('inputLoc').value = dados.local || "";
-            document.getElementById('inputFotoBase64').value = dados.foto || "";
-            
-            // Lógica do Usuário (@) e os 15 Dias
-            const handleInput = document.getElementById('inputUserHandle');
-            const msgUser = document.getElementById('msgTrocaUser');
-            handleInput.value = dados.user || "@usuario";
-
-            if (dados.ultimoTrocaUser) {
-                const ultimaTroca = new Date(dados.ultimoTrocaUser);
-                const hoje = new Date();
-                const diffTempo = hoje - ultimaTroca;
-                const diffDias = diffTempo / (1000 * 60 * 60 * 24); 
-
-                if (diffDias < 15) {
-                    const diasRestantes = Math.ceil(15 - diffDias);
-                    handleInput.disabled = true;
-                    handleInput.title = "Aguarde o prazo para trocar novamente";
-                    msgUser.style.display = "block";
-                    msgUser.innerHTML = `<i class='bx bx-time-five'></i> Você só poderá alterar o usuário novamente em <b>${diasRestantes} dias</b>.`;
-                } else {
-                    handleInput.disabled = false;
-                    msgUser.style.display = "none";
-                }
-            } else {
-                handleInput.disabled = false;
-                msgUser.style.display = "none";
-            }
-        }
-
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // Tenta pegar do banco para garantir que está atualizado
-                try {
-                    const docRef = doc(db, "usuarios", user.uid);
-                    const docSnap = await getDoc(docRef);
-
-                    if (docSnap.exists()) {
-                        const dados = docSnap.data();
-                        
-                        // Se for profissional, redireciona
-                        if (dados.isProfissional === true) {
-                            window.location.href = "meuperfil.html";
-                            return;
-                        }
-
-                        // Atualiza o localStorage com o que veio do banco (Sincronização Importante)
-                        localStorage.setItem('doke_usuario_perfil', JSON.stringify(dados));
-                        
-                        // Preenche a tela
-                        preencherDadosTela(dados);
-                    }
-                } catch (e) {
-                    console.error("Erro ao carregar perfil:", e);
-                    // Se falhar a rede, tenta usar o localStorage
-                    const dadosLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-                    if(dadosLocal) preencherDadosTela(dadosLocal);
-                }
-            } else {
-                window.location.href = "login.html";
-            }
+        await addDoc(collection(db, "posts"), {
+            uid: user.uid,
+            autorNome: perfilLocal.nome || "Usuário",
+            autorFoto: perfilLocal.foto || "https://placehold.co/150",
+            autorUser: perfilLocal.user || "@usuario",
+            texto: texto,
+            imagem: imagem,
+            data: new Date().toISOString(),
+            likes: 0
         });
 
-        window.abrirTab = function(evt, tabName) {
-            document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
-            document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
-            document.getElementById(tabName).style.display = "block";
-            evt.currentTarget.classList.add("active");
-        }
+        // Limpa o form
+        document.getElementById('textoPost').value = "";
+        window.removerImagemPost();
+        btn.innerText = "Publicar";
+        btn.disabled = false;
+        
+        // Feed atualiza automaticamente pelo onSnapshot
 
-        window.abrirModalEditar = () => document.getElementById('modalEditar').style.display = 'flex';
-        window.fecharModalEditar = () => document.getElementById('modalEditar').style.display = 'none';
+    } catch (e) {
+        console.error("Erro ao publicar:", e);
+        alert("Erro ao publicar post.");
+        btn.innerText = "Publicar";
+        btn.disabled = false;
+    }
+}
 
-        window.salvarPerfilUsuario = async function() {
-            const user = auth.currentUser;
-            if(!user) {
-                alert("Você precisa estar logado.");
-                return;
-            }
+// Substitua a função window.carregarPosts inteira por esta:
+window.carregarPosts = function(uid) {
+    const container = document.getElementById('container-feed-posts');
+    if (!container) return;
 
-            const btnSave = document.querySelector('.btn-save');
-            if(btnSave) { btnSave.innerText = "Salvando..."; btnSave.disabled = true; }
-            
-            // Pega dados atuais para manter o que não mudou
-            const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    const q = query(collection(db, "posts"), where("uid", "==", uid), orderBy("data", "desc"));
 
-            const fotoFinal = document.getElementById('inputFotoBase64').value;
-            const novoHandle = document.getElementById('inputUserHandle').value.trim();
-            const inputHandle = document.getElementById('inputUserHandle');
-
-            const novosDados = {
-                ...perfilAntigo, // Mantém dados antigos
-                nome: document.getElementById('inputNome').value,
-                bio: document.getElementById('inputBio').value,
-                local: document.getElementById('inputLoc').value,
-                foto: fotoFinal
-            };
-
-            // VERIFICA SE O USUÁRIO MUDOU O HANDLE E SE PODIA
-            if (inputHandle && !inputHandle.disabled && novoHandle !== userHandleOriginal) {
-                let handleFormatado = novoHandle.toLowerCase();
-                if (!handleFormatado.startsWith('@')) {
-                    handleFormatado = '@' + handleFormatado;
-                }
-                novosDados.user = handleFormatado;
-                novosDados.ultimoTrocaUser = new Date().toISOString();
-            }
-
-            try {
-                // 1. SALVA NO BANCO (IMPORTANTE: Await garante que salvou)
-                await updateDoc(doc(db, "usuarios", user.uid), novosDados);
-                
-                // 2. ATUALIZA LOCALSTORAGE
-                localStorage.setItem('doke_usuario_perfil', JSON.stringify(novosDados));
-
-                alert("Perfil salvo com sucesso!");
-                location.reload();
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao salvar no banco de dados.");
-                if(btnSave) { btnSave.innerText = "Salvar Alterações"; btnSave.disabled = false; }
-            }
-        }
-
-        window.fazerLogout = function() {
-            signOut(auth).then(() => {
-                localStorage.removeItem('usuarioLogado');
-                window.location.href = 'index.html';
-            });
-        }
-
-        const fileInput = document.getElementById('inputFotoFile');
-        if(fileInput) {
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if(file) {
-                    document.getElementById('fotoFileName').innerText = file.name;
-                    const reader = new FileReader();
-                    reader.onload = function(evt) { 
-                        document.getElementById('inputFotoBase64').value = evt.target.result; 
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
-        }
-
-        // =======================================================
-        // FUNÇÕES DO MENU DROPDOWN (Adicionadas Aqui)
-        // =======================================================
-        function renderizarMenuDropdown(fotoUrl) {
-            const container = document.getElementById('header-user-area');
-            if (!container) return;
-
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = "";
+        
+        if (snapshot.empty) {
             container.innerHTML = `
-                <div class="profile-container">
-                    <img src="${fotoUrl}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil">
-                    <div id="dropdownPerfil" class="dropdown-profile">
-                        <a href="#" class="dropdown-item" style="pointer-events:none; color:#aaa; font-size:0.8rem;"><i class='bx bx-user'></i> Logado como Usuário</a>
-                        <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user'></i> Ver Perfil</a>
-                        <a href="anunciar.html" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
-                        <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+                <div class="empty-state" style="padding:40px 20px; text-align:center;">
+                    <i class='bx bx-camera' style="font-size: 40px; color: #ccc;"></i>
+                    <h4 style="margin:10px 0 5px 0; color:#555;">Nenhuma publicação</h4>
+                    <p style="color:#999; font-size:0.9rem;">Seus posts aparecerão aqui.</p>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const post = doc.data();
+            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+            const imgHtml = post.imagem ? `<div class="midia-post"><img src="${post.imagem}"></div>` : '';
+
+            // AQUI ESTÁ A MUDANÇA NO NOME (autorUser)
+            const html = `
+                <div class="post-feed-card">
+                    <div class="header-post">
+                        <div class="user-post">
+                            <img src="${post.autorFoto}" alt="Avatar">
+                            <div>
+                                <h4>${post.autorUser || post.autorNome}</h4> 
+                                <span>${dataPost}</span>
+                            </div>
+                        </div>
+                        <i class='bx bx-dots-horizontal-rounded' style="cursor:pointer; color:#999;"></i>
+                    </div>
+                    <p class="legenda-post">${post.texto}</p>
+                    ${imgHtml}
+                    <div class="stats-post">
+                        <div class="action-post"><i class='bx bx-heart'></i> ${post.likes || 0} Curtidas</div>
+                        <div class="action-post"><i class='bx bx-comment'></i> Comentar</div>
                     </div>
                 </div>
             `;
-        }
-
-        // Torna a função acessível globalmente (para o onclick funcionar)
-        window.toggleDropdown = function(event) {
-            if(event) event.stopPropagation();
-            const drop = document.getElementById('dropdownPerfil');
-            if(drop) drop.classList.toggle('show');
-        }
-
-        // Fechar ao clicar fora
-        window.addEventListener('click', function(e) {
-            if (!e.target.matches('.profile-img-btn')) {
-                const drops = document.getElementsByClassName("dropdown-profile");
-                for (let i = 0; i < drops.length; i++) {
-                    if (drops[i].classList.contains('show')) {
-                        drops[i].classList.remove('show');
-                    }
-                }
-            }
+            container.innerHTML += html;
         });
-    </script>
+    });
+}
+
+// --- FUNÇÕES DE PERFIL EXISTENTES (Mantidas) ---
+window.carregarPerfil = function() {
+    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
+    
+    userHandleOriginal = usuario.user || "@usuario";
+
+    if(document.getElementById('nomePerfilDisplay')) {
+        document.getElementById('nomePerfilDisplay').innerHTML = `
+            <div style="display:flex; flex-direction:column; align-items:flex-start;">
+                <span style="font-size: 1.6rem; color: var(--cor2); font-weight: 800; display:flex; align-items:center; gap:5px;">
+                    ${usuario.user || '@usuario'} 
+                    <i class='bx bxs-badge-check' style="color:#2ecc71; font-size: 1.2rem;"></i>
+                </span>
+                <span style="font-size: 1.0rem; color: #666; font-weight: 500; margin-top: -2px;">${usuario.nome}</span>
+            </div>`;
+    }
+    if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
+    if(document.getElementById('locPerfilDisplay')) document.getElementById('locPerfilDisplay').innerHTML = "<i class='bx bx-map'></i> " + usuario.local;
+    if(document.getElementById('fotoPerfilDisplay')) document.getElementById('fotoPerfilDisplay').src = usuario.foto;
+    if(document.getElementById('avatar-criar-post')) document.getElementById('avatar-criar-post').src = usuario.foto; // Atualiza avatar do post
+    if(document.getElementById('dataMembroDisplay')) document.getElementById('dataMembroDisplay').innerHTML = "<i class='bx bx-calendar'></i> Membro desde " + (usuario.membroDesde || "2024");
+
+    renderizarMenuDropdown(usuario.foto || "https://placehold.co/150");
+
+    if(document.getElementById('inputNome')) {
+        document.getElementById('inputNome').value = usuario.nome;
+        document.getElementById('inputBio').value = usuario.bio;
+        document.getElementById('inputLoc').value = usuario.local;
+        document.getElementById('inputFotoBase64').value = usuario.foto;
+        const handleInput = document.getElementById('inputUserHandle');
+        if (handleInput) handleInput.value = usuario.user || "@usuario";
+    }
+}
+
+window.salvarPerfil = async function() {
+    const user = auth.currentUser;
+    if(!user) { alert("Você precisa estar logado."); return; }
+    const btnSave = document.querySelector('.btn-save');
+    if(btnSave) { btnSave.innerText = "Salvando..."; btnSave.disabled = true; }
+    const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    const novoHandle = document.getElementById('inputUserHandle').value.trim();
+    const novoPerfil = {
+        ...perfilAntigo,
+        nome: document.getElementById('inputNome').value,
+        bio: document.getElementById('inputBio').value,
+        local: document.getElementById('inputLoc').value,
+        foto: document.getElementById('inputFotoBase64').value
+    };
+    if (novoHandle !== userHandleOriginal) {
+        let handleFormatado = novoHandle.toLowerCase();
+        if (!handleFormatado.startsWith('@')) handleFormatado = '@' + handleFormatado;
+        novoPerfil.user = handleFormatado;
+        novoPerfil.ultimoTrocaUser = new Date().toISOString();
+    }
+    try {
+        await updateDoc(doc(db, "usuarios", user.uid), novoPerfil);
+        localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
+        carregarPerfil();
+        fecharModalEditar();
+        alert("Perfil atualizado!");
+    } catch (e) {
+        console.error("Erro:", e);
+        alert("Erro ao salvar.");
+    } finally {
+        if(btnSave) { btnSave.innerText = "Salvar Alterações"; btnSave.disabled = false; }
+    }
+}
+
+window.renderizarAnuncios = async function() {
+    const container = document.getElementById('lista-meus-anuncios');
+    if(!container) return;
+    container.innerHTML = '<div style="padding:40px; text-align:center; color:#666;"><i class="bx bx-loader-alt bx-spin"></i> Carregando...</div>'; 
+    try {
+        const usuarioLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+        const meuUserHandle = usuarioLocal ? usuarioLocal.user : null;
+        if (!meuUserHandle) { container.innerHTML = '<p>Erro: Usuário não identificado.</p>'; return; }
+        const q = query(collection(db, "anuncios"), where("userHandle", "==", meuUserHandle));
+        const querySnapshot = await getDocs(q);
+        container.innerHTML = ''; 
+        if (querySnapshot.empty) {
+            container.innerHTML = `<div class="empty-state"><i class='bx bx-ghost' style="font-size: 40px;"></i><br>Você ainda não tem anúncios ativos.<br><a href="anunciar.html" style="color:var(--cor0); font-weight:bold;">Criar um agora</a></div>`;
+            return;
+        }
+        querySnapshot.forEach((docSnap) => {
+            const anuncio = docSnap.data();
+            const views = anuncio.views || 0;
+            let imgCapa = (anuncio.fotos && anuncio.fotos.length > 0) ? anuncio.fotos[0] : (anuncio.img || 'https://placehold.co/100');
+            const html = `
+                <div class="anuncio-stats-card">
+                    <img src="${imgCapa}" class="img-anuncio-mini">
+                    <div class="info-anuncio-stats">
+                        <div class="topo-anuncio"><h4 style="margin:0; font-size:1rem;">${anuncio.titulo}</h4><span class="badge-status ativo">ATIVO</span></div>
+                        <div class="grid-metricas-anuncio"><div class="metrica"><i class='bx bx-show'></i> <strong>${views}</strong></div><div class="metrica"><i class='bx bx-dollar-circle'></i> <strong>${anuncio.preco || 'A combinar'}</strong></div></div>
+                    </div>
+                    <div class="acoes-anuncio-stats"><button class="btn-icon-stats"><i class='bx bx-edit'></i></button><button class="btn-icon-stats" onclick="deletarAnuncio('${docSnap.id}')" style="color:#e74c3c;"><i class='bx bx-trash'></i></button></div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    } catch (error) { console.error(error); container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar anúncios.</p>`; }
+}
+
+window.deletarAnuncio = async function(id) {
+    if(confirm("Excluir este anúncio?")) {
+        try { await deleteDoc(doc(db, "anuncios", id)); alert("Excluído!"); renderizarAnuncios(); } 
+        catch (e) { alert("Erro ao excluir."); }
+    }
+}
+
+// UI HELPERS
+window.abrirTab = function(evt, tabName) {
+    document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
+    document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
+    document.getElementById(tabName).style.display = "block";
+    evt.currentTarget.classList.add("active");
+}
+window.abrirModalEditar = function() { document.getElementById('modalEditar').style.display = 'flex'; }
+window.fecharModalEditar = function() { document.getElementById('modalEditar').style.display = 'none'; }
+
+const fileInput = document.getElementById('inputFotoFile');
+if(fileInput) {
+    fileInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if(file) {
+            const reader = new FileReader();
+            reader.onload = function(evt) { document.getElementById('inputFotoBase64').value = evt.target.result; };
+            reader.readAsDataURL(file);
+        }
+    });
+}
+
+function renderizarMenuDropdown(fotoUrl) {
+    const container = document.getElementById('header-user-area');
+    if (!container) return;
+    container.innerHTML = `
+        <div class="profile-container">
+            <img src="${fotoUrl}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil">
+            <div id="dropdownPerfil" class="dropdown-profile">
+                <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user'></i> Ver Perfil</a>
+                <a href="anunciar.html" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
+                <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+            </div>
+        </div>`;
+}
+window.toggleDropdown = function(event) { event.stopPropagation(); document.getElementById('dropdownPerfil').classList.toggle('show'); }
+window.addEventListener('click', function(e) { if (!e.target.matches('.profile-img-btn')) { const drops = document.getElementsByClassName("dropdown-profile"); for (let i = 0; i < drops.length; i++) if (drops[i].classList.contains('show')) drops[i].classList.remove('show'); } });
+window.fazerLogout = function() { signOut(auth).then(() => { localStorage.removeItem('usuarioLogado'); window.location.href = 'index.html'; }); }
+
+onAuthStateChanged(auth, async (user) => {
+    if (user) {
+        try {
+            const docRef = doc(db, "usuarios", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(docSnap.data()));
+                carregarPerfil();
+                renderizarAnuncios();
+                carregarPosts(user.uid); // CARREGA OS POSTS
+            }
+        } catch (e) { carregarPerfil(); }
+    } else {
+        window.location.href = "login.html";
+    }
+});
+</script>
 </body>
 </html>

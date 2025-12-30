@@ -22,15 +22,17 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app); 
 
-// Garante acesso global
+// Garante acesso global (para console ou scripts inline)
 window.db = db;
 window.auth = auth;
 window.collection = collection;
 window.query = query;
 window.getDocs = getDocs;
+window.orderBy = orderBy; // <--- ADICIONE ISSO (Obrigatório para o feed)
+window.where = where;     // <--- ADICIONE ISSO (Bom para garantir filtros futuros)
 
 // ============================================================
-// 2. FUNÇÃO DE PUBLICAR ANÚNCIO
+// 2. FUNÇÃO DE PUBLICAR ANÚNCIO (FINAL: LÊ CAMPOS DA TELA)
 // ============================================================
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
@@ -49,7 +51,7 @@ window.publicarAnuncio = async function(event) {
         const descricao = document.getElementById('descricao').value;
         const categoriasString = document.getElementById('categorias-validacao').value; 
         const categoriaFinal = categoriasString ? categoriasString.split(',')[0] : "Geral";
-
+        
         const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "A combinar";
         let precoFinal = tipoPreco;
         if (tipoPreco === 'Preço Fixo') {
@@ -57,8 +59,31 @@ window.publicarAnuncio = async function(event) {
             if (valorInput) precoFinal = valorInput;
         }
 
-        const cep = document.getElementById('cep').value || "Local não informado";
+        const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
         const telefone = document.getElementById('telefone').value || "";
+
+        // PEGA OS DADOS DOS CAMPOS VISUAIS (Se existirem)
+        // Se o usuário não preencheu e os campos não existem, usa padrão
+        const cidadeInput = document.getElementById('cidade');
+        const ufInput = document.getElementById('uf');
+        const bairroInput = document.getElementById('bairro');
+
+        let cidadeFinal = cidadeInput ? cidadeInput.value : "Indefinido";
+        let ufFinal = ufInput ? ufInput.value : "BR";
+        let bairroFinal = bairroInput ? bairroInput.value : "Geral";
+
+        // Se os campos estiverem vazios (caso o usuário não tenha clicado fora do CEP), tenta buscar agora
+        if ((!cidadeFinal || cidadeFinal === "Indefinido") && cep.length === 8) {
+            try {
+                const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+                const data = await resp.json();
+                if(!data.erro) {
+                    cidadeFinal = data.localidade;
+                    ufFinal = data.uf;
+                    bairroFinal = data.bairro || "Centro";
+                }
+            } catch(e) { console.log("Erro fallback CEP"); }
+        }
 
         if(!titulo || !descricao) {
             throw new Error("Preencha o título e a descrição.");
@@ -75,11 +100,7 @@ window.publicarAnuncio = async function(event) {
         const nomeAutor = perfilLocal.nome || "Você";
         const fotoAutor = perfilLocal.foto || "https://i.pravatar.cc/150?img=12";
         
-        // Garante o @usuario
-        let userHandle = perfilLocal.user;
-        if (!userHandle) {
-            userHandle = "@" + nomeAutor.split(' ')[0].toLowerCase();
-        }
+        let userHandle = perfilLocal.user || ("@" + nomeAutor.split(' ')[0].toLowerCase());
         if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
 
         const novoAnuncio = {
@@ -89,13 +110,19 @@ window.publicarAnuncio = async function(event) {
             categorias: categoriasString,
             preco: precoFinal,
             cep: cep,
+            
+            // SALVA OS DADOS CORRETOS PARA O FILTRO
+            uf: ufFinal,
+            cidade: cidadeFinal,
+            bairro: bairroFinal,
+            
             whatsapp: telefone,
             fotos: fotos,
             img: fotos[0],
             dataCriacao: new Date().toISOString(),
             nomeAutor: nomeAutor,
             fotoAutor: fotoAutor,
-            userHandle: userHandle, 
+            userHandle: userHandle,
             views: 0,
             cliques: 0,
             mediaAvaliacao: 0,
@@ -104,7 +131,7 @@ window.publicarAnuncio = async function(event) {
 
         await addDoc(collection(window.db, "anuncios"), novoAnuncio);
         
-        alert("Anúncio publicado com sucesso!");
+        alert(`Anúncio publicado com sucesso em ${cidadeFinal}-${ufFinal}!`);
         window.location.href = "index.html";
 
     } catch (erro) {
@@ -165,11 +192,11 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             const fotoAutor = anuncio.fotoAutor || "https://i.pravatar.cc/150";
             const descricao = anuncio.descricao || "";
             
-            // --- CORREÇÃO NOME (@USUARIO) ---
+            // --- NOME (@USUARIO) ---
             let nomeParaExibir = anuncio.userHandle || "@usuario"; 
             if(!nomeParaExibir.startsWith('@')) nomeParaExibir = '@' + nomeParaExibir;
 
-            // --- CORREÇÃO ESTRELAS (Se for 0, mostra "Novo") ---
+            // --- ESTRELAS (Se for 0, mostra "Novo") ---
             const nota = anuncio.mediaAvaliacao || 0;
             const qtdAvaliacoes = anuncio.numAvaliacoes || 0;
             
@@ -273,7 +300,7 @@ window.carregarCategorias = async function() {
                 listaCategorias.push(doc.data());
             });
         } 
-        // 2. Se banco vazio, usa lista padrão (Isso resolve a tela branca)
+        // 2. Se banco vazio, usa lista padrão (Isso resolve o problema da tela branca)
         else {
             listaCategorias = [
                 { nome: "Casa", img: "https://cdn-icons-png.flaticon.com/512/10338/10338273.png" },
@@ -331,7 +358,7 @@ window.carregarProfissionais = async function() {
 
         const job = p.bio ? (p.bio.length > 25 ? p.bio.substring(0, 25) + "..." : p.bio) : "Membro Doke";
 
-        // CORREÇÃO: Remove o "5.0" se for novo
+        // CORREÇÃO: Remove o "5.0" se for novo e usa dados reais
         let avaliacaoHTML = "";
         let numReviews = (p.stats && p.stats.avaliacoes) ? p.stats.avaliacoes : 0;
         
@@ -349,7 +376,7 @@ window.carregarProfissionais = async function() {
                 <span class="pro-name" style="color:var(--cor2);">${userHandle}</span>
                 <span class="pro-job">${job}</span>
                 ${avaliacaoHTML}
-                <button class="btn-pro-action" onclick="window.location.href='meuperfil.html'">Ver Meu Perfil</button>
+                <button class="btn-pro-action" onclick="window.location.href='meuperfil.html'">Ver Perfil</button>
             </div>
         `;
         container.innerHTML = html;
@@ -452,8 +479,51 @@ window.filtrarPorCategoria = function(categoria) {
 }
 
 // ============================================================
-// 7. UTILITÁRIOS GLOBAIS
+// 7. UTILITÁRIOS GLOBAIS (CEP CORRIGIDO)
 // ============================================================
+
+// Formata o CEP enquanto digita (12345-678)
+function formatarCepInput(e) {
+    let valor = e.target.value.replace(/\D/g, ""); 
+    if (valor.length > 5) {
+        valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
+    }
+    e.target.value = valor;
+}
+
+// Salva o CEP aceitando 8 dígitos sem traço ou 9 com traço
+window.salvarCep = function() {
+    const i = document.getElementById('inputCep');
+    if(!i) return;
+    
+    // Remove traço para validar
+    const cepLimpo = i.value.replace(/\D/g, ''); 
+
+    if(cepLimpo.length === 8) {
+        const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
+        localStorage.setItem('meu_cep_doke', cepFormatado); 
+        window.atualizarTelaCep(cepFormatado);
+        document.getElementById('boxCep').style.display = 'none';
+    } else { 
+        alert("CEP inválido! Digite 8 números."); 
+        i.focus();
+    }
+}
+
+window.atualizarTelaCep = function(cep) {
+    const s = document.getElementById('textoCepSpan');
+    const i = document.getElementById('inputCep');
+    if (s) { s.innerText = "Alterar CEP"; s.style.fontWeight = "600"; s.style.color = "var(--cor0)"; }
+    if (i) i.value = cep;
+}
+
+window.toggleCep = function(e) {
+    if(e) e.preventDefault(); 
+    const p = document.getElementById('boxCep');
+    const i = document.getElementById('inputCep');
+    if (p.style.display === 'block') { p.style.display = 'none'; } else { p.style.display = 'block'; if(i) i.focus(); }
+}
+
 window.abrirMenuMobile = function() {
     const menu = document.querySelector('.sidebar-icones');
     if (menu) menu.classList.add('menu-aberto');
@@ -470,28 +540,6 @@ window.fecharMenuMobile = function() {
 }
 window.abrirPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "block"; }
 window.fecharPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "none"; }
-
-window.toggleCep = function(e) {
-    if(e) e.preventDefault(); 
-    const p = document.getElementById('boxCep');
-    const i = document.getElementById('inputCep');
-    if (p.style.display === 'block') { p.style.display = 'none'; } else { p.style.display = 'block'; if(i) i.focus(); }
-}
-window.salvarCep = function() {
-    const i = document.getElementById('inputCep');
-    if(!i) return;
-    if(i.value.length >= 9) {
-        localStorage.setItem('meu_cep_doke', i.value); 
-        window.atualizarTelaCep(i.value);
-        document.getElementById('boxCep').style.display = 'none';
-    } else { alert("CEP incompleto!"); }
-}
-window.atualizarTelaCep = function(cep) {
-    const s = document.getElementById('textoCepSpan');
-    const i = document.getElementById('inputCep');
-    if (s) { s.innerText = "Alterar CEP"; s.style.fontWeight = "600"; s.style.color = "var(--cor0)"; }
-    if (i) i.value = cep;
-}
 
 window.toggleFiltrosExtras = function() {
     const area = document.getElementById("filtrosExtras");
@@ -611,9 +659,88 @@ window.realizarLogin = async function(e) {
 }
 
 // ============================================================
-// 9. INICIALIZAÇÃO
+// 9. FUNÇÃO PARA CARREGAR FILTROS DE LOCALIZAÇÃO (NOVO)
+// ============================================================
+window.carregarFiltrosLocalizacao = async function() {
+    const selEstado = document.getElementById('selectEstado');
+    const selCidade = document.getElementById('selectCidade');
+    const selBairro = document.getElementById('selectBairro');
+
+    if (!selEstado || !selCidade || !selBairro) return;
+
+    try {
+        // Busca todos os anúncios para saber onde tem serviço
+        const q = query(collection(window.db, "anuncios"));
+        const snapshot = await getDocs(q);
+        
+        const locaisMap = {}; // { SP: { Santos: [Gonzaga], ... } }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const uf = data.uf || "Outros";
+            const cidade = data.cidade || "Indefinido";
+            const bairro = data.bairro || "Geral";
+
+            if (!locaisMap[uf]) locaisMap[uf] = {};
+            if (!locaisMap[uf][cidade]) locaisMap[uf][cidade] = new Set();
+            
+            locaisMap[uf][cidade].add(bairro);
+        });
+
+        selEstado.innerHTML = '<option value="" disabled selected>Selecionar UF</option>';
+        Object.keys(locaisMap).sort().forEach(uf => {
+            selEstado.innerHTML += `<option value="${uf}">${uf}</option>`;
+        });
+
+        selEstado.onchange = function() {
+            const ufSel = this.value;
+            selCidade.innerHTML = '<option value="" disabled selected>Cidade</option>';
+            selBairro.innerHTML = '<option value="" disabled selected>Bairro</option>';
+            selCidade.disabled = false;
+            selBairro.disabled = true;
+
+            if (locaisMap[ufSel]) {
+                Object.keys(locaisMap[ufSel]).sort().forEach(cidade => {
+                    selCidade.innerHTML += `<option value="${cidade}">${cidade}</option>`;
+                });
+            }
+        };
+
+        selCidade.onchange = function() {
+            const ufSel = selEstado.value;
+            const cidSel = this.value;
+            selBairro.innerHTML = '<option value="" disabled selected>Bairro</option>';
+            selBairro.disabled = false;
+
+            if (locaisMap[ufSel] && locaisMap[ufSel][cidSel]) {
+                const bairros = Array.from(locaisMap[ufSel][cidSel]).sort();
+                bairros.forEach(bairro => {
+                    selBairro.innerHTML += `<option value="${bairro}">${bairro}</option>`;
+                });
+            }
+            filtrarAnunciosPorLocal(ufSel, cidSel, null);
+        };
+
+        selBairro.onchange = function() {
+            filtrarAnunciosPorLocal(selEstado.value, selCidade.value, this.value);
+        };
+
+    } catch (e) {
+        console.error("Erro ao carregar filtros de local:", e);
+    }
+}
+
+window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
+    console.log("Filtrando por:", uf, cidade, bairro);
+    // Aqui você pode implementar a lógica de recarregar o feed com os filtros
+}
+
+// ============================================================
+// 10. INICIALIZAÇÃO
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
+
+    
     
     // 1. Proteção e Header
     protegerPaginasRestritas();
@@ -622,8 +749,21 @@ document.addEventListener("DOMContentLoaded", function() {
     // 2. CARREGAMENTOS DINÂMICOS (Categorias + Destaque)
     carregarCategorias(); // AGORA TEM FALLBACK SE VAZIO
     carregarProfissionais(); // MOSTRA DADOS REAIS (@usuario e Novo)
+    carregarFiltrosLocalizacao(); // Filtros de Local
 
-    // 3. Lógica de Busca e Anúncios
+    // 3. CEP Input Logic
+    const inputCep = document.getElementById('inputCep');
+    if (inputCep) {
+        inputCep.addEventListener('input', formatarCepInput);
+        inputCep.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') window.salvarCep();
+        });
+    }
+
+    const cepSalvo = localStorage.getItem('meu_cep_doke');
+    if (cepSalvo) window.atualizarTelaCep(cepSalvo);
+
+    // 4. Lógica de Busca e Anúncios
     const params = new URLSearchParams(window.location.search);
     const termoUrl = params.get('q');
     const inputBusca = document.getElementById('inputBusca');
@@ -637,7 +777,11 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
-    // 4. Efeitos de Busca (Histórico)
+    if(document.getElementById('feed-global-container')) {
+        carregarFeedGlobal();
+    }
+
+    // 5. Efeitos de Busca (Histórico)
     const wrapper = document.getElementById('buscaWrapper');
     if(inputBusca) {
         atualizarListaHistorico();
@@ -664,7 +808,7 @@ document.addEventListener("DOMContentLoaded", function() {
         if(btnProcurarMain) btnProcurarMain.onclick = (e) => { e.preventDefault(); executarBusca(); };
     }
 
-    // 5. Cookies e Popups
+    // 6. Cookies e Popups
     const banner = document.getElementById('cookieBanner');
     const btnCookie = document.getElementById('acceptBtn');
     if (banner && btnCookie) {
@@ -681,10 +825,7 @@ document.addEventListener("DOMContentLoaded", function() {
         localStorage.setItem("popupVistoData", dataHoje);
     }
 
-    const cepSalvo = localStorage.getItem('meu_cep_doke');
-    if (cepSalvo) window.atualizarTelaCep(cepSalvo);
-
-    // 6. Efeito Typewriter
+    // 7. Efeito Typewriter
     const elementoTexto = document.getElementById('typewriter');
     if (elementoTexto) {
         const frases = ["Chefes de cozinha próximos", "Eletricistas na pituba", "Aulas de Inglês Online", "Manutenção de Ar condicionado"];
@@ -701,3 +842,149 @@ document.addEventListener("DOMContentLoaded", function() {
         typeEffect();
     }
 });
+
+// ============================================================
+// 11. FEED GLOBAL (Para Index.html)
+// ============================================================
+window.carregarFeedGlobal = async function() {
+    const container = document.getElementById('feed-global-container');
+    if (!container) return;
+
+    // Loading state
+    container.innerHTML = `
+        <div style="text-align:center; padding:40px; color:#777;">
+            <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
+            <p>Carregando atualizações da comunidade...</p>
+        </div>`;
+
+    try {
+        // Busca os últimos 20 posts de todos os usuários
+        const q = window.query(
+            window.collection(window.db, "posts"), 
+            window.orderBy("data", "desc"), 
+            // window.limit(20) // Opcional: limitar a 20 posts
+        );
+
+        const snapshot = await window.getDocs(q);
+
+        container.innerHTML = ""; // Limpa loading
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:30px; background:#fff; border-radius:12px;">
+                    <i class='bx bx-news' style="font-size:3rem; color:#ddd;"></i>
+                    <p style="color:#666;">Ainda não há publicações na comunidade.</p>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const post = doc.data();
+            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { 
+                day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' 
+            });
+            
+            // Verifica se tem imagem
+            const imgHtml = post.imagem 
+                ? `<div class="feed-img-wrapper"><img src="${post.imagem}" loading="lazy"></div>` 
+                : '';
+
+            const html = `
+                <div class="card-feed-global">
+                    <div class="feed-header">
+                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User">
+                        <div class="feed-user-info">
+                            <h4>${post.autorNome}</h4>
+                            <span>${post.autorUser || '@usuario'} • ${dataPost}</span>
+                        </div>
+                    </div>
+                    <div class="feed-body">
+                        <p>${post.texto}</p>
+                    </div>
+                    ${imgHtml}
+                    <div class="feed-footer">
+                        <div class="feed-action"><i class='bx bx-heart'></i> ${post.likes || 0}</div>
+                        <div class="feed-action"><i class='bx bx-comment'></i> Comentar</div>
+                        <div class="feed-action"><i class='bx bx-share-alt'></i> Compartilhar</div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar feed global:", e);
+        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar feed.</p>`;
+    }
+}
+
+// Adicione esta chamada no DOMContentLoaded existente no final do script.js:
+// document.addEventListener("DOMContentLoaded", function() {
+//    ... código existente ...
+//    carregarFeedGlobal(); // <--- ADICIONE ISSO
+// });
+
+// ============================================================
+// 12. FEED GLOBAL (Para Index.html)
+// ============================================================
+window.carregarFeedGlobal = async function() {
+    const container = document.getElementById('feed-global-container');
+    if (!container) return; // Se não estiver na home, não faz nada
+
+    // Limpa e mostra carregando
+    container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;"><i class='bx bx-loader-alt bx-spin'></i> Carregando feed...</div>`;
+
+    try {
+        // Busca TODOS os posts, ordenados por data (mais recentes primeiro)
+        // Nota: Removi o "where uid" para mostrar posts de todos
+        const q = window.query(
+            window.collection(window.db, "posts"), 
+            window.orderBy("data", "desc")
+        );
+
+        const snapshot = await window.getDocs(q);
+
+        container.innerHTML = ""; // Limpa o loading
+
+        if (snapshot.empty) {
+            container.innerHTML = `<div style="text-align:center; padding:20px;">Nenhuma publicação na comunidade ainda.</div>`;
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const post = doc.data();
+            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+            
+            // Lógica da Imagem (Usa a mesma classe midia-post do perfil)
+            const imgHtml = post.imagem 
+                ? `<div class="midia-post"><img src="${post.imagem}"></div>` 
+                : '';
+
+            const html = `
+                <div class="card-feed-global">
+                    <div class="header-post" style="padding:15px; display:flex; align-items:center; gap:10px;">
+                        <img src="${post.autorFoto || 'https://placehold.co/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                        <div>
+                            <h4 style="margin:0; font-size:0.95rem; color:#333;">${post.autorUser || post.autorNome}</h4>
+                            <span style="font-size:0.75rem; color:#888;">${dataPost}</span>
+                        </div>
+                    </div>
+                    
+                    <p style="padding:0 15px 15px 15px; margin:0; color:#444;">${post.texto}</p>
+                    
+                    ${imgHtml}
+
+                    <div style="padding:10px 15px; border-top:1px solid #eee; display:flex; gap:20px; color:#666;">
+                        <span><i class='bx bx-heart'></i> ${post.likes || 0}</span>
+                        <span><i class='bx bx-comment'></i> Comentar</span>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro feed global:", e);
+        container.innerHTML = `<p style="text-align:center;">Erro ao carregar feed.</p>`;
+    }
+}
