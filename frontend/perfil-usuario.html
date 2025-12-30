@@ -8,8 +8,8 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
         /* ==========================================================================
-           ESTILOS PADRONIZADOS (Idênticos ao meuperfil.html)
-           ========================================================================== */
+        ESTILOS PADRONIZADOS (Idênticos ao meuperfil.html)
+        ========================================================================== */
         .perfil-main { margin-left: 270px; margin-right: 20px; max-width: 1600px; padding-bottom: 60px; }
         
         .perfil-header-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; }
@@ -22,15 +22,10 @@
         .avatar-container { position: relative; flex-shrink: 0; }
         .avatar-container img { width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; }
 
-        /* TEXTOS (Ajustado para igualar o Profissional) */
+        /* TEXTOS */
         .info-texto { flex: 1; margin-top: 60px; min-width: 250px; }
-        
         .nome-destaque-row { display: flex; flex-direction: column; gap: 2px; }
-        
-        /* O @usuario é o destaque principal (Azul/Roxo) */
         .handle-principal { font-size: 1.6rem; color: var(--cor2); font-weight: 800; display: flex; align-items: center; gap: 8px; margin: 0; line-height: 1.2; }
-        
-        /* O Nome completo é secundário (Cinza) */
         .nome-secundario { font-size: 1.05rem; color: #666; font-weight: 500; margin: 0; }
 
         /* STATS */
@@ -44,15 +39,10 @@
 
         /* AÇÕES DIREITA */
         .acoes-perfil { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 60px; }
-        
-        /* Botão Verde Padrão (Editar) */
         .btn-padrao { background: var(--cor0); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; text-decoration: none; font-size: 0.9rem; }
         .btn-padrao:hover { background: #096356; transform: translateY(-2px); }
-
-        /* Botão Upgrade (Destaque Especial) */
         .btn-upgrade-top { background: linear-gradient(135deg, #f39c12, #e67e22); color: white; border: none; padding: 8px 20px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 10px rgba(230, 126, 34, 0.3); text-decoration: none; margin-bottom: 5px; }
         .btn-upgrade-top:hover { transform: scale(1.05); }
-
 
         /* Destaques (Stories) */
         .area-destaques-container { padding: 10px 30px 30px 30px; border-top: 1px solid #f5f5f5; margin-top: 10px; }
@@ -75,6 +65,36 @@
         .btn-upgrade-card { background: white; color: var(--cor0); padding: 12px 30px; border-radius: 50px; font-weight: 800; text-decoration: none; display: inline-block; transition: 0.3s; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
         .upgrade-icon { position: absolute; right: -20px; bottom: -30px; font-size: 10rem; opacity: 0.1; transform: rotate(-15deg); }
 
+        /* MODAL MODERNIZADO */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.3s; display: flex; flex-direction: column; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        .modal-header { background: #f9f9f9; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-header h3 { margin: 0; font-size: 1.1rem; color: #333; }
+        .btn-close-modal { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
+
+        .modal-body { padding: 20px; overflow-y: auto; max-height: 70vh; }
+        .form-group { margin-bottom: 15px; } 
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color:#555; font-size: 0.9rem; } 
+        .input-modal { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
+
+        /* Estilo para input desabilitado */
+        .input-modal:disabled { background-color: #f0f0f0; color: #999; cursor: not-allowed; }
+
+        /* Estilo do Input de Arquivo */
+        .custom-file-wrapper { display: flex; align-items: center; gap: 10px; }
+        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; color: #555; font-size: 0.9rem; font-weight: 600; transition: 0.2s; }
+        .custom-file-label:hover { background-color: #e9ecef; border-color: #ccc; color: #333; }
+        .custom-file-label i { font-size: 1.2rem; color: var(--cor0); }
+        .file-name { font-size: 0.85rem; color: #888; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 200px; }
+
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 15px 20px; border-top: 1px solid #eee; background: #fff; }
+        .btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; color:#555; } 
+        .btn-save { background: var(--cor0); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; }
+
+        h2 {color : white;}
+
         /* RESPONSIVIDADE */
         @media (max-width: 768px) {
             .perfil-main { margin-left: 0; margin-right: 0; padding: 20px 0 80px 0; }
@@ -87,15 +107,6 @@
             .upgrade-card { flex-direction: column; text-align: center; border-radius: 0; }
             .upgrade-content { max-width: 100%; margin-bottom: 20px; }
         }
-
-        /* MODAL */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
-        .form-group { margin-bottom: 15px; } .form-group label { display: block; margin-bottom: 5px; font-weight: 600; } .input-modal { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; }
-        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
-        .btn-cancel { background: #eee; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; } .btn-save { background: var(--cor0); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-
-        h2 {color : white;}
     </style>
 </head>
 <body>
@@ -130,10 +141,7 @@
             <a href="novidades.html">Novidades</a>
         </nav>
         <div class="botoes-direita" id="header-user-area">
-            <div style="display:flex; align-items:center; gap:10px;">
-                <img id="headerAvatar" src="" style="width:35px; height:35px; border-radius:50%; object-fit:cover; display:none;">
             </div>
-        </div>
     </header>
 
     <main class="perfil-main">
@@ -175,8 +183,6 @@
                     <button class="btn-padrao" onclick="abrirModalEditar()">
                         <i class='bx bx-pencil'></i> Editar Perfil
                     </button>
-                    
-
                 </div>
             </div>
 
@@ -236,14 +242,45 @@
 
     <div id="modalEditar" class="modal-overlay">
         <div class="modal-card">
-            <h3 style="margin-bottom: 20px;">Editar Meus Dados</h3>
-            <div class="form-group"><label>Nome</label><input type="text" id="inputNome" class="input-modal"></div>
-            <div class="form-group"><label>Biografia</label><textarea id="inputBio" class="input-modal" rows="3"></textarea></div>
-            <div class="form-group"><label>Localização</label><input type="text" id="inputLocal" class="input-modal"></div>
-            <div class="form-group"><label>URL da Foto</label><input type="text" id="inputFoto" class="input-modal"></div>
+            <div class="modal-header">
+                <h3>Editar Meus Dados</h3>
+                <button onclick="fecharModalEditar()" class="btn-close-modal">×</button>
+            </div>
+            <div class="modal-body">
+                
+                <div class="form-group">
+                    <label>Nome de Usuário (@)</label>
+                    <input type="text" id="inputUserHandle" class="input-modal" placeholder="@usuario">
+                    <small id="msgTrocaUser" style="color:#e74c3c; font-size:0.8rem; display:none; margin-top:5px; font-weight:600;"></small>
+                </div>
+
+                <div class="form-group">
+                    <label>Nome Completo</label>
+                    <input type="text" id="inputNome" class="input-modal">
+                </div>
+                <div class="form-group">
+                    <label>Biografia</label>
+                    <textarea id="inputBio" class="input-modal" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Localização</label>
+                    <input type="text" id="inputLoc" class="input-modal">
+                </div>
+                <div class="form-group">
+                    <label>Foto de Perfil</label>
+                    <div class="custom-file-wrapper">
+                        <label for="inputFotoFile" class="custom-file-label">
+                            <i class='bx bx-camera'></i> Trocar Foto
+                        </label>
+                        <span id="fotoFileName" class="file-name">Nenhuma selecionada</span>
+                        <input type="file" id="inputFotoFile" accept="image/*" style="display:none;">
+                        <input type="hidden" id="inputFotoBase64">
+                    </div>
+                </div>
+            </div>
             <div class="modal-footer">
                 <button onclick="fecharModalEditar()" class="btn-cancel">Cancelar</button>
-                <button onclick="salvarPerfilUsuario()" class="btn-save">Salvar</button>
+                <button onclick="salvarPerfilUsuario()" class="btn-save">Salvar Alterações</button>
             </div>
         </div>
     </div>
@@ -266,40 +303,89 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         const auth = getAuth(app);
+        
+        let userHandleOriginal = ""; 
+
+        // Função separada para preencher a tela, facilita o reuso
+        function preencherDadosTela(dados) {
+            // Guarda para comparar depois
+            userHandleOriginal = dados.user || "@usuario";
+
+            // Header e Cards
+            document.getElementById('handleDisplay').innerHTML = `${dados.user || "@usuario"} <i class='bx bxs-check-circle' style="font-size:1.1rem; color:var(--cor0);"></i>`;
+            document.getElementById('nomeDisplay').innerText = dados.nome || "Usuário";
+            document.getElementById('bioPerfilDisplay').innerText = dados.bio || "Olá! Estou usando o Doke.";
+            document.getElementById('membroDesdeDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${dados.membroDesde || "2024"}`;
+            document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${dados.local || "Brasil"}`;
+            
+            const foto = dados.foto || "https://placehold.co/150";
+            document.getElementById('fotoPerfilDisplay').src = foto;
+            const miniAvatar = document.getElementById('avatarPostMini');
+            if(miniAvatar) miniAvatar.src = foto;
+
+            // --- AQUI ESTÁ A MÁGICA DO MENU DROPDOWN ---
+            renderizarMenuDropdown(foto);
+
+            // Modal Inputs
+            document.getElementById('inputNome').value = dados.nome || "";
+            document.getElementById('inputBio').value = dados.bio || "";
+            document.getElementById('inputLoc').value = dados.local || "";
+            document.getElementById('inputFotoBase64').value = dados.foto || "";
+            
+            // Lógica do Usuário (@) e os 15 Dias
+            const handleInput = document.getElementById('inputUserHandle');
+            const msgUser = document.getElementById('msgTrocaUser');
+            handleInput.value = dados.user || "@usuario";
+
+            if (dados.ultimoTrocaUser) {
+                const ultimaTroca = new Date(dados.ultimoTrocaUser);
+                const hoje = new Date();
+                const diffTempo = hoje - ultimaTroca;
+                const diffDias = diffTempo / (1000 * 60 * 60 * 24); 
+
+                if (diffDias < 15) {
+                    const diasRestantes = Math.ceil(15 - diffDias);
+                    handleInput.disabled = true;
+                    handleInput.title = "Aguarde o prazo para trocar novamente";
+                    msgUser.style.display = "block";
+                    msgUser.innerHTML = `<i class='bx bx-time-five'></i> Você só poderá alterar o usuário novamente em <b>${diasRestantes} dias</b>.`;
+                } else {
+                    handleInput.disabled = false;
+                    msgUser.style.display = "none";
+                }
+            } else {
+                handleInput.disabled = false;
+                msgUser.style.display = "none";
+            }
+        }
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                const docRef = doc(db, "usuarios", user.uid);
-                const docSnap = await getDoc(docRef);
+                // Tenta pegar do banco para garantir que está atualizado
+                try {
+                    const docRef = doc(db, "usuarios", user.uid);
+                    const docSnap = await getDoc(docRef);
 
-                if (docSnap.exists()) {
-                    const dados = docSnap.data();
-                    
-                    if (dados.isProfissional === true) {
-                        window.location.href = "meuperfil.html";
-                        return;
+                    if (docSnap.exists()) {
+                        const dados = docSnap.data();
+                        
+                        // Se for profissional, redireciona
+                        if (dados.isProfissional === true) {
+                            window.location.href = "meuperfil.html";
+                            return;
+                        }
+
+                        // Atualiza o localStorage com o que veio do banco (Sincronização Importante)
+                        localStorage.setItem('doke_usuario_perfil', JSON.stringify(dados));
+                        
+                        // Preenche a tela
+                        preencherDadosTela(dados);
                     }
-
-                    // PADRONIZAÇÃO VISUAL
-                    // Handle (h1) em AZUL e Nome (span) em CINZA
-                    const userHandle = dados.user || "@usuario";
-                    document.getElementById('handleDisplay').innerHTML = `${userHandle} <i class='bx bxs-check-circle' style="font-size:1.1rem; color:var(--cor0);"></i>`;
-                    document.getElementById('nomeDisplay').innerText = dados.nome || "Usuário";
-
-                    document.getElementById('bioPerfilDisplay').innerText = dados.bio || "Olá! Estou usando o Doke.";
-                    document.getElementById('membroDesdeDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${dados.membroDesde || "2024"}`;
-                    document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${dados.local || "Brasil"}`;
-                    
-                    const foto = dados.foto || "https://placehold.co/150";
-                    document.getElementById('fotoPerfilDisplay').src = foto;
-                    const miniAvatar = document.getElementById('avatarPostMini');
-                    if(miniAvatar) miniAvatar.src = foto;
-
-                    // Modal
-                    document.getElementById('inputNome').value = dados.nome;
-                    document.getElementById('inputBio').value = dados.bio;
-                    document.getElementById('inputLocal').value = dados.local || "";
-                    document.getElementById('inputFoto').value = dados.foto;
+                } catch (e) {
+                    console.error("Erro ao carregar perfil:", e);
+                    // Se falhar a rede, tenta usar o localStorage
+                    const dadosLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+                    if(dadosLocal) preencherDadosTela(dadosLocal);
                 }
             } else {
                 window.location.href = "login.html";
@@ -318,19 +404,52 @@
 
         window.salvarPerfilUsuario = async function() {
             const user = auth.currentUser;
-            if(!user) return;
+            if(!user) {
+                alert("Você precisa estar logado.");
+                return;
+            }
+
+            const btnSave = document.querySelector('.btn-save');
+            if(btnSave) { btnSave.innerText = "Salvando..."; btnSave.disabled = true; }
+            
+            // Pega dados atuais para manter o que não mudou
+            const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+            const fotoFinal = document.getElementById('inputFotoBase64').value;
+            const novoHandle = document.getElementById('inputUserHandle').value.trim();
+            const inputHandle = document.getElementById('inputUserHandle');
+
             const novosDados = {
+                ...perfilAntigo, // Mantém dados antigos
                 nome: document.getElementById('inputNome').value,
                 bio: document.getElementById('inputBio').value,
-                local: document.getElementById('inputLocal').value,
-                foto: document.getElementById('inputFoto').value
+                local: document.getElementById('inputLoc').value,
+                foto: fotoFinal
             };
+
+            // VERIFICA SE O USUÁRIO MUDOU O HANDLE E SE PODIA
+            if (inputHandle && !inputHandle.disabled && novoHandle !== userHandleOriginal) {
+                let handleFormatado = novoHandle.toLowerCase();
+                if (!handleFormatado.startsWith('@')) {
+                    handleFormatado = '@' + handleFormatado;
+                }
+                novosDados.user = handleFormatado;
+                novosDados.ultimoTrocaUser = new Date().toISOString();
+            }
+
             try {
+                // 1. SALVA NO BANCO (IMPORTANTE: Await garante que salvou)
                 await updateDoc(doc(db, "usuarios", user.uid), novosDados);
+                
+                // 2. ATUALIZA LOCALSTORAGE
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(novosDados));
+
+                alert("Perfil salvo com sucesso!");
                 location.reload();
             } catch (e) {
                 console.error(e);
-                alert("Erro ao salvar.");
+                alert("Erro ao salvar no banco de dados.");
+                if(btnSave) { btnSave.innerText = "Salvar Alterações"; btnSave.disabled = false; }
             }
         }
 
@@ -340,6 +459,60 @@
                 window.location.href = 'index.html';
             });
         }
+
+        const fileInput = document.getElementById('inputFotoFile');
+        if(fileInput) {
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if(file) {
+                    document.getElementById('fotoFileName').innerText = file.name;
+                    const reader = new FileReader();
+                    reader.onload = function(evt) { 
+                        document.getElementById('inputFotoBase64').value = evt.target.result; 
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+        }
+
+        // =======================================================
+        // FUNÇÕES DO MENU DROPDOWN (Adicionadas Aqui)
+        // =======================================================
+        function renderizarMenuDropdown(fotoUrl) {
+            const container = document.getElementById('header-user-area');
+            if (!container) return;
+
+            container.innerHTML = `
+                <div class="profile-container">
+                    <img src="${fotoUrl}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil">
+                    <div id="dropdownPerfil" class="dropdown-profile">
+                        <a href="#" class="dropdown-item" style="pointer-events:none; color:#aaa; font-size:0.8rem;"><i class='bx bx-user'></i> Logado como Usuário</a>
+                        <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user'></i> Ver Perfil</a>
+                        <a href="anunciar.html" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
+                        <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Torna a função acessível globalmente (para o onclick funcionar)
+        window.toggleDropdown = function(event) {
+            if(event) event.stopPropagation();
+            const drop = document.getElementById('dropdownPerfil');
+            if(drop) drop.classList.toggle('show');
+        }
+
+        // Fechar ao clicar fora
+        window.addEventListener('click', function(e) {
+            if (!e.target.matches('.profile-img-btn')) {
+                const drops = document.getElementsByClassName("dropdown-profile");
+                for (let i = 0; i < drops.length; i++) {
+                    if (drops[i].classList.contains('show')) {
+                        drops[i].classList.remove('show');
+                    }
+                }
+            }
+        });
     </script>
 </body>
 </html>
