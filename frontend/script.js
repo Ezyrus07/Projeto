@@ -3,7 +3,7 @@
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"; // Adicionado 'limit'
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 // SUAS CHAVES DO PROJETO 'Doke-Site'
@@ -22,17 +22,18 @@ const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app); 
 
-// Garante acesso global (para console ou scripts inline)
+// Garante acesso global
 window.db = db;
 window.auth = auth;
 window.collection = collection;
 window.query = query;
 window.getDocs = getDocs;
-window.orderBy = orderBy; // <--- ADICIONE ISSO (Obrigatório para o feed)
-window.where = where;     // <--- ADICIONE ISSO (Bom para garantir filtros futuros)
+window.orderBy = orderBy;
+window.where = where;
+window.limit = limit; // NOVO: Necessário para limitar vídeos na home
 
 // ============================================================
-// 2. FUNÇÃO DE PUBLICAR ANÚNCIO (FINAL: LÊ CAMPOS DA TELA)
+// 2. FUNÇÃO DE PUBLICAR ANÚNCIO
 // ============================================================
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
@@ -62,8 +63,6 @@ window.publicarAnuncio = async function(event) {
         const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
         const telefone = document.getElementById('telefone').value || "";
 
-        // PEGA OS DADOS DOS CAMPOS VISUAIS (Se existirem)
-        // Se o usuário não preencheu e os campos não existem, usa padrão
         const cidadeInput = document.getElementById('cidade');
         const ufInput = document.getElementById('uf');
         const bairroInput = document.getElementById('bairro');
@@ -72,7 +71,6 @@ window.publicarAnuncio = async function(event) {
         let ufFinal = ufInput ? ufInput.value : "BR";
         let bairroFinal = bairroInput ? bairroInput.value : "Geral";
 
-        // Se os campos estiverem vazios (caso o usuário não tenha clicado fora do CEP), tenta buscar agora
         if ((!cidadeFinal || cidadeFinal === "Indefinido") && cep.length === 8) {
             try {
                 const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
@@ -110,12 +108,9 @@ window.publicarAnuncio = async function(event) {
             categorias: categoriasString,
             preco: precoFinal,
             cep: cep,
-            
-            // SALVA OS DADOS CORRETOS PARA O FILTRO
             uf: ufFinal,
             cidade: cidadeFinal,
             bairro: bairroFinal,
-            
             whatsapp: telefone,
             fotos: fotos,
             img: fotos[0],
@@ -146,12 +141,143 @@ window.publicarAnuncio = async function(event) {
 }
 
 // ============================================================
-// 3. FUNÇÃO DE CARREGAMENTO DE ANÚNCIOS (FEED)
+// 3. NOVO: FUNÇÕES DE TRABALHOS REALIZADOS (VÍDEOS NA HOME)
+// ============================================================
+
+// Salvar Trabalho (Chamado pelo Modal no meuperfil.html)
+window.salvarTrabalho = async function() {
+    const user = auth.currentUser;
+    if(!user) { alert("Faça login."); return; }
+
+    const tag = document.getElementById('inputTagTrabalho').value;
+    const desc = document.getElementById('inputDescTrabalho').value;
+    const videoUrl = document.getElementById('inputVideoUrl').value;
+    const capaBase64 = document.getElementById('inputCapaBase64').value;
+    const btn = document.getElementById('btnSalvarTrabalho');
+
+    if(!tag || !desc || !capaBase64) { alert("Preencha a tag, descrição e escolha uma capa."); return; }
+
+    if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
+
+    try {
+        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        
+        await addDoc(collection(db, "trabalhos"), {
+            uid: user.uid,
+            autorNome: perfil.user || perfil.nome,
+            categoria: tag, 
+            tag: tag.toUpperCase(),
+            descricao: desc,
+            videoUrl: videoUrl || "#", 
+            capa: capaBase64,
+            data: new Date().toISOString()
+        });
+
+        alert("Trabalho adicionado à galeria!");
+        window.location.reload(); 
+    } catch (e) {
+        console.error("Erro ao salvar trabalho:", e);
+        alert("Erro ao salvar.");
+        if(btn) { btn.innerText = "Salvar Trabalho"; btn.disabled = false; }
+    }
+}
+
+// Carregar Trabalhos na Home (index.html)
+// ============================================================
+// CARREGAR VÍDEOS NA HOME + PLAYER
+// ============================================================
+
+window.carregarTrabalhosHome = async function() {
+    const container = document.querySelector('.tiktok-scroll-wrapper');
+    if (!container) return;
+
+    container.innerHTML = '<div style="padding:20px; color:white;">Carregando galeria...</div>';
+
+    try {
+        // Busca os últimos 10 trabalhos
+        const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+            container.innerHTML = '<div style="padding:20px; color:white;">Nenhum trabalho recente.</div>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // Criamos um elemento temporário para guardar o vídeo sem poluir o HTML visual
+            // Usamos textarea hidden para guardar o Base64 gigante do vídeo
+            const html = `
+            <div class="tiktok-card" onclick="tocarVideoDoCard(this)">
+                
+                <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
+
+                <div class="badge-status">${data.tag}</div>
+                <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
+                
+                <div class="play-icon">
+                    <svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
+                </div>
+
+                <div class="video-ui-layer">
+                    <div class="video-bottom-info">
+                        <div class="provider-info">
+                            <span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span>
+                        </div>
+                        <p class="video-desc">${data.descricao}</p>
+                        <a href="orcamento.html" onclick="event.stopPropagation()" style="position:relative; z-index:3;">
+                            <button class="btn-video-action">Solicitar Orçamento</button>
+                        </a>
+                    </div>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar trabalhos:", e);
+    }
+}
+
+// --- FUNÇÕES DO PLAYER DE VÍDEO ---
+
+// Chamada ao clicar no Card
+window.tocarVideoDoCard = function(cardElement) {
+    // Pega o código do vídeo que está escondido no textarea dentro do card
+    const videoSrc = cardElement.querySelector('.video-src-hidden').value;
+    
+    if(videoSrc) {
+        const modal = document.getElementById('modalPlayerVideo');
+        const player = document.getElementById('playerPrincipal');
+        
+        player.src = videoSrc; // Coloca o vídeo no player
+        modal.style.display = 'flex'; // Mostra a tela preta
+        player.play(); // Dá play
+    } else {
+        alert("Erro: Vídeo não encontrado.");
+    }
+}
+
+// Fechar o Player
+window.fecharPlayerVideo = function() {
+    const modal = document.getElementById('modalPlayerVideo');
+    const player = document.getElementById('playerPrincipal');
+    
+    player.pause(); // Para o vídeo
+    player.src = ""; // Limpa a memória
+    modal.style.display = 'none'; // Esconde a tela
+}
+
+// ============================================================
+// 4. CARREGAMENTO DE ANÚNCIOS (FEED)
 // ============================================================
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
     const tituloSecao = document.getElementById('categorias-title'); 
-    
     if (!feed) return; 
 
     feed.innerHTML = `<div style="padding:40px; text-align:center;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem; color:var(--cor0);"></i><p style="margin-top:10px; color:#666;">Carregando anúncios...</p></div>`;
@@ -191,32 +317,16 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             const preco = anuncio.preco || "A combinar";
             const fotoAutor = anuncio.fotoAutor || "https://i.pravatar.cc/150";
             const descricao = anuncio.descricao || "";
-            
-            // --- NOME (@USUARIO) ---
             let nomeParaExibir = anuncio.userHandle || "@usuario"; 
             if(!nomeParaExibir.startsWith('@')) nomeParaExibir = '@' + nomeParaExibir;
 
-            // --- ESTRELAS (Se for 0, mostra "Novo") ---
             const nota = anuncio.mediaAvaliacao || 0;
             const qtdAvaliacoes = anuncio.numAvaliacoes || 0;
             
-            let htmlAvaliacaoDisplay = '';
-            if (qtdAvaliacoes === 0) {
-                htmlAvaliacaoDisplay = `<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Novo</span>`;
-            } else {
-                let estrelasIcones = '';
-                for (let i = 1; i <= 5; i++) {
-                    if (i <= nota) estrelasIcones += "<i class='bx bxs-star'></i>";
-                    else if (i - 0.5 <= nota) estrelasIcones += "<i class='bx bxs-star-half'></i>";
-                    else estrelasIcones += "<i class='bx bx-star'></i>";
-                }
-                htmlAvaliacaoDisplay = `<div class="cp-stars-dynamic" style="color:#f1c40f;">${estrelasIcones} <span style="color:#999; font-size:0.75rem;">(${qtdAvaliacoes})</span></div>`;
-            }
+            let htmlAvaliacaoDisplay = qtdAvaliacoes === 0 
+                ? `<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Novo</span>`
+                : `<div class="cp-stars-dynamic" style="color:#f1c40f;"><i class='bx bxs-star'></i> ${nota} <span style="color:#999; font-size:0.75rem;">(${qtdAvaliacoes})</span></div>`;
 
-            let textoStatus = "Online";
-            let classeStatus = "online";
-
-            // Grade de Fotos
             let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : [anuncio.img || "https://placehold.co/600x400"];
             let htmlFotos = '';
             let contadorExtra = fotos.length - 3;
@@ -238,7 +348,6 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
                     <i class='bx bx-info-circle'></i> Mais Informações
                 </button>
-
                 <div class="cp-header-clean">
                     <div style="display:flex; gap:12px; align-items:center;">
                         <img src="${fotoAutor}" class="cp-avatar"> 
@@ -248,19 +357,16 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                                 ${htmlAvaliacaoDisplay}
                             </div>
                             <div class="cp-tempo-online">
-                                <div class="status-dot ${classeStatus}"></div> ${textoStatus}
+                                <div class="status-dot online"></div> Online
                             </div>
                         </div>
                     </div>
                 </div>
-
                 <div class="cp-body">
                     <h3 class="cp-titulo">${titulo}</h3>
                     <p class="cp-desc-clean">${descricao}</p>
                 </div>
-
                 ${htmlFotos}
-
                 <div class="cp-footer-right">
                     <div style="margin-right:auto;">
                         <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
@@ -271,10 +377,8 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                     </a>
                 </div>
             `;
-
             feed.appendChild(card);
         });
-
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
         feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
@@ -282,7 +386,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 }
 
 // ============================================================
-// 4. CARREGAR CATEGORIAS (COM BACKUP SE VAZIO)
+// 5. CARREGAR CATEGORIAS
 // ============================================================
 window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
@@ -293,15 +397,11 @@ window.carregarCategorias = async function() {
         const querySnapshot = await getDocs(q);
         
         let listaCategorias = [];
-
-        // 1. Tenta pegar do banco
         if (!querySnapshot.empty) {
             querySnapshot.forEach((doc) => {
                 listaCategorias.push(doc.data());
             });
-        } 
-        // 2. Se banco vazio, usa lista padrão (Isso resolve o problema da tela branca)
-        else {
+        } else {
             listaCategorias = [
                 { nome: "Casa", img: "https://cdn-icons-png.flaticon.com/512/10338/10338273.png" },
                 { nome: "Tecnologia", img: "https://cdn-icons-png.flaticon.com/512/2920/2920329.png" },
@@ -314,7 +414,6 @@ window.carregarCategorias = async function() {
         }
 
         container.innerHTML = ""; 
-
         listaCategorias.forEach(cat => {
             const html = `
                 <div class="categoria-item" onclick="filtrarPorCategoria('${cat.nome}')" style="cursor:pointer;">
@@ -326,7 +425,6 @@ window.carregarCategorias = async function() {
             `;
             container.innerHTML += html;
         });
-
     } catch (e) {
         console.error("Erro categorias:", e);
         container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponíveis</div>`;
@@ -334,34 +432,24 @@ window.carregarCategorias = async function() {
 }
 
 // ============================================================
-// 5. PROFISSIONAIS EM DESTAQUE (CORRIGIDO: @USUARIO e NOVO)
+// 6. PROFISSIONAIS EM DESTAQUE
 // ============================================================
 window.carregarProfissionais = async function() {
     const container = document.getElementById('listaProfissionais');
     if (!container) return;
-
     container.innerHTML = "";
-
-    // Verifica login
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
     
     if (perfilSalvo) {
         const p = JSON.parse(perfilSalvo);
         const foto = p.foto || "https://i.pravatar.cc/150";
-        
-        // CORREÇÃO: Usa o userHandle real do cadastro
         let userHandle = p.user;
-        if(!userHandle) {
-            userHandle = "@" + (p.nome ? p.nome.split(' ')[0].toLowerCase() : "usuario");
-        }
+        if(!userHandle) { userHandle = "@" + (p.nome ? p.nome.split(' ')[0].toLowerCase() : "usuario"); }
         if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
-
         const job = p.bio ? (p.bio.length > 25 ? p.bio.substring(0, 25) + "..." : p.bio) : "Membro Doke";
-
-        // CORREÇÃO: Remove o "5.0" se for novo e usa dados reais
+        
         let avaliacaoHTML = "";
         let numReviews = (p.stats && p.stats.avaliacoes) ? p.stats.avaliacoes : 0;
-        
         if (numReviews === 0) {
             avaliacaoHTML = `<span class="pro-rating" style="background:#e0f7fa; color:#006064;">Novo</span>`;
         } else {
@@ -381,16 +469,12 @@ window.carregarProfissionais = async function() {
         `;
         container.innerHTML = html;
     } else {
-        container.innerHTML = `
-            <div style="padding: 20px; color: #888; white-space: nowrap;">
-                <a href="login.html" style="color:var(--cor0); font-weight:bold;">Faça login</a> para ver seu destaque.
-            </div>
-        `;
+        container.innerHTML = `<div style="padding: 20px; color: #888; white-space: nowrap;"><a href="login.html" style="color:var(--cor0); font-weight:bold;">Faça login</a> para ver seu destaque.</div>`;
     }
 }
 
 // ============================================================
-// 6. FUNÇÕES DE HEADER E PROTEÇÃO
+// 7. FUNÇÕES DE HEADER, PROTEÇÃO E AUTH
 // ============================================================
 
 function protegerPaginasRestritas() {
@@ -398,25 +482,23 @@ function protegerPaginasRestritas() {
     const caminhoAtual = window.location.pathname;
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
     const estaLogado = localStorage.getItem('usuarioLogado') === 'true';
-
-    if (paginasRestritas.includes(paginaAtual) && !estaLogado) {
-        window.location.href = "login.html";
-    }
+    if (paginasRestritas.includes(paginaAtual) && !estaLogado) { window.location.href = "login.html"; }
 }
 
 window.verificarEstadoLogin = function() {
     const logado = localStorage.getItem('usuarioLogado') === 'true';
-    const perfilSalvo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-    const fotoUsuario = perfilSalvo.foto || 'https://i.pravatar.cc/150?img=12'; 
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    const fotoUsuario = perfil.foto || 'https://i.pravatar.cc/150?img=12'; 
 
     const container = document.querySelector('.botoes-direita');
     if (container) {
         if (logado) {
             container.innerHTML = `
                 <div class="profile-container">
-                    <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown()" alt="Perfil">
+                    <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil">
                     <div id="dropdownPerfil" class="dropdown-profile">
-                        <a href="#" onclick="irParaMeuPerfil(event)" class="dropdown-item"><i class='bx bx-user'></i> Ver Perfil</a>
+                        <a href="#" onclick="irParaMeuPerfil(event)" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                        <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
                         <a href="anunciar.html" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
                         <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
                     </div>
@@ -445,7 +527,18 @@ window.verificarEstadoLogin = function() {
     }
 }
 
-window.toggleDropdown = function() {
+// --- FUNÇÃO PARA ALTERNAR CONTA (LOGOUT E REDIRECIONAR PARA LOGIN) ---
+window.alternarConta = function() {
+    window.auth.signOut().then(() => {
+        localStorage.removeItem('usuarioLogado');
+        window.location.href = 'login.html'; 
+    }).catch((error) => {
+        console.error("Erro ao alternar conta:", error);
+    });
+}
+
+window.toggleDropdown = function(event) {
+    if(event) event.stopPropagation();
     const drop = document.getElementById('dropdownPerfil');
     if(drop) drop.classList.toggle('show');
 }
@@ -460,11 +553,7 @@ window.fazerLogout = function() {
 window.irParaMeuPerfil = function(event) {
     if(event) event.preventDefault();
     const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-    
-    if (!perfilLocal) {
-        window.location.href = "login.html";
-        return;
-    }
+    if (!perfilLocal) { window.location.href = "login.html"; return; }
     if (perfilLocal.isProfissional === true) window.location.href = "meuperfil.html"; 
     else window.location.href = "perfil-usuario.html";
 }
@@ -479,51 +568,36 @@ window.filtrarPorCategoria = function(categoria) {
 }
 
 // ============================================================
-// 7. UTILITÁRIOS GLOBAIS (CEP CORRIGIDO)
+// 8. UTILITÁRIOS GLOBAIS (CEP, UI, BUSCA)
 // ============================================================
-
-// Formata o CEP enquanto digita (12345-678)
 function formatarCepInput(e) {
     let valor = e.target.value.replace(/\D/g, ""); 
-    if (valor.length > 5) {
-        valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
-    }
+    if (valor.length > 5) valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
     e.target.value = valor;
 }
-
-// Salva o CEP aceitando 8 dígitos sem traço ou 9 com traço
 window.salvarCep = function() {
     const i = document.getElementById('inputCep');
     if(!i) return;
-    
-    // Remove traço para validar
     const cepLimpo = i.value.replace(/\D/g, ''); 
-
     if(cepLimpo.length === 8) {
         const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
         localStorage.setItem('meu_cep_doke', cepFormatado); 
         window.atualizarTelaCep(cepFormatado);
         document.getElementById('boxCep').style.display = 'none';
-    } else { 
-        alert("CEP inválido! Digite 8 números."); 
-        i.focus();
-    }
+    } else { alert("CEP inválido! Digite 8 números."); i.focus(); }
 }
-
 window.atualizarTelaCep = function(cep) {
     const s = document.getElementById('textoCepSpan');
     const i = document.getElementById('inputCep');
     if (s) { s.innerText = "Alterar CEP"; s.style.fontWeight = "600"; s.style.color = "var(--cor0)"; }
     if (i) i.value = cep;
 }
-
 window.toggleCep = function(e) {
     if(e) e.preventDefault(); 
     const p = document.getElementById('boxCep');
     const i = document.getElementById('inputCep');
     if (p.style.display === 'block') { p.style.display = 'none'; } else { p.style.display = 'block'; if(i) i.focus(); }
 }
-
 window.abrirMenuMobile = function() {
     const menu = document.querySelector('.sidebar-icones');
     if (menu) menu.classList.add('menu-aberto');
@@ -576,11 +650,7 @@ function atualizarListaHistorico() {
         d.className = 'recent-item'; d.innerHTML = `<span>↺</span> ${t}`;
         d.onclick = () => { 
             const inp = document.getElementById('inputBusca');
-            if(inp) {
-                inp.value = t; 
-                salvarBusca(t);
-                window.location.href = `busca.html?q=${encodeURIComponent(t)}`;
-            }
+            if(inp) { inp.value = t; salvarBusca(t); window.location.href = `busca.html?q=${encodeURIComponent(t)}`; }
         };
         l.appendChild(d);
     });
@@ -629,7 +699,7 @@ window.mostrarToast = function(mensagem, tipo = 'sucesso') {
 }
 
 // ============================================================
-// 8. FUNÇÕES DE LOGIN (AUXILIARES)
+// 9. FUNÇÕES DE LOGIN (AUXILIARES)
 // ============================================================
 window.realizarLogin = async function(e) {
     if(e) e.preventDefault();
@@ -659,7 +729,7 @@ window.realizarLogin = async function(e) {
 }
 
 // ============================================================
-// 9. FUNÇÃO PARA CARREGAR FILTROS DE LOCALIZAÇÃO (NOVO)
+// 10. FUNÇÃO PARA CARREGAR FILTROS DE LOCALIZAÇÃO
 // ============================================================
 window.carregarFiltrosLocalizacao = async function() {
     const selEstado = document.getElementById('selectEstado');
@@ -669,11 +739,9 @@ window.carregarFiltrosLocalizacao = async function() {
     if (!selEstado || !selCidade || !selBairro) return;
 
     try {
-        // Busca todos os anúncios para saber onde tem serviço
         const q = query(collection(window.db, "anuncios"));
         const snapshot = await getDocs(q);
-        
-        const locaisMap = {}; // { SP: { Santos: [Gonzaga], ... } }
+        const locaisMap = {}; 
 
         snapshot.forEach(doc => {
             const data = doc.data();
@@ -683,7 +751,6 @@ window.carregarFiltrosLocalizacao = async function() {
 
             if (!locaisMap[uf]) locaisMap[uf] = {};
             if (!locaisMap[uf][cidade]) locaisMap[uf][cidade] = new Set();
-            
             locaisMap[uf][cidade].add(bairro);
         });
 
@@ -725,31 +792,103 @@ window.carregarFiltrosLocalizacao = async function() {
             filtrarAnunciosPorLocal(selEstado.value, selCidade.value, this.value);
         };
 
-    } catch (e) {
-        console.error("Erro ao carregar filtros de local:", e);
-    }
+    } catch (e) { console.error("Erro ao carregar filtros de local:", e); }
 }
 
 window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
     console.log("Filtrando por:", uf, cidade, bairro);
-    // Aqui você pode implementar a lógica de recarregar o feed com os filtros
 }
 
 // ============================================================
-// 10. INICIALIZAÇÃO
+// 11. FEED GLOBAL (Para Index.html)
+// ============================================================
+window.carregarFeedGlobal = async function() {
+    const container = document.getElementById('feed-global-container');
+    if (!container) return;
+
+    // Loading state
+    container.innerHTML = `
+        <div style="text-align:center; padding:40px; color:#777;">
+            <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
+            <p>Carregando atualizações da comunidade...</p>
+        </div>`;
+
+    try {
+        const q = window.query(
+            window.collection(window.db, "posts"), 
+            window.orderBy("data", "desc")
+        );
+
+        const snapshot = await window.getDocs(q);
+
+        container.innerHTML = ""; // Limpa loading
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:30px; background:#fff; border-radius:12px;">
+                    <i class='bx bx-news' style="font-size:3rem; color:#ddd;"></i>
+                    <p style="color:#666;">Ainda não há publicações na comunidade.</p>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const post = doc.data();
+            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { 
+                day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' 
+            });
+            
+            const imgHtml = post.imagem 
+                ? `<div class="midia-post"><img src="${post.imagem}" loading="lazy"></div>` 
+                : '';
+
+            const html = `
+                <div class="card-feed-global">
+                    <div class="feed-header">
+                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User">
+                        <div class="feed-user-info">
+                            <h4>${post.autorNome}</h4>
+                            <span>${post.autorUser || '@usuario'} • ${dataPost}</span>
+                        </div>
+                    </div>
+                    <div class="feed-body">
+                        <p>${post.texto}</p>
+                    </div>
+                    ${imgHtml}
+                    <div class="feed-footer">
+                        <div class="feed-action"><i class='bx bx-heart'></i> ${post.likes || 0}</div>
+                        <div class="feed-action"><i class='bx bx-comment'></i> Comentar</div>
+                        <div class="feed-action"><i class='bx bx-share-alt'></i> Compartilhar</div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar feed global:", e);
+        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar feed.</p>`;
+    }
+}
+
+// ============================================================
+// 12. INICIALIZAÇÃO
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
-
-    
     
     // 1. Proteção e Header
     protegerPaginasRestritas();
     verificarEstadoLogin();
     
-    // 2. CARREGAMENTOS DINÂMICOS (Categorias + Destaque)
-    carregarCategorias(); // AGORA TEM FALLBACK SE VAZIO
-    carregarProfissionais(); // MOSTRA DADOS REAIS (@usuario e Novo)
-    carregarFiltrosLocalizacao(); // Filtros de Local
+    // 2. CARREGAMENTOS DINÂMICOS
+    carregarCategorias(); 
+    carregarProfissionais(); 
+    carregarFiltrosLocalizacao(); 
+
+    // NOVO: CARREGA VIDEOS SE ESTIVER NA HOME
+    if(document.querySelector('.tiktok-scroll-wrapper')) {
+        carregarTrabalhosHome();
+    }
 
     // 3. CEP Input Logic
     const inputCep = document.getElementById('inputCep');
@@ -842,149 +981,3 @@ document.addEventListener("DOMContentLoaded", function() {
         typeEffect();
     }
 });
-
-// ============================================================
-// 11. FEED GLOBAL (Para Index.html)
-// ============================================================
-window.carregarFeedGlobal = async function() {
-    const container = document.getElementById('feed-global-container');
-    if (!container) return;
-
-    // Loading state
-    container.innerHTML = `
-        <div style="text-align:center; padding:40px; color:#777;">
-            <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
-            <p>Carregando atualizações da comunidade...</p>
-        </div>`;
-
-    try {
-        // Busca os últimos 20 posts de todos os usuários
-        const q = window.query(
-            window.collection(window.db, "posts"), 
-            window.orderBy("data", "desc"), 
-            // window.limit(20) // Opcional: limitar a 20 posts
-        );
-
-        const snapshot = await window.getDocs(q);
-
-        container.innerHTML = ""; // Limpa loading
-
-        if (snapshot.empty) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:30px; background:#fff; border-radius:12px;">
-                    <i class='bx bx-news' style="font-size:3rem; color:#ddd;"></i>
-                    <p style="color:#666;">Ainda não há publicações na comunidade.</p>
-                </div>`;
-            return;
-        }
-
-        snapshot.forEach((doc) => {
-            const post = doc.data();
-            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { 
-                day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' 
-            });
-            
-            // Verifica se tem imagem
-            const imgHtml = post.imagem 
-                ? `<div class="feed-img-wrapper"><img src="${post.imagem}" loading="lazy"></div>` 
-                : '';
-
-            const html = `
-                <div class="card-feed-global">
-                    <div class="feed-header">
-                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User">
-                        <div class="feed-user-info">
-                            <h4>${post.autorNome}</h4>
-                            <span>${post.autorUser || '@usuario'} • ${dataPost}</span>
-                        </div>
-                    </div>
-                    <div class="feed-body">
-                        <p>${post.texto}</p>
-                    </div>
-                    ${imgHtml}
-                    <div class="feed-footer">
-                        <div class="feed-action"><i class='bx bx-heart'></i> ${post.likes || 0}</div>
-                        <div class="feed-action"><i class='bx bx-comment'></i> Comentar</div>
-                        <div class="feed-action"><i class='bx bx-share-alt'></i> Compartilhar</div>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-
-    } catch (e) {
-        console.error("Erro ao carregar feed global:", e);
-        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar feed.</p>`;
-    }
-}
-
-// Adicione esta chamada no DOMContentLoaded existente no final do script.js:
-// document.addEventListener("DOMContentLoaded", function() {
-//    ... código existente ...
-//    carregarFeedGlobal(); // <--- ADICIONE ISSO
-// });
-
-// ============================================================
-// 12. FEED GLOBAL (Para Index.html)
-// ============================================================
-window.carregarFeedGlobal = async function() {
-    const container = document.getElementById('feed-global-container');
-    if (!container) return; // Se não estiver na home, não faz nada
-
-    // Limpa e mostra carregando
-    container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;"><i class='bx bx-loader-alt bx-spin'></i> Carregando feed...</div>`;
-
-    try {
-        // Busca TODOS os posts, ordenados por data (mais recentes primeiro)
-        // Nota: Removi o "where uid" para mostrar posts de todos
-        const q = window.query(
-            window.collection(window.db, "posts"), 
-            window.orderBy("data", "desc")
-        );
-
-        const snapshot = await window.getDocs(q);
-
-        container.innerHTML = ""; // Limpa o loading
-
-        if (snapshot.empty) {
-            container.innerHTML = `<div style="text-align:center; padding:20px;">Nenhuma publicação na comunidade ainda.</div>`;
-            return;
-        }
-
-        snapshot.forEach((doc) => {
-            const post = doc.data();
-            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
-            
-            // Lógica da Imagem (Usa a mesma classe midia-post do perfil)
-            const imgHtml = post.imagem 
-                ? `<div class="midia-post"><img src="${post.imagem}"></div>` 
-                : '';
-
-            const html = `
-                <div class="card-feed-global">
-                    <div class="header-post" style="padding:15px; display:flex; align-items:center; gap:10px;">
-                        <img src="${post.autorFoto || 'https://placehold.co/50'}" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                        <div>
-                            <h4 style="margin:0; font-size:0.95rem; color:#333;">${post.autorUser || post.autorNome}</h4>
-                            <span style="font-size:0.75rem; color:#888;">${dataPost}</span>
-                        </div>
-                    </div>
-                    
-                    <p style="padding:0 15px 15px 15px; margin:0; color:#444;">${post.texto}</p>
-                    
-                    ${imgHtml}
-
-                    <div style="padding:10px 15px; border-top:1px solid #eee; display:flex; gap:20px; color:#666;">
-                        <span><i class='bx bx-heart'></i> ${post.likes || 0}</span>
-                        <span><i class='bx bx-comment'></i> Comentar</span>
-                    </div>
-                </div>
-            `;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-
-    } catch (e) {
-        console.error("Erro feed global:", e);
-        container.innerHTML = `<p style="text-align:center;">Erro ao carregar feed.</p>`;
-    }
-}
