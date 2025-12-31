@@ -6,43 +6,39 @@
     <title>Menu e Configurações | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
     <script type="module" src="script.js"></script>
+
     <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS - MAIS/MENU
            ====================================================== */
-        
-        body { background-color: #f4f6f8; }
+        body { background-color: #f4f6f8; font-family: 'Poppins', sans-serif; }
 
-        /* --- LAYOUT GERAL --- */
         main {
-            /* Mobile: Margem no topo para não ficar sob a navbar */
             padding: 20px;
             margin-top: 80px; 
-            display: block; /* Garante comportamento padrão */
+            display: block;
         }
 
-        /* --- AJUSTE DESKTOP (A CORREÇÃO ESTÁ AQUI) --- */
         @media (min-width: 1024px) {
             main {
-                margin-left: var(--sidebar-width); /* Empurra para o lado da sidebar */
-                margin-top: 0; /* Remove margem do topo pois a navbar é lateral/top */
-                padding: 40px 60px; /* Espaçamento interno generoso */
-                max-width: none; /* Deixa ocupar a tela toda */
-                display: block; /* Remove flex para não centralizar forçado */
+                margin-left: 270px; /* Sidebar Width */
+                margin-top: 0;
+                padding: 40px 60px;
+                max-width: none;
             }
         }
 
-        /* O container que segura o conteúdo e centraliza ele */
         .content-wrapper {
             width: 100%;
-            max-width: 1200px; /* Largura máxima do conteúdo */
-            margin: 0 auto; /* Centraliza na tela grande */
+            max-width: 1200px;
+            margin: 0 auto;
         }
 
-        /* --- HERO SECTION (CABEÇALHO AZUL) --- */
+        /* HERO SECTION */
         .mais-hero-container {
-            background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
+            background: linear-gradient(135deg, var(--cor2, #0095f6) 0%, #1a3c5e 100%);
             padding: 40px; 
             border-radius: 20px; 
             margin-bottom: 30px;
@@ -60,7 +56,7 @@
         .mais-hero-container h1 { font-size: 2rem; margin-bottom: 10px; font-weight: 700; }
         .mais-hero-container p { color: rgba(255,255,255,0.9); font-size: 1rem; max-width: 600px; margin: 0 auto; }
 
-        /* --- CARD BRANCO PRINCIPAL --- */
+        /* CARD BRANCO PRINCIPAL */
         .mais-card {
             background: white; 
             border-radius: 20px; 
@@ -69,36 +65,34 @@
             border: 1px solid #eee;
         }
 
-        /* --- PERFIL HEADER --- */
+        /* PERFIL HEADER (Clicável) */
         .profile-header {
             display: flex; align-items: center; gap: 20px;
             padding-bottom: 30px; border-bottom: 1px solid #f0f0f0;
             margin-bottom: 30px; cursor: pointer; transition: 0.2s;
         }
-        .profile-header:hover { opacity: 0.8; }
+        .profile-header:hover { opacity: 0.8; background-color: #fafafa; border-radius: 10px; padding: 10px; margin: -10px -10px 20px -10px; }
         
         .profile-avatar {
             width: 80px; height: 80px; border-radius: 50%;
             object-fit: cover; border: 4px solid #f9f9f9;
             box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
-        .profile-info h3 { font-size: 1.4rem; color: var(--cor2); margin: 0 0 5px 0; font-weight: 700; }
+        .profile-info h3 { font-size: 1.4rem; color: var(--cor2, #0095f6); margin: 0 0 5px 0; font-weight: 700; }
         .profile-info p { margin: 0; color: #666; font-size: 0.95rem; }
         .profile-arrow { margin-left: auto; font-size: 1.5rem; color: #ccc; }
 
-        /* --- GRID DE OPÇÕES --- */
+        /* GRID DE OPÇÕES */
         .settings-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 40px;
         }
-
         .settings-section { display: flex; flex-direction: column; gap: 15px; }
-        
         .section-title {
             font-size: 0.9rem; font-weight: 700; color: #999;
             text-transform: uppercase; letter-spacing: 1px;
-            margin-bottom: 10px; padding-left: 5px; border-left: 3px solid var(--cor0);
+            margin-bottom: 10px; padding-left: 5px; border-left: 3px solid var(--cor0, #2ecc71);
             line-height: 1;
         }
 
@@ -109,18 +103,16 @@
             cursor: pointer; transition: all 0.2s; text-decoration: none; color: inherit;
         }
         .settings-item:hover {
-            transform: translateY(-3px); border-color: var(--cor0);
+            transform: translateY(-3px); border-color: var(--cor0, #2ecc71);
             box-shadow: 0 5px 15px rgba(0,0,0,0.05);
         }
-
         .item-icon {
             width: 42px; height: 42px; border-radius: 10px;
-            background: #f4f6f8; color: var(--cor2);
+            background: #f4f6f8; color: var(--cor2, #0095f6);
             display: flex; align-items: center; justify-content: center;
             font-size: 1.3rem; margin-right: 15px; transition: 0.3s;
         }
-        .settings-item:hover .item-icon { background: var(--cor0); color: white; }
-
+        .settings-item:hover .item-icon { background: var(--cor0, #2ecc71); color: white; }
         .item-text { flex: 1; font-weight: 600; color: #444; font-size: 1rem; }
         .item-arrow { color: #ddd; font-size: 1.2rem; }
 
@@ -137,7 +129,7 @@
             left: 3px; bottom: 3px; background-color: white;
             transition: .4s; border-radius: 50%;
         }
-        input:checked + .slider { background-color: var(--cor0); }
+        input:checked + .slider { background-color: var(--cor0, #2ecc71); }
         input:checked + .slider:before { transform: translateX(22px); }
 
         /* BOTÃO SAIR */
@@ -150,16 +142,11 @@
         }
         .logout-btn:hover { background: #ff2e63; color: white; border-color: #ff2e63; }
 
-        /* --- RESPONSIVIDADE MOBILE --- */
         @media (max-width: 768px) {
-            .mais-hero-container { 
-                padding: 30px 20px; 
-                margin: 0 0 30px 0; 
-                border-radius: 20px; 
-            }
+            .mais-hero-container { padding: 30px 20px; margin: 0 0 30px 0; border-radius: 20px; }
             .mais-card { padding: 25px 20px; }
             .settings-grid { grid-template-columns: 1fr; gap: 30px; }
-            .profile-header { flex-direction: column; text-align: center; gap: 10px; }
+            .profile-header { flex-direction: column; text-align: center; gap: 10px; margin: 0 0 30px 0; }
             .profile-arrow { display: none; }
             .mais-hero-container h1 { font-size: 1.8rem; }
         }
@@ -168,7 +155,7 @@
 <body>
 
     <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a></div>
         <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
         <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
         <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
@@ -182,7 +169,7 @@
         <div id="logo-desktop"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <nav class="menu">
             <div class="cep-wrapper"><a href="#" class="cep"><span>Informe seu CEP</span></a></div>
-            <a href="anunciar.html">Anuncie</a>
+            <a href="anunciar.html">Anuncie seu serviço</a>
             <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
         </nav>
         <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
@@ -190,8 +177,10 @@
 
     <header class="navbar-mobile">
         <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="mobile-controls"><button id="btn-menu-mobile"><i class='bx bx-menu'></i></button></div>
+        <div class="mobile-controls"><button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size:30px; color:var(--cor2);"></i></button></div>
     </header>
+
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
     <main>
         
@@ -204,11 +193,11 @@
 
             <div class="mais-card">
                 
-                <div class="profile-header" onclick="window.location.href='meuperfil.html'">
-                    <img src="https://i.pravatar.cc/150?img=12" class="profile-avatar" alt="Foto">
+                <div class="profile-header" onclick="irParaPerfilCorreto()">
+                    <img src="https://placehold.co/150" class="profile-avatar" id="mais-foto" alt="Foto">
                     <div class="profile-info">
-                        <h3>Matheus Silva</h3>
-                        <p>Ver e editar perfil completo</p>
+                        <h3 id="mais-nome">Carregando...</h3>
+                        <p id="mais-user">@carregando</p>
                     </div>
                     <i class='bx bx-chevron-right profile-arrow'></i>
                 </div>
@@ -249,7 +238,7 @@
                             </div>
                         </div>
 
-                        <a href="preferencia-notif.html" class="settings-item">
+                        <a href="notificacoes.html" class="settings-item">
                             <div class="item-icon"><i class='bx bx-bell'></i></div>
                             <div class="item-text">Notificações</div>
                             <i class='bx bx-chevron-right item-arrow'></i>
@@ -284,7 +273,7 @@
                 </div>
 
                 <div class="logout-container">
-                    <button class="logout-btn" onclick="alert('Você saiu da conta!')">
+                    <button class="logout-btn" onclick="fazerLogout()">
                         <i class='bx bx-log-out'></i> Sair da Conta
                     </button>
                 </div>
@@ -294,8 +283,6 @@
 
     </main>
 
-
-
     <nav class="bottom-nav">
         <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
         <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
@@ -304,26 +291,56 @@
         <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <script src="script.js"></script>
     <script>
-        // Lógica simples para ativar o Dark Mode
-        const toggle = document.getElementById('darkModeSwitch');
-        
-        // Verifica se já estava ativo antes
-        if(localStorage.getItem('darkMode') === 'true') {
-            document.body.classList.add('dark-mode');
-            toggle.checked = true;
-        }
-
-        toggle.addEventListener('change', () => {
-            if(toggle.checked) {
+        document.addEventListener("DOMContentLoaded", function() {
+            // Verifica o Dark Mode
+            const toggle = document.getElementById('darkModeSwitch');
+            if(localStorage.getItem('darkMode') === 'true') {
                 document.body.classList.add('dark-mode');
-                localStorage.setItem('darkMode', 'true');
+                if(toggle) toggle.checked = true;
+            }
+            if(toggle) {
+                toggle.addEventListener('change', () => {
+                    if(toggle.checked) {
+                        document.body.classList.add('dark-mode');
+                        localStorage.setItem('darkMode', 'true');
+                    } else {
+                        document.body.classList.remove('dark-mode');
+                        localStorage.setItem('darkMode', 'false');
+                    }
+                });
+            }
+
+            // CARREGA OS DADOS DO USUÁRIO
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+            
+            if (perfilLocal) {
+                // Atualiza Foto
+                const img = document.getElementById('mais-foto');
+                if(img) img.src = perfilLocal.foto || "https://placehold.co/150";
+
+                // Atualiza Nome
+                const nome = document.getElementById('mais-nome');
+                if(nome) nome.innerText = perfilLocal.nome || "Usuário Doke";
+
+                // Atualiza User Handle
+                const userTxt = document.getElementById('mais-user');
+                if(userTxt) userTxt.innerText = perfilLocal.user || "@usuario";
             } else {
-                document.body.classList.remove('dark-mode');
-                localStorage.setItem('darkMode', 'false');
+                // Se não estiver logado, manda para o login ou mostra padrão
+                window.location.href = "login.html";
             }
         });
+
+        // Função auxiliar para redirecionar corretamente
+        function irParaPerfilCorreto() {
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+            if(perfil && perfil.isProfissional) {
+                window.location.href = 'meuperfil.html';
+            } else {
+                window.location.href = 'perfil-usuario.html';
+            }
+        }
     </script>
 </body>
 </html>

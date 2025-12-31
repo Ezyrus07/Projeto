@@ -6,63 +6,43 @@
     <title>Notificações | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
     <script type="module" src="script.js"></script>
+    
     <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS DA PÁGINA NOTIFICAÇÕES
            ====================================================== */
         
-        /* Ajuste do Main para compensar Sidebar (Desktop) */
         @media (min-width: 1024px) {
             main {
-                margin-left: var(--sidebar-width);
+                margin-left: 270px;
                 padding: 30px 40px;
                 max-width: 1600px;
             }
         }
 
-        /* Container Central */
-        .notif-container {
-            margin: 0 auto;
-            width: 100%;
-        }
+        .notif-container { margin: 0 auto; width: 100%; }
 
-        /* --- HERO SECTION (Cabeçalho Azul) --- */
+        /* HERO SECTION */
         .notif-hero-container {
             background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
-            padding: 40px;
-            border-radius: 20px;
-            margin-bottom: 30px;
-            color: white;
-            box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
-            position: relative;
-            overflow: hidden;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            flex-wrap: wrap;
-            gap: 20px;
+            padding: 40px; border-radius: 20px; margin-bottom: 30px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative; overflow: hidden; display: flex;
+            justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;
         }
-
         .notif-hero-container::before {
             content: ''; position: absolute; top: -50px; right: -20px;
             width: 200px; height: 200px; background: rgba(255,255,255,0.05);
             border-radius: 50%; pointer-events: none;
         }
 
-        .hero-content h1 {
-            font-size: 2rem; margin-bottom: 5px; font-weight: 700; color: white;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .badge-count {
-            background: #ff2e63; color: white; font-size: 0.8rem; 
-            padding: 3px 10px; border-radius: 12px; vertical-align: middle;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-        }
+        .hero-content h1 { font-size: 2rem; margin-bottom: 5px; font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; }
+        .badge-count { background: #ff2e63; color: white; font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
         .hero-content p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
 
         .hero-actions { display: flex; gap: 10px; }
-
         .btn-hero-action {
             background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
             color: white; padding: 10px 18px; border-radius: 30px;
@@ -72,33 +52,20 @@
         }
         .btn-hero-action:hover { background: white; color: var(--cor2); }
 
-        /* --- FILTROS (Chips) --- */
-        .filters-scroll {
-            display: flex; gap: 10px; margin-bottom: 30px; 
-            overflow-x: auto; padding-bottom: 5px; scrollbar-width: none;
-        }
-        .filters-scroll::-webkit-scrollbar { display: none; }
-
+        /* FILTROS */
+        .filters-scroll { display: flex; gap: 10px; margin-bottom: 30px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .filter-chip {
             background: white; border: 1px solid #e0e0e0; padding: 10px 24px;
             border-radius: 30px; font-size: 0.9rem; font-weight: 600; color: #555;
             cursor: pointer; white-space: nowrap; transition: 0.2s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
         }
-        .filter-chip:hover { border-color: var(--cor2); color: var(--cor2); transform: translateY(-2px); }
-        .filter-chip.active {
-            background: var(--cor2); color: white; border-color: var(--cor2);
-            box-shadow: 0 4px 10px rgba(42, 95, 144, 0.3);
-        }
+        .filter-chip:hover { border-color: var(--cor2); color: var(--cor2); }
+        .filter-chip.active { background: var(--cor2); color: white; border-color: var(--cor2); }
 
-        /* --- GRUPOS DE NOTIFICAÇÃO --- */
+        /* CARDS */
         .date-group { margin-bottom: 30px; }
-        .date-label {
-            font-size: 0.8rem; font-weight: 700; color: #888; 
-            margin-bottom: 15px; padding-left: 5px; text-transform: uppercase; letter-spacing: 1px;
-        }
+        .date-label { font-size: 0.8rem; font-weight: 700; color: #888; margin-bottom: 15px; text-transform: uppercase; }
 
-        /* --- CARD DE NOTIFICAÇÃO --- */
         .notif-card {
             background: white; border-radius: 16px; padding: 20px;
             margin-bottom: 15px; border: 1px solid #f0f0f0;
@@ -106,38 +73,26 @@
             display: flex; gap: 18px; align-items: flex-start;
             position: relative; transition: 0.2s; cursor: pointer;
         }
-        .notif-card:hover {
-            transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06);
-            border-color: #e0e0e0;
-        }
-
-        .notif-card.unread {
-            background: #fff;
-            border-left: 5px solid var(--cor0);
-        }
+        .notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
+        .notif-card.unread { border-left: 5px solid var(--cor0); background: #faffff; }
         .notif-card.unread::after {
             content: ''; position: absolute; top: 20px; right: 20px;
             width: 10px; height: 10px; background: #ff2e63; border-radius: 50%;
-            box-shadow: 0 0 5px rgba(255, 46, 99, 0.5);
         }
 
         .notif-icon {
             width: 50px; height: 50px; border-radius: 14px;
             display: flex; align-items: center; justify-content: center;
             font-size: 1.5rem; flex-shrink: 0;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
         }
         .ni-pedido { background: #e0f2f1; color: var(--cor0); }
         .ni-alerta { background: #fff0f0; color: #ff2e63; }
         .ni-info { background: #eef4fc; color: var(--cor2); }
-        .ni-social { background: #f3e5f5; color: #9c27b0; }
 
         .notif-content { flex: 1; padding-right: 25px; }
-        .notif-header { display: flex; justify-content: space-between; margin-bottom: 5px; align-items: center; }
-        
+        .notif-header { display: flex; justify-content: space-between; margin-bottom: 5px; }
         .notif-title { font-size: 1rem; font-weight: 700; color: #333; }
         .notif-time { font-size: 0.75rem; color: #999; font-weight: 500; }
-        
         .notif-desc { font-size: 0.9rem; color: #666; line-height: 1.5; margin-bottom: 12px; }
         
         .notif-action-btn {
@@ -147,181 +102,52 @@
         }
         .notif-action-btn:hover { background: var(--cor2); color: white; }
 
-        .notif-options {
-            position: absolute; bottom: 15px; right: 15px;
-            color: #ccc; cursor: pointer; padding: 5px; font-size: 1.2rem;
-            transition: 0.2s;
-        }
-        .notif-options:hover { color: var(--cor2); }
-
-        /* Estado Vazio */
         .empty-state {
             text-align: center; padding: 80px 20px; display: none;
             background: white; border-radius: 20px; border: 1px solid #f0f0f0;
         }
-        .empty-state i { font-size: 4rem; color: #e0e0e0; margin-bottom: 20px; }
-        .empty-state h3 { color: #333; margin-bottom: 10px; font-size: 1.2rem; }
-        .empty-state p { color: #888; max-width: 400px; margin: 0 auto; font-size: 0.95rem; }
 
-        /* ======================================================
-           RESPONSIVIDADE MOBILE (CORRIGIDA E CENTRALIZADA)
-           ====================================================== */
         @media (max-width: 768px) {
-            
-            /* 1. Ajuste Global do Main */
-            main {
-                margin-left: 0 !important; /* Remove recuo da sidebar */
-                padding: 20px 20px !important; /* Espaçamento seguro */
-                width: 100% !important;
-                display: flex;
-                flex-direction: column;
-                align-items: center; /* Centraliza o conteúdo */
-                box-sizing: border-box;
-            }
-
-            .notif-container {
-                width: 100%;
-                max-width: 100%;
-            }
-
-            /* 2. Card Azul (Hero) Centralizado e Solto */
-            .notif-hero-container {
-                display: flex;
-                flex-direction: column;
-                align-items: center; /* Centraliza itens */
-                text-align: center; /* Centraliza texto */
-                
-                padding: 30px 20px;
-                margin: 0 auto 25px auto; /* Centraliza o bloco e dá espaço embaixo */
-                
-                border-radius: 20px; /* Bordas arredondadas completas */
-                width: 100%; /* Ocupa a largura disponível */
-                box-sizing: border-box;
-            }
-
-            .hero-content h1 {
-                justify-content: center; /* Centraliza título e badge */
-                width: 100%;
-            }
-
-            /* 3. Botões do Hero (Empilhados e Centralizados) */
-            .hero-actions {
-                width: 100%;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                gap: 12px;
-                margin-top: 20px;
-            }
-
-            .btn-hero-action {
-                width: 100%;
-                justify-content: center;
-                background: rgba(255,255,255,0.2); /* Mais contraste */
-            }
-
-            /* 4. Lista de Notificações */
-            .notif-card {
-                flex-direction: column; /* Ícone em cima, texto embaixo */
-                gap: 15px;
-            }
-
-            .notif-header {
-                flex-direction: row;
-                justify-content: space-between;
-                width: 100%;
-            }
-
-            .notif-content {
-                padding-right: 0;
-            }
-
-            /* 3 pontinhos no topo direito */
-            .notif-options {
-                top: 20px; 
-                right: 15px;
-                bottom: auto; 
-            }
+            main { margin-left: 0; padding: 20px; }
+            .notif-hero-container { text-align: center; justify-content: center; }
+            .hero-actions { width: 100%; justify-content: center; }
+            .notif-card { flex-direction: column; gap: 10px; }
+            .notif-icon { width: 40px; height: 40px; font-size: 1.2rem; }
+            .notif-header { width: 100%; }
         }
     </style>
 </head>
 <body>
 
     <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início"><span>Início</span></a>
-        </div>
-        <div class="item">
-            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar"><span>Explorar</span></a>
-        </div>
-        <div class="item active">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações"><span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades"><span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais"><span>Mais</span></a>
-        </div>
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item active"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <nav class="menu">
-            <div class="cep-wrapper"><a href="#" class="cep" onclick="toggleCep(event)"><span>Informe seu CEP</span></a></div>
-            <a href="anunciar.html">Anuncie</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
-        </nav>
-        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
+        <a href="login.html"><i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i></a>
     </header>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'">
-            </a>           
-        </div>
-        
-        <div class="mobile-controls" style="display: flex; align-items: center; gap: 15px;">
-            <a href="login.html" class="entrar">Entrar</a>
-            
-            <button id="btn-menu-mobile" aria-label="Abrir Menu">
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2a5f90" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="3" y1="12" x2="21" y2="12"></line>
-                    <line x1="3" y1="6" x2="21" y2="6"></line>
-                    <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-            </button>
-        </div>
-    </header>
     <main>
-        
         <div class="notif-container">
             
             <div class="notif-hero-container">
                 <div class="hero-content">
-                    <h1>Notificações <span class="badge-count" id="badge-count">2</span></h1>
+                    <h1>Notificações <span class="badge-count" id="badge-count" style="display:none;">0</span></h1>
                     <p>Acompanhe atualizações sobre seus pedidos e interações.</p>
                 </div>
                 <div class="hero-actions">
                     <button class="btn-hero-action" onclick="marcarTodasLidas()">
-                        <i class='bx bx-check-double'></i> Marcar todas como lidas
+                        <i class='bx bx-check-double'></i> Limpar Avisos
                     </button>
-                    <a href="#" class="btn-hero-action">
-                        <i class='bx bx-cog'></i> Configurar
-                    </a>
+                    <a href="mais.html" class="btn-hero-action"><i class='bx bx-cog'></i> Ajustes</a>
                 </div>
             </div>
 
@@ -329,147 +155,204 @@
                 <button class="filter-chip active" onclick="filtrar('todas', this)">Todas</button>
                 <button class="filter-chip" onclick="filtrar('nao-lidas', this)">Não Lidas</button>
                 <button class="filter-chip" onclick="filtrar('pedidos', this)">Pedidos</button>
-                <button class="filter-chip" onclick="filtrar('sistema', this)">Sistema</button>
             </div>
 
             <div id="lista-notificacoes">
-                
-                <div class="date-group" id="grupo-hoje">
-                    <div class="date-label">Hoje</div>
-
-                    <div class="notif-card unread" data-cat="pedidos">
-                        <div class="notif-icon ni-pedido"><i class='bx bx-file-blank'></i></div>
-                        <div class="notif-content">
-                            <div class="notif-header">
-                                <span class="notif-title">Orçamento Aprovado!</span>
-                                <span class="notif-time">15 min</span>
-                            </div>
-                            <p class="notif-desc">O cliente Marcos aprovou seu orçamento para "Pintura Residencial". Prepare-se para começar o serviço.</p>
-                            <a href="#" class="notif-action-btn">Ver Detalhes do Pedido</a>
-                        </div>
-                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
-                    </div>
-
-                    <div class="notif-card unread" data-cat="sistema">
-                        <div class="notif-icon ni-info"><i class='bx bx-user'></i></div>
-                        <div class="notif-content">
-                            <div class="notif-header">
-                                <span class="notif-title">Dica para seu Perfil</span>
-                                <span class="notif-time">2h</span>
-                            </div>
-                            <p class="notif-desc">Adicione uma foto de capa para aumentar suas chances de ser contratado em até 40% na plataforma.</p>
-                            <a href="meuperfil.html" class="notif-action-btn">Editar Perfil</a>
-                        </div>
-                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
-                    </div>
+                <div style="text-align:center; padding:40px; color:#999;">
+                    <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
+                    <p>Buscando atualizações...</p>
                 </div>
-
-                <div class="date-group" id="grupo-ontem">
-                    <div class="date-label">Ontem</div>
-
-                    <div class="notif-card" data-cat="alerta">
-                        <div class="notif-icon ni-alerta"><i class='bx bx-error-circle'></i></div>
-                        <div class="notif-content">
-                            <div class="notif-header">
-                                <span class="notif-title">Pagamento Recusado</span>
-                                <span class="notif-time">09:00</span>
-                            </div>
-                            <p class="notif-desc">Houve um problema com o cartão final 4242 na tentativa de destaque do anúncio. Atualize seu método.</p>
-                            <a href="#" class="notif-action-btn" style="background:#fff0f0; color:#ff2e63;">Resolver Agora</a>
-                        </div>
-                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
-                    </div>
-
-                    <div class="notif-card" data-cat="pedidos">
-                        <div class="notif-icon ni-social"><i class='bx bx-star'></i></div>
-                        <div class="notif-content">
-                            <div class="notif-header">
-                                <span class="notif-title">Nova Avaliação 5 Estrelas</span>
-                                <span class="notif-time">14:30</span>
-                            </div>
-                            <p class="notif-desc">Ana Julia avaliou seu serviço: "Excelente profissional, muito pontual e organizado!"</p>
-                        </div>
-                        <div class="notif-options"><i class='bx bx-dots-horizontal-rounded'></i></div>
-                    </div>
-                </div>
-
             </div>
 
             <div class="empty-state" id="empty-state">
                 <i class='bx bx-bell-off'></i>
                 <h3>Tudo limpo por aqui!</h3>
-                <p>Você não tem novas notificações no momento. Aproveite para explorar novos serviços.</p>
-                <button class="notif-action-btn" style="background:var(--cor2); color:white; margin-top:20px; padding:12px 25px;" onclick="window.location.href='explorar.html'">Explorar Doke</button>
+                <p>Você não tem novas notificações no momento.</p>
             </div>
 
         </div>
     </main>
 
     <nav class="bottom-nav">
-        <a href="index.html" class="item active">
-            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span>
-        </a>
-        <a href="explorar.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span>
-        </a>
-        <a href="anunciar.html" class="item">
-            <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">
-            <span>Anunciar</span>
-        </a>
-        <a href="notificacoes.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span>
-        </a>
-        <a href="perfil.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
-            <span>Perfil</span>
-        </a>
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <script>
-        function marcarTodasLidas() {
-            const unreadItems = document.querySelectorAll('.notif-card.unread');
-            unreadItems.forEach(item => {
-                item.classList.remove('unread');
+    <script type="module">
+        import { getFirestore, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // Variável para armazenar notificações carregadas e facilitar o filtro
+        let todasNotificacoes = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const auth = getAuth();
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    carregarNotificacoes(user.uid);
+                } else {
+                    window.location.href = "login.html";
+                }
             });
-            document.getElementById('badge-count').style.display = 'none';
+        });
+
+        async function carregarNotificacoes(uid) {
+            const container = document.getElementById('lista-notificacoes');
+            const db = getFirestore();
+            todasNotificacoes = []; // Limpa array global
+
+            try {
+                // 1. Buscas Paralelas: 
+                // - Pedidos que recebi (como prestador)
+                // - Pedidos que enviei (como cliente)
+                
+                const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
+                const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
+
+                const [snapRecebidos, snapEnviados] = await Promise.all([
+                    getDocs(qRecebidos),
+                    getDocs(qEnviados)
+                ]);
+
+                // 2. Processamento (Transforma tudo em "Notificação")
+                
+                // A) Pedidos que recebi (Alguém quer me contratar)
+                snapRecebidos.forEach(doc => {
+                    const data = doc.data();
+                    if(data.status === 'pendente') {
+                        todasNotificacoes.push({
+                            id: doc.id,
+                            titulo: "Novo Pedido de Orçamento",
+                            desc: `${data.clienteNome} solicitou um orçamento para: "${data.servicoReferencia}".`,
+                            tipo: 'pedido',
+                            status: 'unread',
+                            time: new Date(data.dataPedido),
+                            iconClass: 'bx-file-blank',
+                            colorClass: 'ni-pedido',
+                            link: 'chat.html'
+                        });
+                    }
+                });
+
+                // B) Pedidos que enviei (Atualizações de status)
+                snapEnviados.forEach(doc => {
+                    const data = doc.data();
+                    let titulo, desc, icon, cor, statusNotif = 'read';
+                    
+                    if (data.status === 'aceito') {
+                        titulo = "Orçamento Aceito!";
+                        desc = `O profissional ${data.paraNome} aceitou seu pedido. Inicie o chat agora.`;
+                        icon = 'bx-check-circle';
+                        cor = 'ni-info'; // Azul
+                        statusNotif = 'unread'; // Relevante
+                    } else if (data.status === 'recusado') {
+                        titulo = "Pedido Recusado";
+                        desc = `O profissional ${data.paraNome} não pode atender sua solicitação no momento.`;
+                        icon = 'bx-x-circle';
+                        cor = 'ni-alerta';
+                    }
+
+                    if (titulo) { // Só adiciona se tiver relevância (não adiciona pendentes que eu mesmo enviei)
+                        todasNotificacoes.push({
+                            id: doc.id,
+                            titulo: titulo,
+                            desc: desc,
+                            tipo: 'pedido',
+                            status: statusNotif,
+                            time: new Date(data.dataAtualizacao || data.dataPedido),
+                            iconClass: icon,
+                            colorClass: cor,
+                            link: 'chat.html'
+                        });
+                    }
+                });
+
+                // 3. Ordenação por Data (Mais recente primeiro)
+                todasNotificacoes.sort((a, b) => b.time - a.time);
+
+                // 4. Renderização
+                renderizarLista(todasNotificacoes);
+                atualizarBadge();
+
+            } catch (error) {
+                console.error("Erro ao carregar notificações:", error);
+                container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar. Tente recarregar.</p>`;
+            }
         }
 
-        function filtrar(tipo, btn) {
+        function renderizarLista(lista) {
+            const container = document.getElementById('lista-notificacoes');
+            container.innerHTML = "";
+
+            if (lista.length === 0) {
+                document.getElementById('empty-state').style.display = 'block';
+                return;
+            } else {
+                document.getElementById('empty-state').style.display = 'none';
+            }
+
+            // Agrupamento simples (Pode melhorar depois)
+            const html = lista.map(notif => `
+                <div class="notif-card ${notif.status}" data-cat="${notif.tipo}" onclick="window.location.href='${notif.link}'">
+                    <div class="notif-icon ${notif.colorClass}"><i class='bx ${notif.iconClass}'></i></div>
+                    <div class="notif-content">
+                        <div class="notif-header">
+                            <span class="notif-title">${notif.titulo}</span>
+                            <span class="notif-time">${calcularTempo(notif.time)}</span>
+                        </div>
+                        <p class="notif-desc">${notif.desc}</p>
+                    </div>
+                </div>
+            `).join('');
+
+            container.innerHTML = `<div class="date-group"><div class="date-label">Recentes</div>${html}</div>`;
+        }
+
+        // Funções Auxiliares Globais
+        window.filtrar = function(tipo, btn) {
             document.querySelectorAll('.filter-chip').forEach(c => c.classList.remove('active'));
             btn.classList.add('active');
 
-            const lista = document.querySelectorAll('.notif-card');
-            let visiveis = 0;
+            let filtrados = [];
+            if (tipo === 'todas') filtrados = todasNotificacoes;
+            else if (tipo === 'nao-lidas') filtrados = todasNotificacoes.filter(n => n.status === 'unread');
+            else filtrados = todasNotificacoes.filter(n => n.tipo === tipo);
 
-            lista.forEach(card => {
-                let mostrar = false;
-                if (tipo === 'todas') mostrar = true;
-                else if (tipo === 'nao-lidas') mostrar = card.classList.contains('unread');
-                else if (card.dataset.cat === tipo) mostrar = true;
+            renderizarLista(filtrados);
+        }
 
-                if (mostrar) {
-                    card.style.display = 'flex';
-                    visiveis++;
-                } else {
-                    card.style.display = 'none';
-                }
-            });
+        window.marcarTodasLidas = function() {
+            document.querySelectorAll('.notif-card.unread').forEach(el => el.classList.remove('unread'));
+            document.getElementById('badge-count').style.display = 'none';
+        }
 
-            const emptyState = document.getElementById('empty-state');
-            const titulosData = document.querySelectorAll('.date-group'); 
-            
-            if (visiveis === 0) {
-                emptyState.style.display = 'block';
-                titulosData.forEach(t => t.style.display = 'none');
+        function atualizarBadge() {
+            const naoLidas = todasNotificacoes.filter(n => n.status === 'unread').length;
+            const badge = document.getElementById('badge-count');
+            if (naoLidas > 0) {
+                badge.innerText = naoLidas;
+                badge.style.display = 'inline-block';
             } else {
-                emptyState.style.display = 'none';
-                titulosData.forEach(t => t.style.display = 'block');
+                badge.style.display = 'none';
             }
         }
-    </script>
 
+        function calcularTempo(data) {
+            const agora = new Date();
+            const diffMs = agora - data;
+            const diffMin = Math.floor(diffMs / 60000);
+            const diffHoras = Math.floor(diffMin / 60);
+            const diffDias = Math.floor(diffHoras / 24);
+
+            if (diffMin < 1) return "Agora mesmo";
+            if (diffMin < 60) return `${diffMin} min`;
+            if (diffHoras < 24) return `${diffHoras} h`;
+            return `${diffDias} d`;
+        }
+
+    </script>
 </body>
 </html>

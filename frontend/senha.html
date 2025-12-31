@@ -7,6 +7,8 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="style.css">
     
+    <script type="module" src="script.js"></script>
+    
     <style>
         /* ================= VARIÁVEIS E RESET ================= */
         :root {
@@ -15,8 +17,7 @@
             --cor2: #2a5f90; /* Azul Títulos */
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
-            --cor-bg: #f8f9fa;
-            --fonte-padrao: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --fonte-padrao: 'Poppins', sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
@@ -40,6 +41,10 @@
             align-items: center;
         }
 
+        @media (min-width: 1024px) {
+            .main-content { margin-left: 270px; }
+        }
+
         /* Topo */
         .page-header {
             width: 100%; max-width: 600px;
@@ -47,14 +52,14 @@
             margin-bottom: 30px;
         }
         .btn-back {
-            background: white; border: 1px solid #eee;
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
             width: 45px; height: 45px; border-radius: 50%;
             display: flex; align-items: center; justify-content: center;
-            color: var(--cor2); font-size: 1.5rem;
+            color: white; font-size: 1.5rem;
             box-shadow: 0 4px 10px rgba(0,0,0,0.05); transition: 0.2s;
         }
-        .btn-back:hover { transform: translateX(-3px); border-color: var(--cor2); }
-        .page-header h1 { color: var(--cor0);  font-size: 1.8rem; font-weight: 700; }
+        .btn-back:hover { background: white; color: var(--cor2); }
+        .page-header h1 { color: white; font-size: 1.8rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         /* Container dos Formulários */
         .security-container {
@@ -97,47 +102,26 @@
 
         /* Botão Trigger (Abrir form) */
         .btn-expandir {
-            width: 100%;
-            padding: 15px;
-            background: white;
-            border: 1px dashed var(--cor1);
-            color: var(--cor1);
-            border-radius: 12px;
-            cursor: pointer;
-            font-size: 0.95rem;
-            font-weight: 600;
+            width: 100%; padding: 15px; background: white;
+            border: 1px dashed var(--cor1); color: var(--cor1);
+            border-radius: 12px; cursor: pointer; font-size: 0.95rem; font-weight: 600;
             display: flex; justify-content: center; align-items: center; gap: 8px;
             transition: 0.3s;
         }
-        .btn-expandir:hover {
-            border-color: var(--cor2);
-            color: var(--cor2);
-            background: #f9fbfd;
-        }
+        .btn-expandir:hover { border-color: var(--cor2); color: var(--cor2); background: #f9fbfd; }
 
         /* Botões de Ação do Form */
-        .form-actions {
-            display: flex;
-            gap: 10px;
-            margin-top: 15px;
-        }
+        .form-actions { display: flex; gap: 10px; margin-top: 15px; }
         .btn-salvar {
-            flex: 1;
-            padding: 15px; background: var(--cor0); color: white;
+            flex: 1; padding: 15px; background: var(--cor0); color: white;
             border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
             transition: 0.2s; display: flex; align-items: center; justify-content: center; gap: 8px;
         }
         .btn-salvar:hover { background: #086659; transform: translateY(-2px); }
 
         .btn-cancelar {
-            padding: 15px 20px;
-            background: white;
-            border: 1px solid #ddd;
-            color: #666;
-            border-radius: 12px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: 0.2s;
+            padding: 15px 20px; background: white; border: 1px solid #ddd;
+            color: #666; border-radius: 12px; font-weight: 600; cursor: pointer; transition: 0.2s;
         }
         .btn-cancelar:hover { background: #f5f5f5; }
 
@@ -173,27 +157,15 @@
         }
         .btn-danger:hover { background: var(--cor3); color: white; }
 
-        /* Responsividade */
-        .navbar-mobile, .bottom-nav { display: none; }
-
         @media (max-width: 768px) {
             body { flex-direction: column; padding-bottom: 80px; }
             .sidebar-icones { display: none; }
-            
-            .main-content { padding: 20px; }
-            .card-box { padding: 20px; }
-            
+            .main-content { padding: 20px; margin-left: 0; }
             .navbar-mobile {
                 display: flex; align-items: center; justify-content: space-between;
                 padding: 15px 20px; background: white;
                 box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 99;
             }
-            .bottom-nav {
-                display: flex; justify-content: space-around;
-                position: fixed; bottom: 0; left: 0; width: 100%;
-                background: white; border-top: 1px solid #eee; padding: 10px 0; z-index: 999;
-            }
-            .page-header h1 { color: white; } /* Ajuste de cor para mobile com gradiente */
         }
     </style>
 </head>
@@ -207,39 +179,12 @@
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
         <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+        <div class="item active"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="#">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-        </div>
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
+        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
     </header>
 
     <main class="main-content">
@@ -258,11 +203,11 @@
                     <i class='bx bx-edit'></i> Toque para redefinir sua senha
                 </button>
 
-                <form id="form-senha" style="display: none;" onsubmit="salvarSenha(event)">
+                <form id="form-senha" style="display: none;" onsubmit="alterarSenhaReal(event)">
                     <div class="input-group">
                         <label>Senha Atual</label>
                         <div class="password-wrapper">
-                            <input type="password" placeholder="Digite sua senha atual">
+                            <input type="password" id="senhaAtual" placeholder="Digite sua senha atual" required>
                             <i class='bx bx-show toggle-password' onclick="togglePass(this)"></i>
                         </div>
                     </div>
@@ -270,7 +215,7 @@
                     <div class="input-group">
                         <label>Nova Senha</label>
                         <div class="password-wrapper">
-                            <input type="password" id="novaSenha" placeholder="Mínimo de 8 caracteres" onkeyup="checkStrength(this.value)">
+                            <input type="password" id="novaSenha" placeholder="Mínimo de 6 caracteres" onkeyup="checkStrength(this.value)" required>
                             <i class='bx bx-show toggle-password' onclick="togglePass(this)"></i>
                         </div>
                         <div class="password-strength">
@@ -281,13 +226,13 @@
                     <div class="input-group">
                         <label>Confirmar Nova Senha</label>
                         <div class="password-wrapper">
-                            <input type="password" placeholder="Repita a nova senha">
+                            <input type="password" id="confirmaSenha" placeholder="Repita a nova senha" required>
                         </div>
                     </div>
 
                     <div class="form-actions">
                         <button type="button" class="btn-cancelar" onclick="esconderFormulario()">Cancelar</button>
-                        <button type="submit" class="btn-salvar">Atualizar</button>
+                        <button type="submit" class="btn-salvar" id="btnSalvarSenha">Atualizar</button>
                     </div>
                 </form>
             </div>
@@ -301,7 +246,7 @@
                         <p>Receba um código via SMS/E-mail ao entrar.</p>
                     </div>
                     <label class="switch">
-                        <input type="checkbox">
+                        <input type="checkbox" onclick="alert('Funcionalidade em desenvolvimento!')">
                         <span class="slider round"></span>
                     </label>
                 </div>
@@ -323,40 +268,132 @@
                 <p style="color: #666; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5;">
                     Ao excluir sua conta, todos os seus dados, histórico de serviços e pontos serão perdidos permanentemente. Essa ação não pode ser desfeita.
                 </p>
-                <button class="btn-danger" onclick="confirmarExclusao()">Excluir Minha Conta</button>
+                <button class="btn-danger" onclick="excluirContaReal()">Excluir Minha Conta</button>
             </div>
 
         </div>
     </main>
 
     <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
-        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
-        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" width="24"><span>Anunciar</span></a>
-        <a href="mais.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" width="24"><span>Mais</span></a>
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <script>
-        // --- FUNÇÕES DE MOSTRAR/OCULTAR FORMULÁRIO ---
-        function mostrarFormulario() {
-            document.getElementById('btn-abrir-form').style.display = 'none'; // Esconde botão abrir
-            document.getElementById('form-senha').style.display = 'block'; // Mostra form
+    <script type="module">
+        import { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        
+        window.alterarSenhaReal = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSalvarSenha');
+            const textoOriginal = btn.innerText;
+            const currentPass = document.getElementById('senhaAtual').value;
+            const newPass = document.getElementById('novaSenha').value;
+            const confirmPass = document.getElementById('confirmaSenha').value;
+
+            // Validações Básicas
+            if(newPass.length < 6) {
+                alert("A nova senha deve ter pelo menos 6 caracteres.");
+                return;
+            }
+            if(newPass !== confirmPass) {
+                alert("As senhas não conferem.");
+                return;
+            }
+
+            btn.innerText = "Verificando...";
+            btn.disabled = true;
+
+            const user = window.auth.currentUser;
             
-            // Opcional: Efeito suave (se quiser usar CSS animation)
-            // document.getElementById('form-senha').style.animation = 'fadeIn 0.3s';
+            if(!user) {
+                alert("Erro de sessão. Faça login novamente.");
+                window.location.href = "login.html";
+                return;
+            }
+
+            try {
+                // 1. Reautenticar usuário (Necessário para trocar senha)
+                const credential = EmailAuthProvider.credential(user.email, currentPass);
+                await reauthenticateWithCredential(user, credential);
+
+                // 2. Atualizar Senha
+                btn.innerText = "Atualizando...";
+                await updatePassword(user, newPass);
+
+                // 3. Sucesso
+                btn.style.background = "#2ecc71";
+                btn.innerText = "Senha Alterada!";
+                
+                setTimeout(() => {
+                    alert("Sua senha foi atualizada com sucesso.");
+                    esconderFormulario();
+                    btn.innerText = textoOriginal;
+                    btn.style.background = "var(--cor0)";
+                    btn.disabled = false;
+                }, 1000);
+
+            } catch (error) {
+                console.error(error);
+                btn.innerText = textoOriginal;
+                btn.disabled = false;
+                
+                if(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                    alert("A senha atual está incorreta.");
+                } else {
+                    alert("Erro ao alterar senha: " + error.message);
+                }
+            }
+        }
+
+        window.excluirContaReal = async function() {
+            if(confirm("TEM CERTEZA? Sua conta será excluída permanentemente e você perderá acesso a tudo. Não é possível desfazer.")) {
+                const user = window.auth.currentUser;
+                if(!user) return;
+
+                const inputPass = prompt("Por segurança, digite sua senha para confirmar a exclusão:");
+                if(!inputPass) return;
+
+                try {
+                    // Reautenticar antes de excluir
+                    const credential = EmailAuthProvider.credential(user.email, inputPass);
+                    await reauthenticateWithCredential(user, credential);
+                    
+                    // Excluir usuário
+                    await deleteUser(user);
+                    
+                    // Limpar dados locais
+                    localStorage.clear();
+                    alert("Sua conta foi excluída. Sentiremos sua falta!");
+                    window.location.href = "index.html";
+
+                } catch (error) {
+                    console.error(error);
+                    if(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+                        alert("Senha incorreta. Não foi possível excluir a conta.");
+                    } else {
+                        alert("Erro ao excluir conta: " + error.message);
+                    }
+                }
+            }
+        }
+    </script>
+
+    <script>
+        function mostrarFormulario() {
+            document.getElementById('btn-abrir-form').style.display = 'none';
+            document.getElementById('form-senha').style.display = 'block';
         }
 
         function esconderFormulario() {
-            document.getElementById('form-senha').style.display = 'none'; // Esconde form
-            document.getElementById('btn-abrir-form').style.display = 'flex'; // Volta botão abrir
-            
-            // Limpa os campos por segurança
+            document.getElementById('form-senha').style.display = 'none';
+            document.getElementById('btn-abrir-form').style.display = 'flex';
             document.getElementById('form-senha').reset();
             document.getElementById('strengthBar').style.width = '0%';
         }
-        // ----------------------------------------------
 
-        // Função para mostrar/ocultar senha (Olhinho)
         function togglePass(icon) {
             const input = icon.previousElementSibling;
             if (input.type === "password") {
@@ -370,7 +407,6 @@
             }
         }
 
-        // Verificação de Força
         function checkStrength(password) {
             const bar = document.getElementById('strengthBar');
             let strength = 0;
@@ -381,32 +417,9 @@
 
             bar.style.width = strength + '%';
 
-            if (strength < 40) bar.style.backgroundColor = 'var(--cor3)'; // Vermelho
-            else if (strength < 80) bar.style.backgroundColor = '#f1c40f'; // Amarelo
-            else bar.style.backgroundColor = 'var(--cor0)'; // Verde
-        }
-
-        // Feedback Salvar
-        function salvarSenha(e) {
-            e.preventDefault();
-            const btn = document.querySelector('.btn-salvar');
-            const originalText = btn.innerText;
-
-            btn.innerText = "Atualizado!";
-            btn.style.background = "#28a745";
-            
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "var(--cor0)";
-                alert("Senha alterada com sucesso!");
-                esconderFormulario(); // Fecha o form após salvar
-            }, 1500);
-        }
-
-        function confirmarExclusao() {
-            if(confirm("Tem certeza absoluta? Essa ação é irreversível.")) {
-                alert("Solicitação enviada. Verifique seu e-mail.");
-            }
+            if (strength < 40) bar.style.backgroundColor = 'var(--cor3)';
+            else if (strength < 80) bar.style.backgroundColor = '#f1c40f';
+            else bar.style.backgroundColor = 'var(--cor0)';
         }
     </script>
 </body>

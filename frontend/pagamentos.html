@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pagamentos e Planos | Doke</title>
-        <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
     <script type="module" src="script.js"></script>
+    
     <style>
         /* ================= VARIÁVEIS E RESET ================= */
         :root {
@@ -16,7 +18,7 @@
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
             --cor-gold: #f1c40f; /* Destaque Premium */
-            --fonte-padrao: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --fonte-padrao: 'Poppins', sans-serif;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
@@ -31,8 +33,6 @@
 
         a { text-decoration: none; }
 
-
-
         /* ================= CONTEÚDO PRINCIPAL ================= */
         .main-content {
             flex: 1;
@@ -40,6 +40,10 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+        }
+
+        @media (min-width: 1024px) {
+            .main-content { margin-left: 270px; }
         }
 
         /* Topo */
@@ -55,7 +59,7 @@
             color: white; font-size: 1.5rem; transition: 0.2s;
         }
         .btn-back:hover { background: white; color: var(--cor2); }
-        .page-header h1 { color: var(--cor0);  font-size: 1.8rem; font-weight: 700; }
+        .page-header h1 { color: white; font-size: 1.8rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
         /* Container Geral */
         .content-container { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 25px; }
@@ -111,16 +115,12 @@
         }
         .btn-add-card:hover { border-color: var(--cor0); color: var(--cor0); background: #f0fffd; }
 
-        /* Formulário Novo Cartão (Escondido) */
-        .new-card-form {
-            margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none;
-        }
+        /* Formulário Novo Cartão */
+        .new-card-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
         .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
         .input-wrap { flex: 1; }
         .input-wrap label { display: block; font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 5px; }
-        .input-wrap input {
-            width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none;
-        }
+        .input-wrap input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
         .input-wrap input:focus { border-color: var(--cor0); }
         
         .btn-save-card {
@@ -146,15 +146,15 @@
         .hist-desc span { font-size: 0.8rem; color: #888; }
         
         .hist-value { font-weight: 700; font-size: 1rem; }
-        .negative { color: #333; } /* Pagamento feito */
-        .positive { color: var(--cor0); } /* Reembolso ou ganho */
+        .negative { color: #333; }
+        .positive { color: var(--cor0); }
 
         /* RESPONSIVIDADE */
         .navbar-mobile, .bottom-nav { display: none; }
         @media (max-width: 768px) {
             body { flex-direction: column; padding-bottom: 80px; }
             .sidebar-icones { display: none; }
-            .main-content { padding: 20px; }
+            .main-content { padding: 20px; margin-left: 0; }
             .page-header h1 { font-size: 1.5rem; }
             .plan-info { flex-direction: column; text-align: center; gap: 15px; }
             
@@ -181,43 +181,12 @@
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
         <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+        <div class="item active"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
-
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
+        <a href="mais.html"><i class='bx bx-x' style="font-size: 28px; color: #333;"></i></a>
     </header>
 
     <main class="main-content">
@@ -231,14 +200,14 @@
             <div class="card-box">
                 <div class="card-title">
                     <span><i class='bx bx-star'></i> Meu Plano</span>
-                    <span style="font-size: 0.8rem; color: #888;">Renova em: 20/06</span>
+                    <span style="font-size: 0.8rem; color: #888;" id="status-renova">Free</span>
                 </div>
                 <div class="plan-info">
                     <div class="plan-details">
-                        <h3>Doke Básico</h3>
-                        <p>Você está no plano gratuito.</p>
+                        <h3 id="nome-plano">Doke Básico</h3>
+                        <p id="desc-plano">Você está no plano gratuito.</p>
                     </div>
-                    <button class="btn-upgrade" onclick="alert('Indo para página de planos...')">Seja Premium ✨</button>
+                    <button class="btn-upgrade" onclick="alert('Funcionalidade de upgrade em breve!')">Seja Premium ✨</button>
                 </div>
             </div>
 
@@ -248,27 +217,7 @@
                 </div>
 
                 <div class="card-list" id="listaCartoes">
-                    <div class="payment-method">
-                        <div style="display:flex; align-items:center;">
-                            <i class='bx bxl-mastercard method-icon'></i>
-                            <div class="method-info">
-                                <h4>Mastercard final 8890</h4>
-                                <span>Expira em 05/28</span>
-                            </div>
-                        </div>
-                        <i class='bx bx-trash btn-trash' onclick="removerCartao(this)"></i>
-                    </div>
-
-                    <div class="payment-method">
-                        <div style="display:flex; align-items:center;">
-                            <i class='bx bxl-visa method-icon'></i>
-                            <div class="method-info">
-                                <h4>Visa final 1234</h4>
-                                <span>Expira em 12/26</span>
-                            </div>
-                        </div>
-                        <i class='bx bx-trash btn-trash' onclick="removerCartao(this)"></i>
-                    </div>
+                    <div style="text-align:center; color:#999; padding:10px;">Carregando cartões...</div>
                 </div>
 
                 <button id="btn-add" class="btn-add-card" onclick="toggleFormCartao()">
@@ -278,25 +227,25 @@
                 <div class="new-card-form" id="form-cartao">
                     <div class="input-wrap" style="margin-bottom: 15px;">
                         <label>Número do Cartão</label>
-                        <input type="text" placeholder="0000 0000 0000 0000">
+                        <input type="text" id="cardNum" placeholder="0000 0000 0000 0000" maxlength="19" oninput="formatarCartao(this)">
                     </div>
                     <div class="form-row">
                         <div class="input-wrap">
                             <label>Validade</label>
-                            <input type="text" placeholder="MM/AA">
+                            <input type="text" id="cardVal" placeholder="MM/AA" maxlength="5">
                         </div>
                         <div class="input-wrap">
                             <label>CVV</label>
-                            <input type="text" placeholder="123">
+                            <input type="text" id="cardCvv" placeholder="123" maxlength="4">
                         </div>
                     </div>
                     <div class="input-wrap" style="margin-bottom: 15px;">
                         <label>Nome no Cartão</label>
-                        <input type="text" placeholder="Como impresso no cartão">
+                        <input type="text" id="cardNome" placeholder="Como impresso no cartão">
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn-save-card" style="background:#ddd; color:#333;" onclick="toggleFormCartao()">Cancelar</button>
-                        <button class="btn-save-card" onclick="salvarCartao()">Salvar Cartão</button>
+                        <button class="btn-save-card" id="btnSalvarCartao" onclick="salvarCartaoReal()">Salvar Cartão</button>
                     </div>
                 </div>
             </div>
@@ -307,70 +256,163 @@
                     <a href="#" style="font-size: 0.85rem; color: var(--cor0);">Ver tudo</a>
                 </div>
                 <div class="history-list">
-                    
                     <div class="history-item">
                         <div style="display:flex; align-items:center;">
-                            <div class="hist-date"><span>18</span><span>MAI</span></div>
+                            <div class="hist-date"><span>--</span><span>--</span></div>
                             <div class="hist-desc">
-                                <h4>Contratação: Eletricista</h4>
-                                <span>Serviço #90902</span>
+                                <h4>Sem histórico recente</h4>
+                                <span>Suas transações aparecerão aqui.</span>
                             </div>
                         </div>
-                        <span class="hist-value negative">- R$ 150,00</span>
+                        <span class="hist-value negative">-</span>
                     </div>
-
-                    <div class="history-item">
-                        <div style="display:flex; align-items:center;">
-                            <div class="hist-date"><span>10</span><span>MAI</span></div>
-                            <div class="hist-desc">
-                                <h4>Reembolso: Pintura</h4>
-                                <span>Cancelamento aprovado</span>
-                            </div>
-                        </div>
-                        <span class="hist-value positive">+ R$ 50,00</span>
-                    </div>
-
-                    <div class="history-item">
-                        <div style="display:flex; align-items:center;">
-                            <div class="hist-date"><span>02</span><span>ABR</span></div>
-                            <div class="hist-desc">
-                                <h4>Mensalidade Doke Pro</h4>
-                                <span>Assinatura Mensal</span>
-                            </div>
-                        </div>
-                        <span class="hist-value negative">- R$ 29,90</span>
-                    </div>
-
                 </div>
             </div>
 
         </div>
     </main>
+
     <nav class="bottom-nav">
-        <a href="index.html" class="item active">
-            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span>
-        </a>
-        <a href="explorar.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span>
-        </a>
-        <a href="anunciar.html" class="item">
-            <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">
-            <span>Anunciar</span>
-        </a>
-        <a href="notificacoes.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span>
-        </a>
-        <a href="perfil.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
-            <span>Perfil</span>
-        </a>
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" width="24"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" width="24"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul" width="24"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" width="24"><span>Notificações</span></a>
+        <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" width="24"><span>Perfil</span></a>
     </nav>
 
+    <script type="module">
+        import { doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        let listaCartoesLocal = [];
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const logado = localStorage.getItem('usuarioLogado');
+            if (!logado) { window.location.href = "login.html"; return; }
+
+            // Carrega plano e cartões do LocalStorage (Sincronizado com Firebase no Login)
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            
+            // Atualiza Plano (Visual)
+            if(perfil.isProfissional) {
+                document.getElementById('nome-plano').innerText = "Doke Profissional";
+                document.getElementById('desc-plano').innerText = "Conta verificada para prestar serviços.";
+                document.getElementById('status-renova').innerText = "Ativo";
+            }
+
+            // Carrega Cartões
+            if(perfil.metodos_pagamento && Array.isArray(perfil.metodos_pagamento)) {
+                listaCartoesLocal = perfil.metodos_pagamento;
+            } else {
+                listaCartoesLocal = [];
+            }
+            renderizarCartoes();
+        });
+
+        // Função global de salvar
+        window.salvarCartaoReal = async function() {
+            const numero = document.getElementById('cardNum').value.replace(/\s/g, '');
+            const validade = document.getElementById('cardVal').value;
+            const cvv = document.getElementById('cardCvv').value;
+            const nome = document.getElementById('cardNome').value;
+            const btn = document.getElementById('btnSalvarCartao');
+
+            if(numero.length < 13 || !validade || !cvv || !nome) {
+                alert("Preencha todos os campos corretamente.");
+                return;
+            }
+
+            btn.innerText = "Salvando...";
+            btn.disabled = true;
+
+            try {
+                // Identifica Bandeira (Simples)
+                let brand = "Genérico";
+                let iconClass = "bx-credit-card";
+                if(numero.startsWith('4')) { brand = "Visa"; iconClass = "bxl-visa"; }
+                else if(numero.startsWith('5')) { brand = "Mastercard"; iconClass = "bxl-mastercard"; }
+
+                const novoCartao = {
+                    id: Date.now(), // ID único temporário
+                    brand: brand,
+                    icon: iconClass,
+                    last4: numero.slice(-4),
+                    validade: validade
+                };
+
+                listaCartoesLocal.push(novoCartao);
+
+                // ATUALIZA NO FIREBASE
+                const uid = localStorage.getItem('doke_uid');
+                const docRef = doc(window.db, "usuarios", uid);
+                
+                await updateDoc(docRef, {
+                    metodos_pagamento: listaCartoesLocal
+                });
+
+                // ATUALIZA NO LOCALSTORAGE
+                const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                perfilAntigo.metodos_pagamento = listaCartoesLocal;
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilAntigo));
+
+                renderizarCartoes();
+                toggleFormCartao();
+                limparForm();
+                alert("Cartão salvo com sucesso!");
+
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao salvar cartão.");
+            } finally {
+                btn.innerText = "Salvar Cartão";
+                btn.disabled = false;
+            }
+        }
+
+        // Função global de remover
+        window.removerCartaoReal = async function(id) {
+            if(!confirm("Remover este cartão?")) return;
+
+            listaCartoesLocal = listaCartoesLocal.filter(c => c.id !== id);
+
+            // Atualiza Firebase e Storage
+            const uid = localStorage.getItem('doke_uid');
+            const docRef = doc(window.db, "usuarios", uid);
+            const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+            await updateDoc(docRef, { metodos_pagamento: listaCartoesLocal });
+            perfilAntigo.metodos_pagamento = listaCartoesLocal;
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilAntigo));
+
+            renderizarCartoes();
+        }
+
+        function renderizarCartoes() {
+            const container = document.getElementById('listaCartoes');
+            container.innerHTML = "";
+
+            if(listaCartoesLocal.length === 0) {
+                container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Nenhum cartão cadastrado.</div>';
+                return;
+            }
+
+            listaCartoesLocal.forEach(card => {
+                const html = `
+                <div class="payment-method">
+                    <div style="display:flex; align-items:center;">
+                        <i class='bx ${card.icon || 'bx-credit-card'} method-icon'></i>
+                        <div class="method-info">
+                            <h4>${card.brand || 'Cartão'} final ${card.last4}</h4>
+                            <span>Validade: ${card.validade}</span>
+                        </div>
+                    </div>
+                    <i class='bx bx-trash btn-trash' onclick="removerCartaoReal(${card.id})"></i>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        }
+    </script>
+
     <script>
-        // Função para mostrar/esconder formulário de cartão
         function toggleFormCartao() {
             const form = document.getElementById('form-cartao');
             const btn = document.getElementById('btn-add');
@@ -384,19 +426,17 @@
             }
         }
 
-        // Função fake de salvar
-        function salvarCartao() {
-            alert('Cartão adicionado com sucesso!');
-            toggleFormCartao();
+        function limparForm() {
+            document.getElementById('cardNum').value = "";
+            document.getElementById('cardVal').value = "";
+            document.getElementById('cardCvv').value = "";
+            document.getElementById('cardNome').value = "";
         }
 
-        // Função fake de remover
-        function removerCartao(el) {
-            if(confirm('Tem certeza que deseja remover este cartão?')) {
-                // Remove o elemento pai (o payment-method)
-                el.parentElement.remove();
-                alert('Cartão removido.');
-            }
+        function formatarCartao(input) {
+            let v = input.value.replace(/\D/g, "");
+            v = v.replace(/(\d{4})/g, "$1 ").trim();
+            input.value = v;
         }
     </script>
 </body>

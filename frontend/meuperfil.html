@@ -166,11 +166,22 @@
                     <div class="nome-row">
                         <h1 id="nomePerfilDisplay">...</h1>
                     </div>
+                    
                     <div class="social-stats">
-                        <div class="stat-social"><strong id="stat-seguidores">0</strong><span>Seguidores</span></div>
-                        <div class="stat-social"><strong id="stat-seguindo">0</strong><span>Seguindo</span></div>
-                        <div class="stat-social"><strong id="stat-avaliacoes-count">0</strong><span>Avaliações</span></div>
+                        <div class="stat-social">
+                            <strong id="stat-seguidores">0</strong>
+                            <span>Seguidores</span>
+                        </div>
+                        <div class="stat-social">
+                            <strong id="stat-seguindo">0</strong>
+                            <span>Seguindo</span>
+                        </div>
+                        <div class="stat-social">
+                            <strong id="stat-avaliacoes-count">0</strong>
+                            <span>Avaliações</span>
+                        </div>
                     </div>
+
                     <p class="bio" id="bioPerfilDisplay">...</p>
                     <div class="meta-dados">
                         <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
@@ -344,7 +355,7 @@ window.auth = auth;
 let userHandleOriginal = ""; 
 
 // ==========================================
-// FUNÇÕES NOVAS DE POSTAGEM UNIFICADA
+// FUNÇÕES DE POSTAGEM UNIFICADA
 // ==========================================
 
 window.ativarModo = function(modo) {
@@ -357,12 +368,11 @@ window.ativarModo = function(modo) {
         areaVideo.style.display = 'block';
         inputTipo.value = 'trabalho';
         if(avisoCapa) avisoCapa.style.display = 'block';
-        // Não abre automático para não confundir com o botão de capa
     } else {
         areaVideo.style.display = 'none';
         inputTipo.value = 'feed';
         if(avisoCapa) avisoCapa.style.display = 'none';
-        inputFoto.click(); // Abre direto para foto do feed
+        inputFoto.click();
     }
 }
 
@@ -413,7 +423,6 @@ window.publicarConteudoUnificado = async function(event) {
     btn.disabled = true;
 
     try {
-        // MODO VÍDEO (TRABALHO)
         if (tipo === 'trabalho') {
             const tag = document.getElementById('inputTagVideo').value || "Trabalho";
             const videoBase64 = document.getElementById('base64VideoFile').value;
@@ -433,9 +442,7 @@ window.publicarConteudoUnificado = async function(event) {
             });
             alert("Vídeo publicado na Home!");
             window.location.reload();
-        } 
-        // MODO FEED
-        else {
+        } else {
             await addDoc(collection(db, "posts"), {
                 uid: user.uid,
                 autorNome: perfilLocal.nome || "Usuário",
@@ -460,8 +467,38 @@ window.publicarConteudoUnificado = async function(event) {
 }
 
 // ==========================================
-// FUNÇÕES RESTANTES (CARREGAR, PERFIL, ETC)
+// FUNÇÕES DE CARREGAMENTO E PERFIL
 // ==========================================
+
+// NOVA FUNÇÃO: CARREGAR ESTATÍSTICAS DE SEGUIDORES E AVALIAÇÕES
+window.carregarStatsSocial = async function(uid) {
+    try {
+        // 1. Contar Seguidores (Onde 'seguidoUid' é você)
+        const qSeguidores = query(collection(db, "relacoes"), where("seguidoUid", "==", uid));
+        const snapSeguidores = await getDocs(qSeguidores);
+        const countSeguidores = snapSeguidores.size;
+        
+        // 2. Contar Seguindo (Onde 'seguidorUid' é você)
+        const qSeguindo = query(collection(db, "relacoes"), where("seguidorUid", "==", uid));
+        const snapSeguindo = await getDocs(qSeguindo);
+        const countSeguindo = snapSeguindo.size;
+
+        // 3. Atualizar na tela
+        if(document.getElementById('stat-seguidores')) document.getElementById('stat-seguidores').innerText = countSeguidores;
+        if(document.getElementById('stat-seguindo')) document.getElementById('stat-seguindo').innerText = countSeguindo;
+
+        // 4. Carregar Avaliações
+        const docUser = await getDoc(doc(db, "usuarios", uid));
+        if(docUser.exists()) {
+            const data = docUser.data();
+            const numAvaliacoes = (data.stats && data.stats.avaliacoes) ? data.stats.avaliacoes : 0;
+            if(document.getElementById('stat-avaliacoes-count')) document.getElementById('stat-avaliacoes-count').innerText = numAvaliacoes;
+        }
+
+    } catch (e) {
+        console.error("Erro stats social:", e);
+    }
+}
 
 window.carregarPosts = function(uid) {
     const container = document.getElementById('container-feed-posts');
@@ -602,6 +639,7 @@ onAuthStateChanged(auth, async (user) => {
                 carregarPerfil();
                 renderizarAnuncios();
                 carregarPosts(user.uid); 
+                carregarStatsSocial(user.uid); // CHAMA A FUNÇÃO NOVA DE ESTATÍSTICAS
             }
         } catch (e) { carregarPerfil(); }
     } else {

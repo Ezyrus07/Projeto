@@ -278,8 +278,6 @@
                             <textarea id="descricao" placeholder="Descreva seu serviço..." required></textarea>
                         </div>
 
-                        
-
                         <div class="form-group">
                             <label>Fotos do Trabalho (Máx 5)</label>
                             <div class="upload-zone" onclick="document.getElementById('upload-galeria').click()">
@@ -289,8 +287,6 @@
                             <div id="preview-galeria" class="galeria-preview-container"></div>
                         </div>
                     </div>
-
-                    
 
                     <div class="form-step" id="step-2">
                         <h3>Qualificações</h3>
@@ -408,42 +404,39 @@
                             </div>
                         </div>
 
-<h3>Configuração do Formulário de Triagem</h3>
-    <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">
-        Crie um questionário para o cliente responder antes de solicitar o orçamento.
-    </p>
+                        <h3>Configuração do Formulário de Triagem</h3>
+                        <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Crie um questionário para o cliente responder antes de solicitar o orçamento.</p>
 
-    <div id="lista-perguntas-configuradas" style="margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
-        </div>
+                        <div id="lista-perguntas-configuradas" style="margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;"></div>
 
-    <div style="background: #ffffff; padding: 25px; border-radius: 15px; border: 2px solid #eef2f6; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
-        <h4 style="margin-bottom:15px; color: var(--cor2);">+ Nova Questão</h4>
-        
-        <div class="form-group">
-            <label>Tipo de Pergunta</label>
-            <select id="tipo-pergunta-select" class="input-modern" onchange="toggleOpcoesInput()">
-                <option value="fechada">Múltipla Escolha (Seleção)</option>
-                <option value="aberta">Aberta (Texto livre)</option>
-            </select>
-        </div>
+                        <div style="background: #ffffff; padding: 25px; border-radius: 15px; border: 2px solid #eef2f6; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+                            <h4 style="margin-bottom:15px; color: var(--cor2);">+ Nova Questão</h4>
+                            
+                            <div class="form-group">
+                                <label>Tipo de Pergunta</label>
+                                <select id="tipo-pergunta-select" class="input-modern" onchange="toggleOpcoesInput()">
+                                    <option value="fechada">Múltipla Escolha (Seleção)</option>
+                                    <option value="aberta">Aberta (Texto livre)</option>
+                                </select>
+                            </div>
 
-        <div class="form-group">
-            <label>Título da Pergunta</label>
-            <input type="text" id="input-pergunta-txt" class="input-modern" placeholder="Ex: Qual o problema atual?">
-        </div>
+                            <div class="form-group">
+                                <label>Título da Pergunta</label>
+                                <input type="text" id="input-pergunta-txt" class="input-modern" placeholder="Ex: Qual o problema atual?">
+                            </div>
 
-        <div class="form-group" id="container-opcoes-input">
-            <label>Alternativas (separe com vírgula)</label>
-            <input type="text" id="input-opcoes-txt" class="input-modern" placeholder="Ex: Tomada, Disjuntor, Fiação">
-            <small style="color: #888;">O cliente escolherá uma dessas opções.</small>
-        </div>
+                            <div class="form-group" id="container-opcoes-input">
+                                <label>Alternativas (separe com vírgula)</label>
+                                <input type="text" id="input-opcoes-txt" class="input-modern" placeholder="Ex: Tomada, Disjuntor, Fiação">
+                                <small style="color: #888;">O cliente escolherá uma dessas opções.</small>
+                            </div>
 
-        <button type="button" onclick="adicionarQuestaoAoForm()" style="background: var(--cor0); color:white; border:none; padding:12px 25px; border-radius:30px; font-weight:600; cursor:pointer; width: 100%;">
-            Adicionar Questão à Lista
-        </button>
-    </div>
+                            <button type="button" onclick="adicionarQuestaoAoForm()" style="background: var(--cor0); color:white; border:none; padding:12px 25px; border-radius:30px; font-weight:600; cursor:pointer; width: 100%;">
+                                Adicionar Questão à Lista
+                            </button>
+                        </div>
 
-    <input type="hidden" id="perguntas-formulario-json">
+                        <input type="hidden" id="perguntas-formulario-json">
                         <div style="margin-top:20px; padding:15px; background:#eef6fc; border-radius:10px;">
                             <label style="cursor:pointer; display:flex; gap:10px; align-items:center;">
                                 <input type="checkbox" id="termos" required style="width:20px; height:20px;"> 
@@ -455,9 +448,7 @@
                     <div class="form-nav">
                         <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)" style="display:none;">Voltar</button>
                         <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
-                        <button type="button" class="btn-submit" id="btn-submit" onclick="publicarAnuncio(event)" style="display:none;">
-                            Publicar Anúncio
-                        </button>
+                        <button type="button" class="btn-submit" id="btn-submit" onclick="publicarAnuncio(event)" style="display:none;">Publicar Anúncio</button>
                     </div>
 
                 </form>
@@ -466,6 +457,112 @@
     </main>
 
     <script>
+    // --- LÓGICA DE PROTEÇÃO DE ACESSO (LOGIN E PROFISSIONAL) ---
+    document.addEventListener("DOMContentLoaded", function() {
+        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+        const estaLogado = localStorage.getItem('usuarioLogado') === 'true';
+
+        // 1. Verifica login
+        if (!estaLogado) {
+            window.location.href = "login.html";
+            return;
+        }
+
+        // 2. Verifica se é profissional. Se não for, aplica o desfoque e mostra o card.
+        if (!perfilLocal || perfilLocal.isProfissional !== true) {
+            // Aplica o desfoque no conteúdo principal (main)
+            const mainContent = document.querySelector('main');
+            const sidebar = document.querySelector('.sidebar-icones');
+            const navDesktop = document.querySelector('.navbar-desktop');
+
+            if (mainContent) {
+                mainContent.style.filter = "blur(12px)";
+                mainContent.style.pointerEvents = "none"; 
+                mainContent.style.userSelect = "none";    
+            }
+
+            // Injeta o CSS do overlay no head
+            const style = document.createElement('style');
+            style.id = 'style-bloqueio-doke';
+            style.innerHTML = `
+                .lock-overlay {
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background: rgba(255, 255, 255, 0.4);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    z-index: 99999;
+                    font-family: 'Poppins', sans-serif;
+                }
+                .lock-card {
+                    background: white;
+                    padding: 40px;
+                    border-radius: 24px;
+                    box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+                    text-align: center;
+                    max-width: 420px;
+                    width: 90%;
+                    animation: dokeFadeUp 0.4s ease-out;
+                }
+                .lock-icon-circle {
+                    width: 70px;
+                    height: 70px;
+                    background: #e8f5e9;
+                    border-radius: 50%;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin: 0 auto 20px auto;
+                }
+                .lock-icon-circle i { font-size: 35px; color: #2ecc71; }
+                .lock-card h2 { color: #333; font-size: 1.6rem; margin-bottom: 12px; font-weight: 700; }
+                .lock-card p { color: #666; font-size: 0.95rem; line-height: 1.6; margin-bottom: 25px; }
+                .lock-btn-go {
+                    background: #2ecc71;
+                    color: white;
+                    padding: 15px 30px;
+                    border-radius: 12px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    display: inline-block;
+                    transition: 0.3s;
+                    margin-bottom: 15px;
+                }
+                .lock-btn-go:hover { background: #27ae60; transform: translateY(-2px); }
+                .lock-btn-back { display: block; color: #888; text-decoration: none; font-size: 0.9rem; transition: 0.2s; }
+                .lock-btn-back:hover { color: #333; }
+                @keyframes dokeFadeUp {
+                    from { opacity: 0; transform: translateY(20px) scale(0.95); }
+                    to { opacity: 1; transform: translateY(0) scale(1); }
+                }
+            `;
+            document.head.appendChild(style);
+
+            // Cria o elemento de overlay
+            const overlay = document.createElement('div');
+            overlay.className = 'lock-overlay';
+            overlay.innerHTML = `
+                <div class="lock-card">
+                    <div class="lock-icon-circle">
+                        <i class='bx bxs-lock'></i>
+                    </div>
+                    <h2>Perfil Profissional Necessário</h2>
+                    <p>Para criar anúncios na Doke, você precisa primeiro validar seus dados no formulário profissional.</p>
+                    <div class="lock-actions">
+                        <a href="tornar-profissional.html" class="lock-btn-go">Validar meu Perfil</a>
+                        <a href="index.html" class="lock-btn-back">Voltar ao Início</a>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            document.body.style.overflow = "hidden";
+        }
+    });
+
     // --- UPLOAD VISUAL HELPER ---
     function mostrarNomeArquivo(input) {
         if(input.files && input.files[0]) {
@@ -534,27 +631,19 @@
     window.filtrarCategorias = function() { renderCategorias(document.getElementById('cat-search').value); };
     window.mostrarDropdown = function() { renderCategorias(); };
     
-    document.addEventListener('click', function(e) {
-        if (!document.querySelector('.multi-select-container').contains(e.target)) {
-            document.getElementById('cat-dropdown').style.display = 'none';
-        }
-    });
-
-    // --- MÁSCARAS AUTOMÁTICAS (TELEFONE E CEP) ---
     document.getElementById('telefone').addEventListener('input', function (e) {
         let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
         e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
     });
     
     document.getElementById('cep').addEventListener('input', function (e) {
-        let valor = e.target.value.replace(/\D/g, ""); // Remove tudo que não é número
+        let valor = e.target.value.replace(/\D/g, ""); 
         if (valor.length > 5) {
             valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
         }
         e.target.value = valor;
     });
 
-    // --- TOGGLES DE UI ---
     window.toggleTime = function(dia) { document.getElementById(`time-${dia}`).classList.toggle('show'); }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
@@ -566,10 +655,8 @@
         document.getElementById('lbl-doc').innerText = (val === 'PJ') ? "CNPJ" : "CPF";
     }
 
-    // --- NAVEGAÇÃO ENTRE PASSOS ---
     let step = 1;
     window.changeStep = function(dir) {
-        // Validação simples
         if(dir === 1) {
             const inputs = document.getElementById(`step-${step}`).querySelectorAll('input[required], select[required], textarea[required]');
             let valid = true;
@@ -579,14 +666,12 @@
             if(!valid) return;
         }
 
-        // Troca visual
         document.getElementById(`step-${step}`).classList.remove('active');
         document.getElementById(`p-${step}`).classList.remove('active');
         step += dir;
         document.getElementById(`step-${step}`).classList.add('active');
         document.getElementById(`p-${step}`).classList.add('active');
         
-        // Controle dos botões
         document.getElementById('btn-prev').style.display = step > 1 ? 'block' : 'none';
         if(step === 4) {
             document.getElementById('btn-next').style.display = 'none';
@@ -597,11 +682,9 @@
         }
     }
 
-    // --- BUSCA DE ENDEREÇO (VISUAL) ---
     async function buscarEndereco(cep) {
         let cepLimpo = cep.replace(/\D/g, '');
         if (cepLimpo.length === 8) {
-            // Feedback visual
             document.getElementById('cidade').value = "...";
             document.getElementById('uf').value = "...";
             
@@ -623,124 +706,64 @@
         }
     }
 
-    // --- AUTO-PREENCHIMENTO DOS DADOS DE PROFISSIONAL ---
-    document.addEventListener("DOMContentLoaded", function() {
-        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-        
-        if (perfilLocal) {
-            // Se o usuário tem nome, preenche
-            if (perfilLocal.nome) {
-                document.getElementById('nome_doc').value = perfilLocal.nome;
-            }
+    let perguntasArray = [];
+    window.toggleOpcoesInput = function() {
+        const tipo = document.getElementById('tipo-pergunta-select').value;
+        const container = document.getElementById('container-opcoes-input');
+        container.style.display = (tipo === 'aberta') ? 'none' : 'block';
+    }
 
-            // Se tem CPF/CNPJ (vinda do cadastro de profissional)
-            if (perfilLocal.cpf_cnpj) {
-                const docVal = perfilLocal.cpf_cnpj;
-                document.getElementById('doc_num').value = docVal;
-                
-                // Inteligência: Se tiver mais de 11 números, marca como Empresa (PJ)
-                if (docVal.replace(/\D/g, '').length > 11) {
-                    document.getElementById('pj').checked = true;
-                    toggleCNPJ(); // Atualiza os labels
-                }
-            }
+    window.adicionarQuestaoAoForm = function() {
+        const tipo = document.getElementById('tipo-pergunta-select').value;
+        const pergunta = document.getElementById('input-pergunta-txt').value;
+        const opcoesRaw = document.getElementById('input-opcoes-txt').value;
 
-            // Se tem telefone comercial
-            if (perfilLocal.telefone_comercial) {
-                document.getElementById('telefone').value = perfilLocal.telefone_comercial;
-            }
+        if (!pergunta.trim()) { alert("Por favor, digite a pergunta."); return; }
 
-            // Se tem endereço salvo
-            if (perfilLocal.endereco) {
-                const end = perfilLocal.endereco;
-                
-                if (end.cep) document.getElementById('cep').value = end.cep;
-                if (end.bairro) document.getElementById('bairro').value = end.bairro;
-                
-                // O cadastro salva Cidade como "Salvador/BA". Aqui separamos.
-                if (end.cidade && end.cidade.includes('/')) {
-                    const partes = end.cidade.split('/');
-                    if(partes.length === 2) {
-                        document.getElementById('cidade').value = partes[0].trim();
-                        document.getElementById('uf').value = partes[1].trim();
-                    }
-                } else if (end.cidade) {
-                    document.getElementById('cidade').value = end.cidade;
-                }
-            }
+        let novaQuestao = {
+            id: Date.now(),
+            tipo: tipo,
+            pergunta: pergunta,
+            opcoes: tipo === 'fechada' ? opcoesRaw.split(',').map(o => o.trim()).filter(o => o !== "") : []
+        };
+
+        if (tipo === 'fechada' && novaQuestao.opcoes.length < 2) {
+            alert("Para perguntas fechadas, adicione pelo menos 2 alternativas separadas por vírgula.");
+            return;
         }
-    });
 
-let perguntasArray = [];
-
-// Alterna a visibilidade do campo de alternativas
-window.toggleOpcoesInput = function() {
-    const tipo = document.getElementById('tipo-pergunta-select').value;
-    const container = document.getElementById('container-opcoes-input');
-    container.style.display = (tipo === 'aberta') ? 'none' : 'block';
-}
-
-// Adiciona a questão ao array e limpa os campos
-window.adicionarQuestaoAoForm = function() {
-    const tipo = document.getElementById('tipo-pergunta-select').value;
-    const pergunta = document.getElementById('input-pergunta-txt').value;
-    const opcoesRaw = document.getElementById('input-opcoes-txt').value;
-
-    if (!pergunta.trim()) {
-        alert("Por favor, digite a pergunta.");
-        return;
+        perguntasArray.push(novaQuestao);
+        document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
+        renderizarListaPerguntas();
+        document.getElementById('input-pergunta-txt').value = "";
+        document.getElementById('input-opcoes-txt').value = "";
     }
 
-    let novaQuestao = {
-        id: Date.now(),
-        tipo: tipo,
-        pergunta: pergunta,
-        opcoes: tipo === 'fechada' ? opcoesRaw.split(',').map(o => o.trim()).filter(o => o !== "") : []
-    };
-
-    if (tipo === 'fechada' && novaQuestao.opcoes.length < 2) {
-        alert("Para perguntas fechadas, adicione pelo menos 2 alternativas separadas por vírgula.");
-        return;
+    function renderizarListaPerguntas() {
+        const container = document.getElementById('lista-perguntas-configuradas');
+        container.innerHTML = "";
+        perguntasArray.forEach((q, index) => {
+            const item = document.createElement('div');
+            item.style.cssText = "background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
+            const info = q.tipo === 'aberta' ? '📝 Aberta' : `🔘 Fechada (${q.opcoes.length} opc)`;
+            item.innerHTML = `
+                <div>
+                    <span style="font-size: 0.75rem; color: var(--cor2); font-weight: bold; text-transform: uppercase;">${info}</span>
+                    <p style="margin: 5px 0 0; font-weight: 500; color: #334155;">${index + 1}. ${q.pergunta}</p>
+                </div>
+                <button onclick="removerQuestao(${index})" style="background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                    <i class='bx bx-trash'></i>
+                </button>
+            `;
+            container.appendChild(item);
+        });
     }
 
-    perguntasArray.push(novaQuestao);
-    document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
-    
-    renderizarListaPerguntas();
-    
-    // Limpar campos para a próxima
-    document.getElementById('input-pergunta-txt').value = "";
-    document.getElementById('input-opcoes-txt').value = "";
-}
-
-function renderizarListaPerguntas() {
-    const container = document.getElementById('lista-perguntas-configuradas');
-    container.innerHTML = "";
-
-    perguntasArray.forEach((q, index) => {
-        const item = document.createElement('div');
-        item.style.cssText = "background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
-        
-        const info = q.tipo === 'aberta' ? '📝 Aberta' : `🔘 Fechada (${q.opcoes.length} opc)`;
-        
-        item.innerHTML = `
-            <div>
-                <span style="font-size: 0.75rem; color: var(--cor2); font-weight: bold; text-transform: uppercase;">${info}</span>
-                <p style="margin: 5px 0 0; font-weight: 500; color: #334155;">${index + 1}. ${q.pergunta}</p>
-            </div>
-            <button onclick="removerQuestao(${index})" style="background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-                <i class='bx bx-trash'></i>
-            </button>
-        `;
-        container.appendChild(item);
-    });
-}
-
-window.removerQuestao = function(index) {
-    perguntasArray.splice(index, 1);
-    document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
-    renderizarListaPerguntas();
-}
+    window.removerQuestao = function(index) {
+        perguntasArray.splice(index, 1);
+        document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
+        renderizarListaPerguntas();
+    }
     </script>
 </body>
 </html>

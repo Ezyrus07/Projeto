@@ -138,13 +138,13 @@
 
     <main>
 
-<section class="stories-container">
+<section class="stories-container" id="secStories" style="display: none;">
     
-    <div class="stories-scroll" id="boxStories">
+    <div class="stories-scroll" id="boxStories" style="justify-content: center;">
         
         <div class="story-item">
             <div class="story-ring add-story">
-                <img src="https://github.com/mdo.png" alt="Seu Perfil">
+                <img id="imgSeuStory" src="https://placehold.co/150" alt="Seu Perfil">
                 <span class="plus-icon"><i class='bx bx-plus'></i></span>
             </div>
             <span class="story-name">Seu story</span>
@@ -157,42 +157,7 @@
             <span class="story-name" style="font-weight: 800;">DOKE</span>
         </div>
 
-        <div class="story-item">
-            <div class="story-ring unseen">
-                <img src="https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=200&h=200&fit=crop" alt="User">
-            </div>
-            <span class="story-name">pedro_srv</span>
-        </div>
-
-        <div class="story-item">
-            <div class="story-ring unseen">
-                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop" alt="User">
-            </div>
-            <span class="story-name">marcos_arq</span>
-        </div>
-
-        <div class="story-item">
-            <div class="story-ring seen">
-                <img src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200&h=200&fit=crop" alt="User">
-            </div>
-            <span class="story-name">julia_make</span>
-        </div>
-        
-        <div class="story-item">
-            <div class="story-ring seen">
-                <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200&h=200&fit=crop" alt="User">
-            </div>
-            <span class="story-name">ana_design</span>
-        </div>
-
     </div>
-
-    <button class="btn-scroll-stories" onclick="document.getElementById('boxStories').scrollBy({left: 200, behavior: 'smooth'})">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M9 18L15 12L9 6" stroke="#333" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-    </button>
-
 </section>
 
         <section class="secao-busca">
@@ -598,5 +563,49 @@
     .btn-fechar-video:hover { color: #ff4444; transform: scale(1.1); }
 </style>
 
+<script>
+    (function() {
+        // 1. Verifica login no LocalStorage (é instantâneo)
+        const logado = localStorage.getItem('usuarioLogado') === 'true';
+        const areaStories = document.getElementById('secStories');
+        
+        // 2. Força a exibição dos stories se estiver logado
+        if (areaStories) {
+            if (logado) {
+                areaStories.style.display = 'block'; // Mostra!
+                
+                // Tenta carregar a foto do perfil
+                try {
+                    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+                    if (perfil && perfil.foto) {
+                        const img = document.getElementById('imgSeuStory');
+                        if(img) img.src = perfil.foto;
+                    }
+                } catch(e) { console.log("Perfil vazio"); }
+                
+            } else {
+                areaStories.style.display = 'none'; // Garante que esconde se não logado
+            }
+        }
+
+        // 3. Atualiza botão de Entrar/Perfil (caso o script.js falhe)
+        const container = document.querySelector('.botoes-direita');
+        if (container) {
+            if (logado) {
+                // Se já tem HTML de perfil, não mexe. Se tem botão "Entrar", troca.
+                if(container.innerHTML.includes('Entrar')) {
+                    container.innerHTML = `
+                        <div class="profile-container">
+                             <img src="${localStorage.getItem('doke_usuario_perfil') ? JSON.parse(localStorage.getItem('doke_usuario_perfil')).foto || 'https://i.pravatar.cc/150?img=12' : 'https://i.pravatar.cc/150?img=12'}" 
+                                  class="profile-img-btn" onclick="toggleDropdown(event)" 
+                                  style="width:40px; height:40px; border-radius:50%; cursor:pointer; border:2px solid #ddd;">
+                             </div>`;
+                }
+            } else {
+                container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
+            }
+        }
+    })();
+</script>
 </body>
 </html>

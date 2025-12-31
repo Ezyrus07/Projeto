@@ -476,32 +476,53 @@ window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricao
 }
 
 // Lista os pedidos no chat.html
+// ============================================================
+// ATUALIZAÇÃO: CARREGAR PEDIDOS COM TRATAMENTO DE ERRO/VAZIO
+// ============================================================
 window.carregarMeusPedidos = async function() {
     const container = document.getElementById('container-pedidos');
     const contador = document.getElementById('contadorPedidos');
     
     if (!container) return; // Só roda na página chat.html
 
+    // 1. Verifica login
     const user = auth.currentUser;
     if (!user) {
-        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver suas mensagens.</p></div>`;
+        container.innerHTML = `
+            <div class="empty-chat">
+                <i class='bx bx-user-x'></i>
+                <p>Faça login para ver suas mensagens.</p>
+            </div>`;
         return;
     }
 
     try {
-        // Busca pedidos recebidos (Sou o Prestador)
-        const q = query(collection(db, "pedidos"), where("paraUid", "==", user.uid), orderBy("dataPedido", "desc"));
+        // 2. Tenta fazer a busca
+        // OBS: Se der erro de "Index", remova o orderBy temporariamente para testar
+        const q = query(
+            collection(db, "pedidos"), 
+            where("paraUid", "==", user.uid), 
+            orderBy("dataPedido", "desc") 
+        );
         
+        // 3. Listener em tempo real com tratamento de erro (O SEGREDO ESTÁ AQUI)
         onSnapshot(q, (snapshot) => {
-            container.innerHTML = "";
+            container.innerHTML = ""; // Limpa o spinner "Carregando..."
             let novos = 0;
 
+            // CASO 1: Não tem nenhum pedido
             if (snapshot.empty) {
-                container.innerHTML = `<div class="empty-chat"><i class='bx bx-message-rounded-dots'></i><p>Nenhum pedido recebido ainda.</p></div>`;
+                container.innerHTML = `
+                    <div class="empty-chat">
+                        <i class='bx bx-message-rounded-dots' style="color: #ccc; font-size: 4rem;"></i>
+                        <h4 style="color: #666; margin-top: 10px;">Nenhum pedido recebido</h4>
+                        <p style="color: #999;">Quando alguém solicitar um orçamento, aparecerá aqui.</p>
+                    </div>`;
                 if(contador) contador.innerText = "0 novos";
                 return;
             }
 
+            // CASO 2: Tem pedidos (Renderiza a lista)
             snapshot.forEach((doc) => {
                 const p = doc.data();
                 const id = doc.id;
@@ -512,9 +533,8 @@ window.carregarMeusPedidos = async function() {
 
                 if(p.status === 'pendente') novos++;
 
-                // ÁREA DE AÇÕES (AGORA COM CHAT INTERNO)
+                // Lógica dos botões
                 let botoesArea = '';
-                
                 if (p.status === 'pendente') {
                     botoesArea = `
                         <div class="acoes-pedido">
@@ -523,18 +543,12 @@ window.carregarMeusPedidos = async function() {
                         </div>
                     `;
                 } else if (p.status === 'aceito') {
-                    // Botão para abrir o Chat Interno
                     botoesArea = `
                         <div class="contato-liberado" style="display:block; background:#e8f5e9; padding:15px; border-radius:8px; text-align:center; margin-top:10px;">
                             <span style="color:#2e7d32; font-weight:bold; font-size:0.9rem;">Pedido Aceito!</span>
                             <p style="font-size:0.8rem; color:#555; margin:5px 0;">Inicie a conversa pelo nosso chat seguro.</p>
-                            
-                            <button onclick="abrirChatInterno('${p.deUid}', '${id}')" style="margin-top:5px; background:#var(--cor0); color:white; padding:10px 20px; border:none; border-radius:30px; font-weight:bold; cursor:pointer; background-color:#009688;">
+                            <button onclick="abrirChatInterno('${p.deUid}', '${id}', '${p.clienteNome}', '${p.clienteFoto}')" style="margin-top:5px; color:white; padding:10px 20px; border:none; border-radius:30px; font-weight:bold; cursor:pointer; background-color:#009688;">
                                 <i class='bx bx-chat'></i> Abrir Chat
-                            </button>
-                            
-                            <button style="margin-top:5px; margin-left:5px; background:#fff; color:#555; padding:10px 15px; border:1px solid #ddd; border-radius:30px; font-weight:bold; cursor:pointer;">
-                                <i class='bx bx-dollar'></i> Enviar Cobrança
                             </button>
                         </div>
                     `;
@@ -562,30 +576,115 @@ window.carregarMeusPedidos = async function() {
             });
 
             if(contador) contador.innerText = `${novos} pendentes`;
+
+        }, (error) => {
+            // CASO 3: Deu erro no Firebase (ex: Falta de Índice)
+            console.error("Erro no Snapshot:", error);
+            
+            // Remove o spinner e mostra mensagem de erro amigável
+            container.innerHTML = `
+                <div class="empty-chat">
+                    <i class='bx bx-error-circle' style="color: #e74c3c;"></i>
+                    <p>Não foi possível carregar os pedidos.</p>
+                    <small style="color:#999;">Verifique sua conexão ou o Console (F12) para erros de índice.</small>
+                </div>`;
         });
 
     } catch (e) {
-        console.error("Erro ao carregar pedidos:", e);
+        console.error("Erro geral:", e);
+        container.innerHTML = `<div class="empty-chat"><p>Erro técnico ao buscar.</p></div>`;
     }
 }
 
 // Função Placeholder para o Chat Interno (Passo Futuro)
-window.abrirChatInterno = function(idOutroUsuario, idPedido) {
-    alert("O sistema de Chat em Tempo Real será implementado no próximo passo! \n\nID do Cliente: " + idOutroUsuario + "\nID do Pedido: " + idPedido);
-    // Aqui nós iremos redirecionar para uma tela de conversa tipo WhatsApp Web
-    // window.location.href = `conversa.html?chat=${idPedido}`;
-}
 
-// Atualiza Status
-window.atualizarStatusPedido = async function(idPedido, novoStatus) {
+
+// 1. Função para abrir a tela de conversa e carregar dados
+window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, fotoCliente) {
+    const viewLista = document.getElementById('view-lista');
+    const viewChat = document.getElementById('view-chat');
+    
+    // Troca de telas (Esconde lista, mostra chat)
+    if(viewLista) viewLista.style.display = 'none';
+    if(viewChat) {
+        viewChat.style.display = 'flex';
+        // Ajuste Mobile: Esconde menu inferior e topo para focar no chat
+        if(window.innerWidth <= 768) {
+            const bottomNav = document.querySelector('.bottom-nav');
+            const navbarMobile = document.querySelector('.navbar-mobile');
+            if(bottomNav) bottomNav.style.display = 'none';
+            if(navbarMobile) navbarMobile.style.display = 'none';
+        }
+    }
+
+    // Preenche cabeçalho do chat
+    const nomeEl = document.getElementById('chatNome');
+    const imgEl = document.getElementById('chatAvatar');
+    if(nomeEl) nomeEl.innerText = nomeCliente || "Cliente";
+    if(imgEl) imgEl.src = fotoCliente || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    
+    chatAtualId = idPedido;
+    const containerMsgs = document.getElementById('areaMensagens');
+    containerMsgs.innerHTML = '<div style="text-align:center; padding:20px; color:#999;"><i class="bx bx-loader-alt bx-spin"></i> Carregando conversa...</div>';
+
     try {
-        await updateDoc(doc(db, "pedidos", idPedido), {
-            status: novoStatus,
-            dataAtualizacao: new Date().toISOString()
+        // A) Busca detalhes do pedido para exibir o RESUMO DO QUIZ (Dados Reais)
+        const docPedido = await getDoc(doc(db, "pedidos", idPedido));
+        containerMsgs.innerHTML = ""; // Limpa loader
+
+        if (docPedido.exists()) {
+            const dados = docPedido.data();
+            
+            // Verifica se tem respostas do formulário salvas
+            if (dados.formularioRespostas && Array.isArray(dados.formularioRespostas) && dados.formularioRespostas.length > 0) {
+                let htmlQuiz = `
+                    <div class="quiz-summary-card">
+                        <div class="quiz-header"><i class='bx bx-list-check'></i> Detalhes do Serviço</div>
+                `;
+                
+                // Transforma cada resposta em item visual
+                dados.formularioRespostas.forEach(item => {
+                    htmlQuiz += `
+                        <div class="quiz-item">
+                            <div class="quiz-q">${item.pergunta}</div>
+                            <div class="quiz-a">${item.resposta}</div>
+                        </div>
+                    `;
+                });
+                
+                htmlQuiz += `</div>`;
+                containerMsgs.insertAdjacentHTML('beforeend', htmlQuiz);
+            } else if (dados.mensagemInicial) {
+                // Fallback: Se não tiver quiz, mostra a descrição inicial
+                containerMsgs.insertAdjacentHTML('beforeend', `
+                    <div class="quiz-summary-card">
+                        <div class="quiz-header"><i class='bx bx-info-circle'></i> Solicitação do Cliente</div>
+                        <div style="font-style:italic; color:#555; padding:10px;">"${dados.mensagemInicial}"</div>
+                    </div>
+                `);
+            }
+        }
+
+        // B) Listener em Tempo Real para as Mensagens
+        const qMsgs = query(collection(db, "pedidos", idPedido, "mensagens"), orderBy("timestamp", "asc"));
+        
+        if(chatUnsubscribe) chatUnsubscribe(); // Limpa listener anterior se houver
+
+        chatUnsubscribe = onSnapshot(qMsgs, (snapshot) => {
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    renderizarMensagem(change.doc.data(), containerMsgs);
+                }
+            });
+            // Rola para a última mensagem
+            setTimeout(() => {
+                containerMsgs.scrollTop = containerMsgs.scrollHeight;
+            }, 100);
         });
+
     } catch (e) {
-        alert("Erro ao atualizar status.");
-        console.error(e);
+        console.error("Erro ao abrir chat:", e);
+        containerMsgs.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Erro ao carregar mensagens.</div>';
     }
 }
 
@@ -829,7 +928,7 @@ window.carregarProfissionais = async function() {
 // ============================================================
 
 function protegerPaginasRestritas() {
-    const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html'];
+    const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
     const caminhoAtual = window.location.pathname;
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
     const estaLogado = localStorage.getItem('usuarioLogado') === 'true';
@@ -837,29 +936,48 @@ function protegerPaginasRestritas() {
 }
 
 window.verificarEstadoLogin = function() {
+    // 1. Pega os dados com segurança
     const logado = localStorage.getItem('usuarioLogado') === 'true';
-    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-    const fotoUsuario = perfil.foto || 'https://i.pravatar.cc/150?img=12'; 
+    let perfil = {};
+    
+    try {
+        perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    } catch (e) {
+        console.log("Erro ao ler perfil", e);
+        perfil = {};
+    }
 
-    const container = document.querySelector('.botoes-direita');
-    if (container) {
+    // Define foto padrão se não tiver
+    const fotoUsuario = perfil.foto || 'https://i.pravatar.cc/150?img=12'; 
+    const eProfissional = perfil.isProfissional === true;
+
+    // --- A. CONTROLE DOS STORIES ---
+const containers = document.querySelectorAll('.botoes-direita');
+    
+    containers.forEach(container => {
         if (logado) {
+            const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
+            const textoAnunciar = eProfissional ? "Anunciar" : "Seja Profissional";
+
             container.innerHTML = `
                 <div class="profile-container">
-                    <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil">
+                    <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
                     <div id="dropdownPerfil" class="dropdown-profile">
-                        <a href="#" onclick="irParaMeuPerfil(event)" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                        <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+                            ${perfil.user || 'Usuário'}
+                        </div>
+                        <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
                         <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
-                        <a href="anunciar.html" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
+                        <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
                         <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
                     </div>
                 </div>`;
         } else {
             container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
         }
-    }
+    });
 
-    const imgBottom = document.getElementById('imgPerfilMobile');
+const imgBottom = document.getElementById('imgPerfilMobile');
     if (imgBottom) {
         if (logado) {
             imgBottom.src = fotoUsuario;
@@ -878,6 +996,8 @@ window.verificarEstadoLogin = function() {
     }
 }
 
+
+
 window.alternarConta = function() {
     window.auth.signOut().then(() => {
         localStorage.removeItem('usuarioLogado');
@@ -893,10 +1013,23 @@ window.toggleDropdown = function(event) {
     if(drop) drop.classList.toggle('show');
 }
 
-window.fazerLogout = function() {
+window.fazerLogout = async function() {
     if(confirm("Sair da conta?")) {
-        localStorage.removeItem('usuarioLogado');
-        window.location.href = 'index.html';
+        try {
+            // 1. Faz o logout no Firebase
+            await window.auth.signOut(); 
+            
+            // 2. Limpa os dados do navegador
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('doke_usuario_perfil');
+            localStorage.removeItem('doke_uid');
+            
+            // 3. Redireciona para a home
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error("Erro ao sair:", error);
+            alert("Erro ao encerrar sessão. Tente novamente.");
+        }
     }
 }
 
@@ -1375,6 +1508,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if(window.location.pathname.includes('chat')) {
                 carregarMeusPedidos();
             }
+            
         } else {
             localStorage.removeItem('usuarioLogado');
             if(window.location.pathname.includes('perfil') || window.location.pathname.includes('chat')) {
@@ -1405,5 +1539,614 @@ async function finalizarPedidoComQuiz(idPrestador, nomePrestador, servico, formu
     } catch (e) {
         console.error(e);
         alert("Erro ao salvar no Firestore.");
+    }
+}
+
+// ============================================================
+// LÓGICA DO CHAT (ADICIONAR AO SCRIPT.JS)
+// ============================================================
+
+let chatAtualId = null;
+let chatUnsubscribe = null;
+
+// Função chamada pelo botão "Abrir Chat" na lista de pedidos
+window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, fotoCliente) {
+    const viewLista = document.getElementById('view-lista');
+    const viewChat = document.getElementById('view-chat');
+    
+    // 1. Troca a visualização
+    if(viewLista) viewLista.style.display = 'none';
+    if(viewChat) {
+        viewChat.style.display = 'flex';
+        // Ajuste para mobile (cobre a tela toda)
+        if(window.innerWidth <= 768) {
+            document.querySelector('.bottom-nav').style.display = 'none';
+            document.querySelector('.navbar-mobile').style.display = 'none';
+        }
+    }
+
+    // 2. Configura o Header do Chat
+    document.getElementById('chatNome').innerText = nomeCliente || "Cliente";
+    document.getElementById('chatAvatar').src = fotoCliente || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    
+    chatAtualId = idPedido;
+    const containerMsgs = document.getElementById('areaMensagens');
+    containerMsgs.innerHTML = '<div style="text-align:center; padding:20px; color:#999;"><i class="bx bx-loader-alt bx-spin"></i> Carregando conversa...</div>';
+
+    try {
+        // 3. Busca os dados do Pedido (incluindo o QUIZ)
+        const docPedido = await getDoc(doc(db, "pedidos", idPedido));
+        containerMsgs.innerHTML = ""; // Limpa loader
+
+        if (docPedido.exists()) {
+            const dados = docPedido.data();
+            
+            // RENDERIZA O CARD DO QUIZ (Se houver respostas)
+            if (dados.formularioRespostas && Array.isArray(dados.formularioRespostas) && dados.formularioRespostas.length > 0) {
+                let htmlQuiz = `
+                    <div class="quiz-summary-card">
+                        <div class="quiz-header"><i class='bx bx-list-check'></i> Respostas do Formulário</div>
+                `;
+                
+                dados.formularioRespostas.forEach(item => {
+                    htmlQuiz += `
+                        <div class="quiz-item">
+                            <div class="quiz-q">${item.pergunta}</div>
+                            <div class="quiz-a">${item.resposta}</div>
+                        </div>
+                    `;
+                });
+                
+                htmlQuiz += `</div>`;
+                containerMsgs.insertAdjacentHTML('beforeend', htmlQuiz);
+            } else if (dados.mensagemInicial) {
+                // Se não tiver quiz, mostra a mensagem inicial do pedido
+                containerMsgs.insertAdjacentHTML('beforeend', `
+                    <div class="quiz-summary-card">
+                        <div class="quiz-header"><i class='bx bx-info-circle'></i> Pedido Inicial</div>
+                        <div style="font-style:italic; color:#555;">"${dados.mensagemInicial}"</div>
+                    </div>
+                `);
+            }
+        }
+
+        // 4. Carrega as mensagens em tempo real (Subcoleção)
+        const qMsgs = query(collection(db, "pedidos", idPedido, "mensagens"), orderBy("timestamp", "asc"));
+        
+        // Se já existir um listener anterior, cancela ele para não duplicar
+        if(chatUnsubscribe) chatUnsubscribe();
+
+        chatUnsubscribe = onSnapshot(qMsgs, (snapshot) => {
+            // Apenas adiciona as novas mensagens (ou renderiza tudo se for a primeira vez)
+            snapshot.docChanges().forEach((change) => {
+                if (change.type === "added") {
+                    renderizarMensagem(change.doc.data(), containerMsgs);
+                }
+            });
+            // Rola para o final
+            containerMsgs.scrollTop = containerMsgs.scrollHeight;
+        });
+
+    } catch (e) {
+        console.error("Erro ao abrir chat:", e);
+        alert("Erro ao carregar conversa.");
+    }
+}
+
+function renderizarMensagem(msg, container) {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const ehMinha = msg.senderUid === user.uid;
+    const classe = ehMinha ? 'msg-enviada' : 'msg-recebida';
+    
+    // Formata hora (ex: 14:30)
+    let hora = "--:--";
+    if (msg.timestamp) {
+        const dataObj = msg.timestamp.toDate ? msg.timestamp.toDate() : new Date(msg.timestamp);
+        hora = dataObj.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+    }
+
+    const html = `
+        <div class="msg-bubble ${classe}">
+            ${msg.texto}
+            <span class="msg-time">${hora}</span>
+        </div>
+    `;
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+window.enviarMensagem = async function(e) {
+    e.preventDefault();
+    const input = document.getElementById('inputMsg');
+    const texto = input.value.trim();
+    const user = auth.currentUser;
+
+    if (!texto || !chatAtualId || !user) return;
+
+    input.value = ""; // Limpa input imediatamente
+
+    try {
+        await addDoc(collection(db, "pedidos", chatAtualId, "mensagens"), {
+            texto: texto,
+            senderUid: user.uid,
+            timestamp: new Date(),
+            lido: false
+        });
+    } catch (erro) {
+        console.error("Erro ao enviar:", erro);
+        alert("Falha no envio. Verifique sua conexão.");
+    }
+}
+window.voltarParaPedidos = function() {
+    document.getElementById('view-chat').style.display = 'none';
+    document.getElementById('view-lista').style.display = 'block';
+    
+    // Restaura menus no mobile
+    const bottomNav = document.querySelector('.bottom-nav');
+    const navbarMobile = document.querySelector('.navbar-mobile');
+    if(bottomNav) bottomNav.style.display = 'flex';
+    if(navbarMobile) navbarMobile.style.display = 'flex';
+
+    if(chatUnsubscribe) chatUnsubscribe();
+    chatAtualId = null;
+}
+// ATUALIZAR A FUNÇÃO CARREGAR MEUS PEDIDOS PARA PASSAR OS DADOS CERTOS
+window.carregarMeusPedidos = async function() {
+    const container = document.getElementById('container-pedidos');
+    const contador = document.getElementById('contadorPedidos');
+    if (!container) return;
+
+    const user = auth.currentUser;
+    if (!user) {
+        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver pedidos.</p></div>`;
+        return;
+    }
+
+    // OBS: Se der erro de índice no console, o Firebase fornecerá um link para criar.
+    const q = query(
+        collection(db, "pedidos"), 
+        where("paraUid", "==", user.uid), 
+        orderBy("dataPedido", "desc")
+    );
+    
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = "";
+        let novos = 0;
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="empty-chat">
+                    <i class='bx bx-message-rounded-dots'></i>
+                    <p>Você ainda não recebeu pedidos.</p>
+                </div>`;
+            if(contador) contador.innerText = "0 novos";
+            return;
+        }
+
+        snapshot.forEach((doc) => {
+            const p = doc.data();
+            const id = doc.id;
+            let statusClass = p.status; // pendente, aceito, recusado
+            
+            if(p.status === 'pendente') novos++;
+
+            // Define quais botões aparecem baseado no status
+            let botoesHtml = '';
+            
+            if (p.status === 'pendente') {
+                botoesHtml = `
+                    <div class="acoes-pedido">
+                        <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${id}', 'recusado')">Recusar</button>
+                        <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${id}', 'aceito')">Aceitar</button>
+                    </div>`;
+            } else if (p.status === 'aceito') {
+                // DADOS REAIS SENDO PASSADOS AQUI NA CHAMADA DO CHAT
+                botoesHtml = `
+                    <div class="contato-liberado" style="display:block; margin-top:10px; text-align:center;">
+                        <button onclick="abrirChatInterno('${p.deUid}', '${id}', '${p.clienteNome}', '${p.clienteFoto}')" style="background:#009688; color:white; padding:10px 20px; border:none; border-radius:30px; font-weight:bold; cursor:pointer; width:100%;">
+                            <i class='bx bx-chat'></i> Conversar com Cliente
+                        </button>
+                    </div>`;
+            } else {
+                botoesHtml = `<div style="text-align:right; color:#e74c3c; font-size:0.8rem; margin-top:10px;">Recusado</div>`;
+            }
+
+            const card = `
+            <div class="card-pedido ${statusClass}">
+                <div class="avatar-pedido">
+                    <img src="${p.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}">
+                </div>
+                <div class="info-pedido">
+                    <div class="header-card">
+                        <h4>${p.clienteNome}</h4>
+                        <span class="data-pedido">${new Date(p.dataPedido).toLocaleDateString()}</span>
+                    </div>
+                    <span class="servico-tag">${p.servicoReferencia}</span>
+                    <div class="msg-inicial">"${p.mensagemInicial}"</div>
+                    ${botoesHtml}
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', card);
+        });
+        
+        if(contador) contador.innerText = `${novos} novos`;
+    });
+}
+
+// ============================================================
+// ATUALIZAÇÃO: CORREÇÃO DO CARREGAMENTO EXPLORAR
+// ============================================================
+
+window.carregarDadosExplorar = function() {
+    console.log("Iniciando carregamento do Explorar...");
+    
+    // 1. Carrega Categorias
+    if(window.carregarCategorias) window.carregarCategorias();
+
+    // 2. Carrega Inspirações (Com Fallback para Anúncios)
+    carregarInspiracoes();
+
+    // 3. Carrega Profissionais
+    carregarListaProfissionaisReal();
+}
+
+async function carregarInspiracoes() {
+    const container = document.getElementById('gridInspiracao');
+    if (!container) return;
+
+    try {
+        // Tenta buscar na coleção 'trabalhos' (Portfolio)
+        // OBS: Removi o 'orderBy' temporariamente para evitar erro de índice se a coleção for nova
+        let q = query(collection(db, "trabalhos"), limit(8));
+        let snapshot = await getDocs(q);
+        
+        let listaParaMostrar = [];
+        let tipoCard = 'trabalho';
+
+        // Se não tiver trabalhos (portfólio), busca anúncios normais para preencher
+        if (snapshot.empty) {
+            console.log("Sem trabalhos, buscando anúncios...");
+            q = query(collection(db, "anuncios"), limit(8));
+            snapshot = await getDocs(q);
+            tipoCard = 'anuncio';
+        }
+
+        container.innerHTML = ""; // Limpa o spinner "Carregando..."
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="loading-msg">
+                    <i class='bx bx-image-alt' style="font-size: 2rem; margin-bottom: 10px;"></i>
+                    <p>Ainda não há publicações de inspiração.</p>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // Lógica para pegar a imagem correta dependendo se é Trabalho ou Anúncio
+            let imagem = "https://placehold.co/400x300?text=Sem+Imagem";
+            if (data.capa) imagem = data.capa;
+            else if (data.img) imagem = data.img;
+            else if (data.fotos && data.fotos.length > 0) imagem = data.fotos[0];
+
+            const categoria = data.categoria || data.tag || "Geral";
+            const titulo = data.titulo || (data.descricao ? data.descricao.substring(0, 30) : "Serviço");
+            const autor = data.autorNome || data.nomeAutor || "Profissional";
+
+            const html = `
+            <div class="inspiration-card" onclick="window.location.href='index.html'">
+                <div class="like-btn"><i class='bx bx-heart'></i></div>
+                <img src="${imagem}" class="card-img" alt="Inspiração">
+                <div class="card-overlay">
+                    <span class="card-cat-badge">${categoria}</span>
+                    <div class="card-title">${titulo}</div>
+                    <div class="card-user">
+                        <i class='bx bxs-user-circle'></i> ${autor}
+                    </div>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar inspirações:", e);
+        container.innerHTML = `
+            <div class="error-msg">
+                <p>Não foi possível carregar as inspirações.</p>
+                <small>${e.message}</small>
+            </div>`;
+    }
+}
+
+async function carregarListaProfissionaisReal() {
+    const container = document.getElementById('listaProfissionaisReal');
+    if (!container) return;
+
+    try {
+        // Busca usuários onde isProfissional é true
+        const q = query(collection(db, "usuarios"), where("isProfissional", "==", true), limit(10));
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = ""; // Limpa spinner
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div class="pro-card">
+                    <i class='bx bxs-badge-check verified-badge'></i>
+                    <img src="https://i.pravatar.cc/150?img=33" class="pro-avatar-lg">
+                    <span class="pro-name">Seja o Primeiro</span>
+                    <span class="pro-job">Cadastre-se Pro</span>
+                    <button class="btn-pro-action" onclick="window.location.href='tornar-profissional.html'">Começar</button>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const user = doc.data();
+            const foto = user.foto || "https://i.pravatar.cc/150";
+            
+            // Lógica do Nome: Prioriza o @usuario, senão pega o primeiro nome
+            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usuário");
+            if (!nomeExibicao.startsWith('@') && user.user) {
+                nomeExibicao = user.user; // Garante que usa o handle se existir
+            }
+
+            const profissao = user.categoria_profissional || "Profissional";
+            
+            // LÓGICA DE AVALIAÇÃO CORRIGIDA
+            // Se tiver avaliações > 0, mostra estrelas. Senão, mostra "Novo".
+            let htmlAvaliacao;
+            if (user.stats && user.stats.avaliacoes > 0) {
+                htmlAvaliacao = `<span class="pro-rating">★ ${user.stats.media}</span>`;
+            } else {
+                htmlAvaliacao = `<span class="badge-novo-pro">Novo</span>`;
+            }
+
+            const html = `
+            <div class="pro-card">
+                <i class='bx bxs-badge-check verified-badge'></i>
+                <img src="${foto}" class="pro-avatar-lg">
+                <span class="pro-name">${nomeExibicao}</span>
+                <span class="pro-job">${profissao}</span>
+                ${htmlAvaliacao}
+                <button class="btn-pro-action" onclick="alert('Perfil de ${nomeExibicao}')">Ver Perfil</button>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar profissionais:", e);
+        container.innerHTML = `
+            <div style="padding:15px; color:#e74c3c; text-align:center;">
+                Erro ao listar pros. Tente recarregar.
+            </div>`;
+    }
+}
+
+// ============================================================
+// 9. LÓGICA DE COMUNIDADES (ATUALIZADO)
+// ============================================================
+
+// Função principal chamada ao abrir a página
+window.carregarDadosComunidade = function() {
+    carregarComunidadesGerais();
+    carregarMeusGrupos();
+}
+
+// 1. CRIAR NOVA COMUNIDADE
+window.criarNovaComunidade = async function(e) {
+    e.preventDefault();
+    const btn = e.target.querySelector('button');
+    const user = auth.currentUser;
+
+    if(!user) { alert("Faça login para criar um grupo."); return; }
+
+    const nome = document.getElementById('commNome').value;
+    const desc = document.getElementById('commDesc').value;
+    const tipo = document.getElementById('commTipo').value;
+    const fileInput = document.getElementById('commFoto');
+
+    btn.innerText = "Criando..."; 
+    btn.disabled = true;
+
+    try {
+        let capaUrl = "https://placehold.co/600x200?text=Comunidade"; // Imagem padrão
+
+        // Se o usuário selecionou foto, converte para Base64
+        if (fileInput.files && fileInput.files[0]) {
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+            capaUrl = await new Promise((resolve) => {
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        // Salva no Firestore
+        await addDoc(collection(db, "comunidades"), {
+            donoUid: user.uid,
+            nome: nome,
+            descricao: desc,
+            tipo: tipo,
+            capa: capaUrl,
+            membrosCount: 1,
+            membros: [user.uid], // Você entra automaticamente no grupo
+            dataCriacao: new Date().toISOString()
+        });
+
+        alert("Grupo criado com sucesso!");
+        if(window.fecharModalCriarComm) window.fecharModalCriarComm();
+        
+        // Recarrega as listas
+        carregarComunidadesGerais();
+        carregarMeusGrupos();
+
+    } catch (erro) {
+        console.error("Erro ao criar:", erro);
+        alert("Erro ao criar grupo. Tente novamente.");
+    } finally {
+        btn.innerText = "Criar Comunidade"; 
+        btn.disabled = false;
+    }
+}
+
+// 2. LISTAR TODAS AS COMUNIDADES (GERAL)
+async function carregarComunidadesGerais() {
+    const container = document.getElementById('listaComunidadesGeral');
+    if(!container) return;
+
+    try {
+        // ATENÇÃO: Removi o orderBy("dataCriacao") para evitar travamento se não houver índice
+        const q = query(collection(db, "comunidades"), limit(20));
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div style="grid-column:1/-1; text-align:center; padding:40px; background:white; border-radius:16px; border:1px dashed #ddd;">
+                    <i class='bx bx-group' style="font-size:3rem; color:#ddd; margin-bottom:10px;"></i>
+                    <h4 style="color:#555;">Nenhum grupo encontrado</h4>
+                    <p style="color:#888; font-size:0.9rem;">Seja o primeiro a criar uma comunidade!</p>
+                </div>`;
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const comm = doc.data();
+            
+            // Define a cor da tag baseado no tipo
+            let tagClass = "tag-pro"; 
+            if(comm.tipo === "Condomínio") tagClass = "tag-condo";
+            if(comm.tipo === "Hobby") tagClass = "tag-hobby";
+
+            const html = `
+            <div class="card-comm" data-tipo="${comm.tipo}" onclick="alert('Você clicou no grupo: ${comm.nome}')">
+                <div class="card-cover" style="background-image: url('${comm.capa}');">
+                    <span class="card-tag ${tagClass}">${comm.tipo}</span>
+                </div>
+                <div class="card-body">
+                    <div class="card-icon">
+                        <img src="${comm.capa}" style="object-fit:cover;">
+                    </div>
+                    <h3 class="card-title">${comm.nome}</h3>
+                    <p class="card-desc">${comm.descricao}</p>
+                    
+                    <div class="members-preview">
+                        <div class="mem-avatar" style="background:#eee;"></div>
+                        <div class="mem-avatar" style="background:#ddd;"></div>
+                        <span class="mem-count">+${comm.membrosCount} membros</span>
+                    </div>
+
+                    <div class="card-footer">
+                        <button class="btn-entrar">Ver Grupo</button>
+                    </div>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao listar geral:", e);
+        container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">Erro ao carregar lista.</div>`;
+    }
+}
+
+// 3. LISTAR MEUS GRUPOS (Onde sou membro)
+async function carregarMeusGrupos() {
+    const container = document.getElementById('listaMeusGrupos');
+    if(!container) return;
+
+    const user = auth.currentUser;
+    if(!user) {
+        container.innerHTML = `<div style="color:rgba(255,255,255,0.7); padding:10px; font-size:0.9rem;">Faça login para ver.</div>`;
+        return;
+    }
+
+    try {
+        const q = query(collection(db, "comunidades"), where("membros", "array-contains", user.uid));
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+            container.innerHTML = `<div style="color:rgba(255,255,255,0.6); padding:15px; font-size:0.9rem;">Você não participa de nenhum grupo.</div>`;
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const comm = doc.data();
+            const html = `
+            <div class="my-group-item" onclick="alert('Abrir chat: ${comm.nome}')">
+                <div class="group-img-ring">
+                    <img src="${comm.capa}">
+                </div>
+                <span>${comm.nome}</span>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro meus grupos:", e);
+        // Fallback visual silencioso
+        container.innerHTML = `<div style="color:rgba(255,255,255,0.6); padding:10px;">Sem grupos.</div>`;
+    }
+}
+
+// ============================================================
+// LÓGICA DE ESTATÍSTICAS DO PERFIL
+// ============================================================
+
+window.carregarEstatisticasReais = async function() {
+    // Só roda se estiver na página de perfil
+    const elPedidos = document.getElementById('stat-pedidos');
+    const elNota = document.getElementById('stat-nota');
+    const elServicos = document.getElementById('stat-servicos');
+
+    if (!elPedidos || !elNota || !elServicos) return;
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    try {
+        // 1. CONTA MEUS ANÚNCIOS ATIVOS
+        // Busca todos os anúncios onde donoUid sou eu
+        const qAnuncios = query(collection(db, "anuncios"), where("donoUid", "==", user.uid));
+        const snapAnuncios = await getDocs(qAnuncios);
+        elServicos.innerText = snapAnuncios.size; // .size dá a quantidade exata
+
+        // 2. CONTA PEDIDOS RECEBIDOS
+        // Busca todos os pedidos enviados para mim (paraUid == eu)
+        const qPedidos = query(collection(db, "pedidos"), where("paraUid", "==", user.uid));
+        const snapPedidos = await getDocs(qPedidos);
+        elPedidos.innerText = snapPedidos.size;
+
+        // 3. PEGA A NOTA MÉDIA (Do perfil do usuário)
+        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        
+        // Se já tiver a nota salva no perfil local, usa ela
+        if (perfilLocal.stats && perfilLocal.stats.media) {
+            elNota.innerText = perfilLocal.stats.media;
+        } else {
+            // Se não, busca do banco para garantir
+            const docUser = await getDoc(doc(db, "usuarios", user.uid));
+            if(docUser.exists()) {
+                const dados = docUser.data();
+                const media = (dados.stats && dados.stats.media) ? dados.stats.media : "5.0"; // Padrão 5.0 se for novo
+                elNota.innerText = media;
+            } else {
+                elNota.innerText = "Novo";
+            }
+        }
+
+    } catch (e) {
+        console.error("Erro ao carregar estatísticas:", e);
     }
 }
