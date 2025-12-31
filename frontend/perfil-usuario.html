@@ -9,67 +9,176 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* ==========================================================================
-        ESTILOS PADRONIZADOS
-        ========================================================================== */
-        .perfil-main { margin-left: 270px; margin-right: 20px; max-width: 1600px; padding-bottom: 60px; }
+           ESTILOS GERAIS E LAYOUT (CENTRALIZADO)
+           ========================================================================== */
+        body { 
+            background-color: #f4f6f8; 
+            margin: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+
+        /* CONFIGURAÇÃO PRINCIPAL DO LAYOUT */
+        .perfil-main {
+            margin-left: 270px;          /* Espaço da Sidebar */
+            width: calc(100% - 270px);   /* Ocupa o restante da tela */
+            display: flex;               /* Flexbox para alinhar o filho */
+            justify-content: center;     /* Centraliza o container-limite */
+            padding: 20px;
+            padding-bottom: 80px;
+            box-sizing: border-box;
+        }
+
+        /* O CONTAINER QUE SEGURA O CONTEÚDO NO MEIO */
+        .container-limite {
+            width: 100%;
+            max-width: 1200px; /* Trava em 1200px */
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
         
-        .perfil-header-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; }
-        .capa-perfil { height: 180px; background: linear-gradient(120deg, var(--cor2), #8e44ad); position: relative; }
-        .btn-edit-capa { position: absolute; right: 20px; bottom: 20px; background: rgba(0,0,0,0.5); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
+        /* --- HEADER DO PERFIL --- */
+        .perfil-header-card { 
+            background: #fff; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            overflow: visible; position: relative; 
+            margin-bottom: 10px;
+        }
+        .capa-perfil { 
+            height: 220px; 
+            background: linear-gradient(120deg, #8e44ad, #3498db); /* Roxo/Azul para Diferenciar do Profissional */
+            position: relative; 
+            border-radius: 16px 16px 0 0;
+        }
+        .btn-edit-capa { 
+            position: absolute; right: 20px; bottom: 20px; 
+            background: rgba(0,0,0,0.6); color: white; border: none; 
+            padding: 8px 15px; border-radius: 8px; cursor: pointer; 
+            font-size: 0.85rem; display: flex; align-items: center; gap: 6px; 
+            transition: 0.2s; backdrop-filter: blur(4px);
+        }
+        .btn-edit-capa:hover { background: rgba(0,0,0,0.8); }
         
-        .dados-perfil { padding: 0 30px 20px 30px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 30px; margin-top: -50px; }
+        .dados-perfil { 
+            padding: 0 30px 30px 30px; 
+            display: flex; flex-wrap: wrap; align-items: flex-start; 
+            gap: 30px; position: relative;
+        }
         
         /* AVATAR */
-        .avatar-container { position: relative; flex-shrink: 0; }
-        .avatar-container img { width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; }
-        .status-online { width: 20px; height: 20px; background: #2ecc71; border: 3px solid #fff; border-radius: 50%; position: absolute; bottom: 15px; right: 10px; display: none; }
+        .avatar-container { 
+            position: relative; margin-top: -70px; 
+            flex-shrink: 0; 
+        }
+        .avatar-container img { 
+            width: 150px; height: 150px; border-radius: 50%; 
+            border: 5px solid #fff; object-fit: cover; background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .status-online { 
+            width: 24px; height: 24px; background: #2ecc71; 
+            border: 3px solid #fff; border-radius: 50%; 
+            position: absolute; bottom: 15px; right: 10px; display: none; 
+        }
 
         /* TEXTOS */
-        .info-texto { flex: 1; margin-top: 60px; min-width: 250px; }
+        .info-texto { flex: 1; padding-top: 15px; min-width: 250px; }
         .nome-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .nome-row h1 { font-size: 1.6rem; color: #333; margin: 0; display:flex; align-items:center; gap:5px; }
+        .nome-row h1 { 
+            font-size: 1.8rem; color: #333; margin: 0; 
+            display: flex; align-items: center; gap: 8px; 
+        }
 
-        /* STATS */
-        .social-stats { display: flex; gap: 25px; margin: 15px 0 15px 0; }
-        .stat-social { display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; }
-        .stat-social strong { font-size: 1.1rem; color: #333; font-weight: 800; }
-        .stat-social span { font-size: 0.85rem; color: #777; }
+        /* STATS SOCIAIS */
+        .social-stats { 
+            display: flex; gap: 30px; margin: 15px 0; 
+            background: #f8f9fa; padding: 10px 20px; 
+            border-radius: 10px; display: inline-flex;
+        }
+        .stat-social { text-align: center; cursor: pointer; }
+        .stat-social strong { font-size: 1.1rem; color: #333; display: block; }
+        .stat-social span { font-size: 0.8rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
 
-        .bio { color: #666; font-size: 0.95rem; margin: 8px 0 15px 0; line-height: 1.4; }
-        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85rem; color: #777; }
+        .bio { color: #555; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5; max-width: 600px; }
+        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; color: #777; }
+        .meta-dados span { display: flex; align-items: center; gap: 5px; }
 
         /* AÇÕES DIREITA */
-        .acoes-perfil { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 60px; }
+        .acoes-perfil { 
+            display: flex; flex-direction: column; align-items: flex-end; 
+            gap: 15px; padding-top: 15px; 
+        }
         
-        .btn-solid { background: var(--cor0); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .btn-solid:hover { background: #096356; transform: translateY(-2px); }
+        .btn-solid { 
+            background: var(--cor0, #0b7768); color: white; border: none; 
+            padding: 12px 25px; border-radius: 50px; font-weight: 600; 
+            cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            transition: 0.2s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
+        }
+        .btn-solid:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3); }
         
-        /* Botão Virar Profissional */
-        .btn-outline { background: transparent; border: 2px solid var(--cor2); color: var(--cor2); padding: 8px 20px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .btn-outline:hover { background: var(--cor2); color: white; transform: translateY(-2px); }
+        /* Botão Virar Profissional (Estilo Especial) */
+        .btn-outline { 
+            background: #fff; border: 2px solid var(--cor2, #333); 
+            color: var(--cor2, #333); padding: 10px 25px; border-radius: 50px; 
+            font-weight: 700; cursor: pointer; display: flex; align-items: center; 
+            gap: 8px; transition: 0.2s; 
+        }
+        .btn-outline:hover { background: var(--cor2, #333); color: white; transform: translateY(-2px); }
 
-        /* MODAL */
+        /* --- SEÇÃO MEUS PEDIDOS --- */
+        .section-pedidos {
+            background: #fff; border-radius: 16px; padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+        .section-title {
+            font-size: 1.2rem; font-weight: 700; color: #333; 
+            margin-bottom: 20px; border-left: 4px solid var(--cor0, #0b7768); 
+            padding-left: 10px; margin-top: 0;
+        }
+
+        .empty-state-pedidos {
+            text-align: center; padding: 50px 20px; 
+            background: #fafafa; border-radius: 12px; 
+            border: 2px dashed #e0e0e0; display: flex; 
+            flex-direction: column; align-items: center; gap: 15px;
+        }
+        .empty-state-pedidos i { font-size: 3.5rem; color: #ccc; margin-bottom: 5px; }
+        .empty-state-pedidos p { color: #666; font-size: 1rem; margin: 0; }
+        .empty-state-pedidos a { 
+            color: var(--cor0, #0b7768); font-weight: 700; text-decoration: none; 
+            margin-top: 5px; border-bottom: 1px solid transparent; transition: 0.2s;
+        }
+        .empty-state-pedidos a:hover { border-bottom-color: var(--cor0, #0b7768); }
+
+        /* --- MODAL --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.3s; display:flex; flex-direction:column; }
         @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-header { background: #f9f9f9; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y:auto; max-height:70vh;}
-        .form-group { margin-bottom: 15px; }
-        .input-modal { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
-        .modal-footer { padding: 15px 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-cancel { background: #f0f0f0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; color: #666; }
-        .btn-save { background: var(--cor0); color:white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
+        .modal-header { background: #fff; padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y:auto; max-height:70vh; background: #fcfcfc;}
+        .form-group { margin-bottom: 20px; }
+        .input-modal { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background: #fff; box-sizing: border-box; }
+        .modal-footer { padding: 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-cancel { background: #f0f0f0; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #666; font-weight: 600; }
+        .btn-save { background: var(--cor0, #0b7768); color:white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
         .btn-close-modal { border:none; background:transparent; font-size:1.5rem; cursor:pointer;}
 
-        .custom-file-wrapper { display: flex; align-items: center; gap: 10px; }
-        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; color: #555; font-size: 0.9rem; font-weight: 600; }
-        .file-name { font-size: 0.85rem; color: #888; font-style: italic; }
+        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #e3f2fd; border: 1px dashed #2196f3; border-radius: 8px; cursor: pointer; color: #1976d2; font-size: 0.9rem; font-weight: 600; width: 100%; box-sizing: border-box; justify-content: center; }
+        .file-name { font-size: 0.85rem; color: #888; font-style: italic; display: block; text-align: center; margin-top: 5px; }
 
-        @media (max-width: 768px) {
-            .perfil-main { margin-left: 0; margin-right: 0; padding: 0 0 60px 0; }
-            .perfil-header-card { border-radius: 0; border: none; margin-bottom: 15px; }
-            .dados-perfil { flex-direction: column; align-items: center; text-align: center; margin-top: -60px; }
+        @media (max-width: 1024px) {
+            .perfil-main { 
+                margin-left: 0; 
+                width: 100%; 
+                display: block; 
+                padding: 15px;
+            }
+            .dados-perfil { flex-direction: column; align-items: center; text-align: center; padding: 0 20px 30px 20px; }
             .acoes-perfil { align-items: center; width: 100%; padding-top: 20px; }
+            .social-stats { width: 100%; justify-content: center; box-sizing: border-box; }
+            .bio { text-align: center; }
+            .meta-dados { justify-content: center; }
         }
     </style>
 </head>
@@ -108,51 +217,54 @@
     </header>   
 
     <main class="perfil-main">
-        <section class="perfil-header-card">
-            <div class="capa-perfil">
-                <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
-            </div>
-            <div class="dados-perfil">
-                <div class="avatar-container">
-                    <img src="" alt="Perfil" id="fotoPerfilDisplay">
-                    <div class="status-online" id="statusOnlineIndicator"></div>
-                </div>
-                <div class="info-texto">
-                    <div class="nome-row">
-                        <h1 id="nomePerfilDisplay">...</h1>
-                    </div>
-                    <div class="social-stats">
-                        <div class="stat-social"><strong id="stat-seguidores">0</strong><span>Seguidores</span></div>
-                        <div class="stat-social"><strong id="stat-seguindo">0</strong><span>Seguindo</span></div>
-                    </div>
-                    <p class="bio" id="bioPerfilDisplay">...</p>
-                    <div class="meta-dados">
-                        <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
-                        <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
-                    </div>
-                </div>
-                <div class="acoes-perfil">
-                    <button class="btn-outline" onclick="tornarSeProfissional()">
-                        <i class='bx bx-briefcase-alt-2'></i> Quero ser Profissional
-                    </button>
-                    
-                    <button class="btn-solid" onclick="abrirModalEditar()">
-                        <i class='bx bx-pencil'></i> Editar Perfil
-                    </button>
-                </div>
-            </div>
-        </section>
+        
+        <div class="container-limite">
 
-        <div style="padding: 20px;">
-            <h3>Meus Pedidos</h3>
-            <div style="text-align:center; padding:40px; color:#999; border: 1px dashed #ccc; border-radius:10px; margin-top:10px;">
-                <i class='bx bx-shopping-bag' style="font-size: 3rem;"></i>
-                <p>Você ainda não realizou nenhum pedido de serviço.</p>
-                <a href="index.html" style="color:var(--cor2); font-weight:bold;">Procurar Profissionais</a>
-            </div>
-        </div>
+            <section class="perfil-header-card">
+                <div class="capa-perfil">
+                    <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
+                </div>
+                <div class="dados-perfil">
+                    <div class="avatar-container">
+                        <img src="" alt="Perfil" id="fotoPerfilDisplay">
+                        <div class="status-online" id="statusOnlineIndicator"></div>
+                    </div>
+                    <div class="info-texto">
+                        <div class="nome-row">
+                            <h1 id="nomePerfilDisplay">...</h1>
+                        </div>
+                        <div class="social-stats">
+                            <div class="stat-social"><strong id="stat-seguidores">0</strong><span>Seguidores</span></div>
+                            <div class="stat-social"><strong id="stat-seguindo">0</strong><span>Seguindo</span></div>
+                        </div>
+                        <p class="bio" id="bioPerfilDisplay">...</p>
+                        <div class="meta-dados">
+                            <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
+                            <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
+                        </div>
+                    </div>
+                    <div class="acoes-perfil">
+                        <button class="btn-outline" onclick="tornarSeProfissional()">
+                            <i class='bx bx-briefcase-alt-2'></i> Quero ser Profissional
+                        </button>
+                        
+                        <button class="btn-solid" onclick="abrirModalEditar()">
+                            <i class='bx bx-pencil'></i> Editar Perfil
+                        </button>
+                    </div>
+                </div>
+            </section>
 
-    </main>
+            <div class="section-pedidos">
+                <h3 class="section-title">Meus Pedidos</h3>
+                <div class="empty-state-pedidos">
+                    <i class='bx bx-shopping-bag'></i>
+                    <p>Você ainda não realizou nenhum pedido de serviço.</p>
+                    <a href="index.html">Procurar Profissionais</a>
+                </div>
+            </div>
+
+        </div> </main>
 
     <div id="modalEditar" class="modal-overlay">
         <div class="modal-card">
@@ -170,10 +282,10 @@
                     <label>Foto de Perfil</label>
                     <div class="custom-file-wrapper">
                         <label for="inputFotoFile" class="custom-file-label"><i class='bx bx-camera'></i> Trocar Foto</label>
-                        <span id="fotoFileName" class="file-name">Nenhuma selecionada</span>
                         <input type="file" id="inputFotoFile" accept="image/*" style="display:none;">
                         <input type="hidden" id="inputFotoBase64">
                     </div>
+                    <span id="fotoFileName" class="file-name">Nenhuma selecionada</span>
                 </div>
             </div>
             <div class="modal-footer"><button onclick="fecharModalEditar()" class="btn-cancel">Cancelar</button><button onclick="salvarPerfil()" class="btn-save">Salvar Alterações</button></div>
@@ -320,11 +432,10 @@ if(fileInput) {
             const reader = new FileReader();
             reader.onload = function(evt) { document.getElementById('inputFotoBase64').value = evt.target.result; };
             reader.readAsDataURL(file);
+            document.getElementById('fotoFileName').innerText = file.name;
         }
     });
 }
-
-// Dentro do <script type="module"> no final do arquivo:
 
 function renderizarMenuDropdown(fotoUrl) {
     const container = document.getElementById('header-user-area');
@@ -352,7 +463,6 @@ function renderizarMenuDropdown(fotoUrl) {
         </div>`;
 }
 
-// Adicione a função:
 window.alternarConta = function() {
     signOut(auth).then(() => {
         localStorage.removeItem('usuarioLogado');
@@ -384,7 +494,6 @@ onAuthStateChanged(auth, async (user) => {
         window.location.href = "login.html";
     }
 });
-
 
 </script>
 </body>

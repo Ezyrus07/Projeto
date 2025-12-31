@@ -299,6 +299,11 @@
                         <input type="text" class="input-premium" placeholder="Ex: Instalação de 3 tomadas e 1 chuveiro">
                     </div>
 
+                    <div id="container-perguntas-extras" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+                        <h4 style="color: var(--cor2); margin-bottom: 15px;">Perguntas do Profissional</h4>
+                        <div id="lista-perguntas-dinamicas"></div>
+                    </div>
+
                     <div class="input-group">
                         <label>Descrição detalhada</label>
                         <textarea class="input-premium area-texto" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
@@ -325,7 +330,13 @@
                     </div>
                 </div>
 
-                <div class="card-branco">
+                <div id="container-perguntas-extras" style="display:none; margin-top: 25px; padding-top: 20px; border-top: 1px dashed #eee;">
+                    <h4 style="color: var(--cor2); margin-bottom: 15px; font-size: 1rem;">Perguntas do Profissional</h4>
+                    <div id="lista-perguntas-dinamicas" style="display: flex; flex-direction: column; gap: 15px;">
+                        </div>
+                </div>
+
+                <div class="card-branco" id="card-localizacao">
                     <h3 class="titulo-sessao">2. Localização</h3>
                     <div class="input-group">
                         <label>CEP do serviço</label>
@@ -353,34 +364,34 @@
 
             </section>
 
-            <aside class="resumo-section">
-                <div class="card-prestador-resumo">
-                    <div class="header-resumo">
-                        <img src="https://i.pravatar.cc/150?img=11" alt="Prestador">
-                        <div>
-                            <h4>Carlos Elétrica <i class='bx bxs-badge-check' style="color:#0095f6;"></i></h4>
-                            <span>@carlos_eletrica</span>
-                        </div>
-                    </div>
-                    
-                    <div class="stats-resumo">
-                        <div><i class='bx bxs-star'></i> 5.0</div>
-                        <div><i class='bx bx-briefcase'></i> 142 Jobs</div>
-                    </div>
+<aside class="resumo-section">
+    <div class="card-prestador-resumo">
+        <div class="header-resumo">
+            <img src="https://placehold.co/150" alt="Prestador" id="imgPrestadorResumo">
+            <div>
+                <h4 id="nomePrestadorResumo">Carregando...</h4>
+                <span id="userPrestadorResumo">@...</span>
+            </div>
+        </div>
+        
+        <div class="stats-resumo">
+            <div><i class='bx bxs-star'></i> <span id="notaPrestadorResumo">--</span></div>
+            <div><i class='bx bx-briefcase'></i> <span id="jobsPrestadorResumo">0</span> Jobs</div>
+        </div>
 
-                    <hr class="divisor">
+        <hr class="divisor">
 
-                    <ul class="lista-vantagens">
-                        <li><i class='bx bx-check-shield'></i> <strong>Garantia Doke:</strong> Só liberamos o pagamento quando você aprovar o serviço.</li>
-                        <li><i class='bx bx-time-five'></i> Resposta média em 20 min.</li>
-                    </ul>
+        <ul class="lista-vantagens">
+            <li><i class='bx bx-check-shield'></i> <strong>Garantia Doke:</strong> Só liberamos o pagamento quando você aprovar o serviço.</li>
+            <li><i class='bx bx-time-five'></i> Resposta média em 20 min.</li>
+        </ul>
 
-                    <button class="btn-enviar-orcamento" onclick="enviarOrcamento()">
-                        Enviar Solicitação
-                    </button>
-                    <p class="aviso-legal">Ao enviar, você concorda com nossos termos.</p>
-                </div>
-            </aside>
+        <button class="btn-enviar-orcamento" id="btnEnviarOrcamento">
+            Enviar Solicitação
+        </button>
+        <p class="aviso-legal">Ao enviar, você concorda com nossos termos.</p>
+    </div>
+</aside>
 
         </div>
     </main>
@@ -408,39 +419,224 @@
         </a>
     </nav>
 
-    <script>
-        // Puxar CEP salvo no localStorage
-        window.addEventListener('DOMContentLoaded', () => {
-            const cepSalvo = localStorage.getItem('meu_cep_doke');
-            if(cepSalvo) document.getElementById('cepOrcamento').value = cepSalvo;
-        });
+<script type="module">
+    // IMPORTANTE: Não importamos initializeApp para não dar erro de duplicidade.
+    // Importamos apenas as funções de banco de dados que vamos usar.
+    import { doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        // Preview simples de imagens
-        function previewFiles() {
-            const preview = document.getElementById('previewArea');
-            const files = document.getElementById('fileInput').files;
-            
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    preview.appendChild(img);
+    // Variáveis globais para armazenar os dados carregados
+    let dadosPrestador = null;
+    let dadosAnuncio = null;
+
+    // Aguarda a janela carregar para garantir que o script.js já criou o window.db
+    window.addEventListener('load', async function() {
+        const db = window.db;   // Pega o banco de dados do script.js
+        const auth = window.auth; // Pega a autenticação do script.js
+
+        // 1. PEGAR OS IDS DA URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const prestadorUid = urlParams.get('uid'); 
+        const anuncioId = urlParams.get('aid'); 
+        
+        if (!prestadorUid) {
+            // Se não tiver ID, tenta recuperar do anúncio de exemplo (para testes) ou avisa
+            console.warn("UID não fornecido na URL.");
+        }
+
+        try {
+            // A) CARREGAR DADOS DO PRESTADOR (Lateral)
+            if(prestadorUid) {
+                const docUserRef = doc(db, "usuarios", prestadorUid);
+                const docUserSnap = await getDoc(docUserRef);
+
+                if (docUserSnap.exists()) {
+                    dadosPrestador = docUserSnap.data();
+                    
+                    // Preencher Lateral com os dados reais
+                    const elNome = document.getElementById('nomePrestadorResumo');
+                    const elUser = document.getElementById('userPrestadorResumo');
+                    const elImg = document.getElementById('imgPrestadorResumo');
+                    const elNota = document.getElementById('notaPrestadorResumo');
+                    const elJobs = document.getElementById('jobsPrestadorResumo');
+
+                    if(elNome) elNome.innerHTML = `${dadosPrestador.nome} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
+                    if(elUser) elUser.innerText = dadosPrestador.user || "@profissional";
+                    if(elImg) elImg.src = dadosPrestador.foto || "https://placehold.co/150";
+                    
+                    if(dadosPrestador.stats) {
+                        if(elNota) elNota.innerText = dadosPrestador.stats.media || "Novo";
+                        const jobsCount = dadosPrestador.stats.jobs || dadosPrestador.stats.avaliacoes || 0;
+                        if(elJobs) elJobs.innerText = jobsCount;
+                    } else {
+                        if(elNota) elNota.innerText = "Novo";
+                    }
                 }
-                reader.readAsDataURL(file);
+            }
+
+            // B) CARREGAR DADOS DO ANÚNCIO (Configurações Específicas)
+            if (anuncioId) {
+                const docAnuncioRef = doc(db, "anuncios", anuncioId);
+                const docAnuncioSnap = await getDoc(docAnuncioRef);
+                
+                if (docAnuncioSnap.exists()) {
+                    dadosAnuncio = docAnuncioSnap.data();
+                    aplicarConfiguracoesDoAnuncio(dadosAnuncio);
+                }
+            }
+
+        } catch (error) {
+            console.error("Erro ao carregar dados:", error);
+        }
+
+        // --- FUNÇÕES DE INTERAÇÃO ---
+
+        function aplicarConfiguracoesDoAnuncio(anuncio) {
+            // 1. Esconder Localização se for Online
+            const cardLoc = document.getElementById('card-localizacao');
+            if (anuncio.modo_atend === 'Online') {
+                if(cardLoc) cardLoc.style.display = 'none';
+            } else {
+                if(cardLoc) cardLoc.style.display = 'block';
+            }
+
+            // 2. Renderizar Perguntas Extras
+            let perguntas = [];
+            // Tenta ler do JSON ou do objeto direto
+            if (anuncio.perguntasFormularioJson) {
+                try { perguntas = JSON.parse(anuncio.perguntasFormularioJson); } catch(e){}
+            } else if (anuncio.perguntasFormulario) {
+                // Compatibilidade caso tenha salvo direto
+                if(typeof anuncio.perguntasFormulario === 'string') {
+                    try { perguntas = JSON.parse(anuncio.perguntasFormulario); } catch(e){}
+                } else {
+                    perguntas = anuncio.perguntasFormulario;
+                }
+            }
+
+            const containerPerguntas = document.getElementById('container-perguntas-extras');
+            const lista = document.getElementById('lista-perguntas-dinamicas');
+            
+            if (perguntas && perguntas.length > 0 && containerPerguntas && lista) {
+                containerPerguntas.style.display = 'block';
+                lista.innerHTML = "";
+
+                perguntas.forEach((p, index) => {
+                    const div = document.createElement('div');
+                    div.className = 'input-group';
+                    
+                    let inputHtml = "";
+                    if (p.tipo === 'fechada') {
+                        let options = p.opcoes.map(opt => `<option value="${opt}">${opt}</option>`).join('');
+                        inputHtml = `<select class="input-premium pergunta-extra" data-pergunta="${p.pergunta}">
+                                        <option value="" disabled selected>Selecione...</option>
+                                        ${options}
+                                     </select>`;
+                    } else {
+                        inputHtml = `<input type="text" class="input-premium pergunta-extra" data-pergunta="${p.pergunta}" placeholder="Sua resposta...">`;
+                    }
+
+                    div.innerHTML = `
+                        <label style="color:var(--cor2); font-weight:600;">${index+1}. ${p.pergunta}</label>
+                        ${inputHtml}
+                    `;
+                    lista.appendChild(div);
+                });
             }
         }
 
-        // Simulação de Envio
-        function enviarOrcamento() {
-            const btn = document.querySelector('.btn-enviar-orcamento');
-            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
-            setTimeout(() => {
-                alert("Solicitação enviada com sucesso! O prestador responderá em breve.");
-                window.location.href = "chat.html"; // Redireciona para o chat
-            }, 2000);
+        // EVENTO DE CLIQUE NO BOTÃO ENVIAR
+        const btnEnviar = document.getElementById('btnEnviarOrcamento');
+        if(btnEnviar) {
+            btnEnviar.addEventListener('click', async () => {
+                const user = auth.currentUser;
+                
+                if (!user) {
+                    alert("Faça login para continuar.");
+                    window.location.href = "login.html";
+                    return;
+                }
+                
+                // Validações básicas
+                const titulo = document.querySelector('.input-premium[placeholder*="Ex: Instalação"]')?.value;
+                const descricao = document.querySelector('textarea.area-texto')?.value;
+                if (!titulo || !descricao) {
+                    alert("Preencha o título e a descrição.");
+                    return;
+                }
+
+                // Captura Localização
+                let localizacaoData = { tipo: "Online" };
+                const cardLoc = document.getElementById('card-localizacao');
+                if (cardLoc && cardLoc.style.display !== 'none') {
+                    const cep = document.getElementById('cepOrcamento').value;
+                    const endereco = document.querySelector('.input-premium[placeholder*="Rua"]').value;
+                    localizacaoData = { tipo: "Presencial", cep, endereco };
+                }
+
+                // Captura Perguntas Extras
+                let respostasExtras = [];
+                document.querySelectorAll('.pergunta-extra').forEach(inp => {
+                    if(inp.value) {
+                        respostasExtras.push({
+                            pergunta: inp.getAttribute('data-pergunta'),
+                            resposta: inp.value
+                        });
+                    }
+                });
+
+                // UI Feedback
+                btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
+                btnEnviar.disabled = true;
+
+                try {
+                    const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+                    await addDoc(collection(db, "pedidos"), {
+                        deUid: user.uid,
+                        paraUid: prestadorUid,
+                        paraNome: dadosPrestador ? dadosPrestador.nome : "Profissional",
+                        clienteNome: perfilCliente.nome || "Cliente",
+                        clienteFoto: perfilCliente.foto || "",
+                        
+                        servicoReferencia: titulo,
+                        mensagemInicial: descricao,
+                        localizacao: localizacaoData,
+                        formularioRespostas: respostasExtras,
+                        
+                        origemAnuncioId: anuncioId,
+                        status: "pendente",
+                        dataPedido: new Date().toISOString(),
+                        visualizado: false
+                    });
+
+                    alert("Pedido enviado com sucesso!");
+                    window.location.href = "chat.html"; 
+
+                } catch (error) {
+                    console.error(error);
+                    alert("Erro ao enviar.");
+                    btnEnviar.innerHTML = "Enviar Solicitação";
+                    btnEnviar.disabled = false;
+                }
+            });
         }
-    </script>
-</body>
-</html>
+    });
+    
+    // Funções globais auxiliares (CEP, Preview)
+    window.buscarEndereco = function() {
+        const cepEl = document.getElementById('cepOrcamento');
+        if(!cepEl) return;
+        const cep = cepEl.value.replace(/\D/g, '');
+        if(cep.length === 8) {
+            fetch(`https://viacep.com.br/ws/${cep}/json/`)
+                .then(res => res.json())
+                .then(data => {
+                    if(!data.erro) {
+                        const ruaEl = document.querySelector('.input-premium[placeholder*="Rua"]');
+                        if(ruaEl) ruaEl.value = `${data.logradouro}, ${data.bairro} - ${data.localidade}`;
+                    }
+                });
+        }
+    }
+</script>

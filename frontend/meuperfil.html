@@ -7,115 +7,257 @@
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script type="module" src="script.js"></script>
     <style>
-        /* ESTILOS GERAIS */
-        .perfil-main { margin-left: 270px; margin-right: 20px; max-width: 1600px; width: auto; padding-bottom: 60px; }
-        .perfil-header-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 30px; }
-        .capa-perfil { height: 180px; background: linear-gradient(120deg, var(--cor2), #8e44ad); position: relative; }
-        .btn-edit-capa { position: absolute; right: 20px; bottom: 20px; background: rgba(0,0,0,0.5); color: white; border: none; padding: 8px 15px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; display: flex; align-items: center; gap: 6px; transition: 0.2s; }
-        .dados-perfil { padding: 0 30px 20px 30px; display: flex; flex-wrap: wrap; align-items: flex-end; gap: 30px; margin-top: -50px; }
-        .avatar-container { position: relative; flex-shrink: 0; }
-        .avatar-container img { width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; }
-        .status-online { width: 20px; height: 20px; background: #2ecc71; border: 3px solid #fff; border-radius: 50%; position: absolute; bottom: 15px; right: 10px; display: none; }
-        .info-texto { flex: 1; margin-top: 60px; min-width: 250px; }
-        .nome-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .nome-row h1 { font-size: 1.6rem; color: #333; margin: 0; display:flex; align-items:center; gap:5px; }
-        .social-stats { display: flex; gap: 25px; margin: 12px 0 15px 0; }
-        .stat-social { display: flex; flex-direction: column; align-items: flex-start; cursor: pointer; }
-        .stat-social strong { font-size: 1.1rem; color: #333; font-weight: 800; }
-        .stat-social span { font-size: 0.85rem; color: #777; }
-        .bio { color: #666; font-size: 0.95rem; margin: 8px 0 15px 0; line-height: 1.4; }
-        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.85rem; color: #777; }
-        .acoes-perfil { display: flex; flex-direction: column; align-items: flex-end; gap: 10px; padding-top: 60px; }
-        .btn-solid { background: var(--cor0); color: white; border: none; padding: 10px 25px; border-radius: 30px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s; }
-        .btn-solid:hover { background: #096356; transform: translateY(-2px); }
-        .toggle-disponivel { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; font-weight: 600; color: #555; margin-bottom: 5px; }
-        .area-destaques-container { padding: 10px 30px 30px 30px; border-top: 1px solid #f5f5f5; margin-top: 10px; }
-        .scroll-destaques { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; }
+        /* ==========================================================================
+           ESTILOS GERAIS E LAYOUT (CENTRALIZADO)
+           ========================================================================== */
+        body { 
+            background-color: #f4f6f8; 
+            margin: 0; 
+            font-family: 'Segoe UI', sans-serif; 
+        }
+
+        /* CONFIGURAÇÃO PRINCIPAL DO LAYOUT */
+        .perfil-main {
+            margin-left: 270px;          /* Espaço da Sidebar */
+            width: calc(100% - 270px);   /* Ocupa o restante da tela */
+            display: flex;               /* Flexbox para alinhar o filho */
+            justify-content: center;     /* Centraliza o container-limite */
+            padding: 20px;
+            padding-bottom: 80px;
+            box-sizing: border-box;
+        }
+
+        /* O CONTAINER QUE SEGURA O CONTEÚDO NO MEIO */
+        .container-limite {
+            width: 100%;
+            max-width: 1200px; /* Trava em 1200px para não esticar demais */
+            display: flex;
+            flex-direction: column;
+            gap: 25px; /* Espaço entre os blocos verticais */
+        }
+
+        /* --- HEADER DO PERFIL (Estilo Novo) --- */
+        .perfil-header-card { 
+            background: #fff; border-radius: 16px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
+            overflow: visible; /* Permite elementos vazarem se precisar */
+            position: relative;
+            margin-bottom: 10px;
+        }
+        .capa-perfil { 
+            height: 220px; 
+            background: linear-gradient(120deg, #2a5f90, #0b7768); 
+            position: relative; 
+            border-radius: 16px 16px 0 0;
+        }
+        .btn-edit-capa { 
+            position: absolute; right: 20px; bottom: 20px; 
+            background: rgba(0,0,0,0.6); color: white; border: none; 
+            padding: 8px 15px; border-radius: 8px; cursor: pointer; 
+            font-size: 0.85rem; display: flex; align-items: center; gap: 6px; 
+            transition: 0.2s; backdrop-filter: blur(4px);
+        }
+        .btn-edit-capa:hover { background: rgba(0,0,0,0.8); }
+        
+        .dados-perfil { 
+            padding: 0 30px 30px 30px; 
+            display: flex; flex-wrap: wrap; align-items: flex-start; 
+            gap: 30px; position: relative;
+        }
+        
+        .avatar-container { 
+            position: relative; margin-top: -70px; 
+            flex-shrink: 0; 
+        }
+        .avatar-container img { 
+            width: 150px; height: 150px; border-radius: 50%; 
+            border: 5px solid #fff; object-fit: cover; background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
+        .status-online { 
+            width: 24px; height: 24px; background: #2ecc71; 
+            border: 3px solid #fff; border-radius: 50%; 
+            position: absolute; bottom: 15px; right: 10px; display: none; 
+        }
+
+        .info-texto { flex: 1; padding-top: 15px; min-width: 250px; }
+        .nome-row h1 { 
+            font-size: 1.8rem; color: #333; margin: 0; 
+            display: flex; align-items: center; gap: 8px; 
+        }
+
+        /* Stats Sociais (Estilo Clean) */
+        .social-stats { 
+            display: flex; gap: 30px; margin: 15px 0; 
+            background: #f8f9fa; padding: 10px 20px; 
+            border-radius: 10px; display: inline-flex;
+        }
+        .stat-social { text-align: center; cursor: pointer; }
+        .stat-social strong { font-size: 1.1rem; color: #333; display: block; }
+        .stat-social span { font-size: 0.8rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .bio { color: #555; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5; max-width: 600px; }
+        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; color: #777; }
+        .meta-dados span { display: flex; align-items: center; gap: 5px; }
+
+        .acoes-perfil { 
+            display: flex; flex-direction: column; align-items: flex-end; 
+            gap: 15px; padding-top: 15px; 
+        }
+        
+        .btn-solid { 
+            background: var(--cor0, #0b7768); color: white; border: none; 
+            padding: 12px 25px; border-radius: 50px; font-weight: 600; 
+            cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            transition: 0.2s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
+        }
+        .btn-solid:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3); }
+
+        /* DESTAQUES (Stories) */
+        .area-destaques-container { 
+            padding: 20px 30px; border-top: 1px solid #eee; 
+        }
+        .scroll-destaques { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
         .item-destaque { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 70px; }
-        .circulo-destaque { width: 68px; height: 68px; border-radius: 50%; padding: 3px; border: 1px solid #ddd; margin-bottom: 8px; transition: transform 0.2s ease; }
+        .circulo-destaque { 
+            width: 72px; height: 72px; border-radius: 50%; padding: 3px; 
+            border: 2px solid #e0e0e0; margin-bottom: 8px; transition: 0.2s; 
+        }
         .circulo-destaque img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
-        .circulo-destaque.add { border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; background: #fafafa; }
-        .tabs-container { border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; display: flex; gap: 30px; overflow-x: auto; }
-        .tab-btn { background: none; border: none; padding: 10px 5px; font-size: 1rem; color: #777; font-weight: 600; cursor: pointer; border-bottom: 3px solid transparent; transition: 0.3s; white-space: nowrap; }
-        .tab-btn.active { color: var(--cor2); border-bottom-color: var(--cor2); }
+        .circulo-destaque.add { border: 2px dashed #bbb; display: flex; align-items: center; justify-content: center; background: #fafafa; color: #888; font-size: 1.5rem; }
+        .circulo-destaque:hover { border-color: var(--cor0, #0b7768); }
+
+        /* --- ABAS (TABS) MODERNAS --- */
+        .tabs-container { 
+            background: #fff; border-radius: 12px; padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            display: flex; gap: 10px; overflow-x: auto; 
+        }
+        .tab-btn { 
+            background: transparent; border: none; padding: 12px 20px; 
+            font-size: 0.95rem; color: #666; font-weight: 600; 
+            cursor: pointer; border-radius: 8px; transition: 0.3s; 
+            white-space: nowrap; 
+        }
+        .tab-btn:hover { background: #f4f6f8; color: #333; }
+        .tab-btn.active { 
+            background: #e0f2f1; color: var(--cor0, #0b7768); 
+        }
         .tab-content { display: none; animation: fadeIn 0.4s; }
         .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-        .painel-stats-geral { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 30px; }
-        .card-kpi { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; text-align: center; }
-        .card-kpi h3 { font-size: 1.8rem; color: #333; margin: 0; }
-        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 30px; }
-        .chart-card { background: #fff; padding: 20px; border-radius: 12px; border: 1px solid #eee; height: 320px; display: flex; flex-direction: column; }
-        .canvas-container { flex: 1; position: relative; width: 100%; height: 100%; overflow: hidden; }
-        .anuncio-stats-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 15px; display: flex; gap: 20px; margin-bottom: 15px; align-items: center; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- DASHBOARD & GRÁFICOS --- */
+        .painel-stats-geral { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 25px; }
+        .card-kpi { 
+            background: #fff; padding: 25px; border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); text-align: left; 
+            border-left: 4px solid var(--cor0, #0b7768);
+        }
+        .card-kpi span { font-size: 0.9rem; color: #777; font-weight: 600; }
+        .card-kpi h3 { font-size: 2rem; color: #333; margin: 10px 0 0 0; }
+        
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; margin-bottom: 30px; }
+        .chart-card { 
+            background: #fff; padding: 20px; border-radius: 12px; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); min-height: 350px; 
+            display: flex; flex-direction: column; 
+        }
+        .chart-card h4 { margin-top: 0; color: #444; }
+        .canvas-container { flex: 1; position: relative; width: 100%; height: 100%; }
+
+        /* --- ANÚNCIOS --- */
+        .titulo-sessao { font-size: 1.2rem; color: #333; margin-bottom: 20px; border-left: 4px solid var(--cor2, #333); padding-left: 10px; }
+        
+        .anuncio-stats-card { 
+            background: #fff; border-radius: 12px; padding: 20px; 
+            display: flex; gap: 20px; margin-bottom: 20px; align-items: center; 
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04); transition: 0.2s; border: 1px solid #f0f0f0;
+        }
+        .anuncio-stats-card:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
         .img-anuncio-mini { width: 100px; height: 100px; border-radius: 8px; object-fit: cover; }
         .info-anuncio-stats { flex: 1; }
         .topo-anuncio { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-        .badge-status { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+        .badge-status { font-size: 0.75rem; font-weight: 700; padding: 4px 12px; border-radius: 20px; text-transform: uppercase; }
         .badge-status.ativo { background: #e8f5e9; color: #2e7d32; }
-        .grid-metricas-anuncio { display: flex; gap: 25px; }
-        .metrica { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; }
-        .acoes-anuncio-stats { display: flex; flex-direction: column; gap: 8px; }
-        .btn-icon-stats { background: #f5f5f5; border: none; padding: 8px; border-radius: 6px; cursor: pointer; color: #555; }
-        .box-criar-post { background: #fff; border: 1px solid #e0e0e0; border-radius: 12px; padding: 20px; margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.02); }
+        .grid-metricas-anuncio { display: flex; gap: 30px; margin-top: 10px; }
+        .metrica { display: flex; align-items: center; gap: 8px; font-size: 0.9rem; color: #555; }
+        .metrica i { font-size: 1.1rem; color: #888; }
+        
+        .acoes-anuncio-stats { display: flex; flex-direction: column; gap: 10px; }
+        .btn-icon-stats { 
+            background: #fff; border: 1px solid #ddd; padding: 8px; border-radius: 8px; 
+            cursor: pointer; color: #555; transition: 0.2s; 
+        }
+        .btn-icon-stats:hover { background: #f0f0f0; color: #333; }
+
+        /* --- FEED & POSTS --- */
+        .box-criar-post { 
+            background: #fff; border-radius: 12px; padding: 20px; 
+            margin-bottom: 30px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
+        }
         .topo-criar { display: flex; gap: 15px; margin-bottom: 15px; }
         .avatar-mini { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
-        .topo-criar textarea { flex: 1; border: none; resize: none; outline: none; font-family: 'Poppins', sans-serif; font-size: 1rem; color: #333; padding-top: 10px; height: 60px; background: transparent; }
+        .topo-criar textarea { 
+            flex: 1; border: none; resize: none; outline: none; 
+            font-family: inherit; font-size: 1rem; color: #333; 
+            padding-top: 10px; height: 60px; background: transparent; 
+        }
         .bottom-criar { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #f0f0f0; padding-top: 15px; }
-        .opcoes-midia { display: flex; gap: 15px; }
-        .btn-midia { background: transparent; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; font-weight: 600; font-size: 0.9rem; color: #666; transition: 0.2s; }
-        .btn-midia:hover { color: var(--cor0); background: #f0fdfa; padding: 5px 10px; border-radius: 20px; margin: -5px -10px; }
-        .btn-midia.foto i { color: #2ecc71; font-size: 1.2rem; }
-        .btn-publicar { background: var(--cor2); color: white; border: none; padding: 8px 25px; border-radius: 20px; font-weight: 600; cursor: pointer; transition: 0.2s; }
-        .btn-publicar:hover { background: var(--cor0); transform: translateY(-2px); }
-        .post-feed-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 16px; overflow: hidden; animation: fadeIn 0.5s; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
-        .header-post { padding: 15px; display: flex; justify-content: space-between; align-items: center; }
-        .user-post { display: flex; gap: 12px; align-items: center; }
-        .user-post img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
-        .user-post h4 { margin: 0; font-size: 0.95rem; color: #333; font-weight: 700; }
-        .user-post span { font-size: 0.75rem; color: #999; display: block; margin-top: 2px; }
-        .legenda-post { padding: 0 15px 15px 15px; margin: 0; font-size: 0.95rem; color: #444; line-height: 1.5; }
-        .midia-post { width: 100%; background: #f9f9f9; display: flex; justify-content: center; align-items: center; overflow: hidden; max-height: 500px; border-top: 1px solid #f5f5f5; border-bottom: 1px solid #f5f5f5; }
-        .midia-post img { width: 100%; height: auto; object-fit: cover; display: block; }
-        .stats-post { padding: 12px 15px; display: flex; gap: 20px; color: #666; font-size: 0.9rem; font-weight: 600; background: #fff; }
-        .action-post { display: flex; align-items: center; gap: 6px; cursor: pointer; transition: 0.2s; }
-        .action-post:hover { color: var(--cor0); }
-        .action-post i { font-size: 1.2rem; }
-        .empty-state { width: 100%; text-align: center; color: #888; padding: 50px 20px; background: #fafafa; border-radius: 12px; border: 2px dashed #ddd; display: flex; flex-direction: column; align-items: center; gap: 10px; }
-        .empty-state i { font-size: 3rem; color: #ccc; margin-bottom: 5px; }
-        .empty-state h4 { margin: 0; font-size: 1.1rem; color: #555; }
-        .empty-state p { margin: 0; font-size: 0.9rem; }
-        .empty-state a { color: var(--cor0); font-weight: 700; text-decoration: none; }
-        .preview-area { margin-top: 10px; position: relative; display: inline-block; }
-        .preview-img-post { max-height: 150px; border-radius: 8px; border: 1px solid #ddd; }
-        .btn-remove-preview { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+        .btn-midia { 
+            background: #f9f9f9; border: none; cursor: pointer; display: flex; align-items: center; 
+            gap: 8px; font-weight: 600; font-size: 0.9rem; color: #666; 
+            padding: 8px 15px; border-radius: 20px; transition: 0.2s; 
+        }
+        .btn-midia:hover { background: #e0f2f1; color: var(--cor0, #0b7768); }
+        .btn-publicar { 
+            background: var(--cor2, #333); color: white; border: none; 
+            padding: 10px 30px; border-radius: 30px; font-weight: 600; 
+            cursor: pointer; transition: 0.2s; 
+        }
+        .btn-publicar:hover { background: var(--cor0, #0b7768); }
+        
+        .post-feed-card { 
+            background: #fff; border: 1px solid #eee; border-radius: 12px; 
+            margin-bottom: 25px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .header-post { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f9f9f9; }
+        .user-post img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+        .stats-post { padding: 15px 20px; border-top: 1px solid #f9f9f9; display: flex; gap: 25px; }
+
+        /* --- MODAIS --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.3s; display:flex; flex-direction:column; }
         @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-header { background: #f9f9f9; padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y:auto; max-height:70vh;}
-        .form-group { margin-bottom: 15px; }
-        .input-modal { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-family: inherit; }
-        .modal-footer { padding: 15px 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-cancel { background: #f0f0f0; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; color: #666; }
-        .btn-save { background: var(--cor0); color:white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; }
-        .btn-close-modal { border:none; background:transparent; font-size:1.5rem; cursor:pointer;}
-        .custom-file-wrapper { display: flex; align-items: center; gap: 10px; }
-        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #f8f9fa; border: 1px solid #ddd; border-radius: 8px; cursor: pointer; color: #555; font-size: 0.9rem; font-weight: 600; }
-        .file-name { font-size: 0.85rem; color: #888; font-style: italic; }
+        .modal-header { background: #fff; padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
+        .modal-body { padding: 20px; overflow-y:auto; max-height:70vh; background: #fcfcfc;}
+        .form-group { margin-bottom: 20px; }
+        .input-modal { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background: #fff; box-sizing: border-box; }
+        .modal-footer { padding: 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
+        .btn-cancel { background: #f0f0f0; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #666; font-weight: 600; }
+        .btn-save { background: var(--cor0, #0b7768); color:white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
+        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #e3f2fd; border: 1px dashed #2196f3; border-radius: 8px; cursor: pointer; color: #1976d2; font-size: 0.9rem; font-weight: 600; width: 100%; box-sizing: border-box; justify-content: center; }
+        
         .portfolio-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 10px 0; }
-        @media (max-width: 768px) {
-            .perfil-main { margin-left: 0; margin-right: 0; padding: 0 0 60px 0; }
-            .perfil-header-card { border-radius: 0; border: none; margin-bottom: 15px; }
-            .dados-perfil { flex-direction: column; align-items: center; text-align: center; margin-top: -60px; }
+        .empty-state { width: 100%; text-align: center; color: #888; padding: 50px 20px; background: #fff; border-radius: 12px; border: 2px dashed #eee; display: flex; flex-direction: column; align-items: center; gap: 15px; }
+
+        /* RESPONSIVIDADE DO LAYOUT CENTRAL */
+        @media (max-width: 1024px) {
+            .perfil-main { 
+                margin-left: 0; 
+                width: 100%; 
+                display: block; /* Remove o flexbox para fluir em bloco no mobile */
+                padding: 15px;
+            }
             .painel-stats-geral { grid-template-columns: 1fr; }
-            .charts-grid { display: flex; flex-direction: column; gap: 20px; height: auto; margin-bottom: 20px; }
-            .chart-card { width: 100%; height: auto; min-height: 320px; }
-            .portfolio-grid { grid-template-columns: 1fr; }
+            .charts-grid { display: flex; flex-direction: column; gap: 20px; }
+            .dados-perfil { flex-direction: column; align-items: center; text-align: center; padding: 0 20px 30px 20px; }
+            .acoes-perfil { align-items: center; width: 100%; }
+            .social-stats { width: 100%; justify-content: center; box-sizing: border-box; }
+            .bio { text-align: center; }
+            .meta-dados { justify-content: center; }
         }
-        #container-feed-posts { max-width: 700px; margin: 0 auto; }
     </style>
 </head>
 <body>
@@ -153,157 +295,164 @@
     </header>   
 
     <main class="perfil-main">
-        <section class="perfil-header-card">
-            <div class="capa-perfil">
-                <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
-            </div>
-            <div class="dados-perfil">
-                <div class="avatar-container">
-                    <img src="" alt="Perfil" id="fotoPerfilDisplay">
-                    <div class="status-online" id="statusOnlineIndicator"></div>
+        
+        <div class="container-limite">
+
+            <section class="perfil-header-card">
+                <div class="capa-perfil">
+                    <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
                 </div>
-                <div class="info-texto">
-                    <div class="nome-row">
-                        <h1 id="nomePerfilDisplay">...</h1>
+                <div class="dados-perfil">
+                    <div class="avatar-container">
+                        <img src="" alt="Perfil" id="fotoPerfilDisplay">
+                        <div class="status-online" id="statusOnlineIndicator"></div>
+                    </div>
+                    <div class="info-texto">
+                        <div class="nome-row">
+                            <h1 id="nomePerfilDisplay">...</h1>
+                        </div>
+                        
+                        <div class="social-stats">
+                            <div class="stat-social">
+                                <strong id="stat-seguidores">0</strong>
+                                <span>Seguidores</span>
+                            </div>
+                            <div class="stat-social">
+                                <strong id="stat-seguindo">0</strong>
+                                <span>Seguindo</span>
+                            </div>
+                            <div class="stat-social">
+                                <strong id="stat-avaliacoes-count">0</strong>
+                                <span>Avaliações</span>
+                            </div>
+                        </div>
+
+                        <p class="bio" id="bioPerfilDisplay">...</p>
+                        <div class="meta-dados">
+                            <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
+                            <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
+                        </div>
+                    </div>
+                    <div class="acoes-perfil">
+                        <div class="toggle-disponivel">
+                            <span>Disponível</span>
+                            <label class="switch"><input type="checkbox" id="checkDisponivel"><span class="slider round"></span></label>
+                        </div>
+                        <button class="btn-solid" onclick="abrirModalEditar()"><i class='bx bx-pencil'></i> Editar Perfil</button>
+                    </div>
+                </div>
+                <div class="area-destaques-container">
+                    <div class="scroll-destaques" id="lista-destaques">
+                        <div class="item-destaque"><div class="circulo-destaque add"><i class='bx bx-plus'></i></div><span>Novo</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="abrirTab(event, 'tab-anuncios')">Gerenciar Anúncios</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-feed')">Criar Publicação</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-portfolio')">Portfólio</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
+            </div>
+
+            <div id="tab-anuncios" class="tab-content active">
+                <div class="painel-stats-geral">
+                    <div class="card-kpi"><span>Visualizações Totais</span><h3 id="kpi-views">0</h3></div>
+                    <div class="card-kpi"><span>Cliques no Perfil</span><h3 id="kpi-cliques">0</h3></div>
+                    <div class="card-kpi"><span>CTR Médio</span><h3 id="kpi-ctr">0%</h3></div>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-card"><h4>Desempenho</h4><div class="canvas-container"><canvas id="graficoDesempenho"></canvas></div></div>
+                    <div class="chart-card"><h4>Origem</h4><div class="canvas-container"><canvas id="graficoOrigem"></canvas></div></div>
+                </div>
+                <h3 class="titulo-sessao">Meus Anúncios Ativos</h3>
+                <div id="lista-meus-anuncios"></div>
+            </div>
+
+            <div id="tab-feed" class="tab-content">
+                <div class="box-criar-post">
+                    <div class="topo-criar">
+                        <img src="" id="avatar-criar-post" class="avatar-mini">
+                        <textarea id="textoPost" placeholder="O que você realizou hoje? Compartilhe com seus clientes..."></textarea>
                     </div>
                     
-                    <div class="social-stats">
-                        <div class="stat-social">
-                            <strong id="stat-seguidores">0</strong>
-                            <span>Seguidores</span>
-                        </div>
-                        <div class="stat-social">
-                            <strong id="stat-seguindo">0</strong>
-                            <span>Seguindo</span>
-                        </div>
-                        <div class="stat-social">
-                            <strong id="stat-avaliacoes-count">0</strong>
-                            <span>Avaliações</span>
-                        </div>
+                    <div id="previewPostArea" class="preview-area" style="display:none; padding-left: 60px; margin-bottom: 10px;">
+                        <img id="imgPreviewPost" class="preview-img-post">
+                        <div class="btn-remove-preview" onclick="removerImagemPost()">×</div>
+                        <p id="avisoCapaVideo" style="display:none; font-size:0.75rem; color:#666; margin-top:5px; font-weight:600;">
+                            <i class='bx bx-check-circle'></i> Capa do vídeo selecionada
+                        </p>
                     </div>
 
-                    <p class="bio" id="bioPerfilDisplay">...</p>
-                    <div class="meta-dados">
-                        <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
-                        <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
+                    <div id="campos-video-extra" style="display:none; padding-left: 60px; margin-bottom: 15px; animation: fadeIn 0.3s;">
+                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+                            <input type="text" id="inputTagVideo" placeholder="Tag (Ex: Antes & Depois)" style="border:1px solid #ddd; padding:8px; border-radius:6px; width:40%; font-size:0.9rem;">
+                        </div>
+                        
+                        <div style="display:flex; gap:10px; margin-bottom:10px;">
+                            <button class="btn-midia" onclick="document.getElementById('file-post-upload').click()" style="border:1px solid #ddd; justify-content:center;">
+                                <i class='bx bx-image-add'></i> Adicionar Capa
+                            </button>
+
+                            <div class="custom-file-wrapper" style="flex:1;">
+                                <label for="inputVideoFile" class="custom-file-label" style="width:100%; justify-content:center; border:1px dashed #2a5f90; color:#2a5f90; font-size:0.9rem; background: #fff;">
+                                    <i class='bx bx-upload'></i> Anexar Arquivo de Vídeo
+                                </label>
+                                <input type="file" id="inputVideoFile" accept="video/*" style="display:none;" onchange="processarVideoUpload(this)">
+                            </div>
+                        </div>
+
+                        <small id="nomeVideoSelecionado" style="display:block; color:#444; font-weight:600; margin-bottom:5px; padding-left:5px;"></small>
+                        <small style="color:var(--cor0, #0b7768); font-weight:500;">Será publicado na seção <b>Trabalhos Realizados</b></small>
                     </div>
-                </div>
-                <div class="acoes-perfil">
-                    <div class="toggle-disponivel">
-                        <span>Disponível</span>
-                        <label class="switch"><input type="checkbox" id="checkDisponivel"><span class="slider round"></span></label>
+
+                    <div class="bottom-criar">
+                        <div class="opcoes-midia">
+                            <button class="btn-midia foto" onclick="ativarModo('foto')">
+                                <i class='bx bx-image'></i> Foto
+                            </button>
+                            
+                            <button class="btn-midia video" onclick="ativarModo('video')">
+                                <i class='bx bx-video'></i> Vídeo
+                            </button>
+
+                            <input type="file" id="file-post-upload" hidden accept="image/*" onchange="previewImagemPost(this)">
+                            <input type="hidden" id="base64PostImage">
+                            <input type="hidden" id="base64VideoFile">
+                            <input type="hidden" id="tipoPostagemAtual" value="feed">
+                        </div>
+                        <button class="btn-publicar" onclick="publicarConteudoUnificado(event)">Publicar</button>
                     </div>
-                    <button class="btn-solid" onclick="abrirModalEditar()"><i class='bx bx-pencil'></i> Editar Perfil</button>
-                </div>
-            </div>
-            <div class="area-destaques-container">
-                <div class="scroll-destaques" id="lista-destaques">
-                    <div class="item-destaque"><div class="circulo-destaque add"><i class='bx bx-plus'></i></div><span>Novo</span></div>
-                </div>
-            </div>
-        </section>
-
-        <div class="tabs-container">
-            <button class="tab-btn active" onclick="abrirTab(event, 'tab-anuncios')">Gerenciar Anúncios</button>
-            <button class="tab-btn active" onclick="abrirTab(event, 'tab-feed')">Criar Publicação</button>
-            <button class="tab-btn" onclick="abrirTab(event, 'tab-portfolio')">Portfólio</button>
-            <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
-        </div>
-
-        <div id="tab-anuncios" class="tab-content active">
-            <div class="painel-stats-geral">
-                <div class="card-kpi"><span>Visualizações Totais</span><h3 id="kpi-views">0</h3></div>
-                <div class="card-kpi"><span>Cliques no Perfil</span><h3 id="kpi-cliques">0</h3></div>
-                <div class="card-kpi"><h3 id="kpi-ctr">0%</h3><small class="text-secondary">-</small></div>
-            </div>
-            <div class="charts-grid">
-                <div class="chart-card"><h4>Desempenho</h4><div class="canvas-container"><canvas id="graficoDesempenho"></canvas></div></div>
-                <div class="chart-card"><h4>Origem</h4><div class="canvas-container"><canvas id="graficoOrigem"></canvas></div></div>
-            </div>
-            <h3 class="titulo-sessao">Meus Anúncios Ativos</h3>
-            <div id="lista-meus-anuncios"></div>
-        </div>
-
-        <div id="tab-feed" class="tab-content">
-            <div class="box-criar-post">
-                <div class="topo-criar">
-                    <img src="" id="avatar-criar-post" class="avatar-mini">
-                    <textarea id="textoPost" placeholder="O que você realizou hoje? Compartilhe com seus clientes..."></textarea>
                 </div>
                 
-                <div id="previewPostArea" class="preview-area" style="display:none; padding-left: 60px; margin-bottom: 10px;">
-                    <img id="imgPreviewPost" class="preview-img-post">
-                    <div class="btn-remove-preview" onclick="removerImagemPost()">×</div>
-                    <p id="avisoCapaVideo" style="display:none; font-size:0.75rem; color:#666; margin-top:5px; font-weight:600;">
-                        <i class='bx bx-check-circle'></i> Capa do vídeo selecionada
-                    </p>
-                </div>
-
-                <div id="campos-video-extra" style="display:none; padding-left: 60px; margin-bottom: 15px; animation: fadeIn 0.3s;">
-                    <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                        <input type="text" id="inputTagVideo" placeholder="Tag (Ex: Antes & Depois)" style="border:1px solid #ddd; padding:8px; border-radius:6px; width:40%; font-size:0.9rem;">
+                <h3 class="titulo-sessao" style="margin-top:30px;">Suas Publicações Recentes</h3>
+                <div id="container-feed-posts">
+                    <div style="text-align:center; padding:30px; color:#999;">
+                        <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i> Carregando feed...
                     </div>
-                    
-                    <div style="display:flex; gap:10px; margin-bottom:10px;">
-                        <button class="btn-midia" onclick="document.getElementById('file-post-upload').click()" style="border:1px solid #ddd; padding:8px 15px; border-radius:6px; background:#f9f9f9; width:50%; justify-content:center; color:var(--cor2);">
-                            <i class='bx bx-image-add'></i> Adicionar Capa
-                        </button>
-
-                        <div class="custom-file-wrapper" style="flex:1;">
-                            <label for="inputVideoFile" class="custom-file-label" style="width:100%; justify-content:center; border:1px dashed #2a5f90; color:#2a5f90; font-size:0.9rem;">
-                                <i class='bx bx-upload'></i> Anexar Arquivo de Vídeo
-                            </label>
-                            <input type="file" id="inputVideoFile" accept="video/*" style="display:none;" onchange="processarVideoUpload(this)">
-                        </div>
-                    </div>
-
-                    <small id="nomeVideoSelecionado" style="display:block; color:#444; font-weight:600; margin-bottom:5px; padding-left:5px;"></small>
-                    <small style="color:var(--cor0); font-weight:500;">Será publicado na seção <b>Trabalhos Realizados</b></small>
                 </div>
+            </div>
 
-                <div class="bottom-criar">
-                    <div class="opcoes-midia">
-                        <button class="btn-midia foto" onclick="ativarModo('foto')">
-                            <i class='bx bx-image'></i> Foto
-                        </button>
-                        
-                        <button class="btn-midia video" onclick="ativarModo('video')">
-                            <i class='bx bx-video'></i> Vídeo
-                        </button>
-
-                        <input type="file" id="file-post-upload" hidden accept="image/*" onchange="previewImagemPost(this)">
-                        <input type="hidden" id="base64PostImage">
-                        <input type="hidden" id="base64VideoFile">
-                        <input type="hidden" id="tipoPostagemAtual" value="feed">
-                    </div>
-                    <button class="btn-publicar" onclick="publicarConteudoUnificado(event)">Publicar</button>
-                </div>
+            <div id="tab-portfolio" class="tab-content">
+                <h3 class="titulo-sessao">Portfólio</h3>
+                <div class="portfolio-grid" id="container-portfolio"></div>
             </div>
             
-            <h3 class="titulo-sessao" style="margin-top:30px;">Suas Publicações Recentes</h3>
-            <div id="container-feed-posts">
-                <div style="text-align:center; padding:30px; color:#999;">
-                    <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i> Carregando feed...
+            <div id="tab-avaliacoes" class="tab-content">
+                <h3 class="titulo-sessao">Resumo das Avaliações</h3>
+                <div class="avaliacao-container">
+                    <div class="empty-state">
+                        <i class='bx bx-star' style="font-size: 3rem; color: #f1c40f;"></i>
+                        <p>Nenhuma avaliação recebida ainda.</p>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div id="tab-portfolio" class="tab-content">
-            <h3 class="titulo-sessao">Portfólio</h3>
-            <div class="portfolio-grid" id="container-portfolio"></div>
-        </div>
-        
-        <div id="tab-avaliacoes" class="tab-content">
-            <h3 class="titulo-sessao">Resumo das Avaliações</h3>
-            <div class="avaliacao-container">
-                <p style="text-align:center; color:#999; padding:20px;">Nenhuma avaliação ainda.</p>
-            </div>
-        </div>
-    </main>
+        </div> </main>
 
     <div id="modalEditar" class="modal-overlay">
         <div class="modal-card">
-            <div class="modal-header"><h3>Editar Perfil</h3><button onclick="fecharModalEditar()" class="btn-close-modal">×</button></div>
+            <div class="modal-header"><h3>Editar Perfil</h3><button onclick="fecharModalEditar()" class="btn-close-modal" style="background:transparent; border:none; font-size:1.5rem; cursor:pointer;">×</button></div>
             <div class="modal-body">
                 <div class="form-group">
                     <label>Nome de Usuário (@)</label>
@@ -317,7 +466,7 @@
                     <label>Foto de Perfil</label>
                     <div class="custom-file-wrapper">
                         <label for="inputFotoFile" class="custom-file-label"><i class='bx bx-camera'></i> Trocar Foto</label>
-                        <span id="fotoFileName" class="file-name">Nenhuma selecionada</span>
+                        <span id="fotoFileName" class="file-name" style="margin-left:10px;"></span>
                         <input type="file" id="inputFotoFile" accept="image/*" style="display:none;">
                         <input type="hidden" id="inputFotoBase64">
                     </div>
@@ -470,24 +619,19 @@ window.publicarConteudoUnificado = async function(event) {
 // FUNÇÕES DE CARREGAMENTO E PERFIL
 // ==========================================
 
-// NOVA FUNÇÃO: CARREGAR ESTATÍSTICAS DE SEGUIDORES E AVALIAÇÕES
 window.carregarStatsSocial = async function(uid) {
     try {
-        // 1. Contar Seguidores (Onde 'seguidoUid' é você)
         const qSeguidores = query(collection(db, "relacoes"), where("seguidoUid", "==", uid));
         const snapSeguidores = await getDocs(qSeguidores);
         const countSeguidores = snapSeguidores.size;
         
-        // 2. Contar Seguindo (Onde 'seguidorUid' é você)
         const qSeguindo = query(collection(db, "relacoes"), where("seguidorUid", "==", uid));
         const snapSeguindo = await getDocs(qSeguindo);
         const countSeguindo = snapSeguindo.size;
 
-        // 3. Atualizar na tela
         if(document.getElementById('stat-seguidores')) document.getElementById('stat-seguidores').innerText = countSeguidores;
         if(document.getElementById('stat-seguindo')) document.getElementById('stat-seguindo').innerText = countSeguindo;
 
-        // 4. Carregar Avaliações
         const docUser = await getDoc(doc(db, "usuarios", uid));
         if(docUser.exists()) {
             const data = docUser.data();
@@ -521,7 +665,7 @@ window.carregarPerfil = function() {
     const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
     userHandleOriginal = usuario.user || "@usuario";
     if(document.getElementById('nomePerfilDisplay')) {
-        document.getElementById('nomePerfilDisplay').innerHTML = `<div style="display:flex; flex-direction:column; align-items:flex-start;"><span style="font-size: 1.6rem; color: var(--cor2); font-weight: 800; display:flex; align-items:center; gap:5px;">${usuario.user || '@usuario'} <i class='bx bxs-badge-check' style="color:#2ecc71; font-size: 1.2rem;"></i></span><span style="font-size: 1.0rem; color: #666; font-weight: 500; margin-top: -2px;">${usuario.nome}</span></div>`;
+        document.getElementById('nomePerfilDisplay').innerHTML = `<div style="display:flex; flex-direction:column; align-items:flex-start;"><span style="font-size: 1.6rem; color: var(--cor2, #333); font-weight: 800; display:flex; align-items:center; gap:5px;">${usuario.user || '@usuario'} <i class='bx bxs-badge-check' style="color:#2ecc71; font-size: 1.2rem;"></i></span><span style="font-size: 1.0rem; color: #666; font-weight: 500; margin-top: -2px;">${usuario.nome}</span></div>`;
     }
     if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
     if(document.getElementById('locPerfilDisplay')) document.getElementById('locPerfilDisplay').innerHTML = "<i class='bx bx-map'></i> " + usuario.local;
@@ -573,7 +717,7 @@ window.renderizarAnuncios = async function() {
         const q = query(collection(db, "anuncios"), where("userHandle", "==", meuUserHandle));
         const querySnapshot = await getDocs(q);
         container.innerHTML = ''; 
-        if (querySnapshot.empty) { container.innerHTML = `<div class="empty-state"><i class='bx bx-ghost' style="font-size: 40px;"></i><br>Você ainda não tem anúncios ativos.<br><a href="anunciar.html" style="color:var(--cor0); font-weight:bold;">Criar um agora</a></div>`; return; }
+        if (querySnapshot.empty) { container.innerHTML = `<div class="empty-state"><i class='bx bx-ghost' style="font-size: 40px;"></i><br>Você ainda não tem anúncios ativos.<br><a href="anunciar.html" style="color:var(--cor0, #0b7768); font-weight:bold;">Criar um agora</a></div>`; return; }
         querySnapshot.forEach((docSnap) => {
             const anuncio = docSnap.data();
             const views = anuncio.views || 0;
@@ -609,6 +753,7 @@ if(fileInput) {
             const reader = new FileReader();
             reader.onload = function(evt) { document.getElementById('inputFotoBase64').value = evt.target.result; };
             reader.readAsDataURL(file);
+            document.getElementById('fotoFileName').innerText = file.name;
         }
     });
 }
@@ -639,7 +784,7 @@ onAuthStateChanged(auth, async (user) => {
                 carregarPerfil();
                 renderizarAnuncios();
                 carregarPosts(user.uid); 
-                carregarStatsSocial(user.uid); // CHAMA A FUNÇÃO NOVA DE ESTATÍSTICAS
+                carregarStatsSocial(user.uid); 
             }
         } catch (e) { carregarPerfil(); }
     } else {

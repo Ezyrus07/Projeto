@@ -3,123 +3,357 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pedidos e Mensagens | Doke</title>
+    <title>Mensagens | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     
     <script type="module" src="script.js"></script>
 
-    <style>
-        /* ESTILOS ESPECÍFICOS DA CENTRAL DE PEDIDOS */
-        body { background-color: #f4f7f6; }
-        
-        .chat-main { 
-            margin-left: 270px; 
-            padding: 30px; 
-            max-width: 1000px; 
-            height: calc(100vh - 60px); /* Altura fixa para o chat funcionar bem */
-            display: flex;
-            flex-direction: column;
-        }
+<style>
+    /* =========================================
+       VARIÁVEIS E RESET BÁSICO
+       ========================================= */
+    :root {
+        --cor-primaria: #009688; /* Verde Doke */
+        --cor-secundaria: #00796b;
+        --bg-fundo: #f0f2f5;
+        --bg-white: #ffffff;
+        --cinza-texto: #65676b;
+        --borda-suave: #e4e6eb;
+        --sombra-leve: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
 
-        .chat-header {
+    body {
+        background-color: var(--bg-fundo);
+        font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
+        margin: 0;
+        overflow-x: hidden;
+    }
+
+    /* Remove estilos padrão de botões */
+    button {
+        font-family: inherit;
+        outline: none;
+    }
+
+    /* =========================================
+       LAYOUT PRINCIPAL
+       ========================================= */
+    .chat-main {
+        margin-left: 270px; /* Espaço da sidebar */
+        padding: 0;
+        height: 100vh;
+        max-width: 100%;
+        display: flex;
+        overflow: hidden;
+        position: relative;
+    }
+
+    /* Sidebar Responsiva */
+    @media (max-width: 768px) {
+        .chat-main {
+            margin-left: 0;
+            height: calc(100vh - 60px); /* Desconta navbar mobile */
+        }
+    }
+
+    /* =========================================
+       LISTA DE CONVERSAS (#view-lista)
+       ========================================= */
+    #view-lista {
+        width: 100%;
+        height: 100%;
+        background: var(--bg-fundo);
+        display: flex;
+        flex-direction: column;
+        padding: 20px;
+        box-sizing: border-box;
+        overflow-y: auto;
+    }
+
+    .chat-header h2 {
+        color: #1c1e21;
+        font-size: 1.8rem;
+        margin-bottom: 5px;
+    }
+
+    /* Abas (Todas | Diretas | Orçamentos) */
+    .tab-mensagens {
+        display: flex;
+        background: var(--bg-white);
+        padding: 5px;
+        border-radius: 12px;
+        margin: 20px 0;
+        box-shadow: var(--sombra-leve);
+    }
+
+    .tab-btn {
+        flex: 1;
+        background: transparent;
+        border: none;
+        padding: 12px;
+        font-weight: 600;
+        color: var(--cinza-texto);
+        cursor: pointer;
+        border-radius: 8px;
+        transition: 0.3s;
+    }
+
+    .tab-btn:hover { background-color: #f7f8fa; }
+    
+    .tab-btn.active {
+        background-color: #e0f2f1;
+        color: var(--cor-primaria);
+    }
+
+    /* Estado Vazio */
+    .empty-chat {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 300px;
+        color: #b0b3b8;
+        text-align: center;
+    }
+    .empty-chat i { font-size: 3rem; margin-bottom: 15px; color: #dcdfe4; }
+
+    /* Cards de Conversa */
+    .card-pedido {
+        background: var(--bg-white);
+        border-radius: 12px;
+        padding: 15px;
+        margin-bottom: 12px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        border-left: 4px solid transparent;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .card-pedido:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .avatar-pedido img {
+        width: 50px; height: 50px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .header-card h4 { margin: 0; font-size: 1rem; color: #333; }
+    .msg-inicial { 
+        font-size: 0.85rem; color: #666; 
+        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+        max-width: 200px;
+    }
+
+    /* =========================================
+       TELA DO CHAT (#view-chat)
+       ========================================= */
+    #view-chat {
+        display: none; /* JS controla isso */
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        background: #efe7dd; /* Cor clássica de fundo de chat estilo WhatsApp */
+        background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Pattern sutil opcional */
+        position: fixed;
+        top: 0; left: 0;
+        z-index: 200;
+    }
+
+    /* Em Desktop, ajusta posição */
+    @media (min-width: 769px) {
+        #view-chat {
+            position: relative;
             background: #fff;
-            padding: 20px 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-            margin-bottom: 25px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            border-left: 1px solid var(--borda-suave);
         }
-        .chat-header h2 { margin: 0; color: #333; font-size: 1.5rem; }
-        .badge-novos { background: var(--cor0); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+    }
 
-        /* LISTA DE PEDIDOS */
-        .lista-pedidos { display: flex; flex-direction: column; gap: 15px; }
+    /* Header do Chat */
+    .chat-toolbar {
+        background: var(--bg-white);
+        padding: 10px 15px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        z-index: 10;
+        height: 60px;
+    }
 
-        .card-pedido {
-            background: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            display: flex;
-            gap: 20px;
-            border-left: 5px solid #ddd;
-            transition: 0.3s;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-        }
-        .card-pedido:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
-        .card-pedido.pendente { border-left-color: #f1c40f; }
-        .card-pedido.aceito { border-left-color: #2ecc71; }
-        .card-pedido.recusado { border-left-color: #e74c3c; opacity: 0.6; }
+    .btn-voltar-chat {
+        background: transparent;
+        border: none;
+        font-size: 1.5rem;
+        color: var(--cor-primaria);
+        cursor: pointer;
+        border-radius: 50%;
+        width: 40px; height: 40px;
+        display: flex; align-items: center; justify-content: center;
+        transition: 0.2s;
+    }
+    .btn-voltar-chat:hover { background: #f0f2f5; }
 
-        .avatar-pedido img { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; }
-        .info-pedido { flex: 1; }
-        .header-card { display: flex; justify-content: space-between; margin-bottom: 5px; }
-        .header-card h4 { margin: 0; font-size: 1.1rem; color: #333; }
-        .data-pedido { font-size: 0.8rem; color: #999; }
-        .servico-tag { display: inline-block; background: #f0f7ff; color: var(--cor2); padding: 4px 10px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; margin-bottom: 8px; }
-        .msg-inicial { color: #555; font-size: 0.95rem; line-height: 1.4; margin-bottom: 15px; background: #fafafa; padding: 10px; border-radius: 8px; }
-        .acoes-pedido { display: flex; gap: 10px; justify-content: flex-end; }
-        .btn-acao { border: none; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-weight: 600; display: flex; align-items: center; gap: 5px; transition: 0.2s; }
-        .btn-aceitar { background: #2ecc71; color: white; }
-        .btn-recusar { background: #fff; border: 1px solid #e74c3c; color: #e74c3c; }
-        .contato-liberado { background: #e8f5e9; color: #2e7d32; padding: 10px; border-radius: 6px; text-align: center; font-weight: bold; display: none; }
-        .empty-chat { text-align: center; padding: 50px; color: #999; }
-        .empty-chat i { font-size: 4rem; margin-bottom: 10px; color: #ddd; }
+    .chat-user-info { flex: 1; display: flex; align-items: center; gap: 10px; }
+    .chat-user-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
+    .chat-user-name h4 { margin: 0; font-size: 0.95rem; color: #000; }
+    .chat-user-name span { font-size: 0.75rem; color: var(--cor-primaria); font-weight: 600; }
 
-        /* =========================================
-           ÁREA DO CHAT (NOVO)
-           ========================================= */
-        #view-chat { display: none; height: 100%; flex-direction: column; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 5px 20px rgba(0,0,0,0.05); }
-        
-        .chat-toolbar {
-            padding: 15px 20px; background: #fff; border-bottom: 1px solid #eee;
-            display: flex; align-items: center; gap: 15px;
-        }
-        .btn-voltar-chat { background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #666; }
-        .chat-user-info { flex: 1; display: flex; align-items: center; gap: 10px; }
-        .chat-user-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
-        .chat-user-name h4 { margin: 0; font-size: 1rem; color: #333; }
-        .chat-user-name span { font-size: 0.8rem; color: #2ecc71; font-weight: 600; }
+    /* Área das Mensagens */
+    .chat-content {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
 
-        .chat-content { flex: 1; padding: 20px; overflow-y: auto; background: #f9f9f9; display: flex; flex-direction: column; gap: 15px; }
+    /* Balões de Mensagem */
+    .msg-bubble {
+        max-width: 75%;
+        padding: 10px 14px;
+        border-radius: 18px;
+        font-size: 0.95rem;
+        line-height: 1.4;
+        position: relative;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    }
 
-        /* CARD DE RESPOSTAS DO QUIZ */
-        .quiz-summary-card {
-            background: #fff; border: 1px solid #cce5ff; border-radius: 10px; padding: 15px;
-            margin-bottom: 20px; align-self: center; width: 90%; max-width: 600px;
-            box-shadow: 0 2px 5px rgba(0,123,255,0.05);
-        }
-        .quiz-header { display: flex; align-items: center; gap: 8px; color: var(--cor2); font-weight: 700; margin-bottom: 10px; border-bottom: 1px solid #eee; padding-bottom: 8px; }
-        .quiz-item { margin-bottom: 8px; }
-        .quiz-q { font-size: 0.85rem; color: #666; font-weight: 600; }
-        .quiz-a { font-size: 0.95rem; color: #333; background: #f0f7ff; padding: 5px 10px; border-radius: 5px; display: inline-block; margin-top: 2px; }
+    .msg-enviada {
+        align-self: flex-end;
+        background: #d9fdd3; /* Verde claro estilo Zap */
+        color: #111;
+        border-bottom-right-radius: 4px;
+    }
 
-        /* MENSAGENS */
-        .msg-bubble { max-width: 70%; padding: 12px 16px; border-radius: 12px; font-size: 0.95rem; line-height: 1.4; position: relative; word-wrap: break-word; }
-        .msg-enviada { align-self: flex-end; background: var(--cor0); color: white; border-bottom-right-radius: 2px; }
-        .msg-recebida { align-self: flex-start; background: #fff; border: 1px solid #e0e0e0; color: #333; border-bottom-left-radius: 2px; }
-        .msg-time { font-size: 0.7rem; margin-top: 5px; display: block; opacity: 0.7; text-align: right; }
+    .msg-recebida {
+        align-self: flex-start;
+        background: #ffffff;
+        color: #111;
+        border-bottom-left-radius: 4px;
+    }
 
-        .chat-input-area {
-            padding: 15px; background: #fff; border-top: 1px solid #eee;
-            display: flex; gap: 10px; align-items: center;
-        }
-        .chat-input { flex: 1; padding: 12px; border: 1px solid #ddd; border-radius: 25px; outline: none; background: #f9f9f9; }
-        .btn-enviar { background: var(--cor2); color: white; border: none; width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.2s; }
-        .btn-enviar:hover { background: var(--cor0); transform: scale(1.05); }
+    .msg-time {
+        display: block;
+        font-size: 0.65rem;
+        color: rgba(0,0,0,0.45);
+        text-align: right;
+        margin-top: 4px;
+        margin-bottom: -4px;
+    }
 
-        @media (max-width: 768px) {
-            .chat-main { margin-left: 0; padding: 0; height: 100vh; }
-            .card-pedido { flex-direction: column; gap: 10px; margin: 15px; }
-            .acoes-pedido { justify-content: stretch; }
-            .btn-acao { flex: 1; justify-content: center; }
-            .chat-toolbar { padding: 10px 15px; position: sticky; top: 0; z-index: 10; }
-            #view-chat { border-radius: 0; height: 100vh; position: fixed; top: 0; left: 0; width: 100%; z-index: 200; }
-            .navbar-mobile, .bottom-nav { z-index: 100; }
-        }
-    </style>
+    /* =========================================
+       ÁREA DE INPUT (O MELHORAMENTO PRINCIPAL)
+       ========================================= */
+    .chat-input-area {
+        background: var(--bg-white);
+        padding: 10px 16px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        border-top: 1px solid var(--borda-suave);
+        position: relative;
+    }
+
+    /* Campo de Texto Estilizado */
+    .chat-input {
+        flex: 1;
+        padding: 12px 18px;
+        border-radius: 24px;
+        border: 1px solid #ddd;
+        background: #f0f2f5;
+        font-size: 0.95rem;
+        outline: none;
+        transition: 0.3s;
+    }
+    
+    .chat-input:focus {
+        background: #fff;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        border-color: #ccc;
+    }
+
+    /* Botões de Ação (Mic e Enviar) */
+    .btn-chat-icon {
+        background: transparent;
+        border: none;
+        color: #606060;
+        font-size: 1.4rem;
+        cursor: pointer;
+        padding: 8px;
+        border-radius: 50%;
+        transition: 0.2s;
+        display: flex; align-items: center; justify-content: center;
+    }
+    .btn-chat-icon:hover { background: #f0f2f5; color: #333; }
+
+    .btn-enviar-msg {
+        background: var(--cor-primaria);
+        color: white;
+        border: none;
+        width: 42px; height: 42px;
+        border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 1.2rem;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,150,136,0.3);
+        transition: transform 0.2s;
+        margin-left: 5px;
+    }
+    .btn-enviar-msg:hover {
+        background: var(--cor-secundaria);
+        transform: scale(1.05);
+    }
+
+    /* Dropdown Menu (3 pontinhos) */
+    .chat-options-menu {
+        display: none;
+        position: absolute;
+        top: 50px; right: 10px;
+        background: white;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        border-radius: 8px;
+        overflow: hidden;
+        min-width: 160px;
+        z-index: 101;
+    }
+    .chat-options-menu.active { display: block; }
+    .opt-item {
+        padding: 12px 15px;
+        font-size: 0.9rem;
+        color: #333;
+        cursor: pointer;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .opt-item:hover { background: #f5f5f5; }
+    .opt-delete { color: #e74c3c; }
+
+    /* UI Gravando Áudio */
+    .gravando-ui {
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: white;
+        display: none;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0 20px;
+        z-index: 20;
+    }
+    .dot-rec {
+        width: 12px; height: 12px;
+        background: red;
+        border-radius: 50%;
+        animation: pulse 1s infinite;
+    }
+    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+
+</style>
 </head>
 <body>
 
@@ -134,14 +368,46 @@
         <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
         <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
         <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon verde"><a href="chat.html"><span>Mensagens</span></a></div>
-        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><a href="meuperfil.html"><span>Perfil</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item active"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop"><a href="index.html"><img src="assets/Imagens/doke-logo.png"></a></div>
-        <div class="botoes-direita" id="header-user-area"></div>
+        <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
     </header>
 
     <main class="chat-main">
@@ -149,16 +415,21 @@
         <div id="view-lista">
             <div class="chat-header">
                 <div>
-                    <h2>Central de Pedidos</h2>
-                    <span style="color:#666; font-size:0.9rem;">Gerencie seus orçamentos</span>
+                    <h2>Mensagens</h2>
+                    <span style="color:#666; font-size:0.9rem;">Suas conversas e orçamentos</span>
                 </div>
-                <div class="badge-novos" id="contadorPedidos">0 novos</div>
+            </div>
+
+            <div class="tab-mensagens">
+                <button class="tab-btn active" onclick="filtrarLista('todos')">Todas</button>
+                <button class="tab-btn" onclick="filtrarLista('diretas')">Diretas</button>
+                <button class="tab-btn" onclick="filtrarLista('orcamentos')">Orçamentos</button>
             </div>
 
             <div id="container-pedidos" class="lista-pedidos">
                 <div class="empty-chat">
                     <i class='bx bx-loader-alt bx-spin'></i>
-                    <p>Carregando seus pedidos...</p>
+                    <p>Carregando conversas...</p>
                 </div>
             </div>
         </div>
@@ -166,41 +437,51 @@
         <div id="view-chat">
             <div class="chat-toolbar">
                 <button class="btn-voltar-chat" onclick="voltarParaPedidos()"><i class='bx bx-arrow-back'></i></button>
+                
                 <div class="chat-user-info">
                     <img src="" id="chatAvatar" class="chat-user-avatar">
                     <div class="chat-user-name">
-                        <h4 id="chatNome">Cliente</h4>
-                        <span>Online agora</span>
+                        <h4 id="chatNome">Usuário</h4>
+                        <span id="chatStatus">Online</span>
                     </div>
                 </div>
-                <button class="btn-voltar-chat" style="font-size:1.2rem;"><i class='bx bx-dots-vertical-rounded'></i></button>
+
+                <div style="position: relative;">
+                    <button class="btn-voltar-chat" onclick="toggleChatMenu()"><i class='bx bx-dots-vertical-rounded'></i></button>
+                    <div id="menuChatOptions" class="chat-options-menu">
+                        <div class="opt-item" onclick="verPerfilAtual()"><i class='bx bx-user'></i> Ver Perfil</div>
+                        <div class="opt-item opt-delete" onclick="apagarConversaAtual()"><i class='bx bx-trash'></i> Apagar Conversa</div>
+                    </div>
+                </div>
             </div>
 
             <div class="chat-content" id="areaMensagens">
                 </div>
 
-            <form class="chat-input-area" onsubmit="enviarMensagem(event)">
-                <input type="text" id="inputMsg" class="chat-input" placeholder="Digite sua mensagem..." autocomplete="off">
-                <button type="submit" class="btn-enviar"><i class='bx bxs-send'></i></button>
-            </form>
+            <div class="chat-input-area">
+                
+                <div id="uiGravando" class="gravando-ui">
+                    <div class="gravando-indicador">
+                        <div class="dot-rec"></div>
+                        <span id="timerGravacao">00:00</span>
+                    </div>
+                    <button class="btn-chat-icon" onclick="cancelarGravacao()" style="color:#e74c3c;"><i class='bx bx-trash'></i></button>
+                    <button class="btn-enviar-msg" onclick="enviarAudio()"><i class='bx bx-send'></i></button>
+                </div>
+
+                <button class="btn-chat-icon" id="btnMic" onclick="iniciarGravacao()"><i class='bx bx-microphone'></i></button>
+                
+                <input type="text" id="inputMsg" class="chat-input" placeholder="Digite sua mensagem..." autocomplete="off" onkeypress="verificarEnter(event)">
+                
+                <button class="btn-enviar-msg" onclick="enviarMensagemTexto()"><i class='bx bxs-send'></i></button>
+            </div>
         </div>
 
     </main>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
-        <a href="chat.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon verde"><span>Msgs</span></a>
-        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
-    </nav>
-
     <script type="module">
         import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        
-        setTimeout(() => {
-            if(window.carregarMeusPedidos) {
-                window.carregarMeusPedidos();
-            }
-        }, 1500); 
+        // Inicialização via script.js
     </script>
 
 </body>

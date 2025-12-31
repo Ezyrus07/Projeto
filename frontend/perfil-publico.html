@@ -3,257 +3,212 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil Público | Doke</title>
+    <title>Perfil | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script type="module" src="script.js"></script>
     <style>
-        /* ==========================================================================
-           ESTILOS DO PERFIL PÚBLICO (DINÂMICO)
-           ========================================================================== */
+        /* REUTILIZANDO ESTILOS DO MEUPERFIL.HTML PARA MANTER IDENTIDADE */
+        body { background-color: #f4f6f8; margin: 0; font-family: 'Segoe UI', sans-serif; }
         
-        body { background-color: #f4f6f8; }
+        .perfil-main {
+            margin-left: 270px; width: calc(100% - 270px);
+            display: flex; justify-content: center; padding: 20px; padding-bottom: 80px; box-sizing: border-box;
+        }
+        .container-limite { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 25px; }
 
-        .public-profile-main {
-            margin-left: 270px;
-            margin-right: 20px;
-            max-width: 1200px;
-            padding: 20px;
-            padding-bottom: 80px;
-        }
-
-        /* --- HEADER --- */
-        .profile-hero {
-            background: #fff; border-radius: 16px; overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative;
-            margin-bottom: 20px;
-        }
-        .cover-photo {
-            height: 220px; background: linear-gradient(120deg, #2a5f90, #0b7768); position: relative;
-        }
-        .profile-content {
-            padding: 0 30px 30px 30px; position: relative; display: flex; flex-direction: column;
-        }
-        .profile-avatar-wrapper {
-            margin-top: -70px; margin-bottom: 15px; position: relative; width: 140px; align-self: flex-start;
-        }
-        .profile-avatar-img {
-            width: 140px; height: 140px; border-radius: 50%; border: 5px solid #fff;
-            object-fit: cover; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .status-badge {
-            position: absolute; bottom: 10px; right: 10px; background: #ccc; /* Cinza se offline/novo */
-            border: 3px solid #fff; width: 24px; height: 24px; border-radius: 50%;
-        }
-        .status-badge.online { background: #2ecc71; }
-
-        /* Infos */
-        .profile-info-row { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; }
-        .info-left h1 { margin: 0; font-size: 1.8rem; color: #333; display: flex; align-items: center; gap: 8px; }
-        .info-left .category { color: var(--cor0); font-weight: 600; font-size: 1rem; margin-top: 5px; }
-        .info-left .location { color: #777; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; margin-top: 5px; }
-
-        .profile-stats { display: flex; gap: 30px; margin-top: 15px; }
-        .stat-item { text-align: center; }
-        .stat-item strong { display: block; font-size: 1.2rem; color: #333; }
-        .stat-item span { font-size: 0.85rem; color: #888; }
+        /* HEADER */
+        .perfil-header-card { background: #fff; border-radius: 16px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); position: relative; overflow: hidden; }
+        .capa-perfil { height: 220px; background: linear-gradient(120deg, #2a5f90, #0b7768); position: relative; }
+        .capa-perfil img { width: 100%; height: 100%; object-fit: cover; }
         
-        .rating-box { 
-            background: #f0f0f0; color: #888; padding: 5px 10px; 
-            border-radius: 8px; font-weight: 800; display: flex; align-items: center; gap: 5px;
-        }
-        .rating-box.active { background: #fff8e1; color: #f1c40f; }
+        .dados-perfil { padding: 0 30px 30px 30px; display: flex; flex-wrap: wrap; gap: 30px; position: relative; }
+        .avatar-container { margin-top: -70px; flex-shrink: 0; position: relative; }
+        .avatar-container img { width: 150px; height: 150px; border-radius: 50%; border: 5px solid #fff; object-fit: cover; background: #fff; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+        
+        .info-texto { flex: 1; padding-top: 15px; min-width: 250px; }
+        .nome-row h1 { font-size: 1.8rem; color: #333; margin: 0; display: flex; align-items: center; gap: 8px; }
+        .handle-text { color: #777; font-weight: 500; font-size: 1rem; display: block; margin-top: 2px; }
 
-        .profile-actions { display: flex; gap: 10px; margin-top: 10px; }
-        .btn-action-primary {
-            background: var(--cor0); color: white; border: none; padding: 12px 30px;
-            border-radius: 50px; font-weight: 700; cursor: pointer; text-decoration: none;
-            display: inline-flex; align-items: center; gap: 8px;
-        }
-        .btn-action-secondary {
-            background: #fff; color: var(--cor2); border: 2px solid var(--cor2);
-            padding: 10px 20px; border-radius: 50px; font-weight: 700; cursor: pointer;
-            text-decoration: none; display: inline-flex; align-items: center; gap: 8px;
-        }
+        /* STATS SOCIAIS */
+        .social-stats { display: inline-flex; gap: 30px; margin: 15px 0; background: #f8f9fa; padding: 10px 20px; border-radius: 10px; }
+        .stat-social { text-align: center; }
+        .stat-social strong { font-size: 1.1rem; color: #333; display: block; }
+        .stat-social span { font-size: 0.8rem; color: #777; text-transform: uppercase; }
 
-        /* --- DESTAQUES (Stories) --- */
-        .area-destaques-container { 
-            padding: 15px 0 25px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: 25px; 
-            display: none; /* Escondido por padrão se não tiver */
+        .bio { color: #555; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5; max-width: 600px; }
+        .meta-dados { display: flex; gap: 20px; color: #777; font-size: 0.9rem; }
+        .meta-dados span { display: flex; align-items: center; gap: 5px; }
+
+        /* BOTÕES DE AÇÃO (DIFERENÇA PRINCIPAL) */
+        .acoes-perfil { padding-top: 15px; display: flex; gap: 10px; align-items: flex-start; }
+        
+        .btn-seguir { 
+            background: var(--cor0, #0b7768); color: white; border: none; padding: 10px 25px; 
+            border-radius: 50px; font-weight: 600; cursor: pointer; transition: 0.2s; 
+            display: flex; align-items: center; gap: 8px;
         }
-        .scroll-destaques { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
-        .item-destaque { display: flex; flex-direction: column; align-items: center; cursor: pointer; min-width: 75px; }
-        .circulo-destaque {
-            width: 72px; height: 72px; border-radius: 50%; padding: 3px;
-            border: 2px solid #ddd; margin-bottom: 8px; 
+        .btn-seguir.seguindo { background: #e0f2f1; color: #0b7768; border: 1px solid #0b7768; }
+        .btn-seguir:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(11,119,104,0.3); }
+        
+        .btn-msg { 
+            background: #fff; border: 1px solid #ddd; color: #333; padding: 10px 20px; 
+            border-radius: 50px; font-weight: 600; cursor: pointer; transition: 0.2s;
+            display: flex; align-items: center; gap: 8px; 
         }
+        .btn-msg:hover { background: #f4f6f8; border-color: #bbb; }
+
+        /* DESTAQUES */
+        .area-destaques-container { padding: 20px 30px; border-top: 1px solid #eee; }
+        .scroll-destaques { display: flex; gap: 18px; overflow-x: auto; padding-bottom: 5px; scrollbar-width: none; }
+        .item-destaque { display: flex; flex-direction: column; align-items: center; min-width: 70px; }
+        .circulo-destaque { width: 72px; height: 72px; border-radius: 50%; padding: 3px; border: 2px solid #e0e0e0; margin-bottom: 8px; }
         .circulo-destaque img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 
-        /* --- LAYOUT GRID --- */
-        .content-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 25px; }
-        .card-content {
-            background: #fff; border-radius: 12px; padding: 25px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03); margin-bottom: 25px;
-        }
-        .card-title {
-            font-size: 1.1rem; font-weight: 700; color: #333; margin-bottom: 15px;
-            border-left: 4px solid var(--cor0); padding-left: 10px;
-        }
+        /* TABS */
+        .tabs-container { background: #fff; border-radius: 12px; padding: 10px 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.03); display: flex; gap: 10px; overflow-x: auto; }
+        .tab-btn { background: transparent; border: none; padding: 12px 20px; font-size: 0.95rem; color: #666; font-weight: 600; cursor: pointer; border-radius: 8px; transition: 0.3s; white-space: nowrap; }
+        .tab-btn.active { background: #e0f2f1; color: var(--cor0, #0b7768); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
 
-        /* --- ESTADOS VAZIOS (EMPTY STATES) --- */
-        .empty-state-box {
-            text-align: center; padding: 30px; color: #999;
-            border: 1px dashed #ddd; border-radius: 8px;
-        }
-        .empty-state-box i { font-size: 2.5rem; margin-bottom: 10px; display: block; opacity: 0.5; }
-        .empty-state-box p { font-size: 0.9rem; margin: 0; }
+        /* LISTA DE SERVIÇOS (ANÚNCIOS) */
+        .grid-servicos { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+        .card-servico { background: #fff; border-radius: 12px; overflow: hidden; border: 1px solid #eee; transition: 0.2s; cursor: pointer; }
+        .card-servico:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,0,0,0.08); }
+        .img-servico { width: 100%; height: 180px; object-fit: cover; }
+        .body-servico { padding: 15px; }
+        .titulo-servico { font-weight: 700; color: #333; margin-bottom: 5px; font-size: 1.05rem; }
+        .preco-servico { color: var(--cor0, #0b7768); font-weight: 700; font-size: 1.1rem; }
 
-        /* --- FEED --- */
-        .post-feed-card {
-            background: #fff; border: 1px solid #eee; border-radius: 12px;
-            margin-bottom: 25px; overflow: hidden;
-        }
-        .header-post { padding: 15px; display: flex; align-items: center; gap: 10px; }
-        .header-post img { width: 40px; height: 40px; border-radius: 50%; object-fit:cover; }
-        .header-post strong { display: block; font-size: 0.95rem; }
-        .midia-post img { width: 100%; display: block; }
+        /* POSTS */
+        .feed-container { max-width: 700px; margin: 0 auto; }
+        .post-card { background: #fff; border-radius: 12px; border: 1px solid #eee; margin-bottom: 20px; overflow: hidden; }
+        .post-header { padding: 15px; display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #f9f9f9; }
+        .post-header img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .post-content { padding: 15px; }
+        .post-img { width: 100%; display: block; }
         
-        /* RESPONSIVIDADE */
+        /* AVALIAÇÃO */
+        .btn-avaliar { background: #f1c40f; color: #333; border:none; padding: 10px 20px; border-radius: 8px; font-weight: bold; cursor: pointer; margin-bottom: 20px; }
+        .card-review { background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #eee; margin-bottom: 15px; }
+        .top-review { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .stars { color: #f1c40f; }
+
+        /* MODAL */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: #fff; width: 90%; max-width: 450px; border-radius: 12px; padding: 25px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); text-align: center; }
+        .star-rating { display: flex; justify-content: center; gap: 5px; margin: 15px 0; }
+        .star-rating i { font-size: 2rem; color: #ddd; cursor: pointer; transition: 0.2s; }
+        .star-rating i.active { color: #f1c40f; }
+        textarea.input-review { width: 100%; border: 1px solid #ddd; border-radius: 8px; padding: 10px; resize: none; margin-bottom: 15px; font-family: inherit; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* MOBILE */
         @media (max-width: 1024px) {
-            .public-profile-main { margin-left: 0; margin-right: 0; padding: 15px; }
-            .content-grid { grid-template-columns: 1fr; }
-            .right-col { order: 2; } .left-col { order: 1; }
-        }
-        @media (max-width: 768px) {
-            .profile-info-row { flex-direction: column; align-items: center; text-align: center; }
-            .profile-avatar-wrapper { align-self: center; }
-            .info-left h1, .info-left .location { justify-content: center; }
-            .profile-stats { justify-content: center; }
-            .profile-actions { width: 100%; justify-content: center; }
+            .perfil-main { margin-left: 0; width: 100%; padding: 15px; display: block; }
+            .dados-perfil { flex-direction: column; align-items: center; text-align: center; }
+            .acoes-perfil { width: 100%; justify-content: center; }
+            .grid-servicos { grid-template-columns: 1fr; }
         }
     </style>
 </head>
 <body>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="mobile-controls">
-            <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-        </div>
-    </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-
     <aside class="sidebar-icones">
         <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
         <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
-        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+        <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><a href="chat.html"><span>Mensagens</span></a></div>
     </aside>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
-
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
+    <header class="navbar-desktop" style="margin-left: 270px; width: calc(100% - 270px);">
+        <div class="botoes-direita" id="header-user-area">
             </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
     </header>
 
-    <main class="public-profile-main">
-        
-        <section class="profile-hero">
-            <div class="cover-photo">
-                </div>
-            
-            <div class="profile-content">
-                <div class="profile-avatar-wrapper">
-                    <img src="" alt="Prestador" class="profile-avatar-img" id="imgPrestador">
-                    <div class="status-badge" id="statusBadge"></div>
-                </div>
+    <main class="perfil-main">
+        <div class="container-limite">
 
-                <div class="profile-info-row">
-                    <div class="info-left">
-                        <h1 id="nomePrestador">Carregando...</h1>
-                        <div class="category" id="categoriaPrestador">Prestador de Serviços</div>
-                        <div class="location" id="localPrestador"><i class='bx bx-map'></i> ...</div>
+            <section class="perfil-header-card">
+                <div class="capa-perfil">
+                    <img id="capaPublica" src="" style="display:none;">
+                </div>
+                <div class="dados-perfil">
+                    <div class="avatar-container">
+                        <img src="https://placehold.co/150" alt="Perfil" id="fotoPerfilPublica">
+                    </div>
+                    <div class="info-texto">
+                        <div class="nome-row">
+                            <h1 id="nomePerfilPublico">Carregando... <i class='bx bxs-badge-check' style="color:#2ecc71; font-size: 1.2rem;"></i></h1>
+                        </div>
+                        <span id="userHandlePublico" class="handle-text">@...</span>
                         
-                        <div class="profile-stats">
-                            <div class="rating-box" id="boxNota">Novo <i class='bx bx-star'></i></div>
-                            <div class="stat-item"><strong id="numAvaliacoes">0</strong><span>Avaliações</span></div>
-                            <div class="stat-item"><strong id="numServicos">0</strong><span>Serviços</span></div>
+                        <div class="social-stats">
+                            <div class="stat-social">
+                                <strong id="stat-seguidores">0</strong>
+                                <span>Seguidores</span>
+                            </div>
+                            <div class="stat-social">
+                                <strong id="stat-avaliacoes-count">0</strong>
+                                <span>Avaliações</span>
+                            </div>
+                            <div class="stat-social">
+                                <strong id="stat-servicos">0</strong>
+                                <span>Serviços</span>
+                            </div>
+                        </div>
+
+                        <p class="bio" id="bioPerfilPublico">...</p>
+                        <div class="meta-dados">
+                            <span id="locPerfilPublico"><i class='bx bx-map'></i> ...</span>
+                            <span id="dataMembroPublico"><i class='bx bx-calendar'></i> Membro desde ...</span>
                         </div>
                     </div>
 
-                    <div class="profile-actions">
-                        <a href="chat.html" class="btn-action-secondary"><i class='bx bx-message-rounded-dots'></i> Chat</a>
-                        <a href="orcamento.html" class="btn-action-primary"><i class='bx bx-calendar-check'></i> Solicitar Orçamento</a>
+                    <div class="acoes-perfil" id="area-botoes-acao">
+                        <button class="btn-seguir skeleton-btn">...</button>
                     </div>
                 </div>
-            </div>
-
-            <div class="area-destaques-container" id="areaStories">
-                <div class="scroll-destaques" id="listaStories">
-                    </div>
-            </div>
-        </section>
-
-        <div class="content-grid">
-            
-            <div class="left-col">
-                <div class="card-content">
-                    <div class="card-title">Sobre</div>
-                    <p id="bioPrestador" style="color:#555; line-height:1.6;">Sem biografia informada.</p>
-                </div>
-
-                <h3 style="margin-bottom:15px; color:#444; font-size:1.1rem; font-weight:700;">Publicações</h3>
                 
-                <div id="feed-container">
-                    </div>
+                <div class="area-destaques-container" id="area-destaques" style="display:none;">
+                    <div class="scroll-destaques"></div>
+                </div>
+            </section>
 
-                <div class="card-content">
-                    <div class="card-title">Avaliações Recentes</div>
-                    <div id="avaliacoes-container">
-                        </div>
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="abrirTab(event, 'tab-servicos')">Serviços & Anúncios</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-feed')">Publicações</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-portfolio')">Portfólio</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
+            </div>
+
+            <div id="tab-servicos" class="tab-content active">
+                <h3 style="color:#444;">Serviços Disponíveis</h3>
+                <div class="grid-servicos" id="lista-anuncios-publicos">
+                    <p style="color:#777;">Carregando serviços...</p>
                 </div>
             </div>
 
-            <div class="right-col">
-                <div class="card-content">
-                    <div class="card-title">Verificação</div>
-                    <div style="display:flex; flex-direction:column; gap:10px;">
-                        <div style="display:flex; align-items:center; gap:10px; color:#555;"><i class='bx bxs-id-card' style="color:#2ecc71; font-size:1.2rem;"></i> Identidade (Pendente)</div>
-                        <div style="display:flex; align-items:center; gap:10px; color:#555;"><i class='bx bxs-phone' style="color:#2ecc71; font-size:1.2rem;"></i> Telefone (Pendente)</div>
+            <div id="tab-feed" class="tab-content">
+                <div class="feed-container" id="feed-publico">
+                    </div>
+            </div>
+
+            <div id="tab-portfolio" class="tab-content">
+                <h3 style="color:#444;">Trabalhos Realizados</h3>
+                <div class="grid-servicos" id="portfolio-publico" style="grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));">
+                    </div>
+            </div>
+
+            <div id="tab-avaliacoes" class="tab-content">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3 style="color:#444;">O que dizem os clientes</h3>
+                    <button class="btn-avaliar" onclick="abrirModalAvaliar()"><i class='bx bx-star'></i> Avaliar Profissional</button>
+                </div>
+                <div id="lista-avaliacoes">
+                    <div class="empty-state" style="text-align:center; padding:30px; color:#999;">
+                        Nenhuma avaliação ainda. Seja o primeiro!
                     </div>
                 </div>
             </div>
@@ -261,74 +216,385 @@
         </div>
     </main>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
-        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
-        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
-        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
-    </nav>
+    <div id="modalAvaliar" class="modal-overlay">
+        <div class="modal-card">
+            <h3>Avaliar Profissional</h3>
+            <p style="color:#666; font-size:0.9rem;">Como foi sua experiência?</p>
+            <div class="star-rating" id="starRatingBox">
+                <i class='bx bx-star' data-value="1" onclick="selectStar(1)"></i>
+                <i class='bx bx-star' data-value="2" onclick="selectStar(2)"></i>
+                <i class='bx bx-star' data-value="3" onclick="selectStar(3)"></i>
+                <i class='bx bx-star' data-value="4" onclick="selectStar(4)"></i>
+                <i class='bx bx-star' data-value="5" onclick="selectStar(5)"></i>
+            </div>
+            <textarea class="input-review" id="textoAvaliacao" rows="4" placeholder="Escreva um comentário..."></textarea>
+            <div style="display:flex; gap:10px; justify-content:center;">
+                <button onclick="fecharModalAvaliar()" style="background:#f0f0f0; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Cancelar</button>
+                <button onclick="enviarAvaliacao()" style="background:var(--cor0, #0b7768); color:white; border:none; padding:10px 20px; border-radius:8px; cursor:pointer;">Enviar Avaliação</button>
+            </div>
+        </div>
+    </div>
 
-    <script>
-        document.addEventListener("DOMContentLoaded", () => {
-            carregarDadosPerfilPublico();
+<script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, addDoc, getDoc, query, where, orderBy, doc, updateDoc, setDoc, deleteDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
+        authDomain: "doke-site.firebaseapp.com",
+        projectId: "doke-site",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // Pega o UID da URL (ex: perfil-publico.html?uid=12345)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetUid = urlParams.get('uid');
+
+    let currentRating = 0;
+    let targetUserData = null;
+
+    // ===============================================
+    // CARREGAMENTO INICIAL
+    // ===============================================
+    window.onload = async function() {
+        if (!targetUid) {
+            alert("Perfil não especificado.");
+            window.location.href = "index.html";
+            return;
+        }
+        await carregarDadosPerfil(targetUid);
+    };
+
+    async function carregarDadosPerfil(uid) {
+        try {
+            // 1. Dados do Usuário
+            const docRef = doc(db, "usuarios", uid);
+            const docSnap = await getDoc(docRef);
+
+            if (!docSnap.exists()) {
+                document.querySelector('.container-limite').innerHTML = "<h2 style='text-align:center; padding:50px;'>Usuário não encontrado.</h2>";
+                return;
+            }
+
+            targetUserData = docSnap.data();
+            
+            // Preencher HTML
+            document.getElementById('nomePerfilPublico').innerHTML = `${targetUserData.nome} <i class='bx bxs-badge-check' style="color:#2ecc71; font-size: 1.2rem;"></i>`;
+            document.getElementById('userHandlePublico').innerText = targetUserData.user || "@usuario";
+            document.getElementById('bioPerfilPublico').innerText = targetUserData.bio || "Sem biografia.";
+            document.getElementById('locPerfilPublico').innerHTML = `<i class='bx bx-map'></i> ${targetUserData.local || "Brasil"}`;
+            document.getElementById('fotoPerfilPublica').src = targetUserData.foto || "https://placehold.co/150";
+            document.getElementById('dataMembroPublico').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${targetUserData.membroDesde || "2024"}`;
+
+            // Capa (se houver campo capa no BD, senão mantém o padrão CSS)
+            if(targetUserData.capa) {
+                const imgCapa = document.getElementById('capaPublica');
+                imgCapa.src = targetUserData.capa;
+                imgCapa.style.display = 'block';
+            }
+
+            // Stats
+            if (targetUserData.stats) {
+                document.getElementById('stat-avaliacoes-count').innerText = targetUserData.stats.avaliacoes || 0;
+            }
+
+            // 2. Carregar Anúncios (Serviços)
+            carregarAnunciosPublicos(uid, targetUserData.user);
+
+            // 3. Carregar Posts
+            carregarPostsPublicos(uid);
+
+            // 4. Carregar Portfólio
+            carregarPortfolioPublico(uid);
+
+            // 5. Verificar Estado dos Botões (Seguir/Mensagem)
+            checkAuthStateAndButtons(uid);
+            
+            // 6. Contar Seguidores
+            contarSeguidores(uid);
+
+        } catch (error) {
+            console.error("Erro ao carregar perfil:", error);
+        }
+    }
+
+    // ===============================================
+    // LÓGICA DE DADOS (ANÚNCIOS, POSTS, ETC)
+    // ===============================================
+    
+    async function carregarAnunciosPublicos(uid, handle) {
+        const container = document.getElementById('lista-anuncios-publicos');
+        container.innerHTML = "";
+        
+        // Tenta buscar por Handle primeiro, se falhar, tenta lógica de UID se você tiver implementado
+        // Assumindo que anúncios salvam o userHandle ou uid
+        let q;
+        if(handle) {
+            q = query(collection(db, "anuncios"), where("userHandle", "==", handle));
+        } else {
+            // Fallback se não tiver handle
+            container.innerHTML = "<p>Nenhum serviço disponível.</p>";
+            return;
+        }
+
+        const snapshot = await getDocs(q);
+        document.getElementById('stat-servicos').innerText = snapshot.size;
+
+        if (snapshot.empty) {
+            container.innerHTML = "<div style='grid-column: 1/-1; text-align:center; color:#999;'>Este profissional não possui anúncios ativos no momento.</div>";
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const img = (data.fotos && data.fotos.length) ? data.fotos[0] : 'https://placehold.co/300x200';
+            const html = `
+                <div class="card-servico" onclick="window.location.href='detalhes-servico.html?id=${doc.id}'">
+                    <img src="${img}" class="img-servico">
+                    <div class="body-servico">
+                        <div class="titulo-servico">${data.titulo}</div>
+                        <div class="preco-servico">${data.preco || 'A combinar'}</div>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    async function carregarPostsPublicos(uid) {
+        const container = document.getElementById('feed-publico');
+        const q = query(collection(db, "posts"), where("uid", "==", uid), orderBy("data", "desc"));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            container.innerHTML = "<p style='text-align:center; color:#999; padding:20px;'>Nenhuma publicação recente.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+        snapshot.forEach(doc => {
+            const post = doc.data();
+            const dataFormatada = new Date(post.data).toLocaleDateString('pt-BR');
+            let imgHtml = post.imagem ? `<img src="${post.imagem}" class="post-img">` : '';
+            
+            const html = `
+                <div class="post-card">
+                    <div class="post-header">
+                        <img src="${targetUserData.foto}" alt="Avatar">
+                        <div>
+                            <strong style="display:block; color:#333;">${targetUserData.nome}</strong>
+                            <small style="color:#888;">${dataFormatada}</small>
+                        </div>
+                    </div>
+                    <div class="post-content">
+                        <p>${post.texto}</p>
+                    </div>
+                    ${imgHtml}
+                    <div style="padding:10px 15px; border-top:1px solid #f9f9f9; color:#666; font-size:0.9rem;">
+                        <i class='bx bx-heart'></i> ${post.likes || 0} curtidas
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    async function carregarPortfolioPublico(uid) {
+        const container = document.getElementById('portfolio-publico');
+        const q = query(collection(db, "trabalhos"), where("uid", "==", uid), orderBy("data", "desc"));
+        const snapshot = await getDocs(q);
+        
+        if(snapshot.empty) {
+            container.innerHTML = "<p style='grid-column:1/-1; text-align:center; color:#999;'>Nenhum item no portfólio.</p>";
+            return;
+        }
+
+        container.innerHTML = "";
+        snapshot.forEach(doc => {
+            const item = doc.data();
+            // Assumindo que 'videoUrl' é o vídeo e 'capa' é a thumb
+            const html = `
+                <div class="card-servico">
+                    <div style="position:relative; height:200px; background:#000;">
+                         <img src="${item.capa}" style="width:100%; height:100%; object-fit:cover; opacity:0.8;">
+                         <i class='bx bx-play-circle' style="position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); font-size:3rem; color:white;"></i>
+                    </div>
+                    <div class="body-servico">
+                        <div class="titulo-servico">${item.tag || "Trabalho"}</div>
+                        <small>${item.descricao || ""}</small>
+                    </div>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
+
+    async function contarSeguidores(uid) {
+        const q = query(collection(db, "relacoes"), where("seguidoUid", "==", uid));
+        const snap = await getDocs(q);
+        document.getElementById('stat-seguidores').innerText = snap.size;
+    }
+
+    // ===============================================
+    // LÓGICA DE INTERAÇÃO (SEGUIR / MENSAGEM)
+    // ===============================================
+
+    function checkAuthStateAndButtons(profileUid) {
+        onAuthStateChanged(auth, async (user) => {
+            const areaBotoes = document.getElementById('area-botoes-acao');
+            
+            // Header User (Navbar)
+            const headerArea = document.getElementById('header-user-area');
+            if(user) {
+                // Está logado
+                const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+                const userData = userDoc.data();
+                headerArea.innerHTML = `<a href="meuperfil.html" style="display:flex; align-items:center; gap:10px; text-decoration:none; color:#333;"><img src="${userData.foto}" style="width:35px; height:35px; border-radius:50%;"> <span>${userData.nome.split(' ')[0]}</span></a>`;
+
+                // Logica do Botão Principal
+                if (user.uid === profileUid) {
+                    // Visitando o próprio perfil
+                    areaBotoes.innerHTML = `<button onclick="window.location.href='meuperfil.html'" class="btn-seguir" style="background:#333;"><i class='bx bx-edit'></i> Gerenciar meu Perfil</button>`;
+                } else {
+                    // Visitando outro perfil
+                    verificarSeSegue(user.uid, profileUid);
+                }
+            } else {
+                // Deslogado
+                headerArea.innerHTML = `<a href="login.html" style="font-weight:bold; color:var(--cor0, #0b7768); margin-right:15px;">Entrar</a> <a href="cadastro.html" class="btn-seguir" style="padding:8px 20px; font-size:0.9rem;">Criar Conta</a>`;
+                
+                // Botões padrão para deslogado
+                areaBotoes.innerHTML = `
+                    <button onclick="window.location.href='login.html'" class="btn-seguir"><i class='bx bx-plus'></i> Seguir</button>
+                    <button onclick="window.location.href='login.html'" class="btn-msg"><i class='bx bx-chat'></i></button>
+                `;
+            }
+        });
+    }
+
+    async function verificarSeSegue(meuUid, perfilUid) {
+        const q = query(collection(db, "relacoes"), where("seguidorUid", "==", meuUid), where("seguidoUid", "==", perfilUid));
+        const snap = await getDocs(q);
+        const areaBotoes = document.getElementById('area-botoes-acao');
+        
+        let btnSeguirHtml = "";
+        if (!snap.empty) {
+            btnSeguirHtml = `<button id="btnActionSeguir" class="btn-seguir seguindo" onclick="toggleFollow('${perfilUid}')"><i class='bx bx-check'></i> Seguindo</button>`;
+        } else {
+            btnSeguirHtml = `<button id="btnActionSeguir" class="btn-seguir" onclick="toggleFollow('${perfilUid}')"><i class='bx bx-plus'></i> Seguir</button>`;
+        }
+
+        areaBotoes.innerHTML = `
+            ${btnSeguirHtml}
+            <button class="btn-msg" onclick="iniciarChat('${perfilUid}')"><i class='bx bx-chat'></i> Mensagem</button>
+        `;
+    }
+
+    window.toggleFollow = async function(perfilUid) {
+        const user = auth.currentUser;
+        if(!user) return; // Segurança
+
+        const btn = document.getElementById('btnActionSeguir');
+        const jaSegue = btn.classList.contains('seguindo');
+        
+        // UI Optimistic Update
+        if(jaSegue) {
+            btn.classList.remove('seguindo');
+            btn.innerHTML = "<i class='bx bx-plus'></i> Seguir";
+            btn.style.background = "var(--cor0, #0b7768)";
+            btn.style.color = "white";
+        } else {
+            btn.classList.add('seguindo');
+            btn.innerHTML = "<i class='bx bx-check'></i> Seguindo";
+            btn.style.background = "#e0f2f1";
+            btn.style.color = "#0b7768";
+        }
+
+        // Lógica Backend
+        const q = query(collection(db, "relacoes"), where("seguidorUid", "==", user.uid), where("seguidoUid", "==", perfilUid));
+        const snap = await getDocs(q);
+
+        if (!snap.empty) {
+            // Deixar de seguir
+            snap.forEach(async (d) => await deleteDoc(doc(db, "relacoes", d.id)));
+        } else {
+            // Seguir
+            await addDoc(collection(db, "relacoes"), {
+                seguidorUid: user.uid,
+                seguidoUid: perfilUid,
+                data: new Date().toISOString()
+            });
+        }
+        // Atualiza numero
+        contarSeguidores(perfilUid);
+    }
+
+    window.iniciarChat = function(uid) {
+        // Redireciona para o chat passando o ID do usuario alvo
+        window.location.href = `chat.html?chatWith=${uid}`;
+    }
+
+    // ===============================================
+    // AVALIAÇÕES
+    // ===============================================
+    window.abrirModalAvaliar = function() {
+        if(!auth.currentUser) { alert("Faça login para avaliar."); return; }
+        if(auth.currentUser.uid === targetUid) { alert("Você não pode se avaliar."); return; }
+        document.getElementById('modalAvaliar').style.display = 'flex';
+    }
+    window.fecharModalAvaliar = function() { document.getElementById('modalAvaliar').style.display = 'none'; }
+    
+    window.selectStar = function(val) {
+        currentRating = val;
+        const stars = document.querySelectorAll('.star-rating i');
+        stars.forEach(s => {
+            if(parseInt(s.getAttribute('data-value')) <= val) s.classList.add('active');
+            else s.classList.remove('active');
+        });
+    }
+
+    window.enviarAvaliacao = async function() {
+        const texto = document.getElementById('textoAvaliacao').value;
+        if(currentRating === 0) { alert("Selecione as estrelas."); return; }
+        
+        const user = auth.currentUser;
+        const userDoc = await getDoc(doc(db, "usuarios", user.uid));
+        const userData = userDoc.data();
+
+        await addDoc(collection(db, "avaliacoes"), {
+            paraUid: targetUid,
+            deUid: user.uid,
+            autorNome: userData.nome,
+            autorFoto: userData.foto,
+            estrelas: currentRating,
+            texto: texto,
+            data: new Date().toISOString()
         });
 
-        function carregarDadosPerfilPublico() {
-            // 1. TENTA PEGAR DADOS REAIS DO USUÁRIO LOGADO (Simulando que é este perfil)
-            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-            
-            // Dados Básicos
-            const nome = perfil.nome || "Usuário Doke";
-            const foto = perfil.foto || "https://i.pravatar.cc/150?img=68"; // Foto genérica se não tiver
-            const bio = perfil.bio || "Este profissional ainda não adicionou uma biografia.";
-            const local = perfil.local || "Brasil";
+        // Atualizar estatisticas do usuario alvo (simples incremento)
+        // Em app real usaria cloud function ou transacao para media
+        const alvoRef = doc(db, "usuarios", targetUid);
+        await updateDoc(alvoRef, {
+            "stats.avaliacoes": increment(1)
+        });
 
-            // Preencher HTML
-            document.getElementById('nomePrestador').innerText = nome;
-            document.getElementById('imgPrestador').src = foto;
-            document.getElementById('bioPrestador').innerText = bio;
-            document.getElementById('localPrestador').innerHTML = `<i class='bx bx-map'></i> ${local}`;
+        alert("Avaliação enviada!");
+        fecharModalAvaliar();
+        window.location.reload();
+    }
 
-            // 2. LÓGICA DE CONTEÚDO VAZIO (ZERO STATE)
-            
-            // Stories (Supondo que não existe array de stories ainda)
-            const stories = []; // Array vazio
-            const areaStories = document.getElementById('areaStories');
-            
-            if (stories.length === 0) {
-                areaStories.style.display = 'none'; // Esconde a barra inteira
-            }
+    // UI TABS
+    window.abrirTab = function(evt, tabName) {
+        document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
+        document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));
+        document.getElementById(tabName).style.display = "block";
+        evt.currentTarget.classList.add("active");
+    }
 
-            // Feed (Posts)
-            const posts = []; // Array vazio (Simulando conta nova)
-            const feedContainer = document.getElementById('feed-container');
-
-            if (posts.length === 0) {
-                feedContainer.innerHTML = `
-                    <div class="empty-state-box">
-                        <i class='bx bx-image'></i>
-                        <p>Nenhuma publicação ainda.</p>
-                    </div>
-                `;
-            }
-
-            // Avaliações
-            const avaliacoes = []; // Array vazio
-            const reviewContainer = document.getElementById('avaliacoes-container');
-
-            if (avaliacoes.length === 0) {
-                reviewContainer.innerHTML = `
-                    <div class="empty-state-box" style="border:none; padding:10px;">
-                        <i class='bx bx-star'></i>
-                        <p>Seja o primeiro a avaliar este profissional!</p>
-                    </div>
-                `;
-                // Zera nota
-                document.getElementById('boxNota').className = 'rating-box'; // Remove cor amarela
-                document.getElementById('boxNota').innerHTML = 'Novo';
-            }
-        }
-    </script>
-
+</script>
 </body>
 </html>

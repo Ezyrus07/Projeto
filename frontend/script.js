@@ -45,78 +45,58 @@ window.indiceAtual = 0;
 // ============================================================
 // 2. FUNÇÃO DE PUBLICAR ANÚNCIO (SEM WHATSAPP OBRIGATÓRIO)
 // ============================================================
+// Dentro de script.js
+
+// ATUALIZAÇÃO NO SCRIPT.JS - FUNÇÃO PUBLICAR ANÚNCIO
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
 
     const btn = document.getElementById('btn-submit');
     const textoOriginal = btn ? btn.innerText : "Publicar";
-
-    if(btn) { 
-        btn.innerText = "Publicando..."; 
-        btn.disabled = true; 
-        btn.style.opacity = "0.7"; 
-    }
+    if(btn) { btn.innerText = "Publicando..."; btn.disabled = true; }
 
     try {
+        const user = auth.currentUser;
+        if (!user) throw new Error("Você precisa estar logado.");
+
         const titulo = document.getElementById('titulo').value;
         const descricao = document.getElementById('descricao').value;
-        const perguntasFormulario = document.getElementById('perguntas-formulario')?.value || "";
+        
+        // 1. PEGA O QUESTIONÁRIO CORRETAMENTE
+        const perguntasFormulario = document.getElementById('perguntas-formulario-json')?.value || "";
         const temFormulario = perguntasFormulario.trim().length > 0;
+        
+        // 2. PEGA O MODO DE ATENDIMENTO (Online/Presencial)
+        const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value || "Presencial";
+        
         const categoriasString = document.getElementById('categorias-validacao').value; 
         const categoriaFinal = categoriasString ? categoriasString.split(',')[0] : "Geral";
-        
         const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "A combinar";
-        let precoFinal = tipoPreco;
-        if (tipoPreco === 'Preço Fixo') {
-            const valorInput = document.getElementById('valor').value;
-            if (valorInput) precoFinal = valorInput;
-        }
-
-        const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
+        let precoFinal = tipoPreco === 'Preço Fixo' ? document.getElementById('valor').value : tipoPreco;
         
-        // Removemos a obrigatoriedade do telefone no anúncio, já que será chat interno
+        const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
         const telefone = document.getElementById('telefone')?.value || "";
 
-        let cidadeInput = document.getElementById('cidade');
-        let ufInput = document.getElementById('uf');
-        let bairroInput = document.getElementById('bairro');
+        let cidadeFinal = document.getElementById('cidade')?.value || "Indefinido";
+        let ufFinal = document.getElementById('uf')?.value || "BR";
+        let bairroFinal = document.getElementById('bairro')?.value || "Geral";
 
-        let cidadeFinal = cidadeInput ? cidadeInput.value : "Indefinido";
-        let ufFinal = ufInput ? ufInput.value : "BR";
-        let bairroFinal = bairroInput ? bairroInput.value : "Geral";
+        if(!titulo || !descricao) throw new Error("Preencha título e descrição.");
 
-        if ((!cidadeFinal || cidadeFinal === "Indefinido") && cep.length === 8) {
-            try {
-                const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-                const data = await resp.json();
-                if(!data.erro) {
-                    cidadeFinal = data.localidade;
-                    ufFinal = data.uf;
-                    bairroFinal = data.bairro || "Centro";
-                }
-            } catch(e) { console.log("Erro fallback CEP"); }
-        }
-
-        if(!titulo || !descricao) throw new Error("Preencha o título e a descrição.");
-
-        let fotos = [];
-        if (window.fotosParaEnviar && window.fotosParaEnviar.length > 0) {
-            fotos = window.fotosParaEnviar;
-        } else {
-            fotos.push("https://placehold.co/600x400?text=Sem+Foto");
-        }
+        let fotos = window.fotosParaEnviar && window.fotosParaEnviar.length > 0 ? window.fotosParaEnviar : ["https://placehold.co/600x400?text=Sem+Foto"];
 
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
         const nomeAutor = perfilLocal.nome || "Você";
-        const fotoAutor = perfilLocal.foto || "https://i.pravatar.cc/150?img=12";
+        const fotoAutor = perfilLocal.foto || "https://i.pravatar.cc/150";
         let userHandle = perfilLocal.user || ("@" + nomeAutor.split(' ')[0].toLowerCase());
-        if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
 
         const novoAnuncio = {
+            uid: user.uid, // <--- SALVA O DONO (IMPORTANTE)
             titulo: titulo,
             descricao: descricao,
             temFormulario: temFormulario,
-            perguntasFormulario: perguntasFormulario,
+            perguntasFormularioJson: perguntasFormulario, // <--- SALVA AS PERGUNTAS
+            modo_atend: modoAtend, // <--- SALVA SE É ONLINE OU PRESENCIAL
             categoria: categoriaFinal,
             categorias: categoriasString,
             preco: precoFinal,
@@ -124,7 +104,7 @@ window.publicarAnuncio = async function(event) {
             uf: ufFinal,
             cidade: cidadeFinal,
             bairro: bairroFinal,
-            whatsapp: telefone, // Mantido apenas como dado secundário
+            whatsapp: telefone,
             fotos: fotos,
             img: fotos[0],
             dataCriacao: new Date().toISOString(),
@@ -143,13 +123,9 @@ window.publicarAnuncio = async function(event) {
         window.location.href = "index.html";
 
     } catch (erro) {
-        console.error("Erro ao publicar:", erro);
+        console.error("Erro:", erro);
         alert("Erro: " + erro.message);
-        if(btn) { 
-            btn.innerText = textoOriginal; 
-            btn.disabled = false; 
-            btn.style.opacity = "1"; 
-        }
+        if(btn) { btn.innerText = textoOriginal; btn.disabled = false; }
     }
 }
 
@@ -372,24 +348,25 @@ window.carregarTrabalhosHome = async function() {
             const descSegura = (data.descricao || "").replace(/'/g, "");
 
             const html = `
-            <div class="tiktok-card" onclick="tocarVideoDoCard(this)">
-                <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
-                <div class="badge-status">${data.tag}</div>
-                <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
-                <div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
-                
-                <div class="video-ui-layer">
-                    <div class="video-bottom-info">
-                        <div class="provider-info"><span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span></div>
-                        <p class="video-desc">${data.descricao}</p>
-                        <button class="btn-video-action" 
-                            style="position:relative; z-index:3; width:100%; margin-top:5px; cursor:pointer;"
-                            onclick="event.stopPropagation(); solicitarOrcamento('${data.uid}', '${nomeSeguro}', '${descSegura}')">
-                            Solicitar Orçamento
-                        </button>
-                    </div>
-                </div>
-            </div>`;
+<div class="tiktok-card" onclick="tocarVideoDoCard(this)">
+    <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
+    <div class="badge-status">${data.tag}</div>
+    <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
+    <div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
+    
+    <div class="video-ui-layer">
+        <div class="video-bottom-info">
+            <div class="provider-info"><span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span></div>
+            <p class="video-desc">${data.descricao}</p>
+            
+<button class="btn-solicitar" 
+        onclick="window.location.href='orcamento.html?uid=${dados.uid || dados.donoUid}&aid=${dados.id}'">
+        Solicitar Orçamento
+    </button>
+
+        </div>
+    </div>
+</div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
     } catch (e) { console.error(e); }
@@ -479,120 +456,118 @@ window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricao
 // ============================================================
 // ATUALIZAÇÃO: CARREGAR PEDIDOS COM TRATAMENTO DE ERRO/VAZIO
 // ============================================================
+// 2. Carregar Lista Unificada (Pedidos + Conversas)
 window.carregarMeusPedidos = async function() {
-    const container = document.getElementById('container-pedidos');
-    const contador = document.getElementById('contadorPedidos');
-    
-    if (!container) return; // Só roda na página chat.html
+    // Verifica se há um chat pendente para abrir (vindo de redirecionamento)
+    const pendingChatId = localStorage.getItem('doke_abrir_chat_id');
+    if (pendingChatId) {
+        const pNome = localStorage.getItem('doke_abrir_chat_nome');
+        const pFoto = localStorage.getItem('doke_abrir_chat_foto');
+        const pUid = localStorage.getItem('doke_abrir_chat_uid');
+        
+        // Limpa storage
+        localStorage.removeItem('doke_abrir_chat_id');
+        localStorage.removeItem('doke_abrir_chat_nome');
+        localStorage.removeItem('doke_abrir_chat_foto');
+        localStorage.removeItem('doke_abrir_chat_uid');
 
-    // 1. Verifica login
+        abrirTelaChat(pendingChatId, pNome, pFoto, pUid);
+        return; // Foca no chat e carrega a lista em segundo plano depois se necessário
+    }
+
+    const container = document.getElementById('container-pedidos');
+    if (!container) return;
+
     const user = auth.currentUser;
     if (!user) {
-        container.innerHTML = `
-            <div class="empty-chat">
-                <i class='bx bx-user-x'></i>
-                <p>Faça login para ver suas mensagens.</p>
-            </div>`;
+        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver mensagens.</p></div>`;
         return;
     }
 
+    container.innerHTML = `<div class="empty-chat"><i class='bx bx-loader-alt bx-spin'></i><p>Carregando...</p></div>`;
+
     try {
-        // 2. Tenta fazer a busca
-        // OBS: Se der erro de "Index", remova o orderBy temporariamente para testar
-        const q = query(
-            collection(db, "pedidos"), 
-            where("paraUid", "==", user.uid), 
-            orderBy("dataPedido", "desc") 
-        );
+        // BUSCA 1: Conversas Diretas (Coleção 'conversas')
+        const qChats = query(collection(db, "conversas"), where("participantes", "array-contains", user.uid));
         
-        // 3. Listener em tempo real com tratamento de erro (O SEGREDO ESTÁ AQUI)
-        onSnapshot(q, (snapshot) => {
-            container.innerHTML = ""; // Limpa o spinner "Carregando..."
-            let novos = 0;
+        // BUSCA 2: Pedidos de Orçamento (Coleção 'pedidos')
+        // Mantemos a lógica antiga para não quebrar os orçamentos
+        const qPedidos = query(collection(db, "pedidos"), where("paraUid", "==", user.uid));
 
-            // CASO 1: Não tem nenhum pedido
-            if (snapshot.empty) {
-                container.innerHTML = `
-                    <div class="empty-chat">
-                        <i class='bx bx-message-rounded-dots' style="color: #ccc; font-size: 4rem;"></i>
-                        <h4 style="color: #666; margin-top: 10px;">Nenhum pedido recebido</h4>
-                        <p style="color: #999;">Quando alguém solicitar um orçamento, aparecerá aqui.</p>
-                    </div>`;
-                if(contador) contador.innerText = "0 novos";
-                return;
-            }
+        // Executa em paralelo
+        const [snapChats, snapPedidos] = await Promise.all([getDocs(qChats), getDocs(qPedidos)]);
 
-            // CASO 2: Tem pedidos (Renderiza a lista)
-            snapshot.forEach((doc) => {
-                const p = doc.data();
-                const id = doc.id;
-                
-                let classeStatus = 'pendente';
-                if(p.status === 'aceito') classeStatus = 'aceito';
-                if(p.status === 'recusado') classeStatus = 'recusado';
+        let htmlFinal = "";
+        let temItens = false;
 
-                if(p.status === 'pendente') novos++;
-
-                // Lógica dos botões
-                let botoesArea = '';
-                if (p.status === 'pendente') {
-                    botoesArea = `
-                        <div class="acoes-pedido">
-                            <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${id}', 'recusado')">Recusar</button>
-                            <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${id}', 'aceito')">Aceitar Orçamento</button>
-                        </div>
-                    `;
-                } else if (p.status === 'aceito') {
-                    botoesArea = `
-                        <div class="contato-liberado" style="display:block; background:#e8f5e9; padding:15px; border-radius:8px; text-align:center; margin-top:10px;">
-                            <span style="color:#2e7d32; font-weight:bold; font-size:0.9rem;">Pedido Aceito!</span>
-                            <p style="font-size:0.8rem; color:#555; margin:5px 0;">Inicie a conversa pelo nosso chat seguro.</p>
-                            <button onclick="abrirChatInterno('${p.deUid}', '${id}', '${p.clienteNome}', '${p.clienteFoto}')" style="margin-top:5px; color:white; padding:10px 20px; border:none; border-radius:30px; font-weight:bold; cursor:pointer; background-color:#009688;">
-                                <i class='bx bx-chat'></i> Abrir Chat
-                            </button>
-                        </div>
-                    `;
-                } else {
-                    botoesArea = `<div style="text-align:right; color:#e74c3c; font-weight:bold; margin-top:10px;">Pedido Recusado</div>`;
-                }
-
-                const html = `
-                <div class="card-pedido ${classeStatus}">
-                    <div class="avatar-pedido">
-                        <img src="${p.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" alt="Cliente">
-                    </div>
-                    <div class="info-pedido" style="width:100%;">
-                        <div class="header-card">
-                            <h4>${p.clienteNome}</h4>
-                            <span class="data-pedido">${new Date(p.dataPedido).toLocaleDateString()}</span>
-                        </div>
-                        <span class="servico-tag">Interesse: ${p.servicoReferencia}</span>
-                        <div class="msg-inicial">"${p.mensagemInicial}"</div>
-                        ${botoesArea}
-                    </div>
-                </div>`;
-
-                container.insertAdjacentHTML('beforeend', html);
-            });
-
-            if(contador) contador.innerText = `${novos} pendentes`;
-
-        }, (error) => {
-            // CASO 3: Deu erro no Firebase (ex: Falta de Índice)
-            console.error("Erro no Snapshot:", error);
+        // --- Processa Conversas Diretas ---
+        snapChats.forEach(doc => {
+            temItens = true;
+            const data = doc.data();
+            const id = doc.id;
             
-            // Remove o spinner e mostra mensagem de erro amigável
-            container.innerHTML = `
-                <div class="empty-chat">
-                    <i class='bx bx-error-circle' style="color: #e74c3c;"></i>
-                    <p>Não foi possível carregar os pedidos.</p>
-                    <small style="color:#999;">Verifique sua conexão ou o Console (F12) para erros de índice.</small>
-                </div>`;
+            // Descobre quem é o "outro" usuário
+            const outroUid = data.participantes.find(uid => uid !== user.uid);
+            const dadosOutro = data.dadosUsuarios ? data.dadosUsuarios[outroUid] : { nome: "Usuário", foto: "" };
+            
+            const msgPreview = data.tipoUltimaMsg === 'audio' ? '🎤 Áudio' : (data.ultimaMensagem || "Iniciar conversa");
+
+            htmlFinal += `
+            <div class="card-pedido" onclick="abrirTelaChat('${id}', '${dadosOutro.nome}', '${dadosOutro.foto}', '${outroUid}')" style="cursor:pointer; border-left: 5px solid var(--cor2);">
+                <div class="avatar-pedido"><img src="${dadosOutro.foto || 'https://i.pravatar.cc/150'}"></div>
+                <div class="info-pedido">
+                    <div class="header-card"><h4>${dadosOutro.nome}</h4></div>
+                    <span class="servico-tag">Conversa Direta</span>
+                    <div class="msg-inicial" style="margin-top:5px; color:#666; font-size:0.9rem;">${msgPreview}</div>
+                </div>
+            </div>`;
         });
 
+        // --- Processa Pedidos de Orçamento (Lógica Antiga) ---
+        snapPedidos.forEach(doc => {
+            temItens = true;
+            const p = doc.data();
+            const id = doc.id;
+            
+            // Só exibe botões se for pendente. Se for aceito, vira um chat normal.
+            let botoes = "";
+            let clickAction = "";
+            let borderClass = "pendente"; // Amarelo
+
+            if (p.status === 'pendente') {
+                botoes = `
+                <div class="acoes-pedido" onclick="event.stopPropagation()">
+                    <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${id}', 'recusado')">Recusar</button>
+                    <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${id}', 'aceito')">Aceitar</button>
+                </div>`;
+            } else if (p.status === 'aceito') {
+                borderClass = "aceito"; // Verde
+                // Se aceito, clicar abre o chat (Usamos o ID do pedido como ID do chat neste caso legado)
+                clickAction = `onclick="abrirChatInterno('${p.deUid}', '${id}', '${p.clienteNome}', '${p.clienteFoto}')"`;
+                botoes = `<span style="color:green; font-size:0.8rem;">Orçamento Aceito - Clique para abrir</span>`;
+            }
+
+            htmlFinal += `
+            <div class="card-pedido ${borderClass}" ${clickAction}>
+                <div class="avatar-pedido"><img src="${p.clienteFoto}"></div>
+                <div class="info-pedido">
+                    <div class="header-card"><h4>${p.clienteNome}</h4> <small>${new Date(p.dataPedido).toLocaleDateString()}</small></div>
+                    <span class="servico-tag">Orçamento: ${p.servicoReferencia}</span>
+                    <div class="msg-inicial">"${p.mensagemInicial}"</div>
+                    ${botoes}
+                </div>
+            </div>`;
+        });
+
+        if (!temItens) {
+            container.innerHTML = `<div class="empty-chat"><p>Nenhuma mensagem ainda.</p></div>`;
+        } else {
+            container.innerHTML = htmlFinal;
+        }
+
     } catch (e) {
-        console.error("Erro geral:", e);
-        container.innerHTML = `<div class="empty-chat"><p>Erro técnico ao buscar.</p></div>`;
+        console.error("Erro lista:", e);
+        container.innerHTML = `<p style="padding:20px;">Erro ao carregar lista.</p>`;
     }
 }
 
@@ -797,39 +772,40 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             card.className = 'card-premium';
             card.onmousedown = function() { window.registrarVisualizacao(anuncio.id); };
 
-            card.innerHTML = `
-                <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
-                    <i class='bx bx-info-circle'></i> Mais Informações
-                </button>
-                <div class="cp-header-clean">
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <img src="${fotoAutor}" class="cp-avatar"> 
-                        <div class="cp-info-user">
-                            <div class="cp-nome-row">
-                                <h4 class="cp-nome-clean">${nomeParaExibir}</h4>
-                                ${htmlAvaliacaoDisplay}
-                            </div>
-                            <div class="cp-tempo-online">
-                                <div class="status-dot online"></div> Online
-                            </div>
-                        </div>
-                    </div>
+card.innerHTML = `
+    <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
+        <i class='bx bx-info-circle'></i> Mais Informações
+    </button>
+    <div class="cp-header-clean">
+        <div style="display:flex; gap:12px; align-items:center;">
+            <img src="${fotoAutor}" class="cp-avatar"> 
+            <div class="cp-info-user">
+                <div class="cp-nome-row">
+                    <h4 class="cp-nome-clean">${nomeParaExibir}</h4>
+                    ${htmlAvaliacaoDisplay}
                 </div>
-                <div class="cp-body">
-                    <h3 class="cp-titulo">${titulo}</h3>
-                    <p class="cp-desc-clean">${descricao}</p>
+                <div class="cp-tempo-online">
+                    <div class="status-dot online"></div> Online
                 </div>
-                ${htmlFotos}
-                <div class="cp-footer-right">
-                    <div style="margin-right:auto;">
-                        <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
-                        <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
-                    </div>
-                    <a href="orcamento.html">
-                        <button class="btn-solicitar">Solicitar Orçamento</button>
-                    </a>
-                </div>
-            `;
+            </div>
+        </div>
+    </div>
+    <div class="cp-body">
+        <h3 class="cp-titulo">${titulo}</h3>
+        <p class="cp-desc-clean">${descricao}</p>
+    </div>
+    ${htmlFotos}
+<div class="cp-footer-right">
+    <div style="margin-right:auto;">
+        <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
+        <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+    </div>
+    
+    <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
+        Solicitar Orçamento
+    </button>
+</div>
+`;
             feed.appendChild(card);
         });
     } catch (erro) {
@@ -2148,5 +2124,345 @@ window.carregarEstatisticasReais = async function() {
 
     } catch (e) {
         console.error("Erro ao carregar estatísticas:", e);
+    }
+}
+
+// ============================================================
+// NOVO: SISTEMA DE CHAT DIRETO E ÁUDIO
+// ============================================================
+
+// Variáveis de Controle
+window.chatIdAtual = null;
+window.chatUnsubscribe = null;
+window.mediaRecorder = null;
+window.audioChunks = [];
+window.timerInterval = null;
+window.targetUserUid = null; // Armazena com quem estamos falando
+
+// 1. Função para abrir chat direto (sem pedido atrelado)
+// Exemplo de uso no HTML: onclick="iniciarChatDireto('uid123', 'Maria', 'foto.jpg')"
+window.iniciarChatDireto = async function(targetUid, targetName, targetPhoto) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Faça login para enviar mensagens.");
+        window.location.href = "login.html";
+        return;
+    }
+
+    if (user.uid === targetUid) {
+        alert("Você não pode enviar mensagem para si mesmo.");
+        return;
+    }
+
+    // Cria um ID único para a conversa entre esses dois usuários
+    // Ordena os UIDs para garantir que userA+userB seja igual a userB+userA
+    const ids = [user.uid, targetUid].sort();
+    const chatId = `${ids[0]}_${ids[1]}`;
+
+    // Verifica se a conversa já existe, se não, cria
+    try {
+        const chatRef = doc(db, "conversas", chatId);
+        const chatSnap = await getDoc(chatRef);
+
+        if (!chatSnap.exists()) {
+            // Cria a estrutura básica da conversa
+            await setDoc(chatRef, {
+                participantes: [user.uid, targetUid],
+                dadosUsuarios: {
+                    [user.uid]: { nome: user.displayName || "Eu", foto: user.photoURL || "" },
+                    [targetUid]: { nome: targetName, foto: targetPhoto }
+                },
+                ultimaMensagem: "",
+                tipoUltimaMsg: "texto",
+                dataAtualizacao: new Date().toISOString(),
+                tipo: "direta" // Diferencia de "pedido"
+            });
+        }
+        
+        // Redireciona para o chat.html carregando esse chat
+        // Se já estivermos no chat.html, apenas abre
+        if (window.location.pathname.includes("chat.html")) {
+            abrirTelaChat(chatId, targetName, targetPhoto, targetUid);
+        } else {
+            // Salva dados temporários para abrir ao carregar a página
+            localStorage.setItem('doke_abrir_chat_id', chatId);
+            localStorage.setItem('doke_abrir_chat_nome', targetName);
+            localStorage.setItem('doke_abrir_chat_foto', targetPhoto);
+            localStorage.setItem('doke_abrir_chat_uid', targetUid);
+            window.location.href = "chat.html";
+        }
+
+    } catch (e) {
+        console.error("Erro ao iniciar chat:", e);
+        alert("Erro ao iniciar conversa.");
+    }
+}
+
+// 3. Abrir a Tela de Chat (Genérico)
+window.abrirTelaChat = function(chatId, nome, foto, targetUid) {
+    window.chatIdAtual = chatId;
+    window.targetUserUid = targetUid;
+
+    document.getElementById('view-lista').style.display = 'none';
+    document.getElementById('view-chat').style.display = 'flex';
+    document.getElementById('chatNome').innerText = nome;
+    document.getElementById('chatAvatar').src = foto || "https://i.pravatar.cc/150";
+
+    const containerMsgs = document.getElementById('areaMensagens');
+    containerMsgs.innerHTML = '<div style="padding:20px; text-align:center;">Carregando...</div>';
+
+    // Determina qual coleção usar (se é um ID antigo de pedido ou novo de conversa)
+    // Assumimos 'conversas' por padrão, mas se falhar tentamos 'pedidos' (retrocompatibilidade)
+    carregarMensagensFirestore("conversas", chatId, containerMsgs);
+}
+
+function carregarMensagensFirestore(collectionName, docId, container) {
+    if (window.chatUnsubscribe) window.chatUnsubscribe();
+
+    const q = query(collection(db, collectionName, docId, "mensagens"), orderBy("timestamp", "asc"));
+    
+    window.chatUnsubscribe = onSnapshot(q, (snapshot) => {
+        container.innerHTML = "";
+        
+        if(snapshot.empty) {
+            container.innerHTML = '<div style="padding:40px; text-align:center; color:#ccc;">Comece a conversa!</div>';
+        }
+
+        snapshot.forEach(doc => {
+            renderizarMensagemNaTela(doc.data(), container);
+        });
+        
+        container.scrollTop = container.scrollHeight;
+    }, (error) => {
+        // Se der erro, pode ser que seja a coleção antiga "pedidos"
+        if(collectionName === "conversas") {
+            carregarMensagensFirestore("pedidos", docId, container);
+        }
+    });
+}
+
+function renderizarMensagemNaTela(msg, container) {
+    const user = auth.currentUser;
+    const ehMinha = msg.senderUid === user.uid;
+    const classe = ehMinha ? 'msg-enviada' : 'msg-recebida';
+    
+    let conteudoHtml = "";
+
+    if (msg.tipo === 'audio') {
+        conteudoHtml = `
+            <div class="audio-bubble">
+                <button class="btn-play-audio" onclick="tocarAudio(this, '${msg.url}')">
+                    <i class='bx bx-play'></i>
+                </button>
+                <div class="audio-wave"></div>
+                <span style="font-size:0.7rem;">Áudio</span>
+            </div>
+        `;
+    } else {
+        conteudoHtml = msg.texto;
+    }
+
+    const html = `
+        <div class="msg-bubble ${classe}">
+            ${conteudoHtml}
+            <span class="msg-time">${msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</span>
+        </div>`;
+    
+    container.insertAdjacentHTML('beforeend', html);
+}
+
+// 4. Envio de Texto
+window.enviarMensagemTexto = async function() {
+    const input = document.getElementById('inputMsg');
+    const texto = input.value.trim();
+    if (!texto) return;
+
+    input.value = "";
+    enviarParaFirestore({ texto: texto, tipo: 'texto' });
+}
+
+window.verificarEnter = function(e) {
+    if (e.key === 'Enter') window.enviarMensagemTexto();
+}
+
+// 5. Lógica de Gravação de Áudio
+window.iniciarGravacao = async function() {
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        window.mediaRecorder = new MediaRecorder(stream);
+        window.audioChunks = [];
+
+        window.mediaRecorder.ondataavailable = event => {
+            window.audioChunks.push(event.data);
+        };
+
+        window.mediaRecorder.start();
+        
+        // UI
+        document.getElementById('uiGravando').style.display = 'flex';
+        let segundos = 0;
+        document.getElementById('timerGravacao').innerText = "00:00";
+        window.timerInterval = setInterval(() => {
+            segundos++;
+            const mins = Math.floor(segundos / 60).toString().padStart(2, '0');
+            const secs = (segundos % 60).toString().padStart(2, '0');
+            document.getElementById('timerGravacao').innerText = `${mins}:${secs}`;
+        }, 1000);
+
+    } catch (err) {
+        console.error("Erro mic:", err);
+        alert("Permita o uso do microfone para gravar.");
+    }
+}
+
+window.cancelarGravacao = function() {
+    if (window.mediaRecorder) {
+        window.mediaRecorder.stop();
+        window.mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Libera mic
+    }
+    clearInterval(window.timerInterval);
+    document.getElementById('uiGravando').style.display = 'none';
+    window.audioChunks = [];
+}
+
+window.enviarAudio = function() {
+    if (!window.mediaRecorder) return;
+
+    window.mediaRecorder.stop();
+    window.mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    clearInterval(window.timerInterval);
+    document.getElementById('uiGravando').style.display = 'none';
+
+    window.mediaRecorder.onstop = async () => {
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/mp3' });
+        
+        // Upload para Firebase Storage
+        const user = auth.currentUser;
+        const filename = `audios/${user.uid}/${Date.now()}.mp3`;
+        const storageRef = ref(storage, filename);
+        
+        try {
+            // Toast de "Enviando..."
+            const btnEnviar = document.querySelector('.btn-enviar-msg');
+            const originalIcon = btnEnviar.innerHTML;
+            btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
+
+            const snapshot = await uploadBytes(storageRef, audioBlob);
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+
+            await enviarParaFirestore({
+                tipo: 'audio',
+                url: downloadUrl,
+                texto: "Mensagem de áudio"
+            });
+
+            btnEnviar.innerHTML = originalIcon;
+
+        } catch (e) {
+            console.error("Erro upload audio:", e);
+            alert("Erro ao enviar áudio.");
+        }
+    };
+}
+
+// 6. Função Genérica de Envio ao Firestore
+async function enviarParaFirestore(dadosMsg) {
+    const user = auth.currentUser;
+    if (!user || !window.chatIdAtual) return;
+
+    const msgData = {
+        ...dadosMsg,
+        senderUid: user.uid,
+        timestamp: new Date(),
+        lido: false
+    };
+
+    try {
+        // Tenta salvar na coleção 'conversas'
+        // Se o chat for do tipo 'pedido' (legado), precisamos tratar diferente ou migrar.
+        // Por simplicidade, tentamos salvar onde a gente leu (seja conversa ou pedido)
+        
+        // Mas a forma correta é saber qual coleção estamos usando.
+        // Vamos tentar 'conversas' primeiro.
+        const chatRef = doc(db, "conversas", window.chatIdAtual);
+        
+        // Verifica se existe em conversas
+        const docSnap = await getDoc(chatRef);
+        
+        let collectionName = "conversas";
+        if (!docSnap.exists()) {
+            // Se não existe em conversas, deve ser um pedido legado
+            collectionName = "pedidos";
+        }
+
+        await addDoc(collection(db, collectionName, window.chatIdAtual, "mensagens"), msgData);
+
+        // Atualiza 'ultimaMensagem' para a lista ficar atualizada
+        if (collectionName === "conversas") {
+            await updateDoc(chatRef, {
+                ultimaMensagem: dadosMsg.texto || "Áudio",
+                tipoUltimaMsg: dadosMsg.tipo,
+                dataAtualizacao: new Date().toISOString()
+            });
+        }
+
+    } catch (e) {
+        console.error("Erro ao enviar msg:", e);
+    }
+}
+
+// 7. Player de Áudio Simples
+window.tocarAudio = function(btn, url) {
+    const audio = new Audio(url);
+    const icon = btn.querySelector('i');
+    
+    if (btn.classList.contains('playing')) {
+        // Se já está tocando, não faz nada ou pausa (impl. simples toca do zero)
+        return; 
+    }
+
+    icon.classList.remove('bx-play');
+    icon.classList.add('bx-stop');
+    btn.classList.add('playing');
+
+    audio.play();
+
+    audio.onended = () => {
+        icon.classList.add('bx-play');
+        icon.classList.remove('bx-stop');
+        btn.classList.remove('playing');
+    };
+}
+
+// 8. Apagar Conversa
+window.toggleChatMenu = function() {
+    const menu = document.getElementById('menuChatOptions');
+    menu.classList.toggle('active');
+}
+
+window.apagarConversaAtual = async function() {
+    if(!confirm("Tem certeza que deseja apagar esta conversa? Isso não apaga para a outra pessoa.")) return;
+    
+    // Firestore não deleta subcoleções automaticamente. 
+    // Para simplificar: Vamos remover o usuário da lista de 'participantes' ou marcar como deletado.
+    // Ou simplesmente deletar o documento pai (as mensagens ficam órfãs no banco, mas somem da UI).
+    
+    try {
+        await deleteDoc(doc(db, "conversas", window.chatIdAtual));
+        // Se for pedido:
+        await deleteDoc(doc(db, "pedidos", window.chatIdAtual));
+        
+        alert("Conversa apagada.");
+        voltarParaPedidos();
+        carregarMeusPedidos();
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao apagar.");
+    }
+}
+
+window.verPerfilAtual = function() {
+    if(window.targetUserUid) {
+        window.location.href = `ver-perfil.html?uid=${window.targetUserUid}`;
     }
 }

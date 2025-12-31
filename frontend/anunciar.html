@@ -468,6 +468,57 @@
             return;
         }
 
+        // --- PREENCHIMENTO AUTOMÁTICO DE DADOS (CORREÇÃO) ---
+    if (perfilLocal) {
+        // 1. Preenche Nome
+        const inputNome = document.getElementById('nome_doc');
+        if (inputNome) inputNome.value = perfilLocal.nome || "";
+
+        // 2. Preenche CPF/CNPJ
+        const inputDoc = document.getElementById('doc_num');
+        if (inputDoc && perfilLocal.cpf_cnpj) {
+            inputDoc.value = perfilLocal.cpf_cnpj;
+            
+            // Lógica extra: Se for CNPJ (mais de 14 caracteres), marca a bolinha "Empresa"
+            if (perfilLocal.cpf_cnpj.length > 14) {
+                const radioPJ = document.getElementById('pj');
+                if (radioPJ) {
+                    radioPJ.checked = true;
+                    toggleCNPJ(); // Chama a função visual para mudar os labels
+                }
+            }
+        }
+
+        // 3. Preenche Telefone
+        const inputTel = document.getElementById('telefone');
+        // Tenta pegar o comercial primeiro, se não tiver, pega o pessoal, se não, vazio
+        if (inputTel) {
+            inputTel.value = perfilLocal.telefone_comercial || perfilLocal.telefone || "";
+        }
+
+        // 4. Preenche Endereço
+        if (perfilLocal.endereco) {
+            const end = perfilLocal.endereco;
+            
+            if (document.getElementById('cep') && end.cep) 
+                document.getElementById('cep').value = end.cep;
+            
+            if (document.getElementById('bairro') && end.bairro) 
+                document.getElementById('bairro').value = end.bairro;
+
+            // O 'tornar-profissional' salva cidade como "NomeCidade/UF"
+            // O 'anunciar' usa campos separados. Precisamos dividir:
+            if (end.cidade && end.cidade.includes('/')) {
+                const partes = end.cidade.split('/');
+                if (document.getElementById('cidade')) document.getElementById('cidade').value = partes[0];
+                if (document.getElementById('uf')) document.getElementById('uf').value = partes[1];
+            } else if (end.cidade) {
+                // Caso tenha salvo sem a barra
+                if (document.getElementById('cidade')) document.getElementById('cidade').value = end.cidade;
+            }
+        }
+    }
+
         // 2. Verifica se é profissional. Se não for, aplica o desfoque e mostra o card.
         if (!perfilLocal || perfilLocal.isProfissional !== true) {
             // Aplica o desfoque no conteúdo principal (main)
@@ -562,6 +613,8 @@
             document.body.style.overflow = "hidden";
         }
     });
+
+    
 
     // --- UPLOAD VISUAL HELPER ---
     function mostrarNomeArquivo(input) {
