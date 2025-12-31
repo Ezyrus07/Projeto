@@ -3925,3 +3925,126 @@ body.dark-mode {
         max-width: 100%;
     }
 }
+
+/* ESTILOS DA GALERIA (LIGHTBOX) */
+.galeria-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9); /* Fundo bem escuro */
+    z-index: 20000; /* Bem alto para ficar na frente de tudo */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px); /* Desfoque no fundo */
+    animation: fadeIn 0.3s ease;
+}
+
+.galeria-conteudo {
+    position: relative;
+    max-width: 90%;
+    max-height: 90%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.galeria-conteudo img {
+    max-width: 100%;
+    max-height: 85vh; /* Altura máxima para não estourar a tela */
+    border-radius: 8px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    object-fit: contain;
+}
+
+.btn-fechar-galeria {
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 20001;
+    transition: 0.2s;
+}
+.btn-fechar-galeria:hover { color: #ccc; }
+
+/* Setas de Navegação */
+.nav-seta {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(255,255,255,0.1);
+    color: white;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 2rem;
+    transition: 0.3s;
+    z-index: 20001;
+}
+.nav-seta:hover { background: rgba(255,255,255,0.3); }
+.nav-seta.esq { left: 20px; }
+.nav-seta.dir { right: 20px; }
+
+@media (max-width: 768px) {
+    .nav-seta { width: 40px; height: 40px; font-size: 1.5rem; }
+}
+
+/* FAIXA DE MINIATURAS */
+.galeria-thumbnails {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 10px;
+    max-width: 90%;
+    overflow-x: auto; /* Permite rolar se tiver muitas fotos */
+    padding: 10px;
+    background: rgba(0,0,0,0.5); /* Fundo semi-transparente atrás das thumbs */
+    border-radius: 12px;
+    z-index: 20002;
+    scrollbar-width: none; /* Esconde barra de rolagem no Firefox */
+}
+
+/* Esconde barra de rolagem no Chrome/Safari */
+.galeria-thumbnails::-webkit-scrollbar { display: none; }
+
+.thumb-item {
+    width: 60px;
+    height: 60px;
+    object-fit: cover;
+    border-radius: 4px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: 0.2s;
+    border: 2px solid transparent;
+    flex-shrink: 0; /* Impede que a foto seja esmagada */
+}
+
+.thumb-item:hover {
+    opacity: 1;
+}
+
+/* Quando a foto está selecionada */
+.thumb-item.ativo {
+    opacity: 1;
+    border: 2px solid #fff; /* Borda branca igual Webmotors */
+    transform: scale(1.1);
+}
+
+/* Ajuste no mobile */
+@media (max-width: 768px) {
+    .galeria-thumbnails {
+        bottom: 60px; /* Sobe um pouco no celular */
+        justify-content: flex-start; /* Alinha à esquerda para rolar */
+    }
+}

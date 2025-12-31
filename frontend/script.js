@@ -3,8 +3,10 @@
 // ============================================================
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js"; // Adicionado 'limit'
+import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// --- ADICIONADO: Storage para Upload de Vídeo/Foto ---
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // SUAS CHAVES DO PROJETO 'Doke-Site'
 const firebaseConfig = {
@@ -21,19 +23,25 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app); 
+const storage = getStorage(app); // --- ADICIONADO: Inicializa Storage
 
 // Garante acesso global
 window.db = db;
 window.auth = auth;
+window.storage = storage; // --- ADICIONADO
 window.collection = collection;
 window.query = query;
 window.getDocs = getDocs;
 window.orderBy = orderBy;
 window.where = where;
-window.limit = limit; // NOVO: Necessário para limitar vídeos na home
+window.limit = limit;
+
+// --- ADICIONADO: Variáveis globais para segurar os arquivos de upload ---
+window.arquivoFotoSelecionado = null;
+window.arquivoVideoSelecionado = null;
 
 // ============================================================
-// 2. FUNÇÃO DE PUBLICAR ANÚNCIO
+// 2. FUNÇÃO DE PUBLICAR ANÚNCIO (MANTIDA ORIGINAL)
 // ============================================================
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
@@ -63,9 +71,9 @@ window.publicarAnuncio = async function(event) {
         const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
         const telefone = document.getElementById('telefone').value || "";
 
-        const cidadeInput = document.getElementById('cidade');
-        const ufInput = document.getElementById('uf');
-        const bairroInput = document.getElementById('bairro');
+        let cidadeInput = document.getElementById('cidade');
+        let ufInput = document.getElementById('uf');
+        let bairroInput = document.getElementById('bairro');
 
         let cidadeFinal = cidadeInput ? cidadeInput.value : "Indefinido";
         let ufFinal = ufInput ? ufInput.value : "BR";
@@ -141,50 +149,152 @@ window.publicarAnuncio = async function(event) {
 }
 
 // ============================================================
-// 3. NOVO: FUNÇÕES DE TRABALHOS REALIZADOS (VÍDEOS NA HOME)
+// 3. SISTEMA UNIFICADO (VÍDEO/FOTO) + STORAGE - (ADICIONADO)
 // ============================================================
 
-// Salvar Trabalho (Chamado pelo Modal no meuperfil.html)
-window.salvarTrabalho = async function() {
-    const user = auth.currentUser;
-    if(!user) { alert("Faça login."); return; }
+// Alterna entre modo Foto e Vídeo na interface
+window.ativarModo = function(modo) {
+    const areaVideo = document.getElementById('campos-video-extra');
+    const inputTipo = document.getElementById('tipoPostagemAtual');
+    const avisoCapa = document.getElementById('avisoCapaVideo');
+    const inputFoto = document.getElementById('file-post-upload');
 
-    const tag = document.getElementById('inputTagTrabalho').value;
-    const desc = document.getElementById('inputDescTrabalho').value;
-    const videoUrl = document.getElementById('inputVideoUrl').value;
-    const capaBase64 = document.getElementById('inputCapaBase64').value;
-    const btn = document.getElementById('btnSalvarTrabalho');
-
-    if(!tag || !desc || !capaBase64) { alert("Preencha a tag, descrição e escolha uma capa."); return; }
-
-    if(btn) { btn.innerText = "Salvando..."; btn.disabled = true; }
-
-    try {
-        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        
-        await addDoc(collection(db, "trabalhos"), {
-            uid: user.uid,
-            autorNome: perfil.user || perfil.nome,
-            categoria: tag, 
-            tag: tag.toUpperCase(),
-            descricao: desc,
-            videoUrl: videoUrl || "#", 
-            capa: capaBase64,
-            data: new Date().toISOString()
-        });
-
-        alert("Trabalho adicionado à galeria!");
-        window.location.reload(); 
-    } catch (e) {
-        console.error("Erro ao salvar trabalho:", e);
-        alert("Erro ao salvar.");
-        if(btn) { btn.innerText = "Salvar Trabalho"; btn.disabled = false; }
+    if (modo === 'video') {
+        areaVideo.style.display = 'block';
+        inputTipo.value = 'trabalho';
+        if(avisoCapa) avisoCapa.style.display = 'block';
+        window.arquivoFotoSelecionado = null;
+        window.arquivoVideoSelecionado = null;
+    } else {
+        areaVideo.style.display = 'none';
+        inputTipo.value = 'feed';
+        if(avisoCapa) avisoCapa.style.display = 'none';
+        window.arquivoFotoSelecionado = null;
+        window.arquivoVideoSelecionado = null;
+        inputFoto.click(); 
     }
 }
 
-// Carregar Trabalhos na Home (index.html)
+// Processa a FOTO (Capa ou Imagem do Feed)
+window.previewImagemPost = function(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        window.arquivoFotoSelecionado = file; // Guarda o arquivo REAL
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('base64PostImage').value = "imagem_ok"; 
+            document.getElementById('imgPreviewPost').src = e.target.result;
+            document.getElementById('previewPostArea').style.display = 'block';
+        };
+        reader.readAsDataURL(file);
+    }
+}
+
+// Processa o VÍDEO (Arquivo Real)
+window.processarVideoUpload = function(input) {
+    if (input.files && input.files[0]) {
+        const file = input.files[0];
+        // Limite de segurança (ex: 100MB)
+        if (file.size > 100 * 1024 * 1024) { alert("Vídeo muito grande (max 100MB)."); input.value = ""; return; }
+        window.arquivoVideoSelecionado = file; // Guarda o arquivo REAL
+        document.getElementById('nomeVideoSelecionado').innerText = "Vídeo: " + file.name;
+        document.getElementById('base64VideoFile').value = "video_ok";
+    }
+}
+
+window.removerImagemPost = function() {
+    window.arquivoFotoSelecionado = null;
+    window.arquivoVideoSelecionado = null;
+    document.getElementById('base64PostImage').value = "";
+    document.getElementById('base64VideoFile').value = "";
+    document.getElementById('previewPostArea').style.display = 'none';
+    document.getElementById('file-post-upload').value = "";
+    if(document.getElementById('inputVideoFile')) document.getElementById('inputVideoFile').value = "";
+    if(document.getElementById('nomeVideoSelecionado')) document.getElementById('nomeVideoSelecionado').innerText = "";
+}
+
+// FUNÇÃO MESTRA: UPLOAD PARA STORAGE + SALVAR NO BANCO
+window.publicarConteudoUnificado = async function(event) {
+    const btn = event.target;
+    const user = auth.currentUser;
+    if (!user) { alert("Faça login para publicar."); return; }
+
+    const texto = document.getElementById('textoPost').value;
+    const tipo = document.getElementById('tipoPostagemAtual').value;
+    const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+    if (tipo === 'feed' && !texto && !window.arquivoFotoSelecionado) { alert("Escreva algo ou adicione uma foto."); return; }
+    if (tipo === 'trabalho') {
+        if (!window.arquivoFotoSelecionado) { alert("Adicione uma CAPA para o vídeo."); return; }
+        if (!window.arquivoVideoSelecionado) { alert("Anexe o arquivo de VÍDEO."); return; }
+    }
+
+    btn.innerText = "Enviando Mídia...";
+    btn.disabled = true;
+
+    try {
+        let urlImagem = "";
+        let urlVideo = "";
+
+        // 1. Upload IMAGEM (Capa ou Foto do Feed)
+        if (window.arquivoFotoSelecionado) {
+            const refImg = ref(storage, `posts/${user.uid}/img_${Date.now()}_${window.arquivoFotoSelecionado.name}`);
+            const snapImg = await uploadBytes(refImg, window.arquivoFotoSelecionado);
+            urlImagem = await getDownloadURL(snapImg.ref);
+        }
+
+        // 2. Upload VÍDEO (Se for Trabalho)
+        if (tipo === 'trabalho' && window.arquivoVideoSelecionado) {
+            btn.innerText = "Enviando Vídeo...";
+            const refVid = ref(storage, `trabalhos/${user.uid}/vid_${Date.now()}_${window.arquivoVideoSelecionado.name}`);
+            const snapVid = await uploadBytes(refVid, window.arquivoVideoSelecionado);
+            urlVideo = await getDownloadURL(snapVid.ref);
+        }
+
+        btn.innerText = "Salvando...";
+
+        // 3. Salvar no Firestore
+        if (tipo === 'trabalho') {
+            const tag = document.getElementById('inputTagVideo').value || "Trabalho";
+            await addDoc(collection(db, "trabalhos"), {
+                uid: user.uid,
+                autorNome: perfilLocal.user || perfilLocal.nome,
+                categoria: tag,
+                tag: tag.toUpperCase(),
+                descricao: texto,
+                videoUrl: urlVideo, // Link do Storage
+                capa: urlImagem,    // Link do Storage
+                data: new Date().toISOString()
+            });
+            alert("Vídeo publicado com sucesso!");
+            window.location.reload(); 
+        } else {
+            await addDoc(collection(db, "posts"), {
+                uid: user.uid,
+                autorNome: perfilLocal.nome || "Usuário",
+                autorFoto: perfilLocal.foto || "https://placehold.co/150",
+                autorUser: perfilLocal.user || "@usuario",
+                texto: texto,
+                imagem: urlImagem, // Link do Storage
+                data: new Date().toISOString(),
+                likes: 0
+            });
+            document.getElementById('textoPost').value = "";
+            window.removerImagemPost();
+            btn.innerText = "Publicar";
+            btn.disabled = false;
+        }
+    } catch (e) {
+        console.error("Erro no upload:", e);
+        alert("Erro ao publicar: " + e.message);
+        btn.innerText = "Publicar";
+        btn.disabled = false;
+    }
+}
+
 // ============================================================
-// CARREGAR VÍDEOS NA HOME + PLAYER
+// 4. CARREGAR VÍDEOS + PLAYER + ORÇAMENTO - (ATUALIZADO)
 // ============================================================
 
 window.carregarTrabalhosHome = async function() {
@@ -194,7 +304,6 @@ window.carregarTrabalhosHome = async function() {
     container.innerHTML = '<div style="padding:20px; color:white;">Carregando galeria...</div>';
 
     try {
-        // Busca os últimos 10 trabalhos
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
 
@@ -207,73 +316,86 @@ window.carregarTrabalhosHome = async function() {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            
-            // Criamos um elemento temporário para guardar o vídeo sem poluir o HTML visual
-            // Usamos textarea hidden para guardar o Base64 gigante do vídeo
+            const nomeSeguro = (data.autorNome || "").replace(/'/g, "");
+            const descSegura = (data.descricao || "").replace(/'/g, "");
+
             const html = `
             <div class="tiktok-card" onclick="tocarVideoDoCard(this)">
-                
                 <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
-
                 <div class="badge-status">${data.tag}</div>
                 <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
+                <div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
                 
-                <div class="play-icon">
-                    <svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg>
-                </div>
-
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
-                        <div class="provider-info">
-                            <span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span>
-                        </div>
+                        <div class="provider-info"><span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span></div>
                         <p class="video-desc">${data.descricao}</p>
-                        <a href="orcamento.html" onclick="event.stopPropagation()" style="position:relative; z-index:3;">
-                            <button class="btn-video-action">Solicitar Orçamento</button>
-                        </a>
+                        <button class="btn-video-action" 
+                            style="position:relative; z-index:3; width:100%; margin-top:5px; cursor:pointer;"
+                            onclick="event.stopPropagation(); solicitarOrcamento('${data.uid}', '${nomeSeguro}', '${descSegura}')">
+                            Solicitar Orçamento
+                        </button>
                     </div>
                 </div>
             </div>`;
-            
             container.insertAdjacentHTML('beforeend', html);
         });
-
-    } catch (e) {
-        console.error("Erro ao carregar trabalhos:", e);
-    }
+    } catch (e) { console.error(e); }
 }
 
 // --- FUNÇÕES DO PLAYER DE VÍDEO ---
-
-// Chamada ao clicar no Card
 window.tocarVideoDoCard = function(cardElement) {
-    // Pega o código do vídeo que está escondido no textarea dentro do card
     const videoSrc = cardElement.querySelector('.video-src-hidden').value;
-    
     if(videoSrc) {
         const modal = document.getElementById('modalPlayerVideo');
         const player = document.getElementById('playerPrincipal');
-        
-        player.src = videoSrc; // Coloca o vídeo no player
-        modal.style.display = 'flex'; // Mostra a tela preta
-        player.play(); // Dá play
-    } else {
-        alert("Erro: Vídeo não encontrado.");
+        if(player && modal) {
+            player.src = videoSrc;
+            modal.style.display = 'flex';
+            player.play();
+        } else { alert("Player não encontrado no HTML (index.html)."); }
     }
 }
 
-// Fechar o Player
 window.fecharPlayerVideo = function() {
     const modal = document.getElementById('modalPlayerVideo');
     const player = document.getElementById('playerPrincipal');
-    
-    player.pause(); // Para o vídeo
-    player.src = ""; // Limpa a memória
-    modal.style.display = 'none'; // Esconde a tela
+    if(player) { player.pause(); player.src = ""; }
+    if(modal) modal.style.display = 'none';
+}
+
+// --- LÓGICA DE SOLICITAR ORÇAMENTO (PASSO 2) ---
+window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricaoServico) {
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Você precisa fazer login para pedir um orçamento.");
+        window.location.href = "login.html";
+        return;
+    }
+    if (user.uid === idPrestador) {
+        alert("Você não pode pedir orçamento para si mesmo!");
+        return;
+    }
+    const contato = prompt(`Descreva o que você precisa para ${nomePrestador}:`, "Olá, vi seu vídeo e gostaria de um orçamento.");
+    if (contato && contato.trim() !== "") {
+        try {
+            await addDoc(collection(db, "pedidos"), {
+                deUid: user.uid,
+                paraUid: idPrestador,
+                paraNome: nomePrestador,
+                servicoReferencia: descricaoServico,
+                mensagemInicial: contato,
+                status: "pendente",
+                dataPedido: new Date().toISOString(),
+                visualizado: false
+            });
+            alert(`✅ Pedido enviado para ${nomePrestador}!`);
+        } catch (e) { console.error("Erro:", e); alert("Erro ao enviar pedido."); }
+    }
 }
 
 // ============================================================
-// 4. CARREGAMENTO DE ANÚNCIOS (FEED)
+// 5. CARREGAMENTO DE ANÚNCIOS (MANTIDO ORIGINAL)
 // ============================================================
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
@@ -331,13 +453,41 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             let htmlFotos = '';
             let contadorExtra = fotos.length - 3;
 
+// Prepara a lista de fotos para passar no onclick (converte array para string segura)
+            const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
+
             if (fotos.length === 1) {
-                htmlFotos = `<div class="grid-fotos-doke" style="grid-template-columns: 1fr;"><div class="foto-main" style="grid-column: 1; grid-row: 1/3;"><img src="${fotos[0]}" class="img-cover"></div></div>`;
+                htmlFotos = `
+                <div class="grid-fotos-doke" style="grid-template-columns: 1fr;">
+                    <div class="foto-main" style="grid-column: 1; grid-row: 1/3;">
+                        <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
+                    </div>
+                </div>`;
             } else if (fotos.length === 2) {
-                htmlFotos = `<div class="grid-fotos-doke"><div class="foto-main"><img src="${fotos[0]}" class="img-cover"></div><div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover"></div></div>`;
+                htmlFotos = `
+                <div class="grid-fotos-doke">
+                    <div class="foto-main">
+                        <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
+                    </div>
+                    <div class="foto-sub full-height">
+                        <img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)">
+                    </div>
+                </div>`;
             } else {
                 let overlayHtml = (fotos.length > 3) ? `<div class="overlay-count">+${contadorExtra}</div>` : '';
-                htmlFotos = `<div class="grid-fotos-doke"><div class="foto-main"><img src="${fotos[0]}" class="img-cover"></div><div class="foto-sub"><img src="${fotos[1]}" class="img-cover"></div><div class="foto-sub"><img src="${fotos[2]}" class="img-cover">${overlayHtml}</div></div>`;
+                htmlFotos = `
+                <div class="grid-fotos-doke">
+                    <div class="foto-main">
+                        <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
+                    </div>
+                    <div class="foto-sub">
+                        <img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)">
+                    </div>
+                    <div class="foto-sub">
+                        <img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">
+                        ${overlayHtml}
+                    </div>
+                </div>`;
             }
 
             const card = document.createElement('div');
@@ -386,7 +536,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 }
 
 // ============================================================
-// 5. CARREGAR CATEGORIAS
+// 6. CARREGAR CATEGORIAS (MANTIDO)
 // ============================================================
 window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
@@ -402,6 +552,7 @@ window.carregarCategorias = async function() {
                 listaCategorias.push(doc.data());
             });
         } else {
+            // Fallback se não tiver nada no banco
             listaCategorias = [
                 { nome: "Casa", img: "https://cdn-icons-png.flaticon.com/512/10338/10338273.png" },
                 { nome: "Tecnologia", img: "https://cdn-icons-png.flaticon.com/512/2920/2920329.png" },
@@ -432,7 +583,7 @@ window.carregarCategorias = async function() {
 }
 
 // ============================================================
-// 6. PROFISSIONAIS EM DESTAQUE
+// 7. PROFISSIONAIS (MANTIDO)
 // ============================================================
 window.carregarProfissionais = async function() {
     const container = document.getElementById('listaProfissionais');
@@ -474,7 +625,7 @@ window.carregarProfissionais = async function() {
 }
 
 // ============================================================
-// 7. FUNÇÕES DE HEADER, PROTEÇÃO E AUTH
+// 8. HEADER, AUTH, UTILITÁRIOS (MANTIDO)
 // ============================================================
 
 function protegerPaginasRestritas() {
@@ -527,7 +678,6 @@ window.verificarEstadoLogin = function() {
     }
 }
 
-// --- FUNÇÃO PARA ALTERNAR CONTA (LOGOUT E REDIRECIONAR PARA LOGIN) ---
 window.alternarConta = function() {
     window.auth.signOut().then(() => {
         localStorage.removeItem('usuarioLogado');
@@ -567,9 +717,6 @@ window.filtrarPorCategoria = function(categoria) {
     }
 }
 
-// ============================================================
-// 8. UTILITÁRIOS GLOBAIS (CEP, UI, BUSCA)
-// ============================================================
 function formatarCepInput(e) {
     let valor = e.target.value.replace(/\D/g, ""); 
     if (valor.length > 5) valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
@@ -698,9 +845,6 @@ window.mostrarToast = function(mensagem, tipo = 'sucesso') {
     setTimeout(() => { toast.remove(); }, 3000);
 }
 
-// ============================================================
-// 9. FUNÇÕES DE LOGIN (AUXILIARES)
-// ============================================================
 window.realizarLogin = async function(e) {
     if(e) e.preventDefault();
     const email = document.getElementById('email').value;
@@ -728,9 +872,6 @@ window.realizarLogin = async function(e) {
     }
 }
 
-// ============================================================
-// 10. FUNÇÃO PARA CARREGAR FILTROS DE LOCALIZAÇÃO
-// ============================================================
 window.carregarFiltrosLocalizacao = async function() {
     const selEstado = document.getElementById('selectEstado');
     const selCidade = document.getElementById('selectCidade');
@@ -799,14 +940,10 @@ window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
     console.log("Filtrando por:", uf, cidade, bairro);
 }
 
-// ============================================================
-// 11. FEED GLOBAL (Para Index.html)
-// ============================================================
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
 
-    // Loading state
     container.innerHTML = `
         <div style="text-align:center; padding:40px; color:#777;">
             <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
@@ -821,7 +958,7 @@ window.carregarFeedGlobal = async function() {
 
         const snapshot = await window.getDocs(q);
 
-        container.innerHTML = ""; // Limpa loading
+        container.innerHTML = ""; 
 
         if (snapshot.empty) {
             container.innerHTML = `
@@ -872,7 +1009,124 @@ window.carregarFeedGlobal = async function() {
 }
 
 // ============================================================
-// 12. INICIALIZAÇÃO
+// 13. CENTRAL DE PEDIDOS (Lógica do chat.html)
+// ============================================================
+
+window.carregarMeusPedidos = async function() {
+    const container = document.getElementById('container-pedidos');
+    const contador = document.getElementById('contadorPedidos');
+    
+    if (!container) return; // Só roda se estiver na página chat.html
+
+    const user = auth.currentUser;
+    if (!user) {
+        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver seus pedidos.</p><a href="login.html" class="btn-solid">Entrar</a></div>`;
+        return;
+    }
+
+    try {
+        // Busca pedidos onde o campo 'paraUid' é igual ao MEU ID
+        // Ordena pelos mais recentes
+        const q = query(collection(db, "pedidos"), where("paraUid", "==", user.uid), orderBy("dataPedido", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            container.innerHTML = ""; // Limpa a lista
+            
+            if (snapshot.empty) {
+                container.innerHTML = `<div class="empty-chat"><i class='bx bx-ghost'></i><p>Você ainda não recebeu nenhum pedido.</p></div>`;
+                if(contador) contador.innerText = "0 novos";
+                return;
+            }
+
+            let novos = 0;
+
+            snapshot.forEach((doc) => {
+                const pedido = doc.data();
+                const idPedido = doc.id;
+                const dataFormatada = new Date(pedido.dataPedido).toLocaleDateString('pt-BR');
+                
+                // Define a classe CSS baseada no status
+                let classeStatus = 'pendente';
+                if(pedido.status === 'aceito') classeStatus = 'aceito';
+                if(pedido.status === 'recusado') classeStatus = 'recusado';
+
+                if(pedido.status === 'pendente') novos++;
+
+                // Lógica dos Botões vs Contato Liberado
+                let areaAcoes = '';
+                
+                if (pedido.status === 'pendente') {
+                    areaAcoes = `
+                        <div class="acoes-pedido">
+                            <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${idPedido}', 'recusado')">Recusar</button>
+                            <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${idPedido}', 'aceito')"><i class='bx bxl-whatsapp'></i> Aceitar e Conversar</button>
+                        </div>
+                    `;
+                } else if (pedido.status === 'aceito') {
+                    areaAcoes = `
+                        <div class="contato-liberado" style="display:block;">
+                            <i class='bx bxs-check-circle'></i> Você aceitou este pedido!<br>
+                            O cliente aguarda seu contato.
+                        </div>
+                    `;
+                } else {
+                    areaAcoes = `<div style="text-align:right; color:#e74c3c; font-weight:bold;">Pedido Recusado</div>`;
+                }
+
+                const html = `
+                <div class="card-pedido ${classeStatus}">
+                    <div class="avatar-pedido">
+                        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Cliente">
+                    </div>
+                    <div class="info-pedido">
+                        <div class="header-card">
+                            <h4>Cliente Interessado</h4>
+                            <span class="data-pedido">${dataFormatada}</span>
+                        </div>
+                        
+                        <span class="servico-tag">Interesse: ${pedido.servicoReferencia}</span>
+                        
+                        <div class="msg-inicial">
+                            "${pedido.mensagemInicial}"
+                        </div>
+
+                        ${areaAcoes}
+                    </div>
+                </div>`;
+
+                container.insertAdjacentHTML('beforeend', html);
+            });
+
+            if(contador) contador.innerText = `${novos} pendentes`;
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar pedidos:", e);
+        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar pedidos. (Verifique se o índice composto foi criado no Firebase)</p>`;
+    }
+}
+
+// Função para Aceitar ou Recusar
+window.atualizarStatusPedido = async function(idPedido, novoStatus) {
+    const btn = event.target;
+    btn.innerText = "...";
+    btn.disabled = true;
+
+    try {
+        await updateDoc(doc(db, "pedidos", idPedido), {
+            status: novoStatus,
+            dataAtualizacao: new Date().toISOString()
+        });
+        // O onSnapshot vai atualizar a tela sozinho automaticamente!
+    } catch (e) {
+        console.error("Erro ao atualizar:", e);
+        alert("Erro ao atualizar status.");
+        btn.disabled = false;
+    }
+}
+
+// ============================================================
+// 9. INICIALIZAÇÃO
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
     
@@ -981,3 +1235,70 @@ document.addEventListener("DOMContentLoaded", function() {
         typeEffect();
     }
 });
+
+// ==========================================
+// LÓGICA DA GALERIA (COM MINIATURAS)
+// ==========================================
+window.fotosAtuais = [];
+window.indiceAtual = 0;
+
+window.abrirGaleria = function(listaFotos, index) {
+    window.fotosAtuais = listaFotos;
+    window.indiceAtual = index;
+    
+    // 1. Gera as miniaturas
+    const containerThumbs = document.getElementById('areaThumbnails');
+    containerThumbs.innerHTML = ""; // Limpa anteriores
+
+    listaFotos.forEach((foto, i) => {
+        const img = document.createElement('img');
+        img.src = foto;
+        img.classList.add('thumb-item');
+        img.id = `thumb-${i}`; // ID para achar depois
+        img.onclick = function(e) {
+            e.stopPropagation(); // Não fechar o modal
+            window.indiceAtual = i;
+            atualizarImagemModal();
+        };
+        containerThumbs.appendChild(img);
+    });
+
+    atualizarImagemModal();
+    document.getElementById('modalGaleria').style.display = 'flex';
+}
+
+window.mudarImagem = function(direcao) {
+    if(!window.fotosAtuais || window.fotosAtuais.length === 0) return;
+
+    window.indiceAtual += direcao;
+
+    if (window.indiceAtual >= window.fotosAtuais.length) window.indiceAtual = 0;
+    if (window.indiceAtual < 0) window.indiceAtual = window.fotosAtuais.length - 1;
+
+    atualizarImagemModal();
+}
+
+function atualizarImagemModal() {
+    // 1. Muda a imagem grande
+    const img = document.getElementById('imgExpandida');
+    img.src = window.fotosAtuais[window.indiceAtual];
+
+    // 2. Atualiza a borda branca na miniatura
+    // Remove classe 'ativo' de todas
+    document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('ativo'));
+    
+    // Adiciona na atual
+    const thumbAtual = document.getElementById(`thumb-${window.indiceAtual}`);
+    if(thumbAtual) {
+        thumbAtual.classList.add('ativo');
+        // Opcional: Rolar a barrinha para mostrar a foto selecionada
+        thumbAtual.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+}
+
+window.fecharGaleria = function(event) {
+    if (!event || event.target.id === 'modalGaleria' || event.target.classList.contains('btn-fechar-galeria')) {
+        document.getElementById('modalGaleria').style.display = 'none';
+        document.getElementById('imgExpandida').src = "";
+    }
+}
