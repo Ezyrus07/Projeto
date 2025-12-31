@@ -278,6 +278,8 @@
                             <textarea id="descricao" placeholder="Descreva seu serviço..." required></textarea>
                         </div>
 
+                        
+
                         <div class="form-group">
                             <label>Fotos do Trabalho (Máx 5)</label>
                             <div class="upload-zone" onclick="document.getElementById('upload-galeria').click()">
@@ -287,6 +289,8 @@
                             <div id="preview-galeria" class="galeria-preview-container"></div>
                         </div>
                     </div>
+
+                    
 
                     <div class="form-step" id="step-2">
                         <h3>Qualificações</h3>
@@ -404,6 +408,42 @@
                             </div>
                         </div>
 
+<h3>Configuração do Formulário de Triagem</h3>
+    <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">
+        Crie um questionário para o cliente responder antes de solicitar o orçamento.
+    </p>
+
+    <div id="lista-perguntas-configuradas" style="margin-bottom: 25px; display: flex; flex-direction: column; gap: 10px;">
+        </div>
+
+    <div style="background: #ffffff; padding: 25px; border-radius: 15px; border: 2px solid #eef2f6; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">
+        <h4 style="margin-bottom:15px; color: var(--cor2);">+ Nova Questão</h4>
+        
+        <div class="form-group">
+            <label>Tipo de Pergunta</label>
+            <select id="tipo-pergunta-select" class="input-modern" onchange="toggleOpcoesInput()">
+                <option value="fechada">Múltipla Escolha (Seleção)</option>
+                <option value="aberta">Aberta (Texto livre)</option>
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label>Título da Pergunta</label>
+            <input type="text" id="input-pergunta-txt" class="input-modern" placeholder="Ex: Qual o problema atual?">
+        </div>
+
+        <div class="form-group" id="container-opcoes-input">
+            <label>Alternativas (separe com vírgula)</label>
+            <input type="text" id="input-opcoes-txt" class="input-modern" placeholder="Ex: Tomada, Disjuntor, Fiação">
+            <small style="color: #888;">O cliente escolherá uma dessas opções.</small>
+        </div>
+
+        <button type="button" onclick="adicionarQuestaoAoForm()" style="background: var(--cor0); color:white; border:none; padding:12px 25px; border-radius:30px; font-weight:600; cursor:pointer; width: 100%;">
+            Adicionar Questão à Lista
+        </button>
+    </div>
+
+    <input type="hidden" id="perguntas-formulario-json">
                         <div style="margin-top:20px; padding:15px; background:#eef6fc; border-radius:10px;">
                             <label style="cursor:pointer; display:flex; gap:10px; align-items:center;">
                                 <input type="checkbox" id="termos" required style="width:20px; height:20px;"> 
@@ -630,6 +670,77 @@
             }
         }
     });
+
+let perguntasArray = [];
+
+// Alterna a visibilidade do campo de alternativas
+window.toggleOpcoesInput = function() {
+    const tipo = document.getElementById('tipo-pergunta-select').value;
+    const container = document.getElementById('container-opcoes-input');
+    container.style.display = (tipo === 'aberta') ? 'none' : 'block';
+}
+
+// Adiciona a questão ao array e limpa os campos
+window.adicionarQuestaoAoForm = function() {
+    const tipo = document.getElementById('tipo-pergunta-select').value;
+    const pergunta = document.getElementById('input-pergunta-txt').value;
+    const opcoesRaw = document.getElementById('input-opcoes-txt').value;
+
+    if (!pergunta.trim()) {
+        alert("Por favor, digite a pergunta.");
+        return;
+    }
+
+    let novaQuestao = {
+        id: Date.now(),
+        tipo: tipo,
+        pergunta: pergunta,
+        opcoes: tipo === 'fechada' ? opcoesRaw.split(',').map(o => o.trim()).filter(o => o !== "") : []
+    };
+
+    if (tipo === 'fechada' && novaQuestao.opcoes.length < 2) {
+        alert("Para perguntas fechadas, adicione pelo menos 2 alternativas separadas por vírgula.");
+        return;
+    }
+
+    perguntasArray.push(novaQuestao);
+    document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
+    
+    renderizarListaPerguntas();
+    
+    // Limpar campos para a próxima
+    document.getElementById('input-pergunta-txt').value = "";
+    document.getElementById('input-opcoes-txt').value = "";
+}
+
+function renderizarListaPerguntas() {
+    const container = document.getElementById('lista-perguntas-configuradas');
+    container.innerHTML = "";
+
+    perguntasArray.forEach((q, index) => {
+        const item = document.createElement('div');
+        item.style.cssText = "background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.02);";
+        
+        const info = q.tipo === 'aberta' ? '📝 Aberta' : `🔘 Fechada (${q.opcoes.length} opc)`;
+        
+        item.innerHTML = `
+            <div>
+                <span style="font-size: 0.75rem; color: var(--cor2); font-weight: bold; text-transform: uppercase;">${info}</span>
+                <p style="margin: 5px 0 0; font-weight: 500; color: #334155;">${index + 1}. ${q.pergunta}</p>
+            </div>
+            <button onclick="removerQuestao(${index})" style="background: #fee2e2; color: #ef4444; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+                <i class='bx bx-trash'></i>
+            </button>
+        `;
+        container.appendChild(item);
+    });
+}
+
+window.removerQuestao = function(index) {
+    perguntasArray.splice(index, 1);
+    document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
+    renderizarListaPerguntas();
+}
     </script>
 </body>
 </html>

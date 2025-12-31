@@ -5,7 +5,6 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebas
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-// --- ADICIONADO: Storage para Upload de Vídeo/Foto ---
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 // SUAS CHAVES DO PROJETO 'Doke-Site'
@@ -23,12 +22,12 @@ const app = initializeApp(firebaseConfig);
 const analytics = getAnalytics(app);
 const db = getFirestore(app);
 const auth = getAuth(app); 
-const storage = getStorage(app); // --- ADICIONADO: Inicializa Storage
+const storage = getStorage(app); 
 
 // Garante acesso global
 window.db = db;
 window.auth = auth;
-window.storage = storage; // --- ADICIONADO
+window.storage = storage;
 window.collection = collection;
 window.query = query;
 window.getDocs = getDocs;
@@ -36,12 +35,15 @@ window.orderBy = orderBy;
 window.where = where;
 window.limit = limit;
 
-// --- ADICIONADO: Variáveis globais para segurar os arquivos de upload ---
+// Variáveis Globais
 window.arquivoFotoSelecionado = null;
 window.arquivoVideoSelecionado = null;
+window.fotosAtuais = [];
+window.indiceAtual = 0;
+
 
 // ============================================================
-// 2. FUNÇÃO DE PUBLICAR ANÚNCIO (MANTIDA ORIGINAL)
+// 2. FUNÇÃO DE PUBLICAR ANÚNCIO (SEM WHATSAPP OBRIGATÓRIO)
 // ============================================================
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
@@ -58,6 +60,8 @@ window.publicarAnuncio = async function(event) {
     try {
         const titulo = document.getElementById('titulo').value;
         const descricao = document.getElementById('descricao').value;
+        const perguntasFormulario = document.getElementById('perguntas-formulario')?.value || "";
+        const temFormulario = perguntasFormulario.trim().length > 0;
         const categoriasString = document.getElementById('categorias-validacao').value; 
         const categoriaFinal = categoriasString ? categoriasString.split(',')[0] : "Geral";
         
@@ -69,7 +73,9 @@ window.publicarAnuncio = async function(event) {
         }
 
         const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
-        const telefone = document.getElementById('telefone').value || "";
+        
+        // Removemos a obrigatoriedade do telefone no anúncio, já que será chat interno
+        const telefone = document.getElementById('telefone')?.value || "";
 
         let cidadeInput = document.getElementById('cidade');
         let ufInput = document.getElementById('uf');
@@ -91,9 +97,7 @@ window.publicarAnuncio = async function(event) {
             } catch(e) { console.log("Erro fallback CEP"); }
         }
 
-        if(!titulo || !descricao) {
-            throw new Error("Preencha o título e a descrição.");
-        }
+        if(!titulo || !descricao) throw new Error("Preencha o título e a descrição.");
 
         let fotos = [];
         if (window.fotosParaEnviar && window.fotosParaEnviar.length > 0) {
@@ -105,13 +109,14 @@ window.publicarAnuncio = async function(event) {
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
         const nomeAutor = perfilLocal.nome || "Você";
         const fotoAutor = perfilLocal.foto || "https://i.pravatar.cc/150?img=12";
-        
         let userHandle = perfilLocal.user || ("@" + nomeAutor.split(' ')[0].toLowerCase());
         if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
 
         const novoAnuncio = {
             titulo: titulo,
             descricao: descricao,
+            temFormulario: temFormulario,
+            perguntasFormulario: perguntasFormulario,
             categoria: categoriaFinal,
             categorias: categoriasString,
             preco: precoFinal,
@@ -119,7 +124,7 @@ window.publicarAnuncio = async function(event) {
             uf: ufFinal,
             cidade: cidadeFinal,
             bairro: bairroFinal,
-            whatsapp: telefone,
+            whatsapp: telefone, // Mantido apenas como dado secundário
             fotos: fotos,
             img: fotos[0],
             dataCriacao: new Date().toISOString(),
@@ -134,7 +139,7 @@ window.publicarAnuncio = async function(event) {
 
         await addDoc(collection(window.db, "anuncios"), novoAnuncio);
         
-        alert(`Anúncio publicado com sucesso em ${cidadeFinal}-${ufFinal}!`);
+        alert("Anúncio publicado com sucesso!");
         window.location.href = "index.html";
 
     } catch (erro) {
@@ -148,11 +153,11 @@ window.publicarAnuncio = async function(event) {
     }
 }
 
+
 // ============================================================
-// 3. SISTEMA UNIFICADO (VÍDEO/FOTO) + STORAGE - (ADICIONADO)
+// 3. SISTEMA UNIFICADO DE UPLOAD (VÍDEO E FOTO)
 // ============================================================
 
-// Alterna entre modo Foto e Vídeo na interface
 window.ativarModo = function(modo) {
     const areaVideo = document.getElementById('campos-video-extra');
     const inputTipo = document.getElementById('tipoPostagemAtual');
@@ -175,12 +180,10 @@ window.ativarModo = function(modo) {
     }
 }
 
-// Processa a FOTO (Capa ou Imagem do Feed)
 window.previewImagemPost = function(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        window.arquivoFotoSelecionado = file; // Guarda o arquivo REAL
-
+        window.arquivoFotoSelecionado = file; 
         const reader = new FileReader();
         reader.onload = function(e) {
             document.getElementById('base64PostImage').value = "imagem_ok"; 
@@ -191,13 +194,11 @@ window.previewImagemPost = function(input) {
     }
 }
 
-// Processa o VÍDEO (Arquivo Real)
 window.processarVideoUpload = function(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        // Limite de segurança (ex: 100MB)
         if (file.size > 100 * 1024 * 1024) { alert("Vídeo muito grande (max 100MB)."); input.value = ""; return; }
-        window.arquivoVideoSelecionado = file; // Guarda o arquivo REAL
+        window.arquivoVideoSelecionado = file; 
         document.getElementById('nomeVideoSelecionado').innerText = "Vídeo: " + file.name;
         document.getElementById('base64VideoFile').value = "video_ok";
     }
@@ -214,7 +215,6 @@ window.removerImagemPost = function() {
     if(document.getElementById('nomeVideoSelecionado')) document.getElementById('nomeVideoSelecionado').innerText = "";
 }
 
-// FUNÇÃO MESTRA: UPLOAD PARA STORAGE + SALVAR NO BANCO
 window.publicarConteudoUnificado = async function(event) {
     const btn = event.target;
     const user = auth.currentUser;
@@ -237,14 +237,12 @@ window.publicarConteudoUnificado = async function(event) {
         let urlImagem = "";
         let urlVideo = "";
 
-        // 1. Upload IMAGEM (Capa ou Foto do Feed)
         if (window.arquivoFotoSelecionado) {
             const refImg = ref(storage, `posts/${user.uid}/img_${Date.now()}_${window.arquivoFotoSelecionado.name}`);
             const snapImg = await uploadBytes(refImg, window.arquivoFotoSelecionado);
             urlImagem = await getDownloadURL(snapImg.ref);
         }
 
-        // 2. Upload VÍDEO (Se for Trabalho)
         if (tipo === 'trabalho' && window.arquivoVideoSelecionado) {
             btn.innerText = "Enviando Vídeo...";
             const refVid = ref(storage, `trabalhos/${user.uid}/vid_${Date.now()}_${window.arquivoVideoSelecionado.name}`);
@@ -254,7 +252,6 @@ window.publicarConteudoUnificado = async function(event) {
 
         btn.innerText = "Salvando...";
 
-        // 3. Salvar no Firestore
         if (tipo === 'trabalho') {
             const tag = document.getElementById('inputTagVideo').value || "Trabalho";
             await addDoc(collection(db, "trabalhos"), {
@@ -263,8 +260,8 @@ window.publicarConteudoUnificado = async function(event) {
                 categoria: tag,
                 tag: tag.toUpperCase(),
                 descricao: texto,
-                videoUrl: urlVideo, // Link do Storage
-                capa: urlImagem,    // Link do Storage
+                videoUrl: urlVideo,
+                capa: urlImagem,
                 data: new Date().toISOString()
             });
             alert("Vídeo publicado com sucesso!");
@@ -276,7 +273,7 @@ window.publicarConteudoUnificado = async function(event) {
                 autorFoto: perfilLocal.foto || "https://placehold.co/150",
                 autorUser: perfilLocal.user || "@usuario",
                 texto: texto,
-                imagem: urlImagem, // Link do Storage
+                imagem: urlImagem,
                 data: new Date().toISOString(),
                 likes: 0
             });
@@ -293,10 +290,66 @@ window.publicarConteudoUnificado = async function(event) {
     }
 }
 
-// ============================================================
-// 4. CARREGAR VÍDEOS + PLAYER + ORÇAMENTO - (ATUALIZADO)
-// ============================================================
 
+// ============================================================
+// 4. GALERIA LIGHTBOX (COM MINIATURAS E ZOOM)
+// ============================================================
+window.abrirGaleria = function(listaFotos, index) {
+    window.fotosAtuais = listaFotos;
+    window.indiceAtual = index;
+    
+    const containerThumbs = document.getElementById('areaThumbnails');
+    if(containerThumbs) {
+        containerThumbs.innerHTML = ""; 
+        listaFotos.forEach((foto, i) => {
+            const img = document.createElement('img');
+            img.src = foto;
+            img.classList.add('thumb-item');
+            img.id = `thumb-${i}`; 
+            img.onclick = function(e) {
+                e.stopPropagation(); 
+                window.indiceAtual = i;
+                atualizarImagemModal();
+            };
+            containerThumbs.appendChild(img);
+        });
+    }
+
+    atualizarImagemModal();
+    document.getElementById('modalGaleria').style.display = 'flex';
+}
+
+window.mudarImagem = function(direcao) {
+    if(!window.fotosAtuais || window.fotosAtuais.length === 0) return;
+    window.indiceAtual += direcao;
+    if (window.indiceAtual >= window.fotosAtuais.length) window.indiceAtual = 0;
+    if (window.indiceAtual < 0) window.indiceAtual = window.fotosAtuais.length - 1;
+    atualizarImagemModal();
+}
+
+function atualizarImagemModal() {
+    const img = document.getElementById('imgExpandida');
+    if(img) img.src = window.fotosAtuais[window.indiceAtual];
+    
+    document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('ativo'));
+    const thumbAtual = document.getElementById(`thumb-${window.indiceAtual}`);
+    if(thumbAtual) {
+        thumbAtual.classList.add('ativo');
+        thumbAtual.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+    }
+}
+
+window.fecharGaleria = function(event) {
+    if (!event || event.target.id === 'modalGaleria' || event.target.classList.contains('btn-fechar-galeria')) {
+        document.getElementById('modalGaleria').style.display = 'none';
+        document.getElementById('imgExpandida').src = "";
+    }
+}
+
+
+// ============================================================
+// 5. CARREGAR VÍDEOS NA HOME
+// ============================================================
 window.carregarTrabalhosHome = async function() {
     const container = document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
@@ -306,7 +359,6 @@ window.carregarTrabalhosHome = async function() {
     try {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
-
         container.innerHTML = "";
 
         if (snapshot.empty) {
@@ -343,17 +395,14 @@ window.carregarTrabalhosHome = async function() {
     } catch (e) { console.error(e); }
 }
 
-// --- FUNÇÕES DO PLAYER DE VÍDEO ---
-window.tocarVideoDoCard = function(cardElement) {
-    const videoSrc = cardElement.querySelector('.video-src-hidden').value;
-    if(videoSrc) {
-        const modal = document.getElementById('modalPlayerVideo');
-        const player = document.getElementById('playerPrincipal');
-        if(player && modal) {
-            player.src = videoSrc;
-            modal.style.display = 'flex';
-            player.play();
-        } else { alert("Player não encontrado no HTML (index.html)."); }
+window.tocarVideoDoCard = function(card) {
+    const src = card.querySelector('.video-src-hidden').value;
+    const modal = document.getElementById('modalPlayerVideo');
+    const player = document.getElementById('playerPrincipal');
+    if(src && modal && player) {
+        player.src = src; 
+        modal.style.display = 'flex'; 
+        player.play();
     }
 }
 
@@ -364,38 +413,205 @@ window.fecharPlayerVideo = function() {
     if(modal) modal.style.display = 'none';
 }
 
-// --- LÓGICA DE SOLICITAR ORÇAMENTO (PASSO 2) ---
-window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricaoServico) {
+
+// ============================================================
+// 6. SISTEMA DE PEDIDOS E CHAT INTERNO (SEM WHATSAPP)
+// ============================================================
+
+// Botão "Solicitar Orçamento"
+// Botão "Solicitar Orçamento" - VERSÃO COM FORMULÁRIO E DESCRIÇÃO OBRIGATÓRIA
+window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricaoServico, temForm, perguntas) {
     const user = auth.currentUser;
     if (!user) {
-        alert("Você precisa fazer login para pedir um orçamento.");
+        alert("Você precisa fazer login para continuar.");
         window.location.href = "login.html";
         return;
     }
+
     if (user.uid === idPrestador) {
-        alert("Você não pode pedir orçamento para si mesmo!");
+        alert("Você não pode solicitar para si mesmo.");
         return;
     }
-    const contato = prompt(`Descreva o que você precisa para ${nomePrestador}:`, "Olá, vi seu vídeo e gostaria de um orçamento.");
-    if (contato && contato.trim() !== "") {
-        try {
-            await addDoc(collection(db, "pedidos"), {
-                deUid: user.uid,
-                paraUid: idPrestador,
-                paraNome: nomePrestador,
-                servicoReferencia: descricaoServico,
-                mensagemInicial: contato,
-                status: "pendente",
-                dataPedido: new Date().toISOString(),
-                visualizado: false
-            });
-            alert(`✅ Pedido enviado para ${nomePrestador}!`);
-        } catch (e) { console.error("Erro:", e); alert("Erro ao enviar pedido."); }
+
+    let respostasFormulario = "";
+
+    // 1. Se o prestador criou um formulário, ele aparece primeiro (Opcional para o prestador ter, mas se tiver, o cliente responde)
+    if (temForm && perguntas) {
+        respostasFormulario = prompt(`O prestador solicita que você responda:\n\n${perguntas}`);
+        if (respostasFormulario === null) return; // Cancelou
+    }
+
+    // 2. DESCRIÇÃO OBRIGATÓRIA (Toda vez que apertar em solicitar/comprar)
+    const msg = prompt(`DESCREVA SEU PEDIDO (Obrigatório):\nDetalhe o que você precisa para ${nomePrestador}:`);
+    
+    // Validação de obrigatoriedade
+    if (!msg || msg.trim() === "") {
+        alert("A descrição do pedido é obrigatória para enviar a solicitação!");
+        return; 
+    }
+
+    try {
+        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        
+        await addDoc(collection(db, "pedidos"), {
+            deUid: user.uid,
+            paraUid: idPrestador,
+            paraNome: nomePrestador,
+            clienteNome: perfil.nome || "Cliente Doke",
+            clienteFoto: perfil.foto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+            servicoReferencia: descricaoServico,
+            mensagemInicial: msg, // Descrição obrigatória
+            respostasDoFormulario: respostasFormulario, // Respostas das questões do prestador
+            status: "pendente",
+            dataPedido: new Date().toISOString(),
+            visualizado: false
+        });
+
+        alert(`✅ Solicitação enviada! Aguarde o retorno no chat.`);
+        
+    } catch (e) {
+        console.error("Erro ao enviar pedido:", e);
+        alert("Erro técnico ao enviar. Tente novamente.");
     }
 }
 
+// Lista os pedidos no chat.html
+window.carregarMeusPedidos = async function() {
+    const container = document.getElementById('container-pedidos');
+    const contador = document.getElementById('contadorPedidos');
+    
+    if (!container) return; // Só roda na página chat.html
+
+    const user = auth.currentUser;
+    if (!user) {
+        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver suas mensagens.</p></div>`;
+        return;
+    }
+
+    try {
+        // Busca pedidos recebidos (Sou o Prestador)
+        const q = query(collection(db, "pedidos"), where("paraUid", "==", user.uid), orderBy("dataPedido", "desc"));
+        
+        onSnapshot(q, (snapshot) => {
+            container.innerHTML = "";
+            let novos = 0;
+
+            if (snapshot.empty) {
+                container.innerHTML = `<div class="empty-chat"><i class='bx bx-message-rounded-dots'></i><p>Nenhum pedido recebido ainda.</p></div>`;
+                if(contador) contador.innerText = "0 novos";
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const p = doc.data();
+                const id = doc.id;
+                
+                let classeStatus = 'pendente';
+                if(p.status === 'aceito') classeStatus = 'aceito';
+                if(p.status === 'recusado') classeStatus = 'recusado';
+
+                if(p.status === 'pendente') novos++;
+
+                // ÁREA DE AÇÕES (AGORA COM CHAT INTERNO)
+                let botoesArea = '';
+                
+                if (p.status === 'pendente') {
+                    botoesArea = `
+                        <div class="acoes-pedido">
+                            <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${id}', 'recusado')">Recusar</button>
+                            <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${id}', 'aceito')">Aceitar Orçamento</button>
+                        </div>
+                    `;
+                } else if (p.status === 'aceito') {
+                    // Botão para abrir o Chat Interno
+                    botoesArea = `
+                        <div class="contato-liberado" style="display:block; background:#e8f5e9; padding:15px; border-radius:8px; text-align:center; margin-top:10px;">
+                            <span style="color:#2e7d32; font-weight:bold; font-size:0.9rem;">Pedido Aceito!</span>
+                            <p style="font-size:0.8rem; color:#555; margin:5px 0;">Inicie a conversa pelo nosso chat seguro.</p>
+                            
+                            <button onclick="abrirChatInterno('${p.deUid}', '${id}')" style="margin-top:5px; background:#var(--cor0); color:white; padding:10px 20px; border:none; border-radius:30px; font-weight:bold; cursor:pointer; background-color:#009688;">
+                                <i class='bx bx-chat'></i> Abrir Chat
+                            </button>
+                            
+                            <button style="margin-top:5px; margin-left:5px; background:#fff; color:#555; padding:10px 15px; border:1px solid #ddd; border-radius:30px; font-weight:bold; cursor:pointer;">
+                                <i class='bx bx-dollar'></i> Enviar Cobrança
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    botoesArea = `<div style="text-align:right; color:#e74c3c; font-weight:bold; margin-top:10px;">Pedido Recusado</div>`;
+                }
+
+                const html = `
+                <div class="card-pedido ${classeStatus}">
+                    <div class="avatar-pedido">
+                        <img src="${p.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" alt="Cliente">
+                    </div>
+                    <div class="info-pedido" style="width:100%;">
+                        <div class="header-card">
+                            <h4>${p.clienteNome}</h4>
+                            <span class="data-pedido">${new Date(p.dataPedido).toLocaleDateString()}</span>
+                        </div>
+                        <span class="servico-tag">Interesse: ${p.servicoReferencia}</span>
+                        <div class="msg-inicial">"${p.mensagemInicial}"</div>
+                        ${botoesArea}
+                    </div>
+                </div>`;
+
+                container.insertAdjacentHTML('beforeend', html);
+            });
+
+            if(contador) contador.innerText = `${novos} pendentes`;
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar pedidos:", e);
+    }
+}
+
+// Função Placeholder para o Chat Interno (Passo Futuro)
+window.abrirChatInterno = function(idOutroUsuario, idPedido) {
+    alert("O sistema de Chat em Tempo Real será implementado no próximo passo! \n\nID do Cliente: " + idOutroUsuario + "\nID do Pedido: " + idPedido);
+    // Aqui nós iremos redirecionar para uma tela de conversa tipo WhatsApp Web
+    // window.location.href = `conversa.html?chat=${idPedido}`;
+}
+
+// Atualiza Status
+window.atualizarStatusPedido = async function(idPedido, novoStatus) {
+    try {
+        await updateDoc(doc(db, "pedidos", idPedido), {
+            status: novoStatus,
+            dataAtualizacao: new Date().toISOString()
+        });
+    } catch (e) {
+        alert("Erro ao atualizar status.");
+        console.error(e);
+    }
+}
+
+// Notificações Globais
+window.verificarNotificacoes = function(uid) {
+    const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
+    onSnapshot(q, (snap) => {
+        const qtd = snap.size;
+        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
+            const existing = link.querySelector('.badge-notificacao');
+            if(existing) existing.remove();
+            if (qtd > 0) {
+                link.style.position = "relative";
+                const badge = document.createElement('span');
+                badge.className = "badge-notificacao";
+                badge.innerText = qtd;
+                badge.style.cssText = "position:absolute; top:-5px; right:-5px; background:#e74c3c; color:white; font-size:10px; font-weight:bold; width:18px; height:18px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:2px solid white; z-index:100;";
+                link.appendChild(badge);
+            }
+        });
+    });
+}
+
+
 // ============================================================
-// 5. CARREGAMENTO DE ANÚNCIOS (MANTIDO ORIGINAL)
+// 7. CARREGAMENTO DE ANÚNCIOS (FEED) - (MANTIDO E INTEGRADO)
 // ============================================================
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
@@ -450,11 +666,10 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 : `<div class="cp-stars-dynamic" style="color:#f1c40f;"><i class='bx bxs-star'></i> ${nota} <span style="color:#999; font-size:0.75rem;">(${qtdAvaliacoes})</span></div>`;
 
             let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : [anuncio.img || "https://placehold.co/600x400"];
+            const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
+
             let htmlFotos = '';
             let contadorExtra = fotos.length - 3;
-
-// Prepara a lista de fotos para passar no onclick (converte array para string segura)
-            const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
 
             if (fotos.length === 1) {
                 htmlFotos = `
@@ -466,27 +681,16 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             } else if (fotos.length === 2) {
                 htmlFotos = `
                 <div class="grid-fotos-doke">
-                    <div class="foto-main">
-                        <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
-                    </div>
-                    <div class="foto-sub full-height">
-                        <img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)">
-                    </div>
+                    <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+                    <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
                 </div>`;
             } else {
                 let overlayHtml = (fotos.length > 3) ? `<div class="overlay-count">+${contadorExtra}</div>` : '';
                 htmlFotos = `
                 <div class="grid-fotos-doke">
-                    <div class="foto-main">
-                        <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
-                    </div>
-                    <div class="foto-sub">
-                        <img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)">
-                    </div>
-                    <div class="foto-sub">
-                        <img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">
-                        ${overlayHtml}
-                    </div>
+                    <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+                    <div class="foto-sub"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
+                    <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
                 </div>`;
             }
 
@@ -536,7 +740,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 }
 
 // ============================================================
-// 6. CARREGAR CATEGORIAS (MANTIDO)
+// 8. FUNÇÕES GERAIS (CARREGAMENTO, AUTH, ETC) - MANTIDAS
 // ============================================================
 window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
@@ -552,7 +756,6 @@ window.carregarCategorias = async function() {
                 listaCategorias.push(doc.data());
             });
         } else {
-            // Fallback se não tiver nada no banco
             listaCategorias = [
                 { nome: "Casa", img: "https://cdn-icons-png.flaticon.com/512/10338/10338273.png" },
                 { nome: "Tecnologia", img: "https://cdn-icons-png.flaticon.com/512/2920/2920329.png" },
@@ -582,9 +785,6 @@ window.carregarCategorias = async function() {
     }
 }
 
-// ============================================================
-// 7. PROFISSIONAIS (MANTIDO)
-// ============================================================
 window.carregarProfissionais = async function() {
     const container = document.getElementById('listaProfissionais');
     if (!container) return;
@@ -625,7 +825,7 @@ window.carregarProfissionais = async function() {
 }
 
 // ============================================================
-// 8. HEADER, AUTH, UTILITÁRIOS (MANTIDO)
+// 9. HEADER, AUTH, UTILITÁRIOS E BUSCA (MANTIDOS)
 // ============================================================
 
 function protegerPaginasRestritas() {
@@ -845,6 +1045,9 @@ window.mostrarToast = function(mensagem, tipo = 'sucesso') {
     setTimeout(() => { toast.remove(); }, 3000);
 }
 
+// ============================================================
+// 10. FUNÇÕES DE LOGIN (AUXILIARES)
+// ============================================================
 window.realizarLogin = async function(e) {
     if(e) e.preventDefault();
     const email = document.getElementById('email').value;
@@ -872,6 +1075,9 @@ window.realizarLogin = async function(e) {
     }
 }
 
+// ============================================================
+// 11. FUNÇÃO PARA CARREGAR FILTROS DE LOCALIZAÇÃO
+// ============================================================
 window.carregarFiltrosLocalizacao = async function() {
     const selEstado = document.getElementById('selectEstado');
     const selCidade = document.getElementById('selectCidade');
@@ -940,6 +1146,9 @@ window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
     console.log("Filtrando por:", uf, cidade, bairro);
 }
 
+// ============================================================
+// 12. FEED GLOBAL (Para Index.html)
+// ============================================================
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
@@ -1008,125 +1217,36 @@ window.carregarFeedGlobal = async function() {
     }
 }
 
-// ============================================================
-// 13. CENTRAL DE PEDIDOS (Lógica do chat.html)
-// ============================================================
-
-window.carregarMeusPedidos = async function() {
-    const container = document.getElementById('container-pedidos');
-    const contador = document.getElementById('contadorPedidos');
-    
-    if (!container) return; // Só roda se estiver na página chat.html
-
-    const user = auth.currentUser;
-    if (!user) {
-        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver seus pedidos.</p><a href="login.html" class="btn-solid">Entrar</a></div>`;
-        return;
-    }
-
-    try {
-        // Busca pedidos onde o campo 'paraUid' é igual ao MEU ID
-        // Ordena pelos mais recentes
-        const q = query(collection(db, "pedidos"), where("paraUid", "==", user.uid), orderBy("dataPedido", "desc"));
-        
-        onSnapshot(q, (snapshot) => {
-            container.innerHTML = ""; // Limpa a lista
-            
-            if (snapshot.empty) {
-                container.innerHTML = `<div class="empty-chat"><i class='bx bx-ghost'></i><p>Você ainda não recebeu nenhum pedido.</p></div>`;
-                if(contador) contador.innerText = "0 novos";
-                return;
-            }
-
-            let novos = 0;
-
-            snapshot.forEach((doc) => {
-                const pedido = doc.data();
-                const idPedido = doc.id;
-                const dataFormatada = new Date(pedido.dataPedido).toLocaleDateString('pt-BR');
-                
-                // Define a classe CSS baseada no status
-                let classeStatus = 'pendente';
-                if(pedido.status === 'aceito') classeStatus = 'aceito';
-                if(pedido.status === 'recusado') classeStatus = 'recusado';
-
-                if(pedido.status === 'pendente') novos++;
-
-                // Lógica dos Botões vs Contato Liberado
-                let areaAcoes = '';
-                
-                if (pedido.status === 'pendente') {
-                    areaAcoes = `
-                        <div class="acoes-pedido">
-                            <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${idPedido}', 'recusado')">Recusar</button>
-                            <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${idPedido}', 'aceito')"><i class='bx bxl-whatsapp'></i> Aceitar e Conversar</button>
-                        </div>
-                    `;
-                } else if (pedido.status === 'aceito') {
-                    areaAcoes = `
-                        <div class="contato-liberado" style="display:block;">
-                            <i class='bx bxs-check-circle'></i> Você aceitou este pedido!<br>
-                            O cliente aguarda seu contato.
-                        </div>
-                    `;
-                } else {
-                    areaAcoes = `<div style="text-align:right; color:#e74c3c; font-weight:bold;">Pedido Recusado</div>`;
-                }
-
-                const html = `
-                <div class="card-pedido ${classeStatus}">
-                    <div class="avatar-pedido">
-                        <img src="https://cdn-icons-png.flaticon.com/512/847/847969.png" alt="Cliente">
-                    </div>
-                    <div class="info-pedido">
-                        <div class="header-card">
-                            <h4>Cliente Interessado</h4>
-                            <span class="data-pedido">${dataFormatada}</span>
-                        </div>
-                        
-                        <span class="servico-tag">Interesse: ${pedido.servicoReferencia}</span>
-                        
-                        <div class="msg-inicial">
-                            "${pedido.mensagemInicial}"
-                        </div>
-
-                        ${areaAcoes}
-                    </div>
-                </div>`;
-
-                container.insertAdjacentHTML('beforeend', html);
-            });
-
-            if(contador) contador.innerText = `${novos} pendentes`;
-        });
-
-    } catch (e) {
-        console.error("Erro ao carregar pedidos:", e);
-        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar pedidos. (Verifique se o índice composto foi criado no Firebase)</p>`;
-    }
+// Funções extras para perfil
+window.carregarPerfil = function() {
+    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
+    if(document.getElementById('nomePerfilDisplay')) document.getElementById('nomePerfilDisplay').innerText = usuario.nome;
+    if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
+    if(document.getElementById('fotoPerfilDisplay')) document.getElementById('fotoPerfilDisplay').src = usuario.foto;
+    if(document.getElementById('locPerfilDisplay')) document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${usuario.local || "Brasil"}`;
+    if(document.getElementById('dataMembroDisplay')) document.getElementById('dataMembroDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${usuario.membroDesde || "2024"}`;
 }
 
-// Função para Aceitar ou Recusar
-window.atualizarStatusPedido = async function(idPedido, novoStatus) {
-    const btn = event.target;
-    btn.innerText = "...";
-    btn.disabled = true;
-
-    try {
-        await updateDoc(doc(db, "pedidos", idPedido), {
-            status: novoStatus,
-            dataAtualizacao: new Date().toISOString()
+window.carregarPosts = function(uid) {
+    const container = document.getElementById('container-feed-posts');
+    if (!container) return;
+    const q = query(collection(db, "posts"), where("uid", "==", uid), orderBy("data", "desc"));
+    onSnapshot(q, (snapshot) => {
+        container.innerHTML = "";
+        if (snapshot.empty) { container.innerHTML = `<div class="empty-state"><h4>Sem posts</h4></div>`; return; }
+        snapshot.forEach((doc) => {
+            const post = doc.data();
+            const imgHtml = post.imagem ? `<div class="midia-post"><img src="${post.imagem}"></div>` : '';
+            const html = `<div class="post-feed-card"><div class="header-post"><div class="user-post"><img src="${post.autorFoto}"><div><h4>${post.autorUser}</h4></div></div></div><p class="legenda-post">${post.texto}</p>${imgHtml}</div>`;
+            container.innerHTML += html;
         });
-        // O onSnapshot vai atualizar a tela sozinho automaticamente!
-    } catch (e) {
-        console.error("Erro ao atualizar:", e);
-        alert("Erro ao atualizar status.");
-        btn.disabled = false;
-    }
+    });
 }
 
+
+
 // ============================================================
-// 9. INICIALIZAÇÃO
+// 13. INICIALIZAÇÃO E EVENT LISTENERS
 // ============================================================
 document.addEventListener("DOMContentLoaded", function() {
     
@@ -1234,71 +1354,56 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         typeEffect();
     }
+
+    // 8. AUTENTICAÇÃO PERSISTENTE E NOTIFICAÇÕES
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            const docRef = doc(db, "usuarios", user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(docSnap.data()));
+                localStorage.setItem('usuarioLogado', 'true');
+            }
+            
+            // Ativa notificações de pedidos novos
+            verificarNotificacoes(user.uid);
+
+            if(window.location.pathname.includes('perfil')) {
+                carregarPerfil();
+                carregarPosts(user.uid);
+            }
+            if(window.location.pathname.includes('chat')) {
+                carregarMeusPedidos();
+            }
+        } else {
+            localStorage.removeItem('usuarioLogado');
+            if(window.location.pathname.includes('perfil') || window.location.pathname.includes('chat')) {
+                window.location.href = 'login.html';
+            }
+        }
+        verificarEstadoLogin();
+    });
 });
 
-// ==========================================
-// LÓGICA DA GALERIA (COM MINIATURAS)
-// ==========================================
-window.fotosAtuais = [];
-window.indiceAtual = 0;
+async function finalizarPedidoComQuiz(idPrestador, nomePrestador, servico, formularioRespondido) {
+    const user = auth.currentUser;
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
-window.abrirGaleria = function(listaFotos, index) {
-    window.fotosAtuais = listaFotos;
-    window.indiceAtual = index;
-    
-    // 1. Gera as miniaturas
-    const containerThumbs = document.getElementById('areaThumbnails');
-    containerThumbs.innerHTML = ""; // Limpa anteriores
-
-    listaFotos.forEach((foto, i) => {
-        const img = document.createElement('img');
-        img.src = foto;
-        img.classList.add('thumb-item');
-        img.id = `thumb-${i}`; // ID para achar depois
-        img.onclick = function(e) {
-            e.stopPropagation(); // Não fechar o modal
-            window.indiceAtual = i;
-            atualizarImagemModal();
-        };
-        containerThumbs.appendChild(img);
-    });
-
-    atualizarImagemModal();
-    document.getElementById('modalGaleria').style.display = 'flex';
-}
-
-window.mudarImagem = function(direcao) {
-    if(!window.fotosAtuais || window.fotosAtuais.length === 0) return;
-
-    window.indiceAtual += direcao;
-
-    if (window.indiceAtual >= window.fotosAtuais.length) window.indiceAtual = 0;
-    if (window.indiceAtual < 0) window.indiceAtual = window.fotosAtuais.length - 1;
-
-    atualizarImagemModal();
-}
-
-function atualizarImagemModal() {
-    // 1. Muda a imagem grande
-    const img = document.getElementById('imgExpandida');
-    img.src = window.fotosAtuais[window.indiceAtual];
-
-    // 2. Atualiza a borda branca na miniatura
-    // Remove classe 'ativo' de todas
-    document.querySelectorAll('.thumb-item').forEach(el => el.classList.remove('ativo'));
-    
-    // Adiciona na atual
-    const thumbAtual = document.getElementById(`thumb-${window.indiceAtual}`);
-    if(thumbAtual) {
-        thumbAtual.classList.add('ativo');
-        // Opcional: Rolar a barrinha para mostrar a foto selecionada
-        thumbAtual.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-    }
-}
-
-window.fecharGaleria = function(event) {
-    if (!event || event.target.id === 'modalGaleria' || event.target.classList.contains('btn-fechar-galeria')) {
-        document.getElementById('modalGaleria').style.display = 'none';
-        document.getElementById('imgExpandida').src = "";
+    try {
+        await addDoc(collection(db, "pedidos"), {
+            deUid: user.uid,
+            paraUid: idPrestador,
+            paraNome: nomePrestador,
+            clienteNome: perfil.nome || "Cliente",
+            clienteFoto: perfil.foto || "",
+            servicoReferencia: servico,
+            formularioRespostas: formularioRespondido, // ARRAY DE OBJETOS [{pergunta, resposta}]
+            status: "pendente",
+            dataPedido: new Date().toISOString()
+        });
+        alert("✅ Solicitação enviada com sucesso!");
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao salvar no Firestore.");
     }
 }
