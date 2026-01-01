@@ -12,45 +12,57 @@
            ESTILOS GERAIS E LAYOUT (CENTRALIZADO)
            ========================================================================== */
         body { 
-            background-color: #f4f6f8; 
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); 
             margin: 0; 
             font-family: 'Segoe UI', sans-serif; 
         }
 
         /* CONFIGURAÇÃO PRINCIPAL DO LAYOUT */
-        .perfil-main {
-            margin-left: 270px;          /* Espaço da Sidebar */
-            width: calc(100% - 270px);   /* Ocupa o restante da tela */
-            display: flex;               /* Flexbox para alinhar o filho */
-            justify-content: center;     /* Centraliza o container-limite */
-            padding: 20px;
-            padding-bottom: 80px;
-            box-sizing: border-box;
-        }
+.perfil-main {
+    margin-left: 270px;
+    width: calc(100% - 270px);
+    display: flex;
+    justify-content: center;
+    /* Ajuste o padding para coincidir com o do Explorar (30px 40px) */
+    padding: 30px 40px; 
+    padding-bottom: 80px;
+    box-sizing: border-box;
+}
 
         /* O CONTAINER QUE SEGURA O CONTEÚDO NO MEIO */
-        .container-limite {
-            width: 100%;
-            max-width: 1200px; /* Trava em 1200px para não esticar demais */
-            display: flex;
-            flex-direction: column;
-            gap: 25px; /* Espaço entre os blocos verticais */
-        }
+.container-limite {
+    width: 100%;
+    /* Mude de 1200px para 1600px */
+    max-width: 1600px;  
+    display: flex;
+    flex-direction: column;
+    gap: 25px; 
+}
 
         /* --- HEADER DO PERFIL (Estilo Novo) --- */
-        .perfil-header-card { 
-            background: #fff; border-radius: 16px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            overflow: visible; /* Permite elementos vazarem se precisar */
-            position: relative;
-            margin-bottom: 10px;
-        }
-        .capa-perfil { 
-            height: 220px; 
-            background: linear-gradient(120deg, #2a5f90, #0b7768); 
-            position: relative; 
-            border-radius: 16px 16px 0 0;
-        }
+/* Em meuperfil.html */
+
+.perfil-header-card { 
+    background: #fff; 
+    /* Mude de 16px para 20px para igualar ao Explorar */
+    border-radius: 20px; 
+    /* Sombra mais bonita e azulada igual ao Explorar */
+    box-shadow: 0 10px 30px rgba(42, 95, 144, 0.2); 
+    overflow: visible; 
+    position: relative;
+    margin-bottom: 10px;
+    border: none; /* Garante que não tenha borda cinza simples */
+}
+/* Em meuperfil.html */
+
+.capa-perfil { 
+    height: 220px; 
+    /* Use o mesmo degradê do Explorar se quiser a cor exata */
+    background: linear-gradient(135deg, var(--cor2), #1a3c5e); 
+    position: relative; 
+    /* Arredondamento de 20px no topo */
+    border-radius: 20px 20px 0 0;
+}
         .btn-edit-capa { 
             position: absolute; right: 20px; bottom: 20px; 
             background: rgba(0,0,0,0.6); color: white; border: none; 
@@ -225,6 +237,98 @@
         .header-post { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f9f9f9; }
         .user-post img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
         .stats-post { padding: 15px 20px; border-top: 1px solid #f9f9f9; display: flex; gap: 25px; }
+
+
+
+/* O CARD DO POST */
+.post-feed-card { 
+    background: #fff; 
+    border: 1px solid #e0e0e0; 
+    border-radius: 12px; 
+    margin-bottom: 25px; 
+    overflow: hidden; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    max-width: 600px; /* Tamanho ideal de post */
+    margin-left: auto; margin-right: auto; /* Centraliza na tela */
+}
+
+/* CABEÇALHO DO POST (Igual da foto) */
+.header-post { 
+    padding: 15px; 
+    display: flex; 
+    align-items: center; 
+    gap: 12px; /* Espaço entre foto e texto */
+}
+
+.avatar-post-small {
+    width: 48px; 
+    height: 48px; 
+    border-radius: 50%; 
+    object-fit: cover;
+}
+
+.info-post-header {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    line-height: 1.3;
+}
+
+.nome-autor-post {
+    font-weight: 700;
+    font-size: 1rem;
+    color: #0f1419;
+}
+
+.meta-autor-post {
+    font-size: 0.85rem;
+    color: #536471;
+}
+
+/* CONTEÚDO E IMAGEM */
+.legenda-post {
+    padding: 0 15px 15px 15px;
+    margin: 0;
+    font-size: 1rem;
+    color: #0f1419;
+    white-space: pre-line; /* Respeita quebras de linha */
+}
+
+.midia-post {
+    width: 100%;
+    /* Remove limitações de altura para a imagem aparecer inteira */
+    display: block; 
+    background: #f7f9f9;
+}
+
+.midia-post img { 
+    width: 100%; 
+    height: auto; /* IMPORTANTE: Deixa a altura automática baseada na largura */
+    display: block; 
+    object-fit: cover; 
+}
+
+/* RODAPÉ DO POST */
+.stats-post { 
+    padding: 12px 15px; 
+    border-top: 1px solid #eff3f4; 
+    display: flex; 
+    gap: 30px; 
+}
+
+.action-post {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #536471;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: 500;
+}
+
+.action-post:hover { color: var(--cor0); }
+.action-post i { font-size: 1.2rem; }
 
         /* --- MODAIS --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
@@ -476,15 +580,90 @@
         </div>
     </div>
 
+    <div id="modalDelete" class="modal-overlay" style="z-index: 10000;">
+    <div class="modal-card" style="max-width: 400px; text-align: center;">
+        <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+            <div style="background: #ffebee; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                <i class='bx bx-trash' style="font-size: 30px; color: #e74c3c;"></i>
+            </div>
+        </div>
+        
+        <div class="modal-body" style="padding-top: 0;">
+            <h3 style="margin: 0 0 10px 0; color: #333;">Tem certeza?</h3>
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 20px;">
+                Essa ação excluirá permanentemente seu anúncio e não poderá ser desfeita.
+            </p>
+            
+            <div class="form-group" style="text-align: left;">
+                <label style="font-size: 0.85rem; font-weight: 600; color: #444;">Digite sua senha para confirmar:</label>
+                <input type="password" id="inputSenhaDelete" class="input-modal" placeholder="Sua senha atual" style="margin-top: 5px;">
+                <small id="erroSenhaDelete" style="color: #e74c3c; display: none; margin-top: 5px; font-weight: 600;">
+                    <i class='bx bx-error-circle'></i> Senha incorreta.
+                </small>
+            </div>
+        </div>
+
+        <div class="modal-footer" style="justify-content: center; border-top: none; padding-top: 0; gap: 15px;">
+            <button onclick="fecharModalDelete()" class="btn-cancel" style="flex: 1;">Cancelar</button>
+            <button onclick="confirmarExclusaoFinal()" class="btn-save" style="background: #e74c3c; flex: 1; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);">
+                Excluir
+            </button>
+        </div>
+    </div>
+</div>
+
+<div id="modalSuccess" class="modal-overlay" style="z-index: 10001;">
+    <div class="modal-card" style="max-width: 350px; text-align: center; padding: 30px;">
+        
+        <div style="margin: 0 auto 20px auto; width: 70px; height: 70px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i class='bx bx-check' style="font-size: 40px; color: #2ecc71;"></i>
+        </div>
+
+        <h3 style="margin: 0 0 10px 0; color: #333; font-size: 1.5rem;">Sucesso!</h3>
+        
+        <p style="color: #666; font-size: 1rem; margin-bottom: 25px; line-height: 1.5;">
+            O anúncio foi excluído permanentemente da sua lista.
+        </p>
+
+        <button onclick="fecharModalSuccess()" class="btn-solid" style="width: 100%; justify-content: center; background: #2ecc71; border:none; border-radius: 12px; font-size: 1rem; padding: 12px;">
+            OK, Entendi
+        </button>
+    </div>
+</div>
+
+<div id="modalDeleteSimple" class="modal-overlay" style="z-index: 10000;">
+    <div class="modal-card" style="max-width: 400px; text-align: center;">
+        <div class="modal-header" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+            <div style="background: #ffebee; width: 60px; height: 60px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 10px;">
+                <i class='bx bx-trash' style="font-size: 30px; color: #e74c3c;"></i>
+            </div>
+        </div>
+        
+        <div class="modal-body" style="padding-top: 0;">
+            <h3 style="margin: 0 0 10px 0; color: #333;">Excluir Publicação?</h3>
+            <p style="color: #666; font-size: 0.95rem; margin-bottom: 20px;">
+                Você tem certeza que deseja remover este post? Essa ação não pode ser desfeita.
+            </p>
+        </div>
+
+        <div class="modal-footer" style="justify-content: center; border-top: none; padding-top: 0; gap: 15px;">
+            <button onclick="fecharModalDeleteSimple()" class="btn-cancel" style="flex: 1;">Cancelar</button>
+            <button onclick="confirmarExclusaoPost()" class="btn-save" style="background: #e74c3c; flex: 1; box-shadow: 0 4px 10px rgba(231, 76, 60, 0.2);">
+                Sim, Excluir
+            </button>
+        </div>
+    </div>
+</div>
+
     <nav class="bottom-nav">
         <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
         <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <script type="module">
+<script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, onAuthStateChanged, signOut, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
 const firebaseConfig = {
     apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
@@ -501,10 +680,14 @@ const auth = getAuth(app);
 window.db = db;
 window.auth = auth;
 
+// Variáveis Globais
 let userHandleOriginal = ""; 
+let idAnuncioParaDeletar = null; // Para exclusão com senha
+let idPostParaDeletar = null;    // Para exclusão simples
+let colecaoPostParaDeletar = null;
 
 // ==========================================
-// FUNÇÕES DE POSTAGEM UNIFICADA
+// 1. FUNÇÕES DE POSTAGEM (CRIAR)
 // ==========================================
 
 window.ativarModo = function(modo) {
@@ -606,6 +789,8 @@ window.publicarConteudoUnificado = async function(event) {
             window.removerImagemPost();
             btn.innerText = "Publicar";
             btn.disabled = false;
+            // Recarrega o feed sem recarregar a página
+            carregarPosts(user.uid);
         }
     } catch (e) {
         console.error(e);
@@ -616,21 +801,335 @@ window.publicarConteudoUnificado = async function(event) {
 }
 
 // ==========================================
-// FUNÇÕES DE CARREGAMENTO E PERFIL
+// 2. CARREGAR FEED (POSTS E VÍDEOS)
+// ==========================================
+
+window.carregarPosts = async function(uid) {
+    const container = document.getElementById('container-feed-posts');
+    if (!container) return;
+
+    container.innerHTML = `<div style="text-align:center; padding:30px;"><i class='bx bx-loader-alt bx-spin'></i> Carregando publicações...</div>`;
+
+    try {
+        // Busca Posts (Imagens/Texto)
+        const qPosts = query(collection(db, "posts"), where("uid", "==", uid));
+        
+        // Busca Trabalhos (Vídeos)
+        const qTrabalhos = query(collection(db, "trabalhos"), where("uid", "==", uid));
+
+        // Executa as duas buscas ao mesmo tempo
+        const [snapPosts, snapTrabalhos] = await Promise.all([getDocs(qPosts), getDocs(qTrabalhos)]);
+
+        let listaConteudo = [];
+
+        // Processa Posts
+        snapPosts.forEach(doc => {
+            listaConteudo.push({ ...doc.data(), id: doc.id, tipoColecao: 'posts', timestamp: new Date(doc.data().data).getTime() });
+        });
+
+        // Processa Vídeos
+        snapTrabalhos.forEach(doc => {
+            listaConteudo.push({ ...doc.data(), id: doc.id, tipoColecao: 'trabalhos', timestamp: new Date(doc.data().data).getTime() });
+        });
+
+        // Ordena tudo por data (do mais recente para o mais antigo)
+        listaConteudo.sort((a, b) => b.timestamp - a.timestamp);
+
+        container.innerHTML = "";
+
+        if (listaConteudo.length === 0) {
+            container.innerHTML = `<div class="empty-state"><i class='bx bx-camera' style="font-size: 40px; color: #ccc;"></i><h4>Nenhuma publicação</h4><p style="color:#999;">Seus posts aparecerão aqui.</p></div>`;
+            return;
+        }
+
+        // Renderiza
+        listaConteudo.forEach((item) => {
+            const dataPost = new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute:'2-digit' });
+            
+            // Lógica de Mídia (Imagem ou Vídeo)
+            let midiaHtml = '';
+            if (item.tipoColecao === 'trabalhos' && item.videoUrl) {
+                // É VÍDEO
+                midiaHtml = `
+                <div class="midia-post">
+                    <video controls class="midia-post-video" preload="metadata">
+                        <source src="${item.videoUrl}#t=0.1" type="video/mp4">
+                        Seu navegador não suporta vídeos.
+                    </video>
+                </div>`;
+            } else if (item.imagem) {
+                // É IMAGEM
+                midiaHtml = `<div class="midia-post"><img src="${item.imagem}"></div>`;
+            }
+
+            const html = `
+            <div class="post-feed-card" id="card-${item.id}">
+                <div class="header-post">
+                    <div class="user-post">
+                        <img src="${item.autorFoto || 'https://placehold.co/150'}" alt="Avatar">
+                        <div>
+                            <h4>${item.autorUser || item.autorNome}</h4>
+                            <span>${dataPost} • ${item.tipoColecao === 'trabalhos' ? 'Vídeo' : 'Post'}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="post-options-container">
+                        <button class="btn-post-options" onclick="toggleOpcoesPost('${item.id}')">
+                            <i class='bx bx-dots-horizontal-rounded'></i>
+                        </button>
+                        <div id="dropdown-${item.id}" class="dropdown-post-options">
+                            <button onclick="editarDescricaoPost('${item.id}', '${item.tipoColecao}')">
+                                <i class='bx bx-edit'></i> Editar Descrição
+                            </button>
+                            <button class="btn-delete-post" onclick="prepararDelecaoPost('${item.id}', '${item.tipoColecao}')">
+                                <i class='bx bx-trash'></i> Excluir
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <p class="legenda-post" id="legenda-${item.id}">${item.texto || item.descricao || ''}</p>
+                ${midiaHtml}
+                
+                <div class="stats-post">
+                    <div class="action-post"><i class='bx bx-heart'></i> ${item.likes || 0}</div>
+                    <div class="action-post"><i class='bx bx-comment'></i> Comentar</div>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        console.error("Erro ao carregar feed unificado:", e);
+        container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar publicações.</p>`;
+    }
+}
+
+// ==========================================
+// 3. AÇÕES DE POSTS (EDITAR E EXCLUIR SIMPLES)
+// ==========================================
+
+window.toggleOpcoesPost = function(id) {
+    document.querySelectorAll('.dropdown-post-options').forEach(el => {
+        if(el.id !== `dropdown-${id}`) el.classList.remove('show');
+    });
+    const drop = document.getElementById(`dropdown-${id}`);
+    if(drop) drop.classList.toggle('show');
+}
+
+window.addEventListener('click', function(e) {
+    if (!e.target.closest('.post-options-container')) {
+        document.querySelectorAll('.dropdown-post-options').forEach(el => el.classList.remove('show'));
+    }
+});
+
+window.editarDescricaoPost = async function(id, colecao) {
+    const pAtual = document.getElementById(`legenda-${id}`);
+    const novoTexto = prompt("Edite a descrição:", pAtual.innerText);
+    
+    if (novoTexto !== null && novoTexto !== pAtual.innerText) {
+        try {
+            const campo = colecao === 'trabalhos' ? 'descricao' : 'texto';
+            await updateDoc(doc(db, colecao, id), { [campo]: novoTexto });
+            pAtual.innerText = novoTexto;
+            alert("Descrição atualizada!");
+        } catch (e) {
+            console.error(e);
+            alert("Erro ao editar.");
+        }
+    }
+    toggleOpcoesPost(id);
+}
+
+// --- Lógica de Exclusão de POST (SEM SENHA) ---
+
+// 1. Abre modal simples
+window.prepararDelecaoPost = function(id, colecao) {
+    idPostParaDeletar = id;
+    colecaoPostParaDeletar = colecao;
+    document.getElementById('modalDeleteSimple').style.display = 'flex';
+}
+
+// 2. Fecha modal simples
+window.fecharModalDeleteSimple = function() {
+    document.getElementById('modalDeleteSimple').style.display = 'none';
+    idPostParaDeletar = null;
+}
+
+// 3. Executa exclusão direta
+window.confirmarExclusaoPost = async function() {
+    const btn = document.querySelector('#modalDeleteSimple .btn-save');
+    const textoOriginal = btn.innerText;
+    
+    if(!idPostParaDeletar) return;
+
+    btn.innerText = "Excluindo...";
+    btn.disabled = true;
+
+    try {
+        await deleteDoc(doc(db, colecaoPostParaDeletar, idPostParaDeletar));
+
+        // Remove da tela
+        const card = document.getElementById(`card-${idPostParaDeletar}`);
+        if(card) {
+            card.style.opacity = "0";
+            setTimeout(() => card.remove(), 500);
+        }
+
+        fecharModalDeleteSimple();
+
+    } catch (error) {
+        console.error("Erro ao excluir post:", error);
+        alert("Erro ao excluir. Tente novamente.");
+    } finally {
+        btn.innerText = textoOriginal;
+        btn.disabled = false;
+    }
+}
+
+
+// ==========================================
+// 4. ANÚNCIOS (EXCLUSÃO COM SENHA)
+// ==========================================
+
+window.renderizarAnuncios = async function() {
+    const container = document.getElementById('lista-meus-anuncios');
+    if(!container) return;
+    
+    container.innerHTML = '<div style="padding:40px; text-align:center; color:#666;"><i class="bx bx-loader-alt bx-spin"></i> Carregando...</div>'; 
+    
+    try {
+        const usuarioLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
+        const meuUserHandle = usuarioLocal ? usuarioLocal.user : null;
+        
+        if (!meuUserHandle) { container.innerHTML = '<p>Erro: Usuário não identificado.</p>'; return; }
+        
+        const q = query(collection(db, "anuncios"), where("userHandle", "==", meuUserHandle));
+        const querySnapshot = await getDocs(q);
+        
+        container.innerHTML = ''; 
+        
+        if (querySnapshot.empty) { 
+            container.innerHTML = `<div class="empty-state"><i class='bx bx-ghost' style="font-size: 40px;"></i><br>Você ainda não tem anúncios ativos.<br><a href="anunciar.html" style="color:var(--cor0, #0b7768); font-weight:bold;">Criar um agora</a></div>`; 
+            return; 
+        }
+        
+        querySnapshot.forEach((docSnap) => {
+            const anuncio = docSnap.data();
+            const views = anuncio.views || 0;
+            let imgCapa = (anuncio.fotos && anuncio.fotos.length > 0) ? anuncio.fotos[0] : (anuncio.img || 'https://placehold.co/100');
+            
+            const html = `
+            <div class="anuncio-stats-card">
+                <img src="${imgCapa}" class="img-anuncio-mini">
+                <div class="info-anuncio-stats">
+                    <div class="topo-anuncio">
+                        <h4 style="margin:0; font-size:1rem;">${anuncio.titulo}</h4>
+                        <span class="badge-status ativo">ATIVO</span>
+                    </div>
+                    <div class="grid-metricas-anuncio">
+                        <div class="metrica"><i class='bx bx-show'></i> <strong>${views}</strong></div>
+                        <div class="metrica"><i class='bx bx-dollar-circle'></i> <strong>${anuncio.preco || 'A combinar'}</strong></div>
+                    </div>
+                </div>
+                <div class="acoes-anuncio-stats">
+                    <button class="btn-icon-stats" title="Editar" onclick="window.location.href='anunciar.html?id=${docSnap.id}&mode=edit'">
+                        <i class='bx bx-edit'></i>
+                    </button>
+                    <button class="btn-icon-stats" onclick="deletarAnuncio('${docSnap.id}')" style="color:#e74c3c;" title="Excluir">
+                        <i class='bx bx-trash'></i>
+                    </button>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    } catch (error) { 
+        console.error(error); 
+        container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar anúncios.</p>`; 
+    }
+}
+
+// Lógica de exclusão de ANÚNCIO (Com Senha)
+window.deletarAnuncio = function(id) {
+    idAnuncioParaDeletar = id;
+    document.getElementById('inputSenhaDelete').value = "";
+    document.getElementById('erroSenhaDelete').style.display = "none";
+    document.getElementById('modalDelete').style.display = 'flex';
+}
+
+window.fecharModalDelete = function() {
+    document.getElementById('modalDelete').style.display = 'none';
+    idAnuncioParaDeletar = null;
+}
+
+window.fecharModalSuccess = function() {
+    document.getElementById('modalSuccess').style.display = 'none';
+}
+
+// Confirma exclusão COM SENHA (Só para Anúncios)
+window.confirmarExclusaoFinal = async function() {
+    const senha = document.getElementById('inputSenhaDelete').value;
+    const btnConfirmar = document.querySelector('#modalDelete .btn-save');
+    const msgErro = document.getElementById('erroSenhaDelete');
+    
+    if (!senha) {
+        msgErro.innerText = "Digite sua senha para continuar.";
+        msgErro.style.display = 'block';
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const textoOriginal = btnConfirmar.innerText;
+    btnConfirmar.innerText = "Verificando...";
+    btnConfirmar.disabled = true;
+    msgErro.style.display = 'none';
+
+    try {
+        const credential = EmailAuthProvider.credential(user.email, senha);
+        await reauthenticateWithCredential(user, credential);
+
+        if (idAnuncioParaDeletar) {
+            btnConfirmar.innerText = "Excluindo...";
+            await deleteDoc(doc(db, "anuncios", idAnuncioParaDeletar));
+            
+            fecharModalDelete();
+            renderizarAnuncios();
+            document.getElementById('modalSuccess').style.display = 'flex';
+        }
+
+    } catch (error) {
+        console.error("Erro ao excluir anúncio:", error);
+        btnConfirmar.innerText = textoOriginal;
+        btnConfirmar.disabled = false;
+        
+        if (error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
+            msgErro.innerHTML = "<i class='bx bx-error-circle'></i> Senha incorreta.";
+            msgErro.style.display = 'block';
+        } else {
+            msgErro.innerHTML = "<i class='bx bx-error-circle'></i> Erro ao excluir.";
+            msgErro.style.display = 'block';
+        }
+    }
+}
+
+// ==========================================
+// 5. PERFIL E UI GERAL
 // ==========================================
 
 window.carregarStatsSocial = async function(uid) {
     try {
         const qSeguidores = query(collection(db, "relacoes"), where("seguidoUid", "==", uid));
         const snapSeguidores = await getDocs(qSeguidores);
-        const countSeguidores = snapSeguidores.size;
         
         const qSeguindo = query(collection(db, "relacoes"), where("seguidorUid", "==", uid));
         const snapSeguindo = await getDocs(qSeguindo);
-        const countSeguindo = snapSeguindo.size;
 
-        if(document.getElementById('stat-seguidores')) document.getElementById('stat-seguidores').innerText = countSeguidores;
-        if(document.getElementById('stat-seguindo')) document.getElementById('stat-seguindo').innerText = countSeguindo;
+        if(document.getElementById('stat-seguidores')) document.getElementById('stat-seguidores').innerText = snapSeguidores.size;
+        if(document.getElementById('stat-seguindo')) document.getElementById('stat-seguindo').innerText = snapSeguindo.size;
 
         const docUser = await getDoc(doc(db, "usuarios", uid));
         if(docUser.exists()) {
@@ -639,26 +1138,7 @@ window.carregarStatsSocial = async function(uid) {
             if(document.getElementById('stat-avaliacoes-count')) document.getElementById('stat-avaliacoes-count').innerText = numAvaliacoes;
         }
 
-    } catch (e) {
-        console.error("Erro stats social:", e);
-    }
-}
-
-window.carregarPosts = function(uid) {
-    const container = document.getElementById('container-feed-posts');
-    if (!container) return;
-    const q = query(collection(db, "posts"), where("uid", "==", uid), orderBy("data", "desc"));
-    onSnapshot(q, (snapshot) => {
-        container.innerHTML = "";
-        if (snapshot.empty) { container.innerHTML = `<div class="empty-state"><i class='bx bx-camera' style="font-size: 40px; color: #ccc;"></i><h4>Nenhuma publicação</h4><p style="color:#999;">Seus posts aparecerão aqui.</p></div>`; return; }
-        snapshot.forEach((doc) => {
-            const post = doc.data();
-            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long' });
-            const imgHtml = post.imagem ? `<div class="midia-post"><img src="${post.imagem}"></div>` : '';
-            const html = `<div class="post-feed-card"><div class="header-post"><div class="user-post"><img src="${post.autorFoto}" alt="Avatar"><div><h4>${post.autorUser || post.autorNome}</h4><span>${dataPost}</span></div></div><i class='bx bx-dots-horizontal-rounded' style="color:#999;"></i></div><p class="legenda-post">${post.texto}</p>${imgHtml}<div class="stats-post"><div class="action-post"><i class='bx bx-heart'></i> ${post.likes || 0}</div><div class="action-post"><i class='bx bx-comment'></i> Comentar</div></div></div>`;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-    });
+    } catch (e) { console.error("Erro stats social:", e); }
 }
 
 window.carregarPerfil = function() {
@@ -706,36 +1186,6 @@ window.salvarPerfil = async function() {
     } catch (e) { console.error("Erro:", e); alert("Erro ao salvar."); } finally { if(btnSave) { btnSave.innerText = "Salvar Alterações"; btnSave.disabled = false; } }
 }
 
-window.renderizarAnuncios = async function() {
-    const container = document.getElementById('lista-meus-anuncios');
-    if(!container) return;
-    container.innerHTML = '<div style="padding:40px; text-align:center; color:#666;"><i class="bx bx-loader-alt bx-spin"></i> Carregando...</div>'; 
-    try {
-        const usuarioLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-        const meuUserHandle = usuarioLocal ? usuarioLocal.user : null;
-        if (!meuUserHandle) { container.innerHTML = '<p>Erro: Usuário não identificado.</p>'; return; }
-        const q = query(collection(db, "anuncios"), where("userHandle", "==", meuUserHandle));
-        const querySnapshot = await getDocs(q);
-        container.innerHTML = ''; 
-        if (querySnapshot.empty) { container.innerHTML = `<div class="empty-state"><i class='bx bx-ghost' style="font-size: 40px;"></i><br>Você ainda não tem anúncios ativos.<br><a href="anunciar.html" style="color:var(--cor0, #0b7768); font-weight:bold;">Criar um agora</a></div>`; return; }
-        querySnapshot.forEach((docSnap) => {
-            const anuncio = docSnap.data();
-            const views = anuncio.views || 0;
-            let imgCapa = (anuncio.fotos && anuncio.fotos.length > 0) ? anuncio.fotos[0] : (anuncio.img || 'https://placehold.co/100');
-            const html = `<div class="anuncio-stats-card"><img src="${imgCapa}" class="img-anuncio-mini"><div class="info-anuncio-stats"><div class="topo-anuncio"><h4 style="margin:0; font-size:1rem;">${anuncio.titulo}</h4><span class="badge-status ativo">ATIVO</span></div><div class="grid-metricas-anuncio"><div class="metrica"><i class='bx bx-show'></i> <strong>${views}</strong></div><div class="metrica"><i class='bx bx-dollar-circle'></i> <strong>${anuncio.preco || 'A combinar'}</strong></div></div></div><div class="acoes-anuncio-stats"><button class="btn-icon-stats"><i class='bx bx-edit'></i></button><button class="btn-icon-stats" onclick="deletarAnuncio('${docSnap.id}')" style="color:#e74c3c;"><i class='bx bx-trash'></i></button></div></div>`;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-    } catch (error) { console.error(error); container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar anúncios.</p>`; }
-}
-
-window.deletarAnuncio = async function(id) {
-    if(confirm("Excluir este anúncio?")) {
-        try { await deleteDoc(doc(db, "anuncios", id)); alert("Excluído!"); renderizarAnuncios(); } 
-        catch (e) { alert("Erro ao excluir."); }
-    }
-}
-
-// UI HELPERS
 window.abrirTab = function(evt, tabName) {
     document.querySelectorAll(".tab-content").forEach(t => t.style.display = "none");
     document.querySelectorAll(".tab-btn").forEach(t => t.classList.remove("active"));

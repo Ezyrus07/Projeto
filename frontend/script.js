@@ -4,10 +4,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// AQUI ESTAVA O ERRO: Juntei tudo em uma linha só (incluindo sendEmailVerification)
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-// SUAS CHAVES DO PROJETO 'Doke-Site'
+// SUAS CHAVES DO PROJETO
 const firebaseConfig = {
     apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
     authDomain: "doke-site.firebaseapp.com",
@@ -28,6 +29,7 @@ const storage = getStorage(app);
 window.db = db;
 window.auth = auth;
 window.storage = storage;
+// ... resto do seu código ...
 window.collection = collection;
 window.query = query;
 window.getDocs = getDocs;
@@ -326,16 +328,21 @@ window.fecharGaleria = function(event) {
 // ============================================================
 // 5. CARREGAR VÍDEOS NA HOME
 // ============================================================
+// ============================================================
+// 5. CARREGAR VÍDEOS NA HOME (CORRIGIDO)
+// ============================================================
 window.carregarTrabalhosHome = async function() {
     const container = document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
 
+    // Feedback visual de carregamento
     container.innerHTML = '<div style="padding:20px; color:white;">Carregando galeria...</div>';
 
     try {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
-        container.innerHTML = "";
+        
+        container.innerHTML = ""; // Limpa o carregando
 
         if (snapshot.empty) {
             container.innerHTML = '<div style="padding:20px; color:white;">Nenhum trabalho recente.</div>';
@@ -344,32 +351,38 @@ window.carregarTrabalhosHome = async function() {
 
         snapshot.forEach(doc => {
             const data = doc.data();
+            const id = doc.id; // <--- Pegamos o ID do documento aqui
+            
             const nomeSeguro = (data.autorNome || "").replace(/'/g, "");
             const descSegura = (data.descricao || "").replace(/'/g, "");
 
+            // AQUI ESTAVA O ERRO: Usamos 'data' e 'id' agora, não 'dados'
             const html = `
-<div class="tiktok-card" onclick="tocarVideoDoCard(this)">
-    <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
-    <div class="badge-status">${data.tag}</div>
-    <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
-    <div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
-    
-    <div class="video-ui-layer">
-        <div class="video-bottom-info">
-            <div class="provider-info"><span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span></div>
-            <p class="video-desc">${data.descricao}</p>
-            
-<button class="btn-solicitar" 
-        onclick="window.location.href='orcamento.html?uid=${dados.uid || dados.donoUid}&aid=${dados.id}'">
-        Solicitar Orçamento
-    </button>
+            <div class="tiktok-card" onclick="tocarVideoDoCard(this)">
+                <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
+                <div class="badge-status">${data.tag || 'Trabalho'}</div>
+                <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
+                <div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
+                
+                <div class="video-ui-layer">
+                    <div class="video-bottom-info">
+                        <div class="provider-info"><span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span></div>
+                        <p class="video-desc">${data.descricao}</p>
+                        
+                        <button class="btn-solicitar" 
+                                onclick="event.stopPropagation(); window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
+                                Solicitar Orçamento
+                        </button>
 
-        </div>
-    </div>
-</div>`;
+                    </div>
+                </div>
+            </div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Erro ao carregar vídeos:", e);
+        container.innerHTML = '<div style="padding:20px; color:white;">Erro ao carregar vídeos.</div>';
+    }
 }
 
 window.tocarVideoDoCard = function(card) {
@@ -2465,4 +2478,67 @@ window.verPerfilAtual = function() {
     if(window.targetUserUid) {
         window.location.href = `ver-perfil.html?uid=${window.targetUserUid}`;
     }
+}
+
+window.validarCPF = function(cpf) {
+    // Remove tudo que não é dígito
+    cpf = cpf.replace(/[^\d]+/g,'');
+
+    if(cpf == '') return false;
+
+    // Elimina CPFs invalidos conhecidos (ex: 111.111.111-11)
+    if (cpf.length != 11 || 
+        cpf == "00000000000" || 
+        cpf == "11111111111" || 
+        cpf == "22222222222" || 
+        cpf == "33333333333" || 
+        cpf == "44444444444" || 
+        cpf == "55555555555" || 
+        cpf == "66666666666" || 
+        cpf == "77777777777" || 
+        cpf == "88888888888" || 
+        cpf == "99999999999")
+            return false;
+
+    // Valida 1o digito
+    let add = 0;
+    for (let i=0; i < 9; i ++)       
+        add += parseInt(cpf.charAt(i)) * (10 - i);  
+    let rev = 11 - (add % 11);  
+    if (rev == 10 || rev == 11)     
+        rev = 0;    
+    if (rev != parseInt(cpf.charAt(9)))     
+        return false;       
+
+    // Valida 2o digito
+    add = 0;
+    for (let i = 0; i < 10; i ++)        
+        add += parseInt(cpf.charAt(i)) * (11 - i);  
+    rev = 11 - (add % 11);  
+    if (rev == 10 || rev == 11) 
+        rev = 0;    
+    if (rev != parseInt(cpf.charAt(10)))
+        return false;       
+
+    return true;   
+}
+
+window.validarTelefoneBR = function(telefone) {
+    // Remove tudo que não for número
+    let cleanPhone = telefone.replace(/\D/g, '');
+
+    // Verifica se tem 10 ou 11 dígitos (Fixo ou Celular)
+    // DD + Número
+    if (cleanPhone.length < 10 || cleanPhone.length > 11) return false;
+
+    // Verifica se o DDD é válido (existem de 11 a 99)
+    const ddd = parseInt(cleanPhone.substring(0, 2));
+    if (ddd < 11 || ddd > 99) return false;
+
+    // Se for celular (11 dígitos), deve começar com 9
+    if (cleanPhone.length === 11 && cleanPhone[2] !== '9') {
+        return false;
+    }
+
+    return true;
 }
