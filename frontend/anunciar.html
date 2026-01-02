@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anunciar Serviço Completo | Doke</title>
     <link rel="stylesheet" href="style.css">
-    <script type="module" src="script.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    
     <style>
         /* ======================================================
            ESTILOS (PREMIUM & LARGO)
@@ -93,6 +93,15 @@
         .galeria-preview-container { display: flex; gap: 10px; margin-top: 15px; flex-wrap: wrap; }
         .foto-thumb { width: 80px; height: 80px; border-radius: 10px; object-fit: cover; border: 1px solid #ddd; position: relative; }
         .btn-remove-foto { position: absolute; top: -5px; right: -5px; background: red; color: white; border-radius: 50%; width: 20px; height: 20px; font-size: 12px; display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 2; }
+
+        /* DIPLOMA UPLOAD (Novo Estilo) */
+        .diploma-zone {
+            border: 2px dashed #bbb; border-radius: 12px; padding: 20px;
+            text-align: center; background: #fff; cursor: pointer; transition: 0.3s;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+        .diploma-zone:hover { border-color: var(--cor2); background: #f4f8fb; }
+        .diploma-zone.attached { border-color: var(--cor0); background: #f0fdfa; }
 
         /* Multi-Select */
         .multi-select-container {
@@ -187,28 +196,7 @@
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
         <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
-
-    <header class="navbar-desktop">
-        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group"><input type="text" id="inputCep" placeholder="00000-000" maxlength="9"><button onclick="salvarCep()">OK</button></div>
-                </div>
-            </div>
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
-    </header>
 
     <header class="navbar-mobile">
         <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a></div>
@@ -296,12 +284,15 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>Diploma ou Certificado (Opcional)</label>
-                            <div class="upload-zone" onclick="document.getElementById('upload-diploma').click()">
-                                <i class='bx bx-cloud-upload'></i><span>Clique para enviar PDF ou Imagem</span>
-                                <input type="file" id="upload-diploma" onchange="mostrarNomeArquivo(this)">
-                                <div class="file-name-display"></div>
+                            <label>Diploma ou Certificado (PDF ou Imagem)</label>
+                            <div class="diploma-zone" id="box-diploma" onclick="document.getElementById('upload-diploma').click()">
+                                <div id="diploma-ui">
+                                    <i class='bx bx-file-blank' style="font-size: 1.8rem; color: #777;"></i>
+                                    <span style="color:#555;">Clique para anexar arquivo</span>
+                                </div>
+                                <input type="file" id="upload-diploma" accept=".pdf, .jpg, .jpeg, .png" style="display:none;" onchange="processarDiploma(this)">
                             </div>
+                            <small style="color:#888; margin-top:5px; display:block;">Isso aumenta a confiança do cliente.</small>
                         </div>
 
                         <div class="form-group"><label>Garantia</label><textarea id="garantia" style="min-height:80px;" placeholder="Detalhes da garantia..."></textarea></div>
@@ -456,16 +447,48 @@
         </div>
     </main>
 
-<script type="module">
-        import { doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    <script type="module" src="script.js"></script>
+    <script type="module">
+        import { doc, getDoc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
         
-        // Disponibiliza as funções globalmente (window)
+        // Globais para o HTML acessar
         window.doc = doc;
         window.getDoc = getDoc;
         window.updateDoc = updateDoc;
+        window.addDoc = addDoc;
+        window.collection = collection;
+        window.ref = ref;
+        window.uploadBytes = uploadBytes;
+        window.getDownloadURL = getDownloadURL;
+        window.getStorage = getStorage;
+        window.getAuth = getAuth;
     </script>
 
     <script>
+    // --- LÓGICA DE DIPLOMA ---
+    window.diplomaFile = null;
+    window.processarDiploma = function(input) {
+        if (input.files && input.files[0]) {
+            const file = input.files[0];
+            window.diplomaFile = file;
+            
+            // UI Update
+            const ui = document.getElementById('diploma-ui');
+            const box = document.getElementById('box-diploma');
+            
+            ui.innerHTML = `
+                <i class='bx bxs-check-circle' style="font-size: 2rem; color: var(--cor0);"></i>
+                <div>
+                    <strong style="color:var(--cor0); display:block;">Arquivo Selecionado!</strong>
+                    <span style="font-size:0.8rem; color:#555;">${file.name}</span>
+                </div>
+            `;
+            box.classList.add('attached');
+        }
+    }
+
     // --- LÓGICA DE PROTEÇÃO DE ACESSO (LOGIN E PROFISSIONAL) ---
     document.addEventListener("DOMContentLoaded", function() {
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
@@ -477,14 +500,11 @@
             return;
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO DE DADOS DE PERFIL (APENAS SE NÃO FOR EDIÇÃO) ---
-        // Se for edição, o preenchimento será feito pela função carregarDadosParaEdicao
+        // --- PREENCHIMENTO AUTOMÁTICO DE DADOS DE PERFIL ---
         const params = new URLSearchParams(window.location.search);
         if (!params.get('mode') && perfilLocal) {
-            
             const inputNome = document.getElementById('nome_doc');
             if (inputNome) inputNome.value = perfilLocal.nome || "";
-
             const inputDoc = document.getElementById('doc_num');
             if (inputDoc && perfilLocal.cpf_cnpj) {
                 inputDoc.value = perfilLocal.cpf_cnpj;
@@ -493,7 +513,6 @@
                     if (radioPJ) { radioPJ.checked = true; toggleCNPJ(); }
                 }
             }
-
             const inputTel = document.getElementById('telefone');
             if (inputTel) inputTel.value = perfilLocal.telefone_comercial || perfilLocal.telefone || "";
 
@@ -514,14 +533,12 @@
 
         // 2. Verifica se é profissional
         if (!perfilLocal || perfilLocal.isProfissional !== true) {
-            // Aplica o desfoque no conteúdo principal (main)
             const mainContent = document.querySelector('main');
             if (mainContent) {
                 mainContent.style.filter = "blur(12px)";
                 mainContent.style.pointerEvents = "none"; 
                 mainContent.style.userSelect = "none";    
             }
-            // Injeta CSS do bloqueio
             const style = document.createElement('style');
             style.innerHTML = `.lock-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255, 255, 255, 0.4); display: flex; align-items: center; justify-content: center; z-index: 99999; font-family: 'Poppins', sans-serif; } .lock-card { background: white; padding: 40px; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.1); text-align: center; max-width: 420px; width: 90%; } .lock-btn-go { background: #2ecc71; color: white; padding: 15px 30px; border-radius: 12px; text-decoration: none; font-weight: bold; display: inline-block; margin-bottom: 15px; } .lock-icon-circle { width: 70px; height: 70px; background: #e8f5e9; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; } .lock-icon-circle i { font-size: 35px; color: #2ecc71; }`;
             document.head.appendChild(style);
@@ -618,10 +635,9 @@
         document.getElementById('lbl-doc').innerText = (val === 'PJ') ? "CNPJ" : "CPF";
     }
 
-    // --- CONTROLE DE STEPS (COM PULO DO PASSO 3 NA EDIÇÃO) ---
+    // --- CONTROLE DE STEPS ---
     let step = 1;
     window.changeStep = function(dir) {
-        // Validação ao avançar
         if(dir === 1) {
             const inputs = document.getElementById(`step-${step}`).querySelectorAll('input[required], select[required], textarea[required]');
             let valid = true;
@@ -629,28 +645,19 @@
             if(!valid) return;
         }
 
-        // Esconde passo atual
         document.getElementById(`step-${step}`).classList.remove('active');
         document.getElementById(`p-${step}`).classList.remove('active');
         
         let proximoPasso = step + dir;
-
-        // *** LÓGICA DE PULO NA EDIÇÃO ***
-        // Se estiver editando (anuncioIdEdicao existe) e tentar ir para o passo 3:
         if (anuncioIdEdicao && proximoPasso === 3) {
-            // Se estiver indo pra frente (2 -> 3), pula para 4
             if (dir > 0) proximoPasso = 4;
-            // Se estiver voltando (4 -> 3), pula para 2
             else proximoPasso = 2;
         }
 
         step = proximoPasso;
-
-        // Mostra novo passo
         document.getElementById(`step-${step}`).classList.add('active');
         document.getElementById(`p-${step}`).classList.add('active');
         
-        // Controle dos botões
         document.getElementById('btn-prev').style.display = step > 1 ? 'block' : 'none';
         if(step === 4) {
             document.getElementById('btn-next').style.display = 'none';
@@ -702,7 +709,7 @@
         };
 
         if (tipo === 'fechada' && novaQuestao.opcoes.length < 2) {
-            alert("Adicione pelo menos 2 alternativas separadas por vírgula."); return;
+            alert("Adicione pelo menos 2 alternativas."); return;
         }
 
         perguntasArray.push(novaQuestao);
@@ -743,12 +750,10 @@
 
         if (idAnuncio && modo === 'edit') {
             anuncioIdEdicao = idAnuncio;
-            console.log("Modo Edição Ativado:", idAnuncio);
             
             document.querySelector('.anuncio-hero-container h1').innerText = "Editar Anúncio";
             document.querySelector('.anuncio-hero-container p').innerText = "Atualize as informações do seu serviço.";
             
-            // Oculta visualmente o passo 3 no cabeçalho
             const step3Circle = document.getElementById('p-3');
             if(step3Circle) step3Circle.style.display = 'none';
 
@@ -774,13 +779,10 @@
                 alert("Anúncio não encontrado!");
                 window.location.href = "meuperfil.html";
             }
-        } catch (e) {
-            console.error("Erro ao buscar:", e);
-        }
+        } catch (e) { console.error("Erro ao buscar:", e); }
     }
 
     function preencherCampos(dados) {
-        // STEP 1
         document.getElementById('titulo').value = dados.titulo || "";
         document.getElementById('tags').value = dados.tags ? dados.tags.join(', ') : "";
         document.getElementById('descricao').value = dados.descricao || "";
@@ -817,15 +819,20 @@
             });
         }
 
-        // STEP 2
         if(document.getElementById('experiencia')) document.getElementById('experiencia').value = dados.experiencia || "";
         if(document.getElementById('prazo')) document.getElementById('prazo').value = dados.prazo || "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
         if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || "Flexível";
         if(document.getElementById('emergencia')) document.getElementById('emergencia').checked = (dados.atendeEmergencia === true);
 
-        // STEP 3 (Dados Pessoais - Apenas preenche, mas o usuário não vê na edição)
-        // Correção de Bug: Verifica se salvou como 'cidade' ou 'ciudad' (legado)
+        // Preenche info do DIPLOMA (apenas texto visual se já existir)
+        if(dados.diplomaUrl) {
+            const ui = document.getElementById('diploma-ui');
+            const box = document.getElementById('box-diploma');
+            ui.innerHTML = `<i class='bx bxs-check-circle' style="font-size:2rem; color:var(--cor0);"></i><div style="text-align:left;"><strong style="color:var(--cor0);">Diploma Anexado</strong><br><span style="font-size:0.8rem; color:#666;">Já existe um arquivo salvo. Envie outro para substituir.</span></div>`;
+            box.classList.add('attached');
+        }
+
         if(document.getElementById('cep')) document.getElementById('cep').value = dados.cep || "";
         if(document.getElementById('cidade')) document.getElementById('cidade').value = dados.cidade || dados.ciudad || ""; 
         if(document.getElementById('uf')) document.getElementById('uf').value = dados.uf || "";
@@ -839,7 +846,6 @@
             });
         }
 
-        // STEP 4
         if (dados.agenda) {
             Object.keys(dados.agenda).forEach(dia => {
                 const info = dados.agenda[dia];
@@ -857,78 +863,98 @@
 
         if (dados.perguntasFormularioJson) {
             try {
-                let perguntasRecuperadas = typeof dados.perguntasFormularioJson === 'string' 
-                    ? JSON.parse(dados.perguntasFormularioJson) 
-                    : dados.perguntasFormularioJson;
-                
+                let perguntasRecuperadas = typeof dados.perguntasFormularioJson === 'string' ? JSON.parse(dados.perguntasFormularioJson) : dados.perguntasFormularioJson;
                 perguntasArray.length = 0; 
                 perguntasRecuperadas.forEach(p => perguntasArray.push(p));
-                
                 document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
                 if(window.renderizarListaPerguntas) window.renderizarListaPerguntas();
             } catch (err) { console.log("Erro quiz:", err); }
         }
     }
 
-    // Função de SALVAR a edição
+    // --- FUNÇÃO DE PUBLICAR NOVO ANÚNCIO ---
+    window.publicarAnuncio = async function(event) {
+        event.preventDefault();
+        const btn = document.getElementById('btn-submit');
+        btn.innerText = "Publicando...";
+        btn.disabled = true;
+
+        try {
+            const auth = window.getAuth();
+            const user = auth.currentUser;
+            if(!user) throw new Error("Usuário não autenticado");
+
+            // 1. Upload Diploma
+            let diplomaUrlFinal = "";
+            if (window.diplomaFile) {
+                const storage = window.getStorage();
+                const storageRef = window.ref(storage, `diplomas/${user.uid}/${Date.now()}_${window.diplomaFile.name}`);
+                await window.uploadBytes(storageRef, window.diplomaFile);
+                diplomaUrlFinal = await window.getDownloadURL(storageRef);
+            }
+
+            // 2. Coleta Dados Comuns
+            const dadosComuns = coletarDadosDoForm();
+            dadosComuns.uid = user.uid;
+            dadosComuns.diplomaUrl = diplomaUrlFinal;
+            dadosComuns.dataCriacao = new Date().toISOString();
+            
+            // Dados Autor
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            dadosComuns.nomeAutor = perfilLocal.nome || "Anônimo";
+            dadosComuns.fotoAutor = perfilLocal.foto || "";
+            dadosComuns.userHandle = perfilLocal.userHandle || "";
+
+            await window.addDoc(window.collection(window.db, "anuncios"), dadosComuns);
+            
+            alert("Anúncio publicado com sucesso!");
+            window.location.href = "meuperfil.html";
+            
+        } catch (erro) {
+            console.error(erro);
+            alert("Erro ao publicar: " + erro.message);
+            btn.innerText = "Publicar Anúncio";
+            btn.disabled = false;
+        }
+    }
+
+    // --- FUNÇÃO DE ATUALIZAR (EDITAR) ---
     window.atualizarAnuncioExistente = async function() {
         const btn = document.getElementById('btn-submit');
         btn.innerText = "Salvando...";
         btn.disabled = true;
 
         try {
-            const titulo = document.getElementById('titulo').value;
-            const descricao = document.getElementById('descricao').value;
-            const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value;
-            
-            const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value;
-            let precoFinal = (tipoPreco === 'Preço Fixo') ? document.getElementById('valor').value : tipoPreco;
+            const auth = window.getAuth();
+            const user = auth.currentUser;
 
-            const tagsVal = document.getElementById('tags').value;
+            // 1. Upload Diploma se mudou
+            let diplomaUrlFinal = "";
             
-            // Dados ocultos do passo 3 (mantidos ou editados via código se necessário)
-            const cep = document.getElementById('cep').value;
-            const cidade = document.getElementById('cidade').value;
-            const uf = document.getElementById('uf').value;
-            const bairro = document.getElementById('bairro').value;
-            const telefone = document.getElementById('telefone').value;
+            // Recupera URL antiga primeiro (precisamos ler o doc atual ou confiar que não mudou se diplomaFile for null)
+            // Para simplificar, vamos assumir que se não tem arquivo novo, mantém o antigo.
+            // Mas precisamos saber qual é o antigo. Vamos ler o doc novamente? Não, já lemos no load.
+            // Vamos fazer o seguinte: se diplomaFile existe, sobe e usa a nova URL. Se não, não enviamos o campo diplomaUrl (update parcial) ou enviamos o antigo se tivessemos salvo numa var global.
+            // Melhor: vamos ler o doc atual no banco rapidinho ou usar lógica condicional no update.
             
-            const pags = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
+            let updateData = coletarDadosDoForm();
+            
+            if (window.diplomaFile) {
+                const storage = window.getStorage();
+                const storageRef = window.ref(storage, `diplomas/${user ? user.uid : 'edit'}/${Date.now()}_${window.diplomaFile.name}`);
+                await window.uploadBytes(storageRef, window.diplomaFile);
+                diplomaUrlFinal = await window.getDownloadURL(storageRef);
+                updateData.diplomaUrl = diplomaUrlFinal; // Só atualiza se tiver novo
+            }
+            // Se não tiver novo arquivo, o campo 'diplomaUrl' não vai no updateData? 
+            // A função coletarDadosDoForm não pega URL antiga. Então deletamos a chave se estiver vazia?
+            // Não, o updateDoc mescla. Se a gente não passar a chave, ele mantém a antiga.
+            // O problema é que coletarDadosDoForm não retorna a chave diplomaUrl. Entao está seguro.
 
-            const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
-            let agendaObj = {};
-            dias.forEach(d => {
-                const ativo = document.getElementById(`chk-${d}`).checked;
-                const ini = document.getElementById(`${d}-inicio`).value;
-                const fim = document.getElementById(`${d}-fim`).value;
-                agendaObj[d] = { ativo: ativo, inicio: ini, fim: fim };
-            });
-
-            const dadosAtualizados = {
-                titulo: titulo,
-                descricao: descricao,
-                categorias: document.getElementById('categorias-validacao').value,
-                tags: tagsVal.split(',').map(t => t.trim()),
-                modo_atend: modoAtend,
-                preco: precoFinal,
-                // CORREÇÃO: "cidade: cidade" (estava ciudad: cidade antes)
-                cep: cep, cidade: cidade, uf: uf, bairro: bairro, whatsapp: telefone,
-                pagamentosAceitos: pags,
-                agenda: agendaObj,
-                experiencia: document.getElementById('experiencia').value,
-                prazo: document.getElementById('prazo').value,
-                garantia: document.getElementById('garantia').value,
-                politicaCancelamento: document.getElementById('politica').value,
-                atendeEmergencia: document.getElementById('emergencia').checked,
-                fotos: window.fotosParaEnviar,
-                img: window.fotosParaEnviar[0] || "",
-                perguntasFormularioJson: JSON.stringify(perguntasArray),
-                temFormulario: perguntasArray.length > 0,
-                dataAtualizacao: new Date().toISOString()
-            };
+            updateData.dataAtualizacao = new Date().toISOString();
 
             const docRef = window.doc(window.db, "anuncios", anuncioIdEdicao);
-            await window.updateDoc(docRef, dadosAtualizados);
+            await window.updateDoc(docRef, updateData);
 
             alert("Anúncio atualizado com sucesso!");
             window.location.href = "meuperfil.html"; 
@@ -939,6 +965,51 @@
             btn.innerText = "Salvar Alterações";
             btn.disabled = false;
         }
+    }
+
+    function coletarDadosDoForm() {
+        const titulo = document.getElementById('titulo').value;
+        const descricao = document.getElementById('descricao').value;
+        const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value;
+        const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value;
+        let precoFinal = (tipoPreco === 'Preço Fixo') ? document.getElementById('valor').value : tipoPreco;
+        const tagsVal = document.getElementById('tags').value;
+        const cep = document.getElementById('cep').value;
+        const cidade = document.getElementById('cidade').value;
+        const uf = document.getElementById('uf').value;
+        const bairro = document.getElementById('bairro').value;
+        const telefone = document.getElementById('telefone').value;
+        const pags = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
+
+        const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
+        let agendaObj = {};
+        dias.forEach(d => {
+            const ativo = document.getElementById(`chk-${d}`).checked;
+            const ini = document.getElementById(`${d}-inicio`).value;
+            const fim = document.getElementById(`${d}-fim`).value;
+            agendaObj[d] = { ativo: ativo, inicio: ini, fim: fim };
+        });
+
+        return {
+            titulo: titulo,
+            descricao: descricao,
+            categorias: document.getElementById('categorias-validacao').value,
+            tags: tagsVal.split(',').map(t => t.trim()),
+            modo_atend: modoAtend,
+            preco: precoFinal,
+            cep: cep, cidade: cidade, uf: uf, bairro: bairro, whatsapp: telefone,
+            pagamentosAceitos: pags,
+            agenda: agendaObj,
+            experiencia: document.getElementById('experiencia').value,
+            prazo: document.getElementById('prazo').value,
+            garantia: document.getElementById('garantia').value,
+            politicaCancelamento: document.getElementById('politica').value,
+            atendeEmergencia: document.getElementById('emergencia').checked,
+            fotos: window.fotosParaEnviar,
+            img: window.fotosParaEnviar[0] || "",
+            perguntasFormularioJson: JSON.stringify(perguntasArray),
+            temFormulario: perguntasArray.length > 0
+        };
     }
     </script>
 </body>

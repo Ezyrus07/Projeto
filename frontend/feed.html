@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Feed | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+</head>
+<body>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="mobile-controls"><button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu'></i></button></div>
+    </header>
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+    <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span></a>
+        </div>
+        <div class="item">
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span></a>
+        </div>
+        <div class="item">
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <a href="chat.html"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
+            <span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
+            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+            <a href="mais.html"><span>Mais</span></a>
+        </div>
+    </aside>
+
+    <main class="feed-main-container">
+        
+        <div class="reels-scroll-container" id="containerReels">
+            <div style="text-align:center; padding:50px; color:white;">
+                <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i> Carregando Feed...
+            </div>
+        </div>
+
+    </main>
+
+    <nav class="bottom-nav">
+        </nav>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, query, orderBy, limit, getDocs, doc, updateDoc, increment } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        // CONFIGURAÇÃO DO FIREBASE (Mesma do seu script.js)
+        const firebaseConfig = {
+            apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
+            authDomain: "doke-site.firebaseapp.com",
+            projectId: "doke-site",
+            storageBucket: "doke-site.firebasestorage.app",
+            messagingSenderId: "997098339190",
+            appId: "1:997098339190:web:a865b696278be21f069857"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // --- LÓGICA DO FEED TIKTOK ---
+        
+async function carregarReels() {
+    const container = document.getElementById('containerReels');
+    
+    const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(20));
+    const snapshot = await getDocs(q);
+
+    container.innerHTML = "";
+
+    if(snapshot.empty) {
+        container.innerHTML = "<p style='color:white; text-align:center; padding:50px;'>Sem vídeos no momento.</p>";
+        return;
+    }
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        const id = doc.id;
+        const perfilFoto = data.fotoAutor || "https://placehold.co/150"; // Tenta pegar foto do autor se tiver salvo
+
+        const html = `
+        <div class="reel-page" id="reel-${id}">
+            <div class="reel-layout-wrapper">
+                
+                <div class="reel-video-area">
+                    <video class="reel-video" loop playsinline src="${data.videoUrl}" onclick="togglePlay(this)"></video>
+                    <div class="pause-overlay"><i class='bx bx-play'></i></div>
+                    
+                    <div class="mobile-overlay-info">
+                        <h3 style="color:white; margin:0;">${data.autorNome}</h3>
+                        <p style="color:#ddd; font-size:0.9rem;">${data.descricao.substring(0, 50)}...</p>
+                        <button class="btn-orcamento-reel" style="margin-top:10px; padding:10px;" onclick="window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
+                            Orçamento
+                        </button>
+                    </div>
+                </div>
+
+                <div class="reel-sidebar-area">
+                    
+                    <div>
+                        <div class="reel-header-info">
+                            <img src="${perfilFoto}" class="reel-avatar">
+                            <div class="reel-user-name">
+                                <h3>${data.autorNome || '@usuario'}</h3>
+                                <span>${data.tag || 'Profissional'}</span>
+                            </div>
+                            <button style="margin-left:auto; background:#086659; color:white; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:600;">Seguir</button>
+                        </div>
+
+                        <div class="reel-description-scroll">
+                            <p class="reel-desc-text">${data.descricao}</p>
+                            <span class="tag-badge"><i class='bx bx-hash'></i> ${data.categoria || 'Serviço'}</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="reel-actions-bar">
+                            <div class="reel-action-btn" onclick="curtirReel('${id}', this)">
+                                <i class='bx bxs-heart'></i>
+                                <span>${data.likes || 0}</span>
+                            </div>
+                            <div class="reel-action-btn">
+                                <i class='bx bxs-message-rounded-dots'></i>
+                                <span>Comentar</span>
+                            </div>
+                            <div class="reel-action-btn" onclick="compartilharReel('${data.titulo}')">
+                                <i class='bx bxs-share-alt'></i>
+                                <span>Enviar</span>
+                            </div>
+                        </div>
+
+                        <div class="reel-cta-area">
+                            <button class="btn-orcamento-reel" onclick="window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
+                                Solicitar Orçamento
+                            </button>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>`;
+        
+        container.insertAdjacentHTML('beforeend', html);
+    });
+
+    iniciarObserver();
+}
+
+        // AUTO-PLAY AO ROLAR (Intersection Observer)
+        function iniciarObserver() {
+            const videos = document.querySelectorAll('.reel-video');
+            
+            const observer = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const video = entry.target;
+                    if (entry.isIntersecting) {
+                        video.currentTime = 0; // Reinicia ou continua
+                        video.play().catch(e => console.log("Interação necessária para som"));
+                    } else {
+                        video.pause();
+                    }
+                });
+            }, { threshold: 0.6 }); // 60% do vídeo visível para tocar
+
+            videos.forEach(video => observer.observe(video));
+        }
+
+        // Funções Globais para o HTML acessar
+        window.togglePlay = function(video) {
+            const page = video.closest('.reel-page');
+            const icon = page.querySelector('.pause-overlay');
+            if (video.paused) {
+                video.play();
+                icon.style.opacity = '0';
+            } else {
+                video.pause();
+                icon.style.opacity = '1';
+                icon.style.transform = 'translate(-50%, -50%) scale(1.2)';
+                setTimeout(() => icon.style.transform = 'translate(-50%, -50%) scale(1)', 200);
+            }
+        }
+
+        window.curtirReel = async function(id, btn) {
+            const icon = btn.querySelector('i');
+            const span = btn.querySelector('span');
+            
+            icon.style.color = '#e74c3c';
+            icon.classList.add('bx-tada'); // Animação
+            
+            // Simulação visual de incremento
+            let atual = parseInt(span.innerText);
+            span.innerText = atual + 1;
+
+            // Atualiza no banco
+            try {
+                await updateDoc(doc(db, "trabalhos", id), { likes: increment(1) });
+            } catch(e) { console.error(e); }
+        }
+
+        window.compartilharReel = function(texto) {
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Doke',
+                    text: texto,
+                    url: window.location.href
+                });
+            } else {
+                alert("Link copiado!");
+            }
+        }
+
+        // Inicia
+        carregarReels();
+
+        // Verifica Auth para Sidebar
+        onAuthStateChanged(auth, (user) => {
+            if(user) localStorage.setItem('usuarioLogado', 'true');
+            // Aqui você pode chamar a função do script.js principal se quiser carregar avatar
+        });
+
+    </script>
+</body>
+</html>

@@ -325,24 +325,17 @@ window.fecharGaleria = function(event) {
 }
 
 
-// ============================================================
-// 5. CARREGAR VÍDEOS NA HOME
-// ============================================================
-// ============================================================
-// 5. CARREGAR VÍDEOS NA HOME (CORRIGIDO)
-// ============================================================
 window.carregarTrabalhosHome = async function() {
     const container = document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
 
-    // Feedback visual de carregamento
     container.innerHTML = '<div style="padding:20px; color:white;">Carregando galeria...</div>';
 
     try {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
         
-        container.innerHTML = ""; // Limpa o carregando
+        container.innerHTML = ""; 
 
         if (snapshot.empty) {
             container.innerHTML = '<div style="padding:20px; color:white;">Nenhum trabalho recente.</div>';
@@ -351,14 +344,15 @@ window.carregarTrabalhosHome = async function() {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            const id = doc.id; // <--- Pegamos o ID do documento aqui
+            const id = doc.id;
             
-            const nomeSeguro = (data.autorNome || "").replace(/'/g, "");
-            const descSegura = (data.descricao || "").replace(/'/g, "");
-
-            // AQUI ESTAVA O ERRO: Usamos 'data' e 'id' agora, não 'dados'
-            const html = `
-            <div class="tiktok-card" onclick="tocarVideoDoCard(this)">
+            // AQUI ESTÁ A MÁGICA: Adicionamos onmouseenter e onmouseleave
+        const html = `
+        <div class="tiktok-card" 
+            onclick="window.location.href='feed.html'" 
+            onmouseenter="iniciarPreview(this)" 
+            onmouseleave="pararPreview(this)">
+                 
                 <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
                 <div class="badge-status">${data.tag || 'Trabalho'}</div>
                 <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
@@ -2541,4 +2535,49 @@ window.validarTelefoneBR = function(telefone) {
     }
 
     return true;
+}
+
+// ============================================================
+// FUNÇÕES DE PREVIEW DE VÍDEO (HOVER)
+// ============================================================
+
+window.iniciarPreview = function(card) {
+    const videoSrc = card.querySelector('.video-src-hidden').value;
+    
+    // Se não tiver link de vídeo, não faz nada
+    if (!videoSrc || videoSrc === "undefined") return;
+
+    // Verifica se o vídeo já existe para não criar duplicado
+    let video = card.querySelector('.video-preview-hover');
+
+    if (!video) {
+        // Cria o elemento de vídeo dinamicamente
+        video = document.createElement('video');
+        video.src = videoSrc;
+        video.className = 'video-preview-hover';
+        video.muted = true; // OBRIGATÓRIO: Navegadores só dão autoplay se estiver mudo
+        video.loop = true;
+        video.playsInline = true;
+        
+        // Insere o vídeo antes do ícone de play (para ficar embaixo da UI layer)
+        const playIcon = card.querySelector('.play-icon');
+        card.insertBefore(video, playIcon);
+    }
+
+    // Tenta reproduzir
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log('Autoplay prevenido pelo navegador (interaja com a página primeiro)');
+        });
+    }
+}
+
+window.pararPreview = function(card) {
+    const video = card.querySelector('.video-preview-hover');
+    if (video) {
+        video.pause();
+        video.currentTime = 0; // Volta para o início
+        video.remove(); // Remove o elemento para economizar memória do navegador
+    }
 }
