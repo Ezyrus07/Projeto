@@ -2586,3 +2586,43 @@ window.pararPreview = function(card) {
         video.remove(); // Remove o elemento para economizar memória do navegador
     }
 }
+
+// Função para alternar a visibilidade dos campos de endereço
+    window.toggleAddressFields = function() {
+        const modoAtend = document.querySelector('input[name="modo_atend"]:checked').value;
+        const addressContainer = document.getElementById('address-fields-container');
+        
+        // Se for "Online", esconde. Se for "Presencial" ou "Ambos", mostra.
+        if (modoAtend === 'Online') {
+            addressContainer.style.display = 'none';
+            // Opcional: Limpar os campos ao esconder para não enviar lixo
+            // document.getElementById('cep').value = '';
+            // document.getElementById('cidade').value = ''; 
+            // etc...
+        } else {
+            addressContainer.style.display = 'block';
+        }
+    }
+
+    // Adicione o listener 'onchange' aos radio buttons no HTML
+    // Localize esta parte no step-1 e atualize:
+    /*
+    <div class="form-group">
+        <label>Tipo de Atendimento</label>
+        <div class="toggle-wrapper">
+            <div class="radio-card"><input type="radio" name="modo_atend" id="presencial" value="Presencial" checked onchange="toggleAddressFields()"><label for="presencial">Presencial</label></div>
+            <div class="radio-card"><input type="radio" name="modo_atend" id="online" value="Online" onchange="toggleAddressFields()"><label for="online">Online</label></div>
+            <div class="radio-card"><input type="radio" name="modo_atend" id="ambos" value="Ambos" onchange="toggleAddressFields()"><label for="ambos">Ambos</label></div>
+        </div>
+    </div>
+    */
+
+    // Chame a função uma vez no carregamento da página para definir o estado inicial (caso esteja editando)
+    document.addEventListener("DOMContentLoaded", function() {
+        // ... (seu código existente) ...
+        
+        // Adicione isso no final do DOMContentLoaded ou na função de carregarDadosParaEdicao
+        if(document.querySelector('input[name="modo_atend"]:checked')) {
+             toggleAddressFields();
+        }
+    });
