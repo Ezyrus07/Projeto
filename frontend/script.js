@@ -326,19 +326,19 @@ window.fecharGaleria = function(event) {
 
 
 window.carregarTrabalhosHome = async function() {
-    const container = document.querySelector('.tiktok-scroll-wrapper');
+    const container = document.getElementById('galeria-dinamica') || document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
 
-    container.innerHTML = '<div style="padding:20px; color:white;">Carregando galeria...</div>';
-
     try {
-        const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
+        // Buscamos os ANÚNCIOS reais (onde você configurou se é Online ou Presencial)
+        // Ordenados pelos mais recentes
+        const q = query(collection(db, "anuncios"), orderBy("dataCriacao", "desc"), limit(10));
         const snapshot = await getDocs(q);
         
         container.innerHTML = ""; 
 
         if (snapshot.empty) {
-            container.innerHTML = '<div style="padding:20px; color:white;">Nenhum trabalho recente.</div>';
+            container.innerHTML = '<div style="padding:20px; color:white;">Nenhum serviço disponível no momento.</div>';
             return;
         }
 
@@ -346,36 +346,50 @@ window.carregarTrabalhosHome = async function() {
             const data = doc.data();
             const id = doc.id;
             
-            // AQUI ESTÁ A MÁGICA: Adicionamos onmouseenter e onmouseleave
-        const html = `
-        <div class="tiktok-card" 
-            onclick="window.location.href='feed.html'" 
-            onmouseenter="iniciarPreview(this)" 
-            onmouseleave="pararPreview(this)">
-                 
-                <textarea style="display:none;" class="video-src-hidden">${data.videoUrl}</textarea>
-                <div class="badge-status">${data.tag || 'Trabalho'}</div>
-                <img src="${data.capa}" class="video-bg" alt="Capa" style="object-fit: cover;">
-                <div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>
+            // Tratamento de Imagem (Pega a primeira foto ou uma padrão)
+            let imagemCapa = "https://placehold.co/300x500?text=Sem+Imagem";
+            if (data.img) imagemCapa = data.img;
+            else if (data.fotos && data.fotos.length > 0) imagemCapa = data.fotos[0];
+
+            // Define o tipo de atendimento para mostrar na etiqueta
+            const etiqueta = data.modo_atend || data.categoria || "Serviço";
+            
+            // Monta o Card Linkado Corretamente
+            const html = `
+            <div class="tiktok-card">
+                <div class="badge-status">${etiqueta}</div>
+                
+                <img src="${imagemCapa}" class="video-bg" alt="Capa" style="object-fit: cover;">
+                
+                ${data.videoUrl ? '<div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>' : ''}
                 
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
-                        <div class="provider-info"><span class="provider-name" style="font-weight:800; font-size:0.9rem;">${data.autorNome}</span></div>
-                        <p class="video-desc">${data.descricao}</p>
+                        <div class="provider-info">
+                            <span class="provider-name" style="font-weight:800; font-size:0.9rem;">
+                                ${data.userHandle || '@profissional'}
+                            </span>
+                            <span class="service-tag" style="font-size:0.75rem; opacity:0.8; display:block;">
+                                ${data.titulo}
+                            </span>
+                        </div>
                         
-                        <button class="btn-solicitar" 
-                                onclick="event.stopPropagation(); window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
+                        <p class="video-desc" style="max-height: 40px; overflow:hidden;">${data.descricao}</p>
+                        
+                        <button class="btn-video-action" 
+                                onclick="window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
                                 Solicitar Orçamento
                         </button>
-
                     </div>
                 </div>
             </div>`;
+            
             container.insertAdjacentHTML('beforeend', html);
         });
+
     } catch (e) { 
-        console.error("Erro ao carregar vídeos:", e);
-        container.innerHTML = '<div style="padding:20px; color:white;">Erro ao carregar vídeos.</div>';
+        console.error("Erro ao carregar destaques:", e);
+        container.innerHTML = '<div style="padding:20px; color:white;">Erro ao carregar.</div>';
     }
 }
 
@@ -2211,6 +2225,7 @@ window.iniciarChatDireto = async function(targetUid, targetName, targetPhoto) {
 }
 
 // 3. Abrir a Tela de Chat (Genérico)
+// 3. Abrir a Tela de Chat (ATUALIZADO COM AVISO)
 window.abrirTelaChat = function(chatId, nome, foto, targetUid) {
     window.chatIdAtual = chatId;
     window.targetUserUid = targetUid;
@@ -2220,12 +2235,49 @@ window.abrirTelaChat = function(chatId, nome, foto, targetUid) {
     document.getElementById('chatNome').innerText = nome;
     document.getElementById('chatAvatar').src = foto || "https://i.pravatar.cc/150";
 
+    // --- NOVA LÓGICA: BANNER DE "AGUARDE" ---
+    
+    // 1. Remove banner antigo se existir (para não duplicar)
+    const bannerAntigo = document.querySelector('.chat-info-banner');
+    if(bannerAntigo) bannerAntigo.remove();
+
+    // 2. Verifica se acabou de ser enviado (o "sinal" que criamos no orcamento.html)
+    if (localStorage.getItem('doke_pedido_enviado')) {
+        localStorage.removeItem('doke_pedido_enviado'); // Limpa para não aparecer sempre
+        
+        const viewChat = document.getElementById('view-chat');
+        
+        // Cria o elemento do aviso
+        const banner = document.createElement('div');
+        banner.className = 'chat-info-banner';
+        banner.innerHTML = `
+            <i class='bx bx-time-five'></i>
+            <div>
+                <strong>Solicitação Enviada!</strong>
+                <p>O profissional já foi notificado. Por favor, aguarde ele aceitar o pedido para iniciar a conversa.</p>
+            </div>
+        `;
+        
+        // Insere logo abaixo da barra superior do chat
+        const toolbar = viewChat.querySelector('.chat-toolbar');
+        if(toolbar) toolbar.insertAdjacentElement('afterend', banner);
+    }
+    // -----------------------------------------
+
     const containerMsgs = document.getElementById('areaMensagens');
     containerMsgs.innerHTML = '<div style="padding:20px; text-align:center;">Carregando...</div>';
 
-    // Determina qual coleção usar (se é um ID antigo de pedido ou novo de conversa)
-    // Assumimos 'conversas' por padrão, mas se falhar tentamos 'pedidos' (retrocompatibilidade)
+    // Carrega as mensagens
+    // (A função carregarMensagensFirestore deve estar logo abaixo no seu arquivo, não precisa mexer nela)
     carregarMensagensFirestore("conversas", chatId, containerMsgs);
+    
+    // Ajuste para celular
+    if(window.innerWidth <= 768) {
+        const bottomNav = document.querySelector('.bottom-nav');
+        const navbarMobile = document.querySelector('.navbar-mobile');
+        if(bottomNav) bottomNav.style.display = 'none';
+        if(navbarMobile) navbarMobile.style.display = 'none';
+    }
 }
 
 function carregarMensagensFirestore(collectionName, docId, container) {

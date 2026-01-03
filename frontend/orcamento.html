@@ -417,7 +417,7 @@
     import { getFirestore, doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Usa conexão global ou cria nova
+    // Inicializa variáveis e serviços
     const db = window.db || getFirestore();
     const auth = window.auth || getAuth();
 
@@ -427,29 +427,44 @@
     window.addEventListener('load', async function() {
         console.log("🚀 Script de Orçamento Iniciado...");
 
-        // 1. Tenta pegar o ID de várias formas (aid ou id)
         const urlParams = new URLSearchParams(window.location.search);
         const anuncioId = urlParams.get('aid') || urlParams.get('id'); 
-        const prestadorUid = urlParams.get('uid');
+        const prestadorUid = urlParams.get('uid'); 
 
-        // === DIAGNÓSTICO: AVISA SE O ID ESTIVER FALTANDO ===
-        if (!anuncioId) {
-            console.warn("⚠️ NENHUM ID DE ANÚNCIO ENCONTRADO NA URL.");
-            // Opcional: Se quiser esconder a localização por padrão quando não tiver ID, descomente abaixo:
-            // document.getElementById('card-localizacao').style.display = 'none';
-            
-            // Avisa no console para você saber o motivo
-            console.log("Como não há ID, o sistema não sabe se é Online ou Presencial e manteve o padrão.");
-        } else {
-            console.log("✅ ID do Anúncio encontrado:", anuncioId);
-            // Se tem ID, busca os dados
-            await carregarAnuncio(anuncioId);
+        // 1. Carrega Prestador
+        if(prestadorUid) {
+            try {
+                const docUserRef = doc(db, "usuarios", prestadorUid);
+                const docUserSnap = await getDoc(docUserRef);
+                if (docUserSnap.exists()) {
+                    dadosPrestador = docUserSnap.data();
+                    dadosPrestador.uid = prestadorUid; // Garante que temos o UID
+                    atualizarCardResumo(dadosPrestador);
+                }
+            } catch (e) { console.error("Erro user:", e); }
         }
 
-        // Carrega dados do Prestador (para preencher o card lateral)
-        if(prestadorUid) carregarPrestador(prestadorUid);
+        // 2. Carrega Anúncio e Aplica Regras
+        if (anuncioId) {
+            try {
+                const docAnuncioRef = doc(db, "anuncios", anuncioId);
+                const docAnuncioSnap = await getDoc(docAnuncioRef);
+                
+                if (docAnuncioSnap.exists()) {
+                    dadosAnuncio = docAnuncioSnap.data();
+                    
+                    // Preenche título
+                    if(dadosAnuncio.titulo) document.getElementById('titulo-pedido').value = "Orçamento: " + dadosAnuncio.titulo;
+                    
+                    // Chama a função que ESCONDE o endereço se for Online
+                    aplicarConfiguracoesDoAnuncio(dadosAnuncio);
+                }
+            } catch (e) { console.error("Erro anuncio:", e); }
+        } else {
+            console.warn("⚠️ Nenhum ID de anúncio (aid) na URL.");
+        }
 
-        // Verifica autenticação para o botão de envio
+        // 3. Bloqueia se for o dono
         onAuthStateChanged(auth, (user) => {
             if (user && prestadorUid && user.uid === prestadorUid) {
                 bloquearBotaoProprioAnuncio();
@@ -457,77 +472,138 @@
         });
     });
 
-    // --- FUNÇÃO SEPARADA PARA CARREGAR E APLICAR REGRAS ---
-    async function carregarAnuncio(id) {
-        try {
-            const docRef = doc(db, "anuncios", id);
-            const docSnap = await getDoc(docRef);
+    // --- FUNÇÃO QUE ESCONDE A CAIXA DE LOCALIZAÇÃO ---
+    function aplicarConfiguracoesDoAnuncio(anuncio) {
+        const cardLoc = document.getElementById('card-localizacao');
+        const inputCep = document.getElementById('cepOrcamento');
+        const inputEnd = document.getElementById('endereco-completo');
 
-            if (docSnap.exists()) {
-                dadosAnuncio = docSnap.data();
-                console.log("📦 DADOS DO FIREBASE:", dadosAnuncio); // Veja isso no Console (F12)
+        // Formatação robusta para detectar "online"
+        const modo = String(anuncio.modo_atend || "").toLowerCase().trim();
+        
+        console.log("🔍 MODO DETECTADO:", modo);
 
-                // 1. Preenche Título
-                if(dadosAnuncio.titulo) {
-                    document.getElementById('titulo-pedido').value = "Orçamento: " + dadosAnuncio.titulo;
-                }
+        if (modo === 'online' || modo.includes('remoto')) {
+            // ESCONDE O CARD
+            if(cardLoc) cardLoc.style.display = 'none';
+            
+            // REMOVE OBRIGATORIEDADE (Para não travar o envio)
+            if(inputCep) { inputCep.removeAttribute('required'); inputCep.value = ""; }
+            if(inputEnd) { inputEnd.removeAttribute('required'); inputEnd.value = ""; }
 
-                // 2. LÓGICA DE ESCONDER LOCALIZAÇÃO (ROBUSTA)
-                // Pega o valor, transforma em texto, minúsculo e sem espaços
-                let modo = String(dadosAnuncio.modo_atend || "").toLowerCase().trim();
-                
-                console.log(`🔎 MODO ENCONTRADO: "${modo}"`);
+        } else {
+            // MOSTRA O CARD
+            if(cardLoc) cardLoc.style.display = 'block';
+        }
 
-                const cardLoc = document.getElementById('card-localizacao');
-                const inputsEnd = document.querySelectorAll('#card-localizacao input');
+        carregarPerguntasExtras(anuncio);
+    }
 
-                // Verifica: É online? OU É remoto?
-                if (modo === 'online' || modo.includes('remoto')) {
-                    console.log("🙈 MODO ONLINE: Escondendo bloco de localização.");
-                    
-                    if (cardLoc) {
-                        cardLoc.style.display = 'none'; // Some com a div
-                        cardLoc.style.visibility = 'hidden'; // Garante que suma
-                    }
+    // --- LÓGICA DE ENVIO DO PEDIDO (O QUE ACONTECE DEPOIS DE CLICAR) ---
+    const btnEnviar = document.getElementById('btnEnviarOrcamento');
+    if(btnEnviar) {
+        btnEnviar.addEventListener('click', async (e) => {
+            e.preventDefault();
+            const user = auth.currentUser;
+            
+            // 1. Validações Básicas
+            if (!user) { alert("Faça login para continuar."); window.location.href = "login.html"; return; }
+            
+            const titulo = document.getElementById('titulo-pedido').value;
+            const descricao = document.getElementById('descricao-pedido').value;
+            if (!titulo || !descricao) { alert("Preencha o título e a descrição do pedido."); return; }
 
-                    // Remove obrigatoriedade dos inputs escondidos
-                    inputsEnd.forEach(input => {
-                        input.removeAttribute('required');
-                        input.value = ""; 
-                    });
-
-                } else {
-                    console.log("👀 MODO PRESENCIAL (ou Ambos): Mostrando endereço.");
-                    if (cardLoc) {
-                        cardLoc.style.display = 'block';
-                        cardLoc.style.visibility = 'visible';
-                    }
-                }
-
-                // 3. Carrega Perguntas Extras
-                carregarPerguntasExtras(dadosAnuncio);
-
-            } else {
-                console.error("❌ Documento do anúncio não existe no Firebase.");
+            // 2. Validação de Endereço (Só se estiver visível)
+            const cardLoc = document.getElementById('card-localizacao');
+            let localizacaoData = { tipo: "Online" };
+            
+            if (cardLoc && cardLoc.style.display !== 'none') {
+                const cep = document.getElementById('cepOrcamento').value;
+                const end = document.getElementById('endereco-completo').value;
+                if(!cep || !end) { alert("Informe o endereço para serviços presenciais."); return; }
+                localizacaoData = { tipo: "Presencial", cep: cep, endereco: end };
             }
-        } catch (error) {
-            console.error("❌ Erro ao buscar anúncio:", error);
+
+            // 3. Coleta Respostas Extras
+            let respostasExtras = [];
+            document.querySelectorAll('.pergunta-extra').forEach(inp => {
+                if(inp.value) respostasExtras.push({ pergunta: inp.getAttribute('data-pergunta'), resposta: inp.value });
+            });
+
+            // 4. Efeito de Carregamento
+            btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
+            btnEnviar.disabled = true;
+
+try {
+                const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                
+                // Salva no Firebase
+                const docRef = await addDoc(collection(db, "pedidos"), {
+                    deUid: user.uid,
+                    paraUid: new URLSearchParams(window.location.search).get('uid'),
+                    paraNome: dadosPrestador ? dadosPrestador.nome : "Profissional",
+                    clienteNome: perfilCliente.nome || "Cliente",
+                    clienteFoto: perfilCliente.foto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
+                    servicoReferencia: titulo,
+                    mensagemInicial: descricao,
+                    paraQuando: document.getElementById('para-quando').value,
+                    turno: document.getElementById('turno').value,
+                    localizacao: localizacaoData,
+                    formularioRespostas: respostasExtras,
+                    origemAnuncioId: dadosAnuncio ? new URLSearchParams(window.location.search).get('aid') : null,
+                    status: "pendente",
+                    dataPedido: new Date().toISOString(),
+                    visualizado: false
+                });
+
+                // --- AQUI ESTÁ A MUDANÇA ---
+                // Avisa o chat que é um pedido novo para mostrar a mensagem de "Aguarde"
+                localStorage.setItem('doke_pedido_enviado', 'true');
+                
+                // Configura o redirecionamento automático
+                localStorage.setItem('doke_abrir_chat_id', docRef.id);
+                localStorage.setItem('doke_abrir_chat_nome', dadosPrestador ? dadosPrestador.nome : "Profissional");
+                localStorage.setItem('doke_abrir_chat_foto', dadosPrestador ? dadosPrestador.foto : "");
+                localStorage.setItem('doke_abrir_chat_uid', prestadorUid);
+
+                window.location.href = "chat.html";
+
+            } catch (error) {
+                console.error("Erro envio:", error);
+                alert("Erro ao enviar: " + error.message);
+                btnEnviar.innerHTML = "Enviar Solicitação";
+                btnEnviar.disabled = false;
+            }
+        });
+    }
+
+    // --- FUNÇÕES AUXILIARES VISUAIS ---
+    function atualizarCardResumo(dados) {
+        if(document.getElementById('nomePrestadorResumo'))
+            document.getElementById('nomePrestadorResumo').innerHTML = `${dados.nome} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
+        if(document.getElementById('userPrestadorResumo'))
+            document.getElementById('userPrestadorResumo').innerText = dados.user || "@profissional";
+        if(document.getElementById('imgPrestadorResumo'))
+            document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
+        if(dados.stats) {
+            if(document.getElementById('notaPrestadorResumo')) 
+                document.getElementById('notaPrestadorResumo').innerText = dados.stats.media || "Novo";
+            if(document.getElementById('jobsPrestadorResumo'))
+                document.getElementById('jobsPrestadorResumo').innerText = dados.stats.jobs || 0;
         }
     }
 
-    async function carregarPrestador(uid) {
-        try {
-            const docSnap = await getDoc(doc(db, "usuarios", uid));
-            if (docSnap.exists()) {
-                dadosPrestador = docSnap.data();
-                atualizarCardResumo(dadosPrestador);
-            }
-        } catch(e) { console.error(e); }
+    function bloquearBotaoProprioAnuncio() {
+        const btn = document.getElementById('btnEnviarOrcamento');
+        if(btn) {
+            btn.disabled = true;
+            btn.innerHTML = "<i class='bx bx-block'></i> Você é o dono";
+            btn.style.background = "#ccc";
+            btn.style.cursor = "not-allowed";
+        }
     }
 
-    // --- OUTRAS FUNÇÕES (Perguntas, Envio, etc) ---
     function carregarPerguntasExtras(anuncio) {
-        // ... (Mantém a lógica de perguntas que você já tinha)
         let perguntas = [];
         if (anuncio.perguntasFormularioJson) {
             try {
@@ -538,7 +614,6 @@
         }
         const container = document.getElementById('container-perguntas-extras');
         const lista = document.getElementById('lista-perguntas-dinamicas');
-        
         if (perguntas.length > 0 && container && lista) {
             container.style.display = 'block';
             lista.innerHTML = "";
@@ -554,93 +629,32 @@
         }
     }
 
-    function atualizarCardResumo(dados) {
-        if(document.getElementById('nomePrestadorResumo')) document.getElementById('nomePrestadorResumo').innerHTML = `${dados.nome} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
-        if(document.getElementById('userPrestadorResumo')) document.getElementById('userPrestadorResumo').innerText = dados.user || "@profissional";
-        if(document.getElementById('imgPrestadorResumo')) document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
-    }
-
-    function bloquearBotaoProprioAnuncio() {
-        const btn = document.getElementById('btnEnviarOrcamento');
-        if(btn) {
-            btn.disabled = true;
-            btn.innerHTML = "<i class='bx bx-block'></i> Você é o dono";
-            btn.style.background = "#ccc";
-            btn.style.cursor = "not-allowed";
-        }
-    }
-
-    // --- LÓGICA DE ENVIO DO PEDIDO ---
-    const btnEnviar = document.getElementById('btnEnviarOrcamento');
-    if(btnEnviar) {
-        btnEnviar.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const user = auth.currentUser;
-            if (!user) { alert("Faça login."); window.location.href = "login.html"; return; }
-            
-            const titulo = document.getElementById('titulo-pedido').value;
-            const descricao = document.getElementById('descricao-pedido').value;
-            if (!titulo || !descricao) { alert("Preencha a descrição."); return; }
-
-            // CAPTURA LOCALIZAÇÃO SÓ SE O CARD ESTIVER VISÍVEL
-            const cardLoc = document.getElementById('card-localizacao');
-            let localizacaoData = { tipo: "Online" };
-            
-            // Verifica o display computado ou inline
-            const isVisible = cardLoc && cardLoc.style.display !== 'none';
-            
-            if (isVisible) {
-                const cep = document.getElementById('cepOrcamento').value;
-                const end = document.getElementById('endereco-completo').value;
-                if(!cep || !end) { alert("Endereço é obrigatório para este serviço."); return; }
-                localizacaoData = { tipo: "Presencial", cep: cep, endereco: end };
-            }
-
-            // Coleta extras
-            let respostasExtras = [];
-            document.querySelectorAll('.pergunta-extra').forEach(inp => {
-                if(inp.value) respostasExtras.push({ pergunta: inp.getAttribute('data-pergunta'), resposta: inp.value });
-            });
-
-            btnEnviar.innerText = "Enviando...";
-            try {
-                const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-                await addDoc(collection(db, "pedidos"), {
-                    deUid: user.uid,
-                    paraUid: new URLSearchParams(window.location.search).get('uid'),
-                    paraNome: dadosPrestador?.nome || "Profissional",
-                    clienteNome: perfil.nome || "Cliente",
-                    clienteFoto: perfil.foto || "",
-                    servicoReferencia: titulo,
-                    mensagemInicial: descricao,
-                    paraQuando: document.getElementById('para-quando').value,
-                    turno: document.getElementById('turno').value,
-                    localizacao: localizacaoData,
-                    formularioRespostas: respostasExtras,
-                    origemAnuncioId: dadosAnuncio ? new URLSearchParams(window.location.search).get('aid') : null,
-                    status: "pendente",
-                    dataPedido: new Date().toISOString()
-                });
-                alert("✅ Sucesso!");
-                window.location.href = "chat.html";
-            } catch (err) {
-                console.error(err);
-                alert("Erro ao enviar.");
-                btnEnviar.innerText = "Enviar Solicitação";
-            }
-        });
-    }
-
     // Helpers Globais
     window.buscarEndereco = function() {
-        const cep = document.getElementById('cepOrcamento').value.replace(/\D/g, '');
+        const cepEl = document.getElementById('cepOrcamento');
+        if(!cepEl) return;
+        const cep = cepEl.value.replace(/\D/g, '');
         if(cep.length === 8) {
             fetch(`https://viacep.com.br/ws/${cep}/json/`).then(r=>r.json()).then(d=>{
                 if(!d.erro) document.getElementById('endereco-completo').value = `${d.logradouro}, ${d.bairro} - ${d.localidade}`;
             });
         }
     }
-    window.previewFiles = function() { /* ... (código do preview igual) ... */ }
+    
+    window.previewFiles = function() {
+        const preview = document.getElementById('previewArea');
+        const files = document.getElementById('fileInput').files;
+        preview.innerHTML = "";
+        if (files) {
+            [].forEach.call(files, function(file) {
+                if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
+                    const img = document.createElement('img');
+                    img.src = URL.createObjectURL(file);
+                    preview.appendChild(img);
+                }
+            });
+        }
+    }
 </script>
 </body>
 </html>
