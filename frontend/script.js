@@ -1448,12 +1448,17 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     }
 
+// CÓDIGO NOVO (COM VERIFICAÇÃO DE LOGIN)
     var dataHoje = new Date().toDateString();
-    if (localStorage.getItem("popupVistoData") !== dataHoje) {
+    
+    // Verifica se o usuário JÁ está logado
+    const estaLogado = localStorage.getItem('usuarioLogado') === 'true'; 
+
+    // Só abre o popup se a data for nova E se NÃO estiver logado
+    if (localStorage.getItem("popupVistoData") !== dataHoje && !estaLogado) {
         window.abrirPopup();
         localStorage.setItem("popupVistoData", dataHoje);
     }
-
     // 7. Efeito Typewriter
     const elementoTexto = document.getElementById('typewriter');
     if (elementoTexto) {
