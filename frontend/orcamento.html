@@ -438,7 +438,7 @@
                 const docUserSnap = await getDoc(docUserRef);
                 if (docUserSnap.exists()) {
                     dadosPrestador = docUserSnap.data();
-                    dadosPrestador.uid = prestadorUid; // Garante que temos o UID
+                    dadosPrestador.uid = prestadorUid; 
                     atualizarCardResumo(dadosPrestador);
                 }
             } catch (e) { console.error("Erro user:", e); }
@@ -481,25 +481,18 @@
         // Formatação robusta para detectar "online"
         const modo = String(anuncio.modo_atend || "").toLowerCase().trim();
         
-        console.log("🔍 MODO DETECTADO:", modo);
-
         if (modo === 'online' || modo.includes('remoto')) {
-            // ESCONDE O CARD
             if(cardLoc) cardLoc.style.display = 'none';
-            
-            // REMOVE OBRIGATORIEDADE (Para não travar o envio)
             if(inputCep) { inputCep.removeAttribute('required'); inputCep.value = ""; }
             if(inputEnd) { inputEnd.removeAttribute('required'); inputEnd.value = ""; }
-
         } else {
-            // MOSTRA O CARD
             if(cardLoc) cardLoc.style.display = 'block';
         }
 
         carregarPerguntasExtras(anuncio);
     }
 
-    // --- LÓGICA DE ENVIO DO PEDIDO (O QUE ACONTECE DEPOIS DE CLICAR) ---
+    // --- LÓGICA DE ENVIO DO PEDIDO ---
     const btnEnviar = document.getElementById('btnEnviarOrcamento');
     if(btnEnviar) {
         btnEnviar.addEventListener('click', async (e) => {
@@ -508,6 +501,9 @@
             
             // 1. Validações Básicas
             if (!user) { alert("Faça login para continuar."); window.location.href = "login.html"; return; }
+            
+            // --- CORREÇÃO: PEGA O UID DA URL NOVAMENTE AQUI DENTRO ---
+            const uidDestino = new URLSearchParams(window.location.search).get('uid');
             
             const titulo = document.getElementById('titulo-pedido').value;
             const descricao = document.getElementById('descricao-pedido').value;
@@ -534,14 +530,19 @@
             btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
             btnEnviar.disabled = true;
 
-try {
+            try {
                 const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-                
-                // Salva no Firebase
+                const anuncioIdRef = new URLSearchParams(window.location.search).get('aid');
+
+                // 5. Salva no Firebase
                 const docRef = await addDoc(collection(db, "pedidos"), {
                     deUid: user.uid,
-                    paraUid: new URLSearchParams(window.location.search).get('uid'),
+                    paraUid: uidDestino, 
                     paraNome: dadosPrestador ? dadosPrestador.nome : "Profissional",
+                    // ADICIONADO: Salva o user e a foto do prestador
+                    paraUser: dadosPrestador ? (dadosPrestador.user || "@" + dadosPrestador.nome.split(' ')[0]) : "@profissional",
+                    paraFoto: dadosPrestador ? dadosPrestador.foto : "https://placehold.co/150",
+                    
                     clienteNome: perfilCliente.nome || "Cliente",
                     clienteFoto: perfilCliente.foto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
                     servicoReferencia: titulo,
@@ -550,23 +551,13 @@ try {
                     turno: document.getElementById('turno').value,
                     localizacao: localizacaoData,
                     formularioRespostas: respostasExtras,
-                    origemAnuncioId: dadosAnuncio ? new URLSearchParams(window.location.search).get('aid') : null,
+                    origemAnuncioId: anuncioIdRef || null,
                     status: "pendente",
                     dataPedido: new Date().toISOString(),
                     visualizado: false
                 });
 
-                // --- AQUI ESTÁ A MUDANÇA ---
-                // Avisa o chat que é um pedido novo para mostrar a mensagem de "Aguarde"
-                localStorage.setItem('doke_pedido_enviado', 'true');
-                
-                // Configura o redirecionamento automático
-                localStorage.setItem('doke_abrir_chat_id', docRef.id);
-                localStorage.setItem('doke_abrir_chat_nome', dadosPrestador ? dadosPrestador.nome : "Profissional");
-                localStorage.setItem('doke_abrir_chat_foto', dadosPrestador ? dadosPrestador.foto : "");
-                localStorage.setItem('doke_abrir_chat_uid', prestadorUid);
-
-                window.location.href = "chat.html";
+                window.location.href = `chat.html?chatId=${docRef.id}`;
 
             } catch (error) {
                 console.error("Erro envio:", error);

@@ -4,7 +4,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
 import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-// AQUI ESTAVA O ERRO: Juntei tudo em uma linha só (incluindo sendEmailVerification)
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
@@ -25,23 +24,34 @@ const db = getFirestore(app);
 const auth = getAuth(app); 
 const storage = getStorage(app); 
 
-// Garante acesso global
+// Garante acesso global das funções
 window.db = db;
 window.auth = auth;
 window.storage = storage;
-// ... resto do seu código ...
 window.collection = collection;
 window.query = query;
 window.getDocs = getDocs;
 window.orderBy = orderBy;
 window.where = where;
 window.limit = limit;
+window.deleteDoc = deleteDoc;
+window.updateDoc = updateDoc;
+window.addDoc = addDoc;
+window.setDoc = setDoc;
+window.getDoc = getDoc;
+window.doc = doc;
 
 // Variáveis Globais
 window.arquivoFotoSelecionado = null;
 window.arquivoVideoSelecionado = null;
 window.fotosAtuais = [];
 window.indiceAtual = 0;
+window.chatIdAtual = null;
+window.chatUnsubscribe = null;
+window.mediaRecorder = null;
+window.audioChunks = [];
+window.timerInterval = null;
+window.targetUserUid = null;
 
 
 // ============================================================
@@ -473,216 +483,6 @@ window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricao
     }
 }
 
-// Lista os pedidos no chat.html
-// ============================================================
-// ATUALIZAÇÃO: CARREGAR PEDIDOS COM TRATAMENTO DE ERRO/VAZIO
-// ============================================================
-// 2. Carregar Lista Unificada (Pedidos + Conversas)
-window.carregarMeusPedidos = async function() {
-    // Verifica se há um chat pendente para abrir (vindo de redirecionamento)
-    const pendingChatId = localStorage.getItem('doke_abrir_chat_id');
-    if (pendingChatId) {
-        const pNome = localStorage.getItem('doke_abrir_chat_nome');
-        const pFoto = localStorage.getItem('doke_abrir_chat_foto');
-        const pUid = localStorage.getItem('doke_abrir_chat_uid');
-        
-        // Limpa storage
-        localStorage.removeItem('doke_abrir_chat_id');
-        localStorage.removeItem('doke_abrir_chat_nome');
-        localStorage.removeItem('doke_abrir_chat_foto');
-        localStorage.removeItem('doke_abrir_chat_uid');
-
-        abrirTelaChat(pendingChatId, pNome, pFoto, pUid);
-        return; // Foca no chat e carrega a lista em segundo plano depois se necessário
-    }
-
-    const container = document.getElementById('container-pedidos');
-    if (!container) return;
-
-    const user = auth.currentUser;
-    if (!user) {
-        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver mensagens.</p></div>`;
-        return;
-    }
-
-    container.innerHTML = `<div class="empty-chat"><i class='bx bx-loader-alt bx-spin'></i><p>Carregando...</p></div>`;
-
-    try {
-        // BUSCA 1: Conversas Diretas (Coleção 'conversas')
-        const qChats = query(collection(db, "conversas"), where("participantes", "array-contains", user.uid));
-        
-        // BUSCA 2: Pedidos de Orçamento (Coleção 'pedidos')
-        // Mantemos a lógica antiga para não quebrar os orçamentos
-        const qPedidos = query(collection(db, "pedidos"), where("paraUid", "==", user.uid));
-
-        // Executa em paralelo
-        const [snapChats, snapPedidos] = await Promise.all([getDocs(qChats), getDocs(qPedidos)]);
-
-        let htmlFinal = "";
-        let temItens = false;
-
-        // --- Processa Conversas Diretas ---
-        snapChats.forEach(doc => {
-            temItens = true;
-            const data = doc.data();
-            const id = doc.id;
-            
-            // Descobre quem é o "outro" usuário
-            const outroUid = data.participantes.find(uid => uid !== user.uid);
-            const dadosOutro = data.dadosUsuarios ? data.dadosUsuarios[outroUid] : { nome: "Usuário", foto: "" };
-            
-            const msgPreview = data.tipoUltimaMsg === 'audio' ? '🎤 Áudio' : (data.ultimaMensagem || "Iniciar conversa");
-
-            htmlFinal += `
-            <div class="card-pedido" onclick="abrirTelaChat('${id}', '${dadosOutro.nome}', '${dadosOutro.foto}', '${outroUid}')" style="cursor:pointer; border-left: 5px solid var(--cor2);">
-                <div class="avatar-pedido"><img src="${dadosOutro.foto || 'https://i.pravatar.cc/150'}"></div>
-                <div class="info-pedido">
-                    <div class="header-card"><h4>${dadosOutro.nome}</h4></div>
-                    <span class="servico-tag">Conversa Direta</span>
-                    <div class="msg-inicial" style="margin-top:5px; color:#666; font-size:0.9rem;">${msgPreview}</div>
-                </div>
-            </div>`;
-        });
-
-        // --- Processa Pedidos de Orçamento (Lógica Antiga) ---
-        snapPedidos.forEach(doc => {
-            temItens = true;
-            const p = doc.data();
-            const id = doc.id;
-            
-            // Só exibe botões se for pendente. Se for aceito, vira um chat normal.
-            let botoes = "";
-            let clickAction = "";
-            let borderClass = "pendente"; // Amarelo
-
-            if (p.status === 'pendente') {
-                botoes = `
-                <div class="acoes-pedido" onclick="event.stopPropagation()">
-                    <button class="btn-acao btn-recusar" onclick="atualizarStatusPedido('${id}', 'recusado')">Recusar</button>
-                    <button class="btn-acao btn-aceitar" onclick="atualizarStatusPedido('${id}', 'aceito')">Aceitar</button>
-                </div>`;
-            } else if (p.status === 'aceito') {
-                borderClass = "aceito"; // Verde
-                // Se aceito, clicar abre o chat (Usamos o ID do pedido como ID do chat neste caso legado)
-                clickAction = `onclick="abrirChatInterno('${p.deUid}', '${id}', '${p.clienteNome}', '${p.clienteFoto}')"`;
-                botoes = `<span style="color:green; font-size:0.8rem;">Orçamento Aceito - Clique para abrir</span>`;
-            }
-
-            htmlFinal += `
-            <div class="card-pedido ${borderClass}" ${clickAction}>
-                <div class="avatar-pedido"><img src="${p.clienteFoto}"></div>
-                <div class="info-pedido">
-                    <div class="header-card"><h4>${p.clienteNome}</h4> <small>${new Date(p.dataPedido).toLocaleDateString()}</small></div>
-                    <span class="servico-tag">Orçamento: ${p.servicoReferencia}</span>
-                    <div class="msg-inicial">"${p.mensagemInicial}"</div>
-                    ${botoes}
-                </div>
-            </div>`;
-        });
-
-        if (!temItens) {
-            container.innerHTML = `<div class="empty-chat"><p>Nenhuma mensagem ainda.</p></div>`;
-        } else {
-            container.innerHTML = htmlFinal;
-        }
-
-    } catch (e) {
-        console.error("Erro lista:", e);
-        container.innerHTML = `<p style="padding:20px;">Erro ao carregar lista.</p>`;
-    }
-}
-
-// Função Placeholder para o Chat Interno (Passo Futuro)
-
-
-// 1. Função para abrir a tela de conversa e carregar dados
-window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, fotoCliente) {
-    const viewLista = document.getElementById('view-lista');
-    const viewChat = document.getElementById('view-chat');
-    
-    // Troca de telas (Esconde lista, mostra chat)
-    if(viewLista) viewLista.style.display = 'none';
-    if(viewChat) {
-        viewChat.style.display = 'flex';
-        // Ajuste Mobile: Esconde menu inferior e topo para focar no chat
-        if(window.innerWidth <= 768) {
-            const bottomNav = document.querySelector('.bottom-nav');
-            const navbarMobile = document.querySelector('.navbar-mobile');
-            if(bottomNav) bottomNav.style.display = 'none';
-            if(navbarMobile) navbarMobile.style.display = 'none';
-        }
-    }
-
-    // Preenche cabeçalho do chat
-    const nomeEl = document.getElementById('chatNome');
-    const imgEl = document.getElementById('chatAvatar');
-    if(nomeEl) nomeEl.innerText = nomeCliente || "Cliente";
-    if(imgEl) imgEl.src = fotoCliente || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-    
-    chatAtualId = idPedido;
-    const containerMsgs = document.getElementById('areaMensagens');
-    containerMsgs.innerHTML = '<div style="text-align:center; padding:20px; color:#999;"><i class="bx bx-loader-alt bx-spin"></i> Carregando conversa...</div>';
-
-    try {
-        // A) Busca detalhes do pedido para exibir o RESUMO DO QUIZ (Dados Reais)
-        const docPedido = await getDoc(doc(db, "pedidos", idPedido));
-        containerMsgs.innerHTML = ""; // Limpa loader
-
-        if (docPedido.exists()) {
-            const dados = docPedido.data();
-            
-            // Verifica se tem respostas do formulário salvas
-            if (dados.formularioRespostas && Array.isArray(dados.formularioRespostas) && dados.formularioRespostas.length > 0) {
-                let htmlQuiz = `
-                    <div class="quiz-summary-card">
-                        <div class="quiz-header"><i class='bx bx-list-check'></i> Detalhes do Serviço</div>
-                `;
-                
-                // Transforma cada resposta em item visual
-                dados.formularioRespostas.forEach(item => {
-                    htmlQuiz += `
-                        <div class="quiz-item">
-                            <div class="quiz-q">${item.pergunta}</div>
-                            <div class="quiz-a">${item.resposta}</div>
-                        </div>
-                    `;
-                });
-                
-                htmlQuiz += `</div>`;
-                containerMsgs.insertAdjacentHTML('beforeend', htmlQuiz);
-            } else if (dados.mensagemInicial) {
-                // Fallback: Se não tiver quiz, mostra a descrição inicial
-                containerMsgs.insertAdjacentHTML('beforeend', `
-                    <div class="quiz-summary-card">
-                        <div class="quiz-header"><i class='bx bx-info-circle'></i> Solicitação do Cliente</div>
-                        <div style="font-style:italic; color:#555; padding:10px;">"${dados.mensagemInicial}"</div>
-                    </div>
-                `);
-            }
-        }
-
-        // B) Listener em Tempo Real para as Mensagens
-        const qMsgs = query(collection(db, "pedidos", idPedido, "mensagens"), orderBy("timestamp", "asc"));
-        
-        if(chatUnsubscribe) chatUnsubscribe(); // Limpa listener anterior se houver
-
-        chatUnsubscribe = onSnapshot(qMsgs, (snapshot) => {
-            snapshot.docChanges().forEach((change) => {
-                if (change.type === "added") {
-                    renderizarMensagem(change.doc.data(), containerMsgs);
-                }
-            });
-            // Rola para a última mensagem
-            setTimeout(() => {
-                containerMsgs.scrollTop = containerMsgs.scrollHeight;
-            }, 100);
-        });
-
-    } catch (e) {
-        console.error("Erro ao abrir chat:", e);
-        containerMsgs.innerHTML = '<div style="text-align:center; padding:20px; color:red;">Erro ao carregar mensagens.</div>';
-    }
-}
 
 // Notificações Globais
 window.verificarNotificacoes = function(uid) {
@@ -1510,6 +1310,26 @@ document.addEventListener("DOMContentLoaded", function() {
             if(window.location.pathname.includes('chat')) {
                 carregarMeusPedidos();
             }
+
+            const chatIdAuto = localStorage.getItem('doke_abrir_chat_id');
+                if (chatIdAuto) {
+                    const nomeAuto = localStorage.getItem('doke_abrir_chat_nome');
+                    const fotoAuto = localStorage.getItem('doke_abrir_chat_foto');
+                    const uidAuto = localStorage.getItem('doke_abrir_chat_uid');
+                    
+                    // Limpa para não abrir sempre que recarregar a página
+                    localStorage.removeItem('doke_abrir_chat_id');
+                    localStorage.removeItem('doke_abrir_chat_nome');
+                    localStorage.removeItem('doke_abrir_chat_foto');
+                    localStorage.removeItem('doke_abrir_chat_uid');
+                    
+                    // Pequeno delay para garantir que o DOM carregou
+                    setTimeout(() => {
+                        if(window.abrirTelaChat) {
+                            window.abrirTelaChat(chatIdAuto, nomeAuto, fotoAuto, uidAuto);
+                        }
+                    }, 500);
+                }
             
         } else {
             localStorage.removeItem('usuarioLogado');
@@ -1675,24 +1495,33 @@ window.enviarMensagem = async function(e) {
             timestamp: new Date(),
             lido: false
         });
-    } catch (erro) {
+} catch (erro) {
         console.error("Erro ao enviar:", erro);
         alert("Falha no envio. Verifique sua conexão.");
     }
 }
+
+
+
+
+// ============================================================
+// FUNÇÃO VOLTAR (Faltava definir essa função)
+// ============================================================
 window.voltarParaPedidos = function() {
     document.getElementById('view-chat').style.display = 'none';
+    document.getElementById('view-status').style.display = 'none';
     document.getElementById('view-lista').style.display = 'block';
     
-    // Restaura menus no mobile
     const bottomNav = document.querySelector('.bottom-nav');
-    const navbarMobile = document.querySelector('.navbar-mobile');
     if(bottomNav) bottomNav.style.display = 'flex';
-    if(navbarMobile) navbarMobile.style.display = 'flex';
 
-    if(chatUnsubscribe) chatUnsubscribe();
-    chatAtualId = null;
+    if(window.chatUnsubscribe) window.chatUnsubscribe();
+    window.chatIdAtual = null;
+    
+    const novaUrl = window.location.href.split('?')[0];
+    window.history.pushState({path: novaUrl}, '', novaUrl);
 }
+
 // ATUALIZAR A FUNÇÃO CARREGAR MEUS PEDIDOS PARA PASSAR OS DADOS CERTOS
 window.carregarMeusPedidos = async function() {
     const container = document.getElementById('container-pedidos');
@@ -2224,8 +2053,8 @@ window.iniciarChatDireto = async function(targetUid, targetName, targetPhoto) {
     }
 }
 
-// 3. Abrir a Tela de Chat (Genérico)
-// 3. Abrir a Tela de Chat (ATUALIZADO COM AVISO)
+// ATUALIZAÇÃO PARA script.js
+
 window.abrirTelaChat = function(chatId, nome, foto, targetUid) {
     window.chatIdAtual = chatId;
     window.targetUserUid = targetUid;
@@ -2235,43 +2064,45 @@ window.abrirTelaChat = function(chatId, nome, foto, targetUid) {
     document.getElementById('chatNome').innerText = nome;
     document.getElementById('chatAvatar').src = foto || "https://i.pravatar.cc/150";
 
-    // --- NOVA LÓGICA: BANNER DE "AGUARDE" ---
+    // --- CORREÇÃO: MENSAGEM DE AGUARDE ---
     
     // 1. Remove banner antigo se existir (para não duplicar)
     const bannerAntigo = document.querySelector('.chat-info-banner');
     if(bannerAntigo) bannerAntigo.remove();
 
-    // 2. Verifica se acabou de ser enviado (o "sinal" que criamos no orcamento.html)
-    if (localStorage.getItem('doke_pedido_enviado')) {
-        localStorage.removeItem('doke_pedido_enviado'); // Limpa para não aparecer sempre
+    // 2. Verifica se acabou de ser enviado (Lê o sinal do orcamento.html)
+    if (localStorage.getItem('doke_pedido_enviado') === 'true') {
+        
+        localStorage.removeItem('doke_pedido_enviado'); // Limpa para não aparecer de novo ao recarregar
         
         const viewChat = document.getElementById('view-chat');
+        const toolbar = viewChat.querySelector('.chat-toolbar'); // Pega o cabeçalho do chat
         
-        // Cria o elemento do aviso
+        // Cria o aviso
         const banner = document.createElement('div');
         banner.className = 'chat-info-banner';
         banner.innerHTML = `
             <i class='bx bx-time-five'></i>
             <div>
-                <strong>Solicitação Enviada!</strong>
+                <strong>Solicitação Enviada com Sucesso!</strong>
                 <p>O profissional já foi notificado. Por favor, aguarde ele aceitar o pedido para iniciar a conversa.</p>
             </div>
         `;
         
-        // Insere logo abaixo da barra superior do chat
-        const toolbar = viewChat.querySelector('.chat-toolbar');
-        if(toolbar) toolbar.insertAdjacentElement('afterend', banner);
+        // Insere o banner LOGO ABAIXO do cabeçalho
+        if(toolbar) {
+            toolbar.insertAdjacentElement('afterend', banner);
+        }
     }
     // -----------------------------------------
 
     const containerMsgs = document.getElementById('areaMensagens');
     containerMsgs.innerHTML = '<div style="padding:20px; text-align:center;">Carregando...</div>';
 
-    // Carrega as mensagens
-    // (A função carregarMensagensFirestore deve estar logo abaixo no seu arquivo, não precisa mexer nela)
+    // Determina qual coleção usar (se é um ID antigo de pedido ou novo de conversa)
     carregarMensagensFirestore("conversas", chatId, containerMsgs);
     
-    // Ajuste para celular
+    // Ajuste mobile
     if(window.innerWidth <= 768) {
         const bottomNav = document.querySelector('.bottom-nav');
         const navbarMobile = document.querySelector('.navbar-mobile');
@@ -2656,25 +2487,143 @@ window.pararPreview = function(card) {
         }
     }
 
-    // Adicione o listener 'onchange' aos radio buttons no HTML
-    // Localize esta parte no step-1 e atualize:
-    /*
-    <div class="form-group">
-        <label>Tipo de Atendimento</label>
-        <div class="toggle-wrapper">
-            <div class="radio-card"><input type="radio" name="modo_atend" id="presencial" value="Presencial" checked onchange="toggleAddressFields()"><label for="presencial">Presencial</label></div>
-            <div class="radio-card"><input type="radio" name="modo_atend" id="online" value="Online" onchange="toggleAddressFields()"><label for="online">Online</label></div>
-            <div class="radio-card"><input type="radio" name="modo_atend" id="ambos" value="Ambos" onchange="toggleAddressFields()"><label for="ambos">Ambos</label></div>
-        </div>
-    </div>
-    */
 
-    // Chame a função uma vez no carregamento da página para definir o estado inicial (caso esteja editando)
+
     document.addEventListener("DOMContentLoaded", function() {
-        // ... (seu código existente) ...
-        
+
+const paramsChat = new URLSearchParams(window.location.search);
+    const idChatUrl = paramsChat.get('chatId');
+    
+    if (idChatUrl) {
+        setTimeout(async () => {
+            if(window.abrirChatInterno) {
+                // Passamos null no nome/foto pois a função vai buscar no banco
+                window.abrirChatInterno(null, idChatUrl, "Carregando...", ""); 
+            }
+        }, 800);
+    }  
         // Adicione isso no final do DOMContentLoaded ou na função de carregarDadosParaEdicao
         if(document.querySelector('input[name="modo_atend"]:checked')) {
              toggleAddressFields();
         }
     });
+
+    // ==========================================
+// LÓGICA DE ANÁLISE DE PEDIDO (MODAL)
+// ==========================================
+
+window.abrirModalAnalise = async function(idPedido) {
+    const modal = document.getElementById('modalDetalhesPedido');
+    if(!modal) return;
+
+    // Mostra loading enquanto busca
+    modal.style.display = 'flex';
+    document.getElementById('md-descricao').innerText = "Carregando informações...";
+
+    try {
+        const docSnap = await getDoc(doc(db, "pedidos", idPedido));
+        if(!docSnap.exists()) { alert("Pedido não encontrado."); fecharModalDetalhes(); return; }
+
+        const dados = docSnap.data();
+
+        // 1. Preenche Dados Básicos
+        document.getElementById('md-nome').innerText = dados.clienteNome;
+        document.getElementById('md-foto').src = dados.clienteFoto || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+        document.getElementById('md-data').innerText = "Enviado em: " + new Date(dados.dataPedido).toLocaleString();
+        document.getElementById('md-titulo').innerText = dados.servicoReferencia;
+        document.getElementById('md-descricao').innerText = dados.mensagemInicial;
+        
+        document.getElementById('md-data-servico').innerText = dados.paraQuando || "A combinar";
+        document.getElementById('md-turno').innerText = dados.turno || "Qualquer horário";
+
+        // 2. Localização (Online ou Presencial)
+        const boxLocal = document.getElementById('md-box-local');
+        if (dados.localizacao && dados.localizacao.tipo === 'Presencial') {
+            boxLocal.style.display = 'block';
+            document.getElementById('md-endereco').innerHTML = `
+                ${dados.localizacao.endereco} <br> 
+                <small style='color:#777'>CEP: ${dados.localizacao.cep}</small>
+            `;
+        } else {
+            boxLocal.style.display = 'block';
+            document.getElementById('md-endereco').innerHTML = `<span style="background:#e0f2f1; color:#00695c; padding:3px 10px; border-radius:10px; font-size:0.85rem;">🌐 Atendimento Online / Remoto</span>`;
+        }
+
+        // 3. Respostas do Quiz (Se houver)
+        const boxQuiz = document.getElementById('md-box-quiz');
+        const listaQuiz = document.getElementById('md-lista-quiz');
+        listaQuiz.innerHTML = "";
+        
+        if (dados.formularioRespostas && dados.formularioRespostas.length > 0) {
+            boxQuiz.style.display = 'block';
+            dados.formularioRespostas.forEach(r => {
+                listaQuiz.innerHTML += `
+                    <div style="margin-bottom:10px; background:#f5f5f5; padding:10px; border-radius:6px;">
+                        <strong style="font-size:0.85rem; color:#555;">${r.pergunta}</strong>
+                        <div style="color:#333;">${r.resposta}</div>
+                    </div>`;
+            });
+        } else {
+            boxQuiz.style.display = 'none';
+        }
+
+        // 4. Configura os Botões de Ação
+        const btnAceitar = document.getElementById('btn-md-aceitar');
+        const btnRecusar = document.getElementById('btn-md-recusar');
+
+        btnAceitar.onclick = () => processarAceite(idPedido, dados);
+        btnRecusar.onclick = () => processarRecusa(idPedido);
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao abrir detalhes.");
+        fecharModalDetalhes();
+    }
+}
+
+window.fecharModalDetalhes = function() {
+    document.getElementById('modalDetalhesPedido').style.display = 'none';
+}
+
+async function processarAceite(idPedido, dados) {
+    if(!confirm("Aceitar este serviço e liberar o chat?")) return;
+    
+    const btn = document.getElementById('btn-md-aceitar');
+    btn.innerText = "Processando...";
+    btn.disabled = true;
+
+    try {
+        // Atualiza status no banco
+        await updateDoc(doc(db, "pedidos", idPedido), {
+            status: "aceito",
+            dataAtualizacao: new Date().toISOString()
+        });
+
+        fecharModalDetalhes();
+        
+        // Abre o chat imediatamente
+        abrirChatInterno(dados.deUid, idPedido, dados.clienteNome, dados.clienteFoto);
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao aceitar.");
+        btn.innerText = "Aceitar e Conversar";
+        btn.disabled = false;
+    }
+}
+
+async function processarRecusa(idPedido) {
+    if(!confirm("Tem certeza que deseja recusar este pedido?")) return;
+
+    try {
+        await updateDoc(doc(db, "pedidos", idPedido), {
+            status: "recusado",
+            dataAtualizacao: new Date().toISOString()
+        });
+        fecharModalDetalhes();
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao recusar.");
+    }
+}
+

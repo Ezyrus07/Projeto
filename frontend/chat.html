@@ -11,411 +11,327 @@
 
 <style>
     /* =========================================
-       VARIÁVEIS E RESET BÁSICO
+       ESTILOS ESPECÍFICOS DO CHAT
        ========================================= */
     :root {
-        --cor-primaria: #009688; /* Verde Doke */
-        --cor-secundaria: #00796b;
+        --cor-primaria: #009688;
         --bg-fundo: #f0f2f5;
         --bg-white: #ffffff;
-        --cinza-texto: #65676b;
-        --borda-suave: #e4e6eb;
-        --sombra-leve: 0 2px 8px rgba(0, 0, 0, 0.08);
     }
 
-    body {
-        background-color: var(--bg-fundo);
-        font-family: 'Segoe UI', Helvetica, Arial, sans-serif;
-        margin: 0;
-        overflow-x: hidden;
-    }
+    body { background-color: var(--bg-fundo); margin: 0; overflow: hidden; height: 100vh; }
 
-    /* Remove estilos padrão de botões */
-    button {
-        font-family: inherit;
-        outline: none;
-    }
-
-    /* =========================================
-       LAYOUT PRINCIPAL
-       ========================================= */
+    /* LAYOUT PRINCIPAL */
     .chat-main {
-        margin-left: 270px; /* Espaço da sidebar */
-        padding: 0;
+        margin-left: 270px; 
         height: 100vh;
-        max-width: 100%;
         display: flex;
-        overflow: hidden;
         position: relative;
     }
 
-    /* Sidebar Responsiva */
-    @media (max-width: 768px) {
-        .chat-main {
-            margin-left: 0;
-            height: calc(100vh - 60px); /* Desconta navbar mobile */
-        }
-    }
+    @media (max-width: 1024px) { .chat-main { margin-left: 0; height: calc(100vh - 60px); } }
 
-    /* =========================================
-       LISTA DE CONVERSAS (#view-lista)
-       ========================================= */
+    /* 1. TELA DE LISTA (#view-lista) */
     #view-lista {
-        width: 100%;
-        height: 100%;
-        background: var(--bg-fundo);
-        display: flex;
-        flex-direction: column;
+        width: 100%; height: 100%;
         padding: 20px;
-        box-sizing: border-box;
         overflow-y: auto;
+        display: block; /* Padrão visível */
     }
 
-    .chat-header h2 {
-        color: #1c1e21;
-        font-size: 1.8rem;
-        margin-bottom: 5px;
-    }
-
-    /* Abas (Todas | Diretas | Orçamentos) */
-    .tab-mensagens {
-        display: flex;
-        background: var(--bg-white);
-        padding: 5px;
-        border-radius: 12px;
-        margin: 20px 0;
-        box-shadow: var(--sombra-leve);
-    }
-
-    .tab-btn {
-        flex: 1;
-        background: transparent;
-        border: none;
-        padding: 12px;
-        font-weight: 600;
-        color: var(--cinza-texto);
-        cursor: pointer;
-        border-radius: 8px;
-        transition: 0.3s;
-    }
-
-    .tab-btn:hover { background-color: #f7f8fa; }
-    
-    .tab-btn.active {
-        background-color: #e0f2f1;
-        color: var(--cor-primaria);
-    }
-
-    /* Estado Vazio */
-    .empty-chat {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        height: 300px;
-        color: #b0b3b8;
-        text-align: center;
-    }
-    .empty-chat i { font-size: 3rem; margin-bottom: 15px; color: #dcdfe4; }
-
-    /* Cards de Conversa */
-    .card-pedido {
-        background: var(--bg-white);
-        border-radius: 12px;
-        padding: 15px;
-        margin-bottom: 12px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
-        border-left: 4px solid transparent;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-    }
-    .card-pedido:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .avatar-pedido img {
-        width: 50px; height: 50px;
-        border-radius: 50%;
-        object-fit: cover;
-    }
-    .header-card h4 { margin: 0; font-size: 1rem; color: #333; }
-    .msg-inicial { 
-        font-size: 0.85rem; color: #666; 
-        white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
-        max-width: 200px;
-    }
-
-    /* =========================================
-       TELA DO CHAT (#view-chat)
-       ========================================= */
+    /* 2. TELA DE CHAT (#view-chat) */
     #view-chat {
-        display: none; /* JS controla isso */
+        display: none; /* JS ativa */
         flex-direction: column;
-        width: 100%;
-        height: 100%;
-        background: #efe7dd; /* Cor clássica de fundo de chat estilo WhatsApp */
-        background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png'); /* Pattern sutil opcional */
-        position: fixed;
-        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: #fff;
+        position: absolute; top: 0; left: 0;
         z-index: 200;
     }
 
-    /* Em Desktop, ajusta posição */
-    @media (min-width: 769px) {
-        #view-chat {
-            position: relative;
-            background: #fff;
-            border-left: 1px solid var(--borda-suave);
-        }
-    }
-
-    /* Header do Chat */
-    .chat-toolbar {
-        background: var(--bg-white);
-        padding: 10px 15px;
-        display: flex;
-        align-items: center;
-        gap: 15px;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        z-index: 10;
-        height: 60px;
-    }
-
-    .btn-voltar-chat {
-        background: transparent;
-        border: none;
-        font-size: 1.5rem;
-        color: var(--cor-primaria);
-        cursor: pointer;
-        border-radius: 50%;
-        width: 40px; height: 40px;
-        display: flex; align-items: center; justify-content: center;
-        transition: 0.2s;
-    }
-    .btn-voltar-chat:hover { background: #f0f2f5; }
-
-    .chat-user-info { flex: 1; display: flex; align-items: center; gap: 10px; }
-    .chat-user-avatar { width: 38px; height: 38px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
-    .chat-user-name h4 { margin: 0; font-size: 0.95rem; color: #000; }
-    .chat-user-name span { font-size: 0.75rem; color: var(--cor-primaria); font-weight: 600; }
-
-    /* Área das Mensagens */
-    .chat-content {
-        flex: 1;
-        padding: 20px;
-        overflow-y: auto;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-
-    /* Balões de Mensagem */
-    .msg-bubble {
-        max-width: 75%;
-        padding: 10px 14px;
-        border-radius: 18px;
-        font-size: 0.95rem;
-        line-height: 1.4;
-        position: relative;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.1);
-    }
-
-    .msg-enviada {
-        align-self: flex-end;
-        background: #d9fdd3; /* Verde claro estilo Zap */
-        color: #111;
-        border-bottom-right-radius: 4px;
-    }
-
-    .msg-recebida {
-        align-self: flex-start;
-        background: #ffffff;
-        color: #111;
-        border-bottom-left-radius: 4px;
-    }
-
-    .msg-time {
-        display: block;
-        font-size: 0.65rem;
-        color: rgba(0,0,0,0.45);
-        text-align: right;
-        margin-top: 4px;
-        margin-bottom: -4px;
-    }
-
-    /* =========================================
-       ÁREA DE INPUT (O MELHORAMENTO PRINCIPAL)
-       ========================================= */
-    .chat-input-area {
-        background: var(--bg-white);
-        padding: 10px 16px;
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        border-top: 1px solid var(--borda-suave);
-        position: relative;
-    }
-
-    /* Campo de Texto Estilizado */
-    .chat-input {
-        flex: 1;
-        padding: 12px 18px;
-        border-radius: 24px;
-        border: 1px solid #ddd;
-        background: #f0f2f5;
-        font-size: 0.95rem;
-        outline: none;
-        transition: 0.3s;
-    }
-    
-    .chat-input:focus {
-        background: #fff;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        border-color: #ccc;
-    }
-
-    /* Botões de Ação (Mic e Enviar) */
-    .btn-chat-icon {
-        background: transparent;
-        border: none;
-        color: #606060;
-        font-size: 1.4rem;
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 50%;
-        transition: 0.2s;
-        display: flex; align-items: center; justify-content: center;
-    }
-    .btn-chat-icon:hover { background: #f0f2f5; color: #333; }
-
-    .btn-enviar-msg {
-        background: var(--cor-primaria);
-        color: white;
-        border: none;
-        width: 42px; height: 42px;
-        border-radius: 50%;
-        display: flex; align-items: center; justify-content: center;
-        font-size: 1.2rem;
-        cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,150,136,0.3);
-        transition: transform 0.2s;
-        margin-left: 5px;
-    }
-    .btn-enviar-msg:hover {
-        background: var(--cor-secundaria);
-        transform: scale(1.05);
-    }
-
-    /* Dropdown Menu (3 pontinhos) */
-    .chat-options-menu {
-        display: none;
-        position: absolute;
-        top: 50px; right: 10px;
-        background: white;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        border-radius: 8px;
-        overflow: hidden;
-        min-width: 160px;
-        z-index: 101;
-    }
-    .chat-options-menu.active { display: block; }
-    .opt-item {
-        padding: 12px 15px;
-        font-size: 0.9rem;
-        color: #333;
-        cursor: pointer;
-        display: flex; align-items: center; gap: 8px;
-    }
-    .opt-item:hover { background: #f5f5f5; }
-    .opt-delete { color: #e74c3c; }
-
-    /* UI Gravando Áudio */
-    .gravando-ui {
-        position: absolute;
-        top: 0; left: 0;
+    /* 3. TELA DE STATUS / AGUARDANDO (#view-status) */
+    #view-status {
+        display: none; /* JS ativa */
         width: 100%; height: 100%;
-        background: white;
-        display: none;
+        background: #f8f9fa;
+        flex-direction: column;
         align-items: center;
-        justify-content: space-between;
-        padding: 0 20px;
-        z-index: 20;
+        justify-content: center;
+        padding: 20px;
+        position: absolute; top: 0; left: 0;
+        z-index: 300;
+        text-align: center;
     }
-    .dot-rec {
-        width: 12px; height: 12px;
-        background: red;
+
+    /* ELEMENTOS DA TELA DE STATUS */
+    .status-card {
+        background: white; padding: 40px; border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        max-width: 500px; width: 100%;
+        position: relative;
+    }
+
+    .pulsing-circle {
+        width: 80px; height: 80px;
+        background: var(--cor-primaria);
         border-radius: 50%;
-        animation: pulse 1s infinite;
+        margin: 0 auto 20px auto;
+        display: flex; align-items: center; justify-content: center;
+        animation: pulse-green 2s infinite;
     }
-    @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+    .pulsing-circle i { font-size: 2.5rem; color: white; }
 
-    /* Banner de "Aguarde" */
-    .chat-info-banner {
-        background: #e3f2fd; /* Azul bem clarinho */
-        border-left: 5px solid #2196f3; /* Barra lateral azul */
-        color: #0d47a1;
-        padding: 15px 20px;
-        margin: 15px 15px 0 15px;
-        border-radius: 8px;
-        display: flex;
-        align-items: flex-start;
-        gap: 15px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        animation: slideDown 0.4s ease;
-    }
-    
-    .chat-info-banner i { 
-        font-size: 1.5rem; 
-        color: #2196f3;
-        margin-top: 2px;
-    }
-    
-    .chat-info-banner strong { 
-        display: block; 
-        font-size: 1rem; 
-        margin-bottom: 4px; 
-    }
-    
-    .chat-info-banner p { 
-        margin: 0; 
-        font-size: 0.9rem; 
-        opacity: 0.9; 
-        line-height: 1.4;
+    @keyframes pulse-green {
+        0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 150, 136, 0.7); }
+        70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(0, 150, 136, 0); }
+        100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(0, 150, 136, 0); }
     }
 
-    @keyframes slideDown { 
-        from { opacity:0; transform:translateY(-10px); } 
-        to { opacity:1; transform:translateY(0); } 
+    .status-badge {
+        background: #e3f2fd; color: #0d47a1; 
+        padding: 10px 20px; border-radius: 50px; 
+        font-size: 0.9rem; display: inline-flex; align-items: center; gap: 8px;
+        margin-bottom: 25px;
     }
 
-    
+    .resumo-box {
+        text-align: left; border-top: 1px solid #eee; padding-top: 20px;
+    }
+    .resumo-label { font-size: 0.8rem; color: #999; display: block; margin-bottom: 4px; }
+    .resumo-valor { color: #333; font-weight: 600; font-size: 1rem; margin-bottom: 15px; display: block;}
+    .resumo-desc { background: #f9f9f9; padding: 15px; border-radius: 8px; color: #555; font-size: 0.9rem; line-height: 1.5; border-left: 4px solid #ddd; }
 
+    /* Componentes Gerais */
+    .tab-mensagens { display: flex; background: #fff; padding: 5px; border-radius: 12px; margin: 20px 0; box-shadow: 0 2px 8px rgba(0,0,0,0.05); }
+    .tab-btn { flex: 1; border: none; padding: 12px; background: transparent; cursor: pointer; color: #666; font-weight: 600; border-radius: 8px; }
+    .tab-btn.active { background: #e0f2f1; color: var(--cor-primaria); }
+    
+    .card-pedido { background: white; padding: 15px; border-radius: 12px; margin-bottom: 10px; display: flex; align-items: center; gap: 15px; cursor: pointer; transition: 0.2s; border: 1px solid #f0f0f0; }
+    .card-pedido:hover { box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+    
+    /* Toolbar do Chat */
+    .chat-toolbar { background: white; padding: 10px 15px; display: flex; align-items: center; gap: 15px; height: 60px; border-bottom: 1px solid #eee; }
+    .chat-content { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #efe7dd; }
+    .chat-input-area { background: white; padding: 10px; display: flex; gap: 10px; align-items: center; border-top: 1px solid #eee; }
+    .chat-input { flex: 1; padding: 12px; border-radius: 20px; border: 1px solid #ddd; outline: none; }
+    
+    .msg-bubble { max-width: 70%; padding: 10px 15px; border-radius: 15px; font-size: 0.95rem; position: relative; }
+    .msg-enviada { align-self: flex-end; background: #d9fdd3; color: #111; }
+    .msg-recebida { align-self: flex-start; background: white; color: #111; }
+
+    .btn-voltar-top { position: absolute; top: 20px; left: 20px; background: none; border: none; font-size: 1.1rem; color: #555; cursor: pointer; display: flex; align-items: center; gap: 5px; z-index: 301; }
+
+    /* Card de Pedido Pendente (Visão do Cliente) */
+.card-pedido-pendente {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 16px;
+    padding: 20px;
+    margin-bottom: 15px;
+    position: relative;
+    overflow: hidden;
+    transition: 0.3s;
+    border-left: 5px solid #ff9800; /* Laranja indicando espera */
+}
+
+.card-pedido-pendente:hover {
+    box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.cpp-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #f5f5f5;
+    padding-bottom: 10px;
+}
+
+.cpp-pro-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.cpp-pro-img {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #fff;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.cpp-status-badge {
+    background: #fff3e0;
+    color: #ef6c00;
+    padding: 5px 12px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Animação de Pulsar (Bolinha Laranja) */
+.dot-pulse {
+    width: 8px; height: 8px;
+    background: #ef6c00;
+    border-radius: 50%;
+    animation: pulseOrange 1.5s infinite;
+}
+@keyframes pulseOrange {
+    0% { transform: scale(0.95); opacity: 1; }
+    100% { transform: scale(2); opacity: 0; }
+}
+
+.cpp-body {
+    margin-bottom: 15px;
+}
+
+.cpp-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+    display: block;
+}
+
+.cpp-desc {
+    font-size: 0.9rem;
+    color: #666;
+    line-height: 1.4;
+    background: #f9f9f9;
+    padding: 10px;
+    border-radius: 8px;
+    margin-top: 8px;
+}
+
+.cpp-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.cpp-time {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--cor2);
+    font-weight: 600;
+}
+
+/* Botão Cancelar Pedido (Pequeno e discreto) */
+.btn-cancelar-pedido {
+    background: white;
+    border: 1px solid #ff4d4f;
+    color: #ff4d4f;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-left: auto; /* Empurra para a direita */
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.btn-cancelar-pedido:hover {
+    background: #fff1f0;
+}
+
+/* Botão Ver Detalhes (Azul Claro) */
+.btn-ver-detalhes {
+    background: #e3f2fd;
+    color: #0d47a1;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transition: 0.2s;
+}
+.btn-ver-detalhes:hover { background: #bbdefb; }
+
+/* Modal de Detalhes */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5); z-index: 2000;
+    display: none; align-items: center; justify-content: center;
+    backdrop-filter: blur(3px);
+}
+.modal-content {
+    background: white; width: 90%; max-width: 500px;
+    border-radius: 16px; padding: 25px;
+    max-height: 80vh; overflow-y: auto;
+    position: relative; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    animation: slideUp 0.3s ease;
+}
+.modal-row { margin-bottom: 12px; border-bottom: 1px solid #f0f0f0; padding-bottom: 12px; }
+.modal-label { font-size: 0.8rem; color: #888; display: block; margin-bottom: 4px; }
+.modal-val { font-size: 1rem; color: #333; font-weight: 500; }
+.btn-fechar-modal {
+    position: absolute; top: 15px; right: 15px;
+    background: #f5f5f5; border: none; width: 30px; height: 30px;
+    border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+@keyframes slideUp { from {transform: translateY(20px); opacity: 0;} to {transform: translateY(0); opacity: 1;} }
 </style>
 </head>
 <body>
 
     <header class="navbar-mobile">
         <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" style="height:30px;"></a></div>
-        <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size:30px; color:var(--cor2);"></i></button>
+        <button onclick="document.querySelector('.sidebar-icones').classList.toggle('menu-aberto')"><i class='bx bx-menu' style="font-size:30px;"></i></button>
     </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
-    <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
-        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
-        <div class="item active"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+   <aside class="sidebar-icones">
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span></a>
+        </div>
+        <div class="item">
+            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
+            <span>Explorar</span></a>
+        </div>
+        <div class="item">
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <a href="chat.html"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
+            <span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
+            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+            <a href="mais.html"><span>Mais</span></a>
+        </div>
     </aside>
 
-        <header class="navbar-desktop">
+
+    <header class="navbar-desktop">
         <div id="logo-desktop">
             <a href="projeto.html">
                 <img src="assets/Imagens/doke-logo.png" alt="Doke">
@@ -453,77 +369,382 @@
 
     <main class="chat-main">
         
-        <div id="view-lista">
-            <div class="chat-header">
-                <div>
-                    <h2>Mensagens</h2>
-                    <span style="color:#666; font-size:0.9rem;">Suas conversas e orçamentos</span>
-                </div>
+<div id="view-lista">
+            
+            <div style="display: flex; align-items: baseline; gap: 20px; margin-bottom: 5px;">
+                <h2 style="color:var(--cor2); cursor:default; border-bottom: 3px solid var(--cor-primaria); padding-bottom: 5px;">
+                    Pedidos
+                </h2>
+                <h2 style="color:#ccc; cursor:pointer; font-size: 1.5rem;" onclick="alert('A área de Mensagens Diretas será implementada amanhã!')">
+                    Mensagens
+                </h2>
             </div>
+            <span style="color:#666; display:block; margin-bottom: 20px;">Acompanhe o status das suas solicitações</span>
 
             <div class="tab-mensagens">
                 <button class="tab-btn active" onclick="filtrarLista('todos')">Todas</button>
                 <button class="tab-btn" onclick="filtrarLista('diretas')">Diretas</button>
-                <button class="tab-btn" onclick="filtrarLista('orcamentos')">Orçamentos</button>
+                <button class="tab-btn" id="tab-orcamentos" onclick="filtrarLista('orcamentos')" style="display:none;">Orçamentos</button>
             </div>
 
-            <div id="container-pedidos" class="lista-pedidos">
-                <div class="empty-chat">
-                    <i class='bx bx-loader-alt bx-spin'></i>
-                    <p>Carregando conversas...</p>
+            <div id="container-pedidos">
+                <div style="text-align:center; padding:40px; color:#999;">
+                    <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
+                    <p>Carregando pedidos...</p>
                 </div>
+            </div>
+        </div>
+
+        <div id="view-status">
+            <button class="btn-voltar-top" onclick="voltarParaPedidos()"><i class='bx bx-arrow-back'></i> Voltar para lista</button>
+            
+            <div class="status-card">
+                <div class="pulsing-circle">
+                    <i class='bx bx-time'></i>
+                </div>
+                
+                <h2 style="color:var(--cor-primaria); margin-top:0;">Pedido Enviado!</h2>
+                <p style="color:#666; margin-bottom:20px;">
+                    Aguardando <strong id="st-prestador-nome">o profissional</strong> aceitar sua solicitação.
+                </p>
+
+                <div class="status-badge">
+                    <i class='bx bx-timer'></i> Tempo médio de resposta: <strong>20 min</strong>
+                </div>
+
+                <div class="resumo-box">
+                    <span class="resumo-label">SERVIÇO SOLICITADO</span>
+                    <span class="resumo-valor" id="st-servico-titulo">...</span>
+
+                    <span class="resumo-label">SUA DESCRIÇÃO</span>
+                    <div class="resumo-desc" id="st-servico-desc">...</div>
+                    
+                    <div id="st-container-extras" style="margin-top:15px; display:none;">
+                        <div id="st-lista-extras" style="font-size:0.9rem; color:#555;"></div>
+                    </div>
+                </div>
+
+                <button onclick="voltarParaPedidos()" style="margin-top:30px; border:1px solid #ddd; background:white; padding:12px 30px; border-radius:30px; cursor:pointer; color:#666; font-weight:600;">
+                    Ver outras conversas
+                </button>
             </div>
         </div>
 
         <div id="view-chat">
             <div class="chat-toolbar">
-                <button class="btn-voltar-chat" onclick="voltarParaPedidos()"><i class='bx bx-arrow-back'></i></button>
-                
-                <div class="chat-user-info">
-                    <img src="" id="chatAvatar" class="chat-user-avatar">
-                    <div class="chat-user-name">
-                        <h4 id="chatNome">Usuário</h4>
-                        <span id="chatStatus">Online</span>
-                    </div>
-                </div>
-
-                <div style="position: relative;">
-                    <button class="btn-voltar-chat" onclick="toggleChatMenu()"><i class='bx bx-dots-vertical-rounded'></i></button>
-                    <div id="menuChatOptions" class="chat-options-menu">
-                        <div class="opt-item" onclick="verPerfilAtual()"><i class='bx bx-user'></i> Ver Perfil</div>
-                        <div class="opt-item opt-delete" onclick="apagarConversaAtual()"><i class='bx bx-trash'></i> Apagar Conversa</div>
-                    </div>
+                <button onclick="voltarParaPedidos()" style="background:none; border:none; font-size:1.5rem; cursor:pointer; color:var(--cor-primaria);"><i class='bx bx-arrow-back'></i></button>
+                <img id="chatAvatar" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                <div style="flex:1;">
+                    <h4 id="chatNome" style="margin:0;">Usuário</h4>
+                    <span style="font-size:0.8rem; color:green;">Online</span>
                 </div>
             </div>
 
-            <div class="chat-content" id="areaMensagens">
-                </div>
+            <div class="chat-content" id="areaMensagens"></div>
 
             <div class="chat-input-area">
-                
-                <div id="uiGravando" class="gravando-ui">
-                    <div class="gravando-indicador">
-                        <div class="dot-rec"></div>
-                        <span id="timerGravacao">00:00</span>
-                    </div>
-                    <button class="btn-chat-icon" onclick="cancelarGravacao()" style="color:#e74c3c;"><i class='bx bx-trash'></i></button>
-                    <button class="btn-enviar-msg" onclick="enviarAudio()"><i class='bx bx-send'></i></button>
-                </div>
-
-                <button class="btn-chat-icon" id="btnMic" onclick="iniciarGravacao()"><i class='bx bx-microphone'></i></button>
-                
-                <input type="text" id="inputMsg" class="chat-input" placeholder="Digite sua mensagem..." autocomplete="off" onkeypress="verificarEnter(event)">
-                
-                <button class="btn-enviar-msg" onclick="enviarMensagemTexto()"><i class='bx bxs-send'></i></button>
+                <input type="text" id="inputMsg" class="chat-input" placeholder="Digite sua mensagem..." onkeypress="verificarEnter(event)">
+                <button onclick="enviarMensagemTexto()" style="background:var(--cor-primaria); color:white; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer;"><i class='bx bxs-send'></i></button>
             </div>
         </div>
 
     </main>
 
-    <script type="module">
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-        // Inicialização via script.js
-    </script>
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a>
+        <a href="chat.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a>
+    </nav>
 
+    <div id="modalDetalhesPedido" style="display:none;"></div> 
+
+    <script type="module" src="script.js"></script>
+    <script type="module">
+import { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+    // Inicializa variáveis
+    const db = window.db || getFirestore();
+    const auth = window.auth || getAuth();
+
+// =================================================================
+    // 1. CARREGAR A LISTA DE PEDIDOS (COM CONTROLE DE ABA PROFISSIONAL)
+    // =================================================================
+    window.carregarMeusPedidos = async function() {
+        const container = document.getElementById('container-pedidos');
+        if (!container) return;
+
+        const user = auth.currentUser;
+        if (!user) {
+            container.innerHTML = `<div class="empty-chat"><p>Faça login para ver.</p></div>`;
+            return;
+        }
+
+        // --- LÓGICA DE EXIBIÇÃO DA ABA "ORÇAMENTOS" ---
+        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        const btnOrcamento = document.getElementById('tab-orcamentos');
+        
+        if (btnOrcamento) {
+            if (perfilLocal.isProfissional === true) {
+                btnOrcamento.style.display = 'block'; // Mostra para Pro
+            } else {
+                btnOrcamento.style.display = 'none';  // Esconde para Cliente comum
+            }
+        }
+        // -----------------------------------------------
+
+        // Mostra loading
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#999;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i><p>Atualizando lista...</p></div>`;
+
+        try {
+            // Buscas no Banco de Dados
+            const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", user.uid), orderBy("dataPedido", "desc"));
+            const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", user.uid), orderBy("dataPedido", "desc"));
+
+            const [snapEnviados, snapRecebidos] = await Promise.all([getDocs(qEnviados), getDocs(qRecebidos)]);
+
+            container.innerHTML = ""; // Limpa a tela
+            let temItens = false;
+
+            // --- A) PEDIDOS QUE EU ENVIEI (CLIENTE) ---
+            snapEnviados.forEach((docSnap) => {
+                const p = docSnap.data();
+                const id = docSnap.id;
+                
+                if (p.status === 'cancelado') return;
+                temItens = true;
+
+                // Tratamento do Nome e Foto
+                let nomeExibicao = p.paraUser || "@" + (p.paraNome ? p.paraNome.split(' ')[0].toLowerCase() : "profissional");
+                let fotoExibicao = p.paraFoto || "https://placehold.co/150?text=Foto";
+
+                if (p.status === 'pendente') {
+                    // CARD "AGUARDANDO" (Laranja)
+                    const cardHtml = `
+                    <div class="card-pedido-pendente" id="pedido-${id}">
+                        <div class="cpp-header">
+                            <div class="cpp-pro-info">
+                                <img src="${fotoExibicao}" class="cpp-pro-img" onerror="this.src='https://placehold.co/150'">
+                                <div>
+                                    <span style="display:block; font-size:0.75rem; color:#888;">Solicitado para:</span>
+                                    <strong style="font-size:1rem; color:#333;">${nomeExibicao}</strong>
+                                </div>
+                            </div>
+                            <div class="cpp-status-badge"><div class="dot-pulse"></div> Aguardando</div>
+                        </div>
+
+                        <div class="cpp-body">
+                            <span class="cpp-title">Orçamento: ${p.servicoReferencia}</span>
+                            <div class="cpp-desc" style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px;">
+                                "${p.mensagemInicial}"
+                            </div>
+                        </div>
+
+                        <div class="cpp-footer">
+                            <span class="cpp-time">${new Date(p.dataPedido).toLocaleDateString()}</span>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn-ver-detalhes" onclick="verDetalhesPedido('${id}')"><i class='bx bx-plus'></i> Detalhes</button>
+                                <button class="btn-cancelar-pedido" onclick="cancelarPedido('${id}')"><i class='bx bx-x'></i> Cancelar</button>
+                            </div>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', cardHtml);
+
+                } else if (p.status === 'aceito') {
+                    // CARD "ACEITO" (Verde)
+                    const cardHtml = `
+                    <div class="card-pedido" onclick="abrirChatInterno('${p.paraUid}', '${id}', '${p.paraNome}', '${p.paraFoto}')" style="border-left: 4px solid #009688;">
+                        <div class="avatar-pedido"><img src="${fotoExibicao}" onerror="this.src='https://placehold.co/150'"></div>
+                        <div class="info-pedido" style="flex:1;">
+                            <div class="header-card"><h4>${nomeExibicao}</h4><span class="data-pedido">${new Date(p.dataPedido).toLocaleDateString()}</span></div>
+                            <span class="servico-tag" style="color:#009688; font-weight:bold;">Solicitação Aceita!</span>
+                            <div class="msg-inicial">Toque para conversar</div>
+                        </div>
+                        <div><i class='bx bxs-message-dots' style="color:#009688; font-size:1.5rem;"></i></div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', cardHtml);
+                }
+            });
+
+            // --- B) PEDIDOS QUE RECEBI (VISÃO DO PRESTADOR) ---
+            snapRecebidos.forEach((docSnap) => {
+                const p = docSnap.data();
+                const id = docSnap.id;
+                if (p.status === 'cancelado') return;
+                temItens = true;
+
+                if (p.status === 'pendente') {
+                    const cardHtml = `
+                    <div class="card-pedido" style="border-left: 4px solid var(--cor2);">
+                        <div class="avatar-pedido"><img src="${p.clienteFoto || 'https://placehold.co/150'}"></div>
+                        <div class="info-pedido">
+                            <h4>${p.clienteNome} <span style="font-size:0.7rem; background:#eee; padding:2px 6px; border-radius:4px;">Cliente</span></h4>
+                            <span class="servico-tag">${p.servicoReferencia}</span>
+                            <div class="acoes-pedido" style="margin-top:10px;">
+                                <button onclick="abrirModalAnalise('${id}')" style="width:100%; border:1px solid var(--cor2); background:white; color:var(--cor2); padding:8px; border-radius:6px; cursor:pointer;">
+                                    <i class='bx bx-show'></i> Ver Detalhes
+                                </button>
+                            </div>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', cardHtml);
+                } else if (p.status === 'aceito') {
+                    const cardHtml = `
+                    <div class="card-pedido" onclick="abrirChatInterno('${p.deUid}', '${id}', '${p.clienteNome}', '${p.clienteFoto}')">
+                        <div class="avatar-pedido"><img src="${p.clienteFoto}"></div>
+                        <div class="info-pedido">
+                            <h4>${p.clienteNome}</h4>
+                            <span class="servico-tag">Em andamento</span>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', cardHtml);
+                }
+            });
+
+            if (!temItens) {
+                container.innerHTML = `
+                    <div class="empty-chat">
+                        <i class='bx bx-ghost' style="font-size:3rem; color:#ddd;"></i>
+                        <p>Nenhum pedido encontrado.</p>
+                        <a href="explorar.html" style="color:var(--cor0); font-weight:bold; font-size:0.9rem;">Explorar Serviços</a>
+                    </div>`;
+            }
+
+        } catch (e) {
+            console.error("Erro ao carregar lista:", e);
+            container.innerHTML = `<p style="text-align:center; color:red;">Erro de conexão.</p>`;
+        }
+    }
+    // =================================================================
+    // 2. MODAL DE "MAIS DETALHES" (Mostra tudo que foi preenchido)
+    // =================================================================
+    window.verDetalhesPedido = async function(idPedido) {
+        // Cria o modal no HTML se não existir
+        let modal = document.getElementById('modal-detalhes-cliente');
+        if (!modal) {
+            modal = document.createElement('div');
+            modal.id = 'modal-detalhes-cliente';
+            modal.className = 'modal-overlay'; // Usa o CSS que mandei antes
+            document.body.appendChild(modal);
+        }
+
+        // Busca dados atualizados
+        const docRef = await getDoc(doc(db, "pedidos", idPedido));
+        if (!docRef.exists()) return;
+        const d = docRef.data();
+
+        // Formata endereço
+        let htmlEnd = "Online / Remoto";
+        if (d.localizacao && d.localizacao.tipo === 'Presencial') {
+            htmlEnd = `${d.localizacao.endereco}<br><small style="color:#777">CEP: ${d.localizacao.cep}</small>`;
+        }
+
+        // Formata Quiz (Perguntas extras)
+        let htmlQuiz = "";
+        if (d.formularioRespostas && d.formularioRespostas.length > 0) {
+            htmlQuiz = `<div style="background:#f9f9f9; padding:15px; border-radius:8px; margin-top:15px; border-left:4px solid var(--cor0);">`;
+            htmlQuiz += `<strong style="display:block; margin-bottom:10px; color:var(--cor0);">Respostas do Formulário:</strong>`;
+            d.formularioRespostas.forEach(r => {
+                htmlQuiz += `<div style="margin-bottom:8px; font-size:0.9rem;"><strong style="color:#555;">${r.pergunta}</strong><br>${r.resposta}</div>`;
+            });
+            htmlQuiz += `</div>`;
+        }
+
+        modal.innerHTML = `
+            <div class="modal-content">
+                <button class="btn-fechar-modal" onclick="document.getElementById('modal-detalhes-cliente').style.display='none'"><i class='bx bx-x'></i></button>
+                
+                <h3 style="margin-top:0; color:var(--cor-primaria); border-bottom:1px solid #eee; padding-bottom:15px;">Detalhes da Solicitação</h3>
+                
+                <div class="modal-row" style="margin-top:15px;">
+                    <span class="modal-label">O que você pediu:</span>
+                    <span class="modal-val" style="font-size:1.1rem;">${d.servicoReferencia}</span>
+                </div>
+
+                <div class="modal-row">
+                    <span class="modal-label">Descrição completa:</span>
+                    <div style="background:#f0f2f5; padding:10px; border-radius:8px; font-size:0.95rem; line-height:1.5; color:#333;">
+                        ${d.mensagemInicial}
+                    </div>
+                </div>
+
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
+                    <div><span class="modal-label">Para quando?</span> <span class="modal-val">${d.paraQuando || '-'}</span></div>
+                    <div><span class="modal-label">Turno</span> <span class="modal-val">${d.turno || '-'}</span></div>
+                </div>
+
+                <div class="modal-row">
+                    <span class="modal-label"><i class='bx bx-map'></i> Localização</span>
+                    <span class="modal-val">${htmlEnd}</span>
+                </div>
+                
+                ${htmlQuiz}
+
+                <div style="text-align:center; margin-top:20px;">
+                    <button onclick="document.getElementById('modal-detalhes-cliente').style.display='none'" style="background:var(--cor2); color:white; border:none; padding:10px 25px; border-radius:30px; cursor:pointer;">Fechar</button>
+                </div>
+            </div>
+        `;
+        modal.style.display = 'flex';
+    }
+
+    // =================================================================
+    // 3. CANCELAR PEDIDO (CORRIGIDO: DESAPARECE NA HORA)
+    // =================================================================
+    window.cancelarPedido = async function(idPedido) {
+        if(!confirm("Tem certeza que deseja cancelar e excluir este pedido?")) return;
+
+        try {
+            // 1. Apaga do Banco
+            await deleteDoc(doc(db, "pedidos", idPedido));
+            
+            alert("Pedido cancelado.");
+
+            // 2. ATUALIZA A TELA IMEDIATAMENTE
+            // Chama a função de carregar lista novamente para limpar o item excluído
+            await window.carregarMeusPedidos();
+
+        } catch (e) {
+            console.error("Erro ao excluir:", e);
+            alert("Erro ao excluir: " + e.message);
+        }
+    }
+
+    // =================================================================
+    // 4. INICIALIZAÇÃO
+    // =================================================================
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            carregarMeusPedidos();
+            
+            // Verifica URL para abrir chat direto (se tiver ?chatId=...)
+            const params = new URLSearchParams(window.location.search);
+            const idChat = params.get('chatId');
+            if(idChat) {
+                // Pequeno delay para garantir carregamento
+                setTimeout(() => {
+                    // Chama a função que abre o chat (que está no script.js global, ou podemos reimplementar aqui se precisar)
+                    // Como limpamos o script.js, a função abrirChatInterno precisa estar aqui ou no script.js limpo que enviei.
+                    // Para garantir, se não abrir, use o script.js que mandei na resposta anterior.
+                    if(window.abrirChatInterno) window.abrirChatInterno(null, idChat, "Carregando...", "");
+                }, 500);
+            }
+        } else {
+            window.location.href = "login.html";
+        }
+    });
+
+    // Funções extras necessárias para o HTML chamar
+    window.filtrarLista = function(tipo) {
+        // Lógica simples de abas (visual)
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        event.target.classList.add('active');
+        // Aqui você pode implementar filtro real se quiser
+        carregarMeusPedidos(); 
+    }
+
+</script>
 </body>
 </html>
