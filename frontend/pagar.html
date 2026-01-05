@@ -148,12 +148,6 @@
         .guarantee-text p { margin: 3px 0 0 0; font-size: 0.75rem; color: #444; }
 
         /* Botão Finalizar */
-        .btn-checkout {
-            width: 100%; background: var(--cor0); color: white;
-            padding: 15px; border-radius: 50px; font-weight: 700;
-            border: none; cursor: pointer; font-size: 1.1rem;
-            transition: 0.3s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.3);
-        }
         .btn-checkout:hover { background: #096356; transform: translateY(-2px); }
 
 
@@ -174,6 +168,21 @@
             .checkout-layout { grid-template-columns: 1fr; }
             .summary-card { order: -1; position: relative; top: 0; }
         }
+
+        .btn-checkout {
+    width: 100%; 
+    max-width: 100%; /* Garante que ele respeite o tamanho do card lateral */
+    background: var(--cor0); 
+    color: white;
+    padding: 15px; 
+    border-radius: 50px; 
+    font-weight: 700;
+    border: none; 
+    cursor: pointer; 
+    font-size: 1.1rem;
+    transition: 0.3s;
+    box-sizing: border-box; /* Fundamental para o padding não empurrar o botão para fora */
+}
     </style>
 </head>
 <body>
@@ -217,21 +226,21 @@
 
                     <div id="form-cartao" class="credit-card-form active">
                         <div class="form-grid">
-                            <div class="input-group full-width">
-                                <label>Nome impresso no cartão</label>
-                                <input type="text" class="input-payment" placeholder="COMO NO CARTÃO">
-                            </div>
+                        <div class="input-group full-width">
+                            <label>Nome impresso no cartão</label>
+                            <input type="text" id="cardName" class="input-payment" placeholder="Como no cartão"maxlength="50">
+                        </div>
                             <div class="input-group full-width">
                                 <label>Número do cartão</label>
-                                <input type="text" class="input-payment" placeholder="0000 0000 0000 0000">
+                                <input type="text" class="input-payment" placeholder="0000 0000 0000 0000"maxlength="19">
                             </div>
                             <div class="input-group">
                                 <label>Validade</label>
-                                <input type="text" class="input-payment" placeholder="MM/AA">
+                                <input type="text" class="input-payment" placeholder="MM/AA"maxlength="5">
                             </div>
                             <div class="input-group">
                                 <label>CVV</label>
-                                <input type="text" class="input-payment" placeholder="123">
+                                <input type="text" class="input-payment" placeholder="123"maxlength="3">
                             </div>
                             <div class="input-group full-width">
                                 <label>Parcelamento</label>
@@ -257,45 +266,33 @@
                 </div>
             </div>
 
-            <div class="right-col">
-                <div class="summary-card">
-                    <h2 class="section-title" style="font-size:1.2rem;">Resumo do Pedido</h2>
-                    
-                    <div class="order-item">
-                        <img src="https://images.unsplash.com/photo-1589939705384-5185137a7f0f?q=80&w=200" class="item-img">
-                        <div>
-                            <h4 style="margin:0; color:#333;">Pintura Residencial (Sala)</h4>
-                            <span style="font-size:0.85rem; color:#666;">Profissional: <strong>Marcos Pinturas</strong></span>
-                        </div>
-                    </div>
+<div class="right-col">
+    <div class="summary-card">
+        <h2 class="section-title" style="font-size:1.2rem;">Resumo do Pedido</h2>
+        
+        <div class="order-item">
+            <img id="fotoResumo" src="" class="item-img" onerror="this.src='assets/Imagens/doke-logo.png'">
+            <div>
+                <h4 id="resumoProfissional" style="margin:0; color:var(--cor0);">@profissional</h4>
+                <h4 id="resumoServico" style="margin:5px 0; color:#333;">Serviço Geral</h4>
+                <span id="nomeUserResumo" style="font-size:0.85rem; color:#666;">Cliente: -</span>
+            </div>
+        </div>
 
-                    <div class="price-row">
-                        <span>Serviço (Mão de Obra)</span>
-                        <span>R$ 400,00</span>
-                    </div>
-                    <div class="price-row">
-                        <span>Materiais (Adicional)</span>
-                        <span>R$ 50,00</span>
-                    </div>
-                    <div class="price-row">
-                        <span>Taxa de Serviço</span>
-                        <span>R$ 0,00</span>
-                    </div>
+        <div class="price-total">
+            <span>Total a pagar</span>
+            <span id="resumoValorTotal">R$ 0,00</span>
+        </div>
 
-                    <div class="price-total">
-                        <span>Total a pagar</span>
-                        <span>R$ 450,00</span>
-                    </div>
+        <div class="guarantee-box">
+            <i class='bx bx-shield-quarter'></i>
+            <div class="guarantee-text">
+                <h4>Pagamento Garantido Doke</h4>
+                <p>O valor fica retido com segurança e só é liberado ao profissional após você confirmar que o serviço foi concluído.</p>
+            </div>
+        </div>
 
-                    <div class="guarantee-box">
-                        <i class='bx bx-shield-quarter'></i>
-                        <div class="guarantee-text">
-                            <h4>Pagamento Garantido Doke</h4>
-                            <p>O valor fica retido com segurança e só é liberado ao profissional após você confirmar que o serviço foi concluído.</p>
-                        </div>
-                    </div>
-
-                    <button class="btn-checkout">Confirmar Pagamento</button>
+        <button class="btn-checkout">Confirmar Pagamento</button>
 
                     
                     <p style="text-align:center; font-size:0.75rem; color:#999; margin-top:10px;">Ambiente 100% Seguro <i class='bx bxs-lock-alt'></i></p>
@@ -418,23 +415,32 @@
     </nav>
 
     <script>
-        function mudarMetodo(metodo, elemento) {
-            // Remove active de todas as abas
-            document.querySelectorAll('.tab-method').forEach(tab => tab.classList.remove('active'));
-            // Adiciona active na clicada
-            elemento.classList.add('active');
+document.addEventListener("DOMContentLoaded", () => {
+    const params = new URLSearchParams(window.location.search);
+    
+    // Captura os dados da URL
+    const valor = params.get('valor') || "R$ 0,00";
+    const desc = params.get('desc') || "Serviço Geral";
+    const prof = params.get('prof') || "@profissional";
+    const user = params.get('user') || "@cliente";
+    const foto = params.get('foto'); 
 
-            // Esconde todas as áreas
-            document.getElementById('form-cartao').classList.remove('active');
-            document.getElementById('area-pix').classList.remove('active');
+    // 1. Foto do Anúncio
+    const elFoto = document.getElementById('fotoResumo');
+    if (elFoto) elFoto.src = (foto && foto !== 'undefined') ? foto : "assets/Imagens/doke-logo.png";
 
-            // Mostra a correta
-            if(metodo === 'cartao') {
-                document.getElementById('form-cartao').classList.add('active');
-            } else {
-                document.getElementById('area-pix').classList.add('active');
-            }
-        }
+    // 2. @Usernames
+    if (document.getElementById('resumoProfissional')) document.getElementById('resumoProfissional').innerText = prof;
+    if (document.getElementById('nomeUserResumo')) document.getElementById('nomeUserResumo').innerText = "Cliente: " + user;
+
+    // 3. Valor e Descrição
+    if (document.getElementById('resumoServico')) document.getElementById('resumoServico').innerText = desc;
+    if (document.getElementById('resumoValorTotal')) document.getElementById('resumoValorTotal').innerText = valor;
+
+    // 4. Reset do campo Nome no Cartão (Para não vir preenchido)
+    const inputNome = document.getElementById('cardName');
+    if (inputNome) inputNome.value = ""; 
+});
     </script>
 
 </body>
