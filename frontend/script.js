@@ -813,15 +813,28 @@ window.toggleDropdown = function(event) {
 window.fazerLogout = async function() {
     if(confirm("Sair da conta?")) {
         try {
-            // 1. Faz o logout no Firebase
+            // 1. Pega o usuário atual antes de deslogar
+            const user = window.auth.currentUser;
+
+            if (user) {
+                // 2. Atualiza o status para Offline no Firestore
+                // Importante: Faça isso ANTES do signOut
+                const userRef = doc(window.db, "usuarios", user.uid);
+                await updateDoc(userRef, { 
+                    status: "Offline",
+                    ultimaVezOnline: new Date().toISOString() 
+                });
+            }
+
+            // 3. Agora sim, faz o logout no Firebase
             await window.auth.signOut(); 
             
-            // 2. Limpa os dados do navegador
+            // 4. Limpa os dados do navegador
             localStorage.removeItem('usuarioLogado');
             localStorage.removeItem('doke_usuario_perfil');
             localStorage.removeItem('doke_uid');
             
-            // 3. Redireciona para a home
+            // 5. Redireciona para a home
             window.location.href = 'index.html';
         } catch (error) {
             console.error("Erro ao sair:", error);
@@ -1309,6 +1322,12 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             if(window.location.pathname.includes('chat')) {
                 carregarMeusPedidos();
+            }
+
+            if (user) {
+                // Quando o usuário está autenticado, marca como online
+                const userRef = doc(db, "usuarios", user.uid);
+                updateDoc(userRef, { status: "Online" });
             }
 
             const chatIdAuto = localStorage.getItem('doke_abrir_chat_id');
@@ -2626,4 +2645,21 @@ async function processarRecusa(idPedido) {
         alert("Erro ao recusar.");
     }
 }
+
+window.addEventListener('beforeunload', () => {
+    if (auth.currentUser) {
+        const userRef = doc(db, "usuarios", auth.currentUser.uid);
+        updateDoc(userRef, { status: "Offline" });
+    }
+});
+
+window.addEventListener('beforeunload', () => {
+    const user = window.auth.currentUser;
+    if (user) {
+        const userRef = doc(window.db, "usuarios", user.uid);
+        // Usamos updateDoc aqui, mas em fechamento de aba nem sempre funciona 100% 
+        // devido à velocidade do navegador, por isso o botão Sair é o método mais seguro.
+        updateDoc(userRef, { status: "Offline" });
+    }
+});
 
