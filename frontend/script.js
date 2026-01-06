@@ -2807,160 +2807,167 @@ document.body.insertAdjacentHTML('beforeend', modalHTML);
 // ============================================================
 
 // 1. LOGOUT SEGURO (NÃO APAGA COOKIES)
+// ============================================================
+// SISTEMA CORRIGIDO: MODAIS, MÁSCARAS E LOGOUT
+// ============================================================
+
+// 1. LOGOUT SEGURO
 window.fazerLogout = async function() {
-    // Usa o modal de confirmação
     if(await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")) {
         try {
             const user = window.auth.currentUser;
             if (user) {
-                // Tenta marcar como offline, mas não bloqueia o logout se falhar
+                // Tenta marcar como offline
                 try {
-                    await updateDoc(doc(window.db, "usuarios", user.uid), { status: "Offline" });
-                } catch(e) { console.log("Erro ao definir offline:", e); }
+                    const userRef = doc(window.db, "usuarios", user.uid);
+                    await updateDoc(userRef, { status: "Offline" });
+                } catch(e) { console.log("Offline update skipped"); }
             }
             await window.auth.signOut(); 
-            
-            // REMOVE APENAS DADOS DA SESSÃO
-            // A chave 'cookiesAceitos' é preservada!
             localStorage.removeItem('usuarioLogado');
             localStorage.removeItem('doke_usuario_perfil');
             localStorage.removeItem('doke_uid');
-            
             window.location.href = 'index.html';
         } catch (error) {
-            console.error("Erro ao sair:", error);
-            // Força saída em caso de erro
             localStorage.removeItem('usuarioLogado');
             window.location.href = 'index.html';
         }
     }
 }
 
-// 2. FUNÇÕES DE ALERTA GLOBAIS
+// 2. FUNÇÕES GLOBAIS DE PROMISE
 window.dokeAlert = (msg, title="Aviso") => new Promise(r => setupDokeModal(title, msg, 'alert', r));
-window.dokeConfirm = (msg, title="Confirmação") => new Promise(r => setupDokeModal(title, msg, 'confirm', r));
+window.dokeConfirm = (msg, title="Confirmação", type="normal") => new Promise(r => setupDokeModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', r));
 window.dokePrompt = (msg, placeholder="", title="Informação") => new Promise(r => setupDokeModal(title, msg, 'prompt', r, placeholder));
 
-// 3. LÓGICA DO MODAL (COM MÁSCARA FORÇADA)
-// CORREÇÃO: MÁSCARA E VALIDAÇÃO DE NÚMEROS NO MODAL
+// 3. LÓGICA UNIFICADA DO MODAL
 function setupDokeModal(title, msg, type, resolve, placeholder="") {
-    const overlay = document.getElementById('dokeGlobalModal') || document.getElementById('dokeModalOverlay');
-    const box = document.querySelector('.doke-modal-box') || document.getElementById('dokeModalBox');
-    
-    // Injeta HTML se não existir
-    if (!overlay) {
-        injetarHtmlModal();
-        setTimeout(() => setupDokeModal(title, msg, type, resolve, placeholder), 50);
-        return;
-    }
+    // Garante que o HTML existe
+    injetarHtmlModal();
 
-    const elTitle = document.getElementById('dmTitle') || document.getElementById('dokeTitle');
-    const elMsg = document.getElementById('dmText') || document.getElementById('dokeMsg');
-    const inputContainer = document.querySelector('.dm-body') || document.getElementById('dokeInputArea');
-    const btnCancel = document.getElementById('btnDmCancel') || document.getElementById('dokeBtnCancel');
-    const btnConfirm = document.getElementById('btnDmConfirm') || document.getElementById('dokeBtnOk');
+    const overlay = document.getElementById('dokeGlobalModal');
+    const box = overlay.querySelector('.doke-modal-box');
+    const elTitle = document.getElementById('dmTitle');
+    const elMsg = document.getElementById('dmText');
+    const inputContainer = document.querySelector('.dm-body');
+    const btnCancel = document.getElementById('btnDmCancel');
+    const btnConfirm = document.getElementById('btnDmConfirm');
 
-    // 1. Textos
+    // Reset Visual
     elTitle.innerText = title;
     elMsg.innerText = msg;
+    btnCancel.style.display = (type === 'alert') ? 'none' : 'block';
+    
+    // Estilo do botão de confirmação
+    if (type === 'confirm-danger') {
+        btnConfirm.style.background = '#e74c3c';
+        btnConfirm.innerText = "Sim, remover";
+    } else {
+        btnConfirm.style.background = '#0b7768';
+        btnConfirm.innerText = (type === 'prompt' || type === 'alert') ? "OK" : "Sim";
+    }
 
-    // 2. RECRIA O INPUT (Crucial para limpar eventos antigos)
-    // Se existir input antigo, remove
+    // --- RECRIA O INPUT (Para limpar máscaras antigas) ---
     const oldInput = inputContainer.querySelector('input');
     if(oldInput) oldInput.remove();
-    
+
     const input = document.createElement('input');
-    input.type = 'text'; // Mantemos text para poder formatar R$
-    input.className = 'dm-input doke-input';
+    input.type = 'text'; // Mantém text para permitir "R$"
+    input.className = 'dm-input'; // Usa a classe CSS injetada
     input.style.display = (type === 'prompt') ? 'block' : 'none';
     input.style.width = "100%";
     input.style.marginTop = "15px";
     input.style.padding = "10px";
-    input.style.fontSize = "1.1rem";
+    input.style.fontSize = "1.2rem";
+    input.style.fontWeight = "bold";
+    input.style.textAlign = "center";
+    input.style.border = "1px solid #ddd";
+    input.style.borderRadius = "8px";
     input.autocomplete = "off";
     inputContainer.appendChild(input);
 
-    btnCancel.style.display = (type === 'alert') ? 'none' : 'block';
-
-    // 3. LÓGICA DE VALIDAÇÃO E MÁSCARA
+    // --- MÁSCARA DE DINHEIRO INTELIGENTE ---
     if(type === 'prompt') {
         input.placeholder = placeholder;
         
-        // Verifica se é campo de DINHEIRO
-        const isMoney = placeholder.includes("R$") || title.toLowerCase().includes("valor") || title.toLowerCase().includes("cobrança");
-        // Verifica se é campo de PARCELAS (Só números, sem R$)
-        const isParcelas = title.toLowerCase().includes("parcela");
+        // Se for valor monetário (detectado pelo título ou placeholder)
+        const isMoney = placeholder.includes("R$") || title.toLowerCase().includes("valor") || title.toLowerCase().includes("cobranca") || title.toLowerCase().includes("cobrança");
+        const isParcela = title.toLowerCase().includes("parcela");
 
         if (isMoney) {
             input.setAttribute('inputmode', 'numeric');
-            input.addEventListener('input', function() {
-                let v = this.value.replace(/\D/g, ""); // Remove tudo que não é número
-                if (v === "") { this.value = ""; return; }
+            
+            // Função de formatação (Estilo ATM: digita 23 vira 0,23)
+            const formatarMoeda = (val) => {
+                let v = val.replace(/\D/g, ""); // Remove tudo que não é número
+                if (v === "") return "";
                 v = (parseInt(v) / 100).toFixed(2) + "";
                 v = v.replace(".", ",");
                 v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-                this.value = "R$ " + v;
+                return "R$ " + v;
+            };
+
+            input.addEventListener('input', function(e) {
+                this.value = formatarMoeda(this.value);
             });
-        } else if (isParcelas) {
+        } else if (isParcela) {
             input.setAttribute('inputmode', 'numeric');
             input.addEventListener('input', function() {
-                // Remove tudo que não é número
-                this.value = this.value.replace(/\D/g, ""); 
+                this.value = this.value.replace(/\D/g, "");
             });
         }
     }
 
-    // 4. Exibe
+    // Exibe o modal
     overlay.style.display = 'flex';
-    setTimeout(() => {
-        overlay.classList.add('active');
-        if(box) box.classList.add('active');
-    }, 10);
-    
     if(type === 'prompt') setTimeout(() => input.focus(), 100);
 
-    // 5. Botões (Clonagem para limpar eventos)
+    // --- HANDLERS DOS BOTÕES (Clonagem para remover listeners antigos) ---
     const newConfirm = btnConfirm.cloneNode(true);
     const newCancel = btnCancel.cloneNode(true);
     btnConfirm.parentNode.replaceChild(newConfirm, btnConfirm);
     btnCancel.parentNode.replaceChild(newCancel, btnCancel);
 
     newConfirm.onclick = () => {
-        fecharModalLocal();
+        overlay.style.display = 'none';
         resolve(type === 'prompt' ? input.value : true);
     };
 
     newCancel.onclick = () => {
-        fecharModalLocal();
+        overlay.style.display = 'none';
         resolve(type === 'prompt' ? null : false);
     };
-
-    function fecharModalLocal() {
-        overlay.classList.remove('active');
-        if(box) box.classList.remove('active');
-        setTimeout(() => overlay.style.display = 'none', 200);
-    }
 }
 
-// Função de segurança para garantir que o HTML do modal exista
+// Garante que o HTML base do modal exista na página
 function injetarHtmlModal() {
     if (document.getElementById('dokeGlobalModal')) return;
+    
+    // Injeta CSS se necessário
+    if (!document.getElementById('modal-styles-injected')) {
+        const style = document.createElement('style');
+        style.id = 'modal-styles-injected';
+        style.innerHTML = `
+            .doke-input:focus { border-color: #0b7768; outline: none; background: #f9f9f9; }
+        `;
+        document.head.appendChild(style);
+    }
+
     const html = `
-    <div id="dokeGlobalModal" class="doke-overlay" style="display:none; position:fixed; z-index:99999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
-        <div class="doke-modal-box" style="background:#fff; width:90%; max-width:400px; border-radius:15px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
-            <div style="padding:15px 20px; background:#f8f9fa; border-bottom:1px solid #eee; font-weight:bold; color:#333;" id="dmTitle">Aviso</div>
-            <div class="dm-body" style="padding:20px; color:#555;">
-                <p id="dmText" style="margin:0; margin-bottom:10px;">Mensagem</p>
+    <div id="dokeGlobalModal" class="doke-overlay" style="display:none; position:fixed; z-index:99999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); align-items:center; justify-content:center;">
+        <div class="doke-modal-box" style="background:#fff; width:90%; max-width:400px; border-radius:15px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.3); animation: zoomIn 0.2s;">
+            <div style="padding:15px 20px; background:#f8f9fa; border-bottom:1px solid #eee; font-weight:bold; color:#333; font-size:1.1rem;" id="dmTitle">Aviso</div>
+            <div class="dm-body" style="padding:25px; color:#555;">
+                <p id="dmText" style="margin:0; margin-bottom:10px; font-size:1rem;">Mensagem</p>
                 </div>
-            <div style="padding:15px; background:#fff; display:flex; gap:10px; justify-content:flex-end;">
-                <button id="btnDmCancel" style="padding:10px 20px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer;">Cancelar</button>
+            <div style="padding:15px; background:#fff; display:flex; gap:10px; justify-content:flex-end; border-top:1px solid #f0f0f0;">
+                <button id="btnDmCancel" style="padding:10px 20px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer; font-weight:600; color:#666;">Cancelar</button>
                 <button id="btnDmConfirm" style="padding:10px 20px; border:none; background:#0b7768; color:white; border-radius:8px; cursor:pointer; font-weight:bold;">OK</button>
             </div>
         </div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
 }
-
 // ============================================================
 // 14. SISTEMA DE STATUS ONLINE/OFFLINE (Adicione/Substitua no final do script.js)
 // ============================================================
