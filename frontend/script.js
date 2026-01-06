@@ -2960,3 +2960,74 @@ function injetarHtmlModal() {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', html);
 }
+
+// ============================================================
+// 14. SISTEMA DE STATUS ONLINE/OFFLINE (Adicione/Substitua no final do script.js)
+// ============================================================
+
+// Função para marcar como Online
+window.marcarComoOnline = async function(uid) {
+    try {
+        const userRef = doc(db, "usuarios", uid);
+        await updateDoc(userRef, { 
+            status: "Online",
+            ultimaVezOnline: new Date().toISOString()
+        });
+    } catch (e) { console.error("Erro status online:", e); }
+};
+
+// Função para marcar como Offline
+window.marcarComoOffline = async function(uid) {
+    try {
+        const userRef = doc(db, "usuarios", uid);
+        await updateDoc(userRef, { 
+            status: "Offline",
+            ultimaVezOnline: new Date().toISOString()
+        });
+    } catch (e) { console.error("Erro status offline:", e); }
+};
+
+document.addEventListener("DOMContentLoaded", function() {
+    // ... seus outros códigos de inicialização ...
+
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            // 1. Assim que detecta login, marca como Online
+            window.marcarComoOnline(user.uid);
+
+            // 2. Se a aba ficar visível novamente, reforça o Online
+            document.addEventListener("visibilitychange", () => {
+                if (document.visibilityState === 'visible') {
+                    window.marcarComoOnline(user.uid);
+                }
+            });
+
+            // 3. Ao fechar a aba ou atualizar, marca como Offline
+            window.addEventListener('beforeunload', () => {
+                // O navigator.sendBeacon é mais confiável para fechamento de aba
+                // Mas como estamos usando Firestore SDK, tentamos o update padrão:
+                window.marcarComoOffline(user.uid);
+            });
+
+            // Restante da sua lógica de login...
+            localStorage.setItem('usuarioLogado', 'true');
+            // ...
+        }
+    });
+});
+
+// Adicione isso dentro do onAuthStateChanged(auth, (user) => { ... }) no script.js
+
+if (user) {
+    // ... seus códigos de login existentes ...
+
+    // --- BATIMENTO CARDÍACO (HEARTBEAT) ---
+    // Atualiza o "ultimaVezOnline" a cada 1 minuto para provar que está online
+    setInterval(() => {
+        if (document.visibilityState === 'visible') {
+            const userRef = doc(db, "usuarios", user.uid);
+            // Atualiza sem mudar status, apenas o horário
+            updateDoc(userRef, { ultimaVezOnline: new Date().toISOString() }).catch(e => {});
+        }
+    }, 60000); // 60 segundos
+}

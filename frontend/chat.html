@@ -713,6 +713,31 @@
     transition: all 0.2s;
 }
 
+#chatStatus {
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 5px; /* Espaço entre a bolinha e o texto */
+    transition: color 0.3s ease;
+}
+
+/* Alinhamento do Status */
+#chatStatus {
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center; /* Centraliza verticalmente */
+    gap: 6px; /* Espaço entre bolinha e texto */
+    line-height: 1; /* Remove altura de linha extra */
+}
+
+/* Ajuste fino da bolinha */
+.status-dot {
+    font-size: 0.6rem; /* Tamanho da bolinha */
+    display: inline-block;
+    position: relative;
+    top: 0px; /* Ajuste manual se precisar subir/descer */
+}
+
 
     </style>
 </head>
@@ -1374,36 +1399,119 @@ window.liberarPagamento = async (id) => {
         } catch (e) { console.error(e); }
     };
 
+// Função auxiliar para formatar a data (Coloque fora ou antes do abrirChat)
+// Função auxiliar de data (Mantenha ou adicione se não tiver)
+    function formatarUltimaVez(dataIso) {
+        if (!dataIso) return "Offline";
+        try {
+            const data = new Date(dataIso);
+            const hoje = new Date();
+            const ontem = new Date(hoje); ontem.setDate(ontem.getDate() - 1);
+            const hora = data.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            if (data.toDateString() === hoje.toDateString()) return `Hoje às ${hora}`;
+            else if (data.toDateString() === ontem.toDateString()) return `Ontem às ${hora}`;
+            else return data.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' }) + ` às ${hora}`;
+        } catch (e) { return "Offline"; }
+    }
+
     window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
+        // UI
         document.getElementById('chat-placeholder').style.display = 'none';
         document.getElementById('box-conversa-real').style.display = 'flex';
+        const chatFooter = document.getElementById('chatFooter'); 
         const containerAcao = document.getElementById('container-acao-header');
+        
+        // Remove aviso antigo
+        const aviso = document.getElementById('aviso-bloqueio-chat');
+        if(aviso) aviso.remove();
 
+        // 1. LÓGICA DE PEDIDOS (BLOQUEIO/STATUS)
         if (colecao === 'pedidos') {
             onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
                 if (docSnap.exists()) {
                     const p = docSnap.data();
+                    
+                    if (p.status === 'pendente') {
+                        chatFooter.style.display = 'none'; 
+                        mostrarAvisoBloqueio("Aguardando aceite do profissional.");
+                    } else if (['recusado', 'cancelado'].includes(p.status)) {
+                        chatFooter.style.display = 'none'; 
+                        mostrarAvisoBloqueio("Pedido encerrado.");
+                    } else {
+                        chatFooter.style.display = 'flex'; 
+                        if(document.getElementById('aviso-bloqueio-chat')) document.getElementById('aviso-bloqueio-chat').remove();
+                    }
+
+                    // Botões Header
                     if(containerAcao) {
                         containerAcao.innerHTML = (p.deUid === currentUserUid && p.status === 'pago') 
                             ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
+                        
+                        const divAcoesPro = document.getElementById('acoes-profissional-header');
+                        if(divAcoesPro) divAcoesPro.style.display = (p.paraUid === currentUserUid && p.status === 'pendente') ? 'flex' : 'none';
                     }
+                    
+                    // Botões Cobrança
                     const btnC = document.getElementById('btn-cobranca-topo');
+                    const btnP = document.getElementById('btn-pagamento');
                     if(btnC) btnC.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
+                    if(btnP) btnP.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
                 }
             });
+        } else {
+            chatFooter.style.display = 'flex';
         }
 
+        // 2. CARREGA DADOS DO USUÁRIO + STATUS CORRIGIDO
         onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
                 const d = docSnap.data();
-                document.getElementById('chatNome').innerText = d.user || nomePadrao;
-                document.getElementById('chatAvatar').src = d.foto || "https://placehold.co/150";
-                document.getElementById('chatStatus').innerText = d.status || "Offline";
-                document.getElementById('chatStatus').style.color = (d.status === "Online") ? "#2e7d32" : "#666";
+                
+                document.getElementById('chatNome').innerText = d.user || d.nome || nomePadrao;
+                document.getElementById('chatAvatar').src = d.foto || fotoPadrao || "https://placehold.co/150";
+
+                const elStatus = document.getElementById('chatStatus');
+                
+                if (elStatus) {
+                    // --- CORREÇÃO DO STATUS ONLINE ---
+                    const agora = new Date();
+                    const ultimaVez = d.ultimaVezOnline ? new Date(d.ultimaVezOnline) : new Date(0);
+                    
+                    // Calcula a diferença em minutos
+                    const diffMinutos = (agora - ultimaVez) / 1000 / 60;
+
+                    // Se diz que está Online no banco, mas faz mais de 3 minutos que não atualiza => Considera OFFLINE
+                    let isReallyOnline = (d.status === "Online" && diffMinutos < 3);
+
+                    if (isReallyOnline) {
+                        // Bolinha alinhada com classe CSS nova
+                        elStatus.innerHTML = `<i class='bx bxs-circle status-dot' style="color:#2ecc71;"></i> Online`;
+                        elStatus.style.color = "#2ecc71";
+                        elStatus.style.fontWeight = "600";
+                    } else {
+                        elStatus.innerText = `Visto por último: ${formatarUltimaVez(d.ultimaVezOnline)}`;
+                        elStatus.style.color = "#888";
+                        elStatus.style.fontWeight = "400";
+                    }
+                }
             }
         });
-        chatIdAtual = idDoc; colecaoAtual = colecao; carregarMensagens(colecao, idDoc);
+
+        chatIdAtual = idDoc; 
+        colecaoAtual = colecao; 
+        carregarMensagens(colecao, idDoc);
     };
+
+    function mostrarAvisoBloqueio(texto) {
+        const chatBox = document.getElementById('box-conversa-real');
+        if(document.getElementById('aviso-bloqueio-chat')) return;
+        const div = document.createElement('div');
+        div.id = "aviso-bloqueio-chat";
+        div.style.cssText = "padding: 15px; background: #fff3cd; color: #856404; text-align: center; font-size: 0.9rem; border-top: 1px solid #ffeeba;";
+        div.innerHTML = `<i class='bx bx-lock-alt'></i> ${texto}`;
+        chatBox.appendChild(div);
+    }
 
 // EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens
 

@@ -76,37 +76,6 @@
 }
 .btn-outline:hover { background: var(--cor0); color: white; }
 
-/* --- ÁREA DE UPLOAD --- */
-.upload-area {
-    border: 2px dashed #ccc;
-    border-radius: 12px;
-    padding: 30px;
-    text-align: center;
-    cursor: pointer;
-    transition: 0.2s;
-    background: #fafafa;
-}
-.upload-area:hover {
-    border-color: var(--cor0);
-    background: #f0fdfa;
-}
-.upload-area i { font-size: 3rem; color: #ccc; margin-bottom: 10px; }
-.upload-area p { margin: 0; color: #666; font-weight: 500; }
-.upload-area span { font-size: 0.8rem; color: #999; }
-
-.preview-grid {
-    display: flex;
-    gap: 10px;
-    margin-top: 15px;
-    flex-wrap: wrap;
-}
-.preview-grid img {
-    width: 60px; height: 60px;
-    object-fit: cover;
-    border-radius: 8px;
-    border: 1px solid #ddd;
-}
-
 /* --- CARD RESUMO (STICKY) --- */
 .resumo-section {
     position: relative;
@@ -179,6 +148,15 @@
     padding: 6px 15px; border-radius: 30px;
     font-size: 0.85rem; font-weight: 600;
     display: flex; align-items: center; gap: 6px;
+}
+
+/* Estilo das Perguntas Dinâmicas */
+.pergunta-extra-item {
+    margin-bottom: 15px;
+    background: #fcfcfc;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
 }
 
 /* --- RESPONSIVIDADE ORÇAMENTO --- */
@@ -300,10 +278,10 @@
                     </div>
 
                     <div id="container-perguntas-extras" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                        <h4 style="color: var(--cor2); margin-bottom: 15px;">Perguntas do Profissional</h4>
-                        <div id="lista-perguntas-dinamicas"></div>
+                        <h4 style="color: var(--cor2); margin-bottom: 15px; font-size: 1rem;">Perguntas de Triagem (Do Profissional)</h4>
+                        <div id="lista-perguntas-dinamicas">
+                            </div>
                     </div>
-
                     <div class="input-group" style="margin-top: 20px;">
                         <label>Descrição detalhada</label>
                         <textarea class="input-premium area-texto" id="descricao-pedido" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
@@ -343,17 +321,6 @@
                         <label>Endereço completo</label>
                         <input type="text" id="endereco-completo" class="input-premium" placeholder="Rua, Número, Complemento">
                     </div>
-                </div>
-
-                <div class="card-branco">
-                    <h3 class="titulo-sessao">3. Fotos ou Vídeos (Opcional)</h3>
-                    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
-                        <i class='bx bx-cloud-upload'></i>
-                        <p>Clique para adicionar fotos do local ou do problema</p>
-                        <span>(Máx. 5 fotos)</span>
-                        <input type="file" id="fileInput" multiple hidden onchange="previewFiles()">
-                    </div>
-                    <div id="previewArea" class="preview-grid"></div>
                 </div>
 
             </section>
@@ -416,13 +383,12 @@
 <script type="module">
     // 1. IMPORTAÇÕES NECESSÁRIAS
     import { doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
     import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Variável global para fotos
-    window.arquivosParaUpload = [];
+    // Variável para guardar as perguntas carregadas (se houver)
+    window.perguntasTriagem = [];
 
-    // --- 2. CARREGAMENTO DA PÁGINA (Preencher dados do Prestador e Anúncio) ---
+    // --- 2. CARREGAMENTO DA PÁGINA ---
     window.addEventListener('load', async function() {
         console.log("🚀 Página Carregada. Buscando dados...");
 
@@ -447,7 +413,7 @@
             } catch (e) { console.error("Erro user:", e); }
         }
 
-        // B. Carrega Anúncio (Título e Regras Online/Presencial)
+        // B. Carrega Anúncio (Título, Regras e PERGUNTAS DE TRIAGEM)
         if (anuncioId) {
             try {
                 const docAnuncioRef = doc(db, "anuncios", anuncioId);
@@ -462,29 +428,100 @@
                         inputTitulo.value = "Orçamento: " + dadosAnuncio.titulo;
                     }
                     
-                    // Aplica regras (esconde endereço se for online)
+                    // Aplica regras de localização
                     aplicarConfiguracoesDoAnuncio(dadosAnuncio);
+
+                    // --- AQUI ESTÁ A CORREÇÃO: CARREGA AS PERGUNTAS ---
+                    if (dadosAnuncio.perguntasFormularioJson) {
+                        try {
+                            const perguntas = JSON.parse(dadosAnuncio.perguntasFormularioJson);
+                            if (Array.isArray(perguntas) && perguntas.length > 0) {
+                                window.perguntasTriagem = perguntas;
+                                renderizarPerguntasDinamicas(perguntas);
+                            }
+                        } catch (errJson) {
+                            console.error("Erro ao ler JSON de perguntas:", errJson);
+                        }
+                    }
                 }
             } catch (e) { console.error("Erro anuncio:", e); }
         }
 
-        // C. Bloqueia se for o próprio dono
+        // C. Bloqueia APENAS se for o próprio dono tentando pedir orçamento pra si mesmo
         onAuthStateChanged(auth, (user) => {
             if (user && prestadorUid && user.uid === prestadorUid) {
                 bloquearBotaoProprioAnuncio();
             }
         });
 
-        // --- 3. CONFIGURA O BOTÃO DEPOIS QUE TUDO CARREGOU ---
+        // Configura o botão de enviar
         configurarBotaoEnviar();
     });
 
-    // --- FUNÇÃO DE ENVIO SEGURA ---
+    // --- FUNÇÃO PARA DESENHAR AS PERGUNTAS NA TELA ---
+    function renderizarPerguntasDinamicas(perguntas) {
+        const container = document.getElementById('lista-perguntas-dinamicas');
+        const wrapper = document.getElementById('container-perguntas-extras');
+        
+        container.innerHTML = ""; // Limpa
+        wrapper.style.display = "block"; // Mostra a seção
+
+        perguntas.forEach((p, index) => {
+            const div = document.createElement('div');
+            div.className = "pergunta-extra-item";
+            
+            // Cria Label
+            const label = document.createElement('label');
+            label.innerText = p.pergunta;
+            label.style.display = "block";
+            label.style.fontWeight = "bold";
+            label.style.marginBottom = "8px";
+            div.appendChild(label);
+
+            // Cria Input baseado no tipo
+            if (p.tipo === 'fechada') {
+                // Cria Select
+                const select = document.createElement('select');
+                select.className = "input-premium campo-dinamico";
+                select.dataset.pergunta = p.pergunta; // Guarda a pergunta no atributo data
+                
+                // Opção padrão
+                const optPadrao = document.createElement('option');
+                optPadrao.value = "";
+                optPadrao.innerText = "Selecione uma opção...";
+                select.appendChild(optPadrao);
+
+                // Opções do profissional
+                if(p.opcoes && Array.isArray(p.opcoes)) {
+                    p.opcoes.forEach(op => {
+                        const option = document.createElement('option');
+                        option.value = op;
+                        option.innerText = op;
+                        select.appendChild(option);
+                    });
+                }
+                div.appendChild(select);
+
+            } else {
+                // Tipo 'aberta' -> Input Texto ou Textarea
+                const input = document.createElement('input');
+                input.type = "text";
+                input.className = "input-premium campo-dinamico";
+                input.placeholder = "Sua resposta...";
+                input.dataset.pergunta = p.pergunta;
+                div.appendChild(input);
+            }
+
+            container.appendChild(div);
+        });
+    }
+
+    // --- FUNÇÃO DE ENVIO ---
     function configurarBotaoEnviar() {
         const btnEnviar = document.getElementById('btnEnviarOrcamento');
         if (!btnEnviar) return;
 
-        // Clone para limpar listeners antigos e evitar travamentos
+        // Clone para limpar listeners antigos
         const novoBtn = btnEnviar.cloneNode(true);
         btnEnviar.parentNode.replaceChild(novoBtn, btnEnviar);
 
@@ -494,8 +531,6 @@
             
             const db = window.db;
             const auth = window.auth;
-            // ATENÇÃO: Recriamos a conexão com Storage aqui para garantir que não seja undefined
-            const storage = getStorage(window.db.app); 
             
             const user = auth.currentUser;
 
@@ -506,10 +541,23 @@
 
             if (!paraUid) { alert("Erro: Profissional não identificado."); return; }
 
-            // Validação
+            // Validação Básica
             const titulo = document.getElementById('titulo-pedido').value;
             const descricao = document.getElementById('descricao-pedido').value;
             if (!titulo || !descricao) { alert("Preencha título e descrição."); return; }
+
+            // --- COLETA AS RESPOSTAS DA TRIAGEM ---
+            let respostasTriagem = [];
+            const camposDinamicos = document.querySelectorAll('.campo-dinamico');
+            
+            camposDinamicos.forEach(campo => {
+                if (campo.value && campo.value.trim() !== "") {
+                    respostasTriagem.push({
+                        pergunta: campo.dataset.pergunta,
+                        resposta: campo.value
+                    });
+                }
+            });
 
             // Feedback Visual
             const textoOriginal = novoBtn.innerHTML;
@@ -517,29 +565,6 @@
             novoBtn.disabled = true;
 
             try {
-                // 1. Upload Fotos
-                let urlsAnexos = [];
-                if (window.arquivosParaUpload && window.arquivosParaUpload.length > 0) {
-                    novoBtn.innerHTML = `Enviando ${window.arquivosParaUpload.length} fotos...`;
-                    console.log("📤 Iniciando Upload...");
-                    
-                    const promises = window.arquivosParaUpload.map(async (file) => {
-                        try {
-                            const refArquivo = ref(storage, `anexos/${user.uid}/${Date.now()}_${file.name}`);
-                            const snap = await uploadBytes(refArquivo, file);
-                            const url = await getDownloadURL(snap.ref);
-                            console.log("✅ Foto enviada:", url);
-                            return url;
-                        } catch (errUpload) {
-                            console.error("Erro no upload unitário:", errUpload);
-                            throw errUpload;
-                        }
-                    });
-                    urlsAnexos = await Promise.all(promises);
-                }
-
-                // 2. Salvar no Banco
-                novoBtn.innerText = "Finalizando...";
                 console.log("💾 Salvando no banco...");
                 const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
                 
@@ -550,7 +575,11 @@
                     mensagemInicial: descricao,
                     paraQuando: document.getElementById('para-quando').value,
                     turno: document.getElementById('turno').value,
-                    anexos: urlsAnexos,
+                    
+                    // AQUI VÃO AS RESPOSTAS DO FORMULÁRIO
+                    respostasTriagem: respostasTriagem,
+                    
+                    anexos: [], 
                     clienteNome: perfil.nome || "Cliente",
                     clienteFoto: perfil.foto || "https://i.pravatar.cc/150",
                     status: "pendente",
@@ -560,7 +589,7 @@
 
                 console.log("🎉 Sucesso! ID:", docRef.id);
 
-                // 3. Sucesso e Redirecionamento
+                // Sucesso
                 localStorage.setItem('doke_pedido_enviado', 'true');
                 window.location.href = `chat.html?chatId=${docRef.id}`;
 
@@ -573,7 +602,7 @@
         });
     }
 
-    // --- FUNÇÕES VISUAIS E HELPERS (TUDO MANTIDO) ---
+    // --- FUNÇÕES VISUAIS E HELPERS ---
 
     function atualizarCardResumo(dados) {
         if(document.getElementById('nomePrestadorResumo'))
@@ -624,25 +653,6 @@
         if(cep.length === 8) {
             fetch(`https://viacep.com.br/ws/${cep}/json/`).then(r=>r.json()).then(d=>{
                 if(!d.erro) document.getElementById('endereco-completo').value = `${d.logradouro}, ${d.bairro} - ${d.localidade}`;
-            });
-        }
-    }
-    
-    window.previewFiles = function() {
-        const preview = document.getElementById('previewArea');
-        const input = document.getElementById('fileInput');
-        if (input.files) {
-            Array.from(input.files).forEach(file => {
-                window.arquivosParaUpload.push(file);
-                const reader = new FileReader();
-                reader.onload = (e) => {
-                    const img = document.createElement('img');
-                    img.src = e.target.result;
-                    img.style.width = "60px"; img.style.height = "60px"; img.style.objectFit = "cover";
-                    img.style.borderRadius = "8px"; img.style.border = "1px solid #ddd"; img.style.marginRight = "5px";
-                    preview.appendChild(img);
-                }
-                reader.readAsDataURL(file);
             });
         }
     }
