@@ -215,7 +215,47 @@
                 <button class="tab-btn active" onclick="abrirTab(event, 'servicos')">Serviços</button>
                 <button class="tab-btn" onclick="abrirTab(event, 'publicacoes')">Publicações</button>
                 <button class="tab-btn" onclick="abrirTab(event, 'sobre')">Sobre</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'avaliacoes')">Avaliações</button>
+                <div id="avaliacoes" class="tab-content" style="display: none;">
+    
+    <div class="review-dashboard" id="dashAvaliacoes" style="display:none;">
+        
+        <div class="dash-left">
+            <div class="big-score" id="dashNotaGeral">0.0</div>
+            <div class="big-stars" id="dashEstrelas">
+                <i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i>
+            </div>
+            <span class="total-count" id="dashTotalReviews">0 avaliações</span>
+        </div>
+
+        <div class="dash-right">
+            <div class="criteria-row">
+                <span class="criteria-label">Pontualidade</span>
+                <div class="progress-bg"><div class="progress-fill" id="barPontualidade"></div></div>
+                <span class="criteria-value" id="valPontualidade">0.0</span>
+            </div>
+            
+            <div class="criteria-row">
+                <span class="criteria-label">Atendimento</span>
+                <div class="progress-bg"><div class="progress-fill" id="barAtendimento"></div></div>
+                <span class="criteria-value" id="valAtendimento">0.0</span>
+            </div>
+
+            <div class="criteria-row">
+                <span class="criteria-label">Qualidade</span>
+                <div class="progress-bg"><div class="progress-fill" id="barQualidade"></div></div>
+                <span class="criteria-value" id="valQualidade">0.0</span>
+            </div>
+
+            <div class="criteria-row">
+                <span class="criteria-label">Custo-Ben.</span>
+                <div class="progress-bg"><div class="progress-fill" id="barPreco"></div></div>
+                <span class="criteria-value" id="valPreco">0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="listaAvaliacoes" style="display:flex; flex-direction:column; gap:20px;"></div>
+</div>
             </div>
 
             <div id="servicos" class="tab-content grid-conteudo"></div>
@@ -231,115 +271,227 @@
         </div>
     </main>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc, collection, query, where, getDocs, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+<script type="module">
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-            authDomain: "doke-site.firebaseapp.com",
-            projectId: "doke-site",
-            storageBucket: "doke-site.firebasestorage.app",
-            messagingSenderId: "997098339190",
-            appId: "1:997098339190:web:a865b696278be21f069857"
-        };
+    const db = window.db || getFirestore();
+    const auth = window.auth || getAuth();
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+    // Pega o ID da URL (ex: perfil-profissional.html?uid=12345)
+    const params = new URLSearchParams(window.location.search);
+    const targetUid = params.get('uid');
 
-        const params = new URLSearchParams(window.location.search);
-        const targetUid = params.get('uid');
+    // Inicialização
+    window.onload = function() {
+        if(!targetUid) {
+            alert("Perfil não encontrado.");
+            window.location.href = "index.html";
+            return;
+        }
+        carregarPerfilPublico();
+        carregarAvaliacoesDoProfissional(); // <--- NOVA FUNÇÃO CHAMADA AQUI
+    }
 
-        async function carregarTudo() {
-            if (!targetUid) return;
+    // 1. CARREGA DADOS DO PERFIL
+    async function carregarPerfilPublico() {
+        try {
+            const docRef = doc(db, "usuarios", targetUid);
+            const docSnap = await getDoc(docRef);
 
-            const dSnap = await getDoc(doc(db, "usuarios", targetUid));
-            if (dSnap.exists()) {
-                const d = dSnap.data();
-                document.getElementById('profNome').innerText = d.nome;
-                document.getElementById('profUser').innerText = "@" + d.user;
-                document.getElementById('profFoto').src = d.foto || "https://placehold.co/160";
-                document.getElementById('profBio').innerText = d.descricao || "Este profissional ainda não adicionou uma biografia.";
-                document.getElementById('countSeguidores').innerText = d.stats?.seguidores || 0;
-                document.getElementById('countSeguindo').innerText = d.stats?.seguindo || 0;
-                document.getElementById('countAvaliacoes').innerText = d.stats?.avaliacoes || 0;
+            if (docSnap.exists()) {
+                const dados = docSnap.data();
+                
+                // Preenche Cabeçalho
+                document.getElementById('nomeDisplay').innerText = dados.nome || "Profissional";
+                document.getElementById('profissaoDisplay').innerText = dados.categoria_profissional || "Membro Doke";
+                document.getElementById('fotoDisplay').src = dados.foto || "https://i.pravatar.cc/150";
+                document.getElementById('bioDisplay').innerText = dados.bio || "Sem biografia.";
+                
+                // Localização
+                let loc = "Brasil";
+                if(dados.cidade && dados.uf) loc = `${dados.cidade}, ${dados.uf}`;
+                document.getElementById('localDisplay').innerHTML = `<i class='bx bx-map'></i> ${loc}`;
 
-                carregarServicos();
-                carregarPublicacoes();
+                // Estatísticas do Topo (Se existirem)
+                if(dados.stats) {
+                    if(document.getElementById('statNota')) document.getElementById('statNota').innerText = dados.stats.media || "New";
+                    if(document.getElementById('statTotal')) document.getElementById('statTotal').innerText = dados.stats.avaliacoes || "0";
+                }
+
+                // ATUALIZA O RESUMO NA ABA DE AVALIAÇÕES
+                atualizarResumoAvaliacoes(dados.stats);
+
+            } else {
+                alert("Profissional não encontrado.");
             }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // 2. FUNÇÃO NOVA: CARREGA A LISTA DE AVALIAÇÕES
+// --- FUNÇÃO PODEROSA DE AVALIAÇÕES ---
+async function carregarAvaliacoesDetalhadas(uid) {
+    const container = document.getElementById('listaAvaliacoes'); // ou listaMinhasAvaliacoes
+    const dashboard = document.getElementById('dashAvaliacoes');
+    
+    if(!container) return;
+    
+    container.innerHTML = `<div style="text-align:center; padding:20px;"><i class='bx bx-loader-alt bx-spin'></i></div>`;
+
+    try {
+        const q = query(
+            collection(db, "avaliacoes"), 
+            where("paraUid", "==", uid),
+            orderBy("data", "desc")
+        );
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+            container.innerHTML = `<p style="text-align:center; color:#777; padding:20px;">Ainda sem avaliações.</p>`;
+            if(dashboard) dashboard.style.display = 'none';
+            return;
         }
 
-        async function carregarServicos() {
-            const q = query(collection(db, "anuncios"), where("uid", "==", targetUid));
-            const snap = await getDocs(q);
-            const container = document.getElementById('servicos');
-            container.innerHTML = snap.empty ? "<p>Nenhum serviço cadastrado.</p>" : "";
+        if(dashboard) dashboard.style.display = 'grid';
 
-            snap.forEach(d => {
-                const ad = d.data();
-                container.insertAdjacentHTML('beforeend', `
-                    <div class="card-item">
-                        <img src="${ad.fotoPrincipal}" class="capa-item">
-                        <div class="corpo-item">
-                            <h4>${ad.titulo}</h4>
-                            <span style="color:var(--cor0); font-weight:800;">${ad.preco}</span>
-                        </div>
-                    </div>
-                `);
-            });
-        }
+        // Variáveis para somar TUDO
+        let total = snapshot.size;
+        let somaGeral = 0;
+        let somaPontualidade = 0;
+        let somaAtendimento = 0;
+        let somaQualidade = 0;
+        let somaPreco = 0;
 
-        async function carregarPublicacoes() {
-            const q = query(collection(db, "posts"), where("uid", "==", targetUid));
-            const snap = await getDocs(q);
-            const container = document.getElementById('publicacoes');
-            container.innerHTML = snap.empty ? "<p>Nenhuma publicação ainda.</p>" : "";
+        snapshot.forEach(doc => {
+            const r = doc.data();
+            
+            // Soma para as médias (com proteção caso o campo não exista antigo)
+            somaGeral += r.media || r.nota || 0;
+            somaPontualidade += r.pontualidade || r.nota || 0;
+            somaAtendimento += r.atendimento || r.nota || 0;
+            somaQualidade += r.qualidade || r.nota || 0;
+            somaPreco += r.preco || r.nota || 0;
 
-            snap.forEach(d => {
-                const post = d.data();
-                container.insertAdjacentHTML('beforeend', `
-                    <div class="card-item">
-                        <img src="${post.mediaUrl}" class="capa-item">
-                        <div class="corpo-item">
-                            <p style="font-size:0.9rem; color:#555;">${post.legenda || ''}</p>
-                        </div>
-                    </div>
-                `);
-            });
-        }
+            // Renderiza o Card de Comentário (Visual simples para a lista)
+            const dataF = r.data ? new Date(r.data).toLocaleDateString() : '-';
+            const estrelasCard = gerarEstrelasHTML(r.media || r.nota);
+            
+            const htmlCard = `
+            <div class="review-card" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #f0f0f0;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <strong>${r.deNome || "Cliente"}</strong>
+                    <span style="font-size:0.8rem; color:#999;">${dataF}</span>
+                </div>
+                <div style="color:#f1c40f; font-size:0.9rem; margin-bottom:10px;">${estrelasCard}</div>
+                <p style="color:#555; font-style:italic;">"${r.comentarioGeral || r.comentario}"</p>
+                
+                <div style="margin-top:10px; font-size:0.75rem; color:#aaa; display:flex; gap:10px;">
+                    <span><i class='bx bx-time'></i> ${r.pontualidade || '-'}</span>
+                    <span><i class='bx bx-user-voice'></i> ${r.atendimento || '-'}</span>
+                    <span><i class='bx bx-diamond'></i> ${r.qualidade || '-'}</span>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', htmlCard);
+        });
 
-        window.abrirTab = function(evt, name) {
-            document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.getElementById(name).style.display = (name === 'servicos' || name === 'publicacoes') ? 'grid' : 'block';
-            evt.currentTarget.classList.add('active');
-        }
+        // --- CÁLCULO E ATUALIZAÇÃO DO DASHBOARD ---
+        
+        // 1. Médias
+        const mediaGeral = (somaGeral / total).toFixed(1);
+        const mediaPont = (somaPontualidade / total).toFixed(1);
+        const mediaAtend = (somaAtendimento / total).toFixed(1);
+        const mediaQuali = (somaQualidade / total).toFixed(1);
+        const mediaPreco = (somaPreco / total).toFixed(1);
 
-        window.irParaChat = async function() {
-            const user = auth.currentUser;
-            if(!user) { window.location.href="login.html"; return; }
-            if(user.uid === targetUid) return;
+        // 2. Preenche HTML
+        document.getElementById('dashNotaGeral').innerText = mediaGeral;
+        document.getElementById('dashTotalReviews').innerText = `${total} avaliações`;
+        document.getElementById('dashEstrelas').innerHTML = gerarEstrelasHTML(mediaGeral);
 
-            const q = query(collection(db, "conversas"), where("participantes", "array-contains", user.uid));
-            const snap = await getDocs(q);
-            let chatId = null;
-            snap.forEach(d => { if(d.data().participantes.includes(targetUid)) chatId = d.id; });
+        // 3. Atualiza Barras de Progresso e Textos
+        atualizarBarra('barPontualidade', 'valPontualidade', mediaPont);
+        atualizarBarra('barAtendimento', 'valAtendimento', mediaAtend);
+        atualizarBarra('barQualidade', 'valQualidade', mediaQuali);
+        atualizarBarra('barPreco', 'valPreco', mediaPreco);
 
-            if(chatId) window.location.href = `chat.html?chatId=${chatId}`;
-            else {
-                const nova = await addDoc(collection(db, "conversas"), {
-                    participantes: [user.uid, targetUid],
-                    status: "pendente",
-                    dataCriacao: new Date().toISOString(),
-                    solicitadoPor: user.uid
-                });
-                window.location.href = `chat.html?chatId=${nova.id}`;
+    } catch (e) {
+        console.error("Erro stats:", e);
+    }
+}
+
+// Helpers
+function atualizarBarra(idBarra, idTexto, valor) {
+    const elBar = document.getElementById(idBarra);
+    const elTxt = document.getElementById(idTexto);
+    if(elBar && elTxt) {
+        // Converte 0-5 para 0-100%
+        const pct = (valor / 5) * 100;
+        elBar.style.width = `${pct}%`;
+        
+        // Cor da barra baseada na nota
+        if(valor >= 4.5) elBar.style.backgroundColor = "#2ecc71"; // Verde excelente
+        else if(valor >= 3.5) elBar.style.backgroundColor = "#f1c40f"; // Amarelo ok
+        else elBar.style.backgroundColor = "#e74c3c"; // Vermelho ruim
+
+        elTxt.innerText = valor;
+    }
+}
+
+function gerarEstrelasHTML(nota) {
+    let html = "";
+    for(let i=1; i<=5; i++) {
+        if (i <= Math.round(nota)) html += "<i class='bx bxs-star'></i>";
+        else html += "<i class='bx bx-star'></i>";
+    }
+    return html;
+}
+
+    // 3. ATUALIZA O BLOCO DE RESUMO (Aquele 4.9 Grande)
+    function atualizarResumoAvaliacoes(stats) {
+        const media = (stats && stats.media) ? stats.media : "0.0";
+        const total = (stats && stats.avaliacoes) ? stats.avaliacoes : 0;
+
+        // Atualiza números
+        const elNotaBig = document.querySelector('.nota-grande');
+        const elTotalBig = document.querySelector('.total-reviews');
+        
+        if(elNotaBig) elNotaBig.innerText = media;
+        if(elTotalBig) elTotalBig.innerText = `Baseado em ${total} avaliações`;
+
+        // Pinta as estrelas do resumo
+        const containerStars = document.querySelector('.stars-summary');
+        if(containerStars) {
+            let html = "";
+            const notaInt = Math.round(parseFloat(media));
+            for(let i=1; i<=5; i++) {
+                html += (i <= notaInt) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
             }
-        };
+            containerStars.innerHTML = html;
+        }
+    }
 
-        onAuthStateChanged(auth, (user) => { carregarTudo(); });
-    </script>
+    // Lógica das Abas
+    window.mudarTab = function(evt, tabName) {
+        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabName).style.display = 'block';
+        evt.currentTarget.classList.add('active');
+    }
+
+    // Botão Contratar / Chat
+    window.irParaChat = async function() {
+        const user = auth.currentUser;
+        if(!user) { window.location.href="login.html"; return; }
+        if(user.uid === targetUid) { alert("Este é seu próprio perfil."); return; }
+
+        // Redireciona para o fluxo de pedido/chat
+        // Passa o ID do profissional para iniciar a conversa
+        window.location.href = `orcamento.html?uid=${targetUid}`;
+    };
+</script>
 </body>
 </html>

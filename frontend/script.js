@@ -458,7 +458,7 @@ window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricao
         return; 
     }
 
-    try {
+try {
         const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
         
         await addDoc(collection(db, "pedidos"), {
@@ -468,11 +468,15 @@ window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricao
             clienteNome: perfil.nome || "Cliente Doke",
             clienteFoto: perfil.foto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
             servicoReferencia: descricaoServico,
-            mensagemInicial: msg, // Descrição obrigatória
-            respostasDoFormulario: respostasFormulario, // Respostas das questões do prestador
+            mensagemInicial: msg, 
+            respostasDoFormulario: respostasFormulario,
             status: "pendente",
             dataPedido: new Date().toISOString(),
-            visualizado: false
+            visualizado: false,
+            
+            // ADICIONE ESTES CAMPOS: Garante que nasce não lido
+            notificacaoLidaProfissional: false, 
+            notificacaoLidaCliente: true // Eu (cliente) já li o que acabei de enviar
         });
 
         alert(`✅ Solicitação enviada! Aguarde o retorno no chat.`);
@@ -748,13 +752,19 @@ window.verificarEstadoLogin = function() {
     const fotoUsuario = perfil.foto || 'https://i.pravatar.cc/150?img=12'; 
     const eProfissional = perfil.isProfissional === true;
 
-    // --- A. CONTROLE DOS STORIES ---
-const containers = document.querySelectorAll('.botoes-direita');
+    // --- A. CONTROLE DOS MENUS ---
+    const containers = document.querySelectorAll('.botoes-direita');
     
     containers.forEach(container => {
         if (logado) {
             const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
             const textoAnunciar = eProfissional ? "Anunciar" : "Seja Profissional";
+
+            // --- NOVO: LÓGICA DO BOTÃO CARTEIRA ---
+            // Só aparece se for profissional
+            const itemCarteira = eProfissional 
+                ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` 
+                : "";
 
             container.innerHTML = `
                 <div class="profile-container">
@@ -764,7 +774,8 @@ const containers = document.querySelectorAll('.botoes-direita');
                             ${perfil.user || 'Usuário'}
                         </div>
                         <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
-                        <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+                        
+                        ${itemCarteira} <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
                         <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
                         <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
                     </div>
@@ -774,7 +785,7 @@ const containers = document.querySelectorAll('.botoes-direita');
         }
     });
 
-const imgBottom = document.getElementById('imgPerfilMobile');
+    const imgBottom = document.getElementById('imgPerfilMobile');
     if (imgBottom) {
         if (logado) {
             imgBottom.src = fotoUsuario;
@@ -794,7 +805,6 @@ const imgBottom = document.getElementById('imgPerfilMobile');
 }
 
 
-
 window.alternarConta = function() {
     window.auth.signOut().then(() => {
         localStorage.removeItem('usuarioLogado');
@@ -808,39 +818,6 @@ window.toggleDropdown = function(event) {
     if(event) event.stopPropagation();
     const drop = document.getElementById('dropdownPerfil');
     if(drop) drop.classList.toggle('show');
-}
-
-window.fazerLogout = async function() {
-    if(confirm("Sair da conta?")) {
-        try {
-            // 1. Pega o usuário atual antes de deslogar
-            const user = window.auth.currentUser;
-
-            if (user) {
-                // 2. Atualiza o status para Offline no Firestore
-                // Importante: Faça isso ANTES do signOut
-                const userRef = doc(window.db, "usuarios", user.uid);
-                await updateDoc(userRef, { 
-                    status: "Offline",
-                    ultimaVezOnline: new Date().toISOString() 
-                });
-            }
-
-            // 3. Agora sim, faz o logout no Firebase
-            await window.auth.signOut(); 
-            
-            // 4. Limpa os dados do navegador
-            localStorage.removeItem('usuarioLogado');
-            localStorage.removeItem('doke_usuario_perfil');
-            localStorage.removeItem('doke_uid');
-            
-            // 5. Redireciona para a home
-            window.location.href = 'index.html';
-        } catch (error) {
-            console.error("Erro ao sair:", error);
-            alert("Erro ao encerrar sessão. Tente novamente.");
-        }
-    }
 }
 
 window.irParaMeuPerfil = function(event) {
@@ -1314,7 +1291,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }
             
             // Ativa notificações de pedidos novos
-            verificarNotificacoes(user.uid);
+            window.monitorarNotificacoesGlobal(user.uid);
 
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
@@ -2527,123 +2504,72 @@ const paramsChat = new URLSearchParams(window.location.search);
         }
     });
 
-    // ==========================================
-// LÓGICA DE ANÁLISE DE PEDIDO (MODAL)
-// ==========================================
+// EM SCRIPT.JS
 
 window.abrirModalAnalise = async function(idPedido) {
-    const modal = document.getElementById('modalDetalhesPedido');
-    if(!modal) return;
-
-    // Mostra loading enquanto busca
+    const modal = document.getElementById('modalOrcamento'); // ID do seu modal
+    const corpoModal = document.getElementById('mdBody'); // ID do corpo do modal
+    
+    if(!modal || !corpoModal) return;
+    
     modal.style.display = 'flex';
-    document.getElementById('md-descricao').innerText = "Carregando informações...";
+    corpoModal.innerHTML = "<p>Carregando...</p>";
 
     try {
         const docSnap = await getDoc(doc(db, "pedidos", idPedido));
-        if(!docSnap.exists()) { alert("Pedido não encontrado."); fecharModalDetalhes(); return; }
-
+        if(!docSnap.exists()) return;
         const dados = docSnap.data();
 
-        // 1. Preenche Dados Básicos
-        document.getElementById('md-nome').innerText = dados.clienteNome;
-        document.getElementById('md-foto').src = dados.clienteFoto || "https://cdn-icons-png.flaticon.com/512/847/847969.png";
-        document.getElementById('md-data').innerText = "Enviado em: " + new Date(dados.dataPedido).toLocaleString();
-        document.getElementById('md-titulo').innerText = dados.servicoReferencia;
-        document.getElementById('md-descricao').innerText = dados.mensagemInicial;
-        
-        document.getElementById('md-data-servico').innerText = dados.paraQuando || "A combinar";
-        document.getElementById('md-turno').innerText = dados.turno || "Qualquer horário";
-
-        // 2. Localização (Online ou Presencial)
-        const boxLocal = document.getElementById('md-box-local');
-        if (dados.localizacao && dados.localizacao.tipo === 'Presencial') {
-            boxLocal.style.display = 'block';
-            document.getElementById('md-endereco').innerHTML = `
-                ${dados.localizacao.endereco} <br> 
-                <small style='color:#777'>CEP: ${dados.localizacao.cep}</small>
-            `;
-        } else {
-            boxLocal.style.display = 'block';
-            document.getElementById('md-endereco').innerHTML = `<span style="background:#e0f2f1; color:#00695c; padding:3px 10px; border-radius:10px; font-size:0.85rem;">🌐 Atendimento Online / Remoto</span>`;
+        // GERA HTML DAS FOTOS
+        let htmlFotos = "";
+        if(dados.anexos && dados.anexos.length > 0) {
+            htmlFotos = `
+            <div style="margin-top:15px;">
+                <strong style="font-size:0.9rem; color:#666;">Anexos:</strong>
+                <div style="display:flex; gap:10px; overflow-x:auto; margin-top:5px;">
+                    ${dados.anexos.map(url => `
+                        <img src="${url}" onclick="window.open('${url}')" 
+                        style="width:60px; height:60px; border-radius:8px; object-fit:cover; cursor:pointer; border:1px solid #ddd;">
+                    `).join('')}
+                </div>
+            </div>`;
         }
 
-        // 3. Respostas do Quiz (Se houver)
-        const boxQuiz = document.getElementById('md-box-quiz');
-        const listaQuiz = document.getElementById('md-lista-quiz');
-        listaQuiz.innerHTML = "";
-        
-        if (dados.formularioRespostas && dados.formularioRespostas.length > 0) {
-            boxQuiz.style.display = 'block';
-            dados.formularioRespostas.forEach(r => {
-                listaQuiz.innerHTML += `
-                    <div style="margin-bottom:10px; background:#f5f5f5; padding:10px; border-radius:6px;">
-                        <strong style="font-size:0.85rem; color:#555;">${r.pergunta}</strong>
-                        <div style="color:#333;">${r.resposta}</div>
-                    </div>`;
-            });
-        } else {
-            boxQuiz.style.display = 'none';
-        }
-
-        // 4. Configura os Botões de Ação
-        const btnAceitar = document.getElementById('btn-md-aceitar');
-        const btnRecusar = document.getElementById('btn-md-recusar');
-
-        btnAceitar.onclick = () => processarAceite(idPedido, dados);
-        btnRecusar.onclick = () => processarRecusa(idPedido);
-
+        // MONTA O MODAL COMPLETO
+        corpoModal.innerHTML = `
+            <h3>${dados.servicoReferencia}</h3>
+            <p style="color:#555;">${dados.mensagemInicial}</p>
+            ${htmlFotos} <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            
+            <div style="display:flex; gap:10px;">
+                <button onclick="processarRecusa('${idPedido}')" style="flex:1; padding:10px; background:#fce4ec; color:#c2185b; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Recusar</button>
+                <button onclick="processarAceite('${idPedido}', '${dados.deUid}', '${dados.clienteNome}', '${dados.clienteFoto}')" style="flex:1; padding:10px; background:var(--cor0); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Aceitar</button>
+            </div>
+        `;
     } catch (e) {
         console.error(e);
-        alert("Erro ao abrir detalhes.");
-        fecharModalDetalhes();
+        corpoModal.innerText = "Erro ao carregar.";
     }
 }
-
 window.fecharModalDetalhes = function() {
     document.getElementById('modalDetalhesPedido').style.display = 'none';
 }
 
 async function processarAceite(idPedido, dados) {
-    if(!confirm("Aceitar este serviço e liberar o chat?")) return;
-    
-    const btn = document.getElementById('btn-md-aceitar');
-    btn.innerText = "Processando...";
-    btn.disabled = true;
-
+    if(!await window.dokeConfirm("Aceitar este serviço e liberar o chat?")) return;
     try {
-        // Atualiza status no banco
-        await updateDoc(doc(db, "pedidos", idPedido), {
-            status: "aceito",
-            dataAtualizacao: new Date().toISOString()
-        });
-
+        await updateDoc(doc(db, "pedidos", idPedido), { status: "aceito", dataAtualizacao: new Date().toISOString() });
         fecharModalDetalhes();
-        
-        // Abre o chat imediatamente
         abrirChatInterno(dados.deUid, idPedido, dados.clienteNome, dados.clienteFoto);
-
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao aceitar.");
-        btn.innerText = "Aceitar e Conversar";
-        btn.disabled = false;
-    }
+    } catch (e) { window.dokeAlert("Erro ao aceitar."); }
 }
 
 async function processarRecusa(idPedido) {
-    if(!confirm("Tem certeza que deseja recusar este pedido?")) return;
-
+    if(!await window.dokeConfirm("Recusar este pedido?", "Atenção")) return;
     try {
-        await updateDoc(doc(db, "pedidos", idPedido), {
-            status: "recusado",
-            dataAtualizacao: new Date().toISOString()
-        });
+        await updateDoc(doc(db, "pedidos", idPedido), { status: "recusado", dataAtualizacao: new Date().toISOString() });
         fecharModalDetalhes();
-    } catch (e) {
-        console.error(e);
-        alert("Erro ao recusar.");
-    }
+    } catch (e) { window.dokeAlert("Erro ao recusar."); }
 }
 
 window.addEventListener('beforeunload', () => {
@@ -2663,3 +2589,374 @@ window.addEventListener('beforeunload', () => {
     }
 });
 
+// ============================================================
+// MONITORAMENTO GLOBAL DE NOTIFICAÇÕES (SIDEBAR E MOBILE)
+// ============================================================
+window.monitorarNotificacoesGlobal = function(uid) {
+    if (!uid) return;
+    const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
+    const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
+
+    const atualizarBadges = (docsRecebidos, docsEnviados) => {
+        let totalNotif = 0;
+        let totalChat = 0;
+
+        // ... (lógica de contagem permanece igual) ...
+        docsRecebidos.forEach(doc => {
+            const data = doc.data();
+            const st = data.status;
+            if ((st === 'pendente' || st === 'pago' || st === 'finalizado') && !data.notificacaoLidaProfissional) totalNotif++;
+            if (st === 'aceito') totalChat++; 
+        });
+        docsEnviados.forEach(doc => {
+            const data = doc.data();
+            const st = data.status;
+            if ((st === 'aceito' || st === 'recusado') && !data.notificacaoLidaCliente) totalNotif++;
+            if (st === 'aceito') totalChat++;
+        });
+
+        // ESTILO UNIFICADO (Vermelho padrão #ff2e63)
+        const estiloBadge = `
+            position: absolute; top: 5px; right: 5px;
+            background: #ff2e63; color: white;
+            font-size: 10px; font-weight: bold;
+            min-width: 18px; height: 18px;
+            border-radius: 50%; display: none;
+            align-items: center; justify-content: center;
+            border: 2px solid white; z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        `;
+
+        // --- ATUALIZA O MENU LATERAL E MOBILE ---
+        
+        // 1. Badge de NOTIFICAÇÕES (Sininho)
+document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
+            let badge = link.parentNode.querySelector('.badge-sidebar');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge-sidebar';
+                badge.style.cssText = estiloBadge;
+                // Ajuste para mobile vs desktop
+                const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
+                parent.style.position = 'relative';
+                parent.appendChild(badge);
+            }
+            if (totalNotif > 0) { badge.innerText = totalNotif; badge.style.display = 'flex'; } 
+            else { badge.style.display = 'none'; }
+        });
+
+        
+        // 2. Badge de CHAT (Envelope) - Mantém lógica original
+document.querySelectorAll('a[href="chat.html"]').forEach(link => {
+            let badge = link.parentNode.querySelector('.badge-chat-sidebar');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'badge-chat-sidebar';
+                badge.style.cssText = estiloBadge; // Usa a mesma variável de estilo
+                const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
+                parent.style.position = 'relative';
+                parent.appendChild(badge);
+            }
+            if (totalChat > 0) { badge.innerText = totalChat; badge.style.display = 'flex'; } 
+            else { badge.style.display = 'none'; }
+        });
+    };
+// ... (restante dos snapshots igual) ...
+    let cacheRecebidos = []; let cacheEnviados = [];
+    onSnapshot(qRecebidos, (snap) => { cacheRecebidos = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados); });
+    onSnapshot(qEnviados, (snap) => { cacheEnviados = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados); });
+}
+
+const styleModal = document.createElement('style');
+styleModal.innerHTML = `
+    .doke-overlay {
+        display: none; position: fixed; z-index: 99999; left: 0; top: 0;
+        width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+        backdrop-filter: blur(4px); justify-content: center; align-items: center;
+        animation: fadeIn 0.2s;
+    }
+    .doke-modal {
+        background: white; width: 90%; max-width: 400px; border-radius: 16px;
+        padding: 25px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+        transform: scale(0.9); transition: transform 0.2s;
+    }
+    .doke-modal.active { transform: scale(1); }
+    .doke-modal h3 { margin: 0 0 10px 0; color: #333; font-size: 1.3rem; }
+    .doke-modal p { color: #666; margin-bottom: 25px; line-height: 1.5; }
+    .doke-btns { display: flex; gap: 10px; justify-content: center; }
+    .btn-doke { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 1rem; }
+    .btn-doke-ok { background: var(--cor0, #0b7768); color: white; }
+    .btn-doke-cancel { background: #f0f0f0; color: #555; }
+    
+    /* Input customizado para o Prompt */
+    .doke-input {
+        width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px;
+        font-size: 1.1rem; margin-bottom: 20px; outline: none; text-align: center;
+    }
+    .doke-input:focus { border-color: var(--cor0, #0b7768); }
+
+    /* ======================================================
+   ESTILO DO MODAL DOKE (Prompt, Alert, Confirm)
+   ====================================================== */
+
+/* Fundo escuro com Blur */
+.doke-overlay {
+    background: rgba(0, 0, 0, 0.6) !important;
+    backdrop-filter: blur(8px);
+    transition: opacity 0.3s ease;
+}
+
+/* A Caixa do Modal */
+.doke-modal-box {
+    border-radius: 20px !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255,255,255,0.1);
+    font-family: 'Poppins', sans-serif;
+    transform: scale(0.95);
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.doke-modal-box.active {
+    transform: scale(1);
+}
+
+/* Título */
+#dmTitle {
+    background: white !important;
+    color: var(--cor2) !important; /* Azul Doke */
+    font-size: 1.2rem;
+    padding-top: 25px !important;
+    padding-bottom: 10px !important;
+    border: none !important;
+}
+
+/* Texto do Corpo */
+.dm-body {
+    padding: 0 25px 20px 25px !important;
+    color: #555;
+    font-size: 0.95rem;
+}
+
+/* O Campo de Input (Onde digita o valor) */
+.dm-input {
+    background: #f8f9fa;
+    border: 2px solid #e0e0e0 !important;
+    border-radius: 12px !important;
+    padding: 15px !important;
+    font-size: 1.5rem !important; /* Letra grande para dinheiro */
+    color: var(--cor0) !important; /* Verde Doke */
+    font-weight: 700;
+    text-align: center;
+    transition: all 0.2s;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
+}
+
+.dm-input:focus {
+    border-color: var(--cor0) !important;
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(11, 119, 104, 0.1) !important;
+}
+
+.dm-input::placeholder {
+    color: #ccc;
+    font-weight: 400;
+    font-size: 1.1rem;
+}
+
+/* Botões */
+#btnDmCancel {
+    border: none !important;
+    background: #f1f3f5 !important;
+    color: #777 !important;
+    font-weight: 600;
+    transition: 0.2s;
+}
+#btnDmCancel:hover { background: #e9ecef !important; color: #333 !important; }
+
+#btnDmConfirm {
+    background: var(--cor0) !important;
+    box-shadow: 0 4px 15px rgba(11, 119, 104, 0.3);
+    transition: 0.2s;
+}
+#btnDmConfirm:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(11, 119, 104, 0.4);
+}
+`;
+document.head.appendChild(styleModal);
+
+// Cria o HTML do modal na página
+const modalHTML = `
+<div id="dokeModalOverlay" class="doke-overlay">
+    <div class="doke-modal" id="dokeModalBox">
+        <h3 id="dokeTitle">Aviso</h3>
+        <p id="dokeMsg">Mensagem</p>
+        <div id="dokeInputArea" style="display:none;">
+            <input type="text" id="dokeInput" class="doke-input" placeholder="">
+        </div>
+        <div class="doke-btns">
+            <button id="dokeBtnCancel" class="btn-doke btn-doke-cancel">Cancelar</button>
+            <button id="dokeBtnOk" class="btn-doke btn-doke-ok">OK</button>
+        </div>
+    </div>
+</div>`;
+document.body.insertAdjacentHTML('beforeend', modalHTML);
+
+// ============================================================
+// SISTEMA CORRIGIDO: MODAIS, MÁSCARAS E LOGOUT (COPIE TUDO)
+// ============================================================
+
+// 1. LOGOUT SEGURO (NÃO APAGA COOKIES)
+window.fazerLogout = async function() {
+    // Usa o modal de confirmação
+    if(await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")) {
+        try {
+            const user = window.auth.currentUser;
+            if (user) {
+                // Tenta marcar como offline, mas não bloqueia o logout se falhar
+                try {
+                    await updateDoc(doc(window.db, "usuarios", user.uid), { status: "Offline" });
+                } catch(e) { console.log("Erro ao definir offline:", e); }
+            }
+            await window.auth.signOut(); 
+            
+            // REMOVE APENAS DADOS DA SESSÃO
+            // A chave 'cookiesAceitos' é preservada!
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('doke_usuario_perfil');
+            localStorage.removeItem('doke_uid');
+            
+            window.location.href = 'index.html';
+        } catch (error) {
+            console.error("Erro ao sair:", error);
+            // Força saída em caso de erro
+            localStorage.removeItem('usuarioLogado');
+            window.location.href = 'index.html';
+        }
+    }
+}
+
+// 2. FUNÇÕES DE ALERTA GLOBAIS
+window.dokeAlert = (msg, title="Aviso") => new Promise(r => setupDokeModal(title, msg, 'alert', r));
+window.dokeConfirm = (msg, title="Confirmação") => new Promise(r => setupDokeModal(title, msg, 'confirm', r));
+window.dokePrompt = (msg, placeholder="", title="Informação") => new Promise(r => setupDokeModal(title, msg, 'prompt', r, placeholder));
+
+// 3. LÓGICA DO MODAL (COM MÁSCARA FORÇADA)
+// CORREÇÃO: MÁSCARA E VALIDAÇÃO DE NÚMEROS NO MODAL
+function setupDokeModal(title, msg, type, resolve, placeholder="") {
+    const overlay = document.getElementById('dokeGlobalModal') || document.getElementById('dokeModalOverlay');
+    const box = document.querySelector('.doke-modal-box') || document.getElementById('dokeModalBox');
+    
+    // Injeta HTML se não existir
+    if (!overlay) {
+        injetarHtmlModal();
+        setTimeout(() => setupDokeModal(title, msg, type, resolve, placeholder), 50);
+        return;
+    }
+
+    const elTitle = document.getElementById('dmTitle') || document.getElementById('dokeTitle');
+    const elMsg = document.getElementById('dmText') || document.getElementById('dokeMsg');
+    const inputContainer = document.querySelector('.dm-body') || document.getElementById('dokeInputArea');
+    const btnCancel = document.getElementById('btnDmCancel') || document.getElementById('dokeBtnCancel');
+    const btnConfirm = document.getElementById('btnDmConfirm') || document.getElementById('dokeBtnOk');
+
+    // 1. Textos
+    elTitle.innerText = title;
+    elMsg.innerText = msg;
+
+    // 2. RECRIA O INPUT (Crucial para limpar eventos antigos)
+    // Se existir input antigo, remove
+    const oldInput = inputContainer.querySelector('input');
+    if(oldInput) oldInput.remove();
+    
+    const input = document.createElement('input');
+    input.type = 'text'; // Mantemos text para poder formatar R$
+    input.className = 'dm-input doke-input';
+    input.style.display = (type === 'prompt') ? 'block' : 'none';
+    input.style.width = "100%";
+    input.style.marginTop = "15px";
+    input.style.padding = "10px";
+    input.style.fontSize = "1.1rem";
+    input.autocomplete = "off";
+    inputContainer.appendChild(input);
+
+    btnCancel.style.display = (type === 'alert') ? 'none' : 'block';
+
+    // 3. LÓGICA DE VALIDAÇÃO E MÁSCARA
+    if(type === 'prompt') {
+        input.placeholder = placeholder;
+        
+        // Verifica se é campo de DINHEIRO
+        const isMoney = placeholder.includes("R$") || title.toLowerCase().includes("valor") || title.toLowerCase().includes("cobrança");
+        // Verifica se é campo de PARCELAS (Só números, sem R$)
+        const isParcelas = title.toLowerCase().includes("parcela");
+
+        if (isMoney) {
+            input.setAttribute('inputmode', 'numeric');
+            input.addEventListener('input', function() {
+                let v = this.value.replace(/\D/g, ""); // Remove tudo que não é número
+                if (v === "") { this.value = ""; return; }
+                v = (parseInt(v) / 100).toFixed(2) + "";
+                v = v.replace(".", ",");
+                v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+                this.value = "R$ " + v;
+            });
+        } else if (isParcelas) {
+            input.setAttribute('inputmode', 'numeric');
+            input.addEventListener('input', function() {
+                // Remove tudo que não é número
+                this.value = this.value.replace(/\D/g, ""); 
+            });
+        }
+    }
+
+    // 4. Exibe
+    overlay.style.display = 'flex';
+    setTimeout(() => {
+        overlay.classList.add('active');
+        if(box) box.classList.add('active');
+    }, 10);
+    
+    if(type === 'prompt') setTimeout(() => input.focus(), 100);
+
+    // 5. Botões (Clonagem para limpar eventos)
+    const newConfirm = btnConfirm.cloneNode(true);
+    const newCancel = btnCancel.cloneNode(true);
+    btnConfirm.parentNode.replaceChild(newConfirm, btnConfirm);
+    btnCancel.parentNode.replaceChild(newCancel, btnCancel);
+
+    newConfirm.onclick = () => {
+        fecharModalLocal();
+        resolve(type === 'prompt' ? input.value : true);
+    };
+
+    newCancel.onclick = () => {
+        fecharModalLocal();
+        resolve(type === 'prompt' ? null : false);
+    };
+
+    function fecharModalLocal() {
+        overlay.classList.remove('active');
+        if(box) box.classList.remove('active');
+        setTimeout(() => overlay.style.display = 'none', 200);
+    }
+}
+
+// Função de segurança para garantir que o HTML do modal exista
+function injetarHtmlModal() {
+    if (document.getElementById('dokeGlobalModal')) return;
+    const html = `
+    <div id="dokeGlobalModal" class="doke-overlay" style="display:none; position:fixed; z-index:99999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); align-items:center; justify-content:center;">
+        <div class="doke-modal-box" style="background:#fff; width:90%; max-width:400px; border-radius:15px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.3);">
+            <div style="padding:15px 20px; background:#f8f9fa; border-bottom:1px solid #eee; font-weight:bold; color:#333;" id="dmTitle">Aviso</div>
+            <div class="dm-body" style="padding:20px; color:#555;">
+                <p id="dmText" style="margin:0; margin-bottom:10px;">Mensagem</p>
+                </div>
+            <div style="padding:15px; background:#fff; display:flex; gap:10px; justify-content:flex-end;">
+                <button id="btnDmCancel" style="padding:10px 20px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer;">Cancelar</button>
+                <button id="btnDmConfirm" style="padding:10px 20px; border:none; background:#0b7768; color:white; border-radius:8px; cursor:pointer; font-weight:bold;">OK</button>
+            </div>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', html);
+}

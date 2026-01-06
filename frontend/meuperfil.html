@@ -456,7 +456,9 @@
                 <button class="tab-btn active" onclick="abrirTab(event, 'tab-anuncios')">Gerenciar Anúncios</button>
                 <button class="tab-btn" onclick="abrirTab(event, 'tab-feed')">Criar Publicação</button>
                 <button class="tab-btn" onclick="abrirTab(event, 'tab-portfolio')">Portfólio</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
+                <button class="tab-btn" onclick="openTab(event, 'tabAvaliacoes')">
+                    <i class='bx bx-star'></i> Avaliações Recebidas
+                </button>
             </div>
 
             <div id="tab-anuncios" class="tab-content active">
@@ -542,15 +544,48 @@
                 <div class="portfolio-grid" id="container-portfolio"></div>
             </div>
             
-            <div id="tab-avaliacoes" class="tab-content">
-                <h3 class="titulo-sessao">Resumo das Avaliações</h3>
-                <div class="avaliacao-container">
-                    <div class="empty-state">
-                        <i class='bx bx-star' style="font-size: 3rem; color: #f1c40f;"></i>
-                        <p>Nenhuma avaliação recebida ainda.</p>
-                    </div>
-                </div>
+<div id="tabAvaliacoes" class="tab-content" style="display: none;">
+    
+    <div class="review-dashboard" id="meuDashAvaliacoes" style="display:none;">
+        
+        <div class="dash-left">
+            <div class="big-score" id="minhaNotaGeral">0.0</div>
+            <div class="big-stars" id="minhasEstrelasDash">
+                <i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i>
             </div>
+            <span class="total-count" id="meuTotalReviews">0 avaliações recebidas</span>
+        </div>
+
+        <div class="dash-right">
+            <div class="criteria-row">
+                <span class="criteria-label">Pontualidade</span>
+                <div class="progress-bg"><div class="progress-fill" id="myBarPontualidade"></div></div>
+                <span class="criteria-value" id="myValPontualidade">0.0</span>
+            </div>
+            
+            <div class="criteria-row">
+                <span class="criteria-label">Atendimento</span>
+                <div class="progress-bg"><div class="progress-fill" id="myBarAtendimento"></div></div>
+                <span class="criteria-value" id="myValAtendimento">0.0</span>
+            </div>
+
+            <div class="criteria-row">
+                <span class="criteria-label">Qualidade</span>
+                <div class="progress-bg"><div class="progress-fill" id="myBarQualidade"></div></div>
+                <span class="criteria-value" id="myValQualidade">0.0</span>
+            </div>
+
+            <div class="criteria-row">
+                <span class="criteria-label">Custo-Ben.</span>
+                <div class="progress-bg"><div class="progress-fill" id="myBarPreco"></div></div>
+                <span class="criteria-value" id="myValPreco">0.0</span>
+            </div>
+        </div>
+    </div>
+
+    <div id="containerMinhasAvaliacoes" style="display:flex; flex-direction:column; gap:20px;">
+        </div>
+</div>
 
         </div> </main>
 
@@ -1235,12 +1270,151 @@ onAuthStateChanged(auth, async (user) => {
                 renderizarAnuncios();
                 carregarPosts(user.uid); 
                 carregarStatsSocial(user.uid); 
+                carregarMinhasAvaliacoes(user.uid);
             }
         } catch (e) { carregarPerfil(); }
     } else {
         window.location.href = "login.html";
     }
 });
+
+// --- FUNÇÃO PARA O PAINEL DE CONTROLE (MEUPERFIL.HTML) ---
+// --- FUNÇÃO DE AVALIAÇÕES PARA O MEU PERFIL (COM DASHBOARD) ---
+async function carregarMinhasAvaliacoes(uid) {
+    const container = document.getElementById('containerMinhasAvaliacoes');
+    const dashboard = document.getElementById('meuDashAvaliacoes');
+    
+    if (!container) return;
+
+    container.innerHTML = `<div style="text-align:center; padding:40px; color:#999;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i><br>Analisando sua reputação...</div>`;
+
+    try {
+        // Busca avaliações onde EU sou o prestador
+        const q = query(
+            collection(db, "avaliacoes"), 
+            where("paraUid", "==", uid),
+            orderBy("data", "desc")
+        );
+        
+        const snapshot = await getDocs(q);
+        
+        container.innerHTML = "";
+
+        if (snapshot.empty) {
+            container.innerHTML = `
+                <div style="text-align:center; padding:40px; color:#999; background:#f8f9fa; border-radius:12px;">
+                    <i class='bx bx-message-rounded-x' style="font-size:3rem;"></i>
+                    <p>Você ainda não recebeu avaliações.</p>
+                </div>`;
+            if(dashboard) dashboard.style.display = 'none';
+            return;
+        }
+
+        if(dashboard) dashboard.style.display = 'grid';
+
+        // Variáveis para somar as notas específicas
+        let total = snapshot.size;
+        let somaGeral = 0;
+        let somaPont = 0;
+        let somaAtend = 0;
+        let somaQuali = 0;
+        let somaPreco = 0;
+        
+        snapshot.forEach(doc => {
+            const r = doc.data();
+            
+            // Soma com proteção (se o campo não existir, usa a nota geral ou 0)
+            somaGeral += r.media || r.nota || 0;
+            somaPont  += r.pontualidade || r.nota || 0;
+            somaAtend += r.atendimento || r.nota || 0;
+            somaQuali += r.qualidade || r.nota || 0;
+            somaPreco += r.preco || r.nota || 0;
+            
+            // --- Renderiza Card ---
+            const dataF = r.data ? new Date(r.data).toLocaleDateString() : '-';
+            const estrelasHtml = gerarEstrelasHTML(r.media || r.nota);
+
+            const html = `
+            <div style="background:white; padding:20px; border-radius:12px; border:1px solid #eee; box-shadow:0 2px 5px rgba(0,0,0,0.02);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:35px; height:35px; background:#e0f2f1; color:var(--cor0); border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                            ${r.deNome ? r.deNome.charAt(0) : 'C'}
+                        </div>
+                        <div>
+                            <div style="font-weight:700; font-size:0.95rem; color:#333;">${r.deNome || "Cliente"}</div>
+                            <div style="font-size:0.75rem; color:#999;">${dataF}</div>
+                        </div>
+                    </div>
+                    <div style="color:#f1c40f; font-size:0.9rem;">${estrelasHtml}</div>
+                </div>
+                <p style="color:#555; font-size:0.9rem; line-height:1.5; font-style:italic;">"${r.comentarioGeral || r.comentario}"</p>
+                
+                <div style="margin-top:10px; padding-top:10px; border-top:1px dashed #eee; display:flex; gap:15px; font-size:0.75rem; color:#888;">
+                    <span title="Pontualidade"><i class='bx bx-time'></i> ${r.pontualidade || '-'}</span>
+                    <span title="Atendimento"><i class='bx bx-user-voice'></i> ${r.atendimento || '-'}</span>
+                    <span title="Qualidade"><i class='bx bx-diamond'></i> ${r.qualidade || '-'}</span>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+        // --- CÁLCULO DAS MÉDIAS E ATUALIZAÇÃO DO DASHBOARD ---
+        const mGeral = (somaGeral / total).toFixed(1);
+        const mPont = (somaPont / total).toFixed(1);
+        const mAtend = (somaAtend / total).toFixed(1);
+        const mQuali = (somaQuali / total).toFixed(1);
+        const mPreco = (somaPreco / total).toFixed(1);
+
+        // Preenche Esquerda
+        document.getElementById('minhaNotaGeral').innerText = mGeral;
+        document.getElementById('meuTotalReviews').innerText = `${total} avaliações recebidas`;
+        document.getElementById('minhasEstrelasDash').innerHTML = gerarEstrelasHTML(mGeral);
+
+        // Preenche Direita (Barras)
+        atualizarBarra('myBarPontualidade', 'myValPontualidade', mPont);
+        atualizarBarra('myBarAtendimento', 'myValAtendimento', mAtend);
+        atualizarBarra('myBarQualidade', 'myValQualidade', mQuali);
+        atualizarBarra('myBarPreco', 'myValPreco', mPreco);
+
+    } catch (e) {
+        console.error("Erro avaliações:", e);
+    }
+}
+
+// Helpers Visuais (Se já tiver no script, não precisa repetir)
+function atualizarBarra(idBarra, idTexto, valor) {
+    const elBar = document.getElementById(idBarra);
+    const elTxt = document.getElementById(idTexto);
+    if(elBar && elTxt) {
+        const pct = (valor / 5) * 100;
+        elBar.style.width = `${pct}%`;
+        
+        if(valor >= 4.5) elBar.style.backgroundColor = "#2ecc71"; 
+        else if(valor >= 3.5) elBar.style.backgroundColor = "#f1c40f"; 
+        else elBar.style.backgroundColor = "#e74c3c"; 
+
+        elTxt.innerText = valor;
+    }
+}
+
+function gerarEstrelasHTML(nota) {
+    let html = "";
+    for(let i=1; i<=5; i++) {
+        html += (i <= Math.round(nota)) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
+    }
+    return html;
+}
+
+// Função de Troca de Abas (Caso você ainda não tenha no meuperfil.html)
+window.openTab = function(evt, tabName) {
+    document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    
+    document.getElementById(tabName).style.display = 'block';
+    evt.currentTarget.classList.add('active');
+}
 </script>
 </body>
 </html>

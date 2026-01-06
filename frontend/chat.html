@@ -658,6 +658,62 @@
     font-weight: 700;
     font-size: 0.75rem;
 }
+
+.modal-overlay-custom {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
+        z-index: 10000; display: flex; align-items: center; justify-content: center;
+    }
+    .modal-box-custom {
+        background: white; width: 90%; max-width: 400px; border-radius: 20px;
+        padding: 30px; text-align: center; position: relative;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+    .modal-icon-top {
+        width: 70px; height: 70px; background: #e8f5e9; color: #2e7d32;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 3rem; margin: -65px auto 20px auto; border: 5px solid white;
+    }
+    .modal-box-custom h3 { margin: 0 0 10px 0; color: #333; font-size: 1.5rem; }
+    .modal-actions-col { display: flex; flex-direction: column; gap: 10px; }
+    
+    .btn-primary-modal {
+        background: var(--cor0); color: white; border: none; padding: 14px;
+        border-radius: 12px; font-weight: 700; font-size: 1rem; cursor: pointer;
+        display: flex; align-items: center; justify-content: center; gap: 8px;
+        transition: 0.2s;
+    }
+    .btn-primary-modal:hover { background: #096356; transform: scale(1.02); }
+    
+    .btn-secondary-modal {
+        background: transparent; color: #777; border: none; padding: 12px;
+        font-weight: 600; cursor: pointer;
+    }
+    .btn-secondary-modal:hover { color: #333; }
+
+    @keyframes bounceIn {
+        0% { transform: scale(0.8); opacity: 0; }
+        60% { transform: scale(1.05); opacity: 1; }
+        100% { transform: scale(1); }
+    }
+    .bounceIn { animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+
+    /* Botão Cancelar Discreto e Elegante */
+.btn-cancelar-discreto {
+    width: 100%;
+    margin-top: 10px;
+    background: transparent;
+    border: 1px solid #ffcccc;
+    color: #e74c3c;
+    padding: 8px;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+
     </style>
 </head>
 <body>
@@ -810,6 +866,29 @@
     </div>
 </div>
 
+<div id="modalSucessoAvaliacao" class="modal-overlay-custom" style="display:none;">
+    <div class="modal-box-custom bounceIn">
+        <div class="modal-icon-top">
+            <i class='bx bx-check'></i>
+        </div>
+        <h3>Serviço Finalizado!</h3>
+        <p>O pagamento foi liberado para o profissional com segurança.</p>
+        
+        <div style="background:#fff9db; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #ffe082;">
+            <strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experiência?</strong>
+            <span style="font-size:0.9rem; color:#555;">Sua avaliação ajuda a comunidade a contratar com confiança.</span>
+        </div>
+
+        <div class="modal-actions-col">
+            <button class="btn-primary-modal" onclick="irParaAvaliacaoDireta()">
+                <i class='bx bxs-star'></i> Avaliar Agora
+            </button>
+            <button class="btn-secondary-modal" onclick="fecharModalSucesso()">
+                Avaliar depois
+            </button>
+        </div>
+    </div>
+</div>
 
     </div>
 </div>
@@ -842,26 +921,192 @@
     let chatUnsubscribe = null;
     let idPedidoParaAcao = null;
 
-    // --- ESTILOS DINÂMICOS PARA O TOOLTIP (CORREÇÃO DE SOBREPOSIÇÃO) ---
-    const style = document.createElement('style');
-    style.innerHTML = `
-        .tooltip-container { position: relative; display: inline-block; z-index: 999; }
-        .tooltip-card {
-            visibility: hidden; width: 240px; background-color: #ffffff; color: #333;
-            text-align: left; border-radius: 12px; padding: 15px; position: absolute;
-            z-index: 9999 !important; bottom: 135%; left: 50%; transform: translateX(-50%);
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2); border: 1px solid #e0f2f1; opacity: 0;
-            transition: opacity 0.3s, transform 0.3s; pointer-events: none;
+    // =========================================================================
+    // 1. SISTEMA DE ALERTAS PERSONALIZADOS (SUBSTITUI NATIVOS)
+    // =========================================================================
+    
+    // Injeção de Estilos dos Modais
+    const styleModal = document.createElement('style');
+    styleModal.innerHTML = `
+        .doke-overlay {
+            display: none; position: fixed; z-index: 20000; left: 0; top: 0;
+            width: 100%; height: 100%; background: rgba(0,0,0,0.5);
+            backdrop-filter: blur(4px); justify-content: center; align-items: center;
+            opacity: 0; transition: opacity 0.2s;
         }
-        .tooltip-container:hover .tooltip-card { visibility: visible; opacity: 1; transform: translateX(-50%) translateY(-5px); pointer-events: auto; }
-        .tooltip-card::after {
-            content: ""; position: absolute; top: 100%; left: 50%; margin-left: -8px;
-            border-width: 8px; border-style: solid; border-color: #fff transparent transparent transparent;
+        .doke-overlay.active { display: flex; opacity: 1; }
+        
+        .doke-modal-box {
+            background: #fff; width: 90%; max-width: 400px; border-radius: 16px;
+            padding: 0; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+            transform: scale(0.9); transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
         }
-    `;
-    document.head.appendChild(style);
+        .doke-overlay.active .doke-modal-box { transform: scale(1); }
 
-    // --- FUNÇÕES DE INTERFACE ---
+        .dm-header { padding: 20px 25px; border-bottom: 1px solid #eee; display: flex; align-items: center; gap: 10px; }
+        .dm-title { margin: 0; font-size: 1.1rem; color: #333; font-weight: 700; }
+        .dm-body { padding: 25px; font-size: 0.95rem; color: #555; line-height: 1.5; }
+        .dm-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-top: 10px; outline: none; font-size: 1rem; box-sizing: border-box; }
+        .dm-input:focus { border-color: #0b7768; box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.1); }
+        
+        .dm-footer { padding: 15px 25px; background: #f9f9f9; display: flex; justify-content: flex-end; gap: 10px; }
+        
+        .btn-dm { padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: 0.2s; }
+        .btn-dm-cancel { background: #fff; border: 1px solid #ddd; color: #666; }
+        .btn-dm-cancel:hover { background: #f0f0f0; }
+        .btn-dm-confirm { background: #0b7768; color: white; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2); }
+        .btn-dm-confirm:hover { background: #096356; transform: translateY(-1px); }
+        .btn-dm-danger { background: #e74c3c; color: white; }
+        .btn-dm-danger:hover { background: #c0392b; }
+    `;
+    document.head.appendChild(styleModal);
+
+    // HTML do Modal Genérico
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!document.getElementById('dokeGlobalModal')) {
+            const html = `
+                <div id="dokeGlobalModal" class="doke-overlay">
+                    <div class="doke-modal-box">
+                        <div class="dm-header">
+                            <i id="dmIcon" class='bx' style="font-size: 1.5rem;"></i>
+                            <h3 id="dmTitle" class="dm-title">Título</h3>
+                        </div>
+                        <div class="dm-body">
+                            <p id="dmText">Mensagem aqui</p>
+                            <input type="text" id="dmInput" class="dm-input" style="display:none;">
+                        </div>
+                        <div class="dm-footer">
+                            <button id="btnDmCancel" class="btn-dm btn-dm-cancel">Cancelar</button>
+                            <button id="btnDmConfirm" class="btn-dm btn-dm-confirm">Confirmar</button>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', html);
+        }
+    });
+
+    // Funções Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
+    window.dokeAlert = (msg, title = "Aviso") => {
+        return new Promise(resolve => {
+            setupModal(title, msg, 'alert', resolve);
+        });
+    };
+
+    window.dokeConfirm = (msg, title = "Confirmação", type = 'normal') => {
+        return new Promise(resolve => {
+            setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve);
+        });
+    };
+
+    window.dokePrompt = (msg, placeholder = "", title = "Informação") => {
+        return new Promise(resolve => {
+            setupModal(title, msg, 'prompt', resolve, placeholder);
+        });
+    };
+
+    function setupModal(title, text, type, resolveCallback, placeholder = "") {
+        const overlay = document.getElementById('dokeGlobalModal');
+        const elTitle = document.getElementById('dmTitle');
+        const elText = document.getElementById('dmText');
+        const elInput = document.getElementById('dmInput');
+        const btnCancel = document.getElementById('btnDmCancel');
+        const btnConfirm = document.getElementById('btnDmConfirm');
+        const icon = document.getElementById('dmIcon');
+
+        // Reset
+        elTitle.innerText = title;
+        elText.innerText = text;
+        elInput.style.display = 'none';
+        elInput.value = '';
+        btnCancel.style.display = 'block';
+        btnConfirm.className = 'btn-dm btn-dm-confirm'; // Reset classes
+        
+        // Ícones e Cores
+        if(type === 'alert') {
+            icon.className = 'bx bx-info-circle'; icon.style.color = '#0b7768';
+            btnCancel.style.display = 'none';
+            btnConfirm.innerText = "OK";
+        } else if (type === 'confirm') {
+            icon.className = 'bx bx-help-circle'; icon.style.color = '#0b7768';
+            btnConfirm.innerText = "Sim";
+        } else if (type === 'confirm-danger') {
+            icon.className = 'bx bx-error-circle'; icon.style.color = '#e74c3c';
+            btnConfirm.classList.add('btn-dm-danger');
+            btnConfirm.innerText = "Sim, remover";
+        } else if (type === 'prompt') {
+            icon.className = 'bx bx-pencil'; icon.style.color = '#0b7768';
+            elInput.style.display = 'block';
+            elInput.placeholder = placeholder;
+            btnConfirm.innerText = "OK";
+        }
+
+        // Mostrar
+        overlay.classList.add('active');
+        if(type === 'prompt') setTimeout(() => elInput.focus(), 100);
+
+        // Handlers (Remove listeners antigos clonando o elemento)
+        const newConfirm = btnConfirm.cloneNode(true);
+        const newCancel = btnCancel.cloneNode(true);
+        btnConfirm.parentNode.replaceChild(newConfirm, btnConfirm);
+        btnCancel.parentNode.replaceChild(newCancel, btnCancel);
+
+        newConfirm.addEventListener('click', () => {
+            overlay.classList.remove('active');
+            if(type === 'prompt') resolveCallback(elInput.value);
+            else resolveCallback(true);
+        });
+
+        newCancel.addEventListener('click', () => {
+            overlay.classList.remove('active');
+            if(type === 'prompt') resolveCallback(null);
+            else resolveCallback(false);
+        });
+    }
+
+    // =========================================================================
+    // 2. FUNÇÕES DE INJEÇÃO DO MODAL DE GARANTIA (INFO)
+    // =========================================================================
+    document.addEventListener("DOMContentLoaded", () => {
+        if (!document.getElementById('modalGarantiaInfo')) {
+            const modalHTML = `
+                <div id="modalGarantiaInfo" class="modal-detalhes" style="display:none; justify-content:center; align-items:center;">
+                    <div class="md-content" style="max-width: 450px; text-align: left; animation: zoomIn 0.2s;">
+                        <div class="md-header" style="background:#0b7768;">
+                            <h3 style="margin:0; color:white; display:flex; align-items:center; gap:10px;">
+                                <i class='bx bx-shield-quarter' style="font-size:1.5rem;"></i> Garantia Doke
+                            </h3>
+                            <i class='bx bx-x' style="cursor:pointer; font-size:24px; color:white;" onclick="fecharModalGarantia()"></i>
+                        </div>
+                        <div class="md-body" style="padding: 30px;">
+                            <h4 style="margin-top:0; color:#0b7768;">Seu dinheiro está seguro.</h4>
+                            <p style="color:#555; line-height:1.6; font-size:0.95rem;">
+                                O pagamento do cliente já foi realizado, mas não foi enviado diretamente para o profissional.
+                            </p>
+                            <p style="color:#555; line-height:1.6; font-size:0.95rem;">
+                                Ele fica guardado em uma <strong>"Conta Cofre" (Escrow)</strong> da Doke e só é liberado automaticamente assim que o serviço for finalizado com sucesso.
+                            </p>
+                            <div style="background:#e0f2f1; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #b2dfdb;">
+                                <i class='bx bx-info-circle' style="color:#00695c;"></i>
+                                <span style="font-size:0.85rem; color:#004d40;">Isso protege você contra golpes e serviços não realizados.</span>
+                            </div>
+                            <a href="duvida.html" style="display:block; margin-top:20px; text-align:center; color:#0b7768; font-weight:700; text-decoration:none;">
+                                Ler termos completos <i class='bx bx-right-arrow-alt'></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>`;
+            document.body.insertAdjacentHTML('beforeend', modalHTML);
+        }
+    });
+
+    window.abrirModalGarantia = () => { const m = document.getElementById('modalGarantiaInfo'); if(m) m.style.display = 'flex'; };
+    window.fecharModalGarantia = () => { const m = document.getElementById('modalGarantiaInfo'); if(m) m.style.display = 'none'; };
+
+    // =========================================================================
+    // 3. FUNÇÕES GERAIS DA APLICAÇÃO
+    // =========================================================================
+
     window.irParaMeuPerfil = function(event) {
         if(event) event.preventDefault();
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
@@ -869,44 +1114,25 @@
         window.location.href = perfilLocal.isProfissional ? "meuperfil.html" : "perfil-usuario.html";
     };
 
-    window.toggleCep = (e) => {
-        if(e) e.preventDefault();
-        const p = document.getElementById('boxCep');
-        if(p) p.style.display = (p.style.display === 'block') ? 'none' : 'block';
-    };
+    window.toggleCep = (e) => { if(e) e.preventDefault(); const p = document.getElementById('boxCep'); if(p) p.style.display = (p.style.display === 'block') ? 'none' : 'block'; };
+    window.salvarCep = () => { const i = document.getElementById('inputCep'); if(i) { localStorage.setItem('meu_cep_doke', i.value); document.getElementById('textoCepSpan').innerText = i.value; document.getElementById('boxCep').style.display = 'none'; } };
+    window.toggleDropdown = (event) => { if(event) event.stopPropagation(); document.getElementById('dropdownPerfil').classList.toggle('show'); };
 
-    window.salvarCep = () => {
-        const i = document.getElementById('inputCep');
-        if(i) {
-            localStorage.setItem('meu_cep_doke', i.value);
-            const span = document.getElementById('textoCepSpan');
-            if(span) span.innerText = i.value;
-            const box = document.getElementById('boxCep');
-            if(box) box.style.display = 'none';
-        }
-    };
-
-    window.toggleDropdown = (event) => {
-        if(event) event.stopPropagation();
-        const drop = document.getElementById('dropdownPerfil');
-        if(drop) drop.classList.toggle('show');
-    };
-
+    // Logout Atualizado com DokeConfirm
     window.fazerLogout = async () => {
-        try {
-            const user = auth.currentUser;
-            if (user) {
-                const userRef = doc(db, "usuarios", user.uid);
-                await updateDoc(userRef, { status: "Offline", ultimaVezOnline: new Date().toISOString() });
+        if(await window.dokeConfirm("Tem certeza que deseja sair da sua conta?", "Sair")) {
+            try {
+                const user = auth.currentUser;
+                if (user) {
+                    const userRef = doc(db, "usuarios", user.uid);
+                    await updateDoc(userRef, { status: "Offline", ultimaVezOnline: new Date().toISOString() });
+                }
+                await signOut(auth);
+                localStorage.clear();
+                window.location.href = 'index.html';
+            } catch (error) {
+                signOut(auth).then(() => { localStorage.clear(); window.location.href = 'index.html'; });
             }
-            await signOut(auth);
-            localStorage.removeItem('usuarioLogado');
-            localStorage.removeItem('doke_usuario_perfil');
-            localStorage.removeItem('doke_uid');
-            window.location.href = 'index.html';
-        } catch (error) {
-            console.error("Erro ao sair:", error);
-            signOut(auth).then(() => { localStorage.clear(); window.location.href = 'index.html'; });
         }
     };
 
@@ -926,7 +1152,7 @@
         }
     };
 
-    // --- SISTEMA DE DETALHES E ORÇAMENTO ---
+    // Detalhes do Pedido
     window.verDetalhesOrcamento = async function(idPedido) {
         const modal = document.getElementById('modalOrcamento');
         const body = document.getElementById('mdBody');
@@ -940,7 +1166,7 @@
             const p = docSnap.data();
 
             let htmlQuiz = "";
-            if (p.formularioRespostas) {
+            if (p.formularioRespostas && p.formularioRespostas.length > 0) {
                 p.formularioRespostas.forEach(r => {
                     htmlQuiz += `<div style="margin-top:10px; background:#f9f9f9; padding:12px; border-radius:10px;">
                         <div style="font-size:0.65rem; color:var(--cor0); font-weight:800; margin-bottom:3px;">${r.pergunta}</div>
@@ -956,7 +1182,7 @@
                 </div>` : "";
 
             body.innerHTML = `
-                <div class="md-row"><div class="md-label">Título</div><div class="md-value">${p.servicoReferencia}</div></div>
+                <div class="md-row"><div class="md-label">Serviço</div><div class="md-value">${p.servicoReferencia}</div></div>
                 <div class="md-row"><div class="md-label">Descrição</div><div class="md-value">${p.mensagemInicial || "Sem descrição"}</div></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;" class="md-row">
                     <div><div class="md-label">Prazo</div><div class="md-value">${p.paraQuando || "A combinar"}</div></div>
@@ -969,50 +1195,197 @@
 
     window.fecharModalDetalhes = () => document.getElementById('modalOrcamento').style.display = 'none';
 
-    window.prepararRecusa = (id) => { idPedidoParaAcao = id; document.getElementById('modalRecusa').style.display = 'flex'; };
-    window.fecharModalRecusa = () => document.getElementById('modalRecusa').style.display = 'none';
-
-    window.confirmarRecusaFinal = async () => {
-        const motivo = document.getElementById('motivoRecusaTexto').value.trim();
-        if(!motivo) { alert("Informe o motivo."); return; }
-        try {
-            await updateDoc(doc(db, "pedidos", idPedidoParaAcao), { status: 'recusado', motivoRecusa: motivo });
-            fecharModalRecusa(); carregarListaPedidos(); 
-        } catch (e) { console.error(e); }
+    // Ações de Pedido (Agora usando DokePrompt e DokeConfirm)
+    window.prepararRecusa = async (id) => { 
+        const motivo = await window.dokePrompt("Por favor, informe o motivo da recusa:", "Ex: Indisponibilidade de agenda...", "Recusar Pedido");
+        if(motivo) {
+            try {
+                await updateDoc(doc(db, "pedidos", id), { status: 'recusado', motivoRecusa: motivo });
+                window.dokeAlert("Pedido recusado.");
+                carregarListaPedidos(); 
+            } catch (e) { console.error(e); }
+        }
     };
 
     window.aceitarPedidoProfissional = async (id) => {
-        if(!confirm("Aceitar este pedido?")) return;
-        try { await updateDoc(doc(db, "pedidos", id), { status: 'aceito' }); carregarListaPedidos(); } catch (e) { console.error(e); }
+        if(await window.dokeConfirm("Deseja aceitar este pedido e iniciar o atendimento?", "Aceitar")) {
+            try { await updateDoc(doc(db, "pedidos", id), { status: 'aceito' }); carregarListaPedidos(); } catch (e) { console.error(e); }
+        }
+    };
+
+    window.prepararCancelamento = async (id) => {
+        if(await window.dokeConfirm("Tem certeza que deseja cancelar esta solicitação?", "Cancelar", "danger")) {
+            try { await updateDoc(doc(db, "pedidos", id), { status: 'cancelado' }); carregarListaPedidos(); } catch (e) { console.error(e); }
+        }
     };
 
     window.apagarDocumentoPedido = async function(id) {
-        if (!confirm("Remover permanentemente?")) return;
-        try { await deleteDoc(doc(db, "pedidos", id)); carregarListaPedidos(); } catch (e) { alert("Erro."); }
+        if (await window.dokeConfirm("Remover este registro permanentemente do histórico?", "Apagar", "danger")) {
+            try { await deleteDoc(doc(db, "pedidos", id)); carregarListaPedidos(); } catch (e) { window.dokeAlert("Erro ao apagar."); }
+        }
     };
 
-    window.liberarPagamento = async (id) => {
-        if(!confirm("Liberar pagamento ao profissional?")) return;
+// EM CHAT.HTML
+window.liberarPagamento = async (id) => {
+    // Pergunta de confirmação
+    if(!await window.dokeConfirm("Deseja finalizar o serviço e liberar o valor?", "Concluir Serviço")) return;
+
+    try {
+        // 1. Atualiza status no banco
+        await updateDoc(doc(db, "pedidos", id), { 
+            status: 'finalizado',
+            dataConclusao: new Date().toISOString(),
+            notificacaoLidaProfissional: false,
+            avaliado: false
+        });
+
+        // 2. Manda mensagem automática no chat
+        await addDoc(collection(db, "pedidos", id, "mensagens"), {
+            tipo: 'card_avaliacao',
+            texto: "Serviço finalizado. Aguardando avaliação.",
+            senderUid: 'sistema',
+            timestamp: new Date()
+        });
+
+        // 3. ABRE O MODAL DE AVALIAÇÃO IMEDIATAMENTE
+        // Certifique-se de ter colado o HTML do 'modalSucessoAvaliacao' no final do body do chat.html (passo anterior)
+        window.pedidoIdParaAvaliar = id;
+        const modalSucesso = document.getElementById('modalSucessoAvaliacao');
+        
+        if(modalSucesso) {
+            modalSucesso.style.display = 'flex';
+        } else {
+            // Fallback se o modal não existir: vai direto
+            window.location.href = `avaliar.html?pedidoId=${id}`;
+        }
+        
+    } catch (e) {
+        console.error(e);
+        window.dokeAlert("Erro ao finalizar.");
+    }
+};
+    // Funções do Modal
+    window.irParaAvaliacaoDireta = () => {
+        window.location.href = `avaliar.html?pedidoId=${window.pedidoIdParaAvaliar}`;
+    };
+    window.fecharModalSucesso = () => {
+        document.getElementById('modalSucessoAvaliacao').style.display = 'none';
+    };
+    // =========================================================================
+    // 4. RENDERIZAÇÃO E CHAT
+    // =========================================================================
+
+    async function carregarListaPedidos() {
+        const container = document.getElementById('lista-pedidos');
+        if(!container) return;
+        container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+
         try {
-            await updateDoc(doc(db, "pedidos", id), { status: 'finalizado', dataConclusao: new Date().toISOString() });
-            alert("Sucesso!"); carregarListaPedidos();
-        } catch (e) { alert("Erro."); }
+            const q1 = query(collection(db, "pedidos"), where("deUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
+            const q2 = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
+            const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+
+            container.innerHTML = "";
+            const itens = [...s1.docs.map(d=>({d, papel:'cliente'})), ...s2.docs.map(d=>({d, papel:'profissional'}))];
+
+            if(itens.length === 0) { container.innerHTML = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido.</div>`; return; }
+
+            for (const item of itens) {
+                const p = item.d.data();
+                const id = item.d.id;
+
+                if (item.papel === 'profissional' && p.status === 'recusado') continue;
+
+                const uDoc = await getDoc(doc(db, "usuarios", item.papel === 'cliente' ? p.paraUid : p.deUid));
+                const dU = uDoc.exists() ? uDoc.data() : {};
+                
+                let sT = p.status;
+                if(p.status === 'aceito' && item.papel === 'profissional') sT = "Em andamento";
+                
+                // Badge Clicável (Abre Modal de Garantia)
+                let badgeHtml = (p.status === 'pago') ? `
+                    <span class="ip-badge" onclick="event.stopPropagation(); abrirModalGarantia()" 
+                          title="Clique para saber mais sobre a garantia"
+                          style="background:#0b7768; color:white; cursor:pointer; padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.65rem; display:flex; align-items:center; gap:4px; transition:0.2s;">
+                        <i class='bx bx-shield-quarter'></i> DINHEIRO RETIDO <i class='bx bx-help-circle'></i>
+                    </span>` 
+                    : `<span class="ip-badge badge-${p.status}">${sT.toUpperCase()}</span>`;
+
+                let bApagar = (['recusado', 'finalizado', 'cancelado'].includes(p.status)) 
+                    ? `<i class='bx bx-trash' style="color:#e74c3c; cursor:pointer; font-size:1.1rem;" onclick="event.stopPropagation(); apagarDocumentoPedido('${id}')"></i>` : "";
+
+                // Info Saldo (Visual Clean Solicitado)
+                let infoSaldo = (item.papel === 'profissional' && p.status === 'pago') ? `
+                    <div style="background:#ffffff; padding:12px; border-radius:12px; margin-top:12px; border:1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display:flex; align-items:center; gap:12px;">
+                        <div style="width:38px; height:38px; background:#e0f2f1; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#0b7768;">
+                            <i class='bx bx-lock-alt' style="font-size:1.3rem;"></i>
+                        </div>
+                        <div>
+                            <span style="display:block; font-size:0.7rem; color:#888; font-weight:700; text-transform:uppercase;">Garantia Ativa</span>
+                            <strong style="font-size:1.1rem; color:#333;">${p.valorFinal || '---'}</strong>
+                        </div>
+                    </div>` : "";
+
+                // Botões de Ação
+                let acoesHtml = "";
+                if (item.papel === 'profissional' && p.status === 'pendente') {
+                    acoesHtml = `<div style="display:flex; gap:10px; margin-top:10px;">
+                        <button onclick="event.stopPropagation(); prepararRecusa('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#ffebee; color:#e74c3c; font-weight:700; cursor:pointer;">Recusar</button>
+                        <button onclick="event.stopPropagation(); aceitarPedidoProfissional('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#e8f5e9; color:#2e7d32; font-weight:700; cursor:pointer;">Aceitar</button>
+                    </div>`;
+                } else if (item.papel === 'cliente' && p.status === 'pendente') {
+                    acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicitação</button>`;
+                } else if (item.papel === 'cliente' && p.status === 'pago') {
+                     // Botão de Conclusão (Design Compacto)
+                     acoesHtml = `
+                        <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
+                                style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+                            <i class='bx bx-check'></i> Confirmar Conclusão
+                        </button>`;
+                }
+
+                container.insertAdjacentHTML('beforeend', `
+                    <div class="item-pedido tipo-pedido status-border-${p.status}">
+                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${bApagar}${badgeHtml}</div></div>
+                        <div class="ip-user"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
+                        <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
+                            <h4>${p.servicoReferencia}</h4>
+                            <button class="btn-detalhes-card" onclick="event.stopPropagation(); verDetalhesOrcamento('${id}')">Mais detalhes</button>
+                            ${infoSaldo} ${acoesHtml}
+                        </div>
+                    </div>`);
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    window.carregarListaConversas = async function() {
+        const container = document.getElementById('lista-conversas');
+        if(!container) return;
+        try {
+            const q = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
+            const snap = await getDocs(q);
+            container.innerHTML = snap.empty ? "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>" : "";
+            for (const docSnap of snap.docs) {
+                const data = docSnap.data();
+                const outroUid = data.participantes.find(u => u !== currentUserUid);
+                const uD = await getDoc(doc(db, "usuarios", outroUid));
+                container.insertAdjacentHTML('beforeend', `<div class="item-conversa" onclick="abrirChat('${docSnap.id}', '${outroUid}', '', '', 'conversas', '')"><img src="${uD.data()?.foto || 'https://placehold.co/150'}"><div class="ic-info"><div class="ic-nome">${uD.data()?.user}</div><div class="ic-msg">${data.ultimaMensagem || ''}</div></div></div>`);
+            }
+        } catch (e) { console.error(e); }
     };
 
-    // --- GERENCIAMENTO DE CHAT ---
     window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
         document.getElementById('chat-placeholder').style.display = 'none';
         document.getElementById('box-conversa-real').style.display = 'flex';
         const containerAcao = document.getElementById('container-acao-header');
-        if(containerAcao) containerAcao.innerHTML = "";
 
         if (colecao === 'pedidos') {
             onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
                 if (docSnap.exists()) {
                     const p = docSnap.data();
-                    if(containerAcao) containerAcao.innerHTML = "";
-                    if (p.deUid === currentUserUid && p.status === 'pago') {
-                        containerAcao.innerHTML = `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check-double'></i> Finalizar Serviço</button>`;
+                    if(containerAcao) {
+                        containerAcao.innerHTML = (p.deUid === currentUserUid && p.status === 'pago') 
+                            ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
                     }
                     const btnC = document.getElementById('btn-cobranca-topo');
                     if(btnC) btnC.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
@@ -1026,108 +1399,132 @@
                 document.getElementById('chatNome').innerText = d.user || nomePadrao;
                 document.getElementById('chatAvatar').src = d.foto || "https://placehold.co/150";
                 document.getElementById('chatStatus').innerText = d.status || "Offline";
+                document.getElementById('chatStatus').style.color = (d.status === "Online") ? "#2e7d32" : "#666";
             }
         });
         chatIdAtual = idDoc; colecaoAtual = colecao; carregarMensagens(colecao, idDoc);
     };
 
-    async function carregarListaPedidos() {
-        const container = document.getElementById('lista-pedidos');
-        if(!container) return;
-        container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+// EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens
 
-        try {
-            const q1 = query(collection(db, "pedidos"), where("deUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
-            const q2 = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
-            const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
-            container.innerHTML = "";
-            const itens = [...s1.docs.map(d=>({d, papel:'cliente'})), ...s2.docs.map(d=>({d, papel:'profissional'}))];
+function carregarMensagens(colecao, docId) {
+    const container = document.getElementById('areaMensagens');
+    if (window.chatUnsubscribe) window.chatUnsubscribe();
+    
+    const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
+    
+    window.chatUnsubscribe = onSnapshot(q, async (snapshot) => {
+        container.innerHTML = "";
+        
+        let statusPedido = 'pendente';
+        if (colecao === 'pedidos') { 
+            const p = await getDoc(doc(db, "pedidos", docId));
+            if(p.exists()) statusPedido = p.data().status; 
+        }
 
-            for (const item of itens) {
-                const p = item.d.data(); const id = item.d.id;
-                if (item.papel === 'profissional' && p.status === 'recusado') continue;
-
-                const uDoc = await getDoc(doc(db, "usuarios", item.papel === 'cliente' ? p.paraUid : p.deUid));
-                const dU = uDoc.exists() ? uDoc.data() : {};
+        snapshot.forEach(docSnap => {
+            const m = docSnap.data();
+            const souEu = m.senderUid === currentUserUid;
+            
+            // --- CARD PAGAMENTO (VERDE) ---
+            if (m.tipo === 'pagamento') {
+                const jaPago = (statusPedido === 'pago' || statusPedido === 'finalizado');
+                // Passa o ID do pedido e as parcelas para a página de pagar
+                const linkPagar = `pagar.html?pedidoId=${docId}&valor=${encodeURIComponent(m.valor)}&parcelas=${m.maxParcelas||1}`;
                 
-                let sT = p.status;
-                if(p.status === 'aceito' && item.papel === 'profissional') sT = "Em andamento";
-                
-                let bH = (p.status === 'pago') ? `
-                    <div class="tooltip-container">
-                        <span class="ip-badge" style="background:#0b7768; color:white; cursor:help;">DINHEIRO RETIDO (GARANTIA)</span>
-                        <div class="tooltip-card">
-                            <h5 style="margin:0 0 5px; color:#0b7768;"><i class='bx bx-shield'></i> Garantia Doke</h5>
-                            <p style="margin:0; font-size:0.75rem; color:#666;">O pagamento está seguro conosco e será liberado após a entrega.</p>
-                            <a href="duvida.html" style="font-size:0.7rem; color:#0b7768; font-weight:700;">Saiba mais</a>
-                        </div>
-                    </div>` : `<span class="ip-badge badge-${p.status}">${sT.toUpperCase()}</span>`;
+                const btnHtml = jaPago 
+                    ? `<button style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold; cursor:default;"><i class='bx bx-check'></i> Pago</button>`
+                    : `<button onclick="window.location.href='${linkPagar}'" style="width:100%; padding:10px; background:var(--cor0); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Pagar Agora</button>`;
 
-                let infoS = (item.papel === 'profissional' && p.status === 'pago') ? `<div style="background:#e0f2f1; padding:10px; border-radius:12px; margin-top:10px; border:1px dashed var(--cor0);"><small style="color:#00695c; font-weight:800; display:block;">💰 SALDO EM GARANTIA:</small><strong>${p.valorFinal}</strong></div>` : "";
-
+                const html = `
+                <div style="align-self:${souEu ? 'flex-end' : 'flex-start'}; background:white; border:1px solid #ddd; padding:15px; border-radius:12px; margin-bottom:10px; min-width:260px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="color:var(--cor0); font-weight:bold; margin-bottom:5px;"><i class='bx bx-dollar-circle'></i> Cobrança</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#333; text-align:center; margin:10px 0;">${m.valor}</div>
+                    <div style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align:center;">${m.descricao}</div>
+                    ${btnHtml}
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            }
+            // --- CARD AVALIAÇÃO (AMARELO) ---
+            else if (m.tipo === 'card_avaliacao') {
                 container.insertAdjacentHTML('beforeend', `
-                    <div class="item-pedido tipo-pedido status-border-${p.status}">
-                        <div class="ip-header"><span class="tag-tipo tag-orcamento">Orçamento</span><div style="display:flex; gap:8px; align-items:center;">${bH}</div></div>
-                        <div class="ip-user"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
-                        <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
-                            <h4>${p.servicoReferencia}</h4>
-                            <button class="btn-detalhes-card" onclick="event.stopPropagation(); verDetalhesOrcamento('${id}')">Detalhes</button>
-                            ${infoS}
-                        </div>
-                    </div>`);
+                <div style="align-self:center; background:#fff9c4; border:1px solid #fbc02d; padding:15px; border-radius:12px; margin:15px 0; text-align:center;">
+                    <i class='bx bxs-star' style="color:#f9a825; font-size:1.5rem;"></i>
+                    <p style="margin:5px 0; font-weight:600; color:#333;">${m.texto}</p>
+                    <button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>
+                </div>`);
             }
-        } catch (e) { console.error(e); }
-    }
-
-    window.carregarListaConversas = async function() {
-        const container = document.getElementById('lista-conversas');
-        if(!container) return;
-        try {
-            const q = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
-            const snap = await getDocs(q);
-            container.innerHTML = snap.empty ? "<p style='text-align:center;'>Sem mensagens.</p>" : "";
-            for (const docSnap of snap.docs) {
-                const data = docSnap.data();
-                const outroUid = data.participantes.find(u => u !== currentUserUid);
-                const uD = await getDoc(doc(db, "usuarios", outroUid));
-                container.insertAdjacentHTML('beforeend', `<div class="item-conversa" onclick="abrirChat('${docSnap.id}', '${outroUid}', '', '', 'conversas', '')"><img src="${uD.data()?.foto || 'https://placehold.co/150'}"><div class="ic-info"><div class="ic-nome">${uD.data()?.user}</div><div class="ic-msg">${data.ultimaMensagem || ''}</div></div></div>`);
+            // --- TEXTO NORMAL ---
+            else {
+                container.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">${m.texto}</div>`);
             }
-        } catch (e) { console.error(e); }
-    };
-
-    function carregarMensagens(colecao, docId) {
-        const container = document.getElementById('areaMensagens');
-        if (chatUnsubscribe) chatUnsubscribe();
-        chatUnsubscribe = onSnapshot(query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc")), async (snapshot) => {
-            container.innerHTML = "";
-            let sP = 'pendente';
-            if (colecao === 'pedidos') { const pD = await getDoc(doc(db, "pedidos", docId)); if (pD.exists()) sP = pD.data().status; }
-            snapshot.forEach(d => {
-                const m = d.data(); const souEu = m.senderUid === currentUserUid;
-                if (m.tipo === 'pagamento') {
-                    const jaP = (sP === 'pago' || sP === 'finalizado');
-                    const bH = jaP ? `<button class="btn-pagar-card" style="background:#2ecc71;"><i class='bx bx-check-shield'></i> Pago</button>` : (souEu ? `<button class="btn-pagar-card disabled" style="background:#ccc;">Aguardando...</button>` : `<button class="btn-pagar-card" onclick="window.location.href='pagar.html?pedidoId=${docId}&valor=${encodeURIComponent(m.valor)}'">Pagar Agora</button>`);
-                    container.insertAdjacentHTML('beforeend', `<div class="msg-card-pagamento" style="${souEu ? 'align-self:flex-end' : 'align-self:flex-start'}"><div class="cp-header">Pagamento</div><div class="cp-body"><span>${m.valor}</span>${bH}</div></div>`);
-                } else { container.insertAdjacentHTML('beforeend', `<div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">${m.texto}</div>`); }
-            });
-            container.scrollTop = container.scrollHeight;
         });
+        container.scrollTop = container.scrollHeight;
+    });
+}
+
+    // Gerar Pagamento usando Modais Bonitos
+// EM CHAT.HTML
+
+// SUBSTITUA A FUNÇÃO window.gerarPagamento NO CHAT.HTML POR ESTA:
+
+window.gerarPagamento = async function() {
+    // CORREÇÃO 1: Usa a variável local 'chatIdAtual' que o chat.html já possui
+    // Removemos o 'window.' da frente
+    const idParaSalvar = chatIdAtual; 
+    
+    if (!idParaSalvar) { 
+        alert("Erro: Nenhuma conversa aberta. Selecione um cliente na lista."); 
+        return; 
     }
 
-    window.gerarPagamento = async function() {
-        let v = prompt("Valor:"); if(!v) return;
-        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-        await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), { tipo: 'pagamento', valor: "R$ " + v.replace("R$", "").trim(), usernameProfissional: perfil.user, senderUid: currentUserUid, timestamp: new Date() });
-    };
+    // 1. Valor (Agora a máscara vai funcionar se você fizer o passo 2 abaixo)
+    let valorStr = await window.dokePrompt("Qual o valor do serviço?", "R$ 0,00", "Gerar Cobrança");
+    if(!valorStr) return;
+
+    // 2. Descrição
+    let descricao = await window.dokePrompt("Descrição do serviço:", "Ex: Mão de obra", "Descrição");
+    if(!descricao) return;
+
+    // 3. Parcelas
+    let maxParcelas = await window.dokePrompt("Máx. parcelas sem juros (1-12):", "1", "Parcelamento");
+    if(!maxParcelas) maxParcelas = "1";
+
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+    try {
+        await addDoc(collection(db, "pedidos", idParaSalvar, "mensagens"), { 
+            tipo: 'pagamento', 
+            valor: valorStr, 
+            descricao: descricao,
+            maxParcelas: parseInt(maxParcelas.replace(/\D/g, "")) || 1, 
+            usernameProfissional: perfil.user, 
+            senderUid: auth.currentUser.uid, 
+            timestamp: new Date() 
+        });
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao criar cobrança.");
+    }
+};
 
     window.enviarMensagemTexto = async () => {
         const inp = document.getElementById('inputMsg'); if(!inp.value.trim()) return;
         const txt = inp.value; inp.value = "";
         await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), { texto: txt, senderUid: currentUserUid, timestamp: new Date() });
+        if(colecaoAtual === 'conversas') await updateDoc(doc(db, "conversas", chatIdAtual), { ultimaMensagem: txt });
     };
 
     window.verificarEnter = (e) => { if(e.key === 'Enter') window.enviarMensagemTexto(); };
-    onAuthStateChanged(auth, (u) => { if (u) { currentUserUid = u.uid; carregarListaPedidos(); } else { window.location.href = "login.html"; } });
+
+    onAuthStateChanged(auth, (u) => { 
+        if (u) { 
+            currentUserUid = u.uid; 
+            carregarListaPedidos(); 
+        } else { 
+            window.location.href = "login.html"; 
+        } 
+    });
 </script>
 </body>
 </html>  

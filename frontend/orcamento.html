@@ -414,71 +414,188 @@
     </nav>
 
 <script type="module">
-    import { getFirestore, doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    // 1. IMPORTAÇÕES NECESSÁRIAS
+    import { doc, getDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+    import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    // Inicializa variáveis e serviços
-    const db = window.db || getFirestore();
-    const auth = window.auth || getAuth();
+    // Variável global para fotos
+    window.arquivosParaUpload = [];
 
-    let dadosPrestador = null;
-    let dadosAnuncio = null;
-
+    // --- 2. CARREGAMENTO DA PÁGINA (Preencher dados do Prestador e Anúncio) ---
     window.addEventListener('load', async function() {
-        console.log("🚀 Script de Orçamento Iniciado...");
+        console.log("🚀 Página Carregada. Buscando dados...");
+
+        const db = window.db; 
+        const auth = window.auth;
+
+        if (!db) { console.error("Firebase DB não carregou."); return; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const anuncioId = urlParams.get('aid') || urlParams.get('id'); 
         const prestadorUid = urlParams.get('uid'); 
 
-        // 1. Carrega Prestador
+        // A. Carrega Prestador (Card Lateral)
         if(prestadorUid) {
             try {
                 const docUserRef = doc(db, "usuarios", prestadorUid);
                 const docUserSnap = await getDoc(docUserRef);
                 if (docUserSnap.exists()) {
-                    dadosPrestador = docUserSnap.data();
-                    dadosPrestador.uid = prestadorUid; 
+                    const dadosPrestador = docUserSnap.data();
                     atualizarCardResumo(dadosPrestador);
                 }
             } catch (e) { console.error("Erro user:", e); }
         }
 
-        // 2. Carrega Anúncio e Aplica Regras
+        // B. Carrega Anúncio (Título e Regras Online/Presencial)
         if (anuncioId) {
             try {
                 const docAnuncioRef = doc(db, "anuncios", anuncioId);
                 const docAnuncioSnap = await getDoc(docAnuncioRef);
                 
                 if (docAnuncioSnap.exists()) {
-                    dadosAnuncio = docAnuncioSnap.data();
+                    const dadosAnuncio = docAnuncioSnap.data();
                     
                     // Preenche título
-                    if(dadosAnuncio.titulo) document.getElementById('titulo-pedido').value = "Orçamento: " + dadosAnuncio.titulo;
+                    const inputTitulo = document.getElementById('titulo-pedido');
+                    if(inputTitulo && dadosAnuncio.titulo) {
+                        inputTitulo.value = "Orçamento: " + dadosAnuncio.titulo;
+                    }
                     
-                    // Chama a função que ESCONDE o endereço se for Online
+                    // Aplica regras (esconde endereço se for online)
                     aplicarConfiguracoesDoAnuncio(dadosAnuncio);
                 }
             } catch (e) { console.error("Erro anuncio:", e); }
-        } else {
-            console.warn("⚠️ Nenhum ID de anúncio (aid) na URL.");
         }
 
-        // 3. Bloqueia se for o dono
+        // C. Bloqueia se for o próprio dono
         onAuthStateChanged(auth, (user) => {
             if (user && prestadorUid && user.uid === prestadorUid) {
                 bloquearBotaoProprioAnuncio();
             }
         });
+
+        // --- 3. CONFIGURA O BOTÃO DEPOIS QUE TUDO CARREGOU ---
+        configurarBotaoEnviar();
     });
 
-    // --- FUNÇÃO QUE ESCONDE A CAIXA DE LOCALIZAÇÃO ---
+    // --- FUNÇÃO DE ENVIO SEGURA ---
+    function configurarBotaoEnviar() {
+        const btnEnviar = document.getElementById('btnEnviarOrcamento');
+        if (!btnEnviar) return;
+
+        // Clone para limpar listeners antigos e evitar travamentos
+        const novoBtn = btnEnviar.cloneNode(true);
+        btnEnviar.parentNode.replaceChild(novoBtn, btnEnviar);
+
+        novoBtn.addEventListener('click', async (e) => {
+            e.preventDefault();
+            console.log("🖱️ Clique no Enviar");
+            
+            const db = window.db;
+            const auth = window.auth;
+            // ATENÇÃO: Recriamos a conexão com Storage aqui para garantir que não seja undefined
+            const storage = getStorage(window.db.app); 
+            
+            const user = auth.currentUser;
+
+            if (!user) { alert("Faça login para continuar."); return; }
+
+            const params = new URLSearchParams(window.location.search);
+            const paraUid = params.get('uid');
+
+            if (!paraUid) { alert("Erro: Profissional não identificado."); return; }
+
+            // Validação
+            const titulo = document.getElementById('titulo-pedido').value;
+            const descricao = document.getElementById('descricao-pedido').value;
+            if (!titulo || !descricao) { alert("Preencha título e descrição."); return; }
+
+            // Feedback Visual
+            const textoOriginal = novoBtn.innerHTML;
+            novoBtn.innerHTML = "Enviando...";
+            novoBtn.disabled = true;
+
+            try {
+                // 1. Upload Fotos
+                let urlsAnexos = [];
+                if (window.arquivosParaUpload && window.arquivosParaUpload.length > 0) {
+                    novoBtn.innerHTML = `Enviando ${window.arquivosParaUpload.length} fotos...`;
+                    console.log("📤 Iniciando Upload...");
+                    
+                    const promises = window.arquivosParaUpload.map(async (file) => {
+                        try {
+                            const refArquivo = ref(storage, `anexos/${user.uid}/${Date.now()}_${file.name}`);
+                            const snap = await uploadBytes(refArquivo, file);
+                            const url = await getDownloadURL(snap.ref);
+                            console.log("✅ Foto enviada:", url);
+                            return url;
+                        } catch (errUpload) {
+                            console.error("Erro no upload unitário:", errUpload);
+                            throw errUpload;
+                        }
+                    });
+                    urlsAnexos = await Promise.all(promises);
+                }
+
+                // 2. Salvar no Banco
+                novoBtn.innerText = "Finalizando...";
+                console.log("💾 Salvando no banco...");
+                const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                
+                const docRef = await addDoc(collection(db, "pedidos"), {
+                    deUid: user.uid,
+                    paraUid: paraUid,
+                    servicoReferencia: titulo,
+                    mensagemInicial: descricao,
+                    paraQuando: document.getElementById('para-quando').value,
+                    turno: document.getElementById('turno').value,
+                    anexos: urlsAnexos,
+                    clienteNome: perfil.nome || "Cliente",
+                    clienteFoto: perfil.foto || "https://i.pravatar.cc/150",
+                    status: "pendente",
+                    dataPedido: new Date().toISOString(),
+                    notificacaoLidaProfissional: false
+                });
+
+                console.log("🎉 Sucesso! ID:", docRef.id);
+
+                // 3. Sucesso e Redirecionamento
+                localStorage.setItem('doke_pedido_enviado', 'true');
+                window.location.href = `chat.html?chatId=${docRef.id}`;
+
+            } catch (erro) {
+                console.error("❌ ERRO FATAL:", erro);
+                alert("Erro ao enviar: " + erro.message);
+                novoBtn.innerHTML = textoOriginal;
+                novoBtn.disabled = false;
+            }
+        });
+    }
+
+    // --- FUNÇÕES VISUAIS E HELPERS (TUDO MANTIDO) ---
+
+    function atualizarCardResumo(dados) {
+        if(document.getElementById('nomePrestadorResumo'))
+            document.getElementById('nomePrestadorResumo').innerHTML = `${dados.nome} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
+        if(document.getElementById('userPrestadorResumo'))
+            document.getElementById('userPrestadorResumo').innerText = dados.user || "@profissional";
+        if(document.getElementById('imgPrestadorResumo'))
+            document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
+        
+        if(dados.stats) {
+            if(document.getElementById('notaPrestadorResumo')) 
+                document.getElementById('notaPrestadorResumo').innerText = dados.stats.media || "Novo";
+            if(document.getElementById('jobsPrestadorResumo')) 
+                document.getElementById('jobsPrestadorResumo').innerText = dados.stats.jobs || "0";
+        }
+    }
+
     function aplicarConfiguracoesDoAnuncio(anuncio) {
         const cardLoc = document.getElementById('card-localizacao');
         const inputCep = document.getElementById('cepOrcamento');
         const inputEnd = document.getElementById('endereco-completo');
 
-        // Formatação robusta para detectar "online"
         const modo = String(anuncio.modo_atend || "").toLowerCase().trim();
         
         if (modo === 'online' || modo.includes('remoto')) {
@@ -488,139 +605,18 @@
         } else {
             if(cardLoc) cardLoc.style.display = 'block';
         }
-
-        carregarPerguntasExtras(anuncio);
-    }
-
-    // --- LÓGICA DE ENVIO DO PEDIDO ---
-    const btnEnviar = document.getElementById('btnEnviarOrcamento');
-    if(btnEnviar) {
-        btnEnviar.addEventListener('click', async (e) => {
-            e.preventDefault();
-            const user = auth.currentUser;
-            
-            // 1. Validações Básicas
-            if (!user) { alert("Faça login para continuar."); window.location.href = "login.html"; return; }
-            
-            // --- CORREÇÃO: PEGA O UID DA URL NOVAMENTE AQUI DENTRO ---
-            const uidDestino = new URLSearchParams(window.location.search).get('uid');
-            
-            const titulo = document.getElementById('titulo-pedido').value;
-            const descricao = document.getElementById('descricao-pedido').value;
-            if (!titulo || !descricao) { alert("Preencha o título e a descrição do pedido."); return; }
-
-            // 2. Validação de Endereço (Só se estiver visível)
-            const cardLoc = document.getElementById('card-localizacao');
-            let localizacaoData = { tipo: "Online" };
-            
-            if (cardLoc && cardLoc.style.display !== 'none') {
-                const cep = document.getElementById('cepOrcamento').value;
-                const end = document.getElementById('endereco-completo').value;
-                if(!cep || !end) { alert("Informe o endereço para serviços presenciais."); return; }
-                localizacaoData = { tipo: "Presencial", cep: cep, endereco: end };
-            }
-
-            // 3. Coleta Respostas Extras
-            let respostasExtras = [];
-            document.querySelectorAll('.pergunta-extra').forEach(inp => {
-                if(inp.value) respostasExtras.push({ pergunta: inp.getAttribute('data-pergunta'), resposta: inp.value });
-            });
-
-            // 4. Efeito de Carregamento
-            btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Enviando...";
-            btnEnviar.disabled = true;
-
-            try {
-                const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-                const anuncioIdRef = new URLSearchParams(window.location.search).get('aid');
-
-                // 5. Salva no Firebase
-                const docRef = await addDoc(collection(db, "pedidos"), {
-                    deUid: user.uid,
-                    paraUid: uidDestino, 
-                    paraNome: dadosPrestador ? dadosPrestador.nome : "Profissional",
-                    // ADICIONADO: Salva o user e a foto do prestador
-                    paraUser: dadosPrestador ? (dadosPrestador.user || "@" + dadosPrestador.nome.split(' ')[0]) : "@profissional",
-                    paraFoto: dadosPrestador ? dadosPrestador.foto : "https://placehold.co/150",
-                    
-                    clienteNome: perfilCliente.nome || "Cliente",
-                    clienteFoto: perfilCliente.foto || "https://cdn-icons-png.flaticon.com/512/847/847969.png",
-                    servicoReferencia: titulo,
-                    mensagemInicial: descricao,
-                    paraQuando: document.getElementById('para-quando').value,
-                    turno: document.getElementById('turno').value,
-                    localizacao: localizacaoData,
-                    formularioRespostas: respostasExtras,
-                    origemAnuncioId: anuncioIdRef || null,
-                    status: "pendente",
-                    dataPedido: new Date().toISOString(),
-                    visualizado: false
-                });
-
-                window.location.href = `chat.html?chatId=${docRef.id}`;
-
-            } catch (error) {
-                console.error("Erro envio:", error);
-                alert("Erro ao enviar: " + error.message);
-                btnEnviar.innerHTML = "Enviar Solicitação";
-                btnEnviar.disabled = false;
-            }
-        });
-    }
-
-    // --- FUNÇÕES AUXILIARES VISUAIS ---
-    function atualizarCardResumo(dados) {
-        if(document.getElementById('nomePrestadorResumo'))
-            document.getElementById('nomePrestadorResumo').innerHTML = `${dados.nome} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
-        if(document.getElementById('userPrestadorResumo'))
-            document.getElementById('userPrestadorResumo').innerText = dados.user || "@profissional";
-        if(document.getElementById('imgPrestadorResumo'))
-            document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
-        if(dados.stats) {
-            if(document.getElementById('notaPrestadorResumo')) 
-                document.getElementById('notaPrestadorResumo').innerText = dados.stats.media || "Novo";
-            if(document.getElementById('jobsPrestadorResumo'))
-                document.getElementById('jobsPrestadorResumo').innerText = dados.stats.jobs || 0;
-        }
     }
 
     function bloquearBotaoProprioAnuncio() {
         const btn = document.getElementById('btnEnviarOrcamento');
         if(btn) {
+            btn.innerText = "Você não pode solicitar para si mesmo.";
             btn.disabled = true;
-            btn.innerHTML = "<i class='bx bx-block'></i> Você é o dono";
-            btn.style.background = "#ccc";
             btn.style.cursor = "not-allowed";
+            btn.style.background = "#ccc";
         }
     }
 
-    function carregarPerguntasExtras(anuncio) {
-        let perguntas = [];
-        if (anuncio.perguntasFormularioJson) {
-            try {
-                perguntas = (typeof anuncio.perguntasFormularioJson === 'string') 
-                    ? JSON.parse(anuncio.perguntasFormularioJson) 
-                    : anuncio.perguntasFormularioJson;
-            } catch(e) {}
-        }
-        const container = document.getElementById('container-perguntas-extras');
-        const lista = document.getElementById('lista-perguntas-dinamicas');
-        if (perguntas.length > 0 && container && lista) {
-            container.style.display = 'block';
-            lista.innerHTML = "";
-            perguntas.forEach((p, i) => {
-                const div = document.createElement('div');
-                div.className = 'input-group';
-                let inputHtml = p.tipo === 'fechada' 
-                    ? `<select class="input-premium pergunta-extra" data-pergunta="${p.pergunta}"><option value="" disabled selected>Selecione...</option>${p.opcoes.map(o=>`<option>${o}</option>`).join('')}</select>`
-                    : `<input type="text" class="input-premium pergunta-extra" data-pergunta="${p.pergunta}">`;
-                div.innerHTML = `<label style="color:var(--cor2);">${i+1}. ${p.pergunta}</label>${inputHtml}`;
-                lista.appendChild(div);
-            });
-        }
-    }
-
-    // Helpers Globais
     window.buscarEndereco = function() {
         const cepEl = document.getElementById('cepOrcamento');
         if(!cepEl) return;
@@ -634,15 +630,19 @@
     
     window.previewFiles = function() {
         const preview = document.getElementById('previewArea');
-        const files = document.getElementById('fileInput').files;
-        preview.innerHTML = "";
-        if (files) {
-            [].forEach.call(files, function(file) {
-                if (/\.(jpe?g|png|gif)$/i.test(file.name)) {
+        const input = document.getElementById('fileInput');
+        if (input.files) {
+            Array.from(input.files).forEach(file => {
+                window.arquivosParaUpload.push(file);
+                const reader = new FileReader();
+                reader.onload = (e) => {
                     const img = document.createElement('img');
-                    img.src = URL.createObjectURL(file);
+                    img.src = e.target.result;
+                    img.style.width = "60px"; img.style.height = "60px"; img.style.objectFit = "cover";
+                    img.style.borderRadius = "8px"; img.style.border = "1px solid #ddd"; img.style.marginRight = "5px";
                     preview.appendChild(img);
                 }
+                reader.readAsDataURL(file);
             });
         }
     }

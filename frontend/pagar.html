@@ -129,6 +129,64 @@
 
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+/* ======================================================
+   ESTILO DO LOADER E SUCESSO (PAGAMENTO)
+   ====================================================== */
+
+/* O Container que cobre a tela */
+#loaderPagamento {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(255, 255, 255, 0.95);
+    z-index: 9999;
+    display: none; /* Controlado pelo JS */
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(10px);
+}
+
+/* O Círculo Girando (Loader) */
+#circuloLoader {
+    width: 60px;
+    height: 60px;
+    border: 5px solid #e0f2f1;
+    border-top: 5px solid var(--cor0);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 20px;
+}
+
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+/* O Ícone de Sucesso (Check Verde) */
+#iconeSucesso {
+    font-size: 5rem;
+    color: #2ecc71;
+    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: none;
+    margin-bottom: 15px;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0); opacity: 0; }
+    70% { transform: scale(1.2); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Textos */
+#textoStatus {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 5px;
+}
+
+#subTextoStatus {
+    color: #777;
+    font-size: 0.9rem;
+}
     </style>
 </head>
 <body>
@@ -238,12 +296,20 @@
     <div id="textoStatus" class="payment-status-text">Processando Pagamento...</div>
     <p id="subTextoStatus" style="color:#666;">Por favor, não feche esta janela.</p>
 </div>
+
+<div id="loaderPagamento">
+    <div id="circuloLoader"></div>
+    <i class='bx bxs-check-circle' id="iconeSucesso"></i>
+    <h2 id="textoStatus">Processando...</h2>
+    <p id="subTextoStatus">Validando segurança do pagamento</p>
+</div>
     </main>
 
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+    import { getFirestore, doc, updateDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // Suas configurações
     const firebaseConfig = {
         apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
         authDomain: "doke-site.firebaseapp.com",
@@ -256,10 +322,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
+    // Variável global para armazenar o valor numérico correto
+    let valorGlobalParaSalvar = 0;
+
+    // Função de abas (Cartão/Pix)
     window.mudarMetodo = (metodo) => {
         document.querySelectorAll('.tab-method').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.credit-card-form, .pix-area').forEach(f => f.classList.remove('active'));
-        if(metodo === 'cartao') {
+        if (metodo === 'cartao') {
             document.getElementById('tab-cartao').classList.add('active');
             document.getElementById('form-cartao').classList.add('active');
         } else {
@@ -268,19 +338,68 @@
         }
     };
 
+    // --- CARREGAMENTO E CÁLCULOS ---
+    window.onload = function() {
+        const params = new URLSearchParams(window.location.search);
+        
+        // Pega valores da URL. Ex: "23" ou "R$ 23,00"
+        let valorBruto = params.get('valor') || "0";
+        let maxParcelas = parseInt(params.get('parcelas')) || 1;
+
+        // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
+        // Remove tudo que não for número ou vírgula
+        let valorLimpo = valorBruto.replace(/[^\d,]/g, ''); 
+        // Se tiver vírgula, troca por ponto para o JS entender
+        valorLimpo = valorLimpo.replace(',', '.');
+        
+        // Corrige caso o número venha sem centavos (ex: "23" vira 23)
+        // Mas se vier "23.00" (milhar) precisa tratar. 
+        // Assumindo padrão brasileiro: ultimos 2 digitos são centavos se tiver pontuação?
+        // Simplificação: Se o valor veio do prompt do script.js, ele está formatado como "23,00".
+        
+        valorGlobalParaSalvar = parseFloat(valorLimpo);
+        if (isNaN(valorGlobalParaSalvar)) valorGlobalParaSalvar = 0;
+
+        // 2. Formata para exibir na tela (R$ XX,XX)
+        const valorFormatado = valorGlobalParaSalvar.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+        // Atualiza TOTAL no resumo
+        const elTotal = document.getElementById('resumoValorTotal');
+        if (elTotal) elTotal.innerText = valorFormatado;
+
+        // 3. Gera as Parcelas Corretas
+        const selectParcelas = document.getElementById('cardInstallments'); // ID corrigido conforme seu HTML
+        if (selectParcelas) {
+            selectParcelas.innerHTML = "";
+            for (let i = 1; i <= maxParcelas; i++) {
+                let valorParcela = valorGlobalParaSalvar / i;
+                let textoValor = valorParcela.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                selectParcelas.innerHTML += `<option value="${i}">${i}x de ${textoValor} (Sem juros)</option>`;
+            }
+        }
+
+        // Atualiza botão
+        const btnConfirmar = document.getElementById('btn-finalizar');
+        if (btnConfirmar) {
+            btnConfirmar.innerHTML = `Pagar ${valorFormatado}`;
+        }
+    };
+
+    // --- PREENCHIMENTO DE DADOS DO RESUMO ---
     document.addEventListener("DOMContentLoaded", () => {
         const params = new URLSearchParams(window.location.search);
-        const pedidoId = params.get('pedidoId');
-        const valorRaw = params.get('valor') || "R$ 0,00";
-
-        // Preenchimento de Resumo
+        
+        // Preenche info do profissional e cliente
         document.getElementById('resumoProfissional').innerText = params.get('prof') || "@profissional";
-        document.getElementById('nomeUserResumo').innerText = "Cliente: " + (params.get('user') || "-");
-        document.getElementById('resumoServico').innerText = params.get('desc') || "Serviço Geral";
-        document.getElementById('resumoValorTotal').innerText = valorRaw;
-        if(params.get('foto')) document.getElementById('fotoResumo').src = params.get('foto');
+        document.getElementById('nomeUserResumo').innerText = "Cliente: " + (params.get('user') || "Você");
+        
+        // Decodifica a descrição para não ficar url-encoded
+        const desc = decodeURIComponent(params.get('desc') || "Serviço Geral");
+        document.getElementById('resumoServico').innerText = desc.length > 30 ? desc.substring(0,30)+'...' : desc;
+        
+        if (params.get('foto')) document.getElementById('fotoResumo').src = params.get('foto');
 
-        // Máscaras de Cartão
+        // Máscaras visuais do cartão
         document.getElementById('cardNumber')?.addEventListener('input', (e) => {
             let v = e.target.value.replace(/\D/g, '');
             v = v.replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -295,12 +414,34 @@
             e.target.value = e.target.value.replace(/\D/g, '');
         });
 
-        // LÓGICA DE FINALIZAÇÃO ESTILIZADA
+        // --- LÓGICA DE CONFIRMAÇÃO DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
         btnFinalizar.addEventListener('click', async () => {
-            if(!pedidoId) return alert("Erro: ID do pedido não identificado.");
+            const pedidoId = params.get('pedidoId');
+            
+            // 1. Validação ANTES de mostrar loading
+            if (!pedidoId) {
+                alert("Erro crítico: ID do pedido não encontrado. Volte ao chat e tente novamente.");
+                return;
+            }
+            
+            if (valorGlobalParaSalvar <= 0) {
+                alert("Erro: Valor do pagamento inválido.");
+                return;
+            }
 
-            // Exibe a tela de processamento
+            // Validação simples de campos do cartão (se a aba cartão estiver ativa)
+            const abaCartaoAtiva = document.getElementById('tab-cartao').classList.contains('active');
+            if (abaCartaoAtiva) {
+                const num = document.getElementById('cardNumber').value;
+                const nome = document.getElementById('cardName').value;
+                if (num.length < 15 || nome.length < 3) {
+                    alert("Por favor, preencha os dados do cartão corretamente.");
+                    return;
+                }
+            }
+
+            // 2. Mostra Loading e Oculta Erro Anterior
             const overlay = document.getElementById('loaderPagamento');
             const circulo = document.getElementById('circuloLoader');
             const icone = document.getElementById('iconeSucesso');
@@ -308,37 +449,48 @@
             const subTexto = document.getElementById('subTextoStatus');
 
             overlay.style.display = 'flex';
+            circulo.style.display = 'block'; // Garante que o spinner apareça
+            icone.style.display = 'none';
+            texto.innerText = "Processando Pagamento...";
+            texto.style.color = "var(--cor2)";
+            subTexto.innerText = "Por favor, não feche esta janela.";
 
             try {
-                // Simula um pequeno delay para efeito visual (opcional)
+                // Simula processamento bancário
                 await new Promise(r => setTimeout(r, 2000));
 
+                // 3. Atualiza no Firebase
                 const pedidoRef = doc(db, "pedidos", pedidoId);
+                
+                // Formata o valor final para salvar como string bonita no banco "R$ 23,00"
+                const valorStringFinal = valorGlobalParaSalvar.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
                 await updateDoc(pedidoRef, {
                     status: 'pago',
                     dataPagamento: new Date().toISOString(),
-                    valorFinal: valorRaw
+                    valorFinal: valorStringFinal
                 });
 
-                // Transição para SUCESSO
+                // 4. Sucesso Visual
                 circulo.style.display = 'none';
                 icone.style.display = 'block';
                 texto.innerText = "Pagamento Concluído!";
-                texto.style.color = "#2ecc71";
+                texto.style.color = "#2ecc71"; // Verde sucesso
                 subTexto.innerText = "O profissional já foi notificado. Redirecionando...";
 
-                // Aguarda 2 segundos e volta ao chat
                 setTimeout(() => {
                     window.location.href = "chat.html";
                 }, 2500);
 
             } catch (e) {
                 console.error(e);
+                // Fecha o loader para mostrar o erro (ou muda o texto do loader)
                 overlay.style.display = 'none';
-                alert("Erro ao processar pagamento. Verifique seus dados.");
+                alert("Houve um erro ao atualizar o pedido no sistema. Tente novamente.");
             }
         });
     });
 </script>
+
 </body>
 </html>
