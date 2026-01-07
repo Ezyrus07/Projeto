@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estatísticas | Doke</title>
+    <link rel="stylesheet" href="style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script type="module" src="script.js"></script>
+
+    <style>
+        body { background: #f4f6f8; font-family: 'Segoe UI', sans-serif; }
+        
+        @media (min-width: 1024px) {
+            main { margin-left: 270px; padding: 40px; max-width: 1200px; margin-right: auto; }
+        }
+
+        .stats-header {
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); margin-bottom: 30px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px;
+        }
+        .stats-header h1 { margin: 0; font-size: 1.8rem; color: #333; }
+        
+        .date-filter {
+            display: flex; background: #f0f2f5; padding: 5px; border-radius: 12px;
+        }
+        .filter-btn {
+            border: none; background: transparent; padding: 10px 20px;
+            border-radius: 8px; cursor: pointer; font-weight: 600; color: #666; transition: 0.2s;
+        }
+        .filter-btn.active { background: white; color: var(--cor0); box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+
+        /* CARDS DE RESUMO */
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px; margin-bottom: 30px;
+        }
+        .kpi-card {
+            background: white; padding: 25px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7;
+            display: flex; align-items: center; gap: 20px;
+        }
+        .kpi-icon {
+            width: 60px; height: 60px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 1.8rem;
+        }
+        .kpi-green { background: #e8f5e9; color: #2e7d32; }
+        .kpi-blue { background: #e3f2fd; color: #1565c0; }
+        .kpi-orange { background: #fff3e0; color: #ef6c00; }
+
+        .kpi-info h4 { margin: 0 0 5px 0; font-size: 0.9rem; color: #888; text-transform: uppercase; }
+        .kpi-info strong { font-size: 1.8rem; color: #333; font-weight: 800; }
+
+        /* ÁREA DO GRÁFICO */
+        .chart-container {
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); height: 400px; position: relative;
+        }
+
+        /* TABELA DE TOP SERVIÇOS */
+        .top-services {
+            margin-top: 30px; background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        .ts-item {
+            display: flex; justify-content: space-between; padding: 15px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .ts-item:last-child { border: none; }
+    </style>
+</head>
+<body>
+
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="carteira.html"><img src="https://cdn-icons-png.flaticon.com/512/2488/2488749.png" class="icon azul"><span>Carteira</span></a></div>
+    </aside>
+
+    <main>
+        <div class="stats-header">
+            <div>
+                <h1>Painel Financeiro</h1>
+                <p style="color:#666; margin-top:5px;">Acompanhe seu desempenho detalhado.</p>
+            </div>
+            <div class="date-filter">
+                <button class="filter-btn active" onclick="filtrarDados('hoje', this)">Hoje</button>
+                <button class="filter-btn" onclick="filtrarDados('semana', this)">Semana</button>
+                <button class="filter-btn" onclick="filtrarDados('mes', this)">Mês</button>
+                <button class="filter-btn" onclick="filtrarDados('ano', this)">Ano</button>
+            </div>
+        </div>
+
+        <div class="kpi-grid">
+            <div class="kpi-card">
+                <div class="kpi-icon kpi-green"><i class='bx bx-money'></i></div>
+                <div class="kpi-info">
+                    <h4>Faturamento Total</h4>
+                    <strong id="kpiFaturamento">R$ 0,00</strong>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon kpi-blue"><i class='bx bx-briefcase-alt-2'></i></div>
+                <div class="kpi-info">
+                    <h4>Serviços Realizados</h4>
+                    <strong id="kpiServicos">0</strong>
+                </div>
+            </div>
+            <div class="kpi-card">
+                <div class="kpi-icon kpi-orange"><i class='bx bx-trending-up'></i></div>
+                <div class="kpi-info">
+                    <h4>Ticket Médio</h4>
+                    <strong id="kpiTicket">R$ 0,00</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="chart-container">
+            <h3 style="margin-bottom:20px; color:#333;">Evolução de Ganhos</h3>
+            <canvas id="graficoGanhos"></canvas>
+        </div>
+
+        <div class="top-services">
+            <h3 style="margin-bottom:20px; color:#333;">Histórico Recente</h3>
+            <div id="listaHistoricoRecente">
+                <p style="color:#999; text-align:center;">Carregando...</p>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+
+        const db = getFirestore();
+        const auth = getAuth();
+        let chartInstance = null;
+        let todosPedidos = [];
+
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, (user) => {
+                if(user) carregarDados(user.uid);
+                else window.location.href = "login.html";
+            });
+        });
+
+        async function carregarDados(uid) {
+            // Busca TODOS os pedidos finalizados
+            const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "finalizado"));
+            const snap = await getDocs(q);
+            
+            todosPedidos = [];
+            snap.forEach(doc => {
+                const d = doc.data();
+                todosPedidos.push({
+                    valor: parseFloat((d.valorFinal || "0").replace(/[^\d,]/g, '').replace(',', '.')) || 0,
+                    data: new Date(d.dataConclusao || d.dataPedido),
+                    servico: d.servicoReferencia
+                });
+            });
+
+            // Carrega 'hoje' por padrão
+            filtrarDados('hoje', document.querySelector('.filter-btn.active'));
+        }
+
+        window.filtrarDados = function(periodo, btn) {
+            // UI Botões
+            document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const hoje = new Date();
+            let dadosFiltrados = [];
+            let labels = [];
+            let valores = [];
+
+            // Lógica de Filtro e Agrupamento
+            if(periodo === 'hoje') {
+                dadosFiltrados = todosPedidos.filter(p => p.data.toDateString() === hoje.toDateString());
+                // Agrupar por hora (simplificado: mostra lista linear)
+                labels = dadosFiltrados.map(p => p.data.getHours() + "h");
+                valores = dadosFiltrados.map(p => p.valor);
+            } 
+            else if (periodo === 'semana') {
+                const weekStart = new Date(hoje.setDate(hoje.getDate() - 7));
+                dadosFiltrados = todosPedidos.filter(p => p.data >= weekStart);
+                // Agrupar por dia
+                const dias = {};
+                dadosFiltrados.forEach(p => {
+                    const dia = p.data.toLocaleDateString('pt-BR', {weekday:'short'});
+                    dias[dia] = (dias[dia] || 0) + p.valor;
+                });
+                labels = Object.keys(dias);
+                valores = Object.values(dias);
+            }
+            else if (periodo === 'mes') {
+                const monthStart = new Date(hoje.getFullYear(), hoje.getMonth(), 1);
+                dadosFiltrados = todosPedidos.filter(p => p.data >= monthStart);
+                // Agrupar por dia do mês
+                const dias = {};
+                dadosFiltrados.forEach(p => {
+                    const dia = p.data.getDate();
+                    dias[dia] = (dias[dia] || 0) + p.valor;
+                });
+                labels = Object.keys(dias).map(d => "Dia " + d);
+                valores = Object.values(dias);
+            }
+            else if (periodo === 'ano') {
+                const yearStart = new Date(hoje.getFullYear(), 0, 1);
+                dadosFiltrados = todosPedidos.filter(p => p.data >= yearStart);
+                // Agrupar por mês
+                const meses = {};
+                dadosFiltrados.forEach(p => {
+                    const mes = p.data.toLocaleDateString('pt-BR', {month:'short'});
+                    meses[mes] = (meses[mes] || 0) + p.valor;
+                });
+                labels = Object.keys(meses);
+                valores = Object.values(meses);
+            }
+
+            atualizarKPIs(dadosFiltrados);
+            renderizarGrafico(labels, valores);
+            renderizarLista(dadosFiltrados);
+        }
+
+        function atualizarKPIs(dados) {
+            const total = dados.reduce((acc, cur) => acc + cur.valor, 0);
+            const qtd = dados.length;
+            const ticket = qtd > 0 ? total / qtd : 0;
+
+            document.getElementById('kpiFaturamento').innerText = total.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            document.getElementById('kpiServicos').innerText = qtd;
+            document.getElementById('kpiTicket').innerText = ticket.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+        }
+
+        function renderizarGrafico(labels, data) {
+            const ctx = document.getElementById('graficoGanhos').getContext('2d');
+            
+            if(chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar', // ou 'line'
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Faturamento (R$)',
+                        data: data,
+                        backgroundColor: '#0b7768',
+                        borderRadius: 5,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        }
+
+        function renderizarLista(dados) {
+            const lista = document.getElementById('listaHistoricoRecente');
+            if(dados.length === 0) { lista.innerHTML = "<p style='color:#999; text-align:center;'>Nenhum dado neste período.</p>"; return; }
+            
+            lista.innerHTML = "";
+            // Ordena mais recente primeiro e pega os últimos 5
+            dados.sort((a,b) => b.data - a.data).slice(0,5).forEach(p => {
+                lista.innerHTML += `
+                    <div class="ts-item">
+                        <div>
+                            <strong style="display:block; color:#333;">${p.servico}</strong>
+                            <small style="color:#999;">${p.data.toLocaleDateString()} às ${p.data.toLocaleTimeString()}</small>
+                        </div>
+                        <div style="font-weight:bold; color:#2e7d32;">
+                            + ${p.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    </script>
+</body>
+</html>

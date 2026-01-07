@@ -6,21 +6,21 @@
     <title>Minha Carteira | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
     <script type="module" src="script.js"></script>
 
     <style>
         /* ======================================================
-           ESTILOS DA CARTEIRA (ATUALIZADO - HERO BLUE)
+           ESTILOS DA CARTEIRA
            ====================================================== */
-        
         body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
 
         @media (min-width: 1024px) {
             main { margin-left: 270px; padding: 30px 40px; max-width: 1600px; }
         }
 
-        /* --- NOVO HERO CONTAINER (Igual Notificações) --- */
+        /* --- HERO CONTAINER (Azul) --- */
         .wallet-hero-container {
             background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
             padding: 40px; border-radius: 20px; margin-bottom: 30px;
@@ -29,7 +29,6 @@
             justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;
         }
         
-        /* Efeito de Círculo Decorativo */
         .wallet-hero-container::before {
             content: ''; position: absolute; top: -50px; right: -20px;
             width: 200px; height: 200px; background: rgba(255,255,255,0.05);
@@ -42,18 +41,27 @@
         }
         .hero-content p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
 
-        .hero-actions { display: flex; gap: 10px; }
+        /* Botões de Navegação Interna */
+        .hero-actions { display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 50px; }
         
-        .btn-hero-action {
-            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
-            color: white; padding: 10px 18px; border-radius: 30px;
-            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+        .btn-tab {
+            background: transparent; border: none;
+            color: rgba(255,255,255,0.7); padding: 10px 20px; border-radius: 30px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
             display: flex; align-items: center; gap: 8px; transition: 0.2s;
-            text-decoration: none; backdrop-filter: blur(5px);
         }
-        .btn-hero-action:hover { background: white; color: var(--cor2); }
+        .btn-tab:hover { color: white; }
+        .btn-tab.active { background: white; color: var(--cor2); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
 
-        /* --- CARDS DE SALDO --- */
+        .btn-config {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 10px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; margin-left: 10px;
+        }
+        .btn-config:hover { background: white; color: var(--cor2); }
+
+        /* --- VISÃO GERAL (SALDO) --- */
         .balance-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 25px; margin-bottom: 40px;
@@ -65,70 +73,76 @@
             display: flex; flex-direction: column; justify-content: space-between;
             position: relative; overflow: hidden; transition: transform 0.2s;
         }
-        .balance-card:hover { transform: translateY(-3px); }
-
-        /* Estilo do Card Disponível */
         .card-available { border-bottom: 4px solid #2e7d32; }
-        .card-available .icon-bg {
-            position: absolute; top: 20px; right: 20px; width: 50px; height: 50px;
-            background: #e8f5e9; border-radius: 12px; color: #2e7d32;
-            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
-        }
-
-        /* Estilo do Card Garantia */
         .card-pending { border-bottom: 4px solid #f1c40f; }
-        .card-pending .icon-bg {
+        
+        .icon-bg {
             position: absolute; top: 20px; right: 20px; width: 50px; height: 50px;
-            background: #fff8e1; border-radius: 12px; color: #f1c40f;
-            display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
         }
+        .card-available .icon-bg { background: #e8f5e9; color: #2e7d32; }
+        .card-pending .icon-bg { background: #fff8e1; color: #f1c40f; }
 
-        .bc-label { font-size: 0.85rem; color: #888; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }
-        .bc-value { font-size: 2.5rem; font-weight: 800; color: var(--cor2); margin: 15px 0 5px 0; letter-spacing: -1px; }
+        .bc-label { font-size: 0.85rem; color: #888; font-weight: 700; text-transform: uppercase; }
+        .bc-value { font-size: 2.5rem; font-weight: 800; color: var(--cor2); margin: 15px 0 5px 0; }
         .bc-sub { font-size: 0.85rem; color: #999; margin-bottom: 25px; }
 
         .btn-withdraw {
             background: var(--cor0); color: white; border: none; padding: 14px;
             border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s;
             font-size: 0.95rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
-            box-shadow: 0 4px 12px rgba(11, 119, 104, 0.2);
         }
-        .btn-withdraw:hover { background: #096356; transform: translateY(-2px); }
-        .btn-withdraw:disabled { background: #e0e0e0; color: #999; cursor: not-allowed; transform: none; box-shadow: none; }
+        .btn-withdraw:disabled { background: #e0e0e0; color: #999; cursor: not-allowed; }
 
-        /* --- LISTA DE TRANSAÇÕES --- */
+        /* --- VISÃO ESTATÍSTICAS --- */
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 25px; background: white;
+            padding: 10px; border-radius: 12px; width: fit-content;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .filter-pill {
+            padding: 8px 16px; border-radius: 8px; border: none; background: transparent;
+            color: #666; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .filter-pill.active { background: var(--cor0); color: white; }
+
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px; margin-bottom: 30px;
+        }
+        .kpi-card {
+            background: white; padding: 25px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7;
+            display: flex; align-items: center; gap: 20px;
+        }
+        .kpi-icon {
+            width: 50px; height: 50px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .bg-green { background: #e8f5e9; color: #2e7d32; }
+        .bg-blue { background: #e3f2fd; color: #1565c0; }
+        .bg-orange { background: #fff3e0; color: #ef6c00; }
+
+        .chart-box {
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); height: 400px; position: relative;
+        }
+
+        /* Histórico */
         .history-container { background: white; border-radius: 20px; padding: 30px; border: 1px solid #edf2f7; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
-        .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 1px solid #f0f0f0; }
-        .history-header h3 { margin: 0; color: var(--cor2); font-size: 1.1rem; }
+        .t-item { display: flex; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid #f9f9f9; }
+        .t-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 15px; }
+        .in { background: #e8f5e9; color: #2e7d32; }
+        .wait { background: #fff8e1; color: #f1c40f; }
 
-        .transaction-list { display: flex; flex-direction: column; gap: 0; }
-        
-        .t-item {
-            display: flex; justify-content: space-between; align-items: center;
-            padding: 18px 0; border-bottom: 1px solid #f9f9f9; transition: 0.2s;
-        }
-        .t-item:last-child { border-bottom: none; }
-        .t-item:hover { background: #fcfcfc; padding-left: 10px; padding-right: 10px; border-radius: 8px; }
-
-        .t-left { display: flex; gap: 15px; align-items: center; }
-        .t-icon {
-            width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem;
-        }
-        
-        .t-icon.in { background: #e8f5e9; color: #2e7d32; }
-        .t-icon.wait { background: #fff8e1; color: #f1c40f; }
-
-        .t-info h4 { margin: 0 0 4px 0; font-size: 0.95rem; color: #333; font-weight: 600; }
-        .t-info span { font-size: 0.8rem; color: #999; }
-
-        .t-amount { font-weight: 700; font-size: 1rem; color: var(--cor2); }
-        .t-amount.plus { color: #2e7d32; }
-        .t-amount.waiting { color: #f1c40f; }
+        /* Controle de visibilidade das abas */
+        .view-section { display: none; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
         @media (max-width: 768px) {
-            main { padding: 20px; padding-bottom: 90px; margin-left: 0; }
-            .balance-grid { grid-template-columns: 1fr; }
-            .wallet-hero-container { text-align: center; justify-content: center; }
+            main { padding: 20px; margin-left: 0; padding-bottom: 100px; }
+            .wallet-hero-container { flex-direction: column; align-items: center; text-align: center; }
             .hero-actions { width: 100%; justify-content: center; }
         }
     </style>
@@ -219,56 +233,100 @@
         <div class="wallet-hero-container">
             <div class="hero-content">
                 <h1>Minha Carteira</h1>
-                <p>Acompanhe seu saldo, histórico de ganhos e solicitações.</p>
+                <p>Gerencie seus ganhos e acompanhe seu desempenho.</p>
             </div>
-            <div class="hero-actions">
-                <button class="btn-hero-action" onclick="window.location.href='duvida.html'">
-                    <i class='bx bx-help-circle'></i> Ajuda
-                </button>
-                <button class="btn-hero-action">
-                    <i class='bx bx-cog'></i> Configurar Saque
-                </button>
-            </div>
-        </div>
-
-        <div class="balance-grid">
             
-            <div class="balance-card card-available">
-                <div class="icon-bg"><i class='bx bx-wallet'></i></div>
-                <div>
-                    <span class="bc-label">Disponível para Saque</span>
-                    <div class="bc-value" id="saldoDisponivel">R$ 0,00</div>
-                    <div class="bc-sub">Valores liberados de serviços concluídos.</div>
+            <div style="display: flex; align-items: center;">
+                <div class="hero-actions">
+                    <button class="btn-tab active" onclick="trocarAba('resumo', this)">
+                        <i class='bx bx-wallet'></i> Visão Geral
+                    </button>
+                    <button class="btn-tab" onclick="trocarAba('estatisticas', this)">
+                        <i class='bx bx-bar-chart-alt-2'></i> Estatísticas
+                    </button>
                 </div>
-                <button class="btn-withdraw" id="btnSacar" onclick="solicitarSaque()" disabled>
-                    <i class='bx bx-money-withdraw'></i> Solicitar Transferência
+                
+                <button class="btn-config" title="Configurar Saque" onclick="window.location.href='saque.html'">
+                    <i class='bx bx-cog'></i>
+                </button>
+                <button class="btn-config" title="Ajuda" onclick="window.location.href='duvida.html'">
+                    <i class='bx bx-help-circle'></i>
                 </button>
             </div>
-
-            <div class="balance-card card-pending">
-                <div class="icon-bg"><i class='bx bx-lock-alt'></i></div>
-                <div>
-                    <span class="bc-label">Saldo em Garantia</span>
-                    <div class="bc-value" id="saldoBloqueado" style="color:#f1c40f;">R$ 0,00</div>
-                    <div class="bc-sub">Liberado após confirmação do cliente.</div>
-                </div>
-                <div style="background:#fff8e1; color:#d4ac0d; padding:10px; border-radius:8px; font-size:0.8rem; display:flex; gap:8px; align-items:center;">
-                    <i class='bx bxs-shield-quarter'></i>
-                    <span>Protegido pela Garantia Doke.</span>
-                </div>
-            </div>
-
         </div>
 
-        <div class="history-container">
-            <div class="history-header">
-                <h3>Extrato Recente</h3>
-                <button style="border:none; background:none; color:var(--cor0); font-weight:600; cursor:pointer;">Ver completo</button>
-            </div>
-            <div id="lista-transacoes" class="transaction-list">
-                <div style="text-align:center; padding:30px; color:#999;">
-                    <i class='bx bx-loader-alt bx-spin'></i> Carregando...
+        <div id="view-resumo" class="view-section active">
+            <div class="balance-grid">
+                <div class="balance-card card-available">
+                    <div class="icon-bg"><i class='bx bx-wallet'></i></div>
+                    <div>
+                        <span class="bc-label">Disponível para Saque</span>
+                        <div class="bc-value" id="saldoDisponivel">R$ 0,00</div>
+                        <div class="bc-sub">Valores liberados de serviços concluídos.</div>
+                    </div>
+                    <button class="btn-withdraw" id="btnSacar" onclick="solicitarSaque()" disabled>
+                        <i class='bx bx-money-withdraw'></i> Solicitar Transferência
+                    </button>
                 </div>
+
+                <div class="balance-card card-pending">
+                    <div class="icon-bg"><i class='bx bx-lock-alt'></i></div>
+                    <div>
+                        <span class="bc-label">Saldo em Garantia</span>
+                        <div class="bc-value" id="saldoBloqueado" style="color:#f1c40f;">R$ 0,00</div>
+                        <div class="bc-sub">Liberado após confirmação do cliente.</div>
+                    </div>
+                    <div style="background:#fff8e1; color:#d4ac0d; padding:10px; border-radius:8px; font-size:0.8rem; display:flex; gap:8px; align-items:center;">
+                        <i class='bx bxs-shield-quarter'></i>
+                        <span>Protegido pela Garantia Doke.</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="history-container">
+                <h3 style="margin-top:0; margin-bottom:20px; color:var(--cor2);">Extrato Recente</h3>
+                <div id="lista-transacoes" class="transaction-list">
+                    <div style="text-align:center; padding:30px; color:#999;"><i class='bx bx-loader-alt bx-spin'></i> Carregando...</div>
+                </div>
+            </div>
+        </div>
+
+        <div id="view-estatisticas" class="view-section">
+            
+            <div class="filter-bar">
+                <button class="filter-pill active" onclick="filtrarStats('hoje', this)">Hoje</button>
+                <button class="filter-pill" onclick="filtrarStats('semana', this)">Semana</button>
+                <button class="filter-pill" onclick="filtrarStats('mes', this)">Mês</button>
+                <button class="filter-pill" onclick="filtrarStats('ano', this)">Ano</button>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-green"><i class='bx bx-money'></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:#888; font-weight:700;">FATURAMENTO</span>
+                        <strong style="font-size:1.5rem; color:#333;" id="kpiFaturamento">R$ 0,00</strong>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-blue"><i class='bx bx-briefcase-alt-2'></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:#888; font-weight:700;">SERVIÇOS</span>
+                        <strong style="font-size:1.5rem; color:#333;" id="kpiServicos">0</strong>
+                    </div>
+                </div>
+                <div class="kpi-card">
+                    <div class="kpi-icon bg-orange"><i class='bx bx-trending-up'></i></div>
+                    <div>
+                        <span style="display:block; font-size:0.8rem; color:#888; font-weight:700;">TICKET MÉDIO</span>
+                        <strong style="font-size:1.5rem; color:#333;" id="kpiTicket">R$ 0,00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-box">
+                <h3 style="margin:0 0 20px 0; color:#333;">Evolução de Ganhos</h3>
+                <canvas id="graficoGanhos"></canvas>
             </div>
         </div>
 
@@ -282,118 +340,284 @@
     </nav>
 
     <script type="module">
-        import { getFirestore, collection, query, where, getDocs, doc, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
         const db = getFirestore();
         const auth = getAuth();
         let currentUserUid = null;
-        let totalDisponivel = 0;
+        
+        // Dados Globais para Estatísticas
+        let todosPedidosFinalizados = [];
+        let chartInstance = null;
 
         document.addEventListener("DOMContentLoaded", () => {
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     currentUserUid = user.uid;
-                    carregarCarteira();
+                    carregarDadosCompletos();
                 } else {
                     window.location.href = "login.html";
                 }
             });
         });
 
-        async function carregarCarteira() {
-try {
-        // Busca pedidos onde sou o Profissional (paraUid)
-        const q = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid));
-        const snap = await getDocs(q);
+        // 1. CARREGA TUDO DE UMA VEZ
+        async function carregarDadosCompletos() {
+            try {
+                // Busca pedidos onde sou o Profissional
+                const q = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid));
+                const snap = await getDocs(q);
 
-        let totalDisponivel = 0;
-        let totalBloqueado = 0;
-        let listaOrdenada = [];
-snap.forEach(doc => {
+                let totalDisponivel = 0;
+                let totalBloqueado = 0;
+                let listaExtrato = [];
+                todosPedidosFinalizados = []; // Limpa cache de stats
+
+                snap.forEach(doc => {
                     const data = doc.data();
                     
-                    // CORREÇÃO MATEMÁTICA: Limpa "R$" e converte "," para "."
-                    let valorTexto = data.valorFinal || "0";
+                    // Tratamento de Valor
+                    let valorTexto = data.valorFinal || data.preco || "0";
                     let valorLimpo = valorTexto.toString().replace(/[^\d,]/g, '').replace(',', '.');
                     let valorNumerico = parseFloat(valorLimpo) || 0;
 
+                    // Lógica Saldo
                     if (data.status === 'finalizado') {
                         totalDisponivel += valorNumerico;
-                        // ... push na lista ...
+                        
+                        // Adiciona para stats
+                        todosPedidosFinalizados.push({
+                            valor: valorNumerico,
+                            data: new Date(data.dataConclusao || data.dataPedido),
+                            servico: data.servicoReferencia
+                        });
+
+                        // Adiciona ao extrato
+                        listaExtrato.push({
+                            tipo: 'entrada',
+                            label: 'Serviço Finalizado',
+                            servico: data.servicoReferencia,
+                            data: data.dataConclusao || data.dataPedido,
+                            valor: valorNumerico
+                        });
+
                     } else if (data.status === 'pago') {
                         totalBloqueado += valorNumerico;
-                        // ... push na lista ...
+                        listaExtrato.push({
+                            tipo: 'bloqueado',
+                            label: 'Aguardando Liberação',
+                            servico: data.servicoReferencia,
+                            data: data.dataPedido,
+                            valor: valorNumerico
+                        });
                     }
                 });
 
-                listaOrdenada.sort((a, b) => b.dataOp - a.dataOp);
+                // ATUALIZA UI DO SALDO
+                document.getElementById('saldoDisponivel').innerText = totalDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('saldoBloqueado').innerText = totalBloqueado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 
-        document.getElementById('saldoDisponivel').innerText = totalDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-        document.getElementById('saldoBloqueado').innerText = totalBloqueado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-
-const btnSacar = document.getElementById('btnSacar');
-        if(totalDisponivel > 0) {
-            btnSacar.disabled = false;
-            btnSacar.innerHTML = `<i class='bx bx-money-withdraw'></i> Solicitar Transferência`;
-        } else {
-            btnSacar.disabled = true;
-            btnSacar.innerHTML = "Sem saldo disponível";
-        }
-
-                const containerLista = document.getElementById('lista-transacoes');
-                if (listaOrdenada.length === 0) {
-                    containerLista.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Nenhuma movimentação ainda.</div>`;
+                const btnSacar = document.getElementById('btnSacar');
+                if(totalDisponivel > 0) {
+                    btnSacar.disabled = false;
+                    btnSacar.innerHTML = `<i class='bx bx-money-withdraw'></i> Solicitar Transferência`;
                 } else {
-                    containerLista.innerHTML = listaOrdenada.map(item => {
-                        let iconClass = item.tipo === 'entrada' ? 'in' : 'wait';
-                        let iconName = item.tipo === 'entrada' ? 'bx-up-arrow-alt' : 'bx-lock-alt';
-                        let amountClass = item.tipo === 'entrada' ? 'plus' : 'waiting';
-                        let sinal = item.tipo === 'entrada' ? '+' : '';
-
-                        return `
-                        <div class="t-item">
-                            <div class="t-left">
-                                <div class="t-icon ${iconClass}">
-                                    <i class='bx ${iconName}'></i>
-                                </div>
-                                <div class="t-info">
-                                    <h4>${item.servicoReferencia || 'Serviço'}</h4>
-                                    <span>${item.label} • ${new Date(item.dataOp).toLocaleDateString()}</span>
-                                </div>
-                            </div>
-                            <div class="t-amount ${amountClass}">
-                                ${sinal} ${formatarMoeda(item.valorNum)}
-                            </div>
-                        </div>`;
-                    }).join('');
+                    btnSacar.disabled = true;
+                    btnSacar.innerHTML = "Sem saldo disponível";
                 }
 
-} catch (e) {
-        console.error("Erro carteira:", e);
-    }
-}
+                // ATUALIZA LISTA EXTRATO
+                listaExtrato.sort((a, b) => new Date(b.data) - new Date(a.data));
+                renderizarExtrato(listaExtrato);
 
-        function formatarMoeda(valor) {
-            return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                // PREPARA ESTATÍSTICAS (Mas não desenha ainda)
+                // Se o usuário clicar na aba, já teremos os dados prontos.
+
+            } catch (e) {
+                console.error("Erro carteira:", e);
+            }
         }
 
-        window.solicitarSaque = async function() {
-            if(window.dokeConfirm) {
-                const confirmacao = await window.dokeConfirm(
-                    `Deseja solicitar o saque de ${formatarMoeda(totalDisponivel)} para sua conta bancária?`, 
-                    "Confirmar Saque"
-                );
-                if(confirmacao) {
-                    await window.dokeAlert("Solicitação enviada! O valor cairá na sua conta em até 1 dia útil.", "Sucesso");
-                }
-            } else {
-                if(confirm(`Sacar ${formatarMoeda(totalDisponivel)}?`)) {
-                    alert("Sucesso! Aguarde 1 dia útil.");
-                }
+        function renderizarExtrato(lista) {
+            const container = document.getElementById('lista-transacoes');
+            if (lista.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Nenhuma movimentação ainda.</div>`;
+                return;
             }
-        };
-    </script>
+            container.innerHTML = lista.map(item => {
+                let iconClass = item.tipo === 'entrada' ? 'in' : 'wait';
+                let iconName = item.tipo === 'entrada' ? 'bx-up-arrow-alt' : 'bx-lock-alt';
+                let amountColor = item.tipo === 'entrada' ? '#2e7d32' : '#f1c40f';
+                let sinal = item.tipo === 'entrada' ? '+' : '';
 
+                return `
+                <div class="t-item" style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f0f0f0;">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; background:${item.tipo === 'entrada' ? '#e8f5e9' : '#fff8e1'}; color:${item.tipo === 'entrada' ? '#2e7d32' : '#f1c40f'};">
+                            <i class='bx ${iconName}'></i>
+                        </div>
+                        <div>
+                            <strong style="display:block; color:#333; font-size:0.95rem;">${item.servico || 'Serviço'}</strong>
+                            <small style="color:#999; font-size:0.8rem;">${item.label} • ${new Date(item.data).toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                    <div style="font-weight:700; color:${amountColor}; font-size:1rem;">
+                        ${sinal} ${item.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ======================================================
+        // CONTROLE DE ABAS (SALDO vs ESTATÍSTICAS)
+        // ======================================================
+        window.trocarAba = function(aba, btn) {
+            // UI Botões
+            document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            // UI Views
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${aba}`).classList.add('active');
+
+            // Se abriu estatísticas, carrega o gráfico padrão (Hoje)
+            if(aba === 'estatisticas') {
+                filtrarStats('hoje', document.querySelector('.filter-pill.active'));
+            }
+        }
+
+// ======================================================
+        // LÓGICA DO GRÁFICO (Chart.js) - ATUALIZADO
+        // ======================================================
+        window.filtrarStats = function(periodo, btn) {
+            document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const hoje = new Date();
+            let labels = [];
+            let dataValues = [];
+
+            // 1. FILTRO: HOJE (Mostrar 24h)
+            if(periodo === 'hoje') {
+                // Cria labels das 00h às 23h
+                for(let i=0; i<24; i++) labels.push(i + 'h');
+                dataValues = new Array(24).fill(0); // Zera tudo
+
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data.toDateString() === hoje.toDateString()) {
+                        const hora = p.data.getHours();
+                        dataValues[hora] += p.valor;
+                    }
+                });
+            } 
+            // 2. FILTRO: SEMANA (Últimos 7 dias)
+            else if (periodo === 'semana') {
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    labels.push(d.toLocaleDateString('pt-BR', {weekday:'short'})); // Seg, Ter...
+                }
+                dataValues = new Array(7).fill(0);
+
+                const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+                
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data >= weekStart) {
+                        // Lógica simples: calcular a diferença de dias para achar o índice
+                        const diffTime = Math.abs(hoje - p.data);
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+                        const index = 6 - diffDays; 
+                        if(index >= 0) dataValues[index] += p.valor;
+                    }
+                });
+            }
+            // 3. FILTRO: MÊS (Dias do mês)
+            else if (periodo === 'mes') {
+                const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+                for(let i=1; i<=diasNoMes; i++) labels.push(i);
+                dataValues = new Array(diasNoMes).fill(0);
+
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data.getMonth() === hoje.getMonth() && p.data.getFullYear() === hoje.getFullYear()) {
+                        const dia = p.data.getDate() - 1; // Array começa em 0
+                        dataValues[dia] += p.valor;
+                    }
+                });
+            }
+            // 4. FILTRO: ANO (Jan - Dez)
+            else if (periodo === 'ano') {
+                labels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                dataValues = new Array(12).fill(0);
+
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data.getFullYear() === hoje.getFullYear()) {
+                        const mes = p.data.getMonth();
+                        dataValues[mes] += p.valor;
+                    }
+                });
+            }
+
+            // Calcula KPI com base nos dados filtrados do gráfico (soma total)
+            const totalFiltro = dataValues.reduce((a, b) => a + b, 0);
+            
+            // ATUALIZA KPIS
+            document.getElementById('kpiFaturamento').innerText = totalFiltro.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            // Nota: Para KPIs de qtd e ticket precisaria filtrar o array de objetos novamente, mas para visualização rápida isso serve.
+            
+            renderizarGrafico(labels, dataValues);
+        }
+
+        function renderizarGrafico(labels, data) {
+            const ctx = document.getElementById('graficoGanhos').getContext('2d');
+            
+            if(chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Faturamento',
+                        data: data,
+                        backgroundColor: '#0b7768',
+                        borderRadius: 4,
+                        barPercentage: 0.6, // Deixa a barra mais fina em relação ao espaço
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#f0f0f0' } // Linhas tracejadas bonitas
+                        },
+                        x: {
+                            grid: { display: false } // Remove linhas verticais
+                        }
+                    },
+                    // TRUQUE PARA NÃO FICAR GIGANTE
+                    maxBarThickness: 50 
+                }
+            });
+        }
+    </script>
 </body>
 </html>

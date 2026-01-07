@@ -335,20 +335,24 @@ window.fecharGaleria = function(event) {
 }
 
 
+// ============================================================
+// CORREÇÃO: CARREGAR VÍDEOS DO PORTFÓLIO (Coleção 'trabalhos')
+// ============================================================
+
 window.carregarTrabalhosHome = async function() {
     const container = document.getElementById('galeria-dinamica') || document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
 
     try {
-        // Buscamos os ANÚNCIOS reais (onde você configurou se é Online ou Presencial)
-        // Ordenados pelos mais recentes
-        const q = query(collection(db, "anuncios"), orderBy("dataCriacao", "desc"), limit(10));
+        // CORREÇÃO 1: Buscando da coleção 'trabalhos' (onde você posta os vídeos)
+        // e não de 'anuncios'.
+        const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
         
         container.innerHTML = ""; 
 
         if (snapshot.empty) {
-            container.innerHTML = '<div style="padding:20px; color:white;">Nenhum serviço disponível no momento.</div>';
+            container.innerHTML = '<div style="padding:20px; color:white; text-align:center;">Nenhum vídeo publicado ainda.</div>';
             return;
         }
 
@@ -356,40 +360,45 @@ window.carregarTrabalhosHome = async function() {
             const data = doc.data();
             const id = doc.id;
             
-            // Tratamento de Imagem (Pega a primeira foto ou uma padrão)
-            let imagemCapa = "https://placehold.co/300x500?text=Sem+Imagem";
-            if (data.img) imagemCapa = data.img;
-            else if (data.fotos && data.fotos.length > 0) imagemCapa = data.fotos[0];
-
-            // Define o tipo de atendimento para mostrar na etiqueta
-            const etiqueta = data.modo_atend || data.categoria || "Serviço";
+            // Tratamento de Imagem e Vídeo
+            const imagemCapa = data.capa || "https://placehold.co/300x500?text=Sem+Capa";
+            const videoUrl = data.videoUrl || "";
             
-            // Monta o Card Linkado Corretamente
+            // Dados para o Modal do TikTok
+            const dadosModal = JSON.stringify({
+                id: id,
+                video: videoUrl,
+                img: imagemCapa,
+                user: data.autorNome || '@profissional', // Ajustado para campos de 'trabalhos'
+                desc: data.descricao || "",
+                uid: data.uid,
+                likes: data.likes || 0
+            }).replace(/"/g, '&quot;');
+
+            // HTML DO CARD CORRIGIDO
+            // 1. onmouseenter: Inicia o preview
+            // 2. onmouseleave: Para o preview
+            // 3. onclick: Abre o Player (Modal), NÃO o orçamento
             const html = `
-            <div class="tiktok-card">
-                <div class="badge-status">${etiqueta}</div>
+            <div class="tiktok-card" 
+                 onmouseenter="iniciarPreview(this)" 
+                 onmouseleave="pararPreview(this)"
+                 onclick="abrirPlayerTikTok(${dadosModal})">
                 
-                <img src="${imagemCapa}" class="video-bg" alt="Capa" style="object-fit: cover;">
+                <div class="badge-status">${data.categoria || "Portfólio"}</div>
                 
-                ${data.videoUrl ? '<div class="play-icon"><svg viewBox="0 0 24 24" fill="white"><path d="M8 5v14l11-7z"/></svg></div>' : ''}
+                <input type="hidden" class="video-src-hidden" value="${videoUrl}">
+                
+                <img src="${imagemCapa}" class="video-bg" alt="Capa">
+                
+                <div class="play-icon"><i class='bx bx-play'></i></div>
                 
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
                         <div class="provider-info">
-                            <span class="provider-name" style="font-weight:800; font-size:0.9rem;">
-                                ${data.userHandle || '@profissional'}
-                            </span>
-                            <span class="service-tag" style="font-size:0.75rem; opacity:0.8; display:block;">
-                                ${data.titulo}
-                            </span>
+                            <span class="provider-name">${data.autorNome || '@profissional'}</span>
                         </div>
-                        
-                        <p class="video-desc" style="max-height: 40px; overflow:hidden;">${data.descricao}</p>
-                        
-                        <button class="btn-video-action" 
-                                onclick="window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
-                                Solicitar Orçamento
-                        </button>
+                        <p class="video-desc">${data.descricao ? data.descricao.substring(0, 30) + '...' : ''}</p>
                     </div>
                 </div>
             </div>`;
@@ -398,8 +407,69 @@ window.carregarTrabalhosHome = async function() {
         });
 
     } catch (e) { 
-        console.error("Erro ao carregar destaques:", e);
-        container.innerHTML = '<div style="padding:20px; color:white;">Erro ao carregar.</div>';
+        console.error("Erro ao carregar vídeos:", e);
+        container.innerHTML = '<div style="color:white; padding:20px;">Erro ao carregar.</div>';
+    }
+}
+
+// ============================================================
+// NOVA FUNÇÃO: ABRIR MODAL ESTILO TIKTOK
+// ============================================================
+window.abrirPlayerTikTok = function(dados) {
+    if (!dados.video) {
+        // Se não tiver vídeo, redireciona para detalhes normais
+        window.location.href = `detalhes.html?id=${dados.id}`;
+        return;
+    }
+
+    const modal = document.getElementById('modalPlayerVideo');
+    const player = document.getElementById('playerPrincipal');
+    
+    // Elementos da UI do Modal
+    const uiUser = document.getElementById('tiktokUser');
+    const uiDesc = document.getElementById('tiktokDesc');
+    const uiLikes = document.getElementById('tiktokLikesCount');
+    
+    // Preenche dados
+    if(player) {
+        player.src = dados.video;
+        player.play().catch(e => console.log("Autoplay bloqueado pelo navegador"));
+    }
+    
+    if(uiUser) uiUser.innerText = dados.user;
+    if(uiDesc) uiDesc.innerText = dados.desc;
+    if(uiLikes) uiLikes.innerText = dados.likes || "0";
+
+    // Configura botão de orçamento para este profissional específico
+    const btnOrcamento = document.getElementById('btnOrcamentoModal');
+    if(btnOrcamento) {
+        btnOrcamento.onclick = function() {
+            window.location.href = `orcamento.html?uid=${dados.uid}&aid=${dados.id}`;
+        }
+    }
+
+    if(modal) modal.style.display = 'flex';
+}
+
+// Função de curtir visual (apenas efeito)
+window.toggleLikeTikTok = function(btn) {
+    const icon = btn.querySelector('i');
+    const count = btn.querySelector('span');
+    
+    if (icon.classList.contains('bx-heart')) {
+        icon.classList.remove('bx-heart');
+        icon.classList.add('bxs-heart');
+        icon.style.color = '#fe2c55'; // Cor do TikTok
+        btn.classList.add('animacao-like');
+        let val = parseInt(count.innerText);
+        count.innerText = val + 1;
+    } else {
+        icon.classList.remove('bxs-heart');
+        icon.classList.add('bx-heart');
+        icon.style.color = 'white';
+        btn.classList.remove('animacao-like');
+        let val = parseInt(count.innerText);
+        count.innerText = Math.max(0, val - 1);
     }
 }
 
@@ -1108,13 +1178,14 @@ window.carregarFeedGlobal = async function() {
                 ? `<div class="midia-post"><img src="${post.imagem}" loading="lazy"></div>` 
                 : '';
 
+            // --- ALTERAÇÃO FEITA AQUI ---
             const html = `
                 <div class="card-feed-global">
                     <div class="feed-header">
                         <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User">
                         <div class="feed-user-info">
-                            <h4>${post.autorNome}</h4>
-                            <span>${post.autorUser || '@usuario'} • ${dataPost}</span>
+                            <h4>${post.autorUser || post.autorNome}</h4>
+                            <span>${dataPost}</span>
                         </div>
                     </div>
                     <div class="feed-body">
@@ -3023,18 +3094,155 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 });
 
-// Adicione isso dentro do onAuthStateChanged(auth, (user) => { ... }) no script.js
 
-if (user) {
-    // ... seus códigos de login existentes ...
+window.gerarPagamento = async function() {
+    const idParaSalvar = chatIdAtual; 
+    if (!idParaSalvar) { alert("Erro: Nenhuma conversa aberta."); return; }
 
-    // --- BATIMENTO CARDÍACO (HEARTBEAT) ---
-    // Atualiza o "ultimaVezOnline" a cada 1 minuto para provar que está online
-    setInterval(() => {
-        if (document.visibilityState === 'visible') {
-            const userRef = doc(db, "usuarios", user.uid);
-            // Atualiza sem mudar status, apenas o horário
-            updateDoc(userRef, { ultimaVezOnline: new Date().toISOString() }).catch(e => {});
+    let valorStr = await window.dokePrompt("Qual o valor do serviço?", "R$ 0,00", "Gerar Cobrança");
+    if(!valorStr) return;
+
+    let descricao = await window.dokePrompt("Descrição do serviço:", "Ex: Mão de obra", "Descrição");
+    if(!descricao) return;
+
+    let maxParcelas = await window.dokePrompt("Máx. parcelas sem juros (1-12):", "1", "Parcelamento");
+    if(!maxParcelas) maxParcelas = "1";
+
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+    try {
+        // Salva a mensagem no chat
+        await addDoc(collection(db, "pedidos", idParaSalvar, "mensagens"), { 
+            tipo: 'pagamento', 
+            valor: valorStr, 
+            descricao: descricao,
+            maxParcelas: parseInt(maxParcelas.replace(/\D/g, "")) || 1, 
+            usernameProfissional: perfil.user, 
+            senderUid: auth.currentUser.uid, 
+            timestamp: new Date() 
+        });
+
+        // --- ADICIONE ESTA LINHA ABAIXO PARA A CARTEIRA FUNCIONAR ---
+        // Salva o valor no pedido principal para a carteira conseguir ler
+        await updateDoc(doc(db, "pedidos", idParaSalvar), { 
+            valorFinal: valorStr 
+        });
+        // -----------------------------------------------------------
+
+    } catch(e) {
+        console.error(e);
+        alert("Erro ao criar cobrança.");
+    }
+};
+
+/* EM SCRIPT.JS (SUBSTITUA O FINAL DO ARQUIVO POR ISSO) */
+
+// EM SCRIPT.JS
+
+window.togglePlayVideo = function(event) {
+    // 1. BLOQUEIA O VAZAMENTO DO CLIQUE (Resolve o "entra e sai")
+    if (event) {
+        event.stopPropagation(); // Impede que o clique feche o modal
+        event.preventDefault();  // Impede comportamento padrão
+        
+        // Se clicar nos botões laterais, não faz nada com o vídeo
+        if (event.target.closest('.actions-column')) return;
+    }
+
+    const video = document.getElementById('playerPrincipal');
+    const frame = document.querySelector('.video-frame');
+    const icon = document.getElementById('iconPlayPause');
+
+    if (!video) return;
+
+    if (video.paused) {
+        video.play().then(() => {
+            if(frame) frame.classList.remove('paused');
+            if(icon) icon.style.opacity = '0';
+        }).catch(e => console.log("Erro play:", e));
+    } else {
+        video.pause();
+        if(frame) frame.classList.add('paused');
+        if(icon) icon.style.opacity = '1';
+    }
+}
+
+// Fecha o player e reseta o tempo
+window.fecharPlayerVideo = function() {
+    const modal = document.getElementById('modalPlayerVideo');
+    const player = document.getElementById('playerPrincipal');
+    
+    if(player) {
+        player.pause();
+        player.currentTime = 0;
+    }
+    
+    if(modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Atalhos de Teclado
+document.addEventListener('keydown', function(e) {
+    const modal = document.getElementById('modalPlayerVideo');
+    if (modal && modal.style.display !== 'none') {
+        if (e.code === 'Space') {
+            e.preventDefault();
+            togglePlayVideo();
         }
-    }, 60000); // 60 segundos
+        if (e.code === 'Escape') {
+            fecharPlayerVideo();
+        }
+    }
+});
+
+// 2. DUPLO CLIQUE PARA CURTIR (Com animação)
+window.handleDoubleClick = function(event) {
+    const wrapper = event.currentTarget;
+    
+    // Cria o coração animado
+    const heart = document.createElement('i');
+    heart.className = 'bx bxs-heart heart-animation';
+    
+    // Posiciona onde o mouse clicou
+    const rect = wrapper.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    heart.style.left = `${x}px`;
+    heart.style.top = `${y}px`;
+    
+    wrapper.appendChild(heart);
+    
+    // Remove o coração depois da animação
+    setTimeout(() => heart.remove(), 800);
+
+    // Aciona o like real (função que já existe)
+    // Precisamos achar o botão de like na sidebar e simular o clique ou chamar a função
+    const likeBtn = document.querySelector('.reels-sidebar-right .reels-action-item:nth-child(2)'); // O 2º item é o like
+    if(likeBtn) toggleLikeTikTok(likeBtn);
+}
+
+// 3. COMPARTILHAMENTO REAL
+window.compartilharVideo = async function() {
+    const url = window.location.href; // Ou link específico do vídeo se tiver
+    const titulo = "Confira este serviço na Doke!";
+    
+    if (navigator.share) {
+        // Usa o compartilhamento nativo do celular (WhatsApp, Insta, etc)
+        try {
+            await navigator.share({
+                title: 'Doke',
+                text: titulo,
+                url: url
+            });
+        } catch (err) {
+            console.log('Cancelado pelo usuário');
+        }
+    } else {
+        // Fallback para PC: Copia para área de transferência
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Link copiado para a área de transferência!");
+        });
+    }
 }

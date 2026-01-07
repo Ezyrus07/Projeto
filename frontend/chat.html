@@ -769,6 +769,44 @@
     background: currentColor; transition: width 0.1s linear;
 }
 
+/* Animação de Pulso para o Status Online */
+.status-pulse {
+    width: 10px;
+    height: 10px;
+    background-color: #2ecc71;
+    border-radius: 50%;
+    position: relative;
+    display: inline-block;
+    /* A mágica do pulso acontece aqui */
+    box-shadow: 0 0 0 rgba(46, 204, 113, 0.4);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0.7);
+    }
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 6px rgba(46, 204, 113, 0);
+    }
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(46, 204, 113, 0);
+    }
+}
+
+/* Container para alinhar texto e bolinha perfeitamente */
+.status-container-online {
+    display: flex;
+    align-items: center;
+    gap: 8px; /* Espaço entre bolinha e texto */
+    font-weight: 600;
+    color: #2ecc71;
+    font-size: 0.85rem;
+}
+
     </style>
 </head>
 <body>
@@ -1136,6 +1174,7 @@
             else resolveCallback(false);
         });
     }
+    
 
     // =========================================================================
     // 2. FUNÇÕES DE INJEÇÃO DO MODAL DE GARANTIA (INFO)
@@ -1464,14 +1503,14 @@ window.liberarPagamento = async (id) => {
         } catch (e) { return "Offline"; }
     }
 
-    window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
-        // UI
+window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
+        // UI Inicial
         document.getElementById('chat-placeholder').style.display = 'none';
         document.getElementById('box-conversa-real').style.display = 'flex';
         const chatFooter = document.getElementById('chatFooter'); 
         const containerAcao = document.getElementById('container-acao-header');
         
-        // Remove aviso antigo para limpar a tela
+        // Remove avisos antigos
         const aviso = document.getElementById('aviso-bloqueio-chat');
         if(aviso) aviso.remove();
 
@@ -1481,29 +1520,20 @@ window.liberarPagamento = async (id) => {
                 if (docSnap.exists()) {
                     const p = docSnap.data();
                     
-                    // --- ALTERAÇÃO AQUI: MENSAGEM DIFERENTE PARA O PROFISSIONAL ---
+                    // Lógica de bloqueio do chat
                     if (p.status === 'pendente') {
                         chatFooter.style.display = 'none'; 
-                        
-                        // Se EU sou o Profissional (paraUid), pede para aceitar
-                        if (currentUserUid === p.paraUid) {
-                            mostrarAvisoBloqueio("Aceite o pedido para liberar o chat.");
-                        } else {
-                            // Se EU sou o Cliente, avisa que está aguardando
-                            mostrarAvisoBloqueio("Aguardando aceite do profissional.");
-                        }
-
+                        if (currentUserUid === p.paraUid) mostrarAvisoBloqueio("Aceite o pedido para liberar o chat.");
+                        else mostrarAvisoBloqueio("Aguardando aceite do profissional.");
                     } else if (['recusado', 'cancelado'].includes(p.status)) {
                         chatFooter.style.display = 'none'; 
                         mostrarAvisoBloqueio("Este pedido foi encerrado.");
                     } else {
                         chatFooter.style.display = 'flex'; 
-                        // Se o pedido foi aceito, remove qualquer aviso que tenha sobrado
                         if(document.getElementById('aviso-bloqueio-chat')) document.getElementById('aviso-bloqueio-chat').remove();
                     }
-                    // -----------------------------------------------------------
 
-                    // Botões Header
+                    // Botões Header (Finalizar / Aceitar / Recusar)
                     if(containerAcao) {
                         containerAcao.innerHTML = (p.deUid === currentUserUid && p.status === 'pago') 
                             ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
@@ -1523,7 +1553,7 @@ window.liberarPagamento = async (id) => {
             chatFooter.style.display = 'flex';
         }
 
-        // 2. CARREGA DADOS DO USUÁRIO + STATUS (Mantendo a correção do Online/Offline)
+        // 2. CARREGA DADOS DO USUÁRIO + STATUS ONLINE (VISUAL MELHORADO)
         onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
                 const d = docSnap.data();
@@ -1538,13 +1568,22 @@ window.liberarPagamento = async (id) => {
                     const ultimaVez = d.ultimaVezOnline ? new Date(d.ultimaVezOnline) : new Date(0);
                     const diffMinutos = (agora - ultimaVez) / 1000 / 60;
 
+                    // Lógica para determinar se está online (banco diz online E atualizou em menos de 3 min)
                     let isReallyOnline = (d.status === "Online" && diffMinutos < 3);
 
                     if (isReallyOnline) {
-                        elStatus.innerHTML = `<i class='bx bxs-circle status-dot' style="color:#2ecc71;"></i> Online`;
-                        elStatus.style.color = "#2ecc71";
-                        elStatus.style.fontWeight = "600";
+                        // --- AQUI ESTÁ A MUDANÇA VISUAL ---
+                        elStatus.innerHTML = `
+                            <div class="status-container-online">
+                                <div class="status-pulse"></div>
+                                <span>Online</span>
+                            </div>
+                        `;
+                        // Removemos estilos inline conflitantes para usar o CSS
+                        elStatus.style.color = ""; 
+                        elStatus.style.fontWeight = "";
                     } else {
+                        // Status Offline (Texto Cinza Padrão)
                         elStatus.innerText = `Visto por último: ${formatarUltimaVez(d.ultimaVezOnline)}`;
                         elStatus.style.color = "#888";
                         elStatus.style.fontWeight = "400";
