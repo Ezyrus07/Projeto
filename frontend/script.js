@@ -3135,23 +3135,20 @@ window.gerarPagamento = async function() {
     }
 };
 
-/* EM SCRIPT.JS (SUBSTITUA O FINAL DO ARQUIVO POR ISSO) */
-
-// EM SCRIPT.JS
+// ============================================================
+// FIX FINAL: TORNAR AS FUNÇÕES GLOBAIS
+// ============================================================
 
 window.togglePlayVideo = function(event) {
-    // 1. BLOQUEIA O VAZAMENTO DO CLIQUE (Resolve o "entra e sai")
+    // Impede que o clique atravesse e feche o modal
     if (event) {
-        event.stopPropagation(); // Impede que o clique feche o modal
-        event.preventDefault();  // Impede comportamento padrão
-        
-        // Se clicar nos botões laterais, não faz nada com o vídeo
-        if (event.target.closest('.actions-column')) return;
+        event.stopPropagation();
+        event.preventDefault();
     }
 
     const video = document.getElementById('playerPrincipal');
-    const frame = document.querySelector('.video-frame');
     const icon = document.getElementById('iconPlayPause');
+    const frame = document.querySelector('.video-frame');
 
     if (!video) return;
 
@@ -3167,14 +3164,13 @@ window.togglePlayVideo = function(event) {
     }
 }
 
-// Fecha o player e reseta o tempo
 window.fecharPlayerVideo = function() {
     const modal = document.getElementById('modalPlayerVideo');
-    const player = document.getElementById('playerPrincipal');
+    const video = document.getElementById('playerPrincipal');
     
-    if(player) {
-        player.pause();
-        player.currentTime = 0;
+    if(video) {
+        video.pause();
+        video.currentTime = 0;
     }
     
     if(modal) {
@@ -3182,67 +3178,35 @@ window.fecharPlayerVideo = function() {
     }
 }
 
-// Atalhos de Teclado
-document.addEventListener('keydown', function(e) {
-    const modal = document.getElementById('modalPlayerVideo');
-    if (modal && modal.style.display !== 'none') {
-        if (e.code === 'Space') {
-            e.preventDefault();
-            togglePlayVideo();
-        }
-        if (e.code === 'Escape') {
-            fecharPlayerVideo();
-        }
-    }
-});
-
-// 2. DUPLO CLIQUE PARA CURTIR (Com animação)
+// Garante que o Duplo Clique funcione
 window.handleDoubleClick = function(event) {
+    if(event) event.stopPropagation();
+    
+    // Efeito visual do coração
     const wrapper = event.currentTarget;
-    
-    // Cria o coração animado
     const heart = document.createElement('i');
-    heart.className = 'bx bxs-heart heart-animation';
-    
-    // Posiciona onde o mouse clicou
-    const rect = wrapper.getBoundingClientRect();
-    const x = event.clientX - rect.left;
-    const y = event.clientY - rect.top;
-    
-    heart.style.left = `${x}px`;
-    heart.style.top = `${y}px`;
+    heart.className = 'bx bxs-heart';
+    heart.style.position = 'absolute';
+    heart.style.color = '#fe2c55';
+    heart.style.fontSize = '0px';
+    heart.style.left = (event.offsetX) + 'px';
+    heart.style.top = (event.offsetY) + 'px';
+    heart.style.transform = 'translate(-50%, -50%) rotate(-15deg)';
+    heart.style.zIndex = '50';
+    heart.style.transition = 'all 0.6s ease-out';
+    heart.style.pointerEvents = 'none';
     
     wrapper.appendChild(heart);
     
-    // Remove o coração depois da animação
-    setTimeout(() => heart.remove(), 800);
+    requestAnimationFrame(() => {
+        heart.style.fontSize = '80px';
+        heart.style.opacity = '0';
+        heart.style.top = (event.offsetY - 100) + 'px';
+    });
 
-    // Aciona o like real (função que já existe)
-    // Precisamos achar o botão de like na sidebar e simular o clique ou chamar a função
-    const likeBtn = document.querySelector('.reels-sidebar-right .reels-action-item:nth-child(2)'); // O 2º item é o like
-    if(likeBtn) toggleLikeTikTok(likeBtn);
-}
-
-// 3. COMPARTILHAMENTO REAL
-window.compartilharVideo = async function() {
-    const url = window.location.href; // Ou link específico do vídeo se tiver
-    const titulo = "Confira este serviço na Doke!";
+    setTimeout(() => heart.remove(), 600);
     
-    if (navigator.share) {
-        // Usa o compartilhamento nativo do celular (WhatsApp, Insta, etc)
-        try {
-            await navigator.share({
-                title: 'Doke',
-                text: titulo,
-                url: url
-            });
-        } catch (err) {
-            console.log('Cancelado pelo usuário');
-        }
-    } else {
-        // Fallback para PC: Copia para área de transferência
-        navigator.clipboard.writeText(url).then(() => {
-            alert("Link copiado para a área de transferência!");
-        });
-    }
+    // Chama o like real se existir
+    const btnLike = document.querySelector('.actions-column .action-btn'); 
+    if(btnLike && window.toggleLikeTikTok) window.toggleLikeTikTok(btnLike);
 }
