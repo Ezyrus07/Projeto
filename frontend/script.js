@@ -336,16 +336,16 @@ window.fecharGaleria = function(event) {
 
 
 // ============================================================
-// CORREÇÃO: CARREGAR VÍDEOS DO PORTFÓLIO (Coleção 'trabalhos')
+// CARREGAR VÍDEOS NA HOME (Com dados completos do autor)
 // ============================================================
-
+// ============================================================
+// CARREGAR VÍDEOS NA HOME (CORRIGIDO: ENVIA FOTO E UID)
+// ============================================================
 window.carregarTrabalhosHome = async function() {
     const container = document.getElementById('galeria-dinamica') || document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
 
     try {
-        // CORREÇÃO 1: Buscando da coleção 'trabalhos' (onde você posta os vídeos)
-        // e não de 'anuncios'.
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
         
@@ -360,25 +360,25 @@ window.carregarTrabalhosHome = async function() {
             const data = doc.data();
             const id = doc.id;
             
-            // Tratamento de Imagem e Vídeo
+            // Tratamento de dados (Garante que nada vá vazio)
             const imagemCapa = data.capa || "https://placehold.co/300x500?text=Sem+Capa";
             const videoUrl = data.videoUrl || "";
-            
-            // Dados para o Modal do TikTok
+            const nomeAutor = data.autorNome || '@profissional';
+            const fotoAutor = data.autorFoto || "https://placehold.co/150"; // <--- AQUI ESTAVA O PROBLEMA
+            const uidAutor = data.uid || "";
+
+            // Cria o pacote de dados para o player
             const dadosModal = JSON.stringify({
                 id: id,
                 video: videoUrl,
                 img: imagemCapa,
-                user: data.autorNome || '@profissional', // Ajustado para campos de 'trabalhos'
+                user: nomeAutor,
                 desc: data.descricao || "",
-                uid: data.uid,
+                uid: uidAutor,
+                autorFoto: fotoAutor, // Agora estamos enviando a foto!
                 likes: data.likes || 0
             }).replace(/"/g, '&quot;');
 
-            // HTML DO CARD CORRIGIDO
-            // 1. onmouseenter: Inicia o preview
-            // 2. onmouseleave: Para o preview
-            // 3. onclick: Abre o Player (Modal), NÃO o orçamento
             const html = `
             <div class="tiktok-card" 
                  onmouseenter="iniciarPreview(this)" 
@@ -388,7 +388,6 @@ window.carregarTrabalhosHome = async function() {
                 <div class="badge-status">${data.categoria || "Portfólio"}</div>
                 
                 <input type="hidden" class="video-src-hidden" value="${videoUrl}">
-                
                 <img src="${imagemCapa}" class="video-bg" alt="Capa">
                 
                 <div class="play-icon"><i class='bx bx-play'></i></div>
@@ -396,9 +395,8 @@ window.carregarTrabalhosHome = async function() {
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
                         <div class="provider-info">
-                            <span class="provider-name">${data.autorNome || '@profissional'}</span>
+                            <span class="provider-name">${nomeAutor}</span>
                         </div>
-                        <p class="video-desc">${data.descricao ? data.descricao.substring(0, 30) + '...' : ''}</p>
                     </div>
                 </div>
             </div>`;
@@ -408,70 +406,141 @@ window.carregarTrabalhosHome = async function() {
 
     } catch (e) { 
         console.error("Erro ao carregar vídeos:", e);
-        container.innerHTML = '<div style="color:white; padding:20px;">Erro ao carregar.</div>';
     }
 }
 
 // ============================================================
-// NOVA FUNÇÃO: ABRIR MODAL ESTILO TIKTOK
+// ABRIR PLAYER TIKTOK (CORRIGIDO: RECEBE FOTO E LINK)
 // ============================================================
 window.abrirPlayerTikTok = function(dados) {
     if (!dados.video) {
-        // Se não tiver vídeo, redireciona para detalhes normais
-        window.location.href = `detalhes.html?id=${dados.id}`;
+        alert("Erro: Vídeo não encontrado.");
         return;
     }
 
     const modal = document.getElementById('modalPlayerVideo');
     const player = document.getElementById('playerPrincipal');
     
-    // Elementos da UI do Modal
+    // --- 1. Elementos de Texto ---
     const uiUser = document.getElementById('tiktokUser');
     const uiDesc = document.getElementById('tiktokDesc');
     const uiLikes = document.getElementById('tiktokLikesCount');
-    
-    // Preenche dados
-    if(player) {
-        player.src = dados.video;
-        player.play().catch(e => console.log("Autoplay bloqueado pelo navegador"));
-    }
     
     if(uiUser) uiUser.innerText = dados.user;
     if(uiDesc) uiDesc.innerText = dados.desc;
     if(uiLikes) uiLikes.innerText = dados.likes || "0";
 
-    // Configura botão de orçamento para este profissional específico
+    // --- 2. Elementos de Imagem (Foto do Criador) ---
+    const imgAvatar = document.getElementById('tiktokAvatarImg'); // No rodapé do vídeo
+    const imgBtnSide = document.getElementById('btnProfileImg'); // No botão lateral
+    
+    // Usa a foto recebida ou um padrão se estiver vazia
+    const fotoFinal = dados.autorFoto && dados.autorFoto !== "undefined" ? dados.autorFoto : "https://placehold.co/150";
+    
+    if(imgAvatar) imgAvatar.src = fotoFinal;
+    if(imgBtnSide) imgBtnSide.src = fotoFinal;
+
+    // --- 3. Link para o Perfil (Correção do Redirecionamento) ---
+    const irParaPerfilCriador = function(e) {
+        if(e) e.stopPropagation();
+        if(dados.uid && dados.uid !== "undefined") {
+            window.location.href = `perfil-profissional.html?uid=${dados.uid}`;
+        } else {
+            alert("Perfil indisponível para este vídeo.");
+        }
+    };
+
+    // Aplica o clique na linha do autor (rodapé)
+    const rowAuthor = document.getElementById('rowAuthorInfo');
+    if(rowAuthor) rowAuthor.onclick = irParaPerfilCriador;
+
+    // Aplica o clique no botão lateral de perfil
+    const btnProfileSide = document.getElementById('btnProfileSide');
+    if(btnProfileSide) btnProfileSide.onclick = irParaPerfilCriador;
+
+    // --- 4. Configura Player e Botões ---
+    if(player) {
+        player.src = dados.video;
+        player.play().catch(e => console.log("Autoplay bloqueado"));
+    }
+
+    // Botão de Orçamento com ID correto
     const btnOrcamento = document.getElementById('btnOrcamentoModal');
-    if(btnOrcamento) {
+    if(btnOrcamento && dados.uid) {
         btnOrcamento.onclick = function() {
             window.location.href = `orcamento.html?uid=${dados.uid}&aid=${dados.id}`;
         }
     }
+
+    // Esconde botão "Seguir" se for o próprio usuário
+    const btnSeguir = document.getElementById('btnFollowVideo');
+    const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    if(btnSeguir) {
+        if(userLogado.uid === dados.uid) {
+            btnSeguir.style.display = 'none';
+        } else {
+            btnSeguir.style.display = 'inline-block';
+        }
+    }
+
+    // Garante layout correto
+    const layoutUnico = document.getElementById('layoutVideoUnico');
+    const layoutFeed = document.getElementById('containerFeedScroll');
+    if(layoutUnico) layoutUnico.style.display = 'flex';
+    if(layoutFeed) layoutFeed.innerHTML = ""; 
 
     if(modal) modal.style.display = 'flex';
 }
 
 // Função de curtir visual (apenas efeito)
 window.toggleLikeTikTok = function(btn) {
+    // Procura o elemento dentro do botão (adaptado para o novo HTML)
     const icon = btn.querySelector('i');
-    const count = btn.querySelector('span');
+    const countSpan = btn.querySelector('.action-count');
     
-    if (icon.classList.contains('bx-heart')) {
-        icon.classList.remove('bx-heart');
-        icon.classList.add('bxs-heart');
-        icon.style.color = '#fe2c55'; // Cor do TikTok
-        btn.classList.add('animacao-like');
-        let val = parseInt(count.innerText);
-        count.innerText = val + 1;
+    // Alterna a classe visual no botão pai
+    btn.classList.toggle('liked');
+
+    if (btn.classList.contains('liked')) {
+        // Virou Like
+        icon.className = 'bx bxs-heart'; // Ícone preenchido
+        // Simulação de contagem (+1)
+        if(countSpan) {
+            let val = parseInt(countSpan.innerText.replace(/\D/g,'')) || 0;
+            countSpan.innerText = val + 1;
+        }
+        // Animaçãozinha
+        icon.style.transform = "scale(1.2)";
+        setTimeout(() => icon.style.transform = "scale(1)", 200);
+        
     } else {
-        icon.classList.remove('bxs-heart');
-        icon.classList.add('bx-heart');
-        icon.style.color = 'white';
-        btn.classList.remove('animacao-like');
-        let val = parseInt(count.innerText);
-        count.innerText = Math.max(0, val - 1);
+        // Removeu Like
+        icon.className = 'bx bx-heart'; // Ícone contorno
+        if(countSpan) {
+            let val = parseInt(countSpan.innerText.replace(/\D/g,'')) || 0;
+            countSpan.innerText = Math.max(0, val - 1);
+        }
     }
 }
+
+window.abrirComentarios = function() {
+    // Como você ainda não tem backend de comentários, vamos simular
+    // Futuramente aqui abriria uma gaveta de comentários
+    
+    const user = auth.currentUser;
+    if(!user) {
+        alert("Faça login para comentar!");
+        return;
+    }
+    
+    const msg = prompt("Escreva seu comentário:");
+    if(msg && msg.trim() !== "") {
+        alert("Comentário enviado! (Simulação)");
+        // Aqui você salvaria no Firebase futuramente
+    }
+}
+
+
 
 window.tocarVideoDoCard = function(card) {
     const src = card.querySelector('.video-src-hidden').value;
@@ -1246,6 +1315,7 @@ document.addEventListener("DOMContentLoaded", function() {
     verificarEstadoLogin();
     
     // 2. CARREGAMENTOS DINÂMICOS
+    carregarReelsNoIndex();
     carregarCategorias(); 
     carregarProfissionais(); 
     carregarFiltrosLocalizacao(); 
@@ -1262,6 +1332,10 @@ document.addEventListener("DOMContentLoaded", function() {
         inputCep.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') window.salvarCep();
         });
+    }
+    
+    if(document.getElementById('galeria-dinamica')) {
+        carregarReelsHome();
     }
 
     const cepSalvo = localStorage.getItem('meu_cep_doke');
@@ -3136,11 +3210,10 @@ window.gerarPagamento = async function() {
 };
 
 // ============================================================
-// FIX FINAL: TORNAR AS FUNÇÕES GLOBAIS
+// FUNÇÕES ATUALIZADAS (Seguir + Foto Perfil)
 // ============================================================
 
 window.togglePlayVideo = function(event) {
-    // Impede que o clique atravesse e feche o modal
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -3149,6 +3222,13 @@ window.togglePlayVideo = function(event) {
     const video = document.getElementById('playerPrincipal');
     const icon = document.getElementById('iconPlayPause');
     const frame = document.querySelector('.video-frame');
+    
+    // ATUALIZA A FOTO DO BOTÃO PERFIL IGUAL A DO VÍDEO
+    const avatarVideo = document.getElementById('tiktokAvatarImg');
+    const btnProfile = document.getElementById('btnProfileImg');
+    if(avatarVideo && btnProfile) {
+        btnProfile.src = avatarVideo.src;
+    }
 
     if (!video) return;
 
@@ -3156,7 +3236,7 @@ window.togglePlayVideo = function(event) {
         video.play().then(() => {
             if(frame) frame.classList.remove('paused');
             if(icon) icon.style.opacity = '0';
-        }).catch(e => console.log("Erro play:", e));
+        }).catch(err => console.log(err));
     } else {
         video.pause();
         if(frame) frame.classList.add('paused');
@@ -3164,6 +3244,25 @@ window.togglePlayVideo = function(event) {
     }
 }
 
+// NOVA FUNÇÃO: SEGUIR
+window.toggleFollow = function(event, btn) {
+    if(event) {
+        event.stopPropagation(); // Não clica no perfil, só no seguir
+    }
+    
+    // Lógica simples de alternar
+    if (btn.innerText.includes("Seguir")) {
+        btn.innerText = "• Seguindo";
+        btn.classList.add("seguindo");
+        btn.style.opacity = "0.7";
+    } else {
+        btn.innerText = "• Seguir";
+        btn.classList.remove("seguindo");
+        btn.style.opacity = "1";
+    }
+}
+
+// (Mantenha as outras funções fecharPlayerVideo, etc.)
 window.fecharPlayerVideo = function() {
     const modal = document.getElementById('modalPlayerVideo');
     const video = document.getElementById('playerPrincipal');
@@ -3178,35 +3277,711 @@ window.fecharPlayerVideo = function() {
     }
 }
 
-// Garante que o Duplo Clique funcione
 window.handleDoubleClick = function(event) {
     if(event) event.stopPropagation();
-    
-    // Efeito visual do coração
+    // (Lógica do coração igual a anterior...)
     const wrapper = event.currentTarget;
     const heart = document.createElement('i');
     heart.className = 'bx bxs-heart';
     heart.style.position = 'absolute';
     heart.style.color = '#fe2c55';
-    heart.style.fontSize = '0px';
-    heart.style.left = (event.offsetX) + 'px';
-    heart.style.top = (event.offsetY) + 'px';
+    heart.style.left = event.offsetX + 'px';
+    heart.style.top = event.offsetY + 'px';
+    heart.style.fontSize = '80px';
     heart.style.transform = 'translate(-50%, -50%) rotate(-15deg)';
-    heart.style.zIndex = '50';
-    heart.style.transition = 'all 0.6s ease-out';
+    heart.style.zIndex = '100';
     heart.style.pointerEvents = 'none';
-    
+    heart.style.transition = 'all 0.8s ease-out';
     wrapper.appendChild(heart);
-    
     requestAnimationFrame(() => {
-        heart.style.fontSize = '80px';
+        heart.style.top = (event.offsetY - 150) + 'px';
         heart.style.opacity = '0';
-        heart.style.top = (event.offsetY - 100) + 'px';
     });
-
-    setTimeout(() => heart.remove(), 600);
-    
-    // Chama o like real se existir
+    setTimeout(() => heart.remove(), 800);
     const btnLike = document.querySelector('.actions-column .action-btn'); 
     if(btnLike && window.toggleLikeTikTok) window.toggleLikeTikTok(btnLike);
+}
+
+// ============================================================
+// LÓGICA DE COMENTÁRIOS (NOVO)
+// ============================================================
+
+// 1. Abrir/Fechar a Caixa
+window.toggleComentarios = function() {
+    const box = document.getElementById('boxComentarios');
+    // Se estiver visível, esconde. Se invisível, mostra (flex)
+    if (box.style.display === 'none' || box.style.display === '') {
+        box.style.display = 'flex';
+        // Tenta focar no input
+        setTimeout(() => document.getElementById('inputNovoComentario').focus(), 100);
+    } else {
+        box.style.display = 'none';
+    }
+}
+
+// 2. Atualize a função antiga do botão para chamar essa nova
+window.abrirComentarios = function() {
+    toggleComentarios(); 
+}
+
+// 3. Postar Comentário (Adiciona na lista visualmente)
+window.postarComentario = function() {
+    const input = document.getElementById('inputNovoComentario');
+    const texto = input.value;
+    const lista = document.getElementById('listaComentariosReais');
+
+    if (texto.trim() === "") return;
+
+    // Cria o HTML do novo comentário
+    const novoHTML = `
+        <div class="comment-item" style="animation: slideUpFade 0.3s ease;">
+            <img src="https://placehold.co/40" class="comment-avatar">
+            <div class="comment-content">
+                <span class="comment-user">voce</span>
+                <p class="comment-text">${texto}</p>
+                <div class="comment-meta">
+                    <span>agora</span>
+                    <span>Excluir</span>
+                </div>
+            </div>
+            <i class='bx bx-heart comment-like'></i>
+        </div>
+    `;
+
+    // Adiciona no topo da lista
+    lista.insertAdjacentHTML('afterbegin', novoHTML);
+    
+    // Limpa o input
+    input.value = "";
+    
+    // Rola para o topo
+    lista.scrollTop = 0;
+}
+
+// 4. Permitir postar com ENTER
+window.checarEnter = function(event) {
+    if (event.key === 'Enter') {
+        postarComentario();
+    }
+}
+
+// ============================================================
+// FUNÇÃO PARA COPIAR A FOTO DO CRIADOR PARA O BOTÃO
+// ============================================================
+
+function sincronizarFotoPerfil() {
+    // 1. Pega a foto do criador (lá embaixo, no rodapé do vídeo)
+    const imgCriador = document.getElementById('tiktokAvatarImg');
+    
+    // 2. Pega a imagem do botão lateral
+    const imgBotao = document.getElementById('btnProfileImg');
+
+    // 3. Se as duas existirem, copia o link de uma para a outra
+    if (imgCriador && imgBotao) {
+        imgBotao.src = imgCriador.src;
+    }
+}
+
+// Atualize a função togglePlayVideo para chamar essa sincronização
+window.togglePlayVideo = function(event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+
+    // --- CHAMA A SINCRONIZAÇÃO AQUI ---
+    sincronizarFotoPerfil(); 
+    // ----------------------------------
+
+    const video = document.getElementById('playerPrincipal');
+    const icon = document.getElementById('iconPlayPause');
+    const frame = document.querySelector('.video-frame');
+
+    if (!video) return;
+
+    if (video.paused) {
+        video.play().then(() => {
+            if(frame) frame.classList.remove('paused');
+            if(icon) icon.style.opacity = '0';
+        }).catch(err => console.log(err));
+    } else {
+        video.pause();
+        if(frame) frame.classList.add('paused');
+        if(icon) icon.style.opacity = '1';
+    }
+}
+
+// ============================================================
+// CARREGAR DADOS DO USUÁRIO LOGADO (APENAS PARA COMENTÁRIOS)
+// ============================================================
+
+function carregarDadosUsuarioNoPlayer() {
+    // 1. Pega os dados do seu login salvo
+    const dadosLocal = localStorage.getItem('doke_usuario_perfil');
+    
+    if (dadosLocal) {
+        const usuario = JSON.parse(dadosLocal);
+        const fotoReal = usuario.foto || "https://placehold.co/150";
+
+        // 2. Atualiza APENAS a foto do input de comentários (Essa sim é você)
+        const imgInputComent = document.querySelector('.my-avatar-mini');
+        if (imgInputComent) {
+            imgInputComent.src = fotoReal;
+        }
+
+        // OBS: Não alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
+        // Quem define a foto do vídeo é a função que cria o Feed (criarHTMLVideo).
+    }
+}
+
+// Executa assim que a página carregar
+document.addEventListener('DOMContentLoaded', () => {
+    carregarDadosUsuarioNoPlayer();
+    // Se existir a função antiga sincronizarFotoPerfil, evitamos erros se ela não estiver definida
+    if (typeof sincronizarFotoPerfil === "function") {
+        sincronizarFotoPerfil();
+    }
+});
+
+// ============================================================
+// CONTROLE DE PLAY/PAUSE
+// ============================================================
+
+window.togglePlayVideo = function(event) {
+    if (event) {
+        event.stopPropagation();
+        event.preventDefault();
+    }
+    
+    // Garante que sua foto esteja certa no input de comentários
+    carregarDadosUsuarioNoPlayer();
+
+    const video = document.getElementById('playerPrincipal');
+    const icon = document.getElementById('iconPlayPause');
+    const frame = document.querySelector('.video-frame');
+
+    if (!video) return;
+
+    if (video.paused) {
+        video.play().then(() => {
+            if(frame) frame.classList.remove('paused');
+            if(icon) icon.style.opacity = '0';
+        }).catch(err => console.log("Erro ao dar play:", err));
+    } else {
+        video.pause();
+        if(frame) frame.classList.add('paused');
+        if(icon) icon.style.opacity = '1';
+    }
+}
+// ============================================================
+// LÓGICA DE FEED (SCROLL INFINITO)
+// ============================================================
+
+let videosNoFeed = []; // Guarda os dados dos vídeos carregados
+let observerFeed = null; // Observador de scroll
+
+// ============================================================
+// 1. CARREGA O FEED (COM PROTEÇÃO CONTRA VÍDEOS ANTIGOS)
+// ============================================================
+
+window.abrirFeedVideos = async function(idInicial) {
+    const modal = document.getElementById('modalPlayerVideo');
+    const container = document.getElementById('containerFeedScroll');
+    
+    if(!modal || !container) return;
+    
+    modal.style.display = 'flex';
+    container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i></div>';
+
+    try {
+        const q = query(collection(db, "trabalhos"), orderBy("data", "desc"));
+        const snapshot = await getDocs(q);
+        
+        const promessasVideos = snapshot.docs.map(async (docSnap) => {
+            const dataVideo = docSnap.data();
+            const videoId = docSnap.id;
+            let criadorUid = dataVideo.uid; 
+
+            // Dados Padrão (Fallback)
+            let fotoFinal = "https://placehold.co/150"; 
+            let nomeFinal = "Usuário Doke";
+            let userFinal = "@usuario";
+
+            // Se tiver UID, busca dados frescos do usuário
+            if (criadorUid) {
+                try {
+                    const docRefUser = doc(db, "usuarios", criadorUid);
+                    const docUserSnap = await getDoc(docRefUser);
+                    if (docUserSnap.exists()) {
+                        const dadosUser = docUserSnap.data();
+                        if (dadosUser.foto) fotoFinal = dadosUser.foto;
+                        if (dadosUser.nome) nomeFinal = dadosUser.nome;
+                        if (dadosUser.user) userFinal = dadosUser.user;
+                    }
+                } catch (err) { console.error("Erro user:", err); }
+            } else {
+                // Tenta salvar vídeos antigos que não têm UID (opcional)
+                // console.log("Vídeo antigo sem UID:", videoId);
+            }
+
+            return {
+                id: videoId,
+                ...dataVideo,
+                autorFoto: fotoFinal,
+                autorNome: nomeFinal,
+                autorUser: userFinal,
+                uid: criadorUid // Pode ser undefined em vídeos antigos
+            };
+        });
+
+        videosNoFeed = await Promise.all(promessasVideos);
+
+        if (videosNoFeed.length === 0) {
+            container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum vídeo encontrado.</div>';
+            return;
+        }
+
+        container.innerHTML = '';
+        videosNoFeed.forEach(video => {
+            const htmlItem = criarHTMLVideo(video);
+            container.insertAdjacentHTML('beforeend', htmlItem);
+        });
+
+        if (idInicial) {
+            setTimeout(() => {
+                const elInicial = document.getElementById(`feed-item-${idInicial}`);
+                if (elInicial) elInicial.scrollIntoView();
+            }, 100);
+        }
+
+        iniciarObservadorScroll();
+
+    } catch (e) {
+        console.error("Erro feed:", e);
+        container.innerHTML = '<div style="color:white; text-align:center; margin-top:50vh;">Erro ao carregar.</div>';
+    }
+}
+// ============================================================
+// 2. GERA HTML (COM FUNÇÃO SEGURA DE NAVEGAÇÃO)
+// ============================================================
+
+function criarHTMLVideo(dados) {
+    // Esconde botão seguir se for o próprio dono
+    const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    const meuUser = (userLogado.user || "").trim().toLowerCase();
+    const donoVideo = (dados.autorUser || "").trim().toLowerCase(); 
+    const displaySeguir = (meuUser === donoVideo) ? 'none' : 'inline-block';
+
+    // Garante uma imagem válida
+    const imagemSegura = dados.autorFoto && dados.autorFoto.trim() !== "" ? dados.autorFoto : "https://placehold.co/150";
+
+    // UID seguro (se não tiver, passa string vazia)
+    const uidSeguro = dados.uid || "";
+
+    return `
+    <div class="reels-item" id="feed-item-${dados.id}">
+        <div class="reels-layout">
+            
+            <div class="video-frame">
+                <video class="video-player-feed" loop playsinline src="${dados.videoUrl}"></video>
+                
+                <div class="video-info-overlay">
+                    <div class="author-row" onclick="irParaPerfil('${uidSeguro}')" style="cursor: pointer;">
+                        <img src="${imagemSegura}" class="author-avatar" onerror="this.src='https://placehold.co/150'">
+                        <span class="author-name">${dados.autorNome}</span>
+                        <span class="btn-follow-text" style="display:${displaySeguir}" onclick="toggleFollow(event, this)">• Seguir</span>
+                    </div>
+                    <div class="video-caption">${dados.descricao || ''}</div>
+                </div>
+            </div>
+
+            <div class="actions-column">
+                
+                <button class="action-btn" onclick="irParaPerfil('${uidSeguro}')">
+                    <div class="icon-circle-img">
+                        <img src="${imagemSegura}" onerror="this.src='https://placehold.co/150'">
+                    </div>
+                    <span class="action-label">Perfil</span>
+                </button>
+
+                <button class="action-btn" onclick="toggleLikeTikTok(this)">
+                    <div class="icon-circle"><i class='bx bx-heart'></i></div>
+                    <span class="action-label">Curtir</span>
+                    <span class="action-count">${dados.likes || 0}</span>
+                </button>
+
+                <button class="action-btn" onclick="toggleComentarios()">
+                    <div class="icon-circle"><i class='bx bx-message-rounded-dots'></i></div>
+                    <span class="action-label">Comentar</span>
+                </button>
+
+                <button class="action-btn" onclick="compartilharVideo()">
+                    <div class="icon-circle"><i class='bx bx-share-alt'></i></div>
+                    <span class="action-label">Enviar</span>
+                </button>
+
+                <button class="action-btn" onclick="irParaOrcamento('${uidSeguro}')">
+                    <div class="icon-circle circle-green"><i class='bx bx-dollar'></i></div>
+                    <span class="action-label">Orçar</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    `;
+}
+
+window.irParaPerfil = function(uid) {
+    if (!uid || uid === "undefined" || uid === "null") {
+        alert("Perfil indisponível ou vídeo antigo.");
+        return;
+    }
+    // Redireciona corretamente
+    window.location.href = `perfil-profissional.html?uid=${uid}`;
+}
+
+window.irParaOrcamento = function(uid) {
+    if (!uid || uid === "undefined") {
+        alert("Não é possível solicitar orçamento para este vídeo.");
+        return;
+    }
+    window.location.href = `orcamento.html?uid=${uid}`;
+}
+
+// 3. O Segredo do Scroll: IntersectionObserver
+function iniciarObservadorScroll() {
+    if (observerFeed) observerFeed.disconnect();
+
+    const opcoes = {
+        root: document.getElementById('containerFeedScroll'),
+        threshold: 0.6 // Dispara quando 60% do vídeo estiver visível
+    };
+
+    observerFeed = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            const video = entry.target.querySelector('video');
+            if (!video) return;
+
+            if (entry.isIntersecting) {
+                // Vídeo apareceu na tela: PLAY
+                video.play().catch(e => console.log("Autoplay bloqueado pelo browser"));
+            } else {
+                // Vídeo saiu da tela: PAUSE e RESET
+                video.pause();
+                video.currentTime = 0;
+            }
+        });
+    }, opcoes);
+
+    // Observa todos os itens gerados
+    document.querySelectorAll('.reels-item').forEach(item => {
+        observerFeed.observe(item);
+    });
+}
+
+// 4. Atualizar a função de fechar
+window.fecharPlayerVideo = function() {
+    const modal = document.getElementById('modalPlayerVideo');
+    if(modal) modal.style.display = 'none';
+    
+    // Pausa tudo
+    document.querySelectorAll('video').forEach(v => v.pause());
+    
+    // Desliga o observador para economizar memória
+    if (observerFeed) observerFeed.disconnect();
+}
+
+// --- VARIÁVEIS GLOBAIS DO MODAL ---
+let currentPostId = null;
+let currentCollection = null;
+
+window.abrirModalPost = async function(id, colecao) {
+    const modal = document.getElementById('modalPostDetalhe');
+    modal.style.display = 'flex';
+    
+    // Controle do botão excluir (Apenas no meuperfil.html vai funcionar se tiver o ID btnExcluirModal)
+    const btnDel = document.getElementById('btnExcluirModal');
+    if(btnDel) btnDel.style.display = 'block'; // Mostra por padrão, no perfil-profissional vc esconde no código dele
+
+    // Busca dados
+    const docSnap = await getDoc(doc(db, colecao, id));
+    if(!docSnap.exists()) return;
+    const data = docSnap.data();
+    
+    // Variável global para deleção/comentário
+    currentPostId = id;
+    currentCollection = colecao;
+    // Se estiver usando o script que eu mandei antes de 'currentPost', atualize para usar essas globais ou o objeto currentPost = {id, colecao}
+
+    // -- PREENCHE MÍDIA --
+    const mediaBox = document.getElementById('modalMediaContainer');
+    if((data.videoUrl)) {
+        mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="width:100%;"></video>`;
+    } else {
+        mediaBox.innerHTML = `<img src="${data.imagem}" style="width:100%;">`;
+    }
+
+    // -- PREENCHE INFO --
+    document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
+    document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome;
+    document.getElementById('modalDate').innerText = new Date(data.data).toLocaleDateString();
+    document.getElementById('modalLikesCount').innerText = `${data.likes || 0} curtidas`;
+    
+    // -- LEGENDA (Agora em lugar separado) --
+    const captionDiv = document.getElementById('modalCaption');
+    if(data.texto || data.descricao) {
+        captionDiv.style.display = 'block';
+        captionDiv.innerHTML = data.texto || data.descricao;
+    } else {
+        captionDiv.style.display = 'none';
+    }
+
+    // -- COMENTÁRIOS --
+    const list = document.getElementById('modalCommentsList');
+    list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Carregando...</p>";
+    
+    // Lógica de buscar comentários (Mesma de antes)
+    try {
+        const qComm = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
+        const snapComm = await getDocs(qComm);
+        
+        list.innerHTML = "";
+        if(snapComm.empty) {
+            list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Seja o primeiro a comentar.</p>";
+        } else {
+            snapComm.forEach(c => {
+                const cData = c.data();
+                const html = `
+                <div style="display:flex; gap:10px; margin-bottom:10px; font-size:0.9rem;">
+                    <img src="${cData.foto}" style="width:30px; height:30px; border-radius:50%;">
+                    <div style="background:white; padding:8px 12px; border-radius:10px; border:1px solid #eee; flex:1;">
+                        <strong style="display:block; font-size:0.8rem; color:#333;">${cData.user}</strong>
+                        <span style="color:#555;">${cData.texto}</span>
+                    </div>
+                </div>`;
+                list.insertAdjacentHTML('beforeend', html);
+            });
+        }
+    } catch(e) { console.error(e); }
+}
+
+// Função para fechar clicando fora
+window.fecharModalPost = function(e) {
+    // Se o clique foi no overlay (fundo escuro) ou no botão X, fecha.
+    // Se foi dentro do card (modal-content), o event.stopPropagation no HTML impede de chegar aqui.
+    if (!e || e.target.classList.contains('modal-overlay') || e.target.classList.contains('btn-close-modal')) {
+        document.getElementById('modalPostDetalhe').style.display = 'none';
+        document.getElementById('modalMediaContainer').innerHTML = "";
+    }
+}
+// 3. POSTAR COMENTÁRIO
+window.postarComentarioModal = async function() {
+    const input = document.getElementById('inputComentarioModal');
+    const texto = input.value.trim();
+    if(!texto) return;
+
+    const user = auth.currentUser;
+    if(!user) { alert("Faça login para comentar."); return; }
+    
+    const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+    try {
+        // Salva na subcoleção 'comentarios' dentro do documento do post
+        await addDoc(collection(db, currentCollection, currentPostId, "comentarios"), {
+            uid: user.uid,
+            user: perfilLocal.user || "Usuario",
+            foto: perfilLocal.foto || "https://placehold.co/50",
+            texto: texto,
+            data: new Date().toISOString()
+        });
+
+        // Adiciona visualmente na hora (sem recarregar)
+        const list = document.getElementById('modalCommentsList');
+        const novoHtml = `
+            <div class="comment-row" style="margin-bottom:10px; animation: fadeIn 0.3s;">
+                <img src="${perfilLocal.foto}" style="width:30px; height:30px; border-radius:50%;">
+                <div class="comment-text">
+                    <strong>${perfilLocal.user}</strong> ${texto}
+                </div>
+            </div>`;
+        list.insertAdjacentHTML('beforeend', novoHtml);
+        
+        // Rola para baixo e limpa input
+        list.scrollTop = list.scrollHeight;
+        input.value = "";
+
+    } catch(e) { console.error("Erro ao comentar:", e); }
+}
+
+// 4. DAR LIKE (Simples)
+window.darLikeModal = async function() {
+    if(!currentPostId) return;
+    // Aqui você implementaria a lógica real de like (incrementar no banco)
+    // Para visual:
+    const span = document.getElementById('modalLikesCount');
+    let atual = parseInt(span.innerText);
+    span.innerText = `${atual + 1} curtidas`;
+    alert("Você curtiu!"); 
+}
+
+async function carregarReelsIndex() {
+    const container = document.querySelector('.video-container'); // Certifique-se que essa classe existe no HTML do index
+    if(!container) return;
+
+    try {
+        // Busca os últimos 10 reels de todos os usuários
+        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = ""; // Limpa os placeholdes
+
+        if(snapshot.empty) {
+            container.innerHTML = "<p style='color:white; padding:10px;'>Sem reels no momento.</p>";
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // HTML DO CARD DE REEL NO INDEX
+            const html = `
+            <div class="video-card" style="background-image: url('${data.capa || ''}'); position: relative; overflow: hidden;">
+                <video src="${data.videoUrl}" class="video-feed" 
+                       style="width:100%; height:100%; object-fit:cover; position:absolute; top:0; left:0; z-index:0;" 
+                       loop muted onmouseover="this.play()" onmouseout="this.pause()">
+                </video>
+                
+                <div class="video-info" style="z-index:1; position:absolute; bottom:10px; left:10px; color:white;">
+                    <img src="${data.autorFoto || 'https://placehold.co/30'}" class="profile-img">
+                    <span class="username">${data.autorUser || 'Usuario'}</span>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch(e) {
+        console.error("Erro ao carregar reels no index:", e);
+    }
+}
+
+// Chame a função ao carregar a página
+document.addEventListener("DOMContentLoaded", () => {
+    // ... suas outras inicializações ...
+    carregarReelsIndex();
+});
+
+async function carregarReelsNoIndex() {
+    const container = document.querySelector('.video-container');
+    if(!container) return;
+
+    try {
+        // Busca os últimos 10 Reels REAIS do banco de dados
+        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(15));
+        const snapshot = await getDocs(q);
+
+        container.innerHTML = ""; // Limpa os vídeos de exemplo
+
+        if(snapshot.empty) {
+            // Se não tiver nenhum, mantém o visual limpo
+            return; 
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // HTML EXATO PARA ENCAIXAR NO SEU CARROSSEL
+            const html = `
+            <div class="video-card">
+                <video src="${data.videoUrl}" 
+                       class="video-feed" 
+                       muted loop 
+                       onmouseover="this.play()" 
+                       onmouseout="this.pause(); this.currentTime=0;"
+                       onclick="window.location.href='perfil-profissional.html?uid=${data.uid}'"
+                       style="width:100%; height:100%; object-fit:cover;">
+                </video>
+                
+                <div class="video-info">
+                    <img src="${data.autorFoto || 'https://placehold.co/50'}" class="profile-img">
+                    <span class="username">${data.autorUser || 'Profissional'}</span>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch(e) {
+        console.error("Erro ao carregar Reels no Index:", e);
+    }
+}
+
+// ============================================================
+window.carregarReelsHome = async function() {
+    const container = document.getElementById('galeria-dinamica');
+    if (!container) return;
+
+    container.innerHTML = '<div style="padding:20px; color:white; text-align:center;"><i class="bx bx-loader-alt bx-spin"></i> Carregando destaques...</div>';
+
+    try {
+        const q = query(collection(window.db, "reels"), orderBy("data", "desc"), limit(10));
+        const snapshot = await getDocs(q);
+        
+        container.innerHTML = ""; 
+
+        if (snapshot.empty) {
+            container.innerHTML = '<div style="padding:20px; color:white; text-align:center;">Nenhum vídeo publicado ainda.</div>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id;
+            
+            const videoUrl = data.videoUrl || "";
+            // AQUI ESTÁ A CORREÇÃO DA CAPA:
+            // Usamos data.capa se existir, senão usa uma imagem transparente ou placeholder
+            const capaUrl = data.capa || ""; 
+
+            const nomeAutor = data.autorNome || 'Profissional';
+            const fotoAutor = data.autorFoto || "https://placehold.co/150"; 
+            const uidAutor = data.uid || "";
+            const descricao = data.descricao || "";
+
+            const dadosModal = JSON.stringify({
+                id: id, video: videoUrl, user: nomeAutor, desc: descricao,
+                uid: uidAutor, autorFoto: fotoAutor, likes: data.likes || 0
+            }).replace(/"/g, '&quot;');
+
+            // A MÁGICA ESTÁ NO ATRIBUTO 'poster="${capaUrl}"' DENTRO DA TAG VIDEO ABAIXO:
+            const html = `
+            <div class="tiktok-card" onclick="abrirPlayerTikTok(${dadosModal})">
+                
+                <video src="${videoUrl}" 
+                       poster="${capaUrl}" 
+                       class="video-bg" 
+                       muted loop 
+                       playsinline
+                       onmouseover="this.play()" 
+                       onmouseout="this.pause(); this.load();"> </video>
+                
+                <div class="play-icon"><i class='bx bx-play'></i></div>
+                
+                <div class="video-ui-layer">
+                    <div class="provider-info">
+                        <img src="${fotoAutor}" alt="User">
+                        <div class="info-col">
+                            <span class="provider-name">${nomeAutor}</span>
+                            <span class="video-desc-mini">${descricao}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) { 
+        console.error("Erro reels:", e);
+        container.innerHTML = '<div style="padding:20px; color:white;">Erro ao carregar.</div>';
+    }
 }

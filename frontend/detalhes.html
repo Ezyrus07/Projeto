@@ -4,122 +4,193 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Detalhes do Serviço | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     
-    <style>
-        /* =========================================
-           DESIGN PREMIUM - LIMPO E ORGANIZADO
-           ========================================= */
-        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); font-family: "Poppins", sans-serif; margin: 0; }
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css"> 
 
-        /* Ajuste do Main para Sidebar */
-        main {
-            max-width: 1200px; margin: 0 auto; padding: 30px 20px;
-            display: grid; grid-template-columns: 2fr 1fr; gap: 40px;
-            margin-top: 60px; /* Espaço pro Header Mobile */
+    <style>
+        /* ======================================================
+           DESIGN SYSTEM - DETALHES PREMIUM
+           ====================================================== */
+        :root {
+            --primary: #008a7b;    /* Verde Escuro Doke */
+            --accent: #2ecc71;     /* Verde Claro Doke */
+            --text-dark: #2d3436;
+            --text-light: #636e72;
+            --bg-page: #f8f9fa;
         }
+
+        body { 
+            background-color: var(--bg-page); 
+            font-family: 'Poppins', sans-serif; 
+            margin: 0; 
+            color: var(--text-dark);
+        }
+
+        /* LAYOUT GRID */
+        main {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 1fr 380px; /* Coluna princ + Sidebar */
+            gap: 40px;
+            margin-top: 20px;
+        }
+
         @media (min-width: 1024px) {
-            main { margin-left: 270px; margin-top: 0; }
+            main { margin-left: 290px; margin-top: 20px; width: calc(100% - 330px); }
         }
         @media (max-width: 900px) {
-            main { grid-template-columns: 1fr; }
+            main { grid-template-columns: 1fr; margin-left: 0; padding: 15px; width: 100%; box-sizing: border-box;}
         }
 
-        /* Cartões (Cards) */
-        .card {
-            background: white; border-radius: 16px; padding: 30px;
-            box-shadow: 0 2px 12px rgba(0,0,0,0.04); border: 1px solid #eee;
-            margin-bottom: 24px;
+        /* --- COLUNA ESQUERDA (CONTEÚDO) --- */
+        
+        /* Galeria Estilo Airbnb */
+        .gallery-wrapper {
+            border-radius: 16px;
+            overflow: hidden;
+            margin-bottom: 30px;
+            position: relative;
+            background: #eee;
         }
-
-        /* Galeria de Fotos */
-        .galeria-container {
-            display: grid; gap: 10px; margin-bottom: 30px;
+        .main-image {
+            width: 100%;
+            height: 450px;
+            object-fit: cover;
+            cursor: pointer;
         }
-        .foto-principal {
-            width: 100%; height: 400px; border-radius: 12px; object-fit: cover;
-            background: #eee; cursor: pointer;
-        }
-        .thumbs-row {
-            display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;
+        .thumbnails {
+            display: flex;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            overflow-x: auto;
         }
         .thumb {
-            width: 80px; height: 80px; border-radius: 8px; cursor: pointer;
-            object-fit: cover; opacity: 0.6; transition: 0.2s; border: 2px solid transparent;
+            width: 80px; height: 60px;
+            object-fit: cover;
+            border-radius: 6px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: 0.2s;
         }
-        .thumb:hover, .thumb.active { opacity: 1; border-color: var(--cor0); }
+        .thumb:hover, .thumb.active { opacity: 1; border: 2px solid var(--primary); }
 
-        /* Títulos e Textos */
-        h1.titulo-servico { font-size: 1.8rem; color: #222; margin: 0 0 10px 0; font-weight: 700; line-height: 1.3; }
+        /* Cabeçalho do Serviço */
+        .service-header { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .breadcrumb { font-size: 0.85rem; color: var(--text-light); margin-bottom: 10px; display: block; }
+        h1.service-title { font-size: 2rem; margin: 5px 0 10px; font-weight: 700; line-height: 1.2; color: #0f3460; }
         
-        .secao-titulo {
-            font-size: 1.1rem; color: #222; font-weight: 700;
-            margin: 40px 0 15px 0; border-bottom: 1px solid #eee; padding-bottom: 10px;
+        .meta-info {
+            display: flex; gap: 20px; align-items: center; flex-wrap: wrap;
+            font-size: 0.95rem; color: var(--text-dark);
         }
-        
-        .texto-descricao { font-size: 1rem; color: #555; line-height: 1.7; white-space: pre-line; }
+        .rating-badge { display: flex; align-items: center; gap: 5px; font-weight: 700; }
+        .rating-badge i { color: #f1c40f; }
+        .location-badge i { color: var(--text-light); }
 
-        /* --- ÁREA "MAIS INFORMAÇÕES" (Estilo Grid Moderno) --- */
-        .grid-detalhes {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;
+        /* Seções de Conteúdo */
+        .content-section {
+            background: white;
+            padding: 30px;
+            border-radius: 16px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            border: 1px solid #edf2f7;
         }
-        .detalhe-item {
-            display: flex; align-items: center; gap: 12px;
-            background: #f8f9fa; padding: 15px; border-radius: 12px; border: 1px solid #e9ecef;
-        }
-        .detalhe-item i { font-size: 1.6rem; color: var(--cor0); }
-        .detalhe-item h4 { margin: 0; font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.5px; }
-        .detalhe-item span { display: block; font-size: 0.95rem; font-weight: 600; color: #333; }
+        .section-title { font-size: 1.25rem; margin-bottom: 20px; font-weight: 700; color: #2d3436; }
 
-        /* Botão Diploma */
-        .btn-diploma {
-            display: flex; align-items: center; gap: 12px;
-            background: #e3f2fd; color: #1565c0; padding: 16px;
-            border-radius: 12px; text-decoration: none; font-weight: 600;
-            margin-top: 15px; transition: 0.2s; border: 1px dashed #90caf9;
+        /* Grid de Destaques (Ícones) */
+        .highlights-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px;
         }
-        .btn-diploma:hover { background: #bbdefb; transform: translateY(-2px); }
+        .highlight-item {
+            display: flex; flex-direction: column; gap: 8px;
+            padding: 15px; background: #f8fafc; border-radius: 12px;
+            border: 1px solid #e2e8f0;
+        }
+        .highlight-item i { font-size: 1.5rem; color: var(--primary); }
+        .highlight-label { font-size: 0.75rem; color: var(--text-light); text-transform: uppercase; font-weight: 600; }
+        .highlight-value { font-size: 0.95rem; font-weight: 600; color: var(--text-dark); }
+
+        /* Diploma Card Especial */
+        .diploma-card {
+            display: flex; align-items: center; gap: 15px;
+            background: linear-gradient(135deg, #e0f2f1 0%, #b2dfdb 100%);
+            padding: 20px; border-radius: 12px;
+            border: 1px solid #80cbc4; cursor: pointer; transition: 0.3s;
+            text-decoration: none; color: #004d40;
+        }
+        .diploma-card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px rgba(0,138,123,0.15); }
 
         /* Agenda Visual */
         .agenda-grid { display: flex; flex-wrap: wrap; gap: 8px; }
-        .dia-badge {
-            text-align: center; padding: 8px 12px; border-radius: 8px; 
-            border: 1px solid #eee; min-width: 60px;
+        .day-pill {
+            padding: 8px 14px; border-radius: 8px; border: 1px solid #eee;
+            text-align: center; min-width: 70px;
         }
-        .dia-badge strong { display: block; font-size: 0.75rem; text-transform: uppercase; color: #888; }
-        .dia-badge span { font-size: 0.8rem; font-weight: 600; color: #333; }
-        
-        /* Estados da Agenda */
-        .dia-badge.aberto { background: #e0f2f1; border-color: #b2dfdb; }
-        .dia-badge.aberto strong { color: #00695c; }
-        .dia-badge.aberto span { color: #004d40; }
-        .dia-badge.fechado { background: #fafafa; opacity: 0.6; }
+        .day-pill.active { background: #e8f5e9; border-color: #a5d6a7; }
+        .day-pill.inactive { background: #fafafa; opacity: 0.5; }
+        .day-name { font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px; }
+        .day-time { font-size: 0.8rem; color: #2d3436; }
 
-        /* Sidebar Flutuante (Preço) */
-        .sidebar-sticky { position: sticky; top: 20px; }
-        
-        .autor-card {
-            display: flex; align-items: center; gap: 12px; margin-bottom: 20px;
-            padding-bottom: 20px; border-bottom: 1px solid #eee;
+        /* Avaliações */
+        .review-dashboard-mini {
+            display: flex; gap: 20px; padding: 20px; background: #f8f9fa; 
+            border-radius: 12px; margin-bottom: 25px; align-items: center;
         }
-        .autor-card img { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
-        
-        .preco-destaque { font-size: 2rem; font-weight: 800; color: var(--cor0); margin-bottom: 20px; display: block; }
-        
-        .btn-acao-grande {
-            display: flex; align-items: center; justify-content: center; gap: 10px;
-            width: 100%; background: var(--cor2); color: white; border: none;
-            padding: 16px; border-radius: 50px; font-size: 1rem; font-weight: 700;
-            cursor: pointer; transition: 0.3s; box-shadow: 0 4px 15px rgba(42, 95, 144, 0.2);
+        .big-score { font-size: 2.5rem; font-weight: 800; color: #333; line-height: 1; }
+        .review-bars { flex: 1; display: flex; flex-direction: column; gap: 8px; }
+        .bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #666; }
+        .progress-bg { flex: 1; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #f1c40f; width: 0%; }
+
+        .review-item { padding: 20px 0; border-bottom: 1px solid #eee; }
+        .review-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .reviewer-name { font-weight: 700; font-size: 0.95rem; color: #333; }
+        .review-date { font-size: 0.8rem; color: #999; }
+        .review-stars { color: #f1c40f; font-size: 0.9rem; }
+        .review-text { color: #555; font-size: 0.95rem; line-height: 1.5; font-style: italic; }
+
+        /* --- COLUNA DIREITA (SIDEBAR FIXA) --- */
+        .sidebar-sticky {
+            position: sticky; top: 30px;
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+            border: 1px solid #eee; height: fit-content;
         }
-        .btn-acao-grande:hover { background: #1a4b78; transform: translateY(-2px); }
 
-        /* Tags */
-        .tags-list { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; }
-        .tag { background: #f1f3f5; color: #495057; padding: 4px 12px; border-radius: 20px; font-size: 0.8rem; font-weight: 500; }
-        .tag-emergencia { background: #ffebee; color: #c62828; font-weight: 700; display: flex; align-items: center; gap: 5px; }
+        .price-section { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .price-label { font-size: 0.9rem; color: var(--text-light); }
+        .price-value { font-size: 2rem; font-weight: 800; color: var(--primary); }
+        .price-sub { font-size: 0.85rem; color: #999; }
 
+        .btn-hire {
+            width: 100%; padding: 16px; border-radius: 50px;
+            background: var(--primary); color: white; border: none;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 138, 123, 0.3); transition: 0.3s;
+            display: flex; justify-content: center; align-items: center; gap: 10px;
+        }
+        .btn-hire:hover { background: #00695c; transform: scale(1.02); }
+
+        .provider-mini {
+            display: flex; align-items: center; gap: 12px; margin-top: 25px;
+            padding-top: 20px; border-top: 1px solid #eee;
+        }
+        .provider-avatar { width: 50px; height: 50px; border-radius: 50%; object-fit: cover; }
+        .provider-stats { font-size: 0.8rem; color: var(--text-light); margin-top: 4px; display: block; }
+        
+        .verified-badge-mini { color: #2ecc71; font-size: 0.8rem; font-weight: bold; display: block; }
+
+        /* Tags e Badges */
+        .tag-emergency {
+            background: #ffebee; color: #c62828; padding: 5px 12px;
+            border-radius: 20px; font-size: 0.8rem; font-weight: 700;
+            display: inline-flex; align-items: center; gap: 5px;
+        }
     </style>
 </head>
 <body>
@@ -198,105 +269,163 @@
         </div>
     </header>
 
-    <header class="navbar-mobile">
-        <button onclick="window.history.back()" style="border:none; background:none; font-size:1.5rem; color:var(--cor2);"><i class='bx bx-arrow-back'></i></button>
-    </header>
-
     <main>
-        <div id="loading" style="grid-column: 1/-1; text-align: center; padding: 50px;">
-            <i class='bx bx-loader-alt bx-spin' style="font-size: 3rem; color: var(--cor0);"></i>
+        <div id="loader" style="grid-column: 1/-1; text-align: center; padding: 100px;">
+            <i class='bx bx-loader-alt bx-spin' style="font-size: 3rem; color: var(--primary);"></i>
+            <p>Buscando dados no servidor...</p>
         </div>
 
-        <div id="detalhes-content" style="display: none; grid-column: 1/-1; display: grid; grid-template-columns: 2fr 1fr; gap: 40px; width:100%;">
+        <div id="main-content" style="display: none; contents: inherit;">
             
-            <div class="col-esquerda">
+            <section class="left-col">
                 
-                <div class="galeria-container">
-                    <img id="img-principal" class="foto-principal" src="" alt="Serviço">
-                    <div id="lista-thumbs" class="thumbs-row"></div>
+                <div class="gallery-wrapper">
+                    <img id="main-img" class="main-image" src="" alt="Capa do Serviço">
+                    <div id="thumb-list" class="thumbnails"></div>
                 </div>
 
-                <div class="card">
-                    <div class="tags-list" id="tags-area">
-                        </div>
-
-                    <h1 id="titulo" class="titulo-servico">Carregando título...</h1>
+                <div class="service-header">
+                    <span class="breadcrumb">Explorar > Serviços > <span id="bread-cat">Categoria</span></span>
                     
-                    <h3 class="secao-titulo">Descrição</h3>
-                    <p id="descricao" class="texto-descricao">...</p>
+                    <div id="badges-area" style="margin-top: 10px;"></div>
 
-                    <h3 class="secao-titulo">Ficha Técnica</h3>
-                    <div class="grid-detalhes">
-                        <div class="detalhe-item">
-                            <i class='bx bx-briefcase'></i>
-                            <div><h4>Experiência</h4><span id="txt-experiencia">--</span></div>
+                    <h1 id="service-title" class="service-title">...</h1>
+                    
+                    <div class="meta-info">
+                        <div class="rating-badge">
+                            <div id="top-stars" style="color:#f1c40f; margin-right:5px;"></div>
+                            <span id="meta-rating">0.0</span> 
+                            <span style="font-weight:400; color:#777; margin-left: 5px;">(<span id="meta-count">0</span> avaliações)</span>
                         </div>
-                        <div class="detalhe-item">
-                            <i class='bx bx-time-five'></i>
-                            <div><h4>Prazo Médio</h4><span id="txt-prazo">--</span></div>
+                        <div class="location-badge">
+                            <i class='bx bxs-map'></i> <span id="meta-location">...</span>
                         </div>
-                        <div class="detalhe-item">
+                        <div class="location-badge">
+                            <i class='bx bxs-briefcase-alt-2'></i> <span id="meta-hired">...</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="content-section">
+                    <h2 class="section-title">Sobre o Serviço</h2>
+                    <p id="service-desc" style="line-height: 1.8; color: #555; white-space: pre-line;">...</p>
+                    
+                    <div class="highlights-grid" style="margin-top: 30px;">
+                        <div class="highlight-item">
+                            <i class='bx bx-medal'></i>
+                            <span class="highlight-label">Experiência</span>
+                            <span class="highlight-value" id="hl-xp">--</span>
+                        </div>
+                        <div class="highlight-item">
+                            <i class='bx bx-time'></i>
+                            <span class="highlight-label">Prazo Médio</span>
+                            <span class="highlight-value" id="hl-time">--</span>
+                        </div>
+                        <div class="highlight-item">
                             <i class='bx bx-shield-quarter'></i>
-                            <div><h4>Garantia</h4><span id="txt-garantia">--</span></div>
+                            <span class="highlight-label">Garantia</span>
+                            <span class="highlight-value" id="hl-warranty">--</span>
                         </div>
-                        <div class="detalhe-item">
+                        <div class="highlight-item">
                             <i class='bx bx-laptop'></i>
-                            <div><h4>Atendimento</h4><span id="txt-modo">--</span></div>
-                        </div>
-                        <div class="detalhe-item">
-                            <i class='bx bx-x-circle'></i>
-                            <div><h4>Cancelamento</h4><span id="txt-cancelamento">--</span></div>
+                            <span class="highlight-label">Atendimento</span>
+                            <span class="highlight-value" id="hl-mode">--</span>
                         </div>
                     </div>
 
-                    <div id="box-diploma" style="display: none;">
-                        <a href="#" target="_blank" id="link-diploma" class="btn-diploma">
-                            <i class='bx bxs-certification' style="font-size: 24px;"></i>
+                    <div id="diploma-area" style="margin-top: 25px; display: none;">
+                        <a href="#" target="_blank" id="diploma-link" class="diploma-card">
+                            <i class='bx bxs-graduation' style="font-size: 2rem;"></i>
                             <div>
-                                <span style="display:block; line-height:1.2;">Profissional Certificado</span>
-                                <span style="font-size: 0.8rem; font-weight: 400; opacity: 0.8;">Ver documento validado</span>
+                                <strong style="display:block; font-size:1.1rem;">Profissional Certificado</strong>
+                                <span style="font-size: 0.9rem; opacity: 0.9;">Documento validado e aprovado pela Doke. Clique para visualizar.</span>
                             </div>
                             <i class='bx bx-link-external' style="margin-left: auto;"></i>
                         </a>
                     </div>
+                </div>
 
-                    <h3 class="secao-titulo">Disponibilidade</h3>
-                    <div id="agenda-visual" class="agenda-grid">
+                <div class="content-section">
+                    <h2 class="section-title">Agenda Semanal</h2>
+                    <div id="agenda-container" class="agenda-grid">
                         </div>
                 </div>
-            </div>
 
-            <div class="col-direita">
-                <div class="card sidebar-sticky">
-                    <div class="autor-card">
-                        <img id="autor-foto" src="https://i.pravatar.cc/150">
-                        <div>
-                            <h4 id="autor-nome" style="margin:0; font-size:1rem;">Profissional</h4>
-                            <span id="autor-local" style="font-size:0.8rem; color:#777;">Brasil</span>
+                <div class="content-section">
+                    <h2 class="section-title">Avaliações de Clientes</h2>
+                    
+                    <div id="reviews-dashboard" class="review-dashboard-mini" style="display:none;">
+                        <div style="text-align:center;">
+                            <div class="big-score" id="dash-score">0.0</div>
+                            <div id="dash-stars" style="color:#f1c40f; font-size:0.9rem;"></div>
+                            <small style="color:#777;" id="dash-total">0 avaliações</small>
+                        </div>
+                        <div class="review-bars">
+                            <div class="bar-row">
+                                <span style="width:80px;">Qualidade</span>
+                                <div class="progress-bg"><div class="progress-fill" id="bar-quali"></div></div>
+                                <span id="val-quali">0.0</span>
+                            </div>
+                            <div class="bar-row">
+                                <span style="width:80px;">Preço</span>
+                                <div class="progress-bg"><div class="progress-fill" id="bar-price"></div></div>
+                                <span id="val-price">0.0</span>
+                            </div>
+                            <div class="bar-row">
+                                <span style="width:80px;">Pontual.</span>
+                                <div class="progress-bg"><div class="progress-fill" id="bar-time"></div></div>
+                                <span id="val-time">0.0</span>
+                            </div>
                         </div>
                     </div>
 
-                    <span style="font-size:0.8rem; font-weight:600; color:#888; text-transform:uppercase;">Investimento</span>
-                    <span id="preco" class="preco-destaque">R$ --</span>
+                    <div id="reviews-list">
+                        <p style="color:#777; font-style: italic;">Carregando avaliações...</p>
+                    </div>
+                </div>
 
-                    <button id="btn-orcamento" class="btn-acao-grande">
-                        Solicitar Orçamento
+            </section>
+
+            <aside class="right-col">
+                <div class="sidebar-sticky">
+                    <span class="price-label">Investimento a partir de</span>
+                    <div id="price-display" class="price-value">R$ --</div>
+                    <span id="payment-display" class="price-sub">Aceita Cartão, Pix e Boleto</span>
+
+                    <button id="btn-contact" class="btn-hire" style="margin-top: 20px;">
+                        <i class='bx bx-message-square-detail'></i> Solicitar Orçamento
                     </button>
-
-                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                        <span style="font-size:0.85rem; font-weight:600; color:#555; display:block; margin-bottom:10px;">Aceita:</span>
-                        <div id="pg-list" style="display:flex; gap:8px; flex-wrap:wrap; justify-content:center;"></div>
+                    
+                    <div style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: #888;">
+                        <i class='bx bx-shield-check'></i> Pagamento seguro via Doke
                     </div>
+
+                    <div class="provider-mini">
+                        <img id="prov-img" src="https://placehold.co/100" class="provider-avatar">
+                        <div>
+                            <strong id="prov-name" style="display:block; color:#333;">...</strong>
+                            <a href="#" id="link-perfil" style="font-size:0.85rem; color:var(--primary); text-decoration:none;">Ver perfil completo</a>
+                            <span id="prov-since" class="provider-stats">Membro desde ...</span>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <strong style="font-size:0.9rem; display:block; margin-bottom:10px;">Política de Cancelamento</strong>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <i class='bx bx-info-circle' style="color:var(--primary);"></i>
+                            <span id="policy-text" style="font-size:0.85rem; color:#555;">Flexível</span>
+                        </div>
+                    </div>
+
                 </div>
-            </div>
+            </aside>
 
         </div>
     </main>
 
-    <script type="module" src="script.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
@@ -310,116 +439,273 @@
         const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
 
-        // ID da URL
+        // Pega ID da URL
         const params = new URLSearchParams(window.location.search);
         const idAnuncio = params.get('id');
 
-        async function carregarDetalhes() {
-            if(!idAnuncio) { alert("Anúncio não encontrado."); return; }
+        // ===========================================
+        // FUNÇÃO PRINCIPAL
+        // ===========================================
+        async function initPage() {
+            if(!idAnuncio) {
+                alert("Serviço não encontrado.");
+                window.location.href = "explorar.html";
+                return;
+            }
 
             try {
+                // 1. Busca Dados do Anúncio (Firebase)
                 const docRef = doc(db, "anuncios", idAnuncio);
                 const snap = await getDoc(docRef);
 
-                if (snap.exists()) {
-                    preencherPagina(snap.data());
-                } else {
-                    document.getElementById('loading').innerHTML = "Anúncio removido.";
+                if (!snap.exists()) {
+                    document.getElementById('loader').innerHTML = "<h3>Anúncio removido ou indisponível.</h3>";
+                    return;
                 }
-            } catch (error) {
-                console.error(error);
-                document.getElementById('loading').innerHTML = "Erro ao carregar dados.";
+
+                const data = snap.data();
+                renderizarDetalhes(data);
+
+                // 2. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
+                // Usamos o UID do dono do anúncio para buscar suas avaliações
+                if(data.uid) {
+                    carregarAvaliacoesReais(data.uid); // <--- AQUI ESTÁ A MÁGICA
+                }
+
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loader').innerHTML = "Erro ao carregar dados.";
             }
         }
 
-        function preencherPagina(d) {
-            document.getElementById('loading').style.display = 'none';
-            // Para telas grandes, usa grid. Para mobile, o CSS ajusta
-            const content = document.getElementById('detalhes-content');
-            content.style.display = (window.innerWidth > 900) ? 'grid' : 'block';
+        // ===========================================
+        // RENDERIZAÇÃO ESTÁTICA (DO ANÚNCIO)
+        // ===========================================
+        function renderizarDetalhes(d) {
+            document.getElementById('loader').style.display = 'none';
+            document.getElementById('main-content').style.display = 'contents';
 
-            // 1. TEXTOS BÁSICOS
-            document.getElementById('titulo').innerText = d.titulo || "Sem Título";
-            document.getElementById('descricao').innerText = d.descricao || "";
-            document.getElementById('preco').innerText = (d.preco && d.preco !== 'Sob Orçamento') ? `R$ ${d.preco}` : "Sob Orçamento";
+            // -- HEADER & TEXTOS --
+            document.title = `${d.titulo} | Doke`;
+            document.getElementById('service-title').innerText = d.titulo || "Serviço sem título";
+            document.getElementById('bread-cat').innerText = (d.categorias || "Geral").split(',')[0];
+            document.getElementById('meta-location').innerText = (d.cidade && d.uf) ? `${d.cidade}, ${d.uf}` : "Localização não informada";
+            document.getElementById('service-desc').innerText = d.descricao || "Sem descrição.";
 
-            // 2. GALERIA
-            const mainImg = document.getElementById('img-principal');
-            const thumbBox = document.getElementById('lista-thumbs');
-            const fotos = (d.fotos && d.fotos.length) ? d.fotos : [d.img || 'https://placehold.co/600x400'];
-            
-            mainImg.src = fotos[0];
-            if(fotos.length > 1) {
-                fotos.forEach(src => {
-                    const img = document.createElement('img');
-                    img.src = src; img.className = 'thumb';
-                    img.onclick = () => { mainImg.src = src; document.querySelectorAll('.thumb').forEach(t=>t.classList.remove('active')); img.classList.add('active'); };
-                    thumbBox.appendChild(img);
-                });
-            } else { thumbBox.style.display = 'none'; }
-
-            // 3. TAGS & EMERGÊNCIA
-            const tagArea = document.getElementById('tags-area');
+            // -- TAGS DE EMERGÊNCIA --
             if(d.atendeEmergencia) {
-                tagArea.innerHTML += `<span class="tag tag-emergencia"><i class='bx bxs-alarm-exclamation'></i> Atende Emergência 24h</span>`;
-            }
-            if(d.categorias) {
-                const cats = d.categorias.split(',');
-                cats.forEach(c => { if(c.trim()) tagArea.innerHTML += `<span class="tag">${c.trim()}</span>`; });
+                document.getElementById('badges-area').innerHTML += `
+                    <span class="tag-emergency"><i class='bx bxs-alarm-exclamation'></i> Atendimento de Emergência (24h)</span>
+                `;
             }
 
-            // 4. FICHA TÉCNICA (O que você mais pediu)
-            document.getElementById('txt-experiencia').innerText = d.experiencia || "N/A";
-            document.getElementById('txt-prazo').innerText = d.prazo || "N/A";
-            document.getElementById('txt-garantia').innerText = d.garantia || "N/A";
-            document.getElementById('txt-cancelamento').innerText = d.politicaCancelamento || "Flexível";
-            document.getElementById('txt-modo').innerText = d.modo_atend || "Presencial";
-
-            // 5. DIPLOMA (Lógica de exibição)
-            if(d.diplomaUrl && d.diplomaUrl.length > 5) {
-                document.getElementById('box-diploma').style.display = 'block';
-                document.getElementById('link-diploma').href = d.diplomaUrl;
-            }
-
-            // 6. AGENDA VISUAL
-            const diasSigla = {'seg':'SEG','ter':'TER','qua':'QUA','qui':'QUI','sex':'SEX','sab':'SÁB','dom':'DOM'};
-            const agendaDiv = document.getElementById('agenda-visual');
+            // -- GALERIA --
+            const fotos = (d.fotos && d.fotos.length > 0) ? d.fotos : ['https://placehold.co/800x600?text=Sem+Foto'];
+            const mainImg = document.getElementById('main-img');
+            const thumbList = document.getElementById('thumb-list');
             
-            if(d.agenda) {
-                Object.keys(diasSigla).forEach(key => {
-                    const dia = d.agenda[key];
-                    const div = document.createElement('div');
-                    
-                    if(dia && dia.ativo) {
-                        div.className = "dia-badge aberto";
-                        div.innerHTML = `<strong>${diasSigla[key]}</strong><span>${dia.inicio}<br>${dia.fim}</span>`;
-                    } else {
-                        div.className = "dia-badge fechado";
-                        div.innerHTML = `<strong>${diasSigla[key]}</strong><span>-</span>`;
-                    }
-                    agendaDiv.appendChild(div);
+            mainImg.src = fotos[0]; // Primeira foto
+            
+            if(fotos.length > 1) {
+                fotos.forEach((src, idx) => {
+                    const thumb = document.createElement('img');
+                    thumb.src = src;
+                    thumb.className = `thumb ${idx === 0 ? 'active' : ''}`;
+                    thumb.onclick = () => {
+                        mainImg.src = src;
+                        document.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+                        thumb.classList.add('active');
+                    };
+                    thumbList.appendChild(thumb);
                 });
             } else {
-                agendaDiv.innerHTML = "<span style='color:#777;'>A combinar</span>";
+                thumbList.style.display = 'none';
             }
 
-            // 7. AUTOR & PAGAMENTO
-            document.getElementById('autor-nome').innerText = d.nomeAutor || "Profissional";
-            document.getElementById('autor-local').innerText = (d.cidade && d.uf) ? `${d.cidade} - ${d.uf}` : "Brasil";
-            document.getElementById('autor-foto').src = d.fotoAutor || "https://i.pravatar.cc/150";
+            // -- DESTAQUES (Grid) --
+            document.getElementById('hl-xp').innerText = d.experiencia || "-";
+            document.getElementById('hl-time').innerText = d.prazo || "-";
+            document.getElementById('hl-warranty').innerText = d.garantia || "-";
+            document.getElementById('hl-mode').innerText = d.modo_atend || "Presencial";
 
-            const pgDiv = document.getElementById('pg-list');
-            if(d.pagamentosAceitos) {
-                d.pagamentosAceitos.forEach(p => pgDiv.innerHTML += `<span class="tag">${p}</span>`);
+            // -- DIPLOMA --
+            if(d.diplomaUrl) {
+                const area = document.getElementById('diploma-area');
+                area.style.display = 'block';
+                document.getElementById('diploma-link').href = d.diplomaUrl;
             }
 
-            // 8. BOTÃO AÇÃO
-            document.getElementById('btn-orcamento').onclick = () => {
-                window.location.href = `chat.html?uid=${d.uid}`;
+            // -- SIDEBAR (PREÇO E AUTOR) --
+            const displayPrice = (d.preco && d.preco !== 'Sob Orçamento') ? `R$ ${d.preco}` : "Sob Orçamento";
+            document.getElementById('price-display').innerText = displayPrice;
+            
+            if(d.pagamentosAceitos && d.pagamentosAceitos.length) {
+                document.getElementById('payment-display').innerText = "Aceita: " + d.pagamentosAceitos.join(', ');
+            }
+
+            document.getElementById('prov-name').innerText = d.nomeAutor || "Profissional Doke";
+            document.getElementById('prov-img').src = d.fotoAutor || "assets/Imagens/user_placeholder.png";
+            document.getElementById('link-perfil').href = `perfil-profissional.html?uid=${d.uid}`;
+            document.getElementById('policy-text').innerText = d.politicaCancelamento || "Padrão da plataforma";
+            
+            // Botão Contato
+            document.getElementById('btn-contact').onclick = () => {
+                const userLogado = localStorage.getItem('usuarioLogado');
+                if(!userLogado) {
+                    window.location.href = "login.html";
+                } else {
+                    window.location.href = `chat.html?iniciar=${d.uid}&servico=${encodeURIComponent(d.titulo)}`;
+                }
             };
+
+            // -- AGENDA VISUAL --
+            renderizarAgenda(d.agenda);
         }
 
-        carregarDetalhes();
+        function renderizarAgenda(agenda) {
+            const container = document.getElementById('agenda-container');
+            const diasMap = { 'seg':'SEG', 'ter':'TER', 'qua':'QUA', 'qui':'QUI', 'sex':'SEX', 'sab':'SÁB', 'dom':'DOM' };
+            
+            if(!agenda) {
+                container.innerHTML = "<p>Horário a combinar.</p>";
+                return;
+            }
+
+            Object.keys(diasMap).forEach(key => {
+                const info = agenda[key];
+                const div = document.createElement('div');
+                if(info && info.ativo) {
+                    div.className = "day-pill active";
+                    div.innerHTML = `<span class="day-name">${diasMap[key]}</span><span class="day-time">${info.inicio}<br>${info.fim}</span>`;
+                } else {
+                    div.className = "day-pill inactive";
+                    div.innerHTML = `<span class="day-name">${diasMap[key]}</span><span class="day-time">-</span>`;
+                }
+                container.appendChild(div);
+            });
+        }
+
+        // ===========================================
+        // BUSCA DE AVALIAÇÕES REAIS (SEM DADOS FALSOS)
+        // ===========================================
+        async function carregarAvaliacoesReais(uidProfissional) {
+            const list = document.getElementById('reviews-list');
+            const dash = document.getElementById('reviews-dashboard');
+
+            try {
+                // 1. Busca estatísticas do Usuário (Para pegar Total Contratações)
+                // Isso garante que o número "48 contratações" seja real
+                const userDoc = await getDoc(doc(db, "usuarios", uidProfissional));
+                let totalContratacoes = 0;
+                let membroDesde = "2024";
+
+                if (userDoc.exists()) {
+                    const uData = userDoc.data();
+                    // Se tiver campo stats.servicosRealizados, usa ele. Se não, usa 0 (NÃO INVENTA)
+                    totalContratacoes = (uData.stats && uData.stats.servicosRealizados) ? uData.stats.servicosRealizados : 0;
+                    if(uData.membroDesde) membroDesde = uData.membroDesde;
+                }
+                document.getElementById('meta-hired').innerText = `${totalContratacoes} contratações na Doke`;
+                document.getElementById('prov-since').innerText = `Membro desde ${membroDesde}`;
+
+
+                // 2. Busca Avaliações no Firestore
+                const q = query(
+                    collection(db, "avaliacoes"), 
+                    where("paraUid", "==", uidProfissional),
+                    orderBy("data", "desc")
+                );
+                
+                const snapshot = await getDocs(q);
+
+                list.innerHTML = ""; // Limpa texto de carregamento
+
+                // SE NÃO TIVER DADOS REAIS
+                if(snapshot.empty) {
+                    list.innerHTML = `<div style="padding:20px; background:#f9f9f9; border-radius:10px; text-align:center; color:#777;">Este profissional ainda não possui avaliações registradas na plataforma.</div>`;
+                    document.getElementById('meta-rating').innerText = "0.0";
+                    document.getElementById('meta-count').innerText = "0";
+                    document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(0);
+                    return;
+                }
+
+                // SE TIVER DADOS REAIS -> CALCULA MÉDIAS
+                let total = snapshot.size;
+                let somaGeral = 0;
+                let somaQuali = 0;
+                let somaPreco = 0;
+                let somaTime = 0;
+
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    const nota = r.media || r.nota || 0;
+                    
+                    somaGeral += nota;
+                    somaQuali += r.qualidade || nota;
+                    somaPreco += r.preco || nota;
+                    somaTime  += r.pontualidade || nota;
+
+                    // Renderiza o comentário individual
+                    const dataF = r.data ? new Date(r.data).toLocaleDateString() : '-';
+                    const htmlItem = `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="reviewer-name">${r.deNome || "Cliente Doke"}</span>
+                            <span class="review-date">${dataF}</span>
+                        </div>
+                        <div class="review-stars">${gerarEstrelasHTML(nota)}</div>
+                        <p class="review-text">"${r.comentarioGeral || r.comentario || ''}"</p>
+                    </div>`;
+                    list.insertAdjacentHTML('beforeend', htmlItem);
+                });
+
+                // Atualiza Dashboard com Médias Reais
+                const mediaFinal = (somaGeral / total).toFixed(1);
+                
+                // Topo da página
+                document.getElementById('meta-rating').innerText = mediaFinal;
+                document.getElementById('meta-count').innerText = total;
+                document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(mediaFinal);
+
+                // Dashboard Mini
+                dash.style.display = 'flex';
+                document.getElementById('dash-score').innerText = mediaFinal;
+                document.getElementById('dash-total').innerText = `${total} avaliações`;
+                document.getElementById('dash-stars').innerHTML = gerarEstrelasHTML(mediaFinal);
+
+                // Barras de Progresso
+                atualizarBarra('bar-quali', 'val-quali', (somaQuali/total).toFixed(1));
+                atualizarBarra('bar-price', 'val-price', (somaPreco/total).toFixed(1));
+                atualizarBarra('bar-time', 'val-time', (somaTime/total).toFixed(1));
+
+            } catch (e) {
+                console.error("Erro ao buscar reviews:", e);
+                list.innerHTML = "Erro ao carregar avaliações.";
+            }
+        }
+
+        // --- HELPERS ---
+        function gerarEstrelasHTML(nota) {
+            let html = "";
+            for(let i=1; i<=5; i++) {
+                // Se a nota for maior ou igual a 'i', estrela cheia. Senão vazia.
+                html += (i <= Math.round(nota)) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
+            }
+            return html;
+        }
+
+        function atualizarBarra(idBar, idVal, valor) {
+            const bar = document.getElementById(idBar);
+            const val = document.getElementById(idVal);
+            if(bar && val) {
+                const pct = (valor / 5) * 100;
+                bar.style.width = `${pct}%`;
+                val.innerText = valor;
+            }
+        }
+
+        // Inicia
+        document.addEventListener("DOMContentLoaded", initPage);
     </script>
 </body>
 </html>

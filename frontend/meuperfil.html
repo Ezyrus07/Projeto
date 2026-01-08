@@ -362,6 +362,23 @@
             .bio { text-align: center; }
             .meta-dados { justify-content: center; }
         }
+
+        /* --- CORREÇÃO FORÇADA DE TAMANHO DO REEL --- */
+.portfolio-media.reel-vertical {
+    width: 100% !important;
+    height: 480px !important; /* Altura fixa para não esticar */
+    object-fit: cover !important; /* Preenche sem distorcer */
+    display: block !important;
+    border-radius: 12px !important;
+    background: #000;
+}
+
+/* Garante que o card acompanhe o conteúdo */
+.portfolio-card {
+    height: auto !important;
+    overflow: hidden;
+    background: #000;
+}
     </style>
 </head>
 <body>
@@ -484,7 +501,7 @@
                     
                     <div id="previewPostArea" class="preview-area" style="display:none; padding-left: 60px; margin-bottom: 10px;">
                         <img id="imgPreviewPost" class="preview-img-post">
-                        <div class="btn-remove-preview" onclick="removerImagemPost()">×</div>
+                        <button class="btn-remove-preview" onclick="removerImagemPost()">×</button>
                         <p id="avisoCapaVideo" style="display:none; font-size:0.75rem; color:#666; margin-top:5px; font-weight:600;">
                             <i class='bx bx-check-circle'></i> Capa do vídeo selecionada
                         </p>
@@ -513,20 +530,16 @@
                     </div>
 
                     <div class="bottom-criar">
-                        <div class="opcoes-midia">
-                            <button class="btn-midia foto" onclick="ativarModo('foto')">
-                                <i class='bx bx-image'></i> Foto
-                            </button>
-                            
-                            <button class="btn-midia video" onclick="ativarModo('video')">
-                                <i class='bx bx-video'></i> Vídeo
-                            </button>
-
-                            <input type="file" id="file-post-upload" hidden accept="image/*" onchange="previewImagemPost(this)">
-                            <input type="hidden" id="base64PostImage">
-                            <input type="hidden" id="base64VideoFile">
-                            <input type="hidden" id="tipoPostagemAtual" value="feed">
-                        </div>
+                            <div class="opcoes-midia">
+                                <button class="btn-midia" onclick="ativarModo('foto')"><i class='bx bx-image'></i> Foto</button>
+                                <button class="btn-midia" onclick="ativarModo('video')"><i class='bx bx-video'></i> Vídeo Feed</button>
+                                <button class="btn-midia" onclick="ativarModo('video-curto')" style="color:#E1306C;"><i class='bx bxs-videos'></i> Vídeo Curto</button>
+                                
+                                <input type="file" id="file-post-upload" hidden accept="image/*" onchange="previewImagemPost(this)">
+                                <input type="hidden" id="base64PostImage">
+                                <input type="hidden" id="base64VideoFile">
+                                <input type="hidden" id="tipoPostagemAtual" value="foto">
+                            </div>
                         <button class="btn-publicar" onclick="publicarConteudoUnificado(event)">Publicar</button>
                     </div>
                 </div>
@@ -695,6 +708,49 @@
         <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
+<div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
+    <div class="btn-close-modal">×</div>
+    
+    <div class="modal-content" onclick="event.stopPropagation()"> <div class="modal-header">
+            <div class="modal-author-info">
+                <img id="modalAvatar" src="" class="modal-author-img">
+                <div>
+                    <div id="modalUsername" class="modal-author-name">Nome do Usuário</div>
+                    <span id="modalDate" style="font-size:0.75rem; color:#888;">DATA</span>
+                </div>
+            </div>
+            <button id="btnExcluirModal" onclick="deletarPostAtual()" style="border:none; background:none; cursor:pointer; color:#e74c3c; display:none;" title="Excluir">
+                <i class='bx bx-trash' style="font-size:1.4rem;"></i>
+            </button>
+        </div>
+
+        <div class="modal-media-area" id="modalMediaContainer">
+            </div>
+
+        <div class="modal-info-area">
+            
+            <div class="modal-actions-bar">
+                <i class='bx bx-heart' style="cursor:pointer;" onclick="darLikeModal()"></i>
+                <i class='bx bx-message-rounded'></i>
+                <i class='bx bx-share-alt'></i>
+            </div>
+            <span id="modalLikesCount" class="likes-count-text">0 curtidas</span>
+
+            <div id="modalCaption" class="modal-caption">
+                </div>
+
+            <h4 style="font-size:0.9rem; margin-bottom:10px; color:#666;">Comentários</h4>
+            <div id="modalCommentsList" class="modal-comments-section">
+                </div>
+
+            <div style="display:flex; gap:10px;">
+                <input type="text" id="inputComentarioModal" placeholder="Escreva um comentário..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:50px; outline:none;">
+                <button onclick="postarComentarioModal()" style="background:var(--cor0); color:white; border:none; padding:0 20px; border-radius:50px; cursor:pointer; font-weight:600;">Enviar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
@@ -726,22 +782,33 @@ let colecaoPostParaDeletar = null;
 // ==========================================
 
 window.ativarModo = function(modo) {
-    const areaVideo = document.getElementById('campos-video-extra');
-    const inputTipo = document.getElementById('tipoPostagemAtual');
-    const avisoCapa = document.getElementById('avisoCapaVideo');
-    const inputFoto = document.getElementById('file-post-upload');
+        const areaVideo = document.getElementById('campos-video-extra');
+        const inputTipo = document.getElementById('tipoPostagemAtual');
+        const inputFoto = document.getElementById('file-post-upload');
+        const nomeVid = document.getElementById('nomeVideoSelecionado');
 
-    if (modo === 'video') {
-        areaVideo.style.display = 'block';
-        inputTipo.value = 'trabalho';
-        if(avisoCapa) avisoCapa.style.display = 'block';
-    } else {
+// Reseta estados
         areaVideo.style.display = 'none';
-        inputTipo.value = 'feed';
-        if(avisoCapa) avisoCapa.style.display = 'none';
-        inputFoto.click();
+        
+        if (modo === 'video' || modo === 'video-curto') {
+            // Mostra área de upload de vídeo
+            areaVideo.style.display = 'block';
+            inputTipo.value = modo; // Define se é 'video' (feed) ou 'video-curto' (reels)
+            
+            // Muda o texto de ajuda dependendo do tipo
+            if(modo === 'video-curto') {
+                document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Vídeos Curtos)";
+                document.getElementById('inputTagVideo').placeholder = "Legenda do Reel...";
+            } else {
+                document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Feed)";
+                document.getElementById('inputTagVideo').placeholder = "Título do Serviço...";
+            }
+        } else {
+            // Modo Foto
+            inputTipo.value = 'foto';
+            inputFoto.click();
+        }
     }
-}
 
 window.previewImagemPost = function(input) {
     if (input.files && input.files[0]) {
@@ -774,255 +841,304 @@ window.processarVideoUpload = function(input) {
     }
 }
 
-window.publicarConteudoUnificado = async function(event) {
-    const btn = event.target;
+window.publicarConteudoUnificado = async function() {
     const user = auth.currentUser;
-    if (!user) { alert("Faça login."); return; }
+    if (!user) return alert("Faça login.");
 
+    const tipo = document.getElementById('tipoPostagemAtual').value; // 'foto', 'video' ou 'video-curto'
     const texto = document.getElementById('textoPost').value;
-    const imagem = document.getElementById('base64PostImage').value;
-    const tipo = document.getElementById('tipoPostagemAtual').value;
-    const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-
-    if (tipo === 'feed' && !texto && !imagem) { alert("Escreva algo."); return; }
-
-    btn.innerText = "Enviando...";
-    btn.disabled = true;
+    const img64 = document.getElementById('base64PostImage').value;
+    const vid64 = document.getElementById('base64VideoFile').value;
+    
+    // Pega dados do localStorage
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
     try {
-        if (tipo === 'trabalho') {
-            const tag = document.getElementById('inputTagVideo').value || "Trabalho";
-            const videoBase64 = document.getElementById('base64VideoFile').value;
+        let colecao = 'posts';
+        let dados = {
+            uid: user.uid,
+            autorNome: perfil.nome, autorUser: perfil.user, autorFoto: perfil.foto,
+            data: new Date().toISOString(), likes: 0,
+            texto: texto
+        };
 
-            if (!imagem) { throw new Error("Adicione a CAPA clicando no botão 'Adicionar Capa'."); }
-            if (!videoBase64) { throw new Error("Anexe o arquivo de VÍDEO."); }
-
-            await addDoc(collection(db, "trabalhos"), {
-                uid: user.uid,
-                autorNome: perfilLocal.user || perfilLocal.nome,
-                categoria: tag,
-                tag: tag.toUpperCase(),
-                descricao: texto,
-                videoUrl: videoBase64,
-                capa: imagem,
-                data: new Date().toISOString()
-            });
-            alert("Vídeo publicado na Home!");
-            window.location.reload();
-        } else {
-            await addDoc(collection(db, "posts"), {
-                uid: user.uid,
-                autorNome: perfilLocal.nome || "Usuário",
-                autorFoto: perfilLocal.foto || "https://placehold.co/150",
-                autorUser: perfilLocal.user || "@usuario",
-                texto: texto,
-                imagem: imagem,
-                data: new Date().toISOString(),
-                likes: 0
-            });
-            document.getElementById('textoPost').value = "";
-            window.removerImagemPost();
-            btn.innerText = "Publicar";
-            btn.disabled = false;
-            // Recarrega o feed sem recarregar a página
-            carregarPosts(user.uid);
+        if (tipo === 'foto') {
+            if(!img64) return alert("Selecione uma foto.");
+            dados.imagem = img64;
+        } 
+        else if (tipo === 'video') {
+            if(!vid64) return alert("Selecione um vídeo.");
+            colecao = 'trabalhos'; // Vídeo normal (horizontal)
+            dados.videoUrl = vid64;
+            dados.capa = img64; 
+        } 
+        else if (tipo === 'video-curto') {
+            if(!vid64) return alert("Selecione um vídeo para o Reel.");
+            colecao = 'reels'; // <--- AQUI VAI PARA A COLEÇÃO REELS
+            dados.videoUrl = vid64;
+            dados.descricao = texto;
+            // Reels não precisam de capa obrigatória aqui, o vídeo toca direto
         }
-    } catch (e) {
-        console.error(e);
-        alert("Erro: " + e.message);
-        btn.innerText = "Publicar";
-        btn.disabled = false;
+
+        const btn = document.querySelector('.btn-publicar'); 
+        if(btn) btn.innerText = "Enviando...";
+
+        await addDoc(collection(db, colecao), dados);
+        
+        alert("Publicado com sucesso!");
+        window.location.reload();
+
+    } catch (e) { 
+        console.error(e); 
+        alert("Erro ao publicar: " + e.message); 
     }
 }
-
 // ==========================================
 // 2. CARREGAR FEED (POSTS E VÍDEOS)
 // ==========================================
 
+// --- UPLOAD E PUBLICAÇÃO ---
+window.ativarModo = function(modo) {
+    document.getElementById('tipoPostagemAtual').value = modo;
+    const areaVideo = document.getElementById('campos-video-extra');
+    
+    if(modo === 'foto') {
+        areaVideo.style.display = 'none';
+        document.getElementById('file-post-upload').click();
+    } else {
+        areaVideo.style.display = 'block';
+        const label = (modo === 'video-curto') ? "Vídeo Curto (Reels)" : "Vídeo Horizontal (Feed)";
+        document.querySelector('#campos-video-extra small b').innerText = label;
+    }
+}
+
+window.publicarConteudoUnificado = async function() {
+    const user = auth.currentUser;
+    if (!user) return alert("Faça login.");
+
+    const tipo = document.getElementById('tipoPostagemAtual').value;
+    const texto = document.getElementById('textoPost').value;
+    const img64 = document.getElementById('base64PostImage').value;
+    const vid64 = document.getElementById('base64VideoFile').value;
+    
+    // Coletar dados do usuário do localStorage
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+
+    try {
+        let colecao = 'posts';
+        let dados = {
+            uid: user.uid,
+            autorNome: perfil.nome, autorUser: perfil.user, autorFoto: perfil.foto,
+            data: new Date().toISOString(), likes: 0,
+            texto: texto
+        };
+
+        if (tipo === 'foto') {
+            dados.imagem = img64;
+        } else if (tipo === 'video') {
+            colecao = 'trabalhos';
+            dados.videoUrl = vid64;
+            dados.capa = img64; // Opcional
+        } else if (tipo === 'video-curto') {
+            colecao = 'reels';
+            dados.videoUrl = vid64;
+            dados.descricao = texto;
+        }
+
+        await addDoc(collection(db, colecao), dados);
+        alert("Publicado com sucesso!");
+        window.location.reload();
+
+    } catch (e) { console.error(e); alert("Erro ao publicar."); }
+}
 window.carregarPosts = async function(uid) {
     const container = document.getElementById('container-feed-posts');
     if (!container) return;
 
-    container.innerHTML = `<div style="text-align:center; padding:30px;"><i class='bx bx-loader-alt bx-spin'></i> Carregando publicações...</div>`;
+    // Garante que o container esteja visível
+    container.style.display = "block";
+    container.innerHTML = "Carregando...";
 
     try {
-        // Busca Posts (Imagens/Texto)
-        const qPosts = query(collection(db, "posts"), where("uid", "==", uid));
-        
-        // Busca Trabalhos (Vídeos)
-        const qTrabalhos = query(collection(db, "trabalhos"), where("uid", "==", uid));
+        // Busca Reels e Trabalhos
+        const [snapReels, snapTrabalhos] = await Promise.all([
+            getDocs(query(collection(db, "reels"), where("uid", "==", uid))),
+            getDocs(query(collection(db, "trabalhos"), where("uid", "==", uid)))
+        ]);
 
-        // Executa as duas buscas ao mesmo tempo
-        const [snapPosts, snapTrabalhos] = await Promise.all([getDocs(qPosts), getDocs(qTrabalhos)]);
+        let lista = [];
+        snapReels.forEach(d => lista.push({...d.data(), id:d.id, tipo:'reel', col:'reels'}));
+        snapTrabalhos.forEach(d => lista.push({...d.data(), id:d.id, tipo:'video', col:'trabalhos'}));
 
-        let listaConteudo = [];
+        container.innerHTML = ""; // Limpa
 
-        // Processa Posts
-        snapPosts.forEach(doc => {
-            listaConteudo.push({ ...doc.data(), id: doc.id, tipoColecao: 'posts', timestamp: new Date(doc.data().data).getTime() });
-        });
-
-        // Processa Vídeos
-        snapTrabalhos.forEach(doc => {
-            listaConteudo.push({ ...doc.data(), id: doc.id, tipoColecao: 'trabalhos', timestamp: new Date(doc.data().data).getTime() });
-        });
-
-        // Ordena tudo por data (do mais recente para o mais antigo)
-        listaConteudo.sort((a, b) => b.timestamp - a.timestamp);
-
-        container.innerHTML = "";
-
-        if (listaConteudo.length === 0) {
-            container.innerHTML = `<div class="empty-state"><i class='bx bx-camera' style="font-size: 40px; color: #ccc;"></i><h4>Nenhuma publicação</h4><p style="color:#999;">Seus posts aparecerão aqui.</p></div>`;
+        if (lista.length === 0) {
+            container.innerHTML = "Nada postado ainda.";
             return;
         }
 
-        // Renderiza
-        listaConteudo.forEach((item) => {
-            const dataPost = new Date(item.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute:'2-digit' });
+        // Aplica estilo de grade (3 colunas)
+        container.style.cssText = "column-count: 3; column-gap: 15px;";
+
+        lista.forEach(item => {
+            let mediaHtml = "";
             
-            // Lógica de Mídia (Imagem ou Vídeo)
-            let midiaHtml = '';
-            if (item.tipoColecao === 'trabalhos' && item.videoUrl) {
-                // É VÍDEO
-                midiaHtml = `
-                <div class="midia-post">
-                    <video controls class="midia-post-video" preload="metadata">
-                        <source src="${item.videoUrl}#t=0.1" type="video/mp4">
-                        Seu navegador não suporta vídeos.
+            if (item.tipo === 'reel' || item.videoUrl) {
+                // AQUI ESTÁ A CORREÇÃO DE TAMANHO
+                // height: 450px forçado inline
+                mediaHtml = `
+                <div style="margin-bottom: 15px; break-inside: avoid; border-radius: 12px; overflow: hidden; background: #000; position: relative;">
+                    <div style="position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.6); color: white; padding: 4px; border-radius: 4px; font-size: 10px; z-index: 2;">VÍDEO</div>
+                    <video src="${item.videoUrl}" 
+                           style="width: 100%; height: 450px; object-fit: cover; display: block;" 
+                           muted loop onmouseover="this.play()" onmouseout="this.pause()">
                     </video>
+                    <button onclick="prepararDelecaoPost('${item.id}', '${item.col}')" style="position: absolute; top: 10px; left: 10px; z-index: 5; background: white; border: none; padding: 5px; border-radius: 50%; cursor: pointer;">🗑️</button>
                 </div>`;
-            } else if (item.imagem) {
-                // É IMAGEM
-                midiaHtml = `<div class="midia-post"><img src="${item.imagem}"></div>`;
             }
 
-            const html = `
-            <div class="post-feed-card" id="card-${item.id}">
-                <div class="header-post">
-                    <div class="user-post">
-                        <img src="${item.autorFoto || 'https://placehold.co/150'}" alt="Avatar">
-                        <div>
-                            <h4>${item.autorUser || item.autorNome}</h4>
-                            <span>${dataPost} • ${item.tipoColecao === 'trabalhos' ? 'Vídeo' : 'Post'}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="post-options-container">
-                        <button class="btn-post-options" onclick="toggleOpcoesPost('${item.id}')">
-                            <i class='bx bx-dots-horizontal-rounded'></i>
-                        </button>
-                        <div id="dropdown-${item.id}" class="dropdown-post-options">
-                            <button onclick="editarDescricaoPost('${item.id}', '${item.tipoColecao}')">
-                                <i class='bx bx-edit'></i> Editar Descrição
-                            </button>
-                            <button class="btn-delete-post" onclick="prepararDelecaoPost('${item.id}', '${item.tipoColecao}')">
-                                <i class='bx bx-trash'></i> Excluir
-                            </button>
-                        </div>
-                    </div>
-                </div>
-                
-                <p class="legenda-post" id="legenda-${item.id}">${item.texto || item.descricao || ''}</p>
-                ${midiaHtml}
-                
-                <div class="stats-post">
-                    <div class="action-post"><i class='bx bx-heart'></i> ${item.likes || 0}</div>
-                    <div class="action-post"><i class='bx bx-comment'></i> Comentar</div>
-                </div>
-            </div>`;
-            
-            container.insertAdjacentHTML('beforeend', html);
+            container.insertAdjacentHTML('beforeend', mediaHtml);
         });
 
     } catch (e) {
-        console.error("Erro ao carregar feed unificado:", e);
-        container.innerHTML = `<p style="color:red; text-align:center;">Erro ao carregar publicações.</p>`;
+        console.error(e);
+        container.innerHTML = "Erro ao carregar.";
     }
 }
+// --- LÓGICA DO MODAL (COM BOTÃO DE EXCLUIR) ---
+let currentPost = null;
 
+window.abrirModalPost = async function(id, colecao) {
+    const modal = document.getElementById('modalPostDetalhe');
+    modal.style.display = 'flex';
+    
+    // Mostra botão de excluir no MEU PERFIL
+    document.getElementById('btnExcluirModal').style.display = 'block';
+    
+    // Busca dados
+    const docSnap = await getDoc(doc(db, colecao, id));
+    if(!docSnap.exists()) return;
+    const data = docSnap.data();
+    
+    currentPost = { id, colecao }; // Salva para deletar se precisar
+
+    // Preenche Mídia
+    const mediaBox = document.getElementById('modalMediaContainer');
+    if((data.videoUrl)) {
+        mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="width:100%; height:100%;"></video>`;
+    } else {
+        mediaBox.innerHTML = `<img src="${data.imagem}" style="width:100%; height:100%; object-fit:contain;">`;
+    }
+
+    // Preenche Info
+    document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
+    document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome;
+    document.getElementById('modalLikesCount').innerText = `${data.likes || 0} curtidas`;
+    
+    // Descrição
+    const list = document.getElementById('modalCommentsList');
+    list.innerHTML = `
+        <div style="margin-bottom:15px; display:flex; gap:10px;">
+            <img src="${data.autorFoto}" style="width:30px; height:30px; border-radius:50%;">
+            <div style="font-size:0.9rem;">
+                <strong>${data.autorUser}</strong> ${data.texto || data.descricao || ''}
+            </div>
+        </div>`;
+}
+
+window.fecharModalPost = function() {
+    document.getElementById('modalPostDetalhe').style.display = 'none';
+    document.getElementById('modalMediaContainer').innerHTML = ""; // Para vídeo
+}
+
+window.deletarPostAtual = async function() {
+    if(!currentPost) return;
+    if(confirm("Tem certeza que deseja excluir esta publicação?")) {
+        await deleteDoc(doc(db, currentPost.colecao, currentPost.id));
+        alert("Excluído!");
+        window.location.reload();
+    }
+}
 // ==========================================
 // 3. AÇÕES DE POSTS (EDITAR E EXCLUIR SIMPLES)
 // ==========================================
 
+// --- FUNÇÕES DE CONTROLE DO MENU E EXCLUSÃO ---
+
+// 1. Abre/Fecha o menuzinho de opções
 window.toggleOpcoesPost = function(id) {
+    // Fecha todos primeiro
     document.querySelectorAll('.dropdown-post-options').forEach(el => {
-        if(el.id !== `dropdown-${id}`) el.classList.remove('show');
+        if(el.id !== `dropdown-${id}`) el.style.display = 'none';
     });
+    
+    // Alterna o atual
     const drop = document.getElementById(`dropdown-${id}`);
-    if(drop) drop.classList.toggle('show');
+    if(drop) {
+        drop.style.display = (drop.style.display === 'block') ? 'none' : 'block';
+    }
 }
 
+// Fecha o menu se clicar fora
 window.addEventListener('click', function(e) {
-    if (!e.target.closest('.post-options-container')) {
-        document.querySelectorAll('.dropdown-post-options').forEach(el => el.classList.remove('show'));
+    if (!e.target.closest('.header-post')) {
+        document.querySelectorAll('.dropdown-post-options').forEach(el => el.style.display = 'none');
     }
 });
 
-window.editarDescricaoPost = async function(id, colecao) {
-    const pAtual = document.getElementById(`legenda-${id}`);
-    const novoTexto = prompt("Edite a descrição:", pAtual.innerText);
-    
-    if (novoTexto !== null && novoTexto !== pAtual.innerText) {
-        try {
-            const campo = colecao === 'trabalhos' ? 'descricao' : 'texto';
-            await updateDoc(doc(db, colecao, id), { [campo]: novoTexto });
-            pAtual.innerText = novoTexto;
-            alert("Descrição atualizada!");
-        } catch (e) {
-            console.error(e);
-            alert("Erro ao editar.");
-        }
-    }
-    toggleOpcoesPost(id);
-}
 
-// --- Lógica de Exclusão de POST (SEM SENHA) ---
 
-// 1. Abre modal simples
+// 2. Prepara e abre o modal
 window.prepararDelecaoPost = function(id, colecao) {
     idPostParaDeletar = id;
     colecaoPostParaDeletar = colecao;
+    // Garante que o menu feche
+    const drop = document.getElementById(`dropdown-${id}`);
+    if(drop) drop.style.display = 'none';
+    
+    // Abre o modal (certifique-se que o HTML do modalDeleteSimple existe no final do seu arquivo)
     document.getElementById('modalDeleteSimple').style.display = 'flex';
 }
 
-// 2. Fecha modal simples
+// 3. Cancela
 window.fecharModalDeleteSimple = function() {
     document.getElementById('modalDeleteSimple').style.display = 'none';
     idPostParaDeletar = null;
+    colecaoPostParaDeletar = null;
 }
 
-// 3. Executa exclusão direta
+// 4. Confirma e deleta do banco
 window.confirmarExclusaoPost = async function() {
     const btn = document.querySelector('#modalDeleteSimple .btn-save');
     const textoOriginal = btn.innerText;
     
-    if(!idPostParaDeletar) return;
+    if(!idPostParaDeletar || !colecaoPostParaDeletar) return;
 
     btn.innerText = "Excluindo...";
     btn.disabled = true;
 
     try {
+        // Deleta da coleção correta (posts, trabalhos ou reels)
         await deleteDoc(doc(db, colecaoPostParaDeletar, idPostParaDeletar));
 
-        // Remove da tela
+        // Remove visualmente
         const card = document.getElementById(`card-${idPostParaDeletar}`);
         if(card) {
             card.style.opacity = "0";
             setTimeout(() => card.remove(), 500);
         }
 
+        alert("Publicação excluída com sucesso!");
         fecharModalDeleteSimple();
 
     } catch (error) {
-        console.error("Erro ao excluir post:", error);
+        console.error("Erro ao excluir:", error);
         alert("Erro ao excluir. Tente novamente.");
     } finally {
         btn.innerText = textoOriginal;
         btn.disabled = false;
     }
 }
-
 
 // ==========================================
 // 4. ANÚNCIOS (EXCLUSÃO COM SENHA)

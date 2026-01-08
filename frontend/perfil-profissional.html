@@ -5,9 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Perfil Profissional | Doke</title>
     <link rel="stylesheet" href="style.css">
-    <script type="module" src="script.js"></script>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <style>
+        /* ======================================================
+           ESTILOS DO PERFIL
+           ====================================================== */
         body { 
             background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); 
             margin: 0; font-family: 'Segoe UI', sans-serif; 
@@ -19,7 +21,7 @@
             padding: 30px 40px 80px; box-sizing: border-box;
         }
 
-        .container-limite { width: 100%; max-width: 1600px; }
+        .container-limite { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
 
         /* HEADER */
         .card-perfil-header {
@@ -27,14 +29,14 @@
             display: flex; align-items: center; gap: 30px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 30px;
         }
-
         .foto-perfil {
             width: 160px; height: 160px; border-radius: 50%;
             object-fit: cover; border: 5px solid #fff;
             box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
-
-        /* SELO PROFISSIONAL */
+        .info-basica { flex: 1; }
+        .info-basica h1 { font-size: 2.2rem; margin: 0; color: #333; }
+        .username-badge { color: var(--cor2); font-weight: 600; font-size: 1.1rem; }
         .badge-verificado {
             background: #e0f2f1; color: var(--cor0);
             padding: 4px 12px; border-radius: 20px;
@@ -42,20 +44,13 @@
             display: inline-flex; align-items: center; gap: 5px;
             margin-bottom: 10px; border: 1px solid var(--cor0);
         }
-
-        .info-basica h1 { font-size: 2.2rem; margin: 0; color: #333; }
-        .username-badge { color: var(--cor2); font-weight: 600; font-size: 1.1rem; }
-        
-        /* STATUS SOCIAIS */
         .stats-social { display: flex; gap: 25px; margin: 15px 0; }
         .stat-box { text-align: center; }
         .stat-num { display: block; font-size: 1.3rem; font-weight: 800; color: var(--cor2); }
         .stat-label { font-size: 0.85rem; color: #777; font-weight: 600; }
-
         .acoes-perfil { display: flex; gap: 10px; margin-top: 20px; }
-        
         .btn-principal {
-            background: var(--cor-botton-verde);
+            background: var(--cor0, #008a7b);
             color: white; border: none; padding: 12px 25px;
             border-radius: 50px; font-weight: 700; cursor: pointer;
             display: flex; align-items: center; gap: 8px;
@@ -78,99 +73,96 @@
             width: 100%; height: 4px; background: var(--cor2); border-radius: 10px;
         }
 
-        /* GRIDS */
-        .grid-conteudo {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px;
+        /* --- ABA 1: SERVIÇOS (GRID LADO A LADO) --- */
+        #servicos.grid-servicos {
+            display: grid; /* Grid obrigatório aqui */
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
+            gap: 25px; 
+            width: 100%;
+        }
+        .card-servico-feed {
+            background: #fff; border-radius: 16px; border: 1px solid #e0e0e0;
+            overflow: hidden; display: flex; flex-direction: column;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: transform 0.2s;
+            height: 100%; /* Garante altura igual na linha */
+        }
+        .card-servico-feed:hover { transform: translateY(-3px); }
+        .card-header-feed { padding: 15px; display: flex; align-items: center; gap: 12px; }
+        .card-body-feed { padding: 0 15px 15px; flex: 1; display: flex; flex-direction: column; }
+        .card-title { font-size: 1.1rem; margin-bottom: 10px; }
+        .card-img-wrapper { width: 100%; height: 200px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background:#f0f0f0; }
+        .card-img-main { width: 100%; height: 100%; object-fit: cover; }
+        .card-footer-feed { padding: 15px; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
+        .btn-solicitar-card { background: #008a7b; color: white; border: none; padding: 8px 16px; border-radius: 50px; font-weight: 600; cursor: pointer; }
+
+        /* --- ABA 2: PUBLICAÇÕES (MASONRY/MOSAICO) --- */
+        #publicacoes.portfolio-masonry {
+            display: block; /* Masonry usa block */
+            column-count: 3; column-gap: 20px; width: 100%;
+        }
+        .portfolio-card {
+            break-inside: avoid; margin-bottom: 20px; border-radius: 16px;
+            position: relative; overflow: hidden; cursor: pointer;
+            background: #000; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        .portfolio-card:hover { transform: translateY(-5px); }
+        .portfolio-media { width: 100%; height: auto; display: block; object-fit: cover; }
+        
+        .portfolio-info-overlay {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            padding: 20px 15px 15px; color: white; opacity: 0; transition: 0.3s;
+        }
+        .portfolio-card:hover .portfolio-info-overlay { opacity: 1; }
+        
+        .badge-type {
+            position: absolute; top: 10px; right: 10px;
+            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+            color: white; padding: 5px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
         }
 
-        .card-item {
-            background: white; border-radius: 15px; overflow: hidden;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05); transition: 0.3s;
+        /* --- MODAL VERTICAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.85); z-index: 10000;
+            display: none; justify-content: center; align-items: flex-start;
+            padding: 40px 20px; overflow-y: auto;
         }
-        .card-item:hover { transform: translateY(-5px); }
-        .capa-item { width: 100%; height: 200px; object-fit: cover; }
-        .corpo-item { padding: 20px; }
+        .modal-content {
+            background: #fff; width: 100%; max-width: 700px;
+            border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
+            margin: auto; position: relative;
+        }
+        .modal-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
+        .modal-media-area { width: 100%; background: #000; display: flex; justify-content: center; min-height: 300px; }
+        .modal-media-area img, .modal-media-area video { width: 100%; height: auto; max-height: 80vh; object-fit: contain; }
+        .modal-info-area { padding: 20px 25px; background: #fff; }
+        .btn-close-modal { position: fixed; top: 20px; right: 30px; color: white; font-size: 3rem; cursor: pointer; z-index: 10001; }
 
         @media (max-width: 900px) {
             .perfil-main { margin-left: 0; padding: 20px; width: 100%; }
             .card-perfil-header { flex-direction: column; text-align: center; }
+            #publicacoes.portfolio-masonry { column-count: 2; }
         }
+        @media (max-width: 500px) { #publicacoes.portfolio-masonry { column-count: 1; } }
     </style>
 </head>
 <body>
 
     <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
-        <div class="item">
-            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span></a>
-        </div>
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
     </aside>
 
-
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
-
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
+    <header class="navbar-mobile">
+        <button onclick="window.history.back()" style="background:none; border:none; font-size:1.5rem;"><i class='bx bx-arrow-back'></i></button>
+        <span style="font-weight:700;">Perfil</span>
     </header>
 
     <main class="perfil-main">
@@ -193,8 +185,8 @@
                             <span class="stat-label">Seguidores</span>
                         </div>
                         <div class="stat-box">
-                            <span id="countSeguindo" class="stat-num">0</span>
-                            <span class="stat-label">Seguindo</span>
+                            <span id="countServicos" class="stat-num">0</span>
+                            <span class="stat-label">Serviços</span>
                         </div>
                         <div class="stat-box">
                             <span id="countAvaliacoes" class="stat-num">0</span>
@@ -214,284 +206,341 @@
             <div class="abas-perfil">
                 <button class="tab-btn active" onclick="abrirTab(event, 'servicos')">Serviços</button>
                 <button class="tab-btn" onclick="abrirTab(event, 'publicacoes')">Publicações</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'avaliacoes')">Avaliações</button>
                 <button class="tab-btn" onclick="abrirTab(event, 'sobre')">Sobre</button>
-                <div id="avaliacoes" class="tab-content" style="display: none;">
-    
-    <div class="review-dashboard" id="dashAvaliacoes" style="display:none;">
-        
-        <div class="dash-left">
-            <div class="big-score" id="dashNotaGeral">0.0</div>
-            <div class="big-stars" id="dashEstrelas">
-                <i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i><i class='bx bx-star'></i>
-            </div>
-            <span class="total-count" id="dashTotalReviews">0 avaliações</span>
-        </div>
-
-        <div class="dash-right">
-            <div class="criteria-row">
-                <span class="criteria-label">Pontualidade</span>
-                <div class="progress-bg"><div class="progress-fill" id="barPontualidade"></div></div>
-                <span class="criteria-value" id="valPontualidade">0.0</span>
-            </div>
-            
-            <div class="criteria-row">
-                <span class="criteria-label">Atendimento</span>
-                <div class="progress-bg"><div class="progress-fill" id="barAtendimento"></div></div>
-                <span class="criteria-value" id="valAtendimento">0.0</span>
             </div>
 
-            <div class="criteria-row">
-                <span class="criteria-label">Qualidade</span>
-                <div class="progress-bg"><div class="progress-fill" id="barQualidade"></div></div>
-                <span class="criteria-value" id="valQualidade">0.0</span>
+            <div id="servicos" class="tab-content grid-servicos" style="display:grid;">
+                </div>
+
+            <div id="publicacoes" class="tab-content portfolio-masonry" style="display:none;">
+                </div>
+
+            <div id="avaliacoes" class="tab-content" style="display:none;">
+                <div class="review-dashboard" id="dashAvaliacoes" style="display:none; gap:20px; background:#fff; padding:20px; border-radius:12px; border:1px solid #eee;">
+                    <div style="text-align:center;">
+                        <div class="big-score" id="dashNotaGeral" style="font-size:2.5rem; font-weight:800;">0.0</div>
+                        <div style="color:#f1c40f;" id="dashEstrelas"></div>
+                        <small style="color:#777;" id="dashTotalReviews">0 avaliações</small>
+                    </div>
+                </div>
+                <div id="listaAvaliacoes" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;"></div>
             </div>
 
-            <div class="criteria-row">
-                <span class="criteria-label">Custo-Ben.</span>
-                <div class="progress-bg"><div class="progress-fill" id="barPreco"></div></div>
-                <span class="criteria-value" id="valPreco">0.0</span>
-            </div>
-        </div>
-    </div>
-
-    <div id="listaAvaliacoes" style="display:flex; flex-direction:column; gap:20px;"></div>
-</div>
-            </div>
-
-            <div id="servicos" class="tab-content grid-conteudo"></div>
-            <div id="publicacoes" class="tab-content grid-conteudo" style="display:none;"></div>
-            
             <div id="sobre" class="tab-content" style="display:none;">
-                <div class="card-perfil-header" style="display:block;">
-                    <h3>Biografia Profissional</h3>
-                    <p id="profBio">Carregando informações...</p>
+                <div style="background:white; padding:30px; border-radius:16px; border:1px solid #eee;">
+                    <h3>Sobre o Profissional</h3>
+                    <p id="profBio" style="line-height:1.6; color:#555;">...</p>
+                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid #eee; color:#777; font-size:0.9rem;">
+                        <div id="profLocal"><i class='bx bx-map'></i> Localização não informada</div>
+                        <div id="profMembro"><i class='bx bx-calendar'></i> Membro desde 2024</div>
+                    </div>
                 </div>
             </div>
 
         </div>
     </main>
 
+    <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
+        <div class="btn-close-modal">×</div>
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <div style="display:flex; align-items:center; gap:12px;">
+                    <img id="modalAvatar" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
+                    <div>
+                        <div id="modalUsername" style="font-weight:700;">Usuario</div>
+                        <span id="modalDate" style="font-size:0.75rem; color:#888;">DATA</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-media-area" id="modalMediaContainer"></div>
+            <div class="modal-info-area">
+                <div style="display:flex; gap:20px; font-size:1.6rem; margin-bottom:10px;">
+                    <i class='bx bx-heart'></i> <i class='bx bx-share-alt'></i>
+                </div>
+                <span id="modalLikesCount" style="font-weight:700; display:block; margin-bottom:15px;">0 curtidas</span>
+                <div id="modalCaption" style="margin-bottom:20px; line-height:1.5; color:#444; border-bottom:1px solid #eee; padding-bottom:15px;"></div>
+                <h4 style="font-size:0.9rem; color:#666; margin-bottom:10px;">Comentários</h4>
+                <div id="modalCommentsList" style="background:#f9f9f9; padding:15px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+
 <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
     import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 
-    const db = window.db || getFirestore();
-    const auth = window.auth || getAuth();
+    const firebaseConfig = {
+        apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
+        authDomain: "doke-site.firebaseapp.com",
+        projectId: "doke-site",
+        storageBucket: "doke-site.firebasestorage.app",
+        messagingSenderId: "997098339190",
+        appId: "1:997098339190:web:a865b696278be21f069857"
+    };
 
-    // Pega o ID da URL (ex: perfil-profissional.html?uid=12345)
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
+
     const params = new URLSearchParams(window.location.search);
     const targetUid = params.get('uid');
 
-    // Inicialização
-    window.onload = function() {
+    document.addEventListener("DOMContentLoaded", () => {
         if(!targetUid) {
             alert("Perfil não encontrado.");
-            window.location.href = "index.html";
+            window.location.href = "explorar.html";
             return;
         }
-        carregarPerfilPublico();
-        carregarAvaliacoesDoProfissional(); // <--- NOVA FUNÇÃO CHAMADA AQUI
+        carregarPerfilHeader();
+        carregarServicos(targetUid); 
+        carregarFeedCompleto(targetUid); 
+        carregarAvaliacoes(targetUid);
+    });
+
+    async function carregarPerfilHeader() {
+        try {
+            const docSnap = await getDoc(doc(db, "usuarios", targetUid));
+            if (docSnap.exists()) {
+                const d = docSnap.data();
+                document.getElementById('profNome').innerHTML = `${d.nome}`;
+                document.getElementById('profUser').innerText = d.user || "@usuario";
+                document.getElementById('profFoto').src = d.foto || "https://placehold.co/150";
+                document.getElementById('profBio').innerText = d.bio || "Sem biografia.";
+                if(d.local) document.getElementById('profLocal').innerHTML = `<i class='bx bx-map'></i> ${d.local}`;
+                if(d.membroDesde) document.getElementById('profMembro').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${d.membroDesde}`;
+                if(d.stats && document.getElementById('countAvaliacoes')) document.getElementById('countAvaliacoes').innerText = d.stats.avaliacoes || 0;
+                window.dadosAutor = { nome: d.nome, foto: d.foto, user: d.user };
+            }
+        } catch (e) { console.error(e); }
     }
 
-    // 1. CARREGA DADOS DO PERFIL
-    async function carregarPerfilPublico() {
+    // CARREGA SERVIÇOS (LADO A LADO - GRID)
+    async function carregarServicos(uid) {
+        const container = document.getElementById('servicos');
+        container.className = "grid-servicos"; 
+        container.innerHTML = `<p style="grid-column:1/-1; text-align:center;">Carregando...</p>`;
+        
         try {
-            const docRef = doc(db, "usuarios", targetUid);
-            const docSnap = await getDoc(docRef);
+            const q = query(collection(db, "anuncios"), where("uid", "==", uid));
+            const snap = await getDocs(q);
+            
+            container.innerHTML = "";
+            if(document.getElementById('countServicos')) document.getElementById('countServicos').innerText = snap.size;
 
-            if (docSnap.exists()) {
-                const dados = docSnap.data();
-                
-                // Preenche Cabeçalho
-                document.getElementById('nomeDisplay').innerText = dados.nome || "Profissional";
-                document.getElementById('profissaoDisplay').innerText = dados.categoria_profissional || "Membro Doke";
-                document.getElementById('fotoDisplay').src = dados.foto || "https://i.pravatar.cc/150";
-                document.getElementById('bioDisplay').innerText = dados.bio || "Sem biografia.";
-                
-                // Localização
-                let loc = "Brasil";
-                if(dados.cidade && dados.uf) loc = `${dados.cidade}, ${dados.uf}`;
-                document.getElementById('localDisplay').innerHTML = `<i class='bx bx-map'></i> ${loc}`;
+            if(snap.empty) {
+                container.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777;">Nenhum serviço ativo.</p>`;
+                return;
+            }
 
-                // Estatísticas do Topo (Se existirem)
-                if(dados.stats) {
-                    if(document.getElementById('statNota')) document.getElementById('statNota').innerText = dados.stats.media || "New";
-                    if(document.getElementById('statTotal')) document.getElementById('statTotal').innerText = dados.stats.avaliacoes || "0";
+            snap.forEach(doc => {
+                const d = doc.data();
+                const capa = (d.fotos && d.fotos.length) ? d.fotos[0] : (d.img || 'https://placehold.co/300');
+                const preco = (d.preco && d.preco !== 'Sob Orçamento') ? `R$ ${d.preco}` : "Sob Orçamento";
+                
+                const html = `
+                <div class="card-servico-feed">
+                    <div class="card-header-feed">
+                        <img src="${window.dadosAutor?.foto || 'https://placehold.co/150'}" class="card-avatar-small" style="width:40px; height:40px; border-radius:50%;">
+                        <div><h4 style="margin:0; font-size:0.95rem;">${window.dadosAutor?.nome}</h4></div>
+                    </div>
+                    <div class="card-body-feed">
+                        <h3 class="card-title" style="font-size:1.1rem; margin:10px 0;">${d.titulo}</h3>
+                        <div class="card-img-wrapper">
+                            <img src="${capa}" class="card-img-main" onclick="window.location.href='detalhes.html?id=${doc.id}'" style="cursor:pointer;">
+                        </div>
+                    </div>
+                    <div class="card-footer-feed">
+                        <div>
+                            <span class="preco-text" style="font-size:0.8rem; color:#777;">A partir de</span><br>
+                            <span class="preco-valor" style="color:#008a7b; font-weight:800;">${preco}</span>
+                        </div>
+                        <button class="btn-solicitar-card" onclick="irParaChat()">Solicitar</button>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        } catch (e) { console.error(e); }
+    }
+
+    // CARREGA PUBLICAÇÕES (MOSAICO - MASONRY)
+    async function carregarFeedCompleto(uid) {
+        const container = document.getElementById('publicacoes');
+        container.className = "portfolio-masonry"; 
+        container.innerHTML = `<p style="text-align:center;">Carregando...</p>`;
+
+        try {
+            const [snapP, snapT, snapR] = await Promise.all([
+                getDocs(query(collection(db, "posts"), where("uid", "==", uid))),
+                getDocs(query(collection(db, "trabalhos"), where("uid", "==", uid))),
+                getDocs(query(collection(db, "reels"), where("uid", "==", uid)))
+            ]);
+            
+            let lista = [];
+            snapP.forEach(d => lista.push({...d.data(), id:d.id, col:'posts', tipo:'foto', time:new Date(d.data().data).getTime()}));
+            snapT.forEach(d => lista.push({...d.data(), id:d.id, col:'trabalhos', tipo:'video', time:new Date(d.data().data).getTime()}));
+            snapR.forEach(d => lista.push({...d.data(), id:d.id, col:'reels', tipo:'reel', time:new Date(d.data().data).getTime()}));
+
+            lista.sort((a,b) => b.time - a.time);
+
+            container.innerHTML = "";
+            if(lista.length === 0) {
+                container.innerHTML = `<p style="text-align:center; padding:40px; color:#777; width:100%;">Nenhuma publicação.</p>`;
+                return;
+            }
+
+            lista.forEach(item => {
+                let mediaHtml = "";
+                let badgeHtml = "";
+
+                if (item.tipo === 'video') {
+                    mediaHtml = `<video src="${item.videoUrl}#t=0.1" class="portfolio-media" preload="metadata"></video>`;
+                    badgeHtml = `<div class="badge-type"><i class='bx bxs-video'></i> Vídeo</div>`;
+                } else if (item.tipo === 'reel') {
+                    mediaHtml = `<video src="${item.videoUrl}#t=0.1" class="portfolio-media" preload="metadata"></video>`;
+                    badgeHtml = `<div class="badge-type" style="background:linear-gradient(45deg, #f09433, #bc1888);"><i class='bx bxs-videos'></i> Reel</div>`;
+                } else {
+                    mediaHtml = `<img src="${item.imagem}" class="portfolio-media">`;
                 }
 
-                // ATUALIZA O RESUMO NA ABA DE AVALIAÇÕES
-                atualizarResumoAvaliacoes(dados.stats);
+                const html = `
+                <div class="portfolio-card" onclick="abrirModalPost('${item.id}', '${item.col}')">
+                    ${mediaHtml}
+                    ${badgeHtml}
+                    <div class="portfolio-info-overlay">
+                        <span style="font-size:0.9rem; font-weight:600;"><i class='bx bxs-heart'></i> ${item.likes || 0}</span>
+                        <span style="font-size:0.75rem; opacity:0.8; margin-left:auto;">Ver</span>
+                    </div>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+        } catch (e) { console.error("Erro feed:", e); }
+    }
 
+    window.abrirModalPost = async function(id, colecao) {
+        const modal = document.getElementById('modalPostDetalhe');
+        modal.style.display = 'flex';
+        document.getElementById('modalMediaContainer').innerHTML = "";
+        
+        const docSnap = await getDoc(doc(db, colecao, id));
+        if(!docSnap.exists()) return;
+        const data = docSnap.data();
+
+        const mediaBox = document.getElementById('modalMediaContainer');
+        if((data.videoUrl)) {
+            mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="width:100%;"></video>`;
+        } else {
+            mediaBox.innerHTML = `<img src="${data.imagem}" style="width:100%;">`;
+        }
+
+        document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
+        document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome || "Profissional";
+        document.getElementById('modalDate').innerText = new Date(data.data).toLocaleDateString();
+        document.getElementById('modalLikesCount').innerText = `${data.likes || 0} curtidas`;
+
+        const captionDiv = document.getElementById('modalCaption');
+        if(data.texto || data.descricao) {
+            captionDiv.style.display = 'block';
+            captionDiv.innerHTML = data.texto || data.descricao;
+        } else { captionDiv.style.display = 'none'; }
+        
+        const list = document.getElementById('modalCommentsList');
+        list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Carregando comentários...</p>";
+
+        try {
+            const qComm = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
+            const snapComm = await getDocs(qComm);
+            list.innerHTML = "";
+            if(snapComm.empty) {
+                list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Sem comentários.</p>";
             } else {
-                alert("Profissional não encontrado.");
+                snapComm.forEach(c => {
+                    const cData = c.data();
+                    const html = `
+                    <div style="display:flex; gap:10px; margin-bottom:10px; font-size:0.9rem;">
+                        <img src="${cData.foto}" style="width:30px; height:30px; border-radius:50%;">
+                        <div style="background:#fff; border:1px solid #eee; padding:8px 12px; border-radius:10px; flex:1;">
+                            <strong style="display:block; font-size:0.8rem; color:#333;">${cData.user}</strong>
+                            <span style="color:#555;">${cData.texto}</span>
+                        </div>
+                    </div>`;
+                    list.insertAdjacentHTML('beforeend', html);
+                });
             }
-        } catch (e) {
-            console.error(e);
+        } catch(e) { console.error(e); }
+    }
+
+    window.fecharModalPost = function(e) {
+        if (!e || e.target.classList.contains('modal-overlay') || e.target.classList.contains('btn-close-modal')) {
+            document.getElementById('modalPostDetalhe').style.display = 'none';
+            document.getElementById('modalMediaContainer').innerHTML = "";
         }
     }
 
-    // 2. FUNÇÃO NOVA: CARREGA A LISTA DE AVALIAÇÕES
-// --- FUNÇÃO PODEROSA DE AVALIAÇÕES ---
-async function carregarAvaliacoesDetalhadas(uid) {
-    const container = document.getElementById('listaAvaliacoes'); // ou listaMinhasAvaliacoes
-    const dashboard = document.getElementById('dashAvaliacoes');
-    
-    if(!container) return;
-    
-    container.innerHTML = `<div style="text-align:center; padding:20px;"><i class='bx bx-loader-alt bx-spin'></i></div>`;
-
-    try {
-        const q = query(
-            collection(db, "avaliacoes"), 
-            where("paraUid", "==", uid),
-            orderBy("data", "desc")
-        );
-        const snapshot = await getDocs(q);
-
-        container.innerHTML = "";
-
-        if (snapshot.empty) {
-            container.innerHTML = `<p style="text-align:center; color:#777; padding:20px;">Ainda sem avaliações.</p>`;
-            if(dashboard) dashboard.style.display = 'none';
-            return;
-        }
-
-        if(dashboard) dashboard.style.display = 'grid';
-
-        // Variáveis para somar TUDO
-        let total = snapshot.size;
-        let somaGeral = 0;
-        let somaPontualidade = 0;
-        let somaAtendimento = 0;
-        let somaQualidade = 0;
-        let somaPreco = 0;
-
-        snapshot.forEach(doc => {
-            const r = doc.data();
-            
-            // Soma para as médias (com proteção caso o campo não exista antigo)
-            somaGeral += r.media || r.nota || 0;
-            somaPontualidade += r.pontualidade || r.nota || 0;
-            somaAtendimento += r.atendimento || r.nota || 0;
-            somaQualidade += r.qualidade || r.nota || 0;
-            somaPreco += r.preco || r.nota || 0;
-
-            // Renderiza o Card de Comentário (Visual simples para a lista)
-            const dataF = r.data ? new Date(r.data).toLocaleDateString() : '-';
-            const estrelasCard = gerarEstrelasHTML(r.media || r.nota);
-            
-            const htmlCard = `
-            <div class="review-card" style="background:#fff; padding:20px; border-radius:12px; border:1px solid #f0f0f0;">
-                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                    <strong>${r.deNome || "Cliente"}</strong>
-                    <span style="font-size:0.8rem; color:#999;">${dataF}</span>
-                </div>
-                <div style="color:#f1c40f; font-size:0.9rem; margin-bottom:10px;">${estrelasCard}</div>
-                <p style="color:#555; font-style:italic;">"${r.comentarioGeral || r.comentario}"</p>
-                
-                <div style="margin-top:10px; font-size:0.75rem; color:#aaa; display:flex; gap:10px;">
-                    <span><i class='bx bx-time'></i> ${r.pontualidade || '-'}</span>
-                    <span><i class='bx bx-user-voice'></i> ${r.atendimento || '-'}</span>
-                    <span><i class='bx bx-diamond'></i> ${r.qualidade || '-'}</span>
-                </div>
-            </div>`;
-            container.insertAdjacentHTML('beforeend', htmlCard);
-        });
-
-        // --- CÁLCULO E ATUALIZAÇÃO DO DASHBOARD ---
-        
-        // 1. Médias
-        const mediaGeral = (somaGeral / total).toFixed(1);
-        const mediaPont = (somaPontualidade / total).toFixed(1);
-        const mediaAtend = (somaAtendimento / total).toFixed(1);
-        const mediaQuali = (somaQualidade / total).toFixed(1);
-        const mediaPreco = (somaPreco / total).toFixed(1);
-
-        // 2. Preenche HTML
-        document.getElementById('dashNotaGeral').innerText = mediaGeral;
-        document.getElementById('dashTotalReviews').innerText = `${total} avaliações`;
-        document.getElementById('dashEstrelas').innerHTML = gerarEstrelasHTML(mediaGeral);
-
-        // 3. Atualiza Barras de Progresso e Textos
-        atualizarBarra('barPontualidade', 'valPontualidade', mediaPont);
-        atualizarBarra('barAtendimento', 'valAtendimento', mediaAtend);
-        atualizarBarra('barQualidade', 'valQualidade', mediaQuali);
-        atualizarBarra('barPreco', 'valPreco', mediaPreco);
-
-    } catch (e) {
-        console.error("Erro stats:", e);
-    }
-}
-
-// Helpers
-function atualizarBarra(idBarra, idTexto, valor) {
-    const elBar = document.getElementById(idBarra);
-    const elTxt = document.getElementById(idTexto);
-    if(elBar && elTxt) {
-        // Converte 0-5 para 0-100%
-        const pct = (valor / 5) * 100;
-        elBar.style.width = `${pct}%`;
-        
-        // Cor da barra baseada na nota
-        if(valor >= 4.5) elBar.style.backgroundColor = "#2ecc71"; // Verde excelente
-        else if(valor >= 3.5) elBar.style.backgroundColor = "#f1c40f"; // Amarelo ok
-        else elBar.style.backgroundColor = "#e74c3c"; // Vermelho ruim
-
-        elTxt.innerText = valor;
-    }
-}
-
-function gerarEstrelasHTML(nota) {
-    let html = "";
-    for(let i=1; i<=5; i++) {
-        if (i <= Math.round(nota)) html += "<i class='bx bxs-star'></i>";
-        else html += "<i class='bx bx-star'></i>";
-    }
-    return html;
-}
-
-    // 3. ATUALIZA O BLOCO DE RESUMO (Aquele 4.9 Grande)
-    function atualizarResumoAvaliacoes(stats) {
-        const media = (stats && stats.media) ? stats.media : "0.0";
-        const total = (stats && stats.avaliacoes) ? stats.avaliacoes : 0;
-
-        // Atualiza números
-        const elNotaBig = document.querySelector('.nota-grande');
-        const elTotalBig = document.querySelector('.total-reviews');
-        
-        if(elNotaBig) elNotaBig.innerText = media;
-        if(elTotalBig) elTotalBig.innerText = `Baseado em ${total} avaliações`;
-
-        // Pinta as estrelas do resumo
-        const containerStars = document.querySelector('.stars-summary');
-        if(containerStars) {
-            let html = "";
-            const notaInt = Math.round(parseFloat(media));
-            for(let i=1; i<=5; i++) {
-                html += (i <= notaInt) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
+    async function carregarAvaliacoes(uid) {
+        const container = document.getElementById('listaAvaliacoes');
+        const dash = document.getElementById('dashAvaliacoes');
+        try {
+            const q = query(collection(db, "avaliacoes"), where("paraUid", "==", uid), orderBy("data", "desc"));
+            const snap = await getDocs(q);
+            container.innerHTML = "";
+            if(snap.empty) {
+                container.innerHTML = `<p style="text-align:center; color:#777;">Sem avaliações.</p>`;
+                return;
             }
-            containerStars.innerHTML = html;
-        }
+            dash.style.display = 'flex';
+            let total = snap.size;
+            let sGeral=0;
+            snap.forEach(doc => {
+                const r = doc.data();
+                sGeral += r.media||r.nota||0;
+                const html = `<div style="background:#fff; padding:15px; border-radius:10px; border:1px solid #eee;">
+                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
+                        <strong>${r.deNome || "Cliente"}</strong>
+                        <div style="color:#f1c40f;">${gerarEstrelas(r.media||r.nota)}</div>
+                    </div>
+                    <p style="color:#555; font-style:italic; margin:0;">"${r.comentarioGeral||r.comentario}"</p>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', html);
+            });
+            const mGeral = (sGeral/total).toFixed(1);
+            document.getElementById('dashNotaGeral').innerText = mGeral;
+            document.getElementById('dashTotalReviews').innerText = total + " avaliações";
+            document.getElementById('dashEstrelas').innerHTML = gerarEstrelas(mGeral);
+        } catch (e) { console.error(e); }
     }
 
-    // Lógica das Abas
-    window.mudarTab = function(evt, tabName) {
-        document.querySelectorAll('.tab-content').forEach(c => c.style.display = 'none');
+    function gerarEstrelas(n) {
+        let h=""; for(let i=1; i<=5; i++) h += (i<=Math.round(n)) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
+        return h;
+    }
+
+    // CORREÇÃO CRÍTICA: SEPARA AS ABAS COM DISPLAY:NONE MANUAL
+    window.abrirTab = function(evt, nome) {
+        // 1. Esconde tudo
+        document.getElementById('servicos').style.display = 'none';
+        document.getElementById('publicacoes').style.display = 'none';
+        document.getElementById('avaliacoes').style.display = 'none';
+        document.getElementById('sobre').style.display = 'none';
+        
+        // 2. Remove active
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(tabName).style.display = 'block';
+
+        // 3. Mostra o alvo
+        const target = document.getElementById(nome);
+        if(nome === 'servicos') target.style.display = 'grid'; // Grid para Serviços
+        else target.style.display = 'block'; // Block para os outros
+
         evt.currentTarget.classList.add('active');
     }
 
-    // Botão Contratar / Chat
-    window.irParaChat = async function() {
-        const user = auth.currentUser;
-        if(!user) { window.location.href="login.html"; return; }
-        if(user.uid === targetUid) { alert("Este é seu próprio perfil."); return; }
+    window.irParaChat = function() {
+        const u = auth.currentUser;
+        if(!u) window.location.href="login.html";
+        else window.location.href=`chat.html?iniciar=${targetUid}`;
+    }
 
-        // Redireciona para o fluxo de pedido/chat
-        // Passa o ID do profissional para iniciar a conversa
-        window.location.href = `orcamento.html?uid=${targetUid}`;
-    };
 </script>
 </body>
 </html>
