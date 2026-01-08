@@ -1297,21 +1297,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 .tiktok-scroll-wrapper::-webkit-scrollbar { display: none; }
 
-/* O CARD */
-.tiktok-card {
-    position: relative;
-    flex: 0 0 auto;
-    width: 210px;   /* Um pouco mais largo para caber o botão */
-    height: 360px;
-    border-radius: 12px;
-    overflow: hidden;
-    background-color: #000;
-    scroll-snap-align: start;
-    cursor: pointer;
-    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
-    transition: transform 0.3s ease;
-}
-.tiktok-card:hover { transform: translateY(-5px); }
+/* O C
 
 /* Badge de Status no Topo (ex: Antes & Depois) */
 .badge-status {
@@ -1335,7 +1321,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     width: 100%; height: 100%; object-fit: cover;
     opacity: 0.95; transition: 0.3s;
 }
-.tiktok-card:hover .video-bg { opacity: 0.8; transform: scale(1.05); }
+
 
 /* Play Icon */
 .play-icon {
@@ -5532,45 +5518,8 @@ body.dark-mode {
     display: none; /* Chrome/Safari */
 }
 
-/* O Card do Reel (Formato 9:16) */
-.tiktok-card {
-    min-width: 200px;
-    height: 350px; /* Altura fixa vertical */
-    background: #000;
-    border-radius: 16px;
-    position: relative;
-    overflow: hidden;
-    cursor: pointer;
-    flex-shrink: 0;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    transition: transform 0.2s;
-    border: 1px solid rgba(255,255,255,0.1);
-}
 
-.tiktok-card:hover {
-    transform: scale(1.02);
-}
 
-/* O Vídeo de Fundo */
-.tiktok-card video.video-bg {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Garante preenchimento total */
-    display: block;
-}
-
-/* Ícone de Play Central */
-.tiktok-card .play-icon {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 40px;
-    color: white;
-    opacity: 0.8;
-    z-index: 2;
-    text-shadow: 0 2px 5px rgba(0,0,0,0.5);
-}
 
 /* Camada de Informações (Gradiente embaixo) */
 .video-ui-layer {
@@ -5672,4 +5621,136 @@ body.dark-mode {
     overflow: hidden;
     text-overflow: ellipsis;
     margin-top: 2px;
+}
+
+/* Container de Rolagem Horizontal (Mantido) */
+.tiktok-scroll-wrapper {
+    display: flex;
+    overflow-x: auto;
+    gap: 15px;
+    padding: 20px 0;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    align-items: center;
+}
+.tiktok-scroll-wrapper::-webkit-scrollbar { display: none; }
+
+/* O CARD (Estilo Novo - Igual a Foto) */
+.tiktok-card {
+    min-width: 240px; /* Um pouco mais largo para caber o botão */
+    height: 400px;    /* Altura boa para formato vertical */
+    background: #000;
+    border-radius: 12px;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    flex-shrink: 0;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    transition: transform 0.2s;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.tiktok-card:hover { transform: scale(1.02); }
+
+/* VÍDEO DE FUNDO */
+.tiktok-card video.video-bg {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}
+
+/* BADGE "ONLINE" (Canto Superior Esquerdo) */
+.card-badge-online {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: #fff;
+    color: #0b7768; /* Verde escuro do seu tema */
+    font-size: 0.7rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 4px;
+    z-index: 2;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+/* CAMADA DE INFORMAÇÕES (Fundo Gradiente Embaixo) */
+.info-container {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    /* Gradiente mais forte para leitura */
+    background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.6) 70%, transparent 100%);
+    padding: 20px 15px;
+    box-sizing: border-box;
+    z-index: 3;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start; /* Alinha tudo à esquerda */
+    gap: 6px;
+}
+
+/* NOME DO USUÁRIO (@gabrielantonio) */
+.user-handle {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 800;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    margin: 0;
+}
+
+/* TAGS (Verde escuro atrás) */
+.tags-row {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+.tag-pill {
+    background: #0b6357; /* Fundo verde escuro */
+    color: #fff;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+/* DESCRIÇÃO PEQUENA */
+.desc-mini {
+    color: #ddd;
+    font-size: 0.85rem;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+    margin-bottom: 10px;
+}
+
+/* BOTÃO BRANCO "SOLICITAR ORÇAMENTO" */
+.btn-orcamento-card {
+    background: #fff;
+    color: #0b7768; /* Texto Verde */
+    border: none;
+    width: 100%;
+    padding: 10px 0;
+    font-size: 0.85rem;
+    font-weight: 800;
+    border-radius: 6px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: 0.2s;
+    margin-top: 5px;
+}
+
+.btn-orcamento-card:hover {
+    background: #f0f0f0;
+    transform: translateY(-2px);
 }

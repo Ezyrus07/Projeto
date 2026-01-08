@@ -506,28 +506,32 @@
                             <i class='bx bx-check-circle'></i> Capa do vídeo selecionada
                         </p>
                     </div>
+            <div id="campos-video-extra" style="display:none; padding-left: 60px; margin-bottom: 15px; animation: fadeIn 0.3s;">
+                
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+            <input type="text" id="inputTagVideo" placeholder="Tag (Ex: Antes & Depois)" style="border:1px solid #ddd; padding:8px; border-radius:6px; width:40%; font-size:0.9rem;">
+            
+<select id="selectAnuncioVinculado" style="border:1px solid #ddd; padding:8px; border-radius:6px; width:60%;">
+    <option value="" selected disabled>Selecione um Serviço (Obrigatório)</option>
+</select>
+        </div>
+                
+                <div style="display:flex; gap:10px; margin-bottom:10px;">
+                    <button class="btn-midia" onclick="document.getElementById('file-post-upload').click()" style="border:1px solid #ddd; justify-content:center;">
+                        <i class='bx bx-image-add'></i> Adicionar Capa
+                    </button>
 
-                    <div id="campos-video-extra" style="display:none; padding-left: 60px; margin-bottom: 15px; animation: fadeIn 0.3s;">
-                        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                            <input type="text" id="inputTagVideo" placeholder="Tag (Ex: Antes & Depois)" style="border:1px solid #ddd; padding:8px; border-radius:6px; width:40%; font-size:0.9rem;">
-                        </div>
-                        
-                        <div style="display:flex; gap:10px; margin-bottom:10px;">
-                            <button class="btn-midia" onclick="document.getElementById('file-post-upload').click()" style="border:1px solid #ddd; justify-content:center;">
-                                <i class='bx bx-image-add'></i> Adicionar Capa
-                            </button>
-
-                            <div class="custom-file-wrapper" style="flex:1;">
-                                <label for="inputVideoFile" class="custom-file-label" style="width:100%; justify-content:center; border:1px dashed #2a5f90; color:#2a5f90; font-size:0.9rem; background: #fff;">
-                                    <i class='bx bx-upload'></i> Anexar Arquivo de Vídeo
-                                </label>
-                                <input type="file" id="inputVideoFile" accept="video/*" style="display:none;" onchange="processarVideoUpload(this)">
-                            </div>
-                        </div>
-
-                        <small id="nomeVideoSelecionado" style="display:block; color:#444; font-weight:600; margin-bottom:5px; padding-left:5px;"></small>
-                        <small style="color:var(--cor0, #0b7768); font-weight:500;">Será publicado na seção <b>Trabalhos Realizados</b></small>
+                    <div class="custom-file-wrapper" style="flex:1;">
+                        <label for="inputVideoFile" class="custom-file-label" style="width:100%; justify-content:center; border:1px dashed #2a5f90; color:#2a5f90; font-size:0.9rem; background: #fff;">
+                            <i class='bx bx-upload'></i> Anexar Arquivo de Vídeo
+                        </label>
+                        <input type="file" id="inputVideoFile" accept="video/*" style="display:none;" onchange="processarVideoUpload(this)">
                     </div>
+                </div>
+
+                <small id="nomeVideoSelecionado" style="display:block; color:#444; font-weight:600; margin-bottom:5px; padding-left:5px;"></small>
+                <small style="color:var(--cor0, #0b7768); font-weight:500;">Será publicado na seção <b>Trabalhos Realizados</b></small>
+            </div>
 
                     <div class="bottom-criar">
                             <div class="opcoes-midia">
@@ -897,7 +901,6 @@ window.publicarConteudoUnificado = async function() {
 // 2. CARREGAR FEED (POSTS E VÍDEOS)
 // ==========================================
 
-// --- UPLOAD E PUBLICAÇÃO ---
 window.ativarModo = function(modo) {
     document.getElementById('tipoPostagemAtual').value = modo;
     const areaVideo = document.getElementById('campos-video-extra');
@@ -909,47 +912,89 @@ window.ativarModo = function(modo) {
         areaVideo.style.display = 'block';
         const label = (modo === 'video-curto') ? "Vídeo Curto (Reels)" : "Vídeo Horizontal (Feed)";
         document.querySelector('#campos-video-extra small b').innerText = label;
+
+        // SE FOR VÍDEO CURTO, CARREGA OS SERVIÇOS NA HORA
+        if(modo === 'video-curto') {
+            window.carregarMeusAnunciosSelect();
+        }
     }
 }
 
-window.publicarConteudoUnificado = async function() {
+window.publicarConteudoUnificado = async function(event) {
+    const btn = event.target || document.querySelector('.btn-publicar');
     const user = auth.currentUser;
-    if (!user) return alert("Faça login.");
+    if (!user) return alert("Faça login para publicar.");
 
-    const tipo = document.getElementById('tipoPostagemAtual').value;
+    const tipo = document.getElementById('tipoPostagemAtual').value; 
     const texto = document.getElementById('textoPost').value;
     const img64 = document.getElementById('base64PostImage').value;
     const vid64 = document.getElementById('base64VideoFile').value;
-    
-    // Coletar dados do usuário do localStorage
     const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
     try {
         let colecao = 'posts';
         let dados = {
             uid: user.uid,
-            autorNome: perfil.nome, autorUser: perfil.user, autorFoto: perfil.foto,
-            data: new Date().toISOString(), likes: 0,
+            autorNome: perfil.nome || "Usuário", 
+            autorUser: perfil.user || "@usuario", 
+            autorFoto: perfil.foto || "https://placehold.co/150",
+            data: new Date().toISOString(), 
+            likes: 0,
             texto: texto
         };
 
         if (tipo === 'foto') {
+            if(!img64) return alert("Selecione uma foto.");
             dados.imagem = img64;
-        } else if (tipo === 'video') {
+        } 
+        else if (tipo === 'video') {
+            if(!vid64) return alert("Selecione um vídeo.");
             colecao = 'trabalhos';
             dados.videoUrl = vid64;
-            dados.capa = img64; // Opcional
-        } else if (tipo === 'video-curto') {
+            dados.capa = img64; 
+            dados.tag = (document.getElementById('inputTagVideo').value || "Trabalho").toUpperCase();
+        } 
+        else if (tipo === 'video-curto') {
+            if(!vid64) return alert("Selecione um vídeo para o Reel.");
+            
+            // --- CAPTURA DO VÍNCULO COM O SERVIÇO ---
+            const selectAnuncio = document.getElementById('selectAnuncioVinculado');
+            if (!selectAnuncio || !selectAnuncio.value) {
+                alert("⚠️ É OBRIGATÓRIO selecionar um serviço para vincular ao Reel.");
+                return; 
+            }
+
+            const optionSelecionada = selectAnuncio.options[selectAnuncio.selectedIndex];
+            
             colecao = 'reels';
             dados.videoUrl = vid64;
+            dados.capa = img64; 
             dados.descricao = texto;
+            
+            // Dados para o Card estilo TikTok no index.html
+            dados.anuncioId = selectAnuncio.value; // Link do botão de orçamento
+            dados.categoria = optionSelecionada.getAttribute('data-cat') || "Geral"; // Tag Verde
+            dados.tag = (document.getElementById('inputTagVideo').value || "NOVO").toUpperCase(); // Badge Branca (Topo)
+        }
+
+        if(btn) {
+            btn.innerText = "Publicando...";
+            btn.disabled = true;
         }
 
         await addDoc(collection(db, colecao), dados);
+        
         alert("Publicado com sucesso!");
         window.location.reload();
 
-    } catch (e) { console.error(e); alert("Erro ao publicar."); }
+    } catch (e) { 
+        console.error("Erro ao publicar:", e); 
+        alert("Erro ao publicar conteúdo."); 
+        if(btn) {
+            btn.innerText = "Publicar";
+            btn.disabled = false;
+        }
+    }
 }
 window.carregarPosts = async function(uid) {
     const container = document.getElementById('container-feed-posts');
@@ -1530,6 +1575,42 @@ window.openTab = function(evt, tabName) {
     
     document.getElementById(tabName).style.display = 'block';
     evt.currentTarget.classList.add('active');
+}
+
+// Função para carregar os serviços do usuário logado no dropdown
+window.carregarMeusAnunciosSelect = async function() {
+    const select = document.getElementById('selectAnuncioVinculado');
+    const user = auth.currentUser;
+    
+    if (!select || !user) return;
+
+    // Mostra que está carregando
+    select.innerHTML = '<option selected disabled>↻ Buscando seus serviços...</option>';
+
+    try {
+        // Busca na coleção 'anuncios' apenas os que pertencem ao seu UID
+        const q = query(collection(db, "anuncios"), where("uid", "==", user.uid));
+        const snapshot = await getDocs(q);
+
+        select.innerHTML = '<option value="" selected disabled>Selecione um Serviço (Obrigatório)</option>';
+
+        if (snapshot.empty) {
+            select.innerHTML = '<option value="" disabled>❌ Nenhum anúncio encontrado.</option>';
+            return;
+        }
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const option = document.createElement('option');
+            option.value = doc.id; // Aqui salvamos o ID único do serviço
+            option.innerText = data.titulo; // Nome que aparece para você escolher
+            option.setAttribute('data-cat', data.categoria || "Geral"); // Salva a categoria para a tag verde
+            select.appendChild(option);
+        });
+    } catch (e) {
+        console.error("Erro ao carregar anúncios:", e);
+        select.innerHTML = '<option disabled>Erro ao carregar serviços.</option>';
+    }
 }
 </script>
 </body>

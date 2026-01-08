@@ -142,31 +142,6 @@ window.publicarAnuncio = async function(event) {
 }
 
 
-// ============================================================
-// 3. SISTEMA UNIFICADO DE UPLOAD (VÍDEO E FOTO)
-// ============================================================
-
-window.ativarModo = function(modo) {
-    const areaVideo = document.getElementById('campos-video-extra');
-    const inputTipo = document.getElementById('tipoPostagemAtual');
-    const avisoCapa = document.getElementById('avisoCapaVideo');
-    const inputFoto = document.getElementById('file-post-upload');
-
-    if (modo === 'video') {
-        areaVideo.style.display = 'block';
-        inputTipo.value = 'trabalho';
-        if(avisoCapa) avisoCapa.style.display = 'block';
-        window.arquivoFotoSelecionado = null;
-        window.arquivoVideoSelecionado = null;
-    } else {
-        areaVideo.style.display = 'none';
-        inputTipo.value = 'feed';
-        if(avisoCapa) avisoCapa.style.display = 'none';
-        window.arquivoFotoSelecionado = null;
-        window.arquivoVideoSelecionado = null;
-        inputFoto.click(); 
-    }
-}
 
 window.previewImagemPost = function(input) {
     if (input.files && input.files[0]) {
@@ -204,80 +179,80 @@ window.removerImagemPost = function() {
 }
 
 window.publicarConteudoUnificado = async function(event) {
-    const btn = event.target;
+    const btn = event.target || document.querySelector('.btn-publicar');
     const user = auth.currentUser;
-    if (!user) { alert("Faça login para publicar."); return; }
+    if (!user) return alert("Faça login.");
 
-    const texto = document.getElementById('textoPost').value;
     const tipo = document.getElementById('tipoPostagemAtual').value;
+    const texto = document.getElementById('textoPost').value;
     const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
-    if (tipo === 'feed' && !texto && !window.arquivoFotoSelecionado) { alert("Escreva algo ou adicione uma foto."); return; }
-    if (tipo === 'trabalho') {
-        if (!window.arquivoFotoSelecionado) { alert("Adicione uma CAPA para o vídeo."); return; }
-        if (!window.arquivoVideoSelecionado) { alert("Anexe o arquivo de VÍDEO."); return; }
+    // Validação de Vínculo Obrigatório para Reels
+    if (tipo === 'video-curto') {
+        const selectAnuncio = document.getElementById('selectAnuncioVinculado');
+        if (!selectAnuncio || !selectAnuncio.value) {
+            alert("⚠️ É OBRIGATÓRIO vincular este vídeo a um dos seus serviços.");
+            return;
+        }
     }
 
-    btn.innerText = "Enviando Mídia...";
+    btn.innerText = "Publicando...";
     btn.disabled = true;
 
     try {
         let urlImagem = "";
         let urlVideo = "";
 
+        // Lógica de Upload (Storage)
         if (window.arquivoFotoSelecionado) {
-            const refImg = ref(storage, `posts/${user.uid}/img_${Date.now()}_${window.arquivoFotoSelecionado.name}`);
+            const refImg = ref(storage, `posts/${user.uid}/img_${Date.now()}`);
             const snapImg = await uploadBytes(refImg, window.arquivoFotoSelecionado);
             urlImagem = await getDownloadURL(snapImg.ref);
         }
 
-        if (tipo === 'trabalho' && window.arquivoVideoSelecionado) {
-            btn.innerText = "Enviando Vídeo...";
-            const refVid = ref(storage, `trabalhos/${user.uid}/vid_${Date.now()}_${window.arquivoVideoSelecionado.name}`);
+        if (window.arquivoVideoSelecionado) {
+            const folder = tipo === 'video-curto' ? 'reels' : 'trabalhos';
+            const refVid = ref(storage, `${folder}/${user.uid}/vid_${Date.now()}`);
             const snapVid = await uploadBytes(refVid, window.arquivoVideoSelecionado);
             urlVideo = await getDownloadURL(snapVid.ref);
         }
 
-        btn.innerText = "Salvando...";
+        let colecao = tipo === 'video-curto' ? 'reels' : (tipo === 'video' ? 'trabalhos' : 'posts');
+        
+        let dados = {
+            uid: user.uid,
+            autorNome: perfilLocal.nome || "Usuário",
+            autorUser: perfilLocal.user || "@usuario",
+            autorFoto: perfilLocal.foto || "https://placehold.co/150",
+            data: new Date().toISOString(),
+            likes: 0
+        };
 
-        if (tipo === 'trabalho') {
-            const tag = document.getElementById('inputTagVideo').value || "Trabalho";
-            await addDoc(collection(db, "trabalhos"), {
-                uid: user.uid,
-                autorNome: perfilLocal.user || perfilLocal.nome,
-                categoria: tag,
-                tag: tag.toUpperCase(),
-                descricao: texto,
-                videoUrl: urlVideo,
-                capa: urlImagem,
-                data: new Date().toISOString()
-            });
-            alert("Vídeo publicado com sucesso!");
-            window.location.reload(); 
+        if (tipo === 'video-curto') {
+            const selectAnuncio = document.getElementById('selectAnuncioVinculado');
+            const opt = selectAnuncio.options[selectAnuncio.selectedIndex];
+            dados.videoUrl = urlVideo;
+            dados.capa = urlImagem;
+            dados.descricao = texto;
+            dados.anuncioId = selectAnuncio.value; // ID DO SERVIÇO PARA O BOTÃO
+            dados.categoria = opt.getAttribute('data-cat') || "Geral"; // TAG VERDE
+            dados.tag = (document.getElementById('inputTagVideo').value || "NOVO").toUpperCase(); // TAG TOPO
         } else {
-            await addDoc(collection(db, "posts"), {
-                uid: user.uid,
-                autorNome: perfilLocal.nome || "Usuário",
-                autorFoto: perfilLocal.foto || "https://placehold.co/150",
-                autorUser: perfilLocal.user || "@usuario",
-                texto: texto,
-                imagem: urlImagem,
-                data: new Date().toISOString(),
-                likes: 0
-            });
-            document.getElementById('textoPost').value = "";
-            window.removerImagemPost();
-            btn.innerText = "Publicar";
-            btn.disabled = false;
+            dados.texto = texto;
+            dados.imagem = urlImagem;
+            dados.videoUrl = urlVideo;
         }
+
+        await addDoc(collection(db, colecao), dados);
+        alert("Publicado com sucesso!");
+        window.location.reload();
+
     } catch (e) {
-        console.error("Erro no upload:", e);
-        alert("Erro ao publicar: " + e.message);
+        console.error(e);
         btn.innerText = "Publicar";
         btn.disabled = false;
     }
 }
-
 
 // ============================================================
 // 4. GALERIA LIGHTBOX (COM MINIATURAS E ZOOM)
@@ -3920,68 +3895,93 @@ window.carregarReelsHome = async function() {
     const container = document.getElementById('galeria-dinamica');
     if (!container) return;
 
-    container.innerHTML = '<div style="padding:20px; color:white; text-align:center;"><i class="bx bx-loader-alt bx-spin"></i> Carregando destaques...</div>';
-
     try {
-        const q = query(collection(window.db, "reels"), orderBy("data", "desc"), limit(10));
+        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
-        
         container.innerHTML = ""; 
 
+        if (snapshot.empty) return;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            const id = doc.id;
+            const capaUrl = data.capa || "https://placehold.co/240x400?text=Sem+Capa";
+            const linkBotao = `orcamento.html?uid=${data.uid}&aid=${data.anuncioId}`;
+
+            const dadosModal = JSON.stringify({
+                id: id, video: data.videoUrl, user: data.autorUser, desc: data.descricao,
+                uid: data.uid, autorFoto: data.autorFoto, likes: data.likes || 0
+            }).replace(/"/g, '&quot;');
+
+            const html = `
+            <div class="tiktok-card" onclick="abrirPlayerTikTok(${dadosModal})">
+                <div class="card-badge-online">${data.tag || 'NOVO'}</div>
+                <video src="${data.videoUrl}" poster="${capaUrl}" class="video-bg" muted loop playsinline></video>
+                <div class="info-container">
+                    <h3 class="user-handle">${data.autorUser}</h3>
+                    <div class="tags-row"><span class="tag-pill">${data.categoria}</span></div>
+                    <p class="desc-mini">${data.descricao}</p>
+                    <button class="btn-orcamento-card" onclick="event.stopPropagation(); window.location.href='${linkBotao}'">
+                        SOLICITAR ORÇAMENTO
+                    </button>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    } catch (e) { console.error(e); }
+}
+
+
+
+window.ativarModo = function(modo) {
+    const areaVideo = document.getElementById('campos-video-extra');
+    const inputTipo = document.getElementById('tipoPostagemAtual');
+    const inputFoto = document.getElementById('file-post-upload');
+
+    areaVideo.style.display = 'none'; // Reseta
+    
+    if (modo === 'video' || modo === 'video-curto') {
+        areaVideo.style.display = 'block';
+        inputTipo.value = modo; 
+        
+        if(modo === 'video-curto') {
+            document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Vídeos Curtos)";
+            document.getElementById('inputTagVideo').placeholder = "Legenda do Reel...";
+            window.carregarMeusAnunciosSelect(); // CARREGA SERVIÇOS
+        } else {
+            document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Feed)";
+            document.getElementById('inputTagVideo').placeholder = "Título do Serviço...";
+        }
+    } else {
+        inputTipo.value = 'foto';
+        inputFoto.click();
+    }
+}
+
+// --- NOVO: Função para buscar seus serviços e preencher o select ---
+window.carregarMeusAnunciosSelect = async function() {
+    const select = document.getElementById('selectAnuncioVinculado');
+    if (!select || !auth.currentUser) return;
+
+    select.innerHTML = '<option selected disabled>↻ Buscando seus serviços...</option>';
+
+    try {
+        const q = query(collection(db, "anuncios"), where("uid", "==", auth.currentUser.uid));
+        const snapshot = await getDocs(q);
+        select.innerHTML = '<option value="" selected disabled>Selecione um Serviço (Obrigatório)</option>';
+
         if (snapshot.empty) {
-            container.innerHTML = '<div style="padding:20px; color:white; text-align:center;">Nenhum vídeo publicado ainda.</div>';
+            select.innerHTML = '<option disabled>❌ Nenhum anúncio encontrado.</option>';
             return;
         }
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            const id = doc.id;
-            
-            const videoUrl = data.videoUrl || "";
-            // AQUI ESTÁ A CORREÇÃO DA CAPA:
-            // Usamos data.capa se existir, senão usa uma imagem transparente ou placeholder
-            const capaUrl = data.capa || ""; 
-
-            const nomeAutor = data.autorNome || 'Profissional';
-            const fotoAutor = data.autorFoto || "https://placehold.co/150"; 
-            const uidAutor = data.uid || "";
-            const descricao = data.descricao || "";
-
-            const dadosModal = JSON.stringify({
-                id: id, video: videoUrl, user: nomeAutor, desc: descricao,
-                uid: uidAutor, autorFoto: fotoAutor, likes: data.likes || 0
-            }).replace(/"/g, '&quot;');
-
-            // A MÁGICA ESTÁ NO ATRIBUTO 'poster="${capaUrl}"' DENTRO DA TAG VIDEO ABAIXO:
-            const html = `
-            <div class="tiktok-card" onclick="abrirPlayerTikTok(${dadosModal})">
-                
-                <video src="${videoUrl}" 
-                       poster="${capaUrl}" 
-                       class="video-bg" 
-                       muted loop 
-                       playsinline
-                       onmouseover="this.play()" 
-                       onmouseout="this.pause(); this.load();"> </video>
-                
-                <div class="play-icon"><i class='bx bx-play'></i></div>
-                
-                <div class="video-ui-layer">
-                    <div class="provider-info">
-                        <img src="${fotoAutor}" alt="User">
-                        <div class="info-col">
-                            <span class="provider-name">${nomeAutor}</span>
-                            <span class="video-desc-mini">${descricao}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>`;
-            
-            container.insertAdjacentHTML('beforeend', html);
+            const option = document.createElement('option');
+            option.value = doc.id;
+            option.innerText = data.titulo;
+            option.setAttribute('data-cat', data.categoria || "Geral");
+            select.appendChild(option);
         });
-
-    } catch (e) { 
-        console.error("Erro reels:", e);
-        container.innerHTML = '<div style="padding:20px; color:white;">Erro ao carregar.</div>';
-    }
+    } catch (e) { console.error(e); }
 }
