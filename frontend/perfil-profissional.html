@@ -6,150 +6,190 @@
     <title>Perfil Profissional | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <script type="module" src="script.js"></script>
     <style>
-        /* ======================================================
-           ESTILOS DO PERFIL
-           ====================================================== */
+        /* ==========================================================================
+           ESTILOS PADRONIZADOS (BASEADOS NO MEUPERFIL.HTML)
+           ========================================================================== */
         body { 
             background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); 
-            margin: 0; font-family: 'Segoe UI', sans-serif; 
+            margin: 0; 
+            font-family: 'Segoe UI', sans-serif; 
         }
 
+        /* LAYOUT PRINCIPAL */
         .perfil-main {
-            margin-left: 270px; width: calc(100% - 270px);
-            display: flex; justify-content: center;
-            padding: 30px 40px 80px; box-sizing: border-box;
+            margin-left: 270px;
+            width: calc(100% - 270px);
+            display: flex;
+            justify-content: center;
+            padding: 30px 40px; 
+            padding-bottom: 80px;
+            box-sizing: border-box;
         }
 
-        .container-limite { width: 100%; max-width: 1200px; display: flex; flex-direction: column; gap: 20px; }
+        .container-limite {
+            width: 100%;
+            max-width: 1600px;  
+            display: flex;
+            flex-direction: column;
+            gap: 25px; 
+        }
 
-        /* HEADER */
-        .card-perfil-header {
-            background: white; border-radius: 20px; padding: 40px;
-            display: flex; align-items: center; gap: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1); margin-bottom: 30px;
+        /* HEADER DO PERFIL */
+        .perfil-header-card { 
+            background: #fff; 
+            border-radius: 20px; 
+            box-shadow: 0 10px 30px rgba(42, 95, 144, 0.2); 
+            overflow: visible; 
+            position: relative;
+            margin-bottom: 10px;
+            border: none;
         }
-        .foto-perfil {
-            width: 160px; height: 160px; border-radius: 50%;
-            object-fit: cover; border: 5px solid #fff;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+
+        .capa-perfil { 
+            height: 220px; 
+            background: linear-gradient(135deg, var(--cor2), #1a3c5e); 
+            border-radius: 20px 20px 0 0;
+            position: relative;
         }
-        .info-basica { flex: 1; }
-        .info-basica h1 { font-size: 2.2rem; margin: 0; color: #333; }
-        .username-badge { color: var(--cor2); font-weight: 600; font-size: 1.1rem; }
-        .badge-verificado {
-            background: #e0f2f1; color: var(--cor0);
-            padding: 4px 12px; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 700;
-            display: inline-flex; align-items: center; gap: 5px;
-            margin-bottom: 10px; border: 1px solid var(--cor0);
+        
+        .dados-perfil { 
+            padding: 0 30px 30px 30px; 
+            display: flex; flex-wrap: wrap; align-items: flex-start; 
+            gap: 30px; position: relative;
         }
-        .stats-social { display: flex; gap: 25px; margin: 15px 0; }
-        .stat-box { text-align: center; }
-        .stat-num { display: block; font-size: 1.3rem; font-weight: 800; color: var(--cor2); }
-        .stat-label { font-size: 0.85rem; color: #777; font-weight: 600; }
-        .acoes-perfil { display: flex; gap: 10px; margin-top: 20px; }
-        .btn-principal {
-            background: var(--cor0, #008a7b);
-            color: white; border: none; padding: 12px 25px;
-            border-radius: 50px; font-weight: 700; cursor: pointer;
-            display: flex; align-items: center; gap: 8px;
+        
+        .avatar-container { 
+            position: relative; margin-top: -70px; 
+            flex-shrink: 0; 
         }
-        .btn-seguir {
-            background: #fff; color: var(--cor2); border: 2px solid var(--cor2);
-            padding: 10px 25px; border-radius: 50px; font-weight: 700; cursor: pointer;
+        .avatar-container img { 
+            width: 150px; height: 150px; border-radius: 50%; 
+            border: 5px solid #fff; object-fit: cover; background: #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
+        .status-online { 
+            width: 24px; height: 24px; background: #2ecc71; 
+            border: 3px solid #fff; border-radius: 50%; 
+            position: absolute; bottom: 15px; right: 10px; display: none; 
+        }
+
+        .info-texto { flex: 1; padding-top: 15px; min-width: 250px; }
+        .nome-row h1 { 
+            font-size: 1.8rem; color: #333; margin: 0; 
+            display: flex; align-items: center; gap: 8px; 
+        }
+        .username-badge { display: block; color: #666; font-weight: 600; font-size: 1.1rem; margin-top: 4px; }
+
+        .social-stats { 
+            display: flex; gap: 30px; margin: 15px 0; 
+            background: #f8f9fa; padding: 10px 20px; 
+            border-radius: 10px; display: inline-flex;
+        }
+        .stat-social { text-align: center; }
+        .stat-social strong { font-size: 1.1rem; color: #333; display: block; }
+        .stat-social span { font-size: 0.8rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
+
+        .bio { color: #555; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5; max-width: 600px; }
+        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; color: #777; }
+        .meta-dados span { display: flex; align-items: center; gap: 5px; }
+
+        .acoes-perfil { 
+            display: flex; flex-direction: column; align-items: flex-end; 
+            gap: 10px; padding-top: 15px; 
+        }
+        
+        /* Botões de Ação (Visitante) */
+        .btn-action-primary { 
+            background: var(--cor0, #0b7768); color: white; border: none; 
+            padding: 12px 25px; border-radius: 50px; font-weight: 600; 
+            cursor: pointer; display: flex; align-items: center; gap: 8px; 
+            transition: 0.2s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
+            width: 100%; justify-content: center;
+        }
+        .btn-action-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3); }
+        
+        .btn-action-secondary {
+            background: #e0f2f1; color: var(--cor0); border: none;
+            padding: 12px 25px; border-radius: 50px; font-weight: 600;
+            cursor: pointer; display: flex; align-items: center; gap: 8px;
+            transition: 0.2s; width: 100%; justify-content: center;
+        }
+        .btn-action-secondary:hover { background: #b2dfdb; }
 
         /* TABS */
-        .abas-perfil { display: flex; gap: 30px; border-bottom: 2px solid #ddd; margin-bottom: 25px; }
-        .tab-btn {
-            background: none; border: none; padding: 15px 5px;
-            font-size: 1rem; font-weight: 700; color: #777;
-            cursor: pointer; position: relative;
+        .tabs-container { 
+            background: #fff; border-radius: 12px; padding: 10px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+            display: flex; gap: 10px; overflow-x: auto; 
         }
-        .tab-btn.active { color: var(--cor2); }
-        .tab-btn.active::after {
-            content: ''; position: absolute; bottom: -2px; left: 0;
-            width: 100%; height: 4px; background: var(--cor2); border-radius: 10px;
+        .tab-btn { 
+            background: transparent; border: none; padding: 12px 20px; 
+            font-size: 0.95rem; color: #666; font-weight: 600; 
+            cursor: pointer; border-radius: 8px; transition: 0.3s; 
+            white-space: nowrap; 
         }
+        .tab-btn:hover { background: #f4f6f8; color: #333; }
+        .tab-btn.active { background: #e0f2f1; color: var(--cor0, #0b7768); }
+        .tab-content { display: none; animation: fadeIn 0.4s; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* --- ABA 1: SERVIÇOS (GRID LADO A LADO) --- */
-        #servicos.grid-servicos {
-            display: grid; /* Grid obrigatório aqui */
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); 
-            gap: 25px; 
-            width: 100%;
-        }
-        .card-servico-feed {
-            background: #fff; border-radius: 16px; border: 1px solid #e0e0e0;
-            overflow: hidden; display: flex; flex-direction: column;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.02); transition: transform 0.2s;
-            height: 100%; /* Garante altura igual na linha */
-        }
-        .card-servico-feed:hover { transform: translateY(-3px); }
-        .card-header-feed { padding: 15px; display: flex; align-items: center; gap: 12px; }
-        .card-body-feed { padding: 0 15px 15px; flex: 1; display: flex; flex-direction: column; }
-        .card-title { font-size: 1.1rem; margin-bottom: 10px; }
-        .card-img-wrapper { width: 100%; height: 200px; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; background:#f0f0f0; }
-        .card-img-main { width: 100%; height: 100%; object-fit: cover; }
-        .card-footer-feed { padding: 15px; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
-        .btn-solicitar-card { background: #008a7b; color: white; border: none; padding: 8px 16px; border-radius: 50px; font-weight: 600; cursor: pointer; }
+        /* GRIDS & CARDS */
+        .grid-publicacoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px 0; }
+        .grid-reels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 15px 0; }
+        .doke-post-card { position: relative; background: #000; border-radius: 8px; overflow: hidden; cursor: pointer; width: 100%; }
+        .doke-post-card:hover { opacity: 0.9; transform: scale(1.01); transition: 0.2s; }
+        .post-foto { aspect-ratio: 1 / 1 !important; }
+        .post-video { aspect-ratio: 16 / 9 !important; }
+        .post-reel { aspect-ratio: 9 / 16 !important; }
+        .doke-post-card img, .doke-post-card video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-        /* --- ABA 2: PUBLICAÇÕES (MASONRY/MOSAICO) --- */
-        #publicacoes.portfolio-masonry {
-            display: block; /* Masonry usa block */
-            column-count: 3; column-gap: 20px; width: 100%;
-        }
-        .portfolio-card {
-            break-inside: avoid; margin-bottom: 20px; border-radius: 16px;
-            position: relative; overflow: hidden; cursor: pointer;
-            background: #000; box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        .portfolio-card:hover { transform: translateY(-5px); }
-        .portfolio-media { width: 100%; height: auto; display: block; object-fit: cover; }
+        .card-servico-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
         
-        .portfolio-info-overlay {
-            position: absolute; bottom: 0; left: 0; width: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
-            padding: 20px 15px 15px; color: white; opacity: 0; transition: 0.3s;
+        /* CARD SERVIÇO (Estilo Clean) */
+        .card-premium { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; transition: transform 0.2s; display: flex; flex-direction: column; }
+        .card-premium:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .cp-header-clean { padding: 15px; border-bottom: 1px solid #f9f9f9; }
+        .cp-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .cp-body { padding: 15px; }
+        .cp-titulo { font-size: 1.1rem; font-weight: 700; color: #2c3e50; margin: 0 0 8px 0; }
+        .cp-desc-clean { font-size: 0.9rem; color: #666; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+        .cp-footer-right { padding: 15px; background: #fff; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; }
+        .btn-solicitar-card { background: var(--cor0); color: white; border: none; padding: 8px 20px; border-radius: 50px; font-weight: 700; cursor: pointer; }
+
+        /* ESTADOS VAZIOS */
+        .empty-state-perfil { text-align: center; padding: 40px; color: #999; background: #fff; border-radius: 12px; border: 2px dashed #eee; grid-column: 1 / -1; }
+        .empty-state-perfil i { font-size: 3rem; margin-bottom: 10px; display: block; color: #ddd; }
+
+        /* RESPONSIVIDADE */
+        @media (max-width: 1024px) {
+            .perfil-main { margin-left: 0; width: 100%; display: block; padding: 15px; }
+            .dados-perfil { flex-direction: column; align-items: center; text-align: center; }
+            .acoes-perfil { align-items: center; width: 100%; }
+            .social-stats { justify-content: center; width: 100%; box-sizing: border-box; }
         }
-        .portfolio-card:hover .portfolio-info-overlay { opacity: 1; }
-        
-        .badge-type {
-            position: absolute; top: 10px; right: 10px;
-            background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
-            color: white; padding: 5px 10px; border-radius: 20px;
-            font-size: 0.75rem; font-weight: 600;
+        @media (max-width: 768px) {
+            .grid-publicacoes { grid-template-columns: repeat(3, 1fr); gap: 4px; }
+            .grid-reels { grid-template-columns: repeat(2, 1fr); gap: 8px; }
         }
 
-        /* --- MODAL VERTICAL --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 10000;
-            display: none; justify-content: center; align-items: flex-start;
-            padding: 40px 20px; overflow-y: auto;
-        }
-        .modal-content {
-            background: #fff; width: 100%; max-width: 700px;
-            border-radius: 12px; overflow: hidden; display: flex; flex-direction: column;
-            margin: auto; position: relative;
-        }
-        .modal-header { padding: 15px 20px; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; justify-content: space-between; }
-        .modal-media-area { width: 100%; background: #000; display: flex; justify-content: center; min-height: 300px; }
-        .modal-media-area img, .modal-media-area video { width: 100%; height: auto; max-height: 80vh; object-fit: contain; }
-        .modal-info-area { padding: 20px 25px; background: #fff; }
-        .btn-close-modal { position: fixed; top: 20px; right: 30px; color: white; font-size: 3rem; cursor: pointer; z-index: 10001; }
-
-        @media (max-width: 900px) {
-            .perfil-main { margin-left: 0; padding: 20px; width: 100%; }
-            .card-perfil-header { flex-direction: column; text-align: center; }
-            #publicacoes.portfolio-masonry { column-count: 2; }
-        }
-        @media (max-width: 500px) { #publicacoes.portfolio-masonry { column-count: 1; } }
+        /* MODAIS (Post e Video) */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+        .modal-content-post { background: #fff; width: 90%; max-width: 900px; height: 85vh; border-radius: 12px; overflow: hidden; display: flex; }
+        .modal-media-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
+        .modal-media-side img, .modal-media-side video { max-width: 100%; max-height: 100%; width: auto; height: auto; }
+        .modal-info-side { flex: 1; padding: 20px; background: #fff; display: flex; flex-direction: column; }
     </style>
 </head>
 <body>
+
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="mobile-controls"><button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button></div>
+    </header>
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
     <aside class="sidebar-icones">
         <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
@@ -157,119 +197,149 @@
         <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
         <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-    <header class="navbar-mobile">
-        <button onclick="window.history.back()" style="background:none; border:none; font-size:1.5rem;"><i class='bx bx-arrow-back'></i></button>
-        <span style="font-weight:700;">Perfil</span>
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)"><i class='bx bx-map'></i> <span id="textoCepSpan">Informe seu CEP</span></a>
+            </div>
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html">Comunidades</a>
+        </nav>
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+        </div>
     </header>
 
     <main class="perfil-main">
         <div class="container-limite">
-            
-            <div class="card-perfil-header">
-                <div class="foto-container">
-                    <img id="profFoto" src="https://placehold.co/160" class="foto-perfil">
-                </div>
-                <div class="info-basica">
-                    <div class="badge-verificado">
-                        <i class='bx bxs-badge-check'></i> PROFISSIONAL VERIFICADO
+
+            <section class="perfil-header-card">
+                <div class="capa-perfil"></div>
+                <div class="dados-perfil">
+                    <div class="avatar-container">
+                        <img src="" alt="Perfil" id="profFoto">
+                        <div class="status-online" id="statusIndicator"></div>
                     </div>
-                    <h1 id="profNome">Carregando...</h1>
-                    <span id="profUser" class="username-badge">@usuario</span>
                     
-                    <div class="stats-social">
-                        <div class="stat-box">
-                            <span id="countSeguidores" class="stat-num">0</span>
-                            <span class="stat-label">Seguidores</span>
+                    <div class="info-texto">
+                        <div class="nome-row">
+                            <h1 id="profNome">Carregando...</h1>
                         </div>
-                        <div class="stat-box">
-                            <span id="countServicos" class="stat-num">0</span>
-                            <span class="stat-label">Serviços</span>
+                        <span id="profUser" class="username-badge">@usuario</span>
+
+                        <div class="social-stats">
+                            <div class="stat-social">
+                                <strong id="countSeguidores">0</strong>
+                                <span>Seguidores</span>
+                            </div>
+                            <div class="stat-social">
+                                <strong id="countSeguindo">0</strong>
+                                <span>Seguindo</span>
+                            </div>
+                            <div class="stat-social">
+                                <strong id="countAvaliacoes">0</strong>
+                                <span>Avaliações</span>
+                            </div>
                         </div>
-                        <div class="stat-box">
-                            <span id="countAvaliacoes" class="stat-num">0</span>
-                            <span class="stat-label">Avaliações</span>
+
+                        <div class="meta-dados">
+                            <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
+                            <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> ...</span>
                         </div>
                     </div>
 
                     <div class="acoes-perfil">
-                        <button id="btnSeguir" class="btn-seguir">Seguir</button>
-                        <button class="btn-principal" onclick="irParaChat()">
-                            <i class='bx bx-message-rounded-dots'></i> Solicitar Orçamento
+                        <button class="btn-action-primary" onclick="irParaOrcamentoDireto()">
+                            <i class='bx bx-dollar-circle'></i> Solicitar Orçamento
+                        </button>
+                        <button class="btn-action-secondary" onclick="irParaChat()">
+                            <i class='bx bx-message-rounded-dots'></i> Enviar Mensagem
                         </button>
                     </div>
                 </div>
+            </section>
+
+            <div class="tabs-container">
+                <button class="tab-btn active" onclick="abrirTab(event, 'tab-sobre')">Sobre</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-servicos')">Serviços</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-publicacoes')">Publicações</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-reels')">Vídeos Curtos</button>
+                <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
             </div>
 
-            <div class="abas-perfil">
-                <button class="tab-btn active" onclick="abrirTab(event, 'servicos')">Serviços</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'publicacoes')">Publicações</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'avaliacoes')">Avaliações</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'sobre')">Sobre</button>
+            <div id="tab-sobre" class="tab-content active">
+                <div style="background:white; padding:30px; border-radius:12px; border:1px solid #eee; margin-top:0;">
+                    <h3 style="margin-top:0; color:#333;">Sobre</h3>
+                    <p id="profBio" style="color:#555; line-height:1.6; font-size:1rem;">Carregando biografia...</p>
+                </div>
             </div>
 
-            <div id="servicos" class="tab-content grid-servicos" style="display:grid;">
-                </div>
-
-            <div id="publicacoes" class="tab-content portfolio-masonry" style="display:none;">
-                </div>
-
-            <div id="avaliacoes" class="tab-content" style="display:none;">
-                <div class="review-dashboard" id="dashAvaliacoes" style="display:none; gap:20px; background:#fff; padding:20px; border-radius:12px; border:1px solid #eee;">
-                    <div style="text-align:center;">
-                        <div class="big-score" id="dashNotaGeral" style="font-size:2.5rem; font-weight:800;">0.0</div>
-                        <div style="color:#f1c40f;" id="dashEstrelas"></div>
-                        <small style="color:#777;" id="dashTotalReviews">0 avaliações</small>
+            <div id="tab-servicos" class="tab-content">
+                <div class="card-servico-grid" id="container-servicos">
                     </div>
-                </div>
-                <div id="listaAvaliacoes" style="display:flex; flex-direction:column; gap:15px; margin-top:20px;"></div>
             </div>
 
-            <div id="sobre" class="tab-content" style="display:none;">
-                <div style="background:white; padding:30px; border-radius:16px; border:1px solid #eee;">
-                    <h3>Sobre o Profissional</h3>
-                    <p id="profBio" style="line-height:1.6; color:#555;">...</p>
-                    <div style="margin-top:20px; padding-top:20px; border-top:1px solid #eee; color:#777; font-size:0.9rem;">
-                        <div id="profLocal"><i class='bx bx-map'></i> Localização não informada</div>
-                        <div id="profMembro"><i class='bx bx-calendar'></i> Membro desde 2024</div>
-                    </div>
-                </div>
+            <div id="tab-publicacoes" class="tab-content">
+                <div class="grid-publicacoes" id="container-publicacoes-grid"></div>
+            </div>
+
+            <div id="tab-reels" class="tab-content">
+                <div class="grid-reels" id="container-reels-grid"></div>
+            </div>
+
+            <div id="tab-avaliacoes" class="tab-content">
+                <div id="listaAvaliacoes" style="display:flex; flex-direction:column; gap:15px;"></div>
             </div>
 
         </div>
     </main>
 
     <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
-        <div class="btn-close-modal">×</div>
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div style="display:flex; align-items:center; gap:12px;">
-                    <img id="modalAvatar" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover;">
-                    <div>
-                        <div id="modalUsername" style="font-weight:700;">Usuario</div>
-                        <span id="modalDate" style="font-size:0.75rem; color:#888;">DATA</span>
-                    </div>
+        <div class="modal-content-post" onclick="event.stopPropagation()">
+            <div class="modal-media-side" id="modalMediaContainer"></div>
+            <div class="modal-info-side">
+                <div style="display:flex; align-items:center; gap:10px; padding-bottom:15px; border-bottom:1px solid #eee;">
+                    <img id="modalAvatar" src="" style="width:40px; height:40px; border-radius:50%;">
+                    <strong id="modalUsername">@usuario</strong>
                 </div>
-            </div>
-            <div class="modal-media-area" id="modalMediaContainer"></div>
-            <div class="modal-info-area">
-                <div style="display:flex; gap:20px; font-size:1.6rem; margin-bottom:10px;">
-                    <i class='bx bx-heart'></i> <i class='bx bx-share-alt'></i>
+                <div style="flex:1; overflow-y:auto; padding:15px 0;" id="modalCaption"></div>
+                <div style="border-top:1px solid #eee; padding-top:15px;">
+                    <strong id="modalLikesCount">0 curtidas</strong>
+                    <br><small id="modalDate" style="color:#999;">DATA</small>
                 </div>
-                <span id="modalLikesCount" style="font-weight:700; display:block; margin-bottom:15px;">0 curtidas</span>
-                <div id="modalCaption" style="margin-bottom:20px; line-height:1.5; color:#444; border-bottom:1px solid #eee; padding-bottom:15px;"></div>
-                <h4 style="font-size:0.9rem; color:#666; margin-bottom:10px;">Comentários</h4>
-                <div id="modalCommentsList" style="background:#f9f9f9; padding:15px; border-radius:8px; max-height:300px; overflow-y:auto;"></div>
             </div>
         </div>
     </div>
 
+    <div id="modalPlayerVideo" class="modal-overlay" style="z-index: 20000; background:rgba(0,0,0,0.95);">
+        <span onclick="fecharPlayerVideo()" style="position:absolute; top:20px; right:20px; color:white; font-size:2rem; cursor:pointer;">&times;</span>
+        <div style="width:100%; max-width:450px; height:90vh; position:relative; display:flex; justify-content:center;">
+            <video id="playerPrincipal" loop playsinline style="width:100%; height:100%; object-fit:contain; background:black; border-radius:12px;"></video>
+            <div style="position:absolute; bottom:20px; left:20px; color:white; text-align:left; right:80px;">
+                <h4 id="tiktokUser" style="margin:0;">@user</h4>
+                <p id="tiktokDesc" style="margin:5px 0; font-size:0.9rem;"></p>
+            </div>
+            <div style="position:absolute; right:10px; bottom:100px; display:flex; flex-direction:column; gap:20px; align-items:center;">
+                <div style="width:45px; height:45px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; justify-content:center; align-items:center; color:white;"><i class='bx bx-heart'></i></div>
+                <span id="tiktokLikesCount" style="color:white; font-size:0.8rem; font-weight:bold;">0</span>
+            </div>
+        </div>
+    </div>
+
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
+
 <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
     const firebaseConfig = {
         apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
@@ -282,265 +352,202 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
-    const auth = getAuth(app);
 
     const params = new URLSearchParams(window.location.search);
     const targetUid = params.get('uid');
 
+    if(!targetUid) { window.location.href = "explorar.html"; }
+
+    // --- CARREGAMENTO INICIAL ---
     document.addEventListener("DOMContentLoaded", () => {
-        if(!targetUid) {
-            alert("Perfil não encontrado.");
-            window.location.href = "explorar.html";
-            return;
-        }
-        carregarPerfilHeader();
-        carregarServicos(targetUid); 
-        carregarFeedCompleto(targetUid); 
-        carregarAvaliacoes(targetUid);
+        carregarDadosPerfil();
     });
 
-    async function carregarPerfilHeader() {
-        try {
-            const docSnap = await getDoc(doc(db, "usuarios", targetUid));
-            if (docSnap.exists()) {
-                const d = docSnap.data();
-                document.getElementById('profNome').innerHTML = `${d.nome}`;
-                document.getElementById('profUser').innerText = d.user || "@usuario";
-                document.getElementById('profFoto').src = d.foto || "https://placehold.co/150";
-                document.getElementById('profBio').innerText = d.bio || "Sem biografia.";
-                if(d.local) document.getElementById('profLocal').innerHTML = `<i class='bx bx-map'></i> ${d.local}`;
-                if(d.membroDesde) document.getElementById('profMembro').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${d.membroDesde}`;
-                if(d.stats && document.getElementById('countAvaliacoes')) document.getElementById('countAvaliacoes').innerText = d.stats.avaliacoes || 0;
-                window.dadosAutor = { nome: d.nome, foto: d.foto, user: d.user };
-            }
-        } catch (e) { console.error(e); }
+    async function carregarDadosPerfil() {
+        const docSnap = await getDoc(doc(db, "usuarios", targetUid));
+        if (docSnap.exists()) {
+            const d = docSnap.data();
+            
+            document.getElementById('profNome').innerText = d.nome || "Usuário";
+            document.getElementById('profUser').innerText = d.user || "@usuario";
+            document.getElementById('profFoto').src = d.foto || "https://placehold.co/150";
+            document.getElementById('profBio').innerText = d.bio || "Sem biografia.";
+            
+            document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${d.local || "Brasil"}`;
+            let ano = d.dataCriacao ? new Date(d.dataCriacao).getFullYear() : "2024";
+            document.getElementById('dataMembroDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${ano}`;
+
+            // Variáveis globais para uso nos modais
+            window.fotoProfissionalAtual = d.foto || "https://placehold.co/150";
+            window.nomeProfissionalAtual = d.user || "@usuario";
+
+            carregarStatsExtras(targetUid);
+            carregarMidias(targetUid);
+            carregarServicos(targetUid);
+            carregarAvaliacoes(targetUid);
+        }
     }
 
-    // CARREGA SERVIÇOS (LADO A LADO - GRID)
+    // --- FUNÇÕES DE CARREGAMENTO DE CONTEÚDO ---
+    
+    async function carregarStatsExtras(uid) {
+        try {
+            // Conta quantos SEGUIDORES o perfil tem (seguidoUid == uid)
+            const qSeguidores = query(collection(db, "relacoes"), where("seguidoUid", "==", uid));
+            const snapSeguidores = await getDocs(qSeguidores);
+            if(document.getElementById('countSeguidores')) {
+                document.getElementById('countSeguidores').innerText = snapSeguidores.size;
+            }
+
+            // Conta quantos o perfil está SEGUINDO (seguidorUid == uid)
+            const qSeguindo = query(collection(db, "relacoes"), where("seguidorUid", "==", uid));
+            const snapSeguindo = await getDocs(qSeguindo);
+            if(document.getElementById('countSeguindo')) {
+                document.getElementById('countSeguindo').innerText = snapSeguindo.size;
+            }
+        } catch(e) {
+            console.error("Erro ao carregar stats:", e);
+        }
+    }
+
     async function carregarServicos(uid) {
-        const container = document.getElementById('servicos');
-        container.className = "grid-servicos"; 
-        container.innerHTML = `<p style="grid-column:1/-1; text-align:center;">Carregando...</p>`;
+        const container = document.getElementById('container-servicos');
+        const q = query(collection(db, "anuncios"), where("uid", "==", uid));
+        const snap = await getDocs(q);
         
-        try {
-            const q = query(collection(db, "anuncios"), where("uid", "==", uid));
-            const snap = await getDocs(q);
-            
-            container.innerHTML = "";
-            if(document.getElementById('countServicos')) document.getElementById('countServicos').innerText = snap.size;
-
-            if(snap.empty) {
-                container.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#777;">Nenhum serviço ativo.</p>`;
-                return;
-            }
-
-            snap.forEach(doc => {
-                const d = doc.data();
-                const capa = (d.fotos && d.fotos.length) ? d.fotos[0] : (d.img || 'https://placehold.co/300');
-                const preco = (d.preco && d.preco !== 'Sob Orçamento') ? `R$ ${d.preco}` : "Sob Orçamento";
-                
-                const html = `
-                <div class="card-servico-feed">
-                    <div class="card-header-feed">
-                        <img src="${window.dadosAutor?.foto || 'https://placehold.co/150'}" class="card-avatar-small" style="width:40px; height:40px; border-radius:50%;">
-                        <div><h4 style="margin:0; font-size:0.95rem;">${window.dadosAutor?.nome}</h4></div>
-                    </div>
-                    <div class="card-body-feed">
-                        <h3 class="card-title" style="font-size:1.1rem; margin:10px 0;">${d.titulo}</h3>
-                        <div class="card-img-wrapper">
-                            <img src="${capa}" class="card-img-main" onclick="window.location.href='detalhes.html?id=${doc.id}'" style="cursor:pointer;">
-                        </div>
-                    </div>
-                    <div class="card-footer-feed">
-                        <div>
-                            <span class="preco-text" style="font-size:0.8rem; color:#777;">A partir de</span><br>
-                            <span class="preco-valor" style="color:#008a7b; font-weight:800;">${preco}</span>
-                        </div>
-                        <button class="btn-solicitar-card" onclick="irParaChat()">Solicitar</button>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', html);
-            });
-        } catch (e) { console.error(e); }
-    }
-
-    // CARREGA PUBLICAÇÕES (MOSAICO - MASONRY)
-    async function carregarFeedCompleto(uid) {
-        const container = document.getElementById('publicacoes');
-        container.className = "portfolio-masonry"; 
-        container.innerHTML = `<p style="text-align:center;">Carregando...</p>`;
-
-        try {
-            const [snapP, snapT, snapR] = await Promise.all([
-                getDocs(query(collection(db, "posts"), where("uid", "==", uid))),
-                getDocs(query(collection(db, "trabalhos"), where("uid", "==", uid))),
-                getDocs(query(collection(db, "reels"), where("uid", "==", uid)))
-            ]);
-            
-            let lista = [];
-            snapP.forEach(d => lista.push({...d.data(), id:d.id, col:'posts', tipo:'foto', time:new Date(d.data().data).getTime()}));
-            snapT.forEach(d => lista.push({...d.data(), id:d.id, col:'trabalhos', tipo:'video', time:new Date(d.data().data).getTime()}));
-            snapR.forEach(d => lista.push({...d.data(), id:d.id, col:'reels', tipo:'reel', time:new Date(d.data().data).getTime()}));
-
-            lista.sort((a,b) => b.time - a.time);
-
-            container.innerHTML = "";
-            if(lista.length === 0) {
-                container.innerHTML = `<p style="text-align:center; padding:40px; color:#777; width:100%;">Nenhuma publicação.</p>`;
-                return;
-            }
-
-            lista.forEach(item => {
-                let mediaHtml = "";
-                let badgeHtml = "";
-
-                if (item.tipo === 'video') {
-                    mediaHtml = `<video src="${item.videoUrl}#t=0.1" class="portfolio-media" preload="metadata"></video>`;
-                    badgeHtml = `<div class="badge-type"><i class='bx bxs-video'></i> Vídeo</div>`;
-                } else if (item.tipo === 'reel') {
-                    mediaHtml = `<video src="${item.videoUrl}#t=0.1" class="portfolio-media" preload="metadata"></video>`;
-                    badgeHtml = `<div class="badge-type" style="background:linear-gradient(45deg, #f09433, #bc1888);"><i class='bx bxs-videos'></i> Reel</div>`;
-                } else {
-                    mediaHtml = `<img src="${item.imagem}" class="portfolio-media">`;
-                }
-
-                const html = `
-                <div class="portfolio-card" onclick="abrirModalPost('${item.id}', '${item.col}')">
-                    ${mediaHtml}
-                    ${badgeHtml}
-                    <div class="portfolio-info-overlay">
-                        <span style="font-size:0.9rem; font-weight:600;"><i class='bx bxs-heart'></i> ${item.likes || 0}</span>
-                        <span style="font-size:0.75rem; opacity:0.8; margin-left:auto;">Ver</span>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', html);
-            });
-        } catch (e) { console.error("Erro feed:", e); }
-    }
-
-    window.abrirModalPost = async function(id, colecao) {
-        const modal = document.getElementById('modalPostDetalhe');
-        modal.style.display = 'flex';
-        document.getElementById('modalMediaContainer').innerHTML = "";
-        
-        const docSnap = await getDoc(doc(db, colecao, id));
-        if(!docSnap.exists()) return;
-        const data = docSnap.data();
-
-        const mediaBox = document.getElementById('modalMediaContainer');
-        if((data.videoUrl)) {
-            mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="width:100%;"></video>`;
-        } else {
-            mediaBox.innerHTML = `<img src="${data.imagem}" style="width:100%;">`;
+        container.innerHTML = "";
+        if(snap.empty) {
+            container.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-briefcase'></i><p>Nenhum serviço anunciado.</p></div>";
+            return;
         }
 
-        document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
-        document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome || "Profissional";
-        document.getElementById('modalDate').innerText = new Date(data.data).toLocaleDateString();
-        document.getElementById('modalLikesCount').innerText = `${data.likes || 0} curtidas`;
+        snap.forEach(doc => {
+            const d = doc.data();
+            const imgCapa = (d.fotos && d.fotos.length > 0) ? d.fotos[0] : (d.img || "https://placehold.co/400x300");
+            
+            const html = `
+            <div class="card-premium">
+                <div style="height:180px; overflow:hidden;">
+                    <img src="${imgCapa}" style="width:100%; height:100%; object-fit:cover;">
+                </div>
+                <div class="cp-body">
+                    <h3 class="cp-titulo">${d.titulo}</h3>
+                    <p class="cp-desc-clean">${d.descricao}</p>
+                </div>
+                <div class="cp-footer-right">
+                    <strong style="color:var(--cor0);">${d.preco}</strong>
+                    <button class="btn-solicitar-card" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${doc.id}'">Ver Mais</button>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+    }
 
-        const captionDiv = document.getElementById('modalCaption');
-        if(data.texto || data.descricao) {
-            captionDiv.style.display = 'block';
-            captionDiv.innerHTML = data.texto || data.descricao;
-        } else { captionDiv.style.display = 'none'; }
+    async function carregarMidias(uid) {
+        const containerPubli = document.getElementById('container-publicacoes-grid');
+        const containerReels = document.getElementById('container-reels-grid');
+
+        // Carregar Posts
+        const qPosts = query(collection(db, "posts"), where("uid", "==", uid));
+        const snapPosts = await getDocs(qPosts);
         
-        const list = document.getElementById('modalCommentsList');
-        list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Carregando comentários...</p>";
+        containerPubli.innerHTML = "";
+        if(snapPosts.empty) containerPubli.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-images'></i><p>Nenhuma publicação.</p></div>";
+        
+        snapPosts.forEach(doc => {
+            const d = doc.data();
+            containerPubli.insertAdjacentHTML('beforeend', `
+                <div class="doke-post-card post-foto" onclick="abrirModalPost('${doc.id}', 'posts')">
+                    <img src="${d.imagem}">
+                </div>`);
+        });
 
-        try {
-            const qComm = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
-            const snapComm = await getDocs(qComm);
-            list.innerHTML = "";
-            if(snapComm.empty) {
-                list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Sem comentários.</p>";
-            } else {
-                snapComm.forEach(c => {
-                    const cData = c.data();
-                    const html = `
-                    <div style="display:flex; gap:10px; margin-bottom:10px; font-size:0.9rem;">
-                        <img src="${cData.foto}" style="width:30px; height:30px; border-radius:50%;">
-                        <div style="background:#fff; border:1px solid #eee; padding:8px 12px; border-radius:10px; flex:1;">
-                            <strong style="display:block; font-size:0.8rem; color:#333;">${cData.user}</strong>
-                            <span style="color:#555;">${cData.texto}</span>
-                        </div>
-                    </div>`;
-                    list.insertAdjacentHTML('beforeend', html);
-                });
-            }
-        } catch(e) { console.error(e); }
+        // Carregar Reels
+        const qReels = query(collection(db, "reels"), where("uid", "==", uid));
+        const snapReels = await getDocs(qReels);
+        
+        containerReels.innerHTML = "";
+        if(snapReels.empty) containerReels.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-movie-play'></i><p>Nenhum Reel.</p></div>";
+        
+        snapReels.forEach(doc => {
+            const d = doc.data();
+            const dados = JSON.stringify({video: d.videoUrl, desc: d.descricao, likes: d.likes}).replace(/"/g, '&quot;');
+            containerReels.insertAdjacentHTML('beforeend', `
+                <div class="doke-post-card post-reel" onclick="abrirPlayerTikTok(${dados})">
+                    <video src="${d.videoUrl}#t=0.1" muted></video>
+                </div>`);
+        });
     }
-
-    window.fecharModalPost = function(e) {
-        if (!e || e.target.classList.contains('modal-overlay') || e.target.classList.contains('btn-close-modal')) {
-            document.getElementById('modalPostDetalhe').style.display = 'none';
-            document.getElementById('modalMediaContainer').innerHTML = "";
-        }
-    }
-
+    
     async function carregarAvaliacoes(uid) {
         const container = document.getElementById('listaAvaliacoes');
-        const dash = document.getElementById('dashAvaliacoes');
-        try {
-            const q = query(collection(db, "avaliacoes"), where("paraUid", "==", uid), orderBy("data", "desc"));
-            const snap = await getDocs(q);
-            container.innerHTML = "";
-            if(snap.empty) {
-                container.innerHTML = `<p style="text-align:center; color:#777;">Sem avaliações.</p>`;
-                return;
-            }
-            dash.style.display = 'flex';
-            let total = snap.size;
-            let sGeral=0;
-            snap.forEach(doc => {
-                const r = doc.data();
-                sGeral += r.media||r.nota||0;
-                const html = `<div style="background:#fff; padding:15px; border-radius:10px; border:1px solid #eee;">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:5px;">
-                        <strong>${r.deNome || "Cliente"}</strong>
-                        <div style="color:#f1c40f;">${gerarEstrelas(r.media||r.nota)}</div>
-                    </div>
-                    <p style="color:#555; font-style:italic; margin:0;">"${r.comentarioGeral||r.comentario}"</p>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', html);
-            });
-            const mGeral = (sGeral/total).toFixed(1);
-            document.getElementById('dashNotaGeral').innerText = mGeral;
-            document.getElementById('dashTotalReviews').innerText = total + " avaliações";
-            document.getElementById('dashEstrelas').innerHTML = gerarEstrelas(mGeral);
-        } catch (e) { console.error(e); }
-    }
-
-    function gerarEstrelas(n) {
-        let h=""; for(let i=1; i<=5; i++) h += (i<=Math.round(n)) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
-        return h;
-    }
-
-    // CORREÇÃO CRÍTICA: SEPARA AS ABAS COM DISPLAY:NONE MANUAL
-    window.abrirTab = function(evt, nome) {
-        // 1. Esconde tudo
-        document.getElementById('servicos').style.display = 'none';
-        document.getElementById('publicacoes').style.display = 'none';
-        document.getElementById('avaliacoes').style.display = 'none';
-        document.getElementById('sobre').style.display = 'none';
+        const q = query(collection(db, "avaliacoes"), where("paraUid", "==", uid));
+        const snap = await getDocs(q);
         
-        // 2. Remove active
+        container.innerHTML = "";
+        if(snap.empty) {
+            container.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-star'></i><p>Sem avaliações ainda.</p></div>";
+            return;
+        }
+        
+        if(document.getElementById('countAvaliacoes')) {
+            document.getElementById('countAvaliacoes').innerText = snap.size;
+        }
+
+        snap.forEach(doc => {
+            const r = doc.data();
+            container.insertAdjacentHTML('beforeend', `
+                <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #eee;">
+                    <div style="font-weight:bold; color:#333;">${r.deNome || 'Cliente'} <span style="color:#f1c40f;">★ ${r.nota}</span></div>
+                    <p style="color:#666; margin:5px 0;">${r.comentario}</p>
+                </div>
+            `);
+        });
+    }
+
+    // --- CONTROLE DE ABAS ---
+    window.abrirTab = function(evt, nome) {
+        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
         document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-
-        // 3. Mostra o alvo
-        const target = document.getElementById(nome);
-        if(nome === 'servicos') target.style.display = 'grid'; // Grid para Serviços
-        else target.style.display = 'block'; // Block para os outros
-
+        document.getElementById(nome).style.display = 'block';
         evt.currentTarget.classList.add('active');
     }
 
-    window.irParaChat = function() {
-        const u = auth.currentUser;
-        if(!u) window.location.href="login.html";
-        else window.location.href=`chat.html?iniciar=${targetUid}`;
+    // --- MODAIS ---
+    window.abrirModalPost = async function(id, col) {
+        document.getElementById('modalPostDetalhe').style.display = 'flex';
+        const docSnap = await getDoc(doc(db, col, id));
+        const d = docSnap.data();
+        
+        document.getElementById('modalMediaContainer').innerHTML = `<img src="${d.imagem}">`;
+        document.getElementById('modalUsername').innerText = window.nomeProfissionalAtual;
+        document.getElementById('modalAvatar').src = window.fotoProfissionalAtual;
+        document.getElementById('modalCaption').innerText = d.texto || "";
+        document.getElementById('modalLikesCount').innerText = (d.likes || 0) + " curtidas";
+        document.getElementById('modalDate').innerText = new Date(d.data).toLocaleDateString();
+    }
+    window.fecharModalPost = function() { document.getElementById('modalPostDetalhe').style.display = 'none'; }
+
+    window.abrirPlayerTikTok = function(dados) {
+        document.getElementById('modalPlayerVideo').style.display = 'flex';
+        const v = document.getElementById('playerPrincipal');
+        v.src = dados.video; v.play();
+        document.getElementById('tiktokDesc').innerText = dados.desc || "";
+        document.getElementById('tiktokLikesCount').innerText = dados.likes || 0;
+        document.getElementById('tiktokUser').innerText = window.nomeProfissionalAtual;
+    }
+    window.fecharPlayerVideo = function() {
+        const v = document.getElementById('playerPrincipal');
+        v.pause(); v.src = "";
+        document.getElementById('modalPlayerVideo').style.display = 'none';
     }
 
+    // --- AÇÕES ---
+    window.irParaChat = function() { window.location.href = `chat.html?uid=${targetUid}`; }
+    window.irParaOrcamentoDireto = function() { 
+        alert("Escolha um serviço na aba 'Serviços' para orçar especificamente.");
+        document.querySelector("button[onclick*='tab-servicos']").click();
+    }
 </script>
 </body>
 </html>

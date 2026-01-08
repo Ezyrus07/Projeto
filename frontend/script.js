@@ -310,12 +310,6 @@ window.fecharGaleria = function(event) {
 }
 
 
-// ============================================================
-// CARREGAR VÍDEOS NA HOME (Com dados completos do autor)
-// ============================================================
-// ============================================================
-// CARREGAR VÍDEOS NA HOME (CORRIGIDO: ENVIA FOTO E UID)
-// ============================================================
 window.carregarTrabalhosHome = async function() {
     const container = document.getElementById('galeria-dinamica') || document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
@@ -323,35 +317,18 @@ window.carregarTrabalhosHome = async function() {
     try {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
         const snapshot = await getDocs(q);
-        
         container.innerHTML = ""; 
 
-        if (snapshot.empty) {
-            container.innerHTML = '<div style="padding:20px; color:white; text-align:center;">Nenhum vídeo publicado ainda.</div>';
-            return;
-        }
+        if (snapshot.empty) return;
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            const id = doc.id;
+            const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${data.uid}'"`;
             
-            // Tratamento de dados (Garante que nada vá vazio)
-            const imagemCapa = data.capa || "https://placehold.co/300x500?text=Sem+Capa";
-            const videoUrl = data.videoUrl || "";
-            const nomeAutor = data.autorNome || '@profissional';
-            const fotoAutor = data.autorFoto || "https://placehold.co/150"; // <--- AQUI ESTAVA O PROBLEMA
-            const uidAutor = data.uid || "";
-
-            // Cria o pacote de dados para o player
+            // ... (código do dadosModal igual) ...
             const dadosModal = JSON.stringify({
-                id: id,
-                video: videoUrl,
-                img: imagemCapa,
-                user: nomeAutor,
-                desc: data.descricao || "",
-                uid: uidAutor,
-                autorFoto: fotoAutor, // Agora estamos enviando a foto!
-                likes: data.likes || 0
+                id: doc.id, video: data.videoUrl, img: data.capa, user: data.autorNome,
+                desc: data.descricao, uid: data.uid, autorFoto: data.autorFoto, likes: data.likes
             }).replace(/"/g, '&quot;');
 
             const html = `
@@ -359,31 +336,22 @@ window.carregarTrabalhosHome = async function() {
                  onmouseenter="iniciarPreview(this)" 
                  onmouseleave="pararPreview(this)"
                  onclick="abrirPlayerTikTok(${dadosModal})">
-                
                 <div class="badge-status">${data.categoria || "Portfólio"}</div>
-                
-                <input type="hidden" class="video-src-hidden" value="${videoUrl}">
-                <img src="${imagemCapa}" class="video-bg" alt="Capa">
-                
+                <input type="hidden" class="video-src-hidden" value="${data.videoUrl}">
+                <img src="${data.capa}" class="video-bg">
                 <div class="play-icon"><i class='bx bx-play'></i></div>
-                
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
                         <div class="provider-info">
-                            <span class="provider-name">${nomeAutor}</span>
+                            <span class="provider-name" ${linkPerfil} style="cursor:pointer; text-decoration:underline;">${data.autorNome}</span>
                         </div>
                     </div>
                 </div>
             </div>`;
-            
             container.insertAdjacentHTML('beforeend', html);
         });
-
-    } catch (e) { 
-        console.error("Erro ao carregar vídeos:", e);
-    }
+    } catch (e) { console.error(e); }
 }
-
 // ============================================================
 // ABRIR PLAYER TIKTOK (CORRIGIDO: RECEBE FOTO E LINK)
 // ============================================================
@@ -707,45 +675,54 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 </div>`;
             }
 
+// Dentro de window.carregarAnunciosDoFirebase, substitua a criação do card.innerHTML por:
+
+// ... código anterior ...
+            
+            // Link de redirecionamento para o perfil
+            const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${anuncio.uid}'"`;
+            const estiloLink = `style="cursor: pointer;"`;
+
             const card = document.createElement('div');
             card.className = 'card-premium';
             card.onmousedown = function() { window.registrarVisualizacao(anuncio.id); };
 
-card.innerHTML = `
-    <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
-        <i class='bx bx-info-circle'></i> Mais Informações
-    </button>
-    <div class="cp-header-clean">
-        <div style="display:flex; gap:12px; align-items:center;">
-            <img src="${fotoAutor}" class="cp-avatar"> 
-            <div class="cp-info-user">
-                <div class="cp-nome-row">
-                    <h4 class="cp-nome-clean">${nomeParaExibir}</h4>
-                    ${htmlAvaliacaoDisplay}
+            card.innerHTML = `
+                <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
+                    <i class='bx bx-info-circle'></i> Mais Informações
+                </button>
+                <div class="cp-header-clean">
+                    <div style="display:flex; gap:12px; align-items:center;">
+                        <img src="${fotoAutor}" class="cp-avatar" ${linkPerfil} ${estiloLink}> 
+                        <div class="cp-info-user">
+                            <div class="cp-nome-row">
+                                <h4 class="cp-nome-clean" ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
+                                ${htmlAvaliacaoDisplay}
+                            </div>
+                            <div class="cp-tempo-online">
+                                <div class="status-dot online"></div> Online
+                            </div>
+                        </div>
+                    </div>
                 </div>
-                <div class="cp-tempo-online">
-                    <div class="status-dot online"></div> Online
+                <div class="cp-body">
+                    <h3 class="cp-titulo">${titulo}</h3>
+                    <p class="cp-desc-clean">${descricao}</p>
                 </div>
-            </div>
-        </div>
-    </div>
-    <div class="cp-body">
-        <h3 class="cp-titulo">${titulo}</h3>
-        <p class="cp-desc-clean">${descricao}</p>
-    </div>
-    ${htmlFotos}
-<div class="cp-footer-right">
-    <div style="margin-right:auto;">
-        <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
-        <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
-    </div>
-    
-    <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
-        Solicitar Orçamento
-    </button>
-</div>
-`;
+                ${htmlFotos}
+                <div class="cp-footer-right">
+                    <div style="margin-right:auto;">
+                        <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
+                        <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+                    </div>
+                    
+                    <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
+                        Solicitar Orçamento
+                    </button>
+                </div>
+            `;
             feed.appendChild(card);
+// ... restante da função ...
         });
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
@@ -1187,69 +1164,45 @@ window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
 
-    container.innerHTML = `
-        <div style="text-align:center; padding:40px; color:#777;">
-            <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
-            <p>Carregando atualizações da comunidade...</p>
-        </div>`;
+    container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
 
     try {
-        const q = window.query(
-            window.collection(window.db, "posts"), 
-            window.orderBy("data", "desc")
-        );
-
+        const q = window.query(window.collection(window.db, "posts"), window.orderBy("data", "desc"));
         const snapshot = await window.getDocs(q);
-
         container.innerHTML = ""; 
 
-        if (snapshot.empty) {
-            container.innerHTML = `
-                <div style="text-align:center; padding:30px; background:#fff; border-radius:12px;">
-                    <i class='bx bx-news' style="font-size:3rem; color:#ddd;"></i>
-                    <p style="color:#666;">Ainda não há publicações na comunidade.</p>
-                </div>`;
-            return;
-        }
+        if (snapshot.empty) return;
 
         snapshot.forEach((doc) => {
             const post = doc.data();
-            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { 
-                day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' 
-            });
+            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+            const imgHtml = post.imagem ? `<div class="midia-post"><img src="${post.imagem}" loading="lazy"></div>` : '';
             
-            const imgHtml = post.imagem 
-                ? `<div class="midia-post"><img src="${post.imagem}" loading="lazy"></div>` 
-                : '';
+            // --- LINK DE REDIRECIONAMENTO ---
+            const uidDestino = post.uid || ""; 
+            const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${uidDestino}'"`;
+            const cursorStyle = `style="cursor: pointer;"`;
 
-            // --- ALTERAÇÃO FEITA AQUI ---
             const html = `
                 <div class="card-feed-global">
                     <div class="feed-header">
-                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User">
+                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User" ${linkPerfil} ${cursorStyle}>
                         <div class="feed-user-info">
-                            <h4>${post.autorUser || post.autorNome}</h4>
+                            <h4 ${linkPerfil} ${cursorStyle}>${post.autorUser || post.autorNome}</h4>
                             <span>${dataPost}</span>
                         </div>
                     </div>
-                    <div class="feed-body">
-                        <p>${post.texto}</p>
-                    </div>
+                    <div class="feed-body"><p>${post.texto}</p></div>
                     ${imgHtml}
                     <div class="feed-footer">
                         <div class="feed-action"><i class='bx bx-heart'></i> ${post.likes || 0}</div>
                         <div class="feed-action"><i class='bx bx-comment'></i> Comentar</div>
                         <div class="feed-action"><i class='bx bx-share-alt'></i> Compartilhar</div>
                     </div>
-                </div>
-            `;
+                </div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
-
-    } catch (e) {
-        console.error("Erro ao carregar feed global:", e);
-        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar feed.</p>`;
-    }
+    } catch (e) { console.error(e); }
 }
 
 // Funções extras para perfil
@@ -3890,7 +3843,6 @@ async function carregarReelsNoIndex() {
     }
 }
 
-// ============================================================
 window.carregarReelsHome = async function() {
     const container = document.getElementById('galeria-dinamica');
     if (!container) return;
@@ -3905,32 +3857,84 @@ window.carregarReelsHome = async function() {
         snapshot.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-            const capaUrl = data.capa || "https://placehold.co/240x400?text=Sem+Capa";
+            const capaUrl = data.capa || data.img || "https://placehold.co/240x400?text=Sem+Capa";
+            const videoUrl = data.videoUrl || "";
             const linkBotao = `orcamento.html?uid=${data.uid}&aid=${data.anuncioId}`;
 
             const dadosModal = JSON.stringify({
-                id: id, video: data.videoUrl, user: data.autorUser, desc: data.descricao,
-                uid: data.uid, autorFoto: data.autorFoto, likes: data.likes || 0
+                id: id, 
+                video: videoUrl, 
+                user: data.autorUser || "@profissional", 
+                desc: data.descricao || "",
+                uid: data.uid, 
+                autorFoto: data.autorFoto || "https://placehold.co/150", 
+                likes: data.likes || 0
             }).replace(/"/g, '&quot;');
 
             const html = `
-            <div class="tiktok-card" onclick="abrirPlayerTikTok(${dadosModal})">
+            <div class="tiktok-card" 
+                 onclick="abrirPlayerTikTok(${dadosModal})"
+                 onmouseenter="agendarPlay(this)" 
+                 onmouseleave="cancelarPlay(this)">
+                
                 <div class="card-badge-online">${data.tag || 'NOVO'}</div>
-                <video src="${data.videoUrl}" poster="${capaUrl}" class="video-bg" muted loop playsinline></video>
+
+                <video src="${videoUrl}" 
+                       poster="${capaUrl}" 
+                       class="video-bg" 
+                       muted 
+                       loop 
+                       playsinline
+                       preload="metadata">
+                </video>
+                
                 <div class="info-container">
-                    <h3 class="user-handle">${data.autorUser}</h3>
-                    <div class="tags-row"><span class="tag-pill">${data.categoria}</span></div>
-                    <p class="desc-mini">${data.descricao}</p>
+                    <h3 class="user-handle">${data.autorUser || "@profissional"}</h3>
+                    <div class="tags-row"><span class="tag-pill">${data.categoria || "Geral"}</span></div>
+                    <p class="desc-mini">${data.descricao || "Confira este trabalho."}</p>
                     <button class="btn-orcamento-card" onclick="event.stopPropagation(); window.location.href='${linkBotao}'">
                         SOLICITAR ORÇAMENTO
                     </button>
                 </div>
             </div>`;
+            
             container.insertAdjacentHTML('beforeend', html);
         });
-    } catch (e) { console.error(e); }
+    } catch (e) { 
+        console.error("Erro ao carregar Reels:", e); 
+    }
 }
 
+// LÓGICA DO DELAY DE 3 SEGUNDOS
+// LÓGICA DO DELAY DE 3 SEGUNDOS COM RESET DE CAPA
+let timerVideo;
+
+window.agendarPlay = function(card) {
+    const video = card.querySelector('video');
+    if (!video) return;
+
+    // Agenda o play para daqui a 3 segundos
+    timerVideo = setTimeout(() => {
+        video.play().catch(e => console.log("Autoplay bloqueado"));
+    }, 3000);
+}
+
+window.cancelarPlay = function(card) {
+    const video = card.querySelector('video');
+    
+    // 1. Cancela o agendamento se o mouse sair antes de começar
+    clearTimeout(timerVideo);
+    
+    if (video) {
+        // 2. Pausa o vídeo
+        video.pause();
+        
+        // 3. O TRUQUE: Ao definir o tempo para 0 e chamar load(), 
+        // o navegador é forçado a exibir o atributo 'poster' (a capa) novamente.
+        video.currentTime = 0;
+        video.load(); 
+    }
+}
 
 
 window.ativarModo = function(modo) {
