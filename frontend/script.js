@@ -674,18 +674,12 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                     <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
                 </div>`;
             }
-
-// Dentro de window.carregarAnunciosDoFirebase, substitua a criação do card.innerHTML por:
-
-// ... código anterior ...
-            
-            // Link de redirecionamento para o perfil
-            const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${anuncio.uid}'"`;
+            const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid}')"`;
             const estiloLink = `style="cursor: pointer;"`;
 
             const card = document.createElement('div');
             card.className = 'card-premium';
-            card.onmousedown = function() { window.registrarVisualizacao(anuncio.id); };
+            card.onmousedown = function() { window.registrarVisualizacao(anuncio.id, anuncio.uid); };
 
             card.innerHTML = `
                 <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
@@ -1029,12 +1023,79 @@ window.onclick = function(e) {
     if (p && w && !w.contains(e.target)) p.style.display = 'none';
 }
 
-window.registrarVisualizacao = async function(idAnuncio) {
-    if(!idAnuncio) return;
+window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
+    if (!idAnuncio) return;
+
+    const user = auth.currentUser;
+    
+    // TRAVA 1: O dono não gera visualização no próprio anúncio
+    if (user && idDonoAnuncio && user.uid === idDonoAnuncio) {
+        console.log("Dono visualizando o próprio anúncio (View ignorada).");
+        return; 
+    }
+
+    // TRAVA 2: Verifica se já visualizou nesta sessão (Anti-F5)
+    const chaveStorage = `view_anuncio_${idAnuncio}`;
+    if (sessionStorage.getItem(chaveStorage)) {
+        console.log("Visualização já contabilizada nesta sessão.");
+        return;
+    }
+
     try {
-        const anuncioRef = doc(db, "anuncios", idAnuncio);
-        await updateDoc(anuncioRef, { views: increment(1) });
-    } catch (error) { console.error(error); }
+        const anuncioRef = doc(window.db, "anuncios", idAnuncio);
+        await updateDoc(anuncioRef, { 
+            views: increment(1) 
+        });
+        
+        // Marca que já viu para não contar de novo até fechar o navegador
+        sessionStorage.setItem(chaveStorage, "true");
+        console.log("View contabilizada +1");
+
+    } catch (error) { 
+        console.error("Erro ao registrar view:", error); 
+    }
+}
+
+// 2. REGISTRAR CLIQUE NO PERFIL (Novo)
+window.registrarCliquePerfil = async function(uidDestino) {
+    if (!uidDestino) return;
+
+    const user = auth.currentUser;
+
+    // TRAVA 1: Não conta clique no próprio perfil
+    if (user && user.uid === uidDestino) return;
+
+    // TRAVA 2: Anti-spam de sessão para cliques no perfil
+    const chaveStorage = `click_profile_${uidDestino}`;
+    if (sessionStorage.getItem(chaveStorage)) return;
+
+    try {
+        // Redireciona o usuário imediatamente para não travar a navegação
+        // A contagem acontece em segundo plano
+        const userRef = doc(window.db, "usuarios", uidDestino);
+        
+        // Atualiza estatística no documento do usuário (campo: stats.cliques_perfil)
+        // Usamos notação de ponto "stats.cliques_perfil" para atualizar campo aninhado
+        await updateDoc(userRef, { 
+            "stats.cliques_perfil": increment(1) 
+        });
+
+        sessionStorage.setItem(chaveStorage, "true");
+
+    } catch (error) {
+        // Se o campo stats não existir, o update pode falhar. 
+        // Nesse caso, usamos setDoc com merge para criar.
+        try {
+            const userRef = doc(window.db, "usuarios", uidDestino);
+            await setDoc(userRef, { stats: { cliques_perfil: 1 } }, { merge: true });
+        } catch(e) { console.error(e); }
+    }
+}
+
+// 3. FUNÇÃO AUXILIAR PARA REDIRECIONAR E CONTAR (Use isso nos botões)
+window.irParaPerfilComContagem = function(uid) {
+    registrarCliquePerfil(uid); // Dispara contagem
+    window.location.href = `perfil-profissional.html?uid=${uid}`; // Vai para a página
 }
 
 window.mostrarToast = function(mensagem, tipo = 'sucesso') {
@@ -1361,6 +1422,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if (docSnap.exists()) {
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(docSnap.data()));
                 localStorage.setItem('usuarioLogado', 'true');
+                
             }
             
             // Ativa notificações de pedidos novos
@@ -1369,6 +1431,7 @@ document.addEventListener("DOMContentLoaded", function() {
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
                 carregarPosts(user.uid);
+                carregarMeusStories(user.uid);
             }
             if(window.location.pathname.includes('chat')) {
                 carregarMeusPedidos();
@@ -3988,4 +4051,184 @@ window.carregarMeusAnunciosSelect = async function() {
             select.appendChild(option);
         });
     } catch (e) { console.error(e); }
+}
+
+// ============================================================
+// SISTEMA DE STORIES (COM DURAÇÃO DE 24H)
+// ============================================================
+
+let storyTimer = null;
+let currentStoryId = null;
+
+// 1. UPLOAD DO STORY
+window.uploadStory = async function(input) {
+    if (!input.files || !input.files[0]) return;
+
+    const file = input.files[0];
+    const user = auth.currentUser;
+    if (!user) return alert("Faça login.");
+
+    // Animação de carregando no botão Novo
+    const btnUI = document.getElementById('btnNovoStoryUI');
+    const iconeOriginal = btnUI.innerHTML;
+    btnUI.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
+
+    try {
+        // Salva a imagem/vídeo no Storage
+        const refStory = ref(storage, `stories/${user.uid}/${Date.now()}`);
+        const snap = await uploadBytes(refStory, file);
+        const url = await getDownloadURL(snap.ref);
+
+        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        const isVideo = file.type.startsWith('video');
+
+        // Salva no Banco de Dados
+        await addDoc(collection(db, "stories"), {
+            uid: user.uid,
+            autorNome: perfil.user || "Usuario",
+            autorFoto: perfil.foto || "https://placehold.co/50",
+            midiaUrl: url,
+            tipo: isVideo ? 'video' : 'foto',
+            dataCriacao: new Date().toISOString()
+        });
+
+        alert("Story publicado!");
+        window.carregarMeusStories(user.uid); // Atualiza a lista na hora
+
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao postar story.");
+    } finally {
+        btnUI.innerHTML = iconeOriginal;
+        input.value = ""; 
+    }
+}
+
+// 2. CARREGAR STORIES VÁLIDOS (ÚLTIMAS 24H)
+window.carregarMeusStories = async function(uid) {
+    const container = document.getElementById('container-bolinhas-stories');
+    if (!container) return;
+
+    // Calcula data de ontem (24h atrás)
+    const ontem = new Date();
+    ontem.setHours(ontem.getHours() - 24);
+    const dataLimite = ontem.toISOString();
+
+    try {
+        // Busca apenas stories criados DEPOIS da data limite
+        const q = query(
+            collection(db, "stories"), 
+            where("uid", "==", uid),
+            where("dataCriacao", ">", dataLimite),
+            orderBy("dataCriacao", "asc")
+        );
+
+        const snapshot = await getDocs(q);
+        container.innerHTML = "";
+
+        if (snapshot.empty) return;
+
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            // Prepara dados para passar para a função de abrir
+            const dadosJson = JSON.stringify({ ...data, id: doc.id }).replace(/"/g, '&quot;');
+            
+            // Renderiza a bolinha
+            const html = `
+            <div class="item-destaque" onclick="abrirStoryViewer(${dadosJson})">
+                <div class="circulo-destaque com-story">
+                    <img src="${data.midiaUrl}" style="${data.tipo === 'video' ? 'object-fit:cover;' : ''}">
+                </div>
+                <span style="font-size:0.7rem;">${calcularTempoAtras(data.dataCriacao)}</span>
+            </div>`;
+            
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch (e) {
+        // Se der erro de índice, o console vai avisar com um link para criar
+        console.error("Erro ao carregar stories (verifique índices):", e);
+    }
+}
+
+function calcularTempoAtras(isoString) {
+    const diff = new Date() - new Date(isoString);
+    const horas = Math.floor(diff / (1000 * 60 * 60));
+    const minutos = Math.floor(diff / (1000 * 60));
+    if (horas > 0) return `${horas}h`;
+    return `${minutos}m`;
+}
+
+// 3. VISUALIZADOR DE STORY
+window.abrirStoryViewer = function(story) {
+    const modal = document.getElementById('modalStoryViewer');
+    const containerMedia = document.getElementById('storyMediaContainer');
+    
+    currentStoryId = story.id; 
+
+    // Preenche Header
+    document.getElementById('storyUserImg').src = story.autorFoto;
+    document.getElementById('storyUserName').innerText = story.autorNome;
+    document.getElementById('storyTime').innerText = calcularTempoAtras(story.dataCriacao);
+
+    containerMedia.innerHTML = "";
+    let tempoDuracao = 5000; // 5 segundos para fotos
+
+    // Renderiza Vídeo ou Imagem
+    if (story.tipo === 'video') {
+        const video = document.createElement('video');
+        video.src = story.midiaUrl;
+        video.autoplay = true;
+        video.playsInline = true;
+        
+        // Ajusta duração baseada no tamanho do vídeo
+        video.onloadedmetadata = () => {
+            tempoDuracao = video.duration * 1000;
+            iniciarBarraProgresso(tempoDuracao);
+        };
+        video.onended = () => fecharStory(); 
+        containerMedia.appendChild(video);
+    } else {
+        const img = document.createElement('img');
+        img.src = story.midiaUrl;
+        containerMedia.appendChild(img);
+        iniciarBarraProgresso(tempoDuracao);
+    }
+
+    modal.style.display = 'flex';
+}
+
+function iniciarBarraProgresso(ms) {
+    const progress = document.getElementById('storyProgress');
+    progress.style.width = '0%';
+    progress.style.transition = 'none';
+    
+    setTimeout(() => {
+        progress.style.transition = `width ${ms}ms linear`;
+        progress.style.width = '100%';
+    }, 50);
+
+    if (storyTimer) clearTimeout(storyTimer);
+    storyTimer = setTimeout(() => {
+        fecharStory();
+    }, ms);
+}
+
+window.fecharStory = function() {
+    const modal = document.getElementById('modalStoryViewer');
+    modal.style.display = 'none';
+    document.getElementById('storyMediaContainer').innerHTML = ""; 
+    if (storyTimer) clearTimeout(storyTimer);
+}
+
+window.deletarStoryAtual = async function() {
+    if(!currentStoryId) return;
+    if(confirm("Apagar este story?")) {
+        try {
+            await deleteDoc(doc(db, "stories", currentStoryId));
+            fecharStory();
+            const user = auth.currentUser;
+            if(user) carregarMeusStories(user.uid);
+        } catch(e) { console.error(e); }
+    }
 }

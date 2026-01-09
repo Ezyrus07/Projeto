@@ -464,6 +464,55 @@
         margin-left: 0;
     }
 }
+
+/* STORIES NA LISTA */
+.circulo-destaque.com-story {
+    border: 3px solid var(--cor0); /* Verde Doke */
+    padding: 2px; /* Espaço entre borda e foto */
+}
+.circulo-destaque img {
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* PLAYER DE STORIES (Tela Cheia) */
+.story-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; z-index: 99999;
+    display: flex; justify-content: center; align-items: center;
+}
+.story-content {
+    width: 100%; max-width: 450px; height: 100%;
+    position: relative; background: #222;
+    display: flex; flex-direction: column;
+}
+.story-header {
+    position: absolute; top: 20px; left: 10px; right: 10px;
+    z-index: 10; display: flex; align-items: center; gap: 10px;
+    color: white; text-shadow: 1px 1px 2px black;
+}
+.story-avatar { width: 35px; height: 35px; border-radius: 50%; border: 1px solid white; }
+.story-media-box { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background:black; }
+.story-media-box img, .story-media-box video { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* Barra de Progresso */
+.story-progress-bar {
+    position: absolute; top: 5px; left: 5px; right: 5px;
+    height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; z-index: 15;
+}
+.story-progress-fill {
+    height: 100%; background: white; width: 0%;
+    transition: width 0.1s linear;
+}
+
+.btn-trash-story {
+    position: absolute; bottom: 20px; right: 20px;
+    background: rgba(0,0,0,0.5); color: #e74c3c;
+    border: none; border-radius: 50%; width: 40px; height: 40px;
+    font-size: 1.2rem; cursor: pointer; z-index: 20;
+}
     </style>
 </head>
 <body>
@@ -575,11 +624,40 @@
                         <button class="btn-solid" onclick="abrirModalEditar()"><i class='bx bx-pencil'></i> Editar Perfil</button>
                     </div>
                 </div>
-                <div class="area-destaques-container">
-                    <div class="scroll-destaques" id="lista-destaques">
-                        <div class="item-destaque"><div class="circulo-destaque add"><i class='bx bx-plus'></i></div><span>Novo</span></div>
-                    </div>
-                </div>
+<div class="area-destaques-container">
+    <div class="scroll-destaques" id="lista-destaques">
+        
+        <div class="item-destaque" onclick="document.getElementById('inputStoryFile').click()">
+            <div class="circulo-destaque add" id="btnNovoStoryUI">
+                <i class='bx bx-plus'></i>
+            </div>
+            <span>Novo</span>
+        </div>
+
+        <div id="container-bolinhas-stories" style="display:flex; gap:18px;"></div>
+    </div>
+</div>
+
+<input type="file" id="inputStoryFile" hidden accept="image/*,video/*" onchange="window.uploadStory(this)">
+
+<div id="modalStoryViewer" class="story-overlay" style="display:none;">
+    <div class="story-content">
+        <div class="story-progress-bar">
+            <div class="story-progress-fill" id="storyProgress"></div>
+        </div>
+
+        <div class="story-header">
+            <img id="storyUserImg" src="" class="story-avatar">
+            <span id="storyUserName">Usuario</span>
+            <span id="storyTime" style="opacity:0.7; font-size:0.8rem; margin-left:10px;"></span>
+            <button onclick="fecharStory()" style="margin-left:auto; background:none; border:none; color:white; font-size:2rem; cursor:pointer;">&times;</button>
+        </div>
+
+        <div id="storyMediaContainer" class="story-media-box"></div>
+        
+        <button id="btnDeleteStory" onclick="deletarStoryAtual()" class="btn-trash-story"><i class='bx bx-trash'></i></button>
+    </div>
+</div>
             </section>
 <div class="tabs-container">
         <button class="tab-btn" onclick="abrirTab(event, 'tab-sobre')">Sobre</button>
@@ -1336,7 +1414,9 @@ onAuthStateChanged(auth, async (user) => {
             renderizarAnuncios();
             carregarPosts(user.uid);
             carregarStatsSocial(user.uid);
+            carregarMeusStories(user.uid);
             carregarMinhasAvaliacoes(user.uid);
+            carregarKPIsReais(user.uid);
         }
     } else {
         window.location.href = "login.html";
@@ -1459,6 +1539,52 @@ async function carregarReels(uid) {
     });
 }
 
+async function carregarKPIsReais(uid) {
+    try {
+        // 1. BUSCAR CLIQUES NO PERFIL (Vem do documento do Usuário)
+        const docUser = await getDoc(doc(db, "usuarios", uid));
+        let cliquesTotal = 0;
+        
+        if (docUser.exists()) {
+            const userData = docUser.data();
+            // Pega do campo stats.cliques_perfil ou 0 se não existir
+            cliquesTotal = (userData.stats && userData.stats.cliques_perfil) ? userData.stats.cliques_perfil : 0;
+        }
+        
+        // Atualiza na tela
+        const elCliques = document.getElementById('kpi-cliques');
+        if(elCliques) elCliques.innerText = cliquesTotal;
+
+        // 2. BUSCAR VISUALIZAÇÕES TOTAIS (Soma de todos os anúncios)
+        const qAnuncios = query(collection(db, "anuncios"), where("uid", "==", uid));
+        const snapAnuncios = await getDocs(qAnuncios);
+        
+        let viewsTotal = 0;
+        snapAnuncios.forEach(adDoc => {
+            const adData = adDoc.data();
+            viewsTotal += (adData.views || 0);
+        });
+
+        // Atualiza na tela
+        const elViews = document.getElementById('kpi-views');
+        if(elViews) elViews.innerText = viewsTotal;
+
+        // 3. CALCULAR CTR (Taxa de Cliques: Cliques / Views)
+        // Isso mostra quão atrativo é seu perfil
+        const elCTR = document.getElementById('kpi-ctr');
+        if(elCTR) {
+            if (viewsTotal > 0) {
+                const ctr = (cliquesTotal / viewsTotal) * 100;
+                elCTR.innerText = ctr.toFixed(1) + "%";
+            } else {
+                elCTR.innerText = "0%";
+            }
+        }
+
+    } catch (e) {
+        console.error("Erro ao carregar KPIs:", e);
+    }
+}
 
 
 </script>

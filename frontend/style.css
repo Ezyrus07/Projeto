@@ -5754,3 +5754,126 @@ body.dark-mode {
     background: #f0f0f0;
     transform: translateY(-2px);
 }
+
+/* =================================================================
+   LAYOUT MESTRE DO PLAYER (DESKTOP DIVIDIDO / TIKTOK WEB)
+   ================================================================= */
+.modal-video-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.9); z-index: 20000;
+    display: none; justify-content: center; align-items: center;
+}
+
+.reels-layout {
+    display: flex; width: 100%; max-width: 1100px; height: 90vh;
+    background: #fff; border-radius: 8px; overflow: hidden;
+    box-shadow: 0 0 50px rgba(0,0,0,0.5);
+}
+
+/* LADO ESQUERDO: VÍDEO (Fundo Preto) */
+.video-side {
+    flex: 1; background: #000; position: relative;
+    display: flex; align-items: center; justify-content: center;
+}
+.video-player-feed { width: 100%; height: 100%; object-fit: contain; }
+
+.btn-close-modal {
+    position: absolute; top: 20px; left: 20px;
+    width: 45px; height: 45px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); color: white;
+    font-size: 24px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; transition: 0.2s; z-index: 10;
+}
+.btn-close-modal:hover { background: rgba(255,255,255,0.3); }
+
+/* LADO DIREITO: PAINEL BRANCO (Perfil, Comentários) */
+.interactive-side {
+    width: 400px; display: flex; flex-direction: column;
+    background: #fff; border-left: 1px solid #eee;
+}
+
+.reel-header {
+    padding: 15px 20px; border-bottom: 1px solid #f0f0f0;
+    display: flex; align-items: center; gap: 12px;
+}
+.reel-avatar-img { width: 42px; height: 42px; border-radius: 50%; object-fit: cover; }
+.reel-user-info h4 { margin: 0; font-size: 1rem; color: #161823; font-weight: 700; }
+.reel-user-info span { font-size: 0.8rem; color: #888; }
+
+.reel-body { flex: 1; padding: 20px; overflow-y: auto; background: #fcfcfc; }
+.reel-desc { font-size: 0.95rem; margin-bottom: 20px; color: #161823; line-height: 1.5; }
+
+.reel-footer { padding: 15px 20px; border-top: 1px solid #eee; background: #fff; }
+.action-buttons { display: flex; gap: 15px; margin-bottom: 15px; }
+
+.btn-icon-reel {
+    background: none; border: none; cursor: pointer;
+    display: flex; align-items: center; gap: 6px;
+    font-size: 0.9rem; font-weight: 600; color: #161823; padding: 0;
+}
+.icon-circle {
+    width: 45px; height: 45px; background: #f1f1f2;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; transition: 0.2s;
+}
+.btn-icon-reel:hover .icon-circle { background: #e0e0e0; }
+
+.input-fake {
+    background: #f1f1f2; padding: 12px; border-radius: 8px; color: #888; font-size: 0.9rem;
+}
+
+/* Responsivo */
+@media (max-width: 900px) {
+    .reels-layout { flex-direction: column; background: #000; height: 100%; border-radius: 0; }
+    .interactive-side { display: none; }
+    .btn-close-modal { top: 15px; left: 15px; }
+}
+
+/* STORIES NA LISTA */
+.circulo-destaque.com-story {
+    border: 3px solid var(--cor0); /* Verde Doke */
+    padding: 2px; /* Espaço entre borda e foto */
+}
+.circulo-destaque img {
+    border-radius: 50%;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* PLAYER DE STORIES (Tela Cheia) */
+.story-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: #000; z-index: 99999;
+    display: flex; justify-content: center; align-items: center;
+}
+.story-content {
+    width: 100%; max-width: 450px; height: 100%;
+    position: relative; background: #222;
+    display: flex; flex-direction: column;
+}
+.story-header {
+    position: absolute; top: 20px; left: 10px; right: 10px;
+    z-index: 10; display: flex; align-items: center; gap: 10px;
+    color: white; text-shadow: 1px 1px 2px black;
+}
+.story-avatar { width: 35px; height: 35px; border-radius: 50%; border: 1px solid white; }
+.story-media-box { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background:black; }
+.story-media-box img, .story-media-box video { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* Barra de Progresso */
+.story-progress-bar {
+    position: absolute; top: 5px; left: 5px; right: 5px;
+    height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; z-index: 15;
+}
+.story-progress-fill {
+    height: 100%; background: white; width: 0%;
+    transition: width 0.1s linear;
+}
+
+.btn-trash-story {
+    position: absolute; bottom: 20px; right: 20px;
+    background: rgba(0,0,0,0.5); color: #e74c3c;
+    border: none; border-radius: 50%; width: 40px; height: 40px;
+    font-size: 1.2rem; cursor: pointer; z-index: 20;
+}
