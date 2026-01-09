@@ -376,63 +376,72 @@
         <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
-    <div id="modalPlayerVideo" class="modal-video-overlay" style="display: none;">
-        <span class="btn-close-reels" onclick="fecharPlayerVideo()" style="z-index: 20000;">&times;</span>
-        
-        <div id="containerFeedScroll" class="feed-scroll-wrapper"></div>
+<div id="modalPlayerVideo" class="modal-overlay" onclick="fecharPlayerVideo(event)">
+    
+    <button class="btn-close-modal-fixed" onclick="fecharPlayerVideoForce()">&times;</button>
+    
+    <button class="nav-arrow nav-up" onclick="navegarReel(-1)"><i class='bx bx-chevron-up'></i></button>
+    <button class="nav-arrow nav-down" onclick="navegarReel(1)"><i class='bx bx-chevron-down'></i></button>
 
-        <div class="reels-layout" id="layoutVideoUnico">
-            <div class="video-frame" onclick="togglePlayVideo(event)" ondblclick="handleDoubleClick(event)">
-                <video id="playerPrincipal" loop playsinline src=""></video>
-                <div id="iconPlayPause" class="play-overlay"><i class='bx bx-play'></i></div>
-                <div class="video-info-overlay">
-                    <div id="rowAuthorInfo" class="author-row">
-                        <img id="tiktokAvatarImg" src="https://placehold.co/50" class="author-avatar">
-                        <span id="tiktokUser" class="author-name">@usuario</span>
-                        <span id="btnFollowVideo" class="btn-follow-text" onclick="toggleFollow(event, this)">• Seguir</span>
-                    </div>
-                    <div id="tiktokDesc" class="video-caption">Descrição...</div>
-                </div>
-            </div>  
+    <div class="modal-content">
+        <div class="modal-media-area" onwheel="handleReelScroll(event)">
+            <div id="reelBlurBg" style="position: absolute; top:0; left:0; width:100%; height:100%; background-size:cover; filter:blur(20px); opacity:0.3; z-index:1;"></div>
+            <video id="playerPrincipal" loop playsinline onclick="togglePlayVideo(event)" style="z-index:2; cursor:pointer;"></video>
+            <div id="iconPlayOverlay" style="position: absolute; z-index: 3; font-size: 80px; color: rgba(255,255,255,0.8); pointer-events: none; opacity: 0;"><i class='bx bx-play'></i></div>
+        </div>
 
-            <div class="actions-column" onclick="event.stopPropagation()">
-                <button class="action-btn" onclick="window.location.href='meuperfil.html'">
-                    <div class="icon-circle-img"><img id="btnProfileImg" src="https://placehold.co/50"></div>
-                    <span class="action-label">Perfil</span>
-                </button>
-                <button class="action-btn" onclick="toggleLikeTikTok(this)">
-                    <div class="icon-circle"><i class='bx bx-heart'></i></div>
-                    <span id="tiktokLikesCount" class="action-count">0</span>
-                </button>
-                <button class="action-btn" onclick="toggleComentarios()">
-                    <div class="icon-circle"><i class='bx bx-message-rounded-dots'></i></div>
-                    <span class="action-label">Comentar</span>
-                </button>
-                <button class="action-btn" onclick="compartilharVideo()">
-                    <div class="icon-circle"><i class='bx bx-share-alt'></i></div>
-                    <span class="action-label">Enviar</span>
-                </button>
-                <button id="btnOrcamentoModal" class="action-btn btn-orcamento-destaque">
-                    <div class="icon-circle circle-green"><i class='bx bx-dollar'></i></div>
-                    <span class="action-label">Orçar</span>
-                </button>
-            </div>
-
-            <div id="boxComentarios" class="comments-box" style="display: none;" onclick="event.stopPropagation()">
-                <div class="comments-header">
-                    <h3>Comentários</h3>
-                    <span class="btn-close-comments" onclick="toggleComentarios()">&times;</span>
+<div class="modal-info-area">
+    <div class="modal-header">
+        <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+            <img id="reelAvatar" src="" style="width: 42px; height: 42px; border-radius: 50%; object-fit: cover;">
+            <div>
+                <div style="display:flex; align-items:center; gap:5px;">
+                    <strong id="reelUsername" style="font-size: 0.95rem; color: #262626;">@usuario</strong>
+                    <span onclick="toggleSeguir(event)" style="color: #0095f6; font-weight: 600; font-size: 0.85rem; cursor: pointer;">• Seguir</span>
                 </div>
-                <div class="comments-list" id="listaComentariosReais"></div>
-                <div class="comments-input-area">
-                    <img src="https://placehold.co/50" class="my-avatar-mini">
-                    <input type="text" id="inputNovoComentario" placeholder="Adicione um comentário..." onkeypress="checarEnter(event)">
-                    <button onclick="postarComentario()">Publicar</button>
-                </div>
+                <span id="reelDataTop" style="font-size: 0.75rem; color: #8e8e8e;">Vídeo curto</span>
             </div>
         </div>
+        <i class='bx bx-dots-horizontal-rounded' style="font-size: 1.5rem; color: #262626; cursor: pointer;"></i>
     </div>
 
+    <div class="modal-comments-section" id="reelCommentsBody">
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <img id="reelAvatarCap" src="" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+            <div style="font-size: 0.9rem; line-height: 1.5; color: #262626;">
+                <strong id="reelUsernameCap" style="margin-right: 5px;">@usuario</strong>
+                <span id="reelDesc">Descrição do vídeo...</span>
+                <div id="reelData" style="font-size: 0.75rem; color: #8e8e8e; margin-top: 8px;">1 sem</div>
+            </div>
+        </div>
+        
+        <div id="listaComentariosReel"></div>
+    </div>
+
+    <div class="modal-footer-actions">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <div style="display: flex; gap: 16px; font-size: 1.7rem;">
+                <i class='bx bx-heart' id="btnLikeReel" onclick="darLikeReel()" style="cursor: pointer;"></i>
+                <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioReel').focus()" style="cursor: pointer;"></i>
+                <i class='bx bx-paper-plane' onclick="compartilharReelAtual()" style="cursor: pointer;"></i>
+            </div>
+            
+            <button class="btn-orcar-v" onclick="irOrcamentoReel()">
+                <i class='bx bx-dollar'></i> ORÇAR
+            </button>
+        </div>
+
+        <span id="reelLikesCount" style="display: block; font-weight: 700; font-size: 0.9rem; color: #262626; margin-bottom: 8px;">0 curtidas</span>
+        
+        <div style="display: flex; align-items: center; gap: 10px; border-top: 1px solid #efefef; padding-top: 12px; margin-top: 10px;">
+            <input type="text" id="inputComentarioReel" placeholder="Adicione um comentário..." style="flex: 1; border: none; outline: none; font-size: 0.95rem; background: transparent;">
+            <button onclick="enviarComentarioReel()" style="background: transparent; color: #0095f6; border: none; font-weight: 700; font-size: 0.9rem; cursor: pointer;">Publicar</button>
+        </div>
+    </div>
+</div>
+        </div>
+    </div>
+</div>
     <nav class="bottom-nav">
         <a href="index.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
         <a href="explorar.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a>
@@ -469,78 +478,262 @@
         <div id="storyMediaContainer" class="story-media-box"></div>
     </div>
 </div>
+<div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
+    <button class="btn-close-modal-fixed" onclick="fecharModalPostForce()">&times;</button>
+    <div class="modal-content" onclick="event.stopPropagation()">
+        <div class="modal-media-area" id="modalMediaContainer">
+            </div>
+        <div class="modal-info-area">
+            <div class="modal-header">
+                <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+                    <img id="modalAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    <div style="font-weight: bold; font-size: 0.95rem;" id="modalUsername">User</div>
+                </div>
+            </div>
+            <div class="modal-comments-section" id="modalCommentsList">
+                <div id="modalCaption"></div>
+            </div>
+<div class="modal-footer-actions">
+    <div class="modal-actions-bar">
+        <div class="action-icons-left">
+            <i class='bx bx-heart' id="btnLikeReel" onclick="darLikeReel()"></i>
+            <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioReel').focus()"></i>
+            <i class='bx bx-paper-plane' onclick="compartilharReelAtual()"></i>
+        </div>
+        
+        <button class="btn-orcar-v" onclick="irOrcamentoReel()">
+            <i class='bx bx-dollar'></i> ORÇAR
+        </button>
+    </div>
+
+    <span class="likes-count-universal" id="reelLikesCount">0 curtidas</span>
+
+    <div class="input-container-universal">
+        <input type="text" id="inputComentarioReel" placeholder="Adicione um comentário...">
+        <button onclick="enviarComentarioReel()" style="background:none; border:none; color:#0095f6; font-weight:bold; cursor:pointer;">Publicar</button>
+    </div>
+</div>
+        </div>
+    </div>
+</div>
 
 <style>
-    /* CSS DO PLAYER DE VÍDEO */
-    .modal-video-overlay {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.95); /* Fundo preto quase total */
-        z-index: 10000;
-        display: flex; justify-content: center; align-items: center;
-        backdrop-filter: blur(5px);
-        animation: fadeIn 0.3s ease;
-    }
-    .video-wrapper {
-        width: 90%; max-width: 500px; /* Tamanho estilo TikTok/Reels */
-        aspect-ratio: 9 / 16;
-        background: #000;
-        border-radius: 12px; overflow: hidden;
-        box-shadow: 0 0 50px rgba(0,0,0,0.5);
-    }
-    .video-wrapper video {
-        width: 100%; height: 100%; object-fit: contain;
-    }
-    .btn-fechar-video {
-        position: absolute; top: 20px; right: 30px;
-        color: white; font-size: 40px; cursor: pointer; z-index: 10001;
-        transition: 0.2s;
-    }
-    .btn-fechar-video:hover { color: #ff4444; transform: scale(1.1); }
+/* =========================================
+   TRAVA DE BOTÕES: IGUALDADE TOTAL
+   ========================================= */
+
+/* 1. Container de Ações (A barra onde ficam os ícones) */
+.modal-actions-bar {
+    display: flex;
+    justify-content: space-between; /* Empurra o Orçar para a direita */
+    align-items: center;
+    padding: 10px 0;
+    height: 40px; /* Altura fixa para não variar */
+}
+
+/* 2. Grupo de Ícones da Esquerda */
+.action-icons-left {
+    display: flex;
+    gap: 18px; /* Espaço exato entre os ícones */
+    align-items: center;
+}
+
+/* 3. Estilo dos Ícones (Like, Comentar, Share) */
+.action-icons-left i {
+    font-size: 26px !important; /* TAMANHO FIXO IGUAL PARA TUDO */
+    color: #262626;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.action-icons-left i:hover {
+    transform: scale(1.1);
+    color: #8e8e8e;
+}
+
+/* Coração Vermelho */
+.action-icons-left i.bxs-heart {
+    color: #ed4956 !important;
+}
+
+/* 4. Botão ORÇAR (Verde Doke) */
+.btn-orcar-v {
+    background: #0b7768 !important; /* Verde exato */
+    color: #fff !important;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    text-transform: uppercase;
+}
+
+/* 5. Contador de Curtidas e Input */
+.likes-count-universal {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #262626;
+    margin-bottom: 10px;
+    display: block;
+}
+
+.input-container-universal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-top: 1px solid #efefef;
+    padding-top: 10px;
+}
+
+.input-container-universal input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 0.9rem;
+}
+
+.modal-overlay, .modal-video-overlay{
+    background: rgba(0, 0, 0, 0.15);
+}
+.modal-info-area {
+        min-width: 320px;
+
+
+
+}
+
+
+
+/* =========================================
+   PLAYER ESTILO TIKTOK (9:16) - FINAL
+   ========================================= */
+
+/* Fundo */
+#modalPlayerVideo.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    background: rgba(0, 0, 0, 0.92); z-index: 20000;
+    display: none; justify-content: center; align-items: center;
+    backdrop-filter: blur(10px);
+}
+
+/* O Container do TikTok (Mais estreito que o de foto para manter a proporção) */
+#modalPlayerVideo .modal-content {
+    background: #fff;
+    width: 95%;
+    max-width: 850px !important; /* LARGURA IDEAL TIKTOK DESKTOP */
+    height: 90vh;
+    max-height: 800px;
+    display: flex;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    box-shadow: 0 0 100px rgba(0,0,0,0.8);
+}
+
+/* Área do Vídeo (Esquerda) */
+#modalPlayerVideo .modal-media-area {
+    flex: 1.1 !important; /* Ajustado para o vídeo não ficar largo demais */
+    background: #000;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+}
+
+#modalPlayerVideo video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Faz o vídeo preencher como no TikTok */
+}
+
+/* Área de Info (Direita) */
+#modalPlayerVideo .modal-info-area {
+    flex: 1 !important;
+    min-width: 380px;
+    display: flex; flex-direction: column;
+    background: #fff;
+    border-left: 1px solid #efefef;
+}
+
+/* Botão Orçar Verde Doke */
+.btn-orcar-v {
+    background: #0b7768 !important;
+    color: white !important;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-transform: uppercase;
+}
+
+/* Ajuste das setas laterais */
+.nav-arrow {
+    position: absolute; right: 30px;
+    width: 50px; height: 50px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 30px; cursor: pointer; border: 1px solid rgba(255,255,255,0.2);
+    z-index: 20002;
+}
+.nav-up { top: 42%; }
+.nav-down { top: 58%; }
+
+.btn-close-v {
+    position: absolute; top: 20px; left: 20px;
+    color: white; font-size: 40px; cursor: pointer; z-index: 20001;
+    background: none; border: none;
+}
+
+/* Força a lateral do vídeo a ser um clone da do post */
+#modalPlayerVideo .modal-info-area {
+    background: #ffffff !important;
+}
+
+#modalPlayerVideo .modal-header {
+    border-bottom: 1px solid #efefef !important;
+}
+
+/* Tamanho dos ícones para bater com o Post */
+#modalPlayerVideo .bx {
+    color: #262626;
+    transition: transform 0.1s;
+}
+
+#modalPlayerVideo .bx-heart:hover, 
+#modalPlayerVideo .bx-message-rounded:hover, 
+#modalPlayerVideo .bx-paper-plane:hover {
+    color: #8e8e8e;
+}
+
+/* O Botão Orçar Verde Doke */
+.btn-orcar-v {
+    background: #0b7768 !important;
+    color: #fff !important;
+    border: none;
+    padding: 7px 14px;
+    border-radius: 4px;
+    font-weight: 700;
+    font-size: 0.8rem;
+    cursor: pointer;
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Ajuste do Scrollbar para ficar fino igual ao do Post */
+.modal-comments-section::-webkit-scrollbar {
+    width: 4px;
+}
+.modal-comments-section::-webkit-scrollbar-thumb {
+    background: #dbdbdb;
+    border-radius: 10px;
+}
 </style>
-
-<script>
-    (function() {
-        // 1. Verifica login no LocalStorage (é instantâneo)
-        const logado = localStorage.getItem('usuarioLogado') === 'true';
-        const areaStories = document.getElementById('secStories');
-        
-        // 2. Força a exibição dos stories se estiver logado
-        if (areaStories) {
-            if (logado) {
-                areaStories.style.display = 'block'; // Mostra!
-                
-                // Tenta carregar a foto do perfil
-                try {
-                    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-                    if (perfil && perfil.foto) {
-                        const img = document.getElementById('imgSeuStory');
-                        if(img) img.src = perfil.foto;
-                    }
-                } catch(e) { console.log("Perfil vazio"); }
-                
-            } else {
-                areaStories.style.display = 'none'; // Garante que esconde se não logado
-            }
-        }
-
-        // 3. Atualiza botão de Entrar/Perfil (caso o script.js falhe)
-        const container = document.querySelector('.botoes-direita');
-        if (container) {
-            if (logado) {
-                // Se já tem HTML de perfil, não mexe. Se tem botão "Entrar", troca.
-                if(container.innerHTML.includes('Entrar')) {
-                    container.innerHTML = `
-                        <div class="profile-container">
-                             <img src="${localStorage.getItem('doke_usuario_perfil') ? JSON.parse(localStorage.getItem('doke_usuario_perfil')).foto || 'https://i.pravatar.cc/150?img=12' : 'https://i.pravatar.cc/150?img=12'}" 
-                                  class="profile-img-btn" onclick="toggleDropdown(event)" 
-                                  style="width:40px; height:40px; border-radius:50%; cursor:pointer; border:2px solid #ddd;">
-                             </div>`;
-                }
-            } else {
-                container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
-            }
-        }
-    })();
-</script>
+</style>
 </body>
 </html>

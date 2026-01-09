@@ -850,70 +850,141 @@
         </div>
     </div>
 
-    <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
-        <div class="btn-close-modal">×</div>
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <div class="modal-header">
-                <div class="modal-author-info"><img id="modalAvatar" src="" class="modal-author-img"><div><div id="modalUsername" class="modal-author-name">User</div><span id="modalDate" style="font-size:0.75rem; color:#888;">Data</span></div></div>
-                <button id="btnExcluirModal" onclick="deletarPostAtual()" style="border:none; background:none; cursor:pointer; color:#e74c3c; display:none;" title="Excluir"><i class='bx bx-trash' style="font-size:1.4rem;"></i></button>
+<div id="modalPlayerVideo" class="modal-overlay" onclick="fecharModalVideo(event)" style="display: none; z-index: 20000;">
+    
+    <button class="btn-close-modal-fixed" onclick="fecharModalVideoForce()">&times;</button>
+    
+    <button class="nav-arrow nav-up" onclick="navegarReel(-1)"><i class='bx bx-chevron-up'></i></button>
+    <button class="nav-arrow nav-down" onclick="navegarReel(1)"><i class='bx bx-chevron-down'></i></button>
+
+    <div class="modal-content" onclick="event.stopPropagation()">
+        
+        <div class="modal-media-area" id="reelVideoArea" onwheel="handleReelScroll(event)" style="background: black; position: relative;">
+            <div id="reelBlurBg" style="position: absolute; top:0; left:0; width:100%; height:100%; background-size:cover; filter:blur(20px); opacity:0.3; z-index:1;"></div>
+            <video id="playerPrincipal" loop playsinline onclick="togglePlayVideo(event)" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain;"></video>
+            <div id="iconPlayOverlay" style="position: absolute; z-index: 3; font-size: 80px; color: rgba(255,255,255,0.8); pointer-events: none; opacity: 0; transition: 0.2s;">
+                <i class='bx bx-play'></i>
             </div>
-            <div class="modal-media-area" id="modalMediaContainer"></div>
-            <div class="modal-info-area">
-                <div class="modal-actions-bar"><i class='bx bx-heart'></i><i class='bx bx-message-rounded'></i><i class='bx bx-share-alt'></i></div>
-                <span id="modalLikesCount" class="likes-count-text">0 curtidas</span>
-                <div id="modalCaption" class="modal-caption"></div>
-                <h4 style="font-size:0.9rem; margin-bottom:10px; color:#666;">Comentários</h4><div id="modalCommentsList" class="modal-comments-section"></div>
-                <div style="display:flex; gap:10px;"><input type="text" id="inputComentarioModal" placeholder="Escreva..." style="flex:1; padding:10px; border:1px solid #ddd; border-radius:50px;"><button onclick="postarComentarioModal()" style="background:var(--cor0); color:white; border:none; padding:0 20px; border-radius:50px;">Enviar</button></div>
+        </div>
+
+        <div class="modal-info-area">
+            
+            <div class="modal-header">
+                <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+                    <img id="reelAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">User</div>
+                            <span onclick="toggleFollow(event, this)" style="font-size:0.8rem; color:#0095f6; font-weight:600; cursor:pointer;">• Seguir</span>
+                        </div>
+                        <span id="reelDataTop" style="font-size: 0.75rem; color: #888;">Vídeo Reels</span>
+                    </div>
+                </div>
+                <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; cursor:pointer; color:#333;"></i>
+            </div>
+
+            <div class="modal-comments-section" id="reelCommentsBody">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <img id="reelAvatarCap" src="" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <span id="reelUsernameCap" style="font-weight: bold; font-size: 0.9rem; margin-right:5px;">User</span>
+                        <span id="reelDesc" style="font-size: 0.9rem; color: #333; line-height: 1.4;">Descrição...</span>
+                        <div id="reelData" style="font-size:0.75rem; color:#888; margin-top:5px;">Data</div>
+                    </div>
+                </div>
+                <div id="listaComentariosReel"></div>
+            </div>
+
+            <div class="modal-footer-actions">
+                <div class="modal-actions-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 15px; font-size: 1.5rem;">
+                        <i class='bx bx-heart' id="btnLikeReel" onclick="darLikeReel()" style="cursor: pointer;"></i>
+                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioReel').focus()" style="cursor: pointer;"></i>
+                        <i class='bx bx-paper-plane' onclick="compartilharReelAtual()" style="cursor: pointer;"></i>
+                    </div>
+                    <button onclick="irOrcamentoReel()" style="background: #0b7768; color: white; border: none; padding: 6px 15px; border-radius: 4px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor:pointer;">
+                        <i class='bx bx-dollar'></i> ORÇAR
+                    </button>
+                </div>
+                <span id="reelLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
+                
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="inputComentarioReel" placeholder="Adicione um comentário..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 0.9rem;">
+                    <button onclick="enviarComentarioReel()" style="background: transparent; color: #0b7768; border: none; font-weight: bold; cursor: pointer;">Publicar</button>
+                </div>
             </div>
         </div>
     </div>
+</div>
 
     <nav class="bottom-nav">
         <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
         <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-<div id="modalPlayerVideo" class="modal-video-overlay">
+<div id="modalPlayerVideo" class="modal-overlay" onclick="fecharModalVideo(event)" style="display: none; z-index: 20000;">
     
-    <span class="btn-close-reels" onclick="fecharPlayerVideo()">&times;</span>
+    <button class="btn-close-modal-fixed" onclick="fecharModalVideoForce()">&times;</button>
+    
+    <button class="nav-arrow nav-up" onclick="navegarReel(-1)"><i class='bx bx-chevron-up'></i></button>
+    <button class="nav-arrow nav-down" onclick="navegarReel(1)"><i class='bx bx-chevron-down'></i></button>
 
-    <div class="reels-layout">
+    <div class="modal-content" onclick="event.stopPropagation()">
         
-        <div class="video-frame">
-            <video id="playerPrincipal" loop playsinline class="video-player-feed"></video>
-            
-            <div class="video-info-overlay">
-                <div class="author-row">
-                    <img id="tiktokAvatarImg" src="" class="author-avatar">
-                    <span id="tiktokUser" class="author-name">@usuario</span>
-                </div>
-                <p id="tiktokDesc" class="video-caption">Descrição do vídeo...</p>
+        <div class="modal-media-area" id="reelVideoArea" onwheel="handleReelScroll(event)" style="background: black; position: relative;">
+            <div id="reelBlurBg" style="position: absolute; top:0; left:0; width:100%; height:100%; background-size:cover; filter:blur(20px); opacity:0.3; z-index:1;"></div>
+            <video id="playerPrincipal" loop playsinline onclick="togglePlayVideo(event)" style="position:relative; z-index:2; width:100%; height:100%; object-fit:contain; cursor: pointer;"></video>
+            <div id="iconPlayOverlay" style="position: absolute; z-index: 3; font-size: 80px; color: rgba(255,255,255,0.8); pointer-events: none; opacity: 0; transition: 0.2s;">
+                <i class='bx bx-play'></i>
             </div>
-        </div>  
+        </div>
 
-        <div class="actions-column">
+        <div class="modal-info-area">
             
-            <button class="action-btn">
-                <div class="icon-circle">
-                    <i class='bx bxs-heart' style="color: #ff4757;"></i> </div>
-                <span id="tiktokLikesCount" class="action-label">0</span>
-            </button>
-
-            <button class="action-btn">
-                <div class="icon-circle">
-                    <i class='bx bx-message-rounded-dots'></i>
+            <div class="modal-header">
+                <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+                    <img id="reelAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <div style="display:flex; align-items:center; gap:5px;">
+                            <div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">User</div>
+                            <span onclick="toggleFollow(event, this)" style="font-size:0.8rem; color:#0095f6; font-weight:600; cursor:pointer;">• Seguir</span>
+                        </div>
+                        <span id="reelDataTop" style="font-size: 0.75rem; color: #888;">Vídeo Reels</span>
+                    </div>
                 </div>
-                <span class="action-label">Comentar</span>
-            </button>
+                <i class='bx bx-dots-horizontal-rounded' style="font-size:1.5rem; cursor:pointer; color:#333;"></i>
+            </div>
 
-            <button class="action-btn">
-                <div class="icon-circle">
-                    <i class='bx bx-share-alt'></i>
+            <div class="modal-comments-section" id="reelCommentsBody">
+                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                    <img id="reelAvatarCap" src="" style="width: 32px; height: 32px; border-radius: 50%; object-fit: cover;">
+                    <div>
+                        <span id="reelUsernameCap" style="font-weight: bold; font-size: 0.9rem; margin-right:5px;">User</span>
+                        <span id="reelDesc" style="font-size: 0.9rem; color: #333; line-height: 1.4;">Descrição...</span>
+                        <div id="reelData" style="font-size:0.75rem; color:#888; margin-top:5px;">Data</div>
+                    </div>
                 </div>
-                <span class="action-label">Enviar</span>
-            </button>
+                <div id="listaComentariosReel"></div>
+            </div>
 
-
+            <div class="modal-footer-actions">
+                <div class="modal-actions-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <div style="display: flex; gap: 15px; font-size: 1.5rem;">
+                        <i class='bx bx-heart' id="btnLikeReel" onclick="darLikeReel()" style="cursor: pointer;"></i>
+                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioReel').focus()" style="cursor: pointer;"></i>
+                        <i class='bx bx-paper-plane' onclick="compartilharReelAtual()" style="cursor: pointer;"></i>
+                    </div>
+                    <button onclick="irOrcamentoReel()" style="background: #0b7768; color: white; border: none; padding: 6px 15px; border-radius: 4px; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; gap: 5px; cursor:pointer;">
+                        <i class='bx bx-dollar'></i> ORÇAR
+                    </button>
+                </div>
+                <span id="reelLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
+                
+                <div style="display: flex; gap: 10px;">
+                    <input type="text" id="inputComentarioReel" placeholder="Adicione um comentário..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 20px; outline: none; font-size: 0.9rem;">
+                    <button onclick="enviarComentarioReel()" style="background: transparent; color: #0b7768; border: none; font-weight: bold; cursor: pointer;">Publicar</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>

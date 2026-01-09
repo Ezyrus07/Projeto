@@ -52,6 +52,9 @@ window.mediaRecorder = null;
 window.audioChunks = [];
 window.timerInterval = null;
 window.targetUserUid = null;
+window.listaReelsAtual = [];
+window.indiceReelAtual = 0;
+window.isScrollingReel = false;
 
 
 // ============================================================
@@ -355,84 +358,61 @@ window.carregarTrabalhosHome = async function() {
 // ============================================================
 // ABRIR PLAYER TIKTOK (CORRIGIDO: RECEBE FOTO E LINK)
 // ============================================================
-window.abrirPlayerTikTok = function(dados) {
-    if (!dados.video) {
-        alert("Erro: Vídeo não encontrado.");
-        return;
-    }
-
+window.abrirPlayerTikTok = function(dadosRecebidos) {
+    // Tratamento caso venha string ou objeto
+    const dados = (typeof dadosRecebidos === 'string') ? JSON.parse(dadosRecebidos) : dadosRecebidos;
     const modal = document.getElementById('modalPlayerVideo');
+    if(!modal) return;
+
+    // Globais
+    window.currentReelId = dados.id;
+    window.currentReelUid = dados.uid;
+    window.currentReelAnuncioId = dados.anuncioId || dados.aid;
+
+    // 1. Mostrar
+    modal.style.display = 'flex';
+
+    // 2. Preencher Vídeo
     const player = document.getElementById('playerPrincipal');
+    const blur = document.getElementById('videoBlur');
+    player.src = dados.video;
+    player.play().catch(() => {}); // Autoplay
     
-    // --- 1. Elementos de Texto ---
-    const uiUser = document.getElementById('tiktokUser');
-    const uiDesc = document.getElementById('tiktokDesc');
-    const uiLikes = document.getElementById('tiktokLikesCount');
-    
-    if(uiUser) uiUser.innerText = dados.user;
-    if(uiDesc) uiDesc.innerText = dados.desc;
-    if(uiLikes) uiLikes.innerText = dados.likes || "0";
-
-    // --- 2. Elementos de Imagem (Foto do Criador) ---
-    const imgAvatar = document.getElementById('tiktokAvatarImg'); // No rodapé do vídeo
-    const imgBtnSide = document.getElementById('btnProfileImg'); // No botão lateral
-    
-    // Usa a foto recebida ou um padrão se estiver vazia
-    const fotoFinal = dados.autorFoto && dados.autorFoto !== "undefined" ? dados.autorFoto : "https://placehold.co/150";
-    
-    if(imgAvatar) imgAvatar.src = fotoFinal;
-    if(imgBtnSide) imgBtnSide.src = fotoFinal;
-
-    // --- 3. Link para o Perfil (Correção do Redirecionamento) ---
-    const irParaPerfilCriador = function(e) {
-        if(e) e.stopPropagation();
-        if(dados.uid && dados.uid !== "undefined") {
-            window.location.href = `perfil-profissional.html?uid=${dados.uid}`;
-        } else {
-            alert("Perfil indisponível para este vídeo.");
-        }
-    };
-
-    // Aplica o clique na linha do autor (rodapé)
-    const rowAuthor = document.getElementById('rowAuthorInfo');
-    if(rowAuthor) rowAuthor.onclick = irParaPerfilCriador;
-
-    // Aplica o clique no botão lateral de perfil
-    const btnProfileSide = document.getElementById('btnProfileSide');
-    if(btnProfileSide) btnProfileSide.onclick = irParaPerfilCriador;
-
-    // --- 4. Configura Player e Botões ---
-    if(player) {
-        player.src = dados.video;
-        player.play().catch(e => console.log("Autoplay bloqueado"));
+    // Fundo Blur
+    if(blur) {
+        const capa = dados.img || dados.capa || "";
+        blur.style.backgroundImage = `url('${capa}')`;
     }
 
-    // Botão de Orçamento com ID correto
-    const btnOrcamento = document.getElementById('btnOrcamentoModal');
-    if(btnOrcamento && dados.uid) {
-        btnOrcamento.onclick = function() {
-            window.location.href = `orcamento.html?uid=${dados.uid}&aid=${dados.id}`;
-        }
-    }
+    // 3. Preencher Header e Legenda
+    const foto = dados.autorFoto || "https://placehold.co/50";
+    const user = dados.autorUser || "@usuario";
+    const desc = dados.desc || "";
 
-    // Esconde botão "Seguir" se for o próprio usuário
-    const btnSeguir = document.getElementById('btnFollowVideo');
-    const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-    if(btnSeguir) {
-        if(userLogado.uid === dados.uid) {
-            btnSeguir.style.display = 'none';
-        } else {
-            btnSeguir.style.display = 'inline-block';
-        }
-    }
+    // Header
+    document.getElementById('reelAvatar').src = foto;
+    document.getElementById('reelUsername').innerText = user;
 
-    // Garante layout correto
-    const layoutUnico = document.getElementById('layoutVideoUnico');
-    const layoutFeed = document.getElementById('containerFeedScroll');
-    if(layoutUnico) layoutUnico.style.display = 'flex';
-    if(layoutFeed) layoutFeed.innerHTML = ""; 
+    // Legenda (Topo do corpo)
+    document.getElementById('reelAvatarCap').src = foto;
+    document.getElementById('reelUsernameCap').innerText = user;
+    document.getElementById('reelDesc').innerText = desc;
+    document.getElementById('reelData').innerText = "Ver tradução"; // Simulado
 
-    if(modal) modal.style.display = 'flex';
+    // 4. Rodapé
+    document.getElementById('reelLikesCount').innerText = `${dados.likes || 0} curtidas`;
+    document.getElementById('reelDateSmall').innerText = "HÁ 2 DIAS"; // Simulado
+
+    // 5. Resetar Ícone Like
+    const icon = document.getElementById('btnLikeReel');
+    icon.className = 'bx bx-heart';
+    icon.style.color = '';
+
+    // Verifica like no banco
+    if(auth.currentUser) verificarLikeReel(dados.id, auth.currentUser.uid);
+
+    // Carrega Comentários
+    carregarComentariosReel(dados.id);
 }
 
 // Função de curtir visual (apenas efeito)
@@ -1232,14 +1212,24 @@ window.carregarFeedGlobal = async function() {
         const snapshot = await window.getDocs(q);
         container.innerHTML = ""; 
 
-        if (snapshot.empty) return;
+        if (snapshot.empty) {
+            container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publicação ainda.</p>";
+            return;
+        }
 
         snapshot.forEach((doc) => {
             const post = doc.data();
+            const idPost = doc.id;
             const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
-            const imgHtml = post.imagem ? `<div class="midia-post"><img src="${post.imagem}" loading="lazy"></div>` : '';
             
-            // --- LINK DE REDIRECIONAMENTO ---
+            // Se tiver imagem, ao clicar nela abre o Modal
+            const imgHtml = post.imagem 
+                ? `<div class="midia-post" style="cursor:pointer;" onclick="abrirModalPost('${idPost}', 'posts')">
+                     <img src="${post.imagem}" loading="lazy" style="width:100%; height:auto; display:block;">
+                   </div>` 
+                : '';
+            
+            // Link para perfil
             const uidDestino = post.uid || ""; 
             const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${uidDestino}'"`;
             const cursorStyle = `style="cursor: pointer;"`;
@@ -1253,12 +1243,20 @@ window.carregarFeedGlobal = async function() {
                             <span>${dataPost}</span>
                         </div>
                     </div>
-                    <div class="feed-body"><p>${post.texto}</p></div>
+                    <div class="feed-body" onclick="abrirModalPost('${idPost}', 'posts')" style="cursor:pointer;">
+                        <p>${post.texto || ''}</p>
+                    </div>
                     ${imgHtml}
                     <div class="feed-footer">
-                        <div class="feed-action"><i class='bx bx-heart'></i> ${post.likes || 0}</div>
-                        <div class="feed-action"><i class='bx bx-comment'></i> Comentar</div>
-                        <div class="feed-action"><i class='bx bx-share-alt'></i> Compartilhar</div>
+                        <div class="feed-action" onclick="abrirModalPost('${idPost}', 'posts')">
+                            <i class='bx bx-heart'></i> ${post.likes || 0}
+                        </div>
+                        <div class="feed-action" onclick="abrirModalPost('${idPost}', 'posts')">
+                            <i class='bx bx-comment'></i> Comentar
+                        </div>
+                        <div class="feed-action" onclick="compartilharUrlPost('${idPost}')">
+                            <i class='bx bx-share-alt'></i> Compartilhar
+                        </div>
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
@@ -3688,80 +3686,193 @@ window.fecharPlayerVideo = function() {
     if (observerFeed) observerFeed.disconnect();
 }
 
-// --- VARIÁVEIS GLOBAIS DO MODAL ---
-let currentPostId = null;
-let currentCollection = null;
+// Variáveis Globais de Controle
+window.currentPostId = null;
+window.currentCollection = null;
+window.currentPostAuthorUid = null; // <--- NOVO: Para identificar o criador
+let processandoLike = false; // Trava para evitar cliques rápidos
 
 window.abrirModalPost = async function(id, colecao) {
     const modal = document.getElementById('modalPostDetalhe');
-    modal.style.display = 'flex';
+    const user = auth.currentUser;
     
-    // Controle do botão excluir (Apenas no meuperfil.html vai funcionar se tiver o ID btnExcluirModal)
-    const btnDel = document.getElementById('btnExcluirModal');
-    if(btnDel) btnDel.style.display = 'block'; // Mostra por padrão, no perfil-profissional vc esconde no código dele
-
-    // Busca dados
-    const docSnap = await getDoc(doc(db, colecao, id));
-    if(!docSnap.exists()) return;
-    const data = docSnap.data();
+    if(!modal) return;
     
-    // Variável global para deleção/comentário
-    currentPostId = id;
-    currentCollection = colecao;
-    // Se estiver usando o script que eu mandei antes de 'currentPost', atualize para usar essas globais ou o objeto currentPost = {id, colecao}
+    // 1. Reset Visual e Exibição
+    modal.style.display = 'flex'; 
+    window.currentPostId = id;
+    window.currentCollection = colecao;
+    window.currentPostAuthorUid = null; // Reseta
 
-    // -- PREENCHE MÍDIA --
-    const mediaBox = document.getElementById('modalMediaContainer');
-    if((data.videoUrl)) {
-        mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="width:100%;"></video>`;
-    } else {
-        mediaBox.innerHTML = `<img src="${data.imagem}" style="width:100%;">`;
-    }
-
-    // -- PREENCHE INFO --
-    document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
-    document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome;
-    document.getElementById('modalDate').innerText = new Date(data.data).toLocaleDateString();
-    document.getElementById('modalLikesCount').innerText = `${data.likes || 0} curtidas`;
+    // Limpa conteúdos anteriores
+    document.getElementById('modalMediaContainer').innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="color:white; font-size:3rem;"></i></div>';
+    document.getElementById('modalCommentsList').innerHTML = "";
     
-    // -- LEGENDA (Agora em lugar separado) --
-    const captionDiv = document.getElementById('modalCaption');
-    if(data.texto || data.descricao) {
-        captionDiv.style.display = 'block';
-        captionDiv.innerHTML = data.texto || data.descricao;
-    } else {
-        captionDiv.style.display = 'none';
-    }
+    // Trava o botão de like enquanto carrega
+    const iconLike = document.getElementById('btnLikeModalIcon');
+    const labelLike = document.getElementById('modalLikesCount');
+    iconLike.className = 'bx bx-heart'; // Reseta para vazio
+    iconLike.style.color = '';
+    iconLike.style.pointerEvents = 'none'; 
+    iconLike.style.opacity = '0.5';
+    labelLike.innerText = "...";
 
-    // -- COMENTÁRIOS --
-    const list = document.getElementById('modalCommentsList');
-    list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Carregando...</p>";
-    
-    // Lógica de buscar comentários (Mesma de antes)
     try {
-        const qComm = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
-        const snapComm = await getDocs(qComm);
+        const docRef = doc(db, colecao, id);
+        const docSnap = await getDoc(docRef);
         
-        list.innerHTML = "";
-        if(snapComm.empty) {
-            list.innerHTML = "<p style='color:#999; font-size:0.8rem;'>Seja o primeiro a comentar.</p>";
-        } else {
-            snapComm.forEach(c => {
-                const cData = c.data();
-                const html = `
-                <div style="display:flex; gap:10px; margin-bottom:10px; font-size:0.9rem;">
-                    <img src="${cData.foto}" style="width:30px; height:30px; border-radius:50%;">
-                    <div style="background:white; padding:8px 12px; border-radius:10px; border:1px solid #eee; flex:1;">
-                        <strong style="display:block; font-size:0.8rem; color:#333;">${cData.user}</strong>
-                        <span style="color:#555;">${cData.texto}</span>
-                    </div>
-                </div>`;
-                list.insertAdjacentHTML('beforeend', html);
-            });
+        if(!docSnap.exists()) {
+            console.error("Post não encontrado!");
+            fecharModalPostForce();
+            return;
         }
+        
+        const data = docSnap.data();
+        window.currentPostAuthorUid = data.uid; // Salva o ID do dono do post
+
+        // --- PREENCHE DADOS NA TELA ---
+        
+        // Mídia (Foto ou Vídeo)
+        const mediaBox = document.getElementById('modalMediaContainer');
+        if(data.videoUrl) {
+            mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
+        } else {
+            mediaBox.innerHTML = `<img src="${data.imagem}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+        }
+
+        // Info Autor
+        document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
+        document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome;
+        document.getElementById('modalDate').innerText = data.data ? new Date(data.data).toLocaleDateString() : 'Data';
+        labelLike.innerText = `${data.likes || 0} curtidas`;
+
+        // Legenda
+        const captionDiv = document.getElementById('modalCaption');
+        if(data.texto || data.descricao) {
+            captionDiv.innerHTML = `<strong>${data.autorUser}</strong> ${data.texto || data.descricao}`;
+            captionDiv.style.display = 'block';
+        } else {
+            captionDiv.style.display = 'none';
+        }
+
+        // Botão Excluir (Só aparece se eu for o dono)
+        const btnDel = document.getElementById('btnExcluirModal');
+        if (user && data.uid === user.uid) btnDel.style.display = 'block';
+        else btnDel.style.display = 'none';
+
+        // --- VERIFICAÇÃO DE LIKE ---
+        if (user) {
+            await verificarStatusLike(id, colecao, user.uid);
+        } else {
+            // Se não estiver logado, libera o botão (para pedir login ao clicar)
+            iconLike.style.pointerEvents = 'auto';
+            iconLike.style.opacity = '1';
+        }
+
+        // --- CARREGA COMENTÁRIOS ---
+        carregarComentariosNoModal(id, colecao);
+
+    } catch(e) { console.error("Erro modal:", e); }
+}
+async function carregarComentariosNoModal(id, colecao) {
+    const list = document.getElementById('modalCommentsList');
+    const user = auth.currentUser;
+    
+    // Preserva a legenda
+    const legendaDiv = document.getElementById('modalCaption');
+    let legendaHTML = "";
+    if (legendaDiv && legendaDiv.style.display !== 'none') {
+        legendaHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${legendaDiv.innerHTML}</div>`;
+    }
+
+    list.innerHTML = `${legendaHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+
+    try {
+        const q = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
+        const snapshot = await getDocs(q);
+
+        list.innerHTML = legendaHTML;
+
+        if(snapshot.empty) {
+            list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentário.</p>');
+            return;
+        } 
+
+        snapshot.forEach(docSnap => {
+            const c = docSnap.data();
+            const cid = docSnap.id;
+            
+            // Tag Criador
+            let htmlCriador = (window.currentPostAuthorUid && c.uid === window.currentPostAuthorUid) 
+                ? `<span class="badge-criador">Criador</span>` : "";
+
+            // Botão Excluir (Só se for meu)
+            let btnExcluir = (user && c.uid === user.uid) 
+                ? `<button class="btn-delete-comment" onclick="deletarComentario('${cid}')"><i class='bx bx-trash'></i></button>` : "";
+
+            // Botão "Ver Respostas" (Só aparece se replyCount > 0)
+            let btnVerRespostas = "";
+            if (c.replyCount && c.replyCount > 0) {
+                btnVerRespostas = `
+                <div class="toggle-replies-link" onclick="toggleVerRespostas('${cid}', this)">
+                    Ver ${c.replyCount} respostas
+                </div>`;
+            }
+
+            const html = `
+            <div class="comment-block" id="comm-${cid}" style="margin-top:15px;">
+                <div style="display:flex; gap:10px; font-size:0.9rem; align-items:flex-start;">
+                    <img src="${c.foto}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                    <div style="flex:1;">
+                        <div style="display:flex; justify-content:space-between;">
+                            <div><span style="font-weight:700;">${c.user}</span> ${htmlCriador}</div>
+                            ${btnExcluir}
+                        </div>
+                        <div style="color:#333; margin-top:2px;">${c.texto}</div>
+                        
+                        <div style="display:flex; align-items:center; margin-top:4px; gap:15px;">
+                            <span style="font-size:0.75rem; color:#999;">${new Date(c.data).toLocaleDateString()}</span>
+                            <button class="btn-reply-action" onclick="toggleInputResposta('${cid}')">Responder</button>
+                        </div>
+                    </div>
+                </div>
+
+                ${btnVerRespostas}
+
+                <div id="replies-${cid}" class="replies-container"></div>
+
+                <div id="input-box-${cid}" class="reply-input-box">
+                    <input type="text" id="input-reply-${cid}" placeholder="Sua resposta...">
+                    <button onclick="enviarResposta('${cid}')">Enviar</button>
+                </div>
+            </div>`;
+            list.insertAdjacentHTML('beforeend', html);
+        });
+
     } catch(e) { console.error(e); }
 }
 
+window.deletarComentario = async function(commentId) {
+    if(!confirm("Tem certeza que deseja apagar este comentário?")) return;
+
+    // Pega as variáveis globais do post aberto
+    const postId = window.currentPostId;
+    const colecao = window.currentCollection;
+
+    if(!postId || !colecao || !commentId) return;
+
+    try {
+        // Deleta o documento da subcoleção 'comentarios'
+        await deleteDoc(doc(db, colecao, postId, "comentarios", commentId));
+        
+        // Recarrega a lista para sumir com o comentário deletado
+        await carregarComentariosNoModal(postId, colecao);
+        
+    } catch (e) {
+        console.error("Erro ao deletar comentário:", e);
+        alert("Erro ao apagar. Tente novamente.");
+    }
+}
 // Função para fechar clicando fora
 window.fecharModalPost = function(e) {
     // Se o clique foi no overlay (fundo escuro) ou no botão X, fecha.
@@ -3778,13 +3889,19 @@ window.postarComentarioModal = async function() {
     if(!texto) return;
 
     const user = auth.currentUser;
-    if(!user) { alert("Faça login para comentar."); return; }
+    if(!user) return alert("Faça login para comentar.");
     
     const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    
+    // Efeito visual de "Enviando..."
+    const btnEnviar = event.target; // O botão que foi clicado
+    const textoOriginal = btnEnviar.innerText;
+    btnEnviar.innerText = "...";
+    btnEnviar.disabled = true;
 
     try {
-        // Salva na subcoleção 'comentarios' dentro do documento do post
-        await addDoc(collection(db, currentCollection, currentPostId, "comentarios"), {
+        // Salva na subcoleção 'comentarios'
+        await addDoc(collection(db, window.currentCollection, window.currentPostId, "comentarios"), {
             uid: user.uid,
             user: perfilLocal.user || "Usuario",
             foto: perfilLocal.foto || "https://placehold.co/50",
@@ -3792,35 +3909,19 @@ window.postarComentarioModal = async function() {
             data: new Date().toISOString()
         });
 
-        // Adiciona visualmente na hora (sem recarregar)
-        const list = document.getElementById('modalCommentsList');
-        const novoHtml = `
-            <div class="comment-row" style="margin-bottom:10px; animation: fadeIn 0.3s;">
-                <img src="${perfilLocal.foto}" style="width:30px; height:30px; border-radius:50%;">
-                <div class="comment-text">
-                    <strong>${perfilLocal.user}</strong> ${texto}
-                </div>
-            </div>`;
-        list.insertAdjacentHTML('beforeend', novoHtml);
+        input.value = ""; // Limpa input
         
-        // Rola para baixo e limpa input
-        list.scrollTop = list.scrollHeight;
-        input.value = "";
+        // Recarrega a lista para mostrar o novo comentário (e aplicar a tag Criador se necessário)
+        await carregarComentariosNoModal(window.currentPostId, window.currentCollection);
 
-    } catch(e) { console.error("Erro ao comentar:", e); }
+    } catch(e) { 
+        console.error("Erro ao comentar:", e); 
+        alert("Erro ao enviar comentário.");
+    } finally {
+        btnEnviar.innerText = textoOriginal;
+        btnEnviar.disabled = false;
+    }
 }
-
-// 4. DAR LIKE (Simples)
-window.darLikeModal = async function() {
-    if(!currentPostId) return;
-    // Aqui você implementaria a lógica real de like (incrementar no banco)
-    // Para visual:
-    const span = document.getElementById('modalLikesCount');
-    let atual = parseInt(span.innerText);
-    span.innerText = `${atual + 1} curtidas`;
-    alert("Você curtiu!"); 
-}
-
 async function carregarReelsIndex() {
     const container = document.querySelector('.video-container'); // Certifique-se que essa classe existe no HTML do index
     if(!container) return;
@@ -3918,61 +4019,45 @@ window.carregarReelsHome = async function() {
     if (!container) return;
 
     try {
-        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(10));
+        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(20));
         const snapshot = await getDocs(q);
+        
         container.innerHTML = ""; 
+        window.listaReelsAtual = []; // Reseta lista
 
-        if (snapshot.empty) return;
+        if (snapshot.empty) {
+            container.innerHTML = "<p style='color:white; padding:20px;'>Sem vídeos.</p>";
+            return;
+        }
 
+        let index = 0;
         snapshot.forEach(doc => {
             const data = doc.data();
             const id = doc.id;
-            const capaUrl = data.capa || data.img || "https://placehold.co/240x400?text=Sem+Capa";
-            const videoUrl = data.videoUrl || "";
-            const linkBotao = `orcamento.html?uid=${data.uid}&aid=${data.anuncioId}`;
+            
+            // Adiciona na lista global para navegação
+            window.listaReelsAtual.push({
+                id: id,
+                ...data
+            });
 
-            const dadosModal = JSON.stringify({
-                id: id, 
-                video: videoUrl, 
-                user: data.autorUser || "@profissional", 
-                desc: data.descricao || "",
-                uid: data.uid, 
-                autorFoto: data.autorFoto || "https://placehold.co/150", 
-                likes: data.likes || 0
-            }).replace(/"/g, '&quot;');
-
+            // Card HTML
+            const capaUrl = data.capa || data.img || "https://placehold.co/240x400";
             const html = `
-            <div class="tiktok-card" 
-                 onclick="abrirPlayerTikTok(${dadosModal})"
-                 onmouseenter="agendarPlay(this)" 
-                 onmouseleave="cancelarPlay(this)">
-                
+            <div class="tiktok-card" onclick="abrirPlayerTikTok(${index})">
                 <div class="card-badge-online">${data.tag || 'NOVO'}</div>
-
-                <video src="${videoUrl}" 
-                       poster="${capaUrl}" 
-                       class="video-bg" 
-                       muted 
-                       loop 
-                       playsinline
-                       preload="metadata">
-                </video>
-                
+                <video src="${data.videoUrl}" poster="${capaUrl}" class="video-bg" muted loop></video>
                 <div class="info-container">
-                    <h3 class="user-handle">${data.autorUser || "@profissional"}</h3>
-                    <div class="tags-row"><span class="tag-pill">${data.categoria || "Geral"}</span></div>
-                    <p class="desc-mini">${data.descricao || "Confira este trabalho."}</p>
-                    <button class="btn-orcamento-card" onclick="event.stopPropagation(); window.location.href='${linkBotao}'">
-                        SOLICITAR ORÇAMENTO
-                    </button>
+                    <h3 class="user-handle">${data.autorUser || "@user"}</h3>
+                    <button class="btn-orcamento-card">Solicitar orçamento</button>
                 </div>
             </div>`;
             
             container.insertAdjacentHTML('beforeend', html);
+            index++;
         });
-    } catch (e) { 
-        console.error("Erro ao carregar Reels:", e); 
-    }
+
+    } catch (e) { console.error(e); }
 }
 
 // LÓGICA DO DELAY DE 3 SEGUNDOS
@@ -4351,4 +4436,423 @@ function animarBarra(ms) {
         currentStoryIndex = 0;
         storyQueue = [];
     }
+
+window.darLikeModal = async function() {
+    const user = auth.currentUser;
+    if (!user) return alert("Faça login para curtir.");
+    
+    if (!window.currentPostId || !window.currentCollection) return;
+    if (processandoLike) return; // Evita clique duplo rápido
+
+    processandoLike = true; // Trava
+
+    const icon = document.getElementById('btnLikeModalIcon');
+    const label = document.getElementById('modalLikesCount');
+    
+    const postId = window.currentPostId;
+    const colecao = window.currentCollection;
+    
+    // Lê o estado atual (Definido pela verificação)
+    const jaCurtiu = icon.dataset.liked === "true";
+    let likesAtuais = parseInt(label.innerText.replace(/\D/g, '')) || 0;
+
+    const likeDocRef = doc(db, colecao, postId, "likes", user.uid);
+    const postRef = doc(db, colecao, postId);
+
+    try {
+        if (jaCurtiu) {
+            // --- AÇÃO: DESCURTIR (Remover Like) ---
+            
+            // 1. Atualiza Visual Imediatamente
+            icon.className = 'bx bx-heart'; // Coração vazio
+            icon.dataset.liked = "false";
+            label.innerText = `${Math.max(0, likesAtuais - 1)} curtidas`;
+
+            // 2. Atualiza Banco
+            await deleteDoc(likeDocRef); // Deleta o doc do like
+            await updateDoc(postRef, { likes: increment(-1) }); // Diminui contador
+
+        } else {
+            // --- AÇÃO: CURTIR (Adicionar Like) ---
+            
+            // 1. Atualiza Visual Imediatamente
+            icon.className = 'bx bxs-heart'; // Coração cheio
+            icon.dataset.liked = "true";
+            label.innerText = `${likesAtuais + 1} curtidas`;
+
+            // 2. Atualiza Banco
+            await setDoc(likeDocRef, { uid: user.uid, data: new Date().toISOString() }); // Cria doc
+            await updateDoc(postRef, { likes: increment(1) }); // Aumenta contador
+        }
+
+    } catch(e) { 
+        console.error("Erro ao dar like:", e);
+        // Reverte visual em caso de erro
+        if (jaCurtiu) {
+            icon.className = 'bx bxs-heart'; icon.dataset.liked = "true";
+            label.innerText = `${likesAtuais} curtidas`;
+        } else {
+            icon.className = 'bx bx-heart'; icon.dataset.liked = "false";
+            label.innerText = `${likesAtuais} curtidas`;
+        }
+    } finally {
+        processandoLike = false; // Destrava
+    }
+}
+window.compartilharPostAtual = function() {
+    const url = window.location.href; // Ou gere um link específico se tiver
+    
+    if (navigator.share) {
+        navigator.share({
+            title: 'Veja este post na Doke!',
+            text: 'Olha que incrível este trabalho que encontrei na Doke.',
+            url: url
+        }).catch(console.error);
+    } else {
+        // Fallback para copiar link
+        navigator.clipboard.writeText(url).then(() => {
+            alert("Link copiado para a área de transferência!");
+        });
+    }
+}
+
+// Atalho para o botão do feed
+window.compartilharUrlPost = function(id) {
+    // Se quiser, pode implementar lógica para abrir o modal direto
+    alert("Link copiado! (Simulação)");
+}
+
+async function verificarStatusLike(postId, colecao, uid) {
+    const icon = document.getElementById('btnLikeModalIcon');
+    
+    try {
+        // Verifica se existe o documento com meu ID na subcoleção 'likes'
+        const docLikeRef = doc(db, colecao, postId, "likes", uid);
+        const docLikeSnap = await getDoc(docLikeRef);
+        
+        if (docLikeSnap.exists()) {
+            // JÁ CURTIU: Coração cheio e vermelho
+            icon.className = 'bx bxs-heart';
+            icon.dataset.liked = "true"; // Marca como curtido
+        } else {
+            // NÃO CURTIU: Coração vazio
+            icon.className = 'bx bx-heart';
+            icon.dataset.liked = "false"; // Marca como não curtido
+        }
+    } catch (e) {
+        console.error("Erro like check:", e);
+    } finally {
+        // Libera o botão para clique
+        icon.style.pointerEvents = 'auto';
+        icon.style.opacity = '1';
+    }
+}
+// Função de fechamento forçado para o botão X
+window.fecharModalPostForce = function() {
+    const modal = document.getElementById('modalPostDetalhe');
+    if (modal) {
+        modal.style.display = 'none';
+        
+        // Limpa vídeo/imagem para parar som
+        const mediaBox = document.getElementById('modalMediaContainer');
+        if(mediaBox) mediaBox.innerHTML = "";
+    }
+}
+
+// Atualiza a função antiga para usar a mesma lógica
+window.fecharModalPost = function(e) {
+    if (!e || e.target.id === 'modalPostDetalhe') {
+        fecharModalPostForce();
+    }
+}
+
+// 1. Mostrar/Esconder o Input de resposta
+window.toggleInputResposta = function(commentId) {
+    const box = document.getElementById(`input-box-${commentId}`);
+    const input = document.getElementById(`input-reply-${commentId}`);
+    
+    if (box.style.display === 'flex') {
+        box.style.display = 'none';
+    } else {
+        // Fecha outros inputs abertos (opcional, para limpar visual)
+        document.querySelectorAll('.reply-input-box').forEach(el => el.style.display = 'none');
+        
+        box.style.display = 'flex';
+        input.focus();
+    }
+}
+
+// 2. Enviar a Resposta
+window.enviarResposta = async function(parentId) {
+    const input = document.getElementById(`input-reply-${parentId}`);
+    const texto = input.value.trim();
+    const user = auth.currentUser;
+
+    if (!texto || !user) return;
+
+    // Visual de carregando
+    const btn = input.nextElementSibling;
+    const txtOriginal = btn.innerText;
+    btn.innerText = "..."; 
+    btn.disabled = true;
+
+    try {
+        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        
+        // Caminho: posts -> {idPost} -> comentarios -> {idComentarioPai} -> respostas -> {novoDoc}
+        const respostasRef = collection(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas");
+        const parentRef = doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId);
+
+        // Salva a resposta
+        await addDoc(respostasRef, {
+            uid: user.uid,
+            user: perfil.user || "Usuario",
+            foto: perfil.foto || "https://placehold.co/50",
+            texto: texto,
+            data: new Date().toISOString()
+        });
+
+        // Atualiza o contador de respostas no comentário pai (para mostrar "Ver 1 resposta")
+        await updateDoc(parentRef, {
+            replyCount: increment(1)
+        });
+
+        // Limpa e fecha input
+        input.value = "";
+        toggleInputResposta(parentId);
+
+        // Força a abertura das respostas para mostrar a nova
+        const container = document.getElementById(`replies-${parentId}`);
+        container.style.display = 'block';
+        carregarRespostas(parentId); // Recarrega a lista de respostas
+
+    } catch(e) {
+        console.error("Erro ao responder:", e);
+        alert("Erro ao enviar resposta.");
+    } finally {
+        btn.innerText = txtOriginal;
+        btn.disabled = false;
+    }
+}
+
+// 3. Expandir/Esconder Respostas (Toggle)
+window.toggleVerRespostas = function(parentId, btnElement) {
+    const container = document.getElementById(`replies-${parentId}`);
+    
+    if (container.style.display === 'block') {
+        // Se já está aberto, esconde
+        container.style.display = 'none';
+        btnElement.innerHTML = btnElement.innerHTML.replace("Esconder", "Ver");
+    } else {
+        // Se está fechado, carrega e mostra
+        container.style.display = 'block';
+        btnElement.innerHTML = `Esconder respostas`; // Muda texto para Esconder
+        carregarRespostas(parentId);
+    }
+}
+
+// 4. Carregar as Respostas do Banco
+async function carregarRespostas(parentId) {
+    const container = document.getElementById(`replies-${parentId}`);
+    const user = auth.currentUser;
+    container.innerHTML = `<div style="font-size:0.7rem; color:#999; padding:5px;">Carregando...</div>`;
+
+    try {
+        const q = query(
+            collection(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas"), 
+            orderBy("data", "asc")
+        );
+        const snapshot = await getDocs(q);
+        
+        container.innerHTML = ""; // Limpa loader
+
+        snapshot.forEach(docSnap => {
+            const r = docSnap.data();
+            const rid = docSnap.id;
+
+            // Badge Criador na resposta
+            let htmlCriador = (window.currentPostAuthorUid && r.uid === window.currentPostAuthorUid) 
+                ? `<span class="badge-criador">Criador</span>` : "";
+
+            // Botão excluir resposta (se for minha)
+            let btnDel = (user && r.uid === user.uid) 
+                ? `<i class='bx bx-trash' onclick="deletarResposta('${parentId}', '${rid}')" style="cursor:pointer; color:#e74c3c; font-size:0.8rem;"></i>` : "";
+
+            const html = `
+            <div style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
+                <img src="${r.foto}" style="width:24px; height:24px; border-radius:50%;">
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <div style="font-size:0.8rem;">
+                            <span style="font-weight:700;">${r.user}</span> ${htmlCriador}
+                            <span style="color:#333; margin-left:5px;">${r.texto}</span>
+                        </div>
+                        ${btnDel}
+                    </div>
+                    <div style="font-size:0.7rem; color:#999;">${new Date(r.data).toLocaleDateString()}</div>
+                </div>
+            </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+        });
+
+    } catch(e) { console.error(e); }
+}
+
+// 5. Deletar Resposta
+window.deletarResposta = async function(parentId, replyId) {
+    if(!confirm("Apagar resposta?")) return;
+
+    try {
+        // Deleta doc da resposta
+        await deleteDoc(doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", replyId));
+        
+        // Decrementa contador no pai
+        await updateDoc(doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId), {
+            replyCount: increment(-1)
+        });
+
+        // Recarrega lista
+        carregarRespostas(parentId);
+
+    } catch(e) { alert("Erro ao deletar."); }
+}
+
+window.abrirPlayerTikTok = function(indexOuDados) {
+    const modal = document.getElementById('modalPlayerVideo');
+    if(!modal) return;
+
+    if (typeof indexOuDados === 'number') {
+        window.indiceReelAtual = indexOuDados;
+    } else {
+        window.listaReelsAtual = [indexOuDados];
+        window.indiceReelAtual = 0;
+    }
+
+    modal.style.display = 'flex';
+    renderizarReelNoModal(window.indiceReelAtual);
+}
+
+// Renderiza os dados na tela sem fechar o modal
+async function renderizarReelNoModal(index) {
+    const dados = window.listaReelsAtual[index];
+    if(!dados) return;
+
+    window.currentReelId = dados.id;
+    window.currentReelUid = dados.uid;
+    window.currentReelAnuncioId = dados.anuncioId;
+
+    const player = document.getElementById('playerPrincipal');
+    const blur = document.getElementById('reelBlurBg');
+    player.src = dados.videoUrl;
+    player.play().catch(() => {});
+    if(blur) blur.style.backgroundImage = `url('${dados.capa || dados.img || ''}')`;
+
+    const avatar = dados.autorFoto || "https://placehold.co/50";
+    const user = dados.autorUser || "@usuario";
+    
+    // Preenche todos os campos
+    document.getElementById('reelUsername').innerText = user;
+    document.getElementById('reelAvatar').src = avatar;
+    document.getElementById('reelUsernameCap').innerText = user;
+    document.getElementById('reelAvatarCap').src = avatar;
+    document.getElementById('reelDesc').innerText = dados.descricao || "";
+    document.getElementById('reelLikesCount').innerText = `${dados.likes || 0} curtidas`;
+    document.getElementById('reelData').innerText = dados.data ? new Date(dados.data).toLocaleDateString() : "Recente";
+
+    // Reset Like
+    const icon = document.getElementById('btnLikeReel');
+    icon.className = 'bx bx-heart';
+    icon.style.color = '';
+
+    if(auth.currentUser) verificarLikeReel(dados.id, auth.currentUser.uid);
+    carregarComentariosReel(dados.id);
+}
+window.handleReelScroll = function(event) {
+    event.preventDefault();
+    if (window.isScrollingReel) return;
+    const delta = Math.sign(event.deltaY);
+    if (delta > 0) navegarReel(1);
+    else navegarReel(-1);
+}
+
+window.navegarReel = function(direcao) {
+    if (window.isScrollingReel) return;
+    const novoIndice = window.indiceReelAtual + direcao;
+
+    if (novoIndice >= 0 && novoIndice < window.listaReelsAtual.length) {
+        window.isScrollingReel = true;
+        window.indiceReelAtual = novoIndice;
+        
+        // Efeito visual de troca
+        const mediaArea = document.getElementById('reelVideoArea');
+        mediaArea.style.opacity = '0.5';
+        
+        renderizarReelNoModal(novoIndice).then(() => {
+            setTimeout(() => {
+                mediaArea.style.opacity = '1';
+                window.isScrollingReel = false;
+            }, 300);
+        });
+    }
+}
+
+window.fecharModalVideoForce = function() {
+    const v = document.getElementById('playerPrincipal');
+    if(v) { v.pause(); v.src = ""; }
+    document.getElementById('modalPlayerVideo').style.display = 'none';
+}
+window.fecharModalVideo = function(e) {
+    if(e.target.id === 'modalPlayerVideo') fecharModalVideoForce();
+}
+
+// PLAY/PAUSE
+window.togglePlayVideo = function(e) {
+    const v = e.target;
+    const icon = document.getElementById('iconPlayOverlay');
+    if(v.paused) {
+        v.play();
+        icon.style.opacity = '0';
+    } else {
+        v.pause();
+        icon.style.opacity = '1';
+    }
+}
+
+// REDIRECIONAR ORÇAMENTO
+window.irOrcamentoReel = function() {
+    if(window.currentReelUid) {
+        let url = `orcamento.html?uid=${window.currentReelUid}`;
+        if(window.currentReelAnuncioId) url += `&aid=${window.currentReelAnuncioId}`;
+        window.location.href = url;
+    } else {
+        alert("Erro: Profissional não identificado.");
+    }
+}
+
+async function carregarComentariosReel(reelId) {
+    const lista = document.getElementById('listaComentariosReel');
+    lista.innerHTML = "";
+    
+    try {
+        const q = query(collection(db, "reels", reelId, "comentarios"), orderBy("data", "desc"));
+        const snap = await getDocs(q);
+        
+        if(snap.empty) {
+            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem comentários.</div>";
+            return;
+        }
+
+        snap.forEach(doc => {
+            const c = doc.data();
+            const html = `
+            <div class="comm-item">
+                <img src="${c.foto}" style="width:32px; height:32px; border-radius:50%;">
+                <div style="font-size:0.9rem;">
+                    <strong>${c.user}</strong> ${c.texto}
+                </div>
+            </div>`;
+            lista.insertAdjacentHTML('beforeend', html);
+        });
+    } catch(e) { console.error(e); }
+}
 
