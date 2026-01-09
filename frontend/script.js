@@ -1305,6 +1305,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     // 2. CARREGAMENTOS DINÂMICOS
     carregarReelsNoIndex();
+    carregarStoriesGlobal();
     carregarCategorias(); 
     carregarProfissionais(); 
     carregarFiltrosLocalizacao(); 
@@ -1346,6 +1347,10 @@ document.addEventListener("DOMContentLoaded", function() {
 
     if(document.getElementById('feed-global-container')) {
         carregarFeedGlobal();
+    }
+
+    if(document.getElementById('boxStories')) {
+        carregarStoriesGlobal();
     }
 
     // 5. Efeitos de Busca (Histórico)
@@ -1413,6 +1418,8 @@ document.addEventListener("DOMContentLoaded", function() {
         }
         typeEffect();
     }
+
+    
 
     // 8. AUTENTICAÇÃO PERSISTENTE E NOTIFICAÇÕES
     onAuthStateChanged(auth, async (user) => {
@@ -4104,131 +4111,244 @@ window.uploadStory = async function(input) {
     }
 }
 
-// 2. CARREGAR STORIES VÁLIDOS (ÚLTIMAS 24H)
-window.carregarMeusStories = async function(uid) {
-    const container = document.getElementById('container-bolinhas-stories');
-    if (!container) return;
+// ============================================================
+// SISTEMA DE STORIES GLOBAL (INDEX.HTML)
+// ============================================================
 
-    // Calcula data de ontem (24h atrás)
+window.carregarStoriesGlobal = async function() {
+    const container = document.getElementById('boxStories');
+    const secao = document.getElementById('secStories');
+    
+    if (!container || !secao) return;
+
+    // 1. Data limite (24 horas atrás)
     const ontem = new Date();
     ontem.setHours(ontem.getHours() - 24);
     const dataLimite = ontem.toISOString();
 
     try {
-        // Busca apenas stories criados DEPOIS da data limite
+        // 2. Busca Stories recentes
         const q = query(
             collection(db, "stories"), 
-            where("uid", "==", uid),
             where("dataCriacao", ">", dataLimite),
-            orderBy("dataCriacao", "asc")
+            orderBy("dataCriacao", "asc") // Mais antigos primeiro (cronológico)
         );
 
         const snapshot = await getDocs(q);
+        
+        // Se não tiver stories E o usuário não estiver logado, esconde a seção
+        const user = auth.currentUser;
+        if (snapshot.empty && !user) {
+            secao.style.display = 'none';
+            return;
+        }
+
+        secao.style.display = 'block';
         container.innerHTML = "";
+
+        // 3. Adiciona botão "Meu Story" (Se logado)
+        if (user) {
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            const htmlMeuStory = `
+                <div class="story-item" onclick="window.location.href='meuperfil.html'">
+                    <div class="story-ring add-story">
+                        <img src="${perfilLocal.foto || 'https://placehold.co/150'}" alt="Eu">
+                        <span class="plus-icon"><i class='bx bx-plus'></i></span>
+                    </div>
+                    <span class="story-name">Seu story</span>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', htmlMeuStory);
+        }
 
         if (snapshot.empty) return;
 
+        // 4. Agrupa stories por Usuário (UID)
+        const storiesPorUsuario = {};
+
         snapshot.forEach(doc => {
             const data = doc.data();
-            // Prepara dados para passar para a função de abrir
-            const dadosJson = JSON.stringify({ ...data, id: doc.id }).replace(/"/g, '&quot;');
+            const uid = data.uid;
+
+            if (!storiesPorUsuario[uid]) {
+                storiesPorUsuario[uid] = {
+                    infoUser: { nome: data.autorNome, foto: data.autorFoto, uid: uid },
+                    listaStories: []
+                };
+            }
+            // Adiciona o ID do documento para poder apagar/manipular depois se precisar
+            storiesPorUsuario[uid].listaStories.push({ ...data, id: doc.id });
+        });
+
+        // 5. Renderiza as bolinhas (Um por usuário)
+        Object.values(storiesPorUsuario).forEach(grupo => {
+            // Ignora o próprio usuário no feed global (já tem o botão "Seu Story")
+            if (user && grupo.infoUser.uid === user.uid) return;
+
+            // Pega o story mais recente para a borda ou lógica de "visto"
+            // (Aqui simplificado: sempre colorido)
             
-            // Renderiza a bolinha
+            // Serializa para passar no onclick
+            // Passamos a LISTA inteira de stories desse usuário para o player
+            const dadosPlayer = JSON.stringify(grupo.listaStories).replace(/"/g, '&quot;');
+            const primeiroNome = grupo.infoUser.nome.split(' ')[0];
+
             const html = `
-            <div class="item-destaque" onclick="abrirStoryViewer(${dadosJson})">
-                <div class="circulo-destaque com-story">
-                    <img src="${data.midiaUrl}" style="${data.tipo === 'video' ? 'object-fit:cover;' : ''}">
+            <div class="story-item" onclick="abrirPlayerStoriesGrupo(${dadosPlayer})">
+                <div class="story-ring unseen">
+                    <img src="${grupo.infoUser.foto}" alt="${primeiroNome}">
                 </div>
-                <span style="font-size:0.7rem;">${calcularTempoAtras(data.dataCriacao)}</span>
+                <span class="story-name">${primeiroNome}</span>
             </div>`;
             
             container.insertAdjacentHTML('beforeend', html);
         });
 
     } catch (e) {
-        // Se der erro de índice, o console vai avisar com um link para criar
-        console.error("Erro ao carregar stories (verifique índices):", e);
+        console.error("Erro ao carregar stories feed:", e);
     }
 }
 
-function calcularTempoAtras(isoString) {
-    const diff = new Date() - new Date(isoString);
-    const horas = Math.floor(diff / (1000 * 60 * 60));
-    const minutos = Math.floor(diff / (1000 * 60));
-    if (horas > 0) return `${horas}h`;
-    return `${minutos}m`;
+// ============================================================
+// PLAYER DE STORIES SEQUENCIAL (NOVA VERSÃO)
+// ============================================================
+
+let storyQueue = []; // Lista de stories do usuário atual
+let currentStoryIndex = 0;
+let storyTimerGlobal = null;
+
+window.abrirPlayerStoriesGrupo = function(listaStories) {
+    if (!listaStories || listaStories.length === 0) return;
+
+    storyQueue = listaStories;
+    currentStoryIndex = 0; // Começa do primeiro
+
+    const modal = document.getElementById('modalStoryViewer');
+    if(modal) modal.style.display = 'flex';
+
+    tocarStoryAtual();
 }
 
-// 3. VISUALIZADOR DE STORY
-window.abrirStoryViewer = function(story) {
-    const modal = document.getElementById('modalStoryViewer');
+function tocarStoryAtual() {
+    if (currentStoryIndex >= storyQueue.length) {
+        fecharStory(); // Acabaram os stories desse user
+        return;
+    }
+
+    const story = storyQueue[currentStoryIndex];
     const containerMedia = document.getElementById('storyMediaContainer');
-    
-    currentStoryId = story.id; 
+    const headerImg = document.getElementById('storyUserImg');
+    const headerName = document.getElementById('storyUserName');
+    const headerTime = document.getElementById('storyTime');
 
-    // Preenche Header
-    document.getElementById('storyUserImg').src = story.autorFoto;
-    document.getElementById('storyUserName').innerText = story.autorNome;
-    document.getElementById('storyTime').innerText = calcularTempoAtras(story.dataCriacao);
+    // Atualiza Header
+    if(headerImg) headerImg.src = story.autorFoto;
+    if(headerName) headerName.innerText = story.autorNome;
+    if(headerTime) headerTime.innerText = calcularTempoAtras(story.dataCriacao);
 
+    // Limpa anterior
     containerMedia.innerHTML = "";
-    let tempoDuracao = 5000; // 5 segundos para fotos
+    clearTimeout(storyTimerGlobal);
 
-    // Renderiza Vídeo ou Imagem
+    // Barra de progresso (Reset)
+    const progress = document.getElementById('storyProgress');
+    if(progress) {
+        progress.style.transition = 'none';
+        progress.style.width = '0%';
+    }
+
+    // Renderiza Mídia
+    let duracao = 5000; // Padrão foto: 5s
+
     if (story.tipo === 'video') {
         const video = document.createElement('video');
         video.src = story.midiaUrl;
         video.autoplay = true;
         video.playsInline = true;
+        video.style.width = "100%";
+        video.style.height = "100%";
+        video.style.objectFit = "contain";
         
-        // Ajusta duração baseada no tamanho do vídeo
         video.onloadedmetadata = () => {
-            tempoDuracao = video.duration * 1000;
-            iniciarBarraProgresso(tempoDuracao);
+            duracao = video.duration * 1000;
+            animarBarra(duracao);
         };
-        video.onended = () => fecharStory(); 
+        video.onended = () => proximoStory();
         containerMedia.appendChild(video);
     } else {
         const img = document.createElement('img');
         img.src = story.midiaUrl;
+        img.style.width = "100%";
+        img.style.height = "100%";
+        img.style.objectFit = "contain";
         containerMedia.appendChild(img);
-        iniciarBarraProgresso(tempoDuracao);
+        animarBarra(duracao);
+        
+        storyTimerGlobal = setTimeout(proximoStory, duracao);
     }
 
-    modal.style.display = 'flex';
+    // Áreas de toque para navegar
+    criarAreasToque(containerMedia);
 }
 
-function iniciarBarraProgresso(ms) {
+function proximoStory() {
+    currentStoryIndex++;
+    tocarStoryAtual();
+}
+
+function storyAnterior() {
+    if(currentStoryIndex > 0) {
+        currentStoryIndex--;
+        tocarStoryAtual();
+    }
+}
+
+function animarBarra(ms) {
     const progress = document.getElementById('storyProgress');
-    progress.style.width = '0%';
-    progress.style.transition = 'none';
+    if(!progress) return;
     
+    // Pequeno delay para permitir o reset visual
     setTimeout(() => {
-        progress.style.transition = `width ${ms}ms linear`;
-        progress.style.width = '100%';
-    }, 50);
-
-    if (storyTimer) clearTimeout(storyTimer);
-    storyTimer = setTimeout(() => {
-        fecharStory();
-    }, ms);
-}
-
-window.fecharStory = function() {
-    const modal = document.getElementById('modalStoryViewer');
-    modal.style.display = 'none';
-    document.getElementById('storyMediaContainer').innerHTML = ""; 
-    if (storyTimer) clearTimeout(storyTimer);
-}
-
-window.deletarStoryAtual = async function() {
-    if(!currentStoryId) return;
-    if(confirm("Apagar este story?")) {
-        try {
-            await deleteDoc(doc(db, "stories", currentStoryId));
-            fecharStory();
-            const user = auth.currentUser;
-            if(user) carregarMeusStories(user.uid);
-        } catch(e) { console.error(e); }
+            progress.style.transition = `width ${ms}ms linear`;
+            progress.style.width = '100%';
+        }, 50);
     }
-}
+
+    function criarAreasToque(container) {
+        // Remove áreas antigas se houver
+        const oldLeft = document.getElementById('touchLeft');
+        const oldRight = document.getElementById('touchRight');
+        if(oldLeft) oldLeft.remove();
+        if(oldRight) oldRight.remove();
+
+        const left = document.createElement('div');
+        left.id = 'touchLeft';
+        left.style.cssText = "position:absolute; top:0; left:0; width:30%; height:100%; z-index:90;";
+        left.onclick = (e) => { e.stopPropagation(); storyAnterior(); };
+
+        const right = document.createElement('div');
+        right.id = 'touchRight';
+        right.style.cssText = "position:absolute; top:0; right:0; width:70%; height:100%; z-index:90;";
+        right.onclick = (e) => { e.stopPropagation(); proximoStory(); };
+
+        container.appendChild(left);
+        container.appendChild(right);
+    }
+
+    // Atualize a função fecharStory existente
+    window.fecharStory = function() {
+        const modal = document.getElementById('modalStoryViewer'); // ID do index
+        const modalPerfil = document.getElementById('modalStoryViewerPerfil'); // Caso use IDs diferentes
+        
+        if(modal) modal.style.display = 'none';
+        if(modalPerfil) modalPerfil.style.display = 'none';
+
+        const media = document.getElementById('storyMediaContainer');
+        if(media) {
+            media.innerHTML = "";
+        }
+        
+        if (storyTimerGlobal) clearTimeout(storyTimerGlobal);
+        currentStoryIndex = 0;
+        storyQueue = [];
+    }
+

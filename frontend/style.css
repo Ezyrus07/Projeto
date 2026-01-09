@@ -605,6 +605,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 /* Containers Gerais */
 .secao-busca,
 .videos-container,
+.fotos-container,
 .anuncio-container,
 .rodape-container,
 .rodape-container2 {
@@ -1646,6 +1647,8 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   text-decoration: none; font-size: 1em; text-align: center;
   color: var(--cor0); font-weight: bold; margin-bottom: 25px;
 }
+
+.fotos-container { background: var(--cor-botton-verde); border-radius: 12px; }
 .top-bar {
   display: flex; align-items: center; gap: 20px;
   margin-bottom: 25px; flex-wrap: wrap;
@@ -2015,7 +2018,7 @@ body.dark-mode .input-pequeno.full-width {
 
   /* Ajuste de containers */
   .secao-busca, .categorias-container, .videos-container, .anuncio-container, 
-  .rodape-container, .rodape-container2 {
+  .rodape-container, .rodape-container2, .fotos-container{
     max-width: 1100px; padding: 50px 60px;
   }
   
@@ -2278,8 +2281,8 @@ main .main-footer,
   main { padding: 35px 60px; }
 
   .secao-busca, .videos-container, .anuncio-container, 
-  .rodape-container, .rodape-container2 {
-    max-width: 1100px; padding: 50px 60px;
+  .rodape-container, .rodape-container2, .fotos-container {
+    max-width: 1200px; padding: 50px 60px;
   }
   .categorias-grid { gap: 50px; }
   
@@ -2337,7 +2340,7 @@ main .main-footer,
 
 /* --- TELAS GRANDES (1280px+) --- */
 @media (min-width: 1280px) {
-  .secao-busca, .categorias-container, .videos-container, 
+  .secao-busca, .categorias-container, .videos-container,.fotos-container 
   .anuncio-container, .rodape-container2 { max-width: 1200px; }
   .rodape-container { max-width: 1200px; padding: 10px 10px; }
   .categorias-grid { grid-template-columns: repeat(4, 1fr); gap: 60px; }
@@ -2627,7 +2630,7 @@ body.dark-mode {
    ========================================================================== */
 @media (max-width: 767px) {
   /* 1. Ajuste geral de containeres */
-  .secao-busca, .videos-container, .anuncio-container, .rodape-container, .rodape-container2, .filtros-container {
+  .secao-busca, .videos-container, .anuncio-container, .rodape-container, .rodape-container2, .filtros-container, .fotos-container {
     padding: 24px 20px; width: 94%; margin-left: auto; margin-right: auto;
   }
   /* 2. Seção de Busca Específica */
@@ -3909,7 +3912,8 @@ body.dark-mode {
     .videos-container, 
     .anuncio-container, 
     .rodape-container, 
-    .rodape-container2 {
+    .rodape-container2,
+    .fotos-container {
         padding: 30px; /* Reduz de 50px/60px para 30px */
         max-width: 100%;
     }
@@ -5829,19 +5833,95 @@ body.dark-mode {
     .btn-close-modal { top: 15px; left: 15px; }
 }
 
-/* STORIES NA LISTA */
-.circulo-destaque.com-story {
-    border: 3px solid var(--cor0); /* Verde Doke */
-    padding: 2px; /* Espaço entre borda e foto */
-}
-.circulo-destaque img {
-    border-radius: 50%;
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+/* CONTAINER DOS STORIES NO INDEX */
+.stories-container {
+    background: #fff;
+    padding: 15px 0;
+    border-bottom: 1px solid #eee;
+    margin-bottom: 10px;
+    overflow: hidden;
 }
 
-/* PLAYER DE STORIES (Tela Cheia) */
+.stories-scroll {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto;
+    padding: 0 15px;
+    scrollbar-width: none; /* Firefox */
+}
+.stories-scroll::-webkit-scrollbar { display: none; } /* Chrome */
+
+/* ITEM INDIVIDUAL */
+.story-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    min-width: 70px;
+}
+
+.story-ring {
+    width: 65px;
+    height: 65px;
+    border-radius: 50%;
+    padding: 3px;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+/* Anel colorido (Estilo Instagram) */
+.story-ring.unseen {
+    background: linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%);
+}
+/* Anel cinza (Visto - opcional, por enquanto deixamos sempre colorido para destacar) */
+.story-ring.seen {
+    background: #ddd;
+}
+/* Botão adicionar */
+.story-ring.add-story {
+    background: transparent;
+    border: 2px dashed #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.story-ring img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid white; /* Borda interna branca */
+    background: white;
+}
+
+.plus-icon {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: var(--cor0, #0b7768);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    border: 2px solid white;
+}
+
+.story-name {
+    font-size: 0.75rem;
+    color: #333;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    width: 70px;
+    text-align: center;
+}
+
+/* MODAL FULLSCREEN */
 .story-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
     background: #000; z-index: 99999;
@@ -5854,26 +5934,17 @@ body.dark-mode {
 }
 .story-header {
     position: absolute; top: 20px; left: 10px; right: 10px;
-    z-index: 10; display: flex; align-items: center; gap: 10px;
+    z-index: 100; display: flex; align-items: center; gap: 10px;
     color: white; text-shadow: 1px 1px 2px black;
 }
 .story-avatar { width: 35px; height: 35px; border-radius: 50%; border: 1px solid white; }
 .story-media-box { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; background:black; }
-.story-media-box img, .story-media-box video { max-width: 100%; max-height: 100%; object-fit: contain; }
 
-/* Barra de Progresso */
+/* BARRA DE PROGRESSO */
 .story-progress-bar {
-    position: absolute; top: 5px; left: 5px; right: 5px;
-    height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; z-index: 15;
+    position: absolute; top: 10px; left: 5px; right: 5px;
+    height: 3px; background: rgba(255,255,255,0.3); border-radius: 2px; z-index: 100;
 }
 .story-progress-fill {
     height: 100%; background: white; width: 0%;
-    transition: width 0.1s linear;
-}
-
-.btn-trash-story {
-    position: absolute; bottom: 20px; right: 20px;
-    background: rgba(0,0,0,0.5); color: #e74c3c;
-    border: none; border-radius: 50%; width: 40px; height: 40px;
-    font-size: 1.2rem; cursor: pointer; z-index: 20;
 }
