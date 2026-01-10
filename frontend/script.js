@@ -13,7 +13,7 @@ const firebaseConfig = {
     authDomain: "doke-site.firebaseapp.com",
     projectId: "doke-site",
     storageBucket: "doke-site.firebasestorage.app",
-    messagingSenderId: "997098339190",
+    messagingSenderId: "997098339190",  
     appId: "1:997098339190:web:a865b696278be21f069857"
 };
 
