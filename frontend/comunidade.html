@@ -6,7 +6,9 @@
     <title>Comunidades - Doke</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="style.css">
+    
     <script type="module" src="script.js"></script>
+
     <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
@@ -19,6 +21,7 @@
             main { margin-left: 270px; padding: 30px 40px; width: auto; }
         }
 
+        /* --- HERO E HEADER --- */
         .comm-hero-container {
             background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
             padding: 40px; border-radius: 20px; margin-bottom: 40px;
@@ -54,11 +57,12 @@
         }
         .btn-create-comm:hover { background: #fff; color: var(--cor2); }
 
-        /* Meus Grupos */
+        /* --- MEUS GRUPOS (Lista Horizontal) --- */
         .my-groups-section { position: relative; z-index: 2; }
         .section-label { color: white; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; opacity: 0.8; }
         .groups-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; min-height: 90px; }
         .my-group-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; min-width: 80px; transition: 0.2s; }
+        .my-group-item:hover { transform: translateY(-3px); }
         .group-img-ring {
             width: 70px; height: 70px; border-radius: 20px; padding: 3px;
             background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
@@ -66,7 +70,7 @@
         .group-img-ring img { width: 100%; height: 100%; border-radius: 17px; object-fit: cover; background: white; }
         .my-group-item span { color: white; font-size: 0.8rem; font-weight: 600; text-align: center; }
 
-        /* Layout Principal */
+        /* --- LAYOUT GRID --- */
         .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
         .filter-tabs { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; }
         .tab-btn {
@@ -77,6 +81,7 @@
 
         .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
         
+        /* CARD COMUNIDADE */
         .card-comm {
             background: white; border-radius: 16px; overflow: hidden;
             border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
@@ -100,26 +105,128 @@
         .card-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
         .card-title { font-size: 1.15rem; font-weight: 700; color: #333; margin-bottom: 6px; }
         .card-desc { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.5; }
+        
         .members-preview { display: flex; align-items: center; margin-bottom: 15px; margin-top: auto; }
         .mem-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -10px; background:#ddd; }
         .mem-count { font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: 500; }
+        
         .card-footer { padding: 15px 18px; border-top: 1px solid #f5f5f5; background: #fafafa; }
-        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; }
+        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; transition:0.2s; }
         .btn-entrar:hover { background: var(--cor2); color: white; border-color: var(--cor2); }
 
-        /* Sidebar Widgets */
+        /* SIDEBAR */
         .widget-box { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
         .widget-title { font-size: 1.1rem; font-weight: 700; color: var(--cor2); margin-bottom: 20px; border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; }
-        .topic-item { display: flex; gap: 15px; margin-bottom: 15px; }
-        .topic-icon { width: 40px; height: 40px; background: #f0f7ff; color: var(--cor2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
         
-        /* Modal Criar */
+        /* --- ESTILOS DO GRUPO ABERTO (HEADER E POSTS) --- */
+        .group-header-bg {
+            height: 250px; border-radius: 20px; position: relative;
+            background-size: cover; background-position: center;
+            color: white; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+        }
+        .group-header-overlay {
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            width: 100%; height: 100%; padding: 30px;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        .btn-voltar-comm {
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
+            border: none; color: white; padding: 8px 15px; border-radius: 20px;
+            cursor: pointer; width: fit-content; display: flex; align-items: center; gap: 5px; font-weight: 600;
+        }
+        .btn-voltar-comm:hover { background: rgba(255,255,255,0.3); }
+
+        .group-info-large h1 { margin: 0 0 5px 0; font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.3); }
+        .group-info-large p { margin: 0 0 15px 0; opacity: 0.9; max-width: 600px; }
+        .group-meta-row { display: flex; align-items: center; gap: 20px; }
+
+        .btn-join-toggle { padding: 10px 25px; border-radius: 30px; font-weight: 700; border: none; cursor: pointer; transition: 0.2s; }
+        .btn-join-toggle.entrar { background: var(--cor0); color: white; }
+        .btn-join-toggle.sair { background: rgba(255,255,255,0.2); color: white; border: 1px solid rgba(255,255,255,0.5); }
+
+        .btn-config-group { 
+            background: rgba(255,255,255,0.2); color: white; border: none; width: 40px; height: 40px; 
+            border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 1.2rem;
+            backdrop-filter: blur(5px); transition: 0.2s;
+        }
+        .btn-config-group:hover { background: rgba(255,255,255,0.4); }
+
+        .comm-post-card {
+            background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px;
+            border: 1px solid #eee; box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        }
+        .comm-post-header { display: flex; gap: 10px; margin-bottom: 10px; align-items: center; }
+        .comm-post-avatar { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+        .comm-post-user { font-weight: 700; color: #333; }
+        .comm-post-time { font-size: 0.75rem; color: #999; display: block; }
+        .comm-post-body { color: #444; line-height: 1.5; margin-bottom: 15px; }
+        .comm-post-img { width: 100%; border-radius: 8px; margin-top: 10px; max-height: 400px; object-fit: cover; }
+        .comm-post-actions { border-top: 1px solid #f5f5f5; padding-top: 10px; display: flex; gap: 20px; }
+        .btn-action-post { background: none; border: none; cursor: pointer; color: #666; font-size: 0.9rem; display: flex; align-items: center; gap: 5px; }
+        .btn-action-post:hover { color: var(--cor2); }
+
+        .btn-postar-grupo { background: var(--cor2); color: white; border: none; padding: 8px 20px; border-radius: 20px; font-weight: 600; cursor: pointer; }
+
+        /* --- BUSCA DENTRO DO GRUPO --- */
+        .group-search-bar {
+            background: white; border: 1px solid #eee; border-radius: 12px; padding: 10px 15px;
+            display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+        }
+        .group-search-bar input { border: none; outline: none; width: 100%; font-size: 0.9rem; }
+
+        /* --- MODAL E UPLOAD ESTILIZADO --- */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal-card { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; }
+        .modal-card { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; max-height: 90vh; overflow-y: auto; }
         @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
         .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
-        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; outline: none; box-sizing: border-box; }
+        
+        /* ESTILO DO UPLOAD CUSTOMIZADO */
+        .custom-file-upload {
+            border: 2px dashed #ccc;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            margin-bottom: 20px;
+            transition: 0.3s;
+            background: #f9f9f9;
+            color: #666;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .custom-file-upload:hover { border-color: var(--cor0); background: #f0fdfa; color: var(--cor0); }
+        .custom-file-upload i { font-size: 2rem; }
+        
         .btn-submit-modal { width: 100%; padding: 14px; background: var(--cor2); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-danger-modal { width: 100%; padding: 14px; background: #ffebee; color: #c62828; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 10px; }
+
+        /* LISTA DE MEMBROS (NO MODAL) */
+        .member-list-item {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 12px 0; border-bottom: 1px solid #f0f0f0;
+        }
+        .member-info { display: flex; align-items: center; gap: 12px; }
+        .member-info img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; }
+        .member-text { cursor: pointer; }
+        .member-role { font-size: 0.7rem; padding: 2px 6px; border-radius: 4px; font-weight: 700; margin-left: 5px; }
+        .role-admin { background: #e0f7fa; color: #006064; }
+        .role-owner { background: #fff3e0; color: #e65100; }
+        
+        /* Tags de Tipo de Usuário */
+        .tag-user-type { font-size: 0.65rem; padding: 2px 6px; border-radius: 10px; font-weight: 600; text-transform: uppercase; margin-left: 5px; }
+        .tag-pro-user { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+        .tag-normal-user { background: #f5f5f5; color: #777; border: 1px solid #eee; }
+
+        .member-actions button {
+            background: none; border: none; cursor: pointer; color: #666; font-size: 1.2rem;
+            width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        }
+        .member-actions button:hover { background: #f5f5f5; color: #333; }
 
         @media (max-width: 768px) {
             .comm-layout { display: flex; flex-direction: column; }
@@ -133,40 +240,24 @@
 </head>
 <body>
 
-        <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <nav class="menu">
             <div class="cep-wrapper">
                 <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/></svg>
                     <span id="textoCepSpan">Informe seu CEP</span>
                 </a>
-
                 <div class="cep-popup" id="boxCep">
                     <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
+                    <div class="cep-input-group"><input type="text" id="inputCep" placeholder="00000-000" maxlength="9"><button onclick="salvarCep()">OK</button></div>
                 </div>
             </div>
-            
             <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
+        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
     </header>
 
     <aside class="sidebar-icones">
@@ -177,7 +268,6 @@
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
         <div class="item active"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
     <header class="navbar-mobile">
@@ -188,56 +278,126 @@
 
     <main>
         
-        <div class="comm-hero-container">
-            <div class="comm-header">
-                <div class="comm-title">
-                    <h1>Comunidades</h1>
-                    <p>Conecte-se, troque experiências e cresça junto com outros profissionais e vizinhos.</p>
-                </div>
-                <div class="header-actions">
-                    <div class="search-bar-comm">
-                        <i class='bx bx-search'></i>
-                        <input type="text" placeholder="Buscar grupos..." id="inputBuscaComm" onkeyup="filtrarComunidadesTela(this.value)">
+        <div id="view-lista-grupos">
+            <div class="comm-hero-container">
+                <div class="comm-header">
+                    <div class="comm-title">
+                        <h1>Comunidades</h1>
+                        <p>Conecte-se, troque experiências e cresça junto com outros profissionais e vizinhos.</p>
                     </div>
-                    <button class="btn-create-comm" onclick="abrirModalCriarComm()"><i class='bx bx-plus-circle'></i> Criar Grupo</button>
+                    <div class="header-actions">
+                        <div class="search-bar-comm">
+                            <i class='bx bx-search'></i>
+                            <input type="text" placeholder="Buscar grupos..." id="inputBuscaComm" onkeyup="filtrarComunidadesTela(this.value)">
+                        </div>
+                        <button class="btn-create-comm" onclick="abrirModalCriarComm()"><i class='bx bx-plus-circle'></i> Criar Grupo</button>
+                    </div>
+                </div>
+
+                <section class="my-groups-section">
+                    <div class="section-label">Meus Grupos</div>
+                    <div class="groups-scroll" id="listaMeusGrupos">
+                        <div style="color:rgba(255,255,255,0.7); padding:10px;">Carregando...</div>
+                    </div>
+                </section>
+            </div>
+
+            <div class="comm-layout">
+                <div class="main-feed-comm">
+                    <div class="filter-tabs">
+                        <button class="tab-btn active" onclick="filtrarComunidadesTipo('todos', this)">Descobrir</button>
+                        <button class="tab-btn" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
+                        <button class="tab-btn" onclick="filtrarComunidadesTipo('Condomínio', this)">Condomínios</button>
+                        <button class="tab-btn" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
+                    </div>
+
+                    <div class="grid-comunidades" id="listaComunidadesGeral">
+                        </div>
+                </div>
+
+                <aside class="comm-sidebar">
+                    <div class="widget-box">
+                        <h4 class="widget-title"><i class='bx bx-trending-up'></i> Tópicos em Alta</h4>
+                        <div class="topic-list" id="listaTopicos">
+                            <p style="color:#999; font-size:0.9rem;">Nenhum tópico no momento.</p>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        <div id="view-grupo-aberto" style="display: none;">
+            <div class="group-header-bg" id="capaGrupoAberto">
+                <div class="group-header-overlay">
+                    
+                    <div style="display:flex; justify-content:space-between; align-items:center; width:100%;">
+                        <button class="btn-voltar-comm" onclick="fecharGrupo()"><i class='bx bx-arrow-back'></i> Voltar</button>
+                        
+                        <div id="areaAdminGrupo" style="display:none; gap:10px;">
+                            <button class="btn-config-group" onclick="abrirGerenciamentoMembros()" title="Membros">
+                                <i class='bx bx-group'></i>
+                            </button>
+                            <button class="btn-config-group" onclick="abrirEdicaoGrupo()" title="Editar Grupo">
+                                <i class='bx bx-cog'></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="group-info-large">
+                        <h1 id="tituloGrupoAberto">Nome do Grupo</h1>
+                        <p id="descGrupoAberto">Descrição do grupo...</p>
+                        <div class="group-meta-row">
+                            <span id="membrosGrupoAberto">0 membros</span>
+                            <button id="btnParticiparToggle" onclick="toggleParticipacaoGrupo()" class="btn-join-toggle">Entrar no Grupo</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-            <section class="my-groups-section">
-                <div class="section-label">Meus Grupos</div>
-                <div class="groups-scroll" id="listaMeusGrupos">
-                    <div style="color:rgba(255,255,255,0.7); padding:10px;">Carregando seus grupos...</div>
-                </div>
-            </section>
-        </div>
+            <div class="comm-layout" style="margin-top: 20px;">
+                <div class="main-feed-comm">
+                    
+                    <div class="group-search-bar">
+                        <i class='bx bx-search' style="color:#999;"></i>
+                        <input type="text" placeholder="Pesquisar mensagens no grupo..." onkeyup="filtrarMensagensGrupo(this.value)">
+                    </div>
 
-        <div class="comm-layout">
-            <div class="main-feed-comm">
-                <div class="filter-tabs">
-                    <button class="tab-btn active" onclick="filtrarComunidadesTipo('todos', this)">Descobrir</button>
-                    <button class="tab-btn" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
-                    <button class="tab-btn" onclick="filtrarComunidadesTipo('Condomínio', this)">Condomínios</button>
-                    <button class="tab-btn" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
-                </div>
+                    <div id="areaCriarPostGrupo" class="card-comm" style="padding: 20px; display:none; margin-bottom: 20px;">
+                        <div style="display:flex; gap:15px;">
+                            <img id="minhaFotoPostGrupo" src="https://placehold.co/50" style="width:40px; height:40px; border-radius:50%;">
+                            <div style="flex:1;">
+                                <textarea id="textoPostGrupo" placeholder="Escreva algo para o grupo..." style="width:100%; border:none; outline:none; resize:none; font-family:inherit; font-size:1rem; background:transparent;"></textarea>
+                                
+                                <div id="previewImgGrupo" style="display:none; margin-top:10px; position:relative;">
+                                    <img id="imgPreviewGrupoSrc" src="" style="max-height:200px; border-radius:8px;">
+                                    <button onclick="limparImgGrupo()" style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.5); color:white; border:none; border-radius:50%; width:25px; height:25px; cursor:pointer;">&times;</button>
+                                </div>
 
-                <div class="grid-comunidades" id="listaComunidadesGeral">
-                    <div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">
-                        <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
-                        <p>Buscando comunidades...</p>
+                                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:10px; border-top:1px solid #eee; padding-top:10px;">
+                                    <label class="btn-add-midia" style="cursor:pointer; color:var(--cor0); font-size:1.2rem;">
+                                        <i class='bx bx-image-add'></i>
+                                        <input type="file" id="filePostGrupo" accept="image/*" style="display:none;" onchange="previewImagemGrupo(this)">
+                                    </label>
+                                    <button onclick="publicarNoGrupo()" class="btn-postar-grupo">Publicar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div id="feedGrupoConteudo">
+                        <div style="text-align:center; padding:40px; color:#999;">Carregando posts...</div>
                     </div>
                 </div>
-            </div>
 
-            <aside class="comm-sidebar">
-<div class="widget-box">
-    <h4 class="widget-title"><i class='bx bx-trending-up'></i> Tópicos em Alta</h4>
-    
-    <div class="topic-list" id="listaTopicos">
-        <div style="padding:10px; color:#888; font-size:0.85rem;">Nenhum tópico no momento</div>
-    </div>
-</div>
-            </aside>
+                <aside class="comm-sidebar">
+                    <div class="widget-box">
+                        <h4 class="widget-title">Sobre</h4>
+                        <p style="color:#666; font-size:0.9rem;" id="aboutGrupoSide">Detalhes...</p>
+                    </div>
+                </aside>
+            </div>
         </div>
+
     </main>
 
     <nav class="bottom-nav">
@@ -248,7 +408,7 @@
 
     <div id="modalCriarComm" class="modal-overlay">
         <div class="modal-card">
-            <button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <button type="button" onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer; z-index:10;">&times;</button>
             <h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
             <form onsubmit="criarNovaComunidade(event)">
                 <label class="form-label">Nome do Grupo</label>
@@ -265,17 +425,109 @@
                 </select>
 
                 <label class="form-label">Imagem de Capa (Opcional)</label>
-                <input type="file" id="commFoto" class="form-input" accept="image/*">
+                <label for="commFoto" class="custom-file-upload">
+                    <i class='bx bx-cloud-upload'></i>
+                    <span id="labelFotoComm">Escolher arquivo de capa</span>
+                    <input type="file" id="commFoto" accept="image/*" style="display:none;" onchange="updateFileName(this, 'labelFotoComm')">
+                </label>
 
                 <button type="submit" class="btn-submit-modal">Criar Comunidade</button>
             </form>
         </div>
     </div>
 
-    <script>
-        window.abrirModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'flex'; }
-        window.fecharModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'none'; }
+    <div id="modalEditarGrupo" class="modal-overlay">
+        <div class="modal-card">
+            <button type="button" onclick="fecharModalEditarGrupo()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer; z-index:10;">&times;</button>
+            <h2 style="margin-bottom:20px; color:var(--cor2);">Editar Grupo</h2>
+            <form onsubmit="salvarEdicaoGrupo(event)">
+                <label class="form-label">Nome do Grupo</label>
+                <input type="text" id="editCommNome" class="form-input" required>
+                
+                <label class="form-label">Descrição</label>
+                <textarea id="editCommDesc" class="form-textarea" required></textarea>
+                
+                <label class="form-label">Nova Capa (Opcional)</label>
+                <label for="editCommFoto" class="custom-file-upload">
+                    <i class='bx bx-image-alt'></i>
+                    <span id="labelEditFoto">Alterar imagem de capa</span>
+                    <input type="file" id="editCommFoto" accept="image/*" style="display:none;" onchange="updateFileName(this, 'labelEditFoto')">
+                </label>
+
+                <button type="submit" class="btn-submit-modal">Salvar Alterações</button>
+                
+                <button type="button" id="btnExcluirComunidade" class="btn-danger-modal" onclick="excluirComunidade()" style="display:none;">Excluir Comunidade</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="modalMembros" class="modal-overlay">
+        <div class="modal-card">
+            <button type="button" onclick="fecharModalMembros()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer; z-index:10;">&times;</button>
+            <h2 style="margin-bottom:20px; color:var(--cor2);">Membros</h2>
+            <div id="listaMembrosContainer" style="max-height: 300px; overflow-y: auto;">
+                <div style="text-align:center; padding:20px;">Carregando...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        // Importações do Firebase
+        import { 
+            getFirestore, doc, getDoc, addDoc, updateDoc, deleteDoc, collection, arrayUnion, arrayRemove, increment, query, orderBy, onSnapshot, limit, where 
+        } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+        import { getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        // Inicialização
+        const db = window.db || getFirestore();
+        const auth = window.auth || getAuth();
+        const storage = window.storage || getStorage();
+
+        // Variáveis Globais
+        window.idGrupoAtual = null;
+        window.dadosGrupoAtual = null;
+        window.unsubscribeFeedGrupo = null;
+
+        // --------------------------------------------------------
+        // UI HELPERS
+        // --------------------------------------------------------
+        window.abrirModalCriarComm = () => document.getElementById('modalCriarComm').style.display = 'flex';
+        window.fecharModalCriarComm = () => document.getElementById('modalCriarComm').style.display = 'none';
         
+        window.abrirModalEditarGrupo = () => {
+            if(!window.dadosGrupoAtual) return;
+            document.getElementById('editCommNome').value = window.dadosGrupoAtual.nome;
+            document.getElementById('editCommDesc').value = window.dadosGrupoAtual.descricao;
+            
+            // Só mostra o botão de excluir se for o DONO (FUNDADOR)
+            const user = auth.currentUser;
+            const btnExcluir = document.getElementById('btnExcluirComunidade');
+            if (user && user.uid === window.dadosGrupoAtual.donoUid) {
+                btnExcluir.style.display = 'block';
+            } else {
+                btnExcluir.style.display = 'none';
+            }
+
+            document.getElementById('modalEditarGrupo').style.display = 'flex';
+        };
+        window.fecharModalEditarGrupo = () => document.getElementById('modalEditarGrupo').style.display = 'none';
+
+        window.abrirModalMembros = () => document.getElementById('modalMembros').style.display = 'flex';
+        window.fecharModalMembros = () => document.getElementById('modalMembros').style.display = 'none';
+
+        window.updateFileName = function(input, labelId) {
+            const label = document.getElementById(labelId);
+            if(input.files && input.files[0]) {
+                label.innerText = input.files[0].name;
+                label.style.color = "var(--cor0)";
+                label.style.fontWeight = "bold";
+            } else {
+                label.innerText = "Escolher arquivo...";
+            }
+        }
+
         window.filtrarComunidadesTela = function(termo) {
             const cards = document.querySelectorAll('.card-comm');
             cards.forEach(card => {
@@ -284,10 +536,17 @@
             });
         }
 
+        window.filtrarMensagensGrupo = function(termo) {
+            const posts = document.querySelectorAll('.comm-post-card');
+            posts.forEach(post => {
+                const texto = post.innerText.toLowerCase();
+                post.style.display = texto.includes(termo.toLowerCase()) ? 'block' : 'none';
+            });
+        }
+
         window.filtrarComunidadesTipo = function(tipo, btn) {
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
-            
             const cards = document.querySelectorAll('.card-comm');
             cards.forEach(card => {
                 const tag = card.getAttribute('data-tipo');
@@ -296,10 +555,541 @@
             });
         }
 
-        // Inicia carregamento
-        setTimeout(() => {
-            if(window.carregarDadosComunidade) window.carregarDadosComunidade();
-        }, 1000);
+        // Função auxiliar de navegação para perfil
+        window.verificarPerfilEIr = function(uid, isProfissional) {
+            const pagina = isProfissional ? 'perfil-profissional.html' : 'perfil-usuario.html';
+            window.location.href = `${pagina}?uid=${uid}`;
+        }
+
+        // --------------------------------------------------------
+        // LÓGICA DE CRIAÇÃO E ADMINISTRAÇÃO
+        // --------------------------------------------------------
+
+        // 1. Criar Comunidade
+        window.criarNovaComunidade = async function(e) {
+            e.preventDefault();
+            const btn = document.querySelector('.btn-submit-modal');
+            const user = auth.currentUser;
+
+            if(!user) { alert("Faça login para criar um grupo."); return; }
+
+            const nome = document.getElementById('commNome').value;
+            const desc = document.getElementById('commDesc').value;
+            const tipo = document.getElementById('commTipo').value;
+            const fileInput = document.getElementById('commFoto');
+
+            btn.innerText = "Criando..."; 
+            btn.disabled = true;
+
+            try {
+                let capaUrl = "https://placehold.co/600x200?text=Grupo"; 
+
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const storageRef = ref(storage, `comunidades_covers/${Date.now()}_${file.name}`);
+                    const snap = await uploadBytes(storageRef, file);
+                    capaUrl = await getDownloadURL(snap.ref);
+                }
+
+                await addDoc(collection(db, "comunidades"), {
+                    donoUid: user.uid,
+                    admins: [user.uid], // Cria array de admins com o dono
+                    nome: nome,
+                    descricao: desc,
+                    tipo: tipo,
+                    capa: capaUrl,
+                    membrosCount: 1,
+                    membros: [user.uid], 
+                    dataCriacao: new Date().toISOString()
+                });
+
+                alert("Grupo criado com sucesso!");
+                fecharModalCriarComm();
+                carregarComunidadesGerais();
+                carregarMeusGrupos();
+
+            } catch (erro) {
+                console.error("Erro ao criar:", erro);
+                alert("Erro: " + erro.message);
+            } finally {
+                btn.innerText = "Criar Comunidade"; 
+                btn.disabled = false;
+            }
+        }
+
+        // 2. Salvar Edição do Grupo
+        window.abrirEdicaoGrupo = function() { window.abrirModalEditarGrupo(); } // Alias
+        window.salvarEdicaoGrupo = async function(e) {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            const nome = document.getElementById('editCommNome').value;
+            const desc = document.getElementById('editCommDesc').value;
+            const fileInput = document.getElementById('editCommFoto');
+
+            btn.innerText = "Salvando..."; btn.disabled = true;
+
+            try {
+                let updateData = { nome: nome, descricao: desc };
+
+                if (fileInput.files && fileInput.files[0]) {
+                    const file = fileInput.files[0];
+                    const storageRef = ref(storage, `comunidades_covers/${Date.now()}_${file.name}`);
+                    const snap = await uploadBytes(storageRef, file);
+                    updateData.capa = await getDownloadURL(snap.ref);
+                }
+
+                const docRef = doc(db, "comunidades", window.idGrupoAtual);
+                await updateDoc(docRef, updateData);
+
+                // Atualiza visualmente na hora
+                document.getElementById('tituloGrupoAberto').innerText = nome;
+                document.getElementById('descGrupoAberto').innerText = desc;
+                if(updateData.capa) document.getElementById('capaGrupoAberto').style.backgroundImage = `url('${updateData.capa}')`;
+
+                alert("Grupo atualizado!");
+                fecharModalEditarGrupo();
+
+            } catch(erro) {
+                console.error(erro);
+                alert("Erro ao editar.");
+            } finally {
+                btn.innerText = "Salvar Alterações"; btn.disabled = false;
+            }
+        }
+
+        // 3. Excluir Comunidade (SOMENTE FUNDADOR)
+        window.excluirComunidade = async function() {
+            if (!confirm("TEM CERTEZA ABSOLUTA? Isso apagará o grupo e todas as mensagens. Esta ação é irreversível.")) return;
+            
+            const user = auth.currentUser;
+            if (!user || user.uid !== window.dadosGrupoAtual.donoUid) return alert("Apenas o fundador pode excluir.");
+
+            try {
+                // Deleta o documento da comunidade
+                await deleteDoc(doc(db, "comunidades", window.idGrupoAtual));
+                
+                alert("Comunidade excluída.");
+                window.location.reload(); // Recarrega para voltar à lista limpa
+            } catch(e) {
+                console.error(e);
+                alert("Erro ao excluir: " + e.message);
+            }
+        }
+
+        // 4. Gestão de Membros (Listar e Promover)
+        window.abrirGerenciamentoMembros = async function() {
+            abrirModalMembros();
+            const container = document.getElementById('listaMembrosContainer');
+            const user = auth.currentUser;
+            
+            if(!window.dadosGrupoAtual || !user) return;
+
+            // Pega a lista de UIDs
+            const membrosUids = window.dadosGrupoAtual.membros || [];
+            const admins = window.dadosGrupoAtual.admins || [];
+            const dono = window.dadosGrupoAtual.donoUid;
+            const euSouAdmin = admins.includes(user.uid);
+
+            container.innerHTML = '<div style="text-align:center; padding:10px;">Carregando perfis...</div>';
+
+            try {
+                let htmlLista = "";
+
+                // Faz fetch de todos os usuários em paralelo
+                const promessas = membrosUids.map(uid => getDoc(doc(db, "usuarios", uid)));
+                const docsUsuarios = await Promise.all(promessas);
+
+                docsUsuarios.forEach((snap, index) => {
+                    const uidMembro = membrosUids[index]; // UID correspondente
+                    // Dados padrão se não achar
+                    const dadosUsuario = snap.exists() ? snap.data() : { user: "@desconhecido", nome: "Usuário", foto: "https://placehold.co/50", isProfissional: false };
+                    
+                    const isOwner = (uidMembro === dono);
+                    const isAdmin = admins.includes(uidMembro);
+                    const isPro = dadosUsuario.isProfissional === true;
+                    
+                    // Define o nome de exibição (Handle > Nome)
+                    let nomeDisplay = dadosUsuario.user || dadosUsuario.nome || "Usuário";
+                    if (!nomeDisplay.startsWith('@')) nomeDisplay = '@' + nomeDisplay.replace(/\s+/g, '').toLowerCase();
+
+                    // Badge de cargo (Dono/Admin)
+                    let badgeRole = "";
+                    if(isOwner) badgeRole = `<span class="member-role role-owner">Fundador</span>`;
+                    else if(isAdmin) badgeRole = `<span class="member-role role-admin">Admin</span>`;
+
+                    // Badge de tipo (Pro/User)
+                    let badgeType = isPro 
+                        ? `<span class="tag-user-type tag-pro-user">Profissional</span>` 
+                        : `<span class="tag-user-type tag-normal-user">Usuário</span>`;
+
+                    // Ações (Só mostro se EU for admin e NÃO for mexer no dono)
+                    let actions = "";
+                    if (euSouAdmin && uidMembro !== user.uid && !isOwner) {
+                        const btnAdminIcon = isAdmin ? 'bx-shield-x' : 'bx-shield-quarter';
+                        const btnAdminTitle = isAdmin ? 'Remover Admin' : 'Tornar Admin';
+                        const btnAdminAction = `toggleAdmin('${uidMembro}', ${isAdmin})`;
+                        const btnBanAction = `banirMembro('${uidMembro}')`;
+
+                        actions = `
+                        <div class="member-actions" style="display:flex; gap:5px;">
+                            <button title="${btnAdminTitle}" onclick="${btnAdminAction}"><i class='bx ${btnAdminIcon}'></i></button>
+                            <button title="Remover do Grupo" onclick="${btnBanAction}" style="color:#e74c3c;"><i class='bx bx-user-x'></i></button>
+                        </div>`;
+                    }
+
+                    // Link de Perfil correto
+                    const linkPerfil = `onclick="verificarPerfilEIr('${uidMembro}', ${isPro})"`;
+
+                    htmlLista += `
+                    <div class="member-list-item">
+                        <div class="member-info">
+                            <img src="${dadosUsuario.foto || 'https://placehold.co/50'}" ${linkPerfil}>
+                            <div>
+                                <div class="member-text" ${linkPerfil} style="font-weight:600; font-size:0.9rem;">
+                                    ${nomeDisplay} ${badgeRole} ${badgeType}
+                                </div>
+                            </div>
+                        </div>
+                        ${actions}
+                    </div>`;
+                });
+
+                container.innerHTML = htmlLista;
+
+            } catch(e) {
+                console.error(e);
+                container.innerHTML = "Erro ao carregar lista.";
+            }
+        }
+
+        window.toggleAdmin = async function(uidAlvo, isCurrentlyAdmin) {
+            if(!confirm(isCurrentlyAdmin ? "Remover cargo de Admin?" : "Promover este usuário a Admin?")) return;
+            
+            const docRef = doc(db, "comunidades", window.idGrupoAtual);
+            try {
+                if(isCurrentlyAdmin) {
+                    await updateDoc(docRef, { admins: arrayRemove(uidAlvo) });
+                } else {
+                    await updateDoc(docRef, { admins: arrayUnion(uidAlvo) });
+                }
+                // Atualiza dados locais e recarrega lista
+                window.dadosGrupoAtual = (await getDoc(docRef)).data();
+                abrirGerenciamentoMembros();
+            } catch(e) { alert("Erro ao alterar cargo."); }
+        }
+
+        window.banirMembro = async function(uidAlvo) {
+            if(!confirm("Tem certeza que deseja remover este usuário do grupo?")) return;
+            
+            const docRef = doc(db, "comunidades", window.idGrupoAtual);
+            try {
+                await updateDoc(docRef, {
+                    membros: arrayRemove(uidAlvo),
+                    admins: arrayRemove(uidAlvo), 
+                    membrosCount: increment(-1)
+                });
+                window.dadosGrupoAtual = (await getDoc(docRef)).data();
+                abrirGerenciamentoMembros();
+                document.getElementById('membrosGrupoAberto').innerText = window.dadosGrupoAtual.membrosCount + " membros";
+            } catch(e) { alert("Erro ao remover membro."); }
+        }
+
+
+        // --------------------------------------------------------
+        // LÓGICA DE LISTAGEM
+        // --------------------------------------------------------
+
+        async function carregarComunidadesGerais() {
+            const container = document.getElementById('listaComunidadesGeral');
+            if(!container) return;
+
+            try {
+                const q = query(collection(db, "comunidades"), limit(20));
+                const snapshot = await getDocs(q);
+
+                container.innerHTML = "";
+
+                if (snapshot.empty) {
+                    container.innerHTML = `<p style="grid-column:1/-1; text-align:center; color:#999; padding:20px;">Nenhum grupo encontrado.</p>`;
+                    return;
+                }
+
+                snapshot.forEach(docSnap => {
+                    const comm = docSnap.data();
+                    let tagClass = "tag-pro"; 
+                    if(comm.tipo === "Condomínio") tagClass = "tag-condo";
+                    if(comm.tipo === "Hobby") tagClass = "tag-hobby";
+
+                    const html = `
+                    <div class="card-comm" data-tipo="${comm.tipo}" onclick="abrirGrupo('${docSnap.id}')">
+                        <div class="card-cover" style="background-image: url('${comm.capa}');">
+                            <span class="card-tag ${tagClass}">${comm.tipo}</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="card-icon">
+                                <img src="${comm.capa}" style="object-fit:cover;">
+                            </div>
+                            <h3 class="card-title">${comm.nome}</h3>
+                            <p class="card-desc">${comm.descricao}</p>
+                            <div class="members-preview">
+                                <span class="mem-count"><i class='bx bx-user'></i> ${comm.membrosCount || 0} membros</span>
+                            </div>
+                            <div class="card-footer">
+                                <button class="btn-entrar">Ver Grupo</button>
+                            </div>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        async function carregarMeusGrupos() {
+            const container = document.getElementById('listaMeusGrupos');
+            const user = auth.currentUser;
+            if(!user || !container) return;
+
+            try {
+                const q = query(collection(db, "comunidades"), where("membros", "array-contains", user.uid));
+                onSnapshot(q, (snapshot) => {
+                    container.innerHTML = "";
+                    if (snapshot.empty) {
+                        container.innerHTML = `<div style="color:rgba(255,255,255,0.6); padding:10px;">Sem grupos.</div>`;
+                        return;
+                    }
+                    snapshot.forEach(docSnap => {
+                        const comm = docSnap.data();
+                        const html = `
+                        <div class="my-group-item" onclick="abrirGrupo('${docSnap.id}')">
+                            <div class="group-img-ring"><img src="${comm.capa}"></div>
+                            <span>${comm.nome}</span>
+                        </div>`;
+                        container.insertAdjacentHTML('beforeend', html);
+                    });
+                });
+            } catch (e) { console.error(e); }
+        }
+
+        // --------------------------------------------------------
+        // LÓGICA DO GRUPO ABERTO (FEED E AÇÕES)
+        // --------------------------------------------------------
+        
+        window.abrirGrupo = async function(idGrupo) {
+            const user = auth.currentUser;
+            window.idGrupoAtual = idGrupo;
+
+            document.getElementById('view-lista-grupos').style.display = 'none';
+            document.getElementById('view-grupo-aberto').style.display = 'block';
+            window.scrollTo(0,0);
+
+            try {
+                const docRef = doc(db, "comunidades", idGrupo);
+                const docSnap = await getDoc(docRef);
+
+                if (docSnap.exists()) {
+                    window.dadosGrupoAtual = docSnap.data();
+                    const d = window.dadosGrupoAtual;
+                    
+                    document.getElementById('tituloGrupoAberto').innerText = d.nome;
+                    document.getElementById('descGrupoAberto').innerText = d.descricao;
+                    document.getElementById('aboutGrupoSide').innerText = d.descricao;
+                    document.getElementById('membrosGrupoAberto').innerText = (d.membros ? d.membros.length : 0) + " membros";
+                    document.getElementById('capaGrupoAberto').style.backgroundImage = `url('${d.capa}')`;
+
+                    // === LÓGICA DE ADMIN ===
+                    const admins = d.admins || []; // Array de UIDs admins
+                    const isAdmin = user && admins.includes(user.uid);
+                    
+                    const areaAdmin = document.getElementById('areaAdminGrupo');
+                    if(areaAdmin) {
+                        areaAdmin.style.display = isAdmin ? 'flex' : 'none';
+                    }
+
+                    verificarParticipacao(d.membros || []);
+                    carregarFeedDoGrupo(idGrupo);
+                }
+            } catch (e) { console.error("Erro abrir grupo:", e); }
+        }
+
+        window.fecharGrupo = function() {
+            document.getElementById('view-lista-grupos').style.display = 'block';
+            document.getElementById('view-grupo-aberto').style.display = 'none';
+            window.idGrupoAtual = null;
+            if(window.unsubscribeFeedGrupo) window.unsubscribeFeedGrupo();
+        }
+
+        function verificarParticipacao(listaMembros) {
+            const user = auth.currentUser;
+            const btn = document.getElementById('btnParticiparToggle');
+            const areaPost = document.getElementById('areaCriarPostGrupo');
+
+            if (!user) {
+                btn.style.display = 'none'; areaPost.style.display = 'none'; return;
+            }
+
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            document.getElementById('minhaFotoPostGrupo').src = perfil.foto || "https://placehold.co/50";
+
+            if (listaMembros.includes(user.uid)) {
+                btn.innerText = "Sair do Grupo";
+                btn.className = "btn-join-toggle sair";
+                areaPost.style.display = 'block';
+            } else {
+                btn.innerText = "Entrar no Grupo";
+                btn.className = "btn-join-toggle entrar";
+                areaPost.style.display = 'none';
+            }
+        }
+
+        window.toggleParticipacaoGrupo = async function() {
+            const user = auth.currentUser;
+            if(!user) return alert("Faça login.");
+            
+            const docRef = doc(db, "comunidades", window.idGrupoAtual);
+            const btn = document.getElementById('btnParticiparToggle');
+            const entrando = btn.innerText.includes("Entrar");
+            
+            btn.disabled = true;
+
+            try {
+                if (entrando) {
+                    await updateDoc(docRef, {
+                        membros: arrayUnion(user.uid),
+                        membrosCount: increment(1)
+                    });
+                    alert("Bem-vindo!");
+                } else {
+                    await updateDoc(docRef, {
+                        membros: arrayRemove(user.uid),
+                        membrosCount: increment(-1)
+                    });
+                }
+                
+                const snap = await getDoc(docRef);
+                window.dadosGrupoAtual = snap.data();
+                verificarParticipacao(snap.data().membros);
+                document.getElementById('membrosGrupoAberto').innerText = snap.data().membrosCount + " membros";
+
+            } catch(e) { console.error(e); } 
+            finally { btn.disabled = false; }
+        }
+
+        // --- POSTAGEM ---
+        window.previewImagemGrupo = function(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('imgPreviewGrupoSrc').src = e.target.result;
+                    document.getElementById('previewImgGrupo').style.display = 'block';
+                };
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+        window.limparImgGrupo = function() {
+            document.getElementById('filePostGrupo').value = "";
+            document.getElementById('previewImgGrupo').style.display = 'none';
+        }
+
+        window.publicarNoGrupo = async function() {
+            const texto = document.getElementById('textoPostGrupo').value;
+            const fileInput = document.getElementById('filePostGrupo');
+            const user = auth.currentUser;
+            
+            if(!texto && (!fileInput.files || fileInput.files.length === 0)) return;
+
+            const btn = document.querySelector('.btn-postar-grupo');
+            btn.innerText = "..."; btn.disabled = true;
+
+            try {
+                let urlImagem = "";
+                if (fileInput.files[0]) {
+                    const refImg = ref(storage, `comunidades_posts/${window.idGrupoAtual}/${Date.now()}`);
+                    const snap = await uploadBytes(refImg, fileInput.files[0]);
+                    urlImagem = await getDownloadURL(snap.ref);
+                }
+
+                // Pega dados atualizados do user para salvar no post
+                const docUser = await getDoc(doc(db, "usuarios", user.uid));
+                const dadosUser = docUser.exists() ? docUser.data() : {};
+                
+                let nomeDisplay = dadosUser.user || dadosUser.nome || "Usuário";
+                if (!nomeDisplay.startsWith('@')) nomeDisplay = '@' + nomeDisplay.replace(/\s+/g, '').toLowerCase();
+
+                await addDoc(collection(db, "comunidades", window.idGrupoAtual, "posts"), {
+                    autorUid: user.uid,
+                    autorNome: nomeDisplay, // Salva o @handle
+                    autorFoto: dadosUser.foto || "https://placehold.co/50",
+                    autorIsPro: dadosUser.isProfissional || false, // Salva se é pro
+                    texto: texto,
+                    imagem: urlImagem,
+                    data: new Date().toISOString(),
+                    likes: 0
+                });
+
+                document.getElementById('textoPostGrupo').value = "";
+                limparImgGrupo();
+
+            } catch(e) { console.error(e); alert("Erro ao postar."); } 
+            finally { btn.innerText = "Publicar"; btn.disabled = false; }
+        }
+
+        window.carregarFeedDoGrupo = function(idGrupo) {
+            const container = document.getElementById('feedGrupoConteudo');
+            container.innerHTML = '<div style="padding:20px; text-align:center;"><i class="bx bx-loader-alt bx-spin"></i></div>';
+
+            if(window.unsubscribeFeedGrupo) window.unsubscribeFeedGrupo();
+
+            const q = query(collection(db, "comunidades", idGrupo, "posts"), orderBy("data", "desc"));
+
+            window.unsubscribeFeedGrupo = onSnapshot(q, (snapshot) => {
+                container.innerHTML = "";
+                if (snapshot.empty) {
+                    container.innerHTML = `<div style="text-align:center; color:#888; padding:30px;">Seja o primeiro a postar!</div>`;
+                    return;
+                }
+
+                snapshot.forEach(docSnap => {
+                    const p = docSnap.data();
+                    const dataPost = new Date(p.data).toLocaleDateString() + " " + new Date(p.data).toLocaleTimeString([],{hour:'2-digit', minute:'2-digit'});
+                    let imgHtml = p.imagem ? `<img src="${p.imagem}" class="comm-post-img" onclick="window.open('${p.imagem}')">` : "";
+
+                    // Badge de Pro no Post
+                    let badgePro = p.autorIsPro 
+                        ? `<span style="font-size:0.6rem; background:#e8f5e9; color:#2e7d32; padding:1px 5px; border-radius:4px; margin-left:5px; font-weight:700;">PRO</span>` 
+                        : ``;
+
+                    // Link do Perfil
+                    const linkPerfil = `onclick="verificarPerfilEIr('${p.autorUid}', ${p.autorIsPro || false})"`;
+
+                    const html = `
+                    <div class="comm-post-card">
+                        <div class="comm-post-header">
+                            <img src="${p.autorFoto}" class="comm-post-avatar" ${linkPerfil} style="cursor:pointer;">
+                            <div>
+                                <div class="comm-post-user" ${linkPerfil} style="cursor:pointer;">${p.autorNome} ${badgePro}</div>
+                                <span class="comm-post-time">${dataPost}</span>
+                            </div>
+                        </div>
+                        <div class="comm-post-body">${p.texto}</div>
+                        ${imgHtml}
+                        <div class="comm-post-actions">
+                            <button class="btn-action-post"><i class='bx bx-heart'></i> ${p.likes || 0}</button>
+                            <button class="btn-action-post"><i class='bx bx-comment'></i> Comentar</button>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML('beforeend', html);
+                });
+            });
+        }
+
+        // Inicialização
+        onAuthStateChanged(auth, (user) => {
+            if(user) {
+                carregarMeusGrupos();
+            }
+            carregarComunidadesGerais();
+        });
+
     </script>
 </body>
 </html>
