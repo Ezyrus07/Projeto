@@ -4718,19 +4718,24 @@ window.deletarResposta = async function(parentId, replyId) {
 }
 
 window.abrirPlayerTikTok = function(indexOuDados) {
-    const modal = document.getElementById('modalPlayerVideo');
-    if(!modal) return;
 
-    if (typeof indexOuDados === 'number') {
-        window.indiceReelAtual = indexOuDados;
-    } else {
-        window.listaReelsAtual = [indexOuDados];
-        window.indiceReelAtual = 0;
-    }
+  let dados = {};
 
-    modal.style.display = 'flex';
-    renderizarReelNoModal(window.indiceReelAtual);
-}
+  // se vier índice (reels)
+  if (typeof indexOuDados === 'number' && window.listaReelsAtual) {
+    dados = window.listaReelsAtual[indexOuDados] || {};
+  } 
+  // se vier objeto ou JSON
+  else {
+    dados = typeof indexOuDados === 'string'
+      ? JSON.parse(indexOuDados)
+      : indexOuDados;
+  }
+
+  // 🔥 AQUI ESTÁ A CHAVE
+  abrirModalUnificado(dados, 'video', 'reels');
+};
+
 
 // Renderiza os dados na tela sem fechar o modal
 async function renderizarReelNoModal(index) {
@@ -4856,3 +4861,36 @@ async function carregarComentariosReel(reelId) {
     } catch(e) { console.error(e); }
 }
 
+
+/* ================= MODAL UNIFICADO (GERADO PELO CHATGPT) ================= */
+
+
+window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 'reels') {
+  const dados = (typeof dadosRecebidos === 'string') ? JSON.parse(dadosRecebidos) : (dadosRecebidos || {});
+  window.currentCollection = colecao;
+  window.currentPostId = dados.id || dados.postId || dados.aid || null;
+  window.currentReelUid = dados.uid || dados.autorUid || null;
+
+  const modal = document.getElementById('modalPostDetalhe');
+  const mediaArea = document.getElementById('modalMediaContainer');
+  if (!modal || !mediaArea) return;
+
+  mediaArea.innerHTML = '';
+  if (dados.videoUrl || dados.video || tipo === 'video') {
+    mediaArea.innerHTML = `<video src="${dados.videoUrl || dados.video}" controls autoplay style="width:100%;height:100%;object-fit:cover;"></video>`;
+  } else if (dados.imagem) {
+    mediaArea.innerHTML = `<img src="${dados.imagem}" style="width:100%;height:100%;object-fit:cover;">`;
+  }
+
+  if (document.getElementById('modalUsername')) document.getElementById('modalUsername').innerText = dados.autorUser || '@usuario';
+  if (document.getElementById('modalCaption')) document.getElementById('modalCaption').innerText = dados.descricao || '';
+
+  const btnOrcar = document.getElementById('btnSolicitarOrcamento');
+  if (btnOrcar) {
+    btnOrcar.onclick = () => {
+      window.location.href = `orcamento.html?uid=${window.currentReelUid || ''}&aid=${window.currentPostId || ''}`;
+    };
+  }
+
+  modal.style.display = 'flex';
+};
