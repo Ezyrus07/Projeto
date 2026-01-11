@@ -1,20 +1,28 @@
+// ===== PATCH: Guard para evitar carregamento duplicado =====
+if (window.__DOKE_SCRIPT_LOADED__) {
+  console.warn('[DOKE] script.js já carregado — ignorando segunda execução');
+} else {
+  window.__DOKE_SCRIPT_LOADED__ = true;
 // ============================================================
 // 1. IMPORTAÇÃO E CONFIGURAÇÃO (SUPABASE)
 // ============================================================
 
-// Importa a biblioteca oficial do Supabase via CDN
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
-
-// SUAS CHAVES DO PROJETO
-const supabaseUrl = 'https://wgbnoqjnvhasapqarltu.supabase.co'
+// 1. IMPORTAÇÃO E CONFIGURAÇÃO (SUPABASE)
+const supabaseUrl = 'https://wgbnoqjnvhasapqarltu.supabase.co' // CORRIGIDO: .supabase.co
 const supabaseKey = 'sb_publishable_d6YKPrTZlUqX6fj3Z7LsMg_-6r83N21'
 
-// Inicializa o cliente do Supabase
-const supabase = createClient(supabaseUrl, supabaseKey)
+// Inicializa o cliente do Supabase de forma direta
+if (!window.supabase) {
+    console.error('[DOKE] Erro: A biblioteca Supabase não foi carregada. Verifique o <script> no HTML.');
+}
+
+const sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+window.__DOKE_SB__ = sb;
+window.supabaseClient = sb;
+window.sb = sb;
 
 // Disponibiliza o supabase globalmente
-window.supabase = supabase;
-console.log("Supabase conectado!", supabase);
+console.log("Supabase conectado!", sb);
 
 // ============================================================
 // 2. FUNÇÕES DE COMPATIBILIDADE (A "PONTE")
@@ -27,7 +35,7 @@ window.storage = {};
 window.auth = {
     currentUser: null, 
     signOut: async () => {
-        const { error } = await supabase.auth.signOut();
+        const { error } = await sb.auth.signOut();
         if (error) throw error;
         localStorage.removeItem('doke_usuario_perfil');
         localStorage.removeItem('usuarioLogado');
@@ -35,12 +43,38 @@ window.auth = {
     }
 };
 
+// ===== SUPABASE BOOTSTRAP (evita createClient undefined) =====
+(function () {
+  // evita executar duas vezes
+  if (window.__DOKE_SUPABASE_BOOTSTRAPPED__) return;
+  window.__DOKE_SUPABASE_BOOTSTRAPPED__ = true;
+
+  // se a lib não estiver carregada, avisa claramente
+  if (!window.supabase || typeof window.supabase.createClient !== "function") {
+    console.error(
+      "[DOKE] Supabase não carregou. Verifique se esta linha vem ANTES do script.js:\n" +
+      "<script src=\"https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2\"></script>"
+    );
+    return;
+  }
+
+  // cria o client com nome que não conflita
+  const supabaseUrl = window.SUPABASE_URL || "COLE_AQUI_SUA_SUPABASE_URL";
+  const supabaseKey = window.SUPABASE_ANON_KEY || "COLE_AQUI_SUA_SUPABASE_ANON_KEY";
+
+  window.sb = window.supabase.createClient(supabaseUrl, supabaseKey);
+  window.supabaseClient = window.sb;
+
+  console.log("[DOKE] Supabase client pronto ✅");
+})();
+
+
 // --- AUTENTICAÇÃO ---
 
 // Monitor de Login (onAuthStateChanged)
 window.onAuthStateChanged = (authObj, callback) => {
     // 1. Verifica estado atual
-    supabase.auth.getUser().then(({ data }) => {
+    sb.auth.getUser().then(({ data }) => {
         if (data.user) {
             window.auth.currentUser = data.user;
             callback(data.user);
@@ -50,7 +84,7 @@ window.onAuthStateChanged = (authObj, callback) => {
     });
 
     // 2. Ouve mudanças
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = sb.auth.onAuthStateChange(async (event, session) => {
         const user = session?.user || null;
         window.auth.currentUser = user;
         
@@ -83,7 +117,7 @@ window.onAuthStateChanged = (authObj, callback) => {
 
 // Login com Email/Senha
 window.signInWithEmailAndPassword = async (authObj, email, password) => {
-    const { data, error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await sb.auth.signInWithPassword({
         email: email,
         password: password
     });
@@ -93,7 +127,7 @@ window.signInWithEmailAndPassword = async (authObj, email, password) => {
 
 // Cadastro com Email/Senha
 window.createUserWithEmailAndPassword = async (authObj, email, password) => {
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await sb.auth.signUp({
         email: email,
         password: password
     });
@@ -277,7 +311,7 @@ window.getDocs = async (queryObj) => {
     if (typeof queryObj === 'object' && queryObj.type === 'supabase_query') {
         builder = queryObj.builder;
     } else {
-        builder = supabase.from(tabela).select('*');
+        builder = sb.from(tabela).select('*');
     }
 
     const { data, error } = await builder;
@@ -300,7 +334,7 @@ window.getDocs = async (queryObj) => {
 
 // Query Builders
 window.query = (tabela, ...filtros) => {
-    let builder = supabase.from(tabela).select('*');
+    let builder = sb.from(tabela).select('*');
     filtros.forEach(f => {
         if (f.type === 'where') builder = builder.eq(f.field, f.value);
         if (f.type === 'orderBy') builder = builder.order(f.field, { ascending: f.asc });
@@ -330,7 +364,7 @@ window.uploadBytes = async (path, file) => {
     // Limpa o caminho para não duplicar o nome do bucket
     const cleanPath = path.split('/').slice(1).join('/') || file.name;
     
-    const { data, error } = await supabase.storage
+    const { data, error } = await sb.storage
         .from(bucket)
         .upload(cleanPath, file, { upsert: true });
         
@@ -339,7 +373,7 @@ window.uploadBytes = async (path, file) => {
 };
 
 window.getDownloadURL = async (refObj) => {
-    const { data } = supabase.storage
+    const { data } = sb.storage
         .from(refObj.bucket)
         .getPublicUrl(refObj.path);
     return data.publicUrl;
@@ -5196,3 +5230,5 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
 
   modal.style.display = 'flex';
 };
+
+}
