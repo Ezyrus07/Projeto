@@ -1,65 +1,364 @@
 // ============================================================
-// 1. IMPORTAÇÕES E CONFIGURAÇÃO
+// 1. IMPORTAÇÃO E CONFIGURAÇÃO (SUPABASE)
 // ============================================================
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-analytics.js";
-import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, limit, doc, updateDoc, increment, deleteDoc, onSnapshot, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, onAuthStateChanged, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// Importa a biblioteca oficial do Supabase via CDN
+import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm'
 
 // SUAS CHAVES DO PROJETO
-const firebaseConfig = {
-    apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-    authDomain: "doke-site.firebaseapp.com",
-    projectId: "doke-site",
-    storageBucket: "doke-site.firebasestorage.app",
-    messagingSenderId: "997098339190",  
-    appId: "1:997098339190:web:a865b696278be21f069857"
+const supabaseUrl = 'https://wgbnoqjnvhasapqarltu.supabase.co'
+const supabaseKey = 'sb_publishable_d6YKPrTZlUqX6fj3Z7LsMg_-6r83N21'
+
+// Inicializa o cliente do Supabase
+const supabase = createClient(supabaseUrl, supabaseKey)
+
+// Disponibiliza o supabase globalmente
+window.supabase = supabase;
+console.log("Supabase conectado!", supabase);
+
+// ============================================================
+// 2. FUNÇÕES DE COMPATIBILIDADE (A "PONTE")
+// ============================================================
+// Estas funções traduzem os comandos do Firebase para o Supabase
+
+// --- OBJETOS GLOBAIS SIMULADOS ---
+window.db = {}; 
+window.storage = {}; 
+window.auth = {
+    currentUser: null, 
+    signOut: async () => {
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
+        localStorage.removeItem('doke_usuario_perfil');
+        localStorage.removeItem('usuarioLogado');
+        window.location.reload();
+    }
 };
 
-// Inicializa o Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-const db = getFirestore(app);
-const auth = getAuth(app); 
-const storage = getStorage(app); 
+// --- AUTENTICAÇÃO ---
 
-// Garante acesso global das funções
-window.db = db;
-window.auth = auth;
-window.storage = storage;
-window.collection = collection;
-window.query = query;
-window.getDocs = getDocs;
-window.orderBy = orderBy;
-window.where = where;
-window.limit = limit;
-window.deleteDoc = deleteDoc;
-window.updateDoc = updateDoc;
-window.addDoc = addDoc;
-window.setDoc = setDoc;
-window.getDoc = getDoc;
-window.doc = doc;
+// Monitor de Login (onAuthStateChanged)
+window.onAuthStateChanged = (authObj, callback) => {
+    // 1. Verifica estado atual
+    supabase.auth.getUser().then(({ data }) => {
+        if (data.user) {
+            window.auth.currentUser = data.user;
+            callback(data.user);
+        } else {
+            callback(null);
+        }
+    });
 
-// Variáveis Globais
-window.arquivoFotoSelecionado = null;
-window.arquivoVideoSelecionado = null;
-window.fotosAtuais = [];
-window.indiceAtual = 0;
-window.chatIdAtual = null;
-window.chatUnsubscribe = null;
-window.mediaRecorder = null;
-window.audioChunks = [];
-window.timerInterval = null;
-window.targetUserUid = null;
-window.listaReelsAtual = [];
-window.indiceReelAtual = 0;
-window.isScrollingReel = false;
-window.idGrupoAtual = null;
-window.dadosGrupoAtual = null;
-window.unsubscribeFeedGrupo = null;
+    // 2. Ouve mudanças
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+        const user = session?.user || null;
+        window.auth.currentUser = user;
+        
+        if (user) {
+            // Busca dados extras do usuário no banco
+            const { data: perfil } = await supabase
+                .from('usuarios')
+                .select('*')
+                .eq('uid', user.id)
+                .single();
+            
+            if (perfil) {
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+                localStorage.setItem('usuarioLogado', 'true');
+            }
+        } else {
+            localStorage.removeItem('usuarioLogado');
+        }
+        
+        callback(user);
+        
+        // Atualiza UI se existir a função
+        if (typeof window.verificarEstadoLogin === 'function') {
+            window.verificarEstadoLogin();
+        }
+    });
 
+    return () => subscription.unsubscribe();
+};
 
+// Login com Email/Senha
+window.signInWithEmailAndPassword = async (authObj, email, password) => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+    });
+    if (error) throw error;
+    return { user: data.user };
+};
+
+// Cadastro com Email/Senha
+window.createUserWithEmailAndPassword = async (authObj, email, password) => {
+    const { data, error } = await supabase.auth.signUp({
+        email: email,
+        password: password
+    });
+    if (error) throw error;
+    
+    if (data.user && !data.session) {
+        alert("Cadastro realizado! Verifique seu email para confirmar.");
+    }
+    return { user: data.user };
+};
+
+// --- BANCO DE DADOS (FIRESTORE SHIM) ---
+
+window.collection = (db, nomeColecao) => {
+    // Mapeia nomes antigos para tabelas novas
+    const mapa = {
+        'reels': 'clips',       
+        'stories': 'momentos'   
+    };
+    return mapa[nomeColecao] || nomeColecao;
+};
+
+// doc() - Cria referência simulada
+window.doc = (db, tabela, id, ...subcaminhos) => {
+    // Se passar subcoleções (ex: pedidos/123/mensagens/456), monta o caminho
+    if (subcaminhos.length > 0) {
+        // Retorna um objeto que guarda o caminho completo para uso no addDoc/updateDoc
+        return { 
+            type: 'doc_ref', 
+            path: `${tabela}/${id}/${subcaminhos.join('/')}`,
+            id: subcaminhos[subcaminhos.length - 1] // O último é o ID
+        };
+    }
+    return { type: 'doc_ref', table: tabela, id: id };
+};
+
+// addDoc (Adicionar)
+window.addDoc = async (colecaoRef, dados) => {
+    let tabela = typeof colecaoRef === 'string' ? colecaoRef : colecaoRef;
+    
+    // Tratamento para subcoleções (ex: chat)
+    // O Supabase não tem subcoleções reais, então salvamos na tabela principal com um ID de referência
+    // Mas para manter seu código funcionando, vamos simplificar:
+    
+    const { data, error } = await supabase
+        .from(tabela)
+        .insert(dados)
+        .select()
+        .single();
+        
+    if (error) {
+        console.error("Erro addDoc:", error);
+        throw error;
+    }
+    return { id: data.id };
+};
+
+// setDoc (Salvar/Sobrescrever com ID específico)
+
+// updateDoc (Atualizar)
+// ============================================================
+// CORREÇÃO INTELIGENTE: UID -> ID
+// ============================================================
+
+// Função auxiliar que limpa os dados antes de enviar pro Supabase
+function prepararDadosParaSupabase(dados) {
+    // Clona o objeto para não estragar o original
+    const dadosLimpos = JSON.parse(JSON.stringify(dados)); 
+    
+    // Se tiver o campo 'uid', a gente transforma em 'id' e remove o 'uid'
+    // Isso engana o Supabase para ele aceitar os dados
+    if (dadosLimpos.uid) {
+        dadosLimpos.id = dadosLimpos.uid;
+        delete dadosLimpos.uid;
+    }
+    
+    return dadosLimpos;
+}
+
+// 1. setDoc (Salvar/Criar com ID específico)
+window.setDoc = async (docRef, dados) => {
+    let tabela = docRef.table;
+    let id = docRef.id;
+
+    // Ajuste técnico para paths complexos
+    if (!tabela && docRef.path) {
+        const parts = docRef.path.split('/');
+        tabela = parts[0];
+        id = parts[1];
+    }
+
+    // APLICA A CORREÇÃO (UID -> ID)
+    const dadosFinais = prepararDadosParaSupabase(dados);
+
+    // Garante que o ID esteja no corpo dos dados também
+    dadosFinais.id = id; 
+
+    const { error } = await supabase
+        .from(tabela)
+        .upsert(dadosFinais); // upsert = update ou insert
+    
+    if (error) {
+        console.error("Erro Supabase setDoc:", error);
+        throw error;
+    }
+};
+
+// 2. updateDoc (Atualizar)
+window.updateDoc = async (docRef, dados) => {
+    let tabela = docRef.table;
+    let id = docRef.id;
+    
+    // APLICA A CORREÇÃO (UID -> ID)
+    const dadosFinais = prepararDadosParaSupabase(dados);
+
+    const { error } = await supabase
+        .from(tabela)
+        .update(dadosFinais)
+        .eq('id', id); 
+        
+    if (error) {
+        console.error("Erro Supabase updateDoc:", error);
+        throw error;
+    }
+};
+
+// 3. addDoc (Adicionar com ID automático)
+window.addDoc = async (colecaoRef, dados) => {
+    let tabela = typeof colecaoRef === 'string' ? colecaoRef : colecaoRef;
+    
+    // APLICA A CORREÇÃO (UID -> ID)
+    const dadosFinais = prepararDadosParaSupabase(dados);
+
+    const { data, error } = await supabase
+        .from(tabela)
+        .insert(dadosFinais)
+        .select()
+        .single();
+        
+    if (error) {
+        console.error("Erro Supabase addDoc:", error);
+        throw error;
+    }
+    return { id: data.id }; // Retorna o ID gerado
+};
+
+// deleteDoc (Deletar)
+window.deleteDoc = async (docRef) => {
+    const { error } = await supabase
+        .from(docRef.table)
+        .delete()
+        .eq('id', docRef.id);
+    if (error) throw error;
+};
+
+// getDoc (Ler um único documento)
+window.getDoc = async (docRef) => {
+    let tabela = docRef.table;
+    let id = docRef.id;
+
+    const { data, error } = await supabase
+        .from(tabela)
+        .select('*')
+        .or(`id.eq.${id},uid.eq.${id}`) // Tenta achar por ID ou UID
+        .single();
+
+    if (error || !data) return { exists: () => false };
+    
+    return {
+        exists: () => true,
+        data: () => data,
+        id: data.id || data.uid
+    };
+};
+
+// getDocs (Ler lista)
+window.getDocs = async (queryObj) => {
+    let tabela = queryObj;
+    let builder = null;
+
+    if (typeof queryObj === 'object' && queryObj.type === 'supabase_query') {
+        builder = queryObj.builder;
+    } else {
+        builder = supabase.from(tabela).select('*');
+    }
+
+    const { data, error } = await builder;
+    if (error) throw error;
+
+    return {
+        empty: data.length === 0,
+        size: data.length,
+        docs: data.map(item => ({
+            id: item.id || item.uid,
+            data: () => item
+        })),
+        forEach: (callback) => {
+            data.forEach(item => {
+                callback({ id: item.id || item.uid, data: () => item });
+            });
+        }
+    };
+};
+
+// Query Builders
+window.query = (tabela, ...filtros) => {
+    let builder = supabase.from(tabela).select('*');
+    filtros.forEach(f => {
+        if (f.type === 'where') builder = builder.eq(f.field, f.value);
+        if (f.type === 'orderBy') builder = builder.order(f.field, { ascending: f.asc });
+        if (f.type === 'limit') builder = builder.limit(f.value);
+    });
+    return { type: 'supabase_query', builder };
+};
+
+window.where = (field, op, value) => ({ type: 'where', field, value });
+window.orderBy = (field, dir = 'asc') => ({ type: 'orderBy', field, asc: dir === 'asc' });
+window.limit = (num) => ({ type: 'limit', value: num });
+window.increment = (num) => num; // Supabase não tem increment atômico fácil via JS client, teria que ser RPC. Por enquanto, retornamos o valor para somar manualmente se possível.
+
+// --- STORAGE (UPLOAD) ---
+window.ref = (storage, path) => path;
+
+window.uploadBytes = async (path, file) => {
+    // Roteamento de Buckets
+    let bucket = 'outros';
+    if (path.includes('posts')) bucket = 'posts';
+    else if (path.includes('reels')) bucket = 'clips'; // Nome novo
+    else if (path.includes('stories')) bucket = 'momentos'; // Nome novo
+    else if (path.includes('anuncios')) bucket = 'anuncios';
+    else if (path.includes('comunidades')) bucket = 'comunidades_covers';
+    else if (path.includes('audios')) bucket = 'audios';
+
+    // Limpa o caminho para não duplicar o nome do bucket
+    const cleanPath = path.split('/').slice(1).join('/') || file.name;
+    
+    const { data, error } = await supabase.storage
+        .from(bucket)
+        .upload(cleanPath, file, { upsert: true });
+        
+    if (error) throw error;
+    return { ref: { bucket, path: cleanPath } };
+};
+
+window.getDownloadURL = async (refObj) => {
+    const { data } = supabase.storage
+        .from(refObj.bucket)
+        .getPublicUrl(refObj.path);
+    return data.publicUrl;
+};
+
+// --- FILTROS EM TEMPO REAL (onSnapshot) ---
+// Supabase usa "Channels" para realtime
+window.onSnapshot = (queryObj, callback) => {
+    // 1. Faz a busca inicial (estático)
+    window.getDocs(queryObj).then(snapshot => callback(snapshot));
+
+    // 2. (Opcional) Configurar Realtime Subscription aqui
+    // Por enquanto, retorna uma função vazia para não quebrar
+    return () => {}; 
+};
+
+// ============================================================
+// FIM DAS FUNÇÕES DE COMPATIBILIDADE
+// ============================================================
 // ============================================================
 // 2. FUNÇÃO DE PUBLICAR ANÚNCIO (SEM WHATSAPP OBRIGATÓRIO)
 // ============================================================

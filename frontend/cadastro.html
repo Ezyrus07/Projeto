@@ -41,43 +41,42 @@
         .footer-login a { color: var(--cor2); font-weight: 700; text-decoration: none; }
         .btn-voltar { position: absolute; top: 20px; left: 20px; color: #999; font-size: 1.5rem; cursor: pointer; }
 
-        /* --- ESTILOS DE VALIDAÇÃO --- */
-        .input-error {
-            border-color: #ff4444 !important;
-            background-color: #fff0f0 !important;
-            animation: shake 0.3s ease-in-out;
+        /* --- ESTILOS DOS BOTÕES SOCIAIS --- */
+        .divider { margin: 25px 0; border-top: 1px solid #eee; position: relative; }
+        .divider span {
+            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+            background: white; padding: 0 10px; color: #999; font-size: 0.8rem;
         }
-        .input-sucesso {
-            border-color: #00C851 !important;
-            background-color: #f0fff4 !important;
+        .social-login { display: flex; gap: 15px; justify-content: center; }
+        .btn-social {
+            width: 50px; height: 50px; border-radius: 50%; border: 1px solid #ddd;
+            background: white; display: flex; align-items: center; justify-content: center;
+            font-size: 1.5rem; cursor: pointer; transition: 0.3s;
         }
-        .msg-erro-texto {
-            color: #ff4444; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block;
-        }
-        .msg-sucesso-texto {
-            color: #00C851; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block;
-        }
-        @keyframes shake {
-            0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); } 75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-        }
+        .btn-social:hover { background: #f0f0f0; transform: translateY(-3px); }
+        .google { color: #db4437; } 
+        .facebook { color: #4267B2; } 
+        .apple { color: #000; }
+
+        /* Validação */
+        .input-error { border-color: #ff4444 !important; background-color: #fff0f0 !important; animation: shake 0.3s ease-in-out; }
+        .input-sucesso { border-color: #00C851 !important; background-color: #f0fff4 !important; }
+        .msg-erro-texto { color: #ff4444; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block; }
+        .msg-sucesso-texto { color: #00C851; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block; }
+        @keyframes shake { 0% { transform: translateX(0); } 25% { transform: translateX(-5px); } 50% { transform: translateX(5px); } 75% { transform: translateX(-5px); } 100% { transform: translateX(0); } }
     </style>
 </head>
 <body>
 
     <div class="login-card">
         <a href="login.html" class="btn-voltar"><i class='bx bx-arrow-back'></i></a>
-        
         <img src="assets/Imagens/doke-logo.png" alt="Doke" class="login-logo">
-        
         <div class="login-header">
             <h2>Crie sua conta</h2>
             <p>Junte-se à comunidade Doke.</p>
         </div>
 
         <form id="formCadastro" onsubmit="realizarCadastro(event)">
-            
             <div class="form-group">
                 <label>Nome de Usuário (@)</label>
                 <div class="input-icon">
@@ -85,7 +84,6 @@
                     <input type="text" id="usuario" placeholder="ex: usuario123" required>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Nome Completo</label>
                 <div class="input-icon">
@@ -93,7 +91,6 @@
                     <input type="text" id="nome" placeholder="Seu nome" required>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>E-mail</label>
                 <div class="input-icon">
@@ -101,7 +98,6 @@
                     <input type="email" id="email" placeholder="seu@email.com" required>
                 </div>
             </div>
-
             <div class="form-group">
                 <label>Senha</label>
                 <div class="input-icon">
@@ -110,9 +106,15 @@
                 </div>
                 <span id="feedback-senha"></span>
             </div>
-
             <button type="submit" class="btn-login-action">Criar Conta Grátis</button>
         </form>
+
+        <div class="divider"><span>ou cadastre-se com</span></div>
+        <div class="social-login">
+            <button type="button" class="btn-social google" onclick="loginSocial('google')"><i class='bx bxl-google'></i></button>
+            <button type="button" class="btn-social facebook" onclick="loginSocial('facebook')"><i class='bx bxl-facebook'></i></button>
+            <button type="button" class="btn-social apple" onclick="loginSocial('apple')"><i class='bx bxl-apple'></i></button>
+        </div>
 
         <div class="footer-login">
             Já tem uma conta? <a href="login.html">Fazer Login</a>
@@ -120,65 +122,46 @@
     </div>
 
     <script type="module">
-import { collection, doc, setDoc, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-    // Importamos o envio de email aqui também, pois este arquivo roda separado do script.js
-    import { createUserWithEmailAndPassword, sendEmailVerification } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+        // ATENÇÃO: NÃO HÁ IMPORTAÇÕES AQUI.
+        // O script.js carrega o Supabase e expõe as funções (window.auth, window.db, etc).
+        
+        window.realizarCadastro = async function(event) {
+            event.preventDefault(); 
 
-    window.realizarCadastro = async function(event) {
-        event.preventDefault(); 
+            const nome = document.getElementById('nome').value;
+            const usuarioInput = document.getElementById('usuario').value;
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            const btn = event.target.querySelector('button[type="submit"]');
 
-        const nome = document.getElementById('nome').value;
-        const usuarioInput = document.getElementById('usuario').value;
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-        const btn = event.target.querySelector('button');
+            if(btn) { btn.innerText = "Criando conta..."; btn.disabled = true; }
 
-        // ... suas validações ...
+            let userHandle = usuarioInput.trim().toLowerCase();
+            if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
 
-        if(btn) { btn.innerText = "Criando conta..."; btn.disabled = true; }
+            try {
+                // 1. Verifica se usuário já existe (usando função global)
+                const qUser = query(collection(window.db, "usuarios"), where("user", "==", userHandle));
+                const snapshotUser = await getDocs(qUser);
 
-        let userHandle = usuarioInput.trim().toLowerCase();
-        if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
+                if (!snapshotUser.empty) {
+                    throw new Error("username_exists");
+                }
 
-        try {
-            // Verifica username...
-            const qUser = query(collection(window.db, "usuarios"), where("user", "==", userHandle));
-            const snapshotUser = await getDocs(qUser);
+                // 2. Cria a conta no Supabase (usando função global)
+                const userCredential = await createUserWithEmailAndPassword(window.auth, email, senha);
+                const user = userCredential.user; 
 
-            if (!snapshotUser.empty) {
-                throw new Error("username_exists");
-            }
-
-            // === AQUI ENTRA A PARTE QUE VOCÊ QUERIA ===
-            
-            // 1. Cria a conta e guarda o resultado na const userCredential
-            const userCredential = await createUserWithEmailAndPassword(window.auth, email, senha);
-            const user = userCredential.user; 
-
-            // 2. Envia o e-mail usando o usuário criado acima
-            await sendEmailVerification(user);
-            
-            alert("Conta criada! Enviamos um link de confirmação para " + email);
-            
-            // ===========================================
-
-            // Prepara dados do perfil...
-            const dataAtual = new Date();
-            // ... resto do código ...
+                // Prepara dados do perfil
+                const dataAtual = new Date();
                 const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
                 
                 const novoPerfil = {
-                    uid: user.uid,
+                    id: user.id, // Supabase usa 'id', não 'uid'
                     nome: nome,
                     user: userHandle, 
                     email: email,
-                    
-                    // ============================================
-                    // CORREÇÃO AQUI: FORÇA O USUÁRIO A SER CLIENTE
-                    // ============================================
                     isProfissional: false, 
-                    // ============================================
-
                     bio: "Olá! Sou novo na comunidade Doke.",
                     local: "Brasil",
                     foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
@@ -187,37 +170,26 @@ import { collection, doc, setDoc, query, where, getDocs } from "https://www.gsta
                     stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
                 };
 
-                // 4. SALVA NO FIRESTORE
-                await setDoc(doc(window.db, "usuarios", user.uid), novoPerfil);
+                // 3. Salva no Banco de Dados
+                await setDoc(doc(window.db, "usuarios", user.id), novoPerfil);
 
-                // 5. Sucesso e Redirecionamento
+                // 4. Salva no LocalStorage e Redireciona
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
                 localStorage.setItem('usuarioLogado', 'true');
-                localStorage.setItem('doke_uid', user.uid);
+                localStorage.setItem('doke_uid', user.id);
 
                 if(window.mostrarToast) window.mostrarToast("Conta criada com sucesso!", "sucesso");
                 else alert("Conta criada com sucesso!");
 
-                // ========================================================
-                // CORREÇÃO: REDIRECIONA PARA O PERFIL DE USUÁRIO (CLIENTE)
-                // ========================================================
                 window.location.href = "perfil-usuario.html";
 
             } catch (error) {
                 console.error("Erro cadastro:", error);
-                let msg = "Erro ao criar conta.";
+                let msg = "Erro ao criar conta: " + error.message;
                 
-                if (error.message === "username_exists") {
-                    msg = "Este nome de usuário já está em uso.";
-                } else if (error.code === 'auth/email-already-in-use') {
-                    msg = "Este e-mail já está cadastrado.";
-                } else if (error.code === 'auth/weak-password') {
-                    msg = "A senha é muito fraca.";
-                } else if (error.code === 'auth/invalid-email') {
-                    msg = "E-mail inválido.";
-                } else if (error.code === 'permission-denied') {
-                    msg = "Erro de permissão: Verifique as Regras do Firestore no console.";
-                }
+                if (error.message === "username_exists") msg = "Este nome de usuário já está em uso.";
+                else if (error.message && error.message.includes("User already registered")) msg = "Este e-mail já está cadastrado.";
+                else if (error.code === 'weak_password') msg = "A senha é muito fraca.";
 
                 if(window.mostrarToast) window.mostrarToast(msg, "erro");
                 else alert(msg);
@@ -225,10 +197,25 @@ import { collection, doc, setDoc, query, where, getDocs } from "https://www.gsta
                 if(btn) { btn.innerText = "Criar Conta Grátis"; btn.disabled = false; }
             }
         }
+
+        // Lógica de Login Social
+        window.loginSocial = async function(provider) {
+            try {
+                const { data, error } = await window.supabase.auth.signInWithOAuth({
+                    provider: provider,
+                    options: {
+                        redirectTo: window.location.origin + '/index.html'
+                    }
+                });
+                if (error) throw error;
+            } catch (error) {
+                alert("Erro no login social: " + error.message);
+            }
+        }
     </script>
 
     <script>
-        // Esta função precisa estar fora do type="module" para ser vista pelo HTML
+        // Validação visual da senha
         function validarSenhaTempoReal() {
             const input = document.getElementById('senha');
             const feedback = document.getElementById('feedback-senha');
@@ -237,22 +224,18 @@ import { collection, doc, setDoc, query, where, getDocs } from "https://www.gsta
 
             const senha = input.value;
 
-            // Limpa tudo se estiver vazio
             if (senha.length === 0) {
                 input.classList.remove('input-error', 'input-sucesso');
                 feedback.innerText = "";
                 return;
             }
 
-            // Regra: Menor que 6 caracteres é FRACA
             if (senha.length < 6) {
                 input.classList.add('input-error');
                 input.classList.remove('input-sucesso');
                 feedback.innerText = "Senha muito curta (mínimo 6 caracteres)";
                 feedback.className = "msg-erro-texto";
-            } 
-            // Regra: Maior ou igual a 6 é FORTE
-            else {
+            } else {
                 input.classList.remove('input-error');
                 input.classList.add('input-sucesso');
                 feedback.innerText = "Senha forte!";
