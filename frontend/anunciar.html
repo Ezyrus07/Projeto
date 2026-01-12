@@ -1,12 +1,18 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <script src="firebase-compat-supabase.js"></script>
+  <script src="firebase-auth-compat-supabase.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Anunciar Serviço Completo | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     
     <style>
         /* ======================================================
@@ -186,6 +192,8 @@
             main { margin-left: 0; }
         }
     </style>
+
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 </head>
 <body>
 
@@ -427,12 +435,11 @@
         </div>
     </main>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
-    <script type="module">
-        import { doc, getDoc, updateDoc, addDoc, collection } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    <script src="script.js" defer></script>
+    <script>
+        const { doc, getDoc, updateDoc, addDoc, collection } = window;
+        const { getStorage, ref, uploadBytes, getDownloadURL } = window;
+        const { getAuth } = window;
         
         // Globais para o HTML acessar
         window.doc = doc;

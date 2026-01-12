@@ -1,13 +1,19 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <script src="firebase-compat-supabase.js"></script>
+  <script src="firebase-auth-compat-supabase.js"></script>
+
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mensagens | Doke</title>
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="script.js"></script>
+    <script src="script.js" defer></script>
 
     <style>
         /* =========================================================================
@@ -808,28 +814,9 @@
     font-size: 0.85rem;
 }
 
-/* ESTILOS PARA MÍDIA NO CHAT */
-.msg-midia-img {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 12px;
-    cursor: pointer;
-    display: block;
-    margin-bottom: 5px;
-}
-.msg-midia-video {
-    max-width: 100%;
-    max-height: 300px;
-    border-radius: 12px;
-    display: block;
-    margin-bottom: 5px;
-}
-.loading-anexo {
-    animation: spin 1s infinite linear;
-}
-@keyframes spin { from {transform: rotate(0deg);} to {transform: rotate(360deg);} }
-
     </style>
+
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 </head>
 <body>
 
@@ -940,22 +927,17 @@
         <i class='bx bx-dollar'></i>
     </button>
 
-<div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
-    
-    <input type="file" id="inputArquivoChat" style="display:none;" accept="image/*,video/*">
-    <button class="btn-enviar" id="btn-anexo" onclick="document.getElementById('inputArquivoChat').click()" style="background:#e0e0e0; color:#555;">
-        <i class='bx bx-paperclip'></i>
-    </button>
-    <input type="text" id="inputMsg" class="input-msg" placeholder="Digite uma mensagem..." onkeypress="verificarEnter(event)">
-    
-    <button class="btn-enviar" id="btn-mic" onclick="iniciarGravacao()" style="background:#e0e0e0; color:#555;">
-        <i class='bx bxs-microphone'></i>
-    </button>
-    
-    <button class="btn-enviar" id="btn-send-txt" onclick="enviarMensagemTexto()">
-        <i class='bx bxs-send'></i>
-    </button>
-</div>
+    <div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
+        <input type="text" id="inputMsg" class="input-msg" placeholder="Digite uma mensagem..." onkeypress="verificarEnter(event)">
+        
+        <button class="btn-enviar" id="btn-mic" onclick="iniciarGravacao()" style="background:#e0e0e0; color:#555;">
+            <i class='bx bxs-microphone'></i>
+        </button>
+        
+        <button class="btn-enviar" id="btn-send-txt" onclick="enviarMensagemTexto()">
+            <i class='bx bxs-send'></i>
+        </button>
+    </div>
 
     <div id="uiGravando" style="display:none; flex:1; align-items:center; gap:15px; background:#fff; padding:0 10px;">
         <div class="recording-indicator">
@@ -1035,27 +1017,23 @@
         </div>
     </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc, onSnapshot, addDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-// ADICIONADO: Importações do Storage
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+<script>
+    const { initializeApp } = window;
+    const { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc, onSnapshot, addDoc, deleteDoc } = window;
+    const { getAuth, onAuthStateChanged, signOut } = window;
 
-const firebaseConfig = {
-    // ... suas configs (mantenha igual) ...
-    apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-    authDomain: "doke-site.firebaseapp.com",
-    projectId: "doke-site",
-    storageBucket: "doke-site.firebasestorage.app",
-    messagingSenderId: "997098339190",
-    appId: "1:997098339190:web:a865b696278be21f069857"
-};
+    const firebaseConfig = {
+        apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
+        authDomain: "doke-site.firebaseapp.com",
+        projectId: "doke-site",
+        storageBucket: "doke-site.firebasestorage.app",
+        messagingSenderId: "997098339190",
+        appId: "1:997098339190:web:a865b696278be21f069857"
+    };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = getStorage(app); // ADICIONADO: Inicializa o storage
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+    const auth = getAuth(app);
 
     let currentUserUid = null;
     let chatIdAtual = null;
@@ -1646,11 +1624,6 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
     }
 // EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens
 
-// EM CHAT.HTML - Atualização da função carregarMensagens
-
-// EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens INTEIRA POR ESTA
-// EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens INTEIRA POR ESTA
-
 function carregarMensagens(colecao, docId) {
     const container = document.getElementById('areaMensagens');
     if (window.chatUnsubscribe) window.chatUnsubscribe();
@@ -1661,18 +1634,14 @@ function carregarMensagens(colecao, docId) {
         container.innerHTML = "";
         
         let statusPedido = 'pendente';
-        let dadosPedido = {}; // NOVA VARIÁVEL para guardar dados completos
-
         if (colecao === 'pedidos') { 
             const p = await getDoc(doc(db, "pedidos", docId));
-            if(p.exists()) {
-                dadosPedido = p.data(); // Guarda tudo (incluindo o campo 'avaliado')
-                statusPedido = dadosPedido.status; 
-            }
+            if(p.exists()) statusPedido = p.data().status; 
         }
 
         snapshot.forEach(docSnap => {
             const m = docSnap.data();
+            // Verifica se a mensagem foi enviada por MIM (usuário logado)
             const souEu = m.senderUid === currentUserUid;
             
             // Formatar hora
@@ -1681,76 +1650,48 @@ function carregarMensagens(colecao, docId) {
                 horaMsg = new Date(m.timestamp.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
             }
 
-            // 1. IMAGEM
-            if (m.tipo === 'imagem') {
-                container.insertAdjacentHTML('beforeend', `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    <img src="${m.url}" class="msg-midia-img" onclick="verImagemFull('${m.url}')" alt="Imagem">
-                    <span class="msg-hora">${horaMsg}</span>
-                </div>`);
-            }
-            // 2. VÍDEO
-            else if (m.tipo === 'video') {
-                container.insertAdjacentHTML('beforeend', `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    <video src="${m.url}" controls class="msg-midia-video"></video>
-                    <span class="msg-hora">${horaMsg}</span>
-                </div>`);
-            }
-            // 3. PAGAMENTO
-            else if (m.tipo === 'pagamento') {
+            // --- CARD PAGAMENTO (VERDE) ---
+            if (m.tipo === 'pagamento') {
                 const jaPago = (statusPedido === 'pago' || statusPedido === 'finalizado');
                 const linkPagar = `pagar.html?pedidoId=${docId}&valor=${encodeURIComponent(m.valor)}&parcelas=${m.maxParcelas||1}`;
                 
                 let btnHtml = "";
 
                 if (jaPago) {
+                    // CASO 1: JÁ PAGO (Verde para ambos)
                     btnHtml = `<button style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold; cursor:default;"><i class='bx bx-check'></i> Pago</button>`;
                 } else if (souEu) {
+                    // CASO 2: EU SOU O PROFISSIONAL QUE ENVIOU (Aviso Cinza)
                     btnHtml = `<div style="width:100%; padding:10px; background:#f0f2f5; color:#777; border:1px dashed #ccc; border-radius:8px; font-weight:600; text-align:center; font-size:0.9rem;">
                                 <i class='bx bx-time-five'></i> Aguardando Pagamento
                                </div>`;
                 } else {
-                    btnHtml = `<button onclick="window.location.href='${linkPagar}'" class="btn-pagar-card">Pagar Agora</button>`;
+                    // CASO 3: EU SOU O CLIENTE (Botão Pagar)
+                    btnHtml = `<button onclick="window.location.href='${linkPagar}'" style="width:100%; padding:10px; background:var(--cor0); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Pagar Agora</button>`;
                 }
 
                 const html = `
-                <div class="msg-card-pagamento" style="align-self:${souEu ? 'flex-end' : 'flex-start'}">
-                    <div class="cp-header"><i class='bx bx-dollar-circle'></i> Cobrança Gerada</div>
-                    <div class="cp-body">
-                        <div class="cp-valor">${m.valor}</div>
-                        <div class="cp-desc">${m.descricao}</div>
-                        ${btnHtml}
-                    </div>
+                <div style="align-self:${souEu ? 'flex-end' : 'flex-start'}; background:white; border:1px solid #ddd; padding:15px; border-radius:12px; margin-bottom:10px; min-width:260px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
+                    <div style="color:var(--cor0); font-weight:bold; margin-bottom:5px;"><i class='bx bx-dollar-circle'></i> Cobrança</div>
+                    <div style="font-size:1.6rem; font-weight:800; color:#333; text-align:center; margin:10px 0;">${m.valor}</div>
+                    <div style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align:center;">${m.descricao}</div>
+                    ${btnHtml}
                 </div>`;
                 container.insertAdjacentHTML('beforeend', html);
             }
-            // 4. CARD AVALIAÇÃO (AQUI ESTÁ A CORREÇÃO PRINCIPAL)
+            // --- CARD AVALIAÇÃO (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
-                
-                // Verifica se já foi avaliado
-                if (dadosPedido && dadosPedido.avaliado === true) {
-                    // MOSTRA CARTÃO VERDE (JÁ AVALIADO)
-                    container.insertAdjacentHTML('beforeend', `
-                    <div style="align-self:center; background:#e8f5e9; border:1px solid #c8e6c9; padding:15px; border-radius:12px; margin:15px 0; text-align:center; min-width: 250px;">
-                        <i class='bx bx-check-circle' style="color:#2e7d32; font-size:1.8rem;"></i>
-                        <p style="margin:5px 0; font-weight:700; color:#2e7d32;">Avaliação Recebida</p>
-                        <span style="font-size:0.85rem; color:#555;">Obrigado pelo seu feedback!</span>
-                    </div>`);
-                } else {
-                    // MOSTRA CARTÃO AMARELO (PENDENTE)
-                    container.insertAdjacentHTML('beforeend', `
-                    <div style="align-self:center; background:#fff9c4; border:1px solid #fbc02d; padding:15px; border-radius:12px; margin:15px 0; text-align:center;">
-                        <i class='bx bxs-star' style="color:#f9a825; font-size:1.5rem;"></i>
-                        <p style="margin:5px 0; font-weight:600; color:#333;">${m.texto}</p>
-                        <button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>
-                    </div>`);
-                }
+                container.insertAdjacentHTML('beforeend', `
+                <div style="align-self:center; background:#fff9c4; border:1px solid #fbc02d; padding:15px; border-radius:12px; margin:15px 0; text-align:center;">
+                    <i class='bx bxs-star' style="color:#f9a825; font-size:1.5rem;"></i>
+                    <p style="margin:5px 0; font-weight:600; color:#333;">${m.texto}</p>
+                    <button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>
+                </div>`);
             }
-            // 5. ÁUDIO
+            // --- MENSAGEM DE ÁUDIO ---
             else if (m.tipo === 'audio') {
-                const corIcone = souEu ? 'var(--cor0)' : '#555';
                 const corWave = souEu ? 'white' : '#555';
+                const corIcone = souEu ? 'var(--cor0)' : '#555';
                 
                 const htmlAudio = `
                 <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
@@ -1767,11 +1708,11 @@ function carregarMensagens(colecao, docId) {
                 </div>`;
                 container.insertAdjacentHTML('beforeend', htmlAudio);
             }
-            // 6. TEXTO NORMAL
+            // --- TEXTO NORMAL ---
             else {
                 container.insertAdjacentHTML('beforeend', `
                 <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    ${m.texto || ''}
+                    ${m.texto}
                     <span class="msg-hora">${horaMsg}</span>
                 </div>`);
             }
@@ -1779,6 +1720,8 @@ function carregarMensagens(colecao, docId) {
         container.scrollTop = container.scrollHeight;
     });
 }
+
+
     // Gerar Pagamento usando Modais Bonitos
 // EM CHAT.HTML
 
@@ -1905,35 +1848,44 @@ window.cancelarGravacao = function() {
 window.enviarAudio = function() {
     if (!window.mediaRecorder) return;
 
-    // 1. Define o que acontece quando parar (ANTES de parar)
+    // Para a gravação
+    window.mediaRecorder.stop();
+    window.mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Desliga mic
+    clearInterval(window.timerInterval);
+
+    // Quando o áudio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' });
+        // Cria o arquivo de áudio (Blob)
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm é padrão web
         
+        // Feedback visual
         document.getElementById('uiGravando').style.display = 'none';
         document.getElementById('area-input-texto').style.display = 'flex';
         const btnSend = document.getElementById('btn-send-txt');
-        const iconeOriginal = btnSend.innerHTML;
-        btnSend.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>"; 
+        btnSend.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>"; // Loading
 
         try {
             const user = auth.currentUser;
             if (!user) throw new Error("Usuário não logado");
 
+            // Upload para o Storage
             const nomeArquivo = `audios/${window.chatIdAtual}/${Date.now()}.webm`;
             const storageRef = ref(storage, nomeArquivo);
             
             const snapshot = await uploadBytes(storageRef, audioBlob);
             const downloadUrl = await getDownloadURL(snapshot.ref);
 
+            // Salvar mensagem no Firestore
             await addDoc(collection(db, window.colecaoAtual, window.chatIdAtual, "mensagens"), {
                 tipo: 'audio',
-                url: downloadUrl,
-                texto: "Mensagem de voz",
+                url: downloadUrl, // Link do áudio
+                texto: "Mensagem de voz", // Texto de fallback
                 senderUid: user.uid,
                 timestamp: new Date(),
                 lido: false
             });
 
+            // Atualiza última mensagem da conversa
             if(window.colecaoAtual === 'conversas') {
                 updateDoc(doc(db, "conversas", window.chatIdAtual), { 
                     ultimaMensagem: "🎤 Mensagem de voz",
@@ -1945,15 +1897,10 @@ window.enviarAudio = function() {
             console.error("Erro no upload do áudio:", e);
             alert("Erro ao enviar áudio.");
         } finally {
-            btnSend.innerHTML = iconeOriginal;
+            btnSend.innerHTML = "<i class='bx bxs-send'></i>"; // Volta icone normal
         }
     };
-
-    // 2. Agora sim, para a gravação
-    window.mediaRecorder.stop();
-    window.mediaRecorder.stream.getTracks().forEach(track => track.stop());
-    clearInterval(window.timerInterval);
-};
+}
 
 // 4. Função para Tocar Áudio (Player customizado)
 window.tocarAudio = function(btn, url) {
@@ -1972,153 +1919,6 @@ window.tocarAudio = function(btn, url) {
         btn.classList.remove('playing');
     };
 }
-
-// --- LÓGICA DE UPLOAD DE ARQUIVO (CORRIGIDA) ---
-// --- LÓGICA DE UPLOAD DE ARQUIVO (CORRIGIDA DEFINITIVAMENTE) ---
-document.getElementById('inputArquivoChat').addEventListener('change', async function(e) {
-    
-    // CORREÇÃO: Usamos 'chatIdAtual' direto (sem window.)
-    if (!chatIdAtual) {
-        alert("Erro: Nenhuma conversa selecionada. Clique em um usuário na lista primeiro.");
-        this.value = ''; // Limpa o input
-        return;
-    }
-
-    const file = e.target.files[0];
-    if (!file) return;
-
-    // Feedback visual
-    const btnAnexo = document.getElementById('btn-anexo');
-    const iconeOriginal = btnAnexo.innerHTML;
-    btnAnexo.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>"; 
-    btnAnexo.disabled = true;
-
-    try {
-        const user = auth.currentUser;
-        if (!user) throw new Error("Usuário não autenticado.");
-
-        const tipoArquivo = file.type.startsWith('image/') ? 'imagem' : 'video';
-        
-        // CORREÇÃO: Usamos 'chatIdAtual' direto aqui também
-        const nomeArquivo = `chat_midia/${chatIdAtual}/${Date.now()}_${file.name}`;
-        
-        const storageRef = ref(storage, nomeArquivo);
-
-        const snapshot = await uploadBytes(storageRef, file);
-        const downloadUrl = await getDownloadURL(snapshot.ref);
-
-        // CORREÇÃO: Usamos 'colecaoAtual' e 'chatIdAtual' sem window.
-        await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
-            tipo: tipoArquivo,
-            url: downloadUrl,
-            senderUid: user.uid,
-            timestamp: new Date()
-        });
-
-        if (colecaoAtual === 'conversas') {
-            await updateDoc(doc(db, "conversas", chatIdAtual), { 
-                ultimaMensagem: tipoArquivo === 'imagem' ? '📷 Imagem' : '🎥 Vídeo',
-                dataAtualizacao: new Date().toISOString()
-            });
-        }
-
-    } catch (err) {
-        console.error("Erro detalhado no upload:", err);
-        alert("Falha ao enviar arquivo. Verifique o console.");
-    } finally {
-        btnAnexo.innerHTML = iconeOriginal;
-        btnAnexo.disabled = false;
-        this.value = ''; 
-    }
-});
-
-// Função simples para abrir imagem em nova aba (ou modal se preferir)
-window.verImagemFull = (url) => {
-    window.open(url, '_blank');
-};
-
-// Função para carregar notificações na página ou no dropdown
-window.carregarNotificacoes = async function() {
-    // Verifica se estamos na página de notificações ou se tem o container
-    const container = document.getElementById('lista-notificacoes'); 
-    // Se não tiver container na tela (ex: está no chat), não faz nada ou carrega só o sino
-    if (!container && !document.getElementById('badge-sino')) return;
-
-    try {
-        const user = auth.currentUser;
-        if (!user) return;
-
-        // Busca notificações onde 'paraUid' é o usuário logado
-        // ATENÇÃO: Se der erro de índice aqui também, olhe o Console (F12) e clique no link!
-        const q = query(
-            collection(db, "notificacoes"), 
-            where("paraUid", "==", user.uid), 
-            orderBy("timestamp", "desc") // Isso exige Índice!
-        );
-
-        const snapshot = await getDocs(q);
-        
-        // 1. Atualiza o contador (Badge) no sino, se existir
-        const naoLidas = snapshot.docs.filter(doc => !doc.data().lida).length;
-        const badge = document.getElementById('badge-sino'); // Seu elemento HTML do contador
-        if (badge) {
-            badge.innerText = naoLidas;
-            badge.style.display = naoLidas > 0 ? 'flex' : 'none';
-        }
-
-        // 2. Se tiver na página de lista, renderiza os cards
-        if (container) {
-            container.innerHTML = "";
-            if (snapshot.empty) {
-                container.innerHTML = "<p style='padding:20px; text-align:center; color:#777;'>Nenhuma notificação.</p>";
-                return;
-            }
-
-            snapshot.forEach(doc => {
-                const n = doc.data();
-                // Define ícone e cor baseada no tipo
-                let icon = 'bx-bell';
-                let colorClass = 'azul'; // Defina classes CSS ou use style inline
-                
-                if(n.tipo === 'pagamento') { icon = 'bx-dollar-circle'; colorClass = 'verde'; }
-                
-                // HTML da Notificação
-                const html = `
-                <div class="item-notificacao ${n.lida ? '' : 'nao-lida'}" onclick="lerNotificacao('${doc.id}', '${n.link || '#'}')">
-                    <div class="notif-icon"><i class='bx ${icon}'></i></div>
-                    <div class="notif-content">
-                        <h4>${n.titulo}</h4>
-                        <p>${n.mensagem}</p>
-                        <span class="notif-time">${new Date(n.timestamp.seconds * 1000).toLocaleDateString()}</span>
-                    </div>
-                </div>`;
-                container.insertAdjacentHTML('beforeend', html);
-            });
-        }
-
-    } catch (e) {
-        console.error("Erro ao carregar notificações:", e);
-        // Se o erro for "The query requires an index", faça o PASSO 1 novamente para este erro.
-    }
-};
-
-// Função para marcar como lida e ir para o link
-window.lerNotificacao = async (id, link) => {
-    try {
-        await updateDoc(doc(db, "notificacoes", id), { lida: true });
-        if(link && link !== '#') window.location.href = link;
-        else carregarNotificacoes(); // Recarrega para sumir o destaque
-    } catch(e) { console.error(e); }
-};
-
-// Adicione isso no seu onAuthStateChanged para carregar automático
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        currentUserUid = user.uid;
-        // ... seus outros carregamentos ...
-        carregarNotificacoes(); // <--- CHAMA A FUNÇÃO AQUI
-    }
-});
 </script>
 </body>
 </html>  
