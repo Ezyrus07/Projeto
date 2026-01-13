@@ -1,511 +1,226 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Meu Perfil (Cliente) | Doke</title>
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="perfil-upgrade.css" />
+
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-init.js"></script>
   <script src="firebase-compat-supabase.js"></script>
   <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Perfil | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
-    <style>
-        /* ==========================================================================
-           ESTILOS GERAIS E LAYOUT (CENTRALIZADO)
-           ========================================================================== */
-        body { 
-            background-color: #f4f6f8; 
-            margin: 0; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-
-        /* CONFIGURAÇÃO PRINCIPAL DO LAYOUT */
-.perfil-main {
-    margin-left: 270px;
-    width: calc(100% - 270px);
-    display: flex;
-    justify-content: center;
-    /* Ajuste o padding para coincidir com o do Explorar (30px 40px) */
-    padding: 30px 40px; 
-    padding-bottom: 80px;
-    box-sizing: border-box;
-}
-
-        /* O CONTAINER QUE SEGURA O CONTEÚDO NO MEIO */
-.container-limite {
-    width: 100%;
-    /* Mude de 1200px para 1600px */
-    max-width: 1600px;  
-    display: flex;
-    flex-direction: column;
-    gap: 25px; 
-}
-        
-        /* --- HEADER DO PERFIL --- */
-        .perfil-header-card { 
-            background: #fff; border-radius: 16px; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05); 
-            overflow: visible; position: relative; 
-            margin-bottom: 10px;
-        }
-        .capa-perfil { 
-            height: 220px; 
-            background: linear-gradient(120deg, #8e44ad, #3498db); /* Roxo/Azul para Diferenciar do Profissional */
-            position: relative; 
-            border-radius: 16px 16px 0 0;
-        }
-        .btn-edit-capa { 
-            position: absolute; right: 20px; bottom: 20px; 
-            background: rgba(0,0,0,0.6); color: white; border: none; 
-            padding: 8px 15px; border-radius: 8px; cursor: pointer; 
-            font-size: 0.85rem; display: flex; align-items: center; gap: 6px; 
-            transition: 0.2s; backdrop-filter: blur(4px);
-        }
-        .btn-edit-capa:hover { background: rgba(0,0,0,0.8); }
-        
-        .dados-perfil { 
-            padding: 0 30px 30px 30px; 
-            display: flex; flex-wrap: wrap; align-items: flex-start; 
-            gap: 30px; position: relative;
-        }
-        
-        /* AVATAR */
-        .avatar-container { 
-            position: relative; margin-top: -70px; 
-            flex-shrink: 0; 
-        }
-        .avatar-container img { 
-            width: 150px; height: 150px; border-radius: 50%; 
-            border: 5px solid #fff; object-fit: cover; background: #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .status-online { 
-            width: 24px; height: 24px; background: #2ecc71; 
-            border: 3px solid #fff; border-radius: 50%; 
-            position: absolute; bottom: 15px; right: 10px; display: none; 
-        }
-
-        /* TEXTOS */
-        .info-texto { flex: 1; padding-top: 15px; min-width: 250px; }
-        .nome-row { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
-        .nome-row h1 { 
-            font-size: 1.8rem; color: #333; margin: 0; 
-            display: flex; align-items: center; gap: 8px; 
-        }
-
-        /* STATS SOCIAIS */
-        .social-stats { 
-            display: flex; gap: 30px; margin: 15px 0; 
-            background: #f8f9fa; padding: 10px 20px; 
-            border-radius: 10px; display: inline-flex;
-        }
-        .stat-social { text-align: center; cursor: pointer; }
-        .stat-social strong { font-size: 1.1rem; color: #333; display: block; }
-        .stat-social span { font-size: 0.8rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .bio { color: #555; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5; max-width: 600px; }
-        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; color: #777; }
-        .meta-dados span { display: flex; align-items: center; gap: 5px; }
-
-        /* AÇÕES DIREITA */
-        .acoes-perfil { 
-            display: flex; flex-direction: column; align-items: flex-end; 
-            gap: 15px; padding-top: 15px; 
-        }
-        
-        .btn-solid { 
-            background: var(--cor0, #0b7768); color: white; border: none; 
-            padding: 12px 25px; border-radius: 50px; font-weight: 600; 
-            cursor: pointer; display: flex; align-items: center; gap: 8px; 
-            transition: 0.2s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
-        }
-        .btn-solid:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3); }
-        
-        /* Botão Virar Profissional (Estilo Especial) */
-        .btn-outline { 
-            background: #fff; border: 2px solid var(--cor2, #333); 
-            color: var(--cor2, #333); padding: 10px 25px; border-radius: 50px; 
-            font-weight: 700; cursor: pointer; display: flex; align-items: center; 
-            gap: 8px; transition: 0.2s; 
-        }
-        .btn-outline:hover { background: var(--cor2, #333); color: white; transform: translateY(-2px); }
-
-        /* --- SEÇÃO MEUS PEDIDOS --- */
-        .section-pedidos {
-            background: #fff; border-radius: 16px; padding: 30px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-        }
-        .section-title {
-            font-size: 1.2rem; font-weight: 700; color: #333; 
-            margin-bottom: 20px; border-left: 4px solid var(--cor0, #0b7768); 
-            padding-left: 10px; margin-top: 0;
-        }
-
-        .empty-state-pedidos {
-            text-align: center; padding: 50px 20px; 
-            background: #fafafa; border-radius: 12px; 
-            border: 2px dashed #e0e0e0; display: flex; 
-            flex-direction: column; align-items: center; gap: 15px;
-        }
-        .empty-state-pedidos i { font-size: 3.5rem; color: #ccc; margin-bottom: 5px; }
-        .empty-state-pedidos p { color: #666; font-size: 1rem; margin: 0; }
-        .empty-state-pedidos a { 
-            color: var(--cor0, #0b7768); font-weight: 700; text-decoration: none; 
-            margin-top: 5px; border-bottom: 1px solid transparent; transition: 0.2s;
-        }
-        .empty-state-pedidos a:hover { border-bottom-color: var(--cor0, #0b7768); }
-
-        /* --- MODAL --- */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal-card { background: #fff; width: 90%; max-width: 500px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); overflow: hidden; animation: zoomIn 0.3s; display:flex; flex-direction:column; }
-        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-        .modal-header { background: #fff; padding: 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .modal-body { padding: 20px; overflow-y:auto; max-height:70vh; background: #fcfcfc;}
-        .form-group { margin-bottom: 20px; }
-        .input-modal { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-family: inherit; background: #fff; box-sizing: border-box; }
-        .modal-footer { padding: 20px; background: #fff; border-top: 1px solid #eee; display: flex; justify-content: flex-end; gap: 10px; }
-        .btn-cancel { background: #f0f0f0; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #666; font-weight: 600; }
-        .btn-save { background: var(--cor0, #0b7768); color:white; border: none; padding: 10px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; }
-        .btn-close-modal { border:none; background:transparent; font-size:1.5rem; cursor:pointer;}
-
-        .custom-file-label { display: inline-flex; align-items: center; gap: 8px; padding: 10px 20px; background-color: #e3f2fd; border: 1px dashed #2196f3; border-radius: 8px; cursor: pointer; color: #1976d2; font-size: 0.9rem; font-weight: 600; width: 100%; box-sizing: border-box; justify-content: center; }
-        .file-name { font-size: 0.85rem; color: #888; font-style: italic; display: block; text-align: center; margin-top: 5px; }
-
-        @media (max-width: 1024px) {
-            .perfil-main { 
-                margin-left: 0; 
-                width: 100%; 
-                display: block; 
-                padding: 15px;
-            }
-            .dados-perfil { flex-direction: column; align-items: center; text-align: center; padding: 0 20px 30px 20px; }
-            .acoes-perfil { align-items: center; width: 100%; padding-top: 20px; }
-            .social-stats { width: 100%; justify-content: center; box-sizing: border-box; }
-            .bio { text-align: center; }
-            .meta-dados { justify-content: center; }
-        }
-    </style>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="script.js" defer></script>
 </head>
-<body>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile">
-            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a>
+<body class="dp-page">
+  <!-- Sidebar (mantém padrão do site) -->
+  <aside class="sidebar-icones">
+  <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+  <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Inicio</span></a></div>
+  <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+  <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificacoes</span></a></div>
+  <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+  <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+  <div class="item active"><a href="perfil-usuario.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+  <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+</aside>
+
+  <!-- Conteúdo principal -->
+  <header class="navbar-desktop">
+  <div id="logo-desktop">
+    <a href="projeto.html">
+      <img src="assets/Imagens/doke-logo.png" alt="Doke">
+    </a>
+  </div>
+  <nav class="menu">
+    <div class="cep-wrapper">
+      <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+        </svg>
+        <span id="textoCepSpan">Informe seu CEP</span>
+      </a>
+      <div class="cep-popup" id="boxCep">
+        <p>Digite seu CEP:</p>
+        <div class="cep-input-group">
+          <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+          <button onclick="salvarCep()">OK</button>
         </div>
-        <div class="mobile-controls">
-            <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-        </div>
-    </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-
-    <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
-        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><a href="chat.html"><span>Mensagens</span></a></div>
-        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><a href="meuperfil.html"><span>Perfil</span></a></div>
-        <div class="item"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><a href="mais.html"><span>Mais</span></a></div>
-    </aside>
-
-    <header class="navbar-desktop">
-        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <nav class="menu">
-            <div class="cep-wrapper"><a href="#" class="cep"><span>Informe seu CEP</span></a></div>
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-        <div class="botoes-direita" id="header-user-area"></div>
-    </header>   
-
-    <main class="perfil-main">
-        
-        <div class="container-limite">
-
-            <section class="perfil-header-card">
-                <div class="capa-perfil">
-                    <button class="btn-edit-capa"><i class='bx bx-camera'></i> Editar Capa</button>
-                </div>
-                <div class="dados-perfil">
-                    <div class="avatar-container">
-                        <img src="" alt="Perfil" id="fotoPerfilDisplay">
-                        <div class="status-online" id="statusOnlineIndicator"></div>
-                    </div>
-                    <div class="info-texto">
-                        <div class="nome-row">
-                            <h1 id="nomePerfilDisplay">...</h1>
-                        </div>
-                        <div class="social-stats">
-                            <div class="stat-social"><strong id="stat-seguidores">0</strong><span>Seguidores</span></div>
-                            <div class="stat-social"><strong id="stat-seguindo">0</strong><span>Seguindo</span></div>
-                        </div>
-                        <p class="bio" id="bioPerfilDisplay">...</p>
-                        <div class="meta-dados">
-                            <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
-                            <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> Membro desde ...</span>
-                        </div>
-                    </div>
-                    <div class="acoes-perfil">
-                        <button class="btn-outline" onclick="tornarSeProfissional()">
-                            <i class='bx bx-briefcase-alt-2'></i> Quero ser Profissional
-                        </button>
-                        
-                        <button class="btn-solid" onclick="abrirModalEditar()">
-                            <i class='bx bx-pencil'></i> Editar Perfil
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <div class="section-pedidos">
-                <h3 class="section-title">Meus Pedidos</h3>
-                <div class="empty-state-pedidos">
-                    <i class='bx bx-shopping-bag'></i>
-                    <p>Você ainda não realizou nenhum pedido de serviço.</p>
-                    <a href="index.html">Procurar Profissionais</a>
-                </div>
-            </div>
-
-        </div> </main>
-
-    <div id="modalEditar" class="modal-overlay">
-        <div class="modal-card">
-            <div class="modal-header"><h3>Editar Perfil</h3><button onclick="fecharModalEditar()" class="btn-close-modal">×</button></div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>Nome de Usuário (@)</label>
-                    <input type="text" id="inputUserHandle" class="input-modal" placeholder="@usuario">
-                    <small id="msgTrocaUser" style="color:#e74c3c; font-size:0.8rem; display:none; margin-top:5px; font-weight:600;"></small>
-                </div>
-                <div class="form-group"><label>Nome de Exibição</label><input type="text" id="inputNome" class="input-modal"></div>
-                <div class="form-group"><label>Biografia</label><textarea id="inputBio" class="input-modal" rows="3"></textarea></div>
-                <div class="form-group"><label>Localização (Cidade/UF)</label><input type="text" id="inputLoc" class="input-modal"></div>
-                <div class="form-group">
-                    <label>Foto de Perfil</label>
-                    <div class="custom-file-wrapper">
-                        <label for="inputFotoFile" class="custom-file-label"><i class='bx bx-camera'></i> Trocar Foto</label>
-                        <input type="file" id="inputFotoFile" accept="image/*" style="display:none;">
-                        <input type="hidden" id="inputFotoBase64">
-                    </div>
-                    <span id="fotoFileName" class="file-name">Nenhuma selecionada</span>
-                </div>
-            </div>
-            <div class="modal-footer"><button onclick="fecharModalEditar()" class="btn-cancel">Cancelar</button><button onclick="salvarPerfil()" class="btn-save">Salvar Alterações</button></div>
-        </div>
+      </div>
     </div>
+    <a href="anunciar.html">Anuncie seu servico</a>
+    <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
+    <a href="novidades.html">Novidades</a>
+  </nav>
+  <div class="botoes-direita">
+    <a id="dpTopAuthBtn" href="login.html" class="entrar">Entrar</a>
+  </div>
+</header>
 
-    <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
-        <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
-    </nav>
-
-<script>
-const { initializeApp } = window;
-const { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment, deleteDoc, onSnapshot } = window;
-const { getAuth, onAuthStateChanged, signOut } = window;
-
-const firebaseConfig = {
-    apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-    authDomain: "doke-site.firebaseapp.com",
-    projectId: "doke-site",
-    storageBucket: "doke-site.firebasestorage.app",
-    messagingSenderId: "997098339190",
-    appId: "1:997098339190:web:a865b696278be21f069857"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app); 
-window.db = db;
-window.auth = auth;
-
-let userHandleOriginal = ""; 
-
-// --- FUNÇÃO PARA TORNAR PROFISSIONAL ---
-window.tornarSeProfissional = async function() {
-    const user = auth.currentUser;
-    if (!user) { alert("Erro de autenticação."); return; }
-
-    if (confirm("Você quer se tornar um profissional Doke? Isso habilitará seu painel de vendas e portfólio.")) {
-        try {
-            // Atualiza o documento do usuário
-            await updateDoc(doc(db, "usuarios", user.uid), {
-                isProfissional: true
-            });
-
-            // Atualiza o cache local
-            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-            perfilLocal.isProfissional = true;
-            localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilLocal));
-
-            alert("Parabéns! Agora você é um Profissional Doke.");
-            // Redireciona para o painel profissional
-            window.location.href = "meuperfil.html"; 
-
-        } catch (e) {
-            console.error("Erro ao atualizar perfil:", e);
-            alert("Erro ao processar solicitação.");
-        }
-    }
-}
-
-// --- FUNÇÕES DE PERFIL EXISTENTES (Mantidas) ---
-window.carregarPerfil = function() {
-    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
-    
-    // Se o usuário já for profissional, redireciona para a página certa (proteção)
-    if(usuario.isProfissional === true) {
-        window.location.href = "meuperfil.html";
-        return;
-    }
-
-    userHandleOriginal = usuario.user || "@usuario";
-
-    if(document.getElementById('nomePerfilDisplay')) {
-        document.getElementById('nomePerfilDisplay').innerHTML = `
-            <div style="display:flex; flex-direction:column; align-items:flex-start;">
-                <span style="font-size: 1.6rem; color: #333; font-weight: 800; display:flex; align-items:center; gap:5px;">
-                    ${usuario.user || '@usuario'} 
-                </span>
-                <span style="font-size: 1.0rem; color: #666; font-weight: 500; margin-top: -2px;">${usuario.nome}</span>
-            </div>`;
-    }
-    if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
-    if(document.getElementById('locPerfilDisplay')) document.getElementById('locPerfilDisplay').innerHTML = "<i class='bx bx-map'></i> " + usuario.local;
-    if(document.getElementById('fotoPerfilDisplay')) document.getElementById('fotoPerfilDisplay').src = usuario.foto;
-    
-    if(document.getElementById('dataMembroDisplay')) document.getElementById('dataMembroDisplay').innerHTML = "<i class='bx bx-calendar'></i> Membro desde " + (usuario.membroDesde || "2024");
-
-    renderizarMenuDropdown(usuario.foto || "https://placehold.co/150");
-
-    if(document.getElementById('inputNome')) {
-        document.getElementById('inputNome').value = usuario.nome;
-        document.getElementById('inputBio').value = usuario.bio;
-        document.getElementById('inputLoc').value = usuario.local;
-        document.getElementById('inputFotoBase64').value = usuario.foto;
-        const handleInput = document.getElementById('inputUserHandle');
-        if (handleInput) handleInput.value = usuario.user || "@usuario";
-    }
-}
-
-window.salvarPerfil = async function() {
-    const user = auth.currentUser;
-    if(!user) { alert("Você precisa estar logado."); return; }
-    const btnSave = document.querySelector('.btn-save');
-    if(btnSave) { btnSave.innerText = "Salvando..."; btnSave.disabled = true; }
-    const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-    const novoHandle = document.getElementById('inputUserHandle').value.trim();
-    const novoPerfil = {
-        ...perfilAntigo,
-        nome: document.getElementById('inputNome').value,
-        bio: document.getElementById('inputBio').value,
-        local: document.getElementById('inputLoc').value,
-        foto: document.getElementById('inputFotoBase64').value
-    };
-    if (novoHandle !== userHandleOriginal) {
-        let handleFormatado = novoHandle.toLowerCase();
-        if (!handleFormatado.startsWith('@')) handleFormatado = '@' + handleFormatado;
-        novoPerfil.user = handleFormatado;
-        novoPerfil.ultimoTrocaUser = new Date().toISOString();
-    }
-    try {
-        await updateDoc(doc(db, "usuarios", user.uid), novoPerfil);
-        localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
-        carregarPerfil();
-        fecharModalEditar();
-        alert("Perfil atualizado!");
-    } catch (e) {
-        console.error("Erro:", e);
-        alert("Erro ao salvar.");
-    } finally {
-        if(btnSave) { btnSave.innerText = "Salvar Alterações"; btnSave.disabled = false; }
-    }
-}
-
-// UI HELPERS
-window.abrirModalEditar = function() { document.getElementById('modalEditar').style.display = 'flex'; }
-window.fecharModalEditar = function() { document.getElementById('modalEditar').style.display = 'none'; }
-
-const fileInput = document.getElementById('inputFotoFile');
-if(fileInput) {
-    fileInput.addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if(file) {
-            const reader = new FileReader();
-            reader.onload = function(evt) { document.getElementById('inputFotoBase64').value = evt.target.result; };
-            reader.readAsDataURL(file);
-            document.getElementById('fotoFileName').innerText = file.name;
-        }
-    });
-}
-
-function renderizarMenuDropdown(fotoUrl) {
-    const container = document.getElementById('header-user-area');
-    if (!container) return;
-    
-    container.innerHTML = `
-        <div class="profile-container">
-            <img src="${fotoUrl}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil">
-            <div id="dropdownPerfil" class="dropdown-profile">
-                <a href="#" onclick="irParaMeuPerfil(event)" class="dropdown-item">
-                    <i class='bx bx-user'></i> Ver Perfil
-                </a>
-                
-                <a href="#" onclick="alternarConta()" class="dropdown-item">
-                    <i class='bx bx-user-pin'></i> Alternar Conta
-                </a>
-
-                <a href="anunciar.html" class="dropdown-item">
-                    <i class='bx bx-plus-circle'></i> Anunciar
-                </a>
-                <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair">
-                    <i class='bx bx-log-out'></i> Sair
-                </a>
+<main class="dp-wrap">
+      <div id="dpRoot" class="dp-skeleton dp-theme-cliente" data-mode="self" data-theme="cliente">
+        <section class="dp-card">
+          <div id="dpCover" class="dp-cover">
+            <div class="dp-coverActions">
+              <button id="dpCoverBtn" class="dp-btn" type="button"><i class='bx bx-image-add'></i> Alterar capa</button>
+              <input id="dpCoverInput" type="file" accept="image/*" hidden />
             </div>
-        </div>`;
-}
+          </div>
 
-window.alternarConta = function() {
-    signOut(auth).then(() => {
-        localStorage.removeItem('usuarioLogado');
-        window.location.href = 'login.html';
-    });
-}
-window.toggleDropdown = function(event) { event.stopPropagation(); document.getElementById('dropdownPerfil').classList.toggle('show'); }
-window.addEventListener('click', function(e) { if (!e.target.matches('.profile-img-btn')) { const drops = document.getElementsByClassName("dropdown-profile"); for (let i = 0; i < drops.length; i++) if (drops[i].classList.contains('show')) drops[i].classList.remove('show'); } });
-window.fazerLogout = function() { signOut(auth).then(() => { localStorage.removeItem('usuarioLogado'); window.location.href = 'index.html'; }); }
+          <div class="dp-body">
+            <div class="dp-avatarWrap">
+              <div class="dp-avatar">
+                <img id="dpAvatarImg" alt="Foto" style="display:none" />
+                <div id="dpAvatarLetter" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:52px;color:#9aa6b2;">U</div>
+              </div>
+              <button id="dpAvatarBtn" class="dp-avatarBtn" type="button" title="Alterar foto"><i class='bx bx-camera'></i></button>
+              <input id="dpAvatarInput" type="file" accept="image/*" hidden />
+            </div>
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        try {
-            const docRef = doc(db, "usuarios", user.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                const dados = docSnap.data();
-                localStorage.setItem('doke_usuario_perfil', JSON.stringify(dados));
-                
-                // Se já for profissional, manda pro outro painel (meuperfil.html)
-                if (dados.isProfissional === true) {
-                    window.location.href = "meuperfil.html";
-                } else {
-                    carregarPerfil(); // Carrega o perfil comum
-                }
-            }
-        } catch (e) { carregarPerfil(); }
-    } else {
-        window.location.href = "login.html";
-    }
-});
+            <div>
+              <h1 id="dpName" class="dp-name">Carregando…</h1>
+              <div id="dpHandle" class="dp-handle">@usuario</div>
+              <div id="dpBio" class="dp-bio">Carregando…</div>
 
-</script>
+              <div id="dpChips" class="dp-meta"></div>
+
+              <div class="dp-stats" aria-label="Estatísticas">
+                <div class="dp-stat"><b id="dpFollowers">0</b><span>Seguidores</span></div>
+                <div class="dp-stat"><b id="dpFollowing">0</b><span>Seguindo</span></div>
+                <div class="dp-stat" data-pro-only><b id="dpReviews">0</b><span>Avaliações</span></div>
+                <div class="dp-stat" data-pro-only><b id="dpServicesCount">0</b><span>Serviços</span></div>
+              </div>
+            </div>
+
+            <div class="dp-actions">
+              <div id="dpAvailabilityRow" class="dp-availability">
+                <span id="dpStatusText">Disponível</span>
+                <div id="dpSwitch" class="dp-switch"><span></span></div>
+              </div>
+
+              <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button id="dpOrcBtn" class="dp-primary" type="button" style="display:none;"><i class='bx bx-receipt'></i> Solicitar orçamento</button>
+                <button id="dpEditBtn" class="dp-secondary" type="button"><i class='bx bx-edit'></i> Editar perfil</button>
+                <button id="dpMoreBtn" class="dp-secondary" type="button" title="Mais"><i class='bx bx-dots-horizontal-rounded'></i></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="dp-tabs" role="tablist" aria-label="Seções do perfil">
+          <button class="dp-tab active" data-tab="publicacoes" type="button"><i class='bx bx-grid-alt'></i> Publicações</button>
+          <button class="dp-tab" data-tab="servicos" type="button" data-pro-only><i class='bx bx-briefcase'></i> Serviços</button>
+          <button class="dp-tab" data-tab="portfolio" type="button" data-pro-only><i class='bx bx-collection'></i> Portfólio</button>
+          <button class="dp-tab" data-tab="reels" type="button" data-pro-only><i class='bx bx-video'></i> Vídeos curtos</button>
+          <button class="dp-tab" data-tab="avaliacoes" type="button" data-pro-only><i class='bx bx-star'></i> Avaliações</button>
+          <button class="dp-tab" data-tab="sobre" type="button"><i class='bx bx-info-circle'></i> Sobre</button>
+        </div>
+
+        <!-- Sections -->
+        <section class="dp-section" data-tab="publicacoes">
+          <div class="dp-sectionHeader">
+            <h2>Publicações</h2>
+            <button id="dpNewPublicacao" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridPublicacoes" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-grid-alt'></i>
+              <div>
+                <b>Nenhuma publicação ainda</b>
+                <span>Quando você postar algo, vai aparecer aqui.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dp-section" data-tab="servicos" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Serviços</h2>
+            <button id="dpNewServico" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridServicos" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-briefcase'></i>
+              <div>
+                <b>Nenhum serviço ainda</b>
+                <span>Cadastre seus serviços para os clientes encontrarem você.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dp-section" data-tab="portfolio" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Portfólio</h2>
+            <button id="dpNewPortfolio" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridPortfolio" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-collection'></i>
+              <div>
+                <b>Portfólio vazio</b>
+                <span>Adicione imagens e projetos para aumentar confiança.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dp-section" data-tab="reels" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Vídeos curtos</h2>
+            <button id="dpNewReel" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridReels" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-video'></i>
+              <div>
+                <b>Sem vídeos curtos</b>
+                <span>Poste vídeos curtos para ganhar destaque.</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="dp-section" data-tab="avaliacoes" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Avaliações</h2>
+            <button id="dpWriteAvaliacao" class="dp-newBtn" type="button" style="display:none;"><i class='bx bx-star'></i> Avaliar</button>
+          </div>
+          <div id="dpBoxAvaliacoes"></div>
+        </section>
+
+        <section class="dp-section" data-tab="sobre" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Sobre</h2>
+          </div>
+          <div class="dp-card" style="padding:18px;">
+            <p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">
+              <span id="dpAboutText">As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão “Editar perfil”.)</span>
+            </p>
+          </div>
+        </section>
+      </div>
+    </main>
+
+  <!-- Modal -->
+  <div id="dpModalOverlay" class="dp-modalOverlay" aria-hidden="true">
+    <div class="dp-modal" role="dialog" aria-modal="true">
+      <div class="dp-modalHead">
+        <b id="dpModalTitle">Modal</b>
+        <button id="dpModalClose" class="dp-x" type="button">✕</button>
+      </div>
+      <div id="dpModalBody" class="dp-modalBody"></div>
+      <div class="dp-modalFoot">
+        <button id="dpModalCancel" class="dp-ghost" type="button">Cancelar</button>
+        <button id="dpModalSave" class="dp-save" type="button">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="perfil-upgrade.js"></script>
 </body>
 </html>

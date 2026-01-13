@@ -1,284 +1,537 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Criar Conta | Doke</title>
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
+
+  <!-- Supabase (UMD) + init -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Criar Conta | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script>
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <style>
-        body {
-            background: linear-gradient(135deg, var(--cor0) 0%, #064e42 100%);
-            min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px;
-        }
-        .login-card {
-            background: white; padding: 40px; border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2); width: 100%; max-width: 450px;
-            text-align: center; position: relative; animation: subir 0.5s ease;
-        }
-        @keyframes subir { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .login-logo { width: 120px; margin-bottom: 20px; }
-        .login-header h2 { color: var(--cor0); font-size: 1.8rem; margin-bottom: 5px; }
-        .login-header p { color: #666; font-size: 0.95rem; margin-bottom: 30px; }
-        .form-group { margin-bottom: 15px; text-align: left; }
-        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #444; margin-bottom: 8px; }
-        .input-icon { position: relative; }
-        .input-icon i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; font-size: 1.2rem; }
-        .input-icon input {
-            width: 100%; padding: 12px 15px 12px 45px; border: 1px solid #ddd;
-            border-radius: 10px; font-size: 1rem; outline: none; transition: 0.3s;
-            font-family: var(--fonte-padrao); background: #f9f9f9;
-        }
-        .input-icon input:focus { border-color: var(--cor0); background: white; box-shadow: 0 0 0 4px rgba(11, 119, 104, 0.1); }
-        .btn-login-action {
-            width: 100%; padding: 14px; background: var(--cor2);
-            color: white; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700;
-            cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 4px 15px rgba(42, 95, 144, 0.3);
-        }
-        .btn-login-action:hover { background: #1a3c5e; transform: translateY(-2px); }
-        .footer-login { margin-top: 20px; font-size: 0.9rem; color: #666; }
-        .footer-login a { color: var(--cor2); font-weight: 700; text-decoration: none; }
-        .btn-voltar { position: absolute; top: 20px; left: 20px; color: #999; font-size: 1.5rem; cursor: pointer; }
+  <style>
+    :root{
+      --card-radius: 22px;
+      --shadow: 0 18px 60px rgba(0,0,0,.22);
+      --ring: 0 0 0 4px rgba(11,119,104,.12);
+    }
 
-        /* --- ESTILOS DE VALIDAÇÃO --- */
-        .input-error {
-            border-color: #ff4444 !important;
-            background-color: #fff0f0 !important;
-            animation: shake 0.3s ease-in-out;
-        }
-        .input-sucesso {
-            border-color: #00C851 !important;
-            background-color: #f0fff4 !important;
-        }
-        .msg-erro-texto {
-            color: #ff4444; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block;
-        }
-        .msg-sucesso-texto {
-            color: #00C851; font-size: 0.8rem; font-weight: 600; margin-top: 5px; display: block;
-        }
-        @keyframes shake {
-            0% { transform: translateX(0); } 25% { transform: translateX(-5px); }
-            50% { transform: translateX(5px); } 75% { transform: translateX(-5px); }
-            100% { transform: translateX(0); }
-        }
-    </style>
+    body{
+      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.16), transparent 60%),
+                  linear-gradient(135deg, var(--cor0) 0%, #064e42 55%, #043a31 100%);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+    .auth-shell{
+      width: 100%;
+      max-width: 980px;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 900px){
+      .auth-shell{ grid-template-columns: 1fr; max-width: 520px; }
+      .auth-aside{ display:none; }
+    }
+
+    .auth-card{
+      background: #fff;
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      animation: pop .45s ease both;
+    }
+    @keyframes pop { from { opacity:0; transform: translateY(10px) scale(.99);} to {opacity:1; transform:none;} }
+
+    .auth-card-inner{
+      padding: 34px 34px 28px;
+    }
+
+    .btn-voltar{
+      position:absolute;
+      top: 16px;
+      left: 16px;
+      width: 42px;
+      height: 42px;
+      display:grid;
+      place-items:center;
+      border-radius: 14px;
+      background: rgba(0,0,0,.04);
+      color:#667;
+      text-decoration:none;
+      transition:.2s ease;
+    }
+    .btn-voltar:hover{ background: rgba(0,0,0,.07); transform: translateY(-1px); color: var(--cor2); }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 14px;
+      margin: 10px 0 10px;
+    }
+    .brand img{ width: 110px; height:auto; }
+    .brand .tag{
+      margin-left:auto;
+      font-size:.78rem;
+      font-weight:700;
+      color: #0a2e2a;
+      background: rgba(11,119,104,.10);
+      border: 1px solid rgba(11,119,104,.14);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .auth-title{
+      margin: 10px 0 4px;
+      font-size: 1.7rem;
+      letter-spacing: -.02em;
+      color: #0b2a28;
+    }
+    .auth-subtitle{
+      margin: 0 0 18px;
+      color: #667;
+      font-size: .96rem;
+      line-height: 1.35;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .form-group{ margin-bottom: 14px; text-align:left; }
+    .form-group label{
+      display:block;
+      font-size: .9rem;
+      font-weight: 700;
+      color:#3b4653;
+      margin-bottom: 8px;
+    }
+
+    .input-icon{ position:relative; }
+    .input-icon i{
+      position:absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color:#96a0aa;
+      font-size: 1.2rem;
+    }
+    .input-icon input{
+      width: 100%;
+      padding: 12px 14px 12px 44px;
+      border: 1px solid #e5e8ee;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: .2s ease;
+      background: #fafbfc;
+      font-family: var(--fonte-padrao, system-ui, sans-serif);
+    }
+    .input-icon input:focus{
+      border-color: rgba(11,119,104,.55);
+      background:#fff;
+      box-shadow: var(--ring);
+    }
+
+    .hint{
+      font-size: .82rem;
+      color:#7a8794;
+      margin-top: 6px;
+    }
+
+    .pw-meter{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      margin-top: 8px;
+    }
+    .pw-bar{
+      flex:1;
+      height: 10px;
+      border-radius: 999px;
+      background:#eef2f6;
+      overflow:hidden;
+      border: 1px solid #e7ebf0;
+    }
+    .pw-bar > div{
+      height:100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: .2s ease;
+      background: var(--cor3);
+    }
+    .pw-label{
+      min-width: 90px;
+      text-align:right;
+      font-size: .82rem;
+      font-weight: 800;
+      color:#8a96a3;
+    }
+
+    .btn-primary{
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--cor2), #1a3c5e);
+      box-shadow: 0 10px 22px rgba(42,95,144,.28);
+      transition: .2s ease;
+      margin-top: 6px;
+    }
+    .btn-primary:hover{ transform: translateY(-2px); filter: brightness(.98); }
+    .btn-primary:disabled{ opacity:.72; cursor:not-allowed; transform:none; }
+
+    .footer-login{
+      margin-top: 14px;
+      font-size: .92rem;
+      color:#6b7785;
+      text-align:center;
+    }
+    .footer-login a{
+      color: var(--cor2);
+      font-weight: 900;
+      text-decoration:none;
+    }
+    .footer-login a:hover{ text-decoration: underline; }
+
+    .msg{
+      margin-top: 14px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      display:none;
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+    .msg.show{ display:block; }
+    .msg.ok{ background: rgba(0,200,81,.08); border-color: rgba(0,200,81,.18); color:#136b3a; }
+    .msg.err{ background: rgba(243,91,91,.10); border-color: rgba(243,91,91,.18); color:#7b1a1a; }
+
+    .auth-aside{
+      border-radius: var(--card-radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 16px 45px rgba(0,0,0,.20);
+      padding: 26px 26px 22px;
+      color: rgba(255,255,255,.92);
+      position: relative;
+      overflow:hidden;
+    }
+    .auth-aside:before{
+      content:"";
+      position:absolute;
+      inset:-80px -120px auto auto;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.24), transparent 60%);
+      opacity:.9;
+    }
+    .aside-title{
+      font-size: 1.25rem;
+      margin: 4px 0 10px;
+      letter-spacing:-.01em;
+    }
+    .aside-p{
+      margin: 0 0 14px;
+      color: rgba(255,255,255,.80);
+      line-height: 1.45;
+      font-size: .95rem;
+    }
+    .aside-list{
+      display:grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .aside-item{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.14);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .aside-item i{
+      font-size: 1.25rem;
+      opacity:.95;
+      margin-top: 1px;
+    }
+    .aside-item b{ display:block; margin-bottom:2px; }
+    .aside-item span{ color: rgba(255,255,255,.78); font-size: .9rem; }
+  </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <a href="login.html" class="btn-voltar"><i class='bx bx-arrow-back'></i></a>
-        
-        <img src="assets/Imagens/doke-logo.png" alt="Doke" class="login-logo">
-        
-        <div class="login-header">
-            <h2>Crie sua conta</h2>
-            <p>Junte-se à comunidade Doke.</p>
+  <div class="auth-shell">
+    <div class="auth-card">
+      <a href="login.html" class="btn-voltar" aria-label="Voltar"><i class='bx bx-arrow-back'></i></a>
+
+      <div class="auth-card-inner">
+        <div class="brand">
+          <img src="assets/Imagens/doke-logo.png" alt="Doke" />
+          <span class="tag">Novo por aqui</span>
         </div>
 
-        <form id="formCadastro" onsubmit="realizarCadastro(event)">
-            
+        <h2 class="auth-title">Crie sua conta</h2>
+        <p class="auth-subtitle">Junte-se à comunidade Doke. Em menos de 1 minuto você já pode explorar e anunciar.</p>
+
+        <form id="formCadastro" novalidate>
+          <div class="grid">
             <div class="form-group">
-                <label>Nome de Usuário (@)</label>
-                <div class="input-icon">
-                    <i class='bx bx-at'></i>
-                    <input type="text" id="usuario" placeholder="ex: usuario123" required>
-                </div>
+              <label for="usuario">Nome de Usuário (@)</label>
+              <div class="input-icon">
+                <i class='bx bx-at'></i>
+                <input id="usuario" type="text" placeholder="ex: gabrielantonio" autocomplete="username" required />
+              </div>
+              <div class="hint">Sem espaços. Pode usar ponto e underline.</div>
             </div>
 
             <div class="form-group">
-                <label>Nome Completo</label>
-                <div class="input-icon">
-                    <i class='bx bx-user'></i>
-                    <input type="text" id="nome" placeholder="Seu nome" required>
-                </div>
+              <label for="nome">Nome Completo</label>
+              <div class="input-icon">
+                <i class='bx bx-user'></i>
+                <input id="nome" type="text" placeholder="Seu nome" autocomplete="name" required />
+              </div>
             </div>
+          </div>
 
-            <div class="form-group">
-                <label>E-mail</label>
-                <div class="input-icon">
-                    <i class='bx bx-envelope'></i>
-                    <input type="email" id="email" placeholder="seu@email.com" required>
-                </div>
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <div class="input-icon">
+              <i class='bx bx-envelope'></i>
+              <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" required />
             </div>
+          </div>
 
-            <div class="form-group">
-                <label>Senha</label>
-                <div class="input-icon">
-                    <i class='bx bx-lock-alt'></i>
-                    <input type="password" id="senha" placeholder="Crie uma senha forte" required oninput="validarSenhaTempoReal()">
-                </div>
-                <span id="feedback-senha"></span>
+          <div class="form-group">
+            <label for="senha">Senha</label>
+            <div class="input-icon">
+              <i class='bx bx-lock-alt'></i>
+              <input id="senha" type="password" placeholder="Crie uma senha forte" autocomplete="new-password" required />
             </div>
+            <div class="pw-meter">
+              <div class="pw-bar"><div id="pwBar"></div></div>
+              <div class="pw-label" id="pwLabel">—</div>
+            </div>
+          </div>
 
-            <button type="submit" class="btn-login-action">Criar Conta Grátis</button>
+          <button id="btnCriar" type="submit" class="btn-primary">Criar Conta</button>
+
+          <div id="msg" class="msg"></div>
+
+          <div class="footer-login">
+            Já tem uma conta? <a href="login.html">Fazer login</a>
+          </div>
         </form>
-
-        <div class="footer-login">
-            Já tem uma conta? <a href="login.html">Fazer Login</a>
-        </div>
+      </div>
     </div>
 
-    <script>
-    const {
-        collection,
-        doc,
-        setDoc,
-        query,
-        where,
-        getDocs,
-        createUserWithEmailAndPassword,
-        sendEmailVerification
-    } = window;
+    <aside class="auth-aside">
+      <h3 class="aside-title">Tudo pronto para começar</h3>
+      <p class="aside-p">Seu perfil nasce como <b>Cliente</b>. Se quiser anunciar, você ativa o modo <b>Profissional</b> depois com 1 clique.</p>
 
-    window.realizarCadastro = async function(event) {
-        event.preventDefault(); 
+      <div class="aside-list">
+        <div class="aside-item">
+          <i class='bx bx-check-shield'></i>
+          <div>
+            <b>Conta segura</b>
+            <span>Cadastro via Supabase Auth. Você mantém controle total.</span>
+          </div>
+        </div>
+        <div class="aside-item">
+          <i class='bx bx-video'></i>
+          <div>
+            <b>Feed moderno</b>
+            <span>Fotos/vídeos e vídeos-curtos com modais padronizados.</span>
+          </div>
+        </div>
+        <div class="aside-item">
+          <i class='bx bx-receipt'></i>
+          <div>
+            <b>Orçamento em 1 clique</b>
+            <span>Solicite orçamento direto do anúncio.</span>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </div>
 
-        const nome = document.getElementById('nome').value;
-        const usuarioInput = document.getElementById('usuario').value;
-        const email = document.getElementById('email').value;
-        const senha = document.getElementById('senha').value;
-        const btn = event.target.querySelector('button');
+  <script>
+    function showMsg(type, text){
+      const el = document.getElementById("msg");
+      el.className = "msg show " + (type === "ok" ? "ok" : "err");
+      el.textContent = text;
+    }
 
-        // ... suas validações ...
+    function normalizeHandle(raw){
+      let h = String(raw || "").trim().toLowerCase();
+      h = h.replace(/\s+/g, "");
+      if (!h) return "";
+      if (!h.startsWith("@")) h = "@" + h;
+      if (!/^@[a-z0-9._]+$/.test(h)) return "__INVALID__";
+      if (h.length < 4) return "__SHORT__";
+      return h;
+    }
 
-        if(btn) { btn.innerText = "Criando conta..."; btn.disabled = true; }
+    function pwScore(pw){
+      const s = String(pw || "");
+      let score = 0;
+      if (s.length >= 6) score++;
+      if (s.length >= 10) score++;
+      if (/[A-Z]/.test(s)) score++;
+      if (/[0-9]/.test(s)) score++;
+      if (/[^A-Za-z0-9]/.test(s)) score++;
+      return Math.min(score, 5);
+    }
 
-        let userHandle = usuarioInput.trim().toLowerCase();
-        if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
+    function updatePwMeter(){
+      const pw = document.getElementById("senha").value;
+      const score = pwScore(pw);
+      const bar = document.getElementById("pwBar");
+      const label = document.getElementById("pwLabel");
 
-        try {
-            // Verifica username...
-            const qUser = query(collection(window.db, "usuarios"), where("user", "==", userHandle));
-            const snapshotUser = await getDocs(qUser);
+      const pct = [0, 25, 45, 65, 85, 100][score] || 0;
+      bar.style.width = pct + "%";
+      bar.style.background = score <= 1 ? "var(--cor3)" : (score <= 3 ? "var(--cor2)" : "var(--cor0)");
 
-            if (!snapshotUser.empty) {
-                throw new Error("username_exists");
-            }
+      const text = ["—","Fraca","Ok","Boa","Forte","Muito forte"][score] || "—";
+      label.textContent = text;
+      label.style.color = score <= 1 ? "var(--cor3)" : (score <= 3 ? "#2a5f90" : "var(--cor0)");
+    }
 
-            // === AQUI ENTRA A PARTE QUE VOCÊ QUERIA ===
-            
-            // 1. Cria a conta e guarda o resultado na const userCredential
-            const userCredential = await createUserWithEmailAndPassword(window.auth, email, senha);
-            const user = userCredential.user; 
+    document.getElementById("senha").addEventListener("input", updatePwMeter);
+    updatePwMeter();
 
-            // 2. Envia o e-mail usando o usuário criado acima
-            await sendEmailVerification(user);
-            
-            alert("Conta criada! Enviamos um link de confirmação para " + email);
-            
-            // ===========================================
+    async function ensureSupabase(){
+      const sb = window.supabaseClient || window.sbClient || window.supabase;
+      if (!sb || typeof sb.from !== "function" || !sb.auth) {
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js (URL + anon public key).");
+      }
+      return sb;
+    }
 
-            // Prepara dados do perfil...
-            const dataAtual = new Date();
-            // ... resto do código ...
-                const meses = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
-                
-                const novoPerfil = {
-                    uid: user.uid,
-                    nome: nome,
-                    user: userHandle, 
-                    email: email,
-                    
-                    // ============================================
-                    // CORREÇÃO AQUI: FORÇA O USUÁRIO A SER CLIENTE
-                    // ============================================
-                    isProfissional: false, 
-                    // ============================================
+    document.getElementById("formCadastro").addEventListener("submit", async (event) => {
+      event.preventDefault();
 
-                    bio: "Olá! Sou novo na comunidade Doke.",
-                    local: "Brasil",
-                    foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
-                    membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
-                    disponivel: true,
-                    stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
-                };
+      const btn = document.getElementById("btnCriar");
+      const nome = document.getElementById("nome").value.trim();
+      const usuarioRaw = document.getElementById("usuario").value;
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
 
-                // 4. SALVA NO FIRESTORE
-                await setDoc(doc(window.db, "usuarios", user.uid), novoPerfil);
+      const handle = normalizeHandle(usuarioRaw);
 
-                // 5. Sucesso e Redirecionamento
-                localStorage.setItem('doke_usuario_perfil', JSON.stringify(novoPerfil));
-                localStorage.setItem('usuarioLogado', 'true');
-                localStorage.setItem('doke_uid', user.uid);
+      if (!nome || nome.length < 2) return showMsg("err", "Digite seu nome completo.");
+      if (handle === "__INVALID__") return showMsg("err", "Nome de usuário inválido. Use apenas letras, números, ponto e underline.");
+      if (handle === "__SHORT__") return showMsg("err", "Nome de usuário muito curto.");
+      if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
+      if ((senha || "").length < 6) return showMsg("err", "A senha precisa ter no mínimo 6 caracteres.");
 
-                if(window.mostrarToast) window.mostrarToast("Conta criada com sucesso!", "sucesso");
-                else alert("Conta criada com sucesso!");
+      btn.disabled = true;
+      btn.textContent = "Criando...";
 
-                // ========================================================
-                // CORREÇÃO: REDIRECIONA PARA O PERFIL DE USUÁRIO (CLIENTE)
-                // ========================================================
-                window.location.href = "perfil-usuario.html";
+      try {
+        const supabase = await ensureSupabase();
 
-            } catch (error) {
-                console.error("Erro cadastro:", error);
-                let msg = "Erro ao criar conta.";
+        // Username uniqueness (table: usuarios)
+        const { data: existing, error: exErr } = await supabase
+          .from("usuarios")
+          .select("uid")
+          .eq("user", handle)
+          .maybeSingle();
 
-                const errMsg = String(error?.message || "");
-                const errCode = String(error?.code || "");
-                const errStatus = Number(error?.status || 0);
-                
-                if (error.message === "username_exists") {
-                    msg = "Este nome de usuário já está em uso.";
-                } else if (errCode === "auth/email-already-in-use" || errMsg.includes("User already registered") || errStatus === 422) {
-                    msg = "Este e-mail já está cadastrado. Faça login.";
-                } else if (errCode === "auth/weak-password") {
-                    msg = "A senha é muito fraca.";
-                } else if (errCode === "auth/invalid-email") {
-                    msg = "E-mail inválido.";
-                } else if (errCode === "permission-denied") {
-                    msg = "Erro de permissão: Verifique as Regras do Firestore no console.";
-                }
-
-                if(window.mostrarToast) window.mostrarToast(msg, "erro");
-                else alert(msg);
-
-                if(btn) { btn.innerText = "Criar Conta Grátis"; btn.disabled = false; }
-            }
+        // ignore "no rows" variations (maybeSingle can return "no rows" codes depending on version)
+        if (exErr && exErr.code && exErr.code !== "PGRST116") {
+          // If it's a real error, stop.
+          // If you get an RLS error here, fix policies on table 'usuarios'.
+          throw exErr;
         }
-    </script>
 
-    <script>
-        // Esta função precisa estar fora do type="module" para ser vista pelo HTML
-        function validarSenhaTempoReal() {
-            const input = document.getElementById('senha');
-            const feedback = document.getElementById('feedback-senha');
-            
-            if(!input || !feedback) return;
-
-            const senha = input.value;
-
-            // Limpa tudo se estiver vazio
-            if (senha.length === 0) {
-                input.classList.remove('input-error', 'input-sucesso');
-                feedback.innerText = "";
-                return;
-            }
-
-            // Regra: Menor que 6 caracteres é FRACA
-            if (senha.length < 6) {
-                input.classList.add('input-error');
-                input.classList.remove('input-sucesso');
-                feedback.innerText = "Senha muito curta (mínimo 6 caracteres)";
-                feedback.className = "msg-erro-texto";
-            } 
-            // Regra: Maior ou igual a 6 é FORTE
-            else {
-                input.classList.remove('input-error');
-                input.classList.add('input-sucesso');
-                feedback.innerText = "Senha forte!";
-                feedback.className = "msg-sucesso-texto";
-            }
+        if (existing) {
+          showMsg("err", "Esse nome de usuário já está em uso.");
+          return;
         }
-    </script>
+
+        const { data: signData, error: signErr } = await supabase.auth.signUp({
+          email,
+          password: senha,
+          options: { data: { nome, user: handle } }
+        });
+        if (signErr) throw signErr;
+
+        const uid = signData.user?.id;
+        if (!uid) {
+          showMsg("ok", "Conta criada! Verifique seu e-mail para confirmar e depois faça login.");
+          return;
+        }
+
+        const dataAtual = new Date();
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+const novoPerfil = {
+  id: uid,          // 🔥 ESSENCIAL
+  uid: uid,         // opcional (se quiser manter)
+  nome,
+  user: handle,
+  email,
+  isProfissional: false,
+  bio: "Olá! Sou novo na comunidade Doke.",
+  local: "Brasil",
+  foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
+  membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
+  disponivel: true,
+  stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
+};
+
+
+        const { error: insErr } = await supabase.from("usuarios").insert([novoPerfil]);
+        if (insErr) throw insErr;
+
+        localStorage.setItem("doke_usuario_perfil", JSON.stringify(novoPerfil));
+        localStorage.setItem("usuarioLogado", "true");
+        localStorage.setItem("doke_uid", uid);
+
+        showMsg("ok", "Conta criada! Redirecionando...");
+        setTimeout(() => { window.location.href = "perfil-usuario.html"; }, 700);
+
+      } catch (e) {
+        const errMsg = String(e?.message || "");
+        const errCode = String(e?.code || "");
+
+        if (errCode === "user_already_exists" || errMsg.toLowerCase().includes("already registered")) {
+          showMsg("err", "Este e-mail já está cadastrado. Faça login.");
+        } else if (errMsg.toLowerCase().includes("password")) {
+          showMsg("err", "Senha inválida ou muito fraca.");
+        } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
+          showMsg("err", "Permissão negada. Verifique as políticas (RLS) no Supabase para a tabela 'usuarios'.");
+        } else {
+          showMsg("err", errMsg || "Erro ao criar conta.");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Criar Conta";
+      }
+    });
+  </script>
 </body>
 </html>

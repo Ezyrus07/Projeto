@@ -1,591 +1,226 @@
-<!DOCTYPE html>
-<html lang="pt-br">
+<!doctype html>
+<html lang="pt-BR">
 <head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Perfil Profissional | Doke</title>
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <link rel="stylesheet" href="style.css" />
+  <link rel="stylesheet" href="perfil-upgrade.css" />
+
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-init.js"></script>
   <script src="firebase-compat-supabase.js"></script>
   <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Perfil Profissional | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="script.js" defer></script>
-    <style>
-        /* ==========================================================================
-           ESTILOS PADRONIZADOS (BASEADOS NO MEUPERFIL.HTML)
-           ========================================================================== */
-        body { 
-            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); 
-            margin: 0; 
-            font-family: 'Segoe UI', sans-serif; 
-        }
-
-        /* LAYOUT PRINCIPAL */
-        .perfil-main {
-            margin-left: 270px;
-            width: calc(100% - 270px);
-            display: flex;
-            justify-content: center;
-            padding: 30px 40px; 
-            padding-bottom: 80px;
-            box-sizing: border-box;
-        }
-
-        .container-limite {
-            width: 100%;
-            max-width: 1600px;  
-            display: flex;
-            flex-direction: column;
-            gap: 25px; 
-        }
-
-        /* HEADER DO PERFIL */
-        .perfil-header-card { 
-            background: #fff; 
-            border-radius: 20px; 
-            box-shadow: 0 10px 30px rgba(42, 95, 144, 0.2); 
-            overflow: visible; 
-            position: relative;
-            margin-bottom: 10px;
-            border: none;
-        }
-
-        .capa-perfil { 
-            height: 220px; 
-            background: linear-gradient(135deg, var(--cor2), #1a3c5e); 
-            border-radius: 20px 20px 0 0;
-            position: relative;
-        }
-        
-        .dados-perfil { 
-            padding: 0 30px 30px 30px; 
-            display: flex; flex-wrap: wrap; align-items: flex-start; 
-            gap: 30px; position: relative;
-        }
-        
-        .avatar-container { 
-            position: relative; margin-top: -70px; 
-            flex-shrink: 0; 
-        }
-        .avatar-container img { 
-            width: 150px; height: 150px; border-radius: 50%; 
-            border: 5px solid #fff; object-fit: cover; background: #fff;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-        }
-        .status-online { 
-            width: 24px; height: 24px; background: #2ecc71; 
-            border: 3px solid #fff; border-radius: 50%; 
-            position: absolute; bottom: 15px; right: 10px; display: none; 
-        }
-
-        .info-texto { flex: 1; padding-top: 15px; min-width: 250px; }
-        .nome-row h1 { 
-            font-size: 1.8rem; color: #333; margin: 0; 
-            display: flex; align-items: center; gap: 8px; 
-        }
-        .username-badge { 
-    display: block; 
-    color: var(--cor2); /* ou #666 */
-    font-weight: 600; 
-    font-size: 1.1rem; 
-    margin-top: 4px;
-}
-
-        .social-stats { 
-            display: flex; gap: 30px; margin: 15px 0; 
-            background: #f8f9fa; padding: 10px 20px; 
-            border-radius: 10px; display: inline-flex;
-        }
-        .stat-social { text-align: center; }
-        .stat-social strong { font-size: 1.1rem; color: #333; display: block; }
-        .stat-social span { font-size: 0.8rem; color: #777; text-transform: uppercase; letter-spacing: 0.5px; }
-
-        .bio { color: #555; font-size: 0.95rem; margin-bottom: 15px; line-height: 1.5; max-width: 600px; }
-        .meta-dados { display: flex; gap: 20px; flex-wrap: wrap; font-size: 0.9rem; color: #777; }
-        .meta-dados span { display: flex; align-items: center; gap: 5px; }
-
-        .acoes-perfil { 
-            display: flex; flex-direction: column; align-items: flex-end; 
-            gap: 10px; padding-top: 15px; 
-        }
-        
-        /* Botões de Ação (Visitante) */
-        .btn-action-primary { 
-            background: var(--cor0, #0b7768); color: white; border: none; 
-            padding: 12px 25px; border-radius: 50px; font-weight: 600; 
-            cursor: pointer; display: flex; align-items: center; gap: 8px; 
-            transition: 0.2s; box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
-            width: 100%; justify-content: center;
-        }
-        .btn-action-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(11, 119, 104, 0.3); }
-        
-        .btn-action-secondary {
-            background: #e0f2f1; color: var(--cor0); border: none;
-            padding: 12px 25px; border-radius: 50px; font-weight: 600;
-            cursor: pointer; display: flex; align-items: center; gap: 8px;
-            transition: 0.2s; width: 100%; justify-content: center;
-        }
-        .btn-action-secondary:hover { background: #b2dfdb; }
-
-        /* TABS */
-        .tabs-container { 
-            background: #fff; border-radius: 12px; padding: 10px 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-            display: flex; gap: 10px; overflow-x: auto; 
-        }
-        .tab-btn { 
-            background: transparent; border: none; padding: 12px 20px; 
-            font-size: 0.95rem; color: #666; font-weight: 600; 
-            cursor: pointer; border-radius: 8px; transition: 0.3s; 
-            white-space: nowrap; 
-        }
-        .tab-btn:hover { background: #f4f6f8; color: #333; }
-        .tab-btn.active { background: #e0f2f1; color: var(--cor0, #0b7768); }
-        .tab-content { display: none; animation: fadeIn 0.4s; }
-        .tab-content.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* GRIDS & CARDS */
-        .grid-publicacoes { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 15px 0; }
-        .grid-reels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; padding: 15px 0; }
-        .doke-post-card { position: relative; background: #000; border-radius: 8px; overflow: hidden; cursor: pointer; width: 100%; }
-        .doke-post-card:hover { opacity: 0.9; transform: scale(1.01); transition: 0.2s; }
-        .post-foto { aspect-ratio: 1 / 1 !important; }
-        .post-video { aspect-ratio: 16 / 9 !important; }
-        .post-reel { aspect-ratio: 9 / 16 !important; }
-        .doke-post-card img, .doke-post-card video { width: 100%; height: 100%; object-fit: cover; display: block; }
-
-        .card-servico-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
-        
-        /* CARD SERVIÇO (Estilo Clean) */
-        .card-premium { background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border: 1px solid #f0f0f0; transition: transform 0.2s; display: flex; flex-direction: column; }
-        .card-premium:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .cp-header-clean { padding: 15px; border-bottom: 1px solid #f9f9f9; }
-        .cp-avatar { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
-        .cp-body { padding: 15px; }
-        .cp-titulo { font-size: 1.1rem; font-weight: 700; color: #2c3e50; margin: 0 0 8px 0; }
-        .cp-desc-clean { font-size: 0.9rem; color: #666; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-        .cp-footer-right { padding: 15px; background: #fff; border-top: 1px solid #f5f5f5; display: flex; justify-content: space-between; align-items: center; }
-        .btn-solicitar-card { background: var(--cor0); color: white; border: none; padding: 8px 20px; border-radius: 50px; font-weight: 700; cursor: pointer; }
-
-        /* ESTADOS VAZIOS */
-        .empty-state-perfil { text-align: center; padding: 40px; color: #999; background: #fff; border-radius: 12px; border: 2px dashed #eee; grid-column: 1 / -1; }
-        .empty-state-perfil i { font-size: 3rem; margin-bottom: 10px; display: block; color: #ddd; }
-
-        /* RESPONSIVIDADE */
-        @media (max-width: 1024px) {
-            .perfil-main { margin-left: 0; width: 100%; display: block; padding: 15px; }
-            .dados-perfil { flex-direction: column; align-items: center; text-align: center; }
-            .acoes-perfil { align-items: center; width: 100%; }
-            .social-stats { justify-content: center; width: 100%; box-sizing: border-box; }
-        }
-        @media (max-width: 768px) {
-            .grid-publicacoes { grid-template-columns: repeat(3, 1fr); gap: 4px; }
-            .grid-reels { grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        }
-
-        /* MODAIS (Post e Video) */
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
-        .modal-content-post { background: #fff; width: 90%; max-width: 900px; height: 85vh; border-radius: 12px; overflow: hidden; display: flex; }
-        .modal-media-side { flex: 1.5; background: #000; display: flex; align-items: center; justify-content: center; }
-        .modal-media-side img, .modal-media-side video { max-width: 100%; max-height: 100%; width: auto; height: auto; }
-        .modal-info-side { flex: 1; padding: 20px; background: #fff; display: flex; flex-direction: column; }
-    </style>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="script.js" defer></script>
 </head>
-<body>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="mobile-controls"><button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button></div>
-    </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<body class="dp-page">
+  <!-- Sidebar (mantém padrão do site) -->
+  <aside class="sidebar-icones">
+  <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+  <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Inicio</span></a></div>
+  <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+  <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificacoes</span></a></div>
+  <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+  <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+  <div class="item active"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+  <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+</aside>
 
-    <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
-        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
-        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
-    </aside>
-
-
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
+  <!-- Conteúdo principal -->
+  <header class="navbar-desktop">
+  <div id="logo-desktop">
+    <a href="projeto.html">
+      <img src="assets/Imagens/doke-logo.png" alt="Doke">
+    </a>
+  </div>
+  <nav class="menu">
+    <div class="cep-wrapper">
+      <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+          <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+        </svg>
+        <span id="textoCepSpan">Informe seu CEP</span>
+      </a>
+      <div class="cep-popup" id="boxCep">
+        <p>Digite seu CEP:</p>
+        <div class="cep-input-group">
+          <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+          <button onclick="salvarCep()">OK</button>
         </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
+      </div>
+    </div>
+    <a href="anunciar.html">Anuncie seu servico</a>
+    <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
+    <a href="novidades.html">Novidades</a>
+  </nav>
+  <div class="botoes-direita">
+    <a id="dpTopAuthBtn" href="login.html" class="entrar">Entrar</a>
+  </div>
+</header>
 
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
+<main class="dp-wrap">
+      <div id="dpRoot" class="dp-skeleton dp-theme-profissional" data-mode="public" data-theme="profissional">
+        <section class="dp-card">
+          <div id="dpCover" class="dp-cover">
+            <div class="dp-coverActions">
+              <button id="dpCoverBtn" class="dp-btn" type="button"><i class='bx bx-image-add'></i> Alterar capa</button>
+              <input id="dpCoverInput" type="file" accept="image/*" hidden />
             </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
+          </div>
 
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
+          <div class="dp-body">
+            <div class="dp-avatarWrap">
+              <div class="dp-avatar">
+                <img id="dpAvatarImg" alt="Foto" style="display:none" />
+                <div id="dpAvatarLetter" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:52px;color:#9aa6b2;">U</div>
+              </div>
+              <button id="dpAvatarBtn" class="dp-avatarBtn" type="button" title="Alterar foto"><i class='bx bx-camera'></i></button>
+              <input id="dpAvatarInput" type="file" accept="image/*" hidden />
+            </div>
+
+            <div>
+              <h1 id="dpName" class="dp-name">Carregando…</h1>
+              <div id="dpHandle" class="dp-handle">@usuario</div>
+              <div id="dpBio" class="dp-bio">Carregando…</div>
+
+              <div id="dpChips" class="dp-meta"></div>
+
+              <div class="dp-stats" aria-label="Estatísticas">
+                <div class="dp-stat"><b id="dpFollowers">0</b><span>Seguidores</span></div>
+                <div class="dp-stat"><b id="dpFollowing">0</b><span>Seguindo</span></div>
+                <div class="dp-stat" data-pro-only><b id="dpReviews">0</b><span>Avaliações</span></div>
+                <div class="dp-stat" data-pro-only><b id="dpServicesCount">0</b><span>Serviços</span></div>
+              </div>
+            </div>
+
+            <div class="dp-actions">
+              <div id="dpAvailabilityRow" class="dp-availability">
+                <span id="dpStatusText">Disponível</span>
+                <div id="dpSwitch" class="dp-switch"><span></span></div>
+              </div>
+
+              <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:flex-end;">
+                <button id="dpOrcBtn" class="dp-primary" type="button" style="display:none;"><i class='bx bx-receipt'></i> Solicitar orçamento</button>
+                <button id="dpEditBtn" class="dp-secondary" type="button"><i class='bx bx-edit'></i> Editar perfil</button>
+                <button id="dpMoreBtn" class="dp-secondary" type="button" title="Mais"><i class='bx bx-dots-horizontal-rounded'></i></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="dp-tabs" role="tablist" aria-label="Seções do perfil">
+          <button class="dp-tab active" data-tab="publicacoes" type="button"><i class='bx bx-grid-alt'></i> Publicações</button>
+          <button class="dp-tab" data-tab="servicos" type="button" data-pro-only><i class='bx bx-briefcase'></i> Serviços</button>
+          <button class="dp-tab" data-tab="portfolio" type="button" data-pro-only><i class='bx bx-collection'></i> Portfólio</button>
+          <button class="dp-tab" data-tab="reels" type="button" data-pro-only><i class='bx bx-video'></i> Vídeos curtos</button>
+          <button class="dp-tab" data-tab="avaliacoes" type="button" data-pro-only><i class='bx bx-star'></i> Avaliações</button>
+          <button class="dp-tab" data-tab="sobre" type="button"><i class='bx bx-info-circle'></i> Sobre</button>
         </div>
-    </header>
 
-    <main class="perfil-main">
-        <div class="container-limite">
-
-            <section class="perfil-header-card">
-                <div class="capa-perfil"></div>
-                <div class="dados-perfil">
-                    <div class="avatar-container">
-                        <img src="" alt="Perfil" id="profFoto">
-                        <div class="status-online" id="statusIndicator"></div>
-                    </div>
-                    
-                    <div class="info-texto">
-                        <div class="nome-row">
-                            <h1 id="profNome">Carregando...</h1>
-                        </div>
-                        <span id="profUser" class="username-badge">@usuario</span>
-
-                        <div class="social-stats">
-                            <div class="stat-social">
-                                <strong id="countSeguidores">0</strong>
-                                <span>Seguidores</span>
-                            </div>
-                            <div class="stat-social">
-                                <strong id="countSeguindo">0</strong>
-                                <span>Seguindo</span>
-                            </div>
-                            <div class="stat-social">
-                                <strong id="countAvaliacoes">0</strong>
-                                <span>Avaliações</span>
-                            </div>
-                        </div>
-
-                        <div class="meta-dados">
-                            <span id="locPerfilDisplay"><i class='bx bx-map'></i> ...</span>
-                            <span id="dataMembroDisplay"><i class='bx bx-calendar'></i> ...</span>
-                        </div>
-                    </div>
-
-                    <div class="acoes-perfil">
-                        <button class="btn-action-primary" onclick="irParaOrcamentoDireto()">
-                            <i class='bx bx-dollar-circle'></i> Solicitar Orçamento
-                        </button>
-                        <button class="btn-action-secondary" onclick="irParaChat()">
-                            <i class='bx bx-message-rounded-dots'></i> Enviar Mensagem
-                        </button>
-                    </div>
-                </div>
-            </section>
-
-            <div class="tabs-container">
-                <button class="tab-btn active" onclick="abrirTab(event, 'tab-sobre')">Sobre</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'tab-servicos')">Serviços</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'tab-publicacoes')">Publicações</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'tab-reels')">Vídeos Curtos</button>
-                <button class="tab-btn" onclick="abrirTab(event, 'tab-avaliacoes')">Avaliações</button>
+        <!-- Sections -->
+        <section class="dp-section" data-tab="publicacoes">
+          <div class="dp-sectionHeader">
+            <h2>Publicações</h2>
+            <button id="dpNewPublicacao" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridPublicacoes" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-grid-alt'></i>
+              <div>
+                <b>Nenhuma publicação ainda</b>
+                <span>Quando você postar algo, vai aparecer aqui.</span>
+              </div>
             </div>
+          </div>
+        </section>
 
-            <div id="tab-sobre" class="tab-content active">
-                <div style="background:white; padding:30px; border-radius:12px; border:1px solid #eee; margin-top:0;">
-                    <h3 style="margin-top:0; color:#333;">Sobre</h3>
-                    <p id="profBio" style="color:#555; line-height:1.6; font-size:1rem;">Carregando biografia...</p>
-                </div>
+        <section class="dp-section" data-tab="servicos" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Serviços</h2>
+            <button id="dpNewServico" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridServicos" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-briefcase'></i>
+              <div>
+                <b>Nenhum serviço ainda</b>
+                <span>Cadastre seus serviços para os clientes encontrarem você.</span>
+              </div>
             </div>
+          </div>
+        </section>
 
-            <div id="tab-servicos" class="tab-content">
-                <div class="card-servico-grid" id="container-servicos">
-                    </div>
+        <section class="dp-section" data-tab="portfolio" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Portfólio</h2>
+            <button id="dpNewPortfolio" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridPortfolio" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-collection'></i>
+              <div>
+                <b>Portfólio vazio</b>
+                <span>Adicione imagens e projetos para aumentar confiança.</span>
+              </div>
             </div>
+          </div>
+        </section>
 
-            <div id="tab-publicacoes" class="tab-content">
-                <div class="grid-publicacoes" id="container-publicacoes-grid"></div>
+        <section class="dp-section" data-tab="reels" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Vídeos curtos</h2>
+            <button id="dpNewReel" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
+          </div>
+          <div id="dpGridReels" class="dp-grid">
+            <div class="dp-empty dp-emptyState">
+              <i class='bx bx-video'></i>
+              <div>
+                <b>Sem vídeos curtos</b>
+                <span>Poste vídeos curtos para ganhar destaque.</span>
+              </div>
             </div>
+          </div>
+        </section>
 
-            <div id="tab-reels" class="tab-content">
-                <div class="grid-reels" id="container-reels-grid"></div>
-            </div>
+        <section class="dp-section" data-tab="avaliacoes" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Avaliações</h2>
+            <button id="dpWriteAvaliacao" class="dp-newBtn" type="button" style="display:none;"><i class='bx bx-star'></i> Avaliar</button>
+          </div>
+          <div id="dpBoxAvaliacoes"></div>
+        </section>
 
-            <div id="tab-avaliacoes" class="tab-content">
-                <div id="listaAvaliacoes" style="display:flex; flex-direction:column; gap:15px;"></div>
-            </div>
-
-        </div>
+        <section class="dp-section" data-tab="sobre" style="display:none;">
+          <div class="dp-sectionHeader">
+            <h2>Sobre</h2>
+          </div>
+          <div class="dp-card" style="padding:18px;">
+            <p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">
+              <span id="dpAboutText">As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão “Editar perfil”.)</span>
+            </p>
+          </div>
+        </section>
+      </div>
     </main>
 
-    <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
-        <div class="modal-content-post" onclick="event.stopPropagation()">
-            <div class="modal-media-side" id="modalMediaContainer"></div>
-            <div class="modal-info-side">
-                <div style="display:flex; align-items:center; gap:10px; padding-bottom:15px; border-bottom:1px solid #eee;">
-                    <img id="modalAvatar" src="" style="width:40px; height:40px; border-radius:50%;">
-                    <strong id="modalUsername">@usuario</strong>
-                </div>
-                <div style="flex:1; overflow-y:auto; padding:15px 0;" id="modalCaption"></div>
-                <div style="border-top:1px solid #eee; padding-top:15px;">
-                    <strong id="modalLikesCount">0 curtidas</strong>
-                    <br><small id="modalDate" style="color:#999;">DATA</small>
-                </div>
-            </div>
-        </div>
+  <!-- Modal -->
+  <div id="dpModalOverlay" class="dp-modalOverlay" aria-hidden="true">
+    <div class="dp-modal" role="dialog" aria-modal="true">
+      <div class="dp-modalHead">
+        <b id="dpModalTitle">Modal</b>
+        <button id="dpModalClose" class="dp-x" type="button">✕</button>
+      </div>
+      <div id="dpModalBody" class="dp-modalBody"></div>
+      <div class="dp-modalFoot">
+        <button id="dpModalCancel" class="dp-ghost" type="button">Cancelar</button>
+        <button id="dpModalSave" class="dp-save" type="button">Salvar</button>
+      </div>
     </div>
+  </div>
 
-    <div id="modalPlayerVideo" class="modal-overlay" style="z-index: 20000; background:rgba(0,0,0,0.95);">
-        <span onclick="fecharPlayerVideo()" style="position:absolute; top:20px; right:20px; color:white; font-size:2rem; cursor:pointer;">&times;</span>
-        <div style="width:100%; max-width:450px; height:90vh; position:relative; display:flex; justify-content:center;">
-            <video id="playerPrincipal" loop playsinline style="width:100%; height:100%; object-fit:contain; background:black; border-radius:12px;"></video>
-            <div style="position:absolute; bottom:20px; left:20px; color:white; text-align:left; right:80px;">
-                <h4 id="tiktokUser" style="margin:0;">@user</h4>
-                <p id="tiktokDesc" style="margin:5px 0; font-size:0.9rem;"></p>
-            </div>
-            <div style="position:absolute; right:10px; bottom:100px; display:flex; flex-direction:column; gap:20px; align-items:center;">
-                <div style="width:45px; height:45px; background:rgba(255,255,255,0.2); border-radius:50%; display:flex; justify-content:center; align-items:center; color:white;"><i class='bx bx-heart'></i></div>
-                <span id="tiktokLikesCount" style="color:white; font-size:0.8rem; font-weight:bold;">0</span>
-            </div>
-        </div>
-    </div>
-
-    <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
-        <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
-    </nav>
-
-<script>
-    const { initializeApp } = window;
-    const { getFirestore, doc, getDoc, collection, query, where, getDocs } = window;
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-        authDomain: "doke-site.firebaseapp.com",
-        projectId: "doke-site",
-        storageBucket: "doke-site.firebasestorage.app",
-        messagingSenderId: "997098339190",
-        appId: "1:997098339190:web:a865b696278be21f069857"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-
-    const params = new URLSearchParams(window.location.search);
-    const targetUid = params.get('uid');
-
-    if(!targetUid) { window.location.href = "explorar.html"; }
-
-    // --- CARREGAMENTO INICIAL ---
-    document.addEventListener("DOMContentLoaded", () => {
-        carregarDadosPerfil();
-    });
-
-    async function carregarDadosPerfil() {
-        const docSnap = await getDoc(doc(db, "usuarios", targetUid));
-        if (docSnap.exists()) {
-            const d = docSnap.data();
-            
-            document.getElementById('profNome').innerText = d.nome || "Usuário";
-            document.getElementById('profUser').innerText = d.user || "@usuario";
-            document.getElementById('profFoto').src = d.foto || "https://placehold.co/150";
-            document.getElementById('profBio').innerText = d.bio || "Sem biografia.";
-            
-            document.getElementById('locPerfilDisplay').innerHTML = `<i class='bx bx-map'></i> ${d.local || "Brasil"}`;
-            let ano = d.dataCriacao ? new Date(d.dataCriacao).getFullYear() : "2024";
-            document.getElementById('dataMembroDisplay').innerHTML = `<i class='bx bx-calendar'></i> Membro desde ${ano}`;
-
-            // Variáveis globais para uso nos modais
-            window.fotoProfissionalAtual = d.foto || "https://placehold.co/150";
-            window.nomeProfissionalAtual = d.user || "@usuario";
-
-            carregarStatsExtras(targetUid);
-            carregarMidias(targetUid);
-            carregarServicos(targetUid);
-            carregarAvaliacoes(targetUid);
-        }
-    }
-
-    // --- FUNÇÕES DE CARREGAMENTO DE CONTEÚDO ---
-    
-    async function carregarStatsExtras(uid) {
-        try {
-            // Conta quantos SEGUIDORES o perfil tem (seguidoUid == uid)
-            const qSeguidores = query(collection(db, "relacoes"), where("seguidoUid", "==", uid));
-            const snapSeguidores = await getDocs(qSeguidores);
-            if(document.getElementById('countSeguidores')) {
-                document.getElementById('countSeguidores').innerText = snapSeguidores.size;
-            }
-
-            // Conta quantos o perfil está SEGUINDO (seguidorUid == uid)
-            const qSeguindo = query(collection(db, "relacoes"), where("seguidorUid", "==", uid));
-            const snapSeguindo = await getDocs(qSeguindo);
-            if(document.getElementById('countSeguindo')) {
-                document.getElementById('countSeguindo').innerText = snapSeguindo.size;
-            }
-        } catch(e) {
-            console.error("Erro ao carregar stats:", e);
-        }
-    }
-
-    async function carregarServicos(uid) {
-        const container = document.getElementById('container-servicos');
-        const q = query(collection(db, "anuncios"), where("uid", "==", uid));
-        const snap = await getDocs(q);
-        
-        container.innerHTML = "";
-        if(snap.empty) {
-            container.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-briefcase'></i><p>Nenhum serviço anunciado.</p></div>";
-            return;
-        }
-
-        snap.forEach(doc => {
-            const d = doc.data();
-            const imgCapa = (d.fotos && d.fotos.length > 0) ? d.fotos[0] : (d.img || "https://placehold.co/400x300");
-            
-            const html = `
-            <div class="card-premium">
-                <div style="height:180px; overflow:hidden;">
-                    <img src="${imgCapa}" style="width:100%; height:100%; object-fit:cover;">
-                </div>
-                <div class="cp-body">
-                    <h3 class="cp-titulo">${d.titulo}</h3>
-                    <p class="cp-desc-clean">${d.descricao}</p>
-                </div>
-                <div class="cp-footer-right">
-                    <strong style="color:var(--cor0);">${d.preco}</strong>
-                    <button class="btn-solicitar-card" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${doc.id}'">Ver Mais</button>
-                </div>
-            </div>`;
-            container.insertAdjacentHTML('beforeend', html);
-        });
-    }
-
-    async function carregarMidias(uid) {
-        const containerPubli = document.getElementById('container-publicacoes-grid');
-        const containerReels = document.getElementById('container-reels-grid');
-
-        // Carregar Posts
-        const qPosts = query(collection(db, "posts"), where("uid", "==", uid));
-        const snapPosts = await getDocs(qPosts);
-        
-        containerPubli.innerHTML = "";
-        if(snapPosts.empty) containerPubli.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-images'></i><p>Nenhuma publicação.</p></div>";
-        
-        snapPosts.forEach(doc => {
-            const d = doc.data();
-            containerPubli.insertAdjacentHTML('beforeend', `
-                <div class="doke-post-card post-foto" onclick="abrirModalPost('${doc.id}', 'posts')">
-                    <img src="${d.imagem}">
-                </div>`);
-        });
-
-        // Carregar Reels
-        const qReels = query(collection(db, "reels"), where("uid", "==", uid));
-        const snapReels = await getDocs(qReels);
-        
-        containerReels.innerHTML = "";
-        if(snapReels.empty) containerReels.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-movie-play'></i><p>Nenhum Reel.</p></div>";
-        
-        snapReels.forEach(doc => {
-            const d = doc.data();
-            const dados = JSON.stringify({video: d.videoUrl, desc: d.descricao, likes: d.likes}).replace(/"/g, '&quot;');
-            containerReels.insertAdjacentHTML('beforeend', `
-                <div class="doke-post-card post-reel" onclick="abrirPlayerTikTok(${dados})">
-                    <video src="${d.videoUrl}#t=0.1" muted></video>
-                </div>`);
-        });
-    }
-    
-    async function carregarAvaliacoes(uid) {
-        const container = document.getElementById('listaAvaliacoes');
-        const q = query(collection(db, "avaliacoes"), where("paraUid", "==", uid));
-        const snap = await getDocs(q);
-        
-        container.innerHTML = "";
-        if(snap.empty) {
-            container.innerHTML = "<div class='empty-state-perfil'><i class='bx bx-star'></i><p>Sem avaliações ainda.</p></div>";
-            return;
-        }
-        
-        if(document.getElementById('countAvaliacoes')) {
-            document.getElementById('countAvaliacoes').innerText = snap.size;
-        }
-
-        snap.forEach(doc => {
-            const r = doc.data();
-            container.insertAdjacentHTML('beforeend', `
-                <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #eee;">
-                    <div style="font-weight:bold; color:#333;">${r.deNome || 'Cliente'} <span style="color:#f1c40f;">★ ${r.nota}</span></div>
-                    <p style="color:#666; margin:5px 0;">${r.comentario}</p>
-                </div>
-            `);
-        });
-    }
-
-    // --- CONTROLE DE ABAS ---
-    window.abrirTab = function(evt, nome) {
-        document.querySelectorAll('.tab-content').forEach(t => t.style.display = 'none');
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.getElementById(nome).style.display = 'block';
-        evt.currentTarget.classList.add('active');
-    }
-
-    // --- MODAIS ---
-    window.abrirModalPost = async function(id, col) {
-        document.getElementById('modalPostDetalhe').style.display = 'flex';
-        const docSnap = await getDoc(doc(db, col, id));
-        const d = docSnap.data();
-        
-        document.getElementById('modalMediaContainer').innerHTML = `<img src="${d.imagem}">`;
-        document.getElementById('modalUsername').innerText = window.nomeProfissionalAtual;
-        document.getElementById('modalAvatar').src = window.fotoProfissionalAtual;
-        document.getElementById('modalCaption').innerText = d.texto || "";
-        document.getElementById('modalLikesCount').innerText = (d.likes || 0) + " curtidas";
-        document.getElementById('modalDate').innerText = new Date(d.data).toLocaleDateString();
-    }
-    window.fecharModalPost = function() { document.getElementById('modalPostDetalhe').style.display = 'none'; }
-
-    window.abrirPlayerTikTok = function(dados) {
-        document.getElementById('modalPlayerVideo').style.display = 'flex';
-        const v = document.getElementById('playerPrincipal');
-        v.src = dados.video; v.play();
-        document.getElementById('tiktokDesc').innerText = dados.desc || "";
-        document.getElementById('tiktokLikesCount').innerText = dados.likes || 0;
-        document.getElementById('tiktokUser').innerText = window.nomeProfissionalAtual;
-    }
-    window.fecharPlayerVideo = function() {
-        const v = document.getElementById('playerPrincipal');
-        v.pause(); v.src = "";
-        document.getElementById('modalPlayerVideo').style.display = 'none';
-    }
-
-    // --- AÇÕES ---
-    window.irParaChat = function() { window.location.href = `chat.html?uid=${targetUid}`; }
-    window.irParaOrcamentoDireto = function() { 
-        alert("Escolha um serviço na aba 'Serviços' para orçar especificamente.");
-        document.querySelector("button[onclick*='tab-servicos']").click();
-    }
-</script>
+  <script src="perfil-upgrade.js"></script>
 </body>
 </html>

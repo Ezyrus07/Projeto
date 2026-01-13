@@ -4,7 +4,11 @@
     return obj && obj.auth && typeof obj.auth.getSession === "function";
   }
   const getClient = () => {
-    const candidate = window.supabaseClient || window.sbClient || window.supabase;
+    const candidate =
+      window.supabaseClient ||
+      window.sbClient ||
+      window.sb ||
+      window.supabase;
     return isClient(candidate) ? candidate : null;
   };
   function ensure(){

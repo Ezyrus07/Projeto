@@ -601,7 +601,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 return titulo.includes(termo) || desc.includes(termo);
             });
         } else {
-            if(tituloSecao) tituloSecao.innerText = "NOVOS ANÚNCIOS:";
+            if(tituloSecao) tituloSecao.innerText = "Categorias em alta:";
         }
 
         feed.innerHTML = ""; 
@@ -797,17 +797,19 @@ function protegerPaginasRestritas() {
     const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
     const caminhoAtual = window.location.pathname;
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
-    const estaLogado = localStorage.getItem('usuarioLogado') === 'true';
+    const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+    const estaLogado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo;
     if (paginasRestritas.includes(paginaAtual) && !estaLogado) { window.location.href = "login.html"; }
 }
 
 window.verificarEstadoLogin = function() {
     // 1. Pega os dados com segurança
-    const logado = localStorage.getItem('usuarioLogado') === 'true';
+    const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+    const logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo;
     let perfil = {};
     
     try {
-        perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+        perfil = JSON.parse(perfilSalvo) || {};
     } catch (e) {
         console.log("Erro ao ler perfil", e);
         perfil = {};
@@ -992,6 +994,76 @@ window.limparHistorico = function(e) {
     localStorage.removeItem('doke_historico_busca');
     atualizarListaHistorico();
 };
+
+function initHomeEnhancements() {
+    if (!document.body || document.body.dataset.page !== "home") return;
+
+    const revealEls = Array.from(document.querySelectorAll(
+        '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .rodape-container, .rodape-container2'
+    ));
+    revealEls.forEach(el => el.classList.add('reveal'));
+
+    if ('IntersectionObserver' in window) {
+        const io = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('is-visible');
+                    io.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.12 });
+        revealEls.forEach(el => io.observe(el));
+    } else {
+        revealEls.forEach(el => el.classList.add('is-visible'));
+    }
+
+    const scrollers = [
+        document.getElementById('listaCategorias'),
+        document.getElementById('galeria-dinamica'),
+        document.querySelector('.stories-scroll'),
+        document.querySelector('.filtros-chips-scroll')
+    ].filter(Boolean);
+
+    scrollers.forEach(enableDragScroll);
+
+    scrollers.forEach(el => {
+        el.addEventListener('wheel', (ev) => {
+            if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) {
+                el.scrollLeft += ev.deltaY;
+                ev.preventDefault();
+            }
+        }, { passive: false });
+    });
+
+    function enableDragScroll(container) {
+        let isDown = false;
+        let startX = 0;
+        let scrollLeft = 0;
+
+        container.style.cursor = 'grab';
+
+        container.addEventListener('mousedown', (e) => {
+            isDown = true;
+            container.classList.add('is-dragging');
+            container.style.cursor = 'grabbing';
+            startX = e.pageX - container.offsetLeft;
+            scrollLeft = container.scrollLeft;
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDown = false;
+            container.classList.remove('is-dragging');
+            container.style.cursor = 'grab';
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            const x = e.pageX - container.offsetLeft;
+            const walk = (x - startX) * 1.2;
+            container.scrollLeft = scrollLeft - walk;
+        });
+    }
+}
 
 window.onclick = function(e) {
     if (!e.target.matches('.profile-img-btn') && !e.target.matches('img')) {
@@ -1355,6 +1427,13 @@ document.addEventListener("DOMContentLoaded", function() {
     const wrapper = document.getElementById('buscaWrapper');
     if(inputBusca) {
         atualizarListaHistorico();
+        const limparBtn = document.getElementById('limparHistoricoBtn');
+        if (limparBtn) {
+            limparBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                window.limparHistorico(e);
+            });
+        }
         inputBusca.addEventListener('focus', () => { if(wrapper) wrapper.classList.add('active'); });
         
         document.addEventListener('click', (e) => { 
@@ -1377,6 +1456,8 @@ document.addEventListener("DOMContentLoaded", function() {
         const btnProcurarMain = document.querySelector('.btn-procurar');
         if(btnProcurarMain) btnProcurarMain.onclick = (e) => { e.preventDefault(); executarBusca(); };
     }
+
+    initHomeEnhancements();
 
     // 6. Cookies e Popups
     const banner = document.getElementById('cookieBanner');
@@ -1436,7 +1517,9 @@ document.addEventListener("DOMContentLoaded", function() {
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
                 carregarPosts(user.uid);
-                carregarMeusStories(user.uid);
+                if (typeof carregarMeusStories === "function") {
+                    carregarMeusStories(user.uid);
+                }
             }
             if(window.location.pathname.includes('chat')) {
                 carregarMeusPedidos();
@@ -4185,7 +4268,9 @@ window.uploadStory = async function(input) {
         });
 
         alert("Story publicado!");
-        window.carregarMeusStories(user.uid); // Atualiza a lista na hora
+        if (typeof window.carregarMeusStories === "function") {
+            window.carregarMeusStories(user.uid); // Atualiza a lista na hora
+        }
 
     } catch (e) {
         console.error(e);

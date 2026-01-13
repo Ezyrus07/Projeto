@@ -1,189 +1,479 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar | Doke</title>
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
+  <link rel="stylesheet" href="style.css" />
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
 
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Entrar | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <script src="script.js" defer></script> 
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <style>
-        /* Estilos exclusivos para centralizar o Login */
-        body {
-            background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
+  <!-- Supabase (UMD) + init -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="script.js"></script>
 
-        .login-card {
-            background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-            width: 100%;
-            max-width: 450px;
-            text-align: center;
-            position: relative;
-            animation: subir 0.5s ease;
-        }
+  <style>
+    :root{
+      --card-radius: 22px;
+      --shadow: 0 18px 60px rgba(0,0,0,.22);
+      --ring: 0 0 0 4px rgba(11,119,104,.12);
+    }
 
-        @keyframes subir { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    body{ 
+      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.14), transparent 60%),
+                  linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 55%, #102a40 100%);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
 
-        .login-logo { width: 120px; margin-bottom: 20px; }
-        
-        .login-header h2 { color: var(--cor2); font-size: 1.8rem; margin-bottom: 5px; }
-        .login-header p { color: #666; font-size: 0.95rem; margin-bottom: 30px; }
+    .auth-shell{
+      width: 100%;
+      max-width: 980px;
+      display: grid;
+      grid-template-columns: .95fr 1.05fr;
+      gap: 22px;
+      align-items: stretch;
+    }
 
-        .form-group { margin-bottom: 20px; text-align: left; }
-        .form-group label { display: block; font-size: 0.9rem; font-weight: 600; color: #444; margin-bottom: 8px; }
-        
-        .input-icon { position: relative; }
-        .input-icon i { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); color: #999; font-size: 1.2rem; }
-        .input-icon input {
-            width: 100%; padding: 12px 15px 12px 45px; border: 1px solid #ddd;
-            border-radius: 10px; font-size: 1rem; outline: none; transition: 0.3s;
-            font-family: var(--fonte-padrao); background: #f9f9f9;
-        }
-        .input-icon input:focus { border-color: var(--cor0); background: white; box-shadow: 0 0 0 4px rgba(11, 119, 104, 0.1); }
+    @media (max-width: 900px){
+      .auth-shell{ grid-template-columns: 1fr; max-width: 520px; }
+      .auth-aside{ display:none; }
+    }
 
-        .btn-login-action {
-            width: 100%; padding: 14px; background: var(--cor0); color: white;
-            border: none; border-radius: 50px; font-size: 1rem; font-weight: 700;
-            cursor: pointer; transition: 0.3s; margin-top: 10px; box-shadow: 0 4px 15px rgba(11, 119, 104, 0.3);
-        }
-        .btn-login-action:hover { background: #096356; transform: translateY(-2px); }
+    .auth-card{
+      background: #fff;
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      animation: pop .45s ease both;
+    }
+    @keyframes pop { from { opacity:0; transform: translateY(10px) scale(.99);} to {opacity:1; transform:none;} }
 
-        .links-uteis {
-            display: flex; justify-content: space-between; align-items: center;
-            font-size: 0.85rem; margin-bottom: 20px; margin-top: 10px;
-        }
-        .links-uteis a { color: var(--cor2); text-decoration: none; font-weight: 600; }
-        .links-uteis a:hover { text-decoration: underline; }
+    .auth-card-inner{ padding: 34px 34px 28px; }
 
-        .divider { margin: 30px 0; border-top: 1px solid #eee; position: relative; }
-        .divider span {
-            position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
-            background: white; padding: 0 10px; color: #999; font-size: 0.8rem;
-        }
+    .btn-voltar{
+      position:absolute;
+      top: 16px;
+      left: 16px;
+      width: 42px;
+      height: 42px;
+      display:grid;
+      place-items:center;
+      border-radius: 14px;
+      background: rgba(0,0,0,.04);
+      color:#667;
+      text-decoration:none;
+      transition:.2s ease;
+    }
+    .btn-voltar:hover{ background: rgba(0,0,0,.07); transform: translateY(-1px); color: var(--cor0); }
 
-        .social-login { display: flex; gap: 15px; justify-content: center; }
-        .btn-social {
-            width: 50px; height: 50px; border-radius: 50%; border: 1px solid #ddd;
-            background: white; display: flex; align-items: center; justify-content: center;
-            font-size: 1.5rem; cursor: pointer; transition: 0.3s;
-        }
-        .btn-social:hover { background: #f0f0f0; transform: translateY(-3px); }
-        .google { color: #db4437; } .facebook { color: #4267B2; } .apple { color: #000; }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 14px;
+      margin: 10px 0 10px;
+    }
+    .brand img{ width: 110px; height:auto; }
+    .brand .tag{
+      margin-left:auto;
+      font-size:.78rem;
+      font-weight:700;
+      color: #0a2e2a;
+      background: rgba(11,119,104,.10);
+      border: 1px solid rgba(11,119,104,.14);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
 
-        .footer-login { margin-top: 30px; font-size: 0.9rem; color: #666; }
-        .footer-login a { color: var(--cor0); font-weight: 700; text-decoration: none; }
+    .auth-title{
+      margin: 10px 0 4px;
+      font-size: 1.7rem;
+      letter-spacing: -.02em;
+      color: #0b2a28;
+    }
+    .auth-subtitle{
+      margin: 0 0 18px;
+      color: #667;
+      font-size: .96rem;
+      line-height: 1.35;
+    }
 
-        .btn-voltar {
-            position: absolute; top: 20px; left: 20px; color: #999; font-size: 1.5rem; cursor: pointer;
-        }
-        .btn-voltar:hover { color: var(--cor2); }
+    .form-group{ margin-bottom: 16px; text-align:left; }
+    .form-group label{
+      display:block;
+      font-size: .9rem;
+      font-weight: 800;
+      color:#3b4653;
+      margin-bottom: 8px;
+    }
 
-        /* Estilo específico para o ícone do olho */
-.icon-eye {
-    position: absolute;
-    right: 15px;      /* Posiciona na direita */
-    left: auto !important; /* Garante que não pegue o estilo da esquerda */
-    top: 50%;
-    transform: translateY(-50%);
-    cursor: pointer;  /* Mostra que é clicável */
-    color: #999;
-    font-size: 1.2rem;
-    z-index: 10;
-}
+    .input-icon{ position:relative; }
+    .input-icon i{
+      position:absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color:#96a0aa;
+      font-size: 1.2rem;
+    }
+    .input-icon input{
+      width: 100%;
+      padding: 12px 14px 12px 44px;
+      border: 1px solid #e5e8ee;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: .2s ease;
+      background: #fafbfc;
+      font-family: var(--fonte-padrao, system-ui, sans-serif);
+    }
+    .input-icon input:focus{
+      border-color: rgba(11,119,104,.55);
+      background:#fff;
+      box-shadow: var(--ring);
+    }
 
-.icon-eye:hover {
-    color: var(--cor0); /* Muda de cor ao passar o mouse (opcional) */
-}
+    .icon-eye{
+      position:absolute;
+      right: 14px;
+      left: auto !important;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor:pointer;
+      color:#96a0aa;
+      font-size: 1.2rem;
+      z-index: 5;
+      transition:.15s ease;
+    }
+    .icon-eye:hover{ color: var(--cor0); }
+    .input-icon input{ padding-right: 46px; }
 
-/* Ajuste no input para o texto não ficar por cima do olho */
-.input-icon input {
-    padding-right: 45px; /* Espaço extra na direita */
-}
-    </style>
+    .row{
+      display:flex;
+      justify-content: space-between;
+      align-items:center;
+      gap: 12px;
+      margin: 10px 0 6px;
+      font-size: .88rem;
+      color:#6b7785;
+    }
+    .row a{
+      color: var(--cor2);
+      font-weight: 900;
+      text-decoration:none;
+    }
+    .row a:hover{ text-decoration: underline; }
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+    .btn-primary{
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--cor0), #096356);
+      box-shadow: 0 10px 22px rgba(11,119,104,.28);
+      transition: .2s ease;
+      margin-top: 10px;
+    }
+    .btn-primary:hover{ transform: translateY(-2px); filter: brightness(.98); }
+    .btn-primary:disabled{ opacity:.72; cursor:not-allowed; transform:none; }
+
+    .divider{
+      margin: 22px 0 14px;
+      border-top: 1px solid #eef1f5;
+      position: relative;
+    }
+    .divider span{
+      position:absolute;
+      top: -10px;
+      left: 50%;
+      transform: translateX(-50%);
+      background:#fff;
+      padding: 0 10px;
+      color: #9aa4ae;
+      font-size: .82rem;
+      font-weight: 800;
+    }
+
+    .social{
+      display:flex;
+      gap: 12px;
+      justify-content:center;
+      margin-top: 10px;
+    }
+    .btn-social{
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 1px solid #e4e9f0;
+      background:#fff;
+      display:grid;
+      place-items:center;
+      font-size: 1.5rem;
+      cursor:pointer;
+      transition: .2s ease;
+    }
+    .btn-social:hover{ transform: translateY(-2px); background:#f6f8fb; }
+    .google{ color:#db4437; } .facebook{ color:#4267B2; } .apple{ color:#000; }
+
+    .footer{
+      margin-top: 16px;
+      text-align:center;
+      color:#6b7785;
+      font-size: .92rem;
+    }
+    .footer a{
+      color: var(--cor0);
+      font-weight: 900;
+      text-decoration:none;
+    }
+    .footer a:hover{ text-decoration: underline; }
+
+    .msg{
+      margin-top: 14px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      display:none;
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+    .msg.show{ display:block; }
+    .msg.ok{ background: rgba(0,200,81,.08); border-color: rgba(0,200,81,.18); color:#136b3a; }
+    .msg.err{ background: rgba(243,91,91,.10); border-color: rgba(243,91,91,.18); color:#7b1a1a; }
+
+    .auth-aside{
+      border-radius: var(--card-radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 16px 45px rgba(0,0,0,.20);
+      padding: 26px 26px 22px;
+      color: rgba(255,255,255,.92);
+      position: relative;
+      overflow:hidden;
+    }
+    .auth-aside:before{
+      content:"";
+      position:absolute;
+      inset:-80px auto auto -120px;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 60%);
+      opacity:.95;
+    }
+    .aside-title{
+      font-size: 1.25rem;
+      margin: 4px 0 10px;
+      letter-spacing:-.01em;
+    }
+    .aside-p{
+      margin: 0 0 14px;
+      color: rgba(255,255,255,.80);
+      line-height: 1.45;
+      font-size: .95rem;
+    }
+    .aside-kpi{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 16px;
+    }
+    .kpi{
+      padding: 14px 14px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.14);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .kpi b{ display:block; font-size: 1.1rem; }
+    .kpi span{ display:block; color: rgba(255,255,255,.78); font-size: .9rem; margin-top: 2px; }
+  </style>
 </head>
 <body>
 
-    <div class="login-card">
-        <a href="index.html" class="btn-voltar"><i class='bx bx-arrow-back'></i></a>
-        
-        <img src="assets/Imagens/doke-logo.png" alt="Doke" class="login-logo">
-        
-        <div class="login-header">
-            <h2>Bem-vindo de volta!</h2>
-            <p>Insira seus dados para acessar sua conta.</p>
+  <div class="auth-shell">
+    <aside class="auth-aside">
+      <h3 class="aside-title">Bem-vindo de volta</h3>
+      <p class="aside-p">Entre para ver seus anúncios, mensagens e novidades da comunidade.</p>
+
+      <div class="aside-kpi">
+        <div class="kpi"><b>Feed</b><span>Vídeos curtos e posts</span></div>
+        <div class="kpi"><b>Orçamento</b><span>Solicite em 1 clique</span></div>
+        <div class="kpi"><b>Avaliações</b><span>Confiança e reputação</span></div>
+        <div class="kpi"><b>Perfil</b><span>Cliente ou Profissional</span></div>
+      </div>
+    </aside>
+
+    <div class="auth-card">
+      <a href="index.html" class="btn-voltar" aria-label="Voltar"><i class='bx bx-arrow-back'></i></a>
+
+      <div class="auth-card-inner">
+        <div class="brand">
+          <img src="assets/Imagens/doke-logo.png" alt="Doke" />
+          <span class="tag">Acesso</span>
         </div>
 
-        <form id="formLogin" onsubmit="realizarLogin(event)">
-            <div class="form-group">
-                <label>E-mail</label>
-                <div class="input-icon">
-                    <i class='bx bx-envelope'></i>
-                    <input type="email" id="email" placeholder="seu@email.com" required>
-                </div>
-            </div>
+        <h2 class="auth-title">Entrar na sua conta</h2>
+        <p class="auth-subtitle">Insira seu e-mail e senha para continuar.</p>
 
-            <div class="form-group">
-                <label>Senha</label>
-                <div class="input-icon">
-                    <i class='bx bx-lock-alt'></i> <input type="password" id="senha" placeholder="********" required>
-                    <i class='bx bx-show icon-eye' id="btn-senha" onclick="mostrarSenha()"></i>
-                </div>
+        <form id="formLogin" novalidate>
+          <div class="form-group">
+            <label for="email">E-mail</label>
+            <div class="input-icon">
+              <i class='bx bx-envelope'></i>
+              <input id="email" type="email" placeholder="seu@email.com" autocomplete="email" required />
             </div>
+          </div>
 
-            <div class="links-uteis">
-                <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
-                    <input type="checkbox"> Lembrar de mim
-                </label>
-                <a href="#">Esqueceu a senha?</a>
+          <div class="form-group">
+            <label for="senha">Senha</label>
+            <div class="input-icon">
+              <i class='bx bx-lock-alt'></i>
+              <input id="senha" type="password" placeholder="********" autocomplete="current-password" required />
+              <i class='bx bx-show icon-eye' id="btn-senha" title="Mostrar/ocultar senha"></i>
             </div>
+          </div>
 
-            <button type="submit" class="btn-login-action">Entrar na Conta</button>
+          <div class="row">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input id="lembrar" type="checkbox" /> Lembrar de mim
+            </label>
+            <a href="#" id="btnReset">Esqueceu a senha?</a>
+          </div>
+
+          <button id="btnEntrar" type="submit" class="btn-primary">Entrar</button>
+
+          <div id="msg" class="msg"></div>
         </form>
 
         <div class="divider"><span>ou entre com</span></div>
 
-        <div class="social-login">
-            <button class="btn-social google"><i class='bx bxl-google'></i></button>
-            <button class="btn-social facebook"><i class='bx bxl-facebook'></i></button>
-            <button class="btn-social apple"><i class='bx bxl-apple'></i></button>
+        <div class="social" aria-label="Logins sociais (placeholder)">
+          <button class="btn-social google" type="button" title="Google (em breve)"><i class='bx bxl-google'></i></button>
+          <button class="btn-social facebook" type="button" title="Facebook (em breve)"><i class='bx bxl-facebook'></i></button>
+          <button class="btn-social apple" type="button" title="Apple (em breve)"><i class='bx bxl-apple'></i></button>
         </div>
 
-        <div class="footer-login">
-            Não tem uma conta? <a href="cadastro.html">Cadastre-se</a>
+        <div class="footer">
+          Não tem conta? <a href="cadastro.html">Cadastre-se</a>
         </div>
+      </div>
     </div>
+  </div>
 
+  <script>
 
-    <script>
-    function mostrarSenha() {
-        var inputPass = document.getElementById('senha');
-        var btnShowPass = document.getElementById('btn-senha');
+    async function ensureSupabase(){
+  const sb = window.sb;
+  if (!sb) {
+    alert("Supabase não inicializado");
+    throw new Error("Supabase não inicializado");
+  }
+  return sb;
+}
 
-        if (inputPass.type === 'password') {
-            inputPass.setAttribute('type', 'text'); // Mostra a senha
-            btnShowPass.classList.replace('bx-show', 'bx-hide'); // Muda ícone para "olho fechado"
-        } else {
-            inputPass.setAttribute('type', 'password'); // Esconde a senha
-            btnShowPass.classList.replace('bx-hide', 'bx-show'); // Muda ícone para "olho aberto"
-        }
+    function showMsg(type, text){
+      const el = document.getElementById("msg");
+      el.className = "msg show " + (type === "ok" ? "ok" : "err");
+      el.textContent = text;
     }
-</script>
+
+ensureSupabase()
+
+    const eye = document.getElementById("btn-senha");
+    eye.addEventListener("click", () => {
+      const input = document.getElementById("senha");
+      const isPw = input.type === "password";
+      input.type = isPw ? "text" : "password";
+      eye.classList.toggle("bx-show", !isPw);
+      eye.classList.toggle("bx-hide", isPw);
+    });
+
+    document.getElementById("formLogin").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const btn = document.getElementById("btnEntrar");
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+
+      if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
+      if (!senha) return showMsg("err", "Digite sua senha.");
+
+      btn.disabled = true;
+      btn.textContent = "Entrando...";
+
+      try {
+        const supabase = await ensureSupabase();
+
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+        if (error) throw error;
+
+        const uid = data.user?.id;
+        if (!uid) throw new Error("Não foi possível obter seu usuário.");
+
+        const { data: perfil, error: perfilErr } = await supabase
+          .from("usuarios")
+          .select("*")
+          .eq("uid", uid)
+          .maybeSingle();
+
+        if (perfilErr && perfilErr.code && perfilErr.code !== "PGRST116") {
+          console.warn("[DOKE] Perfil não carregado:", perfilErr);
+        }
+
+        if (perfil) {
+          localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfil));
+          localStorage.setItem("doke_uid", perfil.uid || uid);
+        } else {
+          localStorage.setItem("doke_uid", uid);
+        }
+
+        localStorage.setItem("usuarioLogado", "true");
+
+        showMsg("ok", "Login realizado! Redirecionando...");
+        setTimeout(() => { window.location.href = "index.html"; }, 700);
+
+      } catch (e) {
+        const errMsg = String(e?.message || "");
+        const errCode = String(e?.code || "");
+        if (errCode === "invalid_login_credentials" || errMsg.toLowerCase().includes("invalid login")) {
+          showMsg("err", "E-mail ou senha incorretos.");
+        } else if (errMsg.toLowerCase().includes("email not confirmed")) {
+          showMsg("err", "Confirme seu e-mail antes de entrar.");
+        } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
+          showMsg("err", "Permissão negada. Verifique as políticas (RLS) do Supabase.");
+        } else {
+          showMsg("err", errMsg || "Erro ao entrar.");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Entrar";
+      }
+    });
+
+    document.getElementById("btnReset").addEventListener("click", async (e) => {
+      e.preventDefault();
+      const email = document.getElementById("email").value.trim();
+      if (!email.includes("@")) return showMsg("err", "Digite seu e-mail acima para receber o link de redefinição.");
+
+      try {
+        const supabase = await ensureSupabase();
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) throw error;
+        showMsg("ok", "Enviamos um e-mail para redefinir sua senha.");
+      } catch (err) {
+        showMsg("err", String(err?.message || err || "Não foi possível enviar o e-mail."));
+      }
+    });
+  </script>
+
 </body>
 </html>
