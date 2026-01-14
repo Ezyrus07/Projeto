@@ -19,8 +19,35 @@ create table if not exists public.publicacoes (
 -- Garante coluna descricao mesmo em bases antigas
 alter table public.publicacoes
   add column if not exists descricao text;
+-- Garante coluna thumb_url mesmo em bases antigas
+alter table public.publicacoes
+  add column if not exists thumb_url text;
 create index if not exists publicacoes_user_id_idx on public.publicacoes(user_id);
 alter table public.publicacoes enable row level security;
+
+-- CURTIDAS (publicacoes)
+create table if not exists public.publicacoes_curtidas (
+  id uuid primary key default gen_random_uuid(),
+  publicacao_id uuid not null references public.publicacoes(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists publicacoes_curtidas_unique on public.publicacoes_curtidas(publicacao_id, user_id);
+create index if not exists publicacoes_curtidas_pub_idx on public.publicacoes_curtidas(publicacao_id);
+create index if not exists publicacoes_curtidas_user_idx on public.publicacoes_curtidas(user_id);
+alter table public.publicacoes_curtidas enable row level security;
+
+-- COMENTARIOS (publicacoes)
+create table if not exists public.publicacoes_comentarios (
+  id uuid primary key default gen_random_uuid(),
+  publicacao_id uuid not null references public.publicacoes(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  texto text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists publicacoes_comentarios_pub_idx on public.publicacoes_comentarios(publicacao_id);
+create index if not exists publicacoes_comentarios_user_idx on public.publicacoes_comentarios(user_id);
+alter table public.publicacoes_comentarios enable row level security;
 
 -- REELS (vídeo-curto)
 create table if not exists public.videos_curtos (
@@ -29,8 +56,11 @@ create table if not exists public.videos_curtos (
   titulo text,
   descricao text,
   video_url text not null,
+  thumb_url text,
   created_at timestamptz not null default now()
 );
+alter table public.videos_curtos
+  add column if not exists thumb_url text;
 create index if not exists videos_curtos_user_id_idx on public.videos_curtos(user_id);
 alter table public.videos_curtos enable row level security;
 
@@ -79,6 +109,18 @@ alter table public.avaliacoes enable row level security;
 do $$ begin
   if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes' and policyname='Public read') then
     create policy "Public read" on public.publicacoes for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_curtidas' and policyname='Public read') then
+    create policy "Public read" on public.publicacoes_curtidas for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_comentarios' and policyname='Public read') then
+    create policy "Public read" on public.publicacoes_comentarios for select using (true);
   end if;
 end $$;
 
@@ -133,6 +175,24 @@ end $$;
 do $$ begin
   if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes' and policyname='Owner write') then
     create policy "Owner write" on public.publicacoes
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_curtidas' and policyname='Owner write') then
+    create policy "Owner write" on public.publicacoes_curtidas
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_comentarios' and policyname='Owner write') then
+    create policy "Owner write" on public.publicacoes_comentarios
       for all
       using (public.is_owner(user_id))
       with check (public.is_owner(user_id));

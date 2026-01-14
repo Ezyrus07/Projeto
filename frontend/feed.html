@@ -16,7 +16,7 @@
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 </head>
-<body>
+<body class="page-feed">
 
     <header class="navbar-mobile">
         <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
@@ -69,13 +69,26 @@
         </div>
 
     </main>
+    <div id="reelCommentsOverlay" class="reel-comments-overlay" style="display: none;" onclick="if(event.target.id==='reelCommentsOverlay') fecharComentariosReel()">
+        <div class="reel-comments-card">
+            <div class="reel-comments-header">
+                <b>Comentarios</b>
+                <button type="button" class="reel-comments-close" onclick="fecharComentariosReel()">x</button>
+            </div>
+            <div id="reelCommentsList" class="reel-comments-list"></div>
+            <div class="reel-comments-input">
+                <input type="text" id="reelCommentInput" placeholder="Adicione um comentario...">
+                <button type="button" onclick="enviarComentarioReel()">Publicar</button>
+            </div>
+        </div>
+    </div>
 
     <nav class="bottom-nav">
         </nav>
 
     <script>
         const { initializeApp } = window;
-        const { getFirestore, collection, query, orderBy, limit, getDocs, doc, updateDoc, increment } = window;
+        const { getFirestore, collection, query, orderBy, limit, getDocs, doc, updateDoc, increment, addDoc } = window;
         const { getAuth, onAuthStateChanged, signOut } = window;
 
         // CONFIGURAÇÃO DO FIREBASE (Mesma do seu script.js)
@@ -93,83 +106,147 @@
         const auth = getAuth(app);
 
         // --- LÓGICA DO FEED TIKTOK ---
+function getSupabaseClient() {
+    return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
+}
+
+async function fetchSupabaseReelsFeed() {
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+    let { data, error } = await client
+        .from("videos_curtos")
+        .select(withJoin)
+        .order("created_at", { ascending: false })
+        .limit(30);
+    if (error) {
+        const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+        const retry = await client
+            .from("videos_curtos")
+            .select(fallback)
+            .order("created_at", { ascending: false })
+            .limit(30);
+        if (retry.error) {
+            console.error("Erro ao carregar videos curtos supabase:", retry.error);
+            return [];
+        }
+        return retry.data || [];
+    }
+    return data || [];
+}
+
         
 async function carregarReels() {
     const container = document.getElementById('containerReels');
-    
-    const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(20));
-    const snapshot = await getDocs(q);
-
     container.innerHTML = "";
 
-    if(snapshot.empty) {
-        container.innerHTML = "<p style='color:white; text-align:center; padding:50px;'>Sem vídeos no momento.</p>";
+    const feedItems = [];
+
+    try {
+        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(30));
+        const snapshot = await getDocs(q);
+        snapshot.forEach(doc => {
+            const data = doc.data() || {};
+            feedItems.push({
+                source: "firebase",
+                id: doc.id,
+                createdAt: data.data,
+                data
+            });
+        });
+    } catch (e) {
+        console.error(e);
+    }
+
+    try {
+        const supaItems = await fetchSupabaseReelsFeed();
+        supaItems.forEach(item => {
+            feedItems.push({
+                source: "supabase",
+                id: item.id,
+                createdAt: item.created_at,
+                data: item
+            });
+        });
+    } catch (e) {
+        console.error(e);
+    }
+
+    if (feedItems.length === 0) {
+        container.innerHTML = "<p style='color:white; text-align:center; padding:50px;'>Sem videos no momento.</p>";
         return;
     }
 
-    snapshot.forEach(doc => {
-        const data = doc.data();
-        const id = doc.id;
-        const perfilFoto = data.fotoAutor || "https://placehold.co/150"; // Tenta pegar foto do autor se tiver salvo
+    feedItems.sort((a, b) => {
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
+        return (bTime || 0) - (aTime || 0);
+    });
+
+    feedItems.forEach(entry => {
+        const data = entry.data || {};
+        const source = entry.source;
+        let videoUrl = "";
+        let capa = "";
+        let perfilFoto = "https://placehold.co/150";
+        let autorNome = "@usuario";
+        let descricao = "";
+        let uidSeguro = "";
+        let likes = 0;
+
+        if (source === "firebase") {
+            videoUrl = data.videoUrl || "";
+            capa = data.capa || data.img || "";
+            perfilFoto = data.autorFoto || "https://placehold.co/150";
+            autorNome = data.autorUser || data.autorNome || "@usuario";
+            descricao = data.descricao || "";
+            uidSeguro = data.uid || "";
+            likes = data.likes || 0;
+        } else {
+            const autor = data.usuarios || {};
+            videoUrl = data.video_url || "";
+            capa = data.thumb_url || "";
+            perfilFoto = autor.foto || "https://placehold.co/150";
+            autorNome = autor.user || autor.nome || "@usuario";
+            descricao = data.descricao || data.titulo || "";
+            uidSeguro = autor.uid || "";
+        }
+
+        if (!videoUrl) return;
+        const reelId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
 
         const html = `
-        <div class="reel-page" id="reel-${id}">
-            <div class="reel-layout-wrapper">
-                
-                <div class="reel-video-area">
-                    <video class="reel-video" loop playsinline src="${data.videoUrl}" onclick="togglePlay(this)"></video>
-                    <div class="pause-overlay"><i class='bx bx-play'></i></div>
-                    
-                    <div class="mobile-overlay-info">
-                        <h3 style="color:white; margin:0;">${data.autorNome}</h3>
-                        <p style="color:#ddd; font-size:0.9rem;">${data.descricao.substring(0, 50)}...</p>
-                        <button class="btn-orcamento-reel" style="margin-top:10px; padding:10px;" onclick="window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
-                            Orçamento
-                        </button>
+        <div class="reel-page" id="reel-${reelId}">
+            <div class="reels-layout">
+                <div class="video-frame" onclick="togglePlayFeed(this)">
+                    <video class="video-player-feed" loop playsinline muted ${capa ? `poster="${capa}"` : ""} src="${videoUrl}"></video>
+                    <div class="play-overlay"><i class='bx bx-play'></i></div>
+                    <div class="video-info-overlay">
+                        <div class="author-row" onclick="event.stopPropagation(); irParaPerfil('${uidSeguro}')">
+                            <img src="${perfilFoto}" class="author-avatar" onerror="this.src='https://placehold.co/150'">
+                            <span class="author-name">${autorNome}</span>
+                        </div>
+                        <div class="video-caption">${descricao}</div>
                     </div>
                 </div>
 
-                <div class="reel-sidebar-area">
-                    
-                    <div>
-                        <div class="reel-header-info">
-                            <img src="${perfilFoto}" class="reel-avatar">
-                            <div class="reel-user-name">
-                                <h3>${data.autorNome || '@usuario'}</h3>
-                                <span>${data.tag || 'Profissional'}</span>
-                            </div>
-                            <button style="margin-left:auto; background:#086659; color:white; border:none; padding:5px 12px; border-radius:4px; cursor:pointer; font-weight:600;">Seguir</button>
-                        </div>
+                <div class="actions-column">
+                    <button class="short-profile-btn" onclick="irParaPerfil('${uidSeguro}')">
+                        <img src="${perfilFoto}" class="short-avatar" onerror="this.src='https://placehold.co/150'">
+                    </button>
 
-                        <div class="reel-description-scroll">
-                            <p class="reel-desc-text">${data.descricao}</p>
-                            <span class="tag-badge"><i class='bx bx-hash'></i> ${data.categoria || 'Serviço'}</span>
-                        </div>
-                    </div>
+                    <button class="short-action-btn" onclick="curtirReel('${source}', '${entry.id}', this)">
+                        <i class='bx bx-heart'></i>
+                        <span class="short-action-count">${likes}</span>
+                    </button>
 
-                    <div>
-                        <div class="reel-actions-bar">
-                            <div class="reel-action-btn" onclick="curtirReel('${id}', this)">
-                                <i class='bx bxs-heart'></i>
-                                <span>${data.likes || 0}</span>
-                            </div>
-                            <div class="reel-action-btn">
-                                <i class='bx bxs-message-rounded-dots'></i>
-                                <span>Comentar</span>
-                            </div>
-                            <div class="reel-action-btn" onclick="compartilharReel('${data.titulo}')">
-                                <i class='bx bxs-share-alt'></i>
-                                <span>Enviar</span>
-                            </div>
-                        </div>
+                    <button class="short-action-btn" onclick="comentarReel('${source}', '${entry.id}')">
+                        <i class='bx bx-message-rounded'></i>
+                    </button>
 
-                        <div class="reel-cta-area">
-                            <button class="btn-orcamento-reel" onclick="window.location.href='orcamento.html?uid=${data.uid}&aid=${id}'">
-                                Solicitar Orçamento
-                            </button>
-                        </div>
-                    </div>
-
+                    <button class="short-action-btn" onclick="compartilharReel('${autorNome}')">
+                        <i class='bx bx-paper-plane'></i>
+                    </button>
                 </div>
             </div>
         </div>`;
@@ -178,69 +255,173 @@ async function carregarReels() {
     });
 
     iniciarObserver();
+
+    const startId = new URLSearchParams(window.location.search).get('start');
+    if (startId) {
+        const alvo = document.getElementById(`reel-${startId}`);
+        if (alvo) alvo.scrollIntoView({ block: 'start' });
+    }
 }
 
         // AUTO-PLAY AO ROLAR (Intersection Observer)
         function iniciarObserver() {
-            const videos = document.querySelectorAll('.reel-video');
+            const videos = document.querySelectorAll('.video-player-feed');
+            const root = document.getElementById('containerReels');
             
             const observer = new IntersectionObserver((entries) => {
                 entries.forEach(entry => {
                     const video = entry.target;
+                    const frame = video.closest('.video-frame');
                     if (entry.isIntersecting) {
-                        video.currentTime = 0; // Reinicia ou continua
-                        video.play().catch(e => console.log("Interação necessária para som"));
+                        video.currentTime = 0;
+                        video.play().catch(() => {});
+                        if (frame) frame.classList.remove('paused');
                     } else {
                         video.pause();
+                        video.currentTime = 0;
+                        if (frame) frame.classList.add('paused');
                     }
                 });
-            }, { threshold: 0.6 }); // 60% do vídeo visível para tocar
+            }, { threshold: 0.6, root });
 
             videos.forEach(video => observer.observe(video));
         }
 
         // Funções Globais para o HTML acessar
-        window.togglePlay = function(video) {
-            const page = video.closest('.reel-page');
-            const icon = page.querySelector('.pause-overlay');
+        window.togglePlayFeed = function(frame) {
+            const video = frame.querySelector('video');
+            const icon = frame.querySelector('.play-overlay');
+            if (!video) return;
             if (video.paused) {
-                video.play();
-                icon.style.opacity = '0';
+                video.play().catch(() => {});
+                frame.classList.remove('paused');
+                if (icon) icon.style.opacity = '0';
             } else {
                 video.pause();
-                icon.style.opacity = '1';
-                icon.style.transform = 'translate(-50%, -50%) scale(1.2)';
-                setTimeout(() => icon.style.transform = 'translate(-50%, -50%) scale(1)', 200);
+                frame.classList.add('paused');
+                if (icon) {
+                    icon.style.opacity = '1';
+                    icon.style.transform = 'translate(-50%, -50%) scale(1.1)';
+                    setTimeout(() => icon.style.transform = 'translate(-50%, -50%) scale(1)', 200);
+                }
             }
         }
 
-        window.curtirReel = async function(id, btn) {
+                window.curtirReel = async function(source, id, btn) {
             const icon = btn.querySelector('i');
-            const span = btn.querySelector('span');
-            
-            icon.style.color = '#e74c3c';
-            icon.classList.add('bx-tada'); // Animação
-            
-            // Simulação visual de incremento
-            let atual = parseInt(span.innerText);
-            span.innerText = atual + 1;
+            const span = btn.querySelector('.short-action-count');
+            const liked = btn.classList.toggle('liked');
+            if (icon) icon.className = liked ? 'bx bxs-heart' : 'bx bx-heart';
+            let atual = parseInt(span?.innerText || "0", 10) || 0;
+            atual = liked ? atual + 1 : Math.max(0, atual - 1);
+            if (span) span.innerText = atual;
 
-            // Atualiza no banco
+            if (source !== "firebase") return;
+
             try {
-                await updateDoc(doc(db, "trabalhos", id), { likes: increment(1) });
+                await updateDoc(doc(db, "reels", id), { likes: increment(liked ? 1 : -1) });
             } catch(e) { console.error(e); }
         }
+                        window.comentarReel = function(source, id) {
+            const overlay = document.getElementById('reelCommentsOverlay');
+            const list = document.getElementById('reelCommentsList');
+            const input = document.getElementById('reelCommentInput');
+            const sendBtn = overlay?.querySelector('.reel-comments-input button');
+            if (!overlay || !list || !input || !sendBtn) return;
 
-        window.compartilharReel = function(texto) {
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Doke',
-                    text: texto,
-                    url: window.location.href
-                });
-            } else {
-                alert("Link copiado!");
+            window.currentReelCommentsSource = source;
+            window.currentReelCommentsId = id;
+            overlay.style.display = 'flex';
+
+            if (source !== "firebase") {
+                list.innerHTML = "<div class='reel-comments-empty'>Comentarios indisponiveis neste video.</div>";
+                input.value = "";
+                input.disabled = true;
+                sendBtn.disabled = true;
+                return;
             }
+
+            input.disabled = false;
+            sendBtn.disabled = false;
+            list.innerHTML = "<div class='reel-comments-empty'>Carregando comentarios...</div>";
+            carregarComentariosReelFirebase(id);
+        }
+
+        window.fecharComentariosReel = function() {
+            const overlay = document.getElementById('reelCommentsOverlay');
+            if (overlay) overlay.style.display = 'none';
+            window.currentReelCommentsSource = null;
+            window.currentReelCommentsId = null;
+        }
+
+        async function carregarComentariosReelFirebase(id) {
+            const list = document.getElementById('reelCommentsList');
+            if (!list) return;
+            list.innerHTML = "";
+
+            try {
+                const q = query(collection(db, "reels", id, "comentarios"), orderBy("data", "desc"));
+                const snap = await getDocs(q);
+                if (snap.empty) {
+                    list.innerHTML = "<div class='reel-comments-empty'>Sem comentarios ainda.</div>";
+                    return;
+                }
+                snap.forEach(docSnap => {
+                    const c = docSnap.data();
+                    const html = `
+                    <div class="reel-comment-item">
+                        <img src="${c.foto || 'https://placehold.co/32'}" alt="">
+                        <div>
+                            <b>${c.user || 'Usuario'}</b>
+                            <span>${c.texto || ''}</span>
+                        </div>
+                    </div>`;
+                    list.insertAdjacentHTML('beforeend', html);
+                });
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = "<div class='reel-comments-empty'>Erro ao carregar comentarios.</div>";
+            }
+        }
+
+        window.enviarComentarioReel = async function() {
+            const overlay = document.getElementById('reelCommentsOverlay');
+            const input = document.getElementById('reelCommentInput');
+            if (!overlay || !input) return;
+
+            if (window.currentReelCommentsSource !== "firebase") {
+                alert("Comentarios indisponiveis neste video.");
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Faca login para comentar.");
+                return;
+            }
+
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            try {
+                await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
+                    uid: user.uid,
+                    user: perfilLocal.user || "Usuario",
+                    foto: perfilLocal.foto || "https://placehold.co/50",
+                    texto: texto,
+                    data: new Date().toISOString()
+                });
+                input.value = "";
+                carregarComentariosReelFirebase(window.currentReelCommentsId);
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao comentar.");
+            }
+        }
+        window.irParaPerfil = function(uid) {
+            if (!uid) return;
+            window.location.href = `perfil-profissional.html?uid=${uid}`;
         }
 
         // Inicia
@@ -255,3 +436,13 @@ async function carregarReels() {
     </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+

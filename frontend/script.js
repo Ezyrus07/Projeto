@@ -1028,6 +1028,7 @@ function initHomeEnhancements() {
 
     scrollers.forEach(el => {
         el.addEventListener('wheel', (ev) => {
+            if (el.id === 'galeria-dinamica') return;
             if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) {
                 el.scrollLeft += ev.deltaY;
                 ev.preventDefault();
@@ -1273,35 +1274,230 @@ window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
 // ============================================================
 // 12. FEED GLOBAL (Para Index.html)
 // ============================================================
+function getSupabaseClient() {
+    return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
+}
+
+if (window._dokePublicacoesJoinStatus === undefined) {
+    window._dokePublicacoesJoinStatus = null;
+}
+if (window._dokePublicacoesSocialStatus === undefined) {
+    window._dokePublicacoesSocialStatus = null;
+}
+if (window._dokePublicacoesColStatus === undefined) {
+    window._dokePublicacoesColStatus = {
+        titulo: null,
+        descricao: null,
+        legenda: null,
+        thumb_url: null
+    };
+}
+
+function isMissingTableError(err) {
+    if (!err) return false;
+    const msg = (err.message || "") + " " + (err.hint || "") + " " + (err.details || "");
+    return err.code === "PGRST205" || err.status === 404 || /could not find the table/i.test(msg) || /not found/i.test(msg);
+}
+
+function markPublicacoesSelectError(err) {
+    if (!err) return;
+    const msg = ((err.message || "") + " " + (err.hint || "") + " " + (err.details || "")).toLowerCase();
+    if (msg.includes("publicacoes_curtidas") || msg.includes("publicacoes_comentarios")) {
+        window._dokePublicacoesSocialStatus = false;
+    }
+    if (msg.includes("usuarios") || msg.includes("relationship") || msg.includes("foreign key")) {
+        window._dokePublicacoesJoinStatus = false;
+    }
+    const cacheMatch = msg.match(/'([^']+)'/);
+    if (cacheMatch && cacheMatch[1]) {
+        const col = cacheMatch[1].trim();
+        if (window._dokePublicacoesColStatus[col] !== undefined) {
+            window._dokePublicacoesColStatus[col] = false;
+        }
+    }
+    const colMatch = msg.match(/publicacoes\.([a-z0-9_]+)/);
+    if (colMatch && colMatch[1]) {
+        const col = colMatch[1].trim();
+        if (window._dokePublicacoesColStatus[col] !== undefined) {
+            window._dokePublicacoesColStatus[col] = false;
+        }
+    }
+}
+
+function buildPublicacoesSelect({ withJoin, withSocial }) {
+    const cols = ["id", "tipo", "media_url", "created_at", "user_id"];
+    const optional = window._dokePublicacoesColStatus || {};
+    Object.keys(optional).forEach((col) => {
+        if (optional[col] !== false) cols.push(col);
+    });
+    const base = cols.join(", ");
+    const join = withJoin ? ", usuarios (id, uid, nome, user, foto)" : "";
+    const social = withSocial ? ", publicacoes_curtidas(count), publicacoes_comentarios(count)" : "";
+    return `${base}${join}${social}`;
+}
+
+function publicacoesStatusKey() {
+    return JSON.stringify({
+        join: window._dokePublicacoesJoinStatus,
+        social: window._dokePublicacoesSocialStatus,
+        cols: window._dokePublicacoesColStatus
+    });
+}
+
+function escapeHtml(texto) {
+    return (texto ?? "").toString()
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+}
+
+function normalizeHandle(valor) {
+    if (!valor) return "@usuario";
+    const handle = valor.toString().trim();
+    return handle.startsWith("@") ? handle : `@${handle}`;
+}
+
+function formatFeedDate(data) {
+    const d = new Date(data);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
+}
+
+async function getSupabaseUserRow() {
+    const client = getSupabaseClient();
+    const authUser = auth?.currentUser;
+    if (!client || !authUser?.uid) return null;
+    if (window._dokeSupabaseUserRow && window._dokeSupabaseUserRow.uid === authUser.uid) {
+        return window._dokeSupabaseUserRow;
+    }
+    const { data, error } = await client
+        .from("usuarios")
+        .select("id, uid, nome, user, foto")
+        .eq("uid", authUser.uid)
+        .maybeSingle();
+    if (error) {
+        console.error("Erro ao carregar usuario supabase:", error);
+        return null;
+    }
+    window._dokeSupabaseUserRow = data || null;
+    return window._dokeSupabaseUserRow;
+}
+
+async function fetchSupabasePublicacoesFeed() {
+    const client = getSupabaseClient();
+    if (!client) return [];
+    let lastError = null;
+    let attempts = 0;
+    let lastStatusKey = null;
+    while (attempts < 6) {
+        const joinAllowed = window._dokePublicacoesJoinStatus !== false;
+        const socialAllowed = window._dokePublicacoesSocialStatus !== false;
+        const combos = [];
+        if (joinAllowed && socialAllowed) combos.push({ withJoin: true, withSocial: true });
+        if (joinAllowed) combos.push({ withJoin: true, withSocial: false });
+        if (socialAllowed) combos.push({ withJoin: false, withSocial: true });
+        combos.push({ withJoin: false, withSocial: false });
+
+        let statusChanged = false;
+        for (const combo of combos) {
+            const select = buildPublicacoesSelect(combo);
+            const { data, error } = await client
+                .from("publicacoes")
+                .select(select)
+                .order("created_at", { ascending: false })
+                .limit(40);
+            if (!error) {
+                if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
+                if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
+                return data || [];
+            }
+            lastError = error;
+            const beforeKey = publicacoesStatusKey();
+            markPublicacoesSelectError(error);
+            statusChanged = publicacoesStatusKey() !== beforeKey;
+            if (statusChanged) break;
+        }
+
+        const currentKey = publicacoesStatusKey();
+        if (!statusChanged && currentKey === lastStatusKey) break;
+        lastStatusKey = currentKey;
+        attempts += 1;
+    }
+    if (lastError) console.error("Erro ao carregar publicacoes supabase:", lastError);
+    return [];
+}
+
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
 
     container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
 
+    const feedItems = [];
+
     try {
         const q = window.query(window.collection(window.db, "posts"), window.orderBy("data", "desc"));
         const snapshot = await window.getDocs(q);
-        container.innerHTML = ""; 
+        snapshot.forEach((docSnap) => {
+            const post = docSnap.data();
+            feedItems.push({
+                source: "firebase",
+                id: docSnap.id,
+                createdAt: post.data,
+                data: post
+            });
+        });
+    } catch (e) {
+        console.error(e);
+    }
 
-        if (snapshot.empty) {
-            container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publicação ainda.</p>";
-            return;
-        }
+    let supaUserRow = null;
+    try {
+        supaUserRow = await getSupabaseUserRow();
+    } catch (e) {
+        console.error(e);
+    }
 
-        snapshot.forEach((doc) => {
-            const post = doc.data();
-            const idPost = doc.id;
-            const dataPost = new Date(post.data).toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
-            
-            // Se tiver imagem, ao clicar nela abre o Modal
+    try {
+        const publicacoes = await fetchSupabasePublicacoesFeed();
+        publicacoes.forEach((item) => {
+            feedItems.push({
+                source: "supabase",
+                id: item.id,
+                createdAt: item.created_at,
+                data: item
+            });
+        });
+    } catch (e) {
+        console.error(e);
+    }
+
+    feedItems.sort((a, b) => {
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
+        return (bTime || 0) - (aTime || 0);
+    });
+
+    container.innerHTML = "";
+
+    if (feedItems.length === 0) {
+        container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publicação ainda.</p>";
+        return;
+    }
+
+    feedItems.forEach((entry) => {
+        if (entry.source === "firebase") {
+            const post = entry.data;
+            const idPost = entry.id;
+            const dataPost = formatFeedDate(post.data);
             const imgHtml = post.imagem 
                 ? `<div class="midia-post" style="cursor:pointer;" onclick="abrirModalPost('${idPost}', 'posts')">
                      <img src="${post.imagem}" loading="lazy" style="width:100%; height:auto; display:block;">
                    </div>` 
                 : '';
-            
-            // Link para perfil
+
             const uidDestino = post.uid || ""; 
             const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${uidDestino}'"`;
             const cursorStyle = `style="cursor: pointer;"`;
@@ -1316,7 +1512,7 @@ window.carregarFeedGlobal = async function() {
                         </div>
                     </div>
                     <div class="feed-body" onclick="abrirModalPost('${idPost}', 'posts')" style="cursor:pointer;">
-                        <p>${post.texto || ''}</p>
+                        <p>${escapeHtml(post.texto || '')}</p>
                     </div>
                     ${imgHtml}
                     <div class="feed-footer">
@@ -1332,11 +1528,204 @@ window.carregarFeedGlobal = async function() {
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
-        });
-    } catch (e) { console.error(e); }
+            return;
+        }
+
+        const item = entry.data || {};
+        const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
+        const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
+        const dataPost = formatFeedDate(item.created_at);
+        const textoResumo = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
+        const likesCount = (Array.isArray(item.publicacoes_curtidas) ? item.publicacoes_curtidas[0]?.count : item.publicacoes_curtidas?.count) || 0;
+
+        const mediaHtml = item.tipo === "video"
+            ? `<div class="midia-post" style="cursor:pointer;" onclick="abrirModalPublicacao('${entry.id}')">
+                   <video src="${item.media_url}" poster="${item.thumb_url || ""}" preload="metadata" muted playsinline style="width:100%; height:auto; display:block;"></video>
+               </div>`
+            : `<div class="midia-post" style="cursor:pointer;" onclick="abrirModalPublicacao('${entry.id}')">
+                   <img src="${item.media_url}" loading="lazy" style="width:100%; height:auto; display:block;">
+               </div>`;
+
+        const html = `
+            <div class="card-feed-global">
+                <div class="feed-header">
+                    <img src="${autor.foto || 'https://placehold.co/50'}" alt="User">
+                    <div class="feed-user-info">
+                        <h4>${escapeHtml(autorNome)}</h4>
+                        <span>${dataPost}</span>
+                    </div>
+                </div>
+                <div class="feed-body" onclick="abrirModalPublicacao('${entry.id}')" style="cursor:pointer;">
+                    <p>${escapeHtml(textoResumo)}</p>
+                </div>
+                ${mediaHtml}
+                <div class="feed-footer">
+                    <div class="feed-action" onclick="abrirModalPublicacao('${entry.id}')">
+                        <i class='bx bx-heart'></i> ${likesCount}
+                    </div>
+                    <div class="feed-action" onclick="abrirModalPublicacao('${entry.id}')">
+                        <i class='bx bx-comment'></i> Comentar
+                    </div>
+                    <div class="feed-action" onclick="compartilharUrlPost('${entry.id}')">
+                        <i class='bx bx-share-alt'></i> Compartilhar
+                    </div>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    });
 }
 
 // Funções extras para perfil
+window.carregarFeedGlobal = async function() {
+    const container = document.getElementById('feed-global-container');
+    if (!container) return;
+
+    container.classList.add("feed-publicacoes-grid");
+    container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
+
+    const feedItems = [];
+
+    try {
+        const q = window.query(window.collection(window.db, "posts"), window.orderBy("data", "desc"));
+        const snapshot = await window.getDocs(q);
+        snapshot.forEach((docSnap) => {
+            const post = docSnap.data();
+            feedItems.push({
+                source: "firebase",
+                id: docSnap.id,
+                createdAt: post.data,
+                data: post
+            });
+        });
+    } catch (e) {
+        console.error(e);
+    }
+
+    let supaUserRow = null;
+    try {
+        supaUserRow = await getSupabaseUserRow();
+    } catch (e) {
+        console.error(e);
+    }
+
+    try {
+        const publicacoes = await fetchSupabasePublicacoesFeed();
+        publicacoes.forEach((item) => {
+            feedItems.push({
+                source: "supabase",
+                id: item.id,
+                createdAt: item.created_at,
+                data: item
+            });
+        });
+    } catch (e) {
+        console.error(e);
+    }
+
+    feedItems.sort((a, b) => {
+        const aTime = new Date(a.createdAt).getTime();
+        const bTime = new Date(b.createdAt).getTime();
+        return (bTime || 0) - (aTime || 0);
+    });
+
+    container.innerHTML = "";
+
+    if (feedItems.length === 0) {
+        container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
+        return;
+    }
+
+    feedItems.forEach((entry) => {
+        if (entry.source === "firebase") {
+            const post = entry.data || {};
+            const idPost = entry.id;
+            const mediaHtml = post.videoUrl
+                ? `<video src="${post.videoUrl}" preload="metadata" muted playsinline></video>`
+                : (post.imagem ? `<img src="${post.imagem}" loading="lazy" alt="">` : "");
+            if (!mediaHtml) return;
+
+            const titulo = normalizeHandle(post.autorUser || post.autorNome || "usuario");
+            const descricao = post.texto || "";
+
+            const html = `
+                <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPost('${idPost}', 'posts')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+                    <div class="dp-itemMedia">${mediaHtml}</div>
+                    <div class="dp-itemBody">
+                        <b>${escapeHtml(titulo)}</b>
+                        <p>${escapeHtml(descricao)}</p>
+                    </div>
+                </div>`;
+            container.insertAdjacentHTML('beforeend', html);
+            return;
+        }
+
+        const item = entry.data || {};
+        if (!item.media_url) return;
+        const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
+        const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
+        const titulo = item.titulo || autorNome;
+        const descricao = item.descricao || item.legenda || "";
+        const mediaHtml = item.tipo === "video"
+            ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
+            : `<img src="${item.media_url}" loading="lazy" alt="">`;
+
+        const html = `
+            <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPublicacao('${entry.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+                <div class="dp-itemMedia">${mediaHtml}</div>
+                <div class="dp-itemBody">
+                    <b>${escapeHtml(titulo)}</b>
+                    <p>${escapeHtml(descricao)}</p>
+                </div>
+            </div>`;
+        container.insertAdjacentHTML('beforeend', html);
+    });
+
+    setupFeedVideoPreview(container);
+}
+
+function setupFeedVideoPreview(container) {
+    if (!container) return;
+    const cards = container.querySelectorAll(".feed-publicacao-card");
+    cards.forEach((card) => {
+        if (card.dataset.previewBound === "true") return;
+        card.dataset.previewBound = "true";
+        const video = card.querySelector("video");
+        if (!video) return;
+        video.muted = true;
+        video.loop = true;
+        video.playsInline = true;
+        video.preload = "metadata";
+        let hoverTimer = null;
+        const playPreview = () => {
+            if (hoverTimer) return;
+            hoverTimer = window.setTimeout(() => {
+                hoverTimer = null;
+                video.currentTime = 0;
+                const playPromise = video.play();
+                if (playPromise && typeof playPromise.catch === "function") {
+                    playPromise.catch(() => {});
+                }
+            }, 1500);
+        };
+        const stopPreview = () => {
+            if (hoverTimer) {
+                window.clearTimeout(hoverTimer);
+                hoverTimer = null;
+            }
+            video.pause();
+            video.currentTime = 0;
+            if (video.getAttribute("poster")) {
+                video.load();
+            }
+        };
+        card.addEventListener("mouseenter", playPreview);
+        card.addEventListener("mouseleave", stopPreview);
+        card.addEventListener("focusin", playPreview);
+        card.addEventListener("focusout", stopPreview);
+        card.addEventListener("click", stopPreview);
+    });
+}
+
 window.carregarPerfil = function() {
     const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
     if(document.getElementById('nomePerfilDisplay')) document.getElementById('nomePerfilDisplay').innerText = usuario.nome;
@@ -1381,7 +1770,7 @@ document.addEventListener("DOMContentLoaded", function() {
     carregarFiltrosLocalizacao(); 
 
     // NOVO: CARREGA VIDEOS SE ESTIVER NA HOME
-    if(document.querySelector('.tiktok-scroll-wrapper')) {
+    if(document.querySelector('.tiktok-scroll-wrapper') && !document.getElementById('galeria-dinamica')) {
         carregarTrabalhosHome();
     }
 
@@ -1396,6 +1785,7 @@ document.addEventListener("DOMContentLoaded", function() {
     
     if(document.getElementById('galeria-dinamica')) {
         carregarReelsHome();
+        enableVideosCurtosPageScroll();
     }
 
     const cepSalvo = localStorage.getItem('meu_cep_doke');
@@ -3773,9 +4163,99 @@ window.fecharPlayerVideo = function() {
 window.currentPostId = null;
 window.currentCollection = null;
 window.currentPostAuthorUid = null; // <--- NOVO: Para identificar o criador
+window.currentPostSource = "firebase";
+window.currentSupaPublicacaoId = null;
+window.currentSupaPublicacaoAuthorId = null;
 let processandoLike = false; // Trava para evitar cliques rápidos
 
+function ensureModalPostDetalhe() {
+    if (document.getElementById('modalPostDetalhe')) return;
+    const modalHtml = `
+    <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
+        <button class="btn-close-modal-fixed" onclick="fecharModalPostForce()">&times;</button>
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-media-area" id="modalMediaContainer"></div>
+            <div class="modal-info-area">
+                <div class="modal-header">
+                    <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+                        <img id="modalAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+                        <div style="font-weight: bold; font-size: 0.95rem;" id="modalUsername">User</div>
+                    </div>
+                </div>
+                <div class="modal-comments-section" id="modalCommentsList">
+                    <div id="modalCaption" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
+                </div>
+                <div class="modal-footer-actions">
+                    <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
+                        <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
+                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
+                        <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
+                    </div>
+                    <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
+                    <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
+                        <input type="text" id="inputComentarioModal" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
+                        <button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+function getRelatedCount(value) {
+    return (Array.isArray(value) ? value[0]?.count : value?.count) || 0;
+}
+
+async function fetchSupabasePublicacaoById(publicacaoId) {
+    const client = getSupabaseClient();
+    if (!client) return null;
+    let lastError = null;
+    let attempts = 0;
+    let lastStatusKey = null;
+    while (attempts < 6) {
+        const joinAllowed = window._dokePublicacoesJoinStatus !== false;
+        const socialAllowed = window._dokePublicacoesSocialStatus !== false;
+        const combos = [];
+        if (joinAllowed && socialAllowed) combos.push({ withJoin: true, withSocial: true });
+        if (joinAllowed) combos.push({ withJoin: true, withSocial: false });
+        if (socialAllowed) combos.push({ withJoin: false, withSocial: true });
+        combos.push({ withJoin: false, withSocial: false });
+
+        let statusChanged = false;
+        for (const combo of combos) {
+            const select = buildPublicacoesSelect(combo);
+            const { data, error } = await client
+                .from("publicacoes")
+                .select(select)
+                .eq("id", publicacaoId)
+                .maybeSingle();
+            if (!error) {
+                if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
+                if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
+                return data;
+            }
+            lastError = error;
+            const beforeKey = publicacoesStatusKey();
+            markPublicacoesSelectError(error);
+            statusChanged = publicacoesStatusKey() !== beforeKey;
+            if (statusChanged) break;
+        }
+
+        const currentKey = publicacoesStatusKey();
+        if (!statusChanged && currentKey === lastStatusKey) break;
+        lastStatusKey = currentKey;
+        attempts += 1;
+    }
+    if (lastError) console.error("Erro ao carregar publicacao:", lastError);
+    return null;
+}
+
 window.abrirModalPost = async function(id, colecao) {
+    ensureModalPostDetalhe();
+    window.currentPostSource = "firebase";
+    window.currentSupaPublicacaoId = null;
+    window.currentSupaPublicacaoAuthorId = null;
     const modal = document.getElementById('modalPostDetalhe');
     const user = auth.currentUser;
     
@@ -3935,6 +4415,228 @@ async function carregarComentariosNoModal(id, colecao) {
     } catch(e) { console.error(e); }
 }
 
+async function carregarComentariosSupabase(publicacaoId) {
+    const list = document.getElementById('modalCommentsList');
+    if (!list) return;
+
+    const captionDiv = document.getElementById('modalCaption');
+    let captionHTML = "";
+    if (captionDiv && captionDiv.style.display !== 'none') {
+        captionHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${captionDiv.innerHTML}</div>`;
+    }
+
+    list.innerHTML = `${captionHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+
+    const client = getSupabaseClient();
+    if (!client) {
+        list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>`;
+        return;
+    }
+
+    let { data, error } = await client
+        .from("publicacoes_comentarios")
+        .select("id, texto, created_at, user_id, usuarios (id, nome, user, foto)")
+        .eq("publicacao_id", publicacaoId)
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        if (isMissingTableError(error)) {
+            window._dokePublicacoesSocialStatus = false;
+            list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>`;
+            return;
+        }
+        const retry = await client
+            .from("publicacoes_comentarios")
+            .select("id, texto, created_at, user_id")
+            .eq("publicacao_id", publicacaoId)
+            .order("created_at", { ascending: true });
+        data = retry.data || [];
+        error = retry.error || null;
+    }
+
+    if (error) {
+        console.error("Erro comentarios supabase:", error);
+        list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>`;
+        return;
+    }
+
+    list.innerHTML = captionHTML;
+
+    if (!data || data.length === 0) {
+        list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>');
+        return;
+    }
+
+    data.forEach((c) => {
+        const userInfo = c.usuarios || {};
+        const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
+        const foto = userInfo.foto || "https://placehold.co/50";
+        const dataLabel = c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : "";
+        const isCreator = window.currentSupaPublicacaoAuthorId && c.user_id === window.currentSupaPublicacaoAuthorId;
+        const creatorBadge = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+
+        const html = `
+        <div class="comment-block" style="margin-top:15px;">
+            <div style="display:flex; gap:10px; font-size:0.9rem; align-items:flex-start;">
+                <img src="${foto}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                <div style="flex:1;">
+                    <div style="display:flex; justify-content:space-between;">
+                        <div><span style="font-weight:700;">${escapeHtml(nome)}</span> ${creatorBadge}</div>
+                    </div>
+                    <div style="color:#333; margin-top:2px;">${escapeHtml(c.texto || "")}</div>
+                    <div style="display:flex; align-items:center; margin-top:4px; gap:15px;">
+                        <span style="font-size:0.75rem; color:#999;">${dataLabel}</span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        list.insertAdjacentHTML('beforeend', html);
+    });
+}
+
+async function verificarStatusLikeSupabase(publicacaoId) {
+    const icon = document.getElementById('btnLikeModalIcon');
+    if (!icon) return;
+
+    const client = getSupabaseClient();
+    const userRow = await getSupabaseUserRow();
+
+    if (!client || !userRow) {
+        icon.className = 'bx bx-heart';
+        icon.dataset.liked = "false";
+        icon.style.pointerEvents = 'auto';
+        icon.style.opacity = '1';
+        return;
+    }
+
+    const { data, error } = await client
+        .from("publicacoes_curtidas")
+        .select("id")
+        .eq("publicacao_id", publicacaoId)
+        .eq("user_id", userRow.id)
+        .maybeSingle();
+
+    if (error && isMissingTableError(error)) {
+        window._dokePublicacoesSocialStatus = false;
+    }
+    if (error && !isMissingTableError(error)) {
+        console.error("Erro like supabase:", error);
+    }
+
+    if (data) {
+        icon.className = 'bx bxs-heart';
+        icon.dataset.liked = "true";
+    } else {
+        icon.className = 'bx bx-heart';
+        icon.dataset.liked = "false";
+    }
+
+    icon.style.pointerEvents = 'auto';
+    icon.style.opacity = '1';
+}
+
+async function darLikeModalSupabase() {
+    const client = getSupabaseClient();
+    if (!client) return alert("Supabase nao configurado.");
+
+    const userRow = await getSupabaseUserRow();
+    if (!userRow) return alert("Faça login para curtir.");
+
+    if (!window.currentSupaPublicacaoId) return;
+    if (processandoLike) return;
+
+    processandoLike = true;
+
+    const icon = document.getElementById('btnLikeModalIcon');
+    const label = document.getElementById('modalLikesCount');
+    const jaCurtiu = icon.dataset.liked === "true";
+    const likesAtuais = parseInt(label.innerText.replace(/\D/g, '')) || 0;
+
+    try {
+        if (jaCurtiu) {
+            icon.className = 'bx bx-heart';
+            icon.dataset.liked = "false";
+            label.innerText = `${Math.max(0, likesAtuais - 1)} curtidas`;
+
+            const { error } = await client
+                .from("publicacoes_curtidas")
+                .delete()
+                .eq("publicacao_id", window.currentSupaPublicacaoId)
+                .eq("user_id", userRow.id);
+            if (error && isMissingTableError(error)) {
+                window._dokePublicacoesSocialStatus = false;
+                throw error;
+            }
+            if (error && !isMissingTableError(error)) throw error;
+        } else {
+            icon.className = 'bx bxs-heart';
+            icon.dataset.liked = "true";
+            label.innerText = `${likesAtuais + 1} curtidas`;
+
+            const { error } = await client
+                .from("publicacoes_curtidas")
+                .upsert({ publicacao_id: window.currentSupaPublicacaoId, user_id: userRow.id }, { onConflict: "publicacao_id,user_id" });
+            if (error && isMissingTableError(error)) {
+                window._dokePublicacoesSocialStatus = false;
+                throw error;
+            }
+            if (error && !isMissingTableError(error)) throw error;
+        }
+    } catch (e) {
+        console.error("Erro ao curtir supabase:", e);
+        icon.className = jaCurtiu ? 'bx bxs-heart' : 'bx bx-heart';
+        icon.dataset.liked = jaCurtiu ? "true" : "false";
+        label.innerText = `${likesAtuais} curtidas`;
+    } finally {
+        processandoLike = false;
+    }
+}
+
+async function postarComentarioSupabase() {
+    const input = document.getElementById('inputComentarioModal');
+    const texto = input?.value?.trim();
+    if (!texto) return;
+
+    const client = getSupabaseClient();
+    if (!client) return alert("Supabase nao configurado.");
+
+    const userRow = await getSupabaseUserRow();
+    if (!userRow) return alert("Faça login para comentar.");
+    if (!window.currentSupaPublicacaoId) return;
+
+    const btnEnviar = event?.target;
+    const textoOriginal = btnEnviar ? btnEnviar.innerText : "Publicar";
+    if (btnEnviar) {
+        btnEnviar.innerText = "...";
+        btnEnviar.disabled = true;
+    }
+
+    try {
+        const { error } = await client
+            .from("publicacoes_comentarios")
+            .insert({
+                publicacao_id: window.currentSupaPublicacaoId,
+                user_id: userRow.id,
+                texto: texto
+            });
+        if (error && isMissingTableError(error)) {
+            window._dokePublicacoesSocialStatus = false;
+            throw error;
+        }
+        if (error && !isMissingTableError(error)) throw error;
+        if (input) input.value = "";
+        await carregarComentariosSupabase(window.currentSupaPublicacaoId);
+    } catch (e) {
+        console.error("Erro ao comentar supabase:", e);
+        alert("Erro ao enviar comentario.");
+    } finally {
+        if (btnEnviar) {
+            btnEnviar.innerText = textoOriginal;
+            btnEnviar.disabled = false;
+        }
+    }
+}
+
 window.deletarComentario = async function(commentId) {
     if(!confirm("Tem certeza que deseja apagar este comentário?")) return;
 
@@ -3956,6 +4658,72 @@ window.deletarComentario = async function(commentId) {
         alert("Erro ao apagar. Tente novamente.");
     }
 }
+
+window.abrirModalPublicacao = async function(publicacaoId) {
+    ensureModalPostDetalhe();
+    const modal = document.getElementById('modalPostDetalhe');
+    if (!modal) return;
+
+    modal.style.display = 'flex';
+    window.currentPostSource = "supabase";
+    window.currentSupaPublicacaoId = publicacaoId;
+    window.currentSupaPublicacaoAuthorId = null;
+    window.currentPostId = null;
+    window.currentCollection = null;
+    window.currentPostAuthorUid = null;
+
+    document.getElementById('modalMediaContainer').innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="color:white; font-size:3rem;"></i></div>';
+    document.getElementById('modalCommentsList').innerHTML = "";
+
+    const iconLike = document.getElementById('btnLikeModalIcon');
+    const labelLike = document.getElementById('modalLikesCount');
+    iconLike.className = 'bx bx-heart';
+    iconLike.dataset.liked = "false";
+    iconLike.style.color = '';
+    iconLike.style.pointerEvents = 'none';
+    iconLike.style.opacity = '0.5';
+    labelLike.innerText = "...";
+
+    const item = await fetchSupabasePublicacaoById(publicacaoId);
+    if (!item) {
+        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicacao indisponivel.</div>";
+        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Nao foi possivel carregar esta publicacao.</p>";
+        iconLike.style.pointerEvents = 'auto';
+        iconLike.style.opacity = '1';
+        return;
+    }
+
+    const autorFallback = await getSupabaseUserRow();
+    const autor = item.usuarios || (autorFallback && item.user_id === autorFallback.id ? autorFallback : {});
+    const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
+    const autorFoto = autor.foto || "https://placehold.co/50";
+
+    document.getElementById('modalAvatar').src = autorFoto;
+    document.getElementById('modalUsername').innerText = autorNome;
+
+    const mediaBox = document.getElementById('modalMediaContainer');
+    if (item.tipo === "video") {
+        mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
+    } else {
+        mediaBox.innerHTML = `<img src="${item.media_url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+    }
+
+    const captionText = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
+    const captionDiv = document.getElementById('modalCaption');
+    if (captionText) {
+        captionDiv.innerHTML = `<strong>${escapeHtml(autorNome)}</strong> ${escapeHtml(captionText)}`;
+        captionDiv.style.display = 'block';
+    } else {
+        captionDiv.style.display = 'none';
+    }
+
+    const likesCount = getRelatedCount(item.publicacoes_curtidas);
+    labelLike.innerText = `${likesCount} curtidas`;
+    window.currentSupaPublicacaoAuthorId = item.user_id;
+
+    await verificarStatusLikeSupabase(publicacaoId);
+    carregarComentariosSupabase(publicacaoId);
+}
 // Função para fechar clicando fora
 window.fecharModalPost = function(e) {
     // Se o clique foi no overlay (fundo escuro) ou no botão X, fecha.
@@ -3967,6 +4735,10 @@ window.fecharModalPost = function(e) {
 }
 // 3. POSTAR COMENTÁRIO
 window.postarComentarioModal = async function() {
+    if (window.currentPostSource === "supabase") {
+        await postarComentarioSupabase();
+        return;
+    }
     const input = document.getElementById('inputComentarioModal');
     const texto = input.value.trim();
     if(!texto) return;
@@ -4097,50 +4869,129 @@ async function carregarReelsNoIndex() {
     }
 }
 
+async function fetchSupabaseReelsHome() {
+    const client = getSupabaseClient();
+    if (!client) return [];
+    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+    let { data, error } = await client
+        .from("videos_curtos")
+        .select(withJoin)
+        .order("created_at", { ascending: false })
+        .limit(20);
+    if (error) {
+        const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+        const retry = await client
+            .from("videos_curtos")
+            .select(fallback)
+            .order("created_at", { ascending: false })
+            .limit(20);
+        if (retry.error) {
+            console.error("Erro ao carregar videos curtos supabase:", retry.error);
+            return [];
+        }
+        return retry.data || [];
+    }
+    return data || [];
+}
+
 window.carregarReelsHome = async function() {
     const container = document.getElementById('galeria-dinamica');
     if (!container) return;
 
     try {
-        const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(20));
-        const snapshot = await getDocs(q);
-        
-        container.innerHTML = ""; 
-        window.listaReelsAtual = []; // Reseta lista
+        const feedItems = [];
 
-        if (snapshot.empty) {
-            container.innerHTML = "<p style='color:white; padding:20px;'>Sem vídeos.</p>";
+        try {
+            const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(20));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                feedItems.push({
+                    source: "firebase",
+                    id: doc.id,
+                    createdAt: data.data,
+                    data
+                });
+            });
+        } catch (e) {
+            console.error(e);
+        }
+
+        try {
+            const supaReels = await fetchSupabaseReelsHome();
+            supaReels.forEach(item => {
+                feedItems.push({
+                    source: "supabase",
+                    id: item.id,
+                    createdAt: item.created_at,
+                    data: item
+                });
+            });
+        } catch (e) {
+            console.error(e);
+        }
+
+        feedItems.sort((a, b) => {
+            const aTime = new Date(a.createdAt).getTime();
+            const bTime = new Date(b.createdAt).getTime();
+            return (bTime || 0) - (aTime || 0);
+        });
+
+        container.innerHTML = "";
+        window.listaReelsAtual = [];
+
+        if (feedItems.length === 0) {
+            container.innerHTML = "<p style='color:white; padding:20px;'>Sem videos.</p>";
             return;
         }
 
-        let index = 0;
-        snapshot.forEach(doc => {
-            const data = doc.data();
-            const id = doc.id;
-            
-            // Adiciona na lista global para navegação
-            window.listaReelsAtual.push({
-                id: id,
-                ...data
-            });
+        feedItems.forEach(entry => {
+            const source = entry.source;
+            const item = entry.data || {};
+            let videoUrl = "";
+            let capaUrl = "";
+            let autorUser = "@usuario";
+            let tag = "NOVO";
 
-            // Card HTML
-            const capaUrl = data.capa || data.img || "https://placehold.co/240x400";
+            if (source === "firebase") {
+                videoUrl = item.videoUrl || "";
+                capaUrl = item.capa || item.img || "https://placehold.co/240x400";
+                autorUser = item.autorUser || "@user";
+                tag = item.tag || "NOVO";
+            } else {
+                const autor = item.usuarios || {};
+                videoUrl = item.video_url || "";
+                capaUrl = item.thumb_url || "https://placehold.co/240x400";
+                autorUser = autor.user || autor.nome || "@usuario";
+            }
+
+            if (!videoUrl) return;
+            const startId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
             const html = `
-            <div class="tiktok-card" onclick="abrirPlayerTikTok(${index})">
-                <div class="card-badge-online">${data.tag || 'NOVO'}</div>
-                <video src="${data.videoUrl}" poster="${capaUrl}" class="video-bg" muted loop></video>
+            <div class="tiktok-card" onclick="window.location.href='feed.html?start=${startId}'">
+                <div class="card-badge-online">${tag}</div>
+                <video src="${videoUrl}" poster="${capaUrl}" class="video-bg" muted loop playsinline></video>
                 <div class="info-container">
-                    <h3 class="user-handle">${data.autorUser || "@user"}</h3>
-                    <button class="btn-orcamento-card">Solicitar orçamento</button>
+                    <h3 class="user-handle">${autorUser}</h3>
+                    <button class="btn-orcamento-card">Solicitar orcamento</button>
                 </div>
             </div>`;
-            
             container.insertAdjacentHTML('beforeend', html);
-            index++;
         });
 
     } catch (e) { console.error(e); }
+}
+
+function enableVideosCurtosPageScroll() {
+    const wrapper = document.getElementById('galeria-dinamica');
+    if (!wrapper || wrapper.dataset.scrollFix === "true") return;
+    wrapper.dataset.scrollFix = "true";
+    wrapper.addEventListener('wheel', (event) => {
+        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
+        event.preventDefault();
+        event.stopPropagation();
+        window.scrollBy({ top: event.deltaY, behavior: 'auto' });
+    }, { passive: false });
 }
 
 // LÓGICA DO DELAY DE 3 SEGUNDOS
@@ -4523,6 +5374,10 @@ function animarBarra(ms) {
     }
 
 window.darLikeModal = async function() {
+    if (window.currentPostSource === "supabase") {
+        await darLikeModalSupabase();
+        return;
+    }
     const user = auth.currentUser;
     if (!user) return alert("Faça login para curtir.");
     
@@ -4642,6 +5497,9 @@ window.fecharModalPostForce = function() {
         const mediaBox = document.getElementById('modalMediaContainer');
         if(mediaBox) mediaBox.innerHTML = "";
     }
+    window.currentPostSource = "firebase";
+    window.currentSupaPublicacaoId = null;
+    window.currentSupaPublicacaoAuthorId = null;
 }
 
 // Atualiza a função antiga para usar a mesma lógica
@@ -4979,3 +5837,4 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
 
   modal.style.display = 'flex';
 };
+

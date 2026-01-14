@@ -332,6 +332,12 @@ function hideIf(selector, cond){
     return err.code === "PGRST205" || err.status === 404 || /could not find the table/i.test(msg) || /not found/i.test(msg);
   }
 
+  function isMissingColumnError(err, column){
+    if(!err) return false;
+    const msg = String(err.message || "").toLowerCase();
+    return err.code === "PGRST204" && msg.includes(`'${String(column).toLowerCase()}'`);
+  }
+
   async function safeSelect(queryFn){
     try{
       const { data, error } = await queryFn();
@@ -348,9 +354,10 @@ function hideIf(selector, cond){
   // -----------------------------
   // Sections loaders
   // -----------------------------
-  async function loadPublicacoes(client, userId){
+  async function loadPublicacoes(client, userId, ctx){
     const grid = $("#dpGridPublicacoes");
     if(!grid) return;
+    grid.classList.add("dp-grid--masonry");
     grid.innerHTML = `<div class="dp-empty">Carregando publicações...</div>`;
     const { data, error } = await client
       .from("publicacoes")
@@ -372,12 +379,16 @@ function hideIf(selector, cond){
       return;
     }
     grid.innerHTML = "";
+    const canEdit = !!ctx?.canEdit;
     for(const item of data){
+      const poster = item.thumb_url ? ` poster="${item.thumb_url}"` : "";
       const media = item.tipo === "video"
-        ? `<video src="${item.media_url}" controls preload="metadata"></video>`
+        ? `<video src="${item.media_url}"${poster} preload="metadata" muted playsinline></video>`
         : `<img src="${item.media_url}" alt="">`;
       const card = document.createElement("div");
-      card.className = "dp-item";
+      card.className = "dp-item dp-item--clickable";
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
       const title = item.titulo || item.legenda || "";
       const desc = item.descricao || (item.titulo ? item.legenda : "") || "";
       card.innerHTML = `
@@ -387,14 +398,68 @@ function hideIf(selector, cond){
           <p>${escapeHtml(desc)}</p>
         </div>
       `;
+      if(canEdit){
+        const menu = document.createElement("div");
+        menu.className = "dp-itemMenu";
+        menu.innerHTML = `
+          <button class="dp-itemMenuBtn" type="button" aria-label="Opcoes">...</button>
+          <div class="dp-itemMenuList">
+            <button type="button" class="dp-itemMenuDelete">Excluir</button>
+          </div>
+        `;
+        const menuBtn = menu.querySelector(".dp-itemMenuBtn");
+        const menuList = menu.querySelector(".dp-itemMenuList");
+        const deleteBtn = menu.querySelector(".dp-itemMenuDelete");
+        menuBtn?.addEventListener("click", (event)=>{
+          event.preventDefault();
+          event.stopPropagation();
+          menuList?.classList.toggle("open");
+        });
+        deleteBtn?.addEventListener("click", async (event)=>{
+          event.preventDefault();
+          event.stopPropagation();
+          menuList?.classList.remove("open");
+          if(!confirm("Excluir esta publicação?")) return;
+          const { error: delErr } = await client
+            .from("publicacoes")
+            .delete()
+            .eq("id", item.id);
+          if(delErr){
+            console.error(delErr);
+            toast("Erro ao excluir.");
+            return;
+          }
+          toast("Publicação excluída.");
+          loadPublicacoes(client, userId, ctx);
+        });
+        card.appendChild(menu);
+      }
+      const openModal = () => {
+        if(typeof window.abrirModalPublicacao === "function"){
+          window.abrirModalPublicacao(item.id);
+          return;
+        }
+        toast("Detalhes indisponiveis no momento.");
+      };
+      card.addEventListener("click", (event)=>{
+        event.preventDefault();
+        openModal();
+      });
+      card.addEventListener("keydown", (event)=>{
+        if(event.key === "Enter" || event.key === " "){
+          event.preventDefault();
+          openModal();
+        }
+      });
       grid.appendChild(card);
     }
   }
 
-  async function loadReels(client, userId){
+    async function loadReels(client, userId){
     const grid = $("#dpGridReels");
     if(!grid) return;
-    grid.innerHTML = `<div class="dp-empty">Carregando vídeos curtos...</div>`;
+    grid.classList.add("dp-grid--reels");
+    grid.innerHTML = `<div class="dp-empty">Carregando videos curtos...</div>`;
     const { data, error } = await client
       .from("videos_curtos")
       .select("*")
@@ -403,28 +468,46 @@ function hideIf(selector, cond){
       .limit(40);
     if(error){
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Nenhum vídeo curto ainda.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhum video curto ainda.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
       return;
     }
     if(!data?.length){
-      grid.innerHTML = `<div class="dp-empty">Sem vídeos curtos ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem videos curtos ainda.</div>`;
       return;
     }
     grid.innerHTML = "";
     for(const item of data){
       const card = document.createElement("div");
-      card.className = "dp-item";
+      card.className = "dp-reelCard dp-item dp-item--clickable";
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
       card.innerHTML = `
-        <div class="dp-itemMedia"><video src="${item.video_url}" controls preload="metadata"></video></div>
-        <div class="dp-itemBody">
-          <b>${escapeHtml(item.titulo || "")}</b>
-          <p>${escapeHtml(item.descricao || "")}</p>
+        <div class="dp-reelMedia">
+          <video src="${item.video_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} muted loop playsinline preload="metadata"></video>
+          <div class="dp-reelOverlay">
+            <b>${escapeHtml(item.titulo || "Video curto")}</b>
+            <p>${escapeHtml(item.descricao || "")}</p>
+          </div>
+          <div class="dp-reelPlay"><i class='bx bx-play'></i></div>
         </div>
       `;
+      const openReel = () => {
+        window.location.href = `feed.html?start=sb-${item.id}`;
+      };
+      card.addEventListener("click", (event) => {
+        event.preventDefault();
+        openReel();
+      });
+      card.addEventListener("keydown", (event) => {
+        if(event.key === "Enter" || event.key === " "){
+          event.preventDefault();
+          openReel();
+        }
+      });
       grid.appendChild(card);
     }
   }
@@ -558,9 +641,15 @@ function hideIf(selector, cond){
   // -----------------------------
   // Create items
   // -----------------------------
-  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file }){
+  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, capaFile }){
     // upload to storage
     const storageId = ctx.me?.uid || ctx.me?.id;
+    let thumbUrl = null;
+    if(capaFile){
+      const upCover = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
+      if(upCover.error) throw upCover.error;
+      thumbUrl = upCover.url;
+    }
     const up = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/${crypto.randomUUID()}`, file });
     if(up.error) throw up.error;
     const payload = {
@@ -570,19 +659,23 @@ function hideIf(selector, cond){
       legenda,
       media_url: up.url
     };
+    if(thumbUrl) payload.thumb_url = thumbUrl;
     let { error } = await client.from("publicacoes").insert(payload);
     if(error && error.code === "PGRST204"){
-      const msg = String(error.message || "");
+      const msg = String(error.message || "").toLowerCase();
       const retry = {
         user_id: ctx.me.id,
         tipo,
         media_url: up.url
       };
-      if(!msg.includes("titulo") && titulo) retry.titulo = titulo;
-      if(!msg.includes("legenda")){
-        retry.legenda = legenda;
-      }else{
-        retry.descricao = legenda;
+      if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
+      if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
+      if(legenda){
+        if(!msg.includes("legenda")) {
+          retry.legenda = legenda;
+        } else if(!msg.includes("descricao")) {
+          retry.descricao = legenda;
+        }
       }
       const r2 = await client.from("publicacoes").insert(retry);
       error = r2.error || null;
@@ -590,16 +683,36 @@ function hideIf(selector, cond){
     if(error) throw error;
   }
 
-  async function createReel(client, ctx, { titulo, descricao, file }){
+  async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
     const storageId = ctx.me?.uid || ctx.me?.id;
+    let thumbUrl = null;
+    if(capaFile){
+      const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
+      if(upCover.error) throw upCover.error;
+      thumbUrl = upCover.url;
+    }
     const up = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/${crypto.randomUUID()}`, file });
     if(up.error) throw up.error;
-    const { error } = await client.from("videos_curtos").insert({
+    const payload = {
       user_id: ctx.me.id,
       titulo,
       descricao,
       video_url: up.url
-    });
+    };
+    if(thumbUrl) payload.thumb_url = thumbUrl;
+    let { error } = await client.from("videos_curtos").insert(payload);
+    if(error && error.code === "PGRST204"){
+      const msg = String(error.message || "").toLowerCase();
+      const retry = {
+        user_id: ctx.me.id,
+        video_url: up.url
+      };
+      if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
+      if(descricao && !msg.includes("descricao")) retry.descricao = descricao;
+      if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
+      const r2 = await client.from("videos_curtos").insert(retry);
+      error = r2.error || null;
+    }
     if(error) throw error;
   }
 
@@ -847,7 +960,7 @@ function hideIf(selector, cond){
       sections.forEach(s=> s.style.display = (s.dataset.tab === tab ? "" : "none"));
 
       // Lazy load
-      if(tab === "publicacoes") loadPublicacoes(ctx.client, ctx.target.id);
+      if(tab === "publicacoes") loadPublicacoes(ctx.client, ctx.target.id, ctx);
       if(tab === "reels") loadReels(ctx.client, ctx.target.id);
       if(tab === "servicos") loadServicos(ctx.client, ctx.target.id);
       if(tab === "portfolio") loadPortfolio(ctx.client, ctx.target.id);
@@ -885,6 +998,10 @@ function hideIf(selector, cond){
               <input class="dp-input" type="file" id="dpPubFile" accept="image/*,video/*"/>
             </div>
           </div>
+          <div id="dpPubCoverRow" style="display:none;">
+            <label>Capa do video (opcional)</label>
+            <input class="dp-input" type="file" id="dpPubCover" accept="image/*"/>
+          </div>
           <div>
             <label>Título</label>
             <input class="dp-input" id="dpPubTitulo" placeholder="Ex: Antes e depois" />
@@ -899,6 +1016,7 @@ function hideIf(selector, cond){
         if(!client) return;
         const tipo = $("#dpPubTipo")?.value || "foto";
         const file = $("#dpPubFile")?.files?.[0];
+        const capaFile = $("#dpPubCover")?.files?.[0] || null;
         if(!file) return toast("Selecione um arquivo.");
         try{
           if(tipo === "curto"){
@@ -906,7 +1024,8 @@ function hideIf(selector, cond){
             await createReel(client, ctx, {
               titulo: safeStr($("#dpPubTitulo")?.value),
               descricao: safeStr($("#dpPubDesc")?.value),
-              file
+              file,
+              capaFile
             });
             modal.close();
             toast("Video curto publicado!");
@@ -917,16 +1036,28 @@ function hideIf(selector, cond){
             tipo,
             titulo: safeStr($("#dpPubTitulo")?.value),
             legenda: safeStr($("#dpPubDesc")?.value),
-            file
+            file,
+            capaFile: tipo === "video" ? capaFile : null
           });
           modal.close();
           toast("Publicado!");
-          loadPublicacoes(ctx.client, ctx.target.id);
+          loadPublicacoes(ctx.client, ctx.target.id, ctx);
         }catch(e){
           console.error(e);
           toast("Erro ao publicar.");
         }
       }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
+
+      const tipoEl = $("#dpPubTipo");
+      const coverRow = $("#dpPubCoverRow");
+      const coverInput = $("#dpPubCover");
+      const updateCover = ()=>{
+        const show = (tipoEl?.value || "foto") !== "foto";
+        if(coverRow) coverRow.style.display = show ? "" : "none";
+        if(!show && coverInput) coverInput.value = "";
+      };
+      tipoEl?.addEventListener("change", updateCover);
+      updateCover();
     });
 
     // Novo Reel
@@ -938,6 +1069,10 @@ function hideIf(selector, cond){
           <div>
             <label>Arquivo (vídeo)</label>
             <input class="dp-input" type="file" id="dpReelFile" accept="video/*"/>
+          </div>
+          <div>
+            <label>Capa do video (opcional)</label>
+            <input class="dp-input" type="file" id="dpReelCover" accept="image/*"/>
           </div>
           <div>
             <label>Título</label>
@@ -952,12 +1087,14 @@ function hideIf(selector, cond){
         const client = mustSupa();
         if(!client) return;
         const file = $("#dpReelFile")?.files?.[0];
+        const capaFile = $("#dpReelCover")?.files?.[0] || null;
         if(!file) return toast("Selecione um vídeo.");
         try{
           await createReel(client, ctx, {
             titulo: safeStr($("#dpReelTitulo")?.value),
             descricao: safeStr($("#dpReelDesc")?.value),
-            file
+            file,
+            capaFile
           });
           modal.close();
           toast("Vídeo curto publicado!");
@@ -1292,6 +1429,7 @@ function hideIf(selector, cond){
   document.addEventListener("DOMContentLoaded", init);
 
 })();
+
 
 
 
