@@ -954,6 +954,31 @@ function hideIf(selector, cond){
   function initTabs(ctx){
     const buttons = $$(".dp-tab");
     const sections = $$(".dp-section[data-tab]");
+    const tabsWrap = $(".dp-tabs");
+    const prevNav = $(".dp-tabsPrev");
+    const nextNav = $(".dp-tabsNext");
+
+    if(tabsWrap && prevNav && nextNav){
+      const scrollAmount = () => Math.max(140, Math.round(tabsWrap.clientWidth * 0.6));
+      const updateNav = () => {
+        const maxScroll = tabsWrap.scrollWidth - tabsWrap.clientWidth;
+        const hide = maxScroll <= 1;
+        prevNav.disabled = tabsWrap.scrollLeft <= 0;
+        nextNav.disabled = tabsWrap.scrollLeft >= maxScroll - 1;
+        prevNav.style.visibility = hide ? "hidden" : "visible";
+        nextNav.style.visibility = hide ? "hidden" : "visible";
+      };
+
+      prevNav.addEventListener("click", ()=> {
+        tabsWrap.scrollBy({ left: -scrollAmount(), behavior: "smooth" });
+      });
+      nextNav.addEventListener("click", ()=> {
+        tabsWrap.scrollBy({ left: scrollAmount(), behavior: "smooth" });
+      });
+      tabsWrap.addEventListener("scroll", updateNav, { passive: true });
+      window.addEventListener("resize", updateNav);
+      updateNav();
+    }
 
     function activate(tab){
       buttons.forEach(b=> b.classList.toggle("active", b.dataset.tab === tab));
@@ -973,6 +998,33 @@ function hideIf(selector, cond){
 
     // default tab
     activate("publicacoes");
+  }
+
+  function initStatsNav(){
+    const stats = $(".dp-stats");
+    const prev = $(".dp-statsPrev");
+    const next = $(".dp-statsNext");
+    if(!stats || !prev || !next) return;
+
+    const scrollAmount = () => Math.max(120, Math.round(stats.clientWidth * 0.6));
+    const updateNav = () => {
+      const maxScroll = stats.scrollWidth - stats.clientWidth;
+      const hide = maxScroll <= 1;
+      prev.disabled = stats.scrollLeft <= 0;
+      next.disabled = stats.scrollLeft >= maxScroll - 1;
+      prev.style.visibility = hide ? "hidden" : "visible";
+      next.style.visibility = hide ? "hidden" : "visible";
+    };
+
+    prev.addEventListener("click", ()=> {
+      stats.scrollBy({ left: -scrollAmount(), behavior: "smooth" });
+    });
+    next.addEventListener("click", ()=> {
+      stats.scrollBy({ left: scrollAmount(), behavior: "smooth" });
+    });
+    stats.addEventListener("scroll", updateNav, { passive: true });
+    window.addEventListener("resize", updateNav);
+    updateNav();
   }
 
   // -----------------------------
@@ -1409,6 +1461,7 @@ function hideIf(selector, cond){
       try{ renderHeader(ctx); }catch(e){ console.error(e); }
       try{ initMedia(ctx); }catch(e){ console.error(e); }
       try{ initTabs(ctx); }catch(e){ console.error(e); }
+      try{ initStatsNav(); }catch(e){ console.error(e); }
       try{ initSectionActions(ctx); }catch(e){ console.error(e); }
 
       // show write review only for public professional + logged in and not owner

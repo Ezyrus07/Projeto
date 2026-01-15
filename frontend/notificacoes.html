@@ -182,6 +182,7 @@
                 <button class="filter-chip active" onclick="filtrar('todas', this)">Todas</button>
                 <button class="filter-chip" onclick="filtrar('financeiro', this)">Financeiro</button>
                 <button class="filter-chip" onclick="filtrar('pedidos', this)">Pedidos</button>
+                <button class="filter-chip" onclick="filtrar('social', this)">Interacoes</button>
             </div>
 
             <div id="lista-notificacoes">
@@ -223,6 +224,55 @@
             });
         });
 
+        function montarNotificacaoSocial(data, docId) {
+            const actor = data.deUser || data.deNome || "Alguem";
+            let titulo = "Atualizacao";
+            let desc = "Voce recebeu uma interacao.";
+            let iconClass = "bx-bell";
+            let colorClass = "ni-info";
+
+            if (data.acao === "comentario_post") {
+                titulo = "Novo comentario";
+                desc = `${actor} comentou no seu post.`;
+                iconClass = "bx-message-rounded";
+                colorClass = "ni-info";
+            } else if (data.acao === "comentario_reel") {
+                titulo = "Novo comentario";
+                desc = `${actor} comentou no seu video-curto.`;
+                iconClass = "bx-message-rounded";
+                colorClass = "ni-info";
+            } else if (data.acao === "curtida_post") {
+                titulo = "Novo like";
+                desc = `${actor} curtiu seu post.`;
+                iconClass = "bx-heart";
+                colorClass = "ni-success";
+            } else if (data.acao === "curtida_reel") {
+                titulo = "Novo like";
+                desc = `${actor} curtiu seu video-curto.`;
+                iconClass = "bx-heart";
+                colorClass = "ni-success";
+            } else if (data.acao === "curtida_comentario") {
+                titulo = "Curtiram seu comentario";
+                desc = `${actor} curtiu seu comentario.`;
+                iconClass = "bx-like";
+                colorClass = "ni-success";
+            }
+
+            const timeValue = data.createdAt ? new Date(data.createdAt) : new Date();
+            return {
+                id: docId,
+                role: "social",
+                titulo,
+                desc,
+                tipo: "social",
+                status: data.lida ? "read" : "unread",
+                time: timeValue,
+                iconClass,
+                colorClass,
+                link: data.link || "index.html"
+            };
+        }
+
 // EM NOTIFICACOES.HTML
 
 async function carregarNotificacoes(uid) {
@@ -233,8 +283,13 @@ async function carregarNotificacoes(uid) {
     try {
         const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
         const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
+        const qSociais = query(collection(db, "notificacoes"), where("paraUid", "==", uid));
 
-        const [snapRecebidos, snapEnviados] = await Promise.all([getDocs(qRecebidos), getDocs(qEnviados)]);
+        const [snapRecebidos, snapEnviados, snapSociais] = await Promise.all([
+            getDocs(qRecebidos),
+            getDocs(qEnviados),
+            getDocs(qSociais)
+        ]);
 
         // --- PROFISSIONAL (Recebidos) ---
         snapRecebidos.forEach(doc => {
@@ -320,6 +375,11 @@ async function carregarNotificacoes(uid) {
             }
         });
 
+        snapSociais.forEach(docSnap => {
+            const data = docSnap.data() || {};
+            todasNotificacoes.push(montarNotificacaoSocial(data, docSnap.id));
+        });
+
         todasNotificacoes.sort((a, b) => b.time - a.time);
         renderizarLista(todasNotificacoes);
         atualizarBadge();
@@ -374,16 +434,16 @@ async function carregarNotificacoes(uid) {
                 
                 // Cria um array de promessas para atualizar tudo junto
                 const promises = naoLidas.map(notif => {
+                    if (notif.role === 'social') {
+                        const docRef = doc(db, "notificacoes", notif.id);
+                        return updateDoc(docRef, { lida: true });
+                    }
+
                     const docRef = doc(db, "pedidos", notif.id);
-                    
-                    // Se sou profissional, atualizo o campo do profissional
                     if (notif.role === 'profissional') {
                         return updateDoc(docRef, { notificacaoLidaProfissional: true });
-                    } 
-                    // Se sou cliente, atualizo o campo do cliente
-                    else {
-                        return updateDoc(docRef, { notificacaoLidaCliente: true });
                     }
+                    return updateDoc(docRef, { notificacaoLidaCliente: true });
                 });
 
                 await Promise.all(promises);
@@ -405,6 +465,7 @@ async function carregarNotificacoes(uid) {
             if (tipo === 'todas') filtrados = todasNotificacoes;
             else if (tipo === 'financeiro') filtrados = todasNotificacoes.filter(n => n.tipo === 'financeiro');
             else if (tipo === 'pedidos') filtrados = todasNotificacoes.filter(n => n.tipo === 'pedidos');
+            else if (tipo === 'social') filtrados = todasNotificacoes.filter(n => n.tipo === 'social');
             renderizarLista(filtrados);
         }
 

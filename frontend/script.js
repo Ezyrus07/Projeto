@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // 1. IMPORTAÇÕES E CONFIGURAÇÃO
 // ============================================================
 // [PATCH] import ESM removido; usar Supabase global (supabase-init.js)
@@ -568,6 +568,123 @@ window.verificarNotificacoes = function(uid) {
             }
         });
     });
+}
+
+const _dokeSupabaseUidCache = new Map();
+
+function buildSocialNotifLink(postTipo, postFonte, postId) {
+    if (postTipo === "reel" && postId) {
+        const prefix = postFonte === "supabase" ? "sb" : "fb";
+        return `feed.html?start=${prefix}-${postId}`;
+    }
+    return "index.html";
+}
+
+function getActorPerfil() {
+    const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    const nome = perfil.nome || "";
+    const rawUser = perfil.user || "";
+    const handle = rawUser
+        ? (rawUser.startsWith("@") ? rawUser : `@${rawUser}`)
+        : (nome ? `@${nome.split(" ")[0].toLowerCase()}` : "@usuario");
+    return {
+        nome: nome || handle.replace("@", "") || "Usuario",
+        user: handle,
+        foto: perfil.foto || "https://placehold.co/50"
+    };
+}
+
+async function getSupabaseUidByUserId(userId) {
+    if (!userId) return null;
+    if (_dokeSupabaseUidCache.has(userId)) return _dokeSupabaseUidCache.get(userId);
+    const client = getSupabaseClient();
+    if (!client) return null;
+    const { data, error } = await client
+        .from("usuarios")
+        .select("uid")
+        .eq("id", userId)
+        .maybeSingle();
+    if (error && !isMissingTableError(error)) console.error(error);
+    const uid = data?.uid || null;
+    if (uid) _dokeSupabaseUidCache.set(userId, uid);
+    return uid;
+}
+
+async function resolverDonoComentarioUid(commentId, parentId, isReply) {
+    const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
+    const ownerUid = btn?.dataset?.ownerUid || "";
+    if (ownerUid) return ownerUid;
+    const ownerId = btn?.dataset?.ownerId || "";
+
+    if (window.currentPostSource === "supabase") {
+        if (ownerId) return await getSupabaseUidByUserId(ownerId);
+        const client = getSupabaseClient();
+        if (!client) return null;
+        const cfg = getSupabasePostConfig();
+        let { data, error } = await client
+            .from(cfg.commentsTable)
+            .select("user_id, usuarios (uid)")
+            .eq("id", commentId)
+            .maybeSingle();
+        if (error) {
+            const retry = await client
+                .from(cfg.commentsTable)
+                .select("user_id")
+                .eq("id", commentId)
+                .maybeSingle();
+            data = retry.data || null;
+            error = retry.error || null;
+        }
+        if (error && !isMissingTableError(error)) console.error(error);
+        const uid = data?.usuarios?.uid || (data?.user_id ? await getSupabaseUidByUserId(data.user_id) : null);
+        return uid || null;
+    }
+
+    if (!window.currentCollection || !window.currentPostId) return null;
+    try {
+        const ref = isReply
+            ? doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", commentId)
+            : doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId);
+        const snap = await getDoc(ref);
+        return snap.exists() ? (snap.data().uid || null) : null;
+    } catch (e) {
+        console.error(e);
+        return null;
+    }
+}
+
+async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFonte, comentarioId, comentarioTexto }) {
+    const user = auth?.currentUser;
+    if (!user || !paraUid || user.uid === paraUid) return;
+    const perfil = getActorPerfil();
+    const payload = {
+        paraUid,
+        deUid: user.uid,
+        deNome: perfil.nome,
+        deUser: perfil.user,
+        deFoto: perfil.foto,
+        acao,
+        postId: postId || null,
+        postTipo: postTipo || null,
+        postFonte: postFonte || null,
+        comentarioId: comentarioId || null,
+        comentarioTexto: comentarioTexto || null,
+        lida: false,
+        createdAt: new Date().toISOString(),
+        link: buildSocialNotifLink(postTipo, postFonte, postId)
+    };
+
+    try {
+        if (acao && acao.startsWith("curtida")) {
+            const chave = `like_${acao}_${postId || "x"}_${comentarioId || "x"}_${user.uid}`;
+            await setDoc(doc(db, "notificacoes", chave), payload, { merge: true });
+            return;
+        }
+
+        await addDoc(collection(db, "notificacoes"), payload);
+    } catch (e) {
+        console.warn("Notificacao social ignorada:", e);
+    }
 }
 
 
@@ -1299,6 +1416,16 @@ function isMissingTableError(err) {
     return err.code === "PGRST205" || err.status === 404 || /could not find the table/i.test(msg) || /not found/i.test(msg);
 }
 
+function isMissingColumnError(err) {
+    if (!err) return false;
+    const msg = (err.message || "") + " " + (err.hint || "") + " " + (err.details || "");
+    return err.code === "PGRST204" || /could not find the .* column/i.test(msg) || /column .* does not exist/i.test(msg);
+}
+
+function isSchemaCacheError(err) {
+    return isMissingTableError(err) || isMissingColumnError(err);
+}
+
 function markPublicacoesSelectError(err) {
     if (!err) return;
     const msg = ((err.message || "") + " " + (err.hint || "") + " " + (err.details || "")).toLowerCase();
@@ -1383,6 +1510,31 @@ async function getSupabaseUserRow() {
     }
     window._dokeSupabaseUserRow = data || null;
     return window._dokeSupabaseUserRow;
+}
+
+async function attachSupabaseUsersById(items) {
+    const client = getSupabaseClient();
+    if (!client || !Array.isArray(items) || items.length === 0) return items;
+
+    const missing = Array.from(new Set(items.map((item) => item?.user_id).filter(Boolean)));
+    if (!missing.length) return items;
+
+    const { data, error } = await client
+        .from("usuarios")
+        .select("id, uid, nome, user, foto")
+        .in("id", missing);
+
+    if (error || !Array.isArray(data)) {
+        if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuarios:", error);
+        return items;
+    }
+
+    const map = new Map(data.map((row) => [row.id, row]));
+    return items.map((item) => {
+        if (!item || item.usuarios) return item;
+        const usuario = map.get(item.user_id);
+        return usuario ? { ...item, usuarios: usuario } : item;
+    });
 }
 
 async function fetchSupabasePublicacoesFeed() {
@@ -1694,6 +1846,10 @@ function setupFeedVideoPreview(container) {
         video.muted = true;
         video.loop = true;
         video.playsInline = true;
+        video.controls = false;
+        video.controlsList = 'nodownload noplaybackrate noremoteplayback';
+        video.disablePictureInPicture = true;
+        video.disableRemotePlayback = true;
         video.preload = "metadata";
         let hoverTimer = null;
         const playPreview = () => {
@@ -3210,8 +3366,9 @@ window.monitorarNotificacoesGlobal = function(uid) {
     if (!uid) return;
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
+    const qSociais = query(collection(db, "notificacoes"), where("paraUid", "==", uid), where("lida", "==", false));
 
-    const atualizarBadges = (docsRecebidos, docsEnviados) => {
+    const atualizarBadges = (docsRecebidos, docsEnviados, docsSociais) => {
         let totalNotif = 0;
         let totalChat = 0;
 
@@ -3228,6 +3385,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
             if ((st === 'aceito' || st === 'recusado') && !data.notificacaoLidaCliente) totalNotif++;
             if (st === 'aceito') totalChat++;
         });
+        totalNotif += docsSociais.length;
 
         // ESTILO UNIFICADO (Vermelho padrão #ff2e63)
         const estiloBadge = `
@@ -3276,9 +3434,12 @@ document.querySelectorAll('a[href="chat.html"]').forEach(link => {
         });
     };
 // ... (restante dos snapshots igual) ...
-    let cacheRecebidos = []; let cacheEnviados = [];
-    onSnapshot(qRecebidos, (snap) => { cacheRecebidos = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados); });
-    onSnapshot(qEnviados, (snap) => { cacheEnviados = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados); });
+    let cacheRecebidos = [];
+    let cacheEnviados = [];
+    let cacheSociais = [];
+    onSnapshot(qRecebidos, (snap) => { cacheRecebidos = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
+    onSnapshot(qEnviados, (snap) => { cacheEnviados = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
+    onSnapshot(qSociais, (snap) => { cacheSociais = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
 }
 
 const styleModal = document.createElement('style');
@@ -4166,13 +4327,13 @@ window.currentPostAuthorUid = null; // <--- NOVO: Para identificar o criador
 window.currentPostSource = "firebase";
 window.currentSupaPublicacaoId = null;
 window.currentSupaPublicacaoAuthorId = null;
+window.currentSupaPublicacaoAuthorUid = null;
 let processandoLike = false; // Trava para evitar cliques rápidos
 
 function ensureModalPostDetalhe() {
     if (document.getElementById('modalPostDetalhe')) return;
     const modalHtml = `
     <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
-        <button class="btn-close-modal-fixed" onclick="fecharModalPostForce()">&times;</button>
         <div class="modal-content" onclick="event.stopPropagation()">
             <div class="modal-media-area" id="modalMediaContainer"></div>
             <div class="modal-info-area">
@@ -4256,6 +4417,7 @@ window.abrirModalPost = async function(id, colecao) {
     window.currentPostSource = "firebase";
     window.currentSupaPublicacaoId = null;
     window.currentSupaPublicacaoAuthorId = null;
+    window.currentSupaPublicacaoAuthorUid = null;
     const modal = document.getElementById('modalPostDetalhe');
     const user = auth.currentUser;
     
@@ -4340,8 +4502,7 @@ window.abrirModalPost = async function(id, colecao) {
 async function carregarComentariosNoModal(id, colecao) {
     const list = document.getElementById('modalCommentsList');
     const user = auth.currentUser;
-    
-    // Preserva a legenda
+
     const legendaDiv = document.getElementById('modalCaption');
     let legendaHTML = "";
     if (legendaDiv && legendaDiv.style.display !== 'none') {
@@ -4356,24 +4517,53 @@ async function carregarComentariosNoModal(id, colecao) {
 
         list.innerHTML = legendaHTML;
 
-        if(snapshot.empty) {
-            list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentário.</p>');
+        if (snapshot.empty) {
+            list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>');
             return;
-        } 
+        }
 
+        const comments = [];
         snapshot.forEach(docSnap => {
-            const c = docSnap.data();
-            const cid = docSnap.id;
-            
-            // Tag Criador
-            let htmlCriador = (window.currentPostAuthorUid && c.uid === window.currentPostAuthorUid) 
-                ? `<span class="badge-criador">Criador</span>` : "";
+            comments.push({ id: docSnap.id, ...docSnap.data() });
+        });
 
-            // Botão Excluir (Só se for meu)
-            let btnExcluir = (user && c.uid === user.uid) 
-                ? `<button class="btn-delete-comment" onclick="deletarComentario('${cid}')"><i class='bx bx-trash'></i></button>` : "";
+        comments.sort((a, b) => {
+            const ap = a.pinned === true ? 1 : 0;
+            const bp = b.pinned === true ? 1 : 0;
+            if (ap !== bp) return bp - ap;
+            return new Date(a.data || 0) - new Date(b.data || 0);
+        });
 
-            // Botão "Ver Respostas" (Só aparece se replyCount > 0)
+        const checks = [];
+
+        comments.forEach(c => {
+            const cid = c.id;
+            const dataLabel = c.data ? new Date(c.data).toLocaleDateString('pt-BR') : "";
+            const isCreator = window.currentPostAuthorUid && c.uid === window.currentPostAuthorUid;
+            const isPinned = c.pinned === true;
+            const likeCount = c.likeCount || 0;
+
+            const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+            const badgeFixado = isPinned ? `<span class="badge-fixado">Fixado</span>` : "";
+
+            const canPin = user && window.currentPostAuthorUid && user.uid === window.currentPostAuthorUid;
+            const btnPin = canPin
+                ? `<button class="btn-pin-comment" onclick="alternarFixarComentario('${cid}')">${isPinned ? 'Desafixar' : 'Fixar'}</button>`
+                : "";
+
+            const btnExcluir = (user && c.uid === user.uid)
+                ? `<button class="btn-delete-comment" onclick="deletarComentario('${cid}')"><i class='bx bx-trash'></i></button>`
+                : "";
+
+            const btnReport = (user && c.uid !== user.uid)
+                ? `<button class="comment-report-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" data-comment-uid="${c.uid}" onclick="denunciarComentario('${cid}', '', false)">Denunciar</button>`
+                : "";
+
+            const btnLike = `
+                <button class="comment-like-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" onclick="toggleLikeComentario('${cid}', '', false)">
+                    <i class='bx bx-heart'></i><span>${likeCount}</span>
+                </button>`;
+
             let btnVerRespostas = "";
             if (c.replyCount && c.replyCount > 0) {
                 btnVerRespostas = `
@@ -4383,19 +4573,25 @@ async function carregarComentariosNoModal(id, colecao) {
             }
 
             const html = `
-            <div class="comment-block" id="comm-${cid}" style="margin-top:15px;">
-                <div style="display:flex; gap:10px; font-size:0.9rem; align-items:flex-start;">
-                    <img src="${c.foto}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+            <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
+                <div class="comment-row">
+                    <img src="${c.foto}" class="comment-avatar" alt="">
                     <div style="flex:1;">
-                        <div style="display:flex; justify-content:space-between;">
-                            <div><span style="font-weight:700;">${c.user}</span> ${htmlCriador}</div>
-                            ${btnExcluir}
+                        <div class="comment-header-row">
+                            <div class="comment-header-left">
+                                <span class="comment-user-name">${c.user}</span> ${badgeCriador} ${badgeFixado}
+                            </div>
+                            <div class="comment-header-actions">
+                                ${btnPin}
+                                ${btnExcluir}
+                            </div>
                         </div>
-                        <div style="color:#333; margin-top:2px;">${c.texto}</div>
-                        
-                        <div style="display:flex; align-items:center; margin-top:4px; gap:15px;">
-                            <span style="font-size:0.75rem; color:#999;">${new Date(c.data).toLocaleDateString()}</span>
+                        <div class="comment-text-content">${c.texto}</div>
+                        <div class="comment-meta-row">
+                            <span class="comment-date">${dataLabel}</span>
                             <button class="btn-reply-action" onclick="toggleInputResposta('${cid}')">Responder</button>
+                            ${btnLike}
+                            ${btnReport}
                         </div>
                     </div>
                 </div>
@@ -4410,7 +4606,14 @@ async function carregarComentariosNoModal(id, colecao) {
                 </div>
             </div>`;
             list.insertAdjacentHTML('beforeend', html);
+
+            if (user) {
+                checks.push(verificarLikeComentario(cid, "", false));
+                if (c.uid !== user.uid) checks.push(verificarDenunciaComentario(cid, "", false));
+            }
         });
+
+        if (checks.length) await Promise.all(checks);
 
     } catch(e) { console.error(e); }
 }
@@ -4581,6 +4784,13 @@ async function darLikeModalSupabase() {
                 throw error;
             }
             if (error && !isMissingTableError(error)) throw error;
+            await criarNotificacaoSocial({
+                acao: "curtida_post",
+                paraUid: window.currentSupaPublicacaoAuthorUid,
+                postId: window.currentSupaPublicacaoId,
+                postTipo: "post",
+                postFonte: "supabase"
+            });
         }
     } catch (e) {
         console.error("Erro ao curtir supabase:", e);
@@ -4625,6 +4835,14 @@ async function postarComentarioSupabase() {
         }
         if (error && !isMissingTableError(error)) throw error;
         if (input) input.value = "";
+        await criarNotificacaoSocial({
+            acao: "comentario_post",
+            paraUid: window.currentSupaPublicacaoAuthorUid,
+            postId: window.currentSupaPublicacaoId,
+            postTipo: "post",
+            postFonte: "supabase",
+            comentarioTexto: texto
+        });
         await carregarComentariosSupabase(window.currentSupaPublicacaoId);
     } catch (e) {
         console.error("Erro ao comentar supabase:", e);
@@ -4638,7 +4856,10 @@ async function postarComentarioSupabase() {
 }
 
 window.deletarComentario = async function(commentId) {
-    if(!confirm("Tem certeza que deseja apagar este comentário?")) return;
+    const pode = window.dokeConfirm
+        ? await window.dokeConfirm("Deseja apagar esta mensagem?", "Confirmacao", "danger")
+        : confirm("Deseja apagar esta mensagem?");
+    if (!pode) return;
 
     // Pega as variáveis globais do post aberto
     const postId = window.currentPostId;
@@ -4662,18 +4883,21 @@ window.deletarComentario = async function(commentId) {
 window.abrirModalPublicacao = async function(publicacaoId) {
     ensureModalPostDetalhe();
     const modal = document.getElementById('modalPostDetalhe');
-    if (!modal) return;
+    const mediaContainer = document.getElementById('modalMediaContainer');
+    const commentsList = document.getElementById('modalCommentsList');
+    if (!modal || !mediaContainer || !commentsList) return;
 
     modal.style.display = 'flex';
     window.currentPostSource = "supabase";
     window.currentSupaPublicacaoId = publicacaoId;
     window.currentSupaPublicacaoAuthorId = null;
+    window.currentSupaPublicacaoAuthorUid = null;
     window.currentPostId = null;
     window.currentCollection = null;
     window.currentPostAuthorUid = null;
 
-    document.getElementById('modalMediaContainer').innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="color:white; font-size:3rem;"></i></div>';
-    document.getElementById('modalCommentsList').innerHTML = "";
+    mediaContainer.innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="color:white; font-size:3rem;"></i></div>';
+    commentsList.innerHTML = "";
 
     const iconLike = document.getElementById('btnLikeModalIcon');
     const labelLike = document.getElementById('modalLikesCount');
@@ -4697,6 +4921,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const autor = item.usuarios || (autorFallback && item.user_id === autorFallback.id ? autorFallback : {});
     const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
     const autorFoto = autor.foto || "https://placehold.co/50";
+    window.currentSupaPublicacaoAuthorUid = autor.uid || null;
 
     document.getElementById('modalAvatar').src = autorFoto;
     document.getElementById('modalUsername').innerText = autorNome;
@@ -4710,11 +4935,13 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const captionText = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
     const captionDiv = document.getElementById('modalCaption');
-    if (captionText) {
-        captionDiv.innerHTML = `<strong>${escapeHtml(autorNome)}</strong> ${escapeHtml(captionText)}`;
-        captionDiv.style.display = 'block';
-    } else {
-        captionDiv.style.display = 'none';
+    if (captionDiv) {
+        if (captionText) {
+            captionDiv.innerHTML = `<strong>${escapeHtml(autorNome)}</strong> ${escapeHtml(captionText)}`;
+            captionDiv.style.display = 'block';
+        } else {
+            captionDiv.style.display = 'none';
+        }
     }
 
     const likesCount = getRelatedCount(item.publicacoes_curtidas);
@@ -4761,10 +4988,22 @@ window.postarComentarioModal = async function() {
             user: perfilLocal.user || "Usuario",
             foto: perfilLocal.foto || "https://placehold.co/50",
             texto: texto,
-            data: new Date().toISOString()
+            data: new Date().toISOString(),
+            likeCount: 0,
+            replyCount: 0,
+            pinned: false
         });
 
         input.value = ""; // Limpa input
+
+        await criarNotificacaoSocial({
+            acao: "comentario_post",
+            paraUid: window.currentPostAuthorUid,
+            postId: window.currentPostId,
+            postTipo: "post",
+            postFonte: "firebase",
+            comentarioTexto: texto
+        });
         
         // Recarrega a lista para mostrar o novo comentário (e aplicar a tag Criador se necessário)
         await carregarComentariosNoModal(window.currentPostId, window.currentCollection);
@@ -4872,26 +5111,35 @@ async function carregarReelsNoIndex() {
 async function fetchSupabaseReelsHome() {
     const client = getSupabaseClient();
     if (!client) return [];
-    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
     let { data, error } = await client
         .from("videos_curtos")
         .select(withJoin)
         .order("created_at", { ascending: false })
         .limit(20);
     if (error) {
-        const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
-        const retry = await client
+        const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+        const retryJoin = await client
             .from("videos_curtos")
-            .select(fallback)
+            .select(joinOnly)
             .order("created_at", { ascending: false })
             .limit(20);
-        if (retry.error) {
-            console.error("Erro ao carregar videos curtos supabase:", retry.error);
-            return [];
+        if (retryJoin.error) {
+            const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+            const retry = await client
+                .from("videos_curtos")
+                .select(fallback)
+                .order("created_at", { ascending: false })
+                .limit(20);
+            if (retry.error) {
+                console.error("Erro ao carregar videos curtos supabase:", retry.error);
+                return [];
+            }
+            return await attachSupabaseUsersById(retry.data || []);
         }
-        return retry.data || [];
+        return await attachSupabaseUsersById(retryJoin.data || []);
     }
-    return data || [];
+    return await attachSupabaseUsersById(data || []);
 }
 
 window.carregarReelsHome = async function() {
@@ -4970,7 +5218,7 @@ window.carregarReelsHome = async function() {
             const html = `
             <div class="tiktok-card" onclick="window.location.href='feed.html?start=${startId}'">
                 <div class="card-badge-online">${tag}</div>
-                <video src="${videoUrl}" poster="${capaUrl}" class="video-bg" muted loop playsinline></video>
+                <video src="${videoUrl}" poster="${capaUrl}" class="video-bg" muted loop playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback"></video>
                 <div class="info-container">
                     <h3 class="user-handle">${autorUser}</h3>
                     <button class="btn-orcamento-card">Solicitar orcamento</button>
@@ -4986,12 +5234,6 @@ function enableVideosCurtosPageScroll() {
     const wrapper = document.getElementById('galeria-dinamica');
     if (!wrapper || wrapper.dataset.scrollFix === "true") return;
     wrapper.dataset.scrollFix = "true";
-    wrapper.addEventListener('wheel', (event) => {
-        if (Math.abs(event.deltaY) <= Math.abs(event.deltaX)) return;
-        event.preventDefault();
-        event.stopPropagation();
-        window.scrollBy({ top: event.deltaY, behavior: 'auto' });
-    }, { passive: false });
 }
 
 // LÓGICA DO DELAY DE 3 SEGUNDOS
@@ -5423,6 +5665,13 @@ window.darLikeModal = async function() {
             // 2. Atualiza Banco
             await setDoc(likeDocRef, { uid: user.uid, data: new Date().toISOString() }); // Cria doc
             await updateDoc(postRef, { likes: increment(1) }); // Aumenta contador
+            await criarNotificacaoSocial({
+                acao: "curtida_post",
+                paraUid: window.currentPostAuthorUid,
+                postId: postId,
+                postTipo: "post",
+                postFonte: "firebase"
+            });
         }
 
     } catch(e) { 
@@ -5500,6 +5749,7 @@ window.fecharModalPostForce = function() {
     window.currentPostSource = "firebase";
     window.currentSupaPublicacaoId = null;
     window.currentSupaPublicacaoAuthorId = null;
+    window.currentSupaPublicacaoAuthorUid = null;
 }
 
 // Atualiza a função antiga para usar a mesma lógica
@@ -5527,6 +5777,11 @@ window.toggleInputResposta = function(commentId) {
 
 // 2. Enviar a Resposta
 window.enviarResposta = async function(parentId) {
+    if (window.currentPostSource === "supabase") {
+        await enviarRespostaSupabase(parentId);
+        return;
+    }
+
     const input = document.getElementById(`input-reply-${parentId}`);
     const texto = input.value.trim();
     const user = auth.currentUser;
@@ -5552,7 +5807,8 @@ window.enviarResposta = async function(parentId) {
             user: perfil.user || "Usuario",
             foto: perfil.foto || "https://placehold.co/50",
             texto: texto,
-            data: new Date().toISOString()
+            data: new Date().toISOString(),
+            likeCount: 0
         });
 
         // Atualiza o contador de respostas no comentário pai (para mostrar "Ver 1 resposta")
@@ -5596,54 +5852,85 @@ window.toggleVerRespostas = function(parentId, btnElement) {
 
 // 4. Carregar as Respostas do Banco
 async function carregarRespostas(parentId) {
+    if (window.currentPostSource === "supabase") {
+        await carregarRespostasSupabase(parentId);
+        return;
+    }
+
     const container = document.getElementById(`replies-${parentId}`);
     const user = auth.currentUser;
+    const userRow = user ? await getSupabaseUserRow() : null;
     container.innerHTML = `<div style="font-size:0.7rem; color:#999; padding:5px;">Carregando...</div>`;
 
     try {
         const q = query(
-            collection(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas"), 
+            collection(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas"),
             orderBy("data", "asc")
         );
         const snapshot = await getDocs(q);
-        
-        container.innerHTML = ""; // Limpa loader
+
+        container.innerHTML = "";
+
+        const checks = [];
 
         snapshot.forEach(docSnap => {
             const r = docSnap.data();
             const rid = docSnap.id;
+            const dataLabel = r.data ? new Date(r.data).toLocaleDateString('pt-BR') : "";
+            const isCreator = window.currentPostAuthorUid && r.uid === window.currentPostAuthorUid;
+            const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+            const likeCount = r.likeCount || 0;
 
-            // Badge Criador na resposta
-            let htmlCriador = (window.currentPostAuthorUid && r.uid === window.currentPostAuthorUid) 
-                ? `<span class="badge-criador">Criador</span>` : "";
+            const btnDel = (user && r.uid === user.uid)
+                ? `<i class='bx bx-trash' onclick="deletarResposta('${parentId}', '${rid}')" style="cursor:pointer; color:#e74c3c; font-size:0.8rem;"></i>`
+                : "";
 
-            // Botão excluir resposta (se for minha)
-            let btnDel = (user && r.uid === user.uid) 
-                ? `<i class='bx bx-trash' onclick="deletarResposta('${parentId}', '${rid}')" style="cursor:pointer; color:#e74c3c; font-size:0.8rem;"></i>` : "";
+            const btnReport = (user && r.uid !== user.uid)
+                ? `<button class="comment-report-btn" data-comment-id="${rid}" data-parent-id="${parentId}" data-reply="true" data-comment-uid="${r.uid}" onclick="denunciarComentario('${rid}', '${parentId}', true)">Denunciar</button>`
+                : "";
+
+            const btnLike = `
+                <button class="comment-like-btn" data-comment-id="${rid}" data-parent-id="${parentId}" data-reply="true" onclick="toggleLikeComentario('${rid}', '${parentId}', true)">
+                    <i class='bx bx-heart'></i><span>${likeCount}</span>
+                </button>`;
 
             const html = `
-            <div style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
+            <div class="reply-item" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
                 <img src="${r.foto}" style="width:24px; height:24px; border-radius:50%;">
                 <div style="flex:1;">
                     <div style="display:flex; justify-content:space-between; align-items:center;">
                         <div style="font-size:0.8rem;">
-                            <span style="font-weight:700;">${r.user}</span> ${htmlCriador}
+                            <span style="font-weight:700;">${r.user}</span> ${badgeCriador}
                             <span style="color:#333; margin-left:5px;">${r.texto}</span>
                         </div>
                         ${btnDel}
                     </div>
-                    <div style="font-size:0.7rem; color:#999;">${new Date(r.data).toLocaleDateString()}</div>
+                    <div class="comment-meta-row" style="margin-top:4px;">
+                        <span class="comment-date">${dataLabel}</span>
+                        ${btnLike}
+                        ${btnReport}
+                    </div>
                 </div>
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
+
+            if (user) {
+                checks.push(verificarLikeComentario(rid, parentId, true));
+                if (r.uid !== user.uid) checks.push(verificarDenunciaComentario(rid, parentId, true));
+            }
         });
+
+        if (checks.length) await Promise.all(checks);
 
     } catch(e) { console.error(e); }
 }
 
 // 5. Deletar Resposta
 window.deletarResposta = async function(parentId, replyId) {
-    if(!confirm("Apagar resposta?")) return;
+    const pode = window.dokeConfirm
+        ? await window.dokeConfirm("Deseja apagar esta mensagem?", "Confirmacao", "danger")
+        : confirm("Deseja apagar esta mensagem?");
+    if (!pode) return;
 
     try {
         // Deleta doc da resposta
@@ -5658,6 +5945,64 @@ window.deletarResposta = async function(parentId, replyId) {
         carregarRespostas(parentId);
 
     } catch(e) { alert("Erro ao deletar."); }
+}
+
+window.deletarComentarioSupabase = async function(commentId, parentId) {
+    if (!commentId) return;
+    const pode = window.dokeConfirm
+        ? await window.dokeConfirm("Deseja apagar esta mensagem?", "Confirmacao", "danger")
+        : confirm("Deseja apagar esta mensagem?");
+    if (!pode) return;
+
+    const client = getSupabaseClient();
+    const userRow = await getSupabaseUserRow();
+    if (!client || !userRow) return;
+    const cfg = getSupabasePostConfig();
+    if (!cfg.postId) return;
+
+    try {
+        const { error } = await client
+            .from(cfg.commentsTable)
+            .delete()
+            .eq("id", commentId)
+            .eq("user_id", userRow.id);
+        if (error && !isSchemaCacheError(error)) throw error;
+
+        if (parentId) {
+            const { data: parentRow, error: parentError } = await client
+                .from(cfg.commentsTable)
+                .select("reply_count")
+                .eq("id", parentId)
+                .maybeSingle();
+            if (!parentError && parentRow) {
+                const nextCount = Math.max(0, (parentRow.reply_count || 0) - 1);
+                const { error: updateError } = await client
+                    .from(cfg.commentsTable)
+                    .update({ reply_count: nextCount })
+                    .eq("id", parentId);
+                if (updateError && !isSchemaCacheError(updateError)) console.error(updateError);
+            } else if (parentError && !isSchemaCacheError(parentError)) {
+                console.error(parentError);
+            }
+        }
+
+        if (cfg.isReel) {
+            if (parentId) {
+                carregarRespostasSupabase(parentId);
+            } else {
+                carregarComentariosReelSupabase(cfg.postId);
+            }
+        } else {
+            if (parentId) {
+                carregarRespostasSupabase(parentId);
+            } else {
+                carregarComentariosSupabase(cfg.postId);
+            }
+        }
+    } catch (e) {
+        console.error("Erro ao apagar comentario supabase:", e);
+        alert("Erro ao apagar mensagem.");
+    }
 }
 
 window.abrirPlayerTikTok = function(indexOuDados) {
@@ -5753,6 +6098,19 @@ window.fecharModalVideo = function(e) {
     if(e.target.id === 'modalPlayerVideo') fecharModalVideoForce();
 }
 
+document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    const modalPost = document.getElementById("modalPostDetalhe");
+    if (modalPost && modalPost.style.display === "flex") {
+        fecharModalPostForce();
+        return;
+    }
+    const modalVideo = document.getElementById("modalPlayerVideo");
+    if (modalVideo && modalVideo.style.display === "flex") {
+        fecharModalVideoForce();
+    }
+});
+
 // PLAY/PAUSE
 window.togglePlayVideo = function(e) {
     const v = e.target;
@@ -5837,4 +6195,1402 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
 
   modal.style.display = 'flex';
 };
+
+// ================== SOCIAL ACTIONS (COMMENTS/REPORT/PIN) ==================
+
+if (window.currentSupaPostType === undefined) window.currentSupaPostType = null;
+if (window.currentSupaReelId === undefined) window.currentSupaReelId = null;
+if (window.currentSupaReelAuthorId === undefined) window.currentSupaReelAuthorId = null;
+if (window.currentSupaReelAuthorUid === undefined) window.currentSupaReelAuthorUid = null;
+if (window.currentReelSource === undefined) window.currentReelSource = "firebase";
+
+function getSupabasePostConfig() {
+    const isReel = window.currentSupaPostType === "videos_curtos";
+    return {
+        isReel,
+        postId: isReel ? window.currentSupaReelId : window.currentSupaPublicacaoId,
+        postAuthorId: isReel ? window.currentSupaReelAuthorId : window.currentSupaPublicacaoAuthorId,
+        postIdField: isReel ? "video_curto_id" : "publicacao_id",
+        commentsTable: isReel ? "videos_curtos_comentarios" : "publicacoes_comentarios",
+        commentLikesTable: isReel ? "videos_curtos_comentarios_curtidas" : "publicacoes_comentarios_curtidas",
+        commentReportsTable: isReel ? "videos_curtos_comentarios_denuncias" : "publicacoes_comentarios_denuncias",
+        postReportsTable: isReel ? "videos_curtos_denuncias" : "publicacoes_denuncias",
+        postLikesTable: isReel ? "videos_curtos_curtidas" : "publicacoes_curtidas"
+    };
+}
+
+function getCommentButton(className, commentId, parentId, isReply) {
+    const selector = `.${className}[data-comment-id="${commentId}"][data-parent-id="${parentId || ""}"][data-reply="${isReply ? "true" : "false"}"]`;
+    return document.querySelector(selector);
+}
+
+function setReportIconState(btn) {
+    if (!btn) return;
+    btn.classList.add("is-reported");
+    btn.setAttribute("title", "Denunciado");
+    btn.style.pointerEvents = "none";
+    if ("disabled" in btn) btn.disabled = true;
+}
+
+function setReportButtonVisibility(btns, visible) {
+    btns.forEach(btn => {
+        btn.style.display = visible ? "" : "none";
+        if (visible) {
+            btn.style.pointerEvents = "auto";
+            if ("disabled" in btn) btn.disabled = false;
+            btn.classList.remove("is-reported");
+            btn.setAttribute("title", "Denunciar");
+        }
+    });
+}
+
+function ensureReportButtons() {
+    const postActions = document.querySelector("#modalPostDetalhe .modal-actions-bar");
+    if (postActions && !postActions.querySelector(".btn-report-post")) {
+        const icon = document.createElement("i");
+        icon.className = "bx bx-flag btn-report-post";
+        icon.title = "Denunciar";
+        icon.style.cursor = "pointer";
+        icon.addEventListener("click", () => denunciarPostAtual());
+        postActions.appendChild(icon);
+    }
+    const reelActions = document.querySelector("#modalPlayerVideo .modal-footer-actions > div");
+    if (reelActions && !reelActions.querySelector(".btn-report-post")) {
+        const icon = document.createElement("i");
+        icon.className = "bx bx-flag btn-report-post";
+        icon.title = "Denunciar";
+        icon.style.cursor = "pointer";
+        icon.addEventListener("click", () => denunciarPostAtual());
+        reelActions.appendChild(icon);
+    }
+}
+
+window.enviarComentarioReel = async function() {
+    const input = document.getElementById('inputComentarioReel');
+    const texto = input?.value?.trim();
+    if (!texto) return;
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return alert("Faca login para comentar.");
+        const cfg = getSupabasePostConfig();
+        if (!cfg.postId) return;
+        let { error } = await client
+            .from(cfg.commentsTable)
+            .insert({
+                [cfg.postIdField]: cfg.postId,
+                user_id: userRow.id,
+                texto: texto,
+                parent_id: null,
+                like_count: 0,
+                reply_count: 0,
+                pinned: false
+            });
+        if (error && isSchemaCacheError(error)) {
+            const retry = await client
+                .from(cfg.commentsTable)
+                .insert({
+                    [cfg.postIdField]: cfg.postId,
+                    user_id: userRow.id,
+                    texto: texto
+                });
+            error = retry.error || null;
+        }
+        if (error && !isSchemaCacheError(error)) {
+            console.error(error);
+            alert("Erro ao comentar.");
+            return;
+        }
+        if (input) input.value = "";
+        await criarNotificacaoSocial({
+            acao: "comentario_reel",
+            paraUid: window.currentSupaReelAuthorUid,
+            postId: cfg.postId,
+            postTipo: "reel",
+            postFonte: "supabase",
+            comentarioTexto: texto
+        });
+        carregarComentariosReelSupabase(cfg.postId);
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Faca login para comentar.");
+        return;
+    }
+    const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    try {
+        await addDoc(collection(db, "reels", window.currentPostId, "comentarios"), {
+            uid: user.uid,
+            user: perfilLocal.user || "Usuario",
+            foto: perfilLocal.foto || "https://placehold.co/50",
+            texto: texto,
+            data: new Date().toISOString(),
+            likeCount: 0,
+            replyCount: 0,
+            pinned: false
+        });
+        if (input) input.value = "";
+        await criarNotificacaoSocial({
+            acao: "comentario_reel",
+            paraUid: window.currentPostAuthorUid || window.currentReelUid,
+            postId: window.currentPostId,
+            postTipo: "reel",
+            postFonte: "firebase",
+            comentarioTexto: texto
+        });
+        carregarComentariosReel(window.currentPostId);
+    } catch (e) {
+        console.error(e);
+        alert("Erro ao comentar.");
+    }
+}
+
+let processandoLikeReel = false;
+
+window.darLikeReel = async function() {
+    const icon = document.getElementById('btnLikeReel');
+    const label = document.getElementById('reelLikesCount');
+    if (!icon || !label) return;
+
+    const user = auth.currentUser;
+    if (!user) return alert("Faca login para curtir.");
+
+    if (processandoLikeReel) return;
+    processandoLikeReel = true;
+
+    const liked = icon.dataset.liked === "true";
+    const likesAtuais = parseInt(label.innerText.replace(/\D/g, "")) || 0;
+
+    try {
+        if (window.currentPostSource === "supabase") {
+            const client = getSupabaseClient();
+            const userRow = await getSupabaseUserRow();
+            if (!client || !userRow) return;
+            const cfg = getSupabasePostConfig();
+            if (!cfg.postId) return;
+            if (liked) {
+                icon.className = "bx bx-heart";
+                icon.dataset.liked = "false";
+                label.innerText = `${Math.max(0, likesAtuais - 1)} curtidas`;
+                await client
+                    .from(cfg.postLikesTable)
+                    .delete()
+                    .eq(cfg.postIdField, cfg.postId)
+                    .eq("user_id", userRow.id);
+            } else {
+                icon.className = "bx bxs-heart";
+                icon.dataset.liked = "true";
+                label.innerText = `${likesAtuais + 1} curtidas`;
+                await client
+                    .from(cfg.postLikesTable)
+                    .upsert({ [cfg.postIdField]: cfg.postId, user_id: userRow.id }, { onConflict: `${cfg.postIdField},user_id` });
+                await criarNotificacaoSocial({
+                    acao: "curtida_reel",
+                    paraUid: window.currentSupaReelAuthorUid,
+                    postId: cfg.postId,
+                    postTipo: "reel",
+                    postFonte: "supabase"
+                });
+            }
+            return;
+        }
+
+        const likeDocRef = doc(db, "reels", window.currentPostId, "likes", user.uid);
+        const postRef = doc(db, "reels", window.currentPostId);
+
+        if (liked) {
+            icon.className = "bx bx-heart";
+            icon.dataset.liked = "false";
+            label.innerText = `${Math.max(0, likesAtuais - 1)} curtidas`;
+            await deleteDoc(likeDocRef);
+            await updateDoc(postRef, { likes: increment(-1) });
+        } else {
+            icon.className = "bx bxs-heart";
+            icon.dataset.liked = "true";
+            label.innerText = `${likesAtuais + 1} curtidas`;
+            await setDoc(likeDocRef, { uid: user.uid, data: new Date().toISOString() });
+            await updateDoc(postRef, { likes: increment(1) });
+            await criarNotificacaoSocial({
+                acao: "curtida_reel",
+                paraUid: window.currentPostAuthorUid || window.currentReelUid,
+                postId: window.currentPostId,
+                postTipo: "reel",
+                postFonte: "firebase"
+            });
+        }
+    } catch (e) {
+        console.error("Erro ao curtir reel:", e);
+        icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+        icon.dataset.liked = liked ? "true" : "false";
+        label.innerText = `${likesAtuais} curtidas`;
+    } finally {
+        processandoLikeReel = false;
+    }
+}
+
+async function verificarLikeReel(reelId, uid) {
+    const icon = document.getElementById('btnLikeReel');
+    if (!icon) return;
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        const cfg = getSupabasePostConfig();
+        if (!cfg.postId) return;
+        const { data, error } = await client
+            .from(cfg.postLikesTable)
+            .select("id")
+            .eq(cfg.postIdField, cfg.postId)
+            .eq("user_id", userRow.id)
+            .maybeSingle();
+        if (error && !isMissingTableError(error)) console.error(error);
+        if (data) {
+            icon.className = "bx bxs-heart";
+            icon.dataset.liked = "true";
+        } else {
+            icon.className = "bx bx-heart";
+            icon.dataset.liked = "false";
+        }
+        return;
+    }
+
+    try {
+        const docLikeRef = doc(db, "reels", reelId, "likes", uid);
+        const snap = await getDoc(docLikeRef);
+        if (snap.exists()) {
+            icon.className = "bx bxs-heart";
+            icon.dataset.liked = "true";
+        } else {
+            icon.className = "bx bx-heart";
+            icon.dataset.liked = "false";
+        }
+    } catch (e) {
+        console.error("Erro like reel:", e);
+    }
+}
+
+async function renderizarReelNoModal(index) {
+    const dados = window.listaReelsAtual[index];
+    if (!dados) return;
+
+    const isSupabase = !!dados.video_url || !!dados.user_id || !!dados.usuarios;
+    window.currentPostSource = isSupabase ? "supabase" : "firebase";
+    window.currentSupaPostType = isSupabase ? "videos_curtos" : null;
+    window.currentSupaReelId = isSupabase ? dados.id : null;
+    window.currentSupaReelAuthorId = isSupabase ? (dados.user_id || dados.usuarios?.id || null) : null;
+    window.currentSupaReelAuthorUid = isSupabase ? (dados.usuarios?.uid || null) : null;
+    window.currentCollection = isSupabase ? null : "reels";
+    window.currentPostId = dados.id || null;
+    window.currentPostAuthorUid = isSupabase ? null : (dados.uid || dados.autorUid || null);
+
+    window.currentReelId = dados.id;
+    window.currentReelUid = isSupabase ? (dados.usuarios?.uid || dados.autorUid || dados.uid || null) : (dados.uid || null);
+    window.currentReelAnuncioId = dados.anuncioId || dados.aid || dados.anuncio_id || null;
+
+    const player = document.getElementById('playerPrincipal');
+    const blur = document.getElementById('reelBlurBg');
+    const videoUrl = dados.videoUrl || dados.video_url || dados.video;
+    if (player) {
+        player.src = videoUrl || "";
+        player.play().catch(() => {});
+    }
+    if (blur) blur.style.backgroundImage = `url('${dados.capa || dados.img || dados.thumb_url || ''}')`;
+
+    const avatar = dados.autorFoto || dados.autor_foto || dados.usuarios?.foto || "https://placehold.co/50";
+    const userName = dados.autorUser || dados.autor_user || dados.usuarios?.user || "@usuario";
+    const descricao = dados.descricao || dados.titulo || "";
+    const likesCount = dados.likes || (Array.isArray(dados.videos_curtos_curtidas) ? dados.videos_curtos_curtidas[0]?.count : dados.videos_curtos_curtidas?.count) || 0;
+
+    if (document.getElementById('reelUsername')) document.getElementById('reelUsername').innerText = userName;
+    if (document.getElementById('reelAvatar')) document.getElementById('reelAvatar').src = avatar;
+    if (document.getElementById('reelUsernameCap')) document.getElementById('reelUsernameCap').innerText = userName;
+    if (document.getElementById('reelAvatarCap')) document.getElementById('reelAvatarCap').src = avatar;
+    if (document.getElementById('reelDesc')) document.getElementById('reelDesc').innerText = descricao;
+    if (document.getElementById('reelLikesCount')) document.getElementById('reelLikesCount').innerText = `${likesCount} curtidas`;
+    if (document.getElementById('reelData')) document.getElementById('reelData').innerText = dados.data ? new Date(dados.data).toLocaleDateString() : "Recente";
+
+    const icon = document.getElementById('btnLikeReel');
+    if (icon) {
+        icon.className = 'bx bx-heart';
+        icon.dataset.liked = "false";
+    }
+
+    if (auth.currentUser) verificarLikeReel(dados.id, auth.currentUser.uid);
+    carregarComentariosReel(dados.id);
+    atualizarBotaoDenunciaPost();
+}
+
+const _abrirModalUnificadoOriginal = window.abrirModalUnificado;
+window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 'reels') {
+    const dados = (typeof dadosRecebidos === 'string') ? JSON.parse(dadosRecebidos) : (dadosRecebidos || {});
+    window.currentPostSource = "firebase";
+    window.currentSupaPostType = null;
+    window.currentSupaReelId = null;
+    window.currentSupaReelAuthorId = null;
+    window.currentSupaReelAuthorUid = null;
+    window.currentCollection = colecao;
+    window.currentPostId = dados.id || dados.postId || dados.aid || null;
+    window.currentPostAuthorUid = dados.uid || dados.autorUid || null;
+
+    if (typeof _abrirModalUnificadoOriginal === "function") {
+        _abrirModalUnificadoOriginal(dadosRecebidos, tipo, colecao);
+    }
+
+    if (window.currentPostId && window.currentCollection) {
+        carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+        if (auth.currentUser) verificarStatusLike(window.currentPostId, window.currentCollection, auth.currentUser.uid);
+    }
+    atualizarBotaoDenunciaPost();
+};
+
+const _abrirModalPostOriginal = window.abrirModalPost;
+window.abrirModalPost = async function(id, colecao) {
+    if (typeof _abrirModalPostOriginal === "function") {
+        await _abrirModalPostOriginal(id, colecao);
+    }
+    window.currentSupaPostType = null;
+    window.currentSupaReelId = null;
+    window.currentSupaReelAuthorId = null;
+    window.currentSupaReelAuthorUid = null;
+    atualizarBotaoDenunciaPost();
+};
+
+const _abrirModalPublicacaoOriginal = window.abrirModalPublicacao;
+window.abrirModalPublicacao = async function(publicacaoId) {
+    window.currentSupaPostType = "publicacoes";
+    window.currentSupaReelId = null;
+    window.currentSupaReelAuthorId = null;
+    window.currentSupaReelAuthorUid = null;
+    if (typeof _abrirModalPublicacaoOriginal === "function") {
+        await _abrirModalPublicacaoOriginal(publicacaoId);
+    }
+    atualizarBotaoDenunciaPost();
+};
+
+window.verificarLikeComentario = async function(commentId, parentId, isReply) {
+    const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
+    if (!btn) return;
+    const icon = btn.querySelector("i");
+    const user = auth.currentUser;
+    if (!user) {
+        if (icon) icon.className = "bx bx-heart";
+        btn.classList.remove("liked");
+        return;
+    }
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        const cfg = getSupabasePostConfig();
+        const { data, error } = await client
+            .from(cfg.commentLikesTable)
+            .select("id")
+            .eq("comentario_id", commentId)
+            .eq("user_id", userRow.id)
+            .maybeSingle();
+        if (error && !isMissingTableError(error)) console.error(error);
+        const liked = !!data;
+        if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+        btn.classList.toggle("liked", liked);
+        return;
+    }
+
+    try {
+        const likeRef = isReply
+            ? doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", commentId, "likes", user.uid)
+            : doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId, "likes", user.uid);
+        const snap = await getDoc(likeRef);
+        const liked = snap.exists();
+        if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+        btn.classList.toggle("liked", liked);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+window.toggleLikeComentario = async function(commentId, parentId, isReply) {
+    const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
+    if (!btn) return;
+    const icon = btn.querySelector("i");
+    const countSpan = btn.querySelector("span");
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Faca login para curtir.");
+        return;
+    }
+
+    const wasLiked = btn.classList.contains("liked");
+    const currentCount = parseInt(countSpan?.innerText || "0", 10) || 0;
+    const liked = !wasLiked;
+    const nextCount = liked ? currentCount + 1 : Math.max(0, currentCount - 1);
+
+    btn.classList.toggle("liked", liked);
+    if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+    if (countSpan) countSpan.innerText = nextCount;
+
+    try {
+        if (window.currentPostSource === "supabase") {
+            const client = getSupabaseClient();
+            const userRow = await getSupabaseUserRow();
+            if (!client || !userRow) return;
+            const cfg = getSupabasePostConfig();
+            if (liked) {
+                const { error } = await client
+                    .from(cfg.commentLikesTable)
+                    .upsert({ comentario_id: commentId, user_id: userRow.id }, { onConflict: "comentario_id,user_id" });
+                if (error && !isMissingTableError(error)) throw error;
+            } else {
+                const { error } = await client
+                    .from(cfg.commentLikesTable)
+                    .delete()
+                    .eq("comentario_id", commentId)
+                    .eq("user_id", userRow.id);
+                if (error && !isMissingTableError(error)) throw error;
+            }
+            const { error: countError } = await client
+                .from(cfg.commentsTable)
+                .update({ like_count: nextCount })
+                .eq("id", commentId);
+            if (countError && !isSchemaCacheError(countError)) throw countError;
+            if (liked) {
+                const ownerUid = await resolverDonoComentarioUid(commentId, parentId, isReply);
+                await criarNotificacaoSocial({
+                    acao: "curtida_comentario",
+                    paraUid: ownerUid,
+                    postId: cfg.postId,
+                    postTipo: cfg.isReel ? "reel" : "post",
+                    postFonte: "supabase",
+                    comentarioId: commentId
+                });
+            }
+            return;
+        }
+
+        const commentRef = isReply
+            ? doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", commentId)
+            : doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId);
+        const likeRef = isReply
+            ? doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", commentId, "likes", user.uid)
+            : doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId, "likes", user.uid);
+
+        if (liked) {
+            await setDoc(likeRef, { uid: user.uid, data: new Date().toISOString() });
+            await updateDoc(commentRef, { likeCount: increment(1) });
+            const ownerUid = await resolverDonoComentarioUid(commentId, parentId, isReply);
+            await criarNotificacaoSocial({
+                acao: "curtida_comentario",
+                paraUid: ownerUid,
+                postId: window.currentPostId,
+                postTipo: window.currentCollection === "reels" ? "reel" : "post",
+                postFonte: "firebase",
+                comentarioId: commentId
+            });
+        } else {
+            await deleteDoc(likeRef);
+            await updateDoc(commentRef, { likeCount: increment(-1) });
+        }
+    } catch (e) {
+        console.error(e);
+        btn.classList.toggle("liked", wasLiked);
+        if (icon) icon.className = wasLiked ? "bx bxs-heart" : "bx bx-heart";
+        if (countSpan) countSpan.innerText = currentCount;
+    }
+}
+
+window.verificarDenunciaComentario = async function(commentId, parentId, isReply) {
+    const btn = getCommentButton("comment-report-btn", commentId, parentId, isReply);
+    if (!btn) return;
+    const user = auth.currentUser;
+    if (!user) return;
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        const cfg = getSupabasePostConfig();
+        const { data, error } = await client
+            .from(cfg.commentReportsTable)
+            .select("id")
+            .eq("comentario_id", commentId)
+            .eq("user_id", userRow.id)
+            .maybeSingle();
+        if (error && !isMissingTableError(error)) console.error(error);
+        if (data) setReportIconState(btn);
+        return;
+    }
+
+    try {
+        const reportRef = isReply
+            ? doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", commentId, "denuncias", user.uid)
+            : doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId, "denuncias", user.uid);
+        const snap = await getDoc(reportRef);
+        if (snap.exists()) setReportIconState(btn);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+window.denunciarComentario = async function(commentId, parentId, isReply) {
+    const btn = getCommentButton("comment-report-btn", commentId, parentId, isReply);
+    if (!btn) return;
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Faca login para denunciar.");
+        return;
+    }
+    if (btn.classList.contains("is-reported")) return;
+
+    const ownerUid = btn.dataset.commentUid || "";
+    if (window.currentPostSource !== "supabase" && ownerUid && ownerUid === user.uid) {
+        alert("Nao pode denunciar o proprio comentario.");
+        return;
+    }
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        if (ownerUid && ownerUid === userRow.id) {
+            alert("Nao pode denunciar o proprio comentario.");
+            return;
+        }
+        const cfg = getSupabasePostConfig();
+        const { data, error } = await client
+            .from(cfg.commentReportsTable)
+            .select("id")
+            .eq("comentario_id", commentId)
+            .eq("user_id", userRow.id)
+            .maybeSingle();
+        if (error && !isMissingTableError(error)) {
+            console.error(error);
+            return;
+        }
+        if (data) {
+            setReportIconState(btn);
+            return;
+        }
+        const { error: insertError } = await client
+            .from(cfg.commentReportsTable)
+            .insert({ comentario_id: commentId, user_id: userRow.id });
+        if (insertError && !isMissingTableError(insertError)) {
+            console.error(insertError);
+            return;
+        }
+        setReportIconState(btn);
+        return;
+    }
+
+    try {
+        const reportRef = isReply
+            ? doc(db, window.currentCollection, window.currentPostId, "comentarios", parentId, "respostas", commentId, "denuncias", user.uid)
+            : doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId, "denuncias", user.uid);
+        const snap = await getDoc(reportRef);
+        if (snap.exists()) {
+            setReportIconState(btn);
+            return;
+        }
+        await setDoc(reportRef, { uid: user.uid, data: new Date().toISOString() });
+        setReportIconState(btn);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+window.alternarFixarComentario = async function(commentId) {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        const cfg = getSupabasePostConfig();
+        if (!cfg.postAuthorId || cfg.postAuthorId !== userRow.id) return;
+        const { data, error } = await client
+            .from(cfg.commentsTable)
+            .select("id, pinned")
+            .eq("id", commentId)
+            .maybeSingle();
+        if (error) {
+            if (!isSchemaCacheError(error)) console.error(error);
+            return;
+        }
+        const isPinned = data?.pinned === true;
+        if (!isPinned) {
+            const { error: unpinError } = await client
+                .from(cfg.commentsTable)
+                .update({ pinned: false })
+                .eq(cfg.postIdField, cfg.postId)
+                .eq("pinned", true);
+            if (unpinError && !isSchemaCacheError(unpinError)) console.error(unpinError);
+        }
+        const { error: pinError } = await client
+            .from(cfg.commentsTable)
+            .update({ pinned: !isPinned })
+            .eq("id", commentId);
+        if (pinError && !isSchemaCacheError(pinError)) console.error(pinError);
+        if (cfg.isReel) {
+            carregarComentariosReelSupabase(cfg.postId);
+        } else {
+            carregarComentariosSupabase(cfg.postId);
+        }
+        return;
+    }
+
+    if (!window.currentPostAuthorUid || window.currentPostAuthorUid !== user.uid) return;
+    const commentsRef = collection(db, window.currentCollection, window.currentPostId, "comentarios");
+    const commentRef = doc(db, window.currentCollection, window.currentPostId, "comentarios", commentId);
+    const snap = await getDoc(commentRef);
+    const isPinned = snap.exists() && snap.data().pinned === true;
+
+    if (!isPinned) {
+        const pinnedSnap = await getDocs(query(commentsRef, where("pinned", "==", true)));
+        pinnedSnap.forEach(docSnap => updateDoc(docSnap.ref, { pinned: false }));
+    }
+    await updateDoc(commentRef, { pinned: !isPinned });
+    if (window.currentCollection === "reels") {
+        carregarComentariosReel(window.currentPostId);
+    } else {
+        carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+    }
+}
+
+window.atualizarBotaoDenunciaPost = async function() {
+    ensureReportButtons();
+    const btns = document.querySelectorAll(".btn-report-post");
+    if (!btns.length) return;
+
+    const user = auth.currentUser;
+    if (!user) {
+        setReportButtonVisibility(btns, true);
+        return;
+    }
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const authorUid = window.currentSupaPostType === "videos_curtos"
+            ? window.currentSupaReelAuthorUid
+            : window.currentSupaPublicacaoAuthorUid;
+        if (authorUid && user.uid === authorUid) {
+            setReportButtonVisibility(btns, false);
+            return;
+        }
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) {
+            setReportButtonVisibility(btns, true);
+            return;
+        }
+        const cfg = getSupabasePostConfig();
+        if (!cfg.postId) return;
+        setReportButtonVisibility(btns, true);
+        if (cfg.postAuthorId && cfg.postAuthorId === userRow.id) {
+            setReportButtonVisibility(btns, false);
+            return;
+        }
+        const { data, error } = await client
+            .from(cfg.postReportsTable)
+            .select("id")
+            .eq(cfg.postIdField, cfg.postId)
+            .eq("user_id", userRow.id)
+            .maybeSingle();
+        if (error && !isMissingTableError(error)) console.error(error);
+        if (data) btns.forEach(btn => setReportIconState(btn));
+        return;
+    }
+
+    if (window.currentPostAuthorUid && window.currentPostAuthorUid === user.uid) {
+        setReportButtonVisibility(btns, false);
+        return;
+    }
+    setReportButtonVisibility(btns, true);
+    if (!window.currentCollection || !window.currentPostId) return;
+    try {
+        const reportRef = doc(db, window.currentCollection, window.currentPostId, "denuncias", user.uid);
+        const snap = await getDoc(reportRef);
+        if (snap.exists()) btns.forEach(btn => setReportIconState(btn));
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+window.denunciarPostAtual = async function() {
+    ensureReportButtons();
+    const btns = document.querySelectorAll(".btn-report-post");
+    const user = auth.currentUser;
+    if (!user) {
+        alert("Faca login para denunciar.");
+        return;
+    }
+
+    if (window.currentPostSource === "supabase") {
+        const client = getSupabaseClient();
+        const authorUid = window.currentSupaPostType === "videos_curtos"
+            ? window.currentSupaReelAuthorUid
+            : window.currentSupaPublicacaoAuthorUid;
+        if (authorUid && authorUid === user.uid) {
+            setReportButtonVisibility(btns, false);
+            alert("Nao pode denunciar o proprio post.");
+            return;
+        }
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        const cfg = getSupabasePostConfig();
+        if (!cfg.postId) return;
+        if (cfg.postAuthorId && cfg.postAuthorId === userRow.id) {
+            setReportButtonVisibility(btns, false);
+            alert("Nao pode denunciar o proprio post.");
+            return;
+        }
+        const { data, error } = await client
+            .from(cfg.postReportsTable)
+            .select("id")
+            .eq(cfg.postIdField, cfg.postId)
+            .eq("user_id", userRow.id)
+            .maybeSingle();
+        if (error && !isMissingTableError(error)) {
+            console.error(error);
+            return;
+        }
+        if (data) {
+            btns.forEach(btn => setReportIconState(btn));
+            return;
+        }
+        const { error: insertError } = await client
+            .from(cfg.postReportsTable)
+            .insert({ [cfg.postIdField]: cfg.postId, user_id: userRow.id });
+        if (insertError && !isMissingTableError(insertError)) {
+            console.error(insertError);
+            return;
+        }
+        btns.forEach(btn => setReportIconState(btn));
+        return;
+    }
+
+    if (window.currentPostAuthorUid && window.currentPostAuthorUid === user.uid) {
+        setReportButtonVisibility(btns, false);
+        alert("Nao pode denunciar o proprio post.");
+        return;
+    }
+    if (!window.currentCollection || !window.currentPostId) return;
+    try {
+        const reportRef = doc(db, window.currentCollection, window.currentPostId, "denuncias", user.uid);
+        const snap = await getDoc(reportRef);
+        if (snap.exists()) {
+            btns.forEach(btn => setReportIconState(btn));
+            return;
+        }
+        await setDoc(reportRef, { uid: user.uid, data: new Date().toISOString() });
+        btns.forEach(btn => setReportIconState(btn));
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function carregarRespostasSupabase(parentId) {
+    const container = document.getElementById(`replies-${parentId}`);
+    const user = auth.currentUser;
+    if (!container) return;
+    container.innerHTML = `<div style="font-size:0.7rem; color:#999; padding:5px;">Carregando...</div>`;
+
+    const client = getSupabaseClient();
+    if (!client) {
+        container.innerHTML = "";
+        return;
+    }
+
+    const cfg = getSupabasePostConfig();
+    if (!cfg.postId) {
+        container.innerHTML = "";
+        return;
+    }
+
+    const userRow = user ? await getSupabaseUserRow() : null;
+
+    let { data, error } = await client
+        .from(cfg.commentsTable)
+        .select("id, texto, created_at, user_id, like_count, usuarios (id, nome, user, foto)")
+        .eq(cfg.postIdField, cfg.postId)
+        .eq("parent_id", parentId)
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        if (isMissingTableError(error)) {
+            const retry = await client
+                .from(cfg.commentsTable)
+                .select("id, texto, created_at, user_id")
+                .eq(cfg.postIdField, cfg.postId)
+                .eq("parent_id", parentId)
+                .order("created_at", { ascending: true });
+            data = retry.data || [];
+            error = retry.error || null;
+        }
+        if (error) {
+            container.innerHTML = "";
+            if (!isMissingTableError(error)) console.error(error);
+            return;
+        }
+    }
+
+    container.innerHTML = "";
+    const checks = [];
+
+    data.forEach(r => {
+        const dataLabel = r.created_at ? new Date(r.created_at).toLocaleDateString("pt-BR") : "";
+        const isCreator = cfg.postAuthorId && r.user_id === cfg.postAuthorId;
+        const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+        const likeCount = r.like_count || 0;
+        const userInfo = r.usuarios || {};
+        const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
+        const foto = userInfo.foto || "https://placehold.co/50";
+        const btnExcluir = (userRow && r.user_id === userRow.id)
+            ? `<button class="btn-delete-comment" onclick="deletarComentarioSupabase('${r.id}', '${parentId}')"><i class='bx bx-trash'></i></button>`
+            : "";
+        const btnReport = (userRow && r.user_id !== userRow.id)
+            ? `<button class="comment-report-btn" data-comment-id="${r.id}" data-parent-id="${parentId}" data-reply="true" data-comment-uid="${r.user_id}" onclick="denunciarComentario('${r.id}', '${parentId}', true)">Denunciar</button>`
+            : "";
+        const btnLike = `
+            <button class="comment-like-btn" data-comment-id="${r.id}" data-parent-id="${parentId}" data-reply="true" onclick="toggleLikeComentario('${r.id}', '${parentId}', true)">
+                <i class='bx bx-heart'></i><span>${likeCount}</span>
+            </button>`;
+        const html = `
+        <div class="reply-item" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
+            <img src="${foto}" style="width:24px; height:24px; border-radius:50%;">
+            <div style="flex:1;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="font-size:0.8rem;">
+                        <span style="font-weight:700;">${escapeHtml(nome)}</span> ${badgeCriador}
+                        <span style="color:#333; margin-left:5px;">${escapeHtml(r.texto || "")}</span>
+                    </div>
+                    ${btnExcluir}
+                </div>
+                <div class="comment-meta-row" style="margin-top:4px;">
+                    <span class="comment-date">${dataLabel}</span>
+                    ${btnLike}
+                    ${btnReport}
+                </div>
+            </div>
+        </div>`;
+        container.insertAdjacentHTML("beforeend", html);
+        if (userRow) {
+            checks.push(verificarLikeComentario(r.id, parentId, true));
+            if (r.user_id !== userRow.id) checks.push(verificarDenunciaComentario(r.id, parentId, true));
+        }
+    });
+
+    if (checks.length) await Promise.all(checks);
+}
+
+async function carregarComentariosReelSupabase(reelId) {
+    const lista = document.getElementById('listaComentariosReel');
+    const user = auth.currentUser;
+    const userRow = user ? await getSupabaseUserRow() : null;
+    if (!lista) return;
+    lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Carregando...</div>";
+
+    const client = getSupabaseClient();
+    if (!client) {
+        lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Comentarios indisponiveis.</div>";
+        return;
+    }
+
+    window.currentSupaPostType = "videos_curtos";
+    window.currentSupaReelId = reelId;
+    const cfg = getSupabasePostConfig();
+
+    let { data, error } = await client
+        .from(cfg.commentsTable)
+        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuarios (id, nome, user, foto)")
+        .eq(cfg.postIdField, reelId)
+        .is("parent_id", null)
+        .order("pinned", { ascending: false })
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        if (isMissingTableError(error)) {
+            const retry = await client
+                .from(cfg.commentsTable)
+                .select("id, texto, created_at, user_id")
+                .eq(cfg.postIdField, reelId)
+                .is("parent_id", null)
+                .order("created_at", { ascending: true });
+            data = retry.data || [];
+            error = retry.error || null;
+        }
+        if (error) {
+            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Erro ao carregar comentarios.</div>";
+            if (!isMissingTableError(error)) console.error(error);
+            return;
+        }
+    }
+
+    lista.innerHTML = "";
+    if (!data || data.length === 0) {
+        lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem comentarios.</div>";
+        return;
+    }
+
+    const checks = [];
+    data.forEach(c => {
+        const dataLabel = c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "";
+        const isCreator = cfg.postAuthorId && c.user_id === cfg.postAuthorId;
+        const isPinned = c.pinned === true;
+        const likeCount = c.like_count || 0;
+        const userInfo = c.usuarios || {};
+        const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
+        const foto = userInfo.foto || "https://placehold.co/50";
+        const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+        const badgeFixado = isPinned ? `<span class="badge-fixado">Fixado</span>` : "";
+        const canPin = userRow && cfg.postAuthorId && cfg.postAuthorId === userRow.id;
+        const btnPin = canPin
+            ? `<button class="btn-pin-comment" onclick="alternarFixarComentario('${c.id}')">${isPinned ? "Desafixar" : "Fixar"}</button>`
+            : "";
+        const btnExcluir = (userRow && c.user_id === userRow.id)
+            ? `<button class="btn-delete-comment" onclick="deletarComentarioSupabase('${c.id}', '')"><i class='bx bx-trash'></i></button>`
+            : "";
+        const btnReport = (userRow && c.user_id !== userRow.id)
+            ? `<button class="comment-report-btn" data-comment-id="${c.id}" data-parent-id="" data-reply="false" data-comment-uid="${c.user_id}" onclick="denunciarComentario('${c.id}', '', false)">Denunciar</button>`
+            : "";
+        const btnLike = `
+            <button class="comment-like-btn" data-comment-id="${c.id}" data-parent-id="" data-reply="false" onclick="toggleLikeComentario('${c.id}', '', false)">
+                <i class='bx bx-heart'></i><span>${likeCount}</span>
+            </button>`;
+        let btnVerRespostas = "";
+        if (c.reply_count && c.reply_count > 0) {
+            btnVerRespostas = `
+            <div class="toggle-replies-link" onclick="toggleVerRespostas('${c.id}', this)">
+                Ver ${c.reply_count} respostas
+            </div>`;
+        }
+        const html = `
+        <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${c.id}" data-comment-id="${c.id}">
+            <div class="comment-row">
+                <img src="${foto}" class="comment-avatar" alt="">
+                <div style="flex:1;">
+                    <div class="comment-header-row">
+                        <div class="comment-header-left">
+                            <span class="comment-user-name">${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
+                        </div>
+                        <div class="comment-header-actions">
+                            ${btnPin}
+                            ${btnExcluir}
+                        </div>
+                    </div>
+                    <div class="comment-text-content">${escapeHtml(c.texto || "")}</div>
+                    <div class="comment-meta-row">
+                        <span class="comment-date">${dataLabel}</span>
+                        <button class="btn-reply-action" onclick="toggleInputResposta('${c.id}')">Responder</button>
+                        ${btnLike}
+                        ${btnReport}
+                    </div>
+                </div>
+            </div>
+            ${btnVerRespostas}
+            <div id="replies-${c.id}" class="replies-container"></div>
+            <div id="input-box-${c.id}" class="reply-input-box">
+                <input type="text" id="input-reply-${c.id}" placeholder="Sua resposta...">
+                <button onclick="enviarResposta('${c.id}')">Enviar</button>
+            </div>
+        </div>`;
+        lista.insertAdjacentHTML("beforeend", html);
+        if (userRow) {
+            checks.push(verificarLikeComentario(c.id, "", false));
+            if (c.user_id !== userRow.id) checks.push(verificarDenunciaComentario(c.id, "", false));
+        }
+    });
+    if (checks.length) await Promise.all(checks);
+}
+
+async function carregarComentariosReel(reelId) {
+    if (window.currentPostSource === "supabase") {
+        await carregarComentariosReelSupabase(reelId);
+        return;
+    }
+
+    const lista = document.getElementById('listaComentariosReel');
+    const user = auth.currentUser;
+    if (!lista) return;
+    lista.innerHTML = "";
+
+    try {
+        const q = query(collection(db, "reels", reelId, "comentarios"), orderBy("data", "asc"));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem comentarios.</div>";
+            return;
+        }
+
+        const comments = [];
+        snap.forEach(docSnap => {
+            comments.push({ id: docSnap.id, ...docSnap.data() });
+        });
+
+        comments.sort((a, b) => {
+            const ap = a.pinned === true ? 1 : 0;
+            const bp = b.pinned === true ? 1 : 0;
+            if (ap !== bp) return bp - ap;
+            return new Date(a.data || 0) - new Date(b.data || 0);
+        });
+
+        const checks = [];
+
+        comments.forEach(c => {
+            const cid = c.id;
+            const dataLabel = c.data ? new Date(c.data).toLocaleDateString("pt-BR") : "";
+            const isCreator = window.currentPostAuthorUid && c.uid === window.currentPostAuthorUid;
+            const isPinned = c.pinned === true;
+            const likeCount = c.likeCount || 0;
+            const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+            const badgeFixado = isPinned ? `<span class="badge-fixado">Fixado</span>` : "";
+            const canPin = user && window.currentPostAuthorUid && user.uid === window.currentPostAuthorUid;
+            const btnPin = canPin
+                ? `<button class="btn-pin-comment" onclick="alternarFixarComentario('${cid}')">${isPinned ? "Desafixar" : "Fixar"}</button>`
+                : "";
+            const btnReport = (user && c.uid !== user.uid)
+                ? `<button class="comment-report-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" data-comment-uid="${c.uid}" onclick="denunciarComentario('${cid}', '', false)">Denunciar</button>`
+                : "";
+            const btnLike = `
+                <button class="comment-like-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" onclick="toggleLikeComentario('${cid}', '', false)">
+                    <i class='bx bx-heart'></i><span>${likeCount}</span>
+                </button>`;
+            let btnVerRespostas = "";
+            if (c.replyCount && c.replyCount > 0) {
+                btnVerRespostas = `
+                <div class="toggle-replies-link" onclick="toggleVerRespostas('${cid}', this)">
+                    Ver ${c.replyCount} respostas
+                </div>`;
+            }
+            const html = `
+            <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
+                <div class="comment-row">
+                    <img src="${c.foto || "https://placehold.co/50"}" class="comment-avatar" alt="">
+                    <div style="flex:1;">
+                        <div class="comment-header-row">
+                            <div class="comment-header-left">
+                                <span class="comment-user-name">${escapeHtml(c.user || "Usuario")}</span> ${badgeCriador} ${badgeFixado}
+                            </div>
+                            <div class="comment-header-actions">
+                                ${btnPin}
+                            </div>
+                        </div>
+                        <div class="comment-text-content">${escapeHtml(c.texto || "")}</div>
+                        <div class="comment-meta-row">
+                            <span class="comment-date">${dataLabel}</span>
+                            <button class="btn-reply-action" onclick="toggleInputResposta('${cid}')">Responder</button>
+                            ${btnLike}
+                            ${btnReport}
+                        </div>
+                    </div>
+                </div>
+                ${btnVerRespostas}
+                <div id="replies-${cid}" class="replies-container"></div>
+                <div id="input-box-${cid}" class="reply-input-box">
+                    <input type="text" id="input-reply-${cid}" placeholder="Sua resposta...">
+                    <button onclick="enviarResposta('${cid}')">Enviar</button>
+                </div>
+            </div>`;
+            lista.insertAdjacentHTML("beforeend", html);
+            if (user) {
+                checks.push(verificarLikeComentario(cid, "", false));
+                if (c.uid !== user.uid) checks.push(verificarDenunciaComentario(cid, "", false));
+            }
+        });
+
+        if (checks.length) await Promise.all(checks);
+    } catch (e) {
+        console.error(e);
+    }
+}
+
+async function enviarRespostaSupabase(parentId) {
+    const input = document.getElementById(`input-reply-${parentId}`);
+    const texto = input?.value?.trim();
+    const user = auth.currentUser;
+    if (!texto || !user) return;
+
+    const btn = input.nextElementSibling;
+    const txtOriginal = btn?.innerText;
+    if (btn) {
+        btn.innerText = "...";
+        btn.disabled = true;
+    }
+
+    try {
+        const client = getSupabaseClient();
+        const userRow = await getSupabaseUserRow();
+        if (!client || !userRow) return;
+        const cfg = getSupabasePostConfig();
+        if (!cfg.postId) return;
+
+        const insertData = {
+            [cfg.postIdField]: cfg.postId,
+            user_id: userRow.id,
+            texto: texto,
+            parent_id: parentId,
+            like_count: 0,
+            reply_count: 0,
+            pinned: false
+        };
+        let { error } = await client.from(cfg.commentsTable).insert(insertData);
+        if (error && isSchemaCacheError(error)) {
+            const fallback = {
+                [cfg.postIdField]: cfg.postId,
+                user_id: userRow.id,
+                texto: texto,
+                parent_id: parentId
+            };
+            const retry = await client.from(cfg.commentsTable).insert(fallback);
+            error = retry.error || null;
+        }
+        if (error && !isSchemaCacheError(error)) throw error;
+
+        const { data: parentRow, error: parentError } = await client
+            .from(cfg.commentsTable)
+            .select("reply_count")
+            .eq("id", parentId)
+            .maybeSingle();
+        if (!parentError && parentRow) {
+            const nextCount = (parentRow?.reply_count || 0) + 1;
+            const { error: updateError } = await client
+                .from(cfg.commentsTable)
+                .update({ reply_count: nextCount })
+                .eq("id", parentId);
+            if (updateError && !isSchemaCacheError(updateError)) console.error(updateError);
+        } else if (parentError && !isSchemaCacheError(parentError)) {
+            console.error(parentError);
+        }
+
+        input.value = "";
+        toggleInputResposta(parentId);
+        const container = document.getElementById(`replies-${parentId}`);
+        if (container) container.style.display = "block";
+        carregarRespostasSupabase(parentId);
+    } catch (e) {
+        console.error("Erro ao responder supabase:", e);
+        alert("Erro ao enviar resposta.");
+    } finally {
+        if (btn) {
+            btn.innerText = txtOriginal;
+            btn.disabled = false;
+        }
+    }
+}
+
+async function postarComentarioSupabase() {
+    const input = document.getElementById('inputComentarioModal');
+    const texto = input?.value?.trim();
+    if (!texto) return;
+
+    const client = getSupabaseClient();
+    if (!client) return alert("Supabase nao configurado.");
+
+    const userRow = await getSupabaseUserRow();
+    if (!userRow) return alert("Faca login para comentar.");
+
+    const cfg = getSupabasePostConfig();
+    if (!cfg.postId) return;
+
+    const btnEnviar = event?.target;
+    const textoOriginal = btnEnviar ? btnEnviar.innerText : "Publicar";
+    if (btnEnviar) {
+        btnEnviar.innerText = "...";
+        btnEnviar.disabled = true;
+    }
+
+    try {
+        const insertData = {
+            [cfg.postIdField]: cfg.postId,
+            user_id: userRow.id,
+            texto: texto,
+            parent_id: null,
+            like_count: 0,
+            reply_count: 0,
+            pinned: false
+        };
+        let { error } = await client.from(cfg.commentsTable).insert(insertData);
+        if (error && isSchemaCacheError(error)) {
+            if (isMissingTableError(error)) window._dokePublicacoesSocialStatus = false;
+            const fallback = {
+                [cfg.postIdField]: cfg.postId,
+                user_id: userRow.id,
+                texto: texto
+            };
+            const retry = await client.from(cfg.commentsTable).insert(fallback);
+            error = retry.error || null;
+        }
+        if (error && !isSchemaCacheError(error)) throw error;
+        if (input) input.value = "";
+        await criarNotificacaoSocial({
+            acao: cfg.isReel ? "comentario_reel" : "comentario_post",
+            paraUid: cfg.isReel ? window.currentSupaReelAuthorUid : window.currentSupaPublicacaoAuthorUid,
+            postId: cfg.postId,
+            postTipo: cfg.isReel ? "reel" : "post",
+            postFonte: "supabase",
+            comentarioTexto: texto
+        });
+        if (cfg.isReel) {
+            carregarComentariosReelSupabase(cfg.postId);
+        } else {
+            carregarComentariosSupabase(cfg.postId);
+        }
+    } catch (e) {
+        console.error("Erro ao comentar supabase:", e);
+        alert("Erro ao enviar comentario.");
+    } finally {
+        if (btnEnviar) {
+            btnEnviar.innerText = textoOriginal;
+            btnEnviar.disabled = false;
+        }
+    }
+}
+
+async function carregarComentariosSupabase(publicacaoId) {
+    const list = document.getElementById('modalCommentsList');
+    if (!list) return;
+
+    const captionDiv = document.getElementById('modalCaption');
+    let captionHTML = "";
+    if (captionDiv && captionDiv.style.display !== 'none') {
+        captionHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${captionDiv.innerHTML}</div>`;
+    }
+
+    list.innerHTML = `${captionHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+
+    const client = getSupabaseClient();
+    if (!client) {
+        list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>`;
+        return;
+    }
+
+    const cfg = getSupabasePostConfig();
+    if (!cfg.postId) return;
+
+    let { data, error } = await client
+        .from(cfg.commentsTable)
+        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuarios (id, nome, user, foto)")
+        .eq(cfg.postIdField, cfg.postId)
+        .is("parent_id", null)
+        .order("pinned", { ascending: false })
+        .order("created_at", { ascending: true });
+
+    if (error) {
+        if (isMissingTableError(error)) {
+            window._dokePublicacoesSocialStatus = false;
+        }
+        const retry = await client
+            .from(cfg.commentsTable)
+            .select("id, texto, created_at, user_id")
+            .eq(cfg.postIdField, cfg.postId)
+            .is("parent_id", null)
+            .order("created_at", { ascending: true });
+        data = retry.data || [];
+        error = retry.error || null;
+    }
+
+    if (error) {
+        console.error("Erro comentarios supabase:", error);
+        list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>`;
+        return;
+    }
+
+    list.innerHTML = captionHTML;
+
+    if (!data || data.length === 0) {
+        list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>');
+        return;
+    }
+
+    const user = auth.currentUser;
+    const userRow = user ? await getSupabaseUserRow() : null;
+    const checks = [];
+
+    data.forEach((c) => {
+        const userInfo = c.usuarios || {};
+        const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
+        const foto = userInfo.foto || "https://placehold.co/50";
+        const dataLabel = c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : "";
+        const isCreator = cfg.postAuthorId && c.user_id === cfg.postAuthorId;
+        const isPinned = c.pinned === true;
+        const likeCount = c.like_count || 0;
+
+        const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+        const badgeFixado = isPinned ? `<span class="badge-fixado">Fixado</span>` : "";
+
+        const canPin = userRow && cfg.postAuthorId && cfg.postAuthorId === userRow.id;
+        const btnPin = canPin
+            ? `<button class="btn-pin-comment" onclick="alternarFixarComentario('${c.id}')">${isPinned ? 'Desafixar' : 'Fixar'}</button>`
+            : "";
+
+        const btnExcluir = (userRow && c.user_id === userRow.id)
+            ? `<button class="btn-delete-comment" onclick="deletarComentarioSupabase('${c.id}', '')"><i class='bx bx-trash'></i></button>`
+            : "";
+
+        const btnReport = (userRow && c.user_id !== userRow.id)
+            ? `<button class="comment-report-btn" data-comment-id="${c.id}" data-parent-id="" data-reply="false" data-comment-uid="${c.user_id}" onclick="denunciarComentario('${c.id}', '', false)">Denunciar</button>`
+            : "";
+
+        const btnLike = `
+            <button class="comment-like-btn" data-comment-id="${c.id}" data-parent-id="" data-reply="false" onclick="toggleLikeComentario('${c.id}', '', false)">
+                <i class='bx bx-heart'></i><span>${likeCount}</span>
+            </button>`;
+
+        let btnVerRespostas = "";
+        if (c.reply_count && c.reply_count > 0) {
+            btnVerRespostas = `
+            <div class="toggle-replies-link" onclick="toggleVerRespostas('${c.id}', this)">
+                Ver ${c.reply_count} respostas
+            </div>`;
+        }
+
+        const html = `
+        <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${c.id}" data-comment-id="${c.id}">
+            <div class="comment-row">
+                <img src="${foto}" class="comment-avatar" alt="">
+                <div style="flex:1;">
+                    <div class="comment-header-row">
+                            <div class="comment-header-left">
+                                <span class="comment-user-name">${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
+                            </div>
+                            <div class="comment-header-actions">
+                                ${btnPin}
+                                ${btnExcluir}
+                            </div>
+                        </div>
+                    <div class="comment-text-content">${escapeHtml(c.texto || "")}</div>
+                    <div class="comment-meta-row">
+                        <span class="comment-date">${dataLabel}</span>
+                        <button class="btn-reply-action" onclick="toggleInputResposta('${c.id}')">Responder</button>
+                        ${btnLike}
+                        ${btnReport}
+                    </div>
+                </div>
+            </div>
+            ${btnVerRespostas}
+            <div id="replies-${c.id}" class="replies-container"></div>
+            <div id="input-box-${c.id}" class="reply-input-box">
+                <input type="text" id="input-reply-${c.id}" placeholder="Sua resposta...">
+                <button onclick="enviarResposta('${c.id}')">Enviar</button>
+            </div>
+        </div>`;
+        list.insertAdjacentHTML('beforeend', html);
+
+        if (userRow) {
+            checks.push(verificarLikeComentario(c.id, "", false));
+            if (c.user_id !== userRow.id) checks.push(verificarDenunciaComentario(c.id, "", false));
+        }
+    });
+
+    if (checks.length) await Promise.all(checks);
+}
+
+
+
+
+
+
 

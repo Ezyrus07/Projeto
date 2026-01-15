@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
 
@@ -61,7 +61,7 @@
     </aside>
 
     <main class="feed-main-container">
-        
+
         <div class="reels-scroll-container" id="containerReels">
             <div style="text-align:center; padding:50px; color:white;">
                 <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i> Carregando Feed...
@@ -73,7 +73,6 @@
         <div class="reel-comments-card">
             <div class="reel-comments-header">
                 <b>Comentarios</b>
-                <button type="button" class="reel-comments-close" onclick="fecharComentariosReel()">x</button>
             </div>
             <div id="reelCommentsList" class="reel-comments-list"></div>
             <div class="reel-comments-input">
@@ -88,7 +87,7 @@
 
     <script>
         const { initializeApp } = window;
-        const { getFirestore, collection, query, orderBy, limit, getDocs, doc, updateDoc, increment, addDoc } = window;
+        const { getFirestore, collection, query, orderBy, where, limit, getDocs, getDoc, doc, setDoc, deleteDoc, updateDoc, increment, addDoc } = window;
         const { getAuth, onAuthStateChanged, signOut } = window;
 
         // CONFIGURAÇÃO DO FIREBASE (Mesma do seu script.js)
@@ -105,6 +104,24 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        function sairReels() {
+            if (window.history.length > 1) {
+                window.history.back();
+                return;
+            }
+            window.location.href = "index.html";
+        }
+
+        document.addEventListener("keydown", (event) => {
+            if (event.key !== "Escape") return;
+            const overlay = document.getElementById("reelCommentsOverlay");
+            if (overlay && overlay.style.display === "flex") {
+                fecharComentariosReel();
+                return;
+            }
+            sairReels();
+        });
+
         // --- LÓGICA DO FEED TIKTOK ---
 function getSupabaseClient() {
     return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
@@ -113,26 +130,35 @@ function getSupabaseClient() {
 async function fetchSupabaseReelsFeed() {
     const client = getSupabaseClient();
     if (!client) return [];
-    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
     let { data, error } = await client
         .from("videos_curtos")
         .select(withJoin)
         .order("created_at", { ascending: false })
         .limit(30);
     if (error) {
-        const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
-        const retry = await client
+        const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+        const retryJoin = await client
             .from("videos_curtos")
-            .select(fallback)
+            .select(joinOnly)
             .order("created_at", { ascending: false })
             .limit(30);
-        if (retry.error) {
-            console.error("Erro ao carregar videos curtos supabase:", retry.error);
-            return [];
+        if (retryJoin.error) {
+            const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+            const retry = await client
+                .from("videos_curtos")
+                .select(fallback)
+                .order("created_at", { ascending: false })
+                .limit(30);
+            if (retry.error) {
+                console.error("Erro ao carregar videos curtos supabase:", retry.error);
+                return [];
+            }
+            return await attachSupabaseUsersById(retry.data || []);
         }
-        return retry.data || [];
+        return await attachSupabaseUsersById(retryJoin.data || []);
     }
-    return data || [];
+    return await attachSupabaseUsersById(data || []);
 }
 
         
@@ -192,6 +218,7 @@ async function carregarReels() {
         let autorNome = "@usuario";
         let descricao = "";
         let uidSeguro = "";
+        let autorRowId = "";
         let likes = 0;
 
         if (source === "firebase") {
@@ -210,6 +237,8 @@ async function carregarReels() {
             autorNome = autor.user || autor.nome || "@usuario";
             descricao = data.descricao || data.titulo || "";
             uidSeguro = autor.uid || "";
+            autorRowId = data.user_id || autor.id || "";
+            likes = (Array.isArray(data.videos_curtos_curtidas) ? data.videos_curtos_curtidas[0]?.count : data.videos_curtos_curtidas?.count) || 0;
         }
 
         if (!videoUrl) return;
@@ -235,17 +264,21 @@ async function carregarReels() {
                         <img src="${perfilFoto}" class="short-avatar" onerror="this.src='https://placehold.co/150'">
                     </button>
 
-                    <button class="short-action-btn" onclick="curtirReel('${source}', '${entry.id}', this)">
+                    <button class="short-action-btn" onclick="curtirReel('${source}', '${entry.id}', this)" data-owner-uid="${uidSeguro}" data-owner-row="${autorRowId}">
                         <i class='bx bx-heart'></i>
                         <span class="short-action-count">${likes}</span>
                     </button>
 
-                    <button class="short-action-btn" onclick="comentarReel('${source}', '${entry.id}')">
+                    <button class="short-action-btn" onclick="comentarReel('${source}', '${entry.id}', '${uidSeguro}', '${autorRowId}')">
                         <i class='bx bx-message-rounded'></i>
                     </button>
 
                     <button class="short-action-btn" onclick="compartilharReel('${autorNome}')">
                         <i class='bx bx-paper-plane'></i>
+                    </button>
+
+                    <button class="short-action-btn" onclick="denunciarReelFeed('${source}', '${entry.id}', '${uidSeguro}', '${autorRowId}', this)">
+                        <i class='bx bx-flag'></i>
                     </button>
                 </div>
             </div>
@@ -352,6 +385,8 @@ async function carregarReels() {
             if (overlay) overlay.style.display = 'none';
             window.currentReelCommentsSource = null;
             window.currentReelCommentsId = null;
+            window.currentReelCommentsAuthorUid = null;
+            window.currentReelCommentsAuthorId = null;
         }
 
         async function carregarComentariosReelFirebase(id) {
@@ -419,6 +454,1261 @@ async function carregarReels() {
                 alert("Erro ao comentar.");
             }
         }
+
+        function escapeHtml(texto) {
+            return (texto ?? "").toString()
+                .replaceAll("&", "&amp;")
+                .replaceAll("<", "&lt;")
+                .replaceAll(">", "&gt;")
+                .replaceAll('"', "&quot;")
+                .replaceAll("'", "&#039;");
+        }
+
+        function normalizeHandle(valor) {
+            if (!valor) return "@usuario";
+            const handle = valor.toString().trim();
+            return handle.startsWith("@") ? handle : `@${handle}`;
+        }
+
+        function isMissingTableError(err) {
+            if (!err) return false;
+            const msg = (err.message || "") + " " + (err.hint || "") + " " + (err.details || "");
+            return err.code === "PGRST205" || err.status === 404 || /could not find the table/i.test(msg) || /not found/i.test(msg);
+        }
+
+        function isMissingColumnError(err) {
+            if (!err) return false;
+            const msg = (err.message || "") + " " + (err.hint || "") + " " + (err.details || "");
+            return err.code === "PGRST204" || /could not find the .* column/i.test(msg) || /column .* does not exist/i.test(msg);
+        }
+
+        function isSchemaCacheError(err) {
+            return isMissingTableError(err) || isMissingColumnError(err);
+        }
+
+        async function getSupabaseUserRow() {
+            const client = getSupabaseClient();
+            const authUser = auth?.currentUser;
+            if (!client || !authUser?.uid) return null;
+            if (window._dokeSupabaseUserRow && window._dokeSupabaseUserRow.uid === authUser.uid) {
+                return window._dokeSupabaseUserRow;
+            }
+            const { data, error } = await client
+                .from("usuarios")
+                .select("id, uid, nome, user, foto")
+                .eq("uid", authUser.uid)
+                .maybeSingle();
+            if (error) {
+                console.error("Erro ao carregar usuario supabase:", error);
+                return null;
+            }
+            window._dokeSupabaseUserRow = data || null;
+            return window._dokeSupabaseUserRow;
+        }
+
+        const _dokeSupabaseUidCache = new Map();
+
+        function buildSocialNotifLink(postFonte, postId) {
+            if (!postId) return "feed.html";
+            const prefix = postFonte === "supabase" ? "sb" : "fb";
+            return `feed.html?start=${prefix}-${postId}`;
+        }
+
+        function getActorPerfil() {
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            const nome = perfil.nome || "";
+            const rawUser = perfil.user || "";
+            const handle = rawUser
+                ? (rawUser.startsWith("@") ? rawUser : `@${rawUser}`)
+                : (nome ? `@${nome.split(" ")[0].toLowerCase()}` : "@usuario");
+            return {
+                nome: nome || handle.replace("@", "") || "Usuario",
+                user: handle,
+                foto: perfil.foto || "https://placehold.co/50"
+            };
+        }
+
+        async function getSupabaseUidByUserId(userId) {
+            if (!userId) return null;
+            if (_dokeSupabaseUidCache.has(userId)) return _dokeSupabaseUidCache.get(userId);
+            const client = getSupabaseClient();
+            if (!client) return null;
+            const { data, error } = await client
+                .from("usuarios")
+                .select("uid")
+                .eq("id", userId)
+                .maybeSingle();
+            if (error && !isMissingTableError(error)) console.error(error);
+            const uid = data?.uid || null;
+            if (uid) _dokeSupabaseUidCache.set(userId, uid);
+            return uid;
+        }
+
+        async function criarNotificacaoSocialFeed({ acao, paraUid, postId, postFonte, comentarioId, comentarioTexto }) {
+            const user = auth?.currentUser;
+            if (!user || !paraUid || user.uid === paraUid) return;
+            const perfil = getActorPerfil();
+            const payload = {
+                paraUid,
+                deUid: user.uid,
+                deNome: perfil.nome,
+                deUser: perfil.user,
+                deFoto: perfil.foto,
+                acao,
+                postId: postId || null,
+                postTipo: "reel",
+                postFonte: postFonte || "firebase",
+                comentarioId: comentarioId || null,
+                comentarioTexto: comentarioTexto || null,
+                lida: false,
+                createdAt: new Date().toISOString(),
+                link: buildSocialNotifLink(postFonte, postId)
+            };
+
+            try {
+                if (acao && acao.startsWith("curtida")) {
+                    const chave = `like_${acao}_${postId || "x"}_${comentarioId || "x"}_${user.uid}`;
+                    await setDoc(doc(db, "notificacoes", chave), payload, { merge: true });
+                    return;
+                }
+
+                await addDoc(collection(db, "notificacoes"), payload);
+            } catch (e) {
+                console.warn("Notificacao social ignorada:", e);
+            }
+        }
+
+        async function resolverDonoComentarioUidFeed(commentId, parentId, isReply) {
+            const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
+            const ownerUid = btn?.dataset?.ownerUid || "";
+            if (ownerUid) return ownerUid;
+            const ownerId = btn?.dataset?.ownerId || "";
+
+            if (window.currentReelCommentsSource === "supabase") {
+                if (ownerId) return await getSupabaseUidByUserId(ownerId);
+                const client = getSupabaseClient();
+                if (!client) return null;
+                const cfg = getSupabaseReelConfig();
+                let { data, error } = await client
+                    .from(cfg.commentsTable)
+                    .select("user_id, usuarios (uid)")
+                    .eq("id", commentId)
+                    .maybeSingle();
+                if (error) {
+                    const retry = await client
+                        .from(cfg.commentsTable)
+                        .select("user_id")
+                        .eq("id", commentId)
+                        .maybeSingle();
+                    data = retry.data || null;
+                    error = retry.error || null;
+                }
+                if (error && !isMissingTableError(error)) console.error(error);
+                const uid = data?.usuarios?.uid || (data?.user_id ? await getSupabaseUidByUserId(data.user_id) : null);
+                return uid || null;
+            }
+
+            try {
+                const ref = isReply
+                    ? doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId)
+                    : doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId);
+                const snap = await getDoc(ref);
+                return snap.exists() ? (snap.data().uid || null) : null;
+            } catch (e) {
+                console.error(e);
+                return null;
+            }
+        }
+
+        async function attachSupabaseUsersById(items) {
+            const client = getSupabaseClient();
+            if (!client || !Array.isArray(items) || items.length === 0) return items;
+
+            const missing = Array.from(new Set(items.map((item) => item?.user_id).filter(Boolean)));
+            if (!missing.length) return items;
+
+            const { data, error } = await client
+                .from("usuarios")
+                .select("id, uid, nome, user, foto")
+                .in("id", missing);
+
+            if (error || !Array.isArray(data)) {
+                if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuarios:", error);
+                return items;
+            }
+
+            const map = new Map(data.map((row) => [row.id, row]));
+            return items.map((item) => {
+                if (!item || item.usuarios) return item;
+                const usuario = map.get(item.user_id);
+                return usuario ? { ...item, usuarios: usuario } : item;
+            });
+        }
+
+        function getSupabaseReelConfig() {
+            return {
+                commentsTable: "videos_curtos_comentarios",
+                commentLikesTable: "videos_curtos_comentarios_curtidas",
+                commentReportsTable: "videos_curtos_comentarios_denuncias",
+                postReportsTable: "videos_curtos_denuncias",
+                postIdField: "video_curto_id"
+            };
+        }
+
+        function getCommentButton(className, commentId, parentId, isReply) {
+            const selector = `.${className}[data-comment-id="${commentId}"][data-parent-id="${parentId || ""}"][data-reply="${isReply ? "true" : "false"}"]`;
+            return document.querySelector(selector);
+        }
+
+        function setReportButtonState(btn) {
+            if (!btn) return;
+            btn.classList.add("is-reported");
+            btn.setAttribute("title", "Denunciado");
+            btn.disabled = true;
+        }
+
+        window.verificarLikeComentario = async function(commentId, parentId, isReply) {
+            const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
+            if (!btn) return;
+            const icon = btn.querySelector("i");
+            const user = auth.currentUser;
+            if (!user) {
+                if (icon) icon.className = "bx bx-heart";
+                btn.classList.remove("liked");
+                return;
+            }
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return;
+                const cfg = getSupabaseReelConfig();
+                const { data, error } = await client
+                    .from(cfg.commentLikesTable)
+                    .select("id")
+                    .eq("comentario_id", commentId)
+                    .eq("user_id", userRow.id)
+                    .maybeSingle();
+                if (error && !isMissingTableError(error)) console.error(error);
+                const liked = !!data;
+                if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+                btn.classList.toggle("liked", liked);
+                return;
+            }
+
+            try {
+                const likeRef = isReply
+                    ? doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId, "likes", user.uid)
+                    : doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId, "likes", user.uid);
+                const snap = await getDoc(likeRef);
+                const liked = snap.exists();
+                if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+                btn.classList.toggle("liked", liked);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.deletarComentarioReel = async function(commentId, parentId, isReply) {
+            if (!commentId) return;
+            const pode = window.dokeConfirm
+                ? await window.dokeConfirm("Deseja apagar esta mensagem?", "Confirmacao", "danger")
+                : confirm("Deseja apagar esta mensagem?");
+            if (!pode) return;
+
+            const user = auth.currentUser;
+            if (!user) return;
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return;
+                const cfg = getSupabaseReelConfig();
+                try {
+                    const { error } = await client
+                        .from(cfg.commentsTable)
+                        .delete()
+                        .eq("id", commentId)
+                        .eq("user_id", userRow.id);
+                    if (error && !isSchemaCacheError(error)) throw error;
+
+                    if (parentId) {
+                        const { data: parentRow, error: parentError } = await client
+                            .from(cfg.commentsTable)
+                            .select("reply_count")
+                            .eq("id", parentId)
+                            .maybeSingle();
+                        if (!parentError && parentRow) {
+                            const nextCount = Math.max(0, (parentRow.reply_count || 0) - 1);
+                            const { error: updateError } = await client
+                                .from(cfg.commentsTable)
+                                .update({ reply_count: nextCount })
+                                .eq("id", parentId);
+                            if (updateError && !isSchemaCacheError(updateError)) console.error(updateError);
+                        } else if (parentError && !isSchemaCacheError(parentError)) {
+                            console.error(parentError);
+                        }
+                    }
+
+                    if (parentId) {
+                        carregarRespostas(parentId);
+                    } else {
+                        carregarComentariosReelSupabase(window.currentReelCommentsId);
+                    }
+                } catch (e) {
+                    console.error("Erro ao apagar comentario:", e);
+                    alert("Erro ao apagar mensagem.");
+                }
+                return;
+            }
+
+            try {
+                if (parentId) {
+                    await deleteDoc(doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId));
+                    await updateDoc(doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId), {
+                        replyCount: increment(-1)
+                    });
+                    carregarRespostas(parentId);
+                } else {
+                    await deleteDoc(doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId));
+                    carregarComentariosReelFirebase(window.currentReelCommentsId);
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao apagar mensagem.");
+            }
+        }
+
+        window.toggleLikeComentario = async function(commentId, parentId, isReply) {
+            const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
+            if (!btn) return;
+            const icon = btn.querySelector("i");
+            const countSpan = btn.querySelector("span");
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Faca login para curtir.");
+                return;
+            }
+
+            const wasLiked = btn.classList.contains("liked");
+            const currentCount = parseInt(countSpan?.innerText || "0", 10) || 0;
+            const liked = !wasLiked;
+            const nextCount = liked ? currentCount + 1 : Math.max(0, currentCount - 1);
+
+            btn.classList.toggle("liked", liked);
+            if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
+            if (countSpan) countSpan.innerText = nextCount;
+
+            try {
+                if (window.currentReelCommentsSource === "supabase") {
+                    const client = getSupabaseClient();
+                    const userRow = await getSupabaseUserRow();
+                    if (!client || !userRow) return;
+                    const cfg = getSupabaseReelConfig();
+                    if (liked) {
+                        const { error } = await client
+                            .from(cfg.commentLikesTable)
+                            .upsert({ comentario_id: commentId, user_id: userRow.id }, { onConflict: "comentario_id,user_id" });
+                        if (error && !isMissingTableError(error)) throw error;
+                    } else {
+                        const { error } = await client
+                            .from(cfg.commentLikesTable)
+                            .delete()
+                            .eq("comentario_id", commentId)
+                            .eq("user_id", userRow.id);
+                        if (error && !isMissingTableError(error)) throw error;
+                    }
+                    const { error: countError } = await client
+                        .from(cfg.commentsTable)
+                        .update({ like_count: nextCount })
+                        .eq("id", commentId);
+                    if (countError && !isSchemaCacheError(countError)) throw countError;
+                    if (liked) {
+                        const ownerUid = await resolverDonoComentarioUidFeed(commentId, parentId, isReply);
+                        await criarNotificacaoSocialFeed({
+                            acao: "curtida_comentario",
+                            paraUid: ownerUid,
+                            postId: window.currentReelCommentsId,
+                            postFonte: "supabase",
+                            comentarioId: commentId
+                        });
+                    }
+                    return;
+                }
+
+                const commentRef = isReply
+                    ? doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId)
+                    : doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId);
+                const likeRef = isReply
+                    ? doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId, "likes", user.uid)
+                    : doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId, "likes", user.uid);
+
+                if (liked) {
+                    await setDoc(likeRef, { uid: user.uid, data: new Date().toISOString() });
+                    await updateDoc(commentRef, { likeCount: increment(1) });
+                    const ownerUid = await resolverDonoComentarioUidFeed(commentId, parentId, isReply);
+                    await criarNotificacaoSocialFeed({
+                        acao: "curtida_comentario",
+                        paraUid: ownerUid,
+                        postId: window.currentReelCommentsId,
+                        postFonte: "firebase",
+                        comentarioId: commentId
+                    });
+                } else {
+                    await deleteDoc(likeRef);
+                    await updateDoc(commentRef, { likeCount: increment(-1) });
+                }
+            } catch (e) {
+                console.error(e);
+                btn.classList.toggle("liked", wasLiked);
+                if (icon) icon.className = wasLiked ? "bx bxs-heart" : "bx bx-heart";
+                if (countSpan) countSpan.innerText = currentCount;
+            }
+        }
+
+        window.verificarDenunciaComentario = async function(commentId, parentId, isReply) {
+            const btn = getCommentButton("comment-report-btn", commentId, parentId, isReply);
+            if (!btn) return;
+            const user = auth.currentUser;
+            if (!user) return;
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return;
+                const cfg = getSupabaseReelConfig();
+                const { data, error } = await client
+                    .from(cfg.commentReportsTable)
+                    .select("id")
+                    .eq("comentario_id", commentId)
+                    .eq("user_id", userRow.id)
+                    .maybeSingle();
+                if (error && !isMissingTableError(error)) console.error(error);
+                if (data) setReportButtonState(btn);
+                return;
+            }
+
+            try {
+                const reportRef = isReply
+                    ? doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId, "denuncias", user.uid)
+                    : doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId, "denuncias", user.uid);
+                const snap = await getDoc(reportRef);
+                if (snap.exists()) setReportButtonState(btn);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.denunciarComentario = async function(commentId, parentId, isReply) {
+            const btn = getCommentButton("comment-report-btn", commentId, parentId, isReply);
+            if (!btn) return;
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Faca login para denunciar.");
+                return;
+            }
+            if (btn.classList.contains("is-reported")) return;
+
+            const ownerUid = btn.dataset.commentUid || "";
+            if (window.currentReelCommentsSource !== "supabase" && ownerUid && ownerUid === user.uid) {
+                alert("Nao pode denunciar o proprio comentario.");
+                return;
+            }
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return;
+                if (ownerUid && ownerUid === userRow.id) {
+                    alert("Nao pode denunciar o proprio comentario.");
+                    return;
+                }
+                const cfg = getSupabaseReelConfig();
+                const { data, error } = await client
+                    .from(cfg.commentReportsTable)
+                    .select("id")
+                    .eq("comentario_id", commentId)
+                    .eq("user_id", userRow.id)
+                    .maybeSingle();
+                if (error && !isMissingTableError(error)) {
+                    console.error(error);
+                    return;
+                }
+                if (data) {
+                    setReportButtonState(btn);
+                    return;
+                }
+                const { error: insertError } = await client
+                    .from(cfg.commentReportsTable)
+                    .insert({ comentario_id: commentId, user_id: userRow.id });
+                if (insertError && !isMissingTableError(insertError)) {
+                    console.error(insertError);
+                    return;
+                }
+                setReportButtonState(btn);
+                return;
+            }
+
+            try {
+                const reportRef = isReply
+                    ? doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas", commentId, "denuncias", user.uid)
+                    : doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId, "denuncias", user.uid);
+                const snap = await getDoc(reportRef);
+                if (snap.exists()) {
+                    setReportButtonState(btn);
+                    return;
+                }
+                await setDoc(reportRef, { uid: user.uid, data: new Date().toISOString() });
+                setReportButtonState(btn);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.alternarFixarComentario = async function(commentId) {
+            const user = auth.currentUser;
+            if (!user) return;
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return;
+                if (!window.currentReelCommentsAuthorId || window.currentReelCommentsAuthorId !== userRow.id) return;
+                const cfg = getSupabaseReelConfig();
+                const { data, error } = await client
+                    .from(cfg.commentsTable)
+                    .select("id, pinned")
+                    .eq("id", commentId)
+                    .maybeSingle();
+                if (error) {
+                    if (!isSchemaCacheError(error)) console.error(error);
+                    return;
+                }
+                const isPinned = data?.pinned === true;
+                if (!isPinned) {
+                    const { error: unpinError } = await client
+                        .from(cfg.commentsTable)
+                        .update({ pinned: false })
+                        .eq(cfg.postIdField, window.currentReelCommentsId)
+                        .eq("pinned", true);
+                    if (unpinError && !isSchemaCacheError(unpinError)) console.error(unpinError);
+                }
+                const { error: pinError } = await client
+                    .from(cfg.commentsTable)
+                    .update({ pinned: !isPinned })
+                    .eq("id", commentId);
+                if (pinError && !isSchemaCacheError(pinError)) console.error(pinError);
+                carregarComentariosReelSupabase(window.currentReelCommentsId);
+                return;
+            }
+
+            if (!window.currentReelCommentsAuthorUid || window.currentReelCommentsAuthorUid !== user.uid) return;
+            const commentsRef = collection(db, "reels", window.currentReelCommentsId, "comentarios");
+            const commentRef = doc(db, "reels", window.currentReelCommentsId, "comentarios", commentId);
+            const snap = await getDoc(commentRef);
+            const isPinned = snap.exists() && snap.data().pinned === true;
+
+            if (!isPinned) {
+                const pinnedSnap = await getDocs(query(commentsRef, where("pinned", "==", true)));
+                pinnedSnap.forEach(docSnap => updateDoc(docSnap.ref, { pinned: false }));
+            }
+            await updateDoc(commentRef, { pinned: !isPinned });
+            carregarComentariosReelFirebase(window.currentReelCommentsId);
+        }
+
+        window.toggleInputResposta = function(commentId) {
+            const box = document.getElementById(`input-box-${commentId}`);
+            const input = document.getElementById(`input-reply-${commentId}`);
+            if (!box || !input) return;
+            if (box.style.display === "flex") {
+                box.style.display = "none";
+                return;
+            }
+            document.querySelectorAll(".reply-input-box").forEach(el => el.style.display = "none");
+            box.style.display = "flex";
+            input.focus();
+        }
+
+        window.toggleVerRespostas = function(parentId, btnElement) {
+            const container = document.getElementById(`replies-${parentId}`);
+            if (!container) return;
+            if (container.style.display === "block") {
+                container.style.display = "none";
+                if (btnElement) btnElement.innerHTML = btnElement.innerHTML.replace("Esconder", "Ver");
+            } else {
+                container.style.display = "block";
+                if (btnElement) btnElement.innerHTML = "Esconder respostas";
+                carregarRespostas(parentId);
+            }
+        }
+
+        async function carregarRespostas(parentId) {
+            const container = document.getElementById(`replies-${parentId}`);
+            const user = auth.currentUser;
+            if (!container) return;
+            container.innerHTML = `<div style="font-size:0.7rem; color:#999; padding:5px;">Carregando...</div>`;
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = user ? await getSupabaseUserRow() : null;
+                const cfg = getSupabaseReelConfig();
+                let { data, error } = await client
+                    .from(cfg.commentsTable)
+                    .select("id, texto, created_at, user_id, like_count, usuarios (id, nome, user, foto)")
+                    .eq(cfg.postIdField, window.currentReelCommentsId)
+                    .eq("parent_id", parentId)
+                    .order("created_at", { ascending: true });
+                if (error) {
+                    if (isMissingTableError(error)) {
+                        const retry = await client
+                            .from(cfg.commentsTable)
+                            .select("id, texto, created_at, user_id")
+                            .eq(cfg.postIdField, window.currentReelCommentsId)
+                            .eq("parent_id", parentId)
+                            .order("created_at", { ascending: true });
+                        data = retry.data || [];
+                        error = retry.error || null;
+                    }
+                    if (error) {
+                        container.innerHTML = "";
+                        console.error(error);
+                        return;
+                    }
+                }
+                container.innerHTML = "";
+                const checks = [];
+                data.forEach(r => {
+                    const dataLabel = r.created_at ? new Date(r.created_at).toLocaleDateString("pt-BR") : "";
+                    const isCreator = window.currentReelCommentsAuthorId && r.user_id === window.currentReelCommentsAuthorId;
+                    const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+                    const likeCount = r.like_count || 0;
+                    const userInfo = r.usuarios || {};
+                    const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
+                    const foto = userInfo.foto || "https://placehold.co/50";
+                    const btnExcluir = (userRow && r.user_id === userRow.id)
+                        ? `<button class="btn-delete-comment" onclick="deletarComentarioReel('${r.id}', '${parentId}', true)"><i class='bx bx-trash'></i></button>`
+                        : "";
+                    const btnReport = (userRow && r.user_id !== userRow.id)
+                        ? `<button class="comment-report-btn" data-comment-id="${r.id}" data-parent-id="${parentId}" data-reply="true" data-comment-uid="${r.user_id}" onclick="denunciarComentario('${r.id}', '${parentId}', true)">Denunciar</button>`
+                        : "";
+                    const btnLike = `
+                        <button class="comment-like-btn" data-comment-id="${r.id}" data-parent-id="${parentId}" data-reply="true" onclick="toggleLikeComentario('${r.id}', '${parentId}', true)">
+                            <i class='bx bx-heart'></i><span>${likeCount}</span>
+                        </button>`;
+                    const html = `
+                    <div class="reply-item" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
+                        <img src="${foto}" style="width:24px; height:24px; border-radius:50%;">
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="font-size:0.8rem;">
+                                    <span style="font-weight:700;">${escapeHtml(nome)}</span> ${badgeCriador}
+                                    <span style="color:#333; margin-left:5px;">${escapeHtml(r.texto || "")}</span>
+                                </div>
+                                ${btnExcluir}
+                            </div>
+                            <div class="comment-meta-row" style="margin-top:4px;">
+                                <span class="comment-date">${dataLabel}</span>
+                                ${btnLike}
+                                ${btnReport}
+                            </div>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML("beforeend", html);
+                    if (userRow) {
+                        checks.push(verificarLikeComentario(r.id, parentId, true));
+                        if (r.user_id !== userRow.id) checks.push(verificarDenunciaComentario(r.id, parentId, true));
+                    }
+                });
+                if (checks.length) await Promise.all(checks);
+                return;
+            }
+
+            try {
+                const q = query(
+                    collection(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas"),
+                    orderBy("data", "asc")
+                );
+                const snapshot = await getDocs(q);
+                container.innerHTML = "";
+                const checks = [];
+                snapshot.forEach(docSnap => {
+                    const r = docSnap.data();
+                    const rid = docSnap.id;
+                    const dataLabel = r.data ? new Date(r.data).toLocaleDateString("pt-BR") : "";
+                    const isCreator = window.currentReelCommentsAuthorUid && r.uid === window.currentReelCommentsAuthorUid;
+                    const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+                    const likeCount = r.likeCount || 0;
+                    const btnExcluir = (user && r.uid === user.uid)
+                        ? `<button class="btn-delete-comment" onclick="deletarComentarioReel('${rid}', '${parentId}', true)"><i class='bx bx-trash'></i></button>`
+                        : "";
+                    const btnReport = (user && r.uid !== user.uid)
+                        ? `<button class="comment-report-btn" data-comment-id="${rid}" data-parent-id="${parentId}" data-reply="true" data-comment-uid="${r.uid}" onclick="denunciarComentario('${rid}', '${parentId}', true)">Denunciar</button>`
+                        : "";
+                    const btnLike = `
+                        <button class="comment-like-btn" data-comment-id="${rid}" data-parent-id="${parentId}" data-reply="true" onclick="toggleLikeComentario('${rid}', '${parentId}', true)">
+                            <i class='bx bx-heart'></i><span>${likeCount}</span>
+                        </button>`;
+                    const html = `
+                    <div class="reply-item" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
+                        <img src="${r.foto || "https://placehold.co/50"}" style="width:24px; height:24px; border-radius:50%;">
+                        <div style="flex:1;">
+                            <div style="display:flex; justify-content:space-between; align-items:center;">
+                                <div style="font-size:0.8rem;">
+                                    <span style="font-weight:700;">${escapeHtml(r.user || "Usuario")}</span> ${badgeCriador}
+                                    <span style="color:#333; margin-left:5px;">${escapeHtml(r.texto || "")}</span>
+                                </div>
+                                ${btnExcluir}
+                            </div>
+                            <div class="comment-meta-row" style="margin-top:4px;">
+                                <span class="comment-date">${dataLabel}</span>
+                                ${btnLike}
+                                ${btnReport}
+                            </div>
+                        </div>
+                    </div>`;
+                    container.insertAdjacentHTML("beforeend", html);
+                    if (user) {
+                        checks.push(verificarLikeComentario(rid, parentId, true));
+                        if (r.uid !== user.uid) checks.push(verificarDenunciaComentario(rid, parentId, true));
+                    }
+                });
+                if (checks.length) await Promise.all(checks);
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.enviarResposta = async function(parentId) {
+            const input = document.getElementById(`input-reply-${parentId}`);
+            const texto = input?.value?.trim();
+            const user = auth.currentUser;
+            if (!texto || !user) return;
+            const btn = input.nextElementSibling;
+            const txtOriginal = btn?.innerText;
+            if (btn) {
+                btn.innerText = "...";
+                btn.disabled = true;
+            }
+
+            try {
+                if (window.currentReelCommentsSource === "supabase") {
+                    const client = getSupabaseClient();
+                    const userRow = await getSupabaseUserRow();
+                    if (!client || !userRow) return;
+                    const cfg = getSupabaseReelConfig();
+                    let { error } = await client
+                        .from(cfg.commentsTable)
+                        .insert({
+                            video_curto_id: window.currentReelCommentsId,
+                            user_id: userRow.id,
+                            texto: texto,
+                            parent_id: parentId,
+                            like_count: 0,
+                            reply_count: 0,
+                            pinned: false
+                        });
+                    if (error && isSchemaCacheError(error)) {
+                        const retry = await client
+                            .from(cfg.commentsTable)
+                            .insert({
+                                video_curto_id: window.currentReelCommentsId,
+                                user_id: userRow.id,
+                                texto: texto,
+                                parent_id: parentId
+                            });
+                        error = retry.error || null;
+                    }
+                    if (error && !isSchemaCacheError(error)) throw error;
+                    const { data: parentRow, error: parentError } = await client
+                        .from(cfg.commentsTable)
+                        .select("reply_count")
+                        .eq("id", parentId)
+                        .maybeSingle();
+                    if (!parentError && parentRow) {
+                        const nextCount = (parentRow?.reply_count || 0) + 1;
+                        const { error: updateError } = await client
+                            .from(cfg.commentsTable)
+                            .update({ reply_count: nextCount })
+                            .eq("id", parentId);
+                        if (updateError && !isSchemaCacheError(updateError)) console.error(updateError);
+                    } else if (parentError && !isSchemaCacheError(parentError)) {
+                        console.error(parentError);
+                    }
+                    input.value = "";
+                    toggleInputResposta(parentId);
+                    const container = document.getElementById(`replies-${parentId}`);
+                    if (container) container.style.display = "block";
+                    carregarRespostas(parentId);
+                    return;
+                }
+
+                const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                const respostasRef = collection(db, "reels", window.currentReelCommentsId, "comentarios", parentId, "respostas");
+                const parentRef = doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId);
+                await addDoc(respostasRef, {
+                    uid: user.uid,
+                    user: perfil.user || "Usuario",
+                    foto: perfil.foto || "https://placehold.co/50",
+                    texto: texto,
+                    data: new Date().toISOString(),
+                    likeCount: 0
+                });
+                await updateDoc(parentRef, { replyCount: increment(1) });
+                input.value = "";
+                toggleInputResposta(parentId);
+                const container = document.getElementById(`replies-${parentId}`);
+                if (container) container.style.display = "block";
+                carregarRespostas(parentId);
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao enviar resposta.");
+            } finally {
+                if (btn) {
+                    btn.innerText = txtOriginal;
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        async function carregarComentariosReelFirebase(id) {
+            const list = document.getElementById('reelCommentsList');
+            const user = auth.currentUser;
+            if (!list) return;
+            list.innerHTML = "<div class='reel-comments-empty'>Carregando comentarios...</div>";
+
+            try {
+                const q = query(collection(db, "reels", id, "comentarios"), orderBy("data", "asc"));
+                const snap = await getDocs(q);
+                list.innerHTML = "";
+
+                if (snap.empty) {
+                    list.innerHTML = "<div class='reel-comments-empty'>Sem comentarios ainda.</div>";
+                    return;
+                }
+
+                const comments = [];
+                snap.forEach(docSnap => comments.push({ id: docSnap.id, ...docSnap.data() }));
+                comments.sort((a, b) => {
+                    const ap = a.pinned === true ? 1 : 0;
+                    const bp = b.pinned === true ? 1 : 0;
+                    if (ap !== bp) return bp - ap;
+                    return new Date(a.data || 0) - new Date(b.data || 0);
+                });
+
+                const checks = [];
+
+                comments.forEach(c => {
+                    const cid = c.id;
+                    const dataLabel = c.data ? new Date(c.data).toLocaleDateString("pt-BR") : "";
+                    const isCreator = window.currentReelCommentsAuthorUid && c.uid === window.currentReelCommentsAuthorUid;
+                    const isPinned = c.pinned === true;
+                    const likeCount = c.likeCount || 0;
+                    const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+                    const badgeFixado = isPinned ? `<span class="badge-fixado">Fixado</span>` : "";
+                    const canPin = user && window.currentReelCommentsAuthorUid && user.uid === window.currentReelCommentsAuthorUid;
+                const btnPin = canPin
+                    ? `<button class="btn-pin-comment" onclick="alternarFixarComentario('${cid}')">${isPinned ? "Desafixar" : "Fixar"}</button>`
+                    : "";
+                const btnExcluir = (user && c.uid === user.uid)
+                    ? `<button class="btn-delete-comment" onclick="deletarComentarioReel('${cid}', '', false)"><i class='bx bx-trash'></i></button>`
+                    : "";
+                const btnReport = (user && c.uid !== user.uid)
+                    ? `<button class="comment-report-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" data-comment-uid="${c.uid}" onclick="denunciarComentario('${cid}', '', false)">Denunciar</button>`
+                    : "";
+                    const btnLike = `
+                        <button class="comment-like-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" onclick="toggleLikeComentario('${cid}', '', false)">
+                            <i class='bx bx-heart'></i><span>${likeCount}</span>
+                        </button>`;
+                    let btnVerRespostas = "";
+                    if (c.replyCount && c.replyCount > 0) {
+                        btnVerRespostas = `
+                        <div class="toggle-replies-link" onclick="toggleVerRespostas('${cid}', this)">
+                            Ver ${c.replyCount} respostas
+                        </div>`;
+                    }
+                    const html = `
+                    <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
+                        <div class="comment-row">
+                            <img src="${c.foto || "https://placehold.co/50"}" class="comment-avatar" alt="">
+                            <div style="flex:1;">
+                                <div class="comment-header-row">
+                                    <div class="comment-header-left">
+                                        <span class="comment-user-name">${escapeHtml(c.user || "Usuario")}</span> ${badgeCriador} ${badgeFixado}
+                                    </div>
+                            <div class="comment-header-actions">
+                                ${btnPin}
+                                ${btnExcluir}
+                            </div>
+                        </div>
+                                <div class="comment-text-content">${escapeHtml(c.texto || "")}</div>
+                                <div class="comment-meta-row">
+                                    <span class="comment-date">${dataLabel}</span>
+                                    <button class="btn-reply-action" onclick="toggleInputResposta('${cid}')">Responder</button>
+                                    ${btnLike}
+                                    ${btnReport}
+                                </div>
+                            </div>
+                        </div>
+                        ${btnVerRespostas}
+                        <div id="replies-${cid}" class="replies-container"></div>
+                        <div id="input-box-${cid}" class="reply-input-box">
+                            <input type="text" id="input-reply-${cid}" placeholder="Sua resposta...">
+                            <button onclick="enviarResposta('${cid}')">Enviar</button>
+                        </div>
+                    </div>`;
+                    list.insertAdjacentHTML("beforeend", html);
+                    if (user) {
+                        checks.push(verificarLikeComentario(cid, "", false));
+                        if (c.uid !== user.uid) checks.push(verificarDenunciaComentario(cid, "", false));
+                    }
+                });
+
+                if (checks.length) await Promise.all(checks);
+            } catch (e) {
+                console.error(e);
+                list.innerHTML = "<div class='reel-comments-empty'>Erro ao carregar comentarios.</div>";
+            }
+        }
+
+        async function carregarComentariosReelSupabase(id) {
+            const list = document.getElementById('reelCommentsList');
+            const user = auth.currentUser;
+            const userRow = user ? await getSupabaseUserRow() : null;
+            if (!list) return;
+            list.innerHTML = "<div class='reel-comments-empty'>Carregando comentarios...</div>";
+
+            const client = getSupabaseClient();
+            if (!client) {
+                list.innerHTML = "<div class='reel-comments-empty'>Comentarios indisponiveis neste video.</div>";
+                return;
+            }
+
+            const cfg = getSupabaseReelConfig();
+            let { data, error } = await client
+                .from(cfg.commentsTable)
+                .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuarios (id, nome, user, foto)")
+                .eq(cfg.postIdField, id)
+                .is("parent_id", null)
+                .order("pinned", { ascending: false })
+                .order("created_at", { ascending: true });
+            if (error) {
+                if (isMissingTableError(error)) {
+                    const retry = await client
+                        .from(cfg.commentsTable)
+                        .select("id, texto, created_at, user_id")
+                        .eq(cfg.postIdField, id)
+                        .is("parent_id", null)
+                        .order("created_at", { ascending: true });
+                    data = retry.data || [];
+                    error = retry.error || null;
+                }
+                if (error) {
+                    console.error(error);
+                    list.innerHTML = "<div class='reel-comments-empty'>Erro ao carregar comentarios.</div>";
+                    return;
+                }
+            }
+
+            list.innerHTML = "";
+            if (!data || data.length === 0) {
+                list.innerHTML = "<div class='reel-comments-empty'>Sem comentarios ainda.</div>";
+                return;
+            }
+
+            const checks = [];
+            data.forEach(c => {
+                const cid = c.id;
+                const dataLabel = c.created_at ? new Date(c.created_at).toLocaleDateString("pt-BR") : "";
+                const isCreator = window.currentReelCommentsAuthorId && c.user_id === window.currentReelCommentsAuthorId;
+                const isPinned = c.pinned === true;
+                const likeCount = c.like_count || 0;
+                const userInfo = c.usuarios || {};
+                const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
+                const foto = userInfo.foto || "https://placehold.co/50";
+                const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
+                const badgeFixado = isPinned ? `<span class="badge-fixado">Fixado</span>` : "";
+                const canPin = userRow && window.currentReelCommentsAuthorId && window.currentReelCommentsAuthorId === userRow.id;
+                const btnPin = canPin
+                    ? `<button class="btn-pin-comment" onclick="alternarFixarComentario('${cid}')">${isPinned ? "Desafixar" : "Fixar"}</button>`
+                    : "";
+                const btnExcluir = (userRow && c.user_id === userRow.id)
+                    ? `<button class="btn-delete-comment" onclick="deletarComentarioReel('${cid}', '', false)"><i class='bx bx-trash'></i></button>`
+                    : "";
+                const btnReport = (userRow && c.user_id !== userRow.id)
+                    ? `<button class="comment-report-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" data-comment-uid="${c.user_id}" onclick="denunciarComentario('${cid}', '', false)">Denunciar</button>`
+                    : "";
+                const btnLike = `
+                    <button class="comment-like-btn" data-comment-id="${cid}" data-parent-id="" data-reply="false" onclick="toggleLikeComentario('${cid}', '', false)">
+                        <i class='bx bx-heart'></i><span>${likeCount}</span>
+                    </button>`;
+                let btnVerRespostas = "";
+                if (c.reply_count && c.reply_count > 0) {
+                    btnVerRespostas = `
+                    <div class="toggle-replies-link" onclick="toggleVerRespostas('${cid}', this)">
+                        Ver ${c.reply_count} respostas
+                    </div>`;
+                }
+                const html = `
+                <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
+                    <div class="comment-row">
+                        <img src="${foto}" class="comment-avatar" alt="">
+                        <div style="flex:1;">
+                            <div class="comment-header-row">
+                                <div class="comment-header-left">
+                                    <span class="comment-user-name">${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
+                                </div>
+                            <div class="comment-header-actions">
+                                ${btnPin}
+                                ${btnExcluir}
+                            </div>
+                        </div>
+                            <div class="comment-text-content">${escapeHtml(c.texto || "")}</div>
+                            <div class="comment-meta-row">
+                                <span class="comment-date">${dataLabel}</span>
+                                <button class="btn-reply-action" onclick="toggleInputResposta('${cid}')">Responder</button>
+                                ${btnLike}
+                                ${btnReport}
+                            </div>
+                        </div>
+                    </div>
+                    ${btnVerRespostas}
+                    <div id="replies-${cid}" class="replies-container"></div>
+                    <div id="input-box-${cid}" class="reply-input-box">
+                        <input type="text" id="input-reply-${cid}" placeholder="Sua resposta...">
+                        <button onclick="enviarResposta('${cid}')">Enviar</button>
+                    </div>
+                </div>`;
+                list.insertAdjacentHTML("beforeend", html);
+                if (userRow) {
+                    checks.push(verificarLikeComentario(cid, "", false));
+                    if (c.user_id !== userRow.id) checks.push(verificarDenunciaComentario(cid, "", false));
+                }
+            });
+            if (checks.length) await Promise.all(checks);
+        }
+
+        window.comentarReel = function(source, id, ownerUid, ownerRowId) {
+            const overlay = document.getElementById('reelCommentsOverlay');
+            const list = document.getElementById('reelCommentsList');
+            const input = document.getElementById('reelCommentInput');
+            const sendBtn = overlay?.querySelector('.reel-comments-input button');
+            if (!overlay || !list || !input || !sendBtn) return;
+
+            window.currentReelCommentsSource = source;
+            window.currentReelCommentsId = id;
+            window.currentReelCommentsAuthorUid = ownerUid || null;
+            window.currentReelCommentsAuthorId = ownerRowId || null;
+            overlay.style.display = 'flex';
+
+            input.value = "";
+            input.disabled = false;
+            sendBtn.disabled = false;
+
+            if (source === "supabase") {
+                carregarComentariosReelSupabase(id);
+                return;
+            }
+            carregarComentariosReelFirebase(id);
+        }
+
+        window.enviarComentarioReel = async function() {
+            const overlay = document.getElementById('reelCommentsOverlay');
+            const input = document.getElementById('reelCommentInput');
+            if (!overlay || !input) return;
+
+            const texto = input.value.trim();
+            if (!texto) return;
+
+            if (window.currentReelCommentsSource === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return alert("Faca login para comentar.");
+                const cfg = getSupabaseReelConfig();
+                let { error } = await client
+                    .from(cfg.commentsTable)
+                    .insert({
+                        video_curto_id: window.currentReelCommentsId,
+                        user_id: userRow.id,
+                        texto: texto,
+                        parent_id: null,
+                        like_count: 0,
+                        reply_count: 0,
+                        pinned: false
+                    });
+                if (error && isSchemaCacheError(error)) {
+                    const retry = await client
+                        .from(cfg.commentsTable)
+                        .insert({
+                            video_curto_id: window.currentReelCommentsId,
+                            user_id: userRow.id,
+                            texto: texto
+                        });
+                    error = retry.error || null;
+                }
+                if (error && !isSchemaCacheError(error)) {
+                    console.error(error);
+                    alert("Erro ao comentar.");
+                    return;
+                }
+                input.value = "";
+                await criarNotificacaoSocialFeed({
+                    acao: "comentario_reel",
+                    paraUid: window.currentReelCommentsAuthorUid,
+                    postId: window.currentReelCommentsId,
+                    postFonte: "supabase",
+                    comentarioTexto: texto
+                });
+                carregarComentariosReelSupabase(window.currentReelCommentsId);
+                return;
+            }
+
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Faca login para comentar.");
+                return;
+            }
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            try {
+                await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
+                    uid: user.uid,
+                    user: perfilLocal.user || "Usuario",
+                    foto: perfilLocal.foto || "https://placehold.co/50",
+                    texto: texto,
+                    data: new Date().toISOString(),
+                    likeCount: 0,
+                    replyCount: 0,
+                    pinned: false
+                });
+                input.value = "";
+                await criarNotificacaoSocialFeed({
+                    acao: "comentario_reel",
+                    paraUid: window.currentReelCommentsAuthorUid,
+                    postId: window.currentReelCommentsId,
+                    postFonte: "firebase",
+                    comentarioTexto: texto
+                });
+                carregarComentariosReelFirebase(window.currentReelCommentsId);
+            } catch (e) {
+                console.error(e);
+                alert("Erro ao comentar.");
+            }
+        }
+
+        window.curtirReel = async function(source, id, btn) {
+            const icon = btn.querySelector('i');
+            const span = btn.querySelector('.short-action-count');
+            const liked = btn.classList.toggle('liked');
+            if (icon) icon.className = liked ? 'bx bxs-heart' : 'bx bx-heart';
+            let atual = parseInt(span?.innerText || "0", 10) || 0;
+            atual = liked ? atual + 1 : Math.max(0, atual - 1);
+            if (span) span.innerText = atual;
+
+            if (source === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) {
+                    btn.classList.toggle('liked', !liked);
+                    if (icon) icon.className = !liked ? 'bx bxs-heart' : 'bx bx-heart';
+                    if (span) span.innerText = Math.max(0, atual + (liked ? -1 : 1));
+                    alert("Faca login para curtir.");
+                    return;
+                }
+                if (liked) {
+                    const { error } = await client
+                        .from("videos_curtos_curtidas")
+                        .upsert({ video_curto_id: id, user_id: userRow.id }, { onConflict: "video_curto_id,user_id" });
+                    if (error && !isMissingTableError(error)) console.error(error);
+                    await criarNotificacaoSocialFeed({
+                        acao: "curtida_reel",
+                        paraUid: btn.dataset.ownerUid || "",
+                        postId: id,
+                        postFonte: "supabase"
+                    });
+                } else {
+                    const { error } = await client
+                        .from("videos_curtos_curtidas")
+                        .delete()
+                        .eq("video_curto_id", id)
+                        .eq("user_id", userRow.id);
+                    if (error && !isMissingTableError(error)) console.error(error);
+                }
+                return;
+            }
+
+            try {
+                await updateDoc(doc(db, "reels", id), { likes: increment(liked ? 1 : -1) });
+                if (liked) {
+                    await criarNotificacaoSocialFeed({
+                        acao: "curtida_reel",
+                        paraUid: btn.dataset.ownerUid || "",
+                        postId: id,
+                        postFonte: "firebase"
+                    });
+                }
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
+        window.denunciarReelFeed = async function(source, id, ownerUid, ownerRowId, btn) {
+            const user = auth.currentUser;
+            if (!user) {
+                alert("Faca login para denunciar.");
+                return;
+            }
+            if (btn?.classList.contains("is-reported")) return;
+
+            if (source === "supabase") {
+                const client = getSupabaseClient();
+                const userRow = await getSupabaseUserRow();
+                if (!client || !userRow) return;
+                if (ownerRowId && ownerRowId === userRow.id) {
+                    alert("Nao pode denunciar o proprio video.");
+                    return;
+                }
+                const { data, error } = await client
+                    .from("videos_curtos_denuncias")
+                    .select("id")
+                    .eq("video_curto_id", id)
+                    .eq("user_id", userRow.id)
+                    .maybeSingle();
+                if (error && !isMissingTableError(error)) {
+                    console.error(error);
+                    return;
+                }
+                if (data) {
+                    if (btn) btn.classList.add("is-reported");
+                    return;
+                }
+                const { error: insertError } = await client
+                    .from("videos_curtos_denuncias")
+                    .insert({ video_curto_id: id, user_id: userRow.id });
+                if (insertError && !isMissingTableError(insertError)) {
+                    console.error(insertError);
+                    return;
+                }
+                if (btn) btn.classList.add("is-reported");
+                return;
+            }
+
+            if (ownerUid && ownerUid === user.uid) {
+                alert("Nao pode denunciar o proprio video.");
+                return;
+            }
+            try {
+                const reportRef = doc(db, "reels", id, "denuncias", user.uid);
+                const snap = await getDoc(reportRef);
+                if (snap.exists()) {
+                    if (btn) btn.classList.add("is-reported");
+                    return;
+                }
+                await setDoc(reportRef, { uid: user.uid, data: new Date().toISOString() });
+                if (btn) btn.classList.add("is-reported");
+            } catch (e) {
+                console.error(e);
+            }
+        }
+
         window.irParaPerfil = function(uid) {
             if (!uid) return;
             window.location.href = `perfil-profissional.html?uid=${uid}`;
@@ -436,6 +1726,7 @@ async function carregarReels() {
     </script>
 </body>
 </html>
+
 
 
 

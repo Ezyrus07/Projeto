@@ -45,9 +45,54 @@ create table if not exists public.publicacoes_comentarios (
   texto text not null,
   created_at timestamptz not null default now()
 );
+alter table public.publicacoes_comentarios
+  add column if not exists parent_id uuid references public.publicacoes_comentarios(id) on delete cascade;
+alter table public.publicacoes_comentarios
+  add column if not exists like_count int not null default 0;
+alter table public.publicacoes_comentarios
+  add column if not exists reply_count int not null default 0;
+alter table public.publicacoes_comentarios
+  add column if not exists pinned boolean not null default false;
 create index if not exists publicacoes_comentarios_pub_idx on public.publicacoes_comentarios(publicacao_id);
 create index if not exists publicacoes_comentarios_user_idx on public.publicacoes_comentarios(user_id);
+create index if not exists publicacoes_comentarios_parent_idx on public.publicacoes_comentarios(parent_id);
 alter table public.publicacoes_comentarios enable row level security;
+
+-- COMENTARIOS CURTIDAS (publicacoes)
+create table if not exists public.publicacoes_comentarios_curtidas (
+  id uuid primary key default gen_random_uuid(),
+  comentario_id uuid not null references public.publicacoes_comentarios(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists publicacoes_comentarios_curtidas_unique on public.publicacoes_comentarios_curtidas(comentario_id, user_id);
+create index if not exists publicacoes_comentarios_curtidas_comment_idx on public.publicacoes_comentarios_curtidas(comentario_id);
+create index if not exists publicacoes_comentarios_curtidas_user_idx on public.publicacoes_comentarios_curtidas(user_id);
+alter table public.publicacoes_comentarios_curtidas enable row level security;
+
+-- COMENTARIOS DENUNCIAS (publicacoes)
+create table if not exists public.publicacoes_comentarios_denuncias (
+  id uuid primary key default gen_random_uuid(),
+  comentario_id uuid not null references public.publicacoes_comentarios(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists publicacoes_comentarios_denuncias_unique on public.publicacoes_comentarios_denuncias(comentario_id, user_id);
+create index if not exists publicacoes_comentarios_denuncias_comment_idx on public.publicacoes_comentarios_denuncias(comentario_id);
+create index if not exists publicacoes_comentarios_denuncias_user_idx on public.publicacoes_comentarios_denuncias(user_id);
+alter table public.publicacoes_comentarios_denuncias enable row level security;
+
+-- DENUNCIAS (publicacoes)
+create table if not exists public.publicacoes_denuncias (
+  id uuid primary key default gen_random_uuid(),
+  publicacao_id uuid not null references public.publicacoes(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists publicacoes_denuncias_unique on public.publicacoes_denuncias(publicacao_id, user_id);
+create index if not exists publicacoes_denuncias_pub_idx on public.publicacoes_denuncias(publicacao_id);
+create index if not exists publicacoes_denuncias_user_idx on public.publicacoes_denuncias(user_id);
+alter table public.publicacoes_denuncias enable row level security;
 
 -- REELS (vídeo-curto)
 create table if not exists public.videos_curtos (
@@ -63,6 +108,93 @@ alter table public.videos_curtos
   add column if not exists thumb_url text;
 create index if not exists videos_curtos_user_id_idx on public.videos_curtos(user_id);
 alter table public.videos_curtos enable row level security;
+
+-- CURTIDAS (videos curtos)
+create table if not exists public.videos_curtos_curtidas (
+  id uuid primary key default gen_random_uuid(),
+  video_curto_id uuid not null references public.videos_curtos(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists videos_curtos_curtidas_unique on public.videos_curtos_curtidas(video_curto_id, user_id);
+create index if not exists videos_curtos_curtidas_video_idx on public.videos_curtos_curtidas(video_curto_id);
+create index if not exists videos_curtos_curtidas_user_idx on public.videos_curtos_curtidas(user_id);
+alter table public.videos_curtos_curtidas enable row level security;
+
+-- COMENTARIOS (videos curtos)
+create table if not exists public.videos_curtos_comentarios (
+  id uuid primary key default gen_random_uuid(),
+  video_curto_id uuid not null references public.videos_curtos(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  texto text not null,
+  parent_id uuid references public.videos_curtos_comentarios(id) on delete cascade,
+  like_count int not null default 0,
+  reply_count int not null default 0,
+  pinned boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create index if not exists videos_curtos_comentarios_video_idx on public.videos_curtos_comentarios(video_curto_id);
+create index if not exists videos_curtos_comentarios_user_idx on public.videos_curtos_comentarios(user_id);
+create index if not exists videos_curtos_comentarios_parent_idx on public.videos_curtos_comentarios(parent_id);
+alter table public.videos_curtos_comentarios enable row level security;
+
+-- COMENTARIOS CURTIDAS (videos curtos)
+create table if not exists public.videos_curtos_comentarios_curtidas (
+  id uuid primary key default gen_random_uuid(),
+  comentario_id uuid not null references public.videos_curtos_comentarios(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists videos_curtos_comentarios_curtidas_unique on public.videos_curtos_comentarios_curtidas(comentario_id, user_id);
+create index if not exists videos_curtos_comentarios_curtidas_comment_idx on public.videos_curtos_comentarios_curtidas(comentario_id);
+create index if not exists videos_curtos_comentarios_curtidas_user_idx on public.videos_curtos_comentarios_curtidas(user_id);
+alter table public.videos_curtos_comentarios_curtidas enable row level security;
+
+-- COMENTARIOS DENUNCIAS (videos curtos)
+create table if not exists public.videos_curtos_comentarios_denuncias (
+  id uuid primary key default gen_random_uuid(),
+  comentario_id uuid not null references public.videos_curtos_comentarios(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists videos_curtos_comentarios_denuncias_unique on public.videos_curtos_comentarios_denuncias(comentario_id, user_id);
+create index if not exists videos_curtos_comentarios_denuncias_comment_idx on public.videos_curtos_comentarios_denuncias(comentario_id);
+create index if not exists videos_curtos_comentarios_denuncias_user_idx on public.videos_curtos_comentarios_denuncias(user_id);
+alter table public.videos_curtos_comentarios_denuncias enable row level security;
+
+-- DENUNCIAS (videos curtos)
+create table if not exists public.videos_curtos_denuncias (
+  id uuid primary key default gen_random_uuid(),
+  video_curto_id uuid not null references public.videos_curtos(id) on delete cascade,
+  user_id uuid not null references public.usuarios(id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists videos_curtos_denuncias_unique on public.videos_curtos_denuncias(video_curto_id, user_id);
+create index if not exists videos_curtos_denuncias_video_idx on public.videos_curtos_denuncias(video_curto_id);
+create index if not exists videos_curtos_denuncias_user_idx on public.videos_curtos_denuncias(user_id);
+alter table public.videos_curtos_denuncias enable row level security;
+
+-- NOTIFICACOES (interacoes sociais)
+create table if not exists public.notificacoes (
+  id uuid primary key default gen_random_uuid(),
+  paraUid text not null,
+  deUid text,
+  deNome text,
+  deUser text,
+  deFoto text,
+  acao text,
+  postId text,
+  postTipo text,
+  postFonte text,
+  comentarioId text,
+  comentarioTexto text,
+  lida boolean not null default false,
+  link text,
+  createdAt timestamptz not null default now()
+);
+create index if not exists notificacoes_para_idx on public.notificacoes(paraUid);
+create index if not exists notificacoes_lida_idx on public.notificacoes(lida);
+alter table public.notificacoes enable row level security;
 
 -- PORTFÓLIO (profissional)
 create table if not exists public.portfolio (
@@ -125,8 +257,62 @@ do $$ begin
 end $$;
 
 do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_comentarios_curtidas' and policyname='Public read') then
+    create policy "Public read" on public.publicacoes_comentarios_curtidas for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_comentarios_denuncias' and policyname='Public read') then
+    create policy "Public read" on public.publicacoes_comentarios_denuncias for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_denuncias' and policyname='Public read') then
+    create policy "Public read" on public.publicacoes_denuncias for select using (true);
+  end if;
+end $$;
+
+do $$ begin
   if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos' and policyname='Public read') then
     create policy "Public read" on public.videos_curtos for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_curtidas' and policyname='Public read') then
+    create policy "Public read" on public.videos_curtos_curtidas for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_comentarios' and policyname='Public read') then
+    create policy "Public read" on public.videos_curtos_comentarios for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_comentarios_curtidas' and policyname='Public read') then
+    create policy "Public read" on public.videos_curtos_comentarios_curtidas for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_comentarios_denuncias' and policyname='Public read') then
+    create policy "Public read" on public.videos_curtos_comentarios_denuncias for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_denuncias' and policyname='Public read') then
+    create policy "Public read" on public.videos_curtos_denuncias for select using (true);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='notificacoes' and policyname='Public read') then
+    create policy "Public read" on public.notificacoes for select using (true);
   end if;
 end $$;
 
@@ -200,11 +386,92 @@ do $$ begin
 end $$;
 
 do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_comentarios_curtidas' and policyname='Owner write') then
+    create policy "Owner write" on public.publicacoes_comentarios_curtidas
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_comentarios_denuncias' and policyname='Owner write') then
+    create policy "Owner write" on public.publicacoes_comentarios_denuncias
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes_denuncias' and policyname='Owner write') then
+    create policy "Owner write" on public.publicacoes_denuncias
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
   if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos' and policyname='Owner write') then
     create policy "Owner write" on public.videos_curtos
       for all
       using (public.is_owner(user_id))
       with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_curtidas' and policyname='Owner write') then
+    create policy "Owner write" on public.videos_curtos_curtidas
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_comentarios' and policyname='Owner write') then
+    create policy "Owner write" on public.videos_curtos_comentarios
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_comentarios_curtidas' and policyname='Owner write') then
+    create policy "Owner write" on public.videos_curtos_comentarios_curtidas
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_comentarios_denuncias' and policyname='Owner write') then
+    create policy "Owner write" on public.videos_curtos_comentarios_denuncias
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='videos_curtos_denuncias' and policyname='Owner write') then
+    create policy "Owner write" on public.videos_curtos_denuncias
+      for all
+      using (public.is_owner(user_id))
+      with check (public.is_owner(user_id));
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='notificacoes' and policyname='Public write') then
+    create policy "Public write" on public.notificacoes
+      for all
+      using (true)
+      with check (true);
   end if;
 end $$;
 
