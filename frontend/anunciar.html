@@ -191,24 +191,383 @@
             .steps-container { gap: 40px; }
             main { margin-left: 0; }
         }
-    </style>
+        /* ====== AJUSTES PREMIUM (VALIDACAO / AGENDA / UX) ====== */
+        .optional-badge{ display:inline-block; padding:4px 10px; border-radius:999px; font-size:0.75rem; font-weight:700; background:#eef6fc; color:var(--cor2); margin-left:8px; }
+        .field-hint{ display:block; margin-top:6px; color:#7a7a7a; font-size:0.82rem; }
+        .upload-note{ display:block; margin-top:10px; color:#555; font-size:0.85rem; }
+
+        .input-modern.is-invalid, textarea.is-invalid, select.is-invalid{ border-color:#ef4444 !important; background:#fff5f5 !important; }
+        .input-modern.is-valid, textarea.is-valid, select.is-valid{ border-color:#22c55e !important; background:#f0fdf4 !important; }
+
+        .upload-zone.is-invalid{ border-color:#ef4444 !important; background:#fff5f5 !important; color:#ef4444 !important; animation: shake 0.25s linear 2; }
+        @keyframes shake{0%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-6px)}100%{transform:translateX(0)}}
+
+        /* Botoes utilitarios (evita botoes "crus") */
+        .btn-mini{ background:var(--cor0); color:#fff; border:none; padding:10px 14px; border-radius:999px; font-weight:700; cursor:pointer; white-space:nowrap; }
+        .btn-mini:hover{ filter:brightness(0.96); }
+        .btn-ghost{ background:#fff; color:#555; border:1px solid #ddd; padding:10px 14px; border-radius:999px; font-weight:700; cursor:pointer; }
+        .btn-ghost:hover{ background:#f6f7f8; }
+
+        /* Agenda tools */
+        .agenda-tools{ display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin: 12px 0 18px; padding:14px; border:1px solid #eef2f6; border-radius:14px; background:#fff; }
+        .agenda-tools-left{ display:flex; gap:10px; flex-wrap:wrap; }
+        .agenda-tools-right{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+        .agenda-tools-label{ font-weight:700; color:#444; }
+        .agenda-tools-sep{ color:#666; }
+        .input-time{ padding:10px 12px; border-radius:10px; border:1px solid #ddd; background:#f9f9f9; }
+
+        /* Diploma zone fix (evita cortar texto) */
+        .diploma-zone{ flex-wrap:wrap; justify-content:flex-start; }
+        #diploma-ui{ display:flex; align-items:center; gap:12px; min-width:0; }
+        #diploma-ui span{ word-break:break-word; }
+
+        /* Pagamentos grid */
+        .pagamentos-grid .checkbox-card label{ display:flex; align-items:center; justify-content:center; gap:10px; }
+        .pagamentos-grid .checkbox-card label i{ font-size:1.15rem; }
+
+    
+
+        /* ======================================================
+           UPGRADE VISUAL (FLUIDO, PREMIUM, SEM "DEFAULT")
+           ====================================================== */
+        body{
+            background:
+              radial-gradient(1200px 600px at 10% 0%, rgba(42,95,144,.18), transparent 55%),
+              radial-gradient(900px 500px at 90% 10%, rgba(11,119,104,.16), transparent 55%),
+              #f4f6f8;
+        }
+
+        .anuncio-card{
+            backdrop-filter: blur(6px);
+        }
+
+        /* Badge opcional */
+
+        /* Botões (tudo padronizado) */
+        .btn-mini,
+        .btn-ghost,
+        .btn-prev,
+        .btn-next,
+        .btn-submit,
+        .anuncio-card button{
+            appearance:none;
+            border-radius: 999px;
+            transition: transform .15s ease, box-shadow .2s ease, background .2s ease, border-color .2s ease;
+        }
+        .btn-ghost{
+            background: #fff;
+            border: 1px solid #e4eaf0;
+            color: #3b4b5a;
+            padding: 10px 16px;
+            font-weight: 700;
+        }
+        .btn-ghost:hover{ border-color: rgba(11,119,104,.35); box-shadow: 0 10px 20px rgba(0,0,0,.06); transform: translateY(-1px); }
+
+        .btn-mini{
+            background: linear-gradient(135deg, var(--cor2, #0095f6), var(--cor0, #2ecc71));
+            color: #fff;
+            border: none;
+            padding: 10px 16px;
+            font-weight: 800;
+            box-shadow: 0 10px 22px rgba(11,119,104,.18);
+        }
+        .btn-mini:hover{ transform: translateY(-1px); box-shadow: 0 14px 28px rgba(11,119,104,.24); }
+
+        .btn-prev:hover{ transform: translateY(-1px); box-shadow: 0 10px 18px rgba(0,0,0,.06); }
+        .btn-next:hover, .btn-submit:hover{ transform: translateY(-1px); }
+
+        /* Inputs time e campos */
+        .agenda-times input[type="time"], .input-time{
+            border: 1px solid #d9e2ec;
+            border-radius: 12px;
+            padding: 10px 12px;
+            background: #f9fbfd;
+            font-weight: 600;
+            color: #2b3a49;
+        }
+        .agenda-times input[type="time"]:focus, .input-time:focus{
+            outline: none;
+            border-color: rgba(11,119,104,.55);
+            box-shadow: 0 0 0 4px rgba(11,119,104,.14);
+            background: #fff;
+        }
+
+        /* Checkboxes modernos (remove o quadrado default) */
+        :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos){
+            -webkit-appearance:none;
+            appearance:none;
+            width: 22px; height: 22px;
+            border-radius: 7px;
+            border: 2px solid #cfd8e3;
+            background: #fff;
+            cursor: pointer;
+            display: inline-block;
+            transition: .15s ease;
+            box-shadow: inset 0 0 0 0 rgba(0,0,0,0);
+            flex: 0 0 auto;
+        }
+        :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos):hover{
+            border-color: rgba(11,119,104,.55);
+        }
+        :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos):focus-visible{
+            outline: none;
+            box-shadow: 0 0 0 4px rgba(11,119,104,.14);
+        }
+        :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos):checked{
+            border-color: rgba(11,119,104,.75);
+            background: linear-gradient(135deg, var(--cor2, #0095f6), var(--cor0, #2ecc71));
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: 16px 16px;
+        }
+
+        /* Linha toggle (emergência / termos) */
+        .toggle-line{
+            display:flex; align-items:center; gap: 12px;
+            padding: 12px 14px;
+            border: 1px solid #e7eef5;
+            background: #fff;
+            border-radius: 14px;
+        }
+        .toggle-line:hover{ border-color: rgba(11,119,104,.25); box-shadow: 0 10px 22px rgba(0,0,0,.05); }
+        .toggle-line .toggle-text{ font-weight: 700; color:#34495e; }
+
+        /* Agenda cards mais "app" */
+        .agenda-item{
+            border-radius: 16px;
+            border: 1px solid #e7eef5;
+            box-shadow: 0 10px 22px rgba(0,0,0,.04);
+        }
+        .agenda-item:hover{ box-shadow: 0 14px 28px rgba(0,0,0,.06); }
+        .agenda-header label{ font-size: 1rem; }
+
+        /* Upload zone estado inválido */
+        .upload-zone.is-invalid{
+            border-color: #ef4444 !important;
+            background: #fff1f2;
+            color: #ef4444;
+        }
+        .btn-full{ width:100%; }
+        .diploma-filename{ max-width: 320px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; display:block; }
+        @media(max-width:768px){ .diploma-filename{ max-width: 240px; } }
+
+
+        /* Inputs válidos/inválidos */
+        .input-modern.is-invalid, textarea.is-invalid, select.is-invalid{ border-color:#ef4444 !important; background:#fff1f2; }
+        .input-modern.is-valid{ border-color: rgba(11,119,104,.65) !important; background:#f0fdfa; }
+
+
+
+/* ======================================================
+   DOKE ULTRA UI v5 (CHECKBOX + MODAIS + HERO + AGENDA)
+   ====================================================== */
+
+/* Checkboxes (remove quadrado cru e mostra check) */
+input[type="checkbox"]{
+    -webkit-appearance: none;
+    appearance: none;
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    border: 2px solid #cbd5e1;
+    background: #fff;
+    display: inline-grid;
+    place-content: center;
+    cursor: pointer;
+    transition: 0.15s ease;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.04);
+}
+input[type="checkbox"]::before{
+    content: "";
+    width: 10px;
+    height: 6px;
+    border-left: 3px solid var(--cor0, #0b7768);
+    border-bottom: 3px solid var(--cor0, #0b7768);
+    transform: rotate(-45deg) scale(0);
+    transform-origin: center;
+    transition: 0.12s ease;
+    margin-top: -1px;
+}
+input[type="checkbox"]:checked{
+    border-color: var(--cor0, #0b7768);
+    background: #e9f8f4;
+    box-shadow: 0 0 0 3px rgba(11,119,104,0.10);
+}
+input[type="checkbox"]:checked::before{ transform: rotate(-45deg) scale(1); }
+input[type="checkbox"]:focus-visible{
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(42,95,144,0.18);
+}
+
+/* Melhorias na HERO (mais premium) */
+.anuncio-hero-container{
+    position: relative;
+    overflow: hidden;
+    background: radial-gradient(1200px 500px at 50% 0%, rgba(255,255,255,0.20), transparent 55%),
+                linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+}
+.anuncio-hero-container::after{
+    content:"";
+    position:absolute; inset:-80px;
+    background: radial-gradient(closest-side, rgba(255,255,255,0.12), transparent 70%);
+    filter: blur(10px);
+    pointer-events:none;
+}
+.anuncio-hero-container h1{ letter-spacing: -0.5px; }
+
+/* Barra flutuante de ações */
+.form-nav{
+    position: sticky;
+    bottom: 16px;
+    background: rgba(255,255,255,0.92);
+    backdrop-filter: blur(10px);
+    border: 1px solid #eef2f6;
+    border-radius: 18px;
+    padding: 14px;
+    box-shadow: 0 16px 40px rgba(0,0,0,0.12);
+    margin-top: 28px;
+}
+
+/* Modal (alert / preview) */
+.doke-modal-overlay{
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 999999;
+    padding: 18px;
+}
+.doke-modal{
+    width: min(760px, 96vw);
+    background: #fff;
+    border-radius: 22px;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.28);
+    overflow: hidden;
+    transform: translateY(8px);
+    animation: dokePop .18s ease-out forwards;
+}
+@keyframes dokePop{ to{ transform: translateY(0); } }
+.doke-modal-header{
+    padding: 18px 22px;
+    background: linear-gradient(135deg, var(--cor2, #2a5f90), var(--cor0, #0b7768));
+    color: #fff;
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    gap: 12px;
+}
+.doke-modal-header h3{ margin:0; font-size: 1.05rem; }
+.doke-modal-close{
+    width: 38px; height: 38px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(255,255,255,0.14);
+    color:#fff;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size: 18px;
+}
+.doke-modal-body{ padding: 18px 22px; }
+.doke-modal-actions{
+    padding: 16px 22px;
+    border-top: 1px solid #eef2f6;
+    display:flex;
+    justify-content:flex-end;
+    gap: 10px;
+    background: #fbfcfe;
+}
+.doke-btn{
+    border: none;
+    border-radius: 14px;
+    padding: 12px 18px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.doke-btn.primary{
+    color: #fff;
+    background: linear-gradient(135deg, var(--cor2, #2a5f90), var(--cor0, #0b7768));
+    box-shadow: 0 10px 22px rgba(11,119,104,0.22);
+}
+.doke-btn.ghost{
+    background: #eef2f6;
+    color: #374151;
+}
+
+/* Preview layout */
+.pv-grid{ display:grid; grid-template-columns: 1.15fr 0.85fr; gap: 14px; }
+.pv-card{
+    border: 1px solid #eef2f6;
+    border-radius: 18px;
+    padding: 14px;
+    background: #fff;
+}
+.pv-title{ font-size: 1.2rem; font-weight: 800; margin: 0 0 8px; }
+.pv-pill{
+    display:inline-flex; align-items:center; gap:8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    background: #e9f8f4;
+    color: var(--cor0, #0b7768);
+    font-weight: 700;
+    font-size: 0.82rem;
+    margin-right: 8px;
+    margin-bottom: 8px;
+}
+.pv-mini{ color:#6b7280; font-size: 0.9rem; }
+.pv-photos{ display:flex; gap: 10px; flex-wrap: wrap; }
+.pv-photos img{ width: 78px; height: 78px; border-radius: 14px; object-fit: cover; border: 1px solid #e5e7eb; }
+
+@media (max-width: 860px){
+    .pv-grid{ grid-template-columns: 1fr; }
+}
+h3#dokeAlertTitle{
+    color: #ffffff;
+    font-size: 1.3rem;
+}
+</style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 </head>
 <body>
 
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group"><input type="text" id="inputCep" placeholder="00000-000" maxlength="9"><button onclick="salvarCep()">OK</button></div>
+                </div>
+            </div>
+            <a href="anunciar.html">Anuncie seu servico</a>
+            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+        </nav>
+        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
+    </header>
+
     <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a></div>
-        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Inicio</span></a></div>
         <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item active"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificacoes</span></a></div>
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
         <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
     <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a></div>
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
+        <a href="login.html"><i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i></a>
     </header>
 
     <main>
@@ -282,6 +641,7 @@
                                 <input type="file" id="upload-galeria" multiple accept="image/*" onchange="processarFotos(this)">
                             </div>
                             <div id="preview-galeria" class="galeria-preview-container"></div>
+<small class="upload-note">Obrigatório anexar pelo menos 1 foto para publicar o anúncio.</small>
                         </div>
                     </div>
 
@@ -293,7 +653,7 @@
                         </div>
                         
                         <div class="form-group">
-                            <label>Diploma ou Certificado (PDF ou Imagem)</label>
+                            <label>Diploma ou Certificado (Opcional — PDF ou Imagem) <span class="optional-badge">Opcional</span></label>
                             <div class="diploma-zone" id="box-diploma" onclick="document.getElementById('upload-diploma').click()">
                                 <div id="diploma-ui">
                                     <i class='bx bx-file-blank' style="font-size: 1.8rem; color: #777;"></i>
@@ -301,19 +661,35 @@
                                 </div>
                                 <input type="file" id="upload-diploma" accept=".pdf, .jpg, .jpeg, .png" style="display:none;" onchange="processarDiploma(this)">
                             </div>
-                            <small style="color:#888; margin-top:5px; display:block;">Isso aumenta a confiança do cliente.</small>
+                            <small style="color:#888; margin-top:5px; display:block;">Opcional. Isso aumenta a confiança do cliente.</small>
                         </div>
 
                         <div class="form-group"><label>Garantia</label><textarea id="garantia" style="min-height:80px;" placeholder="Detalhes da garantia..."></textarea></div>
                         <div class="form-group"><label>Cancelamento</label><select id="politica" class="input-modern"><option>Flexível</option><option>Moderada</option><option>Rígida</option></select></div>
-                        <div class="form-group"><label style="display:flex; gap:10px;"><input type="checkbox" id="emergencia"> Atendo Emergências (24h)</label></div>
+                        <div class="form-group"><label class="toggle-line" for="emergencia"><input type="checkbox" id="emergencia"><span class="toggle-text">
+                            Atendo Emergências (24h)</span></label></div>
                     </div>
 
 <div class="form-step" id="step-3">
     <h3>Seus Dados</h3>
     <div class="form-row">
-        <div class="form-group"><label id="lbl-nome">Nome Completo</label><input type="text" id="nome_doc" class="input-modern"></div>
-        <div class="form-group"><label id="lbl-doc">CPF</label><input type="text" id="doc_num" class="input-modern"></div>
+        <div class="form-group"><label id="lbl-nome">Nome Completo</label><input type="text" id="nome_doc" class="input-modern" required></div>
+        <div class="form-group">
+  <label id="lbl-doc">CPF</label>
+  <input type="text" id="doc_num" class="input-modern" inputmode="numeric" autocomplete="off" placeholder="Digite somente números" maxlength="18" required>
+  <small class="field-hint">Somente números. O sistema valida CPF/CNPJ automaticamente.</small>
+</div>
+
+<div class="form-group">
+  <label>Documento com Foto (CPF ou CNPJ) <span class="optional-badge">Obrigatório</span></label>
+  <div class="upload-zone" onclick="document.getElementById('upload-doc').click()">
+      <i class='bx bx-id-card'></i>
+      <span>Anexar foto do documento</span>
+      <input type="file" id="upload-doc" accept="image/*" style="display:none" onchange="processarDocumento(this)">
+  </div>
+  <small class="field-hint">Envie uma foto legível do documento.</small>
+</div>
+
     </div>
     <div class="form-row"> <div class="form-group" style="width: 100%;"> <label>Telefone</label>
             <input type="tel" id="telefone" class="input-modern" placeholder="(00) 00000-0000" maxlength="15">
@@ -344,13 +720,37 @@
         </div>
     </div>
     <div class="form-group">
-        <label>Pagamentos Aceitos</label>
-         </div>
+  <label>Pagamentos Aceitos</label>
+  <div class="checkbox-grid pagamentos-grid">
+    <div class="checkbox-card"><input type="checkbox" id="pg-pix" value="Pix"><label for="pg-pix"><i class='bx bx-qr'></i> Pix</label></div>
+    <div class="checkbox-card"><input type="checkbox" id="pg-credito" value="Cartão de crédito"><label for="pg-credito"><i class='bx bx-credit-card'></i> Crédito</label></div>
+    <div class="checkbox-card"><input type="checkbox" id="pg-debito" value="Cartão de débito"><label for="pg-debito"><i class='bx bx-credit-card-front'></i> Débito</label></div>
+    <div class="checkbox-card"><input type="checkbox" id="pg-dinheiro" value="Dinheiro"><label for="pg-dinheiro"><i class='bx bx-money'></i> Dinheiro</label></div>
+    <div class="checkbox-card"><input type="checkbox" id="pg-boleto" value="Boleto"><label for="pg-boleto"><i class='bx bx-receipt'></i> Boleto</label></div>
+    <div class="checkbox-card"><input type="checkbox" id="pg-transfer" value="Transferência"><label for="pg-transfer"><i class='bx bx-transfer'></i> Transferência</label></div>
+  </div>
+  <small class="field-hint">Marque as formas de pagamento que você aceita.</small>
+</div>
 </div>
 
                     <div class="form-step" id="step-4">
                         <h3>Disponibilidade Semanal</h3>
                         <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Marque os dias que você atende e defina o horário.</p>
+
+<div class="agenda-tools">
+  <div class="agenda-tools-left">
+    <button type="button" class="btn-ghost" onclick="marcarTodosDias(true)">Marcar todos</button>
+    <button type="button" class="btn-ghost" onclick="marcarTodosDias(false)">Desmarcar</button>
+  </div>
+  <div class="agenda-tools-right">
+    <span class="agenda-tools-label">Horário padrão</span>
+    <input type="time" id="bulk-inicio" class="input-time">
+    <span class="agenda-tools-sep">até</span>
+    <input type="time" id="bulk-fim" class="input-time">
+    <button type="button" class="btn-mini" onclick="aplicarHorarioTodos()">Aplicar aos dias marcados</button>
+  </div>
+</div>
+
                         
                         <div class="agenda-list">
                             <div class="agenda-item">
@@ -410,21 +810,24 @@
                                 <small style="color: #888;">O cliente escolherá uma dessas opções.</small>
                             </div>
 
-                            <button type="button" onclick="adicionarQuestaoAoForm()" style="background: var(--cor0); color:white; border:none; padding:12px 25px; border-radius:30px; font-weight:600; cursor:pointer; width: 100%;">
-                                Adicionar Questão à Lista
-                            </button>
+                            <button type="button" class="btn-mini btn-full" onclick="adicionarQuestaoAoForm()">Adicionar Questão à Lista</button>
                         </div>
 
                         <input type="hidden" id="perguntas-formulario-json">
                         <div style="margin-top:20px; padding:15px; background:#eef6fc; border-radius:10px;">
-                            <label style="cursor:pointer; display:flex; gap:10px; align-items:center;">
-                                <input type="checkbox" id="termos" required style="width:20px; height:20px;"> 
-                                Declaro que as informações são verdadeiras.
+                            <label class="toggle-line" for="termos" style="cursor:pointer;">
+                                <input type="checkbox" id="termos" required>
+                                <span class="toggle-text">Declaro que as informações são verdadeiras.</span>
                             </label>
                         </div>
                     </div>
 
                     <div class="form-nav">
+
+<button type="button" class="btn-ghost" onclick="abrirPreview()">
+    Pré-visualizar
+</button>
+
                         <button type="button" class="btn-prev" id="btn-prev" onclick="changeStep(-1)" style="display:none;">Voltar</button>
                         <button type="button" class="btn-next" id="btn-next" onclick="changeStep(1)">Próximo</button>
                         <button type="button" class="btn-submit" id="btn-submit" onclick="publicarAnuncio(event)" style="display:none;">Publicar Anúncio</button>
@@ -470,7 +873,7 @@
                 <i class='bx bxs-check-circle' style="font-size: 2rem; color: var(--cor0);"></i>
                 <div>
                     <strong style="color:var(--cor0); display:block;">Arquivo Selecionado!</strong>
-                    <span style="font-size:0.8rem; color:#555;">${file.name}</span>
+                    <span class="diploma-filename" style="font-size:0.8rem; color:#555;">${String(file.name).replace(/</g, "&lt;").replace(/>/g, "&gt;") }</span>
                 </div>
             `;
             box.classList.add('attached');
@@ -999,6 +1402,725 @@
             temFormulario: perguntasArray.length > 0
         };
     }
-    </script>
+    
+
+    // =============================
+    // UPGRADE: CPF/CNPJ + FOTO OBRIGATORIA + AGENDA PREMIUM
+    // =============================
+
+    function onlyDigits(v){ return (v||'').toString().replace(/\D/g,''); }
+
+    function formatCPF(d){
+      d = onlyDigits(d).slice(0,11);
+      d = d.replace(/(\d{3})(\d)/,'$1.$2');
+      d = d.replace(/(\d{3})(\d)/,'$1.$2');
+      d = d.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+      return d;
+    }
+    function formatCNPJ(d){
+      d = onlyDigits(d).slice(0,14);
+      d = d.replace(/(\d{2})(\d)/,'$1.$2');
+      d = d.replace(/(\d{3})(\d)/,'$1.$2');
+      d = d.replace(/(\d{3})(\d)/,'$1/$2');
+      d = d.replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+      return d;
+    }
+
+    function validarCPF(cpf){
+      cpf = onlyDigits(cpf);
+      if(cpf.length !== 11) return false;
+      if(/^(\d)\1+$/.test(cpf)) return false;
+      let soma=0;
+      for(let i=0;i<9;i++) soma += parseInt(cpf.charAt(i))*(10-i);
+      let dv1 = (soma*10)%11; if(dv1===10) dv1=0;
+      if(dv1 !== parseInt(cpf.charAt(9))) return false;
+      soma=0;
+      for(let i=0;i<10;i++) soma += parseInt(cpf.charAt(i))*(11-i);
+      let dv2 = (soma*10)%11; if(dv2===10) dv2=0;
+      return dv2 === parseInt(cpf.charAt(10));
+    }
+
+    function validarCNPJ(cnpj){
+      cnpj = onlyDigits(cnpj);
+      if(cnpj.length !== 14) return false;
+      if(/^(\d)\1+$/.test(cnpj)) return false;
+      const calc = (base) => {
+        const pesos = base===12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
+        let soma=0;
+        for(let i=0;i<pesos.length;i++) soma += parseInt(cnpj.charAt(i))*pesos[i];
+        const r = soma % 11;
+        return r < 2 ? 0 : 11 - r;
+      }
+      const dv1 = calc(12);
+      if(dv1 !== parseInt(cnpj.charAt(12))) return false;
+      const dv2 = calc(13);
+      return dv2 === parseInt(cnpj.charAt(13));
+    }
+
+    function setValidity(el, ok, msg){
+      if(!el) return ok;
+      el.classList.toggle('is-invalid', !ok);
+      el.classList.toggle('is-valid', ok);
+      el.setCustomValidity(ok ? '' : (msg || 'Campo inválido'));
+      return ok;
+    }
+
+    function validarDoc(show){
+      const el = document.getElementById('doc_num');
+      if(!el) return true;
+      const d = onlyDigits(el.value);
+      let ok=false;
+      if(d.length <= 11){
+        el.value = formatCPF(d);
+        ok = (d.length===11) && validarCPF(d);
+        ok = setValidity(el, ok, 'CPF inválido. Digite um CPF válido.');
+      } else {
+        el.value = formatCNPJ(d);
+        ok = (d.length===14) && validarCNPJ(d);
+        ok = setValidity(el, ok, 'CNPJ inválido. Digite um CNPJ válido.');
+      }
+      if(show && !ok) el.reportValidity();
+      return ok;
+    }
+
+    function exigirFoto(show){
+      const zone = document.querySelector('.upload-zone');
+      const ok = (window.fotosParaEnviar && window.fotosParaEnviar.length > 0);
+      if(zone) zone.classList.toggle('is-invalid', !ok);
+      if(show && !ok) alert('Você precisa anexar pelo menos 1 foto do trabalho para publicar.');
+      return ok;
+    }
+
+    // Agenda: aplicar horario para todos os dias marcados
+    window.aplicarHorarioTodos = function(){
+      const ini = document.getElementById('bulk-inicio')?.value || '';
+      const fim = document.getElementById('bulk-fim')?.value || '';
+      if(!ini || !fim){ alert('Defina o horário padrão (início e fim).'); return; }
+      const dias=['seg','ter','qua','qui','sex','sab','dom'];
+      dias.forEach(d=>{
+        const chk = document.getElementById(`chk-${d}`);
+        if(chk && chk.checked){
+          const t = document.getElementById(`time-${d}`);
+          if(t) t.classList.add('show');
+          const iEl = document.getElementById(`${d}-inicio`);
+          const fEl = document.getElementById(`${d}-fim`);
+          if(iEl) iEl.value = ini;
+          if(fEl) fEl.value = fim;
+        }
+      });
+    }
+
+    window.marcarTodosDias = function(flag){
+      const dias=['seg','ter','qua','qui','sex','sab','dom'];
+      dias.forEach(d=>{
+        const chk = document.getElementById(`chk-${d}`);
+        const t = document.getElementById(`time-${d}`);
+        if(chk){
+          chk.checked = !!flag;
+          if(t) t.classList.toggle('show', !!flag);
+        }
+      });
+    }
+
+    // Fechar dropdown de categorias ao clicar fora
+    document.addEventListener('click', function(e){
+      const dd = document.getElementById('cat-dropdown');
+      const box = document.querySelector('.multi-select-container');
+      if(!dd || !box) return;
+      if(!box.contains(e.target)) dd.style.display = 'none';
+    });
+
+    // Enforce doc input digits + mask live
+function formatarDocumento(valor) {
+    valor = valor.replace(/\D/g, "");
+
+    // CPF
+    if (valor.length <= 11) {
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } 
+    // CNPJ
+    else {
+        valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+
+    return valor;
+}
+
+const docInput = document.getElementById("doc_num");
+
+docInput.addEventListener("input", function () {
+    let numeros = this.value.replace(/\D/g, "");
+    this.value = formatarDocumento(numeros);
+
+    // Validação visual em tempo real
+    if (numeros.length === 11) {
+        setFieldState(this, validaCPF(numeros));
+    } 
+    else if (numeros.length === 14) {
+        setFieldState(this, validaCNPJ(numeros));
+    } 
+    else {
+        this.style.borderColor = "#ef4444";
+        this.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.12)";
+    }
+});
+
+
+    // Regras antes de avançar step / publicar
+    (function(){
+      const oldChange = window.changeStep;
+      if(typeof oldChange === 'function'){
+        window.changeStep = function(dir){
+          const active = document.querySelector('.form-step.active');
+          const current = active && active.id ? parseInt(active.id.replace('step-',''),10) : 1;
+          if(dir === 1){
+            if(current === 1){
+              if(!exigirFoto(true)) return;
+            }
+            if(current === 3){
+              if(!validarDoc(true)) return;
+            }
+          }
+          return oldChange(dir);
+        }
+      }
+
+      const oldPub = window.publicarAnuncio;
+      if(typeof oldPub === 'function'){
+        window.publicarAnuncio = async function(event){
+          if(!exigirFoto(true)) return;
+          if(!validarDoc(true)) return;
+          return oldPub(event);
+        }
+      }
+
+      const oldUpd = window.atualizarAnuncioExistente;
+      if(typeof oldUpd === 'function'){
+        window.atualizarAnuncioExistente = async function(){
+          if(!exigirFoto(true)) return;
+          if(document.getElementById('doc_num')){ if(!validarDoc(true)) return; }
+          return oldUpd();
+        }
+      }
+    })();
+
+</script>
+
+
+<!-- ==========================
+     DOKE MODAIS (ALERT + PREVIEW) v5
+     ========================== -->
+<div class="doke-modal-overlay" id="dokeAlertOverlay" aria-hidden="true">
+  <div class="doke-modal" role="dialog" aria-modal="true" aria-labelledby="dokeAlertTitle">
+    <div class="doke-modal-header">
+      <h3 id="dokeAlertTitle">Aviso</h3>
+      <button class="doke-modal-close" type="button" onclick="window.__dokeCloseAlert()">×</button>
+    </div>
+    <div class="doke-modal-body">
+      <div id="dokeAlertMsg" style="font-size:0.98rem; color:#111827;"></div>
+    </div>
+    <div class="doke-modal-actions">
+      <button class="doke-btn primary" type="button" onclick="window.__dokeCloseAlert()">Ok</button>
+    </div>
+  </div>
+</div>
+
+<div class="doke-modal-overlay" id="dokePreviewOverlay" aria-hidden="true">
+  <div class="doke-modal" role="dialog" aria-modal="true" aria-labelledby="dokePreviewTitle">
+    <div class="doke-modal-header">
+      <h3 id="dokePreviewTitle">Pré-visualização do anúncio</h3>
+      <button class="doke-modal-close" type="button" onclick="window.__dokeClosePreview()">×</button>
+    </div>
+    <div class="doke-modal-body">
+      <div class="pv-grid">
+        <div class="pv-card">
+          <div class="pv-title" id="pvTitulo">—</div>
+          <div id="pvPills"></div>
+          <div class="pv-mini" id="pvMeta">—</div>
+          <hr style="border:none; border-top:1px solid #eef2f6; margin:12px 0;">
+          <div id="pvDescricao" style="white-space:pre-wrap; color:#374151;"></div>
+        </div>
+        <div class="pv-card">
+          <div style="font-weight:800; margin-bottom:10px; color:#111827;">Fotos</div>
+          <div class="pv-photos" id="pvFotos"></div>
+          <hr style="border:none; border-top:1px solid #eef2f6; margin:12px 0;">
+          <div style="font-weight:800; margin-bottom:8px; color:#111827;">Agenda</div>
+          <div id="pvAgenda" class="pv-mini">—</div>
+        </div>
+      </div>
+    </div>
+    <div class="doke-modal-actions">
+      <button class="doke-btn ghost" type="button" onclick="window.__dokeClosePreview()">Voltar</button>
+      <button class="doke-btn primary" type="button" id="pvConfirmBtn">Confirmar e publicar</button>
+    </div>
+  </div>
+</div>
+
+
+
+<script>
+/* ==========================
+   DOKE ENHANCEMENTS v5
+   - Alert estilizado (override window.alert)
+   - Preview antes de publicar
+   - Bloqueio sem foto
+   - CPF/CNPJ: bloqueia letras + valida
+   - Agenda: horario padrao + aplicar para dias marcados
+   ========================== */
+(function(){
+  // --------- ALERT ESTILIZADO ---------
+  const alertOverlay = document.getElementById('dokeAlertOverlay');
+  const alertMsg = document.getElementById('dokeAlertMsg');
+  window.__dokeCloseAlert = function(){
+    if(alertOverlay){ alertOverlay.style.display='none'; alertOverlay.setAttribute('aria-hidden','true'); }
+  };
+  function dokeAlert(msg, title='Aviso'){
+    const t = document.getElementById('dokeAlertTitle');
+    if(t) t.textContent = title;
+    if(alertMsg) alertMsg.textContent = String(msg ?? '');
+    if(alertOverlay){ alertOverlay.style.display='flex'; alertOverlay.setAttribute('aria-hidden','false'); }
+  }
+  // Override global alert
+  window.alert = dokeAlert;
+
+  // --------- HELPERS ---------
+  const $ = (id)=>document.getElementById(id);
+  function onlyDigits(str){ return String(str||'').replace(/\D/g,''); }
+
+  // CPF validate
+  function validaCPF(cpf){
+    cpf = onlyDigits(cpf);
+    if(!cpf || cpf.length !== 11) return false;
+    if(/^([0-9])\1+$/.test(cpf)) return false;
+    let soma=0;
+    for(let i=0;i<9;i++) soma += parseInt(cpf.charAt(i))*(10-i);
+    let r = (soma*10)%11; if(r===10) r=0;
+    if(r !== parseInt(cpf.charAt(9))) return false;
+    soma=0;
+    for(let i=0;i<10;i++) soma += parseInt(cpf.charAt(i))*(11-i);
+    r = (soma*10)%11; if(r===10) r=0;
+    return r === parseInt(cpf.charAt(10));
+  }
+
+  // CNPJ validate
+  function validaCNPJ(cnpj){
+    cnpj = onlyDigits(cnpj);
+    if(!cnpj || cnpj.length !== 14) return false;
+    if(/^([0-9])\1+$/.test(cnpj)) return false;
+    const calc = (base)=>{
+      let pos = base.length - 7;
+      let soma = 0;
+      for(let i=base.length; i>=1; i--){
+        soma += parseInt(base.charAt(base.length - i)) * pos--;
+        if(pos < 2) pos = 9;
+      }
+      const res = soma % 11;
+      return (res < 2) ? 0 : 11 - res;
+    };
+    const base12 = cnpj.slice(0,12);
+    const d1 = calc(base12);
+    const d2 = calc(base12 + d1);
+    return cnpj === base12 + String(d1) + String(d2);
+  }
+
+  function setFieldState(el, ok){
+    if(!el) return;
+    el.style.borderColor = ok ? 'var(--cor0, #0b7768)' : '#ef4444';
+    el.style.boxShadow = ok ? '0 0 0 3px rgba(11,119,104,0.12)' : '0 0 0 3px rgba(239,68,68,0.12)';
+  }
+
+  function ensureRequiredPhotos(){
+    const fotos = (window.fotosParaEnviar || []);
+    if(!Array.isArray(fotos) || fotos.length < 1){
+      const zone = document.querySelector('.upload-zone');
+      if(zone){
+        zone.style.borderColor = '#ef4444';
+        zone.style.background = '#fff5f5';
+      }
+      alert('Você precisa anexar pelo menos 1 foto do trabalho para publicar.', 'Fotos obrigatórias');
+      return false;
+    }
+    return true;
+  }
+
+  function ensureCategorias(){
+    const val = $('categorias-validacao')?.value || '';
+    if(!val.trim()){
+      const box = document.querySelector('.multi-select-container');
+      if(box){ box.style.borderColor = '#ef4444'; box.style.boxShadow='0 0 0 3px rgba(239,68,68,0.12)'; }
+      alert('Selecione pelo menos 1 categoria para continuar.', 'Categorias');
+      return false;
+    }
+    return true;
+  }
+
+  function validateDoc(){
+    const docEl = $('doc_num');
+    if(!docEl) return true;
+    // remove letras na digitação
+    const raw = docEl.value;
+    const digits = onlyDigits(raw);
+    docEl.value = digits; // sem máscara aqui para não quebrar seu fluxo, só trava letras
+    // aceita CPF (11) ou CNPJ (14)
+    const ok = (digits.length===11 && validaCPF(digits)) || (digits.length===14 && validaCNPJ(digits));
+    if(digits.length===0){
+      setFieldState(docEl, false);
+      alert('Informe CPF ou CNPJ válido para continuar.', 'Documento');
+      return false;
+    }
+    setFieldState(docEl, ok);
+    if(!ok){
+      alert('CPF/CNPJ inválido. Verifique os números e tente novamente.', 'Documento inválido');
+    }
+    return ok;
+  }
+
+  function firstInvalidInStep(stepEl){
+    if(!stepEl) return null;
+    const req = stepEl.querySelectorAll('input[required], select[required], textarea[required]');
+    for(const el of req){
+      if(!el.checkValidity()) return el;
+    }
+    return null;
+  }
+
+  function goToStep(n){
+    if(typeof window.changeStep !== 'function') return;
+    // find current step global var 'step' is in outer script; we'll simulate by clicking next/prev until match is risky.
+    // We'll directly activate via DOM:
+    for(let k=1;k<=4;k++){
+      const st = document.getElementById('step-'+k);
+      const pc = document.getElementById('p-'+k);
+      if(st) st.classList.toggle('active', k===n);
+      if(pc) pc.classList.toggle('active', k===n);
+    }
+    const btnPrev = document.getElementById('btn-prev');
+    const btnNext = document.getElementById('btn-next');
+    const btnSubmit = document.getElementById('btn-submit');
+    if(btnPrev) btnPrev.style.display = n>1 ? 'block':'none';
+    if(n===4){ if(btnNext) btnNext.style.display='none'; if(btnSubmit) btnSubmit.style.display='block'; }
+    else { if(btnNext) btnNext.style.display='block'; if(btnSubmit) btnSubmit.style.display='none'; }
+    // keep global step aligned if exists
+    try{ window.step = n; }catch(e){}
+  }
+
+  function validateAllRequiredBeforePublish(){
+    // Step 1: required + categorias
+    if(!ensureCategorias()){ goToStep(1); return false; }
+    const s1 = document.getElementById('step-1');
+    const inv1 = firstInvalidInStep(s1);
+    if(inv1){ goToStep(1); inv1.reportValidity(); return false; }
+
+    // Step 2
+    const s2 = document.getElementById('step-2');
+    const inv2 = firstInvalidInStep(s2);
+    if(inv2){ goToStep(2); inv2.reportValidity(); return false; }
+
+    // Step 3: doc validation + required
+    const s3 = document.getElementById('step-3');
+    const inv3 = firstInvalidInStep(s3);
+    if(inv3){ goToStep(3); inv3.reportValidity(); return false; }
+    if(!validateDoc()){ goToStep(3); return false; }
+
+    // Step 4: terms required + fotos required
+    const s4 = document.getElementById('step-4');
+    const inv4 = firstInvalidInStep(s4);
+    if(inv4){ goToStep(4); inv4.reportValidity(); return false; }
+    if(!ensureRequiredPhotos()){ goToStep(1); return false; }
+
+    return true;
+  }
+
+  // --------- AGENDA: HORARIO PADRAO + APLICAR ---------
+  function buildAgendaTools(){
+    const s4 = document.getElementById('step-4');
+    const agendaList = s4 ? s4.querySelector('.agenda-list') : null;
+    if(!agendaList) return;
+
+    const tools = document.createElement('div');
+    tools.style.cssText = "background:#ffffff;border:1px solid #eef2f6;border-radius:14px;padding:14px;margin:10px 0 16px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;box-shadow:0 6px 18px rgba(0,0,0,0.04)";
+    tools.innerHTML = `
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <strong style="color:#111827">Horário padrão</strong>
+        <input type="time" id="agendaPadraoInicio" style="padding:10px;border-radius:10px;border:1px solid #ddd">
+        <span style="color:#6b7280">até</span>
+        <input type="time" id="agendaPadraoFim" style="padding:10px;border-radius:10px;border:1px solid #ddd">
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button type="button" class="doke-btn ghost" id="btnMarcarTodos">Marcar todos</button>
+        <button type="button" class="doke-btn ghost" id="btnDesmarcarTodos">Desmarcar</button>
+        <button type="button" class="doke-btn primary" id="btnAplicarAgenda">Aplicar aos dias marcados</button>
+      </div>
+    `;
+    agendaList.parentNode.insertBefore(tools, agendaList);
+
+    const dias = ['seg','ter','qua','qui','sex','sab','dom'];
+
+    function marcar(v){
+      dias.forEach(d=>{
+        const chk = document.getElementById('chk-'+d);
+        if(chk){ chk.checked = v; if(typeof window.toggleTime==='function'){ 
+            const box = document.getElementById('time-'+d);
+            if(box) box.classList.toggle('show', v);
+        }}
+      });
+    }
+
+    $('btnMarcarTodos').onclick = ()=>marcar(true);
+    $('btnDesmarcarTodos').onclick = ()=>marcar(false);
+
+    $('btnAplicarAgenda').onclick = ()=>{
+      const ini = $('agendaPadraoInicio')?.value || '';
+      const fim = $('agendaPadraoFim')?.value || '';
+      if(!ini || !fim){
+        alert('Defina o horário padrão (início e fim) para aplicar.', 'Agenda');
+        return;
+      }
+      dias.forEach(d=>{
+        const chk = document.getElementById('chk-'+d);
+        if(chk && chk.checked){
+          const iEl = document.getElementById(d+'-inicio');
+          const fEl = document.getElementById(d+'-fim');
+          if(iEl) iEl.value = ini;
+          if(fEl) fEl.value = fim;
+          const box = document.getElementById('time-'+d);
+          if(box) box.classList.add('show');
+        }
+      });
+      alert('Horário aplicado aos dias marcados!', 'Agenda');
+    };
+  }
+
+  // --------- PREVIEW ---------
+  const pvOverlay = document.getElementById('dokePreviewOverlay');
+  window.__dokeClosePreview = function(){
+    if(pvOverlay){ pvOverlay.style.display='none'; pvOverlay.setAttribute('aria-hidden','true'); }
+  };
+
+  function agendaResumo(){
+    const dias = [
+      ['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']
+    ];
+    const parts = [];
+    dias.forEach(([k,lab])=>{
+      const chk = document.getElementById('chk-'+k);
+      if(chk && chk.checked){
+        const ini = document.getElementById(k+'-inicio')?.value || '';
+        const fim = document.getElementById(k+'-fim')?.value || '';
+        parts.push(`${lab}: ${ini && fim ? (ini+'–'+fim) : '—'}`);
+      }
+    });
+    return parts.length ? parts.join(' • ') : 'Nenhum dia selecionado';
+  }
+
+  function fillPreview(){
+    const titulo = $('titulo')?.value || '—';
+    const cats = $('categorias-validacao')?.value || '';
+    const tags = $('tags')?.value || '';
+    const modoAt = document.querySelector('input[name="modo_atend"]:checked')?.value || '—';
+    const tp = document.querySelector('input[name="tipo_preco"]:checked')?.value || '—';
+    const preco = (tp === 'Preço Fixo') ? ($('valor')?.value || '—') : tp;
+    const cidade = $('cidade')?.value || '';
+    const uf = $('uf')?.value || '';
+    const bairro = $('bairro')?.value || '';
+    const desc = $('descricao')?.value || '';
+
+    const pills = $('pvPills');
+    if(pills){
+      const list = [];
+      (cats.split(',').map(s=>s.trim()).filter(Boolean)).slice(0,6).forEach(c=> list.push(`<span class="pv-pill"><i class='bx bx-category'></i>${c}</span>`));
+      (tags.split(',').map(s=>s.trim()).filter(Boolean)).slice(0,6).forEach(t=> list.push(`<span class="pv-pill"><i class='bx bx-hash'></i>${t}</span>`));
+      pills.innerHTML = list.join('');
+    }
+    $('pvTitulo').textContent = titulo;
+    $('pvMeta').textContent = `${modoAt} • ${preco ? ('Preço: '+preco) : ''} • ${[bairro, cidade, uf].filter(Boolean).join(' - ')}`;
+    $('pvDescricao').textContent = desc || '—';
+    $('pvAgenda').textContent = agendaResumo();
+
+    const pvFotos = $('pvFotos');
+    if(pvFotos){
+      pvFotos.innerHTML = '';
+      const fotos = (window.fotosParaEnviar || []);
+      fotos.slice(0,8).forEach(src=>{
+        const img = document.createElement('img');
+        img.src = src;
+        pvFotos.appendChild(img);
+      });
+      if(!fotos.length){
+        pvFotos.innerHTML = '<span class="pv-mini">Nenhuma foto anexada</span>';
+      }
+    }
+  }
+
+  function openPreview(actionFn){
+    if(!pvOverlay) return;
+    fillPreview();
+    pvOverlay.style.display='flex';
+    pvOverlay.setAttribute('aria-hidden','false');
+    const btn = document.getElementById('pvConfirmBtn');
+    if(btn){
+      btn.onclick = function(){
+        window.__dokeClosePreview();
+        // executa ação original (publicar ou atualizar)
+        if(typeof actionFn === 'function') actionFn();
+      };
+    }
+  }
+
+  // --------- HOOK PUBLICAR / SALVAR ---------
+  function hookPublish(){
+    const btnSubmit = document.getElementById('btn-submit');
+    if(!btnSubmit) return;
+
+    // Keep original behavior (might be changed in edit mode)
+    const originalClick = () => {
+      // if edit mode hooked, btnSubmit.onclick points to update; else publicarAnuncio(event)
+      try{
+        const h = btnSubmit.getAttribute('data-doke-original') || '';
+      }catch(e){}
+      // call current action stored below
+      if(typeof window.__dokeAction === 'function') window.__dokeAction();
+    };
+
+    // Determine action function based on current onclick / edit mode
+    // We'll set __dokeAction to call either atualizarAnuncioExistente or publicarAnuncio
+    window.__dokeAction = function(){
+      // prefer explicit "atualizarAnuncioExistente" when edit mode set it on the button
+      const isEdit = (btnSubmit.textContent || '').toLowerCase().includes('salvar');
+      if(isEdit && typeof window.atualizarAnuncioExistente === 'function'){
+        window.atualizarAnuncioExistente();
+        return;
+      }
+      if(typeof window.publicarAnuncio === 'function'){
+        // create a fake event with preventDefault to satisfy signature
+        window.publicarAnuncio({ preventDefault: function(){} });
+        return;
+      }
+    };
+
+    // Override click to preview + validation
+    btnSubmit.onclick = function(e){
+      if(e && e.preventDefault) e.preventDefault();
+      if(!validateAllRequiredBeforePublish()) return;
+      openPreview(originalClick);
+    };
+  }
+
+  // Hook step changes to validate doc and categories (extra)
+  function hookStepNextValidation(){
+    const btnNext = document.getElementById('btn-next');
+    if(!btnNext) return;
+    const old = btnNext.onclick;
+    btnNext.onclick = function(e){
+      // if leaving step 1, ensure categories selected
+      try{
+        const currentStepEl = document.querySelector('.form-step.active');
+        if(currentStepEl && currentStepEl.id === 'step-1'){
+          if(!ensureCategorias()) return;
+        }
+        if(currentStepEl && currentStepEl.id === 'step-3'){
+          if(!validateDoc()) return;
+        }
+      }catch(err){}
+      if(typeof old === 'function') old(e);
+      else if(typeof window.changeStep === 'function') window.changeStep(1);
+    };
+  }
+
+  // CPF/CNPJ live sanitization
+function formatarDocumento(valor) {
+    valor = valor.replace(/\D/g, "");
+
+    // CPF
+    if (valor.length <= 11) {
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
+        valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    } 
+    // CNPJ
+    else {
+        valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
+        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
+        valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
+        valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
+    }
+
+    return valor;
+}
+
+const docInput = document.getElementById("doc_num");
+
+docInput.addEventListener("input", function () {
+    let numeros = this.value.replace(/\D/g, "");
+    this.value = formatarDocumento(numeros);
+
+    // Validação visual em tempo real
+    if (numeros.length === 11) {
+        setFieldState(this, validaCPF(numeros));
+    } 
+    else if (numeros.length === 14) {
+        setFieldState(this, validaCNPJ(numeros));
+    } 
+    else {
+        this.style.borderColor = "#ef4444";
+        this.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.12)";
+    }
+});
+
+
+  // Close modals on click outside
+  function modalBackdropClose(){
+    document.getElementById('dokeAlertOverlay')?.addEventListener('click', (e)=>{
+      if(e.target && e.target.id === 'dokeAlertOverlay') window.__dokeCloseAlert();
+    });
+    document.getElementById('dokePreviewOverlay')?.addEventListener('click', (e)=>{
+      if(e.target && e.target.id === 'dokePreviewOverlay') window.__dokeClosePreview();
+    });
+  }
+
+  // Close categories dropdown clicking outside (fix UX)
+  function hookDropdownClose(){
+    const dd = document.getElementById('cat-dropdown');
+    if(!dd) return;
+    document.addEventListener('click', function(e){
+      const ms = document.querySelector('.multi-select-container');
+      if(ms && !ms.contains(e.target)){
+        dd.style.display = 'none';
+      }
+    });
+  }
+
+  // Init after everything
+  document.addEventListener('DOMContentLoaded', function(){
+    modalBackdropClose();
+    hookDropdownClose();
+    buildAgendaTools();
+    hookDocInput();
+    hookStepNextValidation();
+    hookPublish();
+  });
+})();
+</script>
+
+
+<script>
+window.documentoFile = null;
+function processarDocumento(input){
+  if(input.files && input.files[0]){
+    window.documentoFile = input.files[0];
+    const zone = input.closest('.upload-zone');
+    zone.innerHTML = '<i class="bx bxs-check-circle" style="color:var(--cor0);font-size:2rem"></i><strong>Documento anexado</strong>';
+  }
+}
+function abrirPreview(){
+  alert("Pré-visualização em construção");
+}
+</script>
+
 </body>
 </html>

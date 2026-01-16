@@ -1018,22 +1018,12 @@
     </div>
 
 <script>
-    const { initializeApp } = window;
+    (function(){
     const { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc, onSnapshot, addDoc, deleteDoc } = window;
     const { getAuth, onAuthStateChanged, signOut } = window;
 
-    const firebaseConfig = {
-        apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-        authDomain: "doke-site.firebaseapp.com",
-        projectId: "doke-site",
-        storageBucket: "doke-site.firebasestorage.app",
-        messagingSenderId: "997098339190",
-        appId: "1:997098339190:web:a865b696278be21f069857"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
+    const db = window.db || getFirestore();
+    const auth = window.auth || getAuth();
 
     let currentUserUid = null;
     let chatIdAtual = null;
@@ -1919,6 +1909,7 @@ window.tocarAudio = function(btn, url) {
         btn.classList.remove('playing');
     };
 }
+    })();
 </script>
 </body>
 </html>  

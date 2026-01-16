@@ -257,6 +257,58 @@ window.publicarConteudoUnificado = async function(event) {
     }
 }
 
+function setScrollLock(locked) {
+    const root = document.documentElement;
+    if (root) root.classList.toggle('no-scroll', locked);
+    if (document.body) document.body.classList.toggle('no-scroll', locked);
+}
+
+function updateScrollLock() {
+    const selectors = [
+        '#modalGaleria',
+        '#modalPlayerVideo',
+        '#modalPostDetalhe',
+        '#modalStoryViewer',
+        '#modalStoryViewerPerfil',
+        '#modalOrcamento',
+        '#modalDetalhesPedido',
+        '#dokeModalOverlay',
+        '#dokeGlobalModal',
+        '.modal-overlay',
+        '.doke-overlay',
+        '.notif-settings-modal',
+        '#dpModalOverlay'
+    ];
+    const aberto = selectors.some((sel) => {
+        const el = document.querySelector(sel);
+        if (!el) return false;
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+    });
+    setScrollLock(aberto);
+}
+
+window.setScrollLock = setScrollLock;
+window.updateScrollLock = updateScrollLock;
+
+let scrollLockRaf = null;
+function scheduleScrollLockUpdate() {
+    if (scrollLockRaf) return;
+    scrollLockRaf = requestAnimationFrame(() => {
+        scrollLockRaf = null;
+        updateScrollLock();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    updateScrollLock();
+    if (document.body) {
+        const observer = new MutationObserver(() => scheduleScrollLockUpdate());
+        observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
+        window._dokeScrollLockObserver = observer;
+    }
+});
+
 // ============================================================
 // 4. GALERIA LIGHTBOX (COM MINIATURAS E ZOOM)
 // ============================================================
@@ -283,6 +335,7 @@ window.abrirGaleria = function(listaFotos, index) {
 
     atualizarImagemModal();
     document.getElementById('modalGaleria').style.display = 'flex';
+    updateScrollLock();
 }
 
 window.mudarImagem = function(direcao) {
@@ -309,6 +362,7 @@ window.fecharGaleria = function(event) {
     if (!event || event.target.id === 'modalGaleria' || event.target.classList.contains('btn-fechar-galeria')) {
         document.getElementById('modalGaleria').style.display = 'none';
         document.getElementById('imgExpandida').src = "";
+        updateScrollLock();
     }
 }
 
@@ -371,6 +425,7 @@ window.abrirPlayerTikTok = function(dadosRecebidos) {
 
     // 1. Mostrar
     modal.style.display = 'flex';
+    updateScrollLock();
 
     // 2. Preencher Vídeo
     const player = document.getElementById('playerPrincipal');
@@ -472,6 +527,7 @@ window.tocarVideoDoCard = function(card) {
     if(src && modal && player) {
         player.src = src; 
         modal.style.display = 'flex'; 
+        updateScrollLock();
         player.play();
     }
 }
@@ -481,6 +537,7 @@ window.fecharPlayerVideo = function() {
     const player = document.getElementById('playerPrincipal');
     if(player) { player.pause(); player.src = ""; }
     if(modal) modal.style.display = 'none';
+    updateScrollLock();
 }
 
 
@@ -572,12 +629,24 @@ window.verificarNotificacoes = function(uid) {
 
 const _dokeSupabaseUidCache = new Map();
 
-function buildSocialNotifLink(postTipo, postFonte, postId) {
+function buildSocialNotifLink(postTipo, postFonte, postId, comentarioId, acao) {
+    let extra = "";
+    if (comentarioId) extra += `&comment=${encodeURIComponent(comentarioId)}`;
+    if (acao === "resposta_comentario") extra += "&reply=1";
     if (postTipo === "reel" && postId) {
         const prefix = postFonte === "supabase" ? "sb" : "fb";
-        return `feed.html?start=${prefix}-${postId}`;
+        return `feed.html?start=${prefix}-${postId}${extra}`;
+    }
+    if (postTipo === "post" && postId) {
+        const prefix = postFonte === "supabase" ? "sb" : "fb";
+        return `index.html?post=${prefix}-${postId}${extra}`;
     }
     return "index.html";
+}
+
+function isUuid(value) {
+    if (!value) return false;
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
 }
 
 function getActorPerfil() {
@@ -658,27 +727,29 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
     if (!user || !paraUid || user.uid === paraUid) return;
     const perfil = getActorPerfil();
     const payload = {
-        paraUid,
-        deUid: user.uid,
-        deNome: perfil.nome,
-        deUser: perfil.user,
-        deFoto: perfil.foto,
+        parauid: paraUid,
+        deuid: user.uid,
+        denome: perfil.nome,
+        deuser: perfil.user,
+        defoto: perfil.foto,
         acao,
-        postId: postId || null,
-        postTipo: postTipo || null,
-        postFonte: postFonte || null,
-        comentarioId: comentarioId || null,
-        comentarioTexto: comentarioTexto || null,
+        postid: postId || null,
+        posttipo: postTipo || null,
+        postfonte: postFonte || null,
+        comentarioid: comentarioId || null,
+        comentariotexto: comentarioTexto || null,
         lida: false,
-        createdAt: new Date().toISOString(),
-        link: buildSocialNotifLink(postTipo, postFonte, postId)
+        createdat: new Date().toISOString(),
+        link: buildSocialNotifLink(postTipo, postFonte, postId, comentarioId, acao)
     };
 
     try {
         if (acao && acao.startsWith("curtida")) {
             const chave = `like_${acao}_${postId || "x"}_${comentarioId || "x"}_${user.uid}`;
-            await setDoc(doc(db, "notificacoes", chave), payload, { merge: true });
-            return;
+            if (isUuid(chave)) {
+                await setDoc(doc(db, "notificacoes", chave), payload, { merge: true });
+                return;
+            }
         }
 
         await addDoc(collection(db, "notificacoes"), payload);
@@ -867,6 +938,29 @@ window.carregarCategorias = async function() {
     }
 }
 
+window.sincronizarSessaoSupabase = async function() {
+    if (!window.sb?.auth?.getSession) return null;
+    try {
+        const { data, error } = await window.sb.auth.getSession();
+        if (error) return null;
+        const user = data?.session?.user || null;
+        if (!user) return null;
+        if (!localStorage.getItem('doke_usuario_perfil')) {
+            const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario");
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify({
+                nome: nomeFallback,
+                user: user.user_metadata?.user || nomeFallback,
+                foto: user.user_metadata?.foto || ""
+            }));
+        }
+        localStorage.setItem('usuarioLogado', 'true');
+        return user;
+    } catch (e) {
+        console.log("Erro ao sincronizar sessao:", e);
+        return null;
+    }
+}
+
 window.carregarProfissionais = async function() {
     const container = document.getElementById('listaProfissionais');
     if (!container) return;
@@ -919,11 +1013,13 @@ function protegerPaginasRestritas() {
     if (paginasRestritas.includes(paginaAtual) && !estaLogado) { window.location.href = "login.html"; }
 }
 
-window.verificarEstadoLogin = function() {
+window.verificarEstadoLogin = async function() {
     // 1. Pega os dados com segurança
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
-    const logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo;
+    const authUser = window.auth?.currentUser;
+    let logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo || !!authUser;
     let perfil = {};
+    let sessionUser = null;
     
     try {
         perfil = JSON.parse(perfilSalvo) || {};
@@ -933,7 +1029,41 @@ window.verificarEstadoLogin = function() {
     }
 
     // Define foto padrão se não tiver
-    const fotoUsuario = perfil.foto || 'https://i.pravatar.cc/150?img=12'; 
+    if (!perfilSalvo && authUser) {
+        const nomeFallback = authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : "Usuario");
+        perfil = {
+            nome: nomeFallback,
+            user: authUser.displayName || nomeFallback,
+            foto: authUser.photoURL || ""
+        };
+        localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+        localStorage.setItem('usuarioLogado', 'true');
+        logado = true;
+    }
+
+    if (!logado && window.sb?.auth?.getSession) {
+        try {
+            const { data, error } = await window.sb.auth.getSession();
+            if (!error) {
+                sessionUser = data?.session?.user || null;
+                if (sessionUser) {
+                    const nomeFallback = sessionUser.user_metadata?.nome || (sessionUser.email ? sessionUser.email.split('@')[0] : "Usuario");
+                    perfil = {
+                        nome: nomeFallback,
+                        user: sessionUser.user_metadata?.user || nomeFallback,
+                        foto: sessionUser.user_metadata?.foto || ""
+                    };
+                    localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+                    localStorage.setItem('usuarioLogado', 'true');
+                    logado = true;
+                }
+            }
+        } catch (e) {
+            console.log("Erro ao buscar sessao:", e);
+        }
+    }
+
+    const fotoUsuario = perfil.foto || authUser?.photoURL || sessionUser?.user_metadata?.foto || 'https://i.pravatar.cc/150?img=12'; 
     const eProfissional = perfil.isProfissional === true;
 
     // --- A. CONTROLE DOS MENUS ---
@@ -1912,9 +2042,10 @@ window.carregarPosts = function(uid) {
 // ============================================================
 // 13. INICIALIZAÇÃO E EVENT LISTENERS
 // ============================================================
-document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", async function() {
     
     // 1. Proteção e Header
+    await window.sincronizarSessaoSupabase();
     protegerPaginasRestritas();
     verificarEstadoLogin();
     
@@ -2005,6 +2136,19 @@ document.addEventListener("DOMContentLoaded", function() {
 
     initHomeEnhancements();
 
+    const postParam = params.get('post');
+    const commentParam = params.get('comment');
+    const openReplies = params.get('reply') === '1';
+    if (postParam) {
+        window._dokePendingModalCommentId = commentParam || null;
+        window._dokePendingModalOpenReplies = openReplies;
+        if (postParam.startsWith('sb-')) {
+            await abrirModalPublicacao(postParam.slice(3));
+        } else if (postParam.startsWith('fb-')) {
+            await abrirModalPost(postParam.slice(3), 'posts');
+        }
+    }
+
     // 6. Cookies e Popups
     const banner = document.getElementById('cookieBanner');
     const btnCookie = document.getElementById('acceptBtn');
@@ -2049,12 +2193,32 @@ document.addEventListener("DOMContentLoaded", function() {
     // 8. AUTENTICAÇÃO PERSISTENTE E NOTIFICAÇÕES
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            const docRef = doc(db, "usuarios", user.uid);
-            const docSnap = await getDoc(docRef);
-            if (docSnap.exists()) {
-                localStorage.setItem('doke_usuario_perfil', JSON.stringify(docSnap.data()));
-                localStorage.setItem('usuarioLogado', 'true');
-                
+            try {
+                const docRef = doc(db, "usuarios", user.uid);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    localStorage.setItem('doke_usuario_perfil', JSON.stringify(docSnap.data()));
+                    localStorage.setItem('usuarioLogado', 'true');
+                } else if (!localStorage.getItem('doke_usuario_perfil')) {
+                    const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuario");
+                    localStorage.setItem('doke_usuario_perfil', JSON.stringify({
+                        nome: nomeFallback,
+                        user: user.displayName || nomeFallback,
+                        foto: user.photoURL || ""
+                    }));
+                    localStorage.setItem('usuarioLogado', 'true');
+                }
+            } catch (error) {
+                console.error("Erro ao carregar perfil:", error);
+                if (!localStorage.getItem('doke_usuario_perfil')) {
+                    const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuario");
+                    localStorage.setItem('doke_usuario_perfil', JSON.stringify({
+                        nome: nomeFallback,
+                        user: user.displayName || nomeFallback,
+                        foto: user.photoURL || ""
+                    }));
+                    localStorage.setItem('usuarioLogado', 'true');
+                }
             }
             
             // Ativa notificações de pedidos novos
@@ -3366,7 +3530,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
     if (!uid) return;
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
-    const qSociais = query(collection(db, "notificacoes"), where("paraUid", "==", uid), where("lida", "==", false));
+    const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", uid), where("lida", "==", false));
 
     const atualizarBadges = (docsRecebidos, docsEnviados, docsSociais) => {
         let totalNotif = 0;
@@ -4614,8 +4778,26 @@ async function carregarComentariosNoModal(id, colecao) {
         });
 
         if (checks.length) await Promise.all(checks);
+        maybeScrollToModalComment();
 
     } catch(e) { console.error(e); }
+}
+
+function maybeScrollToModalComment() {
+    const commentId = window._dokePendingModalCommentId;
+    if (!commentId) return;
+    const alvo = document.getElementById(`comm-${commentId}`);
+    if (!alvo) return;
+    if (window._dokePendingModalOpenReplies) {
+        const container = document.getElementById(`replies-${commentId}`);
+        if (container) {
+            container.style.display = "block";
+            carregarRespostas(commentId);
+        }
+    }
+    alvo.scrollIntoView({ block: "center" });
+    window._dokePendingModalCommentId = null;
+    window._dokePendingModalOpenReplies = false;
 }
 
 async function carregarComentariosSupabase(publicacaoId) {
@@ -4822,25 +5004,29 @@ async function postarComentarioSupabase() {
     }
 
     try {
-        const { error } = await client
+        const { data: insertedRow, error } = await client
             .from("publicacoes_comentarios")
             .insert({
                 publicacao_id: window.currentSupaPublicacaoId,
                 user_id: userRow.id,
                 texto: texto
-            });
+            })
+            .select("id")
+            .maybeSingle();
         if (error && isMissingTableError(error)) {
             window._dokePublicacoesSocialStatus = false;
             throw error;
         }
         if (error && !isMissingTableError(error)) throw error;
         if (input) input.value = "";
+        const comentarioId = insertedRow?.id || null;
         await criarNotificacaoSocial({
             acao: "comentario_post",
             paraUid: window.currentSupaPublicacaoAuthorUid,
             postId: window.currentSupaPublicacaoId,
             postTipo: "post",
             postFonte: "supabase",
+            comentarioId: comentarioId,
             comentarioTexto: texto
         });
         await carregarComentariosSupabase(window.currentSupaPublicacaoId);
@@ -4983,7 +5169,7 @@ window.postarComentarioModal = async function() {
 
     try {
         // Salva na subcoleção 'comentarios'
-        await addDoc(collection(db, window.currentCollection, window.currentPostId, "comentarios"), {
+        const novoComentario = await addDoc(collection(db, window.currentCollection, window.currentPostId, "comentarios"), {
             uid: user.uid,
             user: perfilLocal.user || "Usuario",
             foto: perfilLocal.foto || "https://placehold.co/50",
@@ -5002,6 +5188,7 @@ window.postarComentarioModal = async function() {
             postId: window.currentPostId,
             postTipo: "post",
             postFonte: "firebase",
+            comentarioId: novoComentario?.id || null,
             comentarioTexto: texto
         });
         
@@ -5816,6 +6003,17 @@ window.enviarResposta = async function(parentId) {
             replyCount: increment(1)
         });
 
+        const ownerUid = await resolverDonoComentarioUid(parentId, "", false);
+        await criarNotificacaoSocial({
+            acao: "resposta_comentario",
+            paraUid: ownerUid,
+            postId: window.currentPostId,
+            postTipo: window.currentCollection === "reels" ? "reel" : "post",
+            postFonte: "firebase",
+            comentarioId: parentId,
+            comentarioTexto: texto
+        });
+
         // Limpa e fecha input
         input.value = "";
         toggleInputResposta(parentId);
@@ -6276,7 +6474,7 @@ window.enviarComentarioReel = async function() {
         if (!client || !userRow) return alert("Faca login para comentar.");
         const cfg = getSupabasePostConfig();
         if (!cfg.postId) return;
-        let { error } = await client
+        let { data: insertedRow, error } = await client
             .from(cfg.commentsTable)
             .insert({
                 [cfg.postIdField]: cfg.postId,
@@ -6286,7 +6484,9 @@ window.enviarComentarioReel = async function() {
                 like_count: 0,
                 reply_count: 0,
                 pinned: false
-            });
+            })
+            .select("id")
+            .maybeSingle();
         if (error && isSchemaCacheError(error)) {
             const retry = await client
                 .from(cfg.commentsTable)
@@ -6294,7 +6494,10 @@ window.enviarComentarioReel = async function() {
                     [cfg.postIdField]: cfg.postId,
                     user_id: userRow.id,
                     texto: texto
-                });
+                })
+                .select("id")
+                .maybeSingle();
+            insertedRow = retry.data || null;
             error = retry.error || null;
         }
         if (error && !isSchemaCacheError(error)) {
@@ -6303,12 +6506,14 @@ window.enviarComentarioReel = async function() {
             return;
         }
         if (input) input.value = "";
+        const comentarioId = insertedRow?.id || null;
         await criarNotificacaoSocial({
             acao: "comentario_reel",
             paraUid: window.currentSupaReelAuthorUid,
             postId: cfg.postId,
             postTipo: "reel",
             postFonte: "supabase",
+            comentarioId,
             comentarioTexto: texto
         });
         carregarComentariosReelSupabase(cfg.postId);
@@ -6322,7 +6527,7 @@ window.enviarComentarioReel = async function() {
     }
     const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     try {
-        await addDoc(collection(db, "reels", window.currentPostId, "comentarios"), {
+        const novoComentario = await addDoc(collection(db, "reels", window.currentPostId, "comentarios"), {
             uid: user.uid,
             user: perfilLocal.user || "Usuario",
             foto: perfilLocal.foto || "https://placehold.co/50",
@@ -6339,6 +6544,7 @@ window.enviarComentarioReel = async function() {
             postId: window.currentPostId,
             postTipo: "reel",
             postFonte: "firebase",
+            comentarioId: novoComentario?.id || null,
             comentarioTexto: texto
         });
         carregarComentariosReel(window.currentPostId);
@@ -7083,6 +7289,7 @@ async function carregarRespostasSupabase(parentId) {
     });
 
     if (checks.length) await Promise.all(checks);
+    maybeScrollToModalComment();
 }
 
 async function carregarComentariosReelSupabase(reelId) {
@@ -7365,6 +7572,17 @@ async function enviarRespostaSupabase(parentId) {
             console.error(parentError);
         }
 
+        const ownerUid = await resolverDonoComentarioUid(parentId, "", false);
+        await criarNotificacaoSocial({
+            acao: "resposta_comentario",
+            paraUid: ownerUid,
+            postId: cfg.postId,
+            postTipo: cfg.isReel ? "reel" : "post",
+            postFonte: "supabase",
+            comentarioId: parentId,
+            comentarioTexto: texto
+        });
+
         input.value = "";
         toggleInputResposta(parentId);
         const container = document.getElementById(`replies-${parentId}`);
@@ -7412,7 +7630,11 @@ async function postarComentarioSupabase() {
             reply_count: 0,
             pinned: false
         };
-        let { error } = await client.from(cfg.commentsTable).insert(insertData);
+        let { data: insertedRow, error } = await client
+            .from(cfg.commentsTable)
+            .insert(insertData)
+            .select("id")
+            .maybeSingle();
         if (error && isSchemaCacheError(error)) {
             if (isMissingTableError(error)) window._dokePublicacoesSocialStatus = false;
             const fallback = {
@@ -7420,17 +7642,20 @@ async function postarComentarioSupabase() {
                 user_id: userRow.id,
                 texto: texto
             };
-            const retry = await client.from(cfg.commentsTable).insert(fallback);
+            const retry = await client.from(cfg.commentsTable).insert(fallback).select("id").maybeSingle();
+            insertedRow = retry.data || null;
             error = retry.error || null;
         }
         if (error && !isSchemaCacheError(error)) throw error;
         if (input) input.value = "";
+        const comentarioId = insertedRow?.id || null;
         await criarNotificacaoSocial({
             acao: cfg.isReel ? "comentario_reel" : "comentario_post",
             paraUid: cfg.isReel ? window.currentSupaReelAuthorUid : window.currentSupaPublicacaoAuthorUid,
             postId: cfg.postId,
             postTipo: cfg.isReel ? "reel" : "post",
             postFonte: "supabase",
+            comentarioId,
             comentarioTexto: texto
         });
         if (cfg.isReel) {

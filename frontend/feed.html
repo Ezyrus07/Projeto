@@ -104,6 +104,12 @@
         const db = getFirestore(app);
         const auth = getAuth(app);
 
+        function setScrollLock(locked) {
+            const root = document.documentElement;
+            if (root) root.classList.toggle('no-scroll', locked);
+            if (document.body) document.body.classList.toggle('no-scroll', locked);
+        }
+
         function sairReels() {
             if (window.history.length > 1) {
                 window.history.back();
@@ -245,7 +251,7 @@ async function carregarReels() {
         const reelId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
 
         const html = `
-        <div class="reel-page" id="reel-${reelId}">
+        <div class="reel-page" id="reel-${reelId}" data-source="${source}" data-reel-id="${entry.id}" data-owner-uid="${uidSeguro}" data-owner-row="${autorRowId}">
             <div class="reels-layout">
                 <div class="video-frame" onclick="togglePlayFeed(this)">
                     <video class="video-player-feed" loop playsinline muted ${capa ? `poster="${capa}"` : ""} src="${videoUrl}"></video>
@@ -289,10 +295,24 @@ async function carregarReels() {
 
     iniciarObserver();
 
-    const startId = new URLSearchParams(window.location.search).get('start');
+    const params = new URLSearchParams(window.location.search);
+    const startId = params.get('start');
+    const commentId = params.get('comment');
+    const openReplies = params.get('reply') === '1';
     if (startId) {
         const alvo = document.getElementById(`reel-${startId}`);
-        if (alvo) alvo.scrollIntoView({ block: 'start' });
+        if (alvo) {
+            alvo.scrollIntoView({ block: 'start' });
+            if (commentId) {
+                window._dokePendingCommentId = commentId;
+                window._dokePendingOpenReplies = openReplies;
+                const source = alvo.dataset.source || "firebase";
+                const reelId = alvo.dataset.reelId || "";
+                const ownerUid = alvo.dataset.ownerUid || "";
+                const ownerRow = alvo.dataset.ownerRow || "";
+                if (source && reelId) comentarReel(source, reelId, ownerUid, ownerRow);
+            }
+        }
     }
 }
 
@@ -365,6 +385,7 @@ async function carregarReels() {
             window.currentReelCommentsSource = source;
             window.currentReelCommentsId = id;
             overlay.style.display = 'flex';
+            setScrollLock(true);
 
             if (source !== "firebase") {
                 list.innerHTML = "<div class='reel-comments-empty'>Comentarios indisponiveis neste video.</div>";
@@ -383,6 +404,7 @@ async function carregarReels() {
         window.fecharComentariosReel = function() {
             const overlay = document.getElementById('reelCommentsOverlay');
             if (overlay) overlay.style.display = 'none';
+            setScrollLock(false);
             window.currentReelCommentsSource = null;
             window.currentReelCommentsId = null;
             window.currentReelCommentsAuthorUid = null;
@@ -508,10 +530,18 @@ async function carregarReels() {
 
         const _dokeSupabaseUidCache = new Map();
 
-        function buildSocialNotifLink(postFonte, postId) {
+        function buildSocialNotifLink(postFonte, postId, comentarioId, acao) {
             if (!postId) return "feed.html";
             const prefix = postFonte === "supabase" ? "sb" : "fb";
-            return `feed.html?start=${prefix}-${postId}`;
+            let extra = "";
+            if (comentarioId) extra += `&comment=${encodeURIComponent(comentarioId)}`;
+            if (acao === "resposta_comentario") extra += "&reply=1";
+            return `feed.html?start=${prefix}-${postId}${extra}`;
+        }
+
+        function isUuid(value) {
+            if (!value) return false;
+            return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value));
         }
 
         function getActorPerfil() {
@@ -549,27 +579,29 @@ async function carregarReels() {
             if (!user || !paraUid || user.uid === paraUid) return;
             const perfil = getActorPerfil();
             const payload = {
-                paraUid,
-                deUid: user.uid,
-                deNome: perfil.nome,
-                deUser: perfil.user,
-                deFoto: perfil.foto,
+                parauid: paraUid,
+                deuid: user.uid,
+                denome: perfil.nome,
+                deuser: perfil.user,
+                defoto: perfil.foto,
                 acao,
-                postId: postId || null,
-                postTipo: "reel",
-                postFonte: postFonte || "firebase",
-                comentarioId: comentarioId || null,
-                comentarioTexto: comentarioTexto || null,
+                postid: postId || null,
+                posttipo: "reel",
+                postfonte: postFonte || "firebase",
+                comentarioid: comentarioId || null,
+                comentariotexto: comentarioTexto || null,
                 lida: false,
-                createdAt: new Date().toISOString(),
-                link: buildSocialNotifLink(postFonte, postId)
+                createdat: new Date().toISOString(),
+                link: buildSocialNotifLink(postFonte, postId, comentarioId, acao)
             };
 
             try {
                 if (acao && acao.startsWith("curtida")) {
                     const chave = `like_${acao}_${postId || "x"}_${comentarioId || "x"}_${user.uid}`;
-                    await setDoc(doc(db, "notificacoes", chave), payload, { merge: true });
-                    return;
+                    if (isUuid(chave)) {
+                        await setDoc(doc(db, "notificacoes", chave), payload, { merge: true });
+                        return;
+                    }
                 }
 
                 await addDoc(collection(db, "notificacoes"), payload);
@@ -618,6 +650,17 @@ async function carregarReels() {
                 console.error(e);
                 return null;
             }
+        }
+
+        function maybeFocusReelComment() {
+            const commentId = window._dokePendingCommentId;
+            if (!commentId) return;
+            const alvo = document.getElementById(`comm-${commentId}`);
+            if (!alvo) return;
+            if (window._dokePendingOpenReplies) toggleVerRespostas(commentId);
+            alvo.scrollIntoView({ block: "center" });
+            window._dokePendingCommentId = null;
+            window._dokePendingOpenReplies = false;
         }
 
         async function attachSupabaseUsersById(items) {
@@ -1239,6 +1282,15 @@ async function carregarReels() {
                     const container = document.getElementById(`replies-${parentId}`);
                     if (container) container.style.display = "block";
                     carregarRespostas(parentId);
+                    const ownerUid = await resolverDonoComentarioUidFeed(parentId, "", false);
+                    await criarNotificacaoSocialFeed({
+                        acao: "resposta_comentario",
+                        paraUid: ownerUid,
+                        postId: window.currentReelCommentsId,
+                        postFonte: "supabase",
+                        comentarioId: parentId,
+                        comentarioTexto: texto
+                    });
                     return;
                 }
 
@@ -1259,6 +1311,15 @@ async function carregarReels() {
                 const container = document.getElementById(`replies-${parentId}`);
                 if (container) container.style.display = "block";
                 carregarRespostas(parentId);
+                const ownerUid = await resolverDonoComentarioUidFeed(parentId, "", false);
+                await criarNotificacaoSocialFeed({
+                    acao: "resposta_comentario",
+                    paraUid: ownerUid,
+                    postId: window.currentReelCommentsId,
+                    postFonte: "firebase",
+                    comentarioId: parentId,
+                    comentarioTexto: texto
+                });
             } catch (e) {
                 console.error(e);
                 alert("Erro ao enviar resposta.");
@@ -1364,6 +1425,7 @@ async function carregarReels() {
                 });
 
                 if (checks.length) await Promise.all(checks);
+                maybeFocusReelComment();
             } catch (e) {
                 console.error(e);
                 list.innerHTML = "<div class='reel-comments-empty'>Erro ao carregar comentarios.</div>";
@@ -1485,6 +1547,7 @@ async function carregarReels() {
                 }
             });
             if (checks.length) await Promise.all(checks);
+            maybeFocusReelComment();
         }
 
         window.comentarReel = function(source, id, ownerUid, ownerRowId) {
@@ -1499,6 +1562,7 @@ async function carregarReels() {
             window.currentReelCommentsAuthorUid = ownerUid || null;
             window.currentReelCommentsAuthorId = ownerRowId || null;
             overlay.style.display = 'flex';
+            setScrollLock(true);
 
             input.value = "";
             input.disabled = false;
@@ -1524,7 +1588,7 @@ async function carregarReels() {
                 const userRow = await getSupabaseUserRow();
                 if (!client || !userRow) return alert("Faca login para comentar.");
                 const cfg = getSupabaseReelConfig();
-                let { error } = await client
+                let { data: insertedRow, error } = await client
                     .from(cfg.commentsTable)
                     .insert({
                         video_curto_id: window.currentReelCommentsId,
@@ -1534,7 +1598,9 @@ async function carregarReels() {
                         like_count: 0,
                         reply_count: 0,
                         pinned: false
-                    });
+                    })
+                    .select("id")
+                    .maybeSingle();
                 if (error && isSchemaCacheError(error)) {
                     const retry = await client
                         .from(cfg.commentsTable)
@@ -1542,7 +1608,10 @@ async function carregarReels() {
                             video_curto_id: window.currentReelCommentsId,
                             user_id: userRow.id,
                             texto: texto
-                        });
+                        })
+                        .select("id")
+                        .maybeSingle();
+                    insertedRow = retry.data || null;
                     error = retry.error || null;
                 }
                 if (error && !isSchemaCacheError(error)) {
@@ -1551,11 +1620,16 @@ async function carregarReels() {
                     return;
                 }
                 input.value = "";
+                const ownerUid = window.currentReelCommentsAuthorUid
+                    || (window.currentReelCommentsAuthorId ? await getSupabaseUidByUserId(window.currentReelCommentsAuthorId) : null);
+                if (ownerUid) window.currentReelCommentsAuthorUid = ownerUid;
+                const comentarioId = insertedRow?.id || null;
                 await criarNotificacaoSocialFeed({
                     acao: "comentario_reel",
-                    paraUid: window.currentReelCommentsAuthorUid,
+                    paraUid: ownerUid,
                     postId: window.currentReelCommentsId,
                     postFonte: "supabase",
+                    comentarioId,
                     comentarioTexto: texto
                 });
                 carregarComentariosReelSupabase(window.currentReelCommentsId);
@@ -1569,7 +1643,7 @@ async function carregarReels() {
             }
             const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
             try {
-                await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
+                const novoComentario = await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
                     uid: user.uid,
                     user: perfilLocal.user || "Usuario",
                     foto: perfilLocal.foto || "https://placehold.co/50",
@@ -1585,6 +1659,7 @@ async function carregarReels() {
                     paraUid: window.currentReelCommentsAuthorUid,
                     postId: window.currentReelCommentsId,
                     postFonte: "firebase",
+                    comentarioId: novoComentario?.id || null,
                     comentarioTexto: texto
                 });
                 carregarComentariosReelFirebase(window.currentReelCommentsId);
@@ -1618,9 +1693,12 @@ async function carregarReels() {
                         .from("videos_curtos_curtidas")
                         .upsert({ video_curto_id: id, user_id: userRow.id }, { onConflict: "video_curto_id,user_id" });
                     if (error && !isMissingTableError(error)) console.error(error);
+                    const ownerUid = btn.dataset.ownerUid
+                        || (btn.dataset.ownerRow ? await getSupabaseUidByUserId(btn.dataset.ownerRow) : "");
+                    if (ownerUid) btn.dataset.ownerUid = ownerUid;
                     await criarNotificacaoSocialFeed({
                         acao: "curtida_reel",
-                        paraUid: btn.dataset.ownerUid || "",
+                        paraUid: ownerUid,
                         postId: id,
                         postFonte: "supabase"
                     });

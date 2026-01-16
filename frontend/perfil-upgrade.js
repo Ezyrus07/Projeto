@@ -88,6 +88,7 @@
       const saveBtn = $("#dpModalSave");
       if (saveBtn) saveBtn.textContent = opts?.saveLabel || "Salvar";
       this.overlay.classList.add("open");
+      if (window.updateScrollLock) window.updateScrollLock();
 
       $("#dpModalClose")?.addEventListener("click", ()=> this.close(), { once:true });
       $("#dpModalCancel")?.addEventListener("click", ()=> this.close(), { once:true });
@@ -106,6 +107,7 @@
     },
     close(){
       this.overlay?.classList.remove("open");
+      if (window.updateScrollLock) window.updateScrollLock();
       this.onSave = null;
       this.body && (this.body.innerHTML = "");
     }

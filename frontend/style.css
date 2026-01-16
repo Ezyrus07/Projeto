@@ -56,6 +56,12 @@ html, body {
   max-width: 100%;
 }
 
+html.no-scroll, body.no-scroll {
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 body > main {
   flex: 1;
 }
@@ -628,6 +634,13 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     padding: 30px 20px;
     overflow: hidden;
     border-radius: 12px;
+}
+
+@media (max-width: 600px) {
+    .videos-container,
+    .fotos-container {
+        padding: 20px 16px;
+    }
 }
 
 
@@ -3968,14 +3981,14 @@ body.dark-mode {
     margin: 0;
     padding: 0;
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
     grid-auto-flow: row;
 }
 
 #feed-global-container.feed-publicacoes-grid .feed-publicacao-card {
     width: 100%;
-    height: 320px;
+    height: 380px;
     display: flex;
     flex-direction: column;
 }
@@ -3999,12 +4012,12 @@ body.dark-mode {
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemMedia {
-    height: 210px;
+    height: 280px;
     background: #e9eef3;
     display: flex;
     align-items: center;
     justify-content: center;
-    flex: 0 0 210px;
+    flex: 0 0 280px;
     overflow: hidden;
 }
 
@@ -4021,13 +4034,14 @@ body.dark-mode {
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemBody {
-    padding: 12px 12px 14px;
+    padding: 6px 10px 8px;
     flex: 1;
     overflow: hidden;
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemBody b {
     display: block;
+    font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -4036,7 +4050,7 @@ body.dark-mode {
 #feed-global-container.feed-publicacoes-grid .dp-itemBody p {
     margin: 8px 0 0;
     color: #6b7280;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 1.25;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -4073,10 +4087,10 @@ body.dark-mode {
 }
 
 @media (max-width: 600px) {
-    #feed-global-container.feed-publicacoes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+    #feed-global-container.feed-publicacoes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
     #feed-global-container.feed-publicacoes-grid .feed-publicacao-card { height: auto; }
     #feed-global-container.feed-publicacoes-grid .dp-item { border-radius: 10px; }
-    #feed-global-container.feed-publicacoes-grid .dp-itemMedia { height: auto; flex-basis: auto; aspect-ratio: 1 / 1; }
+    #feed-global-container.feed-publicacoes-grid .dp-itemMedia { height: auto; flex-basis: auto; aspect-ratio: 4 / 5; }
     #feed-global-container.feed-publicacoes-grid .dp-itemBody { display: none; }
 }
 
@@ -4525,10 +4539,21 @@ body.dark-mode {
 /* --- RESPONSIVIDADE (MOBILE) --- */
 /* No celular, voltamos ao layout sobreposto pois não cabe lado a lado */
 @media (max-width: 900px) {
+    .reels-scroll-container {
+        height: 100vh;
+    }
+
+    .reel-page {
+        align-items: stretch;
+    }
+
     .reel-layout-wrapper {
         flex-direction: column;
         border: none;
         background: transparent;
+        height: 100vh;
+        max-width: 100%;
+        border-radius: 0;
     }
     .reel-sidebar-area {
         display: none; /* Esconde sidebar complexa no mobile */
@@ -5008,6 +5033,20 @@ body.dark-mode {
     .page-feed .actions-column {
         right: 12px;
         bottom: 140px;
+    }
+}
+
+@media (max-width: 900px) {
+    .page-feed .reels-layout {
+        width: 100%;
+        height: 100vh;
+    }
+
+    .page-feed .video-frame {
+        width: 100%;
+        height: 100vh;
+        aspect-ratio: auto;
+        border-radius: 0;
     }
 }
 
@@ -6039,7 +6078,7 @@ body.dark-mode {
 
 /* O CARD (Estilo Novo - Igual a Foto) */
 .tiktok-card {
-    min-width: 240px; /* Um pouco mais largo para caber o botão */
+    min-width: 220px; /* Um pouco mais largo para caber o botão */
     height: 400px;    /* Altura boa para formato vertical */
     background: #000;
     border-radius: 12px;
@@ -6077,7 +6116,7 @@ body.dark-mode {
 
 @media (max-width: 600px) {
     .tiktok-scroll-wrapper { gap: 10px; }
-    .tiktok-card { min-width: 150px; width: 150px; height: 240px; }
+    .tiktok-card { min-width: 210px; width: 210px; height: 340px; }
     .card-badge-online { font-size: 0.6rem; padding: 3px 8px; }
     .info-container { padding: 12px 10px; gap: 4px; }
     .user-handle { font-size: 0.9rem; }
