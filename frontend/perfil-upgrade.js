@@ -1485,7 +1485,62 @@ function hideIf(selector, cond){
 
 })();
 
+async function loadServicosPerfil(ctx) {
+  const grid = document.getElementById("dpGridServicos");
+  if (!grid) return;
 
+  grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
+
+  try {
+    // Busca na coleção 'anuncios' onde o 'uid' é o do perfil atual
+    const q = query(
+      collection(window.db, "anuncios"), 
+      where("uid", "==", ctx.targetId) 
+    );
+
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.empty) {
+      grid.innerHTML = `<div class="dp-empty">Nenhum serviço publicado.</div>`;
+      return;
+    }
+
+    grid.innerHTML = ""; // Limpa o carregando
+
+    snapshot.forEach((doc) => {
+      const anuncio = { id: doc.id, ...doc.data() };
+      
+      // Criamos o card usando a estrutura 'card-premium' idêntica à do index.html
+      const card = document.createElement('div');
+      card.className = 'card-premium';
+      
+      // Lógica de imagem de capa
+      const imagem = anuncio.img || (anuncio.fotos && anuncio.fotos[0]) || "assets/Imagens/placeholder.png";
+
+      card.innerHTML = `
+        <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
+            <i class='bx bx-info-circle'></i> Mais Informações
+        </button>
+        <div class="cp-header-clean">
+            <img src="${imagem}" class="cp-capa" style="width:100%; height:160px; object-fit:cover; border-radius:12px;">
+            <div class="cp-info" style="padding:12px 0;">
+                <h3 class="cp-titulo" style="font-size:1.05rem; margin-bottom:4px; font-weight:600;">${anuncio.titulo}</h3>
+                <p class="cp-desc-clean" style="font-size:0.85rem; color:#666; line-height:1.3;">
+                    ${anuncio.descricao ? anuncio.descricao.substring(0, 70) + '...' : ''}
+                </p>
+                <div class="cp-footer-clean" style="margin-top:10px; font-weight:bold; color:var(--cor0); font-size:1rem;">
+                    <span>${anuncio.preco && anuncio.preco !== 'Preço a combinar' ? 'R$ ' + anuncio.preco : 'Preço a combinar'}</span>
+                </div>
+            </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    });
+  } catch (error) {
+    console.error("Erro ao carregar serviços:", error);
+    grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
+  }
+}
 
 
 
