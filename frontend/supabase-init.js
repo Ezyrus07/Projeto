@@ -6,6 +6,11 @@
    2) Este arquivo cria: window.sb (cliente Supabase)
 */
 (function(){
+  // Evita recriar o cliente em hot-reload / múltiplos scripts
+  if (window.sb && typeof window.sb.from === "function") {
+    console.log("[DOKE] Supabase já inicializado (global).");
+    return;
+  }
   const DEFAULT_URL = "https://wgbnoqjnvhasapqarltu.supabase.co";
   const DEFAULT_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnYm5vcWpudmhhc2FwcWFybHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwODEwMzgsImV4cCI6MjA4MzY1NzAzOH0.qZZQJ7To8EYe5eELG2DzwU9Vh0gn6tAkAbCLmns8ScQ";
 

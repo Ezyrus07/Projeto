@@ -65,28 +65,78 @@
     const client = getClient();
     if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!q || !q.table) return makeQuerySnap([]);
-    let r = client.from(q.table).select("*");
-    for (const c of (q.clauses||[])){
-      if (!c) continue;
-      if (c.kind === "where"){
-        const op = c.op;
-        if (op === "==" || op === "=") r = r.eq(c.field, c.value);
-        else if (op === "!=") r = r.neq(c.field, c.value);
-        else if (op === ">") r = r.gt(c.field, c.value);
-        else if (op === ">=") r = r.gte(c.field, c.value);
-        else if (op === "<") r = r.lt(c.field, c.value);
-        else if (op === "<=") r = r.lte(c.field, c.value);
-        else if (op === "in") r = r.in(c.field, c.value);
-        else r = r.eq(c.field, c.value);
-      }
-      if (c.kind === "orderBy"){
-        r = r.order(c.field, { ascending: (String(c.dir||"asc").toLowerCase() !== "desc") });
-      }
-      if (c.kind === "limit"){
-        r = r.limit(c.n);
-      }
+    const clauses = (q.clauses || []);
+    const whereClauses = clauses.filter(c => c && c.kind === "where");
+    const orderClauses = clauses.filter(c => c && c.kind === "orderBy");
+    const limitClause = clauses.find(c => c && c.kind === "limit");
+
+    // Base query: somente filtros (sem order/limit) - facilita retries.
+    let base = client.from(q.table).select("*");
+    for (const c of whereClauses) {
+      const op = c.op;
+      if (op === "==" || op === "=") base = base.eq(c.field, c.value);
+      else if (op === "!=") base = base.neq(c.field, c.value);
+      else if (op === ">") base = base.gt(c.field, c.value);
+      else if (op === ">=") base = base.gte(c.field, c.value);
+      else if (op === "<") base = base.lt(c.field, c.value);
+      else if (op === "<=") base = base.lte(c.field, c.value);
+      else if (op === "in") base = base.in(c.field, c.value);
+      else base = base.eq(c.field, c.value);
     }
-    const { data, error } = await r;
+
+    const limitN = limitClause ? limitClause.n : null;
+
+    const isMissingColumnOrderError = (err) => {
+      const msg = String(err?.message || "").toLowerCase();
+      return err?.status === 400 && (msg.includes("could not find") && msg.includes("column"));
+    };
+
+    const buildOrderFallbacks = (requested) => {
+      const f = String(requested || "").trim();
+      const lower = f.toLowerCase();
+      // Campos comuns que aparecem em projetos (Supabase/Firebase) para "data".
+      const defaults = ["dataCriacao", "created_at", "createdAt", "timestamp", "data", "created"]; 
+      if (!f) return defaults;
+      // Se tentaram created_at, tenta alternativas mais provaveis.
+      if (lower === "created_at") return ["dataCriacao", "createdAt", ...defaults.filter(x => x !== "created_at")];
+      // Se tentaram dataCriacao, tenta created_at.
+      if (lower === "datacriacao") return ["created_at", "createdAt", ...defaults.filter(x => x.toLowerCase() !== "datacriacao")];
+      // Caso geral: tenta o solicitado e depois defaults.
+      return [f, ...defaults.filter(x => x !== f)];
+    };
+
+    const execQuery = async (orders) => {
+      let r = base;
+      for (const o of orders) {
+        const asc = (String(o.dir || "asc").toLowerCase() !== "desc");
+        r = r.order(o.field, { ascending: asc });
+      }
+      if (Number.isFinite(limitN)) r = r.limit(limitN);
+      return await r;
+    };
+
+    // 1) Primeira tentativa com os orderBy originais.
+    let result = await execQuery(orderClauses);
+    if (result.error && isMissingColumnOrderError(result.error) && orderClauses.length) {
+      // 2) Se o orderBy quebrou por coluna inexistente, tenta alternativas.
+      const original = orderClauses[0];
+      const fallbacks = buildOrderFallbacks(original.field);
+      let lastErr = result.error;
+      for (const candidate of fallbacks) {
+        if (!candidate) continue;
+        const retryOrders = [{ ...original, field: candidate }, ...orderClauses.slice(1)];
+        const retry = await execQuery(retryOrders);
+        if (!retry.error) {
+          result = retry;
+          lastErr = null;
+          break;
+        }
+        lastErr = retry.error;
+      }
+      if (lastErr) result = { data: null, error: lastErr };
+    }
+
+    const { data, error } = result;
     if (error) {
       if (shouldReturnEmpty(error)) return makeQuerySnap([]);
       throw error;

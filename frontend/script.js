@@ -883,6 +883,8 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         // (anúncios antigos sem o campo 'ativo' continuam aparecendo)
         listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
 
+        window.__dokeAnunciosCacheFull = listaAnuncios.slice();
+
         if (termoBusca && termoBusca.trim() !== "") {
             const termo = termoBusca.toLowerCase().trim();
             if(tituloSecao) tituloSecao.innerHTML = `Resultados para: <span style="color:var(--cor2)">"${termoBusca}"</span>`;
@@ -915,48 +917,151 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 // ============================================================
 // 8. FUNÇÕES GERAIS (CARREGAMENTO, AUTH, ETC) - MANTIDAS
 // ============================================================
+// ============================================================
+// CATEGORIAS (carrossel em círculo, ícone + nome, hover glow)
+// ============================================================
+function __dokeIconForCategory(nome){
+    const n = String(nome || '').toLowerCase();
+    if (n.includes('reforma') || n.includes('constru')) return 'bx-home';
+    if (n.includes('pint')) return 'bx-paint';
+    if (n.includes('eletric')) return 'bx-bulb';
+    if (n.includes('encan') || n.includes('hidra')) return 'bx-water';
+    if (n.includes('assist') || n.includes('técn') || n.includes('tecnic')) return 'bx-wrench';
+    if (n.includes('aula') || n.includes('curso') || n.includes('particular')) return 'bx-book';
+    if (n.includes('beleza') || n.includes('estetic') || n.includes('cabelo')) return 'bx-cut';
+    if (n.includes('limpeza')) return 'bx-broom';
+    if (n.includes('mudan') || n.includes('frete') || n.includes('entreg')) return 'bx-package';
+    if (n.includes('jardin') || n.includes('paisag') || n.includes('grama')) return 'bx-leaf';
+    if (n.includes('pet') || n.includes('animal') || n.includes('dog') || n.includes('gato')) return 'bx-dog';
+    if (n.includes('foto') || n.includes('film') || n.includes('video')) return 'bx-camera';
+    if (n.includes('design')) return 'bx-palette';
+    return 'bx-category';
+}
+
+function __dokeSetupCatCarousel(){
+    const track = document.getElementById('listaCategorias');
+    if (!track || track.dataset.carouselReady === '1') return;
+    track.dataset.carouselReady = '1';
+
+    const prev = document.querySelector('.cat-prev');
+    const next = document.querySelector('.cat-next');
+    const dots = document.getElementById('catDots');
+
+    const scrollByPage = (dir) => {
+        const amount = Math.max(220, Math.floor(track.clientWidth * 0.85));
+        track.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    };
+
+    prev?.addEventListener('click', () => scrollByPage(-1));
+    next?.addEventListener('click', () => scrollByPage(1));
+
+    const rebuildDots = () => {
+        if (!dots) return;
+        const pages = Math.max(1, Math.ceil(track.scrollWidth / Math.max(1, track.clientWidth)));
+        dots.innerHTML = '';
+        for (let i = 0; i < pages; i++) {
+            const d = document.createElement('span');
+            d.className = 'cat-dot';
+            d.addEventListener('click', () => {
+                const targetLeft = i * track.clientWidth;
+                track.scrollTo({ left: targetLeft, behavior: 'smooth' });
+            });
+            dots.appendChild(d);
+        }
+        updateDots();
+    };
+
+    const updateDots = () => {
+        if (!dots) return;
+        const children = Array.from(dots.children);
+        if (!children.length) return;
+        const page = Math.round(track.scrollLeft / Math.max(1, track.clientWidth));
+        children.forEach((el, idx) => el.classList.toggle('ativo', idx === page));
+    };
+
+    const updateArrows = () => {
+        const maxLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+        if (prev) prev.disabled = track.scrollLeft <= 2;
+        if (next) next.disabled = track.scrollLeft >= maxLeft - 2;
+    };
+
+    const onScroll = () => { updateDots(); updateArrows(); };
+    track.addEventListener('scroll', onScroll, { passive: true });
+
+    // Recalcula quando layout muda
+    const ro = new ResizeObserver(() => {
+        rebuildDots();
+        updateArrows();
+    });
+    ro.observe(track);
+
+    // Init
+    setTimeout(() => {
+        rebuildDots();
+        updateArrows();
+    }, 50);
+}
+
 window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
     if (!container) return;
 
+    container.innerHTML = `
+        <div style="padding: 18px; color:#777; display:flex; align-items:center; gap:10px;">
+            <i class='bx bx-loader-alt bx-spin' style="font-size:1.1rem; color:var(--cor0,#0b7768);"></i>
+            <span>Carregando categorias...</span>
+        </div>
+    `;
+
     try {
-        const q = query(collection(window.db, "categorias"));
-        const querySnapshot = await getDocs(q);
-        
-        let listaCategorias = [];
-        if (!querySnapshot.empty) {
-            querySnapshot.forEach((doc) => {
-                listaCategorias.push(doc.data());
+        // IMPORTANTE: não depende da tabela "categorias".
+        // Gera as categorias com base nos anúncios existentes.
+        const q = query(collection(window.db, "anuncios"));
+        const snap = await getDocs(q);
+
+        const freq = new Map();
+        snap.forEach((docSnap) => {
+            const d = docSnap.data() || {};
+            let cats = d.categorias ?? d.categoria ?? '';
+            if (Array.isArray(cats)) cats = cats.join(',');
+            if (typeof cats !== 'string') cats = String(cats || '');
+            cats.split(',').map(s => s.trim()).filter(Boolean).forEach((nome) => {
+                freq.set(nome, (freq.get(nome) || 0) + 1);
             });
-        } else {
-            listaCategorias = [
-                { nome: "Casa", img: "https://cdn-icons-png.flaticon.com/512/10338/10338273.png" },
-                { nome: "Tecnologia", img: "https://cdn-icons-png.flaticon.com/512/2920/2920329.png" },
-                { nome: "Limpeza", img: "https://cdn-icons-png.flaticon.com/512/995/995053.png" },
-                { nome: "Aulas", img: "https://cdn-icons-png.flaticon.com/512/3976/3976625.png" },
-                { nome: "Beleza", img: "https://cdn-icons-png.flaticon.com/512/2706/2706950.png" },
-                { nome: "Fretes", img: "https://cdn-icons-png.flaticon.com/512/759/759238.png" },
-                { nome: "Mecânica", img: "https://cdn-icons-png.flaticon.com/512/3202/3202926.png" }
-            ];
+        });
+
+        if (freq.size === 0) {
+            container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponíveis</div>`;
+            return;
         }
 
-        container.innerHTML = ""; 
-        listaCategorias.forEach(cat => {
-            const html = `
-                <div class="categoria-item" onclick="filtrarPorCategoria('${cat.nome}')" style="cursor:pointer;">
-                    <div class="categoria-circle">
-                        <img src="${cat.img}" alt="${cat.nome}">
-                    </div>
-                    <p style="text-align:center; font-size:0.8rem; margin-top:8px; color:#666; font-weight:600;">${cat.nome}</p>
-                </div>
+        const lista = [...freq.entries()]
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 20)
+            .map(([nome, count]) => ({ nome, count, icon: __dokeIconForCategory(nome) }));
+
+        container.innerHTML = '';
+        lista.forEach((cat) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cat-card';
+            btn.setAttribute('data-cat', cat.nome);
+            btn.innerHTML = `
+                <div class="cat-circle"><i class='bx ${cat.icon}'></i></div>
+                <div class="cat-label">${cat.nome}</div>
             `;
-            container.innerHTML += html;
+            btn.addEventListener('click', () => {
+                try { window.filtrarPorCategoria(cat.nome); } catch { /* noop */ }
+            });
+            container.appendChild(btn);
         });
+
+        __dokeSetupCatCarousel();
     } catch (e) {
-        console.error("Erro categorias:", e);
+        console.error('Erro categorias:', e);
         container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponíveis</div>`;
     }
-}
+};
 
 window.sincronizarSessaoSupabase = async function() {
     if (!window.sb?.auth?.getSession) return null;
@@ -7839,3 +7944,190 @@ async function carregarComentariosSupabase(publicacaoId) {
 
 
 
+
+// ============================================================
+// DOKE - Delight pack (Home): tema, toast, scroll-top, PWA + filtros
+// ============================================================
+(function(){
+  function byId(id){ return document.getElementById(id); }
+
+  // Toast simples
+  window.dokeToast = window.dokeToast || function(message){
+    const el = byId('dokeToast');
+    if(!el) return;
+    el.textContent = message;
+    el.classList.add('show');
+    clearTimeout(window.__dokeToastT);
+    window.__dokeToastT = setTimeout(() => el.classList.remove('show'), 2300);
+  };
+
+  // Tema (claro/escuro)
+  function setTheme(theme){
+    const root = document.documentElement;
+    root.setAttribute('data-theme', theme);
+    try{ localStorage.setItem('doke_theme', theme); }catch(e){}
+    const btn = byId('btnThemeToggle');
+    if(btn){
+      const icon = btn.querySelector('i');
+      if(icon){
+        icon.className = (theme === 'dark') ? 'bx bx-sun' : 'bx bx-moon';
+      }
+    }
+  }
+
+  function toggleTheme(){
+    const current = document.documentElement.getAttribute('data-theme') || 'light';
+    setTheme(current === 'dark' ? 'light' : 'dark');
+    window.dokeToast(current === 'dark' ? 'Modo claro ativado' : 'Modo escuro ativado');
+  }
+
+  // Scroll-to-top
+  function bindScrollTop(){
+    const btn = byId('btnScrollTop');
+    if(!btn) return;
+    const onScroll = () => {
+      if(window.scrollY > 520) btn.classList.add('show');
+      else btn.classList.remove('show');
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    btn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  }
+
+  // PWA install
+  let deferredPrompt = null;
+  function bindPWAInstall(){
+    const btn = byId('btnInstallPWA');
+    if(!btn) return;
+
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
+      btn.style.display = 'inline-flex';
+    });
+
+    btn.addEventListener('click', async () => {
+      if(!deferredPrompt) return;
+      deferredPrompt.prompt();
+      try{ await deferredPrompt.userChoice; }catch(e){}
+      deferredPrompt = null;
+      btn.style.display = 'none';
+    });
+  }
+
+  // Service Worker
+  async function registerSW(){
+    if(!('serviceWorker' in navigator)) return;
+    try{
+      await navigator.serviceWorker.register('sw.js');
+    }catch(e){}
+  }
+
+  // Filtros da home (max preco + ordenacao) - sem mexer no UX do card
+  function parsePreco(value){
+    if(value === null || value === undefined) return null;
+    const s = String(value).toLowerCase();
+    if(s.includes('orc') || s.includes('combinar')) return null;
+    const cleaned = s.replace(/[^0-9,\.]/g, '');
+    // formato BR: 1.234,56
+    const normalized = cleaned.replace(/\.(?=.*\.)/g, '').replace(',', '.');
+    const n = parseFloat(normalized);
+    return Number.isFinite(n) ? n : null;
+  }
+
+  window.dokeApplyHomeFilters = function(){
+    const full = Array.isArray(window.__dokeAnunciosCacheFull) ? window.__dokeAnunciosCacheFull.slice() : [];
+    const termo = (byId('inputBusca')?.value || '').trim().toLowerCase();
+
+    let lista = full;
+    if(termo){
+      lista = lista.filter(a => {
+        const hay = ((a.titulo||'') + ' ' + (a.descricao||'') + ' ' + (a.categorias||'')).toLowerCase();
+        return hay.includes(termo);
+      });
+    }
+
+    const maxStr = (byId('maxPreco')?.value || '').trim();
+    const max = parseFloat(maxStr.replace(',', '.'));
+    if(Number.isFinite(max)){
+      lista = lista.filter(a => {
+        const p = parsePreco(a.preco);
+        return p === null ? true : p <= max;
+      });
+    }
+
+    const ord = byId('ordenacao')?.value || 'relevancia';
+    if(ord === 'preco_menor'){
+      lista.sort((a,b) => (parsePreco(a.preco) ?? 1e12) - (parsePreco(b.preco) ?? 1e12));
+    } else if(ord === 'preco_maior'){
+      lista.sort((a,b) => (parsePreco(b.preco) ?? -1) - (parsePreco(a.preco) ?? -1));
+    } else if(ord === 'mais_recente'){
+      lista.sort((a,b) => {
+        const da = new Date(a.dataCriacao || a.dataAtualizacao || 0).getTime();
+        const db = new Date(b.dataCriacao || b.dataAtualizacao || 0).getTime();
+        return db - da;
+      });
+    }
+
+    const feed = byId('feedAnuncios');
+    if(feed){
+      feed.innerHTML = '';
+      const frag = document.createDocumentFragment();
+      lista.forEach(anuncio => {
+        try{
+          const card = window.dokeBuildCardPremium(anuncio);
+          // melhorias de performance sem alterar layout
+          const img = card.querySelector('img');
+          if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
+          const video = card.querySelector('video');
+          if(video){ video.preload = 'metadata'; }
+          frag.appendChild(card);
+        }catch(e){}
+      });
+      if(lista.length){
+        feed.appendChild(frag);
+      }else{
+        feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anuncio encontrado com esses filtros.</p></div>';
+      }
+    }
+
+    const count = byId('resultCount');
+    if(count) count.textContent = lista.length ? (lista.length + ' resultados') : '';
+  };
+
+  function bindHomeFilters(){
+    const btn = byId('btn-aplicar');
+    if(btn){
+      btn.addEventListener('click', () => {
+        window.dokeApplyHomeFilters();
+        if(typeof window.toggleFiltrosExtras === 'function') window.toggleFiltrosExtras();
+        window.dokeToast('Filtros aplicados');
+      });
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    // tema
+    const saved = (function(){ try{ return localStorage.getItem('doke_theme'); }catch(e){ return null; } })();
+    setTheme(saved || 'light');
+    const btnTheme = byId('btnThemeToggle');
+    if(btnTheme) btnTheme.addEventListener('click', toggleTheme);
+
+    bindScrollTop();
+    bindPWAInstall();
+    bindHomeFilters();
+    // Banner de conexão (offline/online)
+    (function(){
+      const banner = document.getElementById('netBanner');
+      if(!banner) return;
+      const update = () => {
+        const offline = (typeof navigator !== 'undefined') && (navigator.onLine === false);
+        banner.hidden = !offline;
+      };
+      window.addEventListener('online', update);
+      window.addEventListener('offline', update);
+      update();
+    })();
+    registerSW();
+  });
+})();
