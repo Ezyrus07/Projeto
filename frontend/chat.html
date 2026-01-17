@@ -12,6 +12,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Mensagens | Doke</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="doke-fixes.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="script.js" defer></script>
 
@@ -814,6 +815,34 @@
     font-size: 0.85rem;
 }
 
+        /* --- Pequenas melhorias visuais (sem quebrar o JS existente) --- */
+        .chat-shell{ backdrop-filter: blur(8px); }
+        .chat-main{ background: linear-gradient(180deg, rgba(42,95,144,.08), rgba(11,119,104,.05), rgba(236,237,242,.45)); }
+
+        @keyframes msgPop {
+            from { transform: translateY(6px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .msg-bubble{ animation: msgPop .18s ease-out; }
+
+        /* Botao flutuante para descer (aparece via JS) */
+        .scroll-down{
+            position: absolute;
+            right: 16px;
+            bottom: 92px;
+            width: 42px;
+            height: 42px;
+            border-radius: 999px;
+            border: 1px solid rgba(0,0,0,.08);
+            background: #fff;
+            box-shadow: 0 10px 24px rgba(0,0,0,.10);
+            display: none;
+            place-items: center;
+            cursor: pointer;
+            z-index: 50;
+        }
+        .scroll-down.show{ display: grid; }
+        .scroll-down i{ font-size: 1.3rem; color: var(--cor0); }
     </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->

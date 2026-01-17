@@ -129,7 +129,10 @@ window.publicarAnuncio = async function(event) {
             views: 0,
             cliques: 0,
             mediaAvaliacao: 0,
-            numAvaliacoes: 0
+            numAvaliacoes: 0,
+            // Controle de visibilidade do anúncio
+            // (se false, não aparece no feed público, mas aparece no perfil do dono)
+            ativo: true
         };
 
         await addDoc(collection(window.db, "anuncios"), novoAnuncio);
@@ -762,6 +765,102 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
 // ============================================================
 // 7. CARREGAMENTO DE ANÚNCIOS (FEED) - (MANTIDO E INTEGRADO)
 // ============================================================
+
+// Builder global do card do anúncio (reutilizado no perfil para ficar 100% igual ao feed)
+window.dokeBuildCardPremium = function(anuncio) {
+    const titulo = anuncio.titulo || "Sem título";
+    const preco = anuncio.preco || "A combinar";
+    const fotoAutor = anuncio.fotoAutor || "https://i.pravatar.cc/150";
+    const descricao = anuncio.descricao || "";
+
+    let nomeParaExibir = anuncio.userHandle || "@usuario";
+    if(!nomeParaExibir.startsWith('@')) nomeParaExibir = '@' + nomeParaExibir;
+
+    const nota = anuncio.mediaAvaliacao || 0;
+    const qtdAvaliacoes = anuncio.numAvaliacoes || 0;
+
+    let htmlAvaliacaoDisplay = qtdAvaliacoes === 0 
+        ? `<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Novo</span>`
+        : `<div class="cp-stars-dynamic" style="color:#f1c40f;"><i class='bx bxs-star'></i> ${nota} <span style="color:#999; font-size:0.75rem;">(${qtdAvaliacoes})</span></div>`;
+
+    let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : [anuncio.img || "https://placehold.co/600x400"];
+    const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
+
+    let htmlFotos = '';
+    let contadorExtra = fotos.length - 3;
+
+    if (fotos.length === 1) {
+        htmlFotos = `
+        <div class="grid-fotos-doke" style="grid-template-columns: 1fr;">
+            <div class="foto-main" style="grid-column: 1; grid-row: 1/3;">
+                <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
+            </div>
+        </div>`;
+    } else if (fotos.length === 2) {
+        htmlFotos = `
+        <div class="grid-fotos-doke">
+            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+            <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
+        </div>`;
+    } else {
+        let overlayHtml = (fotos.length > 3) ? `<div class="overlay-count">+${contadorExtra}</div>` : '';
+        htmlFotos = `
+        <div class="grid-fotos-doke">
+            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+            <div class="foto-sub"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
+            <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
+        </div>`;
+    }
+
+    const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid}')"`;
+    const estiloLink = `style="cursor: pointer;"`;
+
+    const card = document.createElement('div');
+    card.className = 'card-premium';
+    card.onmousedown = function() {
+        if (typeof window.registrarVisualizacao === "function") {
+            window.registrarVisualizacao(anuncio.id, anuncio.uid);
+        }
+    };
+
+    card.innerHTML = `
+        <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
+            <i class='bx bx-info-circle'></i> Mais Informações
+        </button>
+        <div class="cp-header-clean">
+            <div style="display:flex; gap:12px; align-items:center;">
+                <img src="${fotoAutor}" class="cp-avatar" ${linkPerfil} ${estiloLink}> 
+                <div class="cp-info-user">
+                    <div class="cp-nome-row">
+                        <h4 class="cp-nome-clean" ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
+                        ${htmlAvaliacaoDisplay}
+                    </div>
+                    <div class="cp-tempo-online">
+                        <div class="status-dot online"></div> Online
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="cp-body">
+            <h3 class="cp-titulo">${titulo}</h3>
+            <p class="cp-desc-clean">${descricao}</p>
+        </div>
+        ${htmlFotos}
+        <div class="cp-footer-right">
+            <div style="margin-right:auto;">
+                <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
+                <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+            </div>
+            
+            <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
+                Solicitar Orçamento
+            </button>
+        </div>
+    `;
+
+    return card;
+};
+
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
     const tituloSecao = document.getElementById('categorias-title'); 
@@ -779,6 +878,10 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             dados.id = docSnap.id; 
             listaAnuncios.push(dados);
         });
+
+        // Não mostrar anúncios desativados no feed público
+        // (anúncios antigos sem o campo 'ativo' continuam aparecendo)
+        listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
 
         if (termoBusca && termoBusca.trim() !== "") {
             const termo = termoBusca.toLowerCase().trim();
@@ -800,91 +903,8 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         listaAnuncios.forEach((anuncio) => {
-            const titulo = anuncio.titulo || "Sem título";
-            const preco = anuncio.preco || "A combinar";
-            const fotoAutor = anuncio.fotoAutor || "https://i.pravatar.cc/150";
-            const descricao = anuncio.descricao || "";
-            let nomeParaExibir = anuncio.userHandle || "@usuario"; 
-            if(!nomeParaExibir.startsWith('@')) nomeParaExibir = '@' + nomeParaExibir;
-
-            const nota = anuncio.mediaAvaliacao || 0;
-            const qtdAvaliacoes = anuncio.numAvaliacoes || 0;
-            
-            let htmlAvaliacaoDisplay = qtdAvaliacoes === 0 
-                ? `<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Novo</span>`
-                : `<div class="cp-stars-dynamic" style="color:#f1c40f;"><i class='bx bxs-star'></i> ${nota} <span style="color:#999; font-size:0.75rem;">(${qtdAvaliacoes})</span></div>`;
-
-            let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : [anuncio.img || "https://placehold.co/600x400"];
-            const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
-
-            let htmlFotos = '';
-            let contadorExtra = fotos.length - 3;
-
-            if (fotos.length === 1) {
-                htmlFotos = `
-                <div class="grid-fotos-doke" style="grid-template-columns: 1fr;">
-                    <div class="foto-main" style="grid-column: 1; grid-row: 1/3;">
-                        <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
-                    </div>
-                </div>`;
-            } else if (fotos.length === 2) {
-                htmlFotos = `
-                <div class="grid-fotos-doke">
-                    <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
-                    <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
-                </div>`;
-            } else {
-                let overlayHtml = (fotos.length > 3) ? `<div class="overlay-count">+${contadorExtra}</div>` : '';
-                htmlFotos = `
-                <div class="grid-fotos-doke">
-                    <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
-                    <div class="foto-sub"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
-                    <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
-                </div>`;
-            }
-            const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid}')"`;
-            const estiloLink = `style="cursor: pointer;"`;
-
-            const card = document.createElement('div');
-            card.className = 'card-premium';
-            card.onmousedown = function() { window.registrarVisualizacao(anuncio.id, anuncio.uid); };
-
-            card.innerHTML = `
-                <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
-                    <i class='bx bx-info-circle'></i> Mais Informações
-                </button>
-                <div class="cp-header-clean">
-                    <div style="display:flex; gap:12px; align-items:center;">
-                        <img src="${fotoAutor}" class="cp-avatar" ${linkPerfil} ${estiloLink}> 
-                        <div class="cp-info-user">
-                            <div class="cp-nome-row">
-                                <h4 class="cp-nome-clean" ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
-                                ${htmlAvaliacaoDisplay}
-                            </div>
-                            <div class="cp-tempo-online">
-                                <div class="status-dot online"></div> Online
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <div class="cp-body">
-                    <h3 class="cp-titulo">${titulo}</h3>
-                    <p class="cp-desc-clean">${descricao}</p>
-                </div>
-                ${htmlFotos}
-                <div class="cp-footer-right">
-                    <div style="margin-right:auto;">
-                        <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
-                        <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
-                    </div>
-                    
-                    <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
-                        Solicitar Orçamento
-                    </button>
-                </div>
-            `;
+            const card = window.dokeBuildCardPremium(anuncio);
             feed.appendChild(card);
-// ... restante da função ...
         });
     } catch (erro) {
         console.error("Erro no carregamento:", erro);

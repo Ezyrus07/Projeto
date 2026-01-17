@@ -10,9 +10,9 @@
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Anunciar Serviço Completo | Doke</title>
+    <title>Editar Anúncio | Doke</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="doke-fixes.css">
+    <!-- Overrides e componentes UI (checkbox/toggles/UX) -->
     <link rel="stylesheet" href="doke-fixes.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     
@@ -528,6 +528,12 @@ h3#dokeAlertTitle{
     color: #ffffff;
     font-size: 1.3rem;
 }
+
+        /* Editar anuncio: card de bloqueio de dados pessoais */
+        .edit-lock-card{background:linear-gradient(180deg,#f8fafc,#ffffff);border:1px dashed #cbd5e1;border-radius:14px;padding:16px;display:flex;gap:12px;align-items:flex-start;margin:10px 0 18px}
+        .edit-lock-icon{width:38px;height:38px;border-radius:12px;background:#eef2ff;display:flex;align-items:center;justify-content:center;flex:0 0 38px;color:var(--cor2)}
+        .edit-lock-text strong{display:block;font-size:0.98rem;color:#0f172a;margin-bottom:2px}
+        .edit-lock-text p{margin:4px 0 0;color:#475569;font-size:0.92rem;line-height:1.35}
 </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
@@ -560,7 +566,7 @@ h3#dokeAlertTitle{
         <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Inicio</span></a></div>
         <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item active"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificacoes</span></a></div>
+        <div class="item "><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificacoes</span></a></div>
         <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
         <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
@@ -575,7 +581,7 @@ h3#dokeAlertTitle{
     <main>
         <div class="content-wrapper">
             <div class="anuncio-hero-container">
-                <h1>Criar Anúncio</h1>
+                <h1>Editar Anúncio</h1>
                 <p>Preencha os dados completos para garantir confiança e atrair mais clientes na plataforma Doke.</p>
                 <div class="progress-wrapper">
                     <div class="steps-container">
@@ -673,69 +679,31 @@ h3#dokeAlertTitle{
                     </div>
 
 <div class="form-step" id="step-3">
-    <h3>Seus Dados</h3>
-    <div class="form-row">
-        <div class="form-group"><label id="lbl-nome">Nome Completo</label><input type="text" id="nome_doc" class="input-modern" required></div>
-        <div class="form-group">
-  <label id="lbl-doc">CPF</label>
-  <input type="text" id="doc_num" class="input-modern" inputmode="numeric" autocomplete="off" placeholder="Digite somente números" maxlength="18" required>
-  <small class="field-hint">Somente números. O sistema valida CPF/CNPJ automaticamente.</small>
-</div>
+  <h3>Seus Dados</h3>
 
-<div class="form-group">
-  <label>Documento com Foto (CPF ou CNPJ) <span class="optional-badge">Obrigatório</span></label>
-  <div class="upload-zone" onclick="document.getElementById('upload-doc').click()">
-      <i class='bx bx-id-card'></i>
-      <span>Anexar foto do documento</span>
-      <input type="file" id="upload-doc" accept="image/*" style="display:none" onchange="processarDocumento(this)">
+  <div class="edit-lock-card">
+    <div class="edit-lock-icon"><i class='bx bxs-lock'></i></div>
+    <div class="edit-lock-text">
+      <strong>Dados pessoais bloqueados nesta tela</strong>
+      <p>Nome, documento, telefone e endereço são gerenciados no seu perfil e não podem ser alterados aqui.</p>
+      <p style="margin:0; color:#64748b; font-size:0.92rem;">Se precisar mudar, edite seu perfil profissional.</p>
+    </div>
   </div>
-  <small class="field-hint">Envie uma foto legível do documento.</small>
-</div>
 
+  <div class="form-group">
+    <label>Pagamentos Aceitos</label>
+    <div class="checkbox-grid pagamentos-grid">
+      <div class="checkbox-card"><input type="checkbox" id="pg-pix" value="Pix"><label for="pg-pix"><i class='bx bx-qr'></i> Pix</label></div>
+      <div class="checkbox-card"><input type="checkbox" id="pg-credito" value="Cartão de crédito"><label for="pg-credito"><i class='bx bx-credit-card'></i> Crédito</label></div>
+      <div class="checkbox-card"><input type="checkbox" id="pg-debito" value="Cartão de débito"><label for="pg-debito"><i class='bx bx-credit-card-front'></i> Débito</label></div>
+      <div class="checkbox-card"><input type="checkbox" id="pg-dinheiro" value="Dinheiro"><label for="pg-dinheiro"><i class='bx bx-money'></i> Dinheiro</label></div>
+      <div class="checkbox-card"><input type="checkbox" id="pg-boleto" value="Boleto"><label for="pg-boleto"><i class='bx bx-receipt'></i> Boleto</label></div>
+      <div class="checkbox-card"><input type="checkbox" id="pg-transfer" value="Transferência"><label for="pg-transfer"><i class='bx bx-transfer'></i> Transferência</label></div>
     </div>
-    <div class="form-row"> <div class="form-group" style="width: 100%;"> <label>Telefone</label>
-            <input type="tel" id="telefone" class="input-modern" placeholder="(00) 00000-0000" maxlength="15">
-        </div>
-    </div>
-
-    <div id="address-fields-container">
-        <div class="form-row">
-             <div class="form-group">
-                <label>CEP (Digite para buscar)</label>
-                <input type="text" id="cep" class="input-modern" placeholder="00000-000" maxlength="9" onblur="buscarEndereco(this.value)">
-            </div>
-        </div>
-
-        <div class="form-row">
-            <div class="form-group">
-                <label>Cidade</label>
-                <input type="text" id="cidade" class="input-modern" readonly style="background-color: #f0f0f0;">
-            </div>
-            <div class="form-group">
-                <label>Estado (UF)</label>
-                <input type="text" id="uf" class="input-modern" readonly style="background-color: #f0f0f0;">
-            </div>
-        </div>
-        <div class="form-group">
-            <label>Bairro</label>
-            <input type="text" id="bairro" class="input-modern">
-        </div>
-    </div>
-    <div class="form-group">
-  <label>Pagamentos Aceitos</label>
-  <div class="checkbox-grid pagamentos-grid">
-    <div class="checkbox-card"><input type="checkbox" id="pg-pix" value="Pix"><label for="pg-pix"><i class='bx bx-qr'></i> Pix</label></div>
-    <div class="checkbox-card"><input type="checkbox" id="pg-credito" value="Cartão de crédito"><label for="pg-credito"><i class='bx bx-credit-card'></i> Crédito</label></div>
-    <div class="checkbox-card"><input type="checkbox" id="pg-debito" value="Cartão de débito"><label for="pg-debito"><i class='bx bx-credit-card-front'></i> Débito</label></div>
-    <div class="checkbox-card"><input type="checkbox" id="pg-dinheiro" value="Dinheiro"><label for="pg-dinheiro"><i class='bx bx-money'></i> Dinheiro</label></div>
-    <div class="checkbox-card"><input type="checkbox" id="pg-boleto" value="Boleto"><label for="pg-boleto"><i class='bx bx-receipt'></i> Boleto</label></div>
-    <div class="checkbox-card"><input type="checkbox" id="pg-transfer" value="Transferência"><label for="pg-transfer"><i class='bx bx-transfer'></i> Transferência</label></div>
+    <small class="field-hint">Marque as formas de pagamento que você aceita.</small>
   </div>
-  <small class="field-hint">Marque as formas de pagamento que você aceita.</small>
 </div>
-</div>
-
-                    <div class="form-step" id="step-4">
+<div class="form-step" id="step-4">
                         <h3>Disponibilidade Semanal</h3>
                         <p style="color:#666; font-size:0.9rem; margin-bottom:20px;">Marque os dias que você atende e defina o horário.</p>
 
@@ -1006,12 +974,14 @@ h3#dokeAlertTitle{
     window.mostrarDropdown = function() { renderCategorias(); };
     
     // Máscaras e UI helpers
-    document.getElementById('telefone').addEventListener('input', function (e) {
+    const __tel = document.getElementById('telefone');
+    if(__tel) __tel.addEventListener('input', function (e) {
         let x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,5})(\d{0,4})/);
         e.target.value = !x[2] ? x[1] : '(' + x[1] + ') ' + x[2] + (x[3] ? '-' + x[3] : '');
     });
     
-    document.getElementById('cep').addEventListener('input', function (e) {
+    const __cepEl = document.getElementById('cep');
+    if(__cepEl) __cepEl.addEventListener('input', function (e) {
         let valor = e.target.value.replace(/\D/g, ""); 
         if (valor.length > 5) valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
         e.target.value = valor;
@@ -1042,10 +1012,6 @@ h3#dokeAlertTitle{
         document.getElementById(`p-${step}`).classList.remove('active');
         
         let proximoPasso = step + dir;
-        if (anuncioIdEdicao && proximoPasso === 3) {
-            if (dir > 0) proximoPasso = 4;
-            else proximoPasso = 2;
-        }
 
         step = proximoPasso;
         document.getElementById(`step-${step}`).classList.add('active');
@@ -1130,6 +1096,141 @@ h3#dokeAlertTitle{
     }
 
 
+
+    // Coleta SOMENTE dados do anuncio (sem dados pessoais) - usado no editar-anuncio.html
+    function coletarDadosDoFormEdicao() {
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return el ? (el.value || "") : "";
+        };
+        const getChecked = (id) => {
+            const el = document.getElementById(id);
+            return !!(el && el.checked);
+        };
+
+        // Tags
+        const tagsText = getVal('tags');
+        const tags = tagsText
+            ? tagsText.split(',').map(t => t.trim()).filter(Boolean)
+            : [];
+
+        // Modos de atendimento
+        const modoAtend = Array.from(document.querySelectorAll('.opt-modo.active')).map(b => b.dataset.value);
+
+        // Preco
+        const precoN = parseFloat((getVal('preco') || "0").toString().replace(',', '.'));
+        const precoFinal = isNaN(precoN) ? 0 : precoN;
+
+        // Pagamentos
+        const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(i => i.value);
+
+        // Agenda
+        const dias = ['dom','seg','ter','qua','qui','sex','sab'];
+        const agenda = {};
+        dias.forEach(d => {
+            const ativo = getChecked(`chk-${d}`);
+            const inicio = getVal(`ini-${d}`);
+            const fim = getVal(`fim-${d}`);
+            agenda[d] = { ativo, inicio, fim };
+        });
+
+        // Formulario (quiz)
+        const perguntasArray = Array.isArray(window.perguntasQuiz) ? window.perguntasQuiz : [];
+
+        return {
+            titulo: getVal('titulo'),
+            descricao: getVal('descricao'),
+            categorias: getVal('categorias-validacao'),
+            tags,
+            modo_atend: modoAtend,
+            preco: precoFinal,
+            experiencia: getVal('experiencia'),
+            prazo: getVal('prazo'),
+            garantia: getVal('garantia'),
+            politicaCancelamento: getVal('politica'),
+            atendeEmergencia: getChecked('emergencia'),
+            pagamentosAceitos,
+            agenda,
+            fotos: window.fotosParaEnviar,
+            img: (window.fotosParaEnviar && window.fotosParaEnviar[0]) ? window.fotosParaEnviar[0] : "",
+            perguntasFormularioJson: JSON.stringify(perguntasArray),
+            temFormulario: perguntasArray.length > 0
+        };
+    }
+
+    // Coleta SOMENTE dados do anuncio (sem dados pessoais) - usado no editar-anuncio.html
+    function coletarDadosDoFormEdicao() {
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return el ? (el.value || "") : "";
+        };
+        const getChecked = (id) => {
+            const el = document.getElementById(id);
+            return !!(el && el.checked);
+        };
+
+        const titulo = getVal('titulo');
+        const descricao = getVal('descricao');
+        const categoria = getVal('categorias-validacao');
+
+        const tagsStr = getVal('tags');
+        const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
+
+        const modoAtend = (document.querySelector('input[name="modo_atend"]:checked') || {}).value || "";
+
+        const precoBase = parseFloat((getVal('preco') || '0').replace(',', '.')) || 0;
+        let precoFinal = precoBase;
+        const hasLoc = document.getElementById('has-locomo');
+        if (hasLoc && hasLoc.checked) {
+            const taxa = parseFloat((getVal('taxa') || '0').replace(',', '.')) || 0;
+            precoFinal += taxa;
+        }
+
+        const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
+
+        const dias = ["seg","ter","qua","qui","sex","sab","dom"];
+        const agenda = {};
+        dias.forEach((d) => {
+            const chk = document.getElementById(`chk-${d}`);
+            const ini = document.getElementById(`ini-${d}`);
+            const fim = document.getElementById(`fim-${d}`);
+            agenda[d] = {
+                ativo: chk ? chk.checked : false,
+                inicio: ini ? ini.value : "",
+                fim: fim ? fim.value : ""
+            };
+        });
+
+        const experiencia = getVal('experiencia');
+        const prazo = getVal('prazo');
+        const garantia = getVal('garantia');
+        const politicaCancelamento = getVal('politica');
+        const atendeEmergencia = getChecked('emergencia');
+
+        const perguntasArray = window.perguntasFormulario || [];
+        const perguntasFormularioJson = JSON.stringify(perguntasArray);
+        const temFormulario = perguntasArray.length > 0;
+
+        return {
+            titulo,
+            descricao,
+            categoria,
+            tags,
+            modo_atend: modoAtend,
+            preco: precoFinal,
+            pagamentosAceitos,
+            agenda,
+            experiencia,
+            prazo,
+            garantia,
+            politicaCancelamento,
+            atendeEmergencia,
+            fotos: window.fotosParaEnviar,
+            img: (window.fotosParaEnviar && window.fotosParaEnviar[0]) ? window.fotosParaEnviar[0] : "",
+            temFormulario,
+            perguntasFormularioJson
+        };
+    }
     // ==========================================
     // LÓGICA DE EDIÇÃO E PREENCHIMENTO AUTOMÁTICO
     // ==========================================
@@ -1141,32 +1242,19 @@ h3#dokeAlertTitle{
         const idAnuncio = params.get('id');
         const modo = params.get('mode');
 
-        if (idAnuncio && modo === 'edit') {
+        if (!idAnuncio) {
+            alert("ID do anuncio nao informado.");
+            window.location.href = "meuperfil.html";
+            return;
+        }
+
+        if (idAnuncio) {
+            // modo edit forcado nesta pagina
+
             anuncioIdEdicao = idAnuncio;
             
             document.querySelector('.anuncio-hero-container h1').innerText = "Editar Anúncio";
-            document.querySelector('.anuncio-hero-container p').innerText = "Atualize as informações do seu serviço.";
-            
-            const step3Circle = document.getElementById('p-3');
-            if(step3Circle) step3Circle.style.display = 'none';
-
-            // Renumera o último passo para não ficar "1 2 4" no modo edição
-            const step4Circle = document.getElementById('p-4');
-            if (step4Circle) {
-                step4Circle.innerHTML = `3 <div class="step-label">Agenda</div>`;
-            }
-
-            // Bloqueia/oculta o passo de dados pessoais no modo edição (mantém os valores, mas impede alteração)
-            const step3 = document.getElementById('step-3');
-            if (step3) {
-                step3.style.display = 'none';
-                step3.querySelectorAll('input, select, textarea, button').forEach(el => {
-                    el.disabled = true;
-                    el.setAttribute('aria-disabled', 'true');
-                });
-            }
-
-            const btnSubmit = document.getElementById('btn-submit');
+            document.querySelector('.anuncio-hero-container p').innerText = "Atualize as informações do seu serviço.";const btnSubmit = document.getElementById('btn-submit');
             if(btnSubmit) {
                 btnSubmit.innerText = "Salvar Alterações";
                 btnSubmit.onclick = atualizarAnuncioExistente; 
@@ -1193,9 +1281,9 @@ h3#dokeAlertTitle{
 
     function preencherCampos(dados) {
         document.getElementById('titulo').value = dados.titulo || "";
-        // Tags: aceita array (jsonb) ou string
+        // Tags podem vir como array (jsonb) ou string
         if (Array.isArray(dados.tags)) {
-            document.getElementById('tags').value = dados.tags.filter(Boolean).join(', ');
+            document.getElementById('tags').value = dados.tags.join(', ');
         } else if (typeof dados.tags === 'string') {
             document.getElementById('tags').value = dados.tags;
         } else {
@@ -1214,25 +1302,13 @@ h3#dokeAlertTitle{
             if(radio) radio.checked = true;
         }
 
-        // Tipo de preco (preferencialmente pelo campo tipoPreco)
-        const tipoPrecoSalvo = dados.tipoPreco || null;
-        if (tipoPrecoSalvo === 'Preço Fixo') {
+        if (dados.preco && dados.preco !== "Sob Orçamento" && dados.preco !== "A combinar") {
             document.getElementById('fixo').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
-            document.getElementById('valor').value = dados.preco || "";
-        } else if (tipoPrecoSalvo === 'Sob Orçamento') {
+            document.getElementById('valor').value = dados.preco;
+        } else {
             document.getElementById('orcamento').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
-        } else {
-            // Fallback: inferir pelo campo preco
-            if (dados.preco && dados.preco !== "Sob Orçamento" && dados.preco !== "A combinar") {
-                document.getElementById('fixo').checked = true;
-                if(window.togglePriceInput) window.togglePriceInput();
-                document.getElementById('valor').value = dados.preco;
-            } else {
-                document.getElementById('orcamento').checked = true;
-                if(window.togglePriceInput) window.togglePriceInput();
-            }
         }
 
         if (dados.fotos && dados.fotos.length > 0) {
@@ -1251,7 +1327,10 @@ h3#dokeAlertTitle{
         if(document.getElementById('prazo')) document.getElementById('prazo').value = dados.prazo || "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
         if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || "Flexível";
-        if(document.getElementById('emergencia')) document.getElementById('emergencia').checked = (dados.atendeEmergencia === true);
+        if (document.getElementById('emergencia')) {
+            const v = dados.atendeEmergencia;
+            document.getElementById('emergencia').checked = (v === true || v === 1 || v === '1' || v === 'true');
+        }
 
         // Preenche info do DIPLOMA (apenas texto visual se já existir)
         if(dados.diplomaUrl) {
@@ -1309,9 +1388,9 @@ h3#dokeAlertTitle{
             if (!docId) return;
             const snap = await window.getDoc(window.doc(window.db, "anuncios", docId));
             if (!snap || !snap.exists()) return;
-            const salvo = snap.data() || {};
+            const d = snap.data() || {};
 
-            const camposCriticos = [
+            const campos = [
                 "atendeEmergencia",
                 "pagamentosAceitos",
                 "agenda",
@@ -1323,22 +1402,26 @@ h3#dokeAlertTitle{
                 "diplomaUrl"
             ];
 
-            const faltando = camposCriticos.filter(k => (esperado && esperado[k] !== undefined) && (salvo[k] === undefined));
-
+            const faltando = campos.filter((k) => (esperado && esperado[k] !== undefined) && (d[k] === undefined));
             const mismatch = [];
-            if (esperado && esperado.atendeEmergencia !== undefined && salvo.atendeEmergencia !== undefined) {
-                if (!!salvo.atendeEmergencia !== !!esperado.atendeEmergencia) mismatch.push("atendeEmergencia");
+            if (esperado && esperado.atendeEmergencia !== undefined && d.atendeEmergencia !== undefined) {
+                const a = (esperado.atendeEmergencia === true);
+                const b = (d.atendeEmergencia === true || d.atendeEmergencia === 1 || d.atendeEmergencia === '1' || d.atendeEmergencia === 'true');
+                if (a !== b) mismatch.push("atendeEmergencia");
             }
 
             if (faltando.length || mismatch.length) {
-                const amostra = [...new Set([...faltando, ...mismatch])].slice(0, 4).join(", ");
+                const lista = Array.from(new Set([...faltando, ...mismatch])).slice(0, 6).join(", ");
                 alert(
-                    `ATENÇÃO: Alguns campos não foram salvos no Supabase (ex: ${amostra}).\n\n` +
-                    `Isso acontece quando a tabela "anuncios" ainda não tem as colunas novas.\n\n` +
-                    `Rode o arquivo: supabase_migration_anuncios_v3.sql (na pasta do projeto) no SQL Editor do Supabase.`
+                    "⚠️ Alguns campos não foram salvos no Supabase (ex: " + lista + ").\n\n" +
+                    "Isso acontece quando a tabela 'anuncios' ainda não tem as colunas novas.\n" +
+                    "Rode o arquivo: supabase_migration_anuncios_v3.sql (na raiz do projeto) no SQL Editor do Supabase."
                 );
             }
-        } catch (e) { /* ignore */ }
+        } catch (e) {
+            // Falha silenciosa: não bloqueia o fluxo do usuário
+            console.warn("Falha ao verificar persistência dos campos extras", e);
+        }
     }
 
     window.publicarAnuncio = async function(event) {
@@ -1406,7 +1489,7 @@ h3#dokeAlertTitle{
             // Vamos fazer o seguinte: se diplomaFile existe, sobe e usa a nova URL. Se não, não enviamos o campo diplomaUrl (update parcial) ou enviamos o antigo se tivessemos salvo numa var global.
             // Melhor: vamos ler o doc atual no banco rapidinho ou usar lógica condicional no update.
             
-            let updateData = coletarDadosDoForm();
+            let updateData = coletarDadosDoFormEdicao();
             
             if (window.diplomaFile) {
                 const storage = window.getStorage();
@@ -1451,16 +1534,6 @@ h3#dokeAlertTitle{
         const telefone = document.getElementById('telefone').value;
         const pags = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
 
-        // Categorias
-        const categoriasStr = document.getElementById('categorias-validacao').value || '';
-        const primeiraCategoria = (categoriasStr.split(',').map(s => s.trim()).filter(Boolean)[0]) || '';
-
-        // Tags (remove vazios)
-        const tagsArr = (tagsVal || '')
-          .split(',')
-          .map(t => t.trim())
-          .filter(Boolean);
-
         const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
         let agendaObj = {};
         dias.forEach(d => {
@@ -1473,13 +1546,9 @@ h3#dokeAlertTitle{
         return {
             titulo: titulo,
             descricao: descricao,
-            // compat: algumas bases usam "categoria" (singular) + "categorias" (string)
-            categoria: primeiraCategoria,
-            categorias: categoriasStr,
-            // tags (array)
-            tags: tagsArr,
+            categorias: document.getElementById('categorias-validacao').value,
+            tags: tagsVal.split(',').map(t => t.trim()),
             modo_atend: modoAtend,
-            tipoPreco: tipoPreco,
             preco: precoFinal,
             cep: cep, cidade: cidade, uf: uf, bairro: bairro, whatsapp: telefone,
             pagamentosAceitos: pags,
@@ -1491,7 +1560,7 @@ h3#dokeAlertTitle{
             atendeEmergencia: document.getElementById('emergencia').checked,
             fotos: window.fotosParaEnviar,
             img: window.fotosParaEnviar[0] || "",
-            perguntasFormularioJson: perguntasArray,
+            perguntasFormularioJson: JSON.stringify(perguntasArray),
             temFormulario: perguntasArray.length > 0
         };
     }
@@ -1645,24 +1714,25 @@ function formatarDocumento(valor) {
 }
 
 const docInput = document.getElementById("doc_num");
-if (docInput) {
-  docInput.addEventListener("input", function () {
-      let numeros = this.value.replace(/\D/g, "");
-      this.value = formatarDocumento(numeros);
 
-      // Validação visual em tempo real
-      if (numeros.length === 11) {
-          setFieldState(this, validaCPF(numeros));
-      } 
-      else if (numeros.length === 14) {
-          setFieldState(this, validaCNPJ(numeros));
-      } 
-      else {
-          this.style.borderColor = "#ef4444";
-          this.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.12)";
-      }
-  });
-}
+if(docInput)
+  docInput.addEventListener("input", function () {
+    let numeros = this.value.replace(/\D/g, "");
+    this.value = formatarDocumento(numeros);
+
+    // Validação visual em tempo real
+    if (numeros.length === 11) {
+        setFieldState(this, validaCPF(numeros));
+    } 
+    else if (numeros.length === 14) {
+        setFieldState(this, validaCNPJ(numeros));
+    } 
+    else {
+        this.style.borderColor = "#ef4444";
+        this.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.12)";
+    }
+
+});
 
 
     // Regras antes de avançar step / publicar
@@ -1779,6 +1849,28 @@ if (docInput) {
     if(alertMsg) alertMsg.textContent = String(msg ?? '');
     if(alertOverlay){ alertOverlay.style.display='flex'; alertOverlay.setAttribute('aria-hidden','false'); }
   }
+
+  function setStepCircleNumber(circleEl, n){
+  if(!circleEl) return;
+  // troca somente o "texto" do número (sem mexer no step-label)
+  const tn = Array.from(circleEl.childNodes).find(node => node.nodeType === Node.TEXT_NODE);
+  if(tn) tn.textContent = ` ${n} `;
+  else circleEl.insertBefore(document.createTextNode(` ${n} `), circleEl.firstChild);
+}
+
+function ajustarStepsParaEdicao(){
+  const p3 = document.getElementById('p-3');
+  const p4 = document.getElementById('p-4');
+
+  if(p3) p3.style.display = 'none';   // remove o passo "Dados"
+  setStepCircleNumber(p4, 3);         // renumera o "4" para "3"
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  const params = new URLSearchParams(location.search);
+  if(params.get("mode") === "edit") ajustarStepsParaEdicao();
+});
+
   // Override global alert
   window.alert = dokeAlert;
 
@@ -2127,7 +2219,7 @@ if (docInput) {
   }
 
   // CPF/CNPJ live sanitization
-  function formatarDocumento(valor) {
+function formatarDocumento(valor) {
     valor = valor.replace(/\D/g, "");
 
     // CPF
@@ -2147,21 +2239,25 @@ if (docInput) {
     return valor;
 }
 
-  // Evita erro quando o step de dados pessoais não existe no modo edição.
-  function hookDocInput(){
-    const docInput = document.getElementById('doc_num');
-    if(!docInput) return;
-    docInput.addEventListener('input', function(){
-      const numeros = String(this.value||'').replace(/\D/g, '');
-      this.value = formatarDocumento(numeros);
-      if(numeros.length === 11) setFieldState(this, validaCPF(numeros));
-      else if(numeros.length === 14) setFieldState(this, validaCNPJ(numeros));
-      else {
-        this.style.borderColor = '#ef4444';
-        this.style.boxShadow = '0 0 0 3px rgba(239,68,68,0.12)';
-      }
-    }, { passive: true });
-  }
+const docInput = document.getElementById("doc_num");
+
+if(docInput)
+  docInput.addEventListener("input", function () {
+    let numeros = this.value.replace(/\D/g, "");
+    this.value = formatarDocumento(numeros);
+
+    // Validação visual em tempo real
+    if (numeros.length === 11) {
+        setFieldState(this, validaCPF(numeros));
+    } 
+    else if (numeros.length === 14) {
+        setFieldState(this, validaCNPJ(numeros));
+    } 
+    else {
+        this.style.borderColor = "#ef4444";
+        this.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.12)";
+    }
+});
 
 
   // Close modals on click outside
