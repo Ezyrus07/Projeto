@@ -56,6 +56,13 @@ window.listaReelsAtual = [];
 window.indiceReelAtual = 0;
 window.isScrollingReel = false;
 
+// 🔥 DESATIVA QUALQUER LÓGICA OFFLINE / PWA (DEV E PROD)
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    regs.forEach(r => r.unregister());
+  });
+}
+
 
 // ============================================================
 // 2. FUNÇÃO DE PUBLICAR ANÚNCIO (SEM WHATSAPP OBRIGATÓRIO)
@@ -373,6 +380,9 @@ window.fecharGaleria = function(event) {
 window.carregarTrabalhosHome = async function() {
     const container = document.getElementById('galeria-dinamica') || document.querySelector('.tiktok-scroll-wrapper');
     if (!container) return;
+
+    // Skeleton enquanto carrega os trabalhos
+    window.dokeRenderTrabalhosSkeleton?.(container);
 
     try {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
@@ -858,7 +868,43 @@ window.dokeBuildCardPremium = function(anuncio) {
         </div>
     `;
 
-    return card;
+    
+
+        // Favoritos (coração) + estado inicial
+        try {
+            card.dataset.anuncioId = anuncio.id || '';
+            const favBtn = document.createElement('button');
+            favBtn.className = 'cp-fav-btn';
+            favBtn.type = 'button';
+            favBtn.setAttribute('aria-label', 'Favoritar');
+            favBtn.setAttribute('aria-pressed', 'false');
+            if (anuncio.id) favBtn.dataset.favId = anuncio.id;
+            favBtn.innerHTML = "<i class='bx bx-heart'></i>";
+            card.appendChild(favBtn);
+        } catch(e) {}
+
+        // Online real-time (melhor esforço: usa flags/timestamps se existirem)
+        try {
+            const dot = card.querySelector('.status-dot');
+            const label = card.querySelector('.status-text');
+            if (dot && label) {
+                const isOnlineFlag = !!(anuncio.statusOnline || anuncio.online || anuncio.isOnline);
+                const last = anuncio.lastActive || anuncio.ultimoOnline || anuncio.last_seen || null;
+                let lastMs = null;
+                if (typeof last === 'number') lastMs = (last > 1e12 ? last : last * 1000);
+                if (typeof last === 'string') {
+                    const d = Date.parse(last);
+                    if (!Number.isNaN(d)) lastMs = d;
+                }
+                const recently = lastMs ? (Date.now() - lastMs) <= 15 * 60 * 1000 : false;
+                const isOnline = isOnlineFlag || recently;
+                dot.classList.toggle('online', isOnline);
+                dot.classList.toggle('offline', !isOnline);
+                label.textContent = isOnline ? 'Online' : 'Offline';
+                dot.title = isOnline ? 'Online agora' : (lastMs ? ('Visto recentemente') : 'Offline');
+            }
+        } catch(e) {}
+return card;
 };
 
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
@@ -866,7 +912,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const tituloSecao = document.getElementById('categorias-title'); 
     if (!feed) return; 
 
-    feed.innerHTML = `<div style="padding:40px; text-align:center;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem; color:var(--cor0);"></i><p style="margin-top:10px; color:#666;">Carregando anúncios...</p></div>`;
+    window.dokeRenderAnunciosSkeleton(feed);
 
     try {
         const q = query(collection(window.db, "anuncios"));
@@ -1039,6 +1085,9 @@ window.carregarCategorias = async function() {
             .sort((a,b) => b[1] - a[1])
             .slice(0, 20)
             .map(([nome, count]) => ({ nome, count, icon: __dokeIconForCategory(nome) }));
+
+        // Atualiza chips de categorias (index)
+        window.dokeRenderQuickChips?.(lista);
 
         container.innerHTML = '';
         lista.forEach((cat) => {
@@ -8116,18 +8165,330 @@ async function carregarComentariosSupabase(publicacaoId) {
     bindScrollTop();
     bindPWAInstall();
     bindHomeFilters();
-    // Banner de conexão (offline/online)
-    (function(){
-      const banner = document.getElementById('netBanner');
-      if(!banner) return;
-      const update = () => {
-        const offline = (typeof navigator !== 'undefined') && (navigator.onLine === false);
-        banner.hidden = !offline;
-      };
-      window.addEventListener('online', update);
-      window.addEventListener('offline', update);
-      update();
-    })();
-    registerSW();
+
   });
 })();
+
+
+/* ======================= INDEX_UPGRADE_PACK ======================= */
+(function(){
+  // ---------- Skeletons ----------
+  window.dokeRenderAnunciosSkeleton = function(feed){
+    if (!feed) return;
+    const count = window.innerWidth < 600 ? 2 : 4;
+    const cards = Array.from({length: count}).map(()=>
+      '<div class="cp-card cp-card-v2" style="position:relative;">'
+      + '<div class="cp-header-clean">'
+      + '  <div class="cp-avatar skeleton" style="width:46px;height:46px;border-radius:14px;"></div>'
+      + '  <div style="flex:1">'
+      + '    <div class="skeleton" style="height:14px;width:48%;margin-bottom:10px;"></div>'
+      + '    <div class="skeleton" style="height:12px;width:32%;"></div>'
+      + '  </div>'
+      + '</div>'
+      + '<div class="cp-body">'
+      + '  <div class="skeleton" style="height:14px;width:70%;margin-bottom:10px;"></div>'
+      + '  <div class="skeleton" style="height:12px;width:90%;margin-bottom:8px;"></div>'
+      + '  <div class="skeleton" style="height:12px;width:80%;"></div>'
+      + '</div>'
+      + '<div class="cp-actions">'
+      + '  <div class="skeleton" style="height:44px;width:100%;border-radius:14px;"></div>'
+      + '</div>'
+      + '</div>'
+    ).join('');
+    feed.innerHTML = '<div class="skeleton-grid">' + cards + '</div>';
+  };
+
+  window.dokeRenderTrabalhosSkeleton = function(container){
+    if (!container) return;
+    const count = window.innerWidth < 600 ? 4 : 7;
+    const items = Array.from({length: count}).map(()=>
+      '<div class="video-card" style="width:160px;">'
+      + '<div class="video-thumb skeleton" style="width:160px;height:90px;border-radius:14px;"></div>'
+      + '<div class="skeleton" style="height:12px;width:90%;margin-top:10px;"></div>'
+      + '</div>'
+    ).join('');
+    container.innerHTML = items;
+  };
+
+  // ---------- Favoritos ----------
+  const FAV_KEY = 'doke:favoritos:anuncios';
+  function getFavs(){
+    try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch(e){ return new Set(); }
+  }
+  function saveFavs(set){
+    try { localStorage.setItem(FAV_KEY, JSON.stringify([...set])); } catch(e) {}
+  }
+  function applyFavUI(root=document){
+    const favs = getFavs();
+    root.querySelectorAll('.cp-fav-btn[data-fav-id], .cp-fav-btn[data-favId]').forEach(btn=>{
+      const id = btn.dataset.favId || btn.dataset.fav_id || btn.dataset.favID || btn.dataset.favId;
+      const on = id && favs.has(id);
+      btn.classList.toggle('is-fav', !!on);
+      btn.setAttribute('aria-pressed', on ? 'true' : 'false');
+      const icon = btn.querySelector('i');
+      if (icon) {
+        icon.classList.toggle('bx-heart', !on);
+        icon.classList.toggle('bxs-heart', !!on);
+      }
+    });
+  }
+
+  document.addEventListener('click', (ev)=>{
+    const btn = ev.target.closest('.cp-fav-btn');
+    if (!btn) return;
+    const id = btn.dataset.favId;
+    if (!id) return;
+    const favs = getFavs();
+    if (favs.has(id)) favs.delete(id); else favs.add(id);
+    saveFavs(favs);
+    applyFavUI();
+  });
+
+  // aplica ao carregar
+  document.addEventListener('DOMContentLoaded', ()=>applyFavUI());
+
+  // ---------- Chips (pílulas) ----------
+  window.dokeRenderQuickChips = function(listaCategorias){
+    const wrap = document.getElementById('quickChips');
+    if (!wrap) return;
+    if (!Array.isArray(listaCategorias) || listaCategorias.length === 0) {
+      wrap.innerHTML = '';
+      wrap.style.display = 'none';
+      return;
+    }
+    wrap.style.display = '';
+    const chips = listaCategorias.slice(0, 10).map((c, idx)=>{
+      const name = (c && (c.nome || c.name)) ? (c.nome || c.name) : String(c||'');
+      return `<button class="chip" type="button" data-chip="${encodeURIComponent(name)}" aria-label="Filtrar por ${name}">${name}</button>`;
+    }).join('');
+    wrap.innerHTML = chips;
+  };
+
+  document.addEventListener('click', (ev)=>{
+    const chip = ev.target.closest('.chip[data-chip]');
+    if (!chip) return;
+    const categoria = decodeURIComponent(chip.dataset.chip || '');
+    const input = document.querySelector('.barra-busca input');
+    if (input) input.value = categoria;
+    if (typeof window.carregarAnunciosDoFirebase === 'function') {
+      window.carregarAnunciosDoFirebase(categoria);
+    }
+  });
+
+  // ---------- Profissionais (Index) ----------
+  async function carregarProsIndex(){
+    const destaque = document.getElementById('proDestaqueScroll');
+    const novos = document.getElementById('proNovosScroll');
+    if (!destaque || !novos) return;
+
+    // skeletons
+    const sk = (n)=>Array.from({length:n}).map(()=>
+      '<div class="pro-card">'
+      + '<div class="pro-banner skeleton" style="height:70px;"></div>'
+      + '<div class="pro-avatar skeleton" style="width:64px;height:64px;border-radius:18px;margin-top:-32px;"></div>'
+      + '<div class="pro-info">'
+      + '<div class="skeleton" style="height:12px;width:70%;margin:8px auto 0;"></div>'
+      + '<div class="skeleton" style="height:12px;width:50%;margin:10px auto 0;"></div>'
+      + '</div></div>'
+    ).join('');
+    destaque.innerHTML = sk(6);
+    novos.innerHTML = sk(6);
+
+    try {
+      if (!window.db || !window.getDocs || !window.query || !window.collection || !window.where || !window.limit) {
+        // ambiente sem firebase inicializado
+        destaque.innerHTML = '';
+        novos.innerHTML = '';
+        return;
+      }
+      const q = query(collection(window.db, 'usuarios'), where('isProfissional','==', true), limit(40));
+      const snap = await getDocs(q);
+      const usuarios = [];
+      snap.forEach(docSnap=>{
+        const d = docSnap.data() || {};
+        d.uid = docSnap.id;
+        usuarios.push(d);
+      });
+
+      // destaque: melhor avaliação
+      const withStats = usuarios.map(u=>{
+        const st = u.stats || {};
+        return {
+          ...u,
+          media: Number(st.media || st.avaliacaoMedia || st.mediaAvaliacoes || 0),
+          aval: Number(st.avaliacoes || st.totalAvaliacoes || 0),
+          created: u.createdAt || u.dataCriacao || u.criadoEm || null,
+        };
+      });
+
+      const destaques = withStats
+        .filter(u=>u.aval > 0)
+        .sort((a,b)=>(b.media-a.media) || (b.aval-a.aval))
+        .slice(0, 10);
+
+      const novosList = withStats
+        .filter(u=>u.aval === 0)
+        .sort((a,b)=>{
+          const ta = typeof a.created === 'number' ? a.created : Date.parse(a.created||'');
+          const tb = typeof b.created === 'number' ? b.created : Date.parse(b.created||'');
+          return (tb-ta);
+        })
+        .slice(0, 10);
+
+      function proCard(u, badge){
+        const nome = u.nomeNegocio || u.nomeProfissional || u.nome || 'Profissional';
+        const categoria = u.categoria || u.area || u.profissao || 'Serviços';
+        const foto = u.fotoPerfil || u.foto || u.avatar || '';
+        const media = Number(u.media || 0).toFixed(1);
+        const aval = Number(u.aval || 0);
+        const bannerGrad = `linear-gradient(135deg, var(--cor0), var(--cor2))`;
+        return `
+          <a class="pro-card" href="perfil-publico.html?uid=${encodeURIComponent(u.uid)}" title="Abrir perfil">
+            <div class="pro-banner" style="background:${bannerGrad}"></div>
+            <div class="pro-avatar" style="background-image:url('${foto}')"></div>
+            <div class="pro-info">
+              <h4>${nome}</h4>
+              <p>${categoria}</p>
+              <div class="pro-rating">
+                <i class='bx bxs-star'></i>
+                <span>${aval>0 ? media : 'Novo'}</span>
+                ${badge ? `<span class="pro-badge">${badge}</span>` : ''}
+              </div>
+            </div>
+          </a>
+        `;
+      }
+
+      destaque.innerHTML = (destaques.length ? destaques : withStats.slice(0,10)).map(u=>proCard(u,'Destaque')).join('');
+      novos.innerHTML = (novosList.length ? novosList : withStats.slice(0,10)).map(u=>proCard(u,'Novo')).join('');
+    } catch(err){
+      // silencioso
+      destaque.innerHTML = '';
+      novos.innerHTML = '';
+    }
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    carregarProsIndex();
+    // re-aplica fav depois de renderizações dinâmicas
+    setTimeout(()=>applyFavUI(), 700);
+  });
+
+  // ---------- Focus trap (acessibilidade) ----------
+  function trapFocus(modal){
+    if (!modal) return;
+    const focusables = modal.querySelectorAll('a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])');
+    const first = focusables[0];
+    const last = focusables[focusables.length - 1];
+    function onKey(e){
+      if (e.key !== 'Tab') return;
+      if (focusables.length === 0) return;
+      if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    }
+    modal.__dokeTrapHandler = onKey;
+    modal.addEventListener('keydown', onKey);
+    setTimeout(()=>{ (first || modal).focus?.(); }, 0);
+  }
+  function untrap(modal){
+    if (!modal || !modal.__dokeTrapHandler) return;
+    modal.removeEventListener('keydown', modal.__dokeTrapHandler);
+    delete modal.__dokeTrapHandler;
+  }
+
+  document.addEventListener('DOMContentLoaded', ()=>{
+    const modals = ['modalGaleria','modalPlayerVideo','modalPostDetalhe'].map(id=>document.getElementById(id)).filter(Boolean);
+    modals.forEach(m=>{
+      // ensure focusable container
+      if (!m.hasAttribute('tabindex')) m.setAttribute('tabindex','-1');
+      const obs = new MutationObserver(()=>{
+        const visible = (m.style.display && m.style.display !== 'none') || m.classList.contains('active') || m.classList.contains('open');
+        if (visible) trapFocus(m); else untrap(m);
+      });
+      obs.observe(m, {attributes:true, attributeFilter:['style','class']});
+    });
+  });
+
+})();
+/* ===================== END INDEX_UPGRADE_PACK ===================== */
+
+const catCarousel = document.getElementById("categoriesCarousel");
+
+["Tecnologia","Eletricista","Limpeza","Aulas","Reformas","Design"].forEach(cat=>{
+  const div=document.createElement("div");
+  div.className="category-card";
+  div.innerHTML=`<div>🔹</div><span>${cat}</span>`;
+  catCarousel.appendChild(div);
+});
+
+document.querySelector(".cat-arrow.left").onclick=()=>catCarousel.scrollLeft-=200;
+document.querySelector(".cat-arrow.right").onclick=()=>catCarousel.scrollLeft+=200;
+
+async function carregarProfissionaisDestaque() {
+  const container = document.getElementById("prosDestaque");
+  if (!container) return;
+
+  // 🔹 Busca anúncios
+  const { data: anuncios, error } = await window.sb
+    .from("anuncios")
+    .select("uid, nomeAutor, fotoAutor, categoria, mediaAvaliacao, numAvaliacoes");
+
+  if (error || !anuncios) {
+    console.error("Erro ao carregar profissionais:", error);
+    return;
+  }
+
+  // 🔹 Agrupa por profissional (uid)
+  const profsMap = {};
+
+  anuncios.forEach(a => {
+    if (!a.uid) return;
+
+    if (!profsMap[a.uid]) {
+      profsMap[a.uid] = {
+        uid: a.uid,
+        nome: a.nomeAutor,
+        foto: a.fotoAutor,
+        categoria: a.categoria,
+        somaAvaliacoes: 0,
+        totalAvaliacoes: 0
+      };
+    }
+
+    if (a.mediaAvaliacao && a.numAvaliacoes) {
+      profsMap[a.uid].somaAvaliacoes += a.mediaAvaliacao * a.numAvaliacoes;
+      profsMap[a.uid].totalAvaliacoes += a.numAvaliacoes;
+    }
+  });
+
+  // 🔹 Calcula média final
+  const profissionais = Object.values(profsMap).map(p => {
+    const media =
+      p.totalAvaliacoes > 0
+        ? (p.somaAvaliacoes / p.totalAvaliacoes).toFixed(1)
+        : "0.0";
+
+    return { ...p, media };
+  });
+
+  // 🔹 Ordena por melhor avaliação
+  profissionais.sort((a, b) => b.media - a.media);
+
+  // 🔹 Renderiza (top 10)
+  profissionais.slice(0, 10).forEach(p => {
+    const card = document.createElement("div");
+    card.className = "pro-card";
+
+    card.innerHTML = `
+      <img src="${p.foto || 'https://via.placeholder.com/80'}" class="pro-avatar-lg">
+      <span class="pro-name">${p.nome || 'Profissional'}</span>
+      <span class="pro-job">${p.categoria || 'Serviço'}</span>
+      <span class="pro-rating">★ ${p.media} (${p.totalAvaliacoes || 0})</span>
+    `;
+
+    container.appendChild(card);
+  });
+}
+
+// 🚀 chama quando carregar a home
+document.addEventListener("DOMContentLoaded", carregarProfissionaisDestaque);

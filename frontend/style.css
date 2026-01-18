@@ -7847,3 +7847,215 @@ html[data-theme="dark"] .doke-fabs .fab{ background:#121821; border-color:rgba(2
   *{ scroll-behavior:auto !important; }
   .cat-circle{ transition:none !important; }
 }
+
+/* =====================================================================
+   INDEX UPGRADE PACK (skeleton + chips + favoritos + profissionais + toast)
+   ===================================================================== */
+
+/* Skeleton shimmer */
+.skeleton{position:relative; overflow:hidden; background:rgba(0,0,0,0.06); border-radius:14px}
+.skeleton::after{content:""; position:absolute; inset:0; transform:translateX(-100%); background:linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent); animation:skeletonShimmer 1.2s infinite}
+@keyframes skeletonShimmer{to{transform:translateX(100%)}}
+
+.skeleton-premium-card{background:#fff; border-radius:18px; box-shadow:0 10px 24px rgba(0,0,0,0.06); overflow:hidden}
+.skeleton-premium-cover{height:175px; border-radius:0}
+.skeleton-premium-body{padding:14px}
+.skeleton-line{height:12px; margin:10px 0}
+.skeleton-line.sm{width:55%}
+.skeleton-line.md{width:80%}
+.skeleton-line.lg{width:95%}
+
+.skeleton-trabalho{width:170px; min-width:170px; height:220px; border-radius:20px}
+
+/* Quick chips */
+.quick-chips{display:flex; gap:10px; overflow:auto; padding:10px 2px 0; scrollbar-width:none}
+.quick-chips::-webkit-scrollbar{display:none}
+.quick-chip{flex:0 0 auto; border:1px solid rgba(0,0,0,0.10); background:rgba(255,255,255,0.8); color:#222; padding:8px 12px; border-radius:999px; font-weight:600; font-size:0.92rem; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease}
+.quick-chip:hover{transform:translateY(-1px); box-shadow:0 10px 18px rgba(0,0,0,0.08); border-color:rgba(0,0,0,0.18)}
+.quick-chip.active{background:linear-gradient(120deg, var(--cor0), var(--cor2)); color:#fff; border-color:transparent}
+
+/* Favoritos no card premium */
+.cp-fav-btn{position:absolute; top:12px; right:12px; width:44px; height:44px; border-radius:999px; border:1px solid rgba(255,255,255,0.55); background:rgba(0,0,0,0.28); backdrop-filter:blur(6px); display:flex; align-items:center; justify-content:center; cursor:pointer; transition:transform .15s ease, background .15s ease, box-shadow .15s ease}
+.cp-fav-btn i{font-size:1.3rem; color:#fff}
+.cp-fav-btn:hover{transform:scale(1.06); background:rgba(0,0,0,0.36); box-shadow:0 10px 24px rgba(0,0,0,0.25)}
+.cp-fav-btn.is-fav{background:rgba(243,91,91,0.92); border-color:rgba(255,255,255,0.35)}
+.cp-fav-btn.is-fav i{color:#fff}
+
+/* Profissionais (reaproveita estilo do explorar.html, ajustado para o index) */
+.top-pros-section{padding:18px 14px 6px; max-width:1200px; margin:0 auto}
+.top-pros-header{display:flex; justify-content:space-between; align-items:flex-end; margin:6px 4px 14px}
+.top-pros-header h3{font-size:1.2rem; margin:0; color:#1c1c1c}
+.top-pros-header p{margin:4px 0 0; color:#666; font-size:.95rem}
+.pros-carousel{position:relative}
+.pros-scroll{display:flex; gap:14px; overflow-x:auto; padding:6px 6px 14px; scroll-snap-type:x mandatory; scrollbar-width:none}
+.pros-scroll::-webkit-scrollbar{display:none}
+.pro-card{min-width:220px; max-width:220px; background:#fff; border-radius:16px; padding:14px; box-shadow:0 10px 24px rgba(0,0,0,0.06); scroll-snap-align:start; cursor:pointer; transition:transform .15s ease, box-shadow .15s ease}
+.pro-card:hover{transform:translateY(-3px); box-shadow:0 14px 28px rgba(0,0,0,0.09)}
+.pro-top{display:flex; gap:10px; align-items:center}
+.pro-avatar{width:44px; height:44px; border-radius:50%; background:linear-gradient(120deg, var(--cor0), var(--cor2)); color:#fff; display:flex; align-items:center; justify-content:center; font-weight:800}
+.pro-info h4{margin:0; font-size:1rem}
+.pro-info p{margin:4px 0 0; font-size:.85rem; color:#666}
+.pro-meta{margin-top:10px; display:flex; justify-content:space-between; align-items:center}
+.pro-stars{display:flex; gap:2px; color:#f4b400; font-size:.92rem}
+.pro-badge{font-size:.78rem; padding:4px 10px; border-radius:999px; background:rgba(11,119,104,0.10); color:var(--cor0); font-weight:700}
+.pro-badge.new{background:rgba(42,95,144,0.10); color:var(--cor2)}
+
+/* setas do carrossel de profissionais */
+.pro-arrow{position:absolute; top:50%; transform:translateY(-50%); width:40px; height:40px; border-radius:999px; border:1px solid rgba(0,0,0,0.12); background:rgba(255,255,255,0.90); box-shadow:0 10px 22px rgba(0,0,0,0.10); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:3}
+.pro-arrow:hover{background:#fff}
+.pro-arrow.left{left:-2px}
+.pro-arrow.right{right:-2px}
+@media (max-width: 900px){.pro-arrow{display:none}}
+
+/* Toast de login (menos intrusivo) */
+.toast-login{position:fixed; right:16px; bottom:16px; width:min(360px, calc(100vw - 32px)); background:#fff; border:1px solid rgba(0,0,0,0.10); border-radius:16px; box-shadow:0 18px 50px rgba(0,0,0,0.16); padding:14px; z-index:9999; display:none}
+.toast-login.show{display:block; animation:toastIn .22s ease}
+@keyframes toastIn{from{transform:translateY(10px); opacity:0}to{transform:translateY(0); opacity:1}}
+.toast-login .tl-top{display:flex; justify-content:space-between; gap:10px; align-items:flex-start}
+.toast-login h4{margin:0; font-size:1rem}
+.toast-login p{margin:6px 0 0; color:#666; font-size:.92rem}
+.toast-login .tl-actions{display:flex; gap:10px; margin-top:12px}
+.toast-login .tl-actions a{flex:1; text-align:center; padding:10px 12px; border-radius:12px; font-weight:700; text-decoration:none}
+.toast-login .tl-actions a.primary{background:linear-gradient(120deg, var(--cor0), var(--cor2)); color:#fff}
+.toast-login .tl-actions a.ghost{border:1px solid rgba(0,0,0,0.12); color:#222}
+.toast-login .tl-close{border:none; background:transparent; cursor:pointer; color:#666}
+
+/* Micro-interacoes CTA */
+.btn-procurar, .btn-anunciar{position:relative; overflow:hidden}
+.btn-procurar::after, .btn-anunciar::after{content:""; position:absolute; inset:-40% -60%; background:radial-gradient(circle at 20% 20%, rgba(255,255,255,0.55), transparent 55%); opacity:0; transform:scale(0.8); transition:opacity .18s ease, transform .18s ease}
+.btn-procurar:hover::after, .btn-anunciar:hover::after{opacity:1; transform:scale(1)}
+
+/* Acessibilidade: foco visivel */
+:focus-visible{outline:3px solid rgba(11,119,104,0.55); outline-offset:3px}
+
+/* === CATEGORIAS (FIX FINAL) === */
+.categories-section{
+  padding:40px 20px;
+}
+.categories-wrapper{
+  position:relative;
+  display:flex;
+  align-items:center;
+}
+.categories-carousel{
+  display:flex;
+  gap:16px;
+  overflow-x:auto;
+  scroll-behavior:smooth;
+  padding:10px;
+}
+.category-card{
+  min-width:110px;
+  height:130px;
+  background:#fff;
+  border-radius:18px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 10px 25px rgba(0,0,0,.06);
+  transition:.2s;
+}
+.category-card:hover{
+  transform:translateY(-4px);
+  box-shadow:0 20px 40px rgba(0,0,0,.12);
+}
+.category-card span{
+  margin-top:8px;
+  font-weight:700;
+}
+.cat-arrow{
+  background:#fff;
+  border:none;
+  width:42px;
+  height:42px;
+  border-radius:50%;
+  box-shadow:0 8px 20px rgba(0,0,0,.15);
+  cursor:pointer;
+  z-index:2;
+}
+.cat-arrow.left{margin-right:10px}
+.cat-arrow.right{margin-left:10px}
+
+/* ================================
+   PROFISSIONAIS EM DESTAQUE
+================================ */
+.top-pros-section {
+  margin: 60px 0;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.section-header h3 {
+  color: var(--cor2);
+  margin: 0;
+}
+
+.see-all {
+  color: var(--cor0);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.pros-scroll {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding: 10px 5px 20px;
+  scroll-behavior: smooth;
+}
+
+.pros-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.pro-card {
+  min-width: 200px;
+  background: #fff;
+  border: 1px solid var(--cor-borda);
+  border-radius: 14px;
+  padding: 20px;
+  text-align: center;
+  transition: 0.3s ease;
+}
+
+.pro-card:hover {
+  border-color: var(--cor0);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+  transform: translateY(-4px);
+}
+
+.pro-avatar-lg {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #eee;
+  margin: 0 auto 10px;
+  border: 3px solid var(--cor4);
+}
+
+.pro-name {
+  font-weight: 700;
+  color: var(--cor-texto);
+  display: block;
+}
+
+.pro-job {
+  font-size: 0.85rem;
+  color: var(--cor1);
+  margin-bottom: 8px;
+  display: block;
+}
+
+.pro-rating {
+  color: #f5b301;
+  font-size: 0.9rem;
+  font-weight: bold;
+}
