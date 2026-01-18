@@ -5422,6 +5422,9 @@ async function carregarReelsIndex() {
 document.addEventListener("DOMContentLoaded", () => {
     // ... suas outras inicializações ...
     carregarReelsIndex();
+    carregarProfissionaisDestaque();
+    carregarProfissionaisNovos();
+
 });
 
 async function carregarReelsNoIndex() {
@@ -8275,104 +8278,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     }
   });
 
-  // ---------- Profissionais (Index) ----------
-  async function carregarProsIndex(){
-    const destaque = document.getElementById('proDestaqueScroll');
-    const novos = document.getElementById('proNovosScroll');
-    if (!destaque || !novos) return;
 
-    // skeletons
-    const sk = (n)=>Array.from({length:n}).map(()=>
-      '<div class="pro-card">'
-      + '<div class="pro-banner skeleton" style="height:70px;"></div>'
-      + '<div class="pro-avatar skeleton" style="width:64px;height:64px;border-radius:18px;margin-top:-32px;"></div>'
-      + '<div class="pro-info">'
-      + '<div class="skeleton" style="height:12px;width:70%;margin:8px auto 0;"></div>'
-      + '<div class="skeleton" style="height:12px;width:50%;margin:10px auto 0;"></div>'
-      + '</div></div>'
-    ).join('');
-    destaque.innerHTML = sk(6);
-    novos.innerHTML = sk(6);
-
-    try {
-      if (!window.db || !window.getDocs || !window.query || !window.collection || !window.where || !window.limit) {
-        // ambiente sem firebase inicializado
-        destaque.innerHTML = '';
-        novos.innerHTML = '';
-        return;
-      }
-      const q = query(collection(window.db, 'usuarios'), where('isProfissional','==', true), limit(40));
-      const snap = await getDocs(q);
-      const usuarios = [];
-      snap.forEach(docSnap=>{
-        const d = docSnap.data() || {};
-        d.uid = docSnap.id;
-        usuarios.push(d);
-      });
-
-      // destaque: melhor avaliação
-      const withStats = usuarios.map(u=>{
-        const st = u.stats || {};
-        return {
-          ...u,
-          media: Number(st.media || st.avaliacaoMedia || st.mediaAvaliacoes || 0),
-          aval: Number(st.avaliacoes || st.totalAvaliacoes || 0),
-          created: u.createdAt || u.dataCriacao || u.criadoEm || null,
-        };
-      });
-
-      const destaques = withStats
-        .filter(u=>u.aval > 0)
-        .sort((a,b)=>(b.media-a.media) || (b.aval-a.aval))
-        .slice(0, 10);
-
-      const novosList = withStats
-        .filter(u=>u.aval === 0)
-        .sort((a,b)=>{
-          const ta = typeof a.created === 'number' ? a.created : Date.parse(a.created||'');
-          const tb = typeof b.created === 'number' ? b.created : Date.parse(b.created||'');
-          return (tb-ta);
-        })
-        .slice(0, 10);
-
-      function proCard(u, badge){
-        const nome = u.nomeNegocio || u.nomeProfissional || u.nome || 'Profissional';
-        const categoria = u.categoria || u.area || u.profissao || 'Serviços';
-        const foto = u.fotoPerfil || u.foto || u.avatar || '';
-        const media = Number(u.media || 0).toFixed(1);
-        const aval = Number(u.aval || 0);
-        const bannerGrad = `linear-gradient(135deg, var(--cor0), var(--cor2))`;
-        return `
-          <a class="pro-card" href="perfil-publico.html?uid=${encodeURIComponent(u.uid)}" title="Abrir perfil">
-            <div class="pro-banner" style="background:${bannerGrad}"></div>
-            <div class="pro-avatar" style="background-image:url('${foto}')"></div>
-            <div class="pro-info">
-              <h4>${nome}</h4>
-              <p>${categoria}</p>
-              <div class="pro-rating">
-                <i class='bx bxs-star'></i>
-                <span>${aval>0 ? media : 'Novo'}</span>
-                ${badge ? `<span class="pro-badge">${badge}</span>` : ''}
-              </div>
-            </div>
-          </a>
-        `;
-      }
-
-      destaque.innerHTML = (destaques.length ? destaques : withStats.slice(0,10)).map(u=>proCard(u,'Destaque')).join('');
-      novos.innerHTML = (novosList.length ? novosList : withStats.slice(0,10)).map(u=>proCard(u,'Novo')).join('');
-    } catch(err){
-      // silencioso
-      destaque.innerHTML = '';
-      novos.innerHTML = '';
-    }
-  }
-
-  document.addEventListener('DOMContentLoaded', ()=>{
-    carregarProsIndex();
-    // re-aplica fav depois de renderizações dinâmicas
-    setTimeout(()=>applyFavUI(), 700);
-  });
 
   // ---------- Focus trap (acessibilidade) ----------
   function trapFocus(modal){
@@ -8424,71 +8330,154 @@ const catCarousel = document.getElementById("categoriesCarousel");
 document.querySelector(".cat-arrow.left").onclick=()=>catCarousel.scrollLeft-=200;
 document.querySelector(".cat-arrow.right").onclick=()=>catCarousel.scrollLeft+=200;
 
-async function carregarProfissionaisDestaque() {
-  const container = document.getElementById("prosDestaque");
-  if (!container) return;
 
-  // 🔹 Busca anúncios
-  const { data: anuncios, error } = await window.sb
-    .from("anuncios")
-    .select("uid, nomeAutor, fotoAutor, categoria, mediaAvaliacao, numAvaliacoes");
+/*************************************************
+ * SUPABASE HELPER
+ *************************************************/
+function getSB() {
+  return window.sb || window.supabase || window.supabaseClient || null;
+}
 
-  if (error || !anuncios) {
-    console.error("Erro ao carregar profissionais:", error);
-    return;
+async function waitForSB(timeout = 4000) {
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    const sb = getSB();
+    if (sb && typeof sb.from === "function") return sb;
+    await new Promise(r => setTimeout(r, 50));
   }
+  return null;
+}
 
-  // 🔹 Agrupa por profissional (uid)
-  const profsMap = {};
+/*************************************************
+ * PERFIL PÚBLICO
+ *************************************************/
+function abrirPerfil(uid) {
+  localStorage.setItem("perfilPublicoId", uid);
+  window.location.href = "perfil-publico.html";
+}
+
+/*************************************************
+ * CARD DO PROFISSIONAL
+ *************************************************/
+function cardPro(p) {
+  const foto = p.foto || p.fotoAutor || "https://i.pravatar.cc/150";
+  const nome = p.userHandle || (p.nomeAutor ? p.nomeAutor.split(" ")[0] : "Profissional");
+  const profissao = p.categoria || "Profissional";
+
+  const ratingHtml =
+    p.numAvaliacoes > 0
+      ? `<div class="pro-rating">★ ${p.mediaAvaliacao.toFixed(1)} (${p.numAvaliacoes})</div>`
+      : `<div class="badge-novo">Novo</div>`;
+
+  return `
+    <div class="pro-card" onclick="abrirPerfil('${p.uid}')">
+      <img src="${foto}" class="pro-avatar" alt="${nome}">
+      <div class="pro-name">${nome}</div>
+      <div class="pro-role">${profissao}</div>
+      ${ratingHtml}
+      <button class="btn-ver-perfil">Ver Perfil</button>
+    </div>
+  `;
+}
+
+/*************************************************
+ * AGRUPA ANÚNCIOS → PROFISSIONAIS
+ *************************************************/
+function agruparProfissionais(anuncios) {
+  const map = new Map();
 
   anuncios.forEach(a => {
     if (!a.uid) return;
 
-    if (!profsMap[a.uid]) {
-      profsMap[a.uid] = {
+    if (!map.has(a.uid)) {
+      map.set(a.uid, {
         uid: a.uid,
-        nome: a.nomeAutor,
-        foto: a.fotoAutor,
-        categoria: a.categoria,
-        somaAvaliacoes: 0,
-        totalAvaliacoes: 0
-      };
+        nomeAutor: a.nomeAutor || "",
+        fotoAutor: a.fotoAutor || "",
+        userHandle: a.userHandle || "",
+        categoria: a.categoria || "",
+        soma: 0,
+        qtd: 0,
+        dataCriacao: a.dataCriacao || a.created_at || null
+      });
     }
 
-    if (a.mediaAvaliacao && a.numAvaliacoes) {
-      profsMap[a.uid].somaAvaliacoes += a.mediaAvaliacao * a.numAvaliacoes;
-      profsMap[a.uid].totalAvaliacoes += a.numAvaliacoes;
+    const p = map.get(a.uid);
+
+    const m = Number(a.mediaAvaliacao || 0);
+    const n = Number(a.numAvaliacoes || 0);
+
+    if (m > 0 && n > 0) {
+      p.soma += m * n;
+      p.qtd += n;
+    }
+
+    if (a.dataCriacao) {
+      const atual = new Date(p.dataCriacao || 0).getTime();
+      const nova = new Date(a.dataCriacao).getTime();
+      if (nova > atual) p.dataCriacao = a.dataCriacao;
     }
   });
 
-  // 🔹 Calcula média final
-  const profissionais = Object.values(profsMap).map(p => {
-    const media =
-      p.totalAvaliacoes > 0
-        ? (p.somaAvaliacoes / p.totalAvaliacoes).toFixed(1)
-        : "0.0";
-
-    return { ...p, media };
-  });
-
-  // 🔹 Ordena por melhor avaliação
-  profissionais.sort((a, b) => b.media - a.media);
-
-  // 🔹 Renderiza (top 10)
-  profissionais.slice(0, 10).forEach(p => {
-    const card = document.createElement("div");
-    card.className = "pro-card";
-
-    card.innerHTML = `
-      <img src="${p.foto || 'https://via.placeholder.com/80'}" class="pro-avatar-lg">
-      <span class="pro-name">${p.nome || 'Profissional'}</span>
-      <span class="pro-job">${p.categoria || 'Serviço'}</span>
-      <span class="pro-rating">★ ${p.media} (${p.totalAvaliacoes || 0})</span>
-    `;
-
-    container.appendChild(card);
-  });
+  return Array.from(map.values()).map(p => ({
+    ...p,
+    mediaAvaliacao: p.qtd > 0 ? p.soma / p.qtd : 0,
+    numAvaliacoes: p.qtd,
+    foto: p.fotoAutor
+  }));
 }
 
-// 🚀 chama quando carregar a home
-document.addEventListener("DOMContentLoaded", carregarProfissionaisDestaque);
+/*************************************************
+ * CARREGA PROFISSIONAIS NO INDEX
+ *************************************************/
+async function carregarProfissionaisIndex() {
+  const destaqueEl = document.getElementById("prosDestaque");
+  const novosEl = document.getElementById("prosNovos");
+  if (!destaqueEl || !novosEl) return;
+
+  destaqueEl.innerHTML = "";
+  novosEl.innerHTML = "";
+
+  const sb = await waitForSB();
+  if (!sb) {
+    console.warn("Supabase não disponível.");
+    return;
+  }
+
+  const { data: anuncios, error } = await sb
+    .from("anuncios")
+    .select("uid,nomeAutor,fotoAutor,userHandle,categoria,mediaAvaliacao,numAvaliacoes,dataCriacao")
+    .limit(1000);
+
+  if (error) {
+    console.error("Erro ao buscar anúncios:", error);
+    return;
+  }
+
+  const profs = agruparProfissionais(anuncios || []);
+
+  // ⭐ Destaque = só quem tem avaliação
+  const destaque = profs
+    .filter(p => p.numAvaliacoes > 0)
+    .sort((a, b) => b.mediaAvaliacao - a.mediaAvaliacao)
+    .slice(0, 10);
+
+  // 🆕 Novos = sem avaliação
+  const novos = profs
+    .filter(p => p.numAvaliacoes === 0)
+    .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
+    .slice(0, 10);
+
+  destaqueEl.innerHTML = destaque.length
+    ? destaque.map(cardPro).join("")
+    : `<div class="pros-empty">Nenhum profissional em destaque no momento.</div>`;
+
+  novosEl.innerHTML = novos.length
+    ? novos.map(cardPro).join("")
+    : `<div class="pros-empty">Ainda não há profissionais novos cadastrados.</div>`;
+}
+
+/*************************************************
+ * INIT
+ *************************************************/
+document.addEventListener("DOMContentLoaded", carregarProfissionaisIndex);
