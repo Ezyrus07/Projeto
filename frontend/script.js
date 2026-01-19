@@ -803,22 +803,22 @@ window.dokeBuildCardPremium = function(anuncio) {
         htmlFotos = `
         <div class="grid-fotos-doke" style="grid-template-columns: 1fr;">
             <div class="foto-main" style="grid-column: 1; grid-row: 1/3;">
-                <img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
+                <img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
             </div>
         </div>`;
     } else if (fotos.length === 2) {
         htmlFotos = `
         <div class="grid-fotos-doke">
-            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
-            <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
+            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+            <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
         </div>`;
     } else {
         let overlayHtml = (fotos.length > 3) ? `<div class="overlay-count">+${contadorExtra}</div>` : '';
         htmlFotos = `
         <div class="grid-fotos-doke">
-            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
-            <div class="foto-sub"><img src="${fotos[1]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
-            <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
+            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+            <div class="foto-sub"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
+            <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
         </div>`;
     }
 
@@ -839,7 +839,7 @@ window.dokeBuildCardPremium = function(anuncio) {
         </button>
         <div class="cp-header-clean">
             <div style="display:flex; gap:12px; align-items:center;">
-                <img src="${fotoAutor}" class="cp-avatar" ${linkPerfil} ${estiloLink}> 
+                <img src="${fotoAutor}" class="cp-avatar" loading="lazy" decoding="async" ${linkPerfil} ${estiloLink}> 
                 <div class="cp-info-user">
                     <div class="cp-nome-row">
                         <h4 class="cp-nome-clean" ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
@@ -1086,9 +1086,6 @@ window.carregarCategorias = async function() {
             .slice(0, 20)
             .map(([nome, count]) => ({ nome, count, icon: __dokeIconForCategory(nome) }));
 
-        // Atualiza chips de categorias (index)
-        window.dokeRenderQuickChips?.(lista);
-
         container.innerHTML = '';
         lista.forEach((cat) => {
             const btn = document.createElement('button');
@@ -1096,8 +1093,9 @@ window.carregarCategorias = async function() {
             btn.className = 'cat-card';
             btn.setAttribute('data-cat', cat.nome);
             btn.innerHTML = `
-                <div class="cat-circle"><i class='bx ${cat.icon}'></i></div>
-                <div class="cat-label">${cat.nome}</div>
+                <span class="cat-ico"><i class='bx ${cat.icon}'></i></span>
+                <span class="cat-label">${cat.nome}</span>
+                <span class="cat-count">${cat.count}</span>
             `;
             btn.addEventListener('click', () => {
                 try { window.filtrarPorCategoria(cat.nome); } catch { /* noop */ }
@@ -8250,33 +8248,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   // aplica ao carregar
   document.addEventListener('DOMContentLoaded', ()=>applyFavUI());
 
-  // ---------- Chips (pílulas) ----------
-  window.dokeRenderQuickChips = function(listaCategorias){
-    const wrap = document.getElementById('quickChips');
-    if (!wrap) return;
-    if (!Array.isArray(listaCategorias) || listaCategorias.length === 0) {
-      wrap.innerHTML = '';
-      wrap.style.display = 'none';
-      return;
-    }
-    wrap.style.display = '';
-    const chips = listaCategorias.slice(0, 10).map((c, idx)=>{
-      const name = (c && (c.nome || c.name)) ? (c.nome || c.name) : String(c||'');
-      return `<button class="chip" type="button" data-chip="${encodeURIComponent(name)}" aria-label="Filtrar por ${name}">${name}</button>`;
-    }).join('');
-    wrap.innerHTML = chips;
-  };
-
-  document.addEventListener('click', (ev)=>{
-    const chip = ev.target.closest('.chip[data-chip]');
-    if (!chip) return;
-    const categoria = decodeURIComponent(chip.dataset.chip || '');
-    const input = document.querySelector('.barra-busca input');
-    if (input) input.value = categoria;
-    if (typeof window.carregarAnunciosDoFirebase === 'function') {
-      window.carregarAnunciosDoFirebase(categoria);
-    }
-  });
+  // chips na área de busca removidos (poluía o layout)
 
 
 
@@ -8497,15 +8469,8 @@ async function carregarComentariosSupabase(publicacaoId) {
       console.warn('Categorias (firestore) falhou:', e);
     }
 
-    // 3) ultimo fallback
-    return [
-      { nome: 'Tecnologia', count: 0 },
-      { nome: 'Eletricista', count: 0 },
-      { nome: 'Limpeza', count: 0 },
-      { nome: 'Aulas', count: 0 },
-      { nome: 'Reformas', count: 0 },
-      { nome: 'Design', count: 0 },
-    ];
+    // 3) último fallback: sem categorias fixas (somente por demanda)
+    return [];
   }
 
   function setupCatArrows(carousel) {
@@ -8532,18 +8497,6 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     let lista = await getCategoriasPorDemanda();
     lista = Array.isArray(lista) ? lista : [];
-
-    // Se tiver poucas categorias reais, completa com sugestoes populares (count 0)
-    // para nao ficar "vazio" e nao quebrar o layout.
-    const fallback = ['Pintor', 'Encanador', 'Diarista', 'Jardineiro', 'Montador', 'Frete', 'Pedreiro', 'Marido de aluguel', 'Mecânico', 'Fotógrafo'];
-    const has = new Set(lista.map(x => String(x?.nome || '').toLowerCase()).filter(Boolean));
-    for (const nome of fallback) {
-      if (lista.length >= 10) break;
-      const low = String(nome).toLowerCase();
-      if (has.has(low)) continue;
-      has.add(low);
-      lista.push({ nome, count: 0, _fallback: true });
-    }
 
     // guarda para autocomplete
     window.__dokeTopCats = (lista || []).map(x => x.nome);

@@ -1700,9 +1700,8 @@ body[data-page="home"] .reveal.is-visible {
   background-color: transparent; box-shadow: none;
   padding: 20px 0; overflow: hidden;
 }
-.categorias-container.estilo-lojas h2 {
-  color: var(--cor1); font-size: 1.2rem; margin-bottom: 25px; margin-left: 20px;
-}
+/* NÃO sobrescreve cor/tamanho do título (usa .sec-title padrão do site) */
+.categorias-container.estilo-lojas h2 { margin-bottom: 25px; margin-left: 20px; }
 .categoria-scroll {
   display: flex; gap: 20px; overflow-x: auto;
   padding: 36px 20px 30px 20px; scroll-behavior: smooth;
@@ -8547,4 +8546,232 @@ button:active, .chip-tag:active, .ver-todos:active, .btn-ver-perfil:active, .btn
 @media (max-width: 520px){
   .trust-line{ justify-content: flex-start; }
   .trust-item{ font-size: 0.88rem; padding: 7px 10px; }
+}
+
+/* =========================================================
+   CATEGORIAS EM ALTA - VISUAL MINIMALISTA (POR DEMANDA)
+   Renderiza apenas categorias que existem em anuncios (Firestore)
+   ========================================================= */
+
+.categorias-em-alta.categorias-min{
+  position: relative;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  padding: 0;
+  overflow: visible;
+}
+
+.categorias-min .cat-carousel{
+  /* remove o “retângulo” de fundo: só os itens (minimalista) */
+  overflow: hidden;
+  border-radius: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  backdrop-filter: none;
+}
+
+.categorias-min .cat-track{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  overflow-x: auto;
+  padding: 10px 36px;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+.categorias-min .cat-track::-webkit-scrollbar{ height: 10px; }
+.categorias-min .cat-track::-webkit-scrollbar-track{ background: transparent; }
+.categorias-min .cat-track::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.10); border-radius: 999px; }
+
+/* chip */
+.categorias-min .cat-card{
+  scroll-snap-align: start;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 18px;
+  padding: 10px 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+  box-shadow: none !important;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: transform .15s ease, background-color .15s ease;
+  position: relative;
+}
+/* Remove o "hover de fundo" (mantém minimalista) */
+.categorias-min .cat-card:hover{ background: transparent !important; }
+.categorias-min .cat-card:active{ transform: translateY(-1px); }
+
+.categorias-min .cat-card:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(11,119,104,0.14);
+}
+
+.categorias-min .cat-ico{
+  width: 112px;
+  height: 112px;
+  border-radius: 20px;
+  background: #fff;
+  border: 1px solid rgba(0,0,0,0.08);
+  color: var(--cor0, #0b7768);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  transition: transform .15s ease;
+}
+
+.categorias-min .cat-ico i{ font-size: 2.35rem; color: var(--cor0, #0b7768); }
+
+/* Micro-interação consistente (sem "cartão" surgindo) */
+.categorias-min .cat-card:hover .cat-ico{ transform: translateY(-2px); }
+.categorias-min .cat-card:hover .cat-ico{
+  background: var(--cor0, #0b7768);
+  border-color: var(--cor0, #0b7768);
+}
+.categorias-min .cat-card:hover .cat-ico i{ color: #fff; }
+
+.categorias-min .cat-label{
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--cor1, #737373);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 210px;
+  text-align: center;
+}
+.categorias-min .cat-card:hover .cat-label{
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+.categorias-min .cat-count{
+  position: absolute;
+  top: 94px;
+  left: calc(50% + 40px);
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 0.8rem;
+  background: rgba(11,119,104,0.10);
+  border: 1px solid rgba(11,119,104,0.20);
+  color: var(--cor0, #0b7768);
+}
+.categorias-min .cat-card:hover .cat-count{
+  background: rgba(255,255,255,0.18);
+  border-color: rgba(255,255,255,0.45);
+  color: #fff;
+}
+/* Setas: reaproveita o MESMO estilo do carrossel de profissionais (.pro-arrow) */
+.categorias-min .pro-arrow{ color:#111; }
+.categorias-min .pro-arrow:disabled{ opacity: 0.35; cursor: default; box-shadow: none; }
+.categorias-min .cat-prev{ left: -2px; }
+.categorias-min .cat-next{ right: -2px; }
+
+@media (max-width: 768px){
+  .categorias-min .cat-track{ padding: 6px 14px; gap: 10px; }
+  .categorias-min .pro-arrow{ display: none; }
+  .categorias-min .cat-card{ width: auto; min-width: 0; }
+  .categorias-min .cat-ico{ width: 92px; height: 92px; }
+  .categorias-min .cat-ico i{ font-size: 2.1rem; }
+  .categorias-min .cat-label{ max-width: 180px; font-size: 1.05rem; }
+  .categorias-min .cat-count{ top: 82px; left: calc(50% + 36px); }
+}
+
+/* Setas consistentes no index */
+.pro-arrow,
+.cat-arrow{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.12);
+  background: rgba(255,255,255,0.90);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.cat-arrow:hover{ background: #fff; }
+
+/* =========================================================
+   HOME - PADRONIZACAO DE CONTAINERS + RESPONSIVIDADE (V6)
+   - Mesma largura/margens em todas as secoes
+   - Melhor toque em mobile/tablet
+   ========================================================= */
+
+body[data-page="home"] main > section,
+body[data-page="home"] main > .anuncio-container{
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+@media (max-width: 900px){
+  body[data-page="home"] main > section,
+  body[data-page="home"] main > .anuncio-container{
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}
+
+@media (max-width: 520px){
+  body[data-page="home"] main > section,
+  body[data-page="home"] main > .anuncio-container{
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+}
+
+/* Microinteracoes consistentes (clicaveis) */
+body[data-page="home"] a,
+body[data-page="home"] button{ -webkit-tap-highlight-color: transparent; }
+
+body[data-page="home"] .pro-arrow,
+body[data-page="home"] .cat-card,
+body[data-page="home"] .btn-procurar,
+body[data-page="home"] .btn-anunciar,
+body[data-page="home"] .ver-todos,
+body[data-page="home"] .btn-solicitar{
+  transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
+}
+
+body[data-page="home"] .pro-arrow:active,
+body[data-page="home"] .btn-procurar:active,
+body[data-page="home"] .btn-anunciar:active,
+body[data-page="home"] .ver-todos:active,
+body[data-page="home"] .btn-solicitar:active{
+  transform: scale(0.98);
+}
+
+/* Responsividade extra (mobile/tablet) */
+@media (max-width: 640px){
+  body[data-page="home"] .botoes-busca{flex-direction:column; gap:10px}
+  body[data-page="home"] .btn-procurar,
+  body[data-page="home"] .btn-anunciar{width:100%}
+  body[data-page="home"] .busca-wrapper{width:100%}
+}
+
+@media (max-width: 900px){
+  /* Evita scroll horizontal por sombras/overflows */
+  body[data-page="home"] main{overflow-x:hidden}
 }

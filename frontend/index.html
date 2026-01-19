@@ -164,31 +164,26 @@
             </div>
 
             <!-- Linha de confiança (mobile-first) -->
-            <div class="trust-line" aria-label="Benefícios da plataforma">
-                <div class="trust-item"><i class='bx bx-lock-alt'></i><span>Pagamento seguro</span></div>
-                <div class="trust-item"><i class='bx bx-star'></i><span>Avaliações reais</span></div>
-                <div class="trust-item"><i class='bx bx-gift'></i><span>Ganhe pontos e recompensas</span></div>
-            </div>
 
-            <div class="quick-chips" id="quickChips" aria-label="Filtros rápidos por categoria" role="list"></div>
+            <!-- chips rápidos removidos (poluía a área de busca) -->
         </section>
 
-<section class="categories-section">
-  <h2 class="sec-title">Categorias em alta</h2>
+<section class="categorias-container estilo-lojas" aria-label="Categorias em alta">
+  <div class="secao-title-row">
+    <h2 class="sec-title">Categorias em alta</h2>
+  </div>
 
-  <div class="categories-wrapper">
-    <button class="cat-arrow left" aria-label="Anterior">❮</button>
+  <div class="categorias-em-alta categorias-min">
+    <!-- Setas no MESMO padrão dos carrosseis de profissionais -->
+    <button class="pro-arrow left cat-prev" type="button" aria-label="Categoria anterior">❮</button>
 
-    <div class="categories-carousel" id="categoriesCarousel">
-      <!-- categorias via JS -->
+    <div class="cat-carousel">
+      <div class="cat-track" id="listaCategorias" role="list" aria-label="Lista de categorias"></div>
     </div>
 
-    <button class="cat-arrow right" aria-label="Próximo">❯</button>
+    <button class="pro-arrow right cat-next" type="button" aria-label="Próxima categoria">❯</button>
   </div>
 </section>
-
-
-
 
 <section class="videos-container">
     <div class="videos-header-top">
@@ -903,23 +898,23 @@
   .cat-track::-webkit-scrollbar-thumb{ background: rgba(11,119,104,0.20); border-radius: 999px; }
   .cat-track::-webkit-scrollbar-track{ background: transparent; }
 
-  .cat-card{
-    min-width: 108px;
-    max-width: 132px;
-    border: 1px solid rgba(11,119,104,0.12);
-    background: rgba(255,255,255,0.85);
-    border-radius: 18px;
-    padding: 14px 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    cursor: pointer;
-    scroll-snap-align: start;
-    transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
-    position: relative;
-    user-select: none;
-  }
+    .cat-card{
+        min-width: 108px;
+        max-width: 132px;
+        border: 1px solid rgba(11,119,104,0.12);
+        background: rgba(255,255,255,0.85);
+        border-radius: 18px;
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        scroll-snap-align: start;
+        transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+        position: relative;
+        user-select: none;
+    }
   .cat-card:hover{
     transform: translateY(-2px);
     border-color: rgba(11,119,104,0.35);
@@ -928,19 +923,6 @@
   }
   .cat-card:active{ transform: translateY(0); }
 
-  .cat-circle{
-    width: 62px;
-    height: 62px;
-    border-radius: 999px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, rgba(42,95,144,0.15), rgba(11,119,104,0.18));
-    border: 1px solid rgba(42,95,144,0.10);
-    box-shadow: inset 0 0 0 6px rgba(255,255,255,0.35);
-    position: relative;
-  }
-  .cat-circle i{ font-size: 28px; color: var(--cor0,#0b7768); }
 
   .cat-label{
     font-weight: 800;
@@ -960,14 +942,7 @@
     gap: 6px;
     margin-top: 12px;
   }
-  .cat-dots .dot{
-    width: 8px;
-    height: 8px;
-    border-radius: 999px;
-    background: rgba(11,119,104,0.35);
-    opacity: .45;
-    transition: width .2s ease, opacity .2s ease;
-  }
+
   .cat-dots .dot.ativo{ width: 18px; opacity: 1; }
 
   @media (max-width: 600px){
