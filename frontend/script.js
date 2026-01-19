@@ -1402,7 +1402,7 @@ function atualizarListaHistorico() {
     c.style.display = 'block'; l.innerHTML = '';
     h.forEach(t => {
         const d = document.createElement('div');
-        d.className = 'recent-item'; d.innerHTML = `<span>↺</span> ${t}`;
+        d.className = 'recent-item'; d.innerHTML = `<i class='bx bx-time-five history-icon'></i><span class='recent-text'>${t}</span>`;
         d.onclick = () => { 
             const inp = document.getElementById('inputBusca');
             if(inp) { inp.value = t; salvarBusca(t); window.location.href = `busca.html?q=${encodeURIComponent(t)}`; }
@@ -8318,18 +8318,534 @@ async function carregarComentariosSupabase(publicacaoId) {
 })();
 /* ===================== END INDEX_UPGRADE_PACK ===================== */
 
-const catCarousel = document.getElementById("categoriesCarousel");
 
-["Tecnologia","Eletricista","Limpeza","Aulas","Reformas","Design"].forEach(cat=>{
-  const div=document.createElement("div");
-  div.className="category-card";
-  div.innerHTML=`<div>🔹</div><span>${cat}</span>`;
-  catCarousel.appendChild(div);
-});
+/* ==== DOKE: INDEX ENHANCEMENTS V2 ==== */
+(function () {
+  const $ = (sel, root = document) => root.querySelector(sel);
+  const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
-document.querySelector(".cat-arrow.left").onclick=()=>catCarousel.scrollLeft-=200;
-document.querySelector(".cat-arrow.right").onclick=()=>catCarousel.scrollLeft+=200;
+  const isHome = () => document.body?.dataset?.page === 'home';
 
+  function normCatName(v) {
+    return String(v ?? '').trim();
+  }
+
+  function readJSON(key, fallback) {
+    try {
+      const raw = localStorage.getItem(key);
+      if (!raw) return fallback;
+      return JSON.parse(raw);
+    } catch {
+      return fallback;
+    }
+  }
+
+  function writeJSON(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  }
+
+  function getPerfilLocal() {
+    return readJSON('doke_usuario_perfil', {}) || {};
+  }
+
+  function getLogado() {
+    return localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
+  }
+
+  // ----------------------------
+  // CATEGORIAS: skeleton + demanda + ranking
+  // ----------------------------
+  function catIconSvg(nome) {
+    const n = (nome || '').toLowerCase();
+    // SVGs simples (sem dependencias)
+    if (n.includes('eletric')) {
+      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2L3 14h7l-1 8 12-14h-7l1-6z" fill="currentColor"/></svg>`;
+    }
+    if (n.includes('limp') || n.includes('fax')) {
+      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 2h10v2H7V2zm2 4h6l1 3h4v3h-2l-2 10H8L6 12H4V9h4l1-3zm1.7 6l1.2 6h.2l1.2-6h-2.6z" fill="currentColor"/></svg>`;
+    }
+    if (n.includes('aula') || n.includes('prof')) {
+      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 6-10 6L2 9l10-6zm0 9l8-4.8V16h-2V8.6L12 12z" fill="currentColor"/></svg>`;
+    }
+    if (n.includes('reforma') || n.includes('obra') || n.includes('constr')) {
+      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 21h20v-2H2v2zm2-4h16V3H4v14zm2-2V5h12v10H6z" fill="currentColor"/></svg>`;
+    }
+    if (n.includes('design')) {
+      return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 17.25V21h3.75L17.8 9.95l-3.75-3.75L3 17.25zm18-11.5a1 1 0 0 0 0-1.4l-1.35-1.35a1 1 0 0 0-1.4 0l-1.15 1.15 3.75 3.75L21 5.75z" fill="currentColor"/></svg>`;
+    }
+    // default: tecnologia/geral
+    return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 12.9 1h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L1.7 7.98a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L1.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.24.1.51.01.64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM11 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" fill="currentColor"/></svg>`;
+  }
+
+  function renderCategorySkeleton(carousel, count = 6) {
+    if (!carousel) return;
+    carousel.innerHTML = '';
+    carousel.classList.add('is-loading');
+    for (let i = 0; i < count; i++) {
+      const item = document.createElement('div');
+      item.className = 'cat-item';
+      item.innerHTML = `
+        <div class="cat-card cat-skel" aria-hidden="true">
+          <div class="cat-icon-wrap cat-skel-circle"></div>
+          <div class="cat-name cat-skel-line"></div>
+        </div>
+      `;
+      carousel.appendChild(item);
+    }
+  }
+
+  function renderCategories(carousel, lista) {
+    carousel.classList.remove('is-loading');
+    carousel.innerHTML = '';
+
+    if (!lista || !lista.length) {
+      carousel.innerHTML = `
+        <div class="empty-inline">
+          <div class="empty-title">Sem categorias por enquanto</div>
+          <div class="empty-sub">Assim que os profissionais forem se cadastrando, as categorias aparecem aqui.</div>
+        </div>
+      `;
+      return;
+    }
+
+    lista.forEach((cat, idx) => {
+      const nome = cat.nome;
+      const item = document.createElement('div');
+      item.className = 'cat-item';
+
+      const colorClass = idx % 2 === 0 ? 'cat-green' : 'cat-blue';
+      item.innerHTML = `
+        <div class="cat-card">
+          <button class="cat-icon-wrap ${colorClass}" type="button" aria-label="Categoria ${esc(nome)}">
+            <span class="cat-icon">${catIconSvg(nome)}</span>
+          </button>
+          <div class="cat-name">${esc(nome)}</div>
+        </div>
+      `;
+
+      const btn = item.querySelector('button');
+      btn.addEventListener('click', () => {
+        // registra clique
+        const clicks = readJSON('doke_categorias_click', []);
+        const next = [nome, ...clicks.filter(x => String(x).toLowerCase() !== String(nome).toLowerCase())].slice(0, 12);
+        writeJSON('doke_categorias_click', next);
+
+        // salva como busca recente
+        try { window.salvarBusca?.(nome); } catch {}
+
+        // redireciona para busca
+        window.location.href = `busca.html?q=${encodeURIComponent(nome)}&src=categoria`;
+      });
+
+      carousel.appendChild(item);
+    });
+  }
+
+  async function getCategoriasPorDemanda() {
+    // 1) tenta Supabase
+    try {
+      const sb = await (window.waitForSB ? window.waitForSB(2500) : null);
+      if (sb && sb.from) {
+        const { data, error } = await sb
+          .from('anuncios')
+          .select('categoria,categorias')
+          .limit(1500);
+        if (!error && data) {
+          const freq = new Map();
+          for (const a of data) {
+            let cats = a?.categorias ?? a?.categoria ?? '';
+            if (Array.isArray(cats)) {
+              for (const c of cats) {
+                const name = normCatName(c);
+                if (!name) continue;
+                freq.set(name, (freq.get(name) || 0) + 1);
+              }
+            } else {
+              const raw = String(cats || '');
+              raw.split(',').map(s => s.trim()).filter(Boolean).forEach((name) => {
+                freq.set(name, (freq.get(name) || 0) + 1);
+              });
+            }
+          }
+          return [...freq.entries()].sort((a,b) => b[1]-a[1]).slice(0, 18).map(([nome,count])=>({nome,count}));
+        }
+      }
+    } catch (e) {
+      console.warn('Categorias (supabase) falhou:', e);
+    }
+
+    // 2) fallback Firestore (compat)
+    try {
+      if (window.db && window.getDocs && window.query && window.collection) {
+        const q = window.query(window.collection(window.db, 'anuncios'));
+        const snap = await window.getDocs(q);
+        const freq = new Map();
+        snap.forEach((docSnap) => {
+          const d = docSnap.data() || {};
+          let cats = d.categorias ?? d.categoria ?? '';
+          if (Array.isArray(cats)) cats = cats.join(',');
+          if (typeof cats !== 'string') cats = String(cats || '');
+          cats.split(',').map(s => s.trim()).filter(Boolean).forEach((name) => {
+            freq.set(name, (freq.get(name) || 0) + 1);
+          });
+        });
+        return [...freq.entries()].sort((a,b) => b[1]-a[1]).slice(0, 18).map(([nome,count])=>({nome,count}));
+      }
+    } catch (e) {
+      console.warn('Categorias (firestore) falhou:', e);
+    }
+
+    // 3) ultimo fallback
+    return [
+      { nome: 'Tecnologia', count: 0 },
+      { nome: 'Eletricista', count: 0 },
+      { nome: 'Limpeza', count: 0 },
+      { nome: 'Aulas', count: 0 },
+      { nome: 'Reformas', count: 0 },
+      { nome: 'Design', count: 0 },
+    ];
+  }
+
+  function setupCatArrows(carousel) {
+    const left = $('.cat-arrow.left');
+    const right = $('.cat-arrow.right');
+    if (left && !left.__dokeBound) {
+      left.__dokeBound = true;
+      left.addEventListener('click', () => carousel.scrollBy({ left: -260, behavior: 'smooth' }));
+    }
+    if (right && !right.__dokeBound) {
+      right.__dokeBound = true;
+      right.addEventListener('click', () => carousel.scrollBy({ left: 260, behavior: 'smooth' }));
+    }
+  }
+
+  async function initCategoriasHome() {
+    if (!isHome()) return;
+    const carousel = document.getElementById('categoriesCarousel');
+    if (!carousel) return;
+
+    // evita "piscar": skeleton first
+    renderCategorySkeleton(carousel, 6);
+    setupCatArrows(carousel);
+
+    let lista = await getCategoriasPorDemanda();
+    lista = Array.isArray(lista) ? lista : [];
+
+    // Se tiver poucas categorias reais, completa com sugestoes populares (count 0)
+    // para nao ficar "vazio" e nao quebrar o layout.
+    const fallback = ['Pintor', 'Encanador', 'Diarista', 'Jardineiro', 'Montador', 'Frete', 'Pedreiro', 'Marido de aluguel', 'Mecânico', 'Fotógrafo'];
+    const has = new Set(lista.map(x => String(x?.nome || '').toLowerCase()).filter(Boolean));
+    for (const nome of fallback) {
+      if (lista.length >= 10) break;
+      const low = String(nome).toLowerCase();
+      if (has.has(low)) continue;
+      has.add(low);
+      lista.push({ nome, count: 0, _fallback: true });
+    }
+
+    // guarda para autocomplete
+    window.__dokeTopCats = (lista || []).map(x => x.nome);
+
+    renderCategories(carousel, lista);
+  }
+
+  // ----------------------------
+  // PROFISSIONAIS: setas (desktop) + drag (mobile) + sem corte no hover
+  // ----------------------------
+  function enableDragScroll(el) {
+    if (!el || el.__dragReady) return;
+    el.__dragReady = true;
+    let isDown = false;
+    let startX = 0;
+    let scrollLeft = 0;
+
+    el.addEventListener('mousedown', (e) => {
+      isDown = true;
+      startX = e.pageX - el.offsetLeft;
+      scrollLeft = el.scrollLeft;
+      el.classList.add('is-dragging');
+    });
+
+    window.addEventListener('mouseup', () => {
+      isDown = false;
+      el.classList.remove('is-dragging');
+    });
+
+    el.addEventListener('mouseleave', () => {
+      isDown = false;
+      el.classList.remove('is-dragging');
+    });
+
+    el.addEventListener('mousemove', (e) => {
+      if (!isDown) return;
+      e.preventDefault();
+      const x = e.pageX - el.offsetLeft;
+      const walk = (x - startX) * 1.4;
+      el.scrollLeft = scrollLeft - walk;
+    });
+
+    // Wheel: nao travar scroll vertical da pagina.
+    // Horizontal via wheel somente com SHIFT (padrao UX).
+    el.addEventListener('wheel', (ev) => {
+      if (!ev.shiftKey) return; // deixa o site subir/descer normalmente
+      const delta = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY;
+      el.scrollLeft += delta;
+      ev.preventDefault();
+    }, { passive: false });
+  }
+
+  function addProsArrows() {
+    if (!isHome()) return;
+    $$('.pros-section').forEach((sec) => {
+      const track = sec.querySelector('.pros-carousel');
+      if (!track) return;
+
+      // evita corte no hover
+      sec.style.overflow = 'visible';
+      sec.style.position = sec.style.position || 'relative';
+      track.style.overflowY = 'visible';
+      track.style.paddingTop = '14px';
+      track.style.paddingBottom = '18px';
+
+      // drag
+      enableDragScroll(track);
+
+      // setas (somente desktop)
+      if (sec.querySelector('.pro-arrow')) return;
+
+      const left = document.createElement('button');
+      left.className = 'pro-arrow left';
+      left.type = 'button';
+      left.setAttribute('aria-label', 'Anterior');
+      left.innerHTML = '❮';
+
+      const right = document.createElement('button');
+      right.className = 'pro-arrow right';
+      right.type = 'button';
+      right.setAttribute('aria-label', 'Próximo');
+      right.innerHTML = '❯';
+
+      left.addEventListener('click', () => track.scrollBy({ left: -320, behavior: 'smooth' }));
+      right.addEventListener('click', () => track.scrollBy({ left: 320, behavior: 'smooth' }));
+
+      sec.appendChild(left);
+      sec.appendChild(right);
+    });
+  }
+
+  // ----------------------------
+  // PARA VOCE + CTA CONTEXTUAL
+  // ----------------------------
+  function buildParaVoceSection() {
+    if (!isHome()) return;
+    if (document.getElementById('paraVoceSection')) return;
+
+    // Melhor posicao: antes de "Profissionais em Destaque".
+    // Se nao existir (por algum motivo), cai para categorias/videos.
+    const anchor = document.querySelector('.pros-section') || document.querySelector('.categories-section') || document.querySelector('.videos-container');
+    if (!anchor) return;
+
+    const sec = document.createElement('section');
+    sec.className = 'para-voce-section';
+    sec.id = 'paraVoceSection';
+
+    const historico = readJSON('doke_historico_busca', []);
+    const clicks = readJSON('doke_categorias_click', []);
+
+    const sugeridos = [...new Set([
+      ...clicks.slice(0, 6),
+      ...historico.slice(0, 6),
+      ...(window.__dokeTopCats || []).slice(0, 6),
+    ].filter(Boolean))].slice(0, 10);
+
+    const logado = getLogado();
+    const perfil = getPerfilLocal();
+    const eProf = perfil?.isProfissional === true;
+
+    let ctaTitle = 'Encontre o serviço ideal';
+    let ctaSub = 'Use as categorias e a busca para achar exatamente o que precisa.';
+    let ctaHref = 'busca.html';
+    let ctaLabel = 'Procurar agora';
+
+    if (!logado) {
+      ctaTitle = 'Entre para aproveitar melhor a Doke';
+      ctaSub = 'Salve buscas, veja recomendações e tenha uma experiência mais rápida.';
+      ctaHref = 'login.html';
+      ctaLabel = 'Entrar / Criar conta';
+    } else if (eProf) {
+      ctaTitle = 'Pronto para vender mais?';
+      ctaSub = 'Publique seu primeiro serviço e apareça no topo para clientes próximos.';
+      ctaHref = 'anunciar.html';
+      ctaLabel = 'Publicar serviço';
+    } else {
+      ctaTitle = 'Peça orçamento em 1 clique';
+      ctaSub = 'Entre em contato com profissionais e acompanhe tudo com segurança.';
+      ctaHref = 'explorar.html';
+      ctaLabel = 'Explorar profissionais';
+    }
+
+    sec.innerHTML = `
+      <div class="para-voce-inner">
+        <div class="pv-head">
+          <h2>Para você</h2>
+          <div class="pv-sub">Sugestões com base nas suas interações recentes</div>
+        </div>
+
+        <div class="pv-chips" id="pvChips">
+          ${sugeridos.length ? sugeridos.map(t => `<button type="button" class="pv-chip" data-q="${esc(t)}">${esc(t)}</button>`).join('') : `<div class="pv-empty">Sem histórico ainda. Clique em uma categoria para começar.</div>`}
+        </div>
+
+        <div class="pv-cta">
+          <div class="pv-cta-text">
+            <div class="pv-cta-title">${esc(ctaTitle)}</div>
+            <div class="pv-cta-sub">${esc(ctaSub)}</div>
+          </div>
+          <a class="pv-cta-btn" href="${ctaHref}">${esc(ctaLabel)}</a>
+        </div>
+      </div>
+    `;
+
+    anchor.parentNode.insertBefore(sec, anchor);
+
+    sec.querySelectorAll('.pv-chip').forEach((b) => {
+      b.addEventListener('click', () => {
+        const q = b.getAttribute('data-q') || '';
+        if (!q) return;
+        try { window.salvarBusca?.(q); } catch {}
+        window.location.href = `busca.html?q=${encodeURIComponent(q)}&src=para_voce`;
+      });
+    });
+  }
+
+  // ----------------------------
+  // BUSCA MAIS VIVA: autocomplete + pins
+  // ----------------------------
+  function esc(str) {
+    return String(str ?? '').replace(/[&<>"']/g, (s) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[s]));
+  }
+
+  function getPins() {
+    return readJSON('doke_busca_pins', []);
+  }
+
+  function togglePin(term) {
+    const pins = getPins();
+    const low = String(term).toLowerCase();
+    const exists = pins.some(x => String(x).toLowerCase() == low);
+    const next = exists ? pins.filter(x => String(x).toLowerCase() != low) : [term, ...pins];
+    writeJSON('doke_busca_pins', next.slice(0, 12));
+  }
+
+  function setupSmartSearch() {
+    const input = document.getElementById('inputBusca');
+    const dropdown = document.getElementById('buscaDropdown');
+    if (!input || !dropdown) return;
+
+    let box = document.getElementById('dokeSugestoes');
+    const histEl = document.getElementById('containerHistorico');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'dokeSugestoes';
+      dropdown.appendChild(box);
+    }
+    // ordem: hint -> historico -> sugestoes
+    try {
+      const hint = dropdown.querySelector('.busca-hint');
+      if (histEl && histEl.parentNode === dropdown) {
+        // garante historico logo apos o hint
+        if (hint && hint.nextElementSibling !== histEl) {
+          dropdown.insertBefore(histEl, hint.nextElementSibling);
+        }
+        // garante sugestoes depois do historico
+        if (box.previousElementSibling !== histEl) {
+          dropdown.insertBefore(box, histEl.nextElementSibling);
+        }
+      }
+    } catch {}
+
+    const termosPopulares = ['Eletricista', 'Pintor', 'Encanador', 'Diarista', 'Design', 'Aulas'];
+
+    function buildSuggestions(query) {
+      const q = String(query || '').trim().toLowerCase();
+      const pins = getPins();
+      const hist = readJSON('doke_historico_busca', []);
+      const cats = (window.__dokeTopCats || []).slice(0, 12);
+
+      const pool = [...new Set([...pins, ...cats, ...termosPopulares])].filter(Boolean);
+      let list = pool;
+      if (q) list = pool.filter(t => String(t).toLowerCase().includes(q));
+      list = list.slice(0, 7);
+
+      if (!list.length) {
+        box.innerHTML = '';
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="sug-title">Sugestões</div>
+        <div class="sug-list">
+          ${list.map(t => {
+            const pinned = pins.some(p => String(p).toLowerCase() === String(t).toLowerCase());
+            return `
+              <div class="sug-item" data-term="${esc(t)}">
+                <div class="sug-left">
+                  <span class="sug-dot"></span>
+                  <span class="sug-text">${esc(t)}</span>
+                </div>
+                <button class="sug-pin" type="button" aria-label="Fixar" data-pin="${pinned ? '1' : '0'}">${pinned ? 'Fixado' : 'Fixar'}</button>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      box.querySelectorAll('.sug-item').forEach((row) => {
+        const term = row.getAttribute('data-term') || '';
+        const pinBtn = row.querySelector('.sug-pin');
+
+        row.addEventListener('click', (e) => {
+          if (e.target === pinBtn) return;
+          try { window.salvarBusca?.(term); } catch {}
+          window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sugestao`;
+        });
+
+        pinBtn?.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          togglePin(term);
+          buildSuggestions(input.value);
+        });
+      });
+    }
+
+    input.addEventListener('input', () => buildSuggestions(input.value));
+    input.addEventListener('focus', () => buildSuggestions(input.value));
+  }
+
+  // ----------------------------
+  // INIT
+  // ----------------------------
+  document.addEventListener('DOMContentLoaded', () => {
+    // categorias
+    initCategoriasHome();
+
+    // para voce + CTA
+    buildParaVoceSection();
+
+    // busca viva
+    setupSmartSearch();
+
+    // profissionais: setas + drag + sem corte
+    addProsArrows();
+
+    // drag no carrossel de categorias tb
+    const catTrack = document.getElementById('categoriesCarousel');
+    if (catTrack) enableDragScroll(catTrack);
+  });
+})();
+/* ==== /DOKE: INDEX ENHANCEMENTS V2 ==== */
 
 /*************************************************
  * SUPABASE HELPER
@@ -8437,6 +8953,18 @@ async function carregarProfissionaisIndex() {
 
   destaqueEl.innerHTML = "";
   novosEl.innerHTML = "";
+
+  // skeleton (estado vazio bonito)
+  const proSkel = () => `
+    <div class="pro-card pro-skel" aria-hidden="true">
+      <div class="pro-avatar skel"></div>
+      <div class="pro-name skel"></div>
+      <div class="pro-role skel"></div>
+      <div class="btn-ver-perfil skel"></div>
+    </div>
+  `;
+  destaqueEl.innerHTML = Array.from({length:6}).map(proSkel).join("");
+  novosEl.innerHTML = Array.from({length:6}).map(proSkel).join("");
 
   const sb = await waitForSB();
   if (!sb) {
