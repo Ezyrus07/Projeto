@@ -60,6 +60,7 @@
             flex-direction: column;
             z-index: 10;
             height: 100%;
+            min-height: 0; /* importante para o scroll funcionar dentro do flex */
         }
 
         .lista-header {
@@ -101,6 +102,8 @@
             flex: 1;
             overflow-y: auto;
             background: #fff;
+            min-height: 0; /* permite a lista encolher e ativar o overflow */
+            overscroll-behavior: contain;
         }
 
         /* CARD DE PEDIDO */
@@ -130,6 +133,27 @@
         .badge-aceito { background: #e8f5e9; color: #2e7d32; }
         .badge-recusado { background: #ffebee; color: #c62828; }
 
+
+        /* Chip de status do pedido (Topo do chat) */
+        .chip-pedido-status{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:4px 10px;
+            border-radius:999px;
+            font-size:0.72rem;
+            font-weight:800;
+            text-transform:uppercase;
+            width:fit-content;
+            margin-top:6px;
+        }
+        .chip-pendente{ background:#fff3e0; color:#ef6c00; border:1px solid #ffe0b2; }
+        .chip-aceito{ background:#e8f5e9; color:#2e7d32; border:1px solid #c8e6c9; }
+        .chip-pago{ background:#e0f2f1; color:#00695c; border:1px solid #b2dfdb; }
+        .chip-finalizado{ background:#e8eaf6; color:#303f9f; border:1px solid #c5cae9; }
+        .chip-recusado{ background:#ffebee; color:#c62828; border:1px solid #ffcdd2; }
+        .chip-cancelado{ background:#ffebee; color:#c62828; border:1px solid #ffcdd2; }
+
         .ip-body h4 { margin: 0; font-size: 0.95rem; color: #111; font-weight: 700; }
         .ip-body p { margin: 2px 0 0 0; font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ip-date { font-size: 0.75rem; color: #999; text-align: right; margin-top: 4px; }
@@ -155,6 +179,7 @@
             flex-direction: column;
             height: 100%;
             overflow: hidden;
+            min-height: 0; /* importante para o scroll interno do chat */
         }
 
         #chat-placeholder {
@@ -184,6 +209,7 @@
             display: flex;
             flex-direction: column;
             gap: 8px;
+            min-height: 0; /* importante para o scroll funcionar dentro do flex */
             
             /* Melhoria visual para o scrollbar */
             scrollbar-width: thin; 
@@ -203,6 +229,13 @@
         .msg-hora { font-size: 0.7rem; color: #999; float: right; margin-top: 5px; margin-left: 10px; }
 
         .btn-voltar-mobile { display: none; }
+
+
+        /* Fix flex overflow (texto vertical/colado) */
+        .coluna-chat, .coluna-lista, .chat-header, .ip-body { min-width: 0; }
+        #chatNome { max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ip-user span { display:block; max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ip-sub { margin: 6px 0 0; color: #64748b; font-size: 0.82rem; line-height: 1.25; }
 
         @media (max-width: 1024px) {
             .navbar-desktop { display: none; }
@@ -843,6 +876,68 @@
         }
         .scroll-down.show{ display: grid; }
         .scroll-down i{ font-size: 1.3rem; color: var(--cor0); }
+        /* =====================
+           POLIMENTO VISUAL DOS CARDS (versão mais bonita, sem mexer no layout)
+           ===================== */
+        .coluna-lista { background: #f6f7f8; }
+
+        .lista-header { background: #ffffff; }
+
+        .item-pedido, .item-conversa {
+            background: #fff;
+            border: 1px solid #eceff1;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.06);
+            margin: 10px 14px;
+        }
+
+        .item-pedido:hover, .item-conversa:hover {
+            transform: translateY(-1px);
+            border-color: rgba(11, 119, 104, 0.25);
+            box-shadow: 0 10px 28px rgba(0,0,0,0.08);
+        }
+
+        .tag-orcamento {
+            background: linear-gradient(135deg, rgba(11,119,104,0.12), rgba(42,95,144,0.12));
+            color: #0b7768;
+            border: 1px solid rgba(11,119,104,0.18);
+            border-radius: 999px;
+            padding: 3px 10px;
+            font-weight: 800;
+            letter-spacing: 0.4px;
+        }
+
+        .ip-badge {
+            border-radius: 999px;
+            padding: 4px 10px;
+            font-size: 0.65rem;
+        }
+
+        .ip-body h4 { margin: 2px 0 0 0; }
+
+        .btn-detalhes-card {
+            border-radius: 999px;
+            padding: 8px 12px;
+            border: 1px solid #e7eef3;
+            background: #f7fafc;
+            font-weight: 800;
+        }
+        .btn-detalhes-card:hover { background: #eef6ff; border-color: rgba(42,95,144,0.25); }
+
+        .btn-cancelar-discreto {
+            border-radius: 999px;
+            padding: 10px 12px;
+            border: 1px solid rgba(231,76,60,0.35);
+            background: #fff;
+            color: #e74c3c;
+            font-weight: 900;
+        }
+        .btn-cancelar-discreto:hover { background: #e74c3c; color: #fff; }
+
+        @media (max-width: 520px){
+            .item-pedido, .item-conversa { margin: 8px 10px; }
+            .mensagens-body { padding: 16px 14px; }
+        }
+
     </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
@@ -885,7 +980,7 @@
             </div>
             
             <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
 
@@ -934,6 +1029,7 @@
                         <div style="flex:1;">
                             <h4 id="chatNome">Usuário</h4>
                             <span id="chatStatus">Offline</span>
+                            <div id="chipPedidoStatus" class="chip-pedido-status chip-pendente" style="display:none;">Pedido em espera</div>
                         </div>
                         
                         <div id="container-acao-header" style="display: flex; align-items: center;"></div>
@@ -1072,8 +1168,9 @@
             width: 100%; height: 100%; background: rgba(0,0,0,0.5);
             backdrop-filter: blur(4px); justify-content: center; align-items: center;
             opacity: 0; transition: opacity 0.2s;
+            pointer-events: none;
         }
-        .doke-overlay.active { display: flex; opacity: 1; }
+        .doke-overlay.active { display: flex; opacity: 1; pointer-events: auto; }
         
         .doke-modal-box {
             background: #fff; width: 90%; max-width: 400px; border-radius: 16px;
@@ -1126,23 +1223,19 @@
     });
 
     // Funções Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
-    window.dokeAlert = (msg, title = "Aviso") => {
-        return new Promise(resolve => {
-            setupModal(title, msg, 'alert', resolve);
-        });
-    };
-
-    window.dokeConfirm = (msg, title = "Confirmação", type = 'normal') => {
-        return new Promise(resolve => {
-            setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve);
-        });
-    };
-
-    window.dokePrompt = (msg, placeholder = "", title = "Informação") => {
-        return new Promise(resolve => {
-            setupModal(title, msg, 'prompt', resolve, placeholder);
-        });
-    };
+    // IMPORTANT: script.js (defer) também define window.dokeAlert/Confirm/Prompt.
+    // Para evitar conflito (modal some e fica travando a tela), nós reatribuímos
+    // as funções APÓS o DOMContentLoaded, garantindo que esta versão seja a final.
+    function bindDokeModalAPI(){
+        window.dokeAlert = (msg, title = "Aviso") => new Promise(resolve => setupModal(title, msg, 'alert', resolve));
+        window.dokeConfirm = (msg, title = "Confirmação", type = 'normal') => new Promise(resolve => setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve));
+        window.dokePrompt = (msg, placeholder = "", title = "Informação") => new Promise(resolve => setupModal(title, msg, 'prompt', resolve, placeholder));
+    }
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindDokeModalAPI);
+    } else {
+        bindDokeModalAPI();
+    }
 
     function setupModal(title, text, type, resolveCallback, placeholder = "") {
         const overlay = document.getElementById('dokeGlobalModal');
@@ -1283,7 +1376,8 @@
             btns[0].classList.add('active');
             document.getElementById('lista-pedidos').style.display = 'block';
             document.getElementById('lista-conversas').style.display = 'none';
-            carregarListaPedidos(); 
+            carregarListaPedidos();
+            abrirChatDeepLink(); 
         } else {
             btns[1].classList.add('active');
             document.getElementById('lista-pedidos').style.display = 'none';
@@ -1305,9 +1399,12 @@
             if (!docSnap.exists()) return;
             const p = docSnap.data();
 
-            let htmlQuiz = "";
-            if (p.formularioRespostas && p.formularioRespostas.length > 0) {
-                p.formularioRespostas.forEach(r => {
+            
+                    atualizarChipPedido(p.status);
+let htmlQuiz = "";
+            if ((p.formularioRespostas && p.formularioRespostas.length > 0) || (p.respostasTriagem && p.respostasTriagem.length > 0)) {
+                const respostas = (p.formularioRespostas && p.formularioRespostas.length) ? p.formularioRespostas : p.respostasTriagem;
+                respostas.forEach(r => {
                     htmlQuiz += `<div style="margin-top:10px; background:#f9f9f9; padding:12px; border-radius:10px;">
                         <div style="font-size:0.65rem; color:var(--cor0); font-weight:800; margin-bottom:3px;">${r.pergunta}</div>
                         <div style="font-size:0.9rem; color:#444;">${r.resposta}</div>
@@ -1336,30 +1433,100 @@
     window.fecharModalDetalhes = () => document.getElementById('modalOrcamento').style.display = 'none';
 
     // Ações de Pedido (Agora usando DokePrompt e DokeConfirm)
-    window.prepararRecusa = async (id) => { 
-        const motivo = await window.dokePrompt("Por favor, informe o motivo da recusa:", "Ex: Indisponibilidade de agenda...", "Recusar Pedido");
-        if(motivo) {
-            try {
-                await updateDoc(doc(db, "pedidos", id), { status: 'recusado', motivoRecusa: motivo });
-                window.dokeAlert("Pedido recusado.");
-                carregarListaPedidos(); 
-            } catch (e) { console.error(e); }
-        }
+    window.criarNotificacaoPedido = async function(paraUid, acao, pedidoId) {
+        try {
+            if(!paraUid || !pedidoId) return;
+            const perfil = (function(){
+                const p = JSON.parse(localStorage.getItem('doke_usuario_perfil')||'{}');
+                const nome = p.nome || 'Usuário';
+                const raw = p.user || '';
+                const user = raw ? (raw.startsWith('@')? raw : '@'+raw) : '@usuario';
+                return { nome, user, foto: p.foto || 'https://placehold.co/50' };
+            })();
+            await addDoc(collection(db, 'notificacoes'), {
+                parauid: paraUid,
+                deuid: currentUserUid,
+                denome: perfil.nome,
+                deuser: perfil.user,
+                defoto: perfil.foto,
+                acao: acao,
+                postid: pedidoId,
+                posttipo: 'pedido',
+                postfonte: 'supabase',
+                lida: false,
+                createdat: new Date().toISOString(),
+                link: `chat.html?chatId=${pedidoId}`
+            });
+        } catch(e) { /* ignora */ }
+    };
+
+    // Ações de Pedido (Profissional: recusa com motivo)
+    window.prepararRecusa = async (id) => {
+        const motivo = await window.dokePrompt('Por favor, informe o motivo da recusa:', 'Ex: Indisponibilidade de agenda...', 'Recusar Pedido');
+        if(!motivo) return;
+        try {
+            const snap = await getDoc(doc(db, 'pedidos', id));
+            const p = snap.exists() ? snap.data() : {};
+            await updateDoc(doc(db, 'pedidos', id), {
+                status: 'recusado',
+                motivoRecusa: motivo
+            });
+            await window.criarNotificacaoPedido(p.deUid, 'pedido_recusado', id);
+            window.dokeAlert('Pedido recusado.');
+            carregarListaPedidos();
+        } catch (e) { console.error(e); window.dokeAlert('Erro ao recusar.'); }
     };
 
     window.aceitarPedidoProfissional = async (id) => {
-        if(await window.dokeConfirm("Deseja aceitar este pedido e iniciar o atendimento?", "Aceitar")) {
-            try { await updateDoc(doc(db, "pedidos", id), { status: 'aceito' }); carregarListaPedidos(); } catch (e) { console.error(e); }
-        }
+        if(!await window.dokeConfirm('Deseja aceitar este pedido e iniciar o atendimento?', 'Aceitar')) return;
+        try {
+            const snap = await getDoc(doc(db, 'pedidos', id));
+            const p = snap.exists() ? snap.data() : {};
+            await updateDoc(doc(db, 'pedidos', id), {
+                status: 'aceito'
+            });
+            await window.criarNotificacaoPedido(p.deUid, 'pedido_aceito', id);
+            window.dokeAlert('Pedido aceito.');
+            carregarListaPedidos();
+            // Abre chat automaticamente
+            const uidOutro = p.deUid;
+            if(uidOutro) {
+                const uDoc = await getDoc(doc(db, 'usuarios', uidOutro));
+                const dU = uDoc.exists() ? uDoc.data() : {};
+                abrirChat(id, uidOutro, dU.user || 'Cliente', dU.foto || '', 'pedidos', 'aceito');
+            }
+        } catch (e) { console.error(e); window.dokeAlert('Erro ao aceitar.'); }
     };
 
     window.prepararCancelamento = async (id) => {
-        if(await window.dokeConfirm("Tem certeza que deseja cancelar esta solicitação?", "Cancelar", "danger")) {
-            try { await updateDoc(doc(db, "pedidos", id), { status: 'cancelado' }); carregarListaPedidos(); } catch (e) { console.error(e); }
-        }
+        if(!await window.dokeConfirm('Tem certeza que deseja cancelar esta solicitação?', 'Cancelar', 'danger')) return;
+        try {
+            const snap = await getDoc(doc(db, 'pedidos', id));
+            const p = snap.exists() ? snap.data() : {};
+            await updateDoc(doc(db, 'pedidos', id), {
+                status: 'cancelado'
+            });
+            await window.criarNotificacaoPedido(p.paraUid, 'pedido_cancelado', id);
+            window.dokeAlert('Solicitação cancelada.');
+            carregarListaPedidos();
+        } catch (e) { console.error(e); window.dokeAlert('Erro ao cancelar.'); }
     };
 
-    window.apagarDocumentoPedido = async function(id) {
+    
+
+    // Ações rápidas no topo do chat (apenas quando o pedido estiver pendente e eu for o profissional)
+    window.acaoPedido = async function(acao){
+        if(!chatIdAtual) return;
+        try {
+            const snap = await getDoc(doc(db, 'pedidos', chatIdAtual));
+            const p = snap.exists() ? snap.data() : {};
+            const souProfissional = (p.paraUid === currentUserUid);
+            if(!souProfissional) return;
+            if(acao === 'aceito') return await window.aceitarPedidoProfissional(chatIdAtual);
+            if(acao === 'recusado') return await window.prepararRecusa(chatIdAtual);
+        } catch(e){ console.error(e); }
+    };
+window.apagarDocumentoPedido = async function(id) {
         if (await window.dokeConfirm("Remover este registro permanentemente do histórico?", "Apagar", "danger")) {
             try { await deleteDoc(doc(db, "pedidos", id)); carregarListaPedidos(); } catch (e) { window.dokeAlert("Erro ao apagar."); }
         }
@@ -1426,7 +1593,17 @@ window.liberarPagamento = async (id) => {
             const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
 
             container.innerHTML = "";
-            const itens = [...s1.docs.map(d=>({d, papel:'cliente'})), ...s2.docs.map(d=>({d, papel:'profissional'}))];
+            const itensRaw = [...s1.docs.map(d=>({d, papel:'cliente'})), ...s2.docs.map(d=>({d, papel:'profissional'}))];
+            const map = new Map();
+            for (const it of itensRaw) {
+                const pid = it?.d?.id;
+                if (!pid) continue;
+                // Preferir "cliente" quando duplicar, pois é a visão mais comum para o usuário final.
+                if (!map.has(pid) || (map.get(pid).papel !== 'cliente' && it.papel === 'cliente')) {
+                    map.set(pid, it);
+                }
+            }
+            const itens = Array.from(map.values());
 
             if(itens.length === 0) { container.innerHTML = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido.</div>`; return; }
 
@@ -1484,12 +1661,26 @@ window.liberarPagamento = async (id) => {
                         </button>`;
                 }
 
+
+                // Mensagem curta (cliente/profissional)
+                let subMsg = "";
+                if (p.status === 'pendente') {
+                    subMsg = (item.papel === 'cliente')
+                        ? '<div class=\"ip-sub\">Aguardando resposta do profissional.</div>'
+                        : '<div class=\"ip-sub\">Novo pedido. Analise e aceite para liberar o chat.</div>';
+                } else if (p.status === 'recusado' && item.papel === 'cliente') {
+                    subMsg = '<div class=\"ip-sub\">Pedido recusado. Veja o motivo em “Mais detalhes”.</div>';
+                } else if (p.status === 'aceito' && item.papel === 'cliente') {
+                    subMsg = '<div class=\"ip-sub\">Chat liberado. Você já pode negociar com o profissional.</div>';
+                }
+
                 container.insertAdjacentHTML('beforeend', `
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
                         <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
                         <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
                             <h4>${p.servicoReferencia}</h4>
+                            ${subMsg}
                             <button class="btn-detalhes-card" onclick="event.stopPropagation(); verDetalhesOrcamento('${id}')">Mais detalhes</button>
                             ${infoSaldo} ${acoesHtml}
                         </div>
@@ -1551,8 +1742,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     // Lógica de bloqueio do chat
                     if (p.status === 'pendente') {
                         chatFooter.style.display = 'none'; 
-                        if (currentUserUid === p.paraUid) mostrarAvisoBloqueio("Aceite o pedido para liberar o chat.");
-                        else mostrarAvisoBloqueio("Aguardando aceite do profissional.");
+                        if (currentUserUid === p.paraUid) mostrarAvisoBloqueio("Pedido em espera. Aceite o pedido para liberar o chat.");
+                        else mostrarAvisoBloqueio("Pedido em espera. Aguardando aceite do profissional.");
                     } else if (['recusado', 'cancelado'].includes(p.status)) {
                         chatFooter.style.display = 'none'; 
                         mostrarAvisoBloqueio("Este pedido foi encerrado.");
@@ -1624,6 +1815,29 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         colecaoAtual = colecao; 
         carregarMensagens(colecao, idDoc);
     };
+
+
+
+    function atualizarChipPedido(status) {
+        const chip = document.getElementById('chipPedidoStatus');
+        if (!chip) return;
+
+        const map = {
+            'pendente': { text: 'Pedido em espera', cls: 'chip-pendente' },
+            'aceito': { text: 'Aceito', cls: 'chip-aceito' },
+            'pago': { text: 'Pago (retido)', cls: 'chip-pago' },
+            'finalizado': { text: 'Finalizado', cls: 'chip-finalizado' },
+            'recusado': { text: 'Recusado', cls: 'chip-recusado' },
+            'cancelado': { text: 'Cancelado', cls: 'chip-cancelado' },
+        };
+
+        const s = String(status || 'pendente').toLowerCase();
+        const data = map[s] || map['pendente'];
+
+        chip.className = 'chip-pedido-status ' + data.cls;
+        chip.textContent = data.text;
+        chip.style.display = 'inline-flex';
+    }
 
     function mostrarAvisoBloqueio(texto) {
         const chatBox = document.getElementById('box-conversa-real');
@@ -1795,10 +2009,34 @@ window.gerarPagamento = async function() {
 
     window.verificarEnter = (e) => { if(e.key === 'Enter') window.enviarMensagemTexto(); };
 
+
+
+    async function abrirChatDeepLink() {
+        const params = new URLSearchParams(window.location.search);
+        const chatId = params.get('chatId') || params.get('pedidoId');
+        if (!chatId || !currentUserUid) return;
+
+        try {
+            const pSnap = await getDoc(doc(db, 'pedidos', chatId));
+            if (!pSnap.exists()) return;
+            const p = pSnap.data();
+
+            // Descobre o outro usuário
+            const outroUid = (p.deUid === currentUserUid) ? p.paraUid : p.deUid;
+
+            // Abre como pedido (isso vai mostrar o status e travar/destravar o chat)
+            await window.abrirChat(chatId, outroUid, '', '', 'pedidos', p.status || '');
+        } catch (e) {
+            console.error('DeepLink chatId erro:', e);
+        }
+    }
+
+
     onAuthStateChanged(auth, (u) => { 
         if (u) { 
-            currentUserUid = u.uid; 
-            carregarListaPedidos(); 
+            currentUserUid = u.uid;
+            carregarListaPedidos();
+            abrirChatDeepLink(); 
         } else { 
             window.location.href = "login.html"; 
         } 

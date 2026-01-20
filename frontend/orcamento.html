@@ -27,6 +27,32 @@
     margin: 0 auto;
 }
 
+/* Espaçamento entre o Hero e o conteúdo */
+.orc-top-card{ margin-bottom: 22px; }
+
+/* Inputs do orçamento: foco/hover mais discreto (remove o "verde" forte do :focus-visible global) */
+.input-premium,
+.select-premium,
+.area-texto{
+    transition: border-color .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.input-premium:hover,
+.select-premium:hover,
+.area-texto:hover{ border-color:#cfd8dc; }
+
+.input-premium:focus,
+.select-premium:focus,
+.area-texto:focus{
+    outline: none;
+    border-color: var(--cor2);
+    background: #fff;
+    box-shadow: 0 0 0 3px rgba(42,95,144,0.18);
+}
+
+.input-premium:focus-visible,
+.select-premium:focus-visible,
+.area-texto:focus-visible{ outline: none; box-shadow: 0 0 0 3px rgba(42,95,144,0.18); }
+
 /* --- ESTILO DOS CARDS BRANCOS --- */
 .card-branco {
     background: #fff;
@@ -177,7 +203,159 @@
         margin-bottom: 25px;
     }
     .grid-duplo { grid-template-columns: 1fr; }
-}</style>
+}
+
+/* --- TOP HEADER (PASSOS) --- */
+.orc-top {
+    grid-column: 1 / -1;
+    margin-bottom: 5px;
+}
+.orc-top-card{
+    /* Hero no padrão do site (similar ao exemplo de Comunidades) */
+    background:
+        radial-gradient(900px 360px at 86% 18%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.0) 60%),
+        radial-gradient(520px 520px at 100% 15%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 55%),
+        linear-gradient(135deg, #244e73 0%, #0f3e56 55%, #0b7768 120%);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 22px;
+    padding: 28px 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 18px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+}
+.orc-top-title{
+    margin:0;
+    font-size: 2.2rem;
+    color:#fff;
+    font-weight: 900;
+    letter-spacing: -0.02em;
+}
+.orc-top-sub{
+    margin:10px 0 0;
+    color: rgba(255,255,255,0.86);
+    font-size: 1.02rem;
+    font-weight: 600;
+    max-width: 720px;
+    line-height: 1.35;
+}
+.orc-steps{
+    display:flex;
+    gap:10px;
+    flex-wrap: wrap;
+    justify-content:flex-end;
+}
+.orc-step{
+    background:#fff;
+    border:1px solid rgba(0,0,0,0.06);
+    border-radius: 999px;
+    padding: 6px 10px;
+    font-size: 0.78rem;
+    color:#444;
+    font-weight: 700;
+    display:flex;
+    align-items:center;
+    gap:6px;
+}
+.orc-step i{ color: var(--cor0); font-size: 1rem; }
+
+/* --- MODAL: PEDIDO ENVIADO / AGUARDANDO ACEITE --- */
+.orc-modal-overlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.55);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 99999;
+}
+.orc-modal{
+    width: 100%;
+    max-width: 440px;
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.30);
+    overflow: hidden;
+}
+.orc-modal-header{
+    padding: 18px 20px;
+    background: #f7faf9;
+    border-bottom: 1px solid #eef2f1;
+    display:flex;
+    align-items:center;
+    gap: 12px;
+}
+.orc-modal-icon{
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    background: rgba(11,119,104,0.12);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color: var(--cor0);
+    flex-shrink: 0;
+}
+.orc-modal-icon i{ font-size: 1.6rem; }
+.orc-modal-title{ margin:0; font-size: 1.05rem; color:#111; font-weight: 900; }
+.orc-modal-body{ padding: 18px 20px 12px; }
+.orc-modal-body p{ margin: 0 0 12px; color:#555; line-height: 1.45; }
+.orc-wait{
+    display:flex;
+    gap: 12px;
+    align-items:flex-start;
+    background: #fff7e6;
+    border: 1px solid #ffe8b3;
+    border-radius: 14px;
+    padding: 12px;
+}
+.orc-wait i{ color:#ef6c00; font-size: 1.3rem; margin-top: 2px; }
+.orc-wait strong{ display:block; color:#7a3d00; }
+.orc-wait span{ display:block; color:#7a3d00; font-size:0.9rem; margin-top:2px; }
+.orc-modal-footer{
+    padding: 14px 20px 18px;
+    display:flex;
+    gap: 10px;
+}
+.orc-btn{
+    flex: 1;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: none;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 0.95rem;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap: 8px;
+}
+.orc-btn-primary{ background: var(--cor0); color:#fff; box-shadow: 0 8px 18px rgba(11,119,104,0.25); }
+.orc-btn-primary:hover{ filter: brightness(0.98); transform: translateY(-1px); }
+.orc-btn-ghost{ background:#fff; border: 1px solid #e7e7e7; color:#444; }
+.orc-btn-ghost:hover{ background:#f7f7f7; }
+
+@media (max-width: 900px){
+    .orc-top-card{
+    /* Hero no padrão do site (similar ao exemplo de Comunidades) */
+    background:
+        radial-gradient(900px 360px at 86% 18%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.0) 60%),
+        radial-gradient(520px 520px at 100% 15%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 55%),
+        linear-gradient(135deg, #244e73 0%, #0f3e56 55%, #0b7768 120%);
+    border: 1px solid rgba(255,255,255,0.10);
+    border-radius: 22px;
+    padding: 28px 30px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap: 18px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.18);
+}
+    .orc-steps{ justify-content:flex-start; }
+}
+</style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 </head>
@@ -261,7 +439,7 @@
             </div>
             
             <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo">NOVO</span></a>
+            <a href="comunidade.html">Comunidades <span class="badge-novo1  ">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
 
@@ -274,6 +452,16 @@
 
     <main class="main-orcamento">
         
+        <div class="orc-top">
+            <div class="orc-top-card">
+                <div>
+                    <h1 class="orc-top-title">Solicitar orçamento</h1>
+                    <p class="orc-top-sub">Envie os detalhes e aguarde o profissional aceitar para liberar o chat.</p>
+                </div>
+            </div>
+        </div>
+        </div>
+
         <div class="layout-orcamento">
             
             <section class="form-section">
@@ -292,7 +480,7 @@
                             </div>
                     </div>
                     <div class="input-group" style="margin-top: 20px;">
-                        <label>Descrição detalhada</label>
+                        <label>Descrição detalhada(Opcional)</label>
                         <textarea class="input-premium area-texto" id="descricao-pedido" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
                     </div>
 
@@ -305,6 +493,11 @@
                                 <option>Para o próximo mês</option>
                                 <option>Data específica</option>
                             </select>
+
+                            <div id="wrap-data-especifica" style="display:none; margin-top:12px;">
+                                <label style="margin-bottom:8px; font-weight:600; color:#555;">Qual dia?</label>
+                                <input type="date" class="input-premium" id="data-especifica">
+                            </div>
                         </div>
                         <div class="input-group">
                             <label>Turno de preferência</label>
@@ -319,16 +512,42 @@
 
                 <div class="card-branco" id="card-localizacao">
                     <h3 class="titulo-sessao">2. Localização</h3>
+
                     <div class="input-group">
                         <label>CEP do serviço</label>
                         <div style="display:flex; gap:10px;">
                             <input type="text" id="cepOrcamento" class="input-premium" placeholder="00000-000">
-                            <button class="btn-outline" onclick="buscarEndereco()">Buscar</button>
+                            <button class="btn-outline" type="button" onclick="buscarEndereco()">Buscar</button>
                         </div>
                     </div>
+
+                    <div class="grid-duplo">
+                        <div class="input-group">
+                            <label>Endereço</label>
+                            <input type="text" id="endereco-completo" class="input-premium" placeholder="Rua, bairro - cidade">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Número</label>
+                            <input type="text" id="numero-residencia" class="input-premium" placeholder="Ex: 120">
+                        </div>
+                    </div>
+
+                    <div class="grid-duplo">
+                        <div class="input-group">
+                            <label>Complemento (opcional)</label>
+                            <input type="text" id="complemento-residencia" class="input-premium" placeholder="Apto, bloco, casa, etc">
+                        </div>
+
+                        <div class="input-group">
+                            <label>Ponto de referência (opcional)</label>
+                            <input type="text" id="referencia-residencia" class="input-premium" placeholder="Ex: perto do mercado">
+                        </div>
+                    </div>
+
                     <div class="input-group">
-                        <label>Endereço completo</label>
-                        <input type="text" id="endereco-completo" class="input-premium" placeholder="Rua, Número, Complemento">
+                        <label>Mais informações (opcional)</label>
+                        <textarea id="info-local" class="input-premium area-texto" placeholder="Ex: portão azul, interfone não funciona, falar com o porteiro..." style="min-height:90px;"></textarea>
                     </div>
                 </div>
 
@@ -465,6 +684,7 @@
 
         // Configura o botão de enviar
         configurarBotaoEnviar();
+        configurarCampoDataEspecifica();
     });
 
     // --- FUNÇÃO PARA DESENHAR AS PERGUNTAS NA TELA ---
@@ -568,6 +788,25 @@
                 }
             });
 
+
+            // Validação: Data específica
+            const selPQ = document.getElementById('para-quando');
+            const pqVal = selPQ ? selPQ.value : "";
+            const isEspecifica = String(pqVal).toLowerCase().includes('data específica') || String(pqVal).toLowerCase().includes('data especifica');
+            if (isEspecifica) {
+                const d = document.getElementById('data-especifica')?.value;
+                if (!d) { alert('Selecione o dia para a data específica.'); return; }
+            }
+
+            // Validação: Localização (somente quando presencial/ambos)
+            const precisaLoc = !!window.__orc_precisa_localizacao;
+            if (precisaLoc) {
+                const cep = (document.getElementById('cepOrcamento')?.value || '').trim();
+                const end = (document.getElementById('endereco-completo')?.value || '').trim();
+                const num = (document.getElementById('numero-residencia')?.value || '').trim();
+                if (!cep || !end || !num) { alert('Preencha CEP, endereço e número do local do serviço.'); return; }
+            }
+
             // Feedback Visual
             const textoOriginal = novoBtn.innerHTML;
             novoBtn.innerHTML = "Enviando...";
@@ -581,14 +820,46 @@
                     deUid: user.uid,
                     paraUid: paraUid,
                     servicoReferencia: titulo,
-                    mensagemInicial: descricao,
-                    paraQuando: document.getElementById('para-quando').value,
+                    mensagemInicial: (function(){
+                        const precisaLoc = !!window.__orc_precisa_localizacao;
+                        if (!precisaLoc) return descricao;
+
+                        const cep = (document.getElementById('cepOrcamento')?.value || '').trim();
+                        const end = (document.getElementById('endereco-completo')?.value || '').trim();
+                        const num = (document.getElementById('numero-residencia')?.value || '').trim();
+                        const comp = (document.getElementById('complemento-residencia')?.value || '').trim();
+                        const ref = (document.getElementById('referencia-residencia')?.value || '').trim();
+                        const info = (document.getElementById('info-local')?.value || '').trim();
+
+                        let loc = `${end}, Nº ${num}`;
+                        if (comp) loc += `, ${comp}`;
+                        if (cep) loc += ` (CEP ${cep})`;
+
+                        let extra = '';
+                        if (ref) extra += `
+Ponto de referência: ${ref}`;
+                        if (info) extra += `
+Mais informações: ${info}`;
+
+                        return `${descricao}
+
+Local do serviço: ${loc}${extra}`;
+                    })(),
+                    // Para quando (se for data específica, inclui o dia escolhido)
+                    paraQuando: (function(){
+                        const sel = document.getElementById('para-quando');
+                        const v = sel ? sel.value : '';
+                        const isEspecifica = String(v).toLowerCase().includes('data específica') || String(v).toLowerCase().includes('data especifica');
+                        if (!isEspecifica) return v;
+                        const d = document.getElementById('data-especifica')?.value;
+                        return d ? (`Data específica: ${formatarDataBR(d)}`) : v;
+                    })(),
                     turno: document.getElementById('turno').value,
                     
                     // AQUI VÃO AS RESPOSTAS DO FORMULÁRIO
                     respostasTriagem: respostasTriagem,
                     
-                    anexos: [], 
+                    // anexos: removido (a coluna pode não existir no Supabase)
                     clienteNome: perfil.nome || "Cliente",
                     clienteFoto: perfil.foto || "https://i.pravatar.cc/150",
                     status: "pendente",
@@ -600,7 +871,7 @@
 
                 // Sucesso
                 localStorage.setItem('doke_pedido_enviado', 'true');
-                window.location.href = `chat.html?chatId=${docRef.id}`;
+                mostrarModalPedidoEnviado(docRef.id);
 
             } catch (erro) {
                 console.error("❌ ERRO FATAL:", erro);
@@ -610,6 +881,48 @@
             }
         });
     }
+
+
+
+    function formatarDataBR(yyyy_mm_dd){
+        if (!yyyy_mm_dd) return "";
+        const parts = String(yyyy_mm_dd).split("-");
+        if (parts.length !== 3) return yyyy_mm_dd;
+        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+    }
+
+    function configurarCampoDataEspecifica(){
+        const sel = document.getElementById('para-quando');
+        const wrap = document.getElementById('wrap-data-especifica');
+        const inp = document.getElementById('data-especifica');
+        if (!sel || !wrap || !inp) return;
+
+        const atualizar = () => {
+            const v = String(sel.value || "").toLowerCase();
+            const isEspecifica = v.includes('data específica') || v.includes('data especifica');
+            wrap.style.display = isEspecifica ? 'block' : 'none';
+            if (!isEspecifica) inp.value = "";
+        };
+
+        sel.addEventListener('change', atualizar);
+        atualizar();
+    }
+
+    // --- MODAL DE SUCESSO (AGUARDANDO ACEITE) ---
+    function mostrarModalPedidoEnviado(pedidoId) {
+        const modal = document.getElementById('modalPedidoEnviado');
+        const btnAbrir = document.getElementById('btnIrChatDireto');
+        if (btnAbrir) btnAbrir.href = `chat.html?chatId=${pedidoId}`;
+
+        if (modal) {
+            modal.style.display = 'flex';
+            // Fechar clicando fora do card
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.style.display = 'none';
+            }, { once: true });
+        }
+    }
+
 
     // --- FUNÇÕES VISUAIS E HELPERS ---
 
@@ -621,11 +934,38 @@
         if(document.getElementById('imgPrestadorResumo'))
             document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
         
-        if(dados.stats) {
-            if(document.getElementById('notaPrestadorResumo')) 
-                document.getElementById('notaPrestadorResumo').innerText = dados.stats.media || "Novo";
-            if(document.getElementById('jobsPrestadorResumo')) 
-                document.getElementById('jobsPrestadorResumo').innerText = dados.stats.jobs || "0";
+        // Avaliação: evita "[object Object]" quando o campo vem como objeto (migração/serialização)
+        const stats = dados.stats || {};
+
+        const numFromAny = (v) => {
+            if (typeof v === 'number' && Number.isFinite(v)) return v;
+            if (typeof v === 'string') {
+                const n = Number(v.replace(',', '.'));
+                return Number.isFinite(n) ? n : null;
+            }
+            if (v && typeof v === 'object') {
+                // tenta chaves comuns
+                for (const k of ['media','value','avg','average','nota']) {
+                    if (v[k] !== undefined) return numFromAny(v[k]);
+                }
+            }
+            return null;
+        };
+
+        const totalAval = numFromAny(stats.avaliacoes) ?? numFromAny(stats.total) ?? numFromAny(stats.count) ?? 0;
+        const media = numFromAny(stats.media) ?? numFromAny(stats.nota) ?? null;
+
+        if (document.getElementById('notaPrestadorResumo')) {
+            if (!totalAval || !media) {
+                document.getElementById('notaPrestadorResumo').innerText = 'Novo (0)';
+            } else {
+                document.getElementById('notaPrestadorResumo').innerText = `${media.toFixed(1)} (${totalAval})`;
+            }
+        }
+
+        if (document.getElementById('jobsPrestadorResumo')) {
+            const jobs = numFromAny(stats.jobs) ?? numFromAny(stats.servicos) ?? 0;
+            document.getElementById('jobsPrestadorResumo').innerText = String(jobs);
         }
     }
 
@@ -633,15 +973,35 @@
         const cardLoc = document.getElementById('card-localizacao');
         const inputCep = document.getElementById('cepOrcamento');
         const inputEnd = document.getElementById('endereco-completo');
+        const inputNum = document.getElementById('numero-residencia');
+        const inputComp = document.getElementById('complemento-residencia');
+        const inputRef = document.getElementById('referencia-residencia');
+        const inputInfo = document.getElementById('info-local');
 
         const modo = String(anuncio.modo_atend || "").toLowerCase().trim();
-        
-        if (modo === 'online' || modo.includes('remoto')) {
+
+        const isOnline = (modo === 'online' || modo.includes('remoto') || modo.includes('online'));
+        const isPresencialOuAmbos = (modo.includes('presencial') || modo.includes('presen') || modo.includes('ambos') || modo.includes('hibr'));
+
+        // Regra: localização somente quando for presencial ou ambos. Se o modo vier vazio/desconhecido, mantém a localização visível.
+        const precisaLocalizacao = isOnline ? false : (isPresencialOuAmbos || !modo);
+
+        window.__orc_precisa_localizacao = !!precisaLocalizacao;
+        window.__orc_modo_atend = modo;
+
+        if (!precisaLocalizacao) {
             if(cardLoc) cardLoc.style.display = 'none';
-            if(inputCep) { inputCep.removeAttribute('required'); inputCep.value = ""; }
-            if(inputEnd) { inputEnd.removeAttribute('required'); inputEnd.value = ""; }
+            for (const el of [inputCep, inputEnd, inputNum]) {
+                if (el) { el.removeAttribute('required'); el.value = ""; }
+            }
+            for (const el of [inputComp, inputRef, inputInfo]) {
+                if (el) el.value = "";
+            }
         } else {
             if(cardLoc) cardLoc.style.display = 'block';
+            if (inputCep) inputCep.setAttribute('required', 'required');
+            if (inputEnd) inputEnd.setAttribute('required', 'required');
+            if (inputNum) inputNum.setAttribute('required', 'required');
         }
     }
 
@@ -666,5 +1026,34 @@
         }
     }
 </script>
+
+
+<!-- Modal: Pedido enviado / aguardando aceite -->
+<div class="orc-modal-overlay" id="modalPedidoEnviado" role="dialog" aria-modal="true" aria-labelledby="orcModalTitle">
+    <div class="orc-modal">
+        <div class="orc-modal-header">
+            <div class="orc-modal-icon"><i class='bx bx-check-circle'></i></div>
+            <div>
+                <h3 class="orc-modal-title" id="orcModalTitle">Solicitação enviada</h3>
+                <div style="font-size:0.85rem; color:#666; font-weight:600;">Pedido em espera</div>
+            </div>
+        </div>
+        <div class="orc-modal-body">
+            <p>Pronto! Seu pedido foi enviado para o profissional.</p>
+            <div class="orc-wait">
+                <i class='bx bx-time-five'></i>
+                <div>
+                    <strong>Aguarde o aceite</strong>
+                    <span>Assim que o profissional aceitar, o chat será liberado e vocês poderão negociar por aqui.</span>
+                </div>
+            </div>
+        </div>
+        <div class="orc-modal-footer">
+            <a class="orc-btn orc-btn-ghost" id="btnAcompanharPedidos" href="chat.html"><i class='bx bx-chat'></i> Ver em Mensagens</a>
+            <a class="orc-btn orc-btn-primary" id="btnIrChatDireto" href="chat.html"><i class='bx bx-message-dots'></i> Abrir pedido</a>
+        </div>
+    </div>
+</div>
+
 </body>
 </html>
