@@ -21,9 +21,9 @@
         
         body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
 
-        main { padding: 20px; max-width: 1600px; }
+        main { padding: 20px; max-width: 1600px; margin: 0 auto; }
         @media (min-width: 1024px) {
-            main { margin-left: 270px; padding: 30px 40px; width: auto; }
+            main { margin-left: 270px; margin-right: 20px; padding: 30px 40px; width: auto; }
         }
 
         .comm-hero-container {
@@ -52,19 +52,23 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s;
         }
         .search-bar-comm input { background: transparent; border: none; outline: none; width: 100%; color: #333; }
+        .search-bar-comm:focus-within { transform: translateY(-1px); box-shadow: 0 10px 26px rgba(0,0,0,0.12); outline: 3px solid rgba(42, 95, 144, 0.18); }
         
         .btn-create-comm {
-            background: #00d2d3; color: #005f5f; border: none; padding: 12px 25px;
-            border-radius: 30px; font-weight: 700; cursor: pointer; display: flex; 
-            align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 210, 211, 0.3);
+            background: var(--cor0); color: #fff; border: 1px solid rgba(255,255,255,0.2);
+            padding: 12px 25px; border-radius: 30px; font-weight: 800; cursor: pointer;
+            display: flex; align-items: center; gap: 8px;
+            box-shadow: 0 10px 22px rgba(11, 119, 104, 0.25);
             transition: 0.2s; white-space: nowrap;
         }
-        .btn-create-comm:hover { background: #fff; color: var(--cor2); }
+        .btn-create-comm:hover { background: #fff; color: var(--cor2); border-color: rgba(0,0,0,0.06); }
+        .btn-create-comm:focus-visible { outline: 3px solid rgba(11, 119, 104, 0.28); outline-offset: 2px; }
 
         /* Meus Grupos */
         .my-groups-section { position: relative; z-index: 2; }
         .section-label { color: white; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; opacity: 0.8; }
         .groups-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; min-height: 90px; }
+        .groups-scroll::-webkit-scrollbar { display: none; }
         .my-group-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; min-width: 80px; transition: 0.2s; }
         .group-img-ring {
             width: 70px; height: 70px; border-radius: 20px; padding: 3px;
@@ -75,12 +79,24 @@
 
         /* Layout Principal */
         .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
-        .filter-tabs { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; }
+        .filter-tabs { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; align-items: center; flex-wrap: wrap; padding-bottom: 6px; }
+        .filter-tabs::-webkit-scrollbar { display: none; }
         .tab-btn {
             padding: 10px 24px; border: 1px solid #e0e0e0; background: white; border-radius: 30px;
             font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; transition: 0.2s;
         }
         .tab-btn.active { background: var(--cor2); color: white; border-color: var(--cor2); }
+        .tab-btn:focus-visible { outline: 3px solid rgba(42, 95, 144, 0.22); outline-offset: 2px; }
+        .results-count {
+            margin-left: auto;
+            font-size: 0.85rem;
+            color: #666;
+            background: rgba(255,255,255,0.7);
+            border: 1px solid rgba(0,0,0,0.06);
+            padding: 7px 12px;
+            border-radius: 999px;
+            white-space: nowrap;
+        }
 
         .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
         
@@ -106,13 +122,43 @@
         }
         .card-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
         .card-title { font-size: 1.15rem; font-weight: 700; color: #333; margin-bottom: 6px; }
-        .card-desc { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.5; }
+        .card-desc {
+            font-size: 0.9rem; color: #666; margin-bottom: 12px; line-height: 1.5;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+        .card-meta { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+        .meta-pill { font-size: 0.78rem; color: #666; background: #f2f5f9; border: 1px solid #e9eef6; padding: 6px 10px; border-radius: 999px; }
         .members-preview { display: flex; align-items: center; margin-bottom: 15px; margin-top: auto; }
         .mem-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -10px; background:#ddd; }
         .mem-count { font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: 500; }
         .card-footer { padding: 15px 18px; border-top: 1px solid #f5f5f5; background: #fafafa; }
-        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; }
+        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 10px; background: white; color: #555; font-weight: 800; cursor: pointer; transition: .2s; }
         .btn-entrar:hover { background: var(--cor2); color: white; border-color: var(--cor2); }
+        .btn-entrar:focus-visible { outline: 3px solid rgba(42, 95, 144, 0.22); outline-offset: 2px; }
+        .btn-entrar.is-member { background: rgba(11, 119, 104, 0.10); border-color: rgba(11, 119, 104, 0.25); color: #0b7768; }
+        .btn-entrar.is-member:hover { background: rgba(11, 119, 104, 0.18); }
+        .btn-entrar.is-pending { background: rgba(115, 115, 115, 0.10); border-color: rgba(115, 115, 115, 0.22); color: #4e4e4e; }
+        .btn-entrar.is-pending:hover { background: rgba(115, 115, 115, 0.16); }
+
+        /* Flags no card (privado/verificado) */
+        .card-flags { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; }
+        .flag {
+            display: inline-flex; align-items: center; gap: 6px;
+            padding: 4px 10px; border-radius: 999px;
+            font-size: 0.72rem; font-weight: 800;
+            background: rgba(0,0,0,0.35); color: #fff; backdrop-filter: blur(6px);
+            border: 1px solid rgba(255,255,255,0.18);
+        }
+
+        /* Skeleton */
+        .skeleton-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        .skeleton-card { background: #fff; border-radius: 16px; border: 1px solid #eee; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.03); }
+        .sk-cover { height:110px; background: linear-gradient(90deg, #eee, #f6f6f6, #eee); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+        .sk-body { padding: 18px; }
+        .sk-line { height: 12px; border-radius: 8px; margin: 10px 0; background: linear-gradient(90deg, #eee, #f6f6f6, #eee); background-size: 200% 100%; animation: shimmer 1.2s infinite; }
+        .sk-line.sm { width: 60%; }
+        .sk-line.xs { width: 40%; }
+        @keyframes shimmer { 0% { background-position: 0% 0; } 100% { background-position: 200% 0; } }
 
         /* Sidebar Widgets */
         .widget-box { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
@@ -122,11 +168,42 @@
         
         /* Modal Criar */
         .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal-card { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; }
+        .modal-card { background: white; width: 90%; max-width: 560px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; }
         @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .modal-close-btn {
+            position:absolute; top:14px; right:14px;
+            width: 42px; height: 42px; border-radius: 12px;
+            border: 1px solid #eee; background: #fff;
+            font-size: 1.4rem; cursor:pointer; display:flex; align-items:center; justify-content:center;
+        }
+        .modal-close-btn:hover { background: #f7f7f7; }
+        .modal-close-btn:focus-visible { outline: 3px solid rgba(42, 95, 144, 0.22); outline-offset: 2px; }
         .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
         .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: rgba(42, 95, 144, 0.55); box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.12); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .help-text { font-size: 0.82rem; color: #777; margin-top: -10px; margin-bottom: 12px; }
+        .img-preview {
+            width: 100%; height: 140px; border-radius: 12px; border: 1px dashed #d9d9d9;
+            display:flex; align-items:center; justify-content:center; overflow:hidden; background:#fafafa;
+            margin-bottom: 12px;
+        }
+        .img-preview img { width: 100%; height: 100%; object-fit: cover; }
         .btn-submit-modal { width: 100%; padding: 14px; background: var(--cor2); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+        .btn-submit-modal:hover { filter: brightness(0.98); }
+        .btn-submit-modal:focus-visible { outline: 3px solid rgba(42, 95, 144, 0.22); outline-offset: 2px; }
+
+        /* FAB mobile */
+        .comm-fab {
+            position: fixed; right: 18px; bottom: 84px;
+            width: 56px; height: 56px; border-radius: 18px;
+            background: var(--cor0); color: #fff;
+            border: none; display: none; align-items:center; justify-content:center;
+            box-shadow: 0 16px 36px rgba(0,0,0,0.22);
+            z-index: 9998; cursor: pointer;
+        }
+        .comm-fab i { font-size: 1.6rem; }
+        .comm-fab:focus-visible { outline: 3px solid rgba(11, 119, 104, 0.28); outline-offset: 2px; }
 
         @media (max-width: 768px) {
             .comm-layout { display: flex; flex-direction: column; }
@@ -135,6 +212,10 @@
             .search-bar-comm, .btn-create-comm { width: 100%; justify-content: center; }
             .grid-comunidades { grid-template-columns: 1fr; }
             main { margin-left: 0 !important; padding: 20px !important; }
+            .btn-create-comm { display: none; }
+            .comm-fab { display: flex; }
+            .results-count { width: 100%; margin-left: 0; }
+            .form-row { grid-template-columns: 1fr; }
         }
     </style>
 
@@ -167,7 +248,7 @@
             </div>
             
             <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+            <a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
 
@@ -206,7 +287,7 @@
                 <div class="header-actions">
                     <div class="search-bar-comm">
                         <i class='bx bx-search'></i>
-                        <input type="text" placeholder="Buscar grupos..." id="inputBuscaComm" onkeyup="filtrarComunidadesTela(this.value)">
+                        <input type="text" placeholder="Buscar grupos..." id="inputBuscaComm" autocomplete="off" aria-label="Buscar comunidades">
                     </div>
                     <button class="btn-create-comm" onclick="abrirModalCriarComm()"><i class='bx bx-plus-circle'></i> Criar Grupo</button>
                 </div>
@@ -227,13 +308,16 @@
                     <button class="tab-btn" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
                     <button class="tab-btn" onclick="filtrarComunidadesTipo('Condomínio', this)">Condomínios</button>
                     <button class="tab-btn" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
+                    <div class="results-count" id="commResultsCount" aria-live="polite">0 resultados</div>
                 </div>
 
                 <div class="grid-comunidades" id="listaComunidadesGeral">
-                    <div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">
-                        <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
-                        <p>Buscando comunidades...</p>
-                    </div>
+                    <div class="skeleton-card" aria-hidden="true"><div class="sk-cover"></div><div class="sk-body"><div class="sk-line sm"></div><div class="sk-line"></div><div class="sk-line xs"></div></div></div>
+                    <div class="skeleton-card" aria-hidden="true"><div class="sk-cover"></div><div class="sk-body"><div class="sk-line sm"></div><div class="sk-line"></div><div class="sk-line xs"></div></div></div>
+                    <div class="skeleton-card" aria-hidden="true"><div class="sk-cover"></div><div class="sk-body"><div class="sk-line sm"></div><div class="sk-line"></div><div class="sk-line xs"></div></div></div>
+                    <div class="skeleton-card" aria-hidden="true"><div class="sk-cover"></div><div class="sk-body"><div class="sk-line sm"></div><div class="sk-line"></div><div class="sk-line xs"></div></div></div>
+                    <div class="skeleton-card" aria-hidden="true"><div class="sk-cover"></div><div class="sk-body"><div class="sk-line sm"></div><div class="sk-line"></div><div class="sk-line xs"></div></div></div>
+                    <div class="skeleton-card" aria-hidden="true"><div class="sk-cover"></div><div class="sk-body"><div class="sk-line sm"></div><div class="sk-line"></div><div class="sk-line xs"></div></div></div>
                 </div>
             </div>
 
@@ -255,10 +339,14 @@
         <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-    <div id="modalCriarComm" class="modal-overlay">
+    <button class="comm-fab" id="commFab" type="button" aria-label="Criar Grupo">
+        <i class='bx bx-plus'></i>
+    </button>
+
+    <div id="modalCriarComm" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modalCommTitle">
         <div class="modal-card">
-            <button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-            <h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
+            <button type="button" class="modal-close-btn" data-modal-close aria-label="Fechar">&times;</button>
+            <h2 id="modalCommTitle" style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
             <form onsubmit="criarNovaComunidade(event)">
                 <label class="form-label">Nome do Grupo</label>
                 <input type="text" id="commNome" class="form-input" placeholder="Ex: Eletricistas Unidos" required>
@@ -266,15 +354,49 @@
                 <label class="form-label">Descrição</label>
                 <textarea id="commDesc" class="form-textarea" placeholder="Sobre o que é este grupo?" required></textarea>
                 
-                <label class="form-label">Tipo de Comunidade</label>
-                <select id="commTipo" class="form-select">
-                    <option value="Pro">Profissional (Networking)</option>
-                    <option value="Condomínio">Condomínio / Vizinhos</option>
-                    <option value="Hobby">Hobby / Interesse</option>
-                </select>
+                <div class="form-row">
+                    <div>
+                        <label class="form-label">Tipo de Comunidade</label>
+                        <select id="commTipo" class="form-select">
+                            <option value="Pro">Profissional (Networking)</option>
+                            <option value="Condomínio">Condomínio / Vizinhos</option>
+                            <option value="Hobby">Hobby / Interesse</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Privacidade</label>
+                        <select id="commPrivacidade" class="form-select">
+                            <option value="publica">Pública</option>
+                            <option value="privada">Privada</option>
+                        </select>
+                        <div class="help-text" id="commPrivHelp">Pública: qualquer pessoa entra. Privada: precisa solicitar entrada.</div>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div>
+                        <label class="form-label">Categoria</label>
+                        <select id="commCategoria" class="form-select">
+                            <option value="">Selecione...</option>
+                            <option value="Reforma e Construção">Reforma e Construção</option>
+                            <option value="Assistência Técnica">Assistência Técnica</option>
+                            <option value="Beleza e Estética">Beleza e Estética</option>
+                            <option value="Aulas Particulares">Aulas Particulares</option>
+                            <option value="Condomínio">Condomínio</option>
+                            <option value="Hobby">Hobby</option>
+                            <option value="Outros">Outros</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="form-label">Subcategoria (opcional)</label>
+                        <input type="text" id="commSubcategoria" class="form-input" placeholder="Ex: Elétrica, Pintura...">
+                    </div>
+                </div>
 
                 <label class="form-label">Imagem de Capa (Opcional)</label>
+                <div class="img-preview" id="commImgPreview"><span style="color:#888; font-size:0.85rem;">Prévia da imagem</span></div>
                 <input type="file" id="commFoto" class="form-input" accept="image/*">
+                <div class="help-text">PNG/JPG, até 2MB. (a imagem aparece no topo do grupo)</div>
 
                 <button type="submit" class="btn-submit-modal">Criar Comunidade</button>
             </form>
@@ -282,33 +404,440 @@
     </div>
 
     <script>
-        window.abrirModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'flex'; }
-        window.fecharModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'none'; }
-        
-        window.filtrarComunidadesTela = function(termo) {
-            const cards = document.querySelectorAll('.card-comm');
-            cards.forEach(card => {
-                const titulo = card.querySelector('.card-title').innerText.toLowerCase();
-                card.style.display = titulo.includes(termo.toLowerCase()) ? 'flex' : 'none';
-            });
-        }
+        (function(){
+            const $ = (sel, root=document) => root.querySelector(sel);
+            const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
 
-        window.filtrarComunidadesTipo = function(tipo, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            const cards = document.querySelectorAll('.card-comm');
-            cards.forEach(card => {
-                const tag = card.getAttribute('data-tipo');
-                if(tipo === 'todos' || tag === tipo) card.style.display = 'flex';
-                else card.style.display = 'none';
-            });
-        }
+            const state = {
+                tipo: 'todos',
+                termo: '',
+                lastFocus: null,
+            };
 
-        // Inicia carregamento
-        setTimeout(() => {
-            if(window.carregarDadosComunidade) window.carregarDadosComunidade();
-        }, 1000);
+            const storageKey = (id) => `doke_comm_state_${id}`;
+            const slugify = (str='') => str
+                .toString()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .toLowerCase()
+                .replace(/[^a-z0-9]+/g, '-')
+                .replace(/(^-|-$)/g, '')
+                .slice(0, 60);
+
+            function debounce(fn, delay=250){
+                let t;
+                return (...args)=>{ clearTimeout(t); t = setTimeout(()=>fn(...args), delay); };
+            }
+
+            function getCommId(card){
+                if(!card) return '';
+                const explicit = card.getAttribute('data-id');
+                if(explicit) return explicit;
+                const title = $('.card-title', card)?.innerText?.trim() || 'grupo';
+                const id = slugify(title);
+                card.setAttribute('data-id', id);
+                return id;
+            }
+
+            function readJoinState(id){
+                try{ return localStorage.getItem(storageKey(id)) || 'none'; }catch(e){ return 'none'; }
+            }
+            function writeJoinState(id, value){
+                try{ localStorage.setItem(storageKey(id), value); }catch(e){}
+            }
+
+            function getPrivacy(card){
+                return (card.getAttribute('data-privacidade') || 'publica').toLowerCase();
+            }
+
+            function setBtnState(btn, card){
+                if(!btn || !card) return;
+                const id = getCommId(card);
+                const privacy = getPrivacy(card);
+                const s = readJoinState(id);
+                btn.classList.remove('is-member','is-pending');
+                btn.removeAttribute('aria-disabled');
+
+                if(s === 'member'){
+                    btn.classList.add('is-member');
+                    btn.textContent = 'Abrir';
+                    btn.setAttribute('data-state', 'member');
+                    return;
+                }
+                if(s === 'pending'){
+                    btn.classList.add('is-pending');
+                    btn.textContent = 'Pendente';
+                    btn.setAttribute('data-state', 'pending');
+                    return;
+                }
+
+                btn.textContent = (privacy === 'privada') ? 'Solicitar entrada' : 'Entrar';
+                btn.setAttribute('data-state', 'none');
+            }
+
+            function ensureFlags(card){
+                const cover = $('.card-cover', card);
+                if(!cover) return;
+                const privacy = getPrivacy(card);
+                const verified = (card.getAttribute('data-verificada') === 'true');
+                if(privacy !== 'privada' && !verified) return;
+
+                let flags = $('.card-flags', cover);
+                if(!flags){
+                    flags = document.createElement('div');
+                    flags.className = 'card-flags';
+                    cover.appendChild(flags);
+                }
+                if(privacy === 'privada' && !flags.querySelector('[data-flag="lock"]')){
+                    const el = document.createElement('span');
+                    el.className = 'flag';
+                    el.setAttribute('data-flag','lock');
+                    el.innerHTML = `<i class='bx bx-lock-alt'></i> Privado`;
+                    flags.appendChild(el);
+                }
+                if(verified && !flags.querySelector('[data-flag="verified"]')){
+                    const el = document.createElement('span');
+                    el.className = 'flag';
+                    el.setAttribute('data-flag','verified');
+                    el.innerHTML = `<i class='bx bx-badge-check'></i> Verificado`;
+                    flags.appendChild(el);
+                }
+            }
+
+            function hydrateCards(){
+                // Remove skeletons quando já houver cards reais
+                const grid = $('#listaComunidadesGeral');
+                if(grid && grid.querySelector('.card-comm')){
+                    $$('.skeleton-card', grid).forEach(el => el.remove());
+                }
+
+                const cards = $$('.card-comm');
+                cards.forEach(card => {
+                    getCommId(card);
+                    ensureFlags(card);
+                    $$('img', card).forEach(img => img.setAttribute('loading','lazy'));
+                    const btn = $('.btn-entrar', card);
+                    if(btn) setBtnState(btn, card);
+
+                    // Meta (membros/atividade) — só cria se o card tiver data-* (não inventa)
+                    const body = $('.card-body', card);
+                    if(body && !$('.card-meta', body)){
+                        const membros = card.getAttribute('data-membros');
+                        const ativo = card.getAttribute('data-ativo');
+                        if(membros || ativo){
+                            const meta = document.createElement('div');
+                            meta.className = 'card-meta';
+                            if(membros) meta.innerHTML += `<span class="meta-pill"><i class='bx bx-group'></i> ${membros}</span>`;
+                            if(ativo) meta.innerHTML += `<span class="meta-pill"><i class='bx bx-time-five'></i> ${ativo}</span>`;
+                            const title = $('.card-title', body);
+                            if(title) title.insertAdjacentElement('afterend', meta);
+                        }
+                    }
+                });
+            }
+
+            function updateResultsCount(visible, total){
+                const el = $('#commResultsCount');
+                if(!el) return;
+                if(total === 0){
+                    el.textContent = '0 resultados';
+                    return;
+                }
+                el.textContent = `${visible} resultado${visible === 1 ? '' : 's'}`;
+            }
+
+            function applyFilters(){
+                const cards = $$('.card-comm');
+                let visible = 0;
+
+                cards.forEach(card => {
+                    const tipo = card.getAttribute('data-tipo') || '';
+                    const title = ($('.card-title', card)?.innerText || '').toLowerCase();
+                    const desc = ($('.card-desc', card)?.innerText || '').toLowerCase();
+                    const tag = ($('.card-tag', card)?.innerText || '').toLowerCase();
+                    const matchTipo = (state.tipo === 'todos') || (tipo === state.tipo);
+                    const q = state.termo.toLowerCase().trim();
+                    const matchBusca = !q || title.includes(q) || desc.includes(q) || tag.includes(q) || tipo.toLowerCase().includes(q);
+                    const show = matchTipo && matchBusca;
+
+                    card.style.display = show ? 'flex' : 'none';
+                    if(show) visible++;
+                });
+
+                updateResultsCount(visible, cards.length);
+
+                const grid = $('#listaComunidadesGeral');
+                if(grid){
+                    let empty = $('#commEmpty');
+                    if(visible === 0 && cards.length > 0){
+                        if(!empty){
+                            empty = document.createElement('div');
+                            empty.id = 'commEmpty';
+                            empty.style.cssText = 'text-align:center; padding:50px 20px; color:#777; grid-column:1/-1;';
+                            empty.innerHTML = `<i class='bx bx-search' style='font-size:2.2rem; opacity:0.7;'></i><p style='margin-top:10px; font-weight:700;'>Nenhum grupo encontrado</p><p style='margin-top:6px; font-size:0.9rem;'>Tente outro termo ou mude a categoria.</p>`;
+                            grid.appendChild(empty);
+                        }
+                    } else if(empty){
+                        empty.remove();
+                    }
+                }
+
+                refreshTopics();
+            }
+
+            function refreshTopics(){
+                const wrap = $('#listaTopicos');
+                if(!wrap) return;
+
+                const cards = $$('.card-comm');
+                const counts = { Pro: 0, 'Condomínio': 0, Hobby: 0 };
+                cards.forEach(c => {
+                    const t = c.getAttribute('data-tipo');
+                    if(counts[t] !== undefined) counts[t]++;
+                });
+
+                wrap.innerHTML = '';
+                const topics = [
+                    { key: 'Pro', label: 'Profissionais', icon: 'bx-briefcase' },
+                    { key: 'Condomínio', label: 'Condomínios', icon: 'bx-building-house' },
+                    { key: 'Hobby', label: 'Hobbies', icon: 'bx-bulb' },
+                ];
+
+                topics.forEach(t => {
+                    const item = document.createElement('div');
+                    item.className = 'topic-item';
+                    item.setAttribute('role','button');
+                    item.setAttribute('tabindex','0');
+                    item.setAttribute('data-topic', t.key);
+                    item.innerHTML = `
+                        <div class="topic-icon"><i class='bx ${t.icon}'></i></div>
+                        <div style="display:flex; flex-direction:column; gap:2px;">
+                            <div style="font-weight:800; color:#333;">${t.label}</div>
+                            <div style="font-size:0.85rem; color:#777;">${counts[t.key]} grupo${counts[t.key] === 1 ? '' : 's'}</div>
+                        </div>
+                    `;
+                    item.addEventListener('click', ()=>{
+                        const btn = $$('.tab-btn').find(b => (b.getAttribute('onclick') || '').includes(`'${t.key}'`));
+                        if(btn) window.filtrarComunidadesTipo(t.key, btn);
+                    });
+                    item.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); item.click(); } });
+                    wrap.appendChild(item);
+                });
+            }
+
+            // Modal (acessível)
+            function openModal(){
+                const modal = $('#modalCriarComm');
+                if(!modal) return;
+                state.lastFocus = document.activeElement;
+                modal.style.display = 'flex';
+                document.body.style.overflow = 'hidden';
+                setTimeout(()=>{ $('#commNome')?.focus(); }, 10);
+            }
+            function closeModal(){
+                const modal = $('#modalCriarComm');
+                if(!modal) return;
+                modal.style.display = 'none';
+                document.body.style.overflow = '';
+                if(state.lastFocus && typeof state.lastFocus.focus === 'function') state.lastFocus.focus();
+            }
+
+            // Expor para HTML inline
+            window.abrirModalCriarComm = openModal;
+            window.fecharModalCriarComm = closeModal;
+
+            window.filtrarComunidadesTela = function(termo){
+                state.termo = String(termo || '');
+                applyFilters();
+            };
+
+            window.filtrarComunidadesTipo = function(tipo, btn){
+                state.tipo = tipo || 'todos';
+                $$('.tab-btn').forEach(b => b.classList.remove('active'));
+                if(btn) btn.classList.add('active');
+                applyFilters();
+            };
+
+            function bindModalA11y(){
+                const modal = $('#modalCriarComm');
+                if(!modal) return;
+                const card = $('.modal-card', modal);
+
+                modal.addEventListener('mousedown', (e)=>{
+                    if(e.target === modal) closeModal();
+                });
+
+                modal.addEventListener('click', (e)=>{
+                    const close = e.target.closest('[data-modal-close]');
+                    if(close) closeModal();
+                });
+
+                document.addEventListener('keydown', (e)=>{
+                    if(modal.style.display !== 'flex') return;
+                    if(e.key === 'Escape') closeModal();
+                });
+
+                // Focus trap simples
+                modal.addEventListener('keydown', (e)=>{
+                    if(modal.style.display !== 'flex') return;
+                    if(e.key !== 'Tab') return;
+                    const focusables = $$('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])', card)
+                        .filter(el => !el.disabled && el.offsetParent !== null);
+                    if(focusables.length === 0) return;
+                    const first = focusables[0];
+                    const last = focusables[focusables.length - 1];
+                    if(e.shiftKey && document.activeElement === first){
+                        e.preventDefault();
+                        last.focus();
+                    } else if(!e.shiftKey && document.activeElement === last){
+                        e.preventDefault();
+                        first.focus();
+                    }
+                });
+            }
+
+            function bindSearch(){
+                const input = $('#inputBuscaComm');
+                if(!input) return;
+                const handler = debounce((v)=>window.filtrarComunidadesTela(v), 250);
+                input.addEventListener('input', (e)=>handler(e.target.value));
+            }
+
+            function bindFab(){
+                $('#commFab')?.addEventListener('click', openModal);
+            }
+
+            function bindJoinButtons(){
+                document.addEventListener('click', (e)=>{
+                    const btn = e.target.closest('.btn-entrar');
+                    if(!btn) return;
+                    e.stopPropagation();
+                    const card = btn.closest('.card-comm');
+                    if(!card) return;
+
+                    const id = getCommId(card);
+                    const privacy = getPrivacy(card);
+                    const current = readJoinState(id);
+
+                    if(current === 'member'){
+                        // Abrir (se tiver link no card)
+                        const href = card.getAttribute('data-href');
+                        if(href) window.location.href = href;
+                        return;
+                    }
+
+                    if(privacy === 'privada'){
+                        // none -> pending | pending -> none (cancelar)
+                        const next = (current === 'pending') ? 'none' : 'pending';
+                        writeJoinState(id, next);
+                    } else {
+                        // pública: none -> member | member -> none
+                        const next = (current === 'member') ? 'none' : 'member';
+                        writeJoinState(id, next);
+                    }
+                    setBtnState(btn, card);
+                }, true);
+            }
+
+            function bindPrivacidadeHelp(){
+                const sel = $('#commPrivacidade');
+                const help = $('#commPrivHelp');
+                if(!sel || !help) return;
+                sel.addEventListener('change', ()=>{
+                    help.textContent = (sel.value === 'privada')
+                        ? 'Privada: pessoas precisam solicitar entrada (você aprova depois).'
+                        : 'Pública: qualquer pessoa consegue entrar.';
+                });
+            }
+
+            function bindImagePreview(){
+                const input = $('#commFoto');
+                const preview = $('#commImgPreview');
+                if(!input || !preview) return;
+
+                input.addEventListener('change', ()=>{
+                    preview.innerHTML = '';
+                    const file = input.files && input.files[0];
+                    if(!file){
+                        preview.innerHTML = '<span style="color:#888; font-size:0.85rem;">Prévia da imagem</span>';
+                        return;
+                    }
+                    const maxMB = 2;
+                    const sizeMB = file.size / (1024*1024);
+                    if(sizeMB > maxMB){
+                        input.value = '';
+                        preview.innerHTML = '<span style="color:#b23b3b; font-size:0.85rem; font-weight:800;">Arquivo muito grande (máx 2MB).</span>';
+                        return;
+                    }
+                    const img = document.createElement('img');
+                    img.alt = 'Prévia da imagem selecionada';
+                    img.src = URL.createObjectURL(file);
+                    img.onload = () => URL.revokeObjectURL(img.src);
+                    preview.appendChild(img);
+                });
+            }
+
+            function wrapCreateCommunity(){
+                // Se existir criarNovaComunidade no script.js, envolvemos para passar dados extras
+                const original = window.criarNovaComunidade;
+                if(typeof original !== 'function') return;
+
+                window.criarNovaComunidade = async function(event){
+                    // anexa dados extras no evento (não quebra a função original)
+                    try{
+                        event.extraData = {
+                            privacidade: $('#commPrivacidade')?.value || 'publica',
+                            categoria: $('#commCategoria')?.value || '',
+                            subcategoria: $('#commSubcategoria')?.value || ''
+                        };
+                    }catch(e){}
+
+                    const result = original.call(this, event);
+                    // tenta aguardar se for promise
+                    try{ if(result && typeof result.then === 'function') await result; }catch(e){}
+                    closeModal();
+
+                    // após criar, tenta atualizar UI
+                    setTimeout(()=>{ hydrateCards(); applyFilters(); }, 0);
+                    return result;
+                };
+            }
+
+            function wrapLoadCommunities(){
+                const original = window.carregarDadosComunidade;
+                if(typeof original !== 'function'){
+                    hydrateCards();
+                    applyFilters();
+                    return;
+                }
+                window.carregarDadosComunidade = async function(...args){
+                    const result = original.apply(this, args);
+                    try{ if(result && typeof result.then === 'function') await result; }catch(e){}
+                    hydrateCards();
+                    applyFilters();
+                    return result;
+                };
+                // chama imediatamente (sem delay artificial)
+                window.carregarDadosComunidade();
+            }
+
+            document.addEventListener('DOMContentLoaded', ()=>{
+                bindSearch();
+                bindFab();
+                bindModalA11y();
+                bindJoinButtons();
+                bindPrivacidadeHelp();
+                bindImagePreview();
+                wrapCreateCommunity();
+                wrapLoadCommunities();
+
+                // se cards forem inseridos depois, re-hidrata
+                const grid = $('#listaComunidadesGeral');
+                if(grid){
+                    const obs = new MutationObserver(debounce(()=>{ hydrateCards(); applyFilters(); }, 120));
+                    obs.observe(grid, { childList: true, subtree: true });
+                }
+            });
+        })();
     </script>
 </body>
 </html>

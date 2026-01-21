@@ -17,14 +17,14 @@
 const url =
   window.DOKE_SUPABASE_URL ||
   window.SUPABASE_URL ||
-  localStorage.getItem("https://wgbnoqjnvhasapqarltu.supabase.co") ||
+  localStorage.getItem("DOKE_SUPABASE_URL") ||
   DEFAULT_URL;
 
   
 const key =
   window.DOKE_SUPABASE_ANON_KEY ||
   window.SUPABASE_ANON_KEY ||
-  localStorage.getItem("eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6IndnYm5vcWpudmhhc2FwcWFybHR1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgwODEwMzgsImV4cCI6MjA4MzY1NzAzOH0.qZZQJ7To8EYe5eELG2DzwU9Vh0gn6tAkAbCLmns8ScQ") ||
+  localStorage.getItem("DOKE_SUPABASE_ANON_KEY") ||
   DEFAULT_KEY;
   
   function warn(msg){ console.warn("[DOKE]", msg); }

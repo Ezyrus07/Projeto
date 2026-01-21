@@ -100,6 +100,27 @@
             color: #009688;
             box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
+        .pedidos-filtros{
+            display:flex;
+            gap:8px;
+            margin-top:10px;
+            flex-wrap:wrap;
+        }
+        .pf-btn{
+            border:1px solid #e2e8f0;
+            background:#fff;
+            color:#475569;
+            padding:6px 10px;
+            border-radius:999px;
+            font-size:0.75rem;
+            font-weight:800;
+            cursor:pointer;
+        }
+        .pf-btn.active{
+            border-color: rgba(11,119,104,0.35);
+            background: rgba(11,119,104,0.12);
+            color:#064e42;
+        }
 
         /* Listas com Scroll */
         .lista-scroll {
@@ -226,6 +247,8 @@
         }
         .input-msg { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; }
         .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .btn-attach { background: #e0e0e0; color: #555; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .btn-attach:hover { filter: brightness(0.98); }
 
         .msg-bubble { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
         .msg-enviada { align-self: flex-end; background: #e3ffeb; border-top-right-radius: 0; }
@@ -529,7 +552,30 @@
     background: var(--cor2); color: white; padding: 20px;
     display: flex; justify-content: space-between; align-items: center;
 }
-.modal-body { padding: 25px; max-height: 70vh; overflow-y: auto; }
+        .modal-body { padding: 25px; max-height: 70vh; overflow-y: auto; }
+        .md-triagem{
+            margin-top: 12px;
+            display: grid;
+            gap: 8px;
+        }
+        .md-triagem .md-qa{
+            background:#f8fafc;
+            border:1px solid #e2e8f0;
+            border-radius:10px;
+            padding:10px 12px;
+        }
+        .md-triagem .md-qa b{
+            display:block;
+            font-size:0.72rem;
+            color:#0b7768;
+            text-transform:uppercase;
+            letter-spacing:.04em;
+            margin-bottom:4px;
+        }
+        .md-triagem .md-qa span{
+            color:#334155;
+            font-size:0.9rem;
+        }
 .detail-row { margin-bottom: 15px; border-bottom: 1px solid #f0f0f0; padding-bottom: 10px; }
 .detail-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .detail-value { color: #333; font-weight: 500; line-height: 1.4; }
@@ -995,7 +1041,7 @@
 
     <header class="navbar-mobile">
         <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
-        <a href="login.html"><i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i></a>
+        <a id="header-user-mobile" href="login.html"><i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i></a>
     </header>
 
     <div class="messenger-layout" id="messengerMaster">
@@ -1006,6 +1052,12 @@
                 <div class="abas-container">
                     <button class="aba-btn active" onclick="trocarAba('pedidos')">Pedidos</button>
                     <button class="aba-btn" onclick="trocarAba('conversas')">Mensagens</button>
+                </div>
+                <div class="pedidos-filtros" id="pedidosFilters">
+                    <button class="pf-btn active" data-status="todos">Todos</button>
+                    <button class="pf-btn" data-status="pendente">Pendentes</button>
+                    <button class="pf-btn" data-status="andamento">Em andamento</button>
+                    <button class="pf-btn" data-status="finalizado">Finalizados</button>
                 </div>
             </div>
 
@@ -1049,6 +1101,9 @@
                 </div>
 
                 <div class="mensagens-body" id="areaMensagens"></div>
+                <button class="scroll-down" id="scrollDownBtn" type="button" title="Descer para a ultima mensagem">
+                    <i class='bx bx-chevron-down'></i>
+                </button>
 
 <div class="chat-footer" id="chatFooter">
     
@@ -1057,6 +1112,10 @@
     </button>
 
     <div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
+        <button class="btn-attach" id="btn-attach" onclick="abrirSeletorAnexo()" title="Anexar imagem/arquivo">
+            <i class='bx bx-paperclip'></i>
+        </button>
+        <input id="inputAnexo" type="file" style="display:none" accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.zip,.rar" onchange="enviarAnexo(this.files[0])" />
         <input type="text" id="inputMsg" class="input-msg" placeholder="Digite uma mensagem..." onkeypress="verificarEnter(event)">
         
         <button class="btn-enviar" id="btn-mic" onclick="iniciarGravacao()" style="background:#e0e0e0; color:#555;">
@@ -1100,6 +1159,21 @@
                 <button id="btnConfirmCancelFinal" onclick="confirmarCancelamentoFinal()" style="flex:1; padding:12px; border-radius:10px; border:none; background:#e74c3c; color:#fff; cursor:pointer; font-weight:600;">Sim, Cancelar</button>
             </div>
         </div>
+    </div>
+</div>
+
+<div id="modalOrcamento" class="modal-detalhes" style="display:none;">
+    <div class="md-content" style="max-width: 520px; text-align: left;">
+        <div class="md-header">
+            <div style="display:flex; align-items:center; gap:10px;">
+                <i class='bx bx-receipt' style="font-size:1.3rem; color:var(--cor0);"></i>
+                <strong>Detalhes do Pedido</strong>
+            </div>
+            <button onclick="fecharModalDetalhes()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
+                <i class='bx bx-x'></i>
+            </button>
+        </div>
+        <div id="mdBody" class="md-body"></div>
     </div>
 </div>
 
@@ -1162,6 +1236,25 @@
     let colecaoAtual = 'pedidos'; 
     let chatUnsubscribe = null;
     let idPedidoParaAcao = null;
+    let pedidosRenderToken = 0;
+    let pedidosFiltro = 'todos';
+
+    function initPedidosFilters(){
+        const wrap = document.getElementById('pedidosFilters');
+        if (!wrap) return;
+        wrap.addEventListener('click', (e) => {
+            const btn = e.target.closest('.pf-btn');
+            if (!btn) return;
+            pedidosFiltro = btn.dataset.status || 'todos';
+            wrap.querySelectorAll('.pf-btn').forEach(b => b.classList.toggle('active', b === btn));
+            carregarListaPedidos();
+        });
+    }
+
+    try {
+        const perfilInicial = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null');
+        if (perfilInicial) renderHeaderUser(perfilInicial);
+    } catch (_) {}
 
     // =========================================================================
     // 1. SISTEMA DE ALERTAS PERSONALIZADOS (SUBSTITUI NATIVOS)
@@ -1207,6 +1300,7 @@
 
     // HTML do Modal Genérico
     document.addEventListener("DOMContentLoaded", () => {
+        initPedidosFilters();
         if (!document.getElementById('dokeGlobalModal')) {
             const html = `
                 <div id="dokeGlobalModal" class="doke-overlay">
@@ -1354,6 +1448,104 @@
         window.location.href = perfilLocal.isProfissional ? "meuperfil.html" : "perfil-usuario.html";
     };
 
+    function renderHeaderUser(perfil) {
+        const container = document.getElementById('header-user-area');
+        const mobile = document.getElementById('header-user-mobile');
+        if (!container) return;
+
+        if (!perfil) {
+            container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
+            if (mobile) {
+                mobile.href = "login.html";
+                mobile.innerHTML = `<i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i>`;
+            }
+            return;
+        }
+
+        const foto = perfil.foto || "https://i.pravatar.cc/150?img=12";
+        const userLabel = perfil.user || perfil.nome || "Usuario";
+        const perfilHref = perfil.isProfissional ? "meuperfil.html" : "perfil-usuario.html";
+
+        container.innerHTML = `
+            <div class="profile-container">
+                <img src="${foto}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
+                <div id="dropdownPerfil" class="dropdown-profile">
+                    <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+                        ${userLabel}
+                    </div>
+                    <a href="${perfilHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                    <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+                </div>
+            </div>`;
+
+        if (mobile) {
+            mobile.href = perfilHref;
+            mobile.innerHTML = `<img src="${foto}" alt="Perfil" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">`;
+        }
+    }
+
+    async function syncPerfilLocal(user) {
+        if (!user) {
+            renderHeaderUser(null);
+            return;
+        }
+
+        let perfil = null;
+        try { perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) {}
+
+        if (!perfil || (!perfil.uid && !perfil.user)) {
+            try {
+                const snap = await getDoc(doc(db, "usuarios", user.uid));
+                if (snap.exists()) {
+                    const d = snap.data() || {};
+                    perfil = {
+                        ...d,
+                        uid: user.uid,
+                        nome: d.nome || d.user || "Usuario",
+                        user: d.user || d.nome || "usuario",
+                        foto: d.foto || "",
+                        isProfissional: d.isProfissional === true
+                    };
+                }
+            } catch (e) {
+                console.error("Erro ao carregar perfil:", e);
+            }
+        }
+
+        if (!perfil) {
+            const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuario");
+            perfil = { nome: nomeFallback, user: nomeFallback, foto: user.photoURL || "", uid: user.uid };
+        }
+
+        localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+        localStorage.setItem('usuarioLogado', 'true');
+        renderHeaderUser(perfil);
+    }
+
+    function getDraftKey() {
+        if (!chatIdAtual || !colecaoAtual) return null;
+        return `doke_chat_draft_${colecaoAtual}_${chatIdAtual}`;
+    }
+
+    function salvarRascunhoChat() {
+        const input = document.getElementById('inputMsg');
+        const key = getDraftKey();
+        if (!input || !key) return;
+        if (!input.value) {
+            localStorage.removeItem(key);
+            return;
+        }
+        localStorage.setItem(key, input.value);
+    }
+
+    function restaurarRascunhoChat() {
+        const input = document.getElementById('inputMsg');
+        const key = getDraftKey();
+        if (!input || !key) return;
+        const draft = localStorage.getItem(key);
+        if (draft) input.value = draft;
+    }
+
     window.toggleCep = (e) => { if(e) e.preventDefault(); const p = document.getElementById('boxCep'); if(p) p.style.display = (p.style.display === 'block') ? 'none' : 'block'; };
     window.salvarCep = () => { const i = document.getElementById('inputCep'); if(i) { localStorage.setItem('meu_cep_doke', i.value); document.getElementById('textoCepSpan').innerText = i.value; document.getElementById('boxCep').style.display = 'none'; } };
     window.toggleDropdown = (event) => { if(event) event.stopPropagation(); document.getElementById('dropdownPerfil').classList.toggle('show'); };
@@ -1378,23 +1570,34 @@
 
     window.trocarAba = function(aba) {
         const btns = document.querySelectorAll('.aba-btn');
+        const filtros = document.getElementById('pedidosFilters');
         btns.forEach(b => b.classList.remove('active'));
         if (aba === 'pedidos') {
             btns[0].classList.add('active');
             document.getElementById('lista-pedidos').style.display = 'block';
             document.getElementById('lista-conversas').style.display = 'none';
+            if (filtros) filtros.style.display = 'flex';
             carregarListaPedidos();
             abrirChatDeepLink(); 
         } else {
             btns[1].classList.add('active');
             document.getElementById('lista-pedidos').style.display = 'none';
             document.getElementById('lista-conversas').style.display = 'block';
+            if (filtros) filtros.style.display = 'none';
             window.carregarListaConversas();
         }
     };
 
     // Detalhes do Pedido
+    window.abrirDetalhesPedido = function(idPedido){
+        if (!idPedido) return;
+        window.verDetalhesOrcamento(idPedido);
+    };
+
     window.verDetalhesOrcamento = async function(idPedido) {
+        // Mantido por compatibilidade (abre a página de orçamento)
+        
+
         const modal = document.getElementById('modalOrcamento');
         const body = document.getElementById('mdBody');
         if(!modal || !body) return;
@@ -1406,17 +1609,41 @@
             if (!docSnap.exists()) return;
             const p = docSnap.data();
 
-            
-                    atualizarChipPedido(p.status);
-let htmlQuiz = "";
-            if ((p.formularioRespostas && p.formularioRespostas.length > 0) || (p.respostasTriagem && p.respostasTriagem.length > 0)) {
-                const respostas = (p.formularioRespostas && p.formularioRespostas.length) ? p.formularioRespostas : p.respostasTriagem;
-                respostas.forEach(r => {
-                    htmlQuiz += `<div style="margin-top:10px; background:#f9f9f9; padding:12px; border-radius:10px;">
-                        <div style="font-size:0.65rem; color:var(--cor0); font-weight:800; margin-bottom:3px;">${r.pergunta}</div>
-                        <div style="font-size:0.9rem; color:#444;">${r.resposta}</div>
-                    </div>`;
+            atualizarChipPedido(p.status);
+
+            const triagemRespostas = (function(){
+                const raw = p.formularioRespostas || p.respostasTriagem || p.formulario_respostas || p.respostas_triagem || p.formulariorespostas || p.respostastriagem || null;
+                if (!raw) return [];
+                let list = raw;
+                if (typeof list === 'string') {
+                    try { list = JSON.parse(list); } catch (e) { return []; }
+                }
+                if (!Array.isArray(list)) list = [list];
+                const out = [];
+                list.forEach((item) => {
+                    if (!item) return;
+                    if (typeof item === 'string') {
+                        out.push({ pergunta: 'Pergunta', resposta: item });
+                        return;
+                    }
+                    const pergunta = item.pergunta || item.question || item.titulo || item.label || item.q;
+                    const resposta = item.resposta || item.answer || item.valor || item.a;
+                    if (pergunta || resposta) {
+                        out.push({ pergunta: pergunta || 'Pergunta', resposta: (resposta != null ? String(resposta) : '-') });
+                    }
                 });
+                return out;
+            })();
+
+            let triagemHtml = "";
+            if (triagemRespostas.length) {
+                triagemHtml = `
+                <div class="md-row">
+                    <div class="md-label">Triagem</div>
+                    <div class="md-triagem">
+                        ${triagemRespostas.map((r) => `<div class="md-qa"><b>${r.pergunta}</b><span>${r.resposta}</span></div>`).join('')}
+                    </div>
+                </div>`;
             }
 
             let motivoRecusaHtml = (p.status === 'recusado' && p.motivoRecusa) ? `
@@ -1432,7 +1659,7 @@ let htmlQuiz = "";
                     <div><div class="md-label">Prazo</div><div class="md-value">${p.paraQuando || "A combinar"}</div></div>
                     <div><div class="md-label">Turno</div><div class="md-value">${p.turno || "Livre"}</div></div>
                 </div>
-                ${htmlQuiz} ${motivoRecusaHtml}
+                ${triagemHtml} ${motivoRecusaHtml}
             `;
         } catch (e) { body.innerHTML = "Erro ao carregar dados."; }
     };
@@ -1592,6 +1819,7 @@ window.liberarPagamento = async (id) => {
     async function carregarListaPedidos() {
         const container = document.getElementById('lista-pedidos');
         if(!container) return;
+        const token = ++pedidosRenderToken;
         container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
 
         try {
@@ -1599,6 +1827,7 @@ window.liberarPagamento = async (id) => {
             const q2 = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
             const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
 
+            if (token !== pedidosRenderToken) return;
             container.innerHTML = "";
             const itensRaw = [...s1.docs.map(d=>({d, papel:'cliente'})), ...s2.docs.map(d=>({d, papel:'profissional'}))];
             const map = new Map();
@@ -1615,8 +1844,16 @@ window.liberarPagamento = async (id) => {
             if(itens.length === 0) { container.innerHTML = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido.</div>`; return; }
 
             for (const item of itens) {
+                if (token !== pedidosRenderToken) return;
                 const p = item.d.data();
                 const id = item.d.id;
+                const statusRaw = String(p.status || '').toLowerCase();
+                const isFinal = ['finalizado','cancelado','recusado'].includes(statusRaw);
+                const isAndamento = ['aceito','pago'].includes(statusRaw);
+
+                if (pedidosFiltro === 'pendente' && statusRaw !== 'pendente') continue;
+                if (pedidosFiltro === 'andamento' && !isAndamento) continue;
+                if (pedidosFiltro === 'finalizado' && !isFinal) continue;
 
                 if (item.papel === 'profissional' && p.status === 'recusado') continue;
 
@@ -1681,6 +1918,23 @@ window.liberarPagamento = async (id) => {
                     subMsg = '<div class=\"ip-sub\">Chat liberado. Você já pode negociar com o profissional.</div>';
                 }
 
+                // Card "Pedido em andamento" (diferencia Orçamentos vs Mensagens)
+                let cardAndamento = "";
+                if (['aceito','pago','finalizado'].includes(String(p.status||'').toLowerCase())) {
+                    const label = (String(p.status||'').toLowerCase() === 'finalizado') ? 'Serviço finalizado' : 'Pedido em andamento';
+                    cardAndamento = `
+                        <div style="margin-top:10px; background:#ffffff; border:1px solid #e6e6e6; border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+                            <div style="width:38px; height:38px; border-radius:12px; background:#e0f2f1; display:flex; align-items:center; justify-content:center; color:var(--cor0);">
+                                <i class='bx bx-receipt' style="font-size:20px;"></i>
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div style="font-weight:800; color:#111; font-size:0.92rem;">${label}</div>
+                                <div style="font-size:0.78rem; color:#6b7280;">Toque em “Detalhes” para ver informações do orçamento.</div>
+                            </div>
+                            <button class="btn-detalhes-card" onclick="event.stopPropagation(); abrirDetalhesPedido('${id}')" style="margin:0;">Detalhes</button>
+                        </div>`;
+                }
+
                 container.insertAdjacentHTML('beforeend', `
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
                         <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${bApagar}${badgeHtml}</div></div>
@@ -1688,7 +1942,7 @@ window.liberarPagamento = async (id) => {
                         <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
                             <h4>${p.servicoReferencia}</h4>
                             ${subMsg}
-                            <button class="btn-detalhes-card" onclick="event.stopPropagation(); verDetalhesOrcamento('${id}')">Mais detalhes</button>
+                            ${cardAndamento}
                             ${infoSaldo} ${acoesHtml}
                         </div>
                     </div>`);
@@ -1850,6 +2104,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 document.getElementById('chatNome').innerText = d.user || d.nome || nomePadrao;
                 document.getElementById('chatAvatar').src = d.foto || fotoPadrao || "https://placehold.co/150";
 
+                document.getElementById('chatAvatar').style.cursor = 'pointer';
+                document.getElementById('chatAvatar').onclick = () => window.location.href = `perfil-usuario.html?id=${uidOutro}`;
+                document.getElementById('chatNome').style.cursor = 'pointer';
+                document.getElementById('chatNome').onclick = () => window.location.href = `perfil-usuario.html?id=${uidOutro}`;
+
                 const elStatus = document.getElementById('chatStatus');
                 
                 if (elStatus) {
@@ -1883,6 +2142,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
         chatIdAtual = idDoc; 
         colecaoAtual = colecao;
+        restaurarRascunhoChat();
         // Mantém compat com trechos antigos que usam window.*
         window.chatIdAtual = chatIdAtual;
         window.colecaoAtual = colecaoAtual;
@@ -1932,11 +2192,14 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
 function carregarMensagens(colecao, docId) {
     const container = document.getElementById('areaMensagens');
+    if (!container) return;
     if (window.chatUnsubscribe) window.chatUnsubscribe();
     
     const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
     
     window.chatUnsubscribe = onSnapshot(q, async (snapshot) => {
+        const wasNearBottom = isNearBottom(container, 120);
+        const prevOffset = container.scrollHeight - container.scrollTop;
         container.innerHTML = "";
         
         let statusPedido = 'pendente';
@@ -1948,13 +2211,17 @@ function carregarMensagens(colecao, docId) {
         snapshot.forEach(docSnap => {
             const m = docSnap.data();
             // Verifica se a mensagem foi enviada por MIM (usuário logado)
-            const souEu = m.senderUid === currentUserUid;
+            const sender = m.senderUid || m.senderuid || m.senderUID || m.sender;
+            const souEu = String(sender||'') === String(currentUserUid);
             
-            // Formatar hora
+            // Formatar hora (Firestore Timestamp / ISO / Date)
             let horaMsg = "";
-            if(m.timestamp && m.timestamp.seconds) {
-                horaMsg = new Date(m.timestamp.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-            }
+            try {
+                let d = null;
+                if (m.timestamp && typeof m.timestamp === 'object' && typeof m.timestamp.seconds === 'number') d = new Date(m.timestamp.seconds * 1000);
+                else if (m.timestamp) d = new Date(m.timestamp);
+                if (d && !isNaN(d.getTime())) horaMsg = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+            } catch(e) {}
 
             // --- CARD PAGAMENTO (VERDE) ---
             if (m.tipo === 'pagamento') {
@@ -1994,6 +2261,34 @@ function carregarMensagens(colecao, docId) {
                     <button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>
                 </div>`);
             }
+            // --- IMAGEM ---
+            else if (m.tipo === 'imagem' && m.url) {
+                const htmlImg = `
+                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" style="padding:8px;">
+                    <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="window.open('${m.url}','_blank')" />
+                    ${m.texto ? `<div style="font-size:0.8rem; color:#666; margin-top:6px;">${m.texto}</div>` : ''}
+                    <span class="msg-hora">${horaMsg}</span>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', htmlImg);
+            }
+            // --- ARQUIVO ---
+            else if (m.tipo === 'arquivo' && m.url) {
+                const nome = m.texto || 'Arquivo';
+                const htmlFile = `
+                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center;">
+                            <i class='bx bx-file' style="font-size:20px; color:#3949ab"></i>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; color:#111; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nome}</div>
+                            <a href="${m.url}" target="_blank" style="font-size:0.82rem; color:var(--cor0); font-weight:700; text-decoration:none;">Baixar / abrir</a>
+                        </div>
+                    </div>
+                    <span class="msg-hora">${horaMsg}</span>
+                </div>`;
+                container.insertAdjacentHTML('beforeend', htmlFile);
+            }
             // --- MENSAGEM DE ÁUDIO ---
             else if (m.tipo === 'audio') {
                 const corWave = souEu ? 'white' : '#555';
@@ -2023,7 +2318,12 @@ function carregarMensagens(colecao, docId) {
                 </div>`);
             }
         });
-        container.scrollTop = container.scrollHeight;
+        if (wasNearBottom) {
+            container.scrollTop = container.scrollHeight;
+        } else {
+            container.scrollTop = Math.max(0, container.scrollHeight - prevOffset);
+        }
+        updateScrollDownButton();
     });
 }
 
@@ -2062,9 +2362,9 @@ window.gerarPagamento = async function() {
             tipo: 'pagamento', 
             valor: valorStr, 
             descricao: descricao,
-            maxParcelas: parseInt(maxParcelas.replace(/\D/g, "")) || 1, 
+            maxparcelas: parseInt(maxParcelas.replace(/\D/g, "")) || 1, 
             usernameProfissional: perfil.user, 
-            senderUid: auth.currentUser.uid, 
+            senderUid: currentUserUid, 
             timestamp: new Date() 
         });
     } catch(e) {
@@ -2076,11 +2376,115 @@ window.gerarPagamento = async function() {
     window.enviarMensagemTexto = async () => {
         const inp = document.getElementById('inputMsg'); if(!inp.value.trim()) return;
         const txt = inp.value; inp.value = "";
-        await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), { texto: txt, senderUid: currentUserUid, timestamp: new Date() });
-        if(colecaoAtual === 'conversas') await updateDoc(doc(db, "conversas", chatIdAtual), { ultimaMensagem: txt });
+        try {
+            if (!chatIdAtual || !colecaoAtual) {
+                window.dokeAlert ? window.dokeAlert('Abra um chat antes de enviar.') : alert('Abra um chat antes de enviar.');
+                return;
+            }
+            const uid = currentUserUid || auth.currentUser?.uid || null;
+            if (!uid) {
+                window.dokeAlert ? window.dokeAlert('Faça login para enviar mensagens.') : alert('Faça login para enviar mensagens.');
+                return;
+            }
+            await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), { tipo: 'texto', texto: txt, senderUid: uid, timestamp: new Date() });
+            const draftKey = getDraftKey();
+            if (draftKey) localStorage.removeItem(draftKey);
+            if(colecaoAtual === 'conversas') {
+                try {
+                    await updateDoc(doc(db, "conversas", chatIdAtual), { ultimamensagem: txt, dataatualizacao: new Date() });
+                } catch (e) { console.warn("Falha ao atualizar conversa:", e); }
+            }
+        } catch (e) {
+            console.error(e);
+            window.dokeAlert ? window.dokeAlert("Falha ao enviar. Verifique permissões (RLS) / colunas do Supabase.") : alert("Falha ao enviar. Verifique permissões (RLS).");
+        }
     };
 
+    // =============================
+    // ANEXOS (imagem/arquivo)
+    // =============================
+    window.abrirSeletorAnexo = () => {
+        if (!chatIdAtual || !colecaoAtual) {
+            window.dokeAlert ? window.dokeAlert('Abra um chat antes de anexar.') : alert('Abra um chat antes de anexar.');
+            return;
+        }
+        const input = document.getElementById('inputAnexo');
+        if (!input) return;
+        input.value = "";
+        input.click();
+    };
+
+    async function enviarAnexoArquivo(file){
+        if (!file) return;
+        if (!chatIdAtual || !colecaoAtual) return;
+
+        try {
+            const storage = getStorage();
+            const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `chat/${colecaoAtual}/${chatIdAtual}/${Date.now()}_${safeName}`;
+            const r = ref(storage, path);
+            await uploadBytes(r, file);
+            const url = await getDownloadURL(r);
+
+            const isImg = (file.type || '').startsWith('image/');
+            await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
+                tipo: isImg ? 'imagem' : 'arquivo',
+                texto: safeName,
+                url,
+                senderUid: currentUserUid,
+                timestamp: new Date()
+            });
+        } catch (e) {
+            console.error(e);
+            window.dokeAlert ? window.dokeAlert('Falha ao enviar anexo. Verifique o Storage (bucket/policies).') : alert('Falha ao enviar anexo.');
+        }
+    }
+
+    // Listener do input de anexo
+    document.addEventListener('DOMContentLoaded', () => {
+        const input = document.getElementById('inputAnexo');
+        if (input) {
+            input.addEventListener('change', async (e) => {
+                const file = e.target.files && e.target.files[0];
+                await enviarAnexoArquivo(file);
+            });
+        }
+        const msgInput = document.getElementById('inputMsg');
+        if (msgInput) msgInput.addEventListener('input', salvarRascunhoChat);
+        initScrollDownButton();
+    });
+
     window.verificarEnter = (e) => { if(e.key === 'Enter') window.enviarMensagemTexto(); };
+
+    function isNearBottom(el, threshold){
+        if (!el) return true;
+        const t = (typeof threshold === 'number') ? threshold : 80;
+        return (el.scrollHeight - el.scrollTop - el.clientHeight) <= t;
+    }
+
+    function updateScrollDownButton(){
+        const btn = document.getElementById('scrollDownBtn');
+        const area = document.getElementById('areaMensagens');
+        if (!btn || !area) return;
+        if (isNearBottom(area, 80)) btn.classList.remove('show');
+        else btn.classList.add('show');
+    }
+
+    function initScrollDownButton(){
+        const btn = document.getElementById('scrollDownBtn');
+        const area = document.getElementById('areaMensagens');
+        if (!btn || !area) return;
+        if (btn.dataset.bound === '1') return;
+        btn.dataset.bound = '1';
+        const toggle = () => updateScrollDownButton();
+        area.addEventListener('scroll', toggle);
+        window.addEventListener('resize', toggle);
+        btn.addEventListener('click', () => {
+            area.scrollTop = area.scrollHeight;
+            updateScrollDownButton();
+        });
+        updateScrollDownButton();
+    }
 
 
 
@@ -2108,9 +2512,11 @@ window.gerarPagamento = async function() {
     onAuthStateChanged(auth, (u) => { 
         if (u) { 
             currentUserUid = u.uid;
+            syncPerfilLocal(u);
             carregarListaPedidos();
             abrirChatDeepLink(); 
         } else { 
+            renderHeaderUser(null);
             window.location.href = "login.html"; 
         } 
     });
@@ -2204,6 +2610,7 @@ window.enviarAudio = function() {
             }
 
             // Upload para o Storage
+            const storage = getStorage();
             const nomeArquivo = `audios/${chatIdAtual}/${Date.now()}.webm`;
             const storageRef = ref(storage, nomeArquivo);
             
@@ -2223,8 +2630,8 @@ window.enviarAudio = function() {
             // Atualiza última mensagem da conversa
             if(colecaoAtual === 'conversas') {
                 updateDoc(doc(db, "conversas", chatIdAtual), { 
-                    ultimaMensagem: "🎤 Mensagem de voz",
-                    dataAtualizacao: new Date().toISOString()
+                    ultimamensagem: "🎤 Mensagem de voz",
+                    dataatualizacao: new Date()
                 });
             }
 

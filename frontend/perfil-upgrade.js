@@ -232,6 +232,16 @@
     return { usuario: r.data || null };
   }
 
+  async function getUsuarioByUsername(client, username){
+    const { data, error } = await client
+      .from("usuarios")
+      .select("*")
+      .eq("user", username)
+      .maybeSingle();
+    if(error) return { error };
+    return { usuario: data || null };
+  }
+
   async function updateUsuario(client, rowId, patch){
     // Atualiza por id; se não afetar ninguém, tenta por uid.
     let r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
@@ -1380,7 +1390,28 @@ function hideIf(selector, cond){
       // target
       const params = new URLSearchParams(location.search);
       const targetIdParam = params.get("id");
-      let targetId = targetIdParam || me?.id || null;
+      const targetUserParam = params.get("user");
+      let targetId = null;
+
+      if(targetIdParam){
+        targetId = targetIdParam;
+      } else if(targetUserParam){
+        // Busca por username
+        const uRes = await getUsuarioByUsername(client, targetUserParam);
+        if(uRes.error){
+          console.error(uRes.error);
+          toast("Erro ao buscar usuário por username.");
+          return;
+        }
+        const usuario = uRes.usuario;
+        if(!usuario){
+          toast("Usuário não encontrado.");
+          return;
+        }
+        targetId = usuario.id;
+      } else {
+        targetId = me?.id || null;
+      }
 
       if(pageMode === "self" && !me){
         toast("Faça login para ver seu perfil.");

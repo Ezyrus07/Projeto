@@ -26,13 +26,41 @@
 
   function buildTableFromPath(parts){
     // parts: [collection, docId, subcollection, docId, ...]
-    // Firestore path: pedidos/{id}/mensagens  -> table pedidos_mensagens + parent (pedido_id)
+    // Firestore path: pedidos/{id}/mensagens  -> table pedidos_mensagens + parent (pedidoId)
     const c0 = parts[0];
     const id0 = parts[1];
     const c1 = parts[2];
     const table = `${c0}_${c1}`;
-    const fk = `${singularize(c0)}_id`;
-    return { table, parent: { id: id0, fk } };
+
+    // Algumas tabelas do projeto usam camelCase (ex: "pedidoId") e outras snake_case (ex: conversa_id).
+    // Para evitar erros do tipo: "column ... does not exist" seguido de NOT NULL violation,
+    // carregamos uma lista de candidatos e (1) filtramos com OR e (2) inserimos com ambos.
+    const baseSnake = `${singularize(c0)}_id`;
+    const baseCamel = `${singularize(c0)}Id`;
+    const baseLower = baseCamel.toLowerCase();
+
+    const c0l = String(c0||"").toLowerCase();
+    const c1l = String(c1||"").toLowerCase();
+
+    // IMPORTANT: seu schema pode usar camelCase (pedidoId) ou snake_case (pedido_id)
+    // ou ainda colunas sem aspas (pedidoid). Mantemos lista de candidatos.
+    let fks = [baseCamel, baseLower, baseSnake];
+    if (c0l === 'pedidos' && c1l === 'mensagens') {
+      fks = ['pedidoid', 'pedido_id', 'pedidoId'];
+    } else if (c0l === 'pedidos') {
+      fks = [baseCamel, baseLower, baseSnake];
+    }
+    if (c0l === 'conversas' && c1l === 'mensagens') {
+      fks = ['conversaid', 'conversa_id', 'conversaId'];
+    } else if (c0l === 'conversas') {
+      fks = [baseCamel, baseLower, baseSnake];
+    }
+    // remove duplicados mantendo ordem
+    fks = Array.from(new Set(fks.filter(Boolean)));
+
+    // Preferência: usa o primeiro como "fk" principal, mas mantém todos em "fks".
+    const fk = fks[0];
+    return { table, parent: { id: id0, fk, fks } };
   }
 
   function isPathCollectionArgs(args){
@@ -141,7 +169,7 @@
     for (let attempt = 1; attempt <= maxTries; attempt++){
       const { data, error } = await client.from(table).insert(safe).select("*").maybeSingle();
       if (!error) return { data, safe };
-      const missing = (error?.status === 400) ? parseMissingColumn(error) : null;
+      const missing = parseMissingColumn(error);
       if (missing && Object.prototype.hasOwnProperty.call(safe, missing)){
         console.warn(`[supabase-compat] insert: coluna inexistente removida ("${missing}") e retry ${attempt}/${maxTries} na tabela "${table}".`);
         delete safe[missing];
@@ -158,7 +186,7 @@
     for (let attempt = 1; attempt <= maxTries; attempt++){
       const { error } = await client.from(table).update(safe).eq("id", id);
       if (!error) return { safe };
-      const missing = (error?.status === 400) ? parseMissingColumn(error) : null;
+      const missing = parseMissingColumn(error);
       if (missing && Object.prototype.hasOwnProperty.call(safe, missing)){
         console.warn(`[supabase-compat] update: coluna inexistente removida ("${missing}") e retry ${attempt}/${maxTries} na tabela "${table}".`);
         delete safe[missing];
@@ -175,7 +203,7 @@
     for (let attempt = 1; attempt <= maxTries; attempt++){
       const { error } = await client.from(table).upsert(safe);
       if (!error) return { safe };
-      const missing = (error?.status === 400) ? parseMissingColumn(error) : null;
+      const missing = parseMissingColumn(error);
       if (missing && Object.prototype.hasOwnProperty.call(safe, missing)){
         console.warn(`[supabase-compat] upsert: coluna inexistente removida ("${missing}") e retry ${attempt}/${maxTries} na tabela "${table}".`);
         delete safe[missing];
@@ -186,6 +214,58 @@
     throw new Error("Falha ao upsert apos multiplas tentativas (colunas inexistentes)." );
   }
 
+  function applyParentFilter(queryBuilder, parent){
+    if (!parent || !parent.id) return queryBuilder;
+    const fks = Array.isArray(parent.fks) && parent.fks.length ? parent.fks : (parent.fk ? [parent.fk] : []);
+    const unique = Array.from(new Set(fks.filter(Boolean)));
+    if (!unique.length) return queryBuilder;
+    if (unique.length === 1) return queryBuilder.eq(unique[0], parent.id);
+
+    // Supabase: OR filter (FK1 == id OR FK2 == id ...)
+    // Ex: .or('pedidoId.eq.<uuid>,pedido_id.eq.<uuid>')
+    const orExpr = unique.map(k => `${k}.eq.${parent.id}`).join(',');
+    return queryBuilder.or(orExpr);
+  }
+
+  function normalizePayload(payload){
+    const out = { ...(payload||{}) };
+
+    // Mapeia campos camelCase -> snake_case usados no schema atual
+    // (mantém ambos para compat com código legado)
+    if (out.maxParcelas != null && out.maxparcelas == null) out.maxparcelas = out.maxParcelas;
+    if (out.ultimaMensagem != null && out.ultimamensagem == null) out.ultimamensagem = out.ultimaMensagem;
+    if (out.dataAtualizacao != null && out.dataatualizacao == null) out.dataatualizacao = out.dataAtualizacao;
+    if (out.pedidoId != null && out.pedido_id == null) out.pedido_id = out.pedidoId;
+    if (out.pedidoId != null && out.pedidoid == null) out.pedidoid = out.pedidoId;
+    if (out.pedido_id != null && out.pedidoid == null) out.pedidoid = out.pedido_id;
+    if (out.conversaId != null && out.conversa_id == null) out.conversa_id = out.conversaId;
+    if (out.conversaId != null && out.conversaid == null) out.conversaid = out.conversaId;
+    if (out.conversa_id != null && out.conversaid == null) out.conversaid = out.conversa_id;
+    if (out.respostasTriagem != null && out.respostas_triagem == null) out.respostas_triagem = out.respostasTriagem;
+    if (out.respostasTriagem != null && out.respostastriagem == null) out.respostastriagem = out.respostasTriagem;
+    if (out.respostas_triagem != null && out.respostastriagem == null) out.respostastriagem = out.respostas_triagem;
+    if (out.formularioRespostas != null && out.formulario_respostas == null) out.formulario_respostas = out.formularioRespostas;
+    if (out.formularioRespostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formularioRespostas;
+    if (out.formulario_respostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formulario_respostas;
+
+    // Normaliza campos de sender uid (algumas tabelas usam senderUid, outras senderuid)
+    if (out.senderUid != null && out.senderuid == null) out.senderuid = out.senderUid;
+    if (out.senderUid != null && out.sender_uid == null) out.sender_uid = out.senderUid;
+    if (out.senderuid != null && out.senderUid == null) out.senderUid = out.senderuid;
+    if (out.sender_uid != null && out.senderUid == null) out.senderUid = out.sender_uid;
+
+    // Normaliza Date -> ISO string
+    for (const k of Object.keys(out)) {
+      const v = out[k];
+      if (v instanceof Date) out[k] = v.toISOString();
+      // Firestore Timestamp-like {seconds,nanoseconds}
+      if (v && typeof v === 'object' && typeof v.seconds === 'number') {
+        out[k] = new Date(v.seconds * 1000).toISOString();
+      }
+    }
+    return out;
+  }
+
   window.getDocs = async function(q){
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
@@ -194,33 +274,34 @@
     const whereClauses = clauses.filter(c => c && c.kind === "where");
     const orderClauses = clauses.filter(c => c && c.kind === "orderBy");
     const limitClause = clauses.find(c => c && c.kind === "limit");
-
-    let base = client.from(q.table).select("*");
-
-    // Implicit parent filter for subcollections
-    if (q.parent && q.parent.fk && q.parent.id) {
-      base = base.eq(q.parent.fk, q.parent.id);
-    }
-
-    for (const c of whereClauses) {
-      const op = c.op;
-      if (op === "==" || op === "=") base = base.eq(c.field, c.value);
-      else if (op === "!=") base = base.neq(c.field, c.value);
-      else if (op === ">") base = base.gt(c.field, c.value);
-      else if (op === ">=") base = base.gte(c.field, c.value);
-      else if (op === "<") base = base.lt(c.field, c.value);
-      else if (op === "<=") base = base.lte(c.field, c.value);
-      else if (op === "in") base = base.in(c.field, c.value);
-      else if (op === "array-contains") base = base.contains(c.field, [c.value]);
-      else base = base.eq(c.field, c.value);
-    }
-
     const limitN = limitClause ? limitClause.n : null;
+    const parent = (q && q.parent && q.parent.id) ? q.parent : null;
+    const parentFks = parent ? ((parent.fks && parent.fks.length) ? parent.fks : (parent.fk ? [parent.fk] : [])) : [];
+    const fkCandidates = (parent && parentFks.length) ? parentFks : [null];
+
+    const buildBase = (fk) => {
+      let base = client.from(q.table).select("*");
+      if (parent && parent.id && fk) base = base.eq(fk, parent.id);
+      for (const c of whereClauses) {
+        const op = c.op;
+        if (op === "==" || op === "=") base = base.eq(c.field, c.value);
+        else if (op === "!=") base = base.neq(c.field, c.value);
+        else if (op === ">") base = base.gt(c.field, c.value);
+        else if (op === ">=") base = base.gte(c.field, c.value);
+        else if (op === "<") base = base.lt(c.field, c.value);
+        else if (op === "<=") base = base.lte(c.field, c.value);
+        else if (op === "in") base = base.in(c.field, c.value);
+        else if (op === "array-contains") base = base.contains(c.field, [c.value]);
+        else base = base.eq(c.field, c.value);
+      }
+      return base;
+    };
 
     const isMissingColumnOrderError = (err) => {
       const msg = String(err?.message || "").toLowerCase();
       return err?.status === 400 && (msg.includes("could not find") && msg.includes("column"));
     };
+    const isMissingColumnError = (err) => !!parseMissingColumn(err);
 
     const buildOrderFallbacks = (requested) => {
       const f = String(requested || "").trim();
@@ -232,8 +313,8 @@
       return [f, ...defaults.filter(x => x !== f)];
     };
 
-    const execQuery = async (orders) => {
-      let r = base;
+    const execQuery = async (orders, fk) => {
+      let r = buildBase(fk);
       for (const o of orders) {
         const asc = (String(o.dir || "asc").toLowerCase() !== "desc");
         r = r.order(o.field, { ascending: asc });
@@ -242,31 +323,42 @@
       return await r;
     };
 
-    let result = await execQuery(orderClauses);
-    if (result.error && isMissingColumnOrderError(result.error) && orderClauses.length) {
-      const original = orderClauses[0];
-      const fallbacks = buildOrderFallbacks(original.field);
-      let lastErr = result.error;
-      for (const candidate of fallbacks) {
-        if (!candidate) continue;
-        const retryOrders = [{ ...original, field: candidate }, ...orderClauses.slice(1)];
-        const retry = await execQuery(retryOrders);
-        if (!retry.error) {
-          result = retry;
-          lastErr = null;
-          break;
+    let lastErr = null;
+    for (const fk of fkCandidates) {
+      let result = await execQuery(orderClauses, fk);
+      if (result.error && isMissingColumnOrderError(result.error) && orderClauses.length) {
+        const original = orderClauses[0];
+        const fallbacks = buildOrderFallbacks(original.field);
+        let orderErr = result.error;
+        for (const candidate of fallbacks) {
+          if (!candidate) continue;
+          const retryOrders = [{ ...original, field: candidate }, ...orderClauses.slice(1)];
+          const retry = await execQuery(retryOrders, fk);
+          if (!retry.error) {
+            result = retry;
+            orderErr = null;
+            break;
+          }
+          orderErr = retry.error;
         }
-        lastErr = retry.error;
+        if (orderErr) result = { data: null, error: orderErr };
       }
-      if (lastErr) result = { data: null, error: lastErr };
-    }
 
-    const { data, error } = result;
-    if (error) {
-      if (shouldReturnEmpty(error)) return makeQuerySnap([]);
-      throw error;
+      if (result.error) {
+        if (isMissingColumnError(result.error) && fk) {
+          lastErr = result.error;
+          continue;
+        }
+        if (shouldReturnEmpty(result.error)) return makeQuerySnap([]);
+        throw result.error;
+      }
+      return makeQuerySnap(result.data);
     }
-    return makeQuerySnap(data);
+    if (lastErr) {
+      if (shouldReturnEmpty(lastErr)) return makeQuerySnap([]);
+      throw lastErr;
+    }
+    return makeQuerySnap([]);
   };
 
   window.getDoc = async function(ref){
@@ -274,17 +366,32 @@
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return makeDocSnap(null);
 
-    let q = client.from(ref.table).select("*").eq("id", ref.id);
-    if (ref.parent && ref.parent.fk && ref.parent.id) {
-      q = q.eq(ref.parent.fk, ref.parent.id);
-    }
+    const parent = (ref && ref.parent && ref.parent.id) ? ref.parent : null;
+    const fks = parent ? ((parent.fks && parent.fks.length) ? parent.fks : (parent.fk ? [parent.fk] : [])) : [];
+    const fkCandidates = (parent && fks.length) ? fks : [null];
+    const isMissingColumnError = (err) => !!parseMissingColumn(err);
 
-    const { data, error } = await q.maybeSingle();
-    if (error) {
-      if (shouldReturnEmpty(error)) return makeDocSnap(null);
-      throw error;
+    let lastErr = null;
+    for (const fk of fkCandidates) {
+      let q = client.from(ref.table).select("*").eq("id", ref.id);
+      if (parent && parent.id && fk) q = q.eq(fk, parent.id);
+
+      const { data, error } = await q.maybeSingle();
+      if (error) {
+        if (isMissingColumnError(error) && fk) {
+          lastErr = error;
+          continue;
+        }
+        if (shouldReturnEmpty(error)) return makeDocSnap(null);
+        throw error;
+      }
+      return makeDocSnap(data);
     }
-    return makeDocSnap(data);
+    if (lastErr) {
+      if (shouldReturnEmpty(lastErr)) return makeDocSnap(null);
+      throw lastErr;
+    }
+    return makeDocSnap(null);
   };
 
   window.addDoc = async function(coll, payload){
@@ -293,9 +400,11 @@
     const table = coll?.table;
     if (!table) throw new Error("Tabela nao informada em collection().");
 
-    let finalPayload = { ...(payload||{}) };
-    if (coll.parent && coll.parent.fk && coll.parent.id) {
-      finalPayload[coll.parent.fk] = coll.parent.id;
+    const finalPayload = normalizePayload(payload);
+
+    if (coll.parent && coll.parent.id) {
+      const fks = (coll.parent.fks && coll.parent.fks.length) ? coll.parent.fks : (coll.parent.fk ? [coll.parent.fk] : []);
+      for (const fk of fks) finalPayload[fk] = coll.parent.id;
     }
 
     const { data } = await insertWithMissingColumnRetry(client, table, finalPayload);
@@ -305,9 +414,10 @@
   window.setDoc = async function(ref, payload){
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
-    const up = { ...payload, id: ref.id };
-    if (ref.parent && ref.parent.fk && ref.parent.id) {
-      up[ref.parent.fk] = ref.parent.id;
+    const up = normalizePayload({ ...payload, id: ref.id });
+    if (ref.parent && ref.parent.id) {
+      const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
+      for (const fk of fks) up[fk] = ref.parent.id;
     }
     await upsertWithMissingColumnRetry(client, ref.table, up);
     return true;
@@ -318,7 +428,7 @@
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
     try {
-      await updateWithMissingColumnRetry(client, ref.table, ref.id, payload);
+      await updateWithMissingColumnRetry(client, ref.table, ref.id, normalizePayload(payload));
       return true;
     } catch (error) {
       if (shouldReturnEmpty(error)) return true;
@@ -331,8 +441,10 @@
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
     let q = client.from(ref.table).delete().eq("id", ref.id);
-    if (ref.parent && ref.parent.fk && ref.parent.id) {
-      q = q.eq(ref.parent.fk, ref.parent.id);
+    if (ref.parent && ref.parent.id) {
+      const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
+      if (fks.length === 1) q = q.eq(fks[0], ref.parent.id);
+      else if (fks.length > 1) q = q.or(fks.map(k => `${k}.eq.${ref.parent.id}`).join(','));
     }
     const { error } = await q;
     if (error) {
