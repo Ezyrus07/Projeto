@@ -883,6 +883,71 @@ window.dokeBuildCardPremium = function(anuncio) {
             card.appendChild(favBtn);
         } catch(e) {}
 
+        try {
+            const menuWrap = document.createElement('div');
+            menuWrap.className = 'cp-more';
+            menuWrap.innerHTML = `
+                <button class="cp-more-btn" type="button" aria-label="Mais opcoes">
+                    <i class='bx bx-dots-vertical-rounded'></i>
+                </button>
+                <div class="cp-more-menu" role="menu">
+                    <button type="button" data-action="like" role="menuitem"><i class='bx bx-heart'></i> Curtir</button>
+                    <button type="button" data-action="share" role="menuitem"><i class='bx bx-share-alt'></i> Compartilhar</button>
+                    <button type="button" data-action="report" role="menuitem"><i class='bx bx-flag'></i> Denunciar</button>
+                </div>
+            `;
+            card.appendChild(menuWrap);
+
+            const menuBtn = menuWrap.querySelector('.cp-more-btn');
+            const menu = menuWrap.querySelector('.cp-more-menu');
+            menuWrap.addEventListener('mousedown', (e) => e.stopPropagation());
+
+            const handleMenuAction = (action) => {
+                if (action === "like") {
+                    menuBtn.classList.toggle('liked');
+                    if (window.dokeDelight?.toast) window.dokeDelight.toast('Curtido');
+                    return;
+                }
+                if (action === "share") {
+                    const url = `detalhes.html?id=${anuncio.id || ''}`;
+                    if (navigator.share) {
+                        navigator.share({ title: anuncio.titulo || 'Servico', url });
+                    } else if (navigator.clipboard?.writeText) {
+                        navigator.clipboard.writeText(url);
+                        if (window.dokeDelight?.toast) window.dokeDelight.toast('Link copiado');
+                    } else {
+                        window.prompt('Copie o link:', url);
+                    }
+                    return;
+                }
+                if (action === "report") {
+                    window.alert('Denuncia enviada. Obrigado!');
+                }
+            };
+
+            menuBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                menu.classList.toggle('open');
+            });
+
+            menu.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const btn = e.target.closest('button');
+                if (!btn) return;
+                menu.classList.remove('open');
+                handleMenuAction(btn.dataset.action);
+            });
+
+            if (!window.__dokeAnuncioMenuCloseBound) {
+                window.__dokeAnuncioMenuCloseBound = true;
+                document.addEventListener('click', () => {
+                    document.querySelectorAll('.cp-more-menu.open').forEach((el) => {
+                        el.classList.remove('open');
+                    });
+                });
+            }
+        } catch(e) {}
+
         // Online real-time (melhor esforço: usa flags/timestamps se existirem)
         try {
             const dot = card.querySelector('.status-dot');
@@ -1454,6 +1519,21 @@ function initHomeEnhancements() {
             }
         }, { passive: false });
     });
+
+    const reelsScroller = document.getElementById('galeria-dinamica');
+    if (reelsScroller && reelsScroller.dataset.wheelFix !== "true") {
+        reelsScroller.dataset.wheelFix = "true";
+        reelsScroller.addEventListener('wheel', (ev) => {
+            const absX = Math.abs(ev.deltaX);
+            const absY = Math.abs(ev.deltaY);
+
+            if (ev.shiftKey || absX > absY) {
+                const delta = absX > absY ? ev.deltaX : ev.deltaY;
+                reelsScroller.scrollLeft += delta;
+                ev.preventDefault();
+            }
+        }, { passive: false });
+    }
 
     function enableDragScroll(container) {
         let isDown = false;
@@ -3573,6 +3653,40 @@ window.pararPreview = function(card) {
 }
 
 // Função para alternar a visibilidade dos campos de endereço
+const reelPreviewTimers = new WeakMap();
+
+window.playReelPreview = function(card) {
+    const video = card && card.querySelector('video');
+    if (!video) return;
+    if (reelPreviewTimers.has(video)) return;
+
+    const timer = window.setTimeout(() => {
+        reelPreviewTimers.delete(video);
+        video.currentTime = 0;
+        const playPromise = video.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+            playPromise.catch(function(){});
+        }
+    }, 700);
+
+    reelPreviewTimers.set(video, timer);
+}
+
+window.stopReelPreview = function(card) {
+    const video = card && card.querySelector('video');
+    if (!video) return;
+    const timer = reelPreviewTimers.get(video);
+    if (timer) {
+        window.clearTimeout(timer);
+        reelPreviewTimers.delete(video);
+    }
+    video.pause();
+    video.currentTime = 0;
+    if (video.getAttribute("poster") && typeof video.load === "function") {
+        video.load();
+    }
+}
+
     window.toggleAddressFields = function() {
         const modoAtend = document.querySelector('input[name="modo_atend"]:checked').value;
         const addressContainer = document.getElementById('address-fields-container');
@@ -5577,13 +5691,17 @@ window.carregarReelsHome = async function() {
 
             if (!videoUrl) return;
             const startId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
+            const tituloReel = (item.titulo || autorUser || "Video curto");
+            const descReel = (item.descricao || item.legenda || tag || "");
             const html = `
-            <div class="tiktok-card" onclick="window.location.href='feed.html?start=${startId}'">
-                <div class="card-badge-online">${tag}</div>
-                <video src="${videoUrl}" poster="${capaUrl}" class="video-bg" muted loop playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback"></video>
-                <div class="info-container">
-                    <h3 class="user-handle">${autorUser}</h3>
-                    <button class="btn-orcamento-card">Solicitar orcamento</button>
+            <div class="dp-reelCard dp-item--clickable" onclick="window.location.href='feed.html?start=${startId}'" onmouseenter="playReelPreview(this)" onmouseleave="stopReelPreview(this)">
+                <div class="dp-reelMedia">
+                    <video src="${videoUrl}" poster="${capaUrl}" muted loop playsinline preload="metadata" disablepictureinpicture disableremoteplayback controlslist="nodownload noplaybackrate noremoteplayback"></video>
+                    <div class="dp-reelOverlay">
+                        <b>${escapeHtml(tituloReel)}</b>
+                        <p>${escapeHtml(descReel)}</p>
+                    </div>
+                    <div class="dp-reelPlay"><i class='bx bx-play'></i></div>
                 </div>
             </div>`;
             container.insertAdjacentHTML('beforeend', html);

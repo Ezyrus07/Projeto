@@ -510,6 +510,10 @@ function hideIf(selector, cond){
           openReel();
         }
       });
+      if (window.playReelPreview && window.stopReelPreview) {
+        card.addEventListener("mouseenter", () => window.playReelPreview(card));
+        card.addEventListener("mouseleave", () => window.stopReelPreview(card));
+      }
       grid.appendChild(card);
     }
   }
@@ -959,6 +963,7 @@ function hideIf(selector, cond){
     const tabsWrap = $(".dp-tabs");
     const prevNav = $(".dp-tabsPrev");
     const nextNav = $(".dp-tabsNext");
+    let sectionsWrap = $(".dp-sections");
 
     if(tabsWrap && prevNav && nextNav){
       const scrollAmount = () => Math.max(140, Math.round(tabsWrap.clientWidth * 0.6));
@@ -982,9 +987,56 @@ function hideIf(selector, cond){
       updateNav();
     }
 
+    if(!sectionsWrap && sections.length){
+      sectionsWrap = document.createElement("div");
+      sectionsWrap.className = "dp-sections";
+      sections[0].parentNode.insertBefore(sectionsWrap, sections[0]);
+      sections.forEach(s => sectionsWrap.appendChild(s));
+    }
+
+    sections.forEach(s => {
+      s.style.display = "";
+      s.setAttribute("aria-hidden", "true");
+    });
+
+    let activeSection = null;
+    const updateWrapHeight = (nextHeight, forceShrink=false) => {
+      if(!sectionsWrap) return;
+      const current = parseFloat(sectionsWrap.style.minHeight || "0") || 0;
+      const next = Math.max(nextHeight || 0, 220);
+      const canShrink = forceShrink || (window.scrollY <= (sectionsWrap.offsetTop + 20));
+      if(next >= current || canShrink){
+        sectionsWrap.style.minHeight = `${next}px`;
+      }
+    };
+
+    if("ResizeObserver" in window && sectionsWrap){
+      const ro = new ResizeObserver((entries)=>{
+        if(!activeSection) return;
+        for(const entry of entries){
+          if(entry.target === activeSection){
+            updateWrapHeight(entry.contentRect.height);
+          }
+        }
+      });
+      sections.forEach(s => ro.observe(s));
+    }
+
     function activate(tab){
+      if(sectionsWrap){
+        updateWrapHeight(sectionsWrap.offsetHeight, true);
+      }
+
       buttons.forEach(b=> b.classList.toggle("active", b.dataset.tab === tab));
-      sections.forEach(s=> s.style.display = (s.dataset.tab === tab ? "" : "none"));
+      sections.forEach(s=> {
+        const isActive = s.dataset.tab === tab;
+        s.classList.toggle("dp-section--hidden", !isActive);
+        s.setAttribute("aria-hidden", isActive ? "false" : "true");
+        if(isActive) activeSection = s;
+      });
+      if(sectionsWrap && activeSection){
+        updateWrapHeight(activeSection.offsetHeight);
+      }
 
       // Lazy load
       if(tab === "publicacoes") loadPublicacoes(ctx.client, ctx.target.id, ctx);
