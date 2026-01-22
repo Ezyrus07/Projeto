@@ -46,12 +46,12 @@
     // ou ainda colunas sem aspas (pedidoid). Mantemos lista de candidatos.
     let fks = [baseCamel, baseLower, baseSnake];
     if (c0l === 'pedidos' && c1l === 'mensagens') {
-      fks = ['pedidoid', 'pedido_id', 'pedidoId'];
+      fks = ['pedido_id', 'pedidoid', 'pedidoId'];
     } else if (c0l === 'pedidos') {
       fks = [baseCamel, baseLower, baseSnake];
     }
     if (c0l === 'conversas' && c1l === 'mensagens') {
-      fks = ['conversaid', 'conversa_id', 'conversaId'];
+      fks = ['conversa_id', 'conversaid', 'conversaId'];
     } else if (c0l === 'conversas') {
       fks = [baseCamel, baseLower, baseSnake];
     }
@@ -152,14 +152,22 @@
     return false;
   }
 
+  function normalizeMissingColumnName(name){
+    if (!name) return null;
+    const last = String(name).trim().split(".").pop();
+    return last.replace(/^["']|["']$/g, "");
+  }
+
   function parseMissingColumn(error){
-    const msg = String(error?.message || error?.details || "");
+    const msg = String(error?.message || error?.details || error?.hint || "");
     let m = msg.match(/Could not find the \'([^\']+)\' column/i);
-    if (m && m[1]) return m[1];
+    if (m && m[1]) return normalizeMissingColumnName(m[1]);
     m = msg.match(/Could not find the \"([^\"]+)\" column/i);
-    if (m && m[1]) return m[1];
+    if (m && m[1]) return normalizeMissingColumnName(m[1]);
     m = msg.match(/column \"([^\"]+)\".*does not exist/i);
-    if (m && m[1]) return m[1];
+    if (m && m[1]) return normalizeMissingColumnName(m[1]);
+    m = msg.match(/column ([^\s]+) does not exist/i);
+    if (m && m[1]) return normalizeMissingColumnName(m[1]);
     return null;
   }
 
@@ -247,12 +255,13 @@
     if (out.formularioRespostas != null && out.formulario_respostas == null) out.formulario_respostas = out.formularioRespostas;
     if (out.formularioRespostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formularioRespostas;
     if (out.formulario_respostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formulario_respostas;
+    if (out.perguntasFormularioJson != null && out.perguntasformulariojson == null) out.perguntasformulariojson = out.perguntasFormularioJson;
+    if (out.perguntasFormularioJson != null && out.perguntas_formulario_json == null) out.perguntas_formulario_json = out.perguntasFormularioJson;
+    if (out.perguntasformulariojson != null && out.perguntasFormularioJson == null) out.perguntasFormularioJson = out.perguntasformulariojson;
+    if (out.perguntas_formulario_json != null && out.perguntasFormularioJson == null) out.perguntasFormularioJson = out.perguntas_formulario_json;
 
-    // Normaliza campos de sender uid (algumas tabelas usam senderUid, outras senderuid)
+    // Normaliza campos de sender uid (prioriza senderuid para evitar retries)
     if (out.senderUid != null && out.senderuid == null) out.senderuid = out.senderUid;
-    if (out.senderUid != null && out.sender_uid == null) out.sender_uid = out.senderUid;
-    if (out.senderuid != null && out.senderUid == null) out.senderUid = out.senderuid;
-    if (out.sender_uid != null && out.senderUid == null) out.senderUid = out.sender_uid;
 
     // Normaliza Date -> ISO string
     for (const k of Object.keys(out)) {
@@ -297,11 +306,24 @@
       return base;
     };
 
-    const isMissingColumnOrderError = (err) => {
+    const isMissingColumnOrderError = (err, field) => {
+      const missing = parseMissingColumn(err);
+      if (missing) {
+        if (!field) return true;
+        return String(missing).toLowerCase() === String(field).toLowerCase();
+      }
       const msg = String(err?.message || "").toLowerCase();
       return err?.status === 400 && (msg.includes("could not find") && msg.includes("column"));
     };
     const isMissingColumnError = (err) => !!parseMissingColumn(err);
+    const shouldTryNextFk = (err) => {
+      if (!err) return false;
+      if (isMissingColumnError(err)) return true;
+      if (err?.status !== 400) return false;
+      const msg = String(err?.message || err?.details || err?.hint || "").toLowerCase();
+      if (msg.includes("column") || msg.includes("schema") || msg.includes("does not exist")) return true;
+      return msg.trim() === "" || msg === "bad request";
+    };
 
     const buildOrderFallbacks = (requested) => {
       const f = String(requested || "").trim();
@@ -326,26 +348,28 @@
     let lastErr = null;
     for (const fk of fkCandidates) {
       let result = await execQuery(orderClauses, fk);
-      if (result.error && isMissingColumnOrderError(result.error) && orderClauses.length) {
+      if (result.error && orderClauses.length) {
         const original = orderClauses[0];
-        const fallbacks = buildOrderFallbacks(original.field);
-        let orderErr = result.error;
-        for (const candidate of fallbacks) {
-          if (!candidate) continue;
-          const retryOrders = [{ ...original, field: candidate }, ...orderClauses.slice(1)];
-          const retry = await execQuery(retryOrders, fk);
-          if (!retry.error) {
-            result = retry;
-            orderErr = null;
-            break;
+        if (isMissingColumnOrderError(result.error, original.field)) {
+          const fallbacks = buildOrderFallbacks(original.field);
+          let orderErr = result.error;
+          for (const candidate of fallbacks) {
+            if (!candidate) continue;
+            const retryOrders = [{ ...original, field: candidate }, ...orderClauses.slice(1)];
+            const retry = await execQuery(retryOrders, fk);
+            if (!retry.error) {
+              result = retry;
+              orderErr = null;
+              break;
+            }
+            orderErr = retry.error;
           }
-          orderErr = retry.error;
+          if (orderErr) result = { data: null, error: orderErr };
         }
-        if (orderErr) result = { data: null, error: orderErr };
       }
 
       if (result.error) {
-        if (isMissingColumnError(result.error) && fk) {
+        if (fk && shouldTryNextFk(result.error)) {
           lastErr = result.error;
           continue;
         }
@@ -401,10 +425,37 @@
     if (!table) throw new Error("Tabela nao informada em collection().");
 
     const finalPayload = normalizePayload(payload);
+    if ((table === 'pedidos_mensagens' || table === 'conversas_mensagens') && finalPayload.senderuid != null) {
+      delete finalPayload.senderUid;
+      delete finalPayload.sender_uid;
+    }
 
     if (coll.parent && coll.parent.id) {
       const fks = (coll.parent.fks && coll.parent.fks.length) ? coll.parent.fks : (coll.parent.fk ? [coll.parent.fk] : []);
-      for (const fk of fks) finalPayload[fk] = coll.parent.id;
+      if (fks.length > 1) {
+        let lastErr = null;
+        for (const fk of fks) {
+          const attempt = { ...finalPayload };
+          for (const other of fks) {
+            if (other !== fk) delete attempt[other];
+          }
+          attempt[fk] = coll.parent.id;
+          try {
+            const { data } = await insertWithMissingColumnRetry(client, table, attempt);
+            return { id: data?.id, _raw: data };
+          } catch (error) {
+            const missing = parseMissingColumn(error);
+            if (missing && String(missing).toLowerCase() === String(fk).toLowerCase()) {
+              lastErr = error;
+              continue;
+            }
+            throw error;
+          }
+        }
+        if (lastErr) throw lastErr;
+      } else {
+        for (const fk of fks) finalPayload[fk] = coll.parent.id;
+      }
     }
 
     const { data } = await insertWithMissingColumnRetry(client, table, finalPayload);
@@ -489,7 +540,7 @@
   };
 
   // "Realtime" (polling). Supabase Realtime channels demand more setup; polling keeps the legacy API working.
-  const DEFAULT_POLL_MS = 3500;
+  const DEFAULT_POLL_MS = 800;
 
   window.onSnapshot = function(refOrQuery, cb, options){
     let active = true;

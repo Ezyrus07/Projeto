@@ -217,11 +217,119 @@
             .results-count { width: 100%; margin-left: 0; }
             .form-row { grid-template-columns: 1fr; }
         }
-    </style>
+    
+        /* =========================================================
+           MODAL - FIX SCROLL + FILE INPUT BONITO
+           ========================================================= */
+        body.modal-open { overflow: hidden; }
+
+        .modal-overlay {
+            align-items: flex-start;
+            padding: 18px 14px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .modal-card {
+            margin: 16px auto;
+            max-height: calc(100vh - 36px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .file-ui {
+            width: 100%;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid #ddd;
+            border-radius: 12px;
+            padding: 12px;
+            background: #fff;
+            margin-bottom: 10px;
+        }
+        .file-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 10px;
+            border: 1px solid #e7e7e7;
+            background: #f7f7f7;
+            cursor: pointer;
+            font-weight: 800;
+            color: #333;
+            user-select: none;
+        }
+        .file-btn:hover { background: #f1f1f1; }
+        .file-btn:focus-visible { outline: 3px solid rgba(42, 95, 144, 0.22); outline-offset: 2px; }
+        .file-name { font-size: 0.92rem; color: #555; }
+
+        @media (max-width: 560px){
+            .modal-card { padding: 18px; border-radius: 16px; }
+            .form-row { grid-template-columns: 1fr; }
+        }
+
+
+        /* Toast (substitui alert do navegador) */
+        .toast-wrap{
+            position: fixed;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: 18px;
+            z-index: 999999;
+            display:flex;
+            flex-direction: column;
+            gap: 10px;
+            width: min(520px, calc(100% - 24px));
+            pointer-events:none;
+        }
+        .toast{
+            pointer-events:auto;
+            background: rgba(17,24,39,0.92);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 16px;
+            padding: 12px 14px;
+            display:flex;
+            align-items:center;
+            justify-content: space-between;
+            gap: 10px;
+            box-shadow: 0 18px 36px rgba(0,0,0,0.18);
+        }
+        .toast small{ color: rgba(255,255,255,0.78); font-weight: 700; }
+        .toast button{
+            border:none;
+            background: rgba(255,255,255,0.12);
+            color:#fff;
+            font-weight: 1000;
+            border-radius: 12px;
+            padding: 8px 10px;
+            cursor:pointer;
+        }
+
+        /* Força modal com scroll interno (mobile) */
+        .modal-overlay{
+            align-items: flex-start !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+            padding: 18px 14px !important;
+        }
+        .modal-card{
+            max-height: calc(100vh - 36px) !important;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        /* Força esconder input file nativo e usar UI custom */
+        #modalCriarComm input[type="file"]{ display:none !important; }
+
+</style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 </head>
 <body>
+    <div class=\"toast-wrap\" id=\"toastWrap\"></div>
 
         <header class="navbar-desktop">
         <div id="logo-desktop">
@@ -395,7 +503,11 @@
 
                 <label class="form-label">Imagem de Capa (Opcional)</label>
                 <div class="img-preview" id="commImgPreview"><span style="color:#888; font-size:0.85rem;">Prévia da imagem</span></div>
-                <input type="file" id="commFoto" class="form-input" accept="image/*">
+                <input type="file" id="commFoto" accept="image/*" hidden>
+                <div class="file-ui" role="group" aria-label="Selecionar imagem de capa">
+                    <label for="commFoto" class="file-btn"><i class='bx bx-upload'></i> Escolher arquivo</label>
+                    <span class="file-name" id="commFotoNome">Nenhum arquivo escolhido</span>
+                </div>
                 <div class="help-text">PNG/JPG, até 2MB. (a imagem aparece no topo do grupo)</div>
 
                 <button type="submit" class="btn-submit-modal">Criar Comunidade</button>
@@ -438,7 +550,37 @@
                 return id;
             }
 
-            function readJoinState(id){
+            
+            function ensureHref(card){
+                const id = getCommId(card);
+                if(!card.getAttribute('data-href')){
+                    card.setAttribute('data-href', `grupo.html?id=${encodeURIComponent(id)}`);
+                }
+                return card.getAttribute('data-href');
+            }
+
+            function saveCommDataFromCard(card){
+                try{
+                    const id = getCommId(card);
+                    const title = ($('.card-title', card)?.innerText || '').trim() || id;
+                    const desc = ($('.card-desc', card)?.innerText || $('.card-text', card)?.innerText || '').trim();
+                    const imgEl = $('.card-cover img', card) || $('img', card);
+                    const cover = imgEl?.getAttribute('src') || '';
+                    const data = {
+                        id,
+                        title,
+                        desc,
+                        cover,
+                        tipo: (card.getAttribute('data-tipo') || '').trim(),
+                        privacidade: getPrivacy(card),
+                        verificada: (card.getAttribute('data-verificada') === 'true'),
+                        membros: card.getAttribute('data-membros') || '',
+                        atividade: card.getAttribute('data-atividade') || ''
+                    };
+                    localStorage.setItem(`doke_comm_data_${id}`, JSON.stringify(data));
+                }catch(e){}
+            }
+function readJoinState(id){
                 try{ return localStorage.getItem(storageKey(id)) || 'none'; }catch(e){ return 'none'; }
             }
             function writeJoinState(id, value){
@@ -513,6 +655,7 @@
                 const cards = $$('.card-comm');
                 cards.forEach(card => {
                     getCommId(card);
+                    ensureHref(card);
                     ensureFlags(card);
                     $$('img', card).forEach(img => img.setAttribute('loading','lazy'));
                     const btn = $('.btn-entrar', card);
@@ -630,14 +773,17 @@
                 if(!modal) return;
                 state.lastFocus = document.activeElement;
                 modal.style.display = 'flex';
-                document.body.style.overflow = 'hidden';
+                                modal.scrollTop = 0;
+                const card = modal.querySelector('.modal-card');
+                if(card) card.scrollTop = 0;
+document.body.classList.add('modal-open');
                 setTimeout(()=>{ $('#commNome')?.focus(); }, 10);
             }
             function closeModal(){
                 const modal = $('#modalCriarComm');
                 if(!modal) return;
                 modal.style.display = 'none';
-                document.body.style.overflow = '';
+                document.body.classList.remove('modal-open');
                 if(state.lastFocus && typeof state.lastFocus.focus === 'function') state.lastFocus.focus();
             }
 
@@ -718,9 +864,20 @@
                     const privacy = getPrivacy(card);
                     const current = readJoinState(id);
 
+                    // Se for público, ao entrar já abre o grupo
+                    if(current === 'none' && privacy !== 'privada'){
+                        writeJoinState(id, 'member');
+                        setBtnState(btn, card);
+                        saveCommDataFromCard(card);
+                        const href = ensureHref(card);
+                        if(href) window.location.href = href;
+                        return;
+                    }
+
                     if(current === 'member'){
-                        // Abrir (se tiver link no card)
-                        const href = card.getAttribute('data-href');
+                        // Abrir
+                        saveCommDataFromCard(card);
+                        const href = ensureHref(card);
                         if(href) window.location.href = href;
                         return;
                     }
@@ -755,9 +912,14 @@
                 if(!input || !preview) return;
 
                 input.addEventListener('change', ()=>{
+                    const nameEl = $('#commFotoNome');
+                    if(nameEl) nameEl.textContent = (input.files && input.files[0]) ? input.files[0].name : 'Nenhum arquivo escolhido';
+
                     preview.innerHTML = '';
                     const file = input.files && input.files[0];
                     if(!file){
+                        const nameEl = $('#commFotoNome');
+                        if(nameEl) nameEl.textContent = 'Nenhum arquivo escolhido';
                         preview.innerHTML = '<span style="color:#888; font-size:0.85rem;">Prévia da imagem</span>';
                         return;
                     }
@@ -765,6 +927,8 @@
                     const sizeMB = file.size / (1024*1024);
                     if(sizeMB > maxMB){
                         input.value = '';
+                        const nameEl = $('#commFotoNome');
+                        if(nameEl) nameEl.textContent = 'Nenhum arquivo escolhido';
                         preview.innerHTML = '<span style="color:#b23b3b; font-size:0.85rem; font-weight:800;">Arquivo muito grande (máx 2MB).</span>';
                         return;
                     }
@@ -839,5 +1003,105 @@
             });
         })();
     </script>
+
+<script>
+(function(){
+  // ===== Toast util =====
+  const wrap = document.getElementById('toastWrap');
+  function esc(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
+  window.showToast = function(msg, kind='info'){
+    if(!wrap) return;
+    const el = document.createElement('div');
+    el.className = 'toast';
+    const left = document.createElement('div');
+    const title = (kind==='error')?'Erro':(kind==='success')?'Sucesso':'Aviso';
+    left.innerHTML = `<div style="font-weight:1000; margin-bottom:2px;">${esc(title)}</div><small>${esc(msg)}</small>`;
+    const btn = document.createElement('button');
+    btn.textContent = 'OK';
+    btn.onclick = () => el.remove();
+    el.appendChild(left);
+    el.appendChild(btn);
+    wrap.appendChild(el);
+    setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 4200);
+  };
+
+  // ===== Mata o "127.0.0.1 DIZ" =====
+  const nativeAlert = window.alert;
+  window.alert = function(msg){
+    const text = String(msg||'');
+    const kind = /erro|error|falha|inválid/i.test(text) ? 'error' : /sucesso|criado|ok|conclu/i.test(text) ? 'success' : 'info';
+    window.showToast(text, kind);
+  };
+
+  // ===== Cria/atualiza modelo completo do grupo no localStorage (para grupo.html) =====
+  function getCurrentUser(){
+    const keys = ['usuarioLogado','user','usuario','currentUser','doke_user'];
+    for(const k of keys){
+      try{
+        const v = localStorage.getItem(k);
+        if(!v) continue;
+        const obj = JSON.parse(v);
+        const id = obj.id || obj.uid || obj.user_id || obj.email || obj.telefone || obj.username;
+        const nome = obj.nome || obj.user || obj.username || obj.displayName || obj.email || 'Você';
+        const foto = obj.foto || obj.avatar || obj.photoURL || 'https://i.pravatar.cc/150?img=3';
+        if(id) return { id: String(id), nome: String(nome), foto: String(foto) };
+      }catch(e){}
+    }
+    return { id:'local_user', nome:'Você', foto:'https://i.pravatar.cc/150?img=3' };
+  }
+
+  function defaultRoles(){
+    return [
+      { id:'owner', name:'Dono', color:'#f59e0b', system:true },
+      { id:'mod', name:'Moderador', color:'#2a5f90', system:true },
+      { id:'member', name:'Membro', color:'#6b7280', system:true }
+    ];
+  }
+
+  // Depois que o grupo é criado, salvamos um modelo completo.
+  function hookCreate(){
+    const old = window.criarNovaComunidade;
+    if(typeof old !== 'function') return;
+
+    window.criarNovaComunidade = async function(ev){
+      const res = await old.call(this, ev);
+      try{
+        // pega id do card recém-criado, ou usa o nome como fallback
+        const nome = (document.getElementById('commNome')?.value || '').trim();
+        const u = getCurrentUser();
+
+        // tenta achar o card mais recente (primeiro do grid)
+        const card = document.querySelector('.comm-grid .comm-card, .communities-grid .comm-card, .comm-card');
+        const id = card?.getAttribute('data-id') || card?.getAttribute('data-comm-id') || (nome ? nome.toLowerCase().replace(/\s+/g,'-') : ('c_'+Date.now()));
+        const cover = document.querySelector('#commImgPreview img')?.src || '';
+
+        const group = {
+          id,
+          title: nome || (card?.querySelector('.card-title')?.innerText || 'Grupo'),
+          desc: (document.getElementById('commDesc')?.value || card?.querySelector('.card-desc')?.innerText || ''),
+          cover,
+          tipo: document.getElementById('commTipo')?.value || card?.getAttribute('data-tipo') || 'Pro',
+          privacidade: document.getElementById('commPrivacidade')?.value || card?.getAttribute('data-privacidade') || 'publica',
+          categoria: document.getElementById('commCategoria')?.value || card?.getAttribute('data-categoria') || '',
+          subcategoria: document.getElementById('commSubcategoria')?.value || '',
+          createdAt: new Date().toISOString(),
+          ownerId: u.id,
+          roles: defaultRoles(),
+          members: [{ id: u.id, nome: u.nome, foto: u.foto, status:'online', roleId:'owner' }],
+          posts: []
+        };
+        localStorage.setItem('doke_group_full_' + id, JSON.stringify(group));
+        // marca como membro para o botão virar Abrir
+        localStorage.setItem('doke_comm_state_' + id, 'member');
+      }catch(e){}
+      return res;
+    };
+  }
+
+  // roda depois do script.js carregar
+  window.addEventListener('load', hookCreate);
+})();
+</script>
+
 </body>
 </html>

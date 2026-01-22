@@ -610,7 +610,7 @@
 
 <script>
     // 1. IMPORTAÇÕES NECESSÁRIAS
-    const { doc, getDoc, addDoc, collection } = window;
+    const { doc, getDoc, addDoc, collection, getDocs, query, where, limit } = window;
     const { onAuthStateChanged } = window;
 
     // Variável para guardar as perguntas carregadas (se houver)
@@ -642,6 +642,35 @@
         }
 
         // B. Carrega Anúncio (Título, Regras e PERGUNTAS DE TRIAGEM)
+        const aplicarDadosAnuncio = (dadosAnuncio) => {
+            if (!dadosAnuncio) return;
+            const inputTitulo = document.getElementById('titulo-pedido');
+            if(inputTitulo && dadosAnuncio.titulo) {
+                inputTitulo.value = "Orcamento: " + dadosAnuncio.titulo;
+            }
+            aplicarConfiguracoesDoAnuncio(dadosAnuncio);
+
+            const rawPerguntas =
+                dadosAnuncio.perguntasFormularioJson ??
+                dadosAnuncio.perguntasformulariojson ??
+                dadosAnuncio.perguntas_formulario_json ??
+                dadosAnuncio.perguntas_formulariojson;
+            if (rawPerguntas) {
+                try {
+                    let perguntas = rawPerguntas;
+                    if (typeof perguntas === 'string') {
+                        perguntas = JSON.parse(perguntas);
+                    }
+                    if (Array.isArray(perguntas) && perguntas.length > 0) {
+                        window.perguntasTriagem = perguntas;
+                        renderizarPerguntasDinamicas(perguntas);
+                    }
+                } catch (errJson) {
+                    console.error("Erro ao ler JSON de perguntas:", errJson);
+                }
+            }
+        };
+
         if (anuncioId) {
             try {
                 const docAnuncioRef = doc(db, "anuncios", anuncioId);
@@ -660,9 +689,17 @@
                     aplicarConfiguracoesDoAnuncio(dadosAnuncio);
 
                     // --- AQUI ESTÁ A CORREÇÃO: CARREGA AS PERGUNTAS ---
-                    if (dadosAnuncio.perguntasFormularioJson) {
+                    const rawPerguntas =
+                        dadosAnuncio.perguntasFormularioJson ??
+                        dadosAnuncio.perguntasformulariojson ??
+                        dadosAnuncio.perguntas_formulario_json ??
+                        dadosAnuncio.perguntas_formulariojson;
+                    if (rawPerguntas) {
                         try {
-                            const perguntas = JSON.parse(dadosAnuncio.perguntasFormularioJson);
+                            let perguntas = rawPerguntas;
+                            if (typeof perguntas === 'string') {
+                                perguntas = JSON.parse(perguntas);
+                            }
                             if (Array.isArray(perguntas) && perguntas.length > 0) {
                                 window.perguntasTriagem = perguntas;
                                 renderizarPerguntasDinamicas(perguntas);
@@ -673,6 +710,13 @@
                     }
                 }
             } catch (e) { console.error("Erro anuncio:", e); }
+        }
+        if (!anuncioId && prestadorUid) {
+            try {
+                const q = query(collection(db, "anuncios"), where("uid", "==", prestadorUid), limit(1));
+                const snap = await getDocs(q);
+                if (!snap.empty) aplicarDadosAnuncio(snap.docs[0].data());
+            } catch (e) { console.error("Erro anuncio (uid):", e); }
         }
 
         // C. Bloqueia APENAS se for o próprio dono tentando pedir orçamento pra si mesmo
