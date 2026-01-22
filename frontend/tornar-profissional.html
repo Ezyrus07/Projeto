@@ -85,7 +85,7 @@
           </div>
           <div>
             <div class="tp-label">Preço mínimo (opcional)</div>
-            <input class="tp-input" id="tpPreco" placeholder="Ex: 80" inputmode="decimal" />
+            <input class="tp-input" id="tpPreco" placeholder="Ex: R$ 80,00" inputmode="decimal" />
           </div>
         </div>
       </form>
@@ -113,6 +113,18 @@
     return u || null;
   }
 
+  const __precoEl = document.getElementById('tpPreco');
+  if(__precoEl) __precoEl.addEventListener('input', function (e) {
+    let valor = e.target.value.replace(/[^\d]/g, "");
+    if (valor === "") {
+      e.target.value = "";
+      return;
+    }
+    valor = parseFloat(valor).toFixed(2).replace(".", ",");
+    valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+    e.target.value = "R$ " + valor;
+  });
+
   btn.addEventListener("click", async ()=>{
     if(!form.checkValidity()){ form.reportValidity(); return; }
     btn.disabled = true; btn.textContent = "Salvando...";
@@ -133,7 +145,7 @@
       stats.prof.telefone = document.getElementById("tpTelefone").value.trim();
       stats.prof.atende = document.getElementById("tpAtende").value.trim();
       stats.prof.experiencia = document.getElementById("tpExp").value.trim();
-      const preco = document.getElementById("tpPreco").value.trim().replace(",",".");
+      const preco = document.getElementById("tpPreco").value.trim().replace(/R\$\s*/, '').replace(",",".");
       stats.prof.preco_min = preco ? Number(preco) : null;
 
       const { error } = await sb.from("usuarios").update({ ...patch, stats }).eq("id", me.id);

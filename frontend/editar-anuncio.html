@@ -987,6 +987,18 @@ h3#dokeAlertTitle{
         e.target.value = valor;
     });
 
+    const __precoEl = document.getElementById('valor');
+    if(__precoEl) __precoEl.addEventListener('input', function (e) {
+        let valor = e.target.value.replace(/[^\d]/g, "");
+        if (valor === "") {
+            e.target.value = "";
+            return;
+        }
+        valor = (parseInt(valor) / 100).toFixed(2).replace(".", ",");
+        valor = valor.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
+        e.target.value = "R$ " + valor;
+    });
+
     window.toggleTime = function(dia) { document.getElementById(`time-${dia}`).classList.toggle('show'); }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
@@ -1118,7 +1130,7 @@ h3#dokeAlertTitle{
         const modoAtend = Array.from(document.querySelectorAll('.opt-modo.active')).map(b => b.dataset.value);
 
         // Preco
-        const precoN = parseFloat((getVal('preco') || "0").toString().replace(',', '.'));
+        const precoN = parseFloat((getVal('preco') || "0").toString().replace(/R\$\s*/, '').replace(',', '.'));
         const precoFinal = isNaN(precoN) ? 0 : precoN;
 
         // Pagamentos
@@ -1178,7 +1190,7 @@ h3#dokeAlertTitle{
 
         const modoAtend = (document.querySelector('input[name="modo_atend"]:checked') || {}).value || "";
 
-        const precoBase = parseFloat((getVal('preco') || '0').replace(',', '.')) || 0;
+        const precoBase = parseFloat((getVal('preco') || '0').replace(/R\$\s*/, '').replace(',', '.')) || 0;
         let precoFinal = precoBase;
         const hasLoc = document.getElementById('has-locomo');
         if (hasLoc && hasLoc.checked) {
