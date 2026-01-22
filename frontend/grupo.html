@@ -1,1520 +1,1672 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <script src="firebase-compat-supabase.js"></script>
+  <script src="firebase-auth-compat-supabase.js"></script>
+
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Grupo | Doke</title>
   <link rel="stylesheet" href="style.css">
   <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+
+  <!-- script central (cria window.db/auth + helpers) -->
+  <script src="script.js" defer></script>
+
   <style>
-    :root{
-      --cor0: #0b7768;
-      --cor2: #2a5f90;
-      --bg: #f4f6fb;
-      --card: #ffffff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --line: rgba(17,24,39,0.08);
-      --shadow: 0 10px 30px rgba(0,0,0,0.08);
-      --r: 16px;
+    /* ===========================
+       Grupo (layout Doke 3 colunas)
+       =========================== */
+    body.doke-group-page{
+      padding-top: 0 !important;
+      padding-bottom: 0 !important;
+      overflow: hidden; /* scroll por coluna */
+      background: #f4f6fb;
+    }
+    .doke-group-root{
+      height: 100vh;
+      width: 100%;
+      display:flex;
+      flex-direction: column;
     }
 
-    *{box-sizing:border-box}
-    body{margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; background: var(--bg); color:var(--text);}
-
-    /* Layout Discord-like */
-    .gc-layout{
-      display:grid;
-      grid-template-columns: 280px minmax(0, 1fr) 280px;
-      min-height: 100vh;
+    .dg-topbar{
+      height: 64px;
+      min-height: 64px;
+      background: #fff;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+      display:flex;
+      align-items:center;
+      padding: 0 14px;
+      gap: 12px;
+      flex-shrink: 0;
     }
-    .gc-left, .gc-right{
-      background: rgba(255,255,255,0.8);
-      backdrop-filter: blur(6px);
-      border-right: 1px solid var(--line);
+    .dg-icon-btn{
+      width: 42px; height: 42px;
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.10);
+      background: #fff;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
     }
-    .gc-right{ border-right: none; border-left: 1px solid var(--line);}
-    .gc-left{ padding: 14px; position: sticky; top:0; height: 100vh; overflow:auto;}
-    .gc-right{ padding: 14px; position: sticky; top:0; height: 100vh; overflow:auto;}
-    .gc-center{ min-width:0; }
-
-    .mini-card{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      box-shadow: 0 6px 18px rgba(0,0,0,0.04);
-      padding: 12px;
+    .dg-icon-btn:hover{ filter: brightness(0.99); }
+    .dg-title{
+      display:flex;
+      flex-direction: column;
+      line-height: 1.1;
+      flex: 1;
+      min-width: 0;
+    }
+    .dg-title h1{
+      font-size: 1.05rem;
+      margin: 0;
+      color: #111827;
+      font-weight: 800;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dg-sub{
+      font-size: 0.82rem;
+      color: rgba(17,24,39,0.62);
+      display:flex;
+      gap: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .dg-actions{
       display:flex;
       gap: 10px;
       align-items:center;
-      margin-bottom: 12px;
     }
-    .mini-ico{
-      width: 44px; height: 44px; border-radius: 14px;
-      background: linear-gradient(135deg, var(--cor2), var(--cor0));
-      display:flex; align-items:center; justify-content:center; color:#fff;
-      flex-shrink:0;
+    .dg-btn{
+      border: 0;
+      border-radius: 14px;
+      padding: 10px 14px;
+      font-weight: 800;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      gap: 8px;
+      background: var(--cor0);
+      color: #fff;
     }
-    .mini-ico i{font-size: 1.35rem;}
-    .mini-title{font-weight: 900; font-size: 1.02rem; line-height:1.15;}
-    .mini-sub{color: var(--muted); font-size: 0.9rem; margin-top: 2px;}
-    .chip{
-      display:inline-flex; align-items:center; gap:6px;
-      font-size: .8rem; color:#0f172a;
-      background: rgba(11,119,104,0.10);
-      border: 1px solid rgba(11,119,104,0.18);
-      padding: 6px 10px; border-radius: 999px;
-      margin-top: 8px;
+    .dg-btn.secondary{
+      background: #fff;
+      color: #111827;
+      border: 1px solid rgba(0,0,0,0.12);
+    }
+    .dg-btn[disabled]{
+      opacity: .55;
+      cursor: not-allowed;
     }
 
-    .sec{margin-top: 12px;}
-    .sec-title{
-      font-size: 0.78rem;
-      letter-spacing: .12em;
-      color: rgba(31,41,55,0.55);
-      font-weight: 900;
-      margin: 10px 8px;
+    .dg-grid{
+      flex: 1;
+      min-height: 0;
+      display:grid;
+      grid-template-columns: 280px 1fr 320px;
+      gap: 14px;
+      padding: 14px;
     }
-    .ch-btn{
-      width:100%;
-      display:flex; align-items:center; gap:10px;
-      padding: 11px 12px;
-      border-radius: 14px;
-      border: 1px solid transparent;
-      background: transparent;
+
+    .dg-col{
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,0.08);
+      box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+      min-height: 0;
+      overflow: hidden;
+      display:flex;
+      flex-direction: column;
+    }
+    .dg-col-scroll{
+      overflow: auto;
+      min-height: 0;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .dg-panel-title{
+      padding: 14px 14px 10px;
+      font-weight: 900;
+      letter-spacing: .02em;
       color: #111827;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+    }
+
+    .dg-nav{
+      padding: 6px 10px 14px;
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .dg-nav-btn{
+      border: 1px solid rgba(0,0,0,0.08);
+      background: #fff;
+      border-radius: 14px;
+      padding: 10px 12px;
+      display:flex;
+      align-items:center;
+      gap: 10px;
       cursor:pointer;
       font-weight: 800;
-      text-align:left;
+      color:#111827;
     }
-    .ch-btn i{font-size: 1.2rem; color: rgba(31,41,55,0.70);}
-    .ch-btn:hover{ background: rgba(42,95,144,0.08); }
-    .ch-btn.active{
-      background: rgba(42,95,144,0.12);
-      border-color: rgba(42,95,144,0.20);
+    .dg-nav-btn.active{
+      border-color: rgba(11,119,104,0.35);
+      background: rgba(11,119,104,0.07);
+      color: var(--cor0);
     }
-    .admin-only{ display:none; }
-    .back-link{
-      display:flex; align-items:center; gap:10px;
-      margin-top: 16px;
-      color: var(--cor2);
-      text-decoration:none;
-      font-weight: 900;
-      padding: 10px 12px;
-      border-radius: 14px;
-      border: 1px dashed rgba(42,95,144,0.25);
-      background: rgba(42,95,144,0.06);
-    }
-    .back-link:hover{ filter: brightness(0.98); }
+    .dg-nav-btn i{ font-size: 1.2rem; }
 
-    /* Header + Cover */
-    .gc-top{
-      position: sticky;
-      top: 0;
-      z-index: 10;
-      background: rgba(244,246,251,0.85);
-      backdrop-filter: blur(8px);
-      border-bottom: 1px solid var(--line);
+    .dg-admin{
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px dashed rgba(0,0,0,0.12);
     }
-    .cover{
-      height: 160px;
-      border-radius: 0 0 26px 26px;
-      background: linear-gradient(135deg, rgba(42,95,144,0.95), rgba(11,119,104,0.95));
-      overflow:hidden;
+
+    /* Centro */
+    .dg-center-header{
+      padding: 0;
+      border-bottom: 1px solid rgba(0,0,0,0.08);
+    }
+    .dg-cover{
+      height: 170px;
+      background: linear-gradient(120deg, var(--cor2), #8e44ad);
+      background-size: cover;
+      background-position: center;
       position: relative;
     }
-    .cover::after{
-      content:'';
-      position:absolute; inset:0;
-      background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.18), transparent 55%);
-      pointer-events:none;
+    .dg-cover::after{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.25));
     }
-    .cover-img{
-      position:absolute; inset:0;
-      width:100%; height:100%;
-      object-fit: cover;
-      filter: saturate(1.05) contrast(1.02);
-      opacity: 0.95;
-    }
-    .gc-head{
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 14px 16px 16px;
-    }
-    .gc-head-row{
+    .dg-cover-body{
+      padding: 14px;
       display:flex;
-      align-items:flex-end;
-      justify-content: space-between;
       gap: 12px;
-      margin-top: -54px;
+      align-items: center;
+      transform: translateY(-26px);
     }
-    .gc-avatar{
-      width: 76px; height: 76px;
-      border-radius: 24px;
-      border: 5px solid var(--bg);
-      background: linear-gradient(135deg, var(--cor2), var(--cor0));
-      display:flex; align-items:center; justify-content:center; color:#fff;
-      box-shadow: 0 10px 28px rgba(0,0,0,0.12);
-      flex-shrink:0;
+    .dg-avatar{
+      width: 62px; height: 62px;
+      border-radius: 18px;
+      background: #fff;
+      border: 3px solid #fff;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      background-size: cover;
+      background-position: center;
+      flex-shrink: 0;
     }
-    .gc-avatar i{font-size: 2rem;}
-    .gc-meta{
-      display:flex; align-items:center; gap: 14px;
+    .dg-info{
       min-width:0;
       flex: 1;
     }
-    .gc-name{
-      font-size: 1.35rem;
-      font-weight: 1000;
-      margin:0;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    .dg-info .name{
+      font-weight: 900;
+      color: #111827;
+      margin: 0;
+      font-size: 1.05rem;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
-    .gc-desc{
-      color: var(--muted);
-      font-weight: 700;
-      font-size: 0.95rem;
+    .dg-info .desc{
       margin-top: 4px;
-      max-width: 820px;
-      display: -webkit-box;
+      color: rgba(17,24,39,0.65);
+      font-weight: 600;
+      font-size: 0.9rem;
+      display:-webkit-box;
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
       overflow:hidden;
     }
-    .gc-actions{
+    .dg-badges{
       display:flex;
-      gap: 10px;
-      align-items:center;
-      flex-shrink:0;
+      gap: 8px;
+      margin-top: 8px;
+      flex-wrap: wrap;
     }
-    .btn{
-      border:none;
-      cursor:pointer;
-      border-radius: 14px;
-      padding: 10px 12px;
-      font-weight: 1000;
-      display:inline-flex; align-items:center; gap:10px;
+    .dg-pill{
+      font-size: 0.72rem;
+      font-weight: 900;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.10);
+      color: rgba(17,24,39,0.75);
       background: #fff;
-      color: #111827;
-      border: 1px solid var(--line);
-      box-shadow: 0 8px 22px rgba(0,0,0,0.06);
     }
-    .btn i{font-size: 1.2rem;}
-    .btn.primary{
-      background: var(--cor0);
-      border-color: rgba(11,119,104,0.2);
-      color: #fff;
+    .dg-pill.lock{
+      color: #b45309;
+      border-color: rgba(180,83,9,0.25);
+      background: rgba(251,191,36,0.12);
     }
-    .btn.primary:hover{ filter: brightness(0.98); }
-    .btn:hover{ filter: brightness(0.99); }
+    .dg-pill.tag{
+      color: var(--cor0);
+      border-color: rgba(11,119,104,0.25);
+      background: rgba(11,119,104,0.08);
+    }
 
-    /* Composer (padrão do chat) */
-    .gc-content{
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 14px 16px 40px;
+    /* Composer igual chat (padrão Doke) */
+    .dg-composer{
+      padding: 0 14px 14px;
+      margin-top: -12px;
     }
-    .composer{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.05);
-      overflow:hidden;
-      margin-top: 14px;
-    }
-    .composer-top{
-      padding: 14px 14px 0;
-    }
-    .composer textarea{
-      width: 100%;
-      min-height: 70px;
-      resize: vertical;
-      border: 1px solid transparent;
-      outline: none;
+    .chat-footer{
+      min-height: 60px;
       background: #f0f2f5;
-      border-radius: 16px;
-      padding: 12px 14px;
-      font-family: inherit;
-      font-weight: 700;
-      color: #111827;
-    }
-    .composer textarea:focus{
-      background: #fff;
-      border-color: var(--cor0);
-      box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.10);
-    }
-    .composer-bottom{
+      border: 1px solid #d1d7db;
+      border-radius: 18px;
       display:flex;
       align-items:center;
+      padding: 10px 12px;
       gap: 10px;
-      padding: 12px 14px 14px;
     }
-    .btn-attach, .btn-send{
-      width: 44px; height: 44px;
+    .input-msg{
+      flex: 1;
+      padding: 12px;
       border-radius: 14px;
-      border: none;
-      display:flex; align-items:center; justify-content:center;
-      cursor:pointer;
-      font-size: 1.2rem;
+      border: 1px solid rgba(0,0,0,0.08);
+      outline: none;
+      background: #fff;
+      font-weight: 700;
     }
-    .btn-attach{
-      background: #eaeef3;
-      color: #334155;
-    }
-    .btn-attach:hover{ filter: brightness(0.98); }
-    .btn-send{
+    .btn-enviar{
       background: var(--cor0);
       color:#fff;
+      border:none;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 1.2rem;
+      cursor:pointer;
     }
-    .btn-send:hover{ filter: brightness(0.98); }
-    .composer-hint{
-      color: var(--muted);
-      font-size: 0.9rem;
-      font-weight: 700;
-      flex: 1;
-      display:flex; align-items:center; gap:8px;
+    .btn-attach{
+      background: #e0e0e0;
+      color:#555;
+      border: none;
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 1.2rem;
+      cursor:pointer;
     }
-    .attach-preview{
-      margin: 10px 14px 0;
-      border-radius: 16px;
-      overflow:hidden;
-      border: 1px solid var(--line);
+
+    .dg-attach-preview{
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 14px;
+      border: 1px dashed rgba(0,0,0,0.20);
       background: #fff;
       display:none;
+      gap: 10px;
+      align-items:center;
+      justify-content: space-between;
     }
-    .attach-preview .pv-top{
-      display:flex; justify-content:space-between; align-items:center;
-      padding: 10px 12px;
-      border-bottom: 1px solid var(--line);
+    .dg-attach-preview .left{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      min-width:0;
     }
-    .attach-preview .pv-name{
-      font-weight: 900;
+    .dg-attach-preview .file{
+      font-weight: 800;
       color:#111827;
-      font-size: 0.95rem;
-      overflow:hidden; white-space:nowrap; text-overflow:ellipsis;
+      font-size: 0.9rem;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      max-width: 360px;
     }
-    .attach-preview .pv-remove{
-      border:none; background: rgba(239,68,68,0.12); color: #b91c1c;
-      font-weight: 1000; padding: 8px 10px; border-radius: 12px;
+    .dg-attach-preview .remove{
+      border: 0;
+      background: rgba(243,91,91,0.12);
+      color: var(--cor3);
+      padding: 8px 12px;
+      border-radius: 12px;
       cursor:pointer;
-      display:flex; align-items:center; gap:6px;
-    }
-    .attach-preview .pv-media{
-      aspect-ratio: 16 / 9;
-      max-height: 420px;
-      background: #0b1220;
-    }
-    .attach-preview img, .attach-preview video{
-      width:100%; height:100%;
-      object-fit: cover;
-      display:block;
+      font-weight: 900;
     }
 
     /* Feed */
-    .feed{ margin-top: 16px; display:flex; flex-direction:column; gap: 12px; }
-    .post{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      box-shadow: 0 10px 26px rgba(0,0,0,0.05);
-      overflow:hidden;
-    }
-    .post-head{
+    .dg-feed{
+      padding: 0 14px 16px;
       display:flex;
-      align-items:center;
-      justify-content:space-between;
-      padding: 14px 14px 10px;
-      gap: 12px;
+      flex-direction: column;
+      gap: 14px;
     }
-    .post-author{
-      display:flex; align-items:center; gap: 10px;
-      min-width:0;
-    }
-    .avatar{
-      width: 42px; height: 42px; border-radius: 14px;
-      background: #e5e7eb;
+    .dg-post{
+      border: 1px solid rgba(0,0,0,0.08);
+      border-radius: 18px;
       overflow:hidden;
+      background: #fff;
+    }
+    .dg-post-head{
+      padding: 12px 12px 10px;
+      display:flex;
+      gap: 10px;
+      align-items:center;
+    }
+    .dg-post-userimg{
+      width: 42px; height: 42px;
+      border-radius: 14px;
+      background: #eee;
+      background-size: cover;
+      background-position: center;
       flex-shrink:0;
-      border: 1px solid rgba(17,24,39,0.08);
     }
-    .avatar img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .author-meta{ min-width:0; }
-    .author-name{
-      font-weight: 1000;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-      display:flex; align-items:center; gap: 8px;
+    .dg-post-meta{ min-width:0; flex: 1; }
+    .dg-post-meta .u{
+      font-weight: 900;
+      color:#111827;
+      display:flex;
+      gap: 8px;
+      align-items:center;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
     }
-    .role-badge{
-      font-size: 0.78rem;
-      font-weight: 1000;
+    .dg-role-badge{
+      font-size: 0.68rem;
+      font-weight: 900;
       padding: 4px 8px;
       border-radius: 999px;
-      border: 1px solid var(--line);
-      background: #f1f5f9;
-      color:#0f172a;
+      border: 1px solid rgba(0,0,0,0.10);
     }
-    .post-time{ color: var(--muted); font-weight: 800; font-size: 0.86rem; white-space:nowrap;}
-    .post-body{ padding: 0 14px 12px; }
-    .post-text{
-      margin: 0 0 10px;
-      color: #111827;
+    .dg-post-meta .t{
+      margin-top: 2px;
+      font-size: 0.78rem;
+      color: rgba(17,24,39,0.55);
       font-weight: 700;
+    }
+    .dg-post-body{
+      padding: 0 12px 12px;
+      color:#111827;
+      font-weight: 650;
+      line-height: 1.35;
       white-space: pre-wrap;
       word-break: break-word;
     }
-    .post-media{
-      border-radius: 16px;
-      overflow:hidden;
-      border: 1px solid var(--line);
-      background: #0b1220;
-      aspect-ratio: 16 / 9;
-      max-height: 520px;
-    }
-    .post-media img, .post-media video{
-      width:100%; height:100%; object-fit: cover; display:block;
-    }
 
-    /* Right members */
-    .members-block{
-      background: var(--card);
-      border: 1px solid var(--line);
-      border-radius: var(--r);
-      padding: 10px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
-      margin-bottom: 12px;
-    }
-    .members-title{
-      font-size: 0.78rem;
-      letter-spacing: .12em;
-      font-weight: 1000;
-      color: rgba(31,41,55,0.55);
-      margin: 8px 8px 10px;
-      display:flex; align-items:center; justify-content:space-between;
-    }
-    .member{
-      display:flex; align-items:center; gap: 10px;
-      padding: 9px 10px;
-      border-radius: 14px;
-      cursor:pointer;
-    }
-    .member:hover{ background: rgba(42,95,144,0.08); }
-    .m-ava{
-      width: 34px; height: 34px;
-      border-radius: 12px;
-      overflow:hidden;
-      border: 1px solid rgba(17,24,39,0.08);
-      flex-shrink:0;
-      position: relative;
-    }
-    .m-ava img{ width:100%; height:100%; object-fit:cover; display:block;}
-    .status-dot{
-      position:absolute;
-      right:-2px; bottom:-2px;
-      width: 12px; height: 12px;
-      border-radius: 999px;
-      border: 2px solid var(--card);
-      background: #9ca3af;
-    }
-    .status-dot.online{ background: #22c55e; }
-    .m-name{
-      font-weight: 1000;
-      font-size: 0.95rem;
-      min-width:0;
-      white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .m-role{
-      font-size: 0.78rem;
-      font-weight: 1000;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid var(--line);
-      background: #f1f5f9;
-      color:#0f172a;
-      margin-left:auto;
-      flex-shrink:0;
-    }
-
-    /* Modal + Toast */
-    .overlay{
-      position: fixed; inset:0;
-      display:none;
-      background: rgba(15,23,42,0.42);
-      backdrop-filter: blur(4px);
-      padding: 18px 14px;
-      overflow:auto;
-      z-index: 9999;
-    }
-    .modal{
-      background: #fff;
-      border-radius: 18px;
-      max-width: 640px;
+    .dg-media{
       width: 100%;
-      margin: 12px auto;
-      border: 1px solid var(--line);
-      box-shadow: var(--shadow);
-      overflow:hidden;
-      max-height: calc(100vh - 36px);
-    }
-    .modal-head{
-      display:flex; align-items:center; justify-content:space-between;
-      padding: 14px 14px;
-      border-bottom: 1px solid var(--line);
-      background: rgba(42,95,144,0.05);
-    }
-    .modal-title{ font-weight: 1100; margin:0; color: var(--cor2); }
-    .modal-close{
-      width: 44px; height: 44px;
-      border-radius: 14px;
-      border: 1px solid var(--line);
-      background: #fff;
-      cursor:pointer;
-      display:flex; align-items:center; justify-content:center;
-      font-size: 1.4rem;
-    }
-    .modal-close:hover{ background: #f7f7f7; }
-    .modal-body{ padding: 14px; overflow:auto; }
-    .field{ margin-bottom: 12px; }
-    .label{ font-weight: 900; color: #111827; display:block; margin-bottom: 6px;}
-    .input, .select, .textarea{
-      width: 100%;
-      border: 1px solid #e5e7eb;
-      border-radius: 14px;
-      padding: 12px 12px;
-      outline: none;
-      font-weight: 700;
-      font-family: inherit;
-      background: #fff;
-    }
-    .textarea{ min-height: 96px; resize: vertical; }
-    .input:focus, .select:focus, .textarea:focus{
-      border-color: rgba(11,119,104,0.55);
-      box-shadow: 0 0 0 3px rgba(11,119,104,0.10);
-    }
-    .row{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .help{ color: var(--muted); font-weight: 700; font-size: 0.9rem; margin-top: 6px;}
-    .modal-actions{
-      padding: 14px;
-      border-top: 1px solid var(--line);
+      background: #000;
+      aspect-ratio: 4 / 5; /* padrão feed Doke */
       display:flex;
-      gap: 10px;
-      justify-content:flex-end;
-      background: rgba(244,246,251,0.65);
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      border-top: 1px solid rgba(0,0,0,0.06);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
     }
-    .btn2{
-      border:none;
-      cursor:pointer;
-      border-radius: 14px;
-      padding: 11px 14px;
-      font-weight: 1000;
-      display:inline-flex; align-items:center; gap:10px;
-      background: #fff;
-      color:#111827;
-      border: 1px solid var(--line);
+    .dg-media img, .dg-media video{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
     }
-    .btn2.primary{ background: var(--cor0); color:#fff; border-color: rgba(11,119,104,0.2); }
-    .btn2.danger{ background: rgba(239,68,68,0.12); color:#b91c1c; border-color: rgba(239,68,68,0.22); }
-    .btn2:hover{ filter: brightness(0.99); }
+    .dg-media a{
+      color:#fff;
+      font-weight: 900;
+      text-decoration: underline;
+      padding: 18px;
+      text-align:center;
+    }
 
-    .toast-wrap{
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 18px;
-      z-index: 10000;
+    /* Membros (direita) */
+    .dg-members{
+      padding: 0 10px 12px;
       display:flex;
       flex-direction: column;
-      gap: 10px;
-      width: min(520px, calc(100% - 24px));
-      pointer-events:none;
+      gap: 12px;
     }
-    .toast{
-      pointer-events:auto;
-      background: rgba(17,24,39,0.92);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 16px;
-      padding: 12px 14px;
+    .dg-sec-label{
+      padding: 0 6px;
+      font-size: 0.72rem;
+      font-weight: 1000;
+      letter-spacing: .12em;
+      color: rgba(17,24,39,0.55);
+      text-transform: uppercase;
+    }
+    .dg-member{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      padding: 10px 10px;
+      border-radius: 14px;
+      border: 1px solid rgba(0,0,0,0.06);
+      background: #fff;
+    }
+    .dg-member:hover{ background: rgba(0,0,0,0.015); }
+    .dg-member .a{
+      width: 36px; height: 36px;
+      border-radius: 14px;
+      background:#eee;
+      background-size: cover;
+      background-position: center;
+      position: relative;
+      flex-shrink:0;
+    }
+    .dg-dot{
+      position:absolute;
+      right: -2px;
+      bottom: -2px;
+      width: 12px; height: 12px;
+      border-radius: 999px;
+      border: 2px solid #fff;
+      background: #9ca3af; /* offline */
+    }
+    .dg-dot.online{ background: #22c55e; }
+    .dg-member .n{
+      min-width:0;
+      flex: 1;
+      display:flex;
+      flex-direction: column;
+    }
+    .dg-member .n .name{
+      font-weight: 900;
+      color:#111827;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .dg-member .n .sub{
+      font-size: 0.78rem;
+      color: rgba(17,24,39,0.55);
+      font-weight: 700;
+      white-space: nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+    }
+    .dg-member .role{
+      font-size: 0.72rem;
+      font-weight: 1000;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(0,0,0,0.10);
+      white-space: nowrap;
+    }
+    .dg-member select{
+      border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 8px 10px;
+      font-weight: 800;
+      background:#fff;
+      max-width: 130px;
+    }
+
+    /* Modal / Toast */
+    .dg-modal{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      display:none;
+      align-items: flex-start;
+      justify-content: center;
+      padding: 18px 10px;
+      z-index: 9999;
+      overflow: auto;
+    }
+    .dg-modal.show{ display:flex; }
+    .dg-modal-card{
+      width: 100%;
+      max-width: 560px;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid rgba(0,0,0,0.10);
+      box-shadow: 0 18px 45px rgba(0,0,0,0.22);
+      padding: 16px;
+      max-height: calc(100vh - 36px);
+      overflow:auto;
+    }
+    .dg-modal-head{
       display:flex;
       align-items:center;
       justify-content: space-between;
       gap: 10px;
-      box-shadow: 0 18px 36px rgba(0,0,0,0.18);
+      margin-bottom: 12px;
     }
-    .toast small{ color: rgba(255,255,255,0.78); font-weight: 700;}
-    .toast button{
-      pointer-events:auto;
-      border:none;
-      background: rgba(255,255,255,0.12);
-      color:#fff;
-      font-weight: 1000;
+    .dg-modal-head h2{
+      margin:0;
+      font-size: 1rem;
+      color:#111827;
+    }
+    .dg-x{
+      width: 40px; height: 40px;
       border-radius: 12px;
-      padding: 8px 10px;
+      border: 1px solid rgba(0,0,0,0.12);
+      background:#fff;
       cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-size: 1.3rem;
+    }
+    .dg-form label{
+      display:block;
+      font-weight: 900;
+      margin: 10px 0 6px;
+      color:#111827;
+      font-size: .9rem;
+    }
+    .dg-form input, .dg-form textarea, .dg-form select{
+      width:100%;
+      border-radius: 14px;
+      border: 1px solid rgba(0,0,0,0.12);
+      padding: 12px;
+      font-weight: 750;
+      outline:none;
+      background:#fff;
+    }
+    .dg-form textarea{ min-height: 110px; resize: vertical; }
+    .dg-row{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .dg-help{
+      margin-top: 8px;
+      font-size: .82rem;
+      color: rgba(17,24,39,0.55);
+      font-weight: 700;
+    }
+    .dg-actions-row{
+      display:flex;
+      gap: 10px;
+      justify-content:flex-end;
+      margin-top: 14px;
     }
 
+    .dg-toast-wrap{
+      position: fixed;
+      right: 14px;
+      bottom: 14px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      z-index: 10000;
+    }
+    .dg-toast{
+      background:#111827;
+      color:#fff;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 800;
+      box-shadow: 0 12px 30px rgba(0,0,0,0.22);
+      max-width: 320px;
+    }
+    .dg-toast.success{ background: var(--cor0); }
+    .dg-toast.error{ background: #b91c1c; }
+
     /* Responsivo */
-    @media (max-width: 1100px){
-      .gc-layout{ grid-template-columns: 260px minmax(0,1fr); }
-      .gc-right{ display:none; }
-    }
-    @media (max-width: 860px){
-      .gc-layout{ grid-template-columns: 1fr; }
-      .gc-left{
-        position: fixed;
-        left: 0; top: 0; bottom: 0;
-        width: 86%;
-        max-width: 340px;
-        transform: translateX(-110%);
-        transition: transform .2s ease;
-        z-index: 10001;
-        box-shadow: 0 24px 60px rgba(0,0,0,0.25);
+    @media(max-width: 980px){
+      body.doke-group-page{ overflow:auto; }
+      .dg-grid{
+        grid-template-columns: 1fr;
+        height: auto;
       }
-      .gc-left.open{ transform: translateX(0); }
-      .gc-right{ display:none; }
-      .gc-head-row{ flex-direction:column; align-items:flex-start; }
-      .gc-actions{ width:100%; }
-      .btn{ flex:1; justify-content:center; }
-      .btn i{ margin-right: 0; }
-      .mobile-topbar{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        padding: 12px 14px;
-        background: rgba(244,246,251,0.85);
-        backdrop-filter: blur(8px);
-        border-bottom: 1px solid var(--line);
-        position: sticky;
-        top:0;
-        z-index: 10002;
-      }
-      .m-toggle{
-        width: 44px; height: 44px;
-        border-radius: 14px;
-        border: 1px solid var(--line);
-        background: #fff;
-        display:flex; align-items:center; justify-content:center;
-        cursor:pointer;
-      }
-      .m-toggle i{ font-size: 1.5rem; }
-      .m-title{ font-weight: 1000; color: #111827; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-      .backdrop{
-        display:none;
-        position: fixed; inset:0;
-        background: rgba(15,23,42,0.35);
-        z-index: 10000;
-      }
-      .backdrop.show{ display:block; }
-    }
-    @media (min-width: 861px){
-      .mobile-topbar, .backdrop{ display:none; }
+      .dg-col{ min-height: auto; }
+      .dg-col-scroll{ max-height: none; }
     }
   </style>
 </head>
 
-<body>
-  <div class="toast-wrap" id="toastWrap"></div>
+<body class="doke-group-page">
+  <div class="doke-group-root">
+    <header class="dg-topbar">
+      <button class="dg-icon-btn" id="btnBack" title="Voltar"><i class='bx bx-arrow-back'></i></button>
+      <div class="dg-title">
+        <h1 id="groupName">Carregando...</h1>
+        <div class="dg-sub" id="groupMeta"> </div>
+      </div>
+      <div class="dg-actions">
+        <button class="dg-btn secondary" id="btnJoin" style="display:none;"><i class='bx bx-log-in'></i><span>Entrar</span></button>
+        <button class="dg-btn secondary" id="btnLeave" style="display:none;"><i class='bx bx-log-out'></i><span>Sair</span></button>
+        <button class="dg-btn" id="btnEdit" style="display:none;"><i class='bx bx-cog'></i><span>Editar</span></button>
+      </div>
+    </header>
 
-  <div class="mobile-topbar">
-    <button class="m-toggle" id="btnOpenLeft" aria-label="Abrir menu"><i class='bx bx-menu'></i></button>
-    <div class="m-title" id="mTitle">Grupo</div>
-    <a class="m-toggle" href="comunidade.html" aria-label="Voltar"><i class='bx bx-left-arrow-alt'></i></a>
-  </div>
-  <div class="backdrop" id="backdrop"></div>
+    <div class="dg-grid">
+      <!-- Esquerda -->
+      <aside class="dg-col">
+        <div class="dg-panel-title">Navegação</div>
+        <div class="dg-col-scroll">
+          <div class="dg-nav">
+            <button class="dg-nav-btn active" data-view="feed"><i class='bx bx-news'></i>Feed</button>
+            <button class="dg-nav-btn" data-view="arquivos"><i class='bx bx-folder'></i>Arquivos</button>
+            <button class="dg-nav-btn" data-view="sobre"><i class='bx bx-info-circle'></i>Sobre</button>
 
-  <div class="gc-layout">
-    <aside class="gc-left" id="leftPane" aria-label="Menu do grupo">
-      <div class="mini-card">
-        <div class="mini-ico"><i class='bx bx-group'></i></div>
-        <div style="min-width:0;">
-          <div class="mini-title" id="miniTitle">Carregando...</div>
-          <div class="mini-sub" id="miniSub"> </div>
-          <div class="chip" id="miniChip" style="display:none;"><i class='bx bx-lock-alt'></i> <span id="miniChipText"></span></div>
+            <div class="dg-admin" id="adminArea" style="display:none;">
+              <div class="dg-panel-title" style="padding:12px 6px 8px;">Admin</div>
+              <button class="dg-nav-btn" data-action="edit"><i class='bx bx-edit'></i>Editar grupo</button>
+              <button class="dg-nav-btn" data-action="roles"><i class='bx bx-layer'></i>Cargos</button>
+            </div>
+          </div>
         </div>
-      </div>
+      </aside>
 
-      <div class="sec">
-        <div class="sec-title">CANAIS</div>
-        <button class="ch-btn active" data-tab="feed"><i class='bx bx-hash'></i> feed</button>
-        <button class="ch-btn" data-tab="sobre"><i class='bx bx-info-circle'></i> sobre</button>
-        <button class="ch-btn" data-tab="arquivos"><i class='bx bx-folder'></i> arquivos</button>
-      </div>
-
-      <div class="sec admin-only" id="adminSection">
-        <div class="sec-title">ADMIN</div>
-        <button class="ch-btn" id="btnEditGroup"><i class='bx bx-edit-alt'></i> editar grupo</button>
-        <button class="ch-btn" id="btnRoles"><i class='bx bx-badge-check'></i> cargos</button>
-        <button class="ch-btn" id="btnMembers"><i class='bx bx-user'></i> membros</button>
-      </div>
-
-      <a class="back-link" href="comunidade.html"><i class='bx bx-left-arrow-alt'></i> Voltar para comunidades</a>
-    </aside>
-
-    <main class="gc-center">
-      <div class="gc-top">
-        <div class="cover" id="cover">
-          <img class="cover-img" id="coverImg" alt="" style="display:none;">
+      <!-- Centro -->
+      <section class="dg-col">
+        <div class="dg-center-header">
+          <div class="dg-cover" id="groupCover"></div>
+          <div class="dg-cover-body">
+            <div class="dg-avatar" id="groupAvatar"></div>
+            <div class="dg-info">
+              <p class="name" id="groupTitle">Carregando...</p>
+              <div class="desc" id="groupDesc"></div>
+              <div class="dg-badges" id="groupBadges"></div>
+            </div>
+          </div>
         </div>
-        <div class="gc-head">
-          <div class="gc-head-row">
-            <div class="gc-meta">
-              <div class="gc-avatar"><i class='bx bx-hash'></i></div>
-              <div style="min-width:0;">
-                <h1 class="gc-name" id="groupName">Grupo</h1>
-                <div class="gc-desc" id="groupDesc"></div>
+
+        <div class="dg-col-scroll">
+          <div class="dg-composer" id="composerWrap" style="display:none;">
+            <div class="chat-footer">
+              <button class="btn-attach" id="btnAttach" title="Anexar"><i class='bx bx-paperclip'></i></button>
+              <input class="input-msg" id="postText" placeholder="Escreva algo no grupo..." />
+              <button class="btn-enviar" id="btnSend" title="Enviar"><i class='bx bx-send'></i></button>
+            </div>
+            <input type="file" id="postFile" accept="image/*,video/*,application/pdf" hidden>
+            <div class="dg-attach-preview" id="attachPreview">
+              <div class="left">
+                <i class='bx bx-file' style="font-size:1.2rem;"></i>
+                <div class="file" id="attachName"></div>
               </div>
+              <button class="remove" id="attachRemove">Remover</button>
             </div>
-            <div class="gc-actions">
-              <button class="btn" id="btnCopy"><i class='bx bx-link'></i> copiar link</button>
-              <button class="btn primary" id="btnJoin"><i class='bx bx-door-open'></i> entrar</button>
-            </div>
+          </div>
+
+          <div class="dg-feed" id="feedWrap"></div>
+        </div>
+      </section>
+
+      <!-- Direita -->
+      <aside class="dg-col">
+        <div class="dg-panel-title">Membros</div>
+        <div class="dg-col-scroll">
+          <div class="dg-members">
+            <div class="dg-sec-label">Online (<span id="onlineCount">0</span>)</div>
+            <div id="membersOnline"></div>
+
+            <div class="dg-sec-label">Offline (<span id="offlineCount">0</span>)</div>
+            <div id="membersOffline"></div>
           </div>
         </div>
-      </div>
-
-      <div class="gc-content">
-        <!-- FEED -->
-        <section id="tabFeed">
-          <div class="composer" id="composerBox" style="display:none;">
-            <div class="composer-top">
-              <textarea id="postText" placeholder="Escreva um post para o grupo..."></textarea>
-            </div>
-
-            <div class="attach-preview" id="attachPreview">
-              <div class="pv-top">
-                <div class="pv-name" id="attachName">Arquivo</div>
-                <button class="pv-remove" id="attachRemove" type="button"><i class='bx bx-x'></i> remover</button>
-              </div>
-              <div class="pv-media" id="attachMedia"></div>
-            </div>
-
-            <div class="composer-bottom">
-              <input type="file" id="attachInput" accept="image/*,video/*" style="display:none;">
-              <button class="btn-attach" type="button" id="btnAttach" aria-label="Anexar"><i class='bx bx-paperclip'></i></button>
-              <div class="composer-hint"><i class='bx bx-shield'></i> Respeite as regras do grupo.</div>
-              <button class="btn-send" type="button" id="btnSend" aria-label="Enviar"><i class='bx bx-send'></i></button>
-            </div>
-          </div>
-
-          <div class="feed" id="feedList"></div>
-        </section>
-
-        <!-- SOBRE -->
-        <section id="tabSobre" style="display:none;">
-          <div class="post" style="padding: 14px;">
-            <div style="font-weight:1000; margin-bottom:8px;">Sobre este grupo</div>
-            <div id="sobreText" style="color:var(--muted); font-weight:700;"></div>
-            <div style="margin-top:14px; display:flex; gap:10px; flex-wrap:wrap;">
-              <span class="role-badge" id="sobreTipo"></span>
-              <span class="role-badge" id="sobreCategoria"></span>
-              <span class="role-badge" id="sobrePriv"></span>
-            </div>
-          </div>
-        </section>
-
-        <!-- ARQUIVOS -->
-        <section id="tabArquivos" style="display:none;">
-          <div class="post" style="padding: 14px;">
-            <div style="font-weight:1000; margin-bottom:8px;">Arquivos</div>
-            <div style="color:var(--muted); font-weight:700;">Em breve: área de arquivos do grupo (imagens, PDFs, etc.).</div>
-          </div>
-        </section>
-      </div>
-    </main>
-
-    <aside class="gc-right" aria-label="Membros do grupo">
-      <div class="members-block">
-        <div class="members-title">ONLINE <span id="onlineCount">0</span></div>
-        <div id="membersOnline"></div>
-      </div>
-      <div class="members-block">
-        <div class="members-title">OFFLINE <span id="offlineCount">0</span></div>
-        <div id="membersOffline"></div>
-      </div>
-    </aside>
+      </aside>
+    </div>
   </div>
 
-  <!-- MODAL: EDITAR GRUPO -->
-  <div class="overlay" id="ovEdit" role="dialog" aria-modal="true" aria-labelledby="ttlEdit">
-    <div class="modal">
-      <div class="modal-head">
-        <h3 class="modal-title" id="ttlEdit">Editar grupo</h3>
-        <button class="modal-close" type="button" data-close>&times;</button>
+  <!-- Modal Editar Grupo -->
+  <div class="dg-modal" id="modalEdit" aria-hidden="true">
+    <div class="dg-modal-card" role="dialog" aria-modal="true" aria-labelledby="modalEditTitle">
+      <div class="dg-modal-head">
+        <h2 id="modalEditTitle">Editar grupo</h2>
+        <button class="dg-x" data-close="modalEdit" aria-label="Fechar">&times;</button>
       </div>
-      <div class="modal-body">
-        <div class="field">
-          <label class="label">Nome</label>
-          <input class="input" id="edNome" placeholder="Nome do grupo">
-        </div>
-        <div class="field">
-          <label class="label">Descrição</label>
-          <textarea class="textarea" id="edDesc" placeholder="Descreva o grupo"></textarea>
-        </div>
-        <div class="row">
-          <div class="field">
-            <label class="label">Privacidade</label>
-            <select class="select" id="edPriv">
-              <option value="publica">Pública</option>
-              <option value="privada">Privada</option>
-            </select>
-            <div class="help">Pública: qualquer pessoa entra. Privada: precisa solicitar entrada.</div>
-          </div>
-          <div class="field">
-            <label class="label">Tipo</label>
-            <select class="select" id="edTipo">
-              <option value="Pro">Profissional (Networking)</option>
-              <option value="Condominio">Condomínio</option>
+      <form class="dg-form" id="formEdit">
+        <label>Nome</label>
+        <input id="editNome" required>
+
+        <label>Descrição</label>
+        <textarea id="editDesc" required></textarea>
+
+        <div class="dg-row">
+          <div>
+            <label>Tipo</label>
+            <select id="editTipo">
+              <option value="Pro">Pro</option>
+              <option value="Condomínio">Condomínio</option>
               <option value="Hobby">Hobby</option>
-              <option value="Estudos">Estudos</option>
+            </select>
+          </div>
+          <div>
+            <label>Privacidade</label>
+            <select id="editPrivacidade">
+              <option value="Público">Público</option>
+              <option value="Privado">Privado</option>
             </select>
           </div>
         </div>
-        <div class="row">
-          <div class="field">
-            <label class="label">Categoria</label>
-            <input class="input" id="edCat" placeholder="Ex: Reforma e Construção">
+
+        <div class="dg-row">
+          <div>
+            <label>Categoria</label>
+            <input id="editCategoria" placeholder="Ex: Reforma e Construção">
           </div>
-          <div class="field">
-            <label class="label">Subcategoria</label>
-            <input class="input" id="edSub" placeholder="Ex: Elétrica, Pintura...">
+          <div>
+            <label>Subcategoria</label>
+            <input id="editSubcategoria" placeholder="Ex: Elétrica">
           </div>
         </div>
-        <div class="field">
-          <label class="label">Imagem de capa</label>
-          <input type="file" id="edCapa" accept="image/*" style="display:none;">
-          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
-            <button class="btn2" type="button" id="btnPickCapa"><i class='bx bx-image'></i> escolher imagem</button>
-            <span class="help" id="edCapaName">Nenhum arquivo escolhido</span>
-          </div>
-          <div class="help">PNG/JPG, até 2MB.</div>
+
+        <label>Imagem de capa</label>
+        <input type="file" id="editCapa" accept="image/*">
+
+        <div class="dg-help">PNG/JPG até 2MB. A capa aparece no topo do grupo.</div>
+
+        <div class="dg-actions-row">
+          <button type="button" class="dg-btn secondary" data-close="modalEdit">Cancelar</button>
+          <button type="submit" class="dg-btn">Salvar</button>
         </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal Cargos -->
+  <div class="dg-modal" id="modalRoles" aria-hidden="true">
+    <div class="dg-modal-card" role="dialog" aria-modal="true" aria-labelledby="modalRolesTitle">
+      <div class="dg-modal-head">
+        <h2 id="modalRolesTitle">Cargos do grupo</h2>
+        <button class="dg-x" data-close="modalRoles" aria-label="Fechar">&times;</button>
       </div>
-      <div class="modal-actions">
-        <button class="btn2" type="button" data-close>Cancelar</button>
-        <button class="btn2 primary" type="button" id="btnSaveEdit"><i class='bx bx-save'></i> salvar</button>
+
+      <div class="dg-form">
+        <div id="rolesList"></div>
+
+        <label style="margin-top:14px;">Criar novo cargo</label>
+        <div class="dg-row">
+          <input id="roleNome" placeholder="Ex: Administrador">
+          <input id="roleCor" type="color" value="#0b7768" title="Cor do cargo">
+        </div>
+        <div class="dg-help">O Dono pode criar cargos e atribuir aos membros.</div>
+
+        <div class="dg-actions-row">
+          <button class="dg-btn secondary" type="button" data-close="modalRoles">Fechar</button>
+          <button class="dg-btn" type="button" id="btnCreateRole"><i class='bx bx-plus'></i>Criar</button>
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- MODAL: CARGOS -->
-  <div class="overlay" id="ovRoles" role="dialog" aria-modal="true" aria-labelledby="ttlRoles">
-    <div class="modal">
-      <div class="modal-head">
-        <h3 class="modal-title" id="ttlRoles">Cargos</h3>
-        <button class="modal-close" type="button" data-close>&times;</button>
-      </div>
-      <div class="modal-body">
-        <div class="post" style="padding: 12px;">
-          <div style="font-weight:1000; margin-bottom:6px;">Criar novo cargo</div>
-          <div class="row">
-            <div class="field" style="margin-bottom:0;">
-              <label class="label">Nome</label>
-              <input class="input" id="roleName" placeholder="Ex: VIP, Suporte, Parceiro">
-            </div>
-            <div class="field" style="margin-bottom:0;">
-              <label class="label">Cor</label>
-              <input class="input" id="roleColor" type="color" value="#2a5f90" style="height:46px; padding:6px 10px;">
-            </div>
-          </div>
-          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
-            <button class="btn2 primary" type="button" id="btnAddRole"><i class='bx bx-plus'></i> criar cargo</button>
-          </div>
-        </div>
-
-        <div style="height:12px;"></div>
-
-        <div class="post" style="padding: 12px;">
-          <div style="font-weight:1000; margin-bottom:8px;">Lista de cargos</div>
-          <div id="rolesList"></div>
-          <div class="help">O Dono pode criar/remover cargos. Dono/Moderador/Membro são base.</div>
-        </div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn2" type="button" data-close>Fechar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- MODAL: MEMBROS -->
-  <div class="overlay" id="ovMembers" role="dialog" aria-modal="true" aria-labelledby="ttlMembers">
-    <div class="modal">
-      <div class="modal-head">
-        <h3 class="modal-title" id="ttlMembers">Membros e cargos</h3>
-        <button class="modal-close" type="button" data-close>&times;</button>
-      </div>
-      <div class="modal-body">
-        <div id="membersManage"></div>
-        <div class="help">Você pode atribuir cargos. O Dono sempre fica como Dono.</div>
-      </div>
-      <div class="modal-actions">
-        <button class="btn2" type="button" data-close>Fechar</button>
-      </div>
-    </div>
-  </div>
+  <div class="dg-toast-wrap" id="toastWrap"></div>
 
   <script>
-    // ===== Toast (substitui alert) =====
-    const toastWrap = document.getElementById('toastWrap');
-    function toast(msg, kind='info'){
-      const el = document.createElement('div');
-      el.className = 'toast';
-      const t = document.createElement('div');
-      t.innerHTML = '<div style="font-weight:1000; margin-bottom:2px;">'+escapeHtml(kind === 'error' ? 'Erro' : kind === 'success' ? 'Sucesso' : 'Aviso')+'</div><small>'+escapeHtml(String(msg||''))+'</small>';
-      const b = document.createElement('button');
-      b.textContent = 'OK';
-      b.onclick = () => el.remove();
-      el.appendChild(t); el.appendChild(b);
-      toastWrap.appendChild(el);
-      setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 4200);
-    }
+    // Bucket padrão para anexos (se estiver usando Supabase Storage)
+    window.__DOKE_SUPABASE_STORAGE_BUCKET__ = window.__DOKE_SUPABASE_STORAGE_BUCKET__ || 'posts';
+
     (function(){
-      const native = window.alert;
+      const $ = (sel, root=document) => root.querySelector(sel);
+      const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+      const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
+
+      function toast(msg, kind='info'){
+        const wrap = $('#toastWrap');
+        if(!wrap) return;
+        const el = document.createElement('div');
+        el.className = 'dg-toast ' + (kind||'');
+        el.textContent = String(msg||'');
+        wrap.appendChild(el);
+        setTimeout(()=>{ el.style.opacity='0.0'; el.style.transition='opacity .25s'; }, 3400);
+        setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 3800);
+      }
+
+      // Mata alert padrão
+      const nativeAlert = window.alert;
       window.alert = function(msg){
-        const text = String(msg||'');
-        const kind = /erro|error|falha|inválid/i.test(text) ? 'error' : /sucesso|criado|ok|conclu/i.test(text) ? 'success' : 'info';
-        toast(text, kind);
+        const t = String(msg||'');
+        const kind = /erro|error|falha|inválid/i.test(t) ? 'error' : /sucesso|criado|ok|conclu/i.test(t) ? 'success' : 'info';
+        toast(t, kind);
       };
-    })();
 
-    function escapeHtml(s){
-      return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
-    }
+      function getSupabaseClient(){
+        return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
+      }
 
-    // ===== Storage helpers =====
-    const FULL_KEY_PREFIX = 'doke_group_full_';
-    function getId(){
-      const url = new URL(window.location.href);
-      return url.searchParams.get('id') || '';
-    }
+      async function readAsDataURL(file){
+        return await new Promise((resolve, reject)=>{
+          const reader = new FileReader();
+          reader.onload = ()=>resolve(reader.result);
+          reader.onerror = ()=>reject(reader.error);
+          reader.readAsDataURL(file);
+        });
+      }
 
-    function getCurrentUser(){
-      // tenta pegar usuário do seu sistema; fallback "Você"
-      const keys = ['usuarioLogado','user','usuario','currentUser','doke_user'];
-      for(const k of keys){
+      async function uploadToSupabase(file, groupId){
+        const sb = getSupabaseClient();
+        if(!sb || !sb.storage) return null;
+        const bucket = window.__DOKE_SUPABASE_STORAGE_BUCKET__ || 'posts';
+        const safeName = (file.name || 'file').replace(/[^a-z0-9._-]/gi,'_');
+        const path = `comunidades/${groupId}/posts/${Date.now()}_${safeName}`;
+        const { error } = await sb.storage.from(bucket).upload(path, file, { upsert: true });
+        if(error) throw error;
+        const { data } = sb.storage.from(bucket).getPublicUrl(path);
+        return data?.publicUrl || null;
+      }
+
+      function fmtTime(iso){
         try{
-          const v = localStorage.getItem(k);
-          if(!v) continue;
-          const obj = JSON.parse(v);
-          const id = obj.id || obj.uid || obj.user_id || obj.email || obj.telefone || obj.username;
-          const nome = obj.nome || obj.user || obj.username || obj.displayName || obj.email || 'Você';
-          const foto = obj.foto || obj.avatar || obj.photoURL || 'https://i.pravatar.cc/150?img=3';
-          if(id) return { id: String(id), nome: String(nome), foto: String(foto) };
-        }catch(e){}
-      }
-      return { id: 'local_user', nome: 'Você', foto: 'https://i.pravatar.cc/150?img=3' };
-    }
-
-    function loadGroupFull(id){
-      try{
-        const raw = localStorage.getItem(FULL_KEY_PREFIX + id);
-        if(raw) return JSON.parse(raw);
-      }catch(e){}
-      return null;
-    }
-    function saveGroupFull(g){
-      try{
-        localStorage.setItem(FULL_KEY_PREFIX + g.id, JSON.stringify(g));
-      }catch(e){}
-    }
-
-    function loadCommCardData(id){
-      try{
-        const raw = localStorage.getItem('doke_comm_data_' + id);
-        if(raw) return JSON.parse(raw);
-      }catch(e){}
-      return null;
-    }
-
-    function nowISO(){ return new Date().toISOString(); }
-
-    function defaultRoles(){
-      return [
-        { id:'owner', name:'Dono', color:'#f59e0b', system:true },
-        { id:'mod', name:'Moderador', color:'#2a5f90', system:true },
-        { id:'member', name:'Membro', color:'#6b7280', system:true }
-      ];
-    }
-
-    function ensureGroupModel(id){
-      const u = getCurrentUser();
-      let g = loadGroupFull(id);
-      if(g) return g;
-
-      const cd = loadCommCardData(id) || {};
-      g = {
-        id,
-        title: cd.title || cd.nome || 'Grupo',
-        desc: cd.desc || cd.descricao || '',
-        cover: cd.cover || '',
-        tipo: cd.tipo || cd.type || 'Pro',
-        privacidade: cd.privacidade || cd.privacy || 'publica',
-        categoria: cd.categoria || '',
-        subcategoria: cd.subcategoria || '',
-        createdAt: cd.criadoEm || nowISO(),
-        ownerId: u.id,
-        roles: defaultRoles(),
-        members: [
-          { id: u.id, nome: u.nome, foto: u.foto, status:'online', roleId:'owner' }
-        ],
-        posts: []
-      };
-      saveGroupFull(g);
-      return g;
-    }
-
-    function isMember(g, userId){
-      return g.members.some(m => String(m.id) === String(userId));
-    }
-    function getMember(g, userId){
-      return g.members.find(m => String(m.id) === String(userId));
-    }
-    function roleById(g, rid){
-      return g.roles.find(r => r.id === rid) || g.roles.find(r => r.id === 'member');
-    }
-    function canAdmin(g, userId){
-      const m = getMember(g, userId);
-      if(!m) return false;
-      return m.roleId === 'owner' || m.roleId === 'mod';
-    }
-    function isOwner(g, userId){
-      const m = getMember(g, userId);
-      return !!m && m.roleId === 'owner';
-    }
-
-    // ===== UI refs =====
-    const id = getId();
-    const u = getCurrentUser();
-    const leftPane = document.getElementById('leftPane');
-    const backdrop = document.getElementById('backdrop');
-    const btnOpenLeft = document.getElementById('btnOpenLeft');
-
-    const coverImg = document.getElementById('coverImg');
-    const groupName = document.getElementById('groupName');
-    const groupDesc = document.getElementById('groupDesc');
-    const miniTitle = document.getElementById('miniTitle');
-    const miniSub = document.getElementById('miniSub');
-    const miniChip = document.getElementById('miniChip');
-    const miniChipText = document.getElementById('miniChipText');
-    const mTitle = document.getElementById('mTitle');
-
-    const btnJoin = document.getElementById('btnJoin');
-    const btnCopy = document.getElementById('btnCopy');
-    const composerBox = document.getElementById('composerBox');
-    const feedList = document.getElementById('feedList');
-
-    const membersOnline = document.getElementById('membersOnline');
-    const membersOffline = document.getElementById('membersOffline');
-    const onlineCount = document.getElementById('onlineCount');
-    const offlineCount = document.getElementById('offlineCount');
-
-    const tabFeed = document.getElementById('tabFeed');
-    const tabSobre = document.getElementById('tabSobre');
-    const tabArquivos = document.getElementById('tabArquivos');
-    const sobreText = document.getElementById('sobreText');
-    const sobreTipo = document.getElementById('sobreTipo');
-    const sobreCategoria = document.getElementById('sobreCategoria');
-    const sobrePriv = document.getElementById('sobrePriv');
-
-    const adminSection = document.getElementById('adminSection');
-
-    // modals
-    const ovEdit = document.getElementById('ovEdit');
-    const ovRoles = document.getElementById('ovRoles');
-    const ovMembers = document.getElementById('ovMembers');
-
-    // edit fields
-    const edNome = document.getElementById('edNome');
-    const edDesc = document.getElementById('edDesc');
-    const edPriv = document.getElementById('edPriv');
-    const edTipo = document.getElementById('edTipo');
-    const edCat  = document.getElementById('edCat');
-    const edSub  = document.getElementById('edSub');
-    const edCapa = document.getElementById('edCapa');
-    const edCapaName = document.getElementById('edCapaName');
-    const btnPickCapa = document.getElementById('btnPickCapa');
-    const btnSaveEdit = document.getElementById('btnSaveEdit');
-
-    // roles
-    const roleName = document.getElementById('roleName');
-    const roleColor = document.getElementById('roleColor');
-    const btnAddRole = document.getElementById('btnAddRole');
-    const rolesList = document.getElementById('rolesList');
-
-    // members manage
-    const membersManage = document.getElementById('membersManage');
-
-    // composer
-    const postText = document.getElementById('postText');
-    const attachInput = document.getElementById('attachInput');
-    const btnAttach = document.getElementById('btnAttach');
-    const btnSend = document.getElementById('btnSend');
-    const attachPreview = document.getElementById('attachPreview');
-    const attachName = document.getElementById('attachName');
-    const attachMedia = document.getElementById('attachMedia');
-    const attachRemove = document.getElementById('attachRemove');
-
-    let g = null;
-    let currentTab = 'feed';
-    let attached = null; // {type, dataUrl, name}
-
-    function openLeft(){
-      leftPane.classList.add('open');
-      backdrop.classList.add('show');
-    }
-    function closeLeft(){
-      leftPane.classList.remove('open');
-      backdrop.classList.remove('show');
-    }
-    btnOpenLeft?.addEventListener('click', openLeft);
-    backdrop?.addEventListener('click', closeLeft);
-
-    // tabs
-    document.querySelectorAll('.ch-btn[data-tab]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        currentTab = btn.getAttribute('data-tab');
-        document.querySelectorAll('.ch-btn[data-tab]').forEach(b=>b.classList.remove('active'));
-        btn.classList.add('active');
-        renderTabs();
-        closeLeft();
-      });
-    });
-
-    function renderTabs(){
-      tabFeed.style.display = currentTab === 'feed' ? '' : 'none';
-      tabSobre.style.display = currentTab === 'sobre' ? '' : 'none';
-      tabArquivos.style.display = currentTab === 'arquivos' ? '' : 'none';
-    }
-
-    // modal helpers (ESC + click fora + focus trap simples)
-    function openOverlay(ov){
-      ov.style.display = 'block';
-      document.body.style.overflow = 'hidden';
-      // focus first focusable
-      const f = ov.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
-      setTimeout(()=>{ try{ f?.focus(); }catch(e){} }, 0);
-    }
-    function closeOverlay(ov){
-      ov.style.display = 'none';
-      document.body.style.overflow = '';
-    }
-    document.querySelectorAll('.overlay').forEach(ov=>{
-      ov.addEventListener('mousedown', (e)=>{
-        if(e.target === ov) closeOverlay(ov);
-      });
-      ov.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape') closeOverlay(ov);
-      });
-    });
-    document.querySelectorAll('[data-close]').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const ov = btn.closest('.overlay');
-        if(ov) closeOverlay(ov);
-      });
-    });
-
-    // ===== RENDER =====
-    function applyCover(){
-      if(g.cover){
-        coverImg.src = g.cover;
-        coverImg.style.display = '';
-      }else{
-        coverImg.style.display = 'none';
-      }
-    }
-
-    function renderHeader(){
-      groupName.textContent = g.title || 'Grupo';
-      groupDesc.textContent = g.desc || '';
-      miniTitle.textContent = g.title || 'Grupo';
-      miniSub.textContent = (g.categoria ? g.categoria : (g.tipo || '')) || '';
-      mTitle.textContent = g.title || 'Grupo';
-
-      if((g.privacidade || '').toLowerCase() === 'privada'){
-        miniChip.style.display = 'inline-flex';
-        miniChipText.textContent = 'Privado';
-      }else{
-        miniChip.style.display = 'none';
+          const d = new Date(iso);
+          return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        }catch(e){ return ''; }
       }
 
-      sobreText.textContent = g.desc || 'Sem descrição.';
-      sobreTipo.textContent = 'Tipo: ' + (g.tipo || '—');
-      sobreCategoria.textContent = (g.categoria ? 'Categoria: ' + g.categoria : 'Categoria: —');
-      sobrePriv.textContent = 'Privacidade: ' + ((g.privacidade || 'publica') === 'privada' ? 'Privada' : 'Pública');
-
-      // join button state
-      const joined = isMember(g, u.id);
-      btnJoin.innerHTML = joined ? "<i class='bx bx-door-open'></i> abrir" : "<i class='bx bx-log-in'></i> entrar";
-      btnJoin.classList.toggle('primary', !joined);
-      composerBox.style.display = joined ? '' : 'none';
-
-      // admin tools
-      adminSection.style.display = canAdmin(g, u.id) ? '' : 'none';
-      applyCover();
-    }
-
-    function renderMembers(){
-      // ensure current user online
-      const me = getMember(g, u.id);
-      if(me) me.status = 'online';
-
-      const online = g.members.filter(m => (m.status || 'offline') === 'online');
-      const offline = g.members.filter(m => (m.status || 'offline') !== 'online');
-
-      onlineCount.textContent = online.length;
-      offlineCount.textContent = offline.length;
-
-      function renderList(container, arr){
-        container.innerHTML = '';
-        arr.forEach(m=>{
-          const r = roleById(g, m.roleId || 'member');
-          const el = document.createElement('div');
-          el.className = 'member';
-          el.innerHTML = `
-            <div class="m-ava">
-              <img src="${escapeHtml(m.foto || 'https://i.pravatar.cc/150?img=5')}" alt="">
-              <div class="status-dot ${m.status === 'online' ? 'online' : ''}"></div>
-            </div>
-            <div class="m-name">${escapeHtml(m.nome || 'Usuário')}</div>
-            <div class="m-role" style="border-color:${escapeHtml(r.color)}33; background:${escapeHtml(r.color)}14; color:${escapeHtml(r.color)};">${escapeHtml(r.name)}</div>
-          `;
-          container.appendChild(el);
-        });
+      function getGroupId(){
+        const id = new URLSearchParams(location.search).get('id');
+        return id ? String(id) : '';
       }
 
-      renderList(membersOnline, online);
-      renderList(membersOffline, offline);
-    }
-
-    function renderFeed(){
-      feedList.innerHTML = '';
-      if(!g.posts || g.posts.length === 0){
-        const empty = document.createElement('div');
-        empty.className = 'post';
-        empty.style.padding = '14px';
-        empty.innerHTML = `<div style="font-weight:1000; margin-bottom:6px;">Sem posts ainda</div><div style="color:var(--muted); font-weight:700;">Seja o primeiro a postar no grupo.</div>`;
-        feedList.appendChild(empty);
-        return;
+      function openModal(id){
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.classList.add('show');
+        el.setAttribute('aria-hidden','false');
+      }
+      function closeModal(id){
+        const el = document.getElementById(id);
+        if(!el) return;
+        el.classList.remove('show');
+        el.setAttribute('aria-hidden','true');
       }
 
-      g.posts.slice().reverse().forEach(p=>{
-        const author = g.members.find(m => String(m.id) === String(p.authorId)) || { nome: p.authorName || 'Usuário', foto: p.authorFoto || 'https://i.pravatar.cc/150?img=8', roleId: p.authorRoleId || 'member' };
-        const r = roleById(g, author.roleId || 'member');
-
-        const card = document.createElement('div');
-        card.className = 'post';
-        const time = new Date(p.createdAt || Date.now());
-        const timeStr = time.toLocaleString('pt-BR');
-
-        const mediaHtml = p.media && p.media.dataUrl ? `
-          <div class="post-media" style="${p.media.kind==='video' ? '' : ''}">
-            ${p.media.kind === 'video' ? `<video src="${escapeHtml(p.media.dataUrl)}" controls></video>` : `<img src="${escapeHtml(p.media.dataUrl)}" alt="">`}
-          </div>` : '';
-
-        card.innerHTML = `
-          <div class="post-head">
-            <div class="post-author">
-              <div class="avatar"><img src="${escapeHtml(author.foto)}" alt=""></div>
-              <div class="author-meta">
-                <div class="author-name">${escapeHtml(author.nome)} 
-                  <span class="role-badge" style="border-color:${escapeHtml(r.color)}33; background:${escapeHtml(r.color)}14; color:${escapeHtml(r.color)};">${escapeHtml(r.name)}</span>
-                </div>
-              </div>
-            </div>
-            <div class="post-time">${escapeHtml(timeStr)}</div>
-          </div>
-          <div class="post-body">
-            ${p.text ? `<p class="post-text">${escapeHtml(p.text)}</p>` : ''}
-            ${mediaHtml}
-          </div>
-        `;
-        feedList.appendChild(card);
-      });
-    }
-
-    function renderAll(){
-      renderTabs();
-      renderHeader();
-      renderMembers();
-      renderFeed();
-      saveGroupFull(g);
-    }
-
-    // ===== Actions =====
-    btnCopy.addEventListener('click', async ()=>{
-      try{
-        await navigator.clipboard.writeText(window.location.href);
-        toast('Link copiado!', 'success');
-      }catch(e){
-        toast('Não foi possível copiar. Copie manualmente o link.', 'info');
+      function roleStyle(role){
+        const c = role?.cor || 'rgba(0,0,0,0.55)';
+        return { borderColor: 'rgba(0,0,0,0.10)', background: c+'22', color: c };
       }
-    });
 
-    btnJoin.addEventListener('click', ()=>{
-      if(!isMember(g, u.id)){
-        g.members.push({ id: u.id, nome: u.nome, foto: u.foto, status:'online', roleId:'member' });
-        try{ localStorage.setItem('doke_comm_state_' + id, 'member'); }catch(e){}
-        toast('Você entrou no grupo!', 'success');
-      }else{
-        toast('Abrindo o grupo...', 'info');
-      }
-      renderAll();
-    });
-
-    // composer attachment
-    btnAttach.addEventListener('click', ()=> attachInput.click());
-    attachInput.addEventListener('change', async ()=>{
-      const file = attachInput.files && attachInput.files[0];
-      if(!file) return;
-      if(file.size > 2*1024*1024){
-        toast('Arquivo acima de 2MB.', 'error');
-        attachInput.value = '';
-        return;
-      }
-      const kind = file.type.startsWith('video/') ? 'video' : 'image';
-      const dataUrl = await readFileAsDataURL(file);
-      attached = { kind, dataUrl, name: file.name };
-      showAttachPreview(attached);
-    });
-
-    attachRemove.addEventListener('click', ()=>{
-      attached = null;
-      attachInput.value = '';
-      attachPreview.style.display = 'none';
-      attachMedia.innerHTML = '';
-    });
-
-    function showAttachPreview(a){
-      attachName.textContent = a.name || 'Arquivo';
-      attachMedia.innerHTML = '';
-      const holder = document.createElement(a.kind === 'video' ? 'video' : 'img');
-      if(a.kind === 'video') holder.controls = true;
-      holder.src = a.dataUrl;
-      attachMedia.appendChild(holder);
-      attachPreview.style.display = 'block';
-    }
-
-    btnSend.addEventListener('click', ()=>{
-      const text = (postText.value || '').trim();
-      if(!text && !attached){
-        toast('Escreva algo ou anexe um arquivo.', 'info');
-        return;
-      }
-      const me = getMember(g, u.id);
-      if(!me){
-        toast('Você precisa entrar no grupo para postar.', 'error');
-        return;
-      }
-      const post = {
-        id: 'p_' + Math.random().toString(16).slice(2) + Date.now(),
-        authorId: u.id,
-        authorName: u.nome,
-        authorFoto: u.foto,
-        authorRoleId: me.roleId,
-        text: text,
-        media: attached ? { kind: attached.kind, dataUrl: attached.dataUrl, name: attached.name } : null,
-        createdAt: new Date().toISOString()
-      };
-      g.posts.push(post);
-      postText.value = '';
-      attached = null;
-      attachInput.value = '';
-      attachPreview.style.display = 'none';
-      attachMedia.innerHTML = '';
-      renderAll();
-      toast('Post publicado!', 'success');
-    });
-
-    function readFileAsDataURL(file){
-      return new Promise((resolve, reject)=>{
-        const r = new FileReader();
-        r.onload = ()=> resolve(r.result);
-        r.onerror = reject;
-        r.readAsDataURL(file);
-      });
-    }
-
-    // ===== Admin: Edit group =====
-    document.getElementById('btnEditGroup').addEventListener('click', ()=>{
-      if(!canAdmin(g, u.id)) return;
-      edNome.value = g.title || '';
-      edDesc.value = g.desc || '';
-      edPriv.value = (g.privacidade || 'publica');
-      edTipo.value = g.tipo || 'Pro';
-      edCat.value = g.categoria || '';
-      edSub.value = g.subcategoria || '';
-      edCapaName.textContent = 'Nenhum arquivo escolhido';
-      edCapa.value = '';
-      openOverlay(ovEdit);
-    });
-
-    btnPickCapa.addEventListener('click', ()=> edCapa.click());
-    edCapa.addEventListener('change', async ()=>{
-      const f = edCapa.files && edCapa.files[0];
-      if(!f) return;
-      if(f.size > 2*1024*1024){
-        toast('Imagem acima de 2MB.', 'error');
-        edCapa.value = '';
-        return;
-      }
-      edCapaName.textContent = f.name;
-      const url = await readFileAsDataURL(f);
-      // preview instant
-      g.cover = url;
-      applyCover();
-    });
-
-    btnSaveEdit.addEventListener('click', ()=>{
-      if(!canAdmin(g, u.id)) return;
-      g.title = (edNome.value || '').trim() || g.title;
-      g.desc = (edDesc.value || '').trim();
-      g.privacidade = edPriv.value;
-      g.tipo = edTipo.value;
-      g.categoria = (edCat.value || '').trim();
-      g.subcategoria = (edSub.value || '').trim();
-      saveGroupFull(g);
-      renderAll();
-      closeOverlay(ovEdit);
-      toast('Grupo atualizado!', 'success');
-    });
-
-    // ===== Admin: Roles =====
-    document.getElementById('btnRoles').addEventListener('click', ()=>{
-      if(!isOwner(g, u.id)){
-        toast('Somente o Dono pode gerenciar cargos.', 'error');
-        return;
-      }
-      roleName.value = '';
-      roleColor.value = '#2a5f90';
-      renderRolesList();
-      openOverlay(ovRoles);
-    });
-
-    function renderRolesList(){
-      rolesList.innerHTML = '';
-      g.roles.forEach(r=>{
-        const row = document.createElement('div');
-        row.style.display = 'flex';
-        row.style.alignItems = 'center';
-        row.style.justifyContent = 'space-between';
-        row.style.gap = '10px';
-        row.style.padding = '10px 10px';
-        row.style.borderRadius = '14px';
-        row.style.border = '1px solid var(--line)';
-        row.style.background = '#fff';
-        row.style.marginBottom = '10px';
-
-        row.innerHTML = `
-          <div style="display:flex; align-items:center; gap:10px; min-width:0;">
-            <span style="width:14px; height:14px; border-radius:999px; background:${escapeHtml(r.color)}; box-shadow:0 0 0 3px ${escapeHtml(r.color)}22;"></span>
-            <div style="min-width:0;">
-              <div style="font-weight:1000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(r.name)}</div>
-              <div style="color:var(--muted); font-weight:700; font-size:0.88rem;">${r.system ? 'Cargo base do sistema' : 'Cargo personalizado'}</div>
-            </div>
-          </div>
-          <div style="display:flex; gap:8px; align-items:center;">
-            ${(!r.system) ? `<button class="btn2 danger" type="button" data-del="${escapeHtml(r.id)}"><i class='bx bx-trash'></i> remover</button>` : `<span class="help">—</span>`}
-          </div>
-        `;
-        rolesList.appendChild(row);
-      });
-
-      rolesList.querySelectorAll('button[data-del]').forEach(btn=>{
-        btn.addEventListener('click', ()=>{
-          const rid = btn.getAttribute('data-del');
-          if(!rid) return;
-          // reassign members with that role to member
-          g.members.forEach(m=>{ if(m.roleId === rid) m.roleId = 'member'; });
-          g.roles = g.roles.filter(r=> r.id !== rid);
-          saveGroupFull(g);
-          renderRolesList();
-          renderAll();
-          toast('Cargo removido!', 'success');
-        });
-      });
-    }
-
-    btnAddRole.addEventListener('click', ()=>{
-      if(!isOwner(g, u.id)) return;
-      const name = (roleName.value || '').trim();
-      if(!name){
-        toast('Digite um nome para o cargo.', 'info');
-        return;
-      }
-      const color = roleColor.value || '#2a5f90';
-      const rid = 'role_' + Math.random().toString(16).slice(2,8) + Date.now().toString(16).slice(-4);
-      g.roles.push({ id: rid, name, color, system:false });
-      saveGroupFull(g);
-      roleName.value = '';
-      renderRolesList();
-      renderAll();
-      toast('Cargo criado!', 'success');
-    });
-
-    // ===== Admin: Members + role assignment =====
-    document.getElementById('btnMembers').addEventListener('click', ()=>{
-      if(!canAdmin(g, u.id)) return;
-      renderMembersManage();
-      openOverlay(ovMembers);
-    });
-
-    function renderMembersManage(){
-      membersManage.innerHTML = '';
-      g.members.forEach(m=>{
-        const wrap = document.createElement('div');
-        wrap.className = 'post';
-        wrap.style.padding = '12px';
-        wrap.style.marginBottom = '10px';
-
-        const opts = g.roles.map(r=> `<option value="${escapeHtml(r.id)}" ${m.roleId===r.id?'selected':''}>${escapeHtml(r.name)}</option>`).join('');
-        const disabled = (m.roleId === 'owner') ? 'disabled' : '';
-
-        wrap.innerHTML = `
-          <div style="display:flex; align-items:center; gap:10px;">
-            <div class="avatar"><img src="${escapeHtml(m.foto || 'https://i.pravatar.cc/150?img=9')}" alt=""></div>
-            <div style="min-width:0; flex:1;">
-              <div style="font-weight:1000; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(m.nome || 'Usuário')}</div>
-              <div class="help" style="margin:4px 0 0;">ID: ${escapeHtml(String(m.id))}</div>
-            </div>
-            <div style="width: 220px; max-width: 45vw;">
-              <select class="select" data-mid="${escapeHtml(String(m.id))}" ${disabled}>${opts}</select>
-            </div>
-          </div>
-        `;
-        membersManage.appendChild(wrap);
-      });
-
-      membersManage.querySelectorAll('select[data-mid]').forEach(sel=>{
-        sel.addEventListener('change', ()=>{
-          const mid = sel.getAttribute('data-mid');
-          const rid = sel.value;
-          const mem = g.members.find(x=> String(x.id)===String(mid));
-          if(!mem) return;
-          if(mem.roleId === 'owner') return;
-          mem.roleId = rid;
-          saveGroupFull(g);
-          renderAll();
-          toast('Cargo atualizado!', 'success');
-        });
-      });
-    }
-
-    // ===== Init =====
-    if(!id){
-      toast('Grupo não encontrado (id ausente).', 'error');
-      document.getElementById('groupName').textContent = 'Grupo não encontrado';
-    }else{
-      g = ensureGroupModel(id);
-      // if user is not member yet, respect join state from communities page
-      // join state stored as doke_comm_state_{id}; if user already "member", auto add
-      try{
-        const joinKey = 'doke_comm_state_' + id;
-        const st = localStorage.getItem(joinKey);
-        if(st === 'member' && !isMember(g, u.id)){
-          g.members.push({ id: u.id, nome: u.nome, foto: u.foto, status:'online', roleId:'member' });
-        try{ localStorage.setItem('doke_comm_state_' + id, 'member'); }catch(e){}
-          saveGroupFull(g);
+      async function waitForDb(){
+        for(let i=0;i<60;i++){
+          if(window.db && window.auth && window.doc && window.getDoc) return true;
+          await sleep(50);
         }
-      }catch(e){}
-      renderAll();
-    }
+        return false;
+      }
+
+      // ====== Estado ======
+      const state = {
+        groupId: getGroupId(),
+        group: null,
+        user: null,
+        roles: [],
+        roleMap: new Map(),
+        members: [], // {uid, roleId, roleName, roleCor, userDoc, online}
+        isOwner: false,
+        isMod: false,
+        isMember: false,
+        view: 'feed',
+        pendingFile: null,
+      };
+
+      // ====== Render ======
+      function setView(view){
+        state.view = view;
+        $$('.dg-nav-btn[data-view]').forEach(b=>{
+          b.classList.toggle('active', b.getAttribute('data-view')===view);
+        });
+        const feedWrap = $('#feedWrap');
+        if(!feedWrap) return;
+        feedWrap.innerHTML = '';
+        if(view === 'sobre'){
+          renderAbout();
+        }else if(view === 'arquivos'){
+          renderFiles();
+        }else{
+          renderFeed();
+        }
+      }
+
+      function renderHeader(){
+        const g = state.group || {};
+        $('#groupName').textContent = g.nome || 'Grupo';
+        $('#groupTitle').textContent = g.nome || 'Grupo';
+        $('#groupDesc').textContent = g.descricao || '';
+        const metaBits = [];
+        if(g.tipo) metaBits.push(g.tipo);
+        if(g.privacidade) metaBits.push(g.privacidade);
+        if(typeof g.membrosCount === 'number') metaBits.push(`${g.membrosCount} membros`);
+        $('#groupMeta').textContent = metaBits.join(' • ');
+
+        const cover = $('#groupCover');
+        if(cover){
+          if(g.capa && String(g.capa).trim()){
+            cover.style.backgroundImage = `url('${g.capa}')`;
+          }else{
+            cover.style.backgroundImage = '';
+          }
+        }
+        const avatar = $('#groupAvatar');
+        if(avatar){
+          const url = g.capa && String(g.capa).trim() ? g.capa : '';
+          avatar.style.backgroundImage = url ? `url('${url}')` : '';
+        }
+
+        const badges = $('#groupBadges');
+        if(badges){
+          badges.innerHTML = '';
+          const priv = document.createElement('span');
+          priv.className = 'dg-pill ' + (String(g.privacidade||'').toLowerCase().includes('priv') ? 'lock':'');
+          priv.textContent = (g.privacidade || 'Público');
+          badges.appendChild(priv);
+
+          if(g.categoria){
+            const t = document.createElement('span');
+            t.className = 'dg-pill tag';
+            t.textContent = g.categoria;
+            badges.appendChild(t);
+          }
+          if(g.subcategoria){
+            const t2 = document.createElement('span');
+            t2.className = 'dg-pill tag';
+            t2.textContent = g.subcategoria;
+            badges.appendChild(t2);
+          }
+        }
+
+        // botões join/leave/edit
+        const btnJoin = $('#btnJoin');
+        const btnLeave = $('#btnLeave');
+        const btnEdit = $('#btnEdit');
+
+        if(btnJoin) btnJoin.style.display = (!state.isMember && state.user) ? 'inline-flex' : 'none';
+        if(btnLeave) btnLeave.style.display = (state.isMember && state.user) ? 'inline-flex' : 'none';
+        const canAdmin = state.isOwner || state.isMod;
+        if(btnEdit) btnEdit.style.display = canAdmin ? 'inline-flex' : 'none';
+        $('#adminArea').style.display = canAdmin ? 'block' : 'none';
+
+        // composer aparece só se membro
+        $('#composerWrap').style.display = (state.isMember && state.user) ? 'block' : 'none';
+      }
+
+      function renderMembers(){
+        const onEl = $('#membersOnline');
+        const offEl = $('#membersOffline');
+        if(!onEl || !offEl) return;
+        onEl.innerHTML = '';
+        offEl.innerHTML = '';
+        const online = [];
+        const offline = [];
+        state.members.forEach(m => (m.online ? online : offline).push(m));
+        $('#onlineCount').textContent = String(online.length);
+        $('#offlineCount').textContent = String(offline.length);
+
+        const canAssign = state.isOwner || state.isMod;
+
+        function createMemberRow(m){
+          const u = m.userDoc || {};
+          const foto = u.foto || 'https://i.pravatar.cc/150?u=' + encodeURIComponent(m.uid);
+          let nome = u.user || (u.nome ? String(u.nome).split(' ')[0] : 'Usuário');
+          const item = document.createElement('div');
+          item.className = 'dg-member';
+
+          const a = document.createElement('div');
+          a.className = 'a';
+          a.style.backgroundImage = `url('${foto}')`;
+          const dot = document.createElement('div');
+          dot.className = 'dg-dot ' + (m.online ? 'online' : '');
+          a.appendChild(dot);
+
+          const n = document.createElement('div');
+          n.className = 'n';
+          n.innerHTML = `<div class="name">${escapeHtml(nome)}</div><div class="sub">${escapeHtml(u.categoria_profissional || '')}</div>`;
+
+          // role badge / selector
+          const roleObj = state.roleMap.get(m.roleId) || { nome: m.roleName || 'Membro', cor: m.roleCor || '#6b7280' };
+          const roleName = roleObj.nome || 'Membro';
+          const roleCor = roleObj.cor || '#6b7280';
+
+          if(canAssign){
+            const sel = document.createElement('select');
+            state.roles.forEach(r=>{
+              const opt = document.createElement('option');
+              opt.value = r.id;
+              opt.textContent = r.nome;
+              sel.appendChild(opt);
+            });
+            sel.value = m.roleId || (state.roles.find(r=>r.nome==='Membro')?.id || '');
+            sel.addEventListener('change', async ()=>{
+              try{
+                await window.setDoc(window.doc(window.db, "comunidades", state.groupId, "membros", m.uid), {
+                  uid: m.uid,
+                  roleId: sel.value
+                }, { merge: true });
+                toast("Cargo atualizado", "success");
+                await loadMembers();
+              }catch(e){
+                console.error(e);
+                toast("Erro ao atualizar cargo", "error");
+              }
+            });
+            item.appendChild(sel);
+          }else{
+            const role = document.createElement('div');
+            role.className = 'role';
+            role.textContent = roleName;
+            role.style.borderColor = roleCor+'44';
+            role.style.background = roleCor+'22';
+            role.style.color = roleCor;
+            item.appendChild(role);
+          }
+
+          item.prepend(a);
+          item.appendChild(n);
+          return item;
+        }
+
+        online.forEach(m=>onEl.appendChild(createMemberRow(m)));
+        offline.forEach(m=>offEl.appendChild(createMemberRow(m)));
+      }
+
+      function renderFeed(){
+        const wrap = $('#feedWrap');
+        if(!wrap) return;
+        wrap.innerHTML = '<div style="padding:10px;color:rgba(17,24,39,0.55);font-weight:800;">Carregando posts...</div>';
+        loadPosts().catch(e=>{
+          console.error(e);
+          wrap.innerHTML = '<div style="padding:10px;color:rgba(17,24,39,0.55);font-weight:800;">Erro ao carregar posts.</div>';
+        });
+      }
+
+      function renderAbout(){
+        const g = state.group || {};
+        const wrap = $('#feedWrap');
+        if(!wrap) return;
+        wrap.innerHTML = `
+          <div style="padding:14px;">
+            <div style="font-weight:1000;color:#111827;font-size:1rem;">Sobre</div>
+            <div style="margin-top:8px;color:rgba(17,24,39,0.70);font-weight:700;white-space:pre-wrap;">${escapeHtml(g.descricao || '')}</div>
+            <div style="margin-top:14px;color:rgba(17,24,39,0.55);font-weight:800;font-size:.9rem;">
+              Criado em: ${escapeHtml(g.dataCriacao ? fmtTime(g.dataCriacao) : '—')}
+            </div>
+          </div>
+        `;
+      }
+
+      function renderFiles(){
+        const wrap = $('#feedWrap');
+        if(!wrap) return;
+        wrap.innerHTML = `
+          <div style="padding:14px;">
+            <div style="font-weight:1000;color:#111827;font-size:1rem;">Arquivos</div>
+            <div style="margin-top:8px;color:rgba(17,24,39,0.55);font-weight:800;">
+              Aqui aparecem anexos (imagens/vídeos/PDF) dos posts.
+            </div>
+          </div>
+        `;
+      }
+
+      function escapeHtml(s){
+        return String(s ?? '')
+          .replaceAll('&','&amp;')
+          .replaceAll('<','&lt;')
+          .replaceAll('>','&gt;')
+          .replaceAll('"','&quot;')
+          .replaceAll("'","&#039;");
+      }
+
+      // ====== DB Loaders ======
+      async function loadGroup(){
+        const ref = window.doc(window.db, "comunidades", state.groupId);
+        const snap = await window.getDoc(ref);
+        if(!snap.exists()){
+          toast("Grupo não encontrado", "error");
+          $('#groupName').textContent = 'Grupo não encontrado';
+          return false;
+        }
+        state.group = snap.data() || {};
+        return true;
+      }
+
+      async function ensureDefaultRolesIfNeeded(){
+        const rolesCol = window.collection(window.db, "comunidades", state.groupId, "cargos");
+        const snap = await window.getDocs(rolesCol);
+        if(!snap.empty) return;
+
+        // só o dono cria defaults automaticamente
+        if(!state.isOwner) return;
+
+        const defaults = [
+          { nome: "Dono", cor: "#0b7768", rank: 100 },
+          { nome: "Moderador", cor: "#2a5f90", rank: 70 },
+          { nome: "Membro", cor: "#6b7280", rank: 10 },
+        ];
+        for(const r of defaults){
+          await window.addDoc(rolesCol, r);
+        }
+      }
+
+      async function loadRoles(){
+        const rolesCol = window.collection(window.db, "comunidades", state.groupId, "cargos");
+        const snap = await window.getDocs(rolesCol);
+        const roles = [];
+        snap.forEach(d=>{
+          const data = d.data() || {};
+          roles.push({ id: d.id, ...data });
+        });
+        roles.sort((a,b)=>(b.rank||0)-(a.rank||0));
+        state.roles = roles;
+        state.roleMap = new Map(roles.map(r=>[r.id, r]));
+      }
+
+      async function loadMembers(){
+        // tenta subcoleção primeiro
+        const memCol = window.collection(window.db, "comunidades", state.groupId, "membros");
+        let memSnap = null;
+        try{
+          memSnap = await window.getDocs(memCol);
+        }catch(e){
+          memSnap = null;
+        }
+
+        let memberEntries = [];
+        if(memSnap && !memSnap.empty){
+          memSnap.forEach(d=>{
+            const data = d.data() || {};
+            memberEntries.push({ uid: data.uid || d.id, roleId: data.roleId || '', roleName: data.roleName || '', roleCor: data.roleCor || '' });
+          });
+        }else{
+          const arr = Array.isArray(state.group?.membros) ? state.group.membros : [];
+          memberEntries = arr.map(uid => ({ uid, roleId:'', roleName:'', roleCor:'' }));
+        }
+
+        // garante dono presente
+        const dono = state.group?.donoUid;
+        if(dono && !memberEntries.some(m=>m.uid===dono)){
+          memberEntries.unshift({ uid: dono, roleId:'', roleName:'', roleCor:'' });
+        }
+
+        // busca dados do usuário
+        const members = [];
+        for(const m of memberEntries){
+          if(!m.uid) continue;
+          try{
+            const uSnap = await window.getDoc(window.doc(window.db, "usuarios", m.uid));
+            const uData = uSnap.exists() ? (uSnap.data()||{}) : {};
+            const last = uData.ultimaVezOnline ? Date.parse(uData.ultimaVezOnline) : 0;
+            const isOnline = (String(uData.status||'').toLowerCase() === 'online') && (Date.now()-last < 10*60*1000);
+            members.push({ ...m, userDoc: uData, online: isOnline });
+          }catch(e){
+            members.push({ ...m, userDoc: {}, online: false });
+          }
+        }
+
+        // atribui role default se faltando
+        const roleMembroId = state.roles.find(r=>r.nome==="Membro")?.id || '';
+        const roleDonoId = state.roles.find(r=>r.nome==="Dono")?.id || '';
+        const roleModId = state.roles.find(r=>r.nome==="Moderador")?.id || '';
+
+        members.forEach(mem=>{
+          if(!mem.roleId){
+            if(mem.uid === state.group?.donoUid) mem.roleId = roleDonoId || roleMembroId;
+            else mem.roleId = roleMembroId;
+          }
+        });
+
+        state.members = members;
+        renderMembers();
+      }
+
+      async function loadPosts(){
+        const wrap = $('#feedWrap');
+        const postsCol = window.collection(window.db, "comunidades", state.groupId, "posts");
+        const snap = await window.getDocs(window.query(postsCol, window.limit(50)));
+        const posts = [];
+        snap.forEach(d=>{
+          const data = d.data() || {};
+          posts.push({ id: d.id, ...data });
+        });
+        posts.sort((a,b)=> (Date.parse(b.createdAt||0) - Date.parse(a.createdAt||0)));
+
+        wrap.innerHTML = '';
+        if(posts.length === 0){
+          wrap.innerHTML = '<div style="padding:10px;color:rgba(17,24,39,0.55);font-weight:800;">Ainda não há posts.</div>';
+          return;
+        }
+
+        for(const p of posts){
+          const card = document.createElement('div');
+          card.className = 'dg-post';
+
+          // user info
+          let uData = {};
+          try{
+            if(p.uid){
+              const uSnap = await window.getDoc(window.doc(window.db,"usuarios",p.uid));
+              uData = uSnap.exists()? (uSnap.data()||{}) : {};
+            }
+          }catch(e){}
+
+          const foto = uData.foto || 'https://i.pravatar.cc/150?u=' + encodeURIComponent(p.uid||p.id);
+          const nome = uData.user || (uData.nome ? String(uData.nome).split(' ')[0] : 'Usuário');
+
+          // role badge from member mapping
+          const member = state.members.find(m=>m.uid===p.uid);
+          const roleObj = member ? (state.roleMap.get(member.roleId) || {}) : {};
+          const roleName = roleObj.nome || (p.roleName||'');
+          const roleCor  = roleObj.cor  || (p.roleCor||'');
+
+          const head = document.createElement('div');
+          head.className = 'dg-post-head';
+          head.innerHTML = `
+            <div class="dg-post-userimg" style="background-image:url('${escapeHtml(foto)}')"></div>
+            <div class="dg-post-meta">
+              <div class="u">
+                <span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nome)}</span>
+                ${roleName ? `<span class="dg-role-badge" style="border-color:${escapeHtml(roleCor||'#6b7280')}44;background:${escapeHtml(roleCor||'#6b7280')}22;color:${escapeHtml(roleCor||'#6b7280')}">${escapeHtml(roleName)}</span>` : ''}
+              </div>
+              <div class="t">${escapeHtml(p.createdAt ? fmtTime(p.createdAt) : '')}</div>
+            </div>
+          `;
+
+          card.appendChild(head);
+
+          if(p.mediaUrl){
+            const media = document.createElement('div');
+            media.className = 'dg-media';
+            if(String(p.mediaType||'').startsWith('image')){
+              media.innerHTML = `<img src="${escapeHtml(p.mediaUrl)}" loading="lazy" alt="Imagem do post">`;
+            }else if(String(p.mediaType||'').startsWith('video')){
+              media.innerHTML = `<video src="${escapeHtml(p.mediaUrl)}" controls></video>`;
+            }else{
+              media.innerHTML = `<a href="${escapeHtml(p.mediaUrl)}" target="_blank" rel="noopener">Abrir arquivo</a>`;
+            }
+            card.appendChild(media);
+          }
+
+          if(p.texto){
+            const body = document.createElement('div');
+            body.className = 'dg-post-body';
+            body.textContent = String(p.texto);
+            card.appendChild(body);
+          }
+
+          wrap.appendChild(card);
+        }
+      }
+
+      async function joinGroup(){
+        if(!state.user){ toast("Faça login para entrar", "error"); return; }
+        const gRef = window.doc(window.db, "comunidades", state.groupId);
+        const uid = state.user.uid;
+
+        try{
+          // adiciona uid no array membros (se existir)
+          const gSnap = await window.getDoc(gRef);
+          if(!gSnap.exists()) return;
+          const g = gSnap.data() || {};
+          const membros = Array.isArray(g.membros) ? g.membros : [];
+          if(!membros.includes(uid)){
+            membros.push(uid);
+            await window.updateDoc(gRef, { membros, membrosCount: membros.length });
+          }
+
+          // cria doc em subcoleção membros
+          const roleMembroId = state.roles.find(r=>r.nome==="Membro")?.id || '';
+          await window.setDoc(window.doc(window.db, "comunidades", state.groupId, "membros", uid), {
+            uid, roleId: roleMembroId
+          }, { merge: true });
+
+          toast("Você entrou no grupo", "success");
+          await refreshAll();
+        }catch(e){
+          console.error(e);
+          toast("Erro ao entrar no grupo", "error");
+        }
+      }
+
+      async function leaveGroup(){
+        if(!state.user){ return; }
+        const uid = state.user.uid;
+        const gRef = window.doc(window.db, "comunidades", state.groupId);
+        try{
+          const gSnap = await window.getDoc(gRef);
+          if(!gSnap.exists()) return;
+          const g = gSnap.data() || {};
+          const membros = Array.isArray(g.membros) ? g.membros : [];
+          const next = membros.filter(x=>x!==uid);
+          await window.updateDoc(gRef, { membros: next, membrosCount: next.length });
+
+          // remove membro doc (se não for dono)
+          if(uid !== g.donoUid){
+            try{ await window.deleteDoc(window.doc(window.db, "comunidades", state.groupId, "membros", uid)); }catch(e){}
+          }
+
+          toast("Você saiu do grupo", "success");
+          await refreshAll();
+        }catch(e){
+          console.error(e);
+          toast("Erro ao sair", "error");
+        }
+      }
+
+      async function createPost(){
+        if(!state.user || !state.isMember){
+          toast("Entre no grupo para postar", "error");
+          return;
+        }
+        const texto = $('#postText').value.trim();
+        const file = state.pendingFile;
+
+        if(!texto && !file){
+          toast("Escreva algo ou anexe um arquivo", "info");
+          return;
+        }
+
+        $('#btnSend').disabled = true;
+
+        try{
+          let mediaUrl = '';
+          let mediaType = '';
+
+          if(file){
+            mediaType = file.type || '';
+            // tenta upload supabase, senão base64 (só imagens pequenas)
+            try{
+              const url = await uploadToSupabase(file, state.groupId);
+              if(url) mediaUrl = url;
+            }catch(e){
+              console.warn("Upload supabase falhou:", e);
+              if((file.type||'').startsWith('image/') && file.size <= 2*1024*1024){
+                mediaUrl = await readAsDataURL(file);
+              }else{
+                throw new Error("Falha ao enviar arquivo. Tente novamente ou use uma imagem menor.");
+              }
+            }
+          }
+
+          const post = {
+            uid: state.user.uid,
+            texto: texto || '',
+            mediaUrl: mediaUrl || '',
+            mediaType: mediaType || '',
+            createdAt: new Date().toISOString()
+          };
+
+          await window.addDoc(window.collection(window.db, "comunidades", state.groupId, "posts"), post);
+
+          $('#postText').value = '';
+          clearAttachment();
+          toast("Post enviado!", "success");
+          await loadPosts();
+        }catch(e){
+          console.error(e);
+          toast(e?.message || "Erro ao postar", "error");
+        }finally{
+          $('#btnSend').disabled = false;
+        }
+      }
+
+      function clearAttachment(){
+        state.pendingFile = null;
+        $('#postFile').value = '';
+        $('#attachPreview').style.display = 'none';
+        $('#attachName').textContent = '';
+      }
+
+      async function refreshAll(){
+        if(!state.groupId){
+          toast("Faltou o ID do grupo na URL", "error");
+          return;
+        }
+        const ok = await loadGroup();
+        if(!ok) return;
+
+        // owner/mod/member flags
+        state.isOwner = !!(state.user && state.group && state.user.uid === state.group.donoUid);
+        state.isMember = !!(state.user && Array.isArray(state.group.membros) && state.group.membros.includes(state.user.uid));
+
+        await ensureDefaultRolesIfNeeded();
+        await loadRoles();
+
+        // mod check: se tiver doc membro e role=Moderador
+        state.isMod = false;
+        if(state.user){
+          try{
+            const ms = await window.getDoc(window.doc(window.db, "comunidades", state.groupId, "membros", state.user.uid));
+            if(ms.exists()){
+              const md = ms.data()||{};
+              const role = state.roleMap.get(md.roleId);
+              if(role && String(role.nome).toLowerCase().includes('moder')) state.isMod = true;
+            }
+          }catch(e){}
+        }
+
+        // se for dono, forçar como membro
+        if(state.isOwner) state.isMember = true;
+
+        // UI
+        renderHeader();
+        await loadMembers();
+        setView(state.view);
+      }
+
+      // ====== UI Events ======
+      function bind(){
+        $('#btnBack').addEventListener('click', ()=> history.length>1 ? history.back() : (location.href='comunidade.html'));
+
+        $$('.dg-nav-btn[data-view]').forEach(btn=>{
+          btn.addEventListener('click', ()=> setView(btn.getAttribute('data-view')));
+        });
+
+        // ações admin
+        $$('.dg-nav-btn[data-action]').forEach(btn=>{
+          btn.addEventListener('click', ()=>{
+            const act = btn.getAttribute('data-action');
+            if(act==='edit') openModal('modalEdit');
+            if(act==='roles') openModal('modalRoles');
+          });
+        });
+
+        $('#btnEdit').addEventListener('click', ()=> openModal('modalEdit'));
+        $('#btnJoin').addEventListener('click', joinGroup);
+        $('#btnLeave').addEventListener('click', leaveGroup);
+
+        // modal close handlers
+        $$('.dg-modal').forEach(modal=>{
+          modal.addEventListener('click', (e)=>{
+            if(e.target === modal) closeModal(modal.id);
+          });
+        });
+        $$('[data-close]').forEach(btn=>{
+          btn.addEventListener('click', ()=> closeModal(btn.getAttribute('data-close')));
+        });
+        document.addEventListener('keydown', (e)=>{
+          if(e.key === 'Escape'){
+            ['modalEdit','modalRoles'].forEach(closeModal);
+          }
+        });
+
+        // composer file
+        $('#btnAttach').addEventListener('click', ()=> $('#postFile').click());
+        $('#postFile').addEventListener('change', ()=>{
+          const f = $('#postFile').files && $('#postFile').files[0];
+          if(!f) return;
+          state.pendingFile = f;
+          $('#attachName').textContent = f.name;
+          $('#attachPreview').style.display = 'flex';
+        });
+        $('#attachRemove').addEventListener('click', clearAttachment);
+        $('#btnSend').addEventListener('click', createPost);
+        $('#postText').addEventListener('keydown', (e)=>{
+          if(e.key === 'Enter' && !e.shiftKey){
+            e.preventDefault();
+            createPost();
+          }
+        });
+
+        // edit group
+        $('#formEdit').addEventListener('submit', async (e)=>{
+          e.preventDefault();
+          if(!(state.isOwner || state.isMod)){
+            toast("Sem permissão", "error");
+            return;
+          }
+          const patch = {
+            nome: $('#editNome').value.trim(),
+            descricao: $('#editDesc').value.trim(),
+            tipo: $('#editTipo').value,
+            privacidade: $('#editPrivacidade').value,
+            categoria: $('#editCategoria').value.trim(),
+            subcategoria: $('#editSubcategoria').value.trim(),
+          };
+
+          // capa upload (base64 simples se não tiver storage)
+          const file = $('#editCapa').files && $('#editCapa').files[0];
+          if(file){
+            if(file.size > 2*1024*1024){ toast("Imagem muito grande (máx 2MB)", "error"); return; }
+            try{
+              let url = null;
+              try{ url = await uploadToSupabase(file, state.groupId); }catch(e){}
+              if(!url) url = await readAsDataURL(file);
+              patch.capa = url;
+            }catch(e){
+              toast("Erro ao enviar capa", "error");
+              return;
+            }
+          }
+
+          try{
+            await window.updateDoc(window.doc(window.db, "comunidades", state.groupId), patch);
+            toast("Grupo atualizado!", "success");
+            closeModal('modalEdit');
+            await refreshAll();
+          }catch(err){
+            console.error(err);
+            toast("Erro ao salvar", "error");
+          }
+        });
+
+        // roles
+        $('#btnCreateRole').addEventListener('click', async ()=>{
+          if(!state.isOwner){ toast("Só o Dono cria cargos", "error"); return; }
+          const nome = $('#roleNome').value.trim();
+          const cor = $('#roleCor').value || '#0b7768';
+          if(!nome){ toast("Informe o nome do cargo", "info"); return; }
+          try{
+            await window.addDoc(window.collection(window.db, "comunidades", state.groupId, "cargos"), {
+              nome, cor, rank: 20
+            });
+            $('#roleNome').value = '';
+            toast("Cargo criado!", "success");
+            await loadRoles();
+            await loadMembers();
+            renderRolesList();
+          }catch(e){
+            console.error(e);
+            toast("Erro ao criar cargo", "error");
+          }
+        });
+      }
+
+      function renderRolesList(){
+        const wrap = $('#rolesList');
+        if(!wrap) return;
+        wrap.innerHTML = '';
+        if(state.roles.length === 0){
+          wrap.innerHTML = '<div class="dg-help">Nenhum cargo ainda.</div>';
+          return;
+        }
+        state.roles.forEach(r=>{
+          const row = document.createElement('div');
+          row.style.display = 'flex';
+          row.style.gap = '10px';
+          row.style.alignItems = 'center';
+          row.style.padding = '10px 0';
+          row.style.borderBottom = '1px solid rgba(0,0,0,0.06)';
+          row.innerHTML = `
+            <div style="width:14px;height:14px;border-radius:999px;background:${escapeHtml(r.cor||'#6b7280')};"></div>
+            <div style="font-weight:900;color:#111827;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.nome||'Cargo')}</div>
+            ${state.isOwner && r.nome!=="Dono" && r.nome!=="Membro" && r.nome!=="Moderador" ? `<button class="dg-btn secondary" style="padding:8px 10px;border-radius:12px;" data-del-role="${escapeHtml(r.id)}"><i class='bx bx-trash'></i></button>` : ''}
+          `;
+          wrap.appendChild(row);
+        });
+
+        // delete role
+        $$('[data-del-role]', wrap).forEach(btn=>{
+          btn.addEventListener('click', async ()=>{
+            if(!state.isOwner) return;
+            const id = btn.getAttribute('data-del-role');
+            try{
+              await window.deleteDoc(window.doc(window.db, "comunidades", state.groupId, "cargos", id));
+              toast("Cargo removido", "success");
+              await loadRoles();
+              await loadMembers();
+              renderRolesList();
+            }catch(e){
+              console.error(e);
+              toast("Erro ao remover cargo", "error");
+            }
+          });
+        });
+      }
+
+      async function main(){
+        if(!state.groupId){
+          toast("URL sem id do grupo (ex: grupo.html?id=XYZ)", "error");
+          $('#groupName').textContent = 'Grupo inválido';
+          return;
+        }
+
+        const ok = await waitForDb();
+        if(!ok){
+          toast("Falha ao iniciar banco", "error");
+          return;
+        }
+
+        bind();
+
+        // auth
+        try{
+          onAuthStateChanged(window.auth, async (user)=>{
+            state.user = user || null;
+            if(user){
+              // usa o seu script central (marca online)
+              if(window.marcarComoOnline) window.marcarComoOnline(user.uid);
+            }
+            await refreshAll();
+            renderRolesList();
+            // preenche modal edit
+            if(state.group){
+              $('#editNome').value = state.group.nome || '';
+              $('#editDesc').value = state.group.descricao || '';
+              $('#editTipo').value = state.group.tipo || 'Pro';
+              $('#editPrivacidade').value = state.group.privacidade || 'Público';
+              $('#editCategoria').value = state.group.categoria || '';
+              $('#editSubcategoria').value = state.group.subcategoria || '';
+            }
+          });
+        }catch(e){
+          // fallback se não existir onAuthStateChanged
+          state.user = window.auth?.currentUser || null;
+          await refreshAll();
+          renderRolesList();
+        }
+
+        // presença offline (melhor esforço)
+        window.addEventListener('beforeunload', ()=>{
+          const u = state.user;
+          if(u && window.marcarComoOffline) window.marcarComoOffline(u.uid);
+        });
+
+        // atualiza roles list quando abrir modal
+        $('#modalRoles').addEventListener('transitionend', renderRolesList);
+        $('#btnEdit').addEventListener('click', ()=>{
+          if(state.group){
+            $('#editNome').value = state.group.nome || '';
+            $('#editDesc').value = state.group.descricao || '';
+            $('#editTipo').value = state.group.tipo || 'Pro';
+            $('#editPrivacidade').value = state.group.privacidade || 'Público';
+            $('#editCategoria').value = state.group.categoria || '';
+            $('#editSubcategoria').value = state.group.subcategoria || '';
+          }
+        });
+      }
+
+      window.addEventListener('load', main);
+    })();
   </script>
 </body>
 </html>

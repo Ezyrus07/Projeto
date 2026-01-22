@@ -76,6 +76,12 @@
         }
         .pix-area.active { display: block; }
         .qr-placeholder { width: 180px; height: 180px; margin: 0 auto 20px; background: #fff; border: 1px solid #ddd; padding: 10px; }
+        .pix-copy-box {
+            display: flex; align-items: center; gap: 12px; justify-content: space-between;
+            padding: 10px 12px; border: 1px solid #e6e6e6; border-radius: 10px; background: #fff;
+        }
+        .pix-code { font-size: 0.8rem; color: #555; word-break: break-all; text-align: left; }
+        .pix-copy-box .btn-checkout { width: auto; padding: 10px 14px; font-size: 0.8rem; border-radius: 8px; }
 
         .summary-card {
             background: #fff; border-radius: 16px; padding: 30px;
@@ -83,7 +89,7 @@
             height: fit-content; position: sticky; top: 100px;
         }
 
-        .order-item { display: flex; gap: 15px; padding-bottom: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
+        .order-item { display: flex; align-items: center; gap: 15px; padding-bottom: 20px; border-bottom: 1px solid #eee; margin-bottom: 20px; }
         .item-img { width: 70px; height: 70px; border-radius: 8px; object-fit: cover; }
         
         .price-total {
@@ -137,63 +143,6 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-/* ======================================================
-   ESTILO DO LOADER E SUCESSO (PAGAMENTO)
-   ====================================================== */
-
-/* O Container que cobre a tela */
-#loaderPagamento {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 255, 255, 0.95);
-    z-index: 9999;
-    display: none; /* Controlado pelo JS */
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(10px);
-}
-
-/* O Círculo Girando (Loader) */
-#circuloLoader {
-    width: 60px;
-    height: 60px;
-    border: 5px solid #e0f2f1;
-    border-top: 5px solid var(--cor0);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin-bottom: 20px;
-}
-
-@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-
-/* O Ícone de Sucesso (Check Verde) */
-#iconeSucesso {
-    font-size: 5rem;
-    color: #2ecc71;
-    animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: none;
-    margin-bottom: 15px;
-}
-
-@keyframes popIn {
-    0% { transform: scale(0); opacity: 0; }
-    70% { transform: scale(1.2); }
-    100% { transform: scale(1); opacity: 1; }
-}
-
-/* Textos */
-#textoStatus {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #333;
-    margin-bottom: 5px;
-}
-
-#subTextoStatus {
-    color: #777;
-    font-size: 0.9rem;
-}
     </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
@@ -326,7 +275,7 @@
                         <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/QR_code_for_mobile_English_Wikipedia.svg" class="qr-placeholder">
                         <div class="pix-copy-box">
                             <div class="pix-code">00020126330014BR.GOV.BCB.PIX0111123456789...</div>
-                            <button class="btn-checkout" style="padding: 10px; font-size:0.8rem; border-radius:8px;">Copiar</button>
+                            <button class="btn-checkout">Copiar</button>
                         </div>
                     </div>
                 </div>
@@ -336,7 +285,7 @@
                 <div class="summary-card">
                     <h2 class="section-title" style="font-size:1.2rem;">Resumo do Pedido</h2>
                     <div class="order-item">
-                        <img id="fotoResumo" src="" class="item-img" onerror="this.src='assets/Imagens/doke-logo.png'">
+                        <img id="fotoResumo" src="assets/Imagens/doke-logo.png" class="item-img" onerror="this.src='assets/Imagens/doke-logo.png'">
                         <div>
                             <h4 id="resumoProfissional" style="margin:0; color:var(--cor0);">@profissional</h4>
                             <h4 id="resumoServico" style="margin:5px 0; color:#333;">Serviço Geral</h4>
@@ -345,7 +294,7 @@
                     </div>
                     <div class="price-total">
                         <span>Total</span>
-                        <span id="resumoValorTotal">R$ 0,00</span>
+                        <span id="resumoValorTotal">R$ 23,00</span>
                     </div>
                     <div class="guarantee-box">
                         <i class='bx bx-shield-quarter'></i>
@@ -354,7 +303,7 @@
                             <p style="font-size: 0.75rem; margin-top: 3px;">O valor só é liberado após a conclusão do serviço.</p>
                         </div>
                     </div>
-                    <button class="btn-checkout" id="btn-finalizar">Confirmar Pagamento</button>
+                    <button class="btn-checkout" id="btn-finalizar">Pagar R$ 23,00</button>
                     <p style="text-align:center; font-size:0.75rem; color:#999; margin-top:15px;">Ambiente Seguro <i class='bx bxs-lock-alt'></i></p>
                 </div>
             </div>
@@ -374,17 +323,11 @@
     <p id="subTextoStatus" style="color:#666;">Por favor, não feche esta janela.</p>
 </div>
 
-<div id="loaderPagamento">
-    <div id="circuloLoader"></div>
-    <i class='bx bxs-check-circle' id="iconeSucesso"></i>
-    <h2 id="textoStatus">Processando...</h2>
-    <p id="subTextoStatus">Validando segurança do pagamento</p>
-</div>
     </main>
 
 <script>
     const { initializeApp } = window;
-    const { getFirestore, doc, updateDoc, getDoc } = window;
+    const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit } = window;
 
     // Suas configurações
     const firebaseConfig = {
@@ -401,6 +344,116 @@
 
     // Variável global para armazenar o valor numérico correto
     let valorGlobalParaSalvar = 0;
+
+    const resumoDefaults = {
+        profissional: "@profissional",
+        cliente: "Você",
+        servico: "Serviço Geral"
+    };
+
+    const safeDecode = (value) => {
+        if (!value) return "";
+        try {
+            return decodeURIComponent(value);
+        } catch (e) {
+            return value;
+        }
+    };
+
+    const formatHandle = (value) => {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        return raw.startsWith("@") ? raw : `@${raw}`;
+    };
+
+    const isPlaceholderHandle = (value) => {
+        const rawValue = String(value || "").trim();
+        if (!rawValue) return true;
+        const normalizedValue = rawValue.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+        const raw = normalizedValue.toLowerCase();
+        const normalized = raw.startsWith("@") ? raw.slice(1) : raw;
+        return ["usuario", "user", "profissional"].includes(normalized);
+    };
+
+    const isDefaultFoto = (value) => {
+        const raw = String(value || "").trim().toLowerCase();
+        if (!raw) return true;
+        return raw.includes("doke-logo") || raw.includes("placehold.co");
+    };
+
+    const normalizarCliente = (value) => {
+        const raw = String(value || "").trim();
+        if (!raw) return "";
+        return raw.replace(/^Cliente:\s*/i, "");
+    };
+
+    const aplicarResumo = (dados = {}) => {
+        const profissional = formatHandle(dados.profissional) || resumoDefaults.profissional;
+        const cliente = normalizarCliente(dados.cliente) || resumoDefaults.cliente;
+        const servico = (dados.servico || "").trim() || resumoDefaults.servico;
+
+        const elProf = document.getElementById('resumoProfissional');
+        if (elProf) elProf.innerText = profissional;
+
+        const elCliente = document.getElementById('nomeUserResumo');
+        if (elCliente) elCliente.innerText = `Cliente: ${cliente}`;
+
+        const elServico = document.getElementById('resumoServico');
+        if (elServico) {
+            elServico.innerText = servico.length > 30 ? `${servico.substring(0, 30)}...` : servico;
+        }
+
+        const elFoto = document.getElementById('fotoResumo');
+        if (elFoto && dados.foto) elFoto.src = dados.foto;
+    };
+
+    const extrairFotoAnuncio = (anuncio) => {
+        if (!anuncio) return "";
+        if (Array.isArray(anuncio.fotos) && anuncio.fotos.length > 0) return anuncio.fotos[0];
+        if (Array.isArray(anuncio.imagens) && anuncio.imagens.length > 0) return anuncio.imagens[0];
+        return anuncio.img || anuncio.imagem || anuncio.foto || "";
+    };
+
+    const buscarUsuarioPorUid = async (uid) => {
+        if (!uid || !getDoc || !doc) return null;
+        try {
+            const snap = await getDoc(doc(db, "usuarios", uid));
+            return snap.exists() ? (snap.data() || {}) : null;
+        } catch (e) {
+            console.warn("Erro ao carregar usuario:", e);
+            return null;
+        }
+    };
+
+    const buscarAnuncioPorId = async (anuncioId) => {
+        if (!anuncioId || !getDoc || !doc) return null;
+        try {
+            const snap = await getDoc(doc(db, "anuncios", anuncioId));
+            return snap.exists() ? (snap.data() || {}) : null;
+        } catch (e) {
+            console.warn("Erro ao carregar anuncio:", e);
+            return null;
+        }
+    };
+
+    const buscarMensagemPagamento = async (pedidoId) => {
+        if (!pedidoId) return null;
+        if (!collection || !query || !where || !orderBy || !limit || !getDocs) return null;
+        try {
+            const q = query(
+                collection(db, "pedidos", pedidoId, "mensagens"),
+                where("tipo", "==", "pagamento"),
+                orderBy("timestamp", "desc"),
+                limit(1)
+            );
+            const snap = await getDocs(q);
+            if (snap.empty) return null;
+            return snap.docs[0].data() || null;
+        } catch (e) {
+            console.warn("Erro ao carregar mensagem de pagamento:", e);
+            return null;
+        }
+    };
 
     // Função de abas (Cartão/Pix)
     window.mudarMetodo = (metodo) => {
@@ -420,8 +473,8 @@
         const params = new URLSearchParams(window.location.search);
         
         // Pega valores da URL. Ex: "23" ou "R$ 23,00"
-        let valorBruto = params.get('valor') || "0";
-        let maxParcelas = parseInt(params.get('parcelas')) || 1;
+        let valorBruto = params.get('valor') || "23,00";
+        let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas')) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
         // Remove tudo que não for número ou vírgula
@@ -463,18 +516,204 @@
     };
 
     // --- PREENCHIMENTO DE DADOS DO RESUMO ---
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+        if (typeof window.sincronizarSessaoSupabase === "function") {
+            try {
+                await window.sincronizarSessaoSupabase();
+            } catch (e) {
+                console.warn("Erro ao sincronizar sessao:", e);
+            }
+        }
+        const garantirPerfilLocal = async () => {
+            let perfilLocal = {};
+            try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || "{}"); }
+            catch (e) { perfilLocal = {}; }
+            const logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilLocal.user || !!perfilLocal.nome || !!perfilLocal.foto;
+            if (logado) return true;
+            if (!window.sb?.auth?.getSession) return false;
+            try {
+                const { data, error } = await window.sb.auth.getSession();
+                if (error) return false;
+                const user = data?.session?.user || null;
+                if (!user) return false;
+                const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario");
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify({
+                    nome: nomeFallback,
+                    user: user.user_metadata?.user || nomeFallback,
+                    foto: user.user_metadata?.foto || ""
+                }));
+                localStorage.setItem('usuarioLogado', 'true');
+                return true;
+            } catch (e) {
+                console.warn("Erro ao ler sessao:", e);
+                return false;
+            }
+        };
+
+        const tentarHeader = async () => {
+            const perfilOk = await garantirPerfilLocal();
+            if (!perfilOk || typeof window.verificarEstadoLogin !== "function") return false;
+            try {
+                await window.verificarEstadoLogin();
+                return true;
+            } catch (e) {
+                console.warn("Erro ao atualizar header:", e);
+                return false;
+            }
+        };
+        if (!(await tentarHeader())) {
+            let tentativas = 0;
+            const timer = setInterval(async () => {
+                tentativas += 1;
+                const ok = await tentarHeader();
+                if (ok || tentativas > 10) clearInterval(timer);
+            }, 300);
+        }
+        const aplicarHeaderPadrao = () => {
+            const containers = document.querySelectorAll('.botoes-direita');
+            if (!containers.length) return;
+            let perfilLocal = {};
+            try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || "{}"); }
+            catch (e) { perfilLocal = {}; }
+            const logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilLocal.user || !!perfilLocal.nome || !!perfilLocal.foto;
+            if (!logado) return;
+            const fotoUsuario = perfilLocal.foto || 'https://i.pravatar.cc/150?img=12';
+            const eProfissional = perfilLocal.isProfissional === true;
+            const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
+            const textoAnunciar = eProfissional ? "Anunciar" : "Seja Profissional";
+            const itemCarteira = eProfissional 
+                ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` 
+                : "";
+            containers.forEach(container => {
+                if (container.querySelector('.profile-container')) return;
+                container.innerHTML = `
+                    <div class="profile-container">
+                        <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
+                        <div id="dropdownPerfil" class="dropdown-profile">
+                            <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+                                ${perfilLocal.user || perfilLocal.nome || 'Usuário'}
+                            </div>
+                            <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                            ${itemCarteira}
+                            <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+                            <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
+                            <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+                        </div>
+                    </div>`;
+            });
+            if (typeof window.toggleDropdown !== "function") {
+                window.toggleDropdown = function(event) {
+                    if (event) event.stopPropagation();
+                    const drop = document.getElementById('dropdownPerfil');
+                    if (drop) drop.classList.toggle('show');
+                };
+                document.addEventListener('click', () => {
+                    const drop = document.getElementById('dropdownPerfil');
+                    if (drop) drop.classList.remove('show');
+                });
+            }
+            if (typeof window.alternarConta !== "function") {
+                window.alternarConta = function() {
+                    localStorage.removeItem('usuarioLogado');
+                    window.location.href = 'login.html';
+                };
+            }
+            if (typeof window.fazerLogout !== "function") {
+                window.fazerLogout = function() {
+                    localStorage.removeItem('usuarioLogado');
+                    localStorage.removeItem('doke_usuario_perfil');
+                    localStorage.removeItem('doke_uid');
+                    window.location.href = 'index.html';
+                };
+            }
+        };
+        if (document.querySelector('.botoes-direita .entrar')) aplicarHeaderPadrao();
+
         const params = new URLSearchParams(window.location.search);
-        
-        // Preenche info do profissional e cliente
-        document.getElementById('resumoProfissional').innerText = params.get('prof') || "@profissional";
-        document.getElementById('nomeUserResumo').innerText = "Cliente: " + (params.get('user') || "Você");
-        
-        // Decodifica a descrição para não ficar url-encoded
-        const desc = decodeURIComponent(params.get('desc') || "Serviço Geral");
-        document.getElementById('resumoServico').innerText = desc.length > 30 ? desc.substring(0,30)+'...' : desc;
-        
-        if (params.get('foto')) document.getElementById('fotoResumo').src = params.get('foto');
+        const resumo = {
+            profissional: safeDecode(params.get('prof') || ""),
+            cliente: safeDecode(params.get('user') || ""),
+            servico: safeDecode(params.get('desc') || ""),
+            foto: safeDecode(params.get('foto') || ""),
+            anuncioId: safeDecode(params.get('anuncioId') || params.get('aid') || "")
+        };
+
+        if (!resumo.cliente) {
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || "{}");
+            resumo.cliente = perfilLocal.nome || perfilLocal.user || "";
+        }
+
+        aplicarResumo(resumo);
+
+        if (resumo.anuncioId) {
+            const anuncio = await buscarAnuncioPorId(resumo.anuncioId);
+            const fotoAnuncio = extrairFotoAnuncio(anuncio);
+            if (fotoAnuncio) {
+                resumo.foto = fotoAnuncio;
+                aplicarResumo(resumo);
+            }
+        }
+
+        const pedidoId = params.get('pedidoId');
+        if (pedidoId) {
+            try {
+                const pedidoSnap = await getDoc(doc(db, "pedidos", pedidoId));
+                if (pedidoSnap.exists()) {
+                    const dados = pedidoSnap.data() || {};
+                    if (isPlaceholderHandle(resumo.profissional)) {
+                        resumo.profissional = dados.profissionalUser || dados.paraUser || dados.profissionalNome || dados.nomeProfissional || dados.paraNome || resumo.profissional;
+                    }
+                    resumo.cliente = resumo.cliente || dados.clienteNome || "";
+                    if (!resumo.servico || resumo.servico === resumoDefaults.servico) {
+                        resumo.servico = dados.servicoReferencia || dados.mensagemInicial || resumo.servico;
+                    }
+                    const fotoPedido = dados.anuncioFoto || dados.fotoAnuncio || dados.fotoServico || dados.servicoFoto || "";
+                    if (fotoPedido) {
+                        resumo.foto = fotoPedido;
+                    } else if (isDefaultFoto(resumo.foto)) {
+                        resumo.foto = dados.profissionalFoto || dados.paraFoto || dados.fotoProfissional || resumo.foto;
+                    }
+                    aplicarResumo(resumo);
+
+                    if (isPlaceholderHandle(resumo.profissional) && dados.paraUid) {
+                        const dadosProf = await buscarUsuarioPorUid(dados.paraUid);
+                        if (dadosProf) {
+                            resumo.profissional = dadosProf.user || dadosProf.nome || resumo.profissional;
+                            if (isDefaultFoto(resumo.foto)) resumo.foto = dadosProf.foto || resumo.foto;
+                            aplicarResumo(resumo);
+                        }
+                    }
+
+                    const anuncioId = dados.anuncioId || dados.anuncio_id || "";
+                    if (anuncioId) {
+                        const anuncio = await buscarAnuncioPorId(anuncioId);
+                        const fotoAnuncio = extrairFotoAnuncio(anuncio);
+                        if (fotoAnuncio) {
+                            resumo.foto = fotoAnuncio;
+                            aplicarResumo(resumo);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn("Erro ao carregar dados do pedido:", e);
+            }
+
+            if (isPlaceholderHandle(resumo.profissional)) {
+                const pagamento = await buscarMensagemPagamento(pedidoId);
+                if (pagamento) {
+                    resumo.profissional = pagamento.profissionalNome || pagamento.usernameProfissional || resumo.profissional;
+                    if (!resumo.servico || resumo.servico === resumoDefaults.servico) {
+                        resumo.servico = pagamento.descricao || resumo.servico;
+                    }
+                    if (pagamento.anuncioFoto || pagamento.fotoServico) {
+                        resumo.foto = pagamento.anuncioFoto || pagamento.fotoServico;
+                    } else if (isDefaultFoto(resumo.foto)) {
+                        resumo.foto = pagamento.profissionalFoto || pagamento.foto || resumo.foto;
+                    }
+                    aplicarResumo(resumo);
+                }
+            }
+        }
 
         // Máscaras visuais do cartão
         document.getElementById('cardNumber')?.addEventListener('input', (e) => {
@@ -493,6 +732,7 @@
 
         // --- LÓGICA DE CONFIRMAÇÃO DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
+        if (!btnFinalizar) return;
         btnFinalizar.addEventListener('click', async () => {
             const pedidoId = params.get('pedidoId');
             
@@ -545,7 +785,8 @@
                 await updateDoc(pedidoRef, {
                     status: 'pago',
                     dataPagamento: new Date().toISOString(),
-                    valorFinal: valorStringFinal
+                    valorFinal: valorStringFinal,
+                    notificacaoLidaProfissional: false
                 });
 
                 // 4. Sucesso Visual

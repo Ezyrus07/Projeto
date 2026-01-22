@@ -628,6 +628,9 @@
         const urlParams = new URLSearchParams(window.location.search);
         const anuncioId = urlParams.get('aid') || urlParams.get('id'); 
         const prestadorUid = urlParams.get('uid'); 
+        window.__orc_anuncio = null;
+        window.__orc_anuncioId = anuncioId || "";
+        window.__orc_prestador = null;
 
         // A. Carrega Prestador (Card Lateral)
         if(prestadorUid) {
@@ -636,6 +639,7 @@
                 const docUserSnap = await getDoc(docUserRef);
                 if (docUserSnap.exists()) {
                     const dadosPrestador = docUserSnap.data();
+                    window.__orc_prestador = dadosPrestador || null;
                     atualizarCardResumo(dadosPrestador);
                 }
             } catch (e) { console.error("Erro user:", e); }
@@ -678,6 +682,8 @@
                 
                 if (docAnuncioSnap.exists()) {
                     const dadosAnuncio = docAnuncioSnap.data();
+                    window.__orc_anuncio = dadosAnuncio || null;
+                    window.__orc_anuncioId = anuncioId || window.__orc_anuncioId || "";
                     
                     // Preenche título
                     const inputTitulo = document.getElementById('titulo-pedido');
@@ -715,7 +721,12 @@
             try {
                 const q = query(collection(db, "anuncios"), where("uid", "==", prestadorUid), limit(1));
                 const snap = await getDocs(q);
-                if (!snap.empty) aplicarDadosAnuncio(snap.docs[0].data());
+                if (!snap.empty) {
+                    const dadosAnuncio = snap.docs[0].data();
+                    window.__orc_anuncio = dadosAnuncio || null;
+                    window.__orc_anuncioId = window.__orc_anuncioId || snap.docs[0].id || "";
+                    aplicarDadosAnuncio(dadosAnuncio);
+                }
             } catch (e) { console.error("Erro anuncio (uid):", e); }
         }
 
@@ -789,6 +800,13 @@
         });
     }
 
+    function extrairFotoAnuncio(dadosAnuncio) {
+        if (!dadosAnuncio) return "";
+        if (Array.isArray(dadosAnuncio.fotos) && dadosAnuncio.fotos.length > 0) return dadosAnuncio.fotos[0];
+        if (Array.isArray(dadosAnuncio.imagens) && dadosAnuncio.imagens.length > 0) return dadosAnuncio.imagens[0];
+        return dadosAnuncio.img || dadosAnuncio.imagem || dadosAnuncio.foto || "";
+    }
+
     // --- FUNÇÃO DE ENVIO ---
     function configurarBotaoEnviar() {
         const btnEnviar = document.getElementById('btnEnviarOrcamento');
@@ -859,10 +877,19 @@
             try {
                 console.log("💾 Salvando no banco...");
                 const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+                const prestador = window.__orc_prestador || {};
+                const anuncio = window.__orc_anuncio || {};
+                const anuncioIdFinal = window.__orc_anuncioId || "";
+                const anuncioFoto = extrairFotoAnuncio(anuncio);
                 
                 const docRef = await addDoc(collection(db, "pedidos"), {
                     deUid: user.uid,
                     paraUid: paraUid,
+                    paraNome: prestador.user || prestador.nome || "",
+                    paraUser: prestador.user || "",
+                    paraFoto: prestador.foto || "",
+                    anuncioId: anuncioIdFinal,
+                    anuncioFoto: anuncioFoto,
                     servicoReferencia: titulo,
                     mensagemInicial: (function(){
                         const precisaLoc = !!window.__orc_precisa_localizacao;

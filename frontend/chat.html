@@ -1904,16 +1904,22 @@ window.liberarPagamento = async (id) => {
             status: 'finalizado',
             dataConclusao: new Date().toISOString(),
             notificacaoLidaProfissional: false,
+            notificacaoLidaCliente: false,
             avaliado: false
         });
 
         // 2. Manda mensagem automática no chat
-        await addDoc(collection(db, "pedidos", id, "mensagens"), {
+        try {
+            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            await addDoc(collection(db, "pedidos", id, "mensagens"), {
             tipo: 'card_avaliacao',
             texto: "Serviço finalizado. Aguardando avaliação.",
-            senderUid: 'sistema',
+            senderUid,
             timestamp: new Date()
         });
+        } catch (e) {
+            console.warn("Falha ao registrar card de avaliacao no chat.", e);
+        }
 
         // 3. ABRE O MODAL DE AVALIAÇÃO IMEDIATAMENTE
         // Certifique-se de ter colado o HTML do 'modalSucessoAvaliacao' no final do body do chat.html (passo anterior)
@@ -2373,7 +2379,20 @@ function carregarMensagens(colecao, docId) {
             // --- CARD PAGAMENTO (VERDE) ---
             if (m.tipo === 'pagamento') {
                 const jaPago = (statusPedido === 'pago' || statusPedido === 'finalizado');
-                const linkPagar = `pagar.html?pedidoId=${docId}&valor=${encodeURIComponent(m.valor)}&parcelas=${m.maxParcelas||1}`;
+                const perfilLocal = (() => {
+                    try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || "{}"); }
+                    catch (e) { return {}; }
+                })();
+                const clienteNome = perfilLocal.nome || perfilLocal.user || "";
+                const profNomeHeader = document.getElementById('chatNome')?.innerText || "";
+                const profNome = m.profissionalNome || m.usernameProfissional || profNomeHeader || "";
+                const fotoHeader = document.getElementById('chatAvatar')?.src || "";
+                const fotoAnuncio = m.anuncioFoto || m.fotoServico || "";
+                const fotoProf = m.profissionalFoto || fotoHeader || "";
+                const fotoFinal = fotoAnuncio || fotoProf || "";
+                const anuncioId = m.anuncioId || m.anuncio_id || "";
+                const parcelas = m.maxParcelas || m.maxparcelas || 1;
+                const linkPagar = `pagar.html?pedidoId=${docId}&valor=${encodeURIComponent(m.valor || "")}&parcelas=${parcelas}&prof=${encodeURIComponent(profNome)}&user=${encodeURIComponent(clienteNome)}&desc=${encodeURIComponent(m.descricao || "")}&foto=${encodeURIComponent(fotoFinal)}&anuncioId=${encodeURIComponent(anuncioId)}`;
                 
                 let btnHtml = "";
 
@@ -2513,6 +2532,20 @@ window.gerarPagamento = async function() {
     if(!maxParcelas) maxParcelas = "1";
 
     const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+    const nomeProfissional = perfil.user || perfil.nome || "Profissional";
+    const fotoProfissional = perfil.foto || "";
+    let anuncioFoto = "";
+    let anuncioId = "";
+    try {
+        const pedidoSnap = await getDoc(doc(db, "pedidos", idParaSalvar));
+        if (pedidoSnap.exists()) {
+            const pedido = pedidoSnap.data() || {};
+            anuncioFoto = pedido.anuncioFoto || pedido.fotoAnuncio || pedido.fotoServico || "";
+            anuncioId = pedido.anuncioId || pedido.anuncio_id || "";
+        }
+    } catch (e) {
+        console.warn("Erro ao carregar dados do pedido:", e);
+    }
 
     try {
         await addDoc(collection(db, "pedidos", idParaSalvar, "mensagens"), { 
@@ -2521,6 +2554,10 @@ window.gerarPagamento = async function() {
             descricao: descricao,
             maxparcelas: parseInt(maxParcelas.replace(/\D/g, "")) || 1, 
             usernameProfissional: perfil.user, 
+            profissionalNome: nomeProfissional,
+            profissionalFoto: fotoProfissional,
+            anuncioFoto: anuncioFoto,
+            anuncioId: anuncioId,
             senderUid: currentUserUid, 
             timestamp: new Date() 
         });
