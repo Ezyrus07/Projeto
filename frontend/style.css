@@ -4730,6 +4730,147 @@ body.dark-mode {
 }
 .criteria-value { width: 30px; text-align: right; font-weight: bold; color: var(--cor2); }
 
+/* --- Fragrantica-like Reviews --- */
+.fr-rating {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 18px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 24px;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.03);
+}
+@media (max-width: 768px) {
+    .fr-rating { grid-template-columns: 1fr; }
+}
+.fr-score {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+}
+.fr-score-num { font-size: 3rem; font-weight: 800; color: var(--cor2); line-height: 1; }
+.fr-score-meta { color: #888; font-size: 0.9rem; }
+
+.fr-stars { position: relative; display: inline-block; font-size: 1.2rem; line-height: 1; }
+.fr-stars-base { color: #e0e0e0; }
+.fr-stars-fill { color: #f1c40f; position: absolute; left: 0; top: 0; white-space: nowrap; overflow: hidden; }
+.fr-stars-sm { font-size: 1rem; }
+
+.fr-hist { display: flex; flex-direction: column; gap: 8px; justify-content: center; }
+.fr-bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.9rem; color: #666; }
+.fr-bar-label { width: 16px; text-align: right; font-weight: 700; }
+.fr-bar { flex: 1; height: 8px; background: #f1f1f1; border-radius: 999px; overflow: hidden; }
+.fr-bar-fill { display: block; height: 100%; background: #f1c40f; border-radius: 999px; }
+.fr-bar-count { width: 28px; text-align: right; color: #999; }
+
+.fr-criteria {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 18px 22px;
+    margin-bottom: 18px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+}
+.fr-criteria-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.fr-criteria-title { font-weight: 700; color: #333; }
+.fr-criteria-nav { display: flex; gap: 8px; }
+.fr-nav-btn {
+    width: 34px; height: 34px; border-radius: 50%;
+    border: 1px solid #e5e7eb; background: #fff; color: #333;
+    font-size: 1.1rem; cursor: pointer; transition: 0.2s;
+}
+.fr-nav-btn:hover { background: #f5f7fa; }
+.fr-nav-btn:disabled { opacity: 0.4; cursor: default; }
+
+.fr-criteria-viewport {
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+}
+.fr-criteria-track {
+    display: flex;
+    gap: 16px;
+    padding-bottom: 6px;
+}
+.fr-crit-card {
+    flex: 0 0 320px;
+    background: #f9fafb;
+    border: 1px solid #eef1f4;
+    border-radius: 14px;
+    padding: 16px;
+    scroll-snap-align: start;
+}
+.fr-crit-card-title { font-weight: 800; color: #222; margin-bottom: 6px; }
+.fr-crit-card-score { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
+.fr-crit-card-value { font-size: 1.4rem; font-weight: 800; color: var(--cor2); }
+.fr-crit-card-meta { margin-left: auto; color: #888; font-size: 0.85rem; }
+.fr-crit-dist { display: grid; gap: 8px; }
+.fr-crit-dist-row { display: grid; grid-template-columns: 90px 1fr 28px; align-items: center; gap: 10px; font-size: 0.85rem; color: #444; }
+.fr-crit-dist-bar { height: 8px; background: #e9edf2; border-radius: 999px; overflow: hidden; }
+.fr-crit-dist-fill { display: block; height: 100%; background: var(--cor0); border-radius: 999px; }
+.fr-crit-dist-count { text-align: right; color: #666; }
+/* legacy styles (kept for compatibility elsewhere) */
+.fr-crit-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: #555;
+    margin: 8px 0;
+}
+.fr-crit-row.fr-crit-empty { opacity: 0.5; }
+.fr-crit-label { width: 130px; font-weight: 600; }
+.fr-crit-bar { flex: 1; height: 8px; background: #f1f1f1; border-radius: 999px; overflow: hidden; }
+.fr-crit-fill { display: block; height: 100%; background: var(--cor0); border-radius: 999px; }
+.fr-crit-value { width: 36px; text-align: right; font-weight: 700; color: #333; }
+.fr-crit-row--mini .fr-crit-label { width: 140px; font-weight: 600; }
+.fr-crit-row--mini .fr-crit-bar { height: 6px; }
+.fr-crit-row--mini .fr-crit-value { width: 34px; font-weight: 600; }
+.fr-crit-comment { margin: 6px 0 0 0; color: #666; font-size: 0.85rem; }
+.fr-crit-group { margin: 10px 0; }
+.fr-crit-counts { margin-left: 142px; font-size: 0.85rem; color: #777; }
+.fr-crit-counts--empty { color: #aaa; }
+
+.fr-review-list { display: grid; gap: 16px; }
+.fr-review {
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 16px;
+    padding: 18px 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+.fr-review-head { display: flex; align-items: center; gap: 12px; }
+.fr-review-avatar { width: 44px; height: 44px; border-radius: 50%; object-fit: cover; }
+.fr-review-name { font-weight: 700; color: #111; }
+.fr-review-date { font-size: 0.8rem; color: #999; }
+.fr-review-score { margin-left: auto; text-align: right; }
+.fr-review-score-num { font-weight: 700; color: #555; font-size: 0.9rem; margin-top: 2px; }
+.fr-review-comment {
+    margin-top: 12px;
+    padding: 10px 12px;
+    background: #f7fbf8;
+    border-radius: 10px;
+    border: 1px solid #e6f4ec;
+    color: #333;
+}
+.fr-review-criteria { margin-top: 12px; }
+.fr-review-criteria-title { font-weight: 700; color: #333; margin-bottom: 6px; }
+.fr-crit-item + .fr-crit-item { margin-top: 8px; }
+
+.fr-comments { background: #fff; border: 1px solid #eee; border-radius: 16px; padding: 16px 18px; }
+.fr-comments-title { font-weight: 700; color: #333; margin-bottom: 10px; }
+.fr-comment-list { display: grid; gap: 14px; }
+.fr-comment { border: 1px solid #eee; border-radius: 14px; padding: 14px 16px; background: #fff; box-shadow: 0 2px 6px rgba(0,0,0,0.03); }
+.fr-comment-head { display: flex; align-items: center; gap: 12px; }
+.fr-comment-body { margin-top: 10px; display: grid; gap: 8px; }
+.fr-msg { background: #f9fafb; border: 1px solid #eef1f4; padding: 8px 10px; border-radius: 10px; color: #333; font-size: 0.9rem; }
+.fr-msg-label { font-weight: 700; color: #444; margin-right: 6px; }
+.fr-empty { color: #888; font-size: 0.9rem; padding: 8px 4px; }
 /* Garante que o vídeo de preview fique em cima da imagem */
 .tiktok-card {
     position: relative;
@@ -8938,3 +9079,4 @@ body[data-page="home"] .btn-solicitar:active{
   /* Evita scroll horizontal por sombras/overflows */
   body[data-page="home"] main{overflow-x:hidden}
 }
+

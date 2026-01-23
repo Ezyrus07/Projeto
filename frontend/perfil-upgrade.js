@@ -607,79 +607,248 @@ function hideIf(selector, cond){
     }
   }
 
-  async function loadAvaliacoes(client, profId){
+  async function loadAvaliacoes(client, prof){
     const box = $("#dpBoxAvaliacoes");
     if(!box) return;
     box.innerHTML = `<div class="dp-empty">Carregando avaliações...</div>`;
-    const { data, error } = await client
-      .from("avaliacoes")
-      .select("*")
-      .eq("profUid", profId)
-      .order("data", { ascending:false })
-      .limit(80);
-    if(error){
-      console.error(error);
-      box.innerHTML = `<div class="dp-empty">Erro ao carregar avaliações.</div>`;
-      return;
+    const profId = (typeof prof === "object" && prof) ? (prof.id || prof.profissional_id || prof.profissionalId) : prof;
+    const profUid = (typeof prof === "object" && prof) ? (prof.uid || prof.user_uid || prof.auth_uid || prof.authUid) : null;
+
+    const filters = [];
+    if(profId) filters.push({ col: "profissional_id", val: profId });
+    if(profUid) filters.push({ col: "profUid", val: profUid });
+    if(profUid) filters.push({ col: "profuid", val: profUid });
+    if(profUid) filters.push({ col: "prof_uid", val: profUid });
+    if(profId) filters.push({ col: "profId", val: profId });
+    if(profId) filters.push({ col: "profissionalId", val: profId });
+    if(profId) filters.push({ col: "profissionalid", val: profId });
+    if(profUid) filters.push({ col: "profissionalUid", val: profUid });
+
+    const orders = ["data", "created_at", "createdAt", "createdat", null];
+    let data = null;
+    let lastError = null;
+
+    for(const f of filters){
+      let success = false;
+      for(const ord of orders){
+        let q = client
+          .from("avaliacoes")
+          .select("*")
+          .eq(f.col, f.val)
+          .limit(80);
+        if(ord) q = q.order(ord, { ascending:false });
+        const res = await q;
+        if(res.error){
+          if(isMissingTableError(res.error)){
+            box.innerHTML = `<div class="dp-empty">Nenhuma avaliação. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+            console.error(res.error);
+            return;
+          }
+          if(isMissingColumnError(res.error, f.col) || (ord && isMissingColumnError(res.error, ord))){
+            lastError = res.error;
+            continue;
+          }
+          lastError = res.error;
+          success = true;
+          break;
+        }
+        data = res.data || [];
+        success = true;
+        break;
+      }
+      if(success && data && data.length) break;
+    }
+
+    if(!data){
+      if(lastError){
+        console.error(lastError);
+        box.innerHTML = `<div class="dp-empty">Erro ao carregar avaliações.</div>`;
+        return;
+      }
+      data = [];
     }
     if(!data?.length){
       box.innerHTML = `<div class="dp-empty">Sem avaliações ainda.</div>`;
       return;
     }
-    const avg = data.reduce((a,x)=>a+(x.media||0),0)/data.length;
-    const stars = "★★★★★".slice(0, Math.round(avg)) + "☆☆☆☆☆".slice(0, 5-Math.round(avg));
-    box.innerHTML = `
-      <div class="dp-empty" style="border-style:solid; border-color:rgba(0,0,0,.06);">
-        <b>Média:</b> ${avg.toFixed(1)} • ${stars} <small>(${data.length} avaliações)</small>
-      </div>
-      <div id="dpAvalList" style="display:grid; gap:20px; margin-top:12px;"></div>
-    `;
-    const list = $("#dpAvalList");
+    const criterios = [
+      { id: 'pontualidade', label: 'Pontualidade' },
+      { id: 'profissionalismo', label: 'Profissionalismo' },
+      { id: 'qualidade', label: 'Qualidade' },
+      { id: 'preco', label: 'Preço / Valor' },
+      { id: 'atendimento', label: 'Atendimento' }
+    ];
+    const starHtml = (valor, extraClass="") => {
+      const pct = Math.max(0, Math.min(100, (Number(valor || 0) / 5) * 100));
+      return `
+        <span class="fr-stars ${extraClass}">
+          <span class="fr-stars-base">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+          <span class="fr-stars-fill" style="width:${pct}%;">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+        </span>`;
+    };
+
+    const avg = data.reduce((a,x)=>a+(Number(x.media ?? x.nota) || 0),0)/data.length;
+    const ratingCounts = [0,0,0,0,0];
+    const critTotals = {};
+    const critCounts = {};
+    const critDistrib = {};
+    criterios.forEach(c=>{ critTotals[c.id]=0; critCounts[c.id]=0; critDistrib[c.id]=[0,0,0,0,0]; });
+
     data.forEach(a=>{
-      const el = document.createElement("div");
-      el.className = "dp-review-card";
-      el.style.cssText = "background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
-      
-      const starsHtml = "★".repeat(Math.round(a.media || 0)) + "☆".repeat(5 - Math.round(a.media || 0));
-      
-      let detailsHtml = "";
+      const r = Math.round(Number(a.media ?? a.nota) || 0);
+      if(r>=1 && r<=5) ratingCounts[r-1]++;
       if(a.detalhes){
-        const criterios = [
-          { id: 'pontualidade', label: 'Pontualidade' },
-          { id: 'profissionalismo', label: 'Profissionalismo' },
-          { id: 'qualidade', label: 'Qualidade' },
-          { id: 'preco', label: 'Preço / Valor' },
-          { id: 'atendimento', label: 'Atendimento' }
-        ];
-        criterios.forEach(c => {
-          const det = a.detalhes[c.id];
-          if(det && det.nota > 0){
-            detailsHtml += `<div style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
-              <strong>${c.label}:</strong> ${"★".repeat(det.nota)}${"☆".repeat(5-det.nota)}`;
-            if(det.comentario){
-              detailsHtml += `<br><small>${escapeHtml(det.comentario)}</small>`;
-            }
-            detailsHtml += `</div>`;
+        criterios.forEach(c=>{
+          const n = Number(a.detalhes?.[c.id]?.nota || 0);
+          if(n>0){
+            critTotals[c.id] += n;
+            critCounts[c.id] += 1;
+            if(n >= 1 && n <= 5) critDistrib[c.id][n-1] += 1;
           }
         });
       }
-      
-      el.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
-          <img src="${a.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-          <div>
-            <strong>${escapeHtml(a.clienteNome || "Anônimo")}</strong>
-            <div style="font-size: 0.8rem; color: #666;">${fmtDateShort(a.data)}</div>
+    });
+
+    const histRows = [5,4,3,2,1].map(n=>{
+      const count = ratingCounts[n-1] || 0;
+      const pct = data.length ? (count / data.length) * 100 : 0;
+      return `
+        <div class="fr-bar-row">
+          <span class="fr-bar-label">${n}</span>
+          <div class="fr-bar"><span class="fr-bar-fill" style="width:${pct}%;"></span></div>
+          <span class="fr-bar-count">${count}</span>
+        </div>`;
+    }).join("");
+
+    const critLabels = ["Péssimo","Ruim","Regular","Bom","Ótimo"];
+    const criteriaCards = criterios.map(c=>{
+      const dist = critDistrib[c.id] || [0,0,0,0,0];
+      const total = dist.reduce((a,b)=>a+b,0);
+      const avgC = total ? (critTotals[c.id] / total) : 0;
+      const avgText = total ? avgC.toFixed(1) : "-";
+      const distRows = critLabels.map((lab,i)=>{
+        const count = dist[i] || 0;
+        const pct = total ? (count / total) * 100 : 0;
+        return `
+          <div class="fr-crit-dist-row">
+            <span class="fr-crit-dist-label">${lab}</span>
+            <div class="fr-crit-dist-bar"><span class="fr-crit-dist-fill" style="width:${pct}%;"></span></div>
+            <span class="fr-crit-dist-count">${count}</span>
+          </div>`;
+      }).join("");
+      return `
+        <div class="fr-crit-card">
+          <div class="fr-crit-card-title">${c.label}</div>
+          <div class="fr-crit-card-score">
+            <div class="fr-crit-card-value">${avgText}</div>
+            ${starHtml(avgC, "fr-stars-sm")}
+            <div class="fr-crit-card-meta">${total ? `${total} votos` : "sem voto"}</div>
+          </div>
+          <div class="fr-crit-dist">
+            ${distRows}
+          </div>
+        </div>`;
+    }).join("");
+
+    box.innerHTML = `
+      <div class="fr-rating">
+        <div class="fr-score">
+          <div class="fr-score-num">${avg.toFixed(1)}</div>
+          ${starHtml(avg)}
+          <div class="fr-score-meta">${data.length} avaliações</div>
+        </div>
+        <div class="fr-hist">${histRows}</div>
+      </div>
+      <div class="fr-criteria">
+        <div class="fr-criteria-head">
+          <div class="fr-criteria-title">Detalhes por critério</div>
+          <div class="fr-criteria-nav">
+            <button class="fr-nav-btn" data-dir="-1" aria-label="Anterior">‹</button>
+            <button class="fr-nav-btn" data-dir="1" aria-label="Próximo">›</button>
           </div>
         </div>
-        <div style="margin-bottom: 10px;">
-          <strong>Avaliação Geral: ${starsHtml} (${a.media})</strong>
+        <div class="fr-criteria-viewport">
+          <div class="fr-criteria-track">
+            ${criteriaCards}
+          </div>
         </div>
-        ${a.comentarioGeral ? `<div style="margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px;"><strong>Comentário Geral:</strong><br>${escapeHtml(a.comentarioGeral)}</div>` : ""}
-        ${detailsHtml ? `<div><strong>Detalhes por Critério:</strong>${detailsHtml}</div>` : ""}
+      </div>
+      <div class="fr-comments">
+        <div class="fr-comments-title">Mensagens</div>
+        <div id="dpAvalList" class="fr-comment-list"></div>
+      </div>
+    `;
+
+    // carousel setup
+    const viewport = box.querySelector(".fr-criteria-viewport");
+    const track = box.querySelector(".fr-criteria-track");
+    const btnPrev = box.querySelector(".fr-nav-btn[data-dir='-1']");
+    const btnNext = box.querySelector(".fr-nav-btn[data-dir='1']");
+    if(viewport && track && btnPrev && btnNext){
+      const updateNav = () => {
+        const maxScroll = track.scrollWidth - viewport.clientWidth;
+        const x = viewport.scrollLeft;
+        btnPrev.disabled = x <= 4;
+        btnNext.disabled = x >= maxScroll - 4;
+      };
+      const getStep = () => {
+        const first = track.children[0];
+        if(!first) return viewport.clientWidth;
+        const style = getComputedStyle(track);
+        const gap = parseFloat(style.gap || style.columnGap || "0");
+        return first.getBoundingClientRect().width + gap;
+      };
+      btnPrev.addEventListener("click", ()=> {
+        viewport.scrollBy({ left: -getStep(), behavior: "smooth" });
+      });
+      btnNext.addEventListener("click", ()=> {
+        viewport.scrollBy({ left: getStep(), behavior: "smooth" });
+      });
+      viewport.addEventListener("scroll", updateNav, { passive: true });
+      window.addEventListener("resize", updateNav);
+      updateNav();
+    }
+
+    const list = $("#dpAvalList");
+    let hasMsgs = false;
+    data.forEach(a=>{
+      const mediaVal = Number(a.media ?? a.nota ?? 0);
+      const dateValue = a.data || a.created_at || a.createdAt || a.createdat;
+      const dateText = dateValue ? fmtDateShort(dateValue) : "";
+      const mensagens = [];
+      if(a.comentarioGeral) mensagens.push({ label: "Comentário geral", text: a.comentarioGeral });
+      if(a.detalhes){
+        criterios.forEach(c=>{
+          const det = a.detalhes?.[c.id];
+          if(det?.comentario) mensagens.push({ label: c.label, text: det.comentario });
+        });
+      }
+      if(!mensagens.length) return;
+      hasMsgs = true;
+      const el = document.createElement("div");
+      el.className = "fr-comment";
+      const msgsHtml = mensagens.map(m=>(
+        `<div class="fr-msg"><span class="fr-msg-label">${m.label}:</span> ${escapeHtml(m.text)}</div>`
+      )).join("");
+      el.innerHTML = `
+        <div class="fr-comment-head">
+          <img class="fr-review-avatar" src="${a.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" alt="">
+          <div>
+            <div class="fr-review-name">${escapeHtml(a.clienteNome || "Anônimo")}</div>
+            <div class="fr-review-date">${dateText}</div>
+          </div>
+          <div class="fr-review-score">
+            ${starHtml(mediaVal, "fr-stars-sm")}
+            <div class="fr-review-score-num">${mediaVal.toFixed(1)}</div>
+          </div>
+        </div>
+        <div class="fr-comment-body">${msgsHtml}</div>
       `;
       list.appendChild(el);
     });
+    if(!hasMsgs){
+      list.innerHTML = `<div class="fr-empty">Sem mensagens.</div>`;
+    }
   }
 
   // -----------------------------
@@ -1081,7 +1250,7 @@ function hideIf(selector, cond){
       if(tab === "reels") loadReels(ctx.client, ctx.target.id);
       if(tab === "servicos") loadServicosPerfil(ctx);
       if(tab === "portfolio") loadPortfolio(ctx.client, ctx.target.id);
-      if(tab === "avaliacoes") loadAvaliacoes(ctx.client, ctx.target.id);
+      if(tab === "avaliacoes") loadAvaliacoes(ctx.client, ctx.target);
     }
 
     buttons.forEach(b=>{
@@ -1285,7 +1454,7 @@ function hideIf(selector, cond){
           });
           modal.close();
           toast("Avaliação enviada!");
-          loadAvaliacoes(ctx.client, ctx.target.id);
+          loadAvaliacoes(ctx.client, ctx.target);
         }catch(e){
           console.error(e);
           toast("Erro ao enviar avaliação.");
@@ -2299,3 +2468,5 @@ async function loadServicosPerfil(ctx) {
   };
 
 })();
+
+

@@ -14,6 +14,7 @@
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="style.css">
     <script src="script.js" defer></script>
+    <script src="comunidades-supabase-patch.js" defer></script>
     <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
@@ -146,11 +147,24 @@
    Mantém header/sidebar do site
    ========================= */
 .grupo-page{ padding: 14px 18px 30px; }
+.grupo-page{
+  /* deixa a coluna do meio (conversas/feed) mais larga */
+  max-width: 1600px;
+  margin: 0 auto;
+}
 .grupo-grid{
   display:grid;
-  grid-template-columns: 320px minmax(0, 1fr) 320px;
+  /* laterais menores para sobrar mais espaço no centro */
+  grid-template-columns: minmax(0, 1fr) 320px;
   gap: 18px;
   align-items: start;
+}
+
+.grupo-sidecol{
+  display:flex;
+  flex-direction:column;
+  gap: 18px;
+  min-width:0;
 }
 .grupo-pane{
   background:#fff;
@@ -192,26 +206,7 @@
 .grupo-channel i{ font-size:18px; color: var(--cor2); }
 .grupo-channel.active{ background: rgba(42,95,144,0.08); border-color: rgba(42,95,144,0.25); }
 
-.grupo-admin-box{
-  margin: 10px 12px 14px;
-  padding: 12px;
-  border-radius:14px;
-  border:1px dashed rgba(42,95,144,0.35);
-  background: rgba(42,95,144,0.05);
-}
-.grupo-admin-box .btn-admin{
-  width:100%;
-  border:none;
-  background:#fff;
-  border-radius:12px;
-  padding:12px 12px;
-  font-weight:800;
-  cursor:pointer;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-.grupo-admin-box .btn-admin + .btn-admin{ margin-top:10px; }
+.grupo-admin-mini{ padding: 0 12px 14px; }
 
 .grupo-center{ overflow:hidden; }
 .grupo-center .inner{ overflow:auto; padding-bottom: 16px; }
@@ -264,21 +259,17 @@
 .grupo-meta{ margin-top: 8px; color:#7a8696; font-weight:700; font-size: 0.92rem; }
 
 .grupo-hero-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
-.btn-sec, .btn-prim{
+.btn-icon-mini{
+  width:42px; height:42px;
   border-radius: 14px;
-  padding: 11px 14px;
-  font-weight: 900;
-  cursor:pointer;
-  border:1px solid #eef0f4;
+  border: 1px solid #eef0f4;
   background:#fff;
-  display:flex; align-items:center; gap:8px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
 }
-.btn-prim{
-  background: var(--cor2);
-  color:#fff;
-  border-color: rgba(0,0,0,0.05);
-}
-.btn-prim i, .btn-sec i{ font-size:18px; }
+.btn-icon-mini i{ font-size: 20px; color:#1f2d3d; }
+.btn-icon-mini.primary{ background: var(--cor2); border-color: rgba(0,0,0,0.05); }
+.btn-icon-mini.primary i{ color:#fff; }
 
 .grupo-composer{
   margin: 16px;
@@ -428,14 +419,14 @@
 }
 
 @media (max-width: 1100px){
-  .grupo-grid{ grid-template-columns: 300px minmax(0, 1fr); }
+  .grupo-grid{ grid-template-columns: minmax(0, 1fr) 300px; }
   .grupo-members{ display:none; }
 }
 @media (max-width: 820px){
   .grupo-page{ padding: 10px 10px 80px; }
   .grupo-grid{ grid-template-columns: 1fr; }
   .grupo-pane{ max-height: none; }
-  .grupo-nav{ order: 2; }
+  .grupo-sidecol{ order: 2; }
   .grupo-center{ order: 1; }
 }
 </style>
@@ -500,21 +491,7 @@
 <main>
   <div class="grupo-page">
     <div class="grupo-grid">
-      <section class="grupo-pane grupo-nav">
-</div>
-        <div class="grupo-channels">
-          <button class="grupo-channel active" data-tab="feed"><i class='bx bx-hash'></i> Feed</button>
-          <button class="grupo-channel" data-tab="arquivos"><i class='bx bx-folder'></i> Arquivos</button>
-          <button class="grupo-channel" data-tab="sobre"><i class='bx bx-info-circle'></i> Sobre</button>
-        </div>
-
-        <div class="grupo-admin-box" id="grupoAdminBox" style="display:none;">
-          <button class="btn-admin" id="btnEditarGrupo">Editar grupo <i class='bx bx-edit-alt'></i></button>
-          <button class="btn-admin" id="btnGerenciarCargos">Cargos <i class='bx bx-crown'></i></button>
-        </div>
-      </section>
-
-      <section class="grupo-pane grupo-center">
+<section class="grupo-pane grupo-center">
         <div class="inner">
           <div class="grupo-hero">
             <div class="grupo-cover" id="grupoCover"></div>
@@ -530,8 +507,9 @@
                 </div>
               </div>
               <div class="grupo-hero-actions">
-                <button class="btn-sec" id="btnCopiarLink"><i class='bx bx-link'></i> Copiar link</button>
-                <button class="btn-prim" id="btnAbrirArquivos"><i class='bx bx-folder-open'></i> Arquivos</button>
+                <button class="btn-icon-mini" id="btnCopiarLink" title="Copiar link"><i class='bx bx-link'></i></button>
+                <button class="btn-icon-mini" id="btnAbrirArquivos" title="Arquivos"><i class='bx bx-folder-open'></i></button>
+                <button class="btn-icon-mini" id="btnConfigGrupo" title="Configurações" style="display:none;"><i class='bx bx-cog'></i></button>
               </div>
             </div>
           </div>
@@ -556,10 +534,44 @@
               <p>Seja o primeiro a postar no grupo.</p>
             </div>
           </div>
+
+          <!-- Área Arquivos (placeholder real: lista vazia até você plugar Storage) -->
+          <div class="grupo-feed" id="tabArquivos" style="display:none; padding-top:16px;">
+            <div class="empty-state">
+              <h3>Nenhum arquivo enviado</h3>
+              <p>Quando você ligar o Storage do Supabase, os arquivos do grupo aparecem aqui.</p>
+            </div>
+          </div>
+
+          <!-- Área Sobre -->
+          <div class="grupo-feed" id="tabSobre" style="display:none; padding-top:16px;">
+            <div class="post-card" style="padding:14px;">
+              <div style="font-weight:900; color:#1d2b3a; margin-bottom:8px;">Sobre o grupo</div>
+              <div id="sobreTexto" style="font-weight:700; color:#2a3340; line-height:1.4;"></div>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section class="grupo-pane grupo-members">
+      <div class="grupo-sidecol">
+        <section class="grupo-pane grupo-nav">
+        <div class="grupo-nav-head">
+          <button class="btn-voltar" onclick="history.back()" title="Voltar"><i class='bx bx-left-arrow-alt' style="font-size:22px; color:var(--cor2);"></i></button>
+          <div class="grupo-nav-title" id="navGrupoNome">Grupo</div>
+        </div>
+        <div class="grupo-channels">
+          <button class="grupo-channel active" data-tab="feed"><i class='bx bx-hash'></i> Feed</button>
+          <button class="grupo-channel" data-tab="arquivos"><i class='bx bx-folder'></i> Arquivos</button>
+          <button class="grupo-channel" data-tab="sobre"><i class='bx bx-info-circle'></i> Sobre</button>
+        </div>
+
+        <!-- Admin (Dono/Mod): fica escondido em "Configurações" (não ocupa espaço) -->
+        <div class="grupo-admin-mini" id="grupoAdminMini" style="display:none;">
+          <button class="grupo-channel" id="btnAbrirConfig" data-tab="config"><i class='bx bx-cog'></i> Configurações</button>
+        </div>
+      </section>
+
+        <section class="grupo-pane grupo-members">
         <div class="membros-head">
           <h3>Membros</h3>
           <small id="membrosSub">—</small>
@@ -575,9 +587,46 @@
           <div class="membros-list" id="listaOffline"></div>
         </div>
       </section>
+      </div>
     </div>
   </div>
 </main>
+
+<!-- Configurações do grupo (somente Dono/Mods) -->
+<div id="modalGrupoConfig" class="modal-overlay" aria-hidden="true">
+  <div class="modal-card" style="max-width:560px;">
+    <button id="btnFecharConfig" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.6rem; cursor:pointer;">&times;</button>
+    <h2 style="margin-bottom:8px; color:var(--cor2);">Configurações do grupo</h2>
+    <p style="margin:0 0 16px; color:#667085; font-weight:700;">Ajustes rápidos (apenas para o dono/mods).</p>
+
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+      <button id="tabCfgEditar" class="tab-btn active" type="button">Editar</button>
+      <button id="tabCfgCargos" class="tab-btn" type="button">Cargos</button>
+    </div>
+
+    <div id="cfgEditar">
+      <label class="form-label">Nome do grupo</label>
+      <input type="text" id="cfgNome" class="form-input" placeholder="" />
+      <label class="form-label">Descrição</label>
+      <textarea id="cfgDesc" class="form-textarea" placeholder=""></textarea>
+      <button id="btnSalvarGrupo" class="btn-submit-modal" type="button">Salvar alterações</button>
+    </div>
+
+    <div id="cfgCargos" style="display:none;">
+      <div style="background:#f7f9fc; border:1px solid #eef0f4; border-radius:12px; padding:12px; margin-bottom:12px;">
+        <div style="font-weight:900; color:#1d2b3a; margin-bottom:6px;">Cargos do grupo</div>
+        <div style="color:#667085; font-weight:700; font-size:0.95rem;">Para ativar cargos, crie a tabela <b>comunidade_cargos</b> no Supabase (com as colunas <b>comunidade_id</b>, <b>nome</b>, <b>cor</b> e <b>ordem</b>).</div>
+      </div>
+
+      <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+        <input id="cargoNome" class="form-input" style="margin:0;" placeholder="Nome do cargo (ex: Moderador)" />
+        <input id="cargoCor" class="form-input" style="margin:0; width:120px;" placeholder="#2a5f90" />
+        <button id="btnCriarCargo" class="btn-prim" type="button" style="white-space:nowrap;">Criar</button>
+      </div>
+      <div id="listaCargos" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+  </div>
+</div>
 
 
     <nav class="bottom-nav">
@@ -585,62 +634,6 @@
         <a href="comunidade.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Grupos</span></a>
         <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
-
-    <div id="modalCriarComm" class="modal-overlay">
-        <div class="modal-card">
-            <button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
-            <h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
-            <form onsubmit="criarNovaComunidade(event)">
-                <label class="form-label">Nome do Grupo</label>
-                <input type="text" id="commNome" class="form-input" placeholder="Ex: Eletricistas Unidos" required>
-                
-                <label class="form-label">Descrição</label>
-                <textarea id="commDesc" class="form-textarea" placeholder="Sobre o que é este grupo?" required></textarea>
-                
-                <label class="form-label">Tipo de Comunidade</label>
-                <select id="commTipo" class="form-select">
-                    <option value="Pro">Profissional (Networking)</option>
-                    <option value="Condomínio">Condomínio / Vizinhos</option>
-                    <option value="Hobby">Hobby / Interesse</option>
-                </select>
-
-                <label class="form-label">Imagem de Capa (Opcional)</label>
-                <input type="file" id="commFoto" class="form-input" accept="image/*">
-
-                <button type="submit" class="btn-submit-modal">Criar Comunidade</button>
-            </form>
-        </div>
-    </div>
-
-    <script>
-        window.abrirModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'flex'; }
-        window.fecharModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'none'; }
-        
-        window.filtrarComunidadesTela = function(termo) {
-            const cards = document.querySelectorAll('.card-comm');
-            cards.forEach(card => {
-                const titulo = card.querySelector('.card-title').innerText.toLowerCase();
-                card.style.display = titulo.includes(termo.toLowerCase()) ? 'flex' : 'none';
-            });
-        }
-
-        window.filtrarComunidadesTipo = function(tipo, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            const cards = document.querySelectorAll('.card-comm');
-            cards.forEach(card => {
-                const tag = card.getAttribute('data-tipo');
-                if(tipo === 'todos' || tag === tipo) card.style.display = 'flex';
-                else card.style.display = 'none';
-            });
-        }
-
-        // Inicia carregamento
-        setTimeout(() => {
-            if(window.carregarDadosComunidade) window.carregarDadosComunidade();
-        }, 1000);
-    </script>
 
 <script>
 (function(){
@@ -761,7 +754,11 @@
   }
 
   async function supa(){
-    return (typeof window.getSupabaseClient === "function") ? window.getSupabaseClient() : window.supabase;
+    try{
+      if(typeof window.getSupabaseClient === "function") return window.getSupabaseClient();
+      if(typeof getSupabaseClient === "function") return getSupabaseClient();
+    }catch(e){}
+    return window.sb || window.supabaseClient || window.sbClient || null;
   }
 
   async function tableExists(client, table){
@@ -920,6 +917,8 @@
     const membrosCount = grupo?.membrosCount || (Array.isArray(grupo?.membros)?grupo.membros.length:0);
 
     $('grupoNome').textContent = nome;
+    const navNome = $('navGrupoNome');
+    if(navNome) navNome.textContent = nome;
     $('grupoTipo').textContent = tipo ? tipo : '';
     $('grupoDesc').textContent = desc ? desc : '';
     $('grupoMembrosCount').textContent = membrosCount ? (membrosCount + ' membros') : '';
@@ -931,11 +930,132 @@
     const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
     const souDono = uidAtual && donoUid && uidAtual === donoUid;
 
-    // admin box
+    // Admin (Dono/Mods) -> Configurações
+    const modalCfg = $('modalGrupoConfig');
+    const openCfg = ()=>{ if(modalCfg){ modalCfg.style.display='flex'; modalCfg.setAttribute('aria-hidden','false'); } };
+    const closeCfg = ()=>{ if(modalCfg){ modalCfg.style.display='none'; modalCfg.setAttribute('aria-hidden','true'); } };
+
+    function getSB(){
+      return window.supabaseClient || window.supabase || (typeof window.getSupabaseClient==='function' ? window.getSupabaseClient() : null);
+    }
+
+    async function loadCargos(){
+      const box = $('listaCargos');
+      if(!box) return;
+      box.innerHTML = '';
+      const sb = getSB();
+      if(!sb || typeof sb.from !== 'function'){
+        box.innerHTML = '<div style="color:#667085; font-weight:800;">Supabase client não disponível nesta página.</div>';
+        return;
+      }
+      try{
+        const { data, error } = await sb.from('comunidade_cargos').select('*').eq('comunidade_id', grupoId).order('ordem', { ascending: true });
+        if(error){
+          box.innerHTML = '<div style="color:#667085; font-weight:800;">Tabela <b>comunidade_cargos</b> ainda não está ativa.</div>';
+          return;
+        }
+        if(!data || data.length===0){
+          box.innerHTML = '<div style="color:#667085; font-weight:800;">Nenhum cargo criado.</div>';
+          return;
+        }
+        data.forEach(c=>{
+          const row = document.createElement('div');
+          row.className = 'membro-item';
+          row.innerHTML = `
+            <div class="membro-left">
+              <div class="membro-avatar" style="border:2px solid ${c.cor || '#eef0f4'};">${(c.nome||'?').trim().slice(0,1).toUpperCase()}</div>
+              <div class="membro-name">${safeText(c.nome)}</div>
+            </div>
+            <div class="membro-badge" style="border-color:${c.cor || '#eef0f4'};">${safeText(c.cor||'')}</div>
+          `;
+          box.appendChild(row);
+        });
+      }catch(e){
+        box.innerHTML = '<div style="color:#667085; font-weight:800;">Não foi possível carregar cargos.</div>';
+      }
+    }
+
+    async function salvarGrupo(){
+      const sb = getSB();
+      const novoNome = safeText($('cfgNome')?.value).trim();
+      const novaDesc = safeText($('cfgDesc')?.value).trim();
+      if(!novoNome){ toast('Nome obrigatório', 'Digite o nome do grupo.'); return; }
+      if(!sb || typeof sb.from !== 'function'){
+        toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
+        return;
+      }
+      try{
+        const { error } = await sb.from('comunidades').update({ nome: novoNome, descricao: novaDesc }).eq('id', grupoId);
+        if(error) throw error;
+        $('grupoNome').textContent = novoNome;
+        if(navNome) navNome.textContent = novoNome;
+        $('grupoDesc').textContent = novaDesc;
+        toast('Salvo', 'Alterações atualizadas.');
+        closeCfg();
+      }catch(e){
+        console.error(e);
+        toast('Erro ao salvar', 'Verifique permissões (RLS) e nomes das colunas no Supabase.');
+      }
+    }
+
+    async function criarCargo(){
+      const sb = getSB();
+      const nomeCargo = safeText($('cargoNome')?.value).trim();
+      const corCargo = safeText($('cargoCor')?.value).trim();
+      if(!nomeCargo){ toast('Cargo', 'Digite o nome do cargo.'); return; }
+      if(!sb || typeof sb.from !== 'function'){
+        toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
+        return;
+      }
+      try{
+        const payload = { comunidade_id: grupoId, nome: nomeCargo, cor: corCargo || null };
+        const { error } = await sb.from('comunidade_cargos').insert(payload);
+        if(error) throw error;
+        $('cargoNome').value = '';
+        toast('Cargo criado', 'Agora você pode atribuir aos membros.');
+        await loadCargos();
+      }catch(e){
+        console.error(e);
+        toast('Não foi possível', 'Crie a tabela comunidade_cargos e revise o schema.');
+      }
+    }
+
+    function setCfgTab(tab){
+      const t1 = $('tabCfgEditar');
+      const t2 = $('tabCfgCargos');
+      const e1 = $('cfgEditar');
+      const e2 = $('cfgCargos');
+      if(tab==='cargos'){
+        t1?.classList.remove('active');
+        t2?.classList.add('active');
+        if(e1) e1.style.display='none';
+        if(e2) e2.style.display='block';
+        loadCargos();
+      }else{
+        t2?.classList.remove('active');
+        t1?.classList.add('active');
+        if(e2) e2.style.display='none';
+        if(e1) e1.style.display='block';
+      }
+    }
+
     if(souDono){
-      $('grupoAdminBox').style.display = 'block';
-      $('btnEditarGrupo').addEventListener('click', ()=>toast('Em breve', 'Tela de edição do grupo será aberta aqui.'));
-      $('btnGerenciarCargos').addEventListener('click', ()=>toast('Em breve', 'Gerenciamento de cargos será aberto aqui.'));
+      const mini = $('grupoAdminMini');
+      if(mini) mini.style.display = 'block';
+      const btnCfgIcon = $('btnConfigGrupo');
+      if(btnCfgIcon){ btnCfgIcon.style.display = 'flex'; btnCfgIcon.addEventListener('click', openCfg); }
+      $('btnAbrirConfig')?.addEventListener('click', openCfg);
+      $('btnFecharConfig')?.addEventListener('click', closeCfg);
+      modalCfg?.addEventListener('click', (e)=>{ if(e.target===modalCfg) closeCfg(); });
+
+      // preencher campos
+      $('cfgNome').value = nome;
+      $('cfgDesc').value = desc;
+
+      $('btnSalvarGrupo')?.addEventListener('click', salvarGrupo);
+      $('btnCriarCargo')?.addEventListener('click', criarCargo);
+      $('tabCfgEditar')?.addEventListener('click', ()=>setCfgTab('editar'));
+      $('tabCfgCargos')?.addEventListener('click', ()=>setCfgTab('cargos'));
     }
 
     // copiar link
@@ -954,11 +1074,12 @@
         document.querySelectorAll('.grupo-channel').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
         const tab = btn.dataset.tab;
-        if(tab==='arquivos'){ toast('Arquivos', 'Área de arquivos será conectada ao Storage.'); }
-        if(tab==='sobre'){ toast('Sobre', desc || 'Sem descrição.'); }
+        if(tab==='arquivos'){ toast('Arquivos', 'Os arquivos aparecem nos posts com anexos.'); }
+        if(tab==='sobre'){ toast('Sobre', desc || 'Sem descrição no momento.'); }
+        if(tab==='config'){ openCfg(); }
       });
     });
-    $('btnAbrirArquivos').addEventListener('click', ()=>toast('Arquivos', 'Área de arquivos será conectada ao Storage.'));
+    $('btnAbrirArquivos').addEventListener('click', ()=>toast('Arquivos', 'Os arquivos aparecem nos posts com anexos.'));
 
     // members (fallback se tabelas não existem)
     await renderMembersFallback(grupo, uidAtual);

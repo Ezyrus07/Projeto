@@ -1365,6 +1365,7 @@
     let pedidosRenderToken = 0;
     let pedidosFiltro = 'todos';
     let statusPedidoAtual = 'pendente';
+    let avaliadoPedidoAtual = false;
 
     function initPedidosFilters(){
         const wrap = document.getElementById('pedidosFilters');
@@ -2187,6 +2188,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         const containerAcao = document.getElementById('container-acao-header');
 
         statusPedidoAtual = (colecao === 'pedidos') ? (statusDoc || 'pendente') : 'pendente';
+        avaliadoPedidoAtual = false;
         
         // Remove avisos antigos
         const aviso = document.getElementById('aviso-bloqueio-chat');
@@ -2197,7 +2199,13 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
                 if (docSnap.exists()) {
                     const p = docSnap.data();
+                    const prevStatus = statusPedidoAtual;
+                    const prevAvaliado = avaliadoPedidoAtual;
                     statusPedidoAtual = p.status || 'pendente';
+                    avaliadoPedidoAtual = !!p.avaliado;
+                    if (prevStatus !== statusPedidoAtual || prevAvaliado !== avaliadoPedidoAtual) {
+                        carregarMensagens(colecao, idDoc);
+                    }
                     
                     // Lógica de bloqueio do chat
                     if (p.status === 'pendente') {
@@ -2349,6 +2357,7 @@ function carregarMensagens(colecao, docId) {
         const prevOffset = container.scrollHeight - container.scrollTop;
         
         let statusPedido = (colecao === 'pedidos') ? (statusPedidoAtual || 'pendente') : 'pendente';
+        const pedidoAvaliado = (colecao === 'pedidos') ? !!avaliadoPedidoAtual : false;
         const htmlParts = [];
         const sigParts = [];
 
@@ -2420,11 +2429,17 @@ function carregarMensagens(colecao, docId) {
             }
             // --- CARD AVALIAÇÃO (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
+                const textoCard = pedidoAvaliado
+                    ? "Serviço já foi avaliado."
+                    : (m.texto || "Serviço finalizado. Aguardando avaliação.");
+                const btnHtml = pedidoAvaliado
+                    ? `<div style="margin-top:6px; color:#777; font-size:0.85rem;">Avaliação já registrada.</div>`
+                    : `<button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>`;
                 htmlParts.push(`
                 <div style="align-self:center; background:#fff9c4; border:1px solid #fbc02d; padding:15px; border-radius:12px; margin:15px 0; text-align:center;">
                     <i class='bx bxs-star' style="color:#f9a825; font-size:1.5rem;"></i>
-                    <p style="margin:5px 0; font-weight:600; color:#333;">${m.texto}</p>
-                    <button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>
+                    <p style="margin:5px 0; font-weight:600; color:#333;">${textoCard}</p>
+                    ${btnHtml}
                 </div>`);
             }
             // --- IMAGEM ---
@@ -2486,7 +2501,7 @@ function carregarMensagens(colecao, docId) {
             }
         });
 
-        const nextSig = sigParts.join("||");
+        const nextSig = sigParts.join("||") + "||" + statusPedido + "|" + (pedidoAvaliado ? "1" : "0");
         if (nextSig === lastSig) {
             updateScrollDownButton();
             return;
