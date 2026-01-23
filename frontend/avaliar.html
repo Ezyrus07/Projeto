@@ -256,23 +256,52 @@
     </div>
 
     <script>
-        const { initializeApp } = window;
-        const { getFirestore, doc, getDoc, updateDoc, collection, addDoc } = window;
-        const { getAuth } = window;
+        // Helpers: access latest globals from script.js at use-time (avoid early capture)
+        const getGlobals = () => ({
+            DB: window.db,
+            AUTH: window.auth,
+            DOC: window.doc,
+            GETDOC: window.getDoc,
+            UPDATEDOC: window.updateDoc || window.updateDoc, 
+            COLLECTION: window.collection,
+            ADDDOC: window.addDoc
+        });
 
-        // Configuração Firebase
-        const firebaseConfig = {
-            apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-            authDomain: "doke-site.firebaseapp.com",
-            projectId: "doke-site",
-            storageBucket: "doke-site.firebasestorage.app",
-            messagingSenderId: "997098339190",
-            appId: "1:997098339190:web:a865b696278be21f069857"
-        };
+        async function waitForFirebaseGlobals(timeout = 5000) {
+            const start = Date.now();
+            while (Date.now() - start < timeout) {
+                const g = getGlobals();
+                if (g.DB && g.AUTH && g.GETDOC && g.ADDDOC && g.COLLECTION && g.DOC && g.UPDATEDOC) return g;
+                await new Promise(r => setTimeout(r, 100));
+            }
+            return null;
+        }
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
+        async function resolverUsuarioPorUid(g, uid) {
+            if (!g || !uid) return null;
+            // 1) Tenta por ID direto (alguns bancos usam id = auth.uid)
+            try {
+                const snap = await g.GETDOC(g.DOC(g.DB, "usuarios", uid));
+                if (snap && snap.exists && snap.exists()) {
+                    const data = snap.data();
+                    return { id: snap.id || data?.id || uid, data };
+                }
+            } catch (_) {}
+            // 2) Tenta por coluna "uid"
+            try {
+                const q = window.query(
+                    window.collection(g.DB, "usuarios"),
+                    window.where("uid", "==", uid),
+                    window.limit(1)
+                );
+                const snapQ = await window.getDocs(q);
+                if (snapQ && !snapQ.empty && snapQ.docs && snapQ.docs.length) {
+                    const d = snapQ.docs[0];
+                    return { id: d.id || d.data()?.id || uid, data: d.data() || {} };
+                }
+            } catch (_) {}
+            return null;
+        }
 
         const criterios = [
             { id: 'pontualidade', label: 'Pontualidade', icon: 'bx-time-five' },
@@ -285,6 +314,7 @@
         window.avaliacaoState = {};
         let pedidoId = null;
         let profUid = null;
+        let profRowId = null;
 
         document.addEventListener("DOMContentLoaded", async () => {
             const params = new URLSearchParams(window.location.search);
@@ -326,12 +356,31 @@
             }
 
             try {
-                const docSnap = await getDoc(doc(db, "pedidos", pedidoId));
-                if(docSnap.exists()) {
+                const g = await waitForFirebaseGlobals(4000);
+                if (!g) {
+                    console.error('Firebase globals não inicializados ao carregar pedido');
+                    return;
+                }
+                const docSnap = await g.GETDOC(g.DOC(g.DB, "pedidos", pedidoId));
+                if(docSnap && docSnap.exists && docSnap.exists()) {
                     const p = docSnap.data();
-                    profUid = p.paraUid;
-                    const profSnap = await getDoc(doc(db, "usuarios", profUid));
-                    const profData = profSnap.exists() ? profSnap.data() : {};
+                    profUid = p.paraUid || p.profUid || p.profissionalUid || p.profissional_uid || p.profissionalId || p.profissional_id;
+                    profRowId = p.profissional_id || p.profissionalId || null;
+
+                    let profData = {};
+                    if (profRowId) {
+                        const profSnap = await g.GETDOC(g.DOC(g.DB, "usuarios", profRowId));
+                        if (profSnap && profSnap.exists && profSnap.exists()) profData = profSnap.data() || {};
+                    }
+                    if (!profData || !Object.keys(profData).length) {
+                        const resolved = await resolverUsuarioPorUid(g, profUid);
+                        if (resolved) {
+                            profRowId = resolved.id || profRowId;
+                            profData = resolved.data || {};
+                            if (!profUid && profData?.uid) profUid = profData.uid;
+                        }
+                    }
+
                     document.getElementById('nomeProf').innerText = "Avaliação de " + (profData.user || p.paraNome);
                     document.getElementById('imgProf').src = profData.foto || 'https://placehold.co/150';
                     const dataFormatada = p.dataConclusao ? new Date(p.dataConclusao).toLocaleDateString() : "--/--/----";
@@ -376,40 +425,133 @@
             
             const soma = notas.reduce((a, b) => a + b, 0);
             const media = soma / notas.length;
-
-            const user = auth.currentUser;
             const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
             const btnEnviar = document.querySelector('.btn-submit-eval');
             btnEnviar.innerText = "Enviando...";
             btnEnviar.disabled = true;
+            // Ensure firebase globals are ready before proceeding
+            const g = await waitForFirebaseGlobals(5000);
+            if(!g){
+                console.error('Firebase globals missing at submit');
+                alert('Erro: biblioteca de dados não inicializada. Recarregue a página.');
+                btnEnviar.innerText = "Enviar Avaliação Completa";
+                btnEnviar.disabled = false;
+                return;
+            }
 
             try {
-                await addDoc(collection(db, "avaliacoes"), {
-                    pedidoId: pedidoId,
-                    profUid: profUid,
-                    clienteUid: user.uid,
-                    clienteNome: anonimo ? "Anônimo" : (perfilCliente.user || "Cliente"),
-                    clienteFoto: anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || ""),
-                    detalhes: window.avaliacaoState, 
-                    comentarioGeral: comentarioGeral,
-                    media: parseFloat(media.toFixed(1)),
-                    data: new Date().toISOString()
-                });
+                const userCheck = g.AUTH && g.AUTH.currentUser ? g.AUTH.currentUser : null;
+                if(!userCheck){
+                    alert('Você precisa estar logado para enviar uma avaliação.');
+                    btnEnviar.innerText = "Enviar Avaliação Completa";
+                    btnEnviar.disabled = false;
+                    return;
+                }
+                const clienteRowId = perfilCliente.id || (await (async () => {
+                    const resolved = await resolverUsuarioPorUid(g, userCheck.uid);
+                    return resolved?.id || null;
+                })());
 
-                await updateDoc(doc(db, "pedidos", pedidoId), { avaliado: true });
+                const profResolved = profRowId ? { id: profRowId } : await resolverUsuarioPorUid(g, profUid || "");
+                if (profResolved && profResolved.id) profRowId = profResolved.id;
 
-                const profRef = doc(db, "usuarios", profUid);
-                const profSnap = await getDoc(profRef);
-                if (profSnap.exists()) {
-                    const dados = profSnap.data();
-                    const stats = dados.stats || { media: 0, avaliacoes: 0 };
-                    const novaQtd = (stats.avaliacoes || 0) + 1;
-                    const novaMedia = ((stats.media * stats.avaliacoes) + media) / novaQtd;
-                    await updateDoc(profRef, {
-                        "stats.avaliacoes": novaQtd,
-                        "stats.media": parseFloat(novaMedia.toFixed(1))
-                    });
+                const useIdSchema = !!profRowId;
+                // Try full payload; if Supabase schema is older/missing columns, retry with reduced payload
+                const fullPayload = useIdSchema
+                    ? {
+                        pedidoId: pedidoId,
+                        profissional_id: profRowId,
+                        cliente_id: clienteRowId || userCheck.uid,
+                        detalhes: window.avaliacaoState,
+                        comentarioGeral: comentarioGeral,
+                        media: parseFloat(media.toFixed(1)),
+                        nota: parseFloat(media.toFixed(1)),
+                        data: new Date().toISOString(),
+                        clienteNome: anonimo ? "Anônimo" : (perfilCliente.user || "Cliente"),
+                        clienteFoto: anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || "")
+                    }
+                    : {
+                        pedidoId: pedidoId,
+                        profUid: profUid,
+                        clienteUid: userCheck.uid,
+                        clienteNome: anonimo ? "Anônimo" : (perfilCliente.user || "Cliente"),
+                        clienteFoto: anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || ""),
+                        detalhes: window.avaliacaoState,
+                        comentarioGeral: comentarioGeral,
+                        media: parseFloat(media.toFixed(1)),
+                        nota: parseFloat(media.toFixed(1)),
+                        data: new Date().toISOString()
+                    };
+                if (useIdSchema) {
+                    if (!fullPayload.profissional_id) delete fullPayload.profissional_id;
+                    if (!fullPayload.cliente_id) delete fullPayload.cliente_id;
+                } else {
+                    if (!fullPayload.profUid) delete fullPayload.profUid;
+                }
+
+                let insertOk = false;
+                try {
+                    await g.ADDDOC(g.COLLECTION(g.DB, "avaliacoes"), fullPayload);
+                    insertOk = true;
+                } catch (err) {
+                    console.warn('Inserção completa falhou, tentando payload reduzido:', err && err.message);
+                    const reduced = useIdSchema
+                        ? {
+                            profissional_id: profRowId,
+                            cliente_id: clienteRowId || userCheck.uid,
+                            detalhes: window.avaliacaoState,
+                            media: parseFloat(media.toFixed(1)),
+                            nota: parseFloat(media.toFixed(1)),
+                            data: new Date().toISOString()
+                        }
+                        : {
+                            profUid: profUid,
+                            clienteUid: userCheck.uid,
+                            detalhes: window.avaliacaoState,
+                            media: parseFloat(media.toFixed(1)),
+                            nota: parseFloat(media.toFixed(1)),
+                            data: new Date().toISOString()
+                        };
+                    if (useIdSchema) {
+                        if (!reduced.profissional_id) delete reduced.profissional_id;
+                        if (!reduced.cliente_id) delete reduced.cliente_id;
+                    } else {
+                        if (!reduced.profUid) delete reduced.profUid;
+                    }
+                    try {
+                        await g.ADDDOC(g.COLLECTION(g.DB, "avaliacoes"), reduced);
+                        insertOk = true;
+                    } catch (err2) {
+                        console.error('Inserção reduzida também falhou:', err2);
+                        throw err2; // bubble up to outer catch
+                    }
+                }
+
+                if(!insertOk) throw new Error('Falha ao inserir avaliação. Schema possivelmente desatualizado.');
+
+                await g.UPDATEDOC(g.DOC(g.DB, "pedidos", pedidoId), { avaliado: true });
+
+                const profRef = g.DOC(g.DB, "usuarios", profRowId || profUid);
+                try {
+                    const profSnap = await g.GETDOC(profRef);
+                    if (profSnap && profSnap.exists && profSnap.exists()) {
+                        const dados = profSnap.data();
+                        const stats = dados.stats || { media: 0, avaliacoes: 0 };
+                        const novaQtd = (stats.avaliacoes || 0) + 1;
+                        const novaMedia = ((stats.media * stats.avaliacoes) + media) / novaQtd;
+                        await g.UPDATEDOC(profRef, {
+                            "stats.avaliacoes": novaQtd,
+                            "stats.media": parseFloat(novaMedia.toFixed(1))
+                        });
+                    }
+                } catch (e) {
+                    const msg = String(e?.message || "");
+                    if (msg.includes("stats") || msg.toLowerCase().includes("schema cache")) {
+                        console.warn("Coluna stats.* não existe em usuarios; ignorando atualização de métricas.");
+                    } else {
+                        throw e;
+                    }
                 }
 
                 // SUBSTITUÍDO O ALERT NATIVO PELO MODAL

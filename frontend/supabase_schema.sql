@@ -224,14 +224,26 @@ alter table public.servicos enable row level security;
 -- AVALIAÇÕES (cliente -> profissional)
 create table if not exists public.avaliacoes (
   id uuid primary key default gen_random_uuid(),
-  profissional_id uuid not null references public.usuarios(id) on delete cascade,
-  cliente_id uuid not null references public.usuarios(id) on delete cascade,
-  nota int not null check (nota between 1 and 5),
-  comentario text,
-  created_at timestamptz not null default now()
-);
-create index if not exists avaliacoes_prof_id_idx on public.avaliacoes(profissional_id);
-create index if not exists avaliacoes_cliente_id_idx on public.avaliacoes(cliente_id);
+  profUid text not null,
+  clienteUid text not null,
+  clienteNome text,
+  clienteFoto text,
+  detalhes jsonb,
+  comentarioGeral text,
+  media float,
+  data timestamptz not null default now(),
+  pedidoId text
+);-- Adicionar colunas se não existirem (para bases antigas)
+alter table public.avaliacoes add column if not exists profUid text;
+alter table public.avaliacoes add column if not exists clienteUid text;
+alter table public.avaliacoes add column if not exists clienteNome text;
+alter table public.avaliacoes add column if not exists clienteFoto text;
+alter table public.avaliacoes add column if not exists detalhes jsonb;
+alter table public.avaliacoes add column if not exists comentarioGeral text;
+alter table public.avaliacoes add column if not exists media float;
+alter table public.avaliacoes add column if not exists data timestamptz default now();
+alter table public.avaliacoes add column if not exists pedidoId text;create index if not exists avaliacoes_prof_uid_idx on public.avaliacoes(profUid);
+create index if not exists avaliacoes_cliente_uid_idx on public.avaliacoes(clienteUid);
 alter table public.avaliacoes enable row level security;
 
 -- ---------------------------
@@ -241,6 +253,24 @@ alter table public.avaliacoes enable row level security;
 do $$ begin
   if not exists(select 1 from pg_policies where schemaname='public' and tablename='publicacoes' and policyname='Public read') then
     create policy "Public read" on public.publicacoes for select using (true);
+  end if;
+end $$;
+
+-- Fallback permissive policy: permite inserts por usuários autenticados
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='avaliacoes' and policyname='Cliente write - auth') then
+    create policy "Cliente write - auth" on public.avaliacoes
+      for insert
+      with check (auth.role() = 'authenticated');
+  end if;
+end $$;
+
+-- Fallback 2: allow inserts when auth.uid() is present (broader compatibility)
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='avaliacoes' and policyname='Cliente write - auth2') then
+    create policy "Cliente write - auth2" on public.avaliacoes
+      for insert
+      with check (auth.uid() is not null);
   end if;
 end $$;
 
@@ -493,17 +523,31 @@ do $$ begin
   end if;
 end $$;
 
--- Avaliações: cliente escreve para profissional (cliente_id precisa ser o auth.uid())
-create or replace function public.is_cliente(cliente_row_id uuid)
-returns boolean language sql stable as $$
-  select exists(select 1 from public.usuarios u where u.id=cliente_row_id and u.uid = auth.uid());
-$$;
-
+-- Avaliações: política de escrita. Alguns deployments antigos usavam nomes diferentes
+-- (cliente_id/profissional_id). Aqui criamos uma política compatível que permite
+-- inserts por usuários autenticados (auth.uid() não nulo). Ajuste se quiser
+-- restringir por mapeamento específico entre auth.uid() e colunas da tabela.
 do $$ begin
   if not exists(select 1 from pg_policies where schemaname='public' and tablename='avaliacoes' and policyname='Cliente write') then
-    create policy "Cliente write" on public.avaliacoes
-      for insert
-      with check (public.is_cliente(cliente_id) and cliente_id <> profissional_id);
+    -- If the column clienteUid exists, create a stricter policy that requires
+    -- the inserted row's clienteUid to match auth.uid(); otherwise fall back
+    -- to a permissive authenticated-only policy.
+    if exists(
+      select 1 from information_schema.columns
+      where table_schema='public' and table_name='avaliacoes' and column_name='clienteUid'
+    ) then
+      execute $pol$
+        create policy "Cliente write" on public.avaliacoes
+          for insert
+          with check (clienteUid = auth.uid()::text);
+      $pol$;
+    else
+      execute $pol$
+        create policy "Cliente write" on public.avaliacoes
+          for insert
+          with check (auth.uid() is not null);
+      $pol$;
+    end if;
   end if;
 end $$;
 

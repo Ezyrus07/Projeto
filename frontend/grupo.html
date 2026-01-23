@@ -1,1672 +1,1001 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-init.js"></script>
   <script src="firebase-compat-supabase.js"></script>
   <script src="firebase-auth-compat-supabase.js"></script>
 
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Grupo | Doke</title>
-  <link rel="stylesheet" href="style.css">
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grupo | Doke</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link rel="stylesheet" href="style.css">
+    <script src="script.js" defer></script>
+    <style>
+        /* ======================================================
+           ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
+           ====================================================== */
+        
+        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
 
-  <!-- script central (cria window.db/auth + helpers) -->
-  <script src="script.js" defer></script>
+        main { padding: 20px; max-width: 1600px; }
+        @media (min-width: 1024px) {
+            main { margin-left: 270px; padding: 30px 40px; width: auto; }
+        }
 
-  <style>
-    /* ===========================
-       Grupo (layout Doke 3 colunas)
-       =========================== */
-    body.doke-group-page{
-      padding-top: 0 !important;
-      padding-bottom: 0 !important;
-      overflow: hidden; /* scroll por coluna */
-      background: #f4f6fb;
-    }
-    .doke-group-root{
-      height: 100vh;
-      width: 100%;
-      display:flex;
-      flex-direction: column;
-    }
+        .comm-hero-container {
+                background: radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.20), transparent 55%), linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+            padding: 40px; border-radius: 20px; margin-bottom: 40px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative; overflow: hidden;
+        }
+        .comm-hero-container::before {
+            content: ''; position: absolute; top: -50px; right: -50px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
+        }
 
-    .dg-topbar{
-      height: 64px;
-      min-height: 64px;
-      background: #fff;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-      display:flex;
-      align-items:center;
-      padding: 0 14px;
-      gap: 12px;
-      flex-shrink: 0;
-    }
-    .dg-icon-btn{
-      width: 42px; height: 42px;
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.10);
-      background: #fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      cursor:pointer;
-    }
-    .dg-icon-btn:hover{ filter: brightness(0.99); }
-    .dg-title{
-      display:flex;
-      flex-direction: column;
-      line-height: 1.1;
-      flex: 1;
-      min-width: 0;
-    }
-    .dg-title h1{
-      font-size: 1.05rem;
-      margin: 0;
-      color: #111827;
-      font-weight: 800;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .dg-sub{
-      font-size: 0.82rem;
-      color: rgba(17,24,39,0.62);
-      display:flex;
-      gap: 10px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .dg-actions{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-    }
-    .dg-btn{
-      border: 0;
-      border-radius: 14px;
-      padding: 10px 14px;
-      font-weight: 800;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      gap: 8px;
-      background: var(--cor0);
-      color: #fff;
-    }
-    .dg-btn.secondary{
-      background: #fff;
-      color: #111827;
-      border: 1px solid rgba(0,0,0,0.12);
-    }
-    .dg-btn[disabled]{
-      opacity: .55;
-      cursor: not-allowed;
-    }
+        .comm-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 30px; flex-wrap: wrap; gap: 20px; position: relative; z-index: 2;
+        }
+        .comm-title h1 { color: white; font-size: 2.2rem; margin-bottom: 8px; font-weight: 700; }
+        .comm-title p { color: rgba(255,255,255,0.85); font-size: 1rem; max-width: 500px; }
 
-    .dg-grid{
-      flex: 1;
-      min-height: 0;
-      display:grid;
-      grid-template-columns: 280px 1fr 320px;
-      gap: 14px;
-      padding: 14px;
-    }
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .search-bar-comm {
+            display: flex; align-items: center; background: white;
+            padding: 12px 20px; border-radius: 50px; width: 320px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .search-bar-comm input { background: transparent; border: none; outline: none; width: 100%; color: #333; }
+        
+        .btn-create-comm {
+            background: #00d2d3; color: #005f5f; border: none; padding: 12px 25px;
+            border-radius: 30px; font-weight: 700; cursor: pointer; display: flex; 
+            align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 210, 211, 0.3);
+            transition: 0.2s; white-space: nowrap;
+        }
+        .btn-create-comm:hover { background: #fff; color: var(--cor2); }
 
-    .dg-col{
-      background: #fff;
-      border-radius: 18px;
-      border: 1px solid rgba(0,0,0,0.08);
-      box-shadow: 0 10px 25px rgba(0,0,0,0.04);
-      min-height: 0;
-      overflow: hidden;
-      display:flex;
-      flex-direction: column;
-    }
-    .dg-col-scroll{
-      overflow: auto;
-      min-height: 0;
-      -webkit-overflow-scrolling: touch;
-    }
+        /* Meus Grupos */
+        .my-groups-section { position: relative; z-index: 2; }
+        .section-label { color: white; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; opacity: 0.8; }
+        .groups-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; min-height: 90px; }
+        .my-group-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; min-width: 80px; transition: 0.2s; }
+        .group-img-ring {
+            width: 70px; height: 70px; border-radius: 20px; padding: 3px;
+            background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+        }
+        .group-img-ring img { width: 100%; height: 100%; border-radius: 17px; object-fit: cover; background: white; }
+        .my-group-item span { color: white; font-size: 0.8rem; font-weight: 600; text-align: center; }
 
-    .dg-panel-title{
-      padding: 14px 14px 10px;
-      font-weight: 900;
-      letter-spacing: .02em;
-      color: #111827;
-      display:flex;
-      align-items:center;
-      justify-content: space-between;
-    }
+        /* Layout Principal */
+        .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+        .filter-tabs { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; }
+        .tab-btn {
+            padding: 10px 24px; border: 1px solid #e0e0e0; background: white; border-radius: 30px;
+            font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--cor2); color: white; border-color: var(--cor2); }
 
-    .dg-nav{
-      padding: 6px 10px 14px;
-      display:flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .dg-nav-btn{
-      border: 1px solid rgba(0,0,0,0.08);
-      background: #fff;
-      border-radius: 14px;
-      padding: 10px 12px;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      cursor:pointer;
-      font-weight: 800;
-      color:#111827;
-    }
-    .dg-nav-btn.active{
-      border-color: rgba(11,119,104,0.35);
-      background: rgba(11,119,104,0.07);
-      color: var(--cor0);
-    }
-    .dg-nav-btn i{ font-size: 1.2rem; }
+        .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        
+        .card-comm {
+            background: white; border-radius: 16px; overflow: hidden;
+            border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer;
+        }
+        .card-comm:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+        .card-cover { height: 110px; background-size: cover; background-position: center; position: relative; background-color: #eee; }
+        .card-tag {
+            position: absolute; top: 10px; right: 10px; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: white; text-transform: uppercase;
+        }
+        .tag-pro { background: var(--cor0); }
+        .tag-condo { background: var(--cor2); }
+        .tag-hobby { background: #9b59b6; }
 
-    .dg-admin{
-      margin-top: 8px;
-      padding-top: 10px;
-      border-top: 1px dashed rgba(0,0,0,0.12);
-    }
+        .card-body { padding: 18px; margin-top: -40px; flex: 1; display: flex; flex-direction: column; }
+        .card-icon {
+            width: 64px; height: 64px; border-radius: 16px; background: white;
+            padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 12px; position: relative; z-index: 2;
+        }
+        .card-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
+        .card-title { font-size: 1.15rem; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .card-desc { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.5; }
+        .members-preview { display: flex; align-items: center; margin-bottom: 15px; margin-top: auto; }
+        .mem-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -10px; background:#ddd; }
+        .mem-count { font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: 500; }
+        .card-footer { padding: 15px 18px; border-top: 1px solid #f5f5f5; background: #fafafa; }
+        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; }
+        .btn-entrar:hover { background: var(--cor2); color: white; border-color: var(--cor2); }
 
-    /* Centro */
-    .dg-center-header{
-      padding: 0;
-      border-bottom: 1px solid rgba(0,0,0,0.08);
-    }
-    .dg-cover{
-      height: 170px;
-      background: linear-gradient(120deg, var(--cor2), #8e44ad);
-      background-size: cover;
-      background-position: center;
-      position: relative;
-    }
-    .dg-cover::after{
-      content:"";
-      position:absolute;
-      inset:0;
-      background: linear-gradient(180deg, rgba(0,0,0,0.0), rgba(0,0,0,0.25));
-    }
-    .dg-cover-body{
-      padding: 14px;
-      display:flex;
-      gap: 12px;
-      align-items: center;
-      transform: translateY(-26px);
-    }
-    .dg-avatar{
-      width: 62px; height: 62px;
-      border-radius: 18px;
-      background: #fff;
-      border: 3px solid #fff;
-      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-      background-size: cover;
-      background-position: center;
-      flex-shrink: 0;
-    }
-    .dg-info{
-      min-width:0;
-      flex: 1;
-    }
-    .dg-info .name{
-      font-weight: 900;
-      color: #111827;
-      margin: 0;
-      font-size: 1.05rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .dg-info .desc{
-      margin-top: 4px;
-      color: rgba(17,24,39,0.65);
-      font-weight: 600;
-      font-size: 0.9rem;
-      display:-webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow:hidden;
-    }
-    .dg-badges{
-      display:flex;
-      gap: 8px;
-      margin-top: 8px;
-      flex-wrap: wrap;
-    }
-    .dg-pill{
-      font-size: 0.72rem;
-      font-weight: 900;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.10);
-      color: rgba(17,24,39,0.75);
-      background: #fff;
-    }
-    .dg-pill.lock{
-      color: #b45309;
-      border-color: rgba(180,83,9,0.25);
-      background: rgba(251,191,36,0.12);
-    }
-    .dg-pill.tag{
-      color: var(--cor0);
-      border-color: rgba(11,119,104,0.25);
-      background: rgba(11,119,104,0.08);
-    }
+        /* Sidebar Widgets */
+        .widget-box { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
+        .widget-title { font-size: 1.1rem; font-weight: 700; color: var(--cor2); margin-bottom: 20px; border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; }
+        .topic-item { display: flex; gap: 15px; margin-bottom: 15px; }
+        .topic-icon { width: 40px; height: 40px; background: #f0f7ff; color: var(--cor2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+        
+        /* Modal Criar */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .btn-submit-modal { width: 100%; padding: 14px; background: var(--cor2); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
 
-    /* Composer igual chat (padrão Doke) */
-    .dg-composer{
-      padding: 0 14px 14px;
-      margin-top: -12px;
-    }
-    .chat-footer{
-      min-height: 60px;
-      background: #f0f2f5;
-      border: 1px solid #d1d7db;
-      border-radius: 18px;
-      display:flex;
-      align-items:center;
-      padding: 10px 12px;
-      gap: 10px;
-    }
-    .input-msg{
-      flex: 1;
-      padding: 12px;
-      border-radius: 14px;
-      border: 1px solid rgba(0,0,0,0.08);
-      outline: none;
-      background: #fff;
-      font-weight: 700;
-    }
-    .btn-enviar{
-      background: var(--cor0);
-      color:#fff;
-      border:none;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 1.2rem;
-      cursor:pointer;
-    }
-    .btn-attach{
-      background: #e0e0e0;
-      color:#555;
-      border: none;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 1.2rem;
-      cursor:pointer;
-    }
+        @media (max-width: 768px) {
+            .comm-layout { display: flex; flex-direction: column; }
+            .comm-hero-container { padding: 30px 20px; border-radius: 0 0 20px 20px; margin: -20px -15px 30px -15px; }
+            .comm-header { flex-direction: column; align-items: flex-start; }
+            .search-bar-comm, .btn-create-comm { width: 100%; justify-content: center; }
+            .grid-comunidades { grid-template-columns: 1fr; }
+            main { margin-left: 0 !important; padding: 20px !important; }
+        }
+    </style>
 
-    .dg-attach-preview{
-      margin-top: 10px;
-      padding: 10px;
-      border-radius: 14px;
-      border: 1px dashed rgba(0,0,0,0.20);
-      background: #fff;
-      display:none;
-      gap: 10px;
-      align-items:center;
-      justify-content: space-between;
-    }
-    .dg-attach-preview .left{
-      display:flex;
-      gap: 10px;
-      align-items:center;
-      min-width:0;
-    }
-    .dg-attach-preview .file{
-      font-weight: 800;
-      color:#111827;
-      font-size: 0.9rem;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-      max-width: 360px;
-    }
-    .dg-attach-preview .remove{
-      border: 0;
-      background: rgba(243,91,91,0.12);
-      color: var(--cor3);
-      padding: 8px 12px;
-      border-radius: 12px;
-      cursor:pointer;
-      font-weight: 900;
-    }
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 
-    /* Feed */
-    .dg-feed{
-      padding: 0 14px 16px;
-      display:flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-    .dg-post{
-      border: 1px solid rgba(0,0,0,0.08);
-      border-radius: 18px;
-      overflow:hidden;
-      background: #fff;
-    }
-    .dg-post-head{
-      padding: 12px 12px 10px;
-      display:flex;
-      gap: 10px;
-      align-items:center;
-    }
-    .dg-post-userimg{
-      width: 42px; height: 42px;
-      border-radius: 14px;
-      background: #eee;
-      background-size: cover;
-      background-position: center;
-      flex-shrink:0;
-    }
-    .dg-post-meta{ min-width:0; flex: 1; }
-    .dg-post-meta .u{
-      font-weight: 900;
-      color:#111827;
-      display:flex;
-      gap: 8px;
-      align-items:center;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .dg-role-badge{
-      font-size: 0.68rem;
-      font-weight: 900;
-      padding: 4px 8px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.10);
-    }
-    .dg-post-meta .t{
-      margin-top: 2px;
-      font-size: 0.78rem;
-      color: rgba(17,24,39,0.55);
-      font-weight: 700;
-    }
-    .dg-post-body{
-      padding: 0 12px 12px;
-      color:#111827;
-      font-weight: 650;
-      line-height: 1.35;
-      white-space: pre-wrap;
-      word-break: break-word;
-    }
+<style>
+/* =========================
+   DOKE - Grupo (layout)
+   Mantém header/sidebar do site
+   ========================= */
+.grupo-page{ padding: 14px 18px 30px; }
+.grupo-grid{
+  display:grid;
+  grid-template-columns: 320px minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+.grupo-pane{
+  background:#fff;
+  border-radius:18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  overflow:hidden;
+  max-height: calc(100vh - 160px);
+  display:flex;
+  flex-direction:column;
+}
+.grupo-pane.scroll{ overflow:auto; }
 
-    .dg-media{
-      width: 100%;
-      background: #000;
-      aspect-ratio: 4 / 5; /* padrão feed Doke */
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      border-top: 1px solid rgba(0,0,0,0.06);
-      border-bottom: 1px solid rgba(0,0,0,0.06);
-    }
-    .dg-media img, .dg-media video{
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-    }
-    .dg-media a{
-      color:#fff;
-      font-weight: 900;
-      text-decoration: underline;
-      padding: 18px;
-      text-align:center;
-    }
+.grupo-nav .grupo-nav-head{
+  padding: 16px;
+  border-bottom: 1px solid #eef0f4;
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.btn-voltar{
+  width:42px;height:42px;border-radius:12px;
+  border:1px solid #eef0f4; background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.grupo-nav-title{ font-weight:800; color:#1d2b3a; }
 
-    /* Membros (direita) */
-    .dg-members{
-      padding: 0 10px 12px;
-      display:flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-    .dg-sec-label{
-      padding: 0 6px;
-      font-size: 0.72rem;
-      font-weight: 1000;
-      letter-spacing: .12em;
-      color: rgba(17,24,39,0.55);
-      text-transform: uppercase;
-    }
-    .dg-member{
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      padding: 10px 10px;
-      border-radius: 14px;
-      border: 1px solid rgba(0,0,0,0.06);
-      background: #fff;
-    }
-    .dg-member:hover{ background: rgba(0,0,0,0.015); }
-    .dg-member .a{
-      width: 36px; height: 36px;
-      border-radius: 14px;
-      background:#eee;
-      background-size: cover;
-      background-position: center;
-      position: relative;
-      flex-shrink:0;
-    }
-    .dg-dot{
-      position:absolute;
-      right: -2px;
-      bottom: -2px;
-      width: 12px; height: 12px;
-      border-radius: 999px;
-      border: 2px solid #fff;
-      background: #9ca3af; /* offline */
-    }
-    .dg-dot.online{ background: #22c55e; }
-    .dg-member .n{
-      min-width:0;
-      flex: 1;
-      display:flex;
-      flex-direction: column;
-    }
-    .dg-member .n .name{
-      font-weight: 900;
-      color:#111827;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .dg-member .n .sub{
-      font-size: 0.78rem;
-      color: rgba(17,24,39,0.55);
-      font-weight: 700;
-      white-space: nowrap;
-      overflow:hidden;
-      text-overflow: ellipsis;
-    }
-    .dg-member .role{
-      font-size: 0.72rem;
-      font-weight: 1000;
-      padding: 6px 10px;
-      border-radius: 999px;
-      border: 1px solid rgba(0,0,0,0.10);
-      white-space: nowrap;
-    }
-    .dg-member select{
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.12);
-      padding: 8px 10px;
-      font-weight: 800;
-      background:#fff;
-      max-width: 130px;
-    }
+.grupo-channels{ padding: 12px; display:flex; flex-direction:column; gap:10px; }
+.grupo-channel{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid #eef0f4;
+  background:#fff;
+  cursor:pointer;
+  font-weight:700;
+  color:#1f2d3d;
+}
+.grupo-channel i{ font-size:18px; color: var(--cor2); }
+.grupo-channel.active{ background: rgba(42,95,144,0.08); border-color: rgba(42,95,144,0.25); }
 
-    /* Modal / Toast */
-    .dg-modal{
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.45);
-      display:none;
-      align-items: flex-start;
-      justify-content: center;
-      padding: 18px 10px;
-      z-index: 9999;
-      overflow: auto;
-    }
-    .dg-modal.show{ display:flex; }
-    .dg-modal-card{
-      width: 100%;
-      max-width: 560px;
-      background: #fff;
-      border-radius: 18px;
-      border: 1px solid rgba(0,0,0,0.10);
-      box-shadow: 0 18px 45px rgba(0,0,0,0.22);
-      padding: 16px;
-      max-height: calc(100vh - 36px);
-      overflow:auto;
-    }
-    .dg-modal-head{
-      display:flex;
-      align-items:center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 12px;
-    }
-    .dg-modal-head h2{
-      margin:0;
-      font-size: 1rem;
-      color:#111827;
-    }
-    .dg-x{
-      width: 40px; height: 40px;
-      border-radius: 12px;
-      border: 1px solid rgba(0,0,0,0.12);
-      background:#fff;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 1.3rem;
-    }
-    .dg-form label{
-      display:block;
-      font-weight: 900;
-      margin: 10px 0 6px;
-      color:#111827;
-      font-size: .9rem;
-    }
-    .dg-form input, .dg-form textarea, .dg-form select{
-      width:100%;
-      border-radius: 14px;
-      border: 1px solid rgba(0,0,0,0.12);
-      padding: 12px;
-      font-weight: 750;
-      outline:none;
-      background:#fff;
-    }
-    .dg-form textarea{ min-height: 110px; resize: vertical; }
-    .dg-row{
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-    .dg-help{
-      margin-top: 8px;
-      font-size: .82rem;
-      color: rgba(17,24,39,0.55);
-      font-weight: 700;
-    }
-    .dg-actions-row{
-      display:flex;
-      gap: 10px;
-      justify-content:flex-end;
-      margin-top: 14px;
-    }
+.grupo-admin-box{
+  margin: 10px 12px 14px;
+  padding: 12px;
+  border-radius:14px;
+  border:1px dashed rgba(42,95,144,0.35);
+  background: rgba(42,95,144,0.05);
+}
+.grupo-admin-box .btn-admin{
+  width:100%;
+  border:none;
+  background:#fff;
+  border-radius:12px;
+  padding:12px 12px;
+  font-weight:800;
+  cursor:pointer;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.grupo-admin-box .btn-admin + .btn-admin{ margin-top:10px; }
 
-    .dg-toast-wrap{
-      position: fixed;
-      right: 14px;
-      bottom: 14px;
-      display:flex;
-      flex-direction: column;
-      gap: 10px;
-      z-index: 10000;
-    }
-    .dg-toast{
-      background:#111827;
-      color:#fff;
-      border-radius: 14px;
-      padding: 12px 14px;
-      font-weight: 800;
-      box-shadow: 0 12px 30px rgba(0,0,0,0.22);
-      max-width: 320px;
-    }
-    .dg-toast.success{ background: var(--cor0); }
-    .dg-toast.error{ background: #b91c1c; }
+.grupo-center{ overflow:hidden; }
+.grupo-center .inner{ overflow:auto; padding-bottom: 16px; }
 
-    /* Responsivo */
-    @media(max-width: 980px){
-      body.doke-group-page{ overflow:auto; }
-      .dg-grid{
-        grid-template-columns: 1fr;
-        height: auto;
-      }
-      .dg-col{ min-height: auto; }
-      .dg-col-scroll{ max-height: none; }
-    }
-  </style>
+.grupo-hero{ border-bottom: 1px solid #eef0f4; }
+.grupo-cover{
+  height: 190px;
+  background: linear-gradient(120deg, #2a5f90, #7b2cbf);
+  background-size: cover;
+  background-position:center;
+}
+.grupo-hero-info{
+  padding: 14px 16px 16px;
+  display:flex;
+  gap: 14px;
+  align-items:flex-end;
+  justify-content:space-between;
+}
+.grupo-hero-left{ display:flex; gap: 14px; align-items:flex-end; min-width:0; }
+.grupo-avatar{
+  width:74px;height:74px;border-radius:18px;
+  background:#fff;
+  border:1px solid #eef0f4;
+  margin-top:-42px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.grupo-avatar img{ width:100%; height:100%; object-fit:cover; }
+.grupo-avatar .initial{
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size: 22px;
+  color:#1f2d3d;
+  background: linear-gradient(120deg, rgba(42,95,144,0.12), rgba(123,44,191,0.10));
+}
+
+.grupo-hero-text{ min-width:0; }
+.grupo-hero-text h2{
+  margin:0; font-size: 1.25rem;
+  color:#1d2b3a; font-weight: 900;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.grupo-hero-text p{
+  margin:6px 0 0; color:#5b6674;
+  font-weight:600;
+  overflow:hidden; text-overflow:ellipsis;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+}
+.grupo-meta{ margin-top: 8px; color:#7a8696; font-weight:700; font-size: 0.92rem; }
+
+.grupo-hero-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
+.btn-sec, .btn-prim{
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-weight: 900;
+  cursor:pointer;
+  border:1px solid #eef0f4;
+  background:#fff;
+  display:flex; align-items:center; gap:8px;
+}
+.btn-prim{
+  background: var(--cor2);
+  color:#fff;
+  border-color: rgba(0,0,0,0.05);
+}
+.btn-prim i, .btn-sec i{ font-size:18px; }
+
+.grupo-composer{
+  margin: 16px;
+  border:1px solid #eef0f4;
+  border-radius: 18px;
+  background:#fff;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+}
+.grupo-composer textarea{
+  width:100%;
+  min-height: 84px;
+  border:none;
+  outline:none;
+  padding: 14px 14px 6px;
+  resize: vertical;
+  font-weight:700;
+  color:#1d2b3a;
+}
+.composer-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+.btn-icon{
+  width:44px;height:44px;border-radius:14px;
+  border:1px solid #eef0f4; background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.btn-icon i{ font-size:20px; color:#1f2d3d; }
+.composer-hint{
+  flex:1;
+  display:flex; align-items:center; gap:8px;
+  color:#7a8696; font-weight:700;
+  padding-left: 4px;
+  min-width:0;
+}
+.composer-hint i{ font-size:18px; color: var(--cor2); }
+.btn-send{
+  width:46px;height:46px;border-radius:16px;
+  border:none;
+  background: var(--cor2);
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.btn-send i{ font-size:20px; }
+
+.grupo-feed{ padding: 0 16px 16px; display:flex; flex-direction:column; gap: 14px; }
+.post-card{
+  border:1px solid #eef0f4;
+  border-radius: 18px;
+  background:#fff;
+  overflow:hidden;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.04);
+}
+.post-head{
+  padding: 12px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.post-user{
+  display:flex; align-items:center; gap:10px; min-width:0;
+}
+.post-user .avatar{
+  width:38px;height:38px;border-radius:12px;
+  background: #f1f4f9;
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+  color:#1f2d3d;
+}
+.post-user .avatar img{ width:100%; height:100%; object-fit:cover; }
+.post-user .name{
+  font-weight:900;
+  color:#1d2b3a;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.post-time{ color:#7a8696; font-weight:700; font-size: 0.9rem; }
+.post-body{ padding: 0 14px 14px; color:#2a3340; font-weight:700; line-height: 1.35; }
+.post-media{
+  margin-top: 10px;
+  border-radius: 16px;
+  overflow:hidden;
+  border: 1px solid #eef0f4;
+}
+.post-media img, .post-media video{
+  width:100%;
+  display:block;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.empty-state{
+  border:1px dashed rgba(42,95,144,0.35);
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(42,95,144,0.05);
+}
+.empty-state h3{ margin:0; font-weight: 900; color:#1d2b3a; }
+.empty-state p{ margin:6px 0 0; color:#6b7686; font-weight:700; }
+
+.membros-head{
+  padding: 16px;
+  border-bottom: 1px solid #eef0f4;
+  display:flex; align-items:flex-end; justify-content:space-between;
+}
+.membros-head h3{ margin:0; font-weight: 900; color:#1d2b3a; }
+.membros-head small{ color:#7a8696; font-weight:800; }
+.membros-section{ padding: 12px 14px; }
+.membros-title{ color:#7a8696; font-weight: 900; letter-spacing: 0.05em; font-size: 0.82rem; margin-bottom: 8px; }
+.membros-list{ display:flex; flex-direction:column; gap: 10px; }
+.membro-item{
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 1px solid #eef0f4;
+  border-radius: 14px;
+}
+.membro-left{ display:flex; align-items:center; gap: 10px; min-width:0; }
+.membro-avatar{
+  width:34px;height:34px;border-radius: 12px;
+  background:#f1f4f9;
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+  color:#1f2d3d;
+}
+.membro-avatar img{ width:100%; height:100%; object-fit:cover; }
+.membro-name{
+  font-weight: 900; color:#1d2b3a;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.membro-badge{
+  font-weight: 900;
+  font-size: 0.82rem;
+  color: #1f2d3d;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #eef0f4;
+  background:#fff;
+}
+.membro-badge.dono{
+  border-color: rgba(42,95,144,0.35);
+  background: rgba(42,95,144,0.08);
+  color: var(--cor2);
+}
+
+@media (max-width: 1100px){
+  .grupo-grid{ grid-template-columns: 300px minmax(0, 1fr); }
+  .grupo-members{ display:none; }
+}
+@media (max-width: 820px){
+  .grupo-page{ padding: 10px 10px 80px; }
+  .grupo-grid{ grid-template-columns: 1fr; }
+  .grupo-pane{ max-height: none; }
+  .grupo-nav{ order: 2; }
+  .grupo-center{ order: 1; }
+}
+</style>
+
 </head>
+<body>
 
-<body class="doke-group-page">
-  <div class="doke-group-root">
-    <header class="dg-topbar">
-      <button class="dg-icon-btn" id="btnBack" title="Voltar"><i class='bx bx-arrow-back'></i></button>
-      <div class="dg-title">
-        <h1 id="groupName">Carregando...</h1>
-        <div class="dg-sub" id="groupMeta"> </div>
-      </div>
-      <div class="dg-actions">
-        <button class="dg-btn secondary" id="btnJoin" style="display:none;"><i class='bx bx-log-in'></i><span>Entrar</span></button>
-        <button class="dg-btn secondary" id="btnLeave" style="display:none;"><i class='bx bx-log-out'></i><span>Sair</span></button>
-        <button class="dg-btn" id="btnEdit" style="display:none;"><i class='bx bx-cog'></i><span>Editar</span></button>
-      </div>
+        <header class="navbar-desktop">
+        <div id="logo-desktop">
+            <a href="projeto.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>
+        </div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
+                    </svg>
+                    <span id="textoCepSpan">Informe seu CEP</span>
+                </a>
+
+                <div class="cep-popup" id="boxCep">
+                    <p>Digite seu CEP:</p>
+                    <div class="cep-input-group">
+                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
+                        <button onclick="salvarCep()">OK</button>
+                    </div>
+                </div>
+            </div>
+            
+            <a href="anunciar.html">Anuncie seu serviço</a>
+            <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+            <a href="novidades.html">Novidades</a>
+        </nav>
+
+        <div class="botoes-direita">
+            <a href="login.html" class="entrar">Entrar</a>
+            <a href="login.html">
+            </a>
+        </div>
     </header>
 
-    <div class="dg-grid">
-      <!-- Esquerda -->
-      <aside class="dg-col">
-        <div class="dg-panel-title">Navegação</div>
-        <div class="dg-col-scroll">
-          <div class="dg-nav">
-            <button class="dg-nav-btn active" data-view="feed"><i class='bx bx-news'></i>Feed</button>
-            <button class="dg-nav-btn" data-view="arquivos"><i class='bx bx-folder'></i>Arquivos</button>
-            <button class="dg-nav-btn" data-view="sobre"><i class='bx bx-info-circle'></i>Sobre</button>
+    <aside class="sidebar-icones">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item active"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="meuperfil.html"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+    </aside>
 
-            <div class="dg-admin" id="adminArea" style="display:none;">
-              <div class="dg-panel-title" style="padding:12px 6px 8px;">Admin</div>
-              <button class="dg-nav-btn" data-action="edit"><i class='bx bx-edit'></i>Editar grupo</button>
-              <button class="dg-nav-btn" data-action="roles"><i class='bx bx-layer'></i>Cargos</button>
-            </div>
-          </div>
-        </div>
-      </aside>
+    <header class="navbar-mobile">
+        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height:25px;"></a></div>
+        <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size:30px; color:var(--cor2);"></i></button>
+    </header>
+    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
-      <!-- Centro -->
-      <section class="dg-col">
-        <div class="dg-center-header">
-          <div class="dg-cover" id="groupCover"></div>
-          <div class="dg-cover-body">
-            <div class="dg-avatar" id="groupAvatar"></div>
-            <div class="dg-info">
-              <p class="name" id="groupTitle">Carregando...</p>
-              <div class="desc" id="groupDesc"></div>
-              <div class="dg-badges" id="groupBadges"></div>
-            </div>
-          </div>
+    
+<main>
+  <div class="grupo-page">
+    <div class="grupo-grid">
+      <section class="grupo-pane grupo-nav">
+</div>
+        <div class="grupo-channels">
+          <button class="grupo-channel active" data-tab="feed"><i class='bx bx-hash'></i> Feed</button>
+          <button class="grupo-channel" data-tab="arquivos"><i class='bx bx-folder'></i> Arquivos</button>
+          <button class="grupo-channel" data-tab="sobre"><i class='bx bx-info-circle'></i> Sobre</button>
         </div>
 
-        <div class="dg-col-scroll">
-          <div class="dg-composer" id="composerWrap" style="display:none;">
-            <div class="chat-footer">
-              <button class="btn-attach" id="btnAttach" title="Anexar"><i class='bx bx-paperclip'></i></button>
-              <input class="input-msg" id="postText" placeholder="Escreva algo no grupo..." />
-              <button class="btn-enviar" id="btnSend" title="Enviar"><i class='bx bx-send'></i></button>
-            </div>
-            <input type="file" id="postFile" accept="image/*,video/*,application/pdf" hidden>
-            <div class="dg-attach-preview" id="attachPreview">
-              <div class="left">
-                <i class='bx bx-file' style="font-size:1.2rem;"></i>
-                <div class="file" id="attachName"></div>
-              </div>
-              <button class="remove" id="attachRemove">Remover</button>
-            </div>
-          </div>
-
-          <div class="dg-feed" id="feedWrap"></div>
+        <div class="grupo-admin-box" id="grupoAdminBox" style="display:none;">
+          <button class="btn-admin" id="btnEditarGrupo">Editar grupo <i class='bx bx-edit-alt'></i></button>
+          <button class="btn-admin" id="btnGerenciarCargos">Cargos <i class='bx bx-crown'></i></button>
         </div>
       </section>
 
-      <!-- Direita -->
-      <aside class="dg-col">
-        <div class="dg-panel-title">Membros</div>
-        <div class="dg-col-scroll">
-          <div class="dg-members">
-            <div class="dg-sec-label">Online (<span id="onlineCount">0</span>)</div>
-            <div id="membersOnline"></div>
-
-            <div class="dg-sec-label">Offline (<span id="offlineCount">0</span>)</div>
-            <div id="membersOffline"></div>
-          </div>
-        </div>
-      </aside>
-    </div>
-  </div>
-
-  <!-- Modal Editar Grupo -->
-  <div class="dg-modal" id="modalEdit" aria-hidden="true">
-    <div class="dg-modal-card" role="dialog" aria-modal="true" aria-labelledby="modalEditTitle">
-      <div class="dg-modal-head">
-        <h2 id="modalEditTitle">Editar grupo</h2>
-        <button class="dg-x" data-close="modalEdit" aria-label="Fechar">&times;</button>
-      </div>
-      <form class="dg-form" id="formEdit">
-        <label>Nome</label>
-        <input id="editNome" required>
-
-        <label>Descrição</label>
-        <textarea id="editDesc" required></textarea>
-
-        <div class="dg-row">
-          <div>
-            <label>Tipo</label>
-            <select id="editTipo">
-              <option value="Pro">Pro</option>
-              <option value="Condomínio">Condomínio</option>
-              <option value="Hobby">Hobby</option>
-            </select>
-          </div>
-          <div>
-            <label>Privacidade</label>
-            <select id="editPrivacidade">
-              <option value="Público">Público</option>
-              <option value="Privado">Privado</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="dg-row">
-          <div>
-            <label>Categoria</label>
-            <input id="editCategoria" placeholder="Ex: Reforma e Construção">
-          </div>
-          <div>
-            <label>Subcategoria</label>
-            <input id="editSubcategoria" placeholder="Ex: Elétrica">
-          </div>
-        </div>
-
-        <label>Imagem de capa</label>
-        <input type="file" id="editCapa" accept="image/*">
-
-        <div class="dg-help">PNG/JPG até 2MB. A capa aparece no topo do grupo.</div>
-
-        <div class="dg-actions-row">
-          <button type="button" class="dg-btn secondary" data-close="modalEdit">Cancelar</button>
-          <button type="submit" class="dg-btn">Salvar</button>
-        </div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Modal Cargos -->
-  <div class="dg-modal" id="modalRoles" aria-hidden="true">
-    <div class="dg-modal-card" role="dialog" aria-modal="true" aria-labelledby="modalRolesTitle">
-      <div class="dg-modal-head">
-        <h2 id="modalRolesTitle">Cargos do grupo</h2>
-        <button class="dg-x" data-close="modalRoles" aria-label="Fechar">&times;</button>
-      </div>
-
-      <div class="dg-form">
-        <div id="rolesList"></div>
-
-        <label style="margin-top:14px;">Criar novo cargo</label>
-        <div class="dg-row">
-          <input id="roleNome" placeholder="Ex: Administrador">
-          <input id="roleCor" type="color" value="#0b7768" title="Cor do cargo">
-        </div>
-        <div class="dg-help">O Dono pode criar cargos e atribuir aos membros.</div>
-
-        <div class="dg-actions-row">
-          <button class="dg-btn secondary" type="button" data-close="modalRoles">Fechar</button>
-          <button class="dg-btn" type="button" id="btnCreateRole"><i class='bx bx-plus'></i>Criar</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="dg-toast-wrap" id="toastWrap"></div>
-
-  <script>
-    // Bucket padrão para anexos (se estiver usando Supabase Storage)
-    window.__DOKE_SUPABASE_STORAGE_BUCKET__ = window.__DOKE_SUPABASE_STORAGE_BUCKET__ || 'posts';
-
-    (function(){
-      const $ = (sel, root=document) => root.querySelector(sel);
-      const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
-      const sleep = (ms)=>new Promise(r=>setTimeout(r,ms));
-
-      function toast(msg, kind='info'){
-        const wrap = $('#toastWrap');
-        if(!wrap) return;
-        const el = document.createElement('div');
-        el.className = 'dg-toast ' + (kind||'');
-        el.textContent = String(msg||'');
-        wrap.appendChild(el);
-        setTimeout(()=>{ el.style.opacity='0.0'; el.style.transition='opacity .25s'; }, 3400);
-        setTimeout(()=>{ try{ el.remove(); }catch(e){} }, 3800);
-      }
-
-      // Mata alert padrão
-      const nativeAlert = window.alert;
-      window.alert = function(msg){
-        const t = String(msg||'');
-        const kind = /erro|error|falha|inválid/i.test(t) ? 'error' : /sucesso|criado|ok|conclu/i.test(t) ? 'success' : 'info';
-        toast(t, kind);
-      };
-
-      function getSupabaseClient(){
-        return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
-      }
-
-      async function readAsDataURL(file){
-        return await new Promise((resolve, reject)=>{
-          const reader = new FileReader();
-          reader.onload = ()=>resolve(reader.result);
-          reader.onerror = ()=>reject(reader.error);
-          reader.readAsDataURL(file);
-        });
-      }
-
-      async function uploadToSupabase(file, groupId){
-        const sb = getSupabaseClient();
-        if(!sb || !sb.storage) return null;
-        const bucket = window.__DOKE_SUPABASE_STORAGE_BUCKET__ || 'posts';
-        const safeName = (file.name || 'file').replace(/[^a-z0-9._-]/gi,'_');
-        const path = `comunidades/${groupId}/posts/${Date.now()}_${safeName}`;
-        const { error } = await sb.storage.from(bucket).upload(path, file, { upsert: true });
-        if(error) throw error;
-        const { data } = sb.storage.from(bucket).getPublicUrl(path);
-        return data?.publicUrl || null;
-      }
-
-      function fmtTime(iso){
-        try{
-          const d = new Date(iso);
-          return d.toLocaleString('pt-BR', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
-        }catch(e){ return ''; }
-      }
-
-      function getGroupId(){
-        const id = new URLSearchParams(location.search).get('id');
-        return id ? String(id) : '';
-      }
-
-      function openModal(id){
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.classList.add('show');
-        el.setAttribute('aria-hidden','false');
-      }
-      function closeModal(id){
-        const el = document.getElementById(id);
-        if(!el) return;
-        el.classList.remove('show');
-        el.setAttribute('aria-hidden','true');
-      }
-
-      function roleStyle(role){
-        const c = role?.cor || 'rgba(0,0,0,0.55)';
-        return { borderColor: 'rgba(0,0,0,0.10)', background: c+'22', color: c };
-      }
-
-      async function waitForDb(){
-        for(let i=0;i<60;i++){
-          if(window.db && window.auth && window.doc && window.getDoc) return true;
-          await sleep(50);
-        }
-        return false;
-      }
-
-      // ====== Estado ======
-      const state = {
-        groupId: getGroupId(),
-        group: null,
-        user: null,
-        roles: [],
-        roleMap: new Map(),
-        members: [], // {uid, roleId, roleName, roleCor, userDoc, online}
-        isOwner: false,
-        isMod: false,
-        isMember: false,
-        view: 'feed',
-        pendingFile: null,
-      };
-
-      // ====== Render ======
-      function setView(view){
-        state.view = view;
-        $$('.dg-nav-btn[data-view]').forEach(b=>{
-          b.classList.toggle('active', b.getAttribute('data-view')===view);
-        });
-        const feedWrap = $('#feedWrap');
-        if(!feedWrap) return;
-        feedWrap.innerHTML = '';
-        if(view === 'sobre'){
-          renderAbout();
-        }else if(view === 'arquivos'){
-          renderFiles();
-        }else{
-          renderFeed();
-        }
-      }
-
-      function renderHeader(){
-        const g = state.group || {};
-        $('#groupName').textContent = g.nome || 'Grupo';
-        $('#groupTitle').textContent = g.nome || 'Grupo';
-        $('#groupDesc').textContent = g.descricao || '';
-        const metaBits = [];
-        if(g.tipo) metaBits.push(g.tipo);
-        if(g.privacidade) metaBits.push(g.privacidade);
-        if(typeof g.membrosCount === 'number') metaBits.push(`${g.membrosCount} membros`);
-        $('#groupMeta').textContent = metaBits.join(' • ');
-
-        const cover = $('#groupCover');
-        if(cover){
-          if(g.capa && String(g.capa).trim()){
-            cover.style.backgroundImage = `url('${g.capa}')`;
-          }else{
-            cover.style.backgroundImage = '';
-          }
-        }
-        const avatar = $('#groupAvatar');
-        if(avatar){
-          const url = g.capa && String(g.capa).trim() ? g.capa : '';
-          avatar.style.backgroundImage = url ? `url('${url}')` : '';
-        }
-
-        const badges = $('#groupBadges');
-        if(badges){
-          badges.innerHTML = '';
-          const priv = document.createElement('span');
-          priv.className = 'dg-pill ' + (String(g.privacidade||'').toLowerCase().includes('priv') ? 'lock':'');
-          priv.textContent = (g.privacidade || 'Público');
-          badges.appendChild(priv);
-
-          if(g.categoria){
-            const t = document.createElement('span');
-            t.className = 'dg-pill tag';
-            t.textContent = g.categoria;
-            badges.appendChild(t);
-          }
-          if(g.subcategoria){
-            const t2 = document.createElement('span');
-            t2.className = 'dg-pill tag';
-            t2.textContent = g.subcategoria;
-            badges.appendChild(t2);
-          }
-        }
-
-        // botões join/leave/edit
-        const btnJoin = $('#btnJoin');
-        const btnLeave = $('#btnLeave');
-        const btnEdit = $('#btnEdit');
-
-        if(btnJoin) btnJoin.style.display = (!state.isMember && state.user) ? 'inline-flex' : 'none';
-        if(btnLeave) btnLeave.style.display = (state.isMember && state.user) ? 'inline-flex' : 'none';
-        const canAdmin = state.isOwner || state.isMod;
-        if(btnEdit) btnEdit.style.display = canAdmin ? 'inline-flex' : 'none';
-        $('#adminArea').style.display = canAdmin ? 'block' : 'none';
-
-        // composer aparece só se membro
-        $('#composerWrap').style.display = (state.isMember && state.user) ? 'block' : 'none';
-      }
-
-      function renderMembers(){
-        const onEl = $('#membersOnline');
-        const offEl = $('#membersOffline');
-        if(!onEl || !offEl) return;
-        onEl.innerHTML = '';
-        offEl.innerHTML = '';
-        const online = [];
-        const offline = [];
-        state.members.forEach(m => (m.online ? online : offline).push(m));
-        $('#onlineCount').textContent = String(online.length);
-        $('#offlineCount').textContent = String(offline.length);
-
-        const canAssign = state.isOwner || state.isMod;
-
-        function createMemberRow(m){
-          const u = m.userDoc || {};
-          const foto = u.foto || 'https://i.pravatar.cc/150?u=' + encodeURIComponent(m.uid);
-          let nome = u.user || (u.nome ? String(u.nome).split(' ')[0] : 'Usuário');
-          const item = document.createElement('div');
-          item.className = 'dg-member';
-
-          const a = document.createElement('div');
-          a.className = 'a';
-          a.style.backgroundImage = `url('${foto}')`;
-          const dot = document.createElement('div');
-          dot.className = 'dg-dot ' + (m.online ? 'online' : '');
-          a.appendChild(dot);
-
-          const n = document.createElement('div');
-          n.className = 'n';
-          n.innerHTML = `<div class="name">${escapeHtml(nome)}</div><div class="sub">${escapeHtml(u.categoria_profissional || '')}</div>`;
-
-          // role badge / selector
-          const roleObj = state.roleMap.get(m.roleId) || { nome: m.roleName || 'Membro', cor: m.roleCor || '#6b7280' };
-          const roleName = roleObj.nome || 'Membro';
-          const roleCor = roleObj.cor || '#6b7280';
-
-          if(canAssign){
-            const sel = document.createElement('select');
-            state.roles.forEach(r=>{
-              const opt = document.createElement('option');
-              opt.value = r.id;
-              opt.textContent = r.nome;
-              sel.appendChild(opt);
-            });
-            sel.value = m.roleId || (state.roles.find(r=>r.nome==='Membro')?.id || '');
-            sel.addEventListener('change', async ()=>{
-              try{
-                await window.setDoc(window.doc(window.db, "comunidades", state.groupId, "membros", m.uid), {
-                  uid: m.uid,
-                  roleId: sel.value
-                }, { merge: true });
-                toast("Cargo atualizado", "success");
-                await loadMembers();
-              }catch(e){
-                console.error(e);
-                toast("Erro ao atualizar cargo", "error");
-              }
-            });
-            item.appendChild(sel);
-          }else{
-            const role = document.createElement('div');
-            role.className = 'role';
-            role.textContent = roleName;
-            role.style.borderColor = roleCor+'44';
-            role.style.background = roleCor+'22';
-            role.style.color = roleCor;
-            item.appendChild(role);
-          }
-
-          item.prepend(a);
-          item.appendChild(n);
-          return item;
-        }
-
-        online.forEach(m=>onEl.appendChild(createMemberRow(m)));
-        offline.forEach(m=>offEl.appendChild(createMemberRow(m)));
-      }
-
-      function renderFeed(){
-        const wrap = $('#feedWrap');
-        if(!wrap) return;
-        wrap.innerHTML = '<div style="padding:10px;color:rgba(17,24,39,0.55);font-weight:800;">Carregando posts...</div>';
-        loadPosts().catch(e=>{
-          console.error(e);
-          wrap.innerHTML = '<div style="padding:10px;color:rgba(17,24,39,0.55);font-weight:800;">Erro ao carregar posts.</div>';
-        });
-      }
-
-      function renderAbout(){
-        const g = state.group || {};
-        const wrap = $('#feedWrap');
-        if(!wrap) return;
-        wrap.innerHTML = `
-          <div style="padding:14px;">
-            <div style="font-weight:1000;color:#111827;font-size:1rem;">Sobre</div>
-            <div style="margin-top:8px;color:rgba(17,24,39,0.70);font-weight:700;white-space:pre-wrap;">${escapeHtml(g.descricao || '')}</div>
-            <div style="margin-top:14px;color:rgba(17,24,39,0.55);font-weight:800;font-size:.9rem;">
-              Criado em: ${escapeHtml(g.dataCriacao ? fmtTime(g.dataCriacao) : '—')}
-            </div>
-          </div>
-        `;
-      }
-
-      function renderFiles(){
-        const wrap = $('#feedWrap');
-        if(!wrap) return;
-        wrap.innerHTML = `
-          <div style="padding:14px;">
-            <div style="font-weight:1000;color:#111827;font-size:1rem;">Arquivos</div>
-            <div style="margin-top:8px;color:rgba(17,24,39,0.55);font-weight:800;">
-              Aqui aparecem anexos (imagens/vídeos/PDF) dos posts.
-            </div>
-          </div>
-        `;
-      }
-
-      function escapeHtml(s){
-        return String(s ?? '')
-          .replaceAll('&','&amp;')
-          .replaceAll('<','&lt;')
-          .replaceAll('>','&gt;')
-          .replaceAll('"','&quot;')
-          .replaceAll("'","&#039;");
-      }
-
-      // ====== DB Loaders ======
-      async function loadGroup(){
-        const ref = window.doc(window.db, "comunidades", state.groupId);
-        const snap = await window.getDoc(ref);
-        if(!snap.exists()){
-          toast("Grupo não encontrado", "error");
-          $('#groupName').textContent = 'Grupo não encontrado';
-          return false;
-        }
-        state.group = snap.data() || {};
-        return true;
-      }
-
-      async function ensureDefaultRolesIfNeeded(){
-        const rolesCol = window.collection(window.db, "comunidades", state.groupId, "cargos");
-        const snap = await window.getDocs(rolesCol);
-        if(!snap.empty) return;
-
-        // só o dono cria defaults automaticamente
-        if(!state.isOwner) return;
-
-        const defaults = [
-          { nome: "Dono", cor: "#0b7768", rank: 100 },
-          { nome: "Moderador", cor: "#2a5f90", rank: 70 },
-          { nome: "Membro", cor: "#6b7280", rank: 10 },
-        ];
-        for(const r of defaults){
-          await window.addDoc(rolesCol, r);
-        }
-      }
-
-      async function loadRoles(){
-        const rolesCol = window.collection(window.db, "comunidades", state.groupId, "cargos");
-        const snap = await window.getDocs(rolesCol);
-        const roles = [];
-        snap.forEach(d=>{
-          const data = d.data() || {};
-          roles.push({ id: d.id, ...data });
-        });
-        roles.sort((a,b)=>(b.rank||0)-(a.rank||0));
-        state.roles = roles;
-        state.roleMap = new Map(roles.map(r=>[r.id, r]));
-      }
-
-      async function loadMembers(){
-        // tenta subcoleção primeiro
-        const memCol = window.collection(window.db, "comunidades", state.groupId, "membros");
-        let memSnap = null;
-        try{
-          memSnap = await window.getDocs(memCol);
-        }catch(e){
-          memSnap = null;
-        }
-
-        let memberEntries = [];
-        if(memSnap && !memSnap.empty){
-          memSnap.forEach(d=>{
-            const data = d.data() || {};
-            memberEntries.push({ uid: data.uid || d.id, roleId: data.roleId || '', roleName: data.roleName || '', roleCor: data.roleCor || '' });
-          });
-        }else{
-          const arr = Array.isArray(state.group?.membros) ? state.group.membros : [];
-          memberEntries = arr.map(uid => ({ uid, roleId:'', roleName:'', roleCor:'' }));
-        }
-
-        // garante dono presente
-        const dono = state.group?.donoUid;
-        if(dono && !memberEntries.some(m=>m.uid===dono)){
-          memberEntries.unshift({ uid: dono, roleId:'', roleName:'', roleCor:'' });
-        }
-
-        // busca dados do usuário
-        const members = [];
-        for(const m of memberEntries){
-          if(!m.uid) continue;
-          try{
-            const uSnap = await window.getDoc(window.doc(window.db, "usuarios", m.uid));
-            const uData = uSnap.exists() ? (uSnap.data()||{}) : {};
-            const last = uData.ultimaVezOnline ? Date.parse(uData.ultimaVezOnline) : 0;
-            const isOnline = (String(uData.status||'').toLowerCase() === 'online') && (Date.now()-last < 10*60*1000);
-            members.push({ ...m, userDoc: uData, online: isOnline });
-          }catch(e){
-            members.push({ ...m, userDoc: {}, online: false });
-          }
-        }
-
-        // atribui role default se faltando
-        const roleMembroId = state.roles.find(r=>r.nome==="Membro")?.id || '';
-        const roleDonoId = state.roles.find(r=>r.nome==="Dono")?.id || '';
-        const roleModId = state.roles.find(r=>r.nome==="Moderador")?.id || '';
-
-        members.forEach(mem=>{
-          if(!mem.roleId){
-            if(mem.uid === state.group?.donoUid) mem.roleId = roleDonoId || roleMembroId;
-            else mem.roleId = roleMembroId;
-          }
-        });
-
-        state.members = members;
-        renderMembers();
-      }
-
-      async function loadPosts(){
-        const wrap = $('#feedWrap');
-        const postsCol = window.collection(window.db, "comunidades", state.groupId, "posts");
-        const snap = await window.getDocs(window.query(postsCol, window.limit(50)));
-        const posts = [];
-        snap.forEach(d=>{
-          const data = d.data() || {};
-          posts.push({ id: d.id, ...data });
-        });
-        posts.sort((a,b)=> (Date.parse(b.createdAt||0) - Date.parse(a.createdAt||0)));
-
-        wrap.innerHTML = '';
-        if(posts.length === 0){
-          wrap.innerHTML = '<div style="padding:10px;color:rgba(17,24,39,0.55);font-weight:800;">Ainda não há posts.</div>';
-          return;
-        }
-
-        for(const p of posts){
-          const card = document.createElement('div');
-          card.className = 'dg-post';
-
-          // user info
-          let uData = {};
-          try{
-            if(p.uid){
-              const uSnap = await window.getDoc(window.doc(window.db,"usuarios",p.uid));
-              uData = uSnap.exists()? (uSnap.data()||{}) : {};
-            }
-          }catch(e){}
-
-          const foto = uData.foto || 'https://i.pravatar.cc/150?u=' + encodeURIComponent(p.uid||p.id);
-          const nome = uData.user || (uData.nome ? String(uData.nome).split(' ')[0] : 'Usuário');
-
-          // role badge from member mapping
-          const member = state.members.find(m=>m.uid===p.uid);
-          const roleObj = member ? (state.roleMap.get(member.roleId) || {}) : {};
-          const roleName = roleObj.nome || (p.roleName||'');
-          const roleCor  = roleObj.cor  || (p.roleCor||'');
-
-          const head = document.createElement('div');
-          head.className = 'dg-post-head';
-          head.innerHTML = `
-            <div class="dg-post-userimg" style="background-image:url('${escapeHtml(foto)}')"></div>
-            <div class="dg-post-meta">
-              <div class="u">
-                <span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(nome)}</span>
-                ${roleName ? `<span class="dg-role-badge" style="border-color:${escapeHtml(roleCor||'#6b7280')}44;background:${escapeHtml(roleCor||'#6b7280')}22;color:${escapeHtml(roleCor||'#6b7280')}">${escapeHtml(roleName)}</span>` : ''}
+      <section class="grupo-pane grupo-center">
+        <div class="inner">
+          <div class="grupo-hero">
+            <div class="grupo-cover" id="grupoCover"></div>
+            <div class="grupo-hero-info">
+              <div class="grupo-hero-left">
+                <div class="grupo-avatar" id="grupoAvatar"><div class="initial">…</div></div>
+                <div class="grupo-hero-text">
+                  <h2 id="grupoNome">Carregando…</h2>
+                  <p id="grupoDesc"></p>
+                  <div class="grupo-meta">
+                    <span id="grupoTipo"></span> <span id="grupoMetaSep">·</span> <span id="grupoMembrosCount"></span>
+                  </div>
+                </div>
               </div>
-              <div class="t">${escapeHtml(p.createdAt ? fmtTime(p.createdAt) : '')}</div>
+              <div class="grupo-hero-actions">
+                <button class="btn-sec" id="btnCopiarLink"><i class='bx bx-link'></i> Copiar link</button>
+                <button class="btn-prim" id="btnAbrirArquivos"><i class='bx bx-folder-open'></i> Arquivos</button>
+              </div>
             </div>
-          `;
+          </div>
 
-          card.appendChild(head);
+          <div class="grupo-composer" id="composerBox">
+            <textarea id="postTexto" placeholder="Escreva um post para o grupo..."></textarea>
+            <div class="composer-actions">
+              <label class="btn-icon" title="Anexar">
+                <i class='bx bx-paperclip'></i>
+                <input type="file" id="postArquivo" accept="image/*,video/*,application/pdf" hidden>
+              </label>
 
-          if(p.mediaUrl){
-            const media = document.createElement('div');
-            media.className = 'dg-media';
-            if(String(p.mediaType||'').startsWith('image')){
-              media.innerHTML = `<img src="${escapeHtml(p.mediaUrl)}" loading="lazy" alt="Imagem do post">`;
-            }else if(String(p.mediaType||'').startsWith('video')){
-              media.innerHTML = `<video src="${escapeHtml(p.mediaUrl)}" controls></video>`;
-            }else{
-              media.innerHTML = `<a href="${escapeHtml(p.mediaUrl)}" target="_blank" rel="noopener">Abrir arquivo</a>`;
-            }
-            card.appendChild(media);
-          }
+              <div class="composer-hint"><i class='bx bx-shield-quarter'></i> Respeite as regras do grupo.</div>
 
-          if(p.texto){
-            const body = document.createElement('div');
-            body.className = 'dg-post-body';
-            body.textContent = String(p.texto);
-            card.appendChild(body);
-          }
+              <button class="btn-send" id="btnEnviarPost" title="Postar"><i class='bx bx-send'></i></button>
+            </div>
+          </div>
 
-          wrap.appendChild(card);
-        }
-      }
+          <div class="grupo-feed" id="grupoFeed">
+            <div class="empty-state" id="feedEmpty" style="display:none;">
+              <h3>Sem posts ainda</h3>
+              <p>Seja o primeiro a postar no grupo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      async function joinGroup(){
-        if(!state.user){ toast("Faça login para entrar", "error"); return; }
-        const gRef = window.doc(window.db, "comunidades", state.groupId);
-        const uid = state.user.uid;
+      <section class="grupo-pane grupo-members">
+        <div class="membros-head">
+          <h3>Membros</h3>
+          <small id="membrosSub">—</small>
+        </div>
 
-        try{
-          // adiciona uid no array membros (se existir)
-          const gSnap = await window.getDoc(gRef);
-          if(!gSnap.exists()) return;
-          const g = gSnap.data() || {};
-          const membros = Array.isArray(g.membros) ? g.membros : [];
-          if(!membros.includes(uid)){
-            membros.push(uid);
-            await window.updateDoc(gRef, { membros, membrosCount: membros.length });
-          }
+        <div class="membros-section">
+          <div class="membros-title">ONLINE (<span id="countOnline">0</span>)</div>
+          <div class="membros-list" id="listaOnline"></div>
+        </div>
 
-          // cria doc em subcoleção membros
-          const roleMembroId = state.roles.find(r=>r.nome==="Membro")?.id || '';
-          await window.setDoc(window.doc(window.db, "comunidades", state.groupId, "membros", uid), {
-            uid, roleId: roleMembroId
-          }, { merge: true });
+        <div class="membros-section">
+          <div class="membros-title">OFFLINE (<span id="countOffline">0</span>)</div>
+          <div class="membros-list" id="listaOffline"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+</main>
 
-          toast("Você entrou no grupo", "success");
-          await refreshAll();
-        }catch(e){
-          console.error(e);
-          toast("Erro ao entrar no grupo", "error");
-        }
-      }
 
-      async function leaveGroup(){
-        if(!state.user){ return; }
-        const uid = state.user.uid;
-        const gRef = window.doc(window.db, "comunidades", state.groupId);
-        try{
-          const gSnap = await window.getDoc(gRef);
-          if(!gSnap.exists()) return;
-          const g = gSnap.data() || {};
-          const membros = Array.isArray(g.membros) ? g.membros : [];
-          const next = membros.filter(x=>x!==uid);
-          await window.updateDoc(gRef, { membros: next, membrosCount: next.length });
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="comunidade.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Grupos</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
 
-          // remove membro doc (se não for dono)
-          if(uid !== g.donoUid){
-            try{ await window.deleteDoc(window.doc(window.db, "comunidades", state.groupId, "membros", uid)); }catch(e){}
-          }
+    <div id="modalCriarComm" class="modal-overlay">
+        <div class="modal-card">
+            <button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">&times;</button>
+            <h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
+            <form onsubmit="criarNovaComunidade(event)">
+                <label class="form-label">Nome do Grupo</label>
+                <input type="text" id="commNome" class="form-input" placeholder="Ex: Eletricistas Unidos" required>
+                
+                <label class="form-label">Descrição</label>
+                <textarea id="commDesc" class="form-textarea" placeholder="Sobre o que é este grupo?" required></textarea>
+                
+                <label class="form-label">Tipo de Comunidade</label>
+                <select id="commTipo" class="form-select">
+                    <option value="Pro">Profissional (Networking)</option>
+                    <option value="Condomínio">Condomínio / Vizinhos</option>
+                    <option value="Hobby">Hobby / Interesse</option>
+                </select>
 
-          toast("Você saiu do grupo", "success");
-          await refreshAll();
-        }catch(e){
-          console.error(e);
-          toast("Erro ao sair", "error");
-        }
-      }
+                <label class="form-label">Imagem de Capa (Opcional)</label>
+                <input type="file" id="commFoto" class="form-input" accept="image/*">
 
-      async function createPost(){
-        if(!state.user || !state.isMember){
-          toast("Entre no grupo para postar", "error");
-          return;
-        }
-        const texto = $('#postText').value.trim();
-        const file = state.pendingFile;
+                <button type="submit" class="btn-submit-modal">Criar Comunidade</button>
+            </form>
+        </div>
+    </div>
 
-        if(!texto && !file){
-          toast("Escreva algo ou anexe um arquivo", "info");
-          return;
-        }
-
-        $('#btnSend').disabled = true;
-
-        try{
-          let mediaUrl = '';
-          let mediaType = '';
-
-          if(file){
-            mediaType = file.type || '';
-            // tenta upload supabase, senão base64 (só imagens pequenas)
-            try{
-              const url = await uploadToSupabase(file, state.groupId);
-              if(url) mediaUrl = url;
-            }catch(e){
-              console.warn("Upload supabase falhou:", e);
-              if((file.type||'').startsWith('image/') && file.size <= 2*1024*1024){
-                mediaUrl = await readAsDataURL(file);
-              }else{
-                throw new Error("Falha ao enviar arquivo. Tente novamente ou use uma imagem menor.");
-              }
-            }
-          }
-
-          const post = {
-            uid: state.user.uid,
-            texto: texto || '',
-            mediaUrl: mediaUrl || '',
-            mediaType: mediaType || '',
-            createdAt: new Date().toISOString()
-          };
-
-          await window.addDoc(window.collection(window.db, "comunidades", state.groupId, "posts"), post);
-
-          $('#postText').value = '';
-          clearAttachment();
-          toast("Post enviado!", "success");
-          await loadPosts();
-        }catch(e){
-          console.error(e);
-          toast(e?.message || "Erro ao postar", "error");
-        }finally{
-          $('#btnSend').disabled = false;
-        }
-      }
-
-      function clearAttachment(){
-        state.pendingFile = null;
-        $('#postFile').value = '';
-        $('#attachPreview').style.display = 'none';
-        $('#attachName').textContent = '';
-      }
-
-      async function refreshAll(){
-        if(!state.groupId){
-          toast("Faltou o ID do grupo na URL", "error");
-          return;
-        }
-        const ok = await loadGroup();
-        if(!ok) return;
-
-        // owner/mod/member flags
-        state.isOwner = !!(state.user && state.group && state.user.uid === state.group.donoUid);
-        state.isMember = !!(state.user && Array.isArray(state.group.membros) && state.group.membros.includes(state.user.uid));
-
-        await ensureDefaultRolesIfNeeded();
-        await loadRoles();
-
-        // mod check: se tiver doc membro e role=Moderador
-        state.isMod = false;
-        if(state.user){
-          try{
-            const ms = await window.getDoc(window.doc(window.db, "comunidades", state.groupId, "membros", state.user.uid));
-            if(ms.exists()){
-              const md = ms.data()||{};
-              const role = state.roleMap.get(md.roleId);
-              if(role && String(role.nome).toLowerCase().includes('moder')) state.isMod = true;
-            }
-          }catch(e){}
-        }
-
-        // se for dono, forçar como membro
-        if(state.isOwner) state.isMember = true;
-
-        // UI
-        renderHeader();
-        await loadMembers();
-        setView(state.view);
-      }
-
-      // ====== UI Events ======
-      function bind(){
-        $('#btnBack').addEventListener('click', ()=> history.length>1 ? history.back() : (location.href='comunidade.html'));
-
-        $$('.dg-nav-btn[data-view]').forEach(btn=>{
-          btn.addEventListener('click', ()=> setView(btn.getAttribute('data-view')));
-        });
-
-        // ações admin
-        $$('.dg-nav-btn[data-action]').forEach(btn=>{
-          btn.addEventListener('click', ()=>{
-            const act = btn.getAttribute('data-action');
-            if(act==='edit') openModal('modalEdit');
-            if(act==='roles') openModal('modalRoles');
-          });
-        });
-
-        $('#btnEdit').addEventListener('click', ()=> openModal('modalEdit'));
-        $('#btnJoin').addEventListener('click', joinGroup);
-        $('#btnLeave').addEventListener('click', leaveGroup);
-
-        // modal close handlers
-        $$('.dg-modal').forEach(modal=>{
-          modal.addEventListener('click', (e)=>{
-            if(e.target === modal) closeModal(modal.id);
-          });
-        });
-        $$('[data-close]').forEach(btn=>{
-          btn.addEventListener('click', ()=> closeModal(btn.getAttribute('data-close')));
-        });
-        document.addEventListener('keydown', (e)=>{
-          if(e.key === 'Escape'){
-            ['modalEdit','modalRoles'].forEach(closeModal);
-          }
-        });
-
-        // composer file
-        $('#btnAttach').addEventListener('click', ()=> $('#postFile').click());
-        $('#postFile').addEventListener('change', ()=>{
-          const f = $('#postFile').files && $('#postFile').files[0];
-          if(!f) return;
-          state.pendingFile = f;
-          $('#attachName').textContent = f.name;
-          $('#attachPreview').style.display = 'flex';
-        });
-        $('#attachRemove').addEventListener('click', clearAttachment);
-        $('#btnSend').addEventListener('click', createPost);
-        $('#postText').addEventListener('keydown', (e)=>{
-          if(e.key === 'Enter' && !e.shiftKey){
-            e.preventDefault();
-            createPost();
-          }
-        });
-
-        // edit group
-        $('#formEdit').addEventListener('submit', async (e)=>{
-          e.preventDefault();
-          if(!(state.isOwner || state.isMod)){
-            toast("Sem permissão", "error");
-            return;
-          }
-          const patch = {
-            nome: $('#editNome').value.trim(),
-            descricao: $('#editDesc').value.trim(),
-            tipo: $('#editTipo').value,
-            privacidade: $('#editPrivacidade').value,
-            categoria: $('#editCategoria').value.trim(),
-            subcategoria: $('#editSubcategoria').value.trim(),
-          };
-
-          // capa upload (base64 simples se não tiver storage)
-          const file = $('#editCapa').files && $('#editCapa').files[0];
-          if(file){
-            if(file.size > 2*1024*1024){ toast("Imagem muito grande (máx 2MB)", "error"); return; }
-            try{
-              let url = null;
-              try{ url = await uploadToSupabase(file, state.groupId); }catch(e){}
-              if(!url) url = await readAsDataURL(file);
-              patch.capa = url;
-            }catch(e){
-              toast("Erro ao enviar capa", "error");
-              return;
-            }
-          }
-
-          try{
-            await window.updateDoc(window.doc(window.db, "comunidades", state.groupId), patch);
-            toast("Grupo atualizado!", "success");
-            closeModal('modalEdit');
-            await refreshAll();
-          }catch(err){
-            console.error(err);
-            toast("Erro ao salvar", "error");
-          }
-        });
-
-        // roles
-        $('#btnCreateRole').addEventListener('click', async ()=>{
-          if(!state.isOwner){ toast("Só o Dono cria cargos", "error"); return; }
-          const nome = $('#roleNome').value.trim();
-          const cor = $('#roleCor').value || '#0b7768';
-          if(!nome){ toast("Informe o nome do cargo", "info"); return; }
-          try{
-            await window.addDoc(window.collection(window.db, "comunidades", state.groupId, "cargos"), {
-              nome, cor, rank: 20
+    <script>
+        window.abrirModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'flex'; }
+        window.fecharModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'none'; }
+        
+        window.filtrarComunidadesTela = function(termo) {
+            const cards = document.querySelectorAll('.card-comm');
+            cards.forEach(card => {
+                const titulo = card.querySelector('.card-title').innerText.toLowerCase();
+                card.style.display = titulo.includes(termo.toLowerCase()) ? 'flex' : 'none';
             });
-            $('#roleNome').value = '';
-            toast("Cargo criado!", "success");
-            await loadRoles();
-            await loadMembers();
-            renderRolesList();
-          }catch(e){
-            console.error(e);
-            toast("Erro ao criar cargo", "error");
-          }
-        });
+        }
+
+        window.filtrarComunidadesTipo = function(tipo, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            
+            const cards = document.querySelectorAll('.card-comm');
+            cards.forEach(card => {
+                const tag = card.getAttribute('data-tipo');
+                if(tipo === 'todos' || tag === tipo) card.style.display = 'flex';
+                else card.style.display = 'none';
+            });
+        }
+
+        // Inicia carregamento
+        setTimeout(() => {
+            if(window.carregarDadosComunidade) window.carregarDadosComunidade();
+        }, 1000);
+    </script>
+
+<script>
+(function(){
+  // Toast simples (sem alert)
+  function toast(title, msg){
+    try{
+      const t = document.createElement('div');
+      t.style.position='fixed';
+      t.style.right='16px';
+      t.style.bottom='16px';
+      t.style.zIndex='99999';
+      t.style.maxWidth='360px';
+      t.style.background='#111827';
+      t.style.color='#fff';
+      t.style.padding='12px 14px';
+      t.style.borderRadius='14px';
+      t.style.boxShadow='0 20px 40px rgba(0,0,0,0.35)';
+      t.innerHTML = '<div style="font-weight:900; margin-bottom:4px;">'+(title||'')+'</div><div style="opacity:0.9; font-weight:700; font-size:0.92rem;">'+(msg||'')+'</div>';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .25s'; }, 2500);
+      setTimeout(()=>{ t.remove(); }, 2850);
+    }catch(e){}
+  }
+
+  const $ = (id)=>document.getElementById(id);
+  const qs = (k)=>new URLSearchParams(window.location.search).get(k);
+
+  async function waitGlobals(){
+    const t0 = Date.now();
+    while(Date.now()-t0 < 8000){
+      if(window.db && window.doc && window.getDoc && window.auth) return true;
+      await new Promise(r=>setTimeout(r, 80));
+    }
+    return false;
+  }
+
+  function setCover(url){
+    const el = $('grupoCover');
+    if(!el) return;
+    if(url){
+      el.style.backgroundImage = 'url('+url+')';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+    }else{
+      // fica o gradiente padrão do CSS
+      el.style.backgroundImage = '';
+    }
+  }
+
+  function setAvatar(url, initial){
+    const box = $('grupoAvatar');
+    if(!box) return;
+    if(url){
+      box.innerHTML = '<img src="'+url+'" alt="capa" onerror="this.remove();">';
+    }else{
+      box.innerHTML = '<div class="initial">'+(initial||'D')+'</div>';
+    }
+  }
+
+  function safeText(v){ return (v==null?'':String(v)); }
+
+  async function getUserDoc(uid){
+    try{
+      const ref = window.doc(window.db, "usuarios", uid);
+      const snap = await window.getDoc(ref);
+      if(!snap.exists()) return null;
+      return snap.data();
+    }catch(e){ return null; }
+  }
+
+  function pickUserName(u){
+    return u?.user || u?.usuario || u?.nome || u?.name || u?.apelido || 'Usuário';
+  }
+  function pickUserPhoto(u){
+    return u?.foto || u?.foto_url || u?.photoURL || u?.avatar || u?.imagem || '';
+  }
+
+  async function renderMembersFallback(grupo, uidAtual){
+    const membros = Array.isArray(grupo?.membros) ? grupo.membros : [];
+    const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
+
+    // online: só o usuário atual (fallback)
+    const online = uidAtual ? [uidAtual] : [];
+    const offline = membros.filter(x=>!online.includes(x));
+
+    async function renderList(targetId, uids, badgeFn){
+      const box = $(targetId);
+      if(!box) return;
+      box.innerHTML = '';
+      for(const uid of uids){
+        const udoc = await getUserDoc(uid);
+        const nome = pickUserName(udoc);
+        const foto = pickUserPhoto(udoc);
+        const initial = (nome?.trim()?.[0] || 'U').toUpperCase();
+        const badge = badgeFn(uid);
+        const badgeClass = badge === 'Dono' ? 'membro-badge dono' : 'membro-badge';
+        const item = document.createElement('div');
+        item.className='membro-item';
+        item.innerHTML = `
+          <div class="membro-left">
+            <div class="membro-avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
+            <div class="membro-name">${safeText(nome)}</div>
+          </div>
+          <div class="${badgeClass}">${badge}</div>
+        `;
+        box.appendChild(item);
       }
+    }
 
-      function renderRolesList(){
-        const wrap = $('#rolesList');
-        if(!wrap) return;
-        wrap.innerHTML = '';
-        if(state.roles.length === 0){
-          wrap.innerHTML = '<div class="dg-help">Nenhum cargo ainda.</div>';
-          return;
-        }
-        state.roles.forEach(r=>{
-          const row = document.createElement('div');
-          row.style.display = 'flex';
-          row.style.gap = '10px';
-          row.style.alignItems = 'center';
-          row.style.padding = '10px 0';
-          row.style.borderBottom = '1px solid rgba(0,0,0,0.06)';
-          row.innerHTML = `
-            <div style="width:14px;height:14px;border-radius:999px;background:${escapeHtml(r.cor||'#6b7280')};"></div>
-            <div style="font-weight:900;color:#111827;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.nome||'Cargo')}</div>
-            ${state.isOwner && r.nome!=="Dono" && r.nome!=="Membro" && r.nome!=="Moderador" ? `<button class="dg-btn secondary" style="padding:8px 10px;border-radius:12px;" data-del-role="${escapeHtml(r.id)}"><i class='bx bx-trash'></i></button>` : ''}
-          `;
-          wrap.appendChild(row);
-        });
+    const badgeFn = (uid)=> (uid && donoUid && uid===donoUid) ? 'Dono' : 'Membro';
 
-        // delete role
-        $$('[data-del-role]', wrap).forEach(btn=>{
-          btn.addEventListener('click', async ()=>{
-            if(!state.isOwner) return;
-            const id = btn.getAttribute('data-del-role');
-            try{
-              await window.deleteDoc(window.doc(window.db, "comunidades", state.groupId, "cargos", id));
-              toast("Cargo removido", "success");
-              await loadRoles();
-              await loadMembers();
-              renderRolesList();
-            }catch(e){
-              console.error(e);
-              toast("Erro ao remover cargo", "error");
-            }
-          });
-        });
+    $('countOnline').textContent = online.length;
+    $('countOffline').textContent = offline.length;
+    $('membrosSub').textContent = (grupo?.membrosCount || membros.length || 0) + ' no total';
+
+    await renderList('listaOnline', online, badgeFn);
+    await renderList('listaOffline', offline, badgeFn);
+  }
+
+  async function supa(){
+    return (typeof window.getSupabaseClient === "function") ? window.getSupabaseClient() : window.supabase;
+  }
+
+  async function tableExists(client, table){
+    try{
+      const { error } = await client.from(table).select('*').limit(1);
+      if(!error) return true;
+      // PGRST205 = table missing
+      if(String(error?.code||'') === 'PGRST205') return false;
+      return true; // outras falhas (RLS) -> existe
+    }catch(e){ return false; }
+  }
+
+  async function loadPosts(grupoId){
+    const client = await supa();
+    const feed = $('grupoFeed');
+    const empty = $('feedEmpty');
+    if(!feed || !client) return;
+
+    const idCols = ['comunidade_id','comunidadeId','comunidade','grupo_id','grupoId'];
+    const orderCols = ['criado_em','created_at','criadoEm','data','timestamp'];
+
+    let data = null, lastErr = null, usedIdCol = null;
+    for(const col of idCols){
+      const q = client.from('comunidade_posts').select('*').eq(col, grupoId).limit(50);
+      // tenta ordenar pelo melhor campo disponível
+      let resp;
+      for(const ocol of orderCols){
+        resp = await q.order(ocol, { ascending:false });
+        if(!resp.error) break;
       }
-
-      async function main(){
-        if(!state.groupId){
-          toast("URL sem id do grupo (ex: grupo.html?id=XYZ)", "error");
-          $('#groupName').textContent = 'Grupo inválido';
-          return;
-        }
-
-        const ok = await waitForDb();
-        if(!ok){
-          toast("Falha ao iniciar banco", "error");
-          return;
-        }
-
-        bind();
-
-        // auth
-        try{
-          onAuthStateChanged(window.auth, async (user)=>{
-            state.user = user || null;
-            if(user){
-              // usa o seu script central (marca online)
-              if(window.marcarComoOnline) window.marcarComoOnline(user.uid);
-            }
-            await refreshAll();
-            renderRolesList();
-            // preenche modal edit
-            if(state.group){
-              $('#editNome').value = state.group.nome || '';
-              $('#editDesc').value = state.group.descricao || '';
-              $('#editTipo').value = state.group.tipo || 'Pro';
-              $('#editPrivacidade').value = state.group.privacidade || 'Público';
-              $('#editCategoria').value = state.group.categoria || '';
-              $('#editSubcategoria').value = state.group.subcategoria || '';
-            }
-          });
-        }catch(e){
-          // fallback se não existir onAuthStateChanged
-          state.user = window.auth?.currentUser || null;
-          await refreshAll();
-          renderRolesList();
-        }
-
-        // presença offline (melhor esforço)
-        window.addEventListener('beforeunload', ()=>{
-          const u = state.user;
-          if(u && window.marcarComoOffline) window.marcarComoOffline(u.uid);
-        });
-
-        // atualiza roles list quando abrir modal
-        $('#modalRoles').addEventListener('transitionend', renderRolesList);
-        $('#btnEdit').addEventListener('click', ()=>{
-          if(state.group){
-            $('#editNome').value = state.group.nome || '';
-            $('#editDesc').value = state.group.descricao || '';
-            $('#editTipo').value = state.group.tipo || 'Pro';
-            $('#editPrivacidade').value = state.group.privacidade || 'Público';
-            $('#editCategoria').value = state.group.categoria || '';
-            $('#editSubcategoria').value = state.group.subcategoria || '';
-          }
-        });
+      if(resp && !resp.error){
+        data = resp.data || [];
+        usedIdCol = col;
+        break;
       }
+      lastErr = resp?.error || lastErr;
+    }
 
-      window.addEventListener('load', main);
-    })();
-  </script>
+    // Se não conseguiu filtrar por colunas conhecidas, tenta buscar sem filtro (não ideal) e filtrar local por comunidade_id/… se existir
+    if(data === null){
+      const resp = await client.from('comunidade_posts').select('*').limit(50);
+      if(!resp.error){
+        const all = resp.data || [];
+        data = all.filter(p=>{
+          return (p.comunidade_id===grupoId || p.comunidadeId===grupoId || p.grupo_id===grupoId || p.grupoId===grupoId || p.comunidade===grupoId);
+        });
+      }else{
+        lastErr = resp.error;
+        data = [];
+      }
+    }
+
+    // Render
+    // Remove cards antigos (mantém empty-state)
+    Array.from(feed.querySelectorAll('.post-card')).forEach(n=>n.remove());
+
+    if(!data || data.length===0){
+      if(empty) empty.style.display='block';
+      return;
+    }
+    if(empty) empty.style.display='none';
+
+    for(const p of data){
+      const uid = p.user_uid || p.uid || p.autor_uid || p.autor || p.userId || null;
+      const udoc = uid ? await getUserDoc(uid) : null;
+      const nome = pickUserName(udoc);
+      const foto = pickUserPhoto(udoc);
+      const initial = (nome?.trim()?.[0] || 'U').toUpperCase();
+
+      const texto = p.texto || p.conteudo || p.mensagem || p.content || p.descricao || '';
+      const created = p.criado_em || p.created_at || p.data || p.timestamp || null;
+      const time = created ? new Date(created).toLocaleString('pt-BR') : '';
+
+      const media = p.midia || p.imagem || p.imagem_url || p.media_url || p.arquivo_url || p.url || '';
+      const mediaType = (p.tipo || p.media_type || '').toString().toLowerCase();
+
+      const card = document.createElement('div');
+      card.className='post-card';
+      card.innerHTML = `
+        <div class="post-head">
+          <div class="post-user">
+            <div class="avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
+            <div class="name">${safeText(nome)}</div>
+          </div>
+          <div class="post-time">${safeText(time)}</div>
+        </div>
+        <div class="post-body">
+          ${safeText(texto)}
+          ${media ? `
+            <div class="post-media">
+              ${(mediaType.includes('video') || (String(media).match(/\.mp4|\.webm|\.ogg/i))) 
+                ? `<video src="${media}" controls></video>`
+                : `<img src="${media}" onerror="this.style.display='none'">`}
+            </div>
+          ` : ``}
+        </div>
+      `;
+      feed.appendChild(card);
+    }
+  }
+
+  async function tryInsertPost(grupoId, uid, texto){
+    const client = await supa();
+    if(!client) throw new Error('Supabase não disponível');
+    // tenta vários formatos de schema
+    const candidates = [
+      { comunidade_id: grupoId, user_uid: uid, texto: texto, criado_em: new Date().toISOString() },
+      { comunidade_id: grupoId, uid: uid, texto: texto, created_at: new Date().toISOString() },
+      { comunidadeId: grupoId, uid: uid, conteudo: texto, created_at: new Date().toISOString() },
+      { grupo_id: grupoId, uid: uid, conteudo: texto, created_at: new Date().toISOString() },
+      { grupoId: grupoId, user_uid: uid, mensagem: texto, data: new Date().toISOString() },
+    ];
+    let lastErr = null;
+    for(const obj of candidates){
+      const { error } = await client.from('comunidade_posts').insert(obj);
+      if(!error) return true;
+      lastErr = error;
+    }
+    throw lastErr || new Error('Falha ao postar');
+  }
+
+  async function init(){
+    const ok = await waitGlobals();
+    if(!ok){
+      toast('Erro', 'Dependências do site não carregaram.');
+      return;
+    }
+
+    const grupoId = qs('id');
+    if(!grupoId){
+      toast('Grupo não encontrado', 'URL sem parâmetro id.');
+      return;
+    }
+
+    // Buscar grupo (coleção comunidades via compat)
+    let grupo = null;
+    try{
+      const ref = window.doc(window.db, "comunidades", grupoId);
+      const snap = await window.getDoc(ref);
+      if(!snap.exists()){
+        toast('Grupo não existe', 'ID não encontrado.');
+        return;
+      }
+      grupo = snap.data();
+    }catch(e){
+      console.error(e);
+      toast('Erro', 'Falha ao buscar o grupo.');
+      return;
+    }
+
+    // Preencher UI
+    const nome = grupo?.nome || 'Grupo';
+    const tipo = grupo?.tipo || '';
+    const desc = grupo?.descricao || '';
+    const capa = grupo?.capa || '';
+    const membrosCount = grupo?.membrosCount || (Array.isArray(grupo?.membros)?grupo.membros.length:0);
+
+    $('grupoNome').textContent = nome;
+    $('grupoTipo').textContent = tipo ? tipo : '';
+    $('grupoDesc').textContent = desc ? desc : '';
+    $('grupoMembrosCount').textContent = membrosCount ? (membrosCount + ' membros') : '';
+    setCover(capa);
+    setAvatar(capa, (nome.trim()[0]||'D').toUpperCase());
+
+    // user atual
+    const uidAtual = window.auth?.currentUser?.uid || null;
+    const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
+    const souDono = uidAtual && donoUid && uidAtual === donoUid;
+
+    // admin box
+    if(souDono){
+      $('grupoAdminBox').style.display = 'block';
+      $('btnEditarGrupo').addEventListener('click', ()=>toast('Em breve', 'Tela de edição do grupo será aberta aqui.'));
+      $('btnGerenciarCargos').addEventListener('click', ()=>toast('Em breve', 'Gerenciamento de cargos será aberto aqui.'));
+    }
+
+    // copiar link
+    $('btnCopiarLink').addEventListener('click', async ()=>{
+      try{
+        await navigator.clipboard.writeText(window.location.href);
+        toast('Link copiado', 'Agora é só compartilhar.');
+      }catch(e){
+        toast('Não foi possível copiar', 'Seu navegador bloqueou a cópia.');
+      }
+    });
+
+    // tabs
+    document.querySelectorAll('.grupo-channel').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.grupo-channel').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.dataset.tab;
+        if(tab==='arquivos'){ toast('Arquivos', 'Área de arquivos será conectada ao Storage.'); }
+        if(tab==='sobre'){ toast('Sobre', desc || 'Sem descrição.'); }
+      });
+    });
+    $('btnAbrirArquivos').addEventListener('click', ()=>toast('Arquivos', 'Área de arquivos será conectada ao Storage.'));
+
+    // members (fallback se tabelas não existem)
+    await renderMembersFallback(grupo, uidAtual);
+
+    // posts
+    await loadPosts(grupoId);
+
+    // postar
+    $('btnEnviarPost').addEventListener('click', async ()=>{
+      const txt = $('postTexto').value.trim();
+      if(!txt){
+        toast('Escreva algo', 'Digite uma mensagem para postar.');
+        return;
+      }
+      const uid = window.auth?.currentUser?.uid || null;
+      if(!uid){
+        toast('Faça login', 'Você precisa estar logado para postar.');
+        return;
+      }
+      $('btnEnviarPost').disabled = true;
+      try{
+        await tryInsertPost(grupoId, uid, txt);
+        $('postTexto').value='';
+        await loadPosts(grupoId);
+        toast('Postado', 'Seu post foi enviado.');
+      }catch(e){
+        console.error(e);
+        toast('Falha ao postar', 'Sua tabela comunidade_posts tem colunas diferentes. Me envie print das colunas que eu ajusto automático.');
+      }finally{
+        $('btnEnviarPost').disabled = false;
+      }
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', init);
+})();
+</script>
+
 </body>
 </html>

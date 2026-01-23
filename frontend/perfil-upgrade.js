@@ -33,8 +33,7 @@
     if(!iso) return "";
     const d = new Date(iso);
     if(Number.isNaN(d.getTime())) return "";
-    const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
-    return `${meses[d.getMonth()]} ${d.getFullYear()}`;
+    return d.toLocaleDateString('pt-BR');
   };
 
   // -----------------------------
@@ -615,40 +614,69 @@ function hideIf(selector, cond){
     const { data, error } = await client
       .from("avaliacoes")
       .select("*")
-      .eq("profissional_id", profId)
-      .order("created_at", { ascending:false })
+      .eq("profUid", profId)
+      .order("data", { ascending:false })
       .limit(80);
     if(error){
-      if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Sem avaliações ainda.</div>`;
-        return;
-      }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
+      box.innerHTML = `<div class="dp-empty">Erro ao carregar avaliações.</div>`;
       return;
     }
     if(!data?.length){
       box.innerHTML = `<div class="dp-empty">Sem avaliações ainda.</div>`;
       return;
     }
-    const avg = data.reduce((a,x)=>a+(x.nota||0),0)/data.length;
+    const avg = data.reduce((a,x)=>a+(x.media||0),0)/data.length;
     const stars = "★★★★★".slice(0, Math.round(avg)) + "☆☆☆☆☆".slice(0, 5-Math.round(avg));
     box.innerHTML = `
       <div class="dp-empty" style="border-style:solid; border-color:rgba(0,0,0,.06);">
-        <b>Média:</b> ${avg.toFixed(1)} • ${stars} <small>(${data.length})</small>
+        <b>Média:</b> ${avg.toFixed(1)} • ${stars} <small>(${data.length} avaliações)</small>
       </div>
-      <div id="dpAvalList" style="display:grid; gap:10px; margin-top:12px;"></div>
+      <div id="dpAvalList" style="display:grid; gap:20px; margin-top:12px;"></div>
     `;
     const list = $("#dpAvalList");
     data.forEach(a=>{
       const el = document.createElement("div");
-      el.className = "dp-item";
+      el.className = "dp-review-card";
+      el.style.cssText = "background: white; border-radius: 12px; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);";
+      
+      const starsHtml = "★".repeat(Math.round(a.media || 0)) + "☆".repeat(5 - Math.round(a.media || 0));
+      
+      let detailsHtml = "";
+      if(a.detalhes){
+        const criterios = [
+          { id: 'pontualidade', label: 'Pontualidade' },
+          { id: 'profissionalismo', label: 'Profissionalismo' },
+          { id: 'qualidade', label: 'Qualidade' },
+          { id: 'preco', label: 'Preço / Valor' },
+          { id: 'atendimento', label: 'Atendimento' }
+        ];
+        criterios.forEach(c => {
+          const det = a.detalhes[c.id];
+          if(det && det.nota > 0){
+            detailsHtml += `<div style="margin-top: 10px; padding: 8px; background: #f8f9fa; border-radius: 8px;">
+              <strong>${c.label}:</strong> ${"★".repeat(det.nota)}${"☆".repeat(5-det.nota)}`;
+            if(det.comentario){
+              detailsHtml += `<br><small>${escapeHtml(det.comentario)}</small>`;
+            }
+            detailsHtml += `</div>`;
+          }
+        });
+      }
+      
       el.innerHTML = `
-        <div class="dp-itemBody">
-          <b>${"★".repeat(a.nota || 0)}${"☆".repeat(5-(a.nota||0))}</b>
-          <p>${escapeHtml(a.comentario || "")}</p>
-          <p><small>${fmtDateShort(a.created_at)}</small></p>
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
+          <img src="${a.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
+          <div>
+            <strong>${escapeHtml(a.clienteNome || "Anônimo")}</strong>
+            <div style="font-size: 0.8rem; color: #666;">${fmtDateShort(a.data)}</div>
+          </div>
         </div>
+        <div style="margin-bottom: 10px;">
+          <strong>Avaliação Geral: ${starsHtml} (${a.media})</strong>
+        </div>
+        ${a.comentarioGeral ? `<div style="margin-bottom: 15px; padding: 12px; background: #e8f5e9; border-radius: 8px;"><strong>Comentário Geral:</strong><br>${escapeHtml(a.comentarioGeral)}</div>` : ""}
+        ${detailsHtml ? `<div><strong>Detalhes por Critério:</strong>${detailsHtml}</div>` : ""}
       `;
       list.appendChild(el);
     });

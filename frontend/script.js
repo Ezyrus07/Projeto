@@ -1,6 +1,19 @@
 ﻿// ============================================================
 // 1. IMPORTAÇÕES E CONFIGURAÇÃO
 // ============================================================
+
+// [DOKE PATCH] Guards globais para evitar quebra em páginas diferentes + navegação de grupos
+window.carregarProfissionaisDestaque ||= function(){};
+window.carregarProfissionaisNovos ||= function(){};
+window.carregarDestaques ||= function(){};
+window.carregarConteudoHome ||= function(){};
+window.abrirGrupo = function(grupoId){
+  try{
+    if(!grupoId) return;
+    window.location.href = "grupo.html?id=" + encodeURIComponent(grupoId);
+  }catch(e){}
+};
+
 // [PATCH] import ESM removido; usar Supabase global (supabase-init.js)
 // [PATCH] import ESM removido; usar Supabase global (supabase-init.js)
 // [PATCH] import ESM removido; usar Supabase global (supabase-init.js)
@@ -2969,7 +2982,7 @@ window.criarNovaComunidade = async function(e) {
     btn.disabled = true;
 
     try {
-        let capaUrl = "https://placehold.co/600x200?text=Comunidade"; // Imagem padrão
+        let capaUrl = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22400%22%20viewBox%3D%220%200%201200%20400%22%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232a5f90%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237b2cbf%22/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%221200%22%20height%3D%22400%22%20fill%3D%22url%28%23g%29%22/%3E%0A%3C/svg%3E"; // Capa padrão (gradiente Doke, sem depender de links externos)
 
         // Se o usuário selecionou foto, converte para Base64
         if (fileInput.files && fileInput.files[0]) {
@@ -3011,343 +3024,185 @@ window.criarNovaComunidade = async function(e) {
 
 // 2. LISTAR TODAS AS COMUNIDADES (GERAL)
 async function carregarComunidadesGerais() {
-    const container = document.getElementById('listaComunidadesGeral');
-    if(!container) return;
+    const container = document.getElementById('listaComunidades');
+    if (!container) return;
+
+    container.innerHTML = `<div style="padding:18px; color:#666;">Carregando comunidades...</div>`;
+
+    const fallbackCover = () => `linear-gradient(120deg, var(--cor2), #7b3fa0)`;
+
+    const renderCard = (comm) => {
+        const id = comm.id || comm.comunidade_id || comm.uuid || comm._id;
+        const nome = comm.nome || comm.titulo || "Comunidade";
+        const descricao = comm.descricao || "";
+        const tipo = comm.tipo || comm.tipo_comunidade || "Grupo";
+        const privacidade = comm.privacidade || "Pública";
+        const capa = comm.capa_url || comm.capa || comm.imagem_capa || "";
+        const thumb = comm.thumb_url || comm.icone_url || "";
+        const membrosArr = Array.isArray(comm.membros) ? comm.membros : null;
+        const membrosCount = (typeof comm.membrosCount === "number" ? comm.membrosCount :
+                             typeof comm.membros_count === "number" ? comm.membros_count :
+                             membrosArr ? membrosArr.length : (comm.membros_total || 0));
+
+        const capaStyle = capa ? `background-image:url('${capa}')` : `background-image:${fallbackCover()}`;
+
+        return `
+          <div class="com-card" onclick="abrirGrupo('${id || ""}')">
+            <div class="com-cover" style="${capaStyle}"></div>
+            <div class="com-body">
+              <div class="com-avatar">${thumb ? `<img src="${thumb}" alt="">` : `<i class='bx bx-group'></i>`}</div>
+              <div class="com-info">
+                <div class="com-title">${nome}</div>
+                <div class="com-desc">${descricao}</div>
+                <div class="com-meta">
+                  <span class="pill">${tipo}</span>
+                  <span class="pill">${privacidade}</span>
+                  <span class="meta-small">${membrosCount ? `+${membrosCount} membros` : `0 membros`}</span>
+                </div>
+              </div>
+              <button class="btn-ver-grupo" onclick="event.stopPropagation(); abrirGrupo('${id || ""}')">Ver Grupo</button>
+            </div>
+          </div>
+        `;
+    };
 
     try {
-        // ATENÇÃO: Removi o orderBy("dataCriacao") para evitar travamento se não houver índice
-        const q = query(collection(db, "comunidades"), limit(20));
-        const snapshot = await getDocs(q);
+        // Preferir Supabase (dados reais)
+        if (window.supabase) {
+            // tentar ordenar, mas fazer fallback se a coluna não existir
+            let res = await window.supabase
+                .from('comunidades')
+                .select('*')
+                .order('dataCriacao', { ascending: false })
+                .limit(40);
 
-        container.innerHTML = "";
+            if (res.error) {
+                res = await window.supabase
+                    .from('comunidades')
+                    .select('*')
+                    .limit(40);
+            }
 
-        if (snapshot.empty) {
-            container.innerHTML = `
-                <div style="grid-column:1/-1; text-align:center; padding:40px; background:white; border-radius:16px; border:1px dashed #ddd;">
-                    <i class='bx bx-group' style="font-size:3rem; color:#ddd; margin-bottom:10px;"></i>
-                    <h4 style="color:#555;">Nenhum grupo encontrado</h4>
-                    <p style="color:#888; font-size:0.9rem;">Seja o primeiro a criar uma comunidade!</p>
-                </div>`;
+            if (res.error) throw res.error;
+
+            const list = (res.data || []).map(c => ({ ...c, id: c.id || c.comunidade_id || c.uuid }));
+            if (!list.length) {
+                container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
+                return;
+            }
+            container.innerHTML = list.map(renderCard).join('');
             return;
         }
 
-        snapshot.forEach(doc => {
+        // Fallback Firestore
+        const snap = await getDocs(collection(db, "comunidades"));
+        if (!snap || snap.empty) {
+            container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
+            return;
+        }
+
+        let html = "";
+        snap.forEach((doc) => {
             const comm = doc.data();
-            
-            // Define a cor da tag baseado no tipo
-            let tagClass = "tag-pro"; 
-            if(comm.tipo === "Condomínio") tagClass = "tag-condo";
-            if(comm.tipo === "Hobby") tagClass = "tag-hobby";
-
-            const html = `
-            <div class="card-comm" data-tipo="${comm.tipo}" onclick="alert('Você clicou no grupo: ${comm.nome}')">
-                <div class="card-cover" style="background-image: url('${comm.capa}');">
-                    <span class="card-tag ${tagClass}">${comm.tipo}</span>
-                </div>
-                <div class="card-body">
-                    <div class="card-icon">
-                        <img src="${comm.capa}" style="object-fit:cover;">
-                    </div>
-                    <h3 class="card-title">${comm.nome}</h3>
-                    <p class="card-desc">${comm.descricao}</p>
-                    
-                    <div class="members-preview">
-                        <div class="mem-avatar" style="background:#eee;"></div>
-                        <div class="mem-avatar" style="background:#ddd;"></div>
-                        <span class="mem-count">+${comm.membrosCount} membros</span>
-                    </div>
-
-                    <div class="card-footer">
-                        <button class="btn-entrar">Ver Grupo</button>
-                    </div>
-                </div>
-            </div>`;
-            
-            container.insertAdjacentHTML('beforeend', html);
+            comm.id = doc.id;
+            html += renderCard(comm);
         });
+        container.innerHTML = html;
 
     } catch (e) {
-        console.error("Erro ao listar geral:", e);
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:#999;">Erro ao carregar lista.</div>`;
+        console.error("Erro ao listar comunidades:", e);
+        container.innerHTML = `<div style="padding:18px; color:#999;">Erro ao carregar lista.</div>`;
     }
 }
-
 // 3. LISTAR MEUS GRUPOS (Onde sou membro)
 async function carregarMeusGrupos() {
     const container = document.getElementById('listaMeusGrupos');
-    if(!container) return;
+    if (!container) return;
 
-    const user = auth.currentUser;
-    if(!user) {
-        container.innerHTML = `<div style="color:rgba(255,255,255,0.7); padding:10px; font-size:0.9rem;">Faça login para ver.</div>`;
-        return;
-    }
+    container.innerHTML = `<div style="padding:18px; color:#666;">Carregando seus grupos...</div>`;
 
     try {
-        const q = query(collection(db, "comunidades"), where("membros", "array-contains", user.uid));
-        const snapshot = await getDocs(q);
-
-        container.innerHTML = "";
-
-        if (snapshot.empty) {
-            container.innerHTML = `<div style="color:rgba(255,255,255,0.6); padding:15px; font-size:0.9rem;">Você não participa de nenhum grupo.</div>`;
+        const uid = (window.auth && window.auth.currentUser && window.auth.currentUser.uid) ? window.auth.currentUser.uid : null;
+        if (!uid) {
+            container.innerHTML = `<div style="padding:18px; color:#777;">Faça login para ver seus grupos.</div>`;
             return;
         }
 
-        snapshot.forEach(doc => {
-            const comm = doc.data();
-            const html = `
-            <div class="my-group-item" onclick="alert('Abrir chat: ${comm.nome}')">
-                <div class="group-img-ring">
-                    <img src="${comm.capa}">
+        const fallbackCover = () => `linear-gradient(120deg, var(--cor2), #7b3fa0)`;
+
+        const renderItem = (comm) => {
+            const id = comm.id || comm.comunidade_id || comm.uuid || comm._id;
+            const nome = comm.nome || comm.titulo || "Comunidade";
+            const tipo = comm.tipo || comm.tipo_comunidade || "Grupo";
+            const capa = comm.capa_url || comm.capa || "";
+            const membrosArr = Array.isArray(comm.membros) ? comm.membros : null;
+            const membrosCount = (typeof comm.membrosCount === "number" ? comm.membrosCount :
+                                 typeof comm.membros_count === "number" ? comm.membros_count :
+                                 membrosArr ? membrosArr.length : (comm.membros_total || 0));
+            const capaStyle = capa ? `background-image:url('${capa}')` : `background-image:${fallbackCover()}`;
+
+            return `
+              <div class="my-group-item" onclick="abrirGrupo('${id || ""}')">
+                <div class="my-group-cover" style="${capaStyle}"></div>
+                <div class="my-group-info">
+                  <div class="my-group-title">${nome}</div>
+                  <div class="my-group-sub">${tipo} • ${membrosCount ? `${membrosCount} membros` : `0 membros`}</div>
                 </div>
-                <span>${comm.nome}</span>
-            </div>`;
-            container.insertAdjacentHTML('beforeend', html);
+                <button class="btn-abrir-grupo" onclick="event.stopPropagation(); abrirGrupo('${id || ""}')">Abrir</button>
+              </div>
+            `;
+        };
+
+        // Preferir Supabase
+        if (window.supabase) {
+            // 1) tentar contains (json/array)
+            let res = await window.supabase
+                .from('comunidades')
+                .select('*')
+                .contains('membros', [uid]);
+
+            // 2) fallback caso seja array literal
+            if (res.error) {
+                const literal = `{"${uid}"}`;
+                res = await window.supabase
+                    .from('comunidades')
+                    .select('*')
+                    .filter('membros', 'cs', literal);
+            }
+
+            if (res.error) throw res.error;
+
+            const list = (res.data || []).map(c => ({ ...c, id: c.id || c.comunidade_id || c.uuid }));
+            if (!list.length) {
+                container.innerHTML = `<div style="padding:18px; color:#777;">Você ainda não participa de nenhum grupo.</div>`;
+                return;
+            }
+            container.innerHTML = list.map(renderItem).join('');
+            return;
+        }
+
+        // Fallback Firestore
+        const q = query(collection(db, "comunidades"), where("membros", "array-contains", uid));
+        const snap = await getDocs(q);
+
+        if (!snap || snap.empty) {
+            container.innerHTML = `<div style="padding:18px; color:#777;">Você ainda não participa de nenhum grupo.</div>`;
+            return;
+        }
+
+        let html = "";
+        snap.forEach((doc) => {
+            const comm = doc.data();
+            comm.id = doc.id;
+            html += renderItem(comm);
         });
+        container.innerHTML = html;
 
     } catch (e) {
         console.error("Erro meus grupos:", e);
-        // Fallback visual silencioso
-        container.innerHTML = `<div style="color:rgba(255,255,255,0.6); padding:10px;">Sem grupos.</div>`;
+        container.innerHTML = `<div style="padding:18px; color:#999;">Erro ao carregar seus grupos.</div>`;
     }
 }
-
-// ============================================================
-// LÓGICA DE ESTATÍSTICAS DO PERFIL
-// ============================================================
-
-window.carregarEstatisticasReais = async function() {
-    // Só roda se estiver na página de perfil
-    const elPedidos = document.getElementById('stat-pedidos');
-    const elNota = document.getElementById('stat-nota');
-    const elServicos = document.getElementById('stat-servicos');
-
-    if (!elPedidos || !elNota || !elServicos) return;
-
-    const user = auth.currentUser;
-    if (!user) return;
-
-    try {
-        // 1. CONTA MEUS ANÚNCIOS ATIVOS
-        // Busca todos os anúncios onde donoUid sou eu
-        const qAnuncios = query(collection(db, "anuncios"), where("donoUid", "==", user.uid));
-        const snapAnuncios = await getDocs(qAnuncios);
-        elServicos.innerText = snapAnuncios.size; // .size dá a quantidade exata
-
-        // 2. CONTA PEDIDOS RECEBIDOS
-        // Busca todos os pedidos enviados para mim (paraUid == eu)
-        const qPedidos = query(collection(db, "pedidos"), where("paraUid", "==", user.uid));
-        const snapPedidos = await getDocs(qPedidos);
-        elPedidos.innerText = snapPedidos.size;
-
-        // 3. PEGA A NOTA MÉDIA (Do perfil do usuário)
-        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        
-        // Se já tiver a nota salva no perfil local, usa ela
-        if (perfilLocal.stats && perfilLocal.stats.media) {
-            elNota.innerText = perfilLocal.stats.media;
-        } else {
-            // Se não, busca do banco para garantir
-            const docUser = await getDoc(doc(db, "usuarios", user.uid));
-            if(docUser.exists()) {
-                const dados = docUser.data();
-                const media = (dados.stats && dados.stats.media) ? dados.stats.media : "5.0"; // Padrão 5.0 se for novo
-                elNota.innerText = media;
-            } else {
-                elNota.innerText = "Novo";
-            }
-        }
-
-    } catch (e) {
-        console.error("Erro ao carregar estatísticas:", e);
-    }
-}
-
-// ============================================================
-// NOVO: SISTEMA DE CHAT DIRETO E ÁUDIO
-// ============================================================
-
-// Variáveis de Controle
-window.chatIdAtual = null;
-window.chatUnsubscribe = null;
-window.mediaRecorder = null;
-window.audioChunks = [];
-window.timerInterval = null;
-window.targetUserUid = null; // Armazena com quem estamos falando
-
-// 1. Função para abrir chat direto (sem pedido atrelado)
-// Exemplo de uso no HTML: onclick="iniciarChatDireto('uid123', 'Maria', 'foto.jpg')"
-window.iniciarChatDireto = async function(targetUid, targetName, targetPhoto) {
-    const user = auth.currentUser;
-    if (!user) {
-        alert("Faça login para enviar mensagens.");
-        window.location.href = "login.html";
-        return;
-    }
-
-    if (user.uid === targetUid) {
-        alert("Você não pode enviar mensagem para si mesmo.");
-        return;
-    }
-
-    // Cria um ID único para a conversa entre esses dois usuários
-    // Ordena os UIDs para garantir que userA+userB seja igual a userB+userA
-    const ids = [user.uid, targetUid].sort();
-    const chatId = `${ids[0]}_${ids[1]}`;
-
-    // Verifica se a conversa já existe, se não, cria
-    try {
-        const chatRef = doc(db, "conversas", chatId);
-        const chatSnap = await getDoc(chatRef);
-
-        if (!chatSnap.exists()) {
-            // Cria a estrutura básica da conversa
-            await setDoc(chatRef, {
-                participantes: [user.uid, targetUid],
-                dadosUsuarios: {
-                    [user.uid]: { nome: user.displayName || "Eu", foto: user.photoURL || "" },
-                    [targetUid]: { nome: targetName, foto: targetPhoto }
-                },
-                ultimaMensagem: "",
-                tipoUltimaMsg: "texto",
-                dataAtualizacao: new Date().toISOString(),
-                tipo: "direta" // Diferencia de "pedido"
-            });
-        }
-        
-        // Redireciona para o chat.html carregando esse chat
-        // Se já estivermos no chat.html, apenas abre
-        if (window.location.pathname.includes("chat.html")) {
-            abrirTelaChat(chatId, targetName, targetPhoto, targetUid);
-        } else {
-            // Salva dados temporários para abrir ao carregar a página
-            localStorage.setItem('doke_abrir_chat_id', chatId);
-            localStorage.setItem('doke_abrir_chat_nome', targetName);
-            localStorage.setItem('doke_abrir_chat_foto', targetPhoto);
-            localStorage.setItem('doke_abrir_chat_uid', targetUid);
-            window.location.href = "chat.html";
-        }
-
-    } catch (e) {
-        console.error("Erro ao iniciar chat:", e);
-        alert("Erro ao iniciar conversa.");
-    }
-}
-
-// ATUALIZAÇÃO PARA script.js
-
-window.abrirTelaChat = function(chatId, nome, foto, targetUid) {
-    window.chatIdAtual = chatId;
-    window.targetUserUid = targetUid;
-
-    document.getElementById('view-lista').style.display = 'none';
-    document.getElementById('view-chat').style.display = 'flex';
-    document.getElementById('chatNome').innerText = nome;
-    document.getElementById('chatAvatar').src = foto || "https://i.pravatar.cc/150";
-
-    // --- CORREÇÃO: MENSAGEM DE AGUARDE ---
-    
-    // 1. Remove banner antigo se existir (para não duplicar)
-    const bannerAntigo = document.querySelector('.chat-info-banner');
-    if(bannerAntigo) bannerAntigo.remove();
-
-    // 2. Verifica se acabou de ser enviado (Lê o sinal do orcamento.html)
-    if (localStorage.getItem('doke_pedido_enviado') === 'true') {
-        
-        localStorage.removeItem('doke_pedido_enviado'); // Limpa para não aparecer de novo ao recarregar
-        
-        const viewChat = document.getElementById('view-chat');
-        const toolbar = viewChat.querySelector('.chat-toolbar'); // Pega o cabeçalho do chat
-        
-        // Cria o aviso
-        const banner = document.createElement('div');
-        banner.className = 'chat-info-banner';
-        banner.innerHTML = `
-            <i class='bx bx-time-five'></i>
-            <div>
-                <strong>Solicitação Enviada com Sucesso!</strong>
-                <p>O profissional já foi notificado. Por favor, aguarde ele aceitar o pedido para iniciar a conversa.</p>
-            </div>
-        `;
-        
-        // Insere o banner LOGO ABAIXO do cabeçalho
-        if(toolbar) {
-            toolbar.insertAdjacentElement('afterend', banner);
-        }
-    }
-    // -----------------------------------------
-
-    const containerMsgs = document.getElementById('areaMensagens');
-    containerMsgs.innerHTML = '<div style="padding:20px; text-align:center;">Carregando...</div>';
-
-    // Determina qual coleção usar (se é um ID antigo de pedido ou novo de conversa)
-    carregarMensagensFirestore("conversas", chatId, containerMsgs);
-    
-    // Ajuste mobile
-    if(window.innerWidth <= 768) {
-        const bottomNav = document.querySelector('.bottom-nav');
-        const navbarMobile = document.querySelector('.navbar-mobile');
-        if(bottomNav) bottomNav.style.display = 'none';
-        if(navbarMobile) navbarMobile.style.display = 'none';
-    }
-}
-
-function carregarMensagensFirestore(collectionName, docId, container) {
-    if (window.chatUnsubscribe) window.chatUnsubscribe();
-
-    const q = query(collection(db, collectionName, docId, "mensagens"), orderBy("timestamp", "asc"));
-    
-    window.chatUnsubscribe = onSnapshot(q, (snapshot) => {
-        container.innerHTML = "";
-        
-        if(snapshot.empty) {
-            container.innerHTML = '<div style="padding:40px; text-align:center; color:#ccc;">Comece a conversa!</div>';
-        }
-
-        snapshot.forEach(doc => {
-            renderizarMensagemNaTela(doc.data(), container);
-        });
-        
-        container.scrollTop = container.scrollHeight;
-    }, (error) => {
-        // Se der erro, pode ser que seja a coleção antiga "pedidos"
-        if(collectionName === "conversas") {
-            carregarMensagensFirestore("pedidos", docId, container);
-        }
-    });
-}
-
-function renderizarMensagemNaTela(msg, container) {
-    const user = auth.currentUser;
-    const ehMinha = msg.senderUid === user.uid;
-    const classe = ehMinha ? 'msg-enviada' : 'msg-recebida';
-    
-    let conteudoHtml = "";
-
-    if (msg.tipo === 'audio') {
-        conteudoHtml = `
-            <div class="audio-bubble">
-                <button class="btn-play-audio" onclick="tocarAudio(this, '${msg.url}')">
-                    <i class='bx bx-play'></i>
-                </button>
-                <div class="audio-wave"></div>
-                <span style="font-size:0.7rem;">Áudio</span>
-            </div>
-        `;
-    } else {
-        conteudoHtml = msg.texto;
-    }
-
-    const html = `
-        <div class="msg-bubble ${classe}">
-            ${conteudoHtml}
-            <span class="msg-time">${msg.timestamp ? new Date(msg.timestamp.seconds * 1000).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '...'}</span>
-        </div>`;
-    
-    container.insertAdjacentHTML('beforeend', html);
-}
-
 // 4. Envio de Texto
 window.enviarMensagemTexto = async function() {
     const input = document.getElementById('inputMsg');
