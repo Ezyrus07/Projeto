@@ -319,6 +319,39 @@
 }
 .btn-send i{ font-size:20px; }
 
+/* === Composer estilo chat (grupo.html) === */
+.composer-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 10px 12px;
+}
+.composer-input{
+  flex:1;
+  height: 44px;
+  border:1px solid #eef0f4;
+  border-radius: 16px;
+  padding: 0 14px;
+  outline:none;
+  font-weight:800;
+  color:#1d2b3a;
+  background:#fff;
+  min-width:0;
+}
+.composer-input::placeholder{ color:#8a96a6; font-weight:800; }
+.composer-sub{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding: 0 14px 12px;
+  color:#7a8696;
+  font-weight:800;
+}
+.composer-sub i{ font-size:18px; color: var(--cor2); }
+#btnMic.recording{ background: #111827; }
+#btnMic.recording i{ color:#fff; }
+
+
 .grupo-feed{ padding: 0 16px 16px; display:flex; flex-direction:column; gap: 14px; }
 .post-card{
   border:1px solid #eef0f4;
@@ -429,6 +462,12 @@
   .grupo-sidecol{ order: 2; }
   .grupo-center{ order: 1; }
 }
+
+@media (min-width: 1024px){
+  main{ display:flex; justify-content:center; }
+  main > .grupo-page{ width: min(1280px, 100%); }
+}
+
 </style>
 
 </head>
@@ -515,16 +554,29 @@
           </div>
 
           <div class="grupo-composer" id="composerBox">
-            <textarea id="postTexto" placeholder="Escreva um post para o grupo..."></textarea>
-            <div class="composer-actions">
+            <div class="composer-row">
               <label class="btn-icon" title="Anexar">
                 <i class='bx bx-paperclip'></i>
-                <input type="file" id="postArquivo" accept="image/*,video/*,application/pdf" hidden>
+                <input type="file" id="postArquivo" accept="image/*,video/*,audio/*,application/pdf" hidden>
               </label>
 
-              <div class="composer-hint"><i class='bx bx-shield-quarter'></i> Respeite as regras do grupo.</div>
+              <input id="postTexto" class="composer-input" type="text" placeholder="Digite uma mensagem para o grupo..." autocomplete="off">
 
-              <button class="btn-send" id="btnEnviarPost" title="Postar"><i class='bx bx-send'></i></button>
+              <button class="btn-icon" id="btnMic" title="Áudio"><i class='bx bx-microphone'></i></button>
+              <button class="btn-send" id="btnEnviarPost" title="Enviar"><i class='bx bx-send'></i></button>
+            </div>
+
+            <div class="composer-sub">
+              <i class='bx bx-shield-quarter'></i> Respeite as regras do grupo.
+              <span id="audioStatus" style="margin-left:auto; display:none; font-weight:800;"></span>
+            </div>
+
+            <div id="audioPreview" style="display:none; padding:10px 12px 12px; border-top:1px solid #eef0f4;">
+              <audio id="audioPlayer" controls style="width:100%;"></audio>
+              <div style="display:flex; gap:10px; margin-top:10px;">
+                <button class="tab-btn" type="button" id="btnCancelarAudio" style="flex:1;">Cancelar áudio</button>
+                <button class="tab-btn active" type="button" id="btnEnviarAudio" style="flex:1;">Enviar áudio</button>
+              </div>
             </div>
           </div>
 
@@ -615,7 +667,7 @@
     <div id="cfgCargos" style="display:none;">
       <div style="background:#f7f9fc; border:1px solid #eef0f4; border-radius:12px; padding:12px; margin-bottom:12px;">
         <div style="font-weight:900; color:#1d2b3a; margin-bottom:6px;">Cargos do grupo</div>
-        <div style="color:#667085; font-weight:700; font-size:0.95rem;">Para ativar cargos, crie a tabela <b>comunidade_cargos</b> no Supabase (com as colunas <b>comunidade_id</b>, <b>nome</b>, <b>cor</b> e <b>ordem</b>).</div>
+        <div style="color:#667085; font-weight:700; font-size:0.95rem;">Gerencie os cargos do grupo. Tabela usada: <b>comunidade_cargos</b> (colunas: <b>comunidade_id</b>, <b>nome</b>, <b>cor</b>, <b>nivel</b>, <b>criado_por</b>, <b>criado_em</b>).</div>
       </div>
 
       <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
@@ -645,7 +697,7 @@
       t.style.right='16px';
       t.style.bottom='16px';
       t.style.zIndex='99999';
-      t.style.maxWidth='360px';
+      t.style.maxWidth='380px';
       t.style.background='#111827';
       t.style.color='#fff';
       t.style.padding='12px 14px';
@@ -653,22 +705,31 @@
       t.style.boxShadow='0 20px 40px rgba(0,0,0,0.35)';
       t.innerHTML = '<div style="font-weight:900; margin-bottom:4px;">'+(title||'')+'</div><div style="opacity:0.9; font-weight:700; font-size:0.92rem;">'+(msg||'')+'</div>';
       document.body.appendChild(t);
-      setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .25s'; }, 2500);
-      setTimeout(()=>{ t.remove(); }, 2850);
+      setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .25s'; }, 2600);
+      setTimeout(()=>{ t.remove(); }, 3000);
     }catch(e){}
   }
 
   const $ = (id)=>document.getElementById(id);
   const qs = (k)=>new URLSearchParams(window.location.search).get(k);
 
-  async function waitGlobals(){
+  const WAIT_MS = 10000;
+
+  async function waitFor(predicate, timeout=WAIT_MS){
     const t0 = Date.now();
-    while(Date.now()-t0 < 8000){
-      if(window.db && window.doc && window.getDoc && window.auth) return true;
+    while(Date.now()-t0 < timeout){
+      try{ if(predicate()) return true; }catch(e){}
       await new Promise(r=>setTimeout(r, 80));
     }
     return false;
   }
+
+  function getSB(){
+    // supabase-init.js cria window.sb
+    return window.sb || window.supabaseClient || window.sbClient || null;
+  }
+
+  function safeText(v){ return (v==null?'':String(v)); }
 
   function setCover(url){
     const el = $('grupoCover');
@@ -678,7 +739,6 @@
       el.style.backgroundSize = 'cover';
       el.style.backgroundPosition = 'center';
     }else{
-      // fica o gradiente padrão do CSS
       el.style.backgroundImage = '';
     }
   }
@@ -693,10 +753,10 @@
     }
   }
 
-  function safeText(v){ return (v==null?'':String(v)); }
-
   async function getUserDoc(uid){
+    // Usa Firestore compat (se existir) só para nome/foto, sem depender para o grupo funcionar
     try{
+      if(!(window.db && window.doc && window.getDoc)) return null;
       const ref = window.doc(window.db, "usuarios", uid);
       const snap = await window.getDoc(ref);
       if(!snap.exists()) return null;
@@ -705,31 +765,177 @@
   }
 
   function pickUserName(u){
-    return u?.user || u?.usuario || u?.nome || u?.name || u?.apelido || 'Usuário';
+    return u?.user || u?.usuario || u?.nome || u?.name || u?.apelido || null;
   }
   function pickUserPhoto(u){
-    return u?.foto || u?.foto_url || u?.photoURL || u?.avatar || u?.imagem || '';
+    return u?.foto || u?.foto_url || u?.photoURL || u?.avatar || u?.imagem || null;
   }
 
-  async function renderMembersFallback(grupo, uidAtual){
-    const membros = Array.isArray(grupo?.membros) ? grupo.membros : [];
-    const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
+  function inferMediaType(url){
+    const u = String(url||'').toLowerCase();
+    if(u.endsWith('.pdf')) return 'application/pdf';
+    if(u.match(/\.(mp3|wav|m4a|ogg|webm)$/)) return 'audio';
+    if(u.match(/\.(mp4|webm|mov|mkv|ogg)$/)) return 'video';
+    if(u.match(/\.(png|jpg|jpeg|gif|webp)$/)) return 'image';
+    return '';
+  }
 
-    // online: só o usuário atual (fallback)
-    const online = uidAtual ? [uidAtual] : [];
-    const offline = membros.filter(x=>!online.includes(x));
+  function renderMedia(container, url, tipo){
+    if(!url) return;
+    const t = (tipo || inferMediaType(url) || '').toLowerCase();
+    const box = document.createElement('div');
+    box.className = 'post-media';
 
-    async function renderList(targetId, uids, badgeFn){
+    if(t.includes('pdf') || url.toLowerCase().endsWith('.pdf')){
+      box.innerHTML = '<a href="'+url+'" target="_blank" style="font-weight:900; color:var(--cor2);">📄 Abrir PDF</a>';
+    }else if(t.includes('audio') || url.match(/\.(mp3|wav|m4a|ogg|webm)$/i)){
+      box.innerHTML = '<audio src="'+url+'" controls style="width:100%;"></audio>';
+    }else if(t.includes('video') || url.match(/\.(mp4|webm|mov|mkv|ogg)$/i)){
+      box.innerHTML = '<video src="'+url+'" controls style="width:100%; border-radius:14px;"></video>';
+    }else{
+      box.innerHTML = '<img src="'+url+'" style="width:100%; border-radius:14px;" onerror="this.style.display=\\'none\\'">';
+    }
+    container.appendChild(box);
+  }
+
+  async function loadGrupo(client, grupoId){
+    // Tabela: comunidades (id uuid)
+    const { data, error } = await client.from('comunidades').select('*').eq('id', grupoId).single();
+    if(error) throw error;
+    return data;
+  }
+
+  async function ensureMember(client, grupoId, uid){
+    if(!uid) return null;
+    const now = new Date().toISOString();
+
+    // coluna comunidade_id é text na tabela comunidade_membros
+    const { data: found, error: e1 } = await client
+      .from('comunidade_membros')
+      .select('*')
+      .eq('comunidade_id', String(grupoId))
+      .eq('user_uid', String(uid))
+      .maybeSingle();
+
+    if(e1 && String(e1.code||'') !== 'PGRST116'){ // PGRST116 = no rows
+      // mesmo com RLS, a tabela pode existir; apenas segue
+    }
+
+    if(!found){
+      const ins = {
+        comunidade_id: String(grupoId),
+        user_uid: String(uid),
+        status: 'online',
+        joined_at: now,
+        last_seen: now
+      };
+      const { data: inserted, error } = await client.from('comunidade_membros').insert(ins).select('*').maybeSingle();
+      if(!error) return inserted || ins;
+      return null;
+    }else{
+      const { error } = await client
+        .from('comunidade_membros')
+        .update({ status: 'online', last_seen: now })
+        .eq('id', found.id);
+      return found;
+    }
+  }
+
+  async function loadCargos(client, grupoId){
+    const { data, error } = await client
+      .from('comunidade_cargos')
+      .select('*')
+      .eq('comunidade_id', String(grupoId))
+      .order('nivel', { ascending: true, nullsFirst: false })
+      .order('nome', { ascending: true });
+    if(error) return [];
+    return data || [];
+  }
+
+  function renderCargosUI(cargos){
+    const box = $('listaCargos');
+    if(!box) return;
+    box.innerHTML = '';
+
+    if(!cargos.length){
+      const empty = document.createElement('div');
+      empty.style.color = '#667085';
+      empty.style.fontWeight = '800';
+      empty.textContent = 'Sem cargos ainda.';
+      box.appendChild(empty);
+      return;
+    }
+
+    for(const c of cargos){
+      const row = document.createElement('div');
+      row.style.display='flex';
+      row.style.alignItems='center';
+      row.style.gap='10px';
+      row.style.border='1px solid #eef0f4';
+      row.style.borderRadius='12px';
+      row.style.padding='10px';
+      row.innerHTML = `
+        <div style="width:14px;height:14px;border-radius:5px;background:${c.cor || '#cbd5e1'};"></div>
+        <div style="font-weight:900; color:#1d2b3a; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeText(c.nome)}</div>
+        <div style="font-weight:900; color:#667085;">${c.nivel ?? ''}</div>
+      `;
+      box.appendChild(row);
+    }
+  }
+
+  async function loadMembers(client, grupoId, donoUid, cargosMap){
+    const now = Date.now();
+    const FIVE_MIN = 5*60*1000;
+
+    const { data, error } = await client
+      .from('comunidade_membros')
+      .select('*')
+      .eq('comunidade_id', String(grupoId))
+      .order('joined_at', { ascending: true });
+
+    const membros = (!error && data) ? data : [];
+    const online = [];
+    const offline = [];
+
+    for(const m of membros){
+      const last = m.last_seen ? new Date(m.last_seen).getTime() : 0;
+      const isOnline = (String(m.status||'').toLowerCase()==='online') || (last && (now-last) < FIVE_MIN);
+      (isOnline ? online : offline).push(m);
+    }
+
+    $('countOnline').textContent = String(online.length);
+    $('countOffline').textContent = String(offline.length);
+    $('membrosSub').textContent = String(membros.length) + ' no total';
+
+    async function renderList(targetId, items){
       const box = $(targetId);
       if(!box) return;
       box.innerHTML = '';
-      for(const uid of uids){
-        const udoc = await getUserDoc(uid);
-        const nome = pickUserName(udoc);
+
+      for(const m of items){
+        const uid = String(m.user_uid || '');
+        const udoc = uid ? await getUserDoc(uid) : null;
+        const nome = (pickUserName(udoc) || uid.slice(0, 8)).toString();
         const foto = pickUserPhoto(udoc);
         const initial = (nome?.trim()?.[0] || 'U').toUpperCase();
-        const badge = badgeFn(uid);
-        const badgeClass = badge === 'Dono' ? 'membro-badge dono' : 'membro-badge';
+
+        let badgeText = 'Membro';
+        let badgeColor = '#e5e7eb';
+        let badgeTextColor = '#1f2937';
+
+        if(donoUid && uid === String(donoUid)){
+          badgeText = 'Dono';
+          badgeColor = 'rgba(42,95,144,0.12)';
+          badgeTextColor = '#1f4d75';
+        }else if(m.role_id && cargosMap && cargosMap[m.role_id]){
+          const c = cargosMap[m.role_id];
+          badgeText = c.nome || 'Cargo';
+          if(c.cor){
+            badgeColor = c.cor;
+            badgeTextColor = '#fff';
+          }
+        }
+
         const item = document.createElement('div');
         item.className='membro-item';
         item.innerHTML = `
@@ -737,155 +943,184 @@
             <div class="membro-avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
             <div class="membro-name">${safeText(nome)}</div>
           </div>
-          <div class="${badgeClass}">${badge}</div>
+          <div class="membro-badge ${badgeText==='Dono'?'dono':''}" style="background:${badgeColor}; color:${badgeTextColor};">${safeText(badgeText)}</div>
         `;
         box.appendChild(item);
       }
     }
 
-    const badgeFn = (uid)=> (uid && donoUid && uid===donoUid) ? 'Dono' : 'Membro';
-
-    $('countOnline').textContent = online.length;
-    $('countOffline').textContent = offline.length;
-    $('membrosSub').textContent = (grupo?.membrosCount || membros.length || 0) + ' no total';
-
-    await renderList('listaOnline', online, badgeFn);
-    await renderList('listaOffline', offline, badgeFn);
+    await renderList('listaOnline', online);
+    await renderList('listaOffline', offline);
   }
 
-  async function supa(){
-    try{
-      if(typeof window.getSupabaseClient === "function") return window.getSupabaseClient();
-      if(typeof getSupabaseClient === "function") return getSupabaseClient();
-    }catch(e){}
-    return window.sb || window.supabaseClient || window.sbClient || null;
-  }
-
-  async function tableExists(client, table){
-    try{
-      const { error } = await client.from(table).select('*').limit(1);
-      if(!error) return true;
-      // PGRST205 = table missing
-      if(String(error?.code||'') === 'PGRST205') return false;
-      return true; // outras falhas (RLS) -> existe
-    }catch(e){ return false; }
-  }
-
-  async function loadPosts(grupoId){
-    const client = await supa();
+  async function loadPosts(client, grupoId){
     const feed = $('grupoFeed');
     const empty = $('feedEmpty');
-    if(!feed || !client) return;
+    if(!feed) return;
 
-    const idCols = ['comunidade_id','comunidadeId','comunidade','grupo_id','grupoId'];
-    const orderCols = ['criado_em','created_at','criadoEm','data','timestamp'];
+    const { data, error } = await client
+      .from('comunidade_posts')
+      .select('*')
+      .or(`comunidadeId.eq.${grupoId},comunidade_id.eq.${grupoId}`)
+      .order('data', { ascending:false, nullsFirst:false })
+      .order('created_at', { ascending:false, nullsFirst:false })
+      .limit(60);
 
-    let data = null, lastErr = null, usedIdCol = null;
-    for(const col of idCols){
-      const q = client.from('comunidade_posts').select('*').eq(col, grupoId).limit(50);
-      // tenta ordenar pelo melhor campo disponível
-      let resp;
-      for(const ocol of orderCols){
-        resp = await q.order(ocol, { ascending:false });
-        if(!resp.error) break;
-      }
-      if(resp && !resp.error){
-        data = resp.data || [];
-        usedIdCol = col;
-        break;
-      }
-      lastErr = resp?.error || lastErr;
-    }
-
-    // Se não conseguiu filtrar por colunas conhecidas, tenta buscar sem filtro (não ideal) e filtrar local por comunidade_id/… se existir
-    if(data === null){
-      const resp = await client.from('comunidade_posts').select('*').limit(50);
-      if(!resp.error){
-        const all = resp.data || [];
-        data = all.filter(p=>{
-          return (p.comunidade_id===grupoId || p.comunidadeId===grupoId || p.grupo_id===grupoId || p.grupoId===grupoId || p.comunidade===grupoId);
-        });
-      }else{
-        lastErr = resp.error;
-        data = [];
-      }
-    }
-
-    // Render
-    // Remove cards antigos (mantém empty-state)
+    const posts = (!error && data) ? data : [];
     Array.from(feed.querySelectorAll('.post-card')).forEach(n=>n.remove());
 
-    if(!data || data.length===0){
+    if(!posts.length){
       if(empty) empty.style.display='block';
       return;
     }
     if(empty) empty.style.display='none';
 
-    for(const p of data){
-      const uid = p.user_uid || p.uid || p.autor_uid || p.autor || p.userId || null;
-      const udoc = uid ? await getUserDoc(uid) : null;
-      const nome = pickUserName(udoc);
-      const foto = pickUserPhoto(udoc);
-      const initial = (nome?.trim()?.[0] || 'U').toUpperCase();
+    for(const p of posts){
+      const nome = p.autorNome || p.autor_nome || p.autor_user || 'Usuário';
+      const foto = p.autorFoto || p.autor_foto || '';
+      const initial = (String(nome).trim()[0] || 'U').toUpperCase();
 
-      const texto = p.texto || p.conteudo || p.mensagem || p.content || p.descricao || '';
-      const created = p.criado_em || p.created_at || p.data || p.timestamp || null;
+      const texto = p.texto || '';
+      const created = p.data || p.created_at || p.criado_em || null;
       const time = created ? new Date(created).toLocaleString('pt-BR') : '';
 
-      const media = p.midia || p.imagem || p.imagem_url || p.media_url || p.arquivo_url || p.url || '';
-      const mediaType = (p.tipo || p.media_type || '').toString().toLowerCase();
+      const mediaUrl = p.midia_url || p.imagem || null;
+      const mediaType = p.midia_tipo || inferMediaType(mediaUrl) || '';
 
       const card = document.createElement('div');
       card.className='post-card';
-      card.innerHTML = `
-        <div class="post-head">
-          <div class="post-user">
-            <div class="avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
-            <div class="name">${safeText(nome)}</div>
-          </div>
-          <div class="post-time">${safeText(time)}</div>
+
+      const head = document.createElement('div');
+      head.className='post-head';
+      head.innerHTML = `
+        <div class="post-user">
+          <div class="avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
+          <div class="name">${safeText(nome)}</div>
         </div>
-        <div class="post-body">
-          ${safeText(texto)}
-          ${media ? `
-            <div class="post-media">
-              ${(mediaType.includes('video') || (String(media).match(/\.mp4|\.webm|\.ogg/i))) 
-                ? `<video src="${media}" controls></video>`
-                : `<img src="${media}" onerror="this.style.display='none'">`}
-            </div>
-          ` : ``}
-        </div>
+        <div class="post-time">${safeText(time)}</div>
       `;
+
+      const body = document.createElement('div');
+      body.className='post-body';
+      body.innerHTML = `${safeText(texto)}`;
+
+      if(mediaUrl){
+        renderMedia(body, mediaUrl, mediaType);
+      }
+
+      card.appendChild(head);
+      card.appendChild(body);
       feed.appendChild(card);
     }
   }
 
-  async function tryInsertPost(grupoId, uid, texto){
-    const client = await supa();
-    if(!client) throw new Error('Supabase não disponível');
-    // tenta vários formatos de schema
-    const candidates = [
-      { comunidade_id: grupoId, user_uid: uid, texto: texto, criado_em: new Date().toISOString() },
-      { comunidade_id: grupoId, uid: uid, texto: texto, created_at: new Date().toISOString() },
-      { comunidadeId: grupoId, uid: uid, conteudo: texto, created_at: new Date().toISOString() },
-      { grupo_id: grupoId, uid: uid, conteudo: texto, created_at: new Date().toISOString() },
-      { grupoId: grupoId, user_uid: uid, mensagem: texto, data: new Date().toISOString() },
-    ];
-    let lastErr = null;
-    for(const obj of candidates){
-      const { error } = await client.from('comunidade_posts').insert(obj);
-      if(!error) return true;
-      lastErr = error;
+  async function uploadFile(client, file, grupoId, uid){
+    const bucket = localStorage.getItem('DOKE_SUPABASE_STORAGE_BUCKET') || 'posts';
+    const safeName = (file.name || 'arquivo').replace(/[^\w.\-]+/g,'_');
+    const path = `grupos/${String(grupoId)}/${String(uid)}/${Date.now()}_${safeName}`;
+
+    const { error } = await client.storage.from(bucket).upload(path, file, { upsert:true });
+    if(error) throw error;
+
+    const { data } = client.storage.from(bucket).getPublicUrl(path);
+    const url = data?.publicUrl;
+    if(!url) throw new Error('Não consegui gerar URL pública do arquivo (bucket privado?).');
+    return url;
+  }
+
+  async function insertPost(client, grupoId, uid, texto, mediaUrl, mediaType, meta){
+    const now = new Date().toISOString();
+
+    const autorNome = meta?.nome || 'Usuário';
+    const autorFoto = meta?.foto || null;
+    const autorUser = meta?.user || null;
+    const autorIsPro = !!meta?.isPro;
+
+    const payload = {
+      // schema "novo"
+      comunidadeId: String(grupoId),
+      autorUid: String(uid),
+      autorNome: autorNome,
+      autorFoto: autorFoto,
+      autorIsPro: autorIsPro,
+      texto: texto || '',
+      imagem: (mediaUrl && (String(mediaType).includes('image'))) ? mediaUrl : null,
+      likes: 0,
+      likesArray: [],
+      data: now,
+
+      // schema "paralelo"
+      comunidade_id: String(grupoId),
+      autor_uid: String(uid),
+      autor_nome: autorNome,
+      autor_user: autorUser,
+      autor_foto: autorFoto,
+      midia_url: mediaUrl || null,
+      midia_tipo: mediaType || null,
+      created_at: now
+    };
+
+    // remove undefined (supabase rejeita)
+    Object.keys(payload).forEach(k=>payload[k]===undefined && delete payload[k]);
+
+    const { error } = await client.from('comunidade_posts').insert(payload);
+    if(error) throw error;
+  }
+
+  // Áudio (MediaRecorder)
+  let recorder = null;
+  let audioBlob = null;
+  let audioStream = null;
+
+  async function startRecording(){
+    audioBlob = null;
+    const status = $('audioStatus');
+    if(status){ status.style.display='inline'; status.textContent='Gravando…'; }
+
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    recorder = new MediaRecorder(audioStream);
+    const chunks = [];
+    recorder.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = ()=>{
+      audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      if(audioStream){ audioStream.getTracks().forEach(t=>t.stop()); audioStream=null; }
+      if(status){ status.textContent='Áudio pronto'; }
+      showAudioPreview(audioBlob);
+    };
+    recorder.start();
+  }
+
+  function stopRecording(){
+    if(recorder && recorder.state !== 'inactive'){
+      recorder.stop();
     }
-    throw lastErr || new Error('Falha ao postar');
+  }
+
+  function clearAudio(){
+    audioBlob = null;
+    const prev = $('audioPreview');
+    const status = $('audioStatus');
+    if(prev) prev.style.display='none';
+    if(status){ status.style.display='none'; status.textContent=''; }
+    const btnMic = $('btnMic');
+    if(btnMic) btnMic.classList.remove('recording');
+  }
+
+  function showAudioPreview(blob){
+    const prev = $('audioPreview');
+    const player = $('audioPlayer');
+    if(!prev || !player) return;
+    player.src = URL.createObjectURL(blob);
+    prev.style.display='block';
   }
 
   async function init(){
-    const ok = await waitGlobals();
-    if(!ok){
-      toast('Erro', 'Dependências do site não carregaram.');
+    const okSB = await waitFor(()=>!!getSB());
+    if(!okSB){
+      toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
       return;
     }
+    const client = getSB();
 
     const grupoId = qs('id');
     if(!grupoId){
@@ -893,225 +1128,275 @@
       return;
     }
 
-    // Buscar grupo (coleção comunidades via compat)
-    let grupo = null;
+    // usuário atual (via compat auth)
+    await waitFor(()=>!!window.auth, 6000);
+    const uid = window.auth?.currentUser?.uid || null;
+
+    // Carrega grupo
+    let grupo;
     try{
-      const ref = window.doc(window.db, "comunidades", grupoId);
-      const snap = await window.getDoc(ref);
-      if(!snap.exists()){
-        toast('Grupo não existe', 'ID não encontrado.');
-        return;
-      }
-      grupo = snap.data();
+      grupo = await loadGrupo(client, grupoId);
     }catch(e){
       console.error(e);
-      toast('Erro', 'Falha ao buscar o grupo.');
+      toast('Falha ao carregar', 'Não consegui buscar o grupo no Supabase (tabela comunidades).');
       return;
     }
 
-    // Preencher UI
     const nome = grupo?.nome || 'Grupo';
     const tipo = grupo?.tipo || '';
     const desc = grupo?.descricao || '';
     const capa = grupo?.capa || '';
-    const membrosCount = grupo?.membrosCount || (Array.isArray(grupo?.membros)?grupo.membros.length:0);
+    const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
 
     $('grupoNome').textContent = nome;
     const navNome = $('navGrupoNome');
     if(navNome) navNome.textContent = nome;
     $('grupoTipo').textContent = tipo ? tipo : '';
     $('grupoDesc').textContent = desc ? desc : '';
-    $('grupoMembrosCount').textContent = membrosCount ? (membrosCount + ' membros') : '';
+    $('grupoMembrosCount').textContent = (grupo?.membrosCount!=null) ? (grupo.membrosCount + ' membros') : '';
+    $('sobreTexto').textContent = desc || '—';
     setCover(capa);
     setAvatar(capa, (nome.trim()[0]||'D').toUpperCase());
 
-    // user atual
-    const uidAtual = window.auth?.currentUser?.uid || null;
-    const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
-    const souDono = uidAtual && donoUid && uidAtual === donoUid;
-
-    // Admin (Dono/Mods) -> Configurações
-    const modalCfg = $('modalGrupoConfig');
-    const openCfg = ()=>{ if(modalCfg){ modalCfg.style.display='flex'; modalCfg.setAttribute('aria-hidden','false'); } };
-    const closeCfg = ()=>{ if(modalCfg){ modalCfg.style.display='none'; modalCfg.setAttribute('aria-hidden','true'); } };
-
-    function getSB(){
-      return window.supabaseClient || window.supabase || (typeof window.getSupabaseClient==='function' ? window.getSupabaseClient() : null);
-    }
-
-    async function loadCargos(){
-      const box = $('listaCargos');
-      if(!box) return;
-      box.innerHTML = '';
-      const sb = getSB();
-      if(!sb || typeof sb.from !== 'function'){
-        box.innerHTML = '<div style="color:#667085; font-weight:800;">Supabase client não disponível nesta página.</div>';
-        return;
-      }
-      try{
-        const { data, error } = await sb.from('comunidade_cargos').select('*').eq('comunidade_id', grupoId).order('ordem', { ascending: true });
-        if(error){
-          box.innerHTML = '<div style="color:#667085; font-weight:800;">Tabela <b>comunidade_cargos</b> ainda não está ativa.</div>';
-          return;
+    // Link copiar
+    const btnCopiar = $('btnCopiarLink');
+    if(btnCopiar){
+      btnCopiar.addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(window.location.href);
+          toast('Copiado', 'Link do grupo copiado.');
+        }catch(e){
+          toast('Erro', 'Não consegui copiar. Copie manualmente pela barra do navegador.');
         }
-        if(!data || data.length===0){
-          box.innerHTML = '<div style="color:#667085; font-weight:800;">Nenhum cargo criado.</div>';
-          return;
-        }
-        data.forEach(c=>{
-          const row = document.createElement('div');
-          row.className = 'membro-item';
-          row.innerHTML = `
-            <div class="membro-left">
-              <div class="membro-avatar" style="border:2px solid ${c.cor || '#eef0f4'};">${(c.nome||'?').trim().slice(0,1).toUpperCase()}</div>
-              <div class="membro-name">${safeText(c.nome)}</div>
-            </div>
-            <div class="membro-badge" style="border-color:${c.cor || '#eef0f4'};">${safeText(c.cor||'')}</div>
-          `;
-          box.appendChild(row);
-        });
-      }catch(e){
-        box.innerHTML = '<div style="color:#667085; font-weight:800;">Não foi possível carregar cargos.</div>';
-      }
+      });
     }
 
-    async function salvarGrupo(){
-      const sb = getSB();
-      const novoNome = safeText($('cfgNome')?.value).trim();
-      const novaDesc = safeText($('cfgDesc')?.value).trim();
-      if(!novoNome){ toast('Nome obrigatório', 'Digite o nome do grupo.'); return; }
-      if(!sb || typeof sb.from !== 'function'){
-        toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
-        return;
-      }
-      try{
-        const { error } = await sb.from('comunidades').update({ nome: novoNome, descricao: novaDesc }).eq('id', grupoId);
-        if(error) throw error;
-        $('grupoNome').textContent = novoNome;
-        if(navNome) navNome.textContent = novoNome;
-        $('grupoDesc').textContent = novaDesc;
-        toast('Salvo', 'Alterações atualizadas.');
-        closeCfg();
-      }catch(e){
-        console.error(e);
-        toast('Erro ao salvar', 'Verifique permissões (RLS) e nomes das colunas no Supabase.');
-      }
-    }
-
-    async function criarCargo(){
-      const sb = getSB();
-      const nomeCargo = safeText($('cargoNome')?.value).trim();
-      const corCargo = safeText($('cargoCor')?.value).trim();
-      if(!nomeCargo){ toast('Cargo', 'Digite o nome do cargo.'); return; }
-      if(!sb || typeof sb.from !== 'function'){
-        toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
-        return;
-      }
-      try{
-        const payload = { comunidade_id: grupoId, nome: nomeCargo, cor: corCargo || null };
-        const { error } = await sb.from('comunidade_cargos').insert(payload);
-        if(error) throw error;
-        $('cargoNome').value = '';
-        toast('Cargo criado', 'Agora você pode atribuir aos membros.');
-        await loadCargos();
-      }catch(e){
-        console.error(e);
-        toast('Não foi possível', 'Crie a tabela comunidade_cargos e revise o schema.');
-      }
-    }
-
-    function setCfgTab(tab){
-      const t1 = $('tabCfgEditar');
-      const t2 = $('tabCfgCargos');
-      const e1 = $('cfgEditar');
-      const e2 = $('cfgCargos');
-      if(tab==='cargos'){
-        t1?.classList.remove('active');
-        t2?.classList.add('active');
-        if(e1) e1.style.display='none';
-        if(e2) e2.style.display='block';
-        loadCargos();
-      }else{
-        t2?.classList.remove('active');
-        t1?.classList.add('active');
-        if(e2) e2.style.display='none';
-        if(e1) e1.style.display='block';
-      }
-    }
-
-    if(souDono){
-      const mini = $('grupoAdminMini');
-      if(mini) mini.style.display = 'block';
-      const btnCfgIcon = $('btnConfigGrupo');
-      if(btnCfgIcon){ btnCfgIcon.style.display = 'flex'; btnCfgIcon.addEventListener('click', openCfg); }
-      $('btnAbrirConfig')?.addEventListener('click', openCfg);
-      $('btnFecharConfig')?.addEventListener('click', closeCfg);
-      modalCfg?.addEventListener('click', (e)=>{ if(e.target===modalCfg) closeCfg(); });
-
-      // preencher campos
-      $('cfgNome').value = nome;
-      $('cfgDesc').value = desc;
-
-      $('btnSalvarGrupo')?.addEventListener('click', salvarGrupo);
-      $('btnCriarCargo')?.addEventListener('click', criarCargo);
-      $('tabCfgEditar')?.addEventListener('click', ()=>setCfgTab('editar'));
-      $('tabCfgCargos')?.addEventListener('click', ()=>setCfgTab('cargos'));
-    }
-
-    // copiar link
-    $('btnCopiarLink').addEventListener('click', async ()=>{
-      try{
-        await navigator.clipboard.writeText(window.location.href);
-        toast('Link copiado', 'Agora é só compartilhar.');
-      }catch(e){
-        toast('Não foi possível copiar', 'Seu navegador bloqueou a cópia.');
-      }
-    });
-
-    // tabs
+    // Tabs
     document.querySelectorAll('.grupo-channel').forEach(btn=>{
       btn.addEventListener('click', ()=>{
         document.querySelectorAll('.grupo-channel').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
-        const tab = btn.dataset.tab;
-        if(tab==='arquivos'){ toast('Arquivos', 'Os arquivos aparecem nos posts com anexos.'); }
-        if(tab==='sobre'){ toast('Sobre', desc || 'Sem descrição no momento.'); }
-        if(tab==='config'){ openCfg(); }
+        const tab = btn.getAttribute('data-tab');
+        $('grupoFeed').style.display = (tab==='feed') ? 'flex' : 'none';
+        $('tabArquivos').style.display = (tab==='arquivos') ? 'block' : 'none';
+        $('tabSobre').style.display = (tab==='sobre') ? 'block' : 'none';
       });
     });
-    $('btnAbrirArquivos').addEventListener('click', ()=>toast('Arquivos', 'Os arquivos aparecem nos posts com anexos.'));
 
-    // members (fallback se tabelas não existem)
-    await renderMembersFallback(grupo, uidAtual);
+    // Admin (config)
+    const souDono = uid && donoUid && String(uid)===String(donoUid);
+    const btnCfg = $('btnConfigGrupo');
+    const adminMini = $('grupoAdminMini');
+    if(souDono){
+      if(btnCfg) btnCfg.style.display='inline-flex';
+      if(adminMini) adminMini.style.display='block';
+    }
 
-    // posts
-    await loadPosts(grupoId);
+    // Modal config open/close
+    const modalCfg = $('modalGrupoConfig');
+    const openCfg = ()=>{ if(modalCfg){ modalCfg.style.display='flex'; modalCfg.setAttribute('aria-hidden','false'); } };
+    const closeCfg = ()=>{ if(modalCfg){ modalCfg.style.display='none'; modalCfg.setAttribute('aria-hidden','true'); } };
 
-    // postar
-    $('btnEnviarPost').addEventListener('click', async ()=>{
-      const txt = $('postTexto').value.trim();
-      if(!txt){
-        toast('Escreva algo', 'Digite uma mensagem para postar.');
-        return;
-      }
-      const uid = window.auth?.currentUser?.uid || null;
+    if(btnCfg) btnCfg.addEventListener('click', openCfg);
+    const btnAbrirConfig = $('btnAbrirConfig');
+    if(btnAbrirConfig) btnAbrirConfig.addEventListener('click', openCfg);
+    const btnFechar = $('btnFecharConfig');
+    if(btnFechar) btnFechar.addEventListener('click', closeCfg);
+    if(modalCfg) modalCfg.addEventListener('click', (e)=>{ if(e.target===modalCfg) closeCfg(); });
+
+    // Preencher inputs de editar
+    const cfgNome = $('cfgNome'); const cfgDesc = $('cfgDesc');
+    if(cfgNome) cfgNome.value = nome;
+    if(cfgDesc) cfgDesc.value = desc;
+
+    // Tabs config (Editar/Cargos)
+    const tabEdit = $('tabCfgEditar'); const tabCargos = $('tabCfgCargos');
+    const boxEdit = $('cfgEditar'); const boxCargos = $('cfgCargos');
+    if(tabEdit && tabCargos && boxEdit && boxCargos){
+      tabEdit.addEventListener('click', ()=>{
+        tabEdit.classList.add('active'); tabCargos.classList.remove('active');
+        boxEdit.style.display='block'; boxCargos.style.display='none';
+      });
+      tabCargos.addEventListener('click', ()=>{
+        tabCargos.classList.add('active'); tabEdit.classList.remove('active');
+        boxEdit.style.display='none'; boxCargos.style.display='block';
+      });
+    }
+
+    // Salvar nome/desc (apenas dono)
+    const btnSalvar = $('btnSalvarGrupo');
+    if(btnSalvar){
+      btnSalvar.addEventListener('click', async ()=>{
+        if(!souDono){ toast('Sem permissão', 'Apenas o dono pode editar.'); return; }
+        try{
+          const novoNome = (cfgNome?.value || '').trim();
+          const novaDesc = (cfgDesc?.value || '').trim();
+          const { error } = await client.from('comunidades').update({ nome: novoNome, descricao: novaDesc }).eq('id', grupoId);
+          if(error) throw error;
+          $('grupoNome').textContent = novoNome || nome;
+          $('grupoDesc').textContent = novaDesc || '';
+          $('sobreTexto').textContent = novaDesc || '—';
+          toast('Salvo', 'Grupo atualizado.');
+        }catch(e){
+          console.error(e);
+          toast('Erro', 'Não consegui salvar. Verifique RLS na tabela comunidades.');
+        }
+      });
+    }
+
+    // Cargos: criar + listar (apenas dono)
+    let cargos = await loadCargos(client, grupoId);
+    const cargosMap = {};
+    cargos.forEach(c=>{ cargosMap[c.id]=c; });
+    renderCargosUI(cargos);
+
+    const btnCriarCargo = $('btnCriarCargo');
+    if(btnCriarCargo){
+      btnCriarCargo.addEventListener('click', async ()=>{
+        if(!souDono){ toast('Sem permissão', 'Apenas o dono pode criar cargos.'); return; }
+        const nomeCargo = ($('cargoNome')?.value || '').trim();
+        const corCargo = ($('cargoCor')?.value || '').trim();
+        if(!nomeCargo){ toast('Nome obrigatório', 'Digite o nome do cargo.'); return; }
+        try{
+          const now = new Date().toISOString();
+          const payload = { comunidade_id: String(grupoId), nome: nomeCargo, cor: corCargo || null, nivel: 1, criado_por: String(uid||''), criado_em: now };
+          const { error } = await client.from('comunidade_cargos').insert(payload);
+          if(error) throw error;
+          $('cargoNome').value=''; $('cargoCor').value='';
+          cargos = await loadCargos(client, grupoId);
+          cargos.length && cargos.forEach(c=>{ cargosMap[c.id]=c; });
+          renderCargosUI(cargos);
+          toast('Criado', 'Cargo adicionado.');
+        }catch(e){
+          console.error(e);
+          toast('Erro', 'Não consegui criar cargo. Verifique RLS da tabela comunidade_cargos.');
+        }
+      });
+    }
+
+    // Presença/membro
+    if(uid){
+      await ensureMember(client, grupoId, uid);
+    }else{
+      toast('Aviso', 'Você não está logado. Você consegue ver, mas não consegue postar.');
+    }
+
+    // Carregar membros + posts
+    await loadMembers(client, grupoId, donoUid, cargosMap);
+    await loadPosts(client, grupoId);
+
+    // Composer: enviar texto/anexo
+    const inputTexto = $('postTexto');
+    const inputArquivo = $('postArquivo');
+    const btnEnviar = $('btnEnviarPost');
+
+    async function currentMeta(){
+      const udoc = uid ? await getUserDoc(uid) : null;
+      const nomeU = pickUserName(udoc) || 'Usuário';
+      const fotoU = pickUserPhoto(udoc) || null;
+      const userU = udoc?.user || udoc?.usuario || null;
+      const isPro = !!(udoc?.isPro || udoc?.profissional || udoc?.tipo==='profissional');
+      return { nome: nomeU, foto: fotoU, user: userU, isPro };
+    }
+
+    async function sendPost({ texto, fileBlob, fileName, fileTypeHint }){
       if(!uid){
         toast('Faça login', 'Você precisa estar logado para postar.');
         return;
       }
-      $('btnEnviarPost').disabled = true;
-      try{
-        await tryInsertPost(grupoId, uid, txt);
-        $('postTexto').value='';
-        await loadPosts(grupoId);
-        toast('Postado', 'Seu post foi enviado.');
-      }catch(e){
-        console.error(e);
-        toast('Falha ao postar', 'Sua tabela comunidade_posts tem colunas diferentes. Me envie print das colunas que eu ajusto automático.');
-      }finally{
-        $('btnEnviarPost').disabled = false;
+      const meta = await currentMeta();
+
+      let mediaUrl = null;
+      let mediaType = null;
+
+      if(fileBlob){
+        const f = new File([fileBlob], fileName || 'audio.webm', { type: fileBlob.type || fileTypeHint || 'audio/webm' });
+        mediaUrl = await uploadFile(client, f, grupoId, uid);
+        mediaType = f.type || fileTypeHint || inferMediaType(mediaUrl) || 'audio';
+      }else if(inputArquivo && inputArquivo.files && inputArquivo.files[0]){
+        const file = inputArquivo.files[0];
+        mediaUrl = await uploadFile(client, file, grupoId, uid);
+        mediaType = file.type || inferMediaType(mediaUrl);
       }
-    });
+
+      await insertPost(client, grupoId, uid, texto || '', mediaUrl, mediaType, meta);
+
+      if(inputArquivo) inputArquivo.value = '';
+      if(inputTexto) inputTexto.value = '';
+      clearAudio();
+
+      await loadPosts(client, grupoId);
+      await loadMembers(client, grupoId, donoUid, cargosMap);
+      toast('Postado', 'Seu post foi enviado.');
+    }
+
+    if(btnEnviar){
+      btnEnviar.addEventListener('click', async ()=>{
+        const txt = (inputTexto?.value || '').trim();
+        const hasFile = inputArquivo && inputArquivo.files && inputArquivo.files[0];
+        if(!txt && !hasFile && !audioBlob){
+          toast('Escreva algo', 'Digite uma mensagem ou anexe um arquivo.');
+          return;
+        }
+        btnEnviar.disabled = true;
+        try{
+          if(audioBlob){
+            await sendPost({ texto: txt, fileBlob: audioBlob, fileName: 'audio.webm', fileTypeHint: 'audio/webm' });
+          }else{
+            await sendPost({ texto: txt });
+          }
+        }catch(e){
+          console.error(e);
+          const msg = String(e?.message || e);
+          if(msg.toLowerCase().includes('row level security') || msg.toLowerCase().includes('permission') || String(e?.code||'').startsWith('PGRST')){
+            toast('Falha ao enviar', 'Não consegui postar. Confira as policies (RLS) da tabela comunidade_posts e do bucket do Storage.');
+          }else{
+            toast('Falha ao enviar', msg);
+          }
+        }finally{
+          btnEnviar.disabled = false;
+        }
+      });
+    }
+
+    // Enter envia
+    if(inputTexto){
+      inputTexto.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          btnEnviar?.click();
+        }
+      });
+    }
+
+    // Áudio
+    const btnMic = $('btnMic');
+    if(btnMic && navigator.mediaDevices && window.MediaRecorder){
+      btnMic.addEventListener('click', async ()=>{
+        try{
+          if(btnMic.classList.contains('recording')){
+            btnMic.classList.remove('recording');
+            stopRecording();
+          }else{
+            btnMic.classList.add('recording');
+            await startRecording();
+          }
+        }catch(e){
+          console.error(e);
+          toast('Áudio indisponível', 'Permissão de microfone negada ou navegador não suporta.');
+          btnMic.classList.remove('recording');
+        }
+      });
+    }else if(btnMic){
+      btnMic.style.display='none';
+    }
+
+    const btnCancelarAudio = $('btnCancelarAudio');
+    if(btnCancelarAudio) btnCancelarAudio.addEventListener('click', clearAudio);
+
+    const btnEnviarAudio = $('btnEnviarAudio');
+    if(btnEnviarAudio) btnEnviarAudio.addEventListener('click', ()=>{ btnEnviar?.click(); });
+
   }
 
   window.addEventListener('DOMContentLoaded', init);

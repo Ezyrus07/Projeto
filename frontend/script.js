@@ -1414,8 +1414,25 @@ window.salvarCep = function() {
         const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
         localStorage.setItem('meu_cep_doke', cepFormatado); 
         window.atualizarTelaCep(cepFormatado);
+        window.preencherTodosCeps(cepFormatado);
         document.getElementById('boxCep').style.display = 'none';
     } else { alert("CEP inválido! Digite 8 números."); i.focus(); }
+}
+window.preencherTodosCeps = function(cep) {
+    if (!cep) return;
+    // Preencher todos os inputs com ID 'inputCep' na página
+    const todosInputsCep = document.querySelectorAll('input[id="inputCep"]');
+    todosInputsCep.forEach(input => {
+        input.value = cep;
+    });
+    // Preencher também inputs com outros IDs de CEP comuns
+    const outrosIds = ['cepOrcamento', 'cepEndereco', 'cepBusca'];
+    outrosIds.forEach(id => {
+        const input = document.getElementById(id);
+        if (input && input.type === 'text') {
+            input.value = cep;
+        }
+    });
 }
 window.atualizarTelaCep = function(cep) {
     const s = document.getElementById('textoCepSpan');
@@ -2329,7 +2346,14 @@ document.addEventListener("DOMContentLoaded", async function() {
     // 3. CEP Input Logic
     const inputCep = document.getElementById('inputCep');
     if (inputCep) {
-        inputCep.addEventListener('input', formatarCepInput);
+        inputCep.addEventListener('input', function(e) {
+            formatarCepInput(e);
+            // Sincronizar com os outros inputs de CEP enquanto digita
+            const cepAtual = e.target.value;
+            if (cepAtual.length >= 5) {
+                window.preencherTodosCeps(cepAtual);
+            }
+        });
         inputCep.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') window.salvarCep();
         });
@@ -2341,7 +2365,25 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     const cepSalvo = localStorage.getItem('meu_cep_doke');
-    if (cepSalvo) window.atualizarTelaCep(cepSalvo);
+    if (cepSalvo) {
+        window.atualizarTelaCep(cepSalvo);
+        window.preencherTodosCeps(cepSalvo);
+    }
+
+    // Adicionar listener a todos os inputs de CEP para sincronizar automaticamente
+    document.querySelectorAll('input[id="inputCep"], input[id="cepOrcamento"], input[id="cepEndereco"], input[id="cepBusca"]').forEach(input => {
+        // Preencher com o CEP salvo ao carregar
+        if (cepSalvo && !input.value) {
+            input.value = cepSalvo;
+        }
+        // Sincronizar quando digitar
+        input.addEventListener('input', function(e) {
+            const cepDigitado = e.target.value;
+            if (cepDigitado.length >= 5) {
+                window.preencherTodosCeps(cepDigitado);
+            }
+        });
+    });
 
     // 4. Lógica de Busca e Anúncios
     const params = new URLSearchParams(window.location.search);
@@ -8667,6 +8709,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   function setupSmartSearch() {
     const input = document.getElementById('inputBusca');
     const dropdown = document.getElementById('buscaDropdown');
+    const wrapper = document.getElementById('buscaWrapper');
     if (!input || !dropdown) return;
 
     let box = document.getElementById('dokeSugestoes');
@@ -8720,7 +8763,7 @@ async function carregarComentariosSupabase(publicacaoId) {
                   <span class="sug-dot"></span>
                   <span class="sug-text">${esc(t)}</span>
                 </div>
-                <button class="sug-pin" type="button" aria-label="Fixar" data-pin="${pinned ? '1' : '0'}">${pinned ? 'Fixado' : 'Fixar'}</button>
+                <button class="sug-pin" type="button" aria-label="${pinned ? 'Remover de favoritados' : 'Adicionar aos favoritados'}" data-pin="${pinned ? '1' : '0'}">${pinned ? '★' : '☆'}</button>
               </div>
             `;
           }).join('')}
@@ -8746,8 +8789,20 @@ async function carregarComentariosSupabase(publicacaoId) {
       });
     }
 
-    input.addEventListener('input', () => buildSuggestions(input.value));
-    input.addEventListener('focus', () => buildSuggestions(input.value));
+    input.addEventListener('input', () => {
+      buildSuggestions(input.value);
+      // Garante que a classe active seja adicionada
+      if (wrapper && !wrapper.classList.contains('active')) {
+        wrapper.classList.add('active');
+      }
+    });
+    input.addEventListener('focus', () => {
+      buildSuggestions(input.value);
+      // Garante que a classe active seja adicionada
+      if (wrapper && !wrapper.classList.contains('active')) {
+        wrapper.classList.add('active');
+      }
+    });
   }
 
   // ----------------------------

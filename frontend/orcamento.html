@@ -89,6 +89,40 @@
     resize: vertical;
     font-family: var(--fonte-padrao);
 }
+.anexo-hint{
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 6px;
+}
+.anexos-list{
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 10px;
+}
+.anexo-item{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 8px 10px;
+    font-size: 0.82rem;
+}
+.anexo-item .anexo-name{
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.anexo-item button{
+    border: none;
+    background: transparent;
+    color: #e74c3c;
+    font-weight: 700;
+    cursor: pointer;
+}
 
 .grid-duplo {
     display: grid;
@@ -240,26 +274,6 @@
     max-width: 720px;
     line-height: 1.35;
 }
-.orc-steps{
-    display:flex;
-    gap:10px;
-    flex-wrap: wrap;
-    justify-content:flex-end;
-}
-.orc-step{
-    background:#fff;
-    border:1px solid rgba(0,0,0,0.06);
-    border-radius: 999px;
-    padding: 6px 10px;
-    font-size: 0.78rem;
-    color:#444;
-    font-weight: 700;
-    display:flex;
-    align-items:center;
-    gap:6px;
-}
-.orc-step i{ color: var(--cor0); font-size: 1rem; }
-
 /* --- MODAL: PEDIDO ENVIADO / AGUARDANDO ACEITE --- */
 .orc-modal-overlay{
     position: fixed;
@@ -353,7 +367,6 @@
     gap: 18px;
     box-shadow: 0 18px 45px rgba(0,0,0,0.18);
 }
-    .orc-steps{ justify-content:flex-start; }
 }
 </style>
 
@@ -483,6 +496,12 @@
                         <label>Descrição detalhada(Opcional)</label>
                         <textarea class="input-premium area-texto" id="descricao-pedido" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
                     </div>
+                    <div class="input-group">
+                        <label>Anexos (opcional)</label>
+                        <input type="file" id="anexos-pedido" class="input-premium" multiple accept="image/*,application/pdf,.doc,.docx,.zip,.rar">
+                        <div class="anexo-hint">Envie fotos, PDFs ou arquivos que ajudem no orçamento.</div>
+                        <div id="lista-anexos" class="anexos-list"></div>
+                    </div>
 
                     <div class="grid-duplo">
                         <div class="input-group">
@@ -610,11 +629,127 @@
 
 <script>
     // 1. IMPORTAÇÕES NECESSÁRIAS
-    const { doc, getDoc, addDoc, collection, getDocs, query, where, limit } = window;
+    const { doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc } = window;
+    const { getStorage, ref, uploadBytes, getDownloadURL } = window;
     const { onAuthStateChanged } = window;
 
     // Variável para guardar as perguntas carregadas (se houver)
     window.perguntasTriagem = [];
+    window.__orc_anexos_files = [];
+
+    function coalesce() {
+        for (let i = 0; i < arguments.length; i++) {
+            const v = arguments[i];
+            if (v !== null && v !== undefined) return v;
+        }
+        return undefined;
+    }
+
+    function getInputValue(id) {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    }
+
+    function coalesce() {
+        for (let i = 0; i < arguments.length; i++) {
+            const v = arguments[i];
+            if (v !== null && v !== undefined) return v;
+        }
+        return undefined;
+    }
+
+    function getInputValue(id) {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    }
+
+    function renderListaAnexos(){
+        const list = document.getElementById('lista-anexos');
+        if (!list) return;
+        if (!window.__orc_anexos_files.length) {
+            list.innerHTML = '';
+            return;
+        }
+        list.innerHTML = window.__orc_anexos_files.map((f, idx) => `
+            <div class="anexo-item">
+                <span class="anexo-name">${f.name}</span>
+                <button type="button" onclick="removerAnexo(${idx})">Remover</button>
+            </div>
+        `).join('');
+    }
+
+    window.removerAnexo = function(idx){
+        if (idx < 0) return;
+        window.__orc_anexos_files.splice(idx, 1);
+        renderListaAnexos();
+    };
+
+    function initAnexosInput(){
+        const input = document.getElementById('anexos-pedido');
+        if (!input || input.dataset.bound === '1') return;
+        input.dataset.bound = '1';
+        input.addEventListener('change', (e) => {
+            const files = Array.from(e.target.files || []);
+            files.forEach((file) => {
+                const exists = window.__orc_anexos_files.some(f => f.name === file.name && f.size === file.size);
+                if (!exists) window.__orc_anexos_files.push(file);
+            });
+            input.value = '';
+            renderListaAnexos();
+        });
+    }
+
+    async function uploadAnexos(userUid, pedidoId){
+        if (!window.__orc_anexos_files.length || !getStorage || !ref || !uploadBytes || !getDownloadURL) return [];
+        const storage = getStorage();
+        const uploaded = [];
+        for (const file of window.__orc_anexos_files) {
+            const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `orcamentos/${userUid}/${pedidoId}/${Date.now()}_${safeName}`;
+            const storageRef = ref(storage, path);
+            await uploadBytes(storageRef, file);
+            const url = await getDownloadURL(storageRef);
+            uploaded.push({ nome: safeName, url, tipo: file.type || '' });
+        }
+        return uploaded;
+    }
+
+    async function carregarPedidoReferencia(db, pedidoId){
+        if (!db || !pedidoId) return;
+        try {
+            const snap = await getDoc(doc(db, "pedidos", pedidoId));
+            if (!snap.exists()) return;
+            const p = snap.data() || {};
+            const titulo = document.getElementById('titulo-pedido');
+            const desc = document.getElementById('descricao-pedido');
+            if (titulo && p.servicoReferencia) titulo.value = p.servicoReferencia;
+            if (desc && p.mensagemInicial) desc.value = p.mensagemInicial;
+
+            const selPQ = document.getElementById('para-quando');
+            const wrapData = document.getElementById('wrap-data-especifica');
+            const inpData = document.getElementById('data-especifica');
+            if (selPQ && p.paraQuando) {
+                const pqVal = String(p.paraQuando);
+                const opts = Array.from(selPQ.options || []);
+                const match = opts.find(o => o.textContent && pqVal.toLowerCase().includes(o.textContent.toLowerCase()));
+                if (match) selPQ.value = match.value;
+                if (pqVal.toLowerCase().includes('data específica') || pqVal.toLowerCase().includes('data especifica')) {
+                    if (wrapData) wrapData.style.display = 'block';
+                    const m = pqVal.match(/(\\d{2})\\/(\\d{2})\\/(\\d{4})/);
+                    if (m && inpData) inpData.value = `${m[3]}-${m[2]}-${m[1]}`;
+                }
+            }
+
+            const turno = document.getElementById('turno');
+            if (turno && p.turno) {
+                const opts = Array.from(turno.options || []);
+                const match = opts.find(o => o.textContent && String(p.turno).toLowerCase().includes(o.textContent.toLowerCase()));
+                if (match) turno.value = match.value;
+            }
+        } catch (e) {
+            console.warn('Falha ao pré-preencher pedido:', e);
+        }
+    }
 
     // --- 2. CARREGAMENTO DA PÁGINA ---
     window.addEventListener('load', async function() {
@@ -628,9 +763,13 @@
         const urlParams = new URLSearchParams(window.location.search);
         const anuncioId = urlParams.get('aid') || urlParams.get('id'); 
         const prestadorUid = urlParams.get('uid'); 
+        const refPedidoId = urlParams.get('refPedido') || urlParams.get('pedidoId');
         window.__orc_anuncio = null;
         window.__orc_anuncioId = anuncioId || "";
         window.__orc_prestador = null;
+
+        initAnexosInput();
+        renderListaAnexos();
 
         // A. Carrega Prestador (Card Lateral)
         if(prestadorUid) {
@@ -653,12 +792,12 @@
                 inputTitulo.value = "Orcamento: " + dadosAnuncio.titulo;
             }
             aplicarConfiguracoesDoAnuncio(dadosAnuncio);
-
-            const rawPerguntas =
-                dadosAnuncio.perguntasFormularioJson ??
-                dadosAnuncio.perguntasformulariojson ??
-                dadosAnuncio.perguntas_formulario_json ??
-                dadosAnuncio.perguntas_formulariojson;
+            const rawPerguntas = coalesce(
+                dadosAnuncio.perguntasFormularioJson,
+                dadosAnuncio.perguntasformulariojson,
+                dadosAnuncio.perguntas_formulario_json,
+                dadosAnuncio.perguntas_formulariojson
+            );
             if (rawPerguntas) {
                 try {
                     let perguntas = rawPerguntas;
@@ -695,11 +834,12 @@
                     aplicarConfiguracoesDoAnuncio(dadosAnuncio);
 
                     // --- AQUI ESTÁ A CORREÇÃO: CARREGA AS PERGUNTAS ---
-                    const rawPerguntas =
-                        dadosAnuncio.perguntasFormularioJson ??
-                        dadosAnuncio.perguntasformulariojson ??
-                        dadosAnuncio.perguntas_formulario_json ??
-                        dadosAnuncio.perguntas_formulariojson;
+                    const rawPerguntas = coalesce(
+                        dadosAnuncio.perguntasFormularioJson,
+                        dadosAnuncio.perguntasformulariojson,
+                        dadosAnuncio.perguntas_formulario_json,
+                        dadosAnuncio.perguntas_formulariojson
+                    );
                     if (rawPerguntas) {
                         try {
                             let perguntas = rawPerguntas;
@@ -736,6 +876,10 @@
                 bloquearBotaoProprioAnuncio();
             }
         });
+
+        if (refPedidoId) {
+            await carregarPedidoReferencia(db, refPedidoId);
+        }
 
         // Configura o botão de enviar
         configurarBotaoEnviar();
@@ -856,16 +1000,16 @@
             const pqVal = selPQ ? selPQ.value : "";
             const isEspecifica = String(pqVal).toLowerCase().includes('data específica') || String(pqVal).toLowerCase().includes('data especifica');
             if (isEspecifica) {
-                const d = document.getElementById('data-especifica')?.value;
+                const d = getInputValue('data-especifica');
                 if (!d) { alert('Selecione o dia para a data específica.'); return; }
             }
 
             // Validação: Localização (somente quando presencial/ambos)
             const precisaLoc = !!window.__orc_precisa_localizacao;
             if (precisaLoc) {
-                const cep = (document.getElementById('cepOrcamento')?.value || '').trim();
-                const end = (document.getElementById('endereco-completo')?.value || '').trim();
-                const num = (document.getElementById('numero-residencia')?.value || '').trim();
+                const cep = getInputValue('cepOrcamento').trim();
+                const end = getInputValue('endereco-completo').trim();
+                const num = getInputValue('numero-residencia').trim();
                 if (!cep || !end || !num) { alert('Preencha CEP, endereço e número do local do serviço.'); return; }
             }
 
@@ -895,12 +1039,12 @@
                         const precisaLoc = !!window.__orc_precisa_localizacao;
                         if (!precisaLoc) return descricao;
 
-                        const cep = (document.getElementById('cepOrcamento')?.value || '').trim();
-                        const end = (document.getElementById('endereco-completo')?.value || '').trim();
-                        const num = (document.getElementById('numero-residencia')?.value || '').trim();
-                        const comp = (document.getElementById('complemento-residencia')?.value || '').trim();
-                        const ref = (document.getElementById('referencia-residencia')?.value || '').trim();
-                        const info = (document.getElementById('info-local')?.value || '').trim();
+                        const cep = getInputValue('cepOrcamento').trim();
+                        const end = getInputValue('endereco-completo').trim();
+                        const num = getInputValue('numero-residencia').trim();
+                        const comp = getInputValue('complemento-residencia').trim();
+                        const ref = getInputValue('referencia-residencia').trim();
+                        const info = getInputValue('info-local').trim();
 
                         let loc = `${end}, Nº ${num}`;
                         if (comp) loc += `, ${comp}`;
@@ -922,7 +1066,7 @@ Local do serviço: ${loc}${extra}`;
                         const v = sel ? sel.value : '';
                         const isEspecifica = String(v).toLowerCase().includes('data específica') || String(v).toLowerCase().includes('data especifica');
                         if (!isEspecifica) return v;
-                        const d = document.getElementById('data-especifica')?.value;
+                        const d = getInputValue('data-especifica');
                         return d ? (`Data específica: ${formatarDataBR(d)}`) : v;
                     })(),
                     turno: document.getElementById('turno').value,
@@ -939,6 +1083,62 @@ Local do serviço: ${loc}${extra}`;
                 });
 
                 console.log("🎉 Sucesso! ID:", docRef.id);
+
+                // Envia anexos como mensagens no chat do pedido (se houver)
+                try {
+                    const anexosEnviados = await uploadAnexos(user.uid, docRef.id);
+                    if (anexosEnviados.length) {
+                        for (const a of anexosEnviados) {
+                            const tipoMsg = String(a.tipo || '').startsWith('image/') ? 'imagem' : 'arquivo';
+                            await addDoc(collection(db, "pedidos", docRef.id, "mensagens"), {
+                                tipo: tipoMsg,
+                                texto: a.nome,
+                                url: a.url,
+                                senderUid: user.uid,
+                                timestamp: new Date()
+                            });
+                        }
+                        // Atualiza triagem com resumo dos anexos e meta do pedido
+                        const anexosResumo = anexosEnviados.map(a => `${a.nome} - ${a.url}`).join('\\n');
+                        const triagemAtual = respostasTriagem.slice();
+                        triagemAtual.push({ pergunta: 'Anexos', resposta: anexosResumo });
+                        await updateDoc(doc(db, "pedidos", docRef.id), {
+                            respostasTriagem: triagemAtual,
+                            ultimaMensagem: '📎 Anexos enviados',
+                            dataAtualizacao: new Date().toISOString()
+                        });
+                        window.__orc_anexos_files = [];
+
+    function coalesce() {
+        for (let i = 0; i < arguments.length; i++) {
+            const v = arguments[i];
+            if (v !== null && v !== undefined) return v;
+        }
+        return undefined;
+    }
+
+    function getInputValue(id) {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    }
+
+    function coalesce() {
+        for (let i = 0; i < arguments.length; i++) {
+            const v = arguments[i];
+            if (v !== null && v !== undefined) return v;
+        }
+        return undefined;
+    }
+
+    function getInputValue(id) {
+        const el = document.getElementById(id);
+        return el ? el.value : "";
+    }
+                        renderListaAnexos();
+                    }
+                } catch (e) {
+                    console.warn("Falha ao enviar anexos:", e);
+                }
 
                 // Sucesso
                 localStorage.setItem('doke_pedido_enviado', 'true');
@@ -1023,8 +1223,8 @@ Local do serviço: ${loc}${extra}`;
             return null;
         };
 
-        const totalAval = numFromAny(stats.avaliacoes) ?? numFromAny(stats.total) ?? numFromAny(stats.count) ?? 0;
-        const media = numFromAny(stats.media) ?? numFromAny(stats.nota) ?? null;
+        const totalAval = coalesce(numFromAny(stats.avaliacoes), numFromAny(stats.total), numFromAny(stats.count), 0);
+        const media = coalesce(numFromAny(stats.media), numFromAny(stats.nota), null);
 
         if (document.getElementById('notaPrestadorResumo')) {
             if (!totalAval || !media) {
@@ -1035,7 +1235,7 @@ Local do serviço: ${loc}${extra}`;
         }
 
         if (document.getElementById('jobsPrestadorResumo')) {
-            const jobs = numFromAny(stats.jobs) ?? numFromAny(stats.servicos) ?? 0;
+            const jobs = coalesce(numFromAny(stats.jobs), numFromAny(stats.servicos), 0);
             document.getElementById('jobsPrestadorResumo').innerText = String(jobs);
         }
     }
@@ -1128,3 +1328,10 @@ Local do serviço: ${loc}${extra}`;
 
 </body>
 </html>
+
+
+
+
+
+
+

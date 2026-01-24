@@ -885,12 +885,6 @@ function hideIf(selector, cond){
       const mediaVal = Number(a.media ?? a.nota ?? 0);
       const dateText = getDateText(a);
       const mensagens = [];
-      if(a.detalhes){
-        criterios.forEach(c=>{
-          const det = a.detalhes?.[c.id];
-          if(det?.comentario) mensagens.push({ label: c.label, text: det.comentario });
-        });
-      }
       const comentarioGeral = getComentarioGeral(a);
       if(comentarioGeral) mensagens.push({ label: "Comentario geral", text: comentarioGeral });
       if(!mensagens.length) return;
