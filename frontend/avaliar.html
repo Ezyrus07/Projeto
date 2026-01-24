@@ -480,12 +480,21 @@
                 return;
             }
 
-            const comentarioGeral = document.getElementById('textoComentario').value;
+            const comentarioGeral = (document.getElementById('textoComentario').value || "").trim();
             const anonimo = document.getElementById('checkAnonimo').checked;
             
             const soma = notas.reduce((a, b) => a + b, 0);
             const media = Number(window.avaliacaoGeral);
             const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            const clienteNome = anonimo ? "Anônimo" : (perfilCliente.user || "Cliente");
+            const clienteFoto = anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || "");
+            const detalhesPayload = { ...window.avaliacaoState };
+            const metaFallback = {};
+            if (comentarioGeral) metaFallback.comentarioGeral = comentarioGeral;
+            if (!anonimo && clienteNome) metaFallback.clienteNome = clienteNome;
+            if (!anonimo && clienteFoto) metaFallback.clienteFoto = clienteFoto;
+            if (anonimo) metaFallback.anonimo = true;
+            if (Object.keys(metaFallback).length) detalhesPayload._meta = metaFallback;
 
             const btnEnviar = document.querySelector('.btn-submit-eval');
             btnEnviar.innerText = "Enviando...";
@@ -531,21 +540,21 @@
                         pedidoId: pedidoId,
                         profissional_id: profRowId,
                         cliente_id: clienteRowId || userCheck.uid,
-                        detalhes: window.avaliacaoState,
+                        detalhes: detalhesPayload,
                         comentarioGeral: comentarioGeral,
                         media: parseFloat(media.toFixed(1)),
                         nota: parseFloat(media.toFixed(1)),
                         data: new Date().toISOString(),
-                        clienteNome: anonimo ? "Anônimo" : (perfilCliente.user || "Cliente"),
-                        clienteFoto: anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || "")
+                        clienteNome: clienteNome,
+                        clienteFoto: clienteFoto
                     }
                     : {
                         pedidoId: pedidoId,
                         profUid: profUid,
                         clienteUid: userCheck.uid,
-                        clienteNome: anonimo ? "Anônimo" : (perfilCliente.user || "Cliente"),
-                        clienteFoto: anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || ""),
-                        detalhes: window.avaliacaoState,
+                        clienteNome: clienteNome,
+                        clienteFoto: clienteFoto,
+                        detalhes: detalhesPayload,
                         comentarioGeral: comentarioGeral,
                         media: parseFloat(media.toFixed(1)),
                         nota: parseFloat(media.toFixed(1)),
@@ -568,7 +577,7 @@
                         ? {
                             profissional_id: profRowId,
                             cliente_id: clienteRowId || userCheck.uid,
-                            detalhes: window.avaliacaoState,
+                            detalhes: detalhesPayload,
                             media: parseFloat(media.toFixed(1)),
                             nota: parseFloat(media.toFixed(1)),
                             data: new Date().toISOString()
@@ -576,7 +585,7 @@
                         : {
                             profUid: profUid,
                             clienteUid: userCheck.uid,
-                            detalhes: window.avaliacaoState,
+                            detalhes: detalhesPayload,
                             media: parseFloat(media.toFixed(1)),
                             nota: parseFloat(media.toFixed(1)),
                             data: new Date().toISOString()

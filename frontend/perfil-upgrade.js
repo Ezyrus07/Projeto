@@ -721,6 +721,40 @@ function hideIf(selector, cond){
     }).join("");
 
     const critLabels = ["Péssimo","Ruim","Regular","Bom","Ótimo"];
+    const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+    const getMeta = (a)=> (a && a.detalhes && a.detalhes._meta) ? a.detalhes._meta : {};
+    const getComentarioGeral = (a)=>{
+      const meta = getMeta(a);
+      return a.comentarioGeral || a.comentario || meta.comentarioGeral || meta.comentario || "";
+    };
+    const getNomeCliente = (a)=>{
+      const meta = getMeta(a);
+      if(meta.anonimo) return "Anônimo";
+      return a.clienteNome || meta.clienteNome || "Cliente";
+    };
+    const getFotoCliente = (a)=>{
+      const meta = getMeta(a);
+      return a.clienteFoto || meta.clienteFoto || defaultAvatar;
+    };
+    const getDateText = (a)=>{
+      const dateValue = a.data || a.created_at || a.createdAt || a.createdat;
+      return dateValue ? fmtDateShort(dateValue) : "";
+    };
+    const buildCritComments = (critId)=>{
+      const items = [];
+      data.forEach(a=>{
+        const det = a.detalhes?.[critId];
+        const texto = det?.comentario;
+        if(!texto) return;
+        items.push({
+          nome: getNomeCliente(a),
+          foto: getFotoCliente(a),
+          dataText: getDateText(a),
+          text: texto
+        });
+      });
+      return items;
+    };
     const criteriaCards = criterios.map(c=>{
       const dist = critDistrib[c.id] || [0,0,0,0,0];
       const total = dist.reduce((a,b)=>a+b,0);
@@ -736,6 +770,22 @@ function hideIf(selector, cond){
             <span class="fr-crit-dist-count">${count}</span>
           </div>`;
       }).join("");
+      const comments = buildCritComments(c.id);
+      const commentsHtml = comments.length
+        ? comments.map((m)=>(
+          `<div class="fr-crit-comment-item">
+            <div class="fr-crit-comment-head">
+              <img class="fr-crit-comment-avatar" src="${m.foto}" alt="">
+              <div>
+                <div class="fr-crit-comment-name">${escapeHtml(m.nome)}</div>
+                <div class="fr-crit-comment-date">${m.dataText}</div>
+              </div>
+            </div>
+            <div class="fr-crit-comment-text">${escapeHtml(m.text)}</div>
+          </div>`
+        )).join("")
+        : `<div class="fr-crit-comment-empty">Sem comentarios neste criterio.</div>`;
+      const commentBtnDisabled = comments.length ? "" : " disabled";
       return `
         <div class="fr-crit-card">
           <div class="fr-crit-card-title">${c.label}</div>
@@ -746,6 +796,12 @@ function hideIf(selector, cond){
           </div>
           <div class="fr-crit-dist">
             ${distRows}
+          </div>
+          <button class="fr-crit-comment-btn" type="button" data-target="fr-crit-comments-${c.id}" aria-expanded="false"${commentBtnDisabled}>
+            Comentarios <span class="fr-crit-comment-count">${comments.length}</span>
+          </button>
+          <div class="fr-crit-comments" id="fr-crit-comments-${c.id}" aria-hidden="true">
+            ${commentsHtml}
           </div>
         </div>`;
     }).join("");
@@ -809,22 +865,38 @@ function hideIf(selector, cond){
       updateNav();
     }
 
+    // criterio: toggle comentarios
+    const commentButtons = box.querySelectorAll(".fr-crit-comment-btn");
+    commentButtons.forEach(btn=>{
+      const targetId = btn.getAttribute("data-target");
+      const panel = targetId ? box.querySelector(`#${targetId}`) : null;
+      if(!panel) return;
+      btn.addEventListener("click", ()=>{
+        const isOpen = panel.classList.toggle("open");
+        btn.classList.toggle("active", isOpen);
+        btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+        panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
+      });
+    });
+
     const list = $("#dpAvalList");
     let hasMsgs = false;
     data.forEach(a=>{
       const mediaVal = Number(a.media ?? a.nota ?? 0);
-      const dateValue = a.data || a.created_at || a.createdAt || a.createdat;
-      const dateText = dateValue ? fmtDateShort(dateValue) : "";
+      const dateText = getDateText(a);
       const mensagens = [];
-      if(a.comentarioGeral) mensagens.push({ label: "Comentário geral", text: a.comentarioGeral });
       if(a.detalhes){
         criterios.forEach(c=>{
           const det = a.detalhes?.[c.id];
           if(det?.comentario) mensagens.push({ label: c.label, text: det.comentario });
         });
       }
+      const comentarioGeral = getComentarioGeral(a);
+      if(comentarioGeral) mensagens.push({ label: "Comentario geral", text: comentarioGeral });
       if(!mensagens.length) return;
       hasMsgs = true;
+      const nomeCliente = getNomeCliente(a);
+      const fotoCliente = getFotoCliente(a);
       const el = document.createElement("div");
       el.className = "fr-comment";
       const msgsHtml = mensagens.map(m=>(
@@ -832,9 +904,9 @@ function hideIf(selector, cond){
       )).join("");
       el.innerHTML = `
         <div class="fr-comment-head">
-          <img class="fr-review-avatar" src="${a.clienteFoto || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'}" alt="">
+          <img class="fr-review-avatar" src="${fotoCliente}" alt="">
           <div>
-            <div class="fr-review-name">${escapeHtml(a.clienteNome || "Anônimo")}</div>
+            <div class="fr-review-name">${escapeHtml(nomeCliente)}</div>
             <div class="fr-review-date">${dateText}</div>
           </div>
           <div class="fr-review-score">
@@ -2468,5 +2540,6 @@ async function loadServicosPerfil(ctx) {
   };
 
 })();
+
 
 
