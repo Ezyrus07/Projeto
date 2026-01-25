@@ -1,1291 +1,1768 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Empresas | Doke</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Doke Empresas - Descubra o Local</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <!-- Leaflet (Mapa) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <link rel="stylesheet" href="style.css?v=20260117">
+    <link rel="stylesheet" href="doke-fixes.css?v=20260117">
+<style>
+        /* ============================================================
+           CORREÇÃO DE LAYOUT (CENTRALIZAÇÃO)
+           ============================================================ */
+        
+        :root {
+            --cor-doke: #0b7768;
+            --cor-fundo-pagina: #f4f7f6; /* Cinza bem suave igual ao print */
+        }
 
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-  <link rel="stylesheet" href="style.css">
-  <script src="script.js" defer></script>
+        body {
+            background-color: var(--cor-fundo-pagina);
+            overflow-x: hidden;
+        }
 
-  <!-- Leaflet (Mapa) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-          integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+        /* 1. O WRAPPER PRINCIPAL (Ocupa o espaço ao lado da sidebar) */
+        .dp-wrap-business {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 25px 20px 110px;
+            box-sizing: border-box;
+        }
 
-  <style>
-    /* ============================================================
-       EMPRESAS (REFAZ DO ZERO) — clean, app-like, sem poluição
-       Mantém o padrão do site (sidebar/header/style.css).
-       ============================================================ */
+        /* 2. O CENTRALIZADOR (Limita a largura para não ficar esticado demais) */
+        .centralizador {
+            width: 100%;
+            max-width: 1200px; /* Largura máxima agradável */
+            padding: 30px; /* Respiro nas bordas */
+            box-sizing: border-box;
+        }
 
-    .emp-shell {
-      max-width: 1200px;
-      margin: 0 auto;
-    }
+        /* Mobile */
+        @media(max-width: 900px) {
+            .dp-wrap-business { margin-left: 0; width: 100%; display: block; padding: 15px 12px 110px; }
+            .centralizador { padding: 0; width: 100%; }
+        }
 
-    /* Top bar */
-    .emp-top {
-      display:flex;
-      align-items:flex-start;
-      justify-content:space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin-bottom: 12px;
-    }
 
-    .emp-title h1 {
-      margin:0;
-      font-size: 1.55rem;
-      font-weight: 900;
-      color:#1e1e1e;
-      letter-spacing: .2px;
-    }
-    .emp-title p {
-      margin: 6px 0 0;
-      color:#6a6a6a;
-      font-weight: 700;
-      line-height: 1.35;
-      max-width: 780px;
-      font-size: .95rem;
-    }
+        /* ============================================================
+           ESTILOS DOS ELEMENTOS (Cards, Header, etc.)
+           ============================================================ */
 
-    .emp-loc {
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      border: 1px solid #eaeaea;
-      background: #fff;
-      border-radius: 999px;
-      padding: 8px 10px;
-      color:#666;
-      font-weight: 900;
-      font-size: .82rem;
-      margin-top: 10px;
-      width: fit-content;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.04);
-    }
+        /* Header Verde com Gradiente */
+        .discovery-header {
+            background: linear-gradient(135deg, #0b7768 0%, #064e44 100%);
+            border-radius: 24px;
+            padding: 40px;
+            color: white;
+            margin-bottom: 40px;
+            position: relative;
+            overflow: visible;
+            box-shadow: 0 10px 30px rgba(11, 119, 104, 0.2);
+            margin-top: 50px; /* Distância do topo */
+        }
 
-    .emp-tabs {
-      display:flex;
-      gap: 8px;
-      background:#fff;
-      border:1px solid #eee;
-      border-radius: 999px;
-      padding: 6px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.05);
-    }
-    .emp-tab {
-      border: none;
-      background: transparent;
-      cursor:pointer;
-      padding: 10px 14px;
-      border-radius: 999px;
-      font-weight: 900;
-      color:#444;
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      user-select:none;
-      white-space: nowrap;
-    }
-    .emp-tab.active {
-      background: rgba(42,95,144,.12);
-      color: var(--cor2);
-    }
+        .discovery-header h1 {
+            font-size: 2.2rem;
+            margin-bottom: 10px;
+            font-weight: 800;
+        }
 
-    /* Pages */
-    .emp-page { display:none; }
-    .emp-page.active { display:block; }
+        /* Pills (Botões de Filtro) */
+        .filter-scroll {
+            display: flex;
+            gap: 12px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            margin-top: 20px;
+            scrollbar-width: none;
+        }
+        .filter-scroll::-webkit-scrollbar { display: none; }
 
-    /* Map card (igual referência) */
-    .emp-map-card {
-      position: relative;
-      border-radius: 22px;
-      overflow: hidden;
-      border: 1px solid #eee;
-      background: #fff;
-      box-shadow: 0 18px 40px rgba(0,0,0,0.06);
-    }
+        .filter-pill {
+            background: rgba(255,255,255,0.15);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            white-space: nowrap;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            backdrop-filter: blur(5px);
+        }
+        .filter-pill:hover, .filter-pill.active {
+            background: white;
+            color: var(--cor-doke);
+            font-weight: 700;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
 
-    #map {
-      width: 100%;
-      height: 520px;
-      border-radius: 22px;
-    }
-    @media (max-width: 980px) {
-      #map { height: 420px; }
-    }
-    @media (max-width: 520px) {
-      #map { height: 360px; }
-    }
+        /* Input de Busca dentro do Header */
+        .search-hero {
+            margin-top: 25px;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            padding: 8px 20px;
+            height: 55px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            max-width: 600px;
+        }
+        .search-hero i { font-size: 1.4rem; color: #999; margin-right: 15px; }
+        .search-hero input { border: none; outline: none; width: 100%; font-size: 1rem; color: #333; }
 
-    /* Dim / blur layer to make it look "hero" like */
-    .emp-map-dim {
-      position:absolute;
-      inset: 0;
-      background: radial-gradient(80% 120% at 50% 0%, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.20) 65%, rgba(0,0,0,0.30) 100%),
-                  linear-gradient(180deg, rgba(0,0,0,0.00) 0%, rgba(0,0,0,0.25) 100%);
-      pointer-events: none;
-      opacity: .85;
-      transition: opacity .25s ease;
-    }
-    .emp-map-card.is-open .emp-map-dim {
-      opacity: .10;
-    }
+        /* Vibe Local (Stories/Reels) */
+        .vibe-section { margin-bottom: 50px; }
+        .vibe-title { font-size: 1.5rem; font-weight: 700; color: #1f2d3d; margin-bottom: 20px; display: flex; align-items: center; gap: 10px; }
+        
+        .vibe-card {
+            min-width: 160px;
+            height: 250px;
+            border-radius: 16px;
+            background: #ccc;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: 0.3s;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .vibe-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        .vibe-card img { width: 100%; height: 100%; object-fit: cover; }
+        .vibe-info {
+            position: absolute; bottom: 0; left: 0; width: 100%;
+            padding: 15px;
+            background: linear-gradient(to top, rgba(0,0,0,0.8), transparent);
+            color: white;
+        }
 
-    .emp-overlay {
-      position:absolute;
-      inset: 0;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      text-align:center;
-      padding: 22px;
-      pointer-events: none;
-      transition: opacity .25s ease, transform .25s ease;
-      opacity: 1;
-      transform: translateY(0);
-    }
-    .emp-map-card.is-open .emp-overlay {
-      opacity: 0;
-      transform: translateY(10px);
-    }
+        /* Grid de Empresas */
+        .business-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 25px;
+        }
 
-    .emp-hero {
-      pointer-events: none;
-      max-width: 780px;
-    }
-    .emp-hero h2 {
-      margin:0;
-      font-size: clamp(1.6rem, 3.4vw, 2.4rem);
-      font-weight: 950;
-      color:#fff;
-      letter-spacing: .2px;
-      text-shadow: 0 10px 30px rgba(0,0,0,0.35);
-    }
-    .emp-hero p {
-      margin: 10px 0 0;
-      color: rgba(255,255,255,.92);
-      font-weight: 800;
-      line-height: 1.4;
-      text-shadow: 0 10px 30px rgba(0,0,0,0.35);
-    }
+        .biz-card {
+            background: white;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            transition: 0.3s;
+            border: 1px solid rgba(0,0,0,0.05);
+            position: relative;
+        }
+        .biz-card:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(11, 119, 104, 0.12); border-color: rgba(11,119,104,0.2); }
 
-    .emp-hero-actions {
-      margin-top: 18px;
-      display:flex;
-      gap: 10px;
-      justify-content:center;
-      flex-wrap: wrap;
-      pointer-events: auto;
-    }
+        .biz-cover { height: 180px; width: 100%; object-fit: cover; }
+        
+        .biz-content { padding: 20px; }
+        
+        .biz-title { font-size: 1.15rem; font-weight: 700; color: #1f2d3d; margin-bottom: 5px; }
+        
+        .biz-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #f0f0f0;
+            display: flex; gap: 10px;
+        }
+        
+        .btn-biz-primary {
+            flex: 1;
+            background: var(--cor-doke);
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-biz-primary:hover { background: #085e52; }
+        
+        /* Botão Flutuante Mapa */
+        .floating-map-btn {
+            position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+            background: #1f2d3d; color: white; padding: 12px 25px;
+            border-radius: 50px; font-weight: 600; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+            cursor: pointer; z-index: 100; display: flex; gap: 8px; align-items: center;
+        }
+        .floating-map-btn:hover { transform: translateX(-50%) scale(1.05); background: black; }
 
-    .emp-btn {
-      border:none;
-      cursor:pointer;
-      border-radius: 999px;
-      padding: 12px 18px;
-      font-weight: 950;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      gap: 10px;
-      user-select:none;
-      transition: transform .08s ease;
-      white-space: nowrap;
-      box-shadow: 0 16px 34px rgba(0,0,0,0.18);
-    }
-    .emp-btn:active { transform: translateY(1px); }
-    .emp-btn.primary {
-      background: #fff;
-      color: #1b1b1b;
-    }
-    .emp-btn.secondary {
-      background: rgba(255,255,255,.18);
-      color: #fff;
-      border: 1px solid rgba(255,255,255,.28);
-      box-shadow: none;
-      backdrop-filter: blur(8px);
-    }
+        /* Badge Verificado */
+        .biz-verified {
+            position: absolute; top: 15px; right: 15px;
+            background: white; color: var(--cor-doke);
+            width: 32px; height: 32px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 1.2rem; box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+        }
 
-    /* Floating search pill (clean) */
-    .emp-pillbar {
-      position:absolute;
-      left: 16px;
-      right: 16px;
-      bottom: 16px;
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      background: rgba(255,255,255,.95);
-      border: 1px solid #eee;
-      border-radius: 999px;
-      padding: 10px 12px;
-      box-shadow: 0 18px 40px rgba(0,0,0,0.10);
-      backdrop-filter: blur(10px);
-    }
-    .emp-pillbar .pill {
-      display:flex;
-      align-items:center;
-      gap: 10px;
-      flex: 1;
-      min-width: 0;
-    }
-    .emp-pillbar input {
-      border: none;
-      outline: none;
-      background: transparent;
-      width: 100%;
-      font-weight: 900;
-      color:#333;
-    }
-    .emp-pillbar .mini {
-      border: 1px solid #e8e8e8;
-      border-radius: 999px;
-      padding: 10px 12px;
-      background: #fff;
-      font-weight: 950;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-      white-space: nowrap;
-    }
-    .emp-pillbar .mini.primary {
-      background: var(--cor2);
-      color:#fff;
-      border-color: transparent;
-    }
+    
+        /* ============================================================
+           BUSCA (MESMO PADRÃO DO INDEX) DENTRO DO HERO
+           ============================================================ */
+        .discovery-header .busca-wrapper {
+            max-width: 720px;
+            margin: 28px 0 0 0;
+        }
+        .discovery-header .busca-input-container {
+            box-shadow: 0 10px 30px rgba(0,0,0,0.18);
+        }
+        .discovery-header .busca-dropdown {
+            margin-top: 14px;
+        }
+        .discovery-header .busca-hint {
+            border-radius: 14px;
+        }
 
-    /* FAB */
-    .emp-fab {
-      position: fixed;
-      right: 22px;
-      bottom: 22px;
-      width: 54px;
-      height: 54px;
-      border-radius: 18px;
-      background: var(--cor2);
-      color:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 24px;
-      border: none;
-      cursor:pointer;
-      box-shadow: 0 18px 40px rgba(42,95,144,.28);
-      z-index: 50;
-    }
-    @media (max-width: 520px) {
-      .emp-fab { right: 16px; bottom: 16px; }
-    }
+        /* ============================================================
+           MAPA (SEÇÃO CENTRALIZADA)
+           ============================================================ */
+        .mapa-section {
+            background: #fff;
+            border-radius: 20px;
+            padding: 18px 18px 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border: 1px solid rgba(0,0,0,0.05);
+            margin: -10px 0 35px;
+        }
+        .mapa-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        .mapa-head h2 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: #1f2d3d;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .mapa-note {
+            font-size: 0.85rem;
+            color: #7b8794;
+            margin-top: 4px;
+        }
+        #mapCanvas {
+            width: 100%;
+            height: 340px;
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        @media(max-width: 600px) {
+            #mapCanvas { height: 280px; }
+        }
 
-    /* Modal (Filtros) */
-    .emp-modal {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.38);
-      display:none;
-      align-items:center;
-      justify-content:center;
-      padding: 18px;
-      z-index: 60;
-    }
-    .emp-modal.open { display:flex; }
+/* ============================================================
+   CONTROLES + FILTROS + EXPERIÊNCIA "APP"
+   ============================================================ */
+.results-section { margin-bottom: 40px; }
+.results-head {
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  margin: 10px 0 18px;
+}
+.results-title { font-size: 1.55rem; color:#1f2d3d; font-weight:800; margin:0; }
+.btn-filters{
+  background:#fff; border:1px solid rgba(11,119,104,0.25); color: var(--cor-doke);
+  padding: 10px 14px; border-radius: 14px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; gap:8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+}
+.btn-filters:hover{ background: rgba(11,119,104,0.06); }
 
-    .emp-modal-card {
-      width: min(720px, 100%);
-      background:#fff;
-      border: 1px solid #eee;
-      border-radius: 22px;
-      padding: 14px;
-      box-shadow: 0 28px 70px rgba(0,0,0,0.20);
-    }
+.controls-bar{
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.05);
+  border-radius: 18px;
+  padding: 12px 14px;
+  display:flex; align-items:center; justify-content:space-between; gap:12px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+  margin-bottom: 12px;
+}
+.sort-wrap{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.sort-wrap label{ font-size:0.85rem; color:#6b7280; font-weight:700; }
+.sort-wrap select{
+  border:1px solid rgba(0,0,0,0.10);
+  border-radius: 12px;
+  padding: 10px 12px;
+  outline:none;
+  font-weight:700;
+  color:#1f2d3d;
+  background:#fff;
+}
+.controls-right{ display:flex; align-items:center; gap:12px; flex-wrap:wrap; justify-content:flex-end; }
+.results-count{ font-size:0.9rem; color:#6b7280; font-weight:700; }
 
-    .emp-modal-head {
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      margin-bottom: 8px;
-    }
-    .emp-modal-head b {
-      font-size: 1.05rem;
-      font-weight: 950;
-      color:#222;
-    }
-    .emp-x {
-      border:none;
-      background:#f5f5f5;
-      width: 40px;
-      height: 40px;
-      border-radius: 14px;
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-size: 20px;
-    }
+.btn-ghost{
+  background: rgba(11,119,104,0.06);
+  color: var(--cor-doke);
+  border: 1px solid rgba(11,119,104,0.20);
+  padding: 9px 12px;
+  border-radius: 12px;
+  font-weight: 800;
+  cursor:pointer;
+  display:flex; align-items:center; gap:8px;
+}
+.btn-ghost:hover{ background: rgba(11,119,104,0.10); }
 
-    .emp-grid {
-      display:grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-top: 10px;
-    }
-    @media (max-width: 720px) {
-      .emp-grid { grid-template-columns: 1fr; }
-    }
+.quick-filters{
+  display:flex; gap:10px;
+  overflow-x:auto;
+  padding: 6px 2px 10px;
+  scrollbar-width:none;
+}
+.quick-filters::-webkit-scrollbar{ display:none; }
+.chip{
+  border-radius: 999px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  color:#374151;
+  padding: 9px 12px;
+  font-weight: 800;
+  font-size: 0.88rem;
+  cursor:pointer;
+  white-space:nowrap;
+  display:flex; align-items:center; gap:8px;
+  transition: 0.2s;
+}
+.chip:hover{ transform: translateY(-1px); box-shadow:0 10px 22px rgba(0,0,0,0.07); }
+.chip.active{
+  border-color: rgba(11,119,104,0.35);
+  background: rgba(11,119,104,0.08);
+  color: var(--cor-doke);
+}
+.chip-price{ padding: 9px 14px; }
+.chip-reset{
+  border-color: rgba(0,0,0,0.06);
+  background: rgba(31,45,61,0.06);
+  color:#1f2d3d;
+}
+.chip-reset:hover{ background: rgba(31,45,61,0.10); }
 
-    .emp-field label {
-      display:block;
-      font-size: .82rem;
-      font-weight: 950;
-      color:#555;
-      margin: 8px 0 6px;
-    }
-    .emp-input, .emp-select {
-      width: 100%;
-      border: 1px solid #e8e8e8;
-      border-radius: 16px;
-      padding: 12px 12px;
-      outline:none;
-      background:#fff;
-      font-weight: 900;
-      color:#333;
-    }
-    .emp-input:focus, .emp-select:focus {
-      border-color: var(--cor2);
-      box-shadow: 0 0 0 4px rgba(42,95,144,.12);
-    }
+.filters-panel{
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.06);
+  border-radius: 18px;
+  padding: 14px;
+  margin: 6px 0 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+}
+.filters-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+@media(max-width: 820px){
+  .filters-grid{ grid-template-columns: 1fr; }
+  .controls-bar{ flex-direction: column; align-items: stretch; }
+  .controls-right{ justify-content:space-between; }
+}
 
-    .emp-chips {
-      display:flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      margin-top: 8px;
-    }
-    .emp-chip {
-      border: 1px solid #e8e8e8;
-      background:#fff;
-      color:#444;
-      border-radius: 999px;
-      padding: 10px 12px;
-      font-weight: 950;
-      font-size: .85rem;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-    }
-    .emp-chip.active {
-      border-color: rgba(42,95,144,.45);
-      color: var(--cor2);
-      box-shadow: 0 0 0 4px rgba(42,95,144,.10);
-    }
+.filter-field{ border:1px solid rgba(0,0,0,0.06); border-radius: 16px; padding: 12px; }
+.ff-label{ font-size:0.85rem; color:#6b7280; font-weight:900; display:block; margin-bottom:8px; }
+.ff-row{ display:flex; align-items:center; gap:12px; }
+.ff-row input[type="range"]{ width: 100%; }
+.ff-value{ font-weight:900; color:#1f2d3d; min-width: 44px; text-align:right; }
+.ff-toggles{ display:flex; flex-direction:column; gap:10px; }
+.toggle{ display:flex; align-items:center; gap:10px; font-weight:800; color:#374151; cursor:pointer; }
+.toggle input{ width: 16px; height: 16px; }
+.ff-actions{ display:flex; gap:10px; justify-content:flex-end; }
+.btn-primary{
+  background: var(--cor-doke);
+  color:#fff;
+  border:none;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-weight: 900;
+  cursor:pointer;
+}
+.btn-primary:hover{ background:#085e52; }
 
-    .emp-range {
-      width: 100%;
-    }
+.empty-state{
+  background:#fff;
+  border:1px dashed rgba(0,0,0,0.18);
+  border-radius: 22px;
+  padding: 28px 18px;
+  text-align:center;
+  margin: 14px 0 0;
+}
+.empty-ico{ font-size: 2.2rem; color: var(--cor-doke); margin-bottom: 6px; }
+.empty-state h3{ margin: 8px 0 4px; font-weight: 900; color:#1f2d3d; }
+.empty-state p{ margin:0 0 12px; color:#6b7280; font-weight: 700; }
 
-    .emp-modal-actions {
-      display:flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      margin-top: 12px;
-      justify-content:flex-end;
-    }
-    .emp-act {
-      border:none;
-      cursor:pointer;
-      border-radius: 16px;
-      padding: 12px 14px;
-      font-weight: 950;
-      display:inline-flex;
-      align-items:center;
-      gap: 10px;
-      white-space: nowrap;
-    }
-    .emp-act.primary {
-      background: var(--cor2);
-      color:#fff;
-      box-shadow: 0 16px 34px rgba(42,95,144,.22);
-    }
-    .emp-act.ghost {
-      background: #fff;
-      border: 1px solid #e8e8e8;
-      color:#222;
-    }
+.load-more-wrap{ display:flex; justify-content:center; margin-top: 18px; }
+.btn-load-more{
+  background:#1f2d3d;
+  color:#fff;
+  border:none;
+  padding: 12px 20px;
+  border-radius: 999px;
+  font-weight: 900;
+  cursor:pointer;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+}
+.btn-load-more:hover{ background:#000; transform: translateY(-1px); }
 
-    /* Results sheet */
-    .emp-sheet {
-      position: fixed;
-      left: 50%;
-      transform: translateX(-50%);
-      bottom: 16px;
-      width: min(980px, calc(100% - 18px));
-      background: rgba(255,255,255,.98);
-      border: 1px solid #eee;
-      border-radius: 22px;
-      box-shadow: 0 26px 70px rgba(0,0,0,0.16);
-      overflow:hidden;
-      z-index: 55;
-      display:none;
-    }
-    .emp-sheet.show { display:block; }
-    .emp-sheet-head {
-      padding: 10px 12px;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap: 10px;
-      cursor:pointer;
-      user-select:none;
-    }
-    .emp-handle {
-      width: 42px;
-      height: 5px;
-      border-radius: 999px;
-      background:#e6e6e6;
-      margin: 6px auto 0;
-    }
-    .emp-sheet-head b {
-      font-weight: 950;
-      color:#222;
-    }
-    .emp-sheet-head span {
-      color:#777;
-      font-weight: 900;
-      font-size: .86rem;
-    }
-    .emp-sheet-body {
-      max-height: 58vh;
-      overflow:auto;
-      padding: 0 10px 10px;
-      display:none;
-    }
-    .emp-sheet.expanded .emp-sheet-body {
-      display:block;
-    }
+/* ============================================================
+   CARDS + FAVORITOS + "VER NO MAPA"
+   ============================================================ */
+.biz-badges{ position:absolute; top: 14px; left: 14px; display:flex; gap:8px; flex-wrap:wrap; }
+.badge{
+  background: rgba(255,255,255,0.92);
+  border:1px solid rgba(0,0,0,0.06);
+  color:#1f2d3d;
+  font-weight: 900;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  border-radius: 999px;
+  display:flex; align-items:center; gap:6px;
+  backdrop-filter: blur(6px);
+}
+.badge.green{ color: var(--cor-doke); border-color: rgba(11,119,104,0.25); }
+.badge.red{ color:#b91c1c; border-color: rgba(185,28,28,0.2); }
+.badge.orange{ color:#b45309; border-color: rgba(180,83,9,0.20); }
 
-    .emp-item {
-      display:flex;
-      gap: 12px;
-      align-items:flex-start;
-      padding: 12px;
-      border: 1px solid #eee;
-      border-radius: 18px;
-      background:#fff;
-      margin: 10px 0;
-      cursor:pointer;
-    }
-    .emp-dot {
-      width: 44px;
-      height: 44px;
-      border-radius: 16px;
-      background: rgba(42,95,144,.10);
-      color: var(--cor2);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      font-weight: 950;
-      flex: 0 0 44px;
-    }
-    .emp-item h4 {
-      margin:0 0 4px;
-      font-weight: 950;
-      color:#222;
-      font-size: .98rem;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      max-width: 620px;
-    }
-    .emp-item p {
-      margin:0;
-      color:#666;
-      font-weight: 800;
-      font-size: .88rem;
-      line-height: 1.3;
-    }
-    .emp-item .meta {
-      margin-top: 10px;
-      display:flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .emp-badge {
-      border:1px solid #eee;
-      border-radius:999px;
-      padding: 7px 10px;
-      font-weight: 950;
-      font-size: .80rem;
-      color:#666;
-      background:#fff;
-    }
-    .emp-mini-actions {
-      margin-top: 10px;
-      display:flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .emp-mini {
-      border: 1px solid #eee;
-      background:#fff;
-      border-radius: 14px;
-      padding: 9px 11px;
-      font-weight: 950;
-      font-size: .80rem;
-      cursor:pointer;
-      display:inline-flex;
-      align-items:center;
-      gap: 8px;
-    }
-    .emp-mini.primary {
-      background: var(--cor2);
-      color:#fff;
-      border-color: transparent;
-    }
+.biz-actions{ align-items:center; }
+.btn-icon{
+  width: 42px; height: 42px;
+  border-radius: 12px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+}
+.btn-icon:hover{ box-shadow:0 10px 22px rgba(0,0,0,0.07); transform: translateY(-1px); }
+.btn-icon i{ font-size: 1.2rem; color:#6b7280; }
+.btn-icon.fav i{ color:#d1d5db; }
+.btn-icon.fav.active i{ color:#ef4444; }
+.biz-card.is-active{
+  box-shadow: 0 18px 38px rgba(11,119,104,0.18);
+  border-color: rgba(11,119,104,0.35);
+}
+.biz-subline{ font-size:0.86rem; color:#6b7280; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.biz-rating{ color:#f59e0b; font-weight: 900; font-size: 0.92rem; display:flex; align-items:center; gap:6px; margin-bottom: 8px; }
+.biz-tags{ display:flex; flex-wrap:wrap; gap:8px; margin-top: 10px; }
+.tag{
+  background: rgba(11,119,104,0.08);
+  color: var(--cor-doke);
+  border: 1px solid rgba(11,119,104,0.20);
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 0.78rem;
+}
 
-    /* Conteúdos wrapper */
-    .emp-content-wrap {
-      max-width: 1200px;
-      margin: 0 auto;
-      margin-top: 12px;
-    }
-    .emp-content-head {
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap: 12px;
-      flex-wrap: wrap;
-      margin: 12px 0 10px;
-    }
-    .emp-content-head h2 {
-      margin:0;
-      font-size: 1.25rem;
-      font-weight: 950;
-      color:#222;
-    }
-    .emp-content-head p {
-      margin: 0;
-      color:#777;
-      font-weight: 900;
-      font-size: .92rem;
-    }
-  </style>
+/* ============================================================
+   SKELETON LOADING + LAZY FEEL
+   ============================================================ */
+.skeleton-card{ position:relative; overflow:hidden; }
+.skeleton-cover{ height: 180px; background: rgba(0,0,0,0.06); }
+.skeleton-body{ padding: 18px; display:flex; flex-direction:column; gap: 10px; }
+.sk-line{ height: 12px; border-radius: 10px; background: rgba(0,0,0,0.06); }
+.sk-line.big{ height: 16px; width: 70%; }
+.sk-line.mid{ width: 55%; }
+.sk-line.small{ width: 35%; }
+.sk-actions{ display:flex; gap: 10px; margin-top: 8px; }
+.sk-btn{ height: 42px; border-radius: 12px; background: rgba(0,0,0,0.06); flex:1; }
+.sk-btn.icon{ flex:0 0 42px; }
+
+.skeleton-card::after{
+  content:"";
+  position:absolute;
+  top:0; left:-60%;
+  width: 60%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer{
+  0%{ left:-60%; }
+  100%{ left: 120%; }
+}
+
+
+    </style>
 </head>
+<body data-page="empresas">
 
-<body>
+    <header class="navbar-desktop">
+        <div id="logo-desktop"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <nav class="menu">
+            <div class="cep-wrapper">
+                <a href="#" class="cep">
+                    <i class='bx bxs-map' style="color:var(--cor2)"></i>
+                    <span id="textoLocal">Vila Madalena, SP</span>
+                </a>
+            </div>
+            <a href="anunciar.html">Anuncie sua empresa</a>
+        </nav>
+        <div class="botoes-direita"><a href="login.html" class="entrar">Entrar</a></div>
+    </header>
 
     <header class="navbar-mobile">
         <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="mobile-controls">
-            <button onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-        </div>
+        <div class="botoes-direita"><i class='bx bx-search' style="font-size: 24px; color: #0b7768;"></i></div>
     </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 
     <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
-        <div class="item">
-            <a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span></a>
-        </div>
-
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logotipo"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
         <div class="item">
             <a href="empresas.html">
-                <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
-                <span>Empresas</span>
+                <i class='bx bxs-store' style="color: #0b7768; font-size: 26px;"></i>
+                <span style="color: #0b7768; font-weight: bold;">Empresas</span>
             </a>
         </div>
-
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item"><a href="chat.html"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><span>Mensagens</span></a></div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
     </aside>
 
+    <main class="dp-wrap-business">
+        
+        <div class="centralizador">
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
+            <section class="discovery-header">
+                <h1>O que vamos fazer hoje?</h1>
+                <p style="opacity:0.9; max-width:500px;">Descubra os melhores lugares, serviços e experiências com a segurança do pagamento Doke.</p>
+                
+                <div class="busca-wrapper" id="buscaWrapper">
+                    <div class="busca-input-container">
+                        <input type="text" id="inputBusca" placeholder="Busque por prato, loja ou serviço..." autocomplete="off">
 
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
+                        <button class="btn-search-circle" type="button" onclick="filtrarEmpresas()">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div class="busca-dropdown" id="buscaDropdown">
+                        <div class="busca-hint">
+                            Dica: busque por <i>nome, categoria, bairro ou serviço</i>
+                        </div>
+                        
+                        <div class="recentes-container" id="containerSugestoes" style="display: none;">
+                            <h4>Sugestões</h4>
+                            <div id="listaSugestoes"></div>
+                        </div>
+<div class="recentes-container" id="containerHistorico" style="display: none;">
+                            <h4>Buscas recentes</h4>
+                            <div id="listaRecentes"></div>
+                            <div class="limpar-historico" id="limparHistoricoBtn">Limpar histórico</div>
+                        </div>
                     </div>
                 </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
 
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
-    </header>
+                <div class="filter-scroll" id="categoryPills">
+    <button class="filter-pill active" data-category="">
+        <i class='bx bx-grid-alt'></i> Todos
+    </button>
+    <button class="filter-pill" data-category="Gastronomia"><i class='bx bx-restaurant'></i> Gastronomia</button>
+    <button class="filter-pill" data-category="Beleza"><i class='bx bx-cut'></i> Beleza</button>
+    <button class="filter-pill" data-category="Lojas"><i class='bx bx-shopping-bag'></i> Lojas</button>
+    <button class="filter-pill" data-category="Fitness"><i class='bx bx-dumbbell'></i> Fitness</button>
+    <button class="filter-pill" data-category="Serviços"><i class='bx bx-wrench'></i> Serviços</button>
+</div>
+            </section>
 
-    
 
-  <main>
-    <section class="anuncio-container emp-shell">
+            <section class="mapa-section" id="mapaSection" aria-label="Mapa de empresas">
+                <div class="mapa-head">
+                    <div>
+                        <h2><i class='bx bxs-map'></i> Mapa</h2>
+                        <div class="mapa-note">Visualize empresas e serviços perto de você.</div>
+                    </div>
+                    <button class="filter-pill" type="button" onclick="irParaMapa()">
+                        <i class='bx bx-target-lock'></i> Centralizar
+                    </button>
+                </div>
+                <div id="mapCanvas" role="application" aria-label="Mapa interativo"></div>
+            </section>
 
-      <div class="emp-top">
-        <div class="emp-title">
-          <h1>Empresas & CNPJs</h1>
-          <p>Um mapa limpo pra descobrir lugares perto de você. (Depois a gente liga no seu sistema de avaliação e “CNPJ verificado”.)</p>
-          <div class="emp-loc" id="locText"><i class='bx bx-map'></i> Localização: não definida</div>
-        </div>
+            <section class="vibe-section" id="vibeSection">
+    <div class="vibe-title">
+        <i class='bx bxs-hot' style="color: var(--cor-doke);"></i> Em alta perto de você
+        <span style="font-size:0.9rem; font-weight:400; color:#666; margin-left:5px;">(Toque para ver no mapa)</span>
+    </div>
+    <div class="filter-scroll" id="vibeScroller" style="margin-top:0;"></div>
+</section>
 
-        <div class="emp-tabs" role="tablist">
-          <button class="emp-tab active" id="tabEmp" type="button"><i class='bx bx-store'></i> Empresas</button>
-          <button class="emp-tab" id="tabCont" type="button"><i class='bx bx-play-circle'></i> Conteúdos</button>
-        </div>
-      </div>
-
-      <!-- PAGE: EMPRESAS (clean) -->
-      <div class="emp-page active" id="pageEmp">
-        <div class="emp-map-card" id="mapCard">
-          <div id="map" aria-label="Mapa de empresas"></div>
-
-          <div class="emp-map-dim"></div>
-
-          <div class="emp-overlay" id="mapOverlay">
-            <div class="emp-hero">
-              <h2>Empresas perto de você</h2>
-              <p>Veja restaurantes, lojas e lugares por perto com um mapa interativo.</p>
-
-              <div class="emp-hero-actions">
-                <button class="emp-btn primary" id="btnOpenMap" type="button"><i class='bx bx-map'></i> Abrir mapa</button>
-                <button class="emp-btn secondary" id="btnGPSHero" type="button"><i class='bx bx-target-lock'></i> Usar GPS</button>
-              </div>
-            </div>
-          </div>
-
-          <div class="emp-pillbar" aria-label="Busca rápida">
-            <div class="pill">
-              <i class='bx bx-search' style="font-size:20px;color:#666"></i>
-              <input id="quickQ" type="text" placeholder="Buscar por nome (ex.: Pizza, Mercado...)" />
-            </div>
-
-            <button class="mini" id="btnQuickCat" type="button" title="Categoria">
-              <i class='bx bx-restaurant'></i>
-              <span id="quickCatLabel">Restaurantes</span>
-            </button>
-
-            <button class="mini primary" id="btnQuickSearch" type="button">
-              <i class='bx bx-radar'></i> Buscar
-            </button>
-          </div>
-        </div>
-
-        <button class="emp-fab" id="btnFilters" type="button" title="Filtros">
-          <i class='bx bx-slider-alt'></i>
+<section class="results-section" id="resultsSection">
+    <div class="results-head">
+        <h2 class="results-title">Empresas</h2>
+        <button class="btn-filters" id="btnToggleFilters" type="button">
+            <i class='bx bx-slider-alt'></i> Filtros
         </button>
-
-        <!-- Modal Filtros -->
-        <div class="emp-modal" id="filtersModal" aria-hidden="true">
-          <div class="emp-modal-card" role="dialog" aria-modal="true" aria-label="Filtros de busca">
-            <div class="emp-modal-head">
-              <b>Filtros</b>
-              <button class="emp-x" id="btnCloseModal" type="button"><i class='bx bx-x'></i></button>
-            </div>
-
-            <div class="emp-field">
-              <label>Categoria</label>
-              <div class="emp-chips" id="catChips">
-                <button class="emp-chip active" data-cat="restaurant"><i class='bx bx-restaurant'></i> Restaurantes</button>
-                <button class="emp-chip" data-cat="supermarket"><i class='bx bx-cart'></i> Mercados</button>
-                <button class="emp-chip" data-cat="pharmacy"><i class='bx bx-plus-medical'></i> Farmácias</button>
-                <button class="emp-chip" data-cat="mall"><i class='bx bx-shopping-bag'></i> Shopping</button>
-                <button class="emp-chip" data-cat="clothes"><i class='bx bx-t-shirt'></i> Roupas</button>
-                <button class="emp-chip" data-cat="cafe"><i class='bx bx-coffee'></i> Cafés</button>
-                <button class="emp-chip" data-cat="beauty"><i class='bx bx-cut'></i> Beleza</button>
-              </div>
-            </div>
-
-            <div class="emp-grid">
-              <div class="emp-field">
-                <label>Buscar por nome</label>
-                <input class="emp-input" id="qText" type="text" placeholder="Ex.: Sushi, Padaria, Mercado..." />
-              </div>
-
-              <div class="emp-field">
-                <label>Raio: <span id="radiusLabel">2.0 km</span></label>
-                <input class="emp-range" id="radius" type="range" min="500" max="10000" value="2000" step="250" />
-              </div>
-            </div>
-
-            <div class="emp-grid">
-              <div class="emp-field">
-                <label>Endereço ou CEP (opcional)</label>
-                <input class="emp-input" id="address" type="text" placeholder="Rua, bairro, cidade - UF ou CEP" />
-              </div>
-
-              <div class="emp-field">
-                <label>CNPJ (opcional / modelo)</label>
-                <input class="emp-input" id="cnpj" inputmode="numeric" maxlength="14" placeholder="00000000000000" />
-              </div>
-            </div>
-
-            <div class="emp-modal-actions">
-              <button class="emp-act ghost" id="btnUseCep" type="button"><i class='bx bx-location-plus'></i> CEP salvo</button>
-              <button class="emp-act ghost" id="btnGPS" type="button"><i class='bx bx-target-lock'></i> GPS</button>
-              <button class="emp-act primary" id="btnSearch" type="button"><i class='bx bx-radar'></i> Buscar</button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Resultados (bottom sheet) -->
-        <div class="emp-sheet" id="resultsSheet">
-          <div class="emp-handle"></div>
-          <div class="emp-sheet-head" id="sheetHead">
-            <b><span id="kpiCount">0</span> resultados</b>
-            <span id="status">Pronto.</span>
-          </div>
-          <div class="emp-sheet-body" id="results"></div>
-        </div>
-      </div>
-
-      <!-- PAGE: CONTEÚDOS (igual index) -->
-      <div class="emp-page" id="pageCont">
-        <div class="emp-content-wrap">
-          <div class="emp-content-head">
-            <div>
-              <h2>Vídeos-curtos & Publicações</h2>
-              <p>Mesma estrutura do Index para manter o padrão.</p>
-            </div>
-          </div>
-        </div>
-
-        <section class="videos-container">
-    <div class="videos-header-top">
-        <h2 class="sec-title" id="categorias-title2">Videos-curtos</h2>
-        <a href="feed.html" class="ver-todos">Ver Galeria ></a>
     </div>
 
-<div class="tiktok-scroll-wrapper" id="galeria-dinamica">
-        <div style="padding: 20px; color: white; text-align: center;">
-            <i class='bx bx-loader-alt bx-spin'></i> Carregando destaques...
+    <div class="controls-bar">
+        <div class="sort-wrap">
+            <label for="sortSelect">Ordenar por</label>
+            <select id="sortSelect">
+                <option value="distance">Mais perto</option>
+                <option value="rating">Melhor avaliado</option>
+                <option value="popular">Mais populares</option>
+                <option value="newest">Mais novos</option>
+            </select>
+        </div>
+
+        <div class="controls-right">
+            <button class="btn-ghost" id="btnMyLocation" type="button">
+                <i class='bx bx-target-lock'></i> Minha localização
+            </button>
+            <div class="results-count" id="resultsCount"></div>
         </div>
     </div>
 
+    <div class="quick-filters" id="quickFilters">
+        <button class="chip" data-filter="openNow"><i class='bx bx-time-five'></i> Aberto agora</button>
+        <button class="chip" data-filter="promo"><i class='bx bx-purchase-tag-alt'></i> Promoções</button>
+        <button class="chip" data-filter="verified"><i class='bx bxs-badge-check'></i> Verificado</button>
+        <button class="chip" data-filter="points"><i class='bx bx-coin-stack'></i> Aceita Doke Pontos</button>
+        <button class="chip" data-filter="rating45"><i class='bx bxs-star'></i> 4.5+</button>
+        <button class="chip" data-filter="favorites"><i class='bx bxs-heart'></i> Favoritos</button>
+        <button class="chip chip-price" data-price="1">R$</button>
+        <button class="chip chip-price" data-price="2">R$$</button>
+        <button class="chip chip-price" data-price="3">R$$$</button>
 
+        <button class="chip chip-reset" id="btnResetFilters" type="button">
+            <i class='bx bx-x'></i> Limpar
+        </button>
     </div>
 
+    <div class="filters-panel" id="filtersPanel" hidden>
+        <div class="filters-grid">
+            <div class="filter-field">
+                <span class="ff-label">Avaliação mínima</span>
+                <div class="ff-row">
+                    <input type="range" min="0" max="5" step="0.1" value="0" id="minRatingRange">
+                    <span class="ff-value" id="minRatingValue">0.0</span>
+                </div>
+            </div>
+
+            <div class="filter-field">
+                <span class="ff-label">Distância máxima</span>
+                <div class="ff-row">
+                    <select id="maxDistanceSelect">
+                        <option value="0">Qualquer</option>
+                        <option value="1">Até 1 km</option>
+                        <option value="3">Até 3 km</option>
+                        <option value="5">Até 5 km</option>
+                        <option value="10">Até 10 km</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="filter-field">
+                <span class="ff-label">Preferências</span>
+                <div class="ff-toggles">
+                    <label class="toggle">
+                        <input type="checkbox" id="toggleOpen">
+                        <span>Somente abertos</span>
+                    </label>
+                    <label class="toggle">
+                        <input type="checkbox" id="togglePromo">
+                        <span>Somente promoções</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="filter-field">
+                <span class="ff-label">Ações</span>
+                <div class="ff-actions">
+                    <button class="btn-ghost" id="btnCloseFilters" type="button">Fechar</button>
+                    <button class="btn-primary" id="btnApplyFilters" type="button">Aplicar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="business-grid" id="gridEmpresas" aria-live="polite"></div>
+
+    <div class="empty-state" id="emptyState" hidden>
+        <div class="empty-ico"><i class='bx bx-search-alt-2'></i></div>
+        <h3>Nenhum resultado</h3>
+        <p>Tente mudar os filtros, a categoria ou o termo de busca.</p>
+        <button class="btn-primary" type="button" id="btnClearAll">Limpar tudo</button>
+    </div>
+
+    <div class="load-more-wrap" id="loadMoreWrap">
+        <button class="btn-load-more" id="btnLoadMore" type="button">Carregar mais</button>
+    </div>
 </section>
 
-        <section class="fotos-container">
-    <div class="section-feed-title" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
-        <h2 class="sec-title sec-title-light">Publicações</h2>
-        <a href="comunidade.html" class="ver-todos">Ver Galeria ></a>
+        </div> </main>
+
+    <div class="floating-map-btn" onclick="irParaMapa()">
+        <i class='bx bxs-map-alt'></i> Mapa
     </div>
-    
-    <div id="feed-global-container"></div>
-</section>
-      </div>
 
-    </section>
+    <nav class="bottom-nav">
+        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
+        <a href="empresas.html" class="item active" style="border-top: 2px solid #0b7768;">
+            <i class='bx bxs-store' style="font-size: 24px; color: #0b7768; margin-bottom:2px;"></i>
+            <span style="color:#0b7768">Empresas</span>
+        </a>
+        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
+        <a href="notificacoes.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a>
+        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
+    </nav>
 
-  </main>
+    <script src="script.js?v=20260117"></script>
 
-  <script>
-    // ============================================================
-    // Lógica (Overpass + Nominatim) — só dentro do empresas.html
-    // ============================================================
+    <!-- Leaflet (Mapa) -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    const OVERPASS = "https://overpass-api.de/api/interpreter";
-    const NOMINATIM = "https://nominatim.openstreetmap.org/search?format=json&limit=1&q=";
 
-    const $ = (id) => document.getElementById(id);
+<script>
+/* ============================================================
+   EMPRESAS.HTML — EXPERIÊNCIA "APP" (FILTROS + MAPA + FAVORITOS)
+   - Busca com histórico/sugestões + limpar histórico (igual index)
+   - Filtros rápidos + painel avançado
+   - Ordenação
+   - Favoritos (localStorage)
+   - Lista ↔ Mapa (sync: clicar card, clicar marcador)
+   - Skeleton loading + imagens lazy
+   - Paginação (Carregar mais)
+   ============================================================ */
+(() => {
+  const BRAND = '#0b7768';
+  const STORAGE_HISTORY = 'doke_buscas_recentes';
+  const STORAGE_FAVS = 'doke_favoritos_empresas';
 
-    // Estado
-    let map, userMarker, circle;
-    let markers = [];
-    let currentCategory = "restaurant";
-    let center = { lat: -12.9714, lng: -38.5014 }; // default Salvador
+  const DEFAULT_CENTER = { lat: -23.5567, lng: -46.6894, label: 'Vila Madalena, SP' };
 
-    // Utils
-    function escapeHtml(s){
-      return String(s||"").replace(/[&<>"']/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
-    }
-    function onlyDigits(s){ return (s||"").replace(/\D+/g,""); }
-    function km(m){ return (m/1000).toFixed(1); }
+  // ---------- Dados mock (substitua por Supabase quando quiser) ----------
+  const BUSINESSES = [
+    {id:'b1',  name:'The Golden Burger', category:'Gastronomia', neighborhood:'Vila Madalena', tags:['Hambúrguer','Delivery'], price:3, rating:4.9, reviews:120, openNow:true, promo:false, points:true, verified:true, popularity:98, createdAt:'2026-01-14', lat:-23.5589, lng:-46.6886, cover:'https://images.pexels.com/photos/1199957/pexels-photo-1199957.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:0.8},
+    {id:'b2',  name:'Café Aurora', category:'Gastronomia', neighborhood:'Pinheiros', tags:['Café','Brunch'], price:2, rating:4.6, reviews:310, openNow:true, promo:true, points:true, verified:true, popularity:90, createdAt:'2026-01-20', lat:-23.5574, lng:-46.6933, cover:'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:1.1},
+    {id:'b3',  name:'La Mamma Trattoria', category:'Gastronomia', neighborhood:'Vila Madalena', tags:['Italiano','Jantar'], price:3, rating:4.7, reviews:200, openNow:false, promo:false, points:false, verified:true, popularity:85, createdAt:'2026-01-02', lat:-23.5548, lng:-46.6889, cover:'https://images.pexels.com/photos/2253643/pexels-photo-2253643.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:2.0},
+    {id:'b4',  name:'Sushi Nori', category:'Gastronomia', neighborhood:'Sumaré', tags:['Sushi','Rodízio'], price:3, rating:4.8, reviews:540, openNow:true, promo:false, points:true, verified:false, popularity:92, createdAt:'2025-12-28', lat:-23.5529, lng:-46.6862, cover:'https://images.pexels.com/photos/2098085/pexels-photo-2098085.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:2.6},
 
-    function haversineMeters(a,b){
-      const R=6371000;
-      const toRad=(x)=>x*Math.PI/180;
-      const dLat=toRad(b.lat-a.lat);
-      const dLng=toRad(b.lng-a.lng);
-      const s1=Math.sin(dLat/2), s2=Math.sin(dLng/2);
-      const aa=s1*s1 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*s2*s2;
-      return 2*R*Math.asin(Math.sqrt(aa));
-    }
+    {id:'b5',  name:'Lumière Salão & Spa', category:'Beleza', neighborhood:'Vila Madalena', tags:['Cabelo','Spa'], price:2, rating:4.8, reviews:85, openNow:true, promo:true, points:true, verified:true, popularity:88, createdAt:'2026-01-12', lat:-23.5596, lng:-46.6911, cover:'https://images.pexels.com/photos/3993311/pexels-photo-3993311.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:1.5},
+    {id:'b6',  name:'Studio Belle', category:'Beleza', neighborhood:'Pinheiros', tags:['Unhas','Sobrancelha'], price:2, rating:4.5, reviews:190, openNow:true, promo:false, points:false, verified:false, popularity:70, createdAt:'2026-01-07', lat:-23.5562, lng:-46.6954, cover:'https://images.pexels.com/photos/3993444/pexels-photo-3993444.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:1.2},
+    {id:'b7',  name:'Barbearia VIP', category:'Beleza', neighborhood:'Vila Madalena', tags:['Corte','Barba'], price:1, rating:4.4, reviews:260, openNow:true, promo:false, points:true, verified:true, popularity:82, createdAt:'2025-12-20', lat:-23.5605, lng:-46.6871, cover:'https://images.pexels.com/photos/3998424/pexels-photo-3998424.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:0.3},
+    {id:'b8',  name:'Dermaclin', category:'Beleza', neighborhood:'Sumaré', tags:['Estética','Limpeza de pele'], price:3, rating:4.9, reviews:75, openNow:false, promo:false, points:false, verified:true, popularity:76, createdAt:'2025-12-10', lat:-23.5534, lng:-46.6942, cover:'https://images.pexels.com/photos/6621465/pexels-photo-6621465.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:3.4},
 
-    function categoryToOverpass(cat){
-      switch(cat){
-        case "restaurant": return ['amenity="restaurant"'];
-        case "cafe": return ['amenity="cafe"', 'shop="bakery"'];
-        case "bar": return ['amenity="bar"','amenity="pub"'];
-        case "fast_food": return ['amenity="fast_food"'];
-        case "supermarket": return ['shop="supermarket"'];
-        case "mall": return ['shop="mall"','shop="department_store"'];
-        case "clothes": return ['shop="clothes"','shop="shoes"'];
-        case "convenience": return ['shop="convenience"'];
-        case "pharmacy": return ['amenity="pharmacy"','shop="pharmacy"'];
-        case "electronics": return ['shop="electronics"','shop="mobile_phone"'];
-        case "beauty": return ['shop="beauty"','shop="hairdresser"','amenity="beauty_salon"'];
-        case "hotel": return ['tourism="hotel"','tourism="hostel"','tourism="guest_house"'];
-        case "bank": return ['amenity="bank"','amenity="atm"'];
-        default: return ['amenity="restaurant"'];
-      }
-    }
+    {id:'b9',  name:'Loja Atlas', category:'Lojas', neighborhood:'Pinheiros', tags:['Roupas','Street'], price:2, rating:4.3, reviews:410, openNow:true, promo:true, points:true, verified:true, popularity:84, createdAt:'2026-01-18', lat:-23.5557, lng:-46.6992, cover:'https://images.pexels.com/photos/264507/pexels-photo-264507.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:1.9},
+    {id:'b10', name:'Mercado Verde', category:'Lojas', neighborhood:'Vila Madalena', tags:['Orgânicos','Hortifruti'], price:2, rating:4.6, reviews:610, openNow:true, promo:false, points:false, verified:false, popularity:80, createdAt:'2025-12-30', lat:-23.5549, lng:-46.6918, cover:'https://images.pexels.com/photos/260922/pexels-photo-260922.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:0.9},
+    {id:'b11', name:'Farmácia 24h Vida', category:'Lojas', neighborhood:'Sumaré', tags:['Saúde','24h'], price:1, rating:4.2, reviews:980, openNow:true, promo:false, points:true, verified:true, popularity:78, createdAt:'2025-11-24', lat:-23.5519, lng:-46.6907, cover:'https://images.pexels.com/photos/5726794/pexels-photo-5726794.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:2.8},
+    {id:'b12', name:'Pet Shop Amigo', category:'Lojas', neighborhood:'Pinheiros', tags:['Pet','Banho e tosa'], price:2, rating:4.7, reviews:230, openNow:false, promo:true, points:true, verified:false, popularity:74, createdAt:'2026-01-05', lat:-23.5599, lng:-46.6967, cover:'https://images.pexels.com/photos/4587996/pexels-photo-4587996.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:2.2},
 
-    function catLabel(cat){
-      const m = {
-        restaurant: "Restaurantes",
-        supermarket: "Mercados",
-        pharmacy: "Farmácias",
-        mall: "Shopping",
-        clothes: "Roupas",
-        cafe: "Cafés",
-        beauty: "Beleza",
-        bar: "Bares",
-        fast_food: "Fast-food",
-        convenience: "Conveniência",
-        electronics: "Eletrônicos",
-        hotel: "Hotéis",
-        bank: "Bancos"
-      };
-      return m[cat] || "Restaurantes";
-    }
+    {id:'b13', name:'FitLife Academia', category:'Fitness', neighborhood:'Vila Madalena', tags:['Treino','24h'], price:2, rating:4.7, reviews:200, openNow:true, promo:false, points:true, verified:false, popularity:86, createdAt:'2026-01-03', lat:-23.5579, lng:-46.6869, cover:'https://images.pexels.com/photos/276583/pexels-photo-276583.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:0.3},
+    {id:'b14', name:'Yoga Studio Satori', category:'Fitness', neighborhood:'Pinheiros', tags:['Yoga','Bem-estar'], price:2, rating:4.9, reviews:95, openNow:true, promo:true, points:false, verified:true, popularity:83, createdAt:'2026-01-11', lat:-23.5561, lng:-46.7011, cover:'https://images.pexels.com/photos/3823039/pexels-photo-3823039.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:2.7},
+    {id:'b15', name:'CrossBox 046', category:'Fitness', neighborhood:'Sumaré', tags:['Crossfit','Força'], price:3, rating:4.6, reviews:140, openNow:false, promo:false, points:true, verified:true, popularity:72, createdAt:'2025-12-02', lat:-23.5527, lng:-46.6961, cover:'https://images.pexels.com/photos/1552242/pexels-photo-1552242.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:3.0},
 
-    function catIcon(cat){
-      const m = {
-        restaurant: "bx-restaurant",
-        supermarket: "bx-cart",
-        pharmacy: "bx-plus-medical",
-        mall: "bx-shopping-bag",
-        clothes: "bx-t-shirt",
-        cafe: "bx-coffee",
-        beauty: "bx-cut"
-      };
-      return m[cat] || "bx-restaurant";
-    }
+    {id:'b16', name:'Chaveiro Express', category:'Serviços', neighborhood:'Vila Madalena', tags:['Chaves','24h'], price:1, rating:4.5, reviews:60, openNow:true, promo:false, points:false, verified:false, popularity:66, createdAt:'2026-01-21', lat:-23.5608, lng:-46.6909, cover:'https://images.pexels.com/photos/6192337/pexels-photo-6192337.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:0.6},
+    {id:'b17', name:'ReparaTech Assistência', category:'Serviços', neighborhood:'Pinheiros', tags:['Celular','Notebook'], price:2, rating:4.8, reviews:310, openNow:true, promo:true, points:true, verified:true, popularity:89, createdAt:'2026-01-09', lat:-23.5570, lng:-46.7041, cover:'https://images.pexels.com/photos/4792718/pexels-photo-4792718.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:3.6},
+    {id:'b18', name:'Limpeza Prime', category:'Serviços', neighborhood:'Sumaré', tags:['Casa','Condomínio'], price:2, rating:4.4, reviews:115, openNow:false, promo:false, points:false, verified:false, popularity:58, createdAt:'2025-12-18', lat:-23.5516, lng:-46.6882, cover:'https://images.pexels.com/photos/4239024/pexels-photo-4239024.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:2.1},
+    {id:'b19', name:'Eletricista 24h SP', category:'Serviços', neighborhood:'Pinheiros', tags:['Emergência','Elétrica'], price:2, rating:4.7, reviews:84, openNow:true, promo:false, points:true, verified:true, popularity:73, createdAt:'2025-11-30', lat:-23.5541, lng:-46.7032, cover:'https://images.pexels.com/photos/8005399/pexels-photo-8005399.jpeg?auto=compress&cs=tinysrgb&w=800', distanceHintKm:3.2},
+  ];
 
-    function setCategory(cat){
-      currentCategory = cat;
-      $("quickCatLabel").textContent = catLabel(cat);
-      const icon = $("btnQuickCat").querySelector("i");
-      icon.className = "bx " + catIcon(cat);
+  // ---------- Estado ----------
+  const state = {
+    search: '',
+    category: '',
+    quick: { openNow:false, promo:false, verified:false, points:false, rating45:false, favorites:false },
+    prices: new Set(),
+    minRating: 0,
+    maxDistance: 0,
+    sort: 'distance',
+    page: 1,
+    pageSize: 9,
+    userLoc: null,
+    suggestionsBase: [],
+  };
 
-      document.querySelectorAll("#catChips .emp-chip").forEach(b => {
-        b.classList.toggle("active", b.dataset.cat === cat);
-      });
-    }
+  // ---------- Mapa ----------
+  let map = null;
+  let markersLayer = null;
+  let markerById = new Map();
+  let selectedId = null;
+  let previewId = null;
+  let mapInited = false;
 
-    // Tabs
-    function setTab(which){
-      const emp = which === "emp";
-      $("tabEmp").classList.toggle("active", emp);
-      $("tabCont").classList.toggle("active", !emp);
-      $("pageEmp").classList.toggle("active", emp);
-      $("pageCont").classList.toggle("active", !emp);
-      if(emp) {
-        setTimeout(()=>{ map && map.invalidateSize(); }, 120);
-      }
-    }
-    $("tabEmp").addEventListener("click", ()=>setTab("emp"));
-    $("tabCont").addEventListener("click", ()=>setTab("cont"));
+  function initMap() {
+    const el = document.getElementById('mapCanvas');
+    if (!el || typeof L === 'undefined' || mapInited) return;
 
-    // Map init
-    function initMap(){
-      map = L.map("map", { zoomControl:true }).setView([center.lat, center.lng], 13);
-      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-        maxZoom: 19, attribution: "&copy; OpenStreetMap"
-      }).addTo(map);
+    map = L.map('mapCanvas', { scrollWheelZoom: false, zoomControl: true }).setView([DEFAULT_CENTER.lat, DEFAULT_CENTER.lng], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap' }).addTo(map);
 
-      userMarker = L.marker([center.lat, center.lng]).addTo(map).bindPopup("Centro da busca");
-      circle = L.circle([center.lat, center.lng], {
-        radius: Number($("radius").value),
-        color: getComputedStyle(document.documentElement).getPropertyValue("--cor2") || "#2a5f90",
-        fillColor: getComputedStyle(document.documentElement).getPropertyValue("--cor2") || "#2a5f90",
-        fillOpacity: .10
-      }).addTo(map);
+    markersLayer = L.layerGroup().addTo(map);
+    mapInited = true;
 
-      // Map starts "closed" visually, but loaded.
-      setTimeout(()=>map.invalidateSize(), 80);
-    }
+    // Render markers once map exists
+    updateMarkers(getFilteredList(false));
+  }
 
-    function setCenter(lat,lng,label){
-      center = { lat, lng };
-      map.setView([lat,lng], 13, { animate:true });
-      userMarker.setLatLng([lat,lng]);
-      circle.setLatLng([lat,lng]);
-      $("locText").innerHTML = "<i class='bx bx-map'></i> Localização: " + escapeHtml(label || (lat.toFixed(5)+", "+lng.toFixed(5)));
-    }
-
-    function clearMarkers(){
-      markers.forEach(m => map.removeLayer(m));
-      markers = [];
-    }
-
-    function openMap(){
-      $("mapCard").classList.add("is-open");
-      // Allow interactions
-      setTimeout(()=>{ map.invalidateSize(); }, 220);
-    }
-
-    // Modal
-    function openModal(){
-      $("filtersModal").classList.add("open");
-      $("filtersModal").setAttribute("aria-hidden", "false");
-      // Prefill modal fields from quick
-      $("qText").value = ($("quickQ").value || "");
-    }
-    function closeModal(){
-      $("filtersModal").classList.remove("open");
-      $("filtersModal").setAttribute("aria-hidden", "true");
-    }
-
-    $("btnFilters").addEventListener("click", openModal);
-    $("btnCloseModal").addEventListener("click", closeModal);
-    $("filtersModal").addEventListener("click", (e)=>{ if(e.target === $("filtersModal")) closeModal(); });
-
-    // Overlay buttons
-    $("btnOpenMap").addEventListener("click", openMap);
-    $("btnGPSHero").addEventListener("click", ()=>{ openMap(); useGeolocation(); });
-
-    // Quick category button cycles through popular
-    const quickCats = ["restaurant","supermarket","pharmacy","mall","clothes","cafe","beauty"];
-    $("btnQuickCat").addEventListener("click", ()=>{
-      const i = quickCats.indexOf(currentCategory);
-      const next = quickCats[(i+1) % quickCats.length];
-      setCategory(next);
-    });
-
-    // Radius label
-    function updateRadiusLabel(){
-      const r = Number($("radius").value);
-      $("radiusLabel").textContent = (r/1000).toFixed(1) + " km";
-      if(circle) circle.setRadius(r);
-    }
-    $("radius").addEventListener("input", updateRadiusLabel);
-
-    // Chips in modal
-    document.querySelectorAll("#catChips .emp-chip").forEach(btn => {
-      btn.addEventListener("click", ()=>setCategory(btn.dataset.cat));
-    });
-
-    // CEP / Address / GPS
-    async function geocodeAddress(addr){
-      if(!addr) return false;
-      $("status").textContent = "Buscando endereço...";
-      try {
-        const resp = await fetch(NOMINATIM + encodeURIComponent(addr), { headers:{"Accept":"application/json"} });
-        const data = await resp.json();
-        if(!data || !data[0]) throw new Error("not found");
-        setCenter(Number(data[0].lat), Number(data[0].lon), data[0].display_name);
-        $("status").textContent = "Localização definida.";
-        return true;
-      } catch(e) {
-        console.error(e);
-        $("status").textContent = "Não achei esse endereço.";
-        return false;
-      }
-    }
-
-    function tryUseCep(){
-      const cep = localStorage.getItem("cepUsuario") || localStorage.getItem("cep") || "";
-      if(!cep) {
-        $("status").textContent = "Sem CEP salvo.";
-        return;
-      }
-      $("address").value = cep;
-      geocodeAddress(cep);
-    }
-
-    function useGeolocation(){
-      if(!navigator.geolocation) {
-        $("status").textContent = "Seu navegador não suporta GPS.";
-        return;
-      }
-      $("status").textContent = "Pegando GPS...";
-      navigator.geolocation.getCurrentPosition(
-        (pos)=>{
-          setCenter(pos.coords.latitude, pos.coords.longitude, "GPS do dispositivo");
-          $("status").textContent = "GPS definido.";
-        },
-        ()=>{ $("status").textContent = "GPS negado/indisponível."; },
-        { enableHighAccuracy:true, timeout:12000, maximumAge:5000 }
-      );
-    }
-
-    $("btnUseCep").addEventListener("click", tryUseCep);
-    $("btnGPS").addEventListener("click", useGeolocation);
-
-    // Results sheet
-    function showSheet(){
-      $("resultsSheet").classList.add("show");
-    }
-    function toggleSheet(){
-      $("resultsSheet").classList.toggle("expanded");
-    }
-    $("sheetHead").addEventListener("click", toggleSheet);
-
-    function skeleton(){
-      const box = $("results");
-      box.innerHTML = "";
-      for(let i=0;i<6;i++) {
-        const d = document.createElement("div");
-        d.className = "emp-item";
-        d.style.opacity = ".6";
-        d.innerHTML = `
-          <div class="emp-dot"><i class='bx bx-loader-alt bx-spin'></i></div>
-          <div style="flex:1;min-width:0">
-            <h4>Carregando...</h4>
-            <p>Buscando lugares por perto...</p>
-            <div class="meta"><span class="emp-badge">…</span></div>
-          </div>`;
-        box.appendChild(d);
-      }
-    }
-
-    // Search
-    async function overpassSearch(opts = {}){
-      const radius = Number($("radius").value);
-      const q = (opts.q ?? $("qText").value ?? "").trim().toLowerCase();
-      const around = `around:${radius},${center.lat},${center.lng}`;
-      const filters = categoryToOverpass(currentCategory);
-
-      $("status").textContent = "Buscando...";
-      showSheet();
-      $("resultsSheet").classList.add("expanded");
-      skeleton();
-
-      const parts = [];
-      for(const f of filters){
-        parts.push(`node[${f}](${around});`);
-        parts.push(`way[${f}](${around});`);
-        parts.push(`relation[${f}](${around});`);
-      }
-
-      const query = `
-        [out:json][timeout:25];
-        (
-          ${parts.join("\n")}
-        );
-        out center tags;
-      `;
-
-      try {
-        const resp = await fetch(OVERPASS, {
-          method:"POST",
-          headers:{ "Content-Type":"application/x-www-form-urlencoded; charset=UTF-8" },
-          body:"data="+encodeURIComponent(query)
-        });
-        if(!resp.ok) throw new Error("Overpass "+resp.status);
-
-        const data = await resp.json();
-        let items = (data.elements || []).map(e=>{
-          const lat = e.lat ?? (e.center && e.center.lat);
-          const lng = e.lon ?? (e.center && e.center.lon);
-          const tags = e.tags || {};
-          const name = tags.name || "(Sem nome)";
-          const addr = [
-            tags["addr:street"],
-            tags["addr:housenumber"],
-            tags["addr:suburb"],
-            tags["addr:city"] || tags["addr:municipality"],
-            tags["addr:state"]
-          ].filter(Boolean).join(", ");
-
-          const dist = haversineMeters(center, {lat, lng});
-          return {
-            lat, lng,
-            name,
-            addr: addr || tags["addr:full"] || "",
-            phone: tags.phone || tags["contact:phone"] || "",
-            website: tags.website || tags["contact:website"] || "",
-            opening: tags.opening_hours || "",
-            dist
-          };
-        }).filter(x=>x.lat && x.lng);
-
-        if(q) items = items.filter(x => (x.name||"").toLowerCase().includes(q));
-        items.sort((a,b)=>a.dist-b.dist);
-
-        render(items);
-        $("status").textContent = items.length ? "Atualizado." : "Nada encontrado.";
-        $("kpiCount").textContent = items.length;
-
-        // update quick input display
-        $("quickQ").value = q;
-      } catch(e) {
-        console.error(e);
-        $("status").textContent = "Falha na busca (tente de novo).";
-        render([]);
-        $("kpiCount").textContent = "0";
-      }
-    }
-
-    function render(items){
-      clearMarkers();
-      const box = $("results");
-      box.innerHTML = "";
-
-      if(!items.length){
-        const empty = document.createElement("div");
-        empty.style.padding = "12px 8px";
-        empty.style.color = "#777";
-        empty.style.fontWeight = "900";
-        empty.innerHTML = "Nada por perto com esses filtros. Tente aumentar o raio.";
-        box.appendChild(empty);
-        return;
-      }
-
-      circle.setRadius(Number($("radius").value));
-
-      items.slice(0, 80).forEach((it, idx)=>{
-        const m = L.marker([it.lat, it.lng]).addTo(map);
-        markers.push(m);
-        m.bindPopup(`<b>${escapeHtml(it.name)}</b><br><span style="color:#666">${escapeHtml(it.addr||"")}</span><br><span style="color:#666;font-weight:900">A ${km(it.dist)} km</span>`);
-
-        const card = document.createElement("div");
-        card.className = "emp-item";
-        card.innerHTML = `
-          <div class="emp-dot">${idx+1}</div>
-          <div style="flex:1;min-width:0">
-            <h4>${escapeHtml(it.name)}</h4>
-            <p>${escapeHtml(it.addr || "Endereço não informado")}</p>
-            <div class="meta">
-              <span class="emp-badge">A ${km(it.dist)} km</span>
-              ${it.opening ? '<span class="emp-badge">Horário</span>' : ''}
-              ${it.phone ? '<span class="emp-badge">Telefone</span>' : ''}
-              ${it.website ? '<span class="emp-badge">Site</span>' : ''}
-            </div>
-            <div class="emp-mini-actions">
-              <button class="emp-mini primary" data-act="route"><i class='bx bx-navigation'></i> Rotas</button>
-              <button class="emp-mini" data-act="focus"><i class='bx bx-map-pin'></i> Ver</button>
-              <button class="emp-mini" data-act="copy"><i class='bx bx-copy'></i> Copiar</button>
-            </div>
-          </div>
-        `;
-
-        card.addEventListener("click", (ev)=>{
-          const act = ev.target && ev.target.dataset && ev.target.dataset.act;
-          if(act){
-            ev.stopPropagation();
-            handleAction(act, it, m);
-            return;
-          }
-          openMap();
-          map.setView([it.lat, it.lng], 16, { animate:true });
-          m.openPopup();
-        });
-
-        box.appendChild(card);
-      });
-    }
-
-    function handleAction(act, it, marker){
-      const google = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(it.lat+","+it.lng)}`;
-      if(act === "route") window.open(google, "_blank", "noopener");
-      if(act === "focus") {
-        openMap();
-        map.setView([it.lat, it.lng], 16, { animate:true });
-        marker && marker.openPopup();
-      }
-      if(act === "copy") {
-        const txt = `${it.name} — ${it.addr || ""} (A ${km(it.dist)} km)`;
-        navigator.clipboard?.writeText(txt);
-        $("status").textContent = "Copiado!";
-        setTimeout(()=>{ $("status").textContent = "Atualizado."; }, 900);
-      }
-    }
-
-    // Bind buttons
-    $("btnSearch").addEventListener("click", async ()=>{
-      // if address typed, geocode first
-      const addr = ($("address").value || "").trim();
-      if(addr) {
-        await geocodeAddress(addr);
-      }
-      closeModal();
-      openMap();
-      await overpassSearch({ q: $("qText").value });
-    });
-
-    $("btnQuickSearch").addEventListener("click", async ()=>{
-      openMap();
-      await overpassSearch({ q: $("quickQ").value });
-    });
-
-    $("quickQ").addEventListener("keydown", (e)=>{ if(e.key==="Enter") $("btnQuickSearch").click(); });
-    $("qText").addEventListener("keydown", (e)=>{ if(e.key==="Enter") $("btnSearch").click(); });
-
-    // Prefill loc pill if CEP exists
-    const cepTxt = localStorage.getItem("cepUsuario") || localStorage.getItem("cep");
-    if(cepTxt) {
-      $("locText").innerHTML = "<i class='bx bx-map'></i> Localização: CEP salvo (" + escapeHtml(cepTxt) + ")";
-    }
-
-    // CNPJ field: keep digits only
-    $("cnpj").addEventListener("input", ()=>{
-      $("cnpj").value = onlyDigits($("cnpj").value).slice(0,14);
-    });
-
-    // Init
+  function ensureMap() {
     initMap();
-    updateRadiusLabel();
-    setCategory("restaurant");
-  </script>
+    if (map) setTimeout(() => map.invalidateSize(), 50);
+  }
+
+  function updateMarkers(list) {
+    if (!markersLayer) return;
+    markersLayer.clearLayers();
+    markerById.clear();
+
+    // Para o mapa, mostramos todos os filtrados (não paginados)
+    const maxMarkers = 120;
+    const useList = list.slice(0, maxMarkers);
+
+    useList.forEach(biz => {
+      const m = L.circleMarker([biz.lat, biz.lng], {
+        radius: 8,
+        color: BRAND,
+        fillColor: BRAND,
+        fillOpacity: 0.95,
+        weight: 2
+      });
+
+      const status = biz.openNow ? `<span style="color:${BRAND}; font-weight:900">Aberto</span>` : `<span style="color:#b91c1c; font-weight:900">Fechado</span>`;
+      const dist = formatKm(getDistanceKm(biz));
+      const price = priceLabel(biz.price);
+
+      m.bindPopup(`
+        <div style="min-width:220px">
+          <div style="font-weight:900; font-size:1rem; margin-bottom:4px;">${escapeHtml(biz.name)}</div>
+          <div style="font-weight:800; color:#6b7280; margin-bottom:6px;">${escapeHtml(biz.neighborhood)} • ${dist} • ${price}</div>
+          <div style="color:#f59e0b; font-weight:900; margin-bottom:8px;">★ ${biz.rating.toFixed(1)} <span style="color:#6b7280; font-weight:800;">(${biz.reviews})</span> • ${status}</div>
+          <div style="display:flex; gap:8px;">
+            <button style="flex:1; background:${BRAND}; color:#fff; border:none; padding:10px 12px; border-radius:10px; font-weight:900; cursor:pointer;"
+              onclick="window.__dokeOpenProfile('${biz.id}')">Ver perfil</button>
+            <button style="width:44px; background:#fff; border:1px solid rgba(0,0,0,0.12); border-radius:10px; cursor:pointer;"
+              onclick="window.__dokeToggleFav('${biz.id}')">❤</button>
+          </div>
+        </div>
+      `);
+
+      m.on('click', () => focusBusiness(biz.id, { source: 'marker', openPopup: true }));
+
+      m.addTo(markersLayer);
+      markerById.set(biz.id, m);
+    });
+
+    if (selectedId) highlightMarker(selectedId);
+  }
+
+  function resetMarkerStyle(id) {
+    if (!markerById.has(id)) return;
+    markerById.get(id).setStyle({ radius: 8, weight: 2, color: BRAND, fillColor: BRAND, fillOpacity: 0.95 });
+  }
+
+  function setMarkerSelectedStyle(id) {
+    if (!markerById.has(id)) return;
+    markerById.get(id).setStyle({ radius: 11, weight: 3, color: '#111827', fillColor: BRAND, fillOpacity: 1 });
+  }
+
+  function setMarkerPreviewStyle(id) {
+    if (!markerById.has(id)) return;
+    markerById.get(id).setStyle({ radius: 10, weight: 3, color: '#111827', fillColor: BRAND, fillOpacity: 0.98 });
+  }
+
+  function highlightMarker(id) {
+    if (!markerById.size) return;
+
+    // Reseta o selecionado anterior
+    if (selectedId && markerById.has(selectedId)) resetMarkerStyle(selectedId);
+
+    // Mantém preview limpo
+    if (previewId && previewId !== id && previewId !== selectedId && markerById.has(previewId)) resetMarkerStyle(previewId);
+
+    selectedId = id;
+    setMarkerSelectedStyle(id);
+  }
+
+  function previewMarker(id) {
+    if (!markerById.size) return;
+    if (!id || id === selectedId) return;
+
+    if (previewId && previewId !== selectedId) resetMarkerStyle(previewId);
+    previewId = id;
+    setMarkerPreviewStyle(id);
+  }
+
+  function clearPreview() {
+    if (!previewId) return;
+    if (previewId !== selectedId) resetMarkerStyle(previewId);
+    previewId = null;
+  }
+
+  function focusBusiness(id, opts = {}) {
+    const biz = BUSINESSES.find(b => b.id === id);
+    if (!biz) return;
+
+    // Highlight card
+    highlightCard(id);
+
+    // Map
+    ensureMap();
+    if (map) map.setView([biz.lat, biz.lng], Math.max(map.getZoom(), 15), { animate: true });
+
+    // Marker highlight/popup
+    if (markerById.has(id)) {
+      highlightMarker(id);
+      if (opts.openPopup) markerById.get(id).openPopup();
+    }
+  }
+
+  function highlightCard(id) {
+    const grid = document.getElementById('gridEmpresas');
+    if (!grid) return;
+
+    grid.querySelectorAll('.biz-card.is-active').forEach(el => el.classList.remove('is-active'));
+    const card = grid.querySelector(`.biz-card[data-id="${CSS.escape(id)}"]`);
+    if (card) {
+      card.classList.add('is-active');
+      // scroll gentil para ficar visível
+      card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }
+
+  // Scroll até o mapa (botão flutuante e botão no header)
+  window.irParaMapa = function() {
+    const sec = document.getElementById('mapaSection');
+    if (!sec) return;
+    sec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    setTimeout(() => {
+      ensureMap();
+      // Centraliza na localização do usuário se existir
+      if (map) {
+        const center = state.userLoc ? [state.userLoc.lat, state.userLoc.lng] : [DEFAULT_CENTER.lat, DEFAULT_CENTER.lng];
+        map.setView(center, state.userLoc ? 15 : 14, { animate: true });
+      }
+    }, 380);
+  };
+
+  // ---------- Favoritos ----------
+  function readFavs() {
+    try { return new Set(JSON.parse(localStorage.getItem(STORAGE_FAVS)) || []); }
+    catch(e) { return new Set(); }
+  }
+  function writeFavs(set) {
+    try { localStorage.setItem(STORAGE_FAVS, JSON.stringify(Array.from(set))); } catch(e){}
+  }
+  function isFav(id) { return readFavs().has(id); }
+
+  function toggleFav(id) {
+    const favs = readFavs();
+    if (favs.has(id)) favs.delete(id);
+    else favs.add(id);
+    writeFavs(favs);
+  }
+
+  // Expostos para o popup do mapa
+  window.__dokeToggleFav = function(id) {
+    toggleFav(id);
+    applyAndRender(false);
+  };
+  window.__dokeOpenProfile = function(id) {
+    openProfile(id);
+  };
+
+  // ---------- Busca (histórico + sugestões) ----------
+  function readHistory() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_HISTORY)) || []; }
+    catch(e) { return []; }
+  }
+  function writeHistory(list) {
+    try { localStorage.setItem(STORAGE_HISTORY, JSON.stringify(list)); } catch(e){}
+  }
+  function addToHistory(term) {
+    const t = (term || '').trim();
+    if (!t) return;
+    let list = readHistory().filter(x => String(x).toLowerCase() !== t.toLowerCase());
+    list.unshift(t);
+    list = list.slice(0, 10);
+    writeHistory(list);
+  }
+
+  function buildSuggestionsBase() {
+    const cats = uniq(BUSINESSES.map(b => b.category));
+    const bairros = uniq(BUSINESSES.map(b => b.neighborhood));
+    const nomes = uniq(BUSINESSES.map(b => b.name));
+    const tags = uniq(BUSINESSES.flatMap(b => b.tags || []));
+    const populares = ['Aberto agora', 'Promoções', 'Perto de mim', 'Vila Madalena', 'Pinheiros', 'Sumaré'];
+    state.suggestionsBase = uniq([...cats, ...bairros, ...tags, ...nomes, ...populares]);
+  }
+
+  function setupSearchUI() {
+    const wrapper = document.getElementById('buscaWrapper');
+    const input = document.getElementById('inputBusca');
+    const dropdown = document.getElementById('buscaDropdown');
+    const contSug = document.getElementById('containerSugestoes');
+    const listaSug = document.getElementById('listaSugestoes');
+    const contHist = document.getElementById('containerHistorico');
+    const listaHist = document.getElementById('listaRecentes');
+    const limparBtn = document.getElementById('limparHistoricoBtn');
+
+    if (!wrapper || !input || !dropdown) return;
+
+    const open = () => wrapper.classList.add('active');
+    const close = () => wrapper.classList.remove('active');
+
+    function render() {
+      const term = (input.value || '').trim().toLowerCase();
+
+      // Sugestões
+      let sug = state.suggestionsBase;
+      if (term) sug = sug.filter(s => s.toLowerCase().includes(term));
+      sug = sug.slice(0, 10);
+
+      if (contSug && listaSug) {
+        contSug.style.display = sug.length ? 'block' : 'none';
+        listaSug.innerHTML = sug.map(t => `
+          <div class="recent-item" data-value="${escapeAttr(t)}">
+            <i class='bx bx-search history-icon'></i>
+            <span>${escapeHtml(t)}</span>
+          </div>
+        `).join('');
+      }
+
+      // Histórico
+      const hist = readHistory();
+      if (contHist && listaHist) {
+        contHist.style.display = hist.length ? 'block' : 'none';
+        listaHist.innerHTML = hist.map(t => `
+          <div class="recent-item" data-value="${escapeAttr(t)}">
+            <i class='bx bx-time-five history-icon'></i>
+            <span>${escapeHtml(t)}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    function doSearch(value) {
+      const term = (value ?? input.value ?? '').trim();
+      state.search = term;
+      state.page = 1;
+      if (term) addToHistory(term);
+      applyAndRender(true);
+      render();
+    }
+
+    // Botão da seta (onclick já chama filtrarEmpresas)
+    window.filtrarEmpresas = function(value) { doSearch(value); };
+
+    input.addEventListener('focus', () => { open(); render(); });
+    input.addEventListener('input', () => { open(); render(); state.search = input.value; state.page = 1; applyAndRender(false); });
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') { e.preventDefault(); doSearch(); close(); }
+      if (e.key === 'Escape') { close(); input.blur(); }
+    });
+
+    dropdown.addEventListener('click', (e) => {
+      const item = e.target.closest('.recent-item');
+      if (!item) return;
+      const v = item.getAttribute('data-value') || item.textContent;
+      input.value = v;
+      doSearch(v);
+      close();
+    });
+
+    if (limparBtn) limparBtn.addEventListener('click', () => { writeHistory([]); render(); });
+
+    document.addEventListener('click', (e) => { if (!wrapper.contains(e.target)) close(); });
+
+    render();
+  }
+
+  // ---------- Categorias (pills do topo) ----------
+  function setupCategoryPills() {
+    const wrap = document.getElementById('categoryPills');
+    if (!wrap) return;
+
+    wrap.addEventListener('click', (e) => {
+      const btn = e.target.closest('.filter-pill');
+      if (!btn) return;
+
+      wrap.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+
+      state.category = btn.getAttribute('data-category') || '';
+      state.page = 1;
+      applyAndRender(true);
+    });
+  }
+
+  // ---------- Filtros rápidos + painel ----------
+  function setupFilters() {
+    const quick = document.getElementById('quickFilters');
+    const sortSelect = document.getElementById('sortSelect');
+    const resultsCount = document.getElementById('resultsCount');
+    const btnLoadMore = document.getElementById('btnLoadMore');
+    const loadMoreWrap = document.getElementById('loadMoreWrap');
+    const btnToggleFilters = document.getElementById('btnToggleFilters');
+    const panel = document.getElementById('filtersPanel');
+
+    // Panel controls
+    const minRange = document.getElementById('minRatingRange');
+    const minVal = document.getElementById('minRatingValue');
+    const maxDist = document.getElementById('maxDistanceSelect');
+    const tOpen = document.getElementById('toggleOpen');
+    const tPromo = document.getElementById('togglePromo');
+    const btnApply = document.getElementById('btnApplyFilters');
+    const btnClose = document.getElementById('btnCloseFilters');
+
+    const btnReset = document.getElementById('btnResetFilters');
+    const btnClearAll = document.getElementById('btnClearAll');
+
+    if (sortSelect) {
+      sortSelect.addEventListener('change', () => {
+        state.sort = sortSelect.value || 'distance';
+        state.page = 1;
+        applyAndRender(false);
+      });
+    }
+
+    if (quick) {
+      quick.addEventListener('click', (e) => {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+
+        if (chip.classList.contains('chip-price')) {
+          const p = Number(chip.getAttribute('data-price') || 0);
+          if (!p) return;
+          if (state.prices.has(p)) state.prices.delete(p);
+          else state.prices.add(p);
+          chip.classList.toggle('active', state.prices.has(p));
+          state.page = 1;
+          applyAndRender(false);
+          return;
+        }
+
+        if (chip.id === 'btnResetFilters') {
+          resetAllFilters();
+          applyAndRender(true);
+          syncUI();
+          return;
+        }
+
+        const f = chip.getAttribute('data-filter');
+        if (!f) return;
+
+        if (f === 'favorites') {
+          state.quick.favorites = !state.quick.favorites;
+          chip.classList.toggle('active', state.quick.favorites);
+        } else if (f === 'openNow') {
+          state.quick.openNow = !state.quick.openNow;
+          chip.classList.toggle('active', state.quick.openNow);
+        } else if (f === 'promo') {
+          state.quick.promo = !state.quick.promo;
+          chip.classList.toggle('active', state.quick.promo);
+        } else if (f === 'verified') {
+          state.quick.verified = !state.quick.verified;
+          chip.classList.toggle('active', state.quick.verified);
+        } else if (f === 'points') {
+          state.quick.points = !state.quick.points;
+          chip.classList.toggle('active', state.quick.points);
+        } else if (f === 'rating45') {
+          state.quick.rating45 = !state.quick.rating45;
+          chip.classList.toggle('active', state.quick.rating45);
+        }
+
+        state.page = 1;
+        applyAndRender(false);
+      });
+    }
+
+    if (btnToggleFilters && panel) {
+      btnToggleFilters.addEventListener('click', () => {
+        panel.hidden = !panel.hidden;
+      });
+    }
+
+    if (minRange && minVal) {
+      minRange.addEventListener('input', () => {
+        minVal.textContent = Number(minRange.value || 0).toFixed(1);
+      });
+    }
+
+    if (btnClose && panel) btnClose.addEventListener('click', () => { panel.hidden = true; });
+
+    if (btnApply) {
+      btnApply.addEventListener('click', () => {
+        state.minRating = Number(minRange?.value || 0);
+        state.maxDistance = Number(maxDist?.value || 0);
+        // toggles no painel (espelhando chips)
+        state.quick.openNow = !!tOpen?.checked;
+        state.quick.promo = !!tPromo?.checked;
+
+        // Ajusta chips visuais
+        syncUI();
+        state.page = 1;
+        applyAndRender(true);
+        if (panel) panel.hidden = true;
+      });
+    }
+
+    if (btnLoadMore) {
+      btnLoadMore.addEventListener('click', () => {
+        state.page += 1;
+        applyAndRender(false);
+      });
+    }
+
+    if (btnReset) {
+      btnReset.addEventListener('click', () => {
+        resetAllFilters();
+        applyAndRender(true);
+        syncUI();
+      });
+    }
+
+    if (btnClearAll) {
+      btnClearAll.addEventListener('click', () => {
+        resetAllFilters(true);
+        applyAndRender(true);
+        syncUI();
+      });
+    }
+
+    // Count updater
+    function setCount(txt) {
+      if (resultsCount) resultsCount.textContent = txt;
+    }
+    window.__dokeSetCount = setCount;
+
+    // Load more visibility
+    window.__dokeSetLoadMore = function(show) {
+      if (!loadMoreWrap) return;
+      loadMoreWrap.style.display = show ? 'flex' : 'none';
+    };
+
+    function syncUI() {
+      // Chips (open/promo etc)
+      if (!quick) return;
+      const chips = Array.from(quick.querySelectorAll('.chip[data-filter]'));
+      chips.forEach(ch => {
+        const f = ch.getAttribute('data-filter');
+        const active =
+          (f === 'openNow' && state.quick.openNow) ||
+          (f === 'promo' && state.quick.promo) ||
+          (f === 'verified' && state.quick.verified) ||
+          (f === 'points' && state.quick.points) ||
+          (f === 'rating45' && state.quick.rating45) ||
+          (f === 'favorites' && state.quick.favorites);
+        ch.classList.toggle('active', !!active);
+      });
+
+      // Prices
+      Array.from(quick.querySelectorAll('.chip-price')).forEach(ch => {
+        const p = Number(ch.getAttribute('data-price') || 0);
+        ch.classList.toggle('active', state.prices.has(p));
+      });
+
+      // Panel mirrors
+      if (tOpen) tOpen.checked = state.quick.openNow;
+      if (tPromo) tPromo.checked = state.quick.promo;
+      if (minRange) minRange.value = String(state.minRating || 0);
+      if (minVal) minVal.textContent = Number(state.minRating || 0).toFixed(1);
+      if (maxDist) maxDist.value = String(state.maxDistance || 0);
+      if (sortSelect) sortSelect.value = state.sort;
+    }
+
+    window.__dokeSyncUI = syncUI;
+    syncUI();
+  }
+
+  function resetAllFilters(clearSearch = false) {
+    state.quick = { openNow:false, promo:false, verified:false, points:false, rating45:false, favorites:false };
+    state.prices = new Set();
+    state.minRating = 0;
+    state.maxDistance = 0;
+    state.sort = 'distance';
+    state.page = 1;
+
+    if (clearSearch) {
+      state.search = '';
+      const input = document.getElementById('inputBusca');
+      if (input) input.value = '';
+    }
+  }
+
+  // ---------- Render ----------
+  function showSkeletons() {
+    const grid = document.getElementById('gridEmpresas');
+    if (!grid) return;
+
+    const n = Math.min(state.pageSize, 9);
+    grid.innerHTML = Array.from({length:n}).map(() => `
+      <div class="biz-card skeleton-card" aria-hidden="true">
+        <div class="skeleton-cover"></div>
+        <div class="skeleton-body">
+          <div class="sk-line big"></div>
+          <div class="sk-line mid"></div>
+          <div class="sk-line small"></div>
+          <div class="sk-actions">
+            <div class="sk-btn"></div>
+            <div class="sk-btn icon"></div>
+            <div class="sk-btn icon"></div>
+            <div class="sk-btn icon"></div>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  function renderVibe(list) {
+    const scroller = document.getElementById('vibeScroller');
+    if (!scroller) return;
+
+    // "Em alta": pega os mais populares (já filtrados)
+    const vibe = [...list]
+      .sort((a,b) => (b.popularity || 0) - (a.popularity || 0))
+      .slice(0, 10);
+
+    scroller.innerHTML = vibe.map(biz => `
+      <div class="vibe-card" data-id="${escapeAttr(biz.id)}" role="button" tabindex="0" aria-label="Ver ${escapeAttr(biz.name)} no mapa">
+        <img loading="lazy" decoding="async" src="${escapeAttr(biz.cover)}" alt="${escapeAttr(biz.name)}">
+        <div class="vibe-info">
+          <div style="font-weight:800">${escapeHtml(biz.name)}</div>
+          <div style="font-size:0.82rem; opacity:0.95">
+            ${formatKm(getDistanceKm(biz))} • ${biz.openNow ? 'Aberto' : 'Fechado'}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    scroller.onclick = (e) => {
+      const card = e.target.closest('.vibe-card');
+      if (!card) return;
+      const id = card.getAttribute('data-id');
+      if (!id) return;
+      window.irParaMapa();
+      setTimeout(() => focusBusiness(id, { openPopup: true, source: 'vibe' }), 450);
+    };
+    scroller.onkeydown = (e) => {
+      if (e.key !== 'Enter') return;
+      const card = e.target.closest('.vibe-card');
+      if (!card) return;
+      const id = card.getAttribute('data-id');
+      if (!id) return;
+      window.irParaMapa();
+      setTimeout(() => focusBusiness(id, { openPopup: true, source: 'vibe' }), 450);
+    };
+  }
+
+  function renderGrid(listFiltered) {
+    const grid = document.getElementById('gridEmpresas');
+    const empty = document.getElementById('emptyState');
+    if (!grid) return;
+
+    const paginated = paginate(listFiltered);
+    const total = listFiltered.length;
+    const showing = paginated.length;
+
+    // Count
+    if (window.__dokeSetCount) window.__dokeSetCount(`${showing} de ${total} resultados`);
+
+    // Load more
+    const canMore = showing < total;
+    if (window.__dokeSetLoadMore) window.__dokeSetLoadMore(canMore);
+
+    if (!total) {
+      grid.innerHTML = '';
+      if (empty) empty.hidden = false;
+      return;
+    } else {
+      if (empty) empty.hidden = true;
+    }
+
+    grid.innerHTML = paginated.map(biz => renderBizCard(biz)).join('');
+  }
+
+  function onGridClick(e) {
+    const card = e.target.closest('.biz-card');
+    if (!card) return;
+    const id = card.getAttribute('data-id');
+    if (!id) return;
+
+    const actionBtn = e.target.closest('[data-action]');
+    const action = actionBtn ? actionBtn.getAttribute('data-action') : null;
+
+    if (action === 'fav') {
+      toggleFav(id);
+      applyAndRender(false);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if (action === 'map') {
+      window.irParaMapa();
+      setTimeout(() => focusBusiness(id, { openPopup: true, source: 'card' }), 450);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if (action === 'rotas') {
+      openRoutes(id);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    if (action === 'perfil') {
+      openProfile(id);
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+
+    // Clique no card: foca no mapa
+    focusBusiness(id, { source: 'card' });
+  }
+
+  function onGridHover(e) {
+    const card = e.target.closest('.biz-card');
+    if (!card) return;
+    const id = card.getAttribute('data-id');
+    if (!id) return;
+    if (markerById.has(id)) previewMarker(id);
+  }
+
+  function onGridOut(e) {
+    // Saiu de um card
+    const leavingCard = e.target.closest('.biz-card');
+    if (!leavingCard) return;
+
+    const to = e.relatedTarget;
+    if (to && leavingCard.contains(to)) return; // ainda dentro do mesmo card
+    clearPreview();
+  }
+
+
+  function renderBizCard(biz) {
+    const fav = isFav(biz.id);
+    const statusBadge = biz.openNow
+      ? `<span class="badge green"><i class='bx bx-time-five'></i> Aberto</span>`
+      : `<span class="badge red"><i class='bx bx-x-circle'></i> Fechado</span>`;
+
+    const badges = [
+      statusBadge,
+      biz.promo ? `<span class="badge orange"><i class='bx bx-purchase-tag-alt'></i> Promo</span>` : '',
+      biz.points ? `<span class="badge green"><i class='bx bx-coin-stack'></i> Pontos</span>` : ''
+    ].filter(Boolean).join('');
+
+    const verified = biz.verified
+      ? `<div class="biz-verified" title="Verificado"><i class='bx bxs-badge-check'></i></div>`
+      : '';
+
+    const tags = (biz.tags || []).slice(0, 3).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join('');
+
+    const dist = formatKm(getDistanceKm(biz));
+    const price = priceLabel(biz.price);
+
+    return `
+      <div class="biz-card" data-id="${escapeAttr(biz.id)}">
+        ${verified}
+        <div class="biz-badges">${badges}</div>
+        <img class="biz-cover" loading="lazy" decoding="async" src="${escapeAttr(biz.cover)}" alt="${escapeAttr(biz.name)}">
+        <div class="biz-content">
+          <h3 class="biz-title">${escapeHtml(biz.name)}</h3>
+          <div class="biz-rating"><i class='bx bxs-star'></i> ${biz.rating.toFixed(1)} <span style="color:#6b7280; font-weight:800;">(${biz.reviews})</span></div>
+          <div class="biz-subline">
+            <span>${escapeHtml(biz.neighborhood)}</span>
+            <span>•</span>
+            <span>${dist}</span>
+            <span>•</span>
+            <span>${price}</span>
+          </div>
+
+          ${tags ? `<div class="biz-tags">${tags}</div>` : ''}
+
+          <div class="biz-actions">
+            <button class="btn-biz-primary" data-action="perfil" type="button">Ver perfil</button>
+            <button class="btn-icon" data-action="map" type="button" title="Ver no mapa"><i class='bx bxs-map'></i></button>
+            <button class="btn-icon fav ${fav ? 'active' : ''}" data-action="fav" type="button" title="Salvar">
+              <i class='bx ${fav ? 'bxs-heart' : 'bx-heart'}'></i>
+            </button>
+            <button class="btn-icon" data-action="rotas" type="button" title="Rotas"><i class='bx bx-directions'></i></button>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ---------- Aplicar filtros e renderizar ----------
+  function applyAndRender(useSkeleton) {
+    if (useSkeleton) showSkeletons();
+
+    const list = getFilteredList(true);
+    renderVibe(list);
+    renderGrid(list);
+
+    // Mapa: atualizar marcadores com todos filtrados (não paginados)
+    if (mapInited) updateMarkers(list);
+  }
+
+  function getFilteredList(applySort = true) {
+    const q = (state.search || '').trim().toLowerCase();
+    const cat = (state.category || '').trim().toLowerCase();
+
+    let list = BUSINESSES.filter(b => {
+      if (cat && b.category.toLowerCase() !== cat) return false;
+
+      if (q) {
+        const hay = `${b.name} ${b.category} ${b.neighborhood} ${(b.tags||[]).join(' ')}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+
+      if (state.quick.openNow && !b.openNow) return false;
+      if (state.quick.promo && !b.promo) return false;
+      if (state.quick.verified && !b.verified) return false;
+      if (state.quick.points && !b.points) return false;
+      if (state.quick.rating45 && (b.rating || 0) < 4.5) return false;
+
+      if (state.quick.favorites && !isFav(b.id)) return false;
+
+      if (state.prices.size && !state.prices.has(Number(b.price || 0))) return false;
+
+      if ((b.rating || 0) < Number(state.minRating || 0)) return false;
+
+      if (state.maxDistance && Number(state.maxDistance) > 0) {
+        const d = getDistanceKm(b);
+        if (d > state.maxDistance) return false;
+      }
+
+      return true;
+    });
+
+    if (applySort) list = sortList(list);
+    return list;
+  }
+
+  function sortList(list) {
+    const s = state.sort || 'distance';
+    const copy = [...list];
+
+    if (s === 'rating') {
+      copy.sort((a,b) => (b.rating||0) - (a.rating||0) || (b.reviews||0) - (a.reviews||0));
+    } else if (s === 'popular') {
+      copy.sort((a,b) => (b.popularity||0) - (a.popularity||0));
+    } else if (s === 'newest') {
+      copy.sort((a,b) => (new Date(b.createdAt)).getTime() - (new Date(a.createdAt)).getTime());
+    } else {
+      // distance
+      copy.sort((a,b) => getDistanceKm(a) - getDistanceKm(b));
+    }
+    return copy;
+  }
+
+  function paginate(list) {
+    const end = state.page * state.pageSize;
+    return list.slice(0, end);
+  }
+
+  // ---------- Ações ----------
+  function openProfile(id) {
+    // Ajuste para sua rota real (ex.: perfil-publico.html?empresa=ID)
+    window.location.href = `empresa-perfil.html?id=${encodeURIComponent(id)}`;
+  }
+
+  function openRoutes(id) {
+    const biz = BUSINESSES.find(b => b.id === id);
+    if (!biz) return;
+    const dest = `${biz.lat},${biz.lng}`;
+    const url = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(dest)}`;
+    window.open(url, '_blank', 'noopener');
+  }
+
+  // ---------- Localização do usuário (opcional) ----------
+  function setupMyLocation() {
+    const btn = document.getElementById('btnMyLocation');
+    if (!btn) return;
+
+    btn.addEventListener('click', () => {
+      if (!navigator.geolocation) {
+        toast('Seu navegador não suporta localização.');
+        return;
+      }
+      btn.disabled = true;
+      btn.style.opacity = '0.75';
+
+      navigator.geolocation.getCurrentPosition((pos) => {
+        state.userLoc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        // Re-render com distances reais
+        state.sort = 'distance';
+        state.page = 1;
+        applyAndRender(true);
+
+        // Centraliza mapa na localização do usuário
+        ensureMap();
+        if (map) {
+          map.setView([state.userLoc.lat, state.userLoc.lng], 15, { animate: true });
+          // marcador do usuário
+          L.circleMarker([state.userLoc.lat, state.userLoc.lng], { radius: 7, color:'#111827', fillColor:'#111827', fillOpacity: 1, weight:2 })
+            .addTo(map)
+            .bindPopup('Você está aqui');
+        }
+        toast('Localização ativada.');
+      }, () => {
+        toast('Não foi possível obter sua localização.');
+      }, { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 });
+
+      setTimeout(() => {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }, 900);
+    });
+  }
+
+  // ---------- Map init lazy (quando a seção aparece) ----------
+  function initMapLazy() {
+    const sec = document.getElementById('mapaSection');
+    if (!sec) return;
+
+    // Se já está na viewport, inicia direto
+    const rect = sec.getBoundingClientRect();
+    const alreadyVisible = rect.top < window.innerHeight && rect.bottom > 0;
+
+    if (alreadyVisible) {
+      ensureMap();
+      return;
+    }
+
+    const io = new IntersectionObserver((entries) => {
+      if (entries.some(e => e.isIntersecting)) {
+        ensureMap();
+        io.disconnect();
+      }
+    }, { threshold: 0.2 });
+
+    io.observe(sec);
+  }
+
+  // ---------- Util ----------
+  function uniq(arr) {
+    const out = [];
+    const seen = new Set();
+    for (const v of arr) {
+      const s = String(v || '').trim();
+      const k = s.toLowerCase();
+      if (!s || seen.has(k)) continue;
+      seen.add(k); out.push(s);
+    }
+    return out;
+  }
+
+  function haversineKm(lat1, lon1, lat2, lon2) {
+    const toRad = (x) => (x * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+  }
+
+  function getDistanceKm(biz) {
+    if (state.userLoc) {
+      return haversineKm(state.userLoc.lat, state.userLoc.lng, biz.lat, biz.lng);
+    }
+    return Number(biz.distanceHintKm || 2.5);
+  }
+
+  function formatKm(km) {
+    const v = Number(km || 0);
+    if (v < 1) return `${Math.round(v*1000)} m`;
+    return `${v.toFixed(1)} km`;
+  }
+
+  function priceLabel(p) {
+    const n = Number(p || 0);
+    if (n <= 1) return 'R$';
+    if (n === 2) return 'R$$';
+    return 'R$$$';
+  }
+
+  function escapeHtml(str) {
+    return String(str || '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'","&#039;");
+  }
+  function escapeAttr(str) {
+    return escapeHtml(str).replaceAll('`','&#096;');
+  }
+
+  function toast(msg) {
+    // toast leve sem dependências
+    const t = document.createElement('div');
+    t.textContent = msg;
+    t.style.position = 'fixed';
+    t.style.left = '50%';
+    t.style.bottom = '92px';
+    t.style.transform = 'translateX(-50%)';
+    t.style.background = '#1f2d3d';
+    t.style.color = 'white';
+    t.style.padding = '10px 14px';
+    t.style.borderRadius = '999px';
+    t.style.fontWeight = '900';
+    t.style.boxShadow = '0 10px 24px rgba(0,0,0,0.25)';
+    t.style.zIndex = '9999';
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity = '0'; t.style.transition = '0.3s'; }, 1600);
+    setTimeout(() => t.remove(), 2000);
+  }
+
+  // ---------- Boot ----------
+  function boot() {
+    buildSuggestionsBase();
+    setupSearchUI();
+    setupCategoryPills();
+    setupFilters();
+    setupMyLocation();
+    initMapLazy();
+
+    // Delegação de eventos (evita duplicar listeners a cada render)
+    const grid = document.getElementById('gridEmpresas');
+    if (grid) {
+      grid.addEventListener('click', onGridClick);
+      grid.addEventListener('mouseover', onGridHover);
+      grid.addEventListener('mouseout', onGridOut);
+    }
+
+    // Primeiro render
+    showSkeletons();
+    setTimeout(() => {
+      applyAndRender(true);
+      if (window.__dokeSyncUI) window.__dokeSyncUI();
+    }, 220);
+  }
+
+  document.addEventListener('DOMContentLoaded', boot);
+})();
+</script>
 
 </body>
 </html>

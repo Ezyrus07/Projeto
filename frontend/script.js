@@ -54,6 +54,10 @@ window.setDoc = setDoc;
 window.getDoc = getDoc;
 window.doc = doc;
 
+// Reforça globals compat caso tenham sido sobrescritos por IDs no DOM
+if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
+if (typeof window.__dokeEnsureAuthCompat === "function") window.__dokeEnsureAuthCompat();
+
 // Variáveis Globais
 window.arquivoFotoSelecionado = null;
 window.arquivoVideoSelecionado = null;
@@ -1380,8 +1384,21 @@ window.alternarConta = function() {
 
 window.toggleDropdown = function(event) {
     if(event) event.stopPropagation();
-    const drop = document.getElementById('dropdownPerfil');
-    if(drop) drop.classList.toggle('show');
+    const target = event?.currentTarget || event?.target;
+    const container = target ? target.closest('.profile-container') : null;
+    const drop = (container && container.querySelector('.dropdown-profile')) || document.getElementById('dropdownPerfil');
+    if (!drop) return;
+    document.querySelectorAll('.dropdown-profile.show').forEach((el) => {
+        if (el !== drop) el.classList.remove('show');
+    });
+    drop.classList.toggle('show');
+}
+
+if (!window.__dokeDropdownBound) {
+    window.__dokeDropdownBound = true;
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown-profile.show').forEach((el) => el.classList.remove('show'));
+    });
 }
 
 window.irParaMeuPerfil = function(event) {

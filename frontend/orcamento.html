@@ -124,6 +124,41 @@
     cursor: pointer;
 }
 
+/* Input de arquivo com botão estilizado */
+.input-premium[type="file"] {
+    padding: 8px 10px;
+    cursor: pointer;
+    background: #fff;
+}
+.input-premium[type="file"]::file-selector-button {
+    background: var(--cor0);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-right: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: var(--fonte-padrao);
+}
+.input-premium[type="file"]:hover::file-selector-button {
+    background: var(--cor2);
+}
+.input-premium[type="file"]::-webkit-file-upload-button {
+    background: var(--cor0);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 12px;
+    margin-right: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-family: var(--fonte-padrao);
+}
+.input-premium[type="file"]:hover::-webkit-file-upload-button {
+    background: var(--cor2);
+}
+
 .grid-duplo {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -628,27 +663,22 @@
     </nav>
 
 <script>
-    // 1. IMPORTAÇÕES NECESSÁRIAS
-    const { doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc } = window;
-    const { getStorage, ref, uploadBytes, getDownloadURL } = window;
-    const { onAuthStateChanged } = window;
+    // 1. IMPORTAÇÕES NECESSÁRIAS (inicializadas após carregar script.js)
+    let doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc;
+    let getStorage, ref, uploadBytes, getDownloadURL;
+    let onAuthStateChanged;
+
+    function initFirebaseHelpers() {
+        if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
+        if (typeof window.__dokeEnsureAuthCompat === "function") window.__dokeEnsureAuthCompat();
+        ({ doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc } = window);
+        ({ getStorage, ref, uploadBytes, getDownloadURL } = window);
+        ({ onAuthStateChanged } = window);
+    }
 
     // Variável para guardar as perguntas carregadas (se houver)
     window.perguntasTriagem = [];
     window.__orc_anexos_files = [];
-
-    function coalesce() {
-        for (let i = 0; i < arguments.length; i++) {
-            const v = arguments[i];
-            if (v !== null && v !== undefined) return v;
-        }
-        return undefined;
-    }
-
-    function getInputValue(id) {
-        const el = document.getElementById(id);
-        return el ? el.value : "";
-    }
 
     function coalesce() {
         for (let i = 0; i < arguments.length; i++) {
@@ -735,7 +765,7 @@
                 if (match) selPQ.value = match.value;
                 if (pqVal.toLowerCase().includes('data específica') || pqVal.toLowerCase().includes('data especifica')) {
                     if (wrapData) wrapData.style.display = 'block';
-                    const m = pqVal.match(/(\\d{2})\\/(\\d{2})\\/(\\d{4})/);
+                    const m = pqVal.match(/(\d{2})\/(\d{2})\/(\d{4})/);
                     if (m && inpData) inpData.value = `${m[3]}-${m[2]}-${m[1]}`;
                 }
             }
@@ -746,14 +776,94 @@
                 const match = opts.find(o => o.textContent && String(p.turno).toLowerCase().includes(o.textContent.toLowerCase()));
                 if (match) turno.value = match.value;
             }
+
+            // Tenta carregar o anúncio do pedido caso não tenha vindo pela URL
+            const anuncioRefId = coalesce(
+                p.anuncioId,
+                p.anuncio_id,
+                p.anuncioid,
+                p.aid,
+                p.anuncio,
+                p.anuncioIdRef,
+                p.anuncio_ref
+            );
+            if (anuncioRefId) {
+                window.__orc_anuncioId = window.__orc_anuncioId || anuncioRefId;
+                if (!window.__orc_anuncio || !window.perguntasTriagem?.length) {
+                    await carregarAnuncioPorId(db, anuncioRefId);
+                }
+            }
         } catch (e) {
             console.warn('Falha ao pré-preencher pedido:', e);
+        }
+    }
+
+    async function carregarAnuncioPorId(db, anuncioId){
+        if (!db || !anuncioId) return null;
+        try {
+            const docAnuncioRef = doc(db, "anuncios", anuncioId);
+            const docAnuncioSnap = await getDoc(docAnuncioRef);
+            if (docAnuncioSnap.exists()) {
+                const dadosAnuncio = docAnuncioSnap.data() || {};
+                window.__orc_anuncio = dadosAnuncio || null;
+                window.__orc_anuncioId = anuncioId || window.__orc_anuncioId || "";
+                aplicarDadosAnuncio(dadosAnuncio);
+                return dadosAnuncio;
+            }
+        } catch (e) {
+            console.error("Erro anuncio:", e);
+        }
+        return null;
+    }
+
+    async function carregarAnuncioPorUid(db, prestadorUid){
+        if (!db || !prestadorUid) return null;
+        try {
+            const q = query(collection(db, "anuncios"), where("uid", "==", prestadorUid), limit(1));
+            const snap = await getDocs(q);
+            if (!snap.empty) {
+                const dadosAnuncio = snap.docs[0].data() || {};
+                window.__orc_anuncio = dadosAnuncio || null;
+                window.__orc_anuncioId = window.__orc_anuncioId || snap.docs[0].id || "";
+                aplicarDadosAnuncio(dadosAnuncio);
+                return dadosAnuncio;
+            }
+        } catch (e) {
+            console.error("Erro anuncio (uid):", e);
+        }
+        return null;
+    }
+
+    function aplicarDadosAnuncio(dadosAnuncio) {
+        if (!dadosAnuncio) return;
+        const inputTitulo = document.getElementById('titulo-pedido');
+        if(inputTitulo && dadosAnuncio.titulo) {
+            inputTitulo.value = "Orçamento: " + dadosAnuncio.titulo;
+        }
+        aplicarConfiguracoesDoAnuncio(dadosAnuncio);
+        const rawPerguntas = pickPerguntas(
+            dadosAnuncio.perguntasFormularioJson,
+            dadosAnuncio.perguntasformulariojson,
+            dadosAnuncio.perguntas_formulario_json,
+            dadosAnuncio.perguntas_formulariojson,
+            dadosAnuncio.perguntasFormulario,
+            dadosAnuncio.perguntas,
+            dadosAnuncio.formularioPerguntas,
+            dadosAnuncio.formulario,
+            dadosAnuncio.quiz,
+            dadosAnuncio.questionario
+        );
+        const perguntas = normalizarPerguntasTriagem(rawPerguntas);
+        if (perguntas.length > 0) {
+            window.perguntasTriagem = perguntas;
+            renderizarPerguntasDinamicas(perguntas);
         }
     }
 
     // --- 2. CARREGAMENTO DA PÁGINA ---
     window.addEventListener('load', async function() {
         console.log("🚀 Página Carregada. Buscando dados...");
+        initFirebaseHelpers();
 
         const db = window.db; 
         const auth = window.auth;
@@ -761,8 +871,8 @@
         if (!db) { console.error("Firebase DB não carregou."); return; }
 
         const urlParams = new URLSearchParams(window.location.search);
-        const anuncioId = urlParams.get('aid') || urlParams.get('id'); 
-        const prestadorUid = urlParams.get('uid'); 
+        const anuncioId = urlParams.get('aid') || urlParams.get('id') || urlParams.get('anuncioId') || urlParams.get('anuncio_id'); 
+        const prestadorUid = urlParams.get('uid') || urlParams.get('prof'); 
         const refPedidoId = urlParams.get('refPedido') || urlParams.get('pedidoId');
         window.__orc_anuncio = null;
         window.__orc_anuncioId = anuncioId || "";
@@ -785,89 +895,11 @@
         }
 
         // B. Carrega Anúncio (Título, Regras e PERGUNTAS DE TRIAGEM)
-        const aplicarDadosAnuncio = (dadosAnuncio) => {
-            if (!dadosAnuncio) return;
-            const inputTitulo = document.getElementById('titulo-pedido');
-            if(inputTitulo && dadosAnuncio.titulo) {
-                inputTitulo.value = "Orcamento: " + dadosAnuncio.titulo;
-            }
-            aplicarConfiguracoesDoAnuncio(dadosAnuncio);
-            const rawPerguntas = coalesce(
-                dadosAnuncio.perguntasFormularioJson,
-                dadosAnuncio.perguntasformulariojson,
-                dadosAnuncio.perguntas_formulario_json,
-                dadosAnuncio.perguntas_formulariojson
-            );
-            if (rawPerguntas) {
-                try {
-                    let perguntas = rawPerguntas;
-                    if (typeof perguntas === 'string') {
-                        perguntas = JSON.parse(perguntas);
-                    }
-                    if (Array.isArray(perguntas) && perguntas.length > 0) {
-                        window.perguntasTriagem = perguntas;
-                        renderizarPerguntasDinamicas(perguntas);
-                    }
-                } catch (errJson) {
-                    console.error("Erro ao ler JSON de perguntas:", errJson);
-                }
-            }
-        };
-
         if (anuncioId) {
-            try {
-                const docAnuncioRef = doc(db, "anuncios", anuncioId);
-                const docAnuncioSnap = await getDoc(docAnuncioRef);
-                
-                if (docAnuncioSnap.exists()) {
-                    const dadosAnuncio = docAnuncioSnap.data();
-                    window.__orc_anuncio = dadosAnuncio || null;
-                    window.__orc_anuncioId = anuncioId || window.__orc_anuncioId || "";
-                    
-                    // Preenche título
-                    const inputTitulo = document.getElementById('titulo-pedido');
-                    if(inputTitulo && dadosAnuncio.titulo) {
-                        inputTitulo.value = "Orçamento: " + dadosAnuncio.titulo;
-                    }
-                    
-                    // Aplica regras de localização
-                    aplicarConfiguracoesDoAnuncio(dadosAnuncio);
-
-                    // --- AQUI ESTÁ A CORREÇÃO: CARREGA AS PERGUNTAS ---
-                    const rawPerguntas = coalesce(
-                        dadosAnuncio.perguntasFormularioJson,
-                        dadosAnuncio.perguntasformulariojson,
-                        dadosAnuncio.perguntas_formulario_json,
-                        dadosAnuncio.perguntas_formulariojson
-                    );
-                    if (rawPerguntas) {
-                        try {
-                            let perguntas = rawPerguntas;
-                            if (typeof perguntas === 'string') {
-                                perguntas = JSON.parse(perguntas);
-                            }
-                            if (Array.isArray(perguntas) && perguntas.length > 0) {
-                                window.perguntasTriagem = perguntas;
-                                renderizarPerguntasDinamicas(perguntas);
-                            }
-                        } catch (errJson) {
-                            console.error("Erro ao ler JSON de perguntas:", errJson);
-                        }
-                    }
-                }
-            } catch (e) { console.error("Erro anuncio:", e); }
+            await carregarAnuncioPorId(db, anuncioId);
         }
         if (!anuncioId && prestadorUid) {
-            try {
-                const q = query(collection(db, "anuncios"), where("uid", "==", prestadorUid), limit(1));
-                const snap = await getDocs(q);
-                if (!snap.empty) {
-                    const dadosAnuncio = snap.docs[0].data();
-                    window.__orc_anuncio = dadosAnuncio || null;
-                    window.__orc_anuncioId = window.__orc_anuncioId || snap.docs[0].id || "";
-                    aplicarDadosAnuncio(dadosAnuncio);
-                }
-            } catch (e) { console.error("Erro anuncio (uid):", e); }
+            await carregarAnuncioPorUid(db, prestadorUid);
         }
 
         // C. Bloqueia APENAS se for o próprio dono tentando pedir orçamento pra si mesmo
@@ -890,7 +922,7 @@
     function renderizarPerguntasDinamicas(perguntas) {
         const container = document.getElementById('lista-perguntas-dinamicas');
         const wrapper = document.getElementById('container-perguntas-extras');
-        
+        if (!container || !wrapper) return;
         container.innerHTML = ""; // Limpa
         wrapper.style.display = "block"; // Mostra a seção
 
@@ -942,6 +974,69 @@
 
             container.appendChild(div);
         });
+    }
+
+    function pickPerguntas(){
+        for (let i = 0; i < arguments.length; i++) {
+            const v = arguments[i];
+            if (v === null || v === undefined) continue;
+            if (Array.isArray(v)) {
+                if (v.length) return v;
+                continue;
+            }
+            if (typeof v === 'string') {
+                const t = v.trim();
+                if (!t || t === '[]' || t === '{}' || t === 'null') continue;
+                return v;
+            }
+            if (typeof v === 'object') {
+                if (Object.keys(v).length) return v;
+                continue;
+            }
+            return v;
+        }
+        return null;
+    }
+
+    function normalizarPerguntasTriagem(rawPerguntas){
+        if (!rawPerguntas) return [];
+        let perguntas = rawPerguntas;
+        if (typeof perguntas === 'string') {
+            const t = perguntas.trim();
+            if (!t || t === '[]' || t === '{}' || t === 'null') return [];
+            try { perguntas = JSON.parse(perguntas); } catch (e) {
+                const parts = t.split(/[;\n|]+/).map(p => p.trim()).filter(Boolean);
+                return parts.map(p => ({ pergunta: p, tipo: 'aberta' }));
+            }
+        }
+        if (typeof perguntas === 'string') {
+            try { perguntas = JSON.parse(perguntas); } catch (e) {}
+        }
+        if (perguntas && typeof perguntas === 'object' && !Array.isArray(perguntas)) {
+            perguntas = perguntas.perguntas || perguntas.questions || perguntas.itens || perguntas.items || perguntas.lista || perguntas.list || perguntas.formulario || perguntas.form || perguntas.formularioPerguntas || perguntas.formPerguntas || perguntas.data || perguntas;
+        }
+        if (perguntas && typeof perguntas === 'object' && !Array.isArray(perguntas)) {
+            const keys = Object.keys(perguntas);
+            const numericKeys = keys.filter(k => /^\d+$/.test(k));
+            if (numericKeys.length) {
+                numericKeys.sort((a,b) => Number(a) - Number(b));
+                perguntas = numericKeys.map(k => perguntas[k]);
+            } else if (perguntas.pergunta || perguntas.texto || perguntas.titulo || perguntas.label || perguntas.q || perguntas.question) {
+                perguntas = [perguntas];
+            }
+        }
+        if (!Array.isArray(perguntas)) return [];
+        return perguntas.map((p) => {
+            if (!p) return null;
+            if (typeof p === 'string') return { pergunta: p, tipo: 'aberta' };
+            const pergunta = p.pergunta || p.texto || p.titulo || p.label || p.q || p.question;
+            const tipo = p.tipo || p.type || (Array.isArray(p.opcoes || p.options) ? 'fechada' : 'aberta');
+            let opcoes = p.opcoes || p.options || p.valores || p.choices || p.alternativas;
+            if (typeof opcoes === 'string') {
+                opcoes = opcoes.split(',').map(o => o.trim()).filter(Boolean);
+            }
+            return { ...p, pergunta, tipo, opcoes };
+        }).filter(p => p && p.pergunta);
     }
 
     function extrairFotoAnuncio(dadosAnuncio) {
@@ -1026,6 +1121,21 @@
                 const anuncioIdFinal = window.__orc_anuncioId || "";
                 const anuncioFoto = extrairFotoAnuncio(anuncio);
                 
+                const precisaLoc = !!window.__orc_precisa_localizacao;
+                const cep = getInputValue('cepOrcamento').trim();
+                const end = getInputValue('endereco-completo').trim();
+                const num = getInputValue('numero-residencia').trim();
+                const comp = getInputValue('complemento-residencia').trim();
+                const ref = getInputValue('referencia-residencia').trim();
+                const info = getInputValue('info-local').trim();
+                const dataEspecifica = (function(){
+                    const sel = document.getElementById('para-quando');
+                    const v = sel ? sel.value : '';
+                    const isEspecifica = String(v).toLowerCase().includes('data específica') || String(v).toLowerCase().includes('data especifica');
+                    if (!isEspecifica) return '';
+                    return getInputValue('data-especifica');
+                })();
+
                 const docRef = await addDoc(collection(db, "pedidos"), {
                     deUid: user.uid,
                     paraUid: paraUid,
@@ -1036,15 +1146,7 @@
                     anuncioFoto: anuncioFoto,
                     servicoReferencia: titulo,
                     mensagemInicial: (function(){
-                        const precisaLoc = !!window.__orc_precisa_localizacao;
                         if (!precisaLoc) return descricao;
-
-                        const cep = getInputValue('cepOrcamento').trim();
-                        const end = getInputValue('endereco-completo').trim();
-                        const num = getInputValue('numero-residencia').trim();
-                        const comp = getInputValue('complemento-residencia').trim();
-                        const ref = getInputValue('referencia-residencia').trim();
-                        const info = getInputValue('info-local').trim();
 
                         let loc = `${end}, Nº ${num}`;
                         if (comp) loc += `, ${comp}`;
@@ -1060,6 +1162,7 @@ Mais informações: ${info}`;
 
 Local do serviço: ${loc}${extra}`;
                     })(),
+                    descricaoBase: descricao,
                     // Para quando (se for data específica, inclui o dia escolhido)
                     paraQuando: (function(){
                         const sel = document.getElementById('para-quando');
@@ -1069,7 +1172,17 @@ Local do serviço: ${loc}${extra}`;
                         const d = getInputValue('data-especifica');
                         return d ? (`Data específica: ${formatarDataBR(d)}`) : v;
                     })(),
+                    dataEspecifica: dataEspecifica || "",
                     turno: document.getElementById('turno').value,
+                    localizacao: precisaLoc ? {
+                        cep,
+                        endereco: end,
+                        numero: num,
+                        complemento: comp,
+                        referencia: ref,
+                        info
+                    } : null,
+                    modoAtend: window.__orc_modo_atend || "",
                     
                     // AQUI VÃO AS RESPOSTAS DO FORMULÁRIO
                     respostasTriagem: respostasTriagem,
@@ -1109,31 +1222,6 @@ Local do serviço: ${loc}${extra}`;
                         });
                         window.__orc_anexos_files = [];
 
-    function coalesce() {
-        for (let i = 0; i < arguments.length; i++) {
-            const v = arguments[i];
-            if (v !== null && v !== undefined) return v;
-        }
-        return undefined;
-    }
-
-    function getInputValue(id) {
-        const el = document.getElementById(id);
-        return el ? el.value : "";
-    }
-
-    function coalesce() {
-        for (let i = 0; i < arguments.length; i++) {
-            const v = arguments[i];
-            if (v !== null && v !== undefined) return v;
-        }
-        return undefined;
-    }
-
-    function getInputValue(id) {
-        const el = document.getElementById(id);
-        return el ? el.value : "";
-    }
                         renderListaAnexos();
                     }
                 } catch (e) {

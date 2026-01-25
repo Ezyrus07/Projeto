@@ -130,5 +130,30 @@
     return true;
   };
 
+  // Exponha aliases estaveis para evitar sobrescrita por IDs globais
+  window.__dokeAuthCompat = window.__dokeAuthCompat || {};
+  window.__dokeAuthCompat.getAuth = window.getAuth;
+  window.__dokeAuthCompat.onAuthStateChanged = window.onAuthStateChanged;
+  window.__dokeAuthCompat.signOut = window.signOut;
+  window.__dokeAuthCompat.signInWithEmailAndPassword = window.signInWithEmailAndPassword;
+  window.__dokeAuthCompat.createUserWithEmailAndPassword = window.createUserWithEmailAndPassword;
+  window.__dokeAuthCompat.sendPasswordResetEmail = window.sendPasswordResetEmail;
+  window.__dokeAuthCompat.updatePassword = window.updatePassword;
+  window.__dokeAuthCompat.reauthenticateWithCredential = window.reauthenticateWithCredential;
+  window.__dokeAuthCompat.deleteUser = window.deleteUser;
+
+  window.__dokeEnsureAuthCompat = function(){
+    const c = window.__dokeAuthCompat || {};
+    if (typeof window.getAuth !== "function" && typeof c.getAuth === "function") window.getAuth = c.getAuth;
+    if (typeof window.onAuthStateChanged !== "function" && typeof c.onAuthStateChanged === "function") window.onAuthStateChanged = c.onAuthStateChanged;
+    if (typeof window.signOut !== "function" && typeof c.signOut === "function") window.signOut = c.signOut;
+    if (typeof window.signInWithEmailAndPassword !== "function" && typeof c.signInWithEmailAndPassword === "function") window.signInWithEmailAndPassword = c.signInWithEmailAndPassword;
+    if (typeof window.createUserWithEmailAndPassword !== "function" && typeof c.createUserWithEmailAndPassword === "function") window.createUserWithEmailAndPassword = c.createUserWithEmailAndPassword;
+    if (typeof window.sendPasswordResetEmail !== "function" && typeof c.sendPasswordResetEmail === "function") window.sendPasswordResetEmail = c.sendPasswordResetEmail;
+    if (typeof window.updatePassword !== "function" && typeof c.updatePassword === "function") window.updatePassword = c.updatePassword;
+    if (typeof window.reauthenticateWithCredential !== "function" && typeof c.reauthenticateWithCredential === "function") window.reauthenticateWithCredential = c.reauthenticateWithCredential;
+    if (typeof window.deleteUser !== "function" && typeof c.deleteUser === "function") window.deleteUser = c.deleteUser;
+  };
+
   console.log("[DOKE] Firebase Auth compat carregado.");
 })();

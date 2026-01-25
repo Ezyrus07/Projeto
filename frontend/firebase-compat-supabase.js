@@ -191,7 +191,10 @@
   async function updateWithMissingColumnRetry(client, table, id, payload){
     const maxTries = 6;
     let safe = { ...(payload||{}) };
+    const hasKeys = (obj) => obj && Object.keys(obj).length > 0;
+    if (!hasKeys(safe)) return { safe, skipped: true };
     for (let attempt = 1; attempt <= maxTries; attempt++){
+      if (!hasKeys(safe)) return { safe, skipped: true };
       const { error } = await client.from(table).update(safe).eq("id", id);
       if (!error) return { safe };
       const missing = parseMissingColumn(error);
@@ -569,6 +572,49 @@
   // placeholders to reduce crashes
   window.initializeApp = window.initializeApp || function(){ return {}; };
   window.getFirestore = window.getFirestore || function(){ return {}; };
+
+  // Exponha aliases estaveis para evitar sobrescrita por IDs globais
+  window.__dokeFirestoreCompat = window.__dokeFirestoreCompat || {};
+  window.__dokeFirestoreCompat.collection = window.collection;
+  window.__dokeFirestoreCompat.query = window.query;
+  window.__dokeFirestoreCompat.where = window.where;
+  window.__dokeFirestoreCompat.orderBy = window.orderBy;
+  window.__dokeFirestoreCompat.limit = window.limit;
+  window.__dokeFirestoreCompat.doc = window.doc;
+  window.__dokeFirestoreCompat.getDoc = window.getDoc;
+  window.__dokeFirestoreCompat.getDocs = window.getDocs;
+  window.__dokeFirestoreCompat.addDoc = window.addDoc;
+  window.__dokeFirestoreCompat.setDoc = window.setDoc;
+  window.__dokeFirestoreCompat.updateDoc = window.updateDoc;
+  window.__dokeFirestoreCompat.deleteDoc = window.deleteDoc;
+  window.__dokeFirestoreCompat.onSnapshot = window.onSnapshot;
+  window.__dokeFirestoreCompat.increment = window.increment;
+  window.__dokeFirestoreCompat.getStorage = window.getStorage;
+  window.__dokeFirestoreCompat.ref = window.ref;
+  window.__dokeFirestoreCompat.uploadBytes = window.uploadBytes;
+  window.__dokeFirestoreCompat.getDownloadURL = window.getDownloadURL;
+
+  window.__dokeEnsureFirestoreCompat = function(){
+    const c = window.__dokeFirestoreCompat || {};
+    if (typeof window.collection !== "function" && typeof c.collection === "function") window.collection = c.collection;
+    if (typeof window.query !== "function" && typeof c.query === "function") window.query = c.query;
+    if (typeof window.where !== "function" && typeof c.where === "function") window.where = c.where;
+    if (typeof window.orderBy !== "function" && typeof c.orderBy === "function") window.orderBy = c.orderBy;
+    if (typeof window.limit !== "function" && typeof c.limit === "function") window.limit = c.limit;
+    if (typeof window.doc !== "function" && typeof c.doc === "function") window.doc = c.doc;
+    if (typeof window.getDoc !== "function" && typeof c.getDoc === "function") window.getDoc = c.getDoc;
+    if (typeof window.getDocs !== "function" && typeof c.getDocs === "function") window.getDocs = c.getDocs;
+    if (typeof window.addDoc !== "function" && typeof c.addDoc === "function") window.addDoc = c.addDoc;
+    if (typeof window.setDoc !== "function" && typeof c.setDoc === "function") window.setDoc = c.setDoc;
+    if (typeof window.updateDoc !== "function" && typeof c.updateDoc === "function") window.updateDoc = c.updateDoc;
+    if (typeof window.deleteDoc !== "function" && typeof c.deleteDoc === "function") window.deleteDoc = c.deleteDoc;
+    if (typeof window.onSnapshot !== "function" && typeof c.onSnapshot === "function") window.onSnapshot = c.onSnapshot;
+    if (typeof window.increment !== "function" && typeof c.increment === "function") window.increment = c.increment;
+    if (typeof window.getStorage !== "function" && typeof c.getStorage === "function") window.getStorage = c.getStorage;
+    if (typeof window.ref !== "function" && typeof c.ref === "function") window.ref = c.ref;
+    if (typeof window.uploadBytes !== "function" && typeof c.uploadBytes === "function") window.uploadBytes = c.uploadBytes;
+    if (typeof window.getDownloadURL !== "function" && typeof c.getDownloadURL === "function") window.getDownloadURL = c.getDownloadURL;
+  };
 
   console.log("[DOKE] Firestore compat carregado.");
 })();

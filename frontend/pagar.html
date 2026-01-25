@@ -327,7 +327,7 @@
 
 <script>
     const { initializeApp } = window;
-    const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit } = window;
+    const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc } = window;
 
     // Suas configurações
     const firebaseConfig = {
@@ -409,9 +409,28 @@
 
     const extrairFotoAnuncio = (anuncio) => {
         if (!anuncio) return "";
-        if (Array.isArray(anuncio.fotos) && anuncio.fotos.length > 0) return anuncio.fotos[0];
-        if (Array.isArray(anuncio.imagens) && anuncio.imagens.length > 0) return anuncio.imagens[0];
-        return anuncio.img || anuncio.imagem || anuncio.foto || "";
+        const extrairPrimeiraUrl = (value) => {
+            if (!value) return "";
+            if (Array.isArray(value)) return value[0] || "";
+            if (typeof value === "string") {
+                const raw = value.trim();
+                if (!raw) return "";
+                try {
+                    const parsed = JSON.parse(raw);
+                    return extrairPrimeiraUrl(parsed);
+                } catch (e) {
+                    // se vier como "url1, url2", pega a primeira
+                    const parts = raw.split(/[,\n;]/).map(p => p.trim()).filter(Boolean);
+                    return parts[0] || raw;
+                }
+            }
+            if (typeof value === "object") {
+                return value.url || value.src || "";
+            }
+            return "";
+        };
+        const fotoLista = extrairPrimeiraUrl(anuncio.fotos) || extrairPrimeiraUrl(anuncio.imagens);
+        return fotoLista || extrairPrimeiraUrl(anuncio.img || anuncio.imagem || anuncio.foto);
     };
 
     const buscarUsuarioPorUid = async (uid) => {
@@ -786,8 +805,23 @@
                     status: 'pago',
                     dataPagamento: new Date().toISOString(),
                     valorFinal: valorStringFinal,
-                    notificacaoLidaProfissional: false
+                    notificacaoLidaProfissional: false,
+                    ultimaMensagem: "Pagamento realizado",
+                    dataAtualizacao: new Date().toISOString()
                 });
+
+                // Cria card de avaliação nas mensagens (para aparecer no chat)
+                try {
+                    const authUserUid = window.auth?.currentUser?.uid || localStorage.getItem('doke_uid') || "";
+                    await addDoc(collection(db, "pedidos", pedidoId, "mensagens"), {
+                        tipo: 'card_avaliacao',
+                        texto: "Pagamento confirmado. Avalie o profissional.",
+                        senderUid: authUserUid,
+                        timestamp: new Date()
+                    });
+                } catch (e) {
+                    console.warn("Falha ao criar card de avaliacao:", e);
+                }
 
                 // 4. Sucesso Visual
                 circulo.style.display = 'none';
@@ -797,7 +831,7 @@
                 subTexto.innerText = "O profissional já foi notificado. Redirecionando...";
 
                 setTimeout(() => {
-                    window.location.href = "chat.html";
+                    window.location.href = `avaliar.html?pedidoId=${encodeURIComponent(pedidoId)}`;
                 }, 2500);
 
             } catch (e) {

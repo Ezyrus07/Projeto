@@ -428,7 +428,8 @@
 
                     document.getElementById('nomeProf').innerText = "Avaliação de " + (profData.user || p.paraNome);
                     document.getElementById('imgProf').src = profData.foto || 'https://placehold.co/150';
-                    const dataFormatada = p.dataConclusao ? new Date(p.dataConclusao).toLocaleDateString() : "--/--/----";
+                    const dataBase = p.dataConclusao || p.dataFinalizado || p.dataPagamento || p.dataAtualizacao || p.dataPedido || null;
+                    const dataFormatada = dataBase ? new Date(dataBase).toLocaleDateString('pt-BR') : "--/--/----";
                     document.getElementById('infoServico').innerText = "Serviço realizado em " + dataFormatada;
                 }
             } catch (e) { console.error("Erro ao buscar dados:", e); }
