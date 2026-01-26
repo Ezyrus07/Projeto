@@ -604,11 +604,12 @@
 }
 
 /* Feedback visual para elementos clicáveis no chat */
-#chatAvatar, #chatNome, .ip-user {
+#chatAvatar, #chatNome, .ip-user, .ic-nome {
+    cursor: pointer;
     transition: opacity 0.2s ease, transform 0.2s ease;
 }
 
-#chatAvatar:hover, #chatNome:hover, .ip-user:hover {
+#chatAvatar:hover, #chatNome:hover, .ip-user:hover, .ic-nome:hover {
     opacity: 0.85;
     transform: translateY(-1px);
 }
@@ -1310,15 +1311,14 @@
     <aside class="sidebar-icones">
         <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
-        <div class="item"><a href="explorar.html"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Explorar</span></a></div>
-        <div class="item">
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><a href="chat.html"><span>Mensagens</span></a></div>
+                <div class="item">
             <a href="empresas.html">
                 <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
                 <span>Empresas</span>
             </a>
         </div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><a href="chat.html"><span>Mensagens</span></a></div>
         <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
         <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
         <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
@@ -1580,6 +1580,61 @@
     let listaModo = 'ativos';
     let pedidoAtualData = null;
     let conversaArquivadaAtual = false;
+    const avaliacaoCache = {};
+
+    window.abrirPerfilUsuario = function(uid, isProfissional){
+        if (!uid) return;
+        if (isProfissional) {
+            if (typeof window.irParaPerfilComContagem === "function") {
+                window.irParaPerfilComContagem(uid);
+            } else {
+                window.location.href = `perfil-profissional.html?uid=${uid}`;
+            }
+            return;
+        }
+        window.location.href = `perfil-usuario.html?id=${uid}`;
+    };
+
+    window.abrirAvaliacaoPedido = function(pedidoId){
+        if (!pedidoId) return;
+        if (avaliadoPedidoAtual) {
+            if (window.dokeAlert) window.dokeAlert("Serviço já avaliado.");
+            else alert("Serviço já avaliado.");
+            return;
+        }
+        window.location.href = `avaliar.html?pedidoId=${pedidoId}`;
+    };
+
+    async function checarAvaliacaoPedido(pedidoId){
+        if (!pedidoId) return false;
+        const cache = avaliacaoCache[pedidoId];
+        const agora = Date.now();
+        if (cache && (agora - cache.ts) < 60000) {
+            if (cache.result) {
+                avaliadoPedidoAtual = true;
+                if (pedidoAtualData) pedidoAtualData.avaliado = true;
+            }
+            return !!cache.result;
+        }
+        try {
+            const q = query(collection(db, "avaliacoes"), where("pedidoId", "==", pedidoId));
+            const snap = await getDocs(q);
+            const found = !!(snap && !snap.empty);
+            avaliacaoCache[pedidoId] = { ts: agora, result: found };
+            if (found) {
+                avaliadoPedidoAtual = true;
+                if (pedidoAtualData) pedidoAtualData.avaliado = true;
+                try { await updateDoc(doc(db, "pedidos", pedidoId), { avaliado: true }); } catch (_) {}
+                if (colecaoAtual === 'pedidos' && chatIdAtual === pedidoId) {
+                    carregarMensagens(colecaoAtual, chatIdAtual);
+                }
+            }
+            return found;
+        } catch (e) {
+            console.warn("Falha ao checar avaliacao do pedido:", e);
+            return false;
+        }
+    }
 
     function initPedidosFilters(){
         const wrap = document.getElementById('pedidosFilters');
@@ -1910,7 +1965,7 @@
             if (souCliente) btns.push(`<button class="danger" onclick="solicitarReembolso()">Solicitar reembolso</button>`);
         } else if (status === 'finalizado') {
             msg = 'ServiÃ§o finalizado.';
-            if (souCliente && !p.avaliado) btns.push(`<button onclick="window.location.href='avaliar.html?pedidoId=${chatIdAtual}'">Avaliar</button>`);
+            if (souCliente && !p.avaliado) btns.push(`<button onclick="abrirAvaliacaoPedido('${chatIdAtual}')">Avaliar</button>`);
             if (souCliente) btns.push(`<button class="primary" onclick="repetirPedidoAtual()">Repetir pedido</button>`);
         } else if (status === 'recusado' || status === 'cancelado') {
             msg = 'Pedido encerrado.';
@@ -2547,7 +2602,9 @@
             const snap = await getDoc(doc(db, 'pedidos', id));
             const p = snap.exists() ? snap.data() : {};
             await updateDoc(doc(db, 'pedidos', id), {
-                status: 'aceito'
+                status: 'aceito',
+                dataAceite: new Date().toISOString(),
+                dataAtualizacao: new Date().toISOString()
             });
             await window.criarNotificacaoPedido(p.deUid, 'pedido_aceito', id);
             window.dokeAlert('Pedido aceito.');
@@ -2789,7 +2846,7 @@ window.liberarPagamento = async (id) => {
                 container.insertAdjacentHTML('beforeend', `
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
                         <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${unreadHtml}${bApagar}${badgeHtml}</div></div>
-                        <div class="ip-user"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
+                        <div class="ip-user" onclick="abrirPerfilUsuario('${uDoc.id}', ${!!dU.isProfissional})"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
                         <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
                             <h4>${p.servicoReferencia}</h4>
                             ${subMsg}
@@ -2860,7 +2917,7 @@ window.liberarPagamento = async (id) => {
                       <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')">
                         <img src="${u.foto || 'https://placehold.co/150'}">
                         <div class="ic-info">
-                          <div class="ic-nome">${u.user || 'Usuário'}</div>
+                          <div class="ic-nome" onclick="event.stopPropagation(); abrirPerfilUsuario('${outroUid}', ${!!u.isProfissional})">${u.user || 'Usuário'}</div>
                           <div class="ic-msg">${data.ultimaMensagem || ''}</div>
                         </div>
                         <div class="ic-meta">${unreadHtml}</div>
@@ -2888,7 +2945,7 @@ window.liberarPagamento = async (id) => {
                       <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'pedidos', '${p.status || ''}')">
                         <img src="${u.foto || 'https://placehold.co/150'}">
                         <div class="ic-info">
-                          <div class="ic-nome">${u.user || 'Usuário'} <span style="margin-left:8px; font-size:.65rem; font-weight:900; color:var(--cor0);">• ORÇAMENTO</span></div>
+                          <div class="ic-nome" onclick="event.stopPropagation(); abrirPerfilUsuario('${outroUid}', ${!!u.isProfissional})">${u.user || 'Usuário'} <span style="margin-left:8px; font-size:.65rem; font-weight:900; color:var(--cor0);">• ORÇAMENTO</span></div>
                           <div class="ic-msg">${preview}</div>
                         </div>
                         <div class="ic-meta">${unreadHtml}<span class="ip-badge" style="align-self:flex-start;">${statusLabel}</span></div>
@@ -2946,6 +3003,9 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     conversaArquivadaAtual = isArquivadoPorUser(p);
                     atualizarMenuConversa();
                     atualizarContextoChat(p);
+                    if (!avaliadoPedidoAtual && String(p.status || '').toLowerCase() === 'finalizado') {
+                        checarAvaliacaoPedido(idDoc);
+                    }
                     if (prevStatus !== statusPedidoAtual || prevAvaliado !== avaliadoPedidoAtual) {
                         carregarMensagens(colecao, idDoc);
                     }
@@ -3000,10 +3060,9 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 document.getElementById('chatNome').innerText = d.user || d.nome || nomePadrao;
                 document.getElementById('chatAvatar').src = d.foto || fotoPadrao || "https://placehold.co/150";
 
-                document.getElementById('chatAvatar').style.cursor = 'pointer';
-                document.getElementById('chatAvatar').onclick = () => window.location.href = `perfil-usuario.html?id=${uidOutro}`;
-                document.getElementById('chatNome').style.cursor = 'pointer';
-                document.getElementById('chatNome').onclick = () => window.location.href = `perfil-usuario.html?id=${uidOutro}`;
+                const abrirPerfilOutro = () => window.abrirPerfilUsuario(uidOutro, !!d.isProfissional);
+                document.getElementById('chatAvatar').onclick = abrirPerfilOutro;
+                document.getElementById('chatNome').onclick = abrirPerfilOutro;
 
                 const elStatus = document.getElementById('chatStatus');
                 
@@ -3186,11 +3245,11 @@ function carregarMensagens(colecao, docId) {
             // --- CARD AVALIAÇÃO (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
                 const textoCard = pedidoAvaliado
-                    ? "Serviço já foi avaliado."
+                    ? "Serviço já avaliado."
                     : (m.texto || "Serviço finalizado. Aguardando avaliação.");
                 const btnHtml = pedidoAvaliado
                     ? `<div style="margin-top:6px; color:#777; font-size:0.85rem;">Avaliação já registrada.</div>`
-                    : `<button onclick="window.location.href='avaliar.html?pedidoId=${docId}'" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>`;
+                    : `<button onclick="abrirAvaliacaoPedido('${docId}')" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>`;
                 htmlParts.push(`
                 <div style="align-self:center; background:#fff9c4; border:1px solid #fbc02d; padding:15px; border-radius:12px; margin:15px 0; text-align:center;">
                     <i class='bx bxs-star' style="color:#f9a825; font-size:1.5rem;"></i>

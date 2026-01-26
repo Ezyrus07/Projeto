@@ -405,6 +405,81 @@
 .empty-state h3{ margin:0; font-weight: 900; color:#1d2b3a; }
 .empty-state p{ margin:6px 0 0; color:#6b7686; font-weight:700; }
 
+/* === Mensagens (padrão chat.html) === */
+.msg-row{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  width:100%;
+}
+.msg-row.me{ align-items:flex-end; }
+.msg-row.other{ align-items:flex-start; }
+
+.msg-top{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  margin: 2px 4px 0;
+  color:#64748b;
+  font-weight:800;
+  font-size:0.78rem;
+}
+.msg-top .avatar{
+  width:28px; height:28px;
+  border-radius:999px;
+  background:#f1f4f9;
+  overflow:hidden;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:900;
+  color:#1f2d3d;
+  border:1px solid #eef0f4;
+}
+.msg-top .avatar img{ width:100%; height:100%; object-fit:cover; }
+.msg-top .name{
+  max-width: 280px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.msg-bubble{
+  max-width: 65%;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  position: relative;
+  box-shadow: 0 1px 1px rgba(0,0,0,0.10);
+  line-height: 1.4;
+  color:#0f172a;
+  font-weight:700;
+}
+.msg-enviada{ align-self:flex-end; background:#e3ffeb; border-top-right-radius:0; }
+.msg-recebida{ align-self:flex-start; background:#fff; border-top-left-radius:0; }
+.msg-hora{ font-size: 0.7rem; color:#94a3b8; float:right; margin-top:5px; margin-left:10px; font-weight:800; }
+
+/* Player de áudio (igual chat.html) */
+.audio-bubble{
+  display:flex; align-items:center; gap:10px; min-width:200px;
+}
+.btn-play-audio{
+  background:#fff; border:none; border-radius:50%;
+  width:35px; height:35px;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer; color: var(--cor0);
+  box-shadow: 0 2px 5px rgba(0,0,0,0.10);
+}
+.audio-wave{
+  flex:1; height:4px; background: rgba(0,0,0,0.12);
+  border-radius:2px; position:relative; overflow:hidden;
+}
+.audio-wave::after{
+  content:''; position:absolute; left:0; top:0; height:100%; width:0%;
+  background: currentColor; transition: width 0.1s linear;
+}
+
+
 .membros-head{
   padding: 16px;
   border-bottom: 1px solid #eef0f4;
@@ -725,11 +800,49 @@
   }
 
   function getSB(){
-    // supabase-init.js cria window.sb
-    return window.sb || window.supabaseClient || window.sbClient || null;
+    const w = window;
+
+    // candidatos comuns (dependendo de como o supabase-init.js foi escrito)
+    const cands = [
+      w.sb, w.sbClient, w.supabaseClient, w.supabase_client, w.supabaseClientInstance,
+      w.__supabaseClient, w.client
+    ];
+
+    for(const c of cands){
+      if(c && typeof c.from === 'function') return c;
+    }
+
+    // alguns projetos setam window.supabase = createClient(...)
+    if(w.supabase && typeof w.supabase.from === 'function') return w.supabase;
+
+    return null;
   }
 
   function safeText(v){ return (v==null?'':String(v)); }
+
+  function setFatal(title, msg){
+    try{
+      const n = document.getElementById('grupoNome');
+      const d = document.getElementById('grupoDesc');
+      const t = document.getElementById('grupoTipo');
+      const mc = document.getElementById('grupoMembrosCount');
+      if(n) n.textContent = title || 'Erro';
+      if(d) d.textContent = msg || '';
+      if(t) t.textContent = '';
+      if(mc) mc.textContent = '';
+      const nav = document.getElementById('navGrupoNome');
+      if(nav) nav.textContent = title || 'Grupo';
+      const empty = document.getElementById('feedEmpty');
+      if(empty){
+        empty.style.display='block';
+        const h = empty.querySelector('h3');
+        const p = empty.querySelector('p');
+        if(h) h.textContent = title || 'Erro';
+        if(p) p.textContent = msg || '';
+      }
+    }catch(e){}
+  }
+
 
   function setCover(url){
     const el = $('grupoCover');
@@ -793,17 +906,51 @@
     }else if(t.includes('video') || url.match(/\.(mp4|webm|mov|mkv|ogg)$/i)){
       box.innerHTML = '<video src="'+url+'" controls style="width:100%; border-radius:14px;"></video>';
     }else{
-      box.innerHTML = '<img src="'+url+'" style="width:100%; border-radius:14px;" onerror="this.style.display=\\'none\\'">';
+      box.innerHTML = '<img src="'+url+'" style="width:100%; border-radius:14px;" onerror="this.style.display=\'none\'">';
     }
     container.appendChild(box);
   }
 
+  
   async function loadGrupo(client, grupoId){
-    // Tabela: comunidades (id uuid)
-    const { data, error } = await client.from('comunidades').select('*').eq('id', grupoId).single();
-    if(error) throw error;
-    return data;
+    // Tabela: comunidades (id pode ser uuid/text/int dependendo do seu schema)
+    const gid = String(grupoId);
+
+    async function tryBy(column, value){
+      try{
+        const { data, error } = await client.from('comunidades').select('*').eq(column, value).maybeSingle();
+        if(data) return data;
+
+        // se deu erro de coluna inexistente, só ignora e tenta outro
+        const msg = String(error?.message || '').toLowerCase();
+        if(msg.includes('does not exist') || msg.includes('undefined_column')) return null;
+        if(String(error?.code || '') === '42703') return null; // postgres undefined_column
+        return null;
+      }catch(e){
+        return null;
+      }
+    }
+
+    // 1) id como texto
+    let g = await tryBy('id', gid);
+    if(g) return g;
+
+    // 2) id como número (caso seja serial/int)
+    if(/^\d+$/.test(gid)){
+      g = await tryBy('id', Number(gid));
+      if(g) return g;
+    }
+
+    // 3) colunas alternativas (se você usa código/slug para link)
+    const altCols = ['codigo','slug','code','link_code','invite_code'];
+    for(const col of altCols){
+      g = await tryBy(col, gid);
+      if(g) return g;
+    }
+
+    throw new Error('Grupo não encontrado.');
   }
+
 
   async function ensureMember(client, grupoId, uid){
     if(!uid) return null;
@@ -953,7 +1100,7 @@
     await renderList('listaOffline', offline);
   }
 
-  async function loadPosts(client, grupoId){
+  async function loadPosts(client, grupoId, uidAtual){
     const feed = $('grupoFeed');
     const empty = $('feedEmpty');
     if(!feed) return;
@@ -966,56 +1113,135 @@
       .order('created_at', { ascending:false, nullsFirst:false })
       .limit(60);
 
-    const posts = (!error && data) ? data : [];
-    Array.from(feed.querySelectorAll('.post-card')).forEach(n=>n.remove());
+    const postsDesc = (!error && data) ? data : [];
+    const posts = postsDesc.slice().reverse(); // render antigo -> novo (mais recente embaixo)
+
+    // limpa mantendo empty-state
+    const emptyNode = empty || null;
+    feed.innerHTML = '';
+    if(emptyNode) feed.appendChild(emptyNode);
 
     if(!posts.length){
-      if(empty) empty.style.display='block';
+      if(emptyNode) emptyNode.style.display='block';
       return;
     }
-    if(empty) empty.style.display='none';
+    if(emptyNode) emptyNode.style.display='none';
 
     for(const p of posts){
+      const sender = String(p.autorUid || p.autor_uid || p.user_uid || p.uid || '');
+      const souEu = uidAtual && sender && String(uidAtual) === String(sender);
+
       const nome = p.autorNome || p.autor_nome || p.autor_user || 'Usuário';
       const foto = p.autorFoto || p.autor_foto || '';
       const initial = (String(nome).trim()[0] || 'U').toUpperCase();
 
-      const texto = p.texto || '';
+      const texto = (p.texto || '').toString();
       const created = p.data || p.created_at || p.criado_em || null;
-      const time = created ? new Date(created).toLocaleString('pt-BR') : '';
+
+      // hora no estilo chat
+      let horaMsg = '';
+      try{
+        if(created){
+          const d = new Date(created);
+          if(!isNaN(d.getTime())){
+            horaMsg = d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+          }
+        }
+      }catch(_){}
 
       const mediaUrl = p.midia_url || p.imagem || null;
-      const mediaType = p.midia_tipo || inferMediaType(mediaUrl) || '';
+      const mediaType = (p.midia_tipo || inferMediaType(mediaUrl) || '').toString();
 
-      const card = document.createElement('div');
-      card.className='post-card';
+      const row = document.createElement('div');
+      row.className = 'msg-row ' + (souEu ? 'me' : 'other');
 
-      const head = document.createElement('div');
-      head.className='post-head';
-      head.innerHTML = `
-        <div class="post-user">
+      // topo (avatar + nome) só para mensagens dos outros (grupo)
+      if(!souEu){
+        const top = document.createElement('div');
+        top.className = 'msg-top';
+        top.innerHTML = `
           <div class="avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
           <div class="name">${safeText(nome)}</div>
-        </div>
-        <div class="post-time">${safeText(time)}</div>
-      `;
-
-      const body = document.createElement('div');
-      body.className='post-body';
-      body.innerHTML = `${safeText(texto)}`;
-
-      if(mediaUrl){
-        renderMedia(body, mediaUrl, mediaType);
+        `;
+        row.appendChild(top);
       }
 
-      card.appendChild(head);
-      card.appendChild(body);
-      feed.appendChild(card);
+      // bubble
+      const bubble = document.createElement('div');
+      bubble.className = 'msg-bubble ' + (souEu ? 'msg-enviada' : 'msg-recebida');
+
+      // conteúdo texto
+      const textoHtml = safeText(texto).replace(/\n/g, '<br>');
+      if(textoHtml){
+        bubble.insertAdjacentHTML('beforeend', textoHtml);
+      }
+
+      // mídia (padronizada como chat)
+      if(mediaUrl){
+        const t = mediaType.toLowerCase();
+        if(t.includes('audio')){
+          const corWave = souEu ? 'white' : '#555';
+          const corIcone = souEu ? 'var(--cor0)' : '#555';
+          const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
+          bubble.insertAdjacentHTML('beforeend', `
+            <div style="margin-top:${textoHtml ? '10px' : '0'};">
+              <div class="audio-bubble" data-audio-id="${audioId}">
+                <button class="btn-play-audio" onclick="tocarAudio(this, '${mediaUrl}', '${audioId}')" style="color:${corIcone}">
+                  <i class='bx bx-play'></i>
+                </button>
+                <div style="display:flex; flex-direction:column; justify-content:center; flex:1;">
+                  <div class="audio-wave" style="background:${corWave}; opacity:0.3; height:3px; width:100px; margin-bottom:3px;"></div>
+                  <span id="audio-time-${audioId}" style="font-size:0.7rem; opacity:0.8;">0:00 / 0:00</span>
+                </div>
+              </div>
+            </div>
+          `);
+        }else if(t.includes('image')){
+          bubble.style.padding = '8px';
+          bubble.insertAdjacentHTML('beforeend', `
+            <div style="margin-top:${textoHtml ? '8px' : '0'};">
+              <img src="${mediaUrl}" alt="imagem" style="max-width:240px; border-radius:12px; display:block; cursor:pointer;" onclick="window.open('${mediaUrl}','_blank')" />
+            </div>
+          `);
+        }else if(t.includes('video')){
+          bubble.style.padding = '8px';
+          bubble.insertAdjacentHTML('beforeend', `
+            <div style="margin-top:${textoHtml ? '8px' : '0'};">
+              <video src="${mediaUrl}" controls style="max-width:280px; border-radius:12px; display:block;"></video>
+            </div>
+          `);
+        }else{
+          // arquivo (pdf/outros)
+          const nomeArq = p.nome_arquivo || p.arquivo_nome || p.filename || 'Arquivo';
+          bubble.insertAdjacentHTML('beforeend', `
+            <div style="display:flex; align-items:center; gap:10px; margin-top:${textoHtml ? '10px' : '0'};">
+              <div style="width:38px; height:38px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center;">
+                <i class='bx bx-file' style="font-size:20px; color:#3949ab"></i>
+              </div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-weight:800; color:#111; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${safeText(nomeArq)}</div>
+                <a href="${mediaUrl}" target="_blank" style="font-size:0.82rem; color:var(--cor0); font-weight:800; text-decoration:none;">Baixar / abrir</a>
+              </div>
+            </div>
+          `);
+        }
+      }
+
+      // hora
+      if(horaMsg){
+        bubble.insertAdjacentHTML('beforeend', `<span class="msg-hora">${safeText(horaMsg)}</span>`);
+      }
+
+      row.appendChild(bubble);
+      feed.appendChild(row);
     }
+
+    // auto-scroll: mantém mais recente visível quando recarrega
+    try{ feed.scrollTop = feed.scrollHeight; }catch(_){}
   }
 
   async function uploadFile(client, file, grupoId, uid){
-    const bucket = localStorage.getItem('DOKE_SUPABASE_STORAGE_BUCKET') || 'posts';
+    const bucket = localStorage.getItem('DOKE_SUPABASE_STORAGE_BUCKET') || 'comunidades_posts';
     const safeName = (file.name || 'arquivo').replace(/[^\w.\-]+/g,'_');
     const path = `grupos/${String(grupoId)}/${String(uid)}/${Date.now()}_${safeName}`;
 
@@ -1114,23 +1340,139 @@
     prev.style.display='block';
   }
 
+  // =========================
+  // Auth helpers (Firebase compat / Supabase / localStorage)
+  // =========================
+  function safeLsGet(key){
+    try{ return localStorage.getItem(key); }catch(_){ return null; }
+  }
+  async function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+  function getFirebaseAuthObj(){
+    // Compat scripts (firebase-auth-compat-supabase.js) sometimes expose window.auth
+    if(window.auth && typeof window.auth.onAuthStateChanged === 'function') return window.auth;
+    // Firebase SDK compat
+    try{
+      if(window.firebase && typeof window.firebase.auth === 'function') return window.firebase.auth();
+    }catch(_){ }
+    return null;
+  }
+
+  async function waitForFirebaseUser(maxMs=1500){
+    const start = Date.now();
+    while(Date.now() - start < maxMs){
+      const authObj = getFirebaseAuthObj();
+      const u = authObj?.currentUser || null;
+      if(u?.uid) return u;
+      await wait(60);
+    }
+    return null;
+  }
+
+  async function resolveAuth(client){
+    // 1) Firebase
+    const fbUser = await waitForFirebaseUser(1500);
+    if(fbUser?.uid) return { uid: String(fbUser.uid), provider: 'firebase', user: fbUser };
+
+    // 2) Supabase (se existir sessão)
+    try{
+      if(client?.auth?.getSession){
+        const { data } = await client.auth.getSession();
+        const sid = data?.session?.user?.id;
+        if(sid) return { uid: String(sid), provider: 'supabase', user: data.session.user };
+      }
+    }catch(_){ }
+
+    // 3) Variáveis globais usadas no projeto
+    const maybe = window.usuarioAtual || window.userAtual || window.currentUser || window.usuarioLogado || null;
+    if(maybe?.uid) return { uid: String(maybe.uid), provider: 'global', user: maybe };
+    if(maybe?.id) return { uid: String(maybe.id), provider: 'global', user: maybe };
+
+    // 4) localStorage fallback (compat com várias páginas do Doke)
+    const directKeys = ['uid','user_uid','userId','idUser','usuario_uid','doke_uid','currentUserUid','firebaseUid'];
+    for(const k of directKeys){
+      const v = safeLsGet(k);
+      if(v && String(v).trim()) return { uid: String(v).trim(), provider: 'localStorage' };
+    }
+
+    // 5) localStorage com JSON do usuário
+    const jsonKeys = ['user','usuario','usuarioLogado','DOKE_USER','doke_user','authUser','currentUser'];
+    for(const k of jsonKeys){
+      const raw = safeLsGet(k);
+      if(!raw) continue;
+      try{
+        const obj = JSON.parse(raw);
+        const id = obj?.uid || obj?.user_uid || obj?.id || obj?.userId || obj?.usuario_id;
+        if(id) return { uid: String(id), provider: 'localStorageJson', user: obj };
+      }catch(_){ }
+    }
+
+    return { uid: null, provider: 'none' };
+  }
+
+
+  // Player de áudio (igual chat.html)
+  window.tocarAudio = function(btn, url, audioId) {
+    try{
+      const audio = new Audio(url);
+      const icon = btn.querySelector('i');
+      const timeSpan = document.getElementById('audio-time-' + audioId);
+
+      if (btn.classList.contains('playing')) return;
+
+      if(icon) icon.className = 'bx bx-stop';
+      btn.classList.add('playing');
+
+      const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+      };
+
+      audio.onloadedmetadata = () => {
+        if (timeSpan) timeSpan.textContent = `0:00 / ${formatTime(audio.duration || 0)}`;
+      };
+
+      audio.ontimeupdate = () => {
+        if (timeSpan) timeSpan.textContent = `${formatTime(audio.currentTime || 0)} / ${formatTime(audio.duration || 0)}`;
+      };
+
+      audio.play();
+
+      audio.onended = () => {
+        if(icon) icon.className = 'bx bx-play';
+        btn.classList.remove('playing');
+        if (timeSpan) timeSpan.textContent = `0:00 / ${formatTime(audio.duration || 0)}`;
+      };
+    }catch(e){
+      console.error(e);
+    }
+  };
+
   async function init(){
     const okSB = await waitFor(()=>!!getSB());
     if(!okSB){
       toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
+      setFatal('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página. Confira se o supabase-init.js está carregando e expondo um cliente global.');
       return;
     }
     const client = getSB();
 
-    const grupoId = qs('id');
+    const grupoId =
+      qs('id') || qs('grupoId') || qs('gid') || qs('grupo') || qs('comunidade') || qs('comunidade_id') ||
+      localStorage.getItem('DOKE_OPEN_GRUPO_ID') || localStorage.getItem('DOKE_GRUPO_ID');
+
     if(!grupoId){
       toast('Grupo não encontrado', 'URL sem parâmetro id.');
+      setFatal('Grupo não encontrado', 'A URL precisa ter ?id=... (ou ?grupoId=...). Confira se o link que abre o grupo está passando o parâmetro corretamente.');
       return;
     }
 
     // usuário atual (via compat auth)
     await waitFor(()=>!!window.auth, 6000);
-    const uid = window.auth?.currentUser?.uid || null;
+    const authInfo = await resolveAuth(client);
+    const uid = authInfo?.uid || null;
+    console.log('[DOKE] Auth detectado:', authInfo);
 
     // Carrega grupo
     let grupo;
@@ -1139,6 +1481,7 @@
     }catch(e){
       console.error(e);
       toast('Falha ao carregar', 'Não consegui buscar o grupo no Supabase (tabela comunidades).');
+      setFatal('Falha ao carregar', 'Não consegui buscar o grupo no Supabase. Verifique o id passado na URL, o nome/coluna da tabela comunidades e as policies (RLS).');
       return;
     }
 
@@ -1278,12 +1621,13 @@
     if(uid){
       await ensureMember(client, grupoId, uid);
     }else{
-      toast('Aviso', 'Você não está logado. Você consegue ver, mas não consegue postar.');
+      const prov = authInfo?.provider || 'none';
+      toast('Aviso', `Sessão não detectada (${prov}). Você consegue ver, mas não consegue postar.`);
     }
 
     // Carregar membros + posts
     await loadMembers(client, grupoId, donoUid, cargosMap);
-    await loadPosts(client, grupoId);
+    await loadPosts(client, grupoId, uid);
 
     // Composer: enviar texto/anexo
     const inputTexto = $('postTexto');
@@ -1325,7 +1669,7 @@
       if(inputTexto) inputTexto.value = '';
       clearAudio();
 
-      await loadPosts(client, grupoId);
+      await loadPosts(client, grupoId, uid);
       await loadMembers(client, grupoId, donoUid, cargosMap);
       toast('Postado', 'Seu post foi enviado.');
     }
@@ -1399,7 +1743,11 @@
 
   }
 
-  window.addEventListener('DOMContentLoaded', init);
+  if(document.readyState === 'loading'){
+    window.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
 })();
 </script>
 

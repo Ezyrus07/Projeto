@@ -651,7 +651,6 @@ h3#dokeAlertTitle{
                         <h3>Qualificações</h3>
                         <div class="form-row">
                             <div class="form-group"><label>Experiência</label><input type="text" id="experiencia" class="input-modern" placeholder="Ex: 5 anos"></div>
-                            <div class="form-group"><label>Prazo Médio</label><input type="text" id="prazo" class="input-modern" placeholder="Ex: 2 dias"></div>
                         </div>
                         
                         <div class="form-group">
@@ -1248,7 +1247,7 @@ h3#dokeAlertTitle{
         }
 
         if(document.getElementById('experiencia')) document.getElementById('experiencia').value = dados.experiencia || "";
-        if(document.getElementById('prazo')) document.getElementById('prazo').value = dados.prazo || "";
+        if(document.getElementById('prazo')) document.getElementById('prazo').value = "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
         if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || "Flexível";
         if(document.getElementById('emergencia')) document.getElementById('emergencia').checked = (dados.atendeEmergencia === true);
@@ -1317,7 +1316,6 @@ h3#dokeAlertTitle{
                 "agenda",
                 "tags",
                 "experiencia",
-                "prazo",
                 "garantia",
                 "politicaCancelamento",
                 "diplomaUrl"
@@ -1366,6 +1364,16 @@ h3#dokeAlertTitle{
             dadosComuns.uid = user.uid;
             dadosComuns.diplomaUrl = diplomaUrlFinal;
             dadosComuns.dataCriacao = new Date().toISOString();
+            
+            // DEBUG: Verificar se os dados estão sendo coletados
+            console.log('Dados coletados para publicação:', {
+                experiencia: dadosComuns.experiencia,
+                garantia: dadosComuns.garantia,
+                politicaCancelamento: dadosComuns.politicaCancelamento,
+                atendeEmergencia: dadosComuns.atendeEmergencia,
+                tags: dadosComuns.tags,
+                agenda: dadosComuns.agenda
+            });
             
             // Dados Autor
             const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
@@ -1485,7 +1493,6 @@ h3#dokeAlertTitle{
             pagamentosAceitos: pags,
             agenda: agendaObj,
             experiencia: document.getElementById('experiencia').value,
-            prazo: document.getElementById('prazo').value,
             garantia: document.getElementById('garantia').value,
             politicaCancelamento: document.getElementById('politica').value,
             atendeEmergencia: document.getElementById('emergencia').checked,
@@ -1622,48 +1629,6 @@ h3#dokeAlertTitle{
       if(!dd || !box) return;
       if(!box.contains(e.target)) dd.style.display = 'none';
     });
-
-    // Enforce doc input digits + mask live
-function formatarDocumento(valor) {
-    valor = valor.replace(/\D/g, "");
-
-    // CPF
-    if (valor.length <= 11) {
-        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
-        valor = valor.replace(/(\d{3})(\d)/, "$1.$2");
-        valor = valor.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    } 
-    // CNPJ
-    else {
-        valor = valor.replace(/^(\d{2})(\d)/, "$1.$2");
-        valor = valor.replace(/^(\d{2})\.(\d{3})(\d)/, "$1.$2.$3");
-        valor = valor.replace(/\.(\d{3})(\d)/, ".$1/$2");
-        valor = valor.replace(/(\d{4})(\d)/, "$1-$2");
-    }
-
-    return valor;
-}
-
-const docInput = document.getElementById("doc_num");
-if (docInput) {
-  docInput.addEventListener("input", function () {
-      let numeros = this.value.replace(/\D/g, "");
-      this.value = formatarDocumento(numeros);
-
-      // Validação visual em tempo real
-      if (numeros.length === 11) {
-          setFieldState(this, validaCPF(numeros));
-      } 
-      else if (numeros.length === 14) {
-          setFieldState(this, validaCNPJ(numeros));
-      } 
-      else {
-          this.style.borderColor = "#ef4444";
-          this.style.boxShadow = "0 0 0 3px rgba(239,68,68,0.12)";
-      }
-  });
-}
-
 
     // Regras antes de avançar step / publicar
     (function(){
@@ -1827,6 +1792,11 @@ if (docInput) {
     el.style.borderColor = ok ? 'var(--cor0, #0b7768)' : '#ef4444';
     el.style.boxShadow = ok ? '0 0 0 3px rgba(11,119,104,0.12)' : '0 0 0 3px rgba(239,68,68,0.12)';
   }
+
+  // Expor helpers para evitar erros caso algum listener antigo ainda exista
+  window.validaCPF = window.validaCPF || validaCPF;
+  window.validaCNPJ = window.validaCNPJ || validaCNPJ;
+  window.setFieldState = window.setFieldState || setFieldState;
 
   function ensureRequiredPhotos(){
     const fotos = (window.fotosParaEnviar || []);

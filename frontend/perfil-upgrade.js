@@ -580,6 +580,8 @@ function hideIf(selector, cond){
       .order("created_at", { ascending:false })
       .limit(50);
     if(error){
+      const countEl = document.getElementById("dpServicesCount");
+      if (countEl) countEl.textContent = "0";
       if(isMissingTableError(error)){
         grid.innerHTML = `<div class="dp-empty">Nenhum serviço cadastrado.</div>`;
         return;
@@ -589,9 +591,13 @@ function hideIf(selector, cond){
       return;
     }
     if(!data?.length){
+      const countEl = document.getElementById("dpServicesCount");
+      if (countEl) countEl.textContent = "0";
       grid.innerHTML = `<div class="dp-empty">Sem serviços cadastrados ainda.</div>`;
       return;
     }
+    const countEl = document.getElementById("dpServicesCount");
+    if (countEl) countEl.textContent = String(data.length || 0);
     grid.innerHTML = "";
     for(const s of data){
       const card = document.createElement("div");
@@ -663,10 +669,14 @@ function hideIf(selector, cond){
       if(lastError){
         console.error(lastError);
         box.innerHTML = `<div class="dp-empty">Erro ao carregar avaliações.</div>`;
+        const countEl = document.getElementById("dpReviews");
+        if (countEl) countEl.textContent = "0";
         return;
       }
       data = [];
     }
+    const countEl = document.getElementById("dpReviews");
+    if (countEl) countEl.textContent = String((data && data.length) || 0);
     if(!data?.length){
       box.innerHTML = `<div class="dp-empty">Sem avaliações ainda.</div>`;
       return;
@@ -1602,6 +1612,84 @@ function hideIf(selector, cond){
     initAvailability(ctx);
   }
 
+  async function updateAvaliacoesCountQuick(ctx){
+    const countEl = $("#dpReviews");
+    if(!countEl) return;
+    const client = ctx?.client;
+    if(!client?.from) return;
+    const prof = ctx?.target || null;
+    const profId = (typeof prof === "object" && prof) ? (prof.id || prof.profissional_id || prof.profissionalId) : prof;
+    const profUid = (typeof prof === "object" && prof) ? (prof.uid || prof.user_uid || prof.auth_uid || prof.authUid) : null;
+
+    const filters = [];
+    if(profId) filters.push({ col: "profissional_id", val: profId });
+    if(profUid) filters.push({ col: "profUid", val: profUid });
+    if(profUid) filters.push({ col: "profuid", val: profUid });
+    if(profUid) filters.push({ col: "prof_uid", val: profUid });
+    if(profId) filters.push({ col: "profId", val: profId });
+    if(profId) filters.push({ col: "profissionalId", val: profId });
+    if(profId) filters.push({ col: "profissionalid", val: profId });
+    if(profUid) filters.push({ col: "profissionalUid", val: profUid });
+
+    for(const f of filters){
+      const res = await client
+        .from("avaliacoes")
+        .select("id", { count: "exact", head: true })
+        .eq(f.col, f.val);
+      if(res.error){
+        if(isMissingTableError(res.error)){
+          countEl.textContent = "0";
+          return;
+        }
+        if(isMissingColumnError(res.error, f.col)) continue;
+        console.error(res.error);
+        return;
+      }
+      if(typeof res.count === "number"){
+        countEl.textContent = String(res.count);
+        return;
+      }
+    }
+  }
+
+  async function updateServicosCountQuick(ctx){
+    const countEl = $("#dpServicesCount");
+    if(!countEl) return;
+    const target = ctx?.target || {};
+    const donoUid = target.uid || target.id || ctx?.targetId;
+    if(!donoUid) return;
+
+    try{
+      if(window.db && typeof window.query === "function" && typeof window.getDocs === "function" && typeof window.collection === "function" && typeof window.where === "function"){
+        const q = query(collection(window.db, "anuncios"), where("uid", "==", donoUid));
+        const snap = await getDocs(q);
+        countEl.textContent = String(snap.size || 0);
+        return;
+      }
+    }catch(e){
+      console.warn("Falha ao contar servicos via Firestore:", e);
+    }
+
+    const client = ctx?.client;
+    if(!client?.from || !target.id) return;
+    const res = await client
+      .from("servicos")
+      .select("id", { count: "exact", head: true })
+      .eq("profissional_id", target.id);
+    if(res.error){
+      if(isMissingTableError(res.error)) countEl.textContent = "0";
+      return;
+    }
+    if(typeof res.count === "number") countEl.textContent = String(res.count);
+  }
+
+  async function updateProfileCounts(ctx){
+    await Promise.allSettled([
+      updateServicosCountQuick(ctx),
+      updateAvaliacoesCountQuick(ctx)
+    ]);
+  }
+
   // -----------------------------
   // Main init
   // -----------------------------
@@ -1725,6 +1813,7 @@ function hideIf(selector, cond){
 
       // Render (cada etapa protegida para não travar a UI)
       try{ renderHeader(ctx); }catch(e){ console.error(e); }
+      updateProfileCounts(ctx).catch(e=>console.error(e));
       try{ initMedia(ctx); }catch(e){ console.error(e); }
       try{ initTabs(ctx); }catch(e){ console.error(e); }
       try{ initStatsNav(); }catch(e){ console.error(e); }
@@ -1795,10 +1884,9 @@ async function loadServicosPerfil(ctx) {
   try {
     // Busca na coleção 'anuncios' onde o 'uid' é o do perfil atual
     const donoUid = (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : ctx.targetId;
-    const q = query(
-      collection(window.db, "anuncios"),
-      where("uid", "==", donoUid)
-    );
+    const clauses = [collection(window.db, "anuncios"), where("uid", "==", donoUid)];
+    if (typeof window.limit === "function") clauses.push(window.limit(200));
+    const q = query(...clauses);
 
     const snapshot = await getDocs(q);
 

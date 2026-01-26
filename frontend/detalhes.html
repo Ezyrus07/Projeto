@@ -473,12 +473,44 @@
                 }
 
                 const data = snap.data();
-                renderizarDetalhes(data);
 
-                // 2. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
-                // Usamos o UID do dono do anúncio para buscar suas avaliações
+                // 2. Busca dados do perfil (para fotos e infos do profissional)
+                let perfil = null;
+                if (data.uid) {
+                    try {
+                        // 1) tenta pelo id (caso o id do usuario seja o uid)
+                        const uSnap = await getDoc(doc(db, "usuarios", data.uid));
+                        if (uSnap.exists()) perfil = uSnap.data();
+                    } catch (e) {
+                        console.warn("Falha ao carregar perfil por id:", e);
+                    }
+                    try {
+                        // 2) tenta por coluna uid (caso a tabela use id separado)
+                        if (!perfil) {
+                            const q = query(collection(db, "usuarios"), where("uid", "==", data.uid));
+                            const s = await getDocs(q);
+                            if (s && !s.empty) perfil = s.docs[0].data();
+                        }
+                    } catch (e) {
+                        console.warn("Falha ao carregar perfil por uid:", e);
+                    }
+                }
+
+                if (!perfil) {
+                    try {
+                        const local = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+                        if (local && local.uid && data.uid && String(local.uid) === String(data.uid)) {
+                            perfil = local;
+                        }
+                    } catch (_) {}
+                }
+
+                renderizarDetalhes({ ...data, __perfil: perfil });
+
+                // 3. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
                 if(data.uid) {
                     carregarAvaliacoesReais(data.uid); // <--- AQUI ESTÁ A MÁGICA
+                    carregarPrazoMedio(data.uid);
                 }
 
             } catch (err) {
@@ -494,6 +526,8 @@
             document.getElementById('loader').style.display = 'none';
             document.getElementById('main-content').style.display = 'contents';
 
+            const perfil = d.__perfil || {};
+
             // -- HEADER & TEXTOS --
             document.title = `${d.titulo} | Doke`;
             document.getElementById('service-title').innerText = d.titulo || "Serviço sem título";
@@ -508,13 +542,39 @@
                 `;
             }
 
-            // -- GALERIA --
-            const fotos = (d.fotos && d.fotos.length > 0) ? d.fotos : ['https://placehold.co/800x600?text=Sem+Foto'];
+            // -- GALERIA (ANÚNCIO + PERFIL) --
+            const fotos = (() => {
+                const lista = [];
+                const push = (v) => {
+                    if (!v) return;
+                    if (Array.isArray(v)) { v.forEach(push); return; }
+                    if (typeof v !== "string") return;
+                    const src = v.trim();
+                    if (!src) return;
+                    if (!lista.includes(src)) lista.push(src);
+                };
+
+                // Fotos do anúncio
+                push(d.fotos || []);
+                push(d.img);
+                push(d.imagem);
+                push(d.capa);
+                push(d.fotoAutor);
+                push(d.capaAutor);
+
+                // Fotos do perfil do profissional
+                push(perfil.foto || perfil.foto_url || perfil.avatar || perfil.avatar_url);
+                push(perfil.capa || perfil.capa_url || perfil.cover || perfil.cover_url);
+                push(perfil.galeria || perfil.fotos || perfil.fotos_trabalhos || perfil.portfolio);
+
+                return lista.length ? lista : ['https://placehold.co/800x600?text=Sem+Foto'];
+            })();
             const mainImg = document.getElementById('main-img');
             const thumbList = document.getElementById('thumb-list');
             
             mainImg.src = fotos[0]; // Primeira foto
             
+            thumbList.innerHTML = "";
             if(fotos.length > 1) {
                 fotos.forEach((src, idx) => {
                     const thumb = document.createElement('img');
@@ -535,7 +595,9 @@
             document.getElementById('hl-xp').innerText = d.experiencia || "-";
             document.getElementById('hl-time').innerText = d.prazo || "-";
             document.getElementById('hl-warranty').innerText = d.garantia || "-";
-            document.getElementById('hl-mode').innerText = d.modo_atend || "Presencial";
+            const modoAt = Array.isArray(d.modo_atend) ? d.modo_atend[0] : d.modo_atend;
+            document.getElementById('hl-mode').innerText = modoAt || "Presencial";
+            document.getElementById('hl-time').innerText = "Calculando...";
 
             // -- DIPLOMA --
             if(d.diplomaUrl) {
@@ -549,7 +611,12 @@
             document.getElementById('price-display').innerText = displayPrice;
             
             if(d.pagamentosAceitos && d.pagamentosAceitos.length) {
-                document.getElementById('payment-display').innerText = "Aceita: " + d.pagamentosAceitos.join(', ');
+                const listaPg = Array.isArray(d.pagamentosAceitos)
+                    ? d.pagamentosAceitos
+                    : String(d.pagamentosAceitos).split(',').map(s => s.trim()).filter(Boolean);
+                if (listaPg.length) {
+                    document.getElementById('payment-display').innerText = "Aceita: " + listaPg.join(', ');
+                }
             }
 
             document.getElementById('prov-name').innerText = d.nomeAutor || "Profissional Doke";
@@ -690,6 +757,62 @@
             } catch (e) {
                 console.error("Erro ao buscar reviews:", e);
                 list.innerHTML = "Erro ao carregar avaliações.";
+            }
+        }
+
+        // ===========================================
+        // PRAZO MÉDIO (ACEITO -> FINALIZADO)
+        // ===========================================
+        async function carregarPrazoMedio(uidProfissional) {
+            const el = document.getElementById('hl-time');
+            if (!el || !uidProfissional) return;
+            try {
+                const q = query(
+                    collection(db, "pedidos"),
+                    where("paraUid", "==", uidProfissional),
+                    where("status", "==", "finalizado")
+                );
+                const snap = await getDocs(q);
+                if (!snap || snap.empty) { el.innerText = "—"; return; }
+
+                const parseDate = (v) => {
+                    if (!v) return null;
+                    if (v instanceof Date) return v;
+                    if (typeof v === "object" && typeof v.seconds === "number") {
+                        return new Date(v.seconds * 1000);
+                    }
+                    const d = new Date(v);
+                    return isNaN(d.getTime()) ? null : d;
+                };
+
+                let total = 0;
+                let count = 0;
+
+                snap.forEach((docSnap) => {
+                    const p = docSnap.data() || {};
+                    const inicio = parseDate(p.dataAceite || p.dataAceito || p.dataPedido || p.dataAtualizacao);
+                    const fim = parseDate(p.dataConclusao || p.dataFinalizado || p.dataAtualizacao);
+                    if (!inicio || !fim) return;
+                    const diff = fim.getTime() - inicio.getTime();
+                    if (diff <= 0) return;
+                    total += diff;
+                    count += 1;
+                });
+
+                if (!count) { el.innerText = "—"; return; }
+
+                const avgMs = total / count;
+                const avgHours = avgMs / 36e5;
+                if (avgHours < 24) {
+                    const horas = Math.max(1, Math.round(avgHours));
+                    el.innerText = `${horas} h`;
+                } else {
+                    const dias = Math.max(1, Math.round(avgHours / 24));
+                    el.innerText = `${dias} dias`;
+                }
+            } catch (e) {
+                console.warn("Erro ao calcular prazo médio:", e);
+                el.innerText = "—";
             }
         }
 

@@ -3692,7 +3692,11 @@ window.fecharModalDetalhes = function() {
 async function processarAceite(idPedido, dados) {
     if(!await window.dokeConfirm("Aceitar este serviço e liberar o chat?")) return;
     try {
-        await updateDoc(doc(db, "pedidos", idPedido), { status: "aceito", dataAtualizacao: new Date().toISOString() });
+        await updateDoc(doc(db, "pedidos", idPedido), {
+            status: "aceito",
+            dataAceite: new Date().toISOString(),
+            dataAtualizacao: new Date().toISOString()
+        });
         fecharModalDetalhes();
         abrirChatInterno(dados.deUid, idPedido, dados.clienteNome, dados.clienteFoto);
     } catch (e) { window.dokeAlert("Erro ao aceitar."); }

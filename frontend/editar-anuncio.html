@@ -657,7 +657,6 @@ h3#dokeAlertTitle{
                         <h3>Qualificações</h3>
                         <div class="form-row">
                             <div class="form-group"><label>Experiência</label><input type="text" id="experiencia" class="input-modern" placeholder="Ex: 5 anos"></div>
-                            <div class="form-group"><label>Prazo Médio</label><input type="text" id="prazo" class="input-modern" placeholder="Ex: 2 dias"></div>
                         </div>
                         
                         <div class="form-group">
@@ -1120,83 +1119,18 @@ h3#dokeAlertTitle{
             return !!(el && el.checked);
         };
 
-        // Tags
-        const tagsText = getVal('tags');
-        const tags = tagsText
-            ? tagsText.split(',').map(t => t.trim()).filter(Boolean)
-            : [];
-
-        // Modos de atendimento
-        const modoAtend = Array.from(document.querySelectorAll('.opt-modo.active')).map(b => b.dataset.value);
-
-        // Preco
-        const precoN = parseFloat((getVal('preco') || "0").toString().replace(/R\$\s*/, '').replace(',', '.'));
-        const precoFinal = isNaN(precoN) ? 0 : precoN;
-
-        // Pagamentos
-        const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(i => i.value);
-
-        // Agenda
-        const dias = ['dom','seg','ter','qua','qui','sex','sab'];
-        const agenda = {};
-        dias.forEach(d => {
-            const ativo = getChecked(`chk-${d}`);
-            const inicio = getVal(`ini-${d}`);
-            const fim = getVal(`fim-${d}`);
-            agenda[d] = { ativo, inicio, fim };
-        });
-
-        // Formulario (quiz)
-        const perguntasArray = Array.isArray(window.perguntasQuiz) ? window.perguntasQuiz : [];
-
-        return {
-            titulo: getVal('titulo'),
-            descricao: getVal('descricao'),
-            categorias: getVal('categorias-validacao'),
-            tags,
-            modo_atend: modoAtend,
-            preco: precoFinal,
-            experiencia: getVal('experiencia'),
-            prazo: getVal('prazo'),
-            garantia: getVal('garantia'),
-            politicaCancelamento: getVal('politica'),
-            atendeEmergencia: getChecked('emergencia'),
-            pagamentosAceitos,
-            agenda,
-            fotos: window.fotosParaEnviar,
-            img: (window.fotosParaEnviar && window.fotosParaEnviar[0]) ? window.fotosParaEnviar[0] : "",
-            perguntasFormularioJson: JSON.stringify(perguntasArray),
-            temFormulario: perguntasArray.length > 0
-        };
-    }
-
-    // Coleta SOMENTE dados do anuncio (sem dados pessoais) - usado no editar-anuncio.html
-    function coletarDadosDoFormEdicao() {
-        const getVal = (id) => {
-            const el = document.getElementById(id);
-            return el ? (el.value || "") : "";
-        };
-        const getChecked = (id) => {
-            const el = document.getElementById(id);
-            return !!(el && el.checked);
-        };
-
         const titulo = getVal('titulo');
         const descricao = getVal('descricao');
-        const categoria = getVal('categorias-validacao');
+
+        const categoriasStr = getVal('categorias-validacao') || '';
+        const primeiraCategoria = (categoriasStr.split(',').map(s => s.trim()).filter(Boolean)[0]) || '';
 
         const tagsStr = getVal('tags');
         const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-        const modoAtend = (document.querySelector('input[name="modo_atend"]:checked') || {}).value || "";
-
-        const precoBase = parseFloat((getVal('preco') || '0').replace(/R\$\s*/, '').replace(',', '.')) || 0;
-        let precoFinal = precoBase;
-        const hasLoc = document.getElementById('has-locomo');
-        if (hasLoc && hasLoc.checked) {
-            const taxa = parseFloat((getVal('taxa') || '0').replace(',', '.')) || 0;
-            precoFinal += taxa;
-        }
+        const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value || "";
+        const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "";
+        const precoFinal = (tipoPreco === 'Preço Fixo') ? getVal('valor') : tipoPreco;
 
         const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
 
@@ -1204,8 +1138,8 @@ h3#dokeAlertTitle{
         const agenda = {};
         dias.forEach((d) => {
             const chk = document.getElementById(`chk-${d}`);
-            const ini = document.getElementById(`ini-${d}`);
-            const fim = document.getElementById(`fim-${d}`);
+            const ini = document.getElementById(`${d}-inicio`);
+            const fim = document.getElementById(`${d}-fim`);
             agenda[d] = {
                 ativo: chk ? chk.checked : false,
                 inicio: ini ? ini.value : "",
@@ -1214,33 +1148,43 @@ h3#dokeAlertTitle{
         });
 
         const experiencia = getVal('experiencia');
-        const prazo = getVal('prazo');
         const garantia = getVal('garantia');
         const politicaCancelamento = getVal('politica');
         const atendeEmergencia = getChecked('emergencia');
 
-        const perguntasArray = window.perguntasFormulario || [];
-        const perguntasFormularioJson = JSON.stringify(perguntasArray);
-        const temFormulario = perguntasArray.length > 0;
+        const cep = getVal('cep');
+        const cidade = getVal('cidade');
+        const uf = getVal('uf');
+        const bairro = getVal('bairro');
+        const telefone = getVal('telefone');
+
+        const perguntasFormulario = Array.isArray(perguntasArray) ? perguntasArray : [];
 
         return {
             titulo,
             descricao,
-            categoria,
+            // compat: algumas bases usam "categoria" (singular) + "categorias" (string)
+            categoria: primeiraCategoria,
+            categorias: categoriasStr,
             tags,
             modo_atend: modoAtend,
+            tipoPreco,
             preco: precoFinal,
+            cep,
+            cidade,
+            uf,
+            bairro,
+            whatsapp: telefone,
             pagamentosAceitos,
             agenda,
             experiencia,
-            prazo,
             garantia,
             politicaCancelamento,
             atendeEmergencia,
             fotos: window.fotosParaEnviar,
             img: (window.fotosParaEnviar && window.fotosParaEnviar[0]) ? window.fotosParaEnviar[0] : "",
-            temFormulario,
-            perguntasFormularioJson
+            perguntasFormularioJson: perguntasFormulario,
+            temFormulario: perguntasFormulario.length > 0
         };
     }
     // ==========================================
@@ -1304,23 +1248,37 @@ h3#dokeAlertTitle{
         document.getElementById('descricao').value = dados.descricao || "";
 
         if (dados.categorias) {
-            const cats = dados.categorias.split(',');
+            const cats = String(dados.categorias || "").split(',');
             categoriasSelecionadas = cats.filter(c => c.trim() !== "");
+            if(window.atualizarTags) window.atualizarTags();
+        } else if (dados.categoria) {
+            categoriasSelecionadas = [String(dados.categoria)];
             if(window.atualizarTags) window.atualizarTags();
         }
 
         if (dados.modo_atend) {
-            const radio = document.querySelector(`input[name="modo_atend"][value="${dados.modo_atend}"]`);
+            const modoValor = Array.isArray(dados.modo_atend) ? dados.modo_atend[0] : dados.modo_atend;
+            const radio = document.querySelector(`input[name="modo_atend"][value="${modoValor}"]`);
             if(radio) radio.checked = true;
         }
 
-        if (dados.preco && dados.preco !== "Sob Orçamento" && dados.preco !== "A combinar") {
+        const tipoPrecoSalvo = dados.tipoPreco || null;
+        if (tipoPrecoSalvo === 'Preço Fixo') {
             document.getElementById('fixo').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
-            document.getElementById('valor').value = dados.preco;
-        } else {
+            document.getElementById('valor').value = dados.preco || "";
+        } else if (tipoPrecoSalvo === 'Sob Orçamento') {
             document.getElementById('orcamento').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
+        } else {
+            if (dados.preco && dados.preco !== "Sob Orçamento" && dados.preco !== "A combinar") {
+                document.getElementById('fixo').checked = true;
+                if(window.togglePriceInput) window.togglePriceInput();
+                document.getElementById('valor').value = dados.preco;
+            } else {
+                document.getElementById('orcamento').checked = true;
+                if(window.togglePriceInput) window.togglePriceInput();
+            }
         }
 
         if (dados.fotos && dados.fotos.length > 0) {
@@ -1336,7 +1294,6 @@ h3#dokeAlertTitle{
         }
 
         if(document.getElementById('experiencia')) document.getElementById('experiencia').value = dados.experiencia || "";
-        if(document.getElementById('prazo')) document.getElementById('prazo').value = dados.prazo || "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
         if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || "Flexível";
         if (document.getElementById('emergencia')) {
@@ -1358,8 +1315,11 @@ h3#dokeAlertTitle{
         if(document.getElementById('bairro')) document.getElementById('bairro').value = dados.bairro || "";
         if(document.getElementById('telefone')) document.getElementById('telefone').value = dados.whatsapp || "";
 
-        if (dados.pagamentosAceitos && Array.isArray(dados.pagamentosAceitos)) {
-            dados.pagamentosAceitos.forEach(pg => {
+        if (dados.pagamentosAceitos) {
+            const listaPg = Array.isArray(dados.pagamentosAceitos)
+                ? dados.pagamentosAceitos
+                : String(dados.pagamentosAceitos).split(',').map(s => s.trim()).filter(Boolean);
+            listaPg.forEach(pg => {
                 const chk = document.querySelector(`input[id^="pg-"][value="${pg}"]`);
                 if(chk) chk.checked = true;
             });
@@ -1408,7 +1368,6 @@ h3#dokeAlertTitle{
                 "agenda",
                 "tags",
                 "experiencia",
-                "prazo",
                 "garantia",
                 "politicaCancelamento",
                 "diplomaUrl"
@@ -1495,13 +1454,17 @@ h3#dokeAlertTitle{
             // 1. Upload Diploma se mudou
             let diplomaUrlFinal = "";
             
-            // Recupera URL antiga primeiro (precisamos ler o doc atual ou confiar que não mudou se diplomaFile for null)
-            // Para simplificar, vamos assumir que se não tem arquivo novo, mantém o antigo.
-            // Mas precisamos saber qual é o antigo. Vamos ler o doc novamente? Não, já lemos no load.
-            // Vamos fazer o seguinte: se diplomaFile existe, sobe e usa a nova URL. Se não, não enviamos o campo diplomaUrl (update parcial) ou enviamos o antigo se tivessemos salvo numa var global.
-            // Melhor: vamos ler o doc atual no banco rapidinho ou usar lógica condicional no update.
-            
             let updateData = coletarDadosDoFormEdicao();
+            
+            // DEBUG: Verificar se os dados estão sendo coletados
+            console.log('Dados coletados para atualização:', {
+                experiencia: updateData.experiencia,
+                garantia: updateData.garantia,
+                politicaCancelamento: updateData.politicaCancelamento,
+                atendeEmergencia: updateData.atendeEmergencia,
+                tags: updateData.tags,
+                agenda: updateData.agenda
+            });
             
             if (window.diplomaFile) {
                 const storage = window.getStorage();
@@ -1510,16 +1473,12 @@ h3#dokeAlertTitle{
                 diplomaUrlFinal = await window.getDownloadURL(storageRef);
                 updateData.diplomaUrl = diplomaUrlFinal; // Só atualiza se tiver novo
             }
-            // Se não tiver novo arquivo, o campo 'diplomaUrl' não vai no updateData? 
-            // A função coletarDadosDoForm não pega URL antiga. Então deletamos a chave se estiver vazia?
-            // Não, o updateDoc mescla. Se a gente não passar a chave, ele mantém a antiga.
-            // O problema é que coletarDadosDoForm não retorna a chave diplomaUrl. Entao está seguro.
 
             updateData.dataAtualizacao = new Date().toISOString();
 
             const docRef = window.doc(window.db, "anuncios", anuncioIdEdicao);
             await window.updateDoc(docRef, updateData);
-            await verificarCamposExtrasSalvos(anuncioId, updateData);
+            await verificarCamposExtrasSalvos(anuncioIdEdicao, updateData);
 
             alert("Anúncio atualizado com sucesso!");
             window.location.href = "meuperfil.html"; 
@@ -1532,50 +1491,7 @@ h3#dokeAlertTitle{
         }
     }
 
-    function coletarDadosDoForm() {
-        const titulo = document.getElementById('titulo').value;
-        const descricao = document.getElementById('descricao').value;
-        const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value;
-        const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value;
-        let precoFinal = (tipoPreco === 'Preço Fixo') ? document.getElementById('valor').value : tipoPreco;
-        const tagsVal = document.getElementById('tags').value;
-        const cep = document.getElementById('cep').value;
-        const cidade = document.getElementById('cidade').value;
-        const uf = document.getElementById('uf').value;
-        const bairro = document.getElementById('bairro').value;
-        const telefone = document.getElementById('telefone').value;
-        const pags = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
 
-        const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
-        let agendaObj = {};
-        dias.forEach(d => {
-            const ativo = document.getElementById(`chk-${d}`).checked;
-            const ini = document.getElementById(`${d}-inicio`).value;
-            const fim = document.getElementById(`${d}-fim`).value;
-            agendaObj[d] = { ativo: ativo, inicio: ini, fim: fim };
-        });
-
-        return {
-            titulo: titulo,
-            descricao: descricao,
-            categorias: document.getElementById('categorias-validacao').value,
-            tags: tagsVal.split(',').map(t => t.trim()),
-            modo_atend: modoAtend,
-            preco: precoFinal,
-            cep: cep, cidade: cidade, uf: uf, bairro: bairro, whatsapp: telefone,
-            pagamentosAceitos: pags,
-            agenda: agendaObj,
-            experiencia: document.getElementById('experiencia').value,
-            prazo: document.getElementById('prazo').value,
-            garantia: document.getElementById('garantia').value,
-            politicaCancelamento: document.getElementById('politica').value,
-            atendeEmergencia: document.getElementById('emergencia').checked,
-            fotos: window.fotosParaEnviar,
-            img: window.fotosParaEnviar[0] || "",
-            perguntasFormularioJson: JSON.stringify(perguntasArray),
-            temFormulario: perguntasArray.length > 0
-        };
-    }
     
 
     // =============================
@@ -1779,7 +1695,7 @@ if(docInput)
       if(typeof oldUpd === 'function'){
         window.atualizarAnuncioExistente = async function(){
           if(!exigirFoto(true)) return;
-          if(document.getElementById('doc_num')){ if(!validarDoc(true)) return; }
+          // No modo edição, não validamos CPF/CNPJ pois os dados pessoais estão bloqueados
           return oldUpd();
         }
       }
