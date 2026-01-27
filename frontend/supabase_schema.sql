@@ -226,6 +226,7 @@ create table if not exists public.avaliacoes (
   id uuid primary key default gen_random_uuid(),
   profUid text not null,
   clienteUid text not null,
+  anuncioId text,
   clienteNome text,
   clienteFoto text,
   detalhes jsonb,
@@ -236,6 +237,7 @@ create table if not exists public.avaliacoes (
 );-- Adicionar colunas se não existirem (para bases antigas)
 alter table public.avaliacoes add column if not exists profUid text;
 alter table public.avaliacoes add column if not exists clienteUid text;
+alter table public.avaliacoes add column if not exists anuncioId text;
 alter table public.avaliacoes add column if not exists clienteNome text;
 alter table public.avaliacoes add column if not exists clienteFoto text;
 alter table public.avaliacoes add column if not exists detalhes jsonb;

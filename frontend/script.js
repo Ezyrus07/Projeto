@@ -87,6 +87,7 @@ if ("serviceWorker" in navigator) {
 // Dentro de script.js
 
 // ATUALIZAÇÃO NO SCRIPT.JS - FUNÇÃO PUBLICAR ANÚNCIO
+if (typeof window.publicarAnuncio !== "function") {
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
 
@@ -170,8 +171,7 @@ window.publicarAnuncio = async function(event) {
         if(btn) { btn.innerText = textoOriginal; btn.disabled = false; }
     }
 }
-
-
+}
 
 window.previewImagemPost = function(input) {
     if (input.files && input.files[0]) {
@@ -430,7 +430,7 @@ window.carregarTrabalhosHome = async function() {
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
                         <div class="provider-info">
-                            <span class="provider-name" ${linkPerfil} style="cursor:pointer; text-decoration:underline;">${data.autorNome}</span>
+                            <span class="provider-name js-user-link" data-uid="${data.uid}" ${linkPerfil} style="cursor:pointer; text-decoration:underline;">${data.autorNome}</span>
                         </div>
                     </div>
                 </div>
@@ -475,12 +475,34 @@ window.abrirPlayerTikTok = function(dadosRecebidos) {
     const desc = dados.desc || "";
 
     // Header
-    document.getElementById('reelAvatar').src = foto;
-    document.getElementById('reelUsername').innerText = user;
+    const reelAvatar = document.getElementById('reelAvatar');
+    if (reelAvatar) {
+        reelAvatar.src = foto;
+        reelAvatar.classList.add('js-user-link');
+        reelAvatar.dataset.uid = dados.uid || '';
+        reelAvatar.dataset.user = user || '';
+    }
+    const reelUserEl = document.getElementById('reelUsername');
+    if (reelUserEl) {
+        reelUserEl.innerText = user;
+        reelUserEl.dataset.uid = dados.uid || '';
+        reelUserEl.classList.add('js-user-link');
+    }
 
     // Legenda (Topo do corpo)
-    document.getElementById('reelAvatarCap').src = foto;
-    document.getElementById('reelUsernameCap').innerText = user;
+    const reelAvatarCap = document.getElementById('reelAvatarCap');
+    if (reelAvatarCap) {
+        reelAvatarCap.src = foto;
+        reelAvatarCap.classList.add('js-user-link');
+        reelAvatarCap.dataset.uid = dados.uid || '';
+        reelAvatarCap.dataset.user = user || '';
+    }
+    const reelUserCapEl = document.getElementById('reelUsernameCap');
+    if (reelUserCapEl) {
+        reelUserCapEl.innerText = user;
+        reelUserCapEl.dataset.uid = dados.uid || '';
+        reelUserCapEl.classList.add('js-user-link');
+    }
     document.getElementById('reelDesc').innerText = desc;
     document.getElementById('reelData').innerText = "Ver tradução"; // Simulado
 
@@ -814,7 +836,6 @@ window.dokeBuildCardPremium = function(anuncio) {
     const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
 
     let htmlFotos = '';
-    let contadorExtra = fotos.length - 3;
 
     if (fotos.length === 1) {
         htmlFotos = `
@@ -830,17 +851,20 @@ window.dokeBuildCardPremium = function(anuncio) {
             <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
         </div>`;
     } else {
-        let overlayHtml = (fotos.length > 3) ? `<div class="overlay-count">+${contadorExtra}</div>` : '';
+        const contadorExtra = Math.max(0, fotos.length - 2);
+        const overlayHtml = contadorExtra > 0
+            ? `<div class="overlay-count" onclick="abrirGaleria(${jsonFotos}, 1)">+${contadorExtra}</div>`
+            : '';
         htmlFotos = `
         <div class="grid-fotos-doke">
             <div class="foto-main"><img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
-            <div class="foto-sub"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
-            <div class="foto-sub"><img src="${fotos[2]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 2)">${overlayHtml}</div>
+            <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)">${overlayHtml}</div>
         </div>`;
     }
 
     const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid}')"`;
     const estiloLink = `style="cursor: pointer;"`;
+    const userDataAttr = anuncio.uid ? `data-uid="${anuncio.uid}"` : "";
 
     const card = document.createElement('div');
     card.className = 'card-premium';
@@ -856,10 +880,10 @@ window.dokeBuildCardPremium = function(anuncio) {
         </button>
         <div class="cp-header-clean">
             <div style="display:flex; gap:12px; align-items:center;">
-                <img src="${fotoAutor}" class="cp-avatar" loading="lazy" decoding="async" ${linkPerfil} ${estiloLink}> 
+                <img src="${fotoAutor}" class="cp-avatar js-user-link" loading="lazy" decoding="async" ${userDataAttr} ${linkPerfil} ${estiloLink}> 
                 <div class="cp-info-user">
                     <div class="cp-nome-row">
-                        <h4 class="cp-nome-clean" ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
+                        <h4 class="cp-nome-clean js-user-link" ${userDataAttr} ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
                         ${htmlAvaliacaoDisplay}
                     </div>
                     <div class="cp-tempo-online">
@@ -1242,7 +1266,7 @@ window.carregarProfissionais = async function() {
             <div class="pro-card">
                 <i class='bx bxs-badge-check verified-badge'></i>
                 <img src="${foto}" class="pro-avatar-lg">
-                <span class="pro-name" style="color:var(--cor2);">${userHandle}</span>
+                <span class="pro-name js-user-link" data-user="${userHandle}" style="color:var(--cor2); cursor:pointer;">${userHandle}</span>
                 <span class="pro-job">${job}</span>
                 ${avaliacaoHTML}
                 <button class="btn-pro-action" onclick="window.location.href='meuperfil.html'">Ver Perfil</button>
@@ -1697,6 +1721,31 @@ window.irParaPerfilComContagem = function(uid) {
     window.location.href = `perfil-profissional.html?uid=${uid}`; // Vai para a página
 }
 
+// Delegação: clicar em @user abre perfil correto
+if (!window.__dokeUserLinkBound) {
+    window.__dokeUserLinkBound = true;
+    document.addEventListener('click', (e) => {
+        const el = e.target && e.target.closest ? e.target.closest('.js-user-link') : null;
+        if (!el) return;
+        const uid = el.getAttribute('data-uid') || '';
+        const user = el.getAttribute('data-user') || '';
+        if (!uid && !user) return;
+        e.preventDefault();
+        e.stopPropagation();
+        if (uid) {
+            if (typeof window.irParaPerfilComContagem === 'function') {
+                window.irParaPerfilComContagem(uid);
+            } else {
+                window.location.href = `perfil-profissional.html?uid=${encodeURIComponent(uid)}`;
+            }
+            return;
+        }
+        const clean = String(user || '').replace(/^@/, '');
+        if (!clean) return;
+        window.location.href = `perfil-profissional.html?user=${encodeURIComponent(clean)}`;
+    });
+}
+
 window.mostrarToast = function(mensagem, tipo = 'sucesso') {
     let container = document.getElementById('toast-container');
     if (!container) {
@@ -2086,9 +2135,9 @@ window.carregarFeedGlobal = async function() {
             const html = `
                 <div class="card-feed-global">
                     <div class="feed-header">
-                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User" ${linkPerfil} ${cursorStyle}>
+                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User" class="js-user-link" data-uid="${uidDestino}" ${linkPerfil} ${cursorStyle}>
                         <div class="feed-user-info">
-                            <h4 ${linkPerfil} ${cursorStyle}>${post.autorUser || post.autorNome}</h4>
+                            <h4 class="js-user-link" data-uid="${uidDestino}" ${linkPerfil} ${cursorStyle}>${post.autorUser || post.autorNome}</h4>
                             <span>${dataPost}</span>
                         </div>
                     </div>
@@ -2115,6 +2164,10 @@ window.carregarFeedGlobal = async function() {
         const item = entry.data || {};
         const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
         const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
+        const autorUid = autor.uid || "";
+        const autorUser = autor.user || autor.nome || "";
+        const uidAttr = autorUid ? `data-uid="${autorUid}"` : "";
+        const userAttr = !autorUid && autorUser ? `data-user="${autorUser}"` : "";
         const dataPost = formatFeedDate(item.created_at);
         const textoResumo = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
         const likesCount = (Array.isArray(item.publicacoes_curtidas) ? item.publicacoes_curtidas[0]?.count : item.publicacoes_curtidas?.count) || 0;
@@ -2130,9 +2183,9 @@ window.carregarFeedGlobal = async function() {
         const html = `
             <div class="card-feed-global">
                 <div class="feed-header">
-                    <img src="${autor.foto || 'https://placehold.co/50'}" alt="User">
+                    <img src="${autor.foto || 'https://placehold.co/50'}" alt="User" class="js-user-link" ${uidAttr} ${userAttr}>
                     <div class="feed-user-info">
-                        <h4>${escapeHtml(autorNome)}</h4>
+                        <h4 class="js-user-link" ${uidAttr} ${userAttr}>${escapeHtml(autorNome)}</h4>
                         <span>${dataPost}</span>
                     </div>
                 </div>
@@ -2329,8 +2382,11 @@ window.carregarPosts = function(uid) {
         if (snapshot.empty) { container.innerHTML = `<div class="empty-state"><h4>Sem posts</h4></div>`; return; }
         snapshot.forEach((doc) => {
             const post = doc.data();
+            const uidPost = post.uid || "";
+            const uidAttr = uidPost ? `data-uid="${uidPost}"` : "";
+            const userAttr = (!uidPost && post.autorUser) ? `data-user="${post.autorUser}"` : "";
             const imgHtml = post.imagem ? `<div class="midia-post"><img src="${post.imagem}"></div>` : '';
-            const html = `<div class="post-feed-card"><div class="header-post"><div class="user-post"><img src="${post.autorFoto}"><div><h4>${post.autorUser}</h4></div></div></div><p class="legenda-post">${post.texto}</p>${imgHtml}</div>`;
+            const html = `<div class="post-feed-card"><div class="header-post"><div class="user-post"><img src="${post.autorFoto}" class="js-user-link" ${uidAttr} ${userAttr}><div><h4 class="js-user-link" ${uidAttr} ${userAttr}>${post.autorUser}</h4></div></div></div><p class="legenda-post">${post.texto}</p>${imgHtml}</div>`;
             container.innerHTML += html;
         });
     });
@@ -2995,11 +3051,11 @@ async function carregarListaProfissionaisReal() {
             const html = `
             <div class="pro-card">
                 <i class='bx bxs-badge-check verified-badge'></i>
-                <img src="${foto}" class="pro-avatar-lg">
-                <span class="pro-name">${nomeExibicao}</span>
+                <img src="${foto}" class="pro-avatar-lg js-user-link" data-uid="${doc.id}">
+                <span class="pro-name js-user-link" data-uid="${doc.id}" style="cursor:pointer;">${nomeExibicao}</span>
                 <span class="pro-job">${profissao}</span>
                 ${htmlAvaliacao}
-                <button class="btn-pro-action" onclick="alert('Perfil de ${nomeExibicao}')">Ver Perfil</button>
+                <button class="btn-pro-action js-user-link" data-uid="${doc.id}" type="button">Ver Perfil</button>
             </div>`;
             
             container.insertAdjacentHTML('beforeend', html);
@@ -4834,15 +4890,30 @@ window.abrirModalPost = async function(id, colecao) {
         }
 
         // Info Autor
-        document.getElementById('modalAvatar').src = data.autorFoto || "https://placehold.co/50";
-        document.getElementById('modalUsername').innerText = data.autorUser || data.autorNome;
+        const modalAvatar = document.getElementById('modalAvatar');
+        const modalUsername = document.getElementById('modalUsername');
+        const autorHandle = data.autorUser || data.autorNome || "";
+        if (modalAvatar) {
+            modalAvatar.src = data.autorFoto || "https://placehold.co/50";
+            modalAvatar.classList.add('js-user-link');
+            modalAvatar.dataset.uid = data.uid || '';
+            modalAvatar.dataset.user = autorHandle || '';
+        }
+        if (modalUsername) {
+            modalUsername.innerText = autorHandle;
+            modalUsername.classList.add('js-user-link');
+            modalUsername.dataset.uid = data.uid || '';
+            modalUsername.dataset.user = autorHandle || '';
+        }
         document.getElementById('modalDate').innerText = data.data ? new Date(data.data).toLocaleDateString() : 'Data';
         labelLike.innerText = `${data.likes || 0} curtidas`;
 
         // Legenda
         const captionDiv = document.getElementById('modalCaption');
         if(data.texto || data.descricao) {
-            captionDiv.innerHTML = `<strong>${data.autorUser}</strong> ${data.texto || data.descricao}`;
+            const safeUser = (typeof escapeHtml === "function") ? escapeHtml(autorHandle) : autorHandle;
+            const safeText = (typeof escapeHtml === "function") ? escapeHtml(data.texto || data.descricao) : (data.texto || data.descricao);
+            captionDiv.innerHTML = `<strong class="js-user-link" data-uid="${data.uid || ''}" data-user="${autorHandle || ''}">${safeUser}</strong> ${safeText}`;
             captionDiv.style.display = 'block';
         } else {
             captionDiv.style.display = 'none';
@@ -4932,6 +5003,9 @@ async function carregarComentariosNoModal(id, colecao) {
                     <i class='bx bx-heart'></i><span>${likeCount}</span>
                 </button>`;
 
+            const uidAttr = c.uid ? `data-uid="${c.uid}"` : "";
+            const userAttr = c.user ? `data-user="${c.user}"` : "";
+
             let btnVerRespostas = "";
             if (c.replyCount && c.replyCount > 0) {
                 btnVerRespostas = `
@@ -4943,11 +5017,11 @@ async function carregarComentariosNoModal(id, colecao) {
             const html = `
             <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
                 <div class="comment-row">
-                    <img src="${c.foto}" class="comment-avatar" alt="">
+                    <img src="${c.foto}" class="comment-avatar js-user-link" ${uidAttr} ${userAttr} alt="">
                     <div style="flex:1;">
                         <div class="comment-header-row">
                             <div class="comment-header-left">
-                                <span class="comment-user-name">${c.user}</span> ${badgeCriador} ${badgeFixado}
+                                <span class="comment-user-name js-user-link" ${uidAttr} ${userAttr}>${c.user}</span> ${badgeCriador} ${badgeFixado}
                             </div>
                             <div class="comment-header-actions">
                                 ${btnPin}
@@ -5060,6 +5134,8 @@ async function carregarComentariosSupabase(publicacaoId) {
         const userInfo = c.usuarios || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
+        const uidAttr = userInfo.uid ? `data-uid="${userInfo.uid}"` : "";
+        const userAttr = (userInfo.user || userInfo.nome) ? `data-user="${userInfo.user || userInfo.nome}"` : "";
         const dataLabel = c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : "";
         const isCreator = window.currentSupaPublicacaoAuthorId && c.user_id === window.currentSupaPublicacaoAuthorId;
         const creatorBadge = isCreator ? `<span class="badge-criador">Criador</span>` : "";
@@ -5067,10 +5143,10 @@ async function carregarComentariosSupabase(publicacaoId) {
         const html = `
         <div class="comment-block" style="margin-top:15px;">
             <div style="display:flex; gap:10px; font-size:0.9rem; align-items:flex-start;">
-                <img src="${foto}" style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
+                <img src="${foto}" class="js-user-link" ${uidAttr} ${userAttr} style="width:32px; height:32px; border-radius:50%; object-fit:cover;">
                 <div style="flex:1;">
                     <div style="display:flex; justify-content:space-between;">
-                        <div><span style="font-weight:700;">${escapeHtml(nome)}</span> ${creatorBadge}</div>
+                        <div><span class="js-user-link" ${uidAttr} ${userAttr} style="font-weight:700;">${escapeHtml(nome)}</span> ${creatorBadge}</div>
                     </div>
                     <div style="color:#333; margin-top:2px;">${escapeHtml(c.texto || "")}</div>
                     <div style="display:flex; align-items:center; margin-top:4px; gap:15px;">
@@ -5313,8 +5389,20 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const autorFoto = autor.foto || "https://placehold.co/50";
     window.currentSupaPublicacaoAuthorUid = autor.uid || null;
 
-    document.getElementById('modalAvatar').src = autorFoto;
-    document.getElementById('modalUsername').innerText = autorNome;
+    const modalAvatar = document.getElementById('modalAvatar');
+    const modalUsername = document.getElementById('modalUsername');
+    if (modalAvatar) {
+        modalAvatar.src = autorFoto;
+        modalAvatar.classList.add('js-user-link');
+        modalAvatar.dataset.uid = autor.uid || '';
+        modalAvatar.dataset.user = autor.user || autor.nome || '';
+    }
+    if (modalUsername) {
+        modalUsername.innerText = autorNome;
+        modalUsername.classList.add('js-user-link');
+        modalUsername.dataset.uid = autor.uid || '';
+        modalUsername.dataset.user = autor.user || autor.nome || '';
+    }
 
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
@@ -5327,7 +5415,9 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const captionDiv = document.getElementById('modalCaption');
     if (captionDiv) {
         if (captionText) {
-            captionDiv.innerHTML = `<strong>${escapeHtml(autorNome)}</strong> ${escapeHtml(captionText)}`;
+            const safeUser = escapeHtml(autorNome);
+            const safeText = escapeHtml(captionText);
+            captionDiv.innerHTML = `<strong class="js-user-link" data-uid="${autor.uid || ''}" data-user="${autor.user || autor.nome || ''}">${safeUser}</strong> ${safeText}`;
             captionDiv.style.display = 'block';
         } else {
             captionDiv.style.display = 'none';
@@ -5435,8 +5525,8 @@ async function carregarReelsIndex() {
                 </video>
                 
                 <div class="video-info" style="z-index:1; position:absolute; bottom:10px; left:10px; color:white;">
-                    <img src="${data.autorFoto || 'https://placehold.co/30'}" class="profile-img">
-                    <span class="username">${data.autorUser || 'Usuario'}</span>
+                    <img src="${data.autorFoto || 'https://placehold.co/30'}" class="profile-img js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">
+                    <span class="username js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">${data.autorUser || 'Usuario'}</span>
                 </div>
             </div>`;
             
@@ -5489,8 +5579,8 @@ async function carregarReelsNoIndex() {
                 </video>
                 
                 <div class="video-info">
-                    <img src="${data.autorFoto || 'https://placehold.co/50'}" class="profile-img">
-                    <span class="username">${data.autorUser || 'Profissional'}</span>
+                    <img src="${data.autorFoto || 'https://placehold.co/50'}" class="profile-img js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">
+                    <span class="username js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">${data.autorUser || 'Profissional'}</span>
                 </div>
             </div>`;
             
@@ -6453,10 +6543,34 @@ async function renderizarReelNoModal(index) {
     const user = dados.autorUser || "@usuario";
     
     // Preenche todos os campos
-    document.getElementById('reelUsername').innerText = user;
-    document.getElementById('reelAvatar').src = avatar;
-    document.getElementById('reelUsernameCap').innerText = user;
-    document.getElementById('reelAvatarCap').src = avatar;
+    const reelUsername = document.getElementById('reelUsername');
+    const reelAvatar = document.getElementById('reelAvatar');
+    const reelUsernameCap = document.getElementById('reelUsernameCap');
+    const reelAvatarCap = document.getElementById('reelAvatarCap');
+    if (reelUsername) {
+        reelUsername.innerText = user;
+        reelUsername.classList.add('js-user-link');
+        reelUsername.dataset.uid = dados.uid || '';
+        reelUsername.dataset.user = user || '';
+    }
+    if (reelAvatar) {
+        reelAvatar.src = avatar;
+        reelAvatar.classList.add('js-user-link');
+        reelAvatar.dataset.uid = dados.uid || '';
+        reelAvatar.dataset.user = user || '';
+    }
+    if (reelUsernameCap) {
+        reelUsernameCap.innerText = user;
+        reelUsernameCap.classList.add('js-user-link');
+        reelUsernameCap.dataset.uid = dados.uid || '';
+        reelUsernameCap.dataset.user = user || '';
+    }
+    if (reelAvatarCap) {
+        reelAvatarCap.src = avatar;
+        reelAvatarCap.classList.add('js-user-link');
+        reelAvatarCap.dataset.uid = dados.uid || '';
+        reelAvatarCap.dataset.user = user || '';
+    }
     document.getElementById('reelDesc').innerText = dados.descricao || "";
     document.getElementById('reelLikesCount').innerText = `${dados.likes || 0} curtidas`;
     document.getElementById('reelData').innerText = dados.data ? new Date(dados.data).toLocaleDateString() : "Recente";
@@ -6561,9 +6675,9 @@ async function carregarComentariosReel(reelId) {
             const c = doc.data();
             const html = `
             <div class="comm-item">
-                <img src="${c.foto}" style="width:32px; height:32px; border-radius:50%;">
+                <img src="${c.foto}" class="js-user-link" data-uid="${c.uid || ''}" data-user="${c.user || ''}" style="width:32px; height:32px; border-radius:50%;">
                 <div style="font-size:0.9rem;">
-                    <strong>${c.user}</strong> ${c.texto}
+                    <strong class="js-user-link" data-uid="${c.uid || ''}" data-user="${c.user || ''}">${c.user}</strong> ${c.texto}
                 </div>
             </div>`;
             lista.insertAdjacentHTML('beforeend', html);
@@ -6592,8 +6706,24 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
     mediaArea.innerHTML = `<img src="${dados.imagem}" style="width:100%;height:100%;object-fit:cover;">`;
   }
 
-  if (document.getElementById('modalUsername')) document.getElementById('modalUsername').innerText = dados.autorUser || '@usuario';
-  if (document.getElementById('modalCaption')) document.getElementById('modalCaption').innerText = dados.descricao || '';
+  const modalUsername = document.getElementById('modalUsername');
+  const modalAvatar = document.getElementById('modalAvatar');
+  const modalCaption = document.getElementById('modalCaption');
+  const modalUser = dados.autorUser || dados.autor_user || dados.usuarios?.user || '@usuario';
+  const modalUid = dados.uid || dados.autorUid || dados.usuarios?.uid || '';
+  if (modalUsername) {
+    modalUsername.innerText = modalUser;
+    modalUsername.classList.add('js-user-link');
+    modalUsername.dataset.uid = modalUid || '';
+    modalUsername.dataset.user = modalUser || '';
+  }
+  if (modalAvatar) {
+    modalAvatar.src = dados.autorFoto || dados.autor_foto || dados.usuarios?.foto || "https://placehold.co/50";
+    modalAvatar.classList.add('js-user-link');
+    modalAvatar.dataset.uid = modalUid || '';
+    modalAvatar.dataset.user = modalUser || '';
+  }
+  if (modalCaption) modalCaption.innerText = dados.descricao || '';
 
   const btnOrcar = document.getElementById('btnSolicitarOrcamento');
   if (btnOrcar) {
@@ -6922,10 +7052,35 @@ async function renderizarReelNoModal(index) {
     const descricao = dados.descricao || dados.titulo || "";
     const likesCount = dados.likes || (Array.isArray(dados.videos_curtos_curtidas) ? dados.videos_curtos_curtidas[0]?.count : dados.videos_curtos_curtidas?.count) || 0;
 
-    if (document.getElementById('reelUsername')) document.getElementById('reelUsername').innerText = userName;
-    if (document.getElementById('reelAvatar')) document.getElementById('reelAvatar').src = avatar;
-    if (document.getElementById('reelUsernameCap')) document.getElementById('reelUsernameCap').innerText = userName;
-    if (document.getElementById('reelAvatarCap')) document.getElementById('reelAvatarCap').src = avatar;
+    const reelUsername = document.getElementById('reelUsername');
+    const reelAvatar = document.getElementById('reelAvatar');
+    const reelUsernameCap = document.getElementById('reelUsernameCap');
+    const reelAvatarCap = document.getElementById('reelAvatarCap');
+    const reelUid = window.currentReelUid || dados.uid || dados.autorUid || '';
+    if (reelUsername) {
+        reelUsername.innerText = userName;
+        reelUsername.classList.add('js-user-link');
+        reelUsername.dataset.uid = reelUid || '';
+        reelUsername.dataset.user = userName || '';
+    }
+    if (reelAvatar) {
+        reelAvatar.src = avatar;
+        reelAvatar.classList.add('js-user-link');
+        reelAvatar.dataset.uid = reelUid || '';
+        reelAvatar.dataset.user = userName || '';
+    }
+    if (reelUsernameCap) {
+        reelUsernameCap.innerText = userName;
+        reelUsernameCap.classList.add('js-user-link');
+        reelUsernameCap.dataset.uid = reelUid || '';
+        reelUsernameCap.dataset.user = userName || '';
+    }
+    if (reelAvatarCap) {
+        reelAvatarCap.src = avatar;
+        reelAvatarCap.classList.add('js-user-link');
+        reelAvatarCap.dataset.uid = reelUid || '';
+        reelAvatarCap.dataset.user = userName || '';
+    }
     if (document.getElementById('reelDesc')) document.getElementById('reelDesc').innerText = descricao;
     if (document.getElementById('reelLikesCount')) document.getElementById('reelLikesCount').innerText = `${likesCount} curtidas`;
     if (document.getElementById('reelData')) document.getElementById('reelData').innerText = dados.data ? new Date(dados.data).toLocaleDateString() : "Recente";
@@ -7587,11 +7742,11 @@ async function carregarComentariosReelSupabase(reelId) {
         const html = `
         <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${c.id}" data-comment-id="${c.id}">
             <div class="comment-row">
-                <img src="${foto}" class="comment-avatar" alt="">
+                <img src="${foto}" class="comment-avatar js-user-link" ${uidAttr} ${userAttr} alt="">
                 <div style="flex:1;">
                     <div class="comment-header-row">
                         <div class="comment-header-left">
-                            <span class="comment-user-name">${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
+                            <span class="comment-user-name js-user-link" ${uidAttr} ${userAttr}>${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
                         </div>
                         <div class="comment-header-actions">
                             ${btnPin}
@@ -7686,11 +7841,11 @@ async function carregarComentariosReel(reelId) {
             const html = `
             <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
                 <div class="comment-row">
-                    <img src="${c.foto || "https://placehold.co/50"}" class="comment-avatar" alt="">
+                    <img src="${c.foto || "https://placehold.co/50"}" class="comment-avatar js-user-link" data-uid="${c.uid || ''}" data-user="${c.user || ''}" alt="">
                     <div style="flex:1;">
                         <div class="comment-header-row">
                             <div class="comment-header-left">
-                                <span class="comment-user-name">${escapeHtml(c.user || "Usuario")}</span> ${badgeCriador} ${badgeFixado}
+                                <span class="comment-user-name js-user-link" data-uid="${c.uid || ''}" data-user="${c.user || ''}">${escapeHtml(c.user || "Usuario")}</span> ${badgeCriador} ${badgeFixado}
                             </div>
                             <div class="comment-header-actions">
                                 ${btnPin}
@@ -7949,6 +8104,8 @@ async function carregarComentariosSupabase(publicacaoId) {
         const userInfo = c.usuarios || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
+        const uidAttr = userInfo.uid ? `data-uid="${userInfo.uid}"` : "";
+        const userAttr = (userInfo.user || userInfo.nome) ? `data-user="${userInfo.user || userInfo.nome}"` : "";
         const dataLabel = c.created_at ? new Date(c.created_at).toLocaleDateString('pt-BR') : "";
         const isCreator = cfg.postAuthorId && c.user_id === cfg.postAuthorId;
         const isPinned = c.pinned === true;
@@ -7986,11 +8143,11 @@ async function carregarComentariosSupabase(publicacaoId) {
         const html = `
         <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${c.id}" data-comment-id="${c.id}">
             <div class="comment-row">
-                <img src="${foto}" class="comment-avatar" alt="">
+                <img src="${foto}" class="comment-avatar js-user-link" ${uidAttr} ${userAttr} alt="">
                 <div style="flex:1;">
                     <div class="comment-header-row">
                             <div class="comment-header-left">
-                                <span class="comment-user-name">${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
+                                <span class="comment-user-name js-user-link" ${uidAttr} ${userAttr}>${escapeHtml(nome)}</span> ${badgeCriador} ${badgeFixado}
                             </div>
                             <div class="comment-header-actions">
                                 ${btnPin}
@@ -8870,8 +9027,12 @@ async function waitForSB(timeout = 4000) {
  * PERFIL PÚBLICO
  *************************************************/
 function abrirPerfil(uid) {
-  localStorage.setItem("perfilPublicoId", uid);
-  window.location.href = "perfil-publico.html";
+  if (!uid) return;
+  if (typeof window.irParaPerfilComContagem === "function") {
+    window.irParaPerfilComContagem(uid);
+    return;
+  }
+  window.location.href = `perfil-profissional.html?uid=${encodeURIComponent(uid)}`;
 }
 
 /*************************************************
@@ -8889,11 +9050,11 @@ function cardPro(p) {
 
   return `
     <div class="pro-card" onclick="abrirPerfil('${p.uid}')">
-      <img src="${foto}" class="pro-avatar" alt="${nome}">
-      <div class="pro-name">${nome}</div>
+      <img src="${foto}" class="pro-avatar js-user-link" data-uid="${p.uid}" alt="${nome}">
+      <div class="pro-name js-user-link" data-uid="${p.uid}">${nome}</div>
       <div class="pro-role">${profissao}</div>
       ${ratingHtml}
-      <button class="btn-ver-perfil">Ver Perfil</button>
+      <button class="btn-ver-perfil js-user-link" data-uid="${p.uid}" type="button">Ver Perfil</button>
     </div>
   `;
 }

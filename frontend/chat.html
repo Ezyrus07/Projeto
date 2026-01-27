@@ -1305,48 +1305,24 @@
     </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+    <link rel="stylesheet" href="doke-chat-grupo-ui.css?v=20260126">
 </head>
 <body>
 
     <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
-
-        <div class="item">
+        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
+        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
+        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
+        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><a href="chat.html"><span>Mensagens</span></a></div>
+                <div class="item">
             <a href="empresas.html">
                 <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
                 <span>Empresas</span>
             </a>
         </div>
-
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
+        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
+        <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
+        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
     </aside>
 
     <header class="navbar-desktop">
@@ -3201,6 +3177,15 @@ function carregarMensagens(colecao, docId) {
         const htmlParts = [];
         const sigParts = [];
         sigParts.push(`clear@${clearTs || ''}`);
+        const __perfilMe = (window.DOKE_UI ? DOKE_UI.meProfile() : (()=>{ try{return JSON.parse(localStorage.getItem('doke_usuario_perfil')||'{}')||{};}catch(e){return {};}})());
+        const __meUser = (window.DOKE_UI ? DOKE_UI.stripAt(__perfilMe.user || __perfilMe.username || __perfilMe.nome || '') : String(__perfilMe.user||'').replace(/^@+/, '')) || 'voce';
+        const __meFoto = (__perfilMe.foto || __perfilMe.avatar || 'https://i.pravatar.cc/150');
+        const __wrapMsg = (souEu, user, foto, hora, bubbleHtml) => {
+            const u = user || (souEu ? __meUser : 'usuario');
+            const f = foto || (souEu ? __meFoto : 'https://i.pravatar.cc/150');
+            if (window.DOKE_UI) return DOKE_UI.wrap({me: !!souEu, user: u, foto: f, time: hora, bubbleHtml});
+            return bubbleHtml;
+        };
 
         snapshot.forEach(docSnap => {
             const m = docSnap.data();
@@ -3294,61 +3279,59 @@ function carregarMensagens(colecao, docId) {
             }
             // --- IMAGEM ---
             else if (m.tipo === 'imagem' && m.url) {
-                const htmlImg = `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" style="padding:8px;">
-                    <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
-                    <span class="msg-hora">${horaMsg}</span>
+                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
+                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
+                const bubble = `
+                <div class="msg-bubble" style="padding:8px;">
+                    <img class="msg-media" src="${m.url}" alt="imagem" onclick="abrirGaleria(['${m.url}'], 0)" />
                 </div>`;
-                htmlParts.push(htmlImg);
+                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
             }
             // --- ARQUIVO ---
             else if (m.tipo === 'arquivo' && m.url) {
-                const nome = m.texto || 'Arquivo';
-                const htmlFile = `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:38px; height:38px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center;">
-                            <i class='bx bx-file' style="font-size:20px; color:#3949ab"></i>
-                        </div>
-                        <div style="flex:1; min-width:0;">
-                            <div style="font-weight:700; color:#111; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nome}</div>
-                            <a href="${m.url}" target="_blank" style="font-size:0.82rem; color:var(--cor0); font-weight:700; text-decoration:none;">Baixar / abrir</a>
-                        </div>
-                    </div>
-                    <span class="msg-hora">${horaMsg}</span>
+                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
+                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
+                const nome = (m.texto || 'Arquivo');
+                const bubble = `
+                <div class="msg-bubble">
+                    <a href="${m.url}" target="_blank" style="text-decoration:none; color:inherit; display:block;">
+                      <div class="msg-file">
+                          <div class="msg-file-ico"><i class='bx bx-file'></i></div>
+                          <div style="min-width:0;">
+                              <div class="msg-file-name">${nome}</div>
+                              <div class="msg-file-sub">Abrir / baixar</div>
+                          </div>
+                      </div>
+                    </a>
                 </div>`;
-                htmlParts.push(htmlFile);
+                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
             }
             // --- MENSAGEM DE ÁUDIO ---
-            else if (m.tipo === 'audio') {
-                const corWave = souEu ? 'white' : '#555';
-                const corIcone = souEu ? 'var(--cor0)' : '#555';
-                
-                const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
-                const htmlAudio = `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    <div class="audio-bubble" data-audio-id="${audioId}">
-                        <button class="btn-play-audio" onclick="tocarAudio(this, '${m.url}', '${audioId}')" style="color:${corIcone}">
-                            <i class='bx bx-play'></i>
-                        </button>
-                        <div style="display:flex; flex-direction:column; justify-content:center; flex:1;">
-                            <div class="audio-wave" style="background:${corWave}; opacity:0.3; height:3px; width:100px; margin-bottom:3px;"></div>
-                            <span id="audio-time-${audioId}" style="font-size:0.7rem; opacity:0.8;">0:00 / 0:00</span>
-                        </div>
-                    </div>
-                    <span class="msg-hora">${horaMsg}</span>
+            else if ((m.tipo === 'audio' || m.tipo === 'áudio' || m.tipo === 'voz') && m.url) {
+                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
+                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
+                const bubble = `
+                <div class="msg-bubble">
+                  <div class="audio-bubble">
+                    <button class="audio-btn" onclick="DOKE_playAudio('${m.url}', this)"><i class='bx bx-play'></i></button>
+                    <div class="audio-time">0:00 / 0:00</div>
+                    <div class="audio-bar"><i></i></div>
+                  </div>
                 </div>`;
-                htmlParts.push(htmlAudio);
+                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
             }
             // --- TEXTO NORMAL ---
             else {
-                htmlParts.push(`
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    ${m.texto}
-                    <span class="msg-hora">${horaMsg}</span>
-                </div>`);
+                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
+                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
+                const bubble = `
+                <div class="msg-bubble">
+                    ${escapeHtml(m.texto || '').replace(/
+/g, '<br>')}
+                </div>`;
+                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
             }
-        });
+});
 
         const nextSig = sigParts.join("||") + "||" + statusPedido + "|" + (pedidoAvaliado ? "1" : "0");
         if (nextSig === lastSig) {
@@ -3830,6 +3813,7 @@ window.tocarAudio = function(btn, url, audioId) {
         <div class="galeria-thumbnails" id="areaThumbnails"></div>
     </div>
 
+    <script src="doke-chat-grupo-ui.js?v=20260126"></script>
 </body>
 </html>  
 

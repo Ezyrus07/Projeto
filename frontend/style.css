@@ -648,7 +648,6 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
 }
 
 .videos-header-top h2 {
@@ -1311,94 +1310,109 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 }
 .tiktok-scroll-wrapper::-webkit-scrollbar { display: none; }
 
-#galeria-dinamica{
-  scroll-snap-type: x proximity;
+#galeria-dinamica {
+  display: flex; /* Garante o alinhamento horizontal */
+  overflow-x: auto;
+  gap: 12px; /* Espaçamento padrão do YouTube entre cards */
+  padding: 10px 0;
+  scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   overscroll-behavior-x: contain;
 }
 
-#galeria-dinamica video,
-#galeria-dinamica .video-preview-hover{
-  pointer-events: none;
+/* Esconde a barra de rolagem para um visual mais limpo */
+#galeria-dinamica::-webkit-scrollbar {
+  display: none;
 }
 
-/* Reels no index com o mesmo visual do perfil */
-#galeria-dinamica{
-  gap: 14px;
-  padding: 20px 0;
-}
-#galeria-dinamica .dp-reelCard{
+#galeria-dinamica .dp-reelCard {
   flex: 0 0 auto;
-  width: clamp(200px, calc((var(--home-section-width, 1100px) - 42px) / 4), 280px);
-  border-radius: 16px;
+  /* Largura calculada para mostrar aprox. 4.5 cards, igual ao YT */
+  width: clamp(160px, calc((var(--home-section-width, 1100px) - 60px) / 5), 210px);
+  border-radius: 12px; /* Bordas um pouco mais fechadas que 16px */
   overflow: hidden;
-  background: #000;
-  box-shadow: 0 10px 26px rgba(0,0,0,0.12);
+  background: transparent;
+  transition: transform 0.2s ease;
 }
-#galeria-dinamica .dp-reelMedia{
+
+#galeria-dinamica .dp-reelCard:hover {
+  transform: translateY(-4px); /* Efeito suave de hover */
+}
+
+#galeria-dinamica .dp-reelMedia {
   position: relative;
   width: 100%;
-  aspect-ratio: 9 / 16;
+  /* A proporção ideal para parecer a prateleira do YT Shorts */
+  aspect-ratio: 9 / 15; 
   background: #000;
+  border-radius: 12px;
+  overflow: hidden;
 }
-#galeria-dinamica .dp-reelMedia video{
+
+#galeria-dinamica .dp-reelMedia video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   display: block;
 }
-#galeria-dinamica .dp-reelMedia video,
-#galeria-dinamica .dp-reelOverlay,
-#galeria-dinamica .dp-reelPlay{
-  pointer-events: none;
-}
-#galeria-dinamica .dp-reelOverlay{
+
+#galeria-dinamica .dp-reelOverlay {
   position: absolute;
   left: 0;
   bottom: 0;
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 8px;
   color: #fff;
-  background: linear-gradient(to top, rgba(0,0,0,.7), rgba(0,0,0,0));
+  /* Gradiente mais suave para legibilidade do texto branco */
+  background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0) 100%);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
 }
-#galeria-dinamica .dp-reelOverlay b{
-  display: block;
+
+#galeria-dinamica .dp-reelOverlay b {
+  display: -webkit-box;
+  -webkit-line-clamp: 2; /* Limita a 2 linhas igual ao original */
+  -webkit-box-orient: vertical;
+  overflow: hidden;
   font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  margin-bottom: 4px;
 }
-#galeria-dinamica .dp-reelOverlay p{
-  margin: 4px 0 0;
+
+#galeria-dinamica .dp-reelOverlay p {
+  margin: 0;
   font-size: 12px;
-  opacity: .85;
+  color: rgba(255, 255, 255, 0.8);
 }
-#galeria-dinamica .dp-reelPlay{
+
+/* Ícone de Play discreto no topo */
+#galeria-dinamica .dp-reelPlay {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 34px;
-  height: 34px;
-  border-radius: 999px;
-  background: rgba(0,0,0,.45);
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.3);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
-  font-size: 18px;
-  opacity: 0;
-  transition: opacity .2s ease;
-}
-#galeria-dinamica .dp-reelCard:hover .dp-reelPlay{
-  opacity: 1;
+  font-size: 14px;
+  backdrop-filter: blur(4px);
 }
 
+/* Responsividade */
 @media (max-width: 900px) {
-  #galeria-dinamica .dp-reelCard{ width: 200px; }
-  #galeria-dinamica .dp-reelOverlay{ padding: 8px 10px; }
-  #galeria-dinamica .dp-reelOverlay b{ font-size: 12px; }
-  #galeria-dinamica .dp-reelOverlay p{ font-size: 11px; }
+  #galeria-dinamica .dp-reelCard { width: 180px; }
 }
 
 @media (max-width: 600px) {
-  #galeria-dinamica .dp-reelCard{ width: 210px; }
+  #galeria-dinamica { gap: 8px; }
+  #galeria-dinamica .dp-reelCard { width: 150px; }
+  #galeria-dinamica .dp-reelOverlay b { font-size: 12px; }
 }
 
 /* O C
@@ -4065,6 +4079,8 @@ body.dark-mode {
     }
 }
 
+
+
 /* ==============================
    FEED PUBLICACOES (HOME)
    ============================== */
@@ -4104,25 +4120,59 @@ body.dark-mode {
     box-shadow: 0 16px 36px rgba(0,0,0,.10);
 }
 
+/* Container do Grid */
+#feed-global-container.feed-publicacoes-grid {
+    display: flex;
+    gap: 16px; /* Espaçamento entre os posts */
+    padding: 10px 0;
+}
+
+/* Card Individual */
+#feed-global-container.feed-publicacoes-grid .dp-item {
+    flex: 0 0 auto;
+    width: clamp(180px, calc((var(--home-section-width, 1100px) - 60px) / 4), 250px);
+    background: #fff; /* Fundo branco para a área do texto */
+    border-radius: 16px; /* Bordas arredondadas iguais ao print */
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Sombra leve para dar profundidade */
+}
+
+/* Mídia (Imagem/Vídeo) */
 #feed-global-container.feed-publicacoes-grid .dp-itemMedia {
-    background: #e9eef3;
+    background: #f0f2f5;
     display: flex;
     align-items: center;
     justify-content: center;
     overflow: hidden;
-    aspect-ratio: 4 / 5;
+    aspect-ratio: 1 / 1; /* Quadrado perfeito costuma ser melhor para posts estáticos */
+    /* Se preferir mais alto, use 4 / 5 */
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemMedia img,
 #feed-global-container.feed-publicacoes-grid .dp-itemMedia video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: cover; /* Garante que a imagem preencha o quadrado sem sobras brancas */
     display: block;
 }
 
-#feed-global-container.feed-publicacoes-grid .dp-itemMedia video {
-    pointer-events: none;
+/* Área de Texto (Abaixo da imagem) */
+#feed-global-container.feed-publicacoes-grid .dp-itemInfo {
+    padding: 12px;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemInfo b {
+    display: block;
+    font-size: 14px;
+    color: #1a1a1a;
+    margin-bottom: 2px;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemInfo p {
+    font-size: 12px;
+    color: #65676b;
+    margin: 0;
+    text-transform: uppercase; /* Para o "TESTER" do print */
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemBody {
@@ -4924,6 +4974,59 @@ body.dark-mode {
 .fr-msg { background: #f9fafb; border: 1px solid #eef1f4; padding: 8px 10px; border-radius: 10px; color: #333; font-size: 0.9rem; }
 .fr-msg-label { font-weight: 700; color: #444; margin-right: 6px; }
 .fr-empty { color: #888; font-size: 0.9rem; padding: 8px 4px; }
+
+.js-user-link{ cursor: pointer; }
+
+/* Avaliações por serviço */
+.fr-servico-bar{
+  display:flex;
+  gap:12px;
+  overflow-x:auto;
+  padding: 6px 2px 10px;
+  margin-bottom: 12px;
+  scroll-behavior: smooth;
+}
+.fr-servico-bar::-webkit-scrollbar{ display:none; }
+.fr-servico-card{
+  border:1px solid #e6edf3;
+  background:#fff;
+  border-radius:14px;
+  padding:8px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:220px;
+  cursor:pointer;
+  transition:.15s ease;
+  box-shadow:0 8px 18px rgba(0,0,0,.05);
+}
+.fr-servico-card:hover{ transform: translateY(-1px); border-color: rgba(11,119,104,.45); }
+.fr-servico-card.active{ border-color: rgba(11,119,104,.7); background: rgba(11,119,104,.08); }
+.fr-servico-thumb{
+  width:56px; height:56px;
+  border-radius:12px;
+  background-size:cover;
+  background-position:center;
+  background-color:#f1f5f9;
+  flex:0 0 auto;
+}
+.fr-servico-thumb.empty{ background:#f1f5f9; border:1px dashed #e2e8f0; }
+.fr-servico-info{ min-width:0; text-align:left; }
+.fr-servico-title{
+  font-weight:800;
+  color:#0f172a;
+  font-size:.95rem;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.fr-servico-meta{
+  font-size:.8rem;
+  color:#64748b;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
 /* Garante que o vídeo de preview fique em cima da imagem */
 .tiktok-card {
     position: relative;
@@ -7930,7 +8033,7 @@ body[data-page="home"] .secao-busca{
 }
 
 .categorias-container.estilo-lojas{
-  margin: 14px 0 10px;
+  margin: 0px 0 0px;
 }
 
 .categorias-em-alta{
@@ -9005,7 +9108,7 @@ body[data-page="home"] .section-feed-title{margin-top: 28px !important; margin-b
 
 /* 4) Padronizacao leve de containers no home */
 body[data-page="home"] main{
-  gap: 28px;
+  gap: 0px;
 }
 body[data-page="home"] .para-voce-section,
 body[data-page="home"] .pros-section,
@@ -9085,12 +9188,12 @@ button:active, .chip-tag:active, .ver-todos:active, .btn-ver-perfil:active, .btn
   backdrop-filter: none;
 }
 
-.categorias-min .cat-track{
+.categorias-min .cat-track {
   display: flex;
-  gap: 4px;
+  gap: 8px; /* Alterado de 4px para 0px para eliminar o espaço entre eles */
   align-items: center;
   overflow-x: auto;
-  padding: 10px 36px;
+  padding: 0px 36px;
   scroll-snap-type: x proximity;
   scroll-behavior: smooth;
   -webkit-overflow-scrolling: touch;
@@ -9100,7 +9203,7 @@ button:active, .chip-tag:active, .ver-todos:active, .btn-ver-perfil:active, .btn
 .categorias-min .cat-track::-webkit-scrollbar-thumb{ background: rgba(0,0,0,0.10); border-radius: 999px; }
 
 /* chip */
-.categorias-min .cat-card{
+.categorias-min .cat-card {
   scroll-snap-align: start;
   flex: 0 0 auto;
   width: auto;
@@ -9109,7 +9212,8 @@ button:active, .chip-tag:active, .ver-todos:active, .btn-ver-perfil:active, .btn
   background: transparent !important;
   border: none !important;
   border-radius: 18px;
-  padding: 10px 6px;
+  /* Reduzi o segundo valor (lateral) de 6px para 2px */
+  padding: 10px 2px; 
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -9151,7 +9255,7 @@ button:active, .chip-tag:active, .ver-todos:active, .btn-ver-perfil:active, .btn
 /* Micro-interação consistente (sem "cartão" surgindo) */
 .categorias-min .cat-card:hover .cat-ico{ transform: translateY(-2px); }
 .categorias-min .cat-card:hover .cat-ico{
-  background: var(--cor0, #0b7768);
+  background: var(--cor-botton-verde);
   border-color: var(--cor0, #0b7768);
 }
 .categorias-min .cat-card:hover .cat-ico i{ color: #fff; }
@@ -9166,10 +9270,7 @@ button:active, .chip-tag:active, .ver-todos:active, .btn-ver-perfil:active, .btn
   max-width: 210px;
   text-align: center;
 }
-.categorias-min .cat-card:hover .cat-label{
-  color: #fff;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.25);
-}
+
 .categorias-min .cat-count{
   position: absolute;
   top: 94px;

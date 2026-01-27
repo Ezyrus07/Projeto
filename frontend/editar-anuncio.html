@@ -318,10 +318,10 @@
         :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos):checked{
             border-color: rgba(11,119,104,.75);
             background: linear-gradient(135deg, var(--cor2, #0095f6), var(--cor0, #2ecc71));
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: center;
-            background-size: 16px 16px;
+            background-size: 14px 14px;
         }
 
         /* Linha toggle (emergência / termos) */
@@ -1027,7 +1027,11 @@ h3#dokeAlertTitle{
         e.target.value = "R$ " + valor;
     });
 
-    window.toggleTime = function(dia) { document.getElementById(`time-${dia}`).classList.toggle('show'); }
+    window.toggleTime = function(dia) {
+        const box = document.getElementById(`time-${dia}`);
+        const chk = document.getElementById(`chk-${dia}`);
+        if(box) box.classList.toggle('show', !!(chk && chk.checked));
+    }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
         document.getElementById('price-input-wrapper').style.display = (val === 'Preço Fixo') ? 'block' : 'none';
@@ -1584,9 +1588,24 @@ h3#dokeAlertTitle{
       return ok;
     }
 
+    function isEditMode(){
+      try{
+        if(typeof anuncioIdEdicao !== 'undefined' && anuncioIdEdicao) return true;
+      }catch(e){}
+      try{
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('id')) return true;
+      }catch(e){}
+      const btn = document.getElementById('btn-submit');
+      if(btn && /salvar/i.test(btn.textContent || '')) return true;
+      return false;
+    }
+
     function validarDoc(show){
+      if(isEditMode()) return true;
       const el = document.getElementById('doc_num');
       if(!el) return true;
+      if(el.disabled || el.readOnly || el.getAttribute('aria-disabled') === 'true') return true;
       const d = onlyDigits(el.value);
       let ok=false;
       if(d.length <= 11){
@@ -1903,8 +1922,10 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function validateDoc(){
+    if(isEditMode()) return true;
     const docEl = $('doc_num');
     if(!docEl) return true;
+    if(docEl.disabled || docEl.readOnly || docEl.getAttribute('aria-disabled') === 'true') return true;
     // remove letras na digitação
     const raw = docEl.value;
     const digits = onlyDigits(raw);
@@ -1981,6 +2002,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // --------- AGENDA: HORARIO PADRAO + APLICAR ---------
   function buildAgendaTools(){
+    if (document.querySelector('.agenda-tools')) return;
     const s4 = document.getElementById('step-4');
     const agendaList = s4 ? s4.querySelector('.agenda-list') : null;
     if(!agendaList) return;
@@ -2045,6 +2067,19 @@ document.addEventListener("DOMContentLoaded", () => {
     if(pvOverlay){ pvOverlay.style.display='none'; pvOverlay.setAttribute('aria-hidden','true'); }
   };
 
+  function updatePreviewLabels(){
+    const title = document.getElementById('dokePreviewTitle');
+    const btn = document.getElementById('pvConfirmBtn');
+    if(!title || !btn) return;
+    if(isEditMode && isEditMode()){
+      title.innerText = 'PrÃ©-visualizaÃ§Ã£o das alteraÃ§Ãµes';
+      btn.innerText = 'Confirmar e salvar';
+    } else {
+      title.innerText = 'PrÃ©-visualizaÃ§Ã£o do anÃºncio';
+      btn.innerText = 'Confirmar e publicar';
+    }
+  }
+
   function agendaResumo(){
     const dias = [
       ['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']
@@ -2103,6 +2138,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function openPreview(actionFn){
     if(!pvOverlay) return;
     fillPreview();
+    updatePreviewLabels();
     pvOverlay.style.display='flex';
     pvOverlay.setAttribute('aria-hidden','false');
     const btn = document.getElementById('pvConfirmBtn');

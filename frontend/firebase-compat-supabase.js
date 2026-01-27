@@ -512,7 +512,7 @@
   const defaultBucket =
     window.__DOKE_SUPABASE_STORAGE_BUCKET__ ||
     localStorage.getItem("DOKE_SUPABASE_STORAGE_BUCKET") ||
-    "public";
+    "perfil";
 
   window.getStorage = function(){
     return { bucket: defaultBucket };

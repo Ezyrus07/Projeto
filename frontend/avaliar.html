@@ -339,6 +339,7 @@
         window.avaliacaoState = {};
         window.avaliacaoGeral = 0;
         let pedidoId = null;
+        let anuncioId = null;
         let avaliacaoBloqueada = false;
         let profUid = null;
         let profRowId = null;
@@ -411,6 +412,7 @@
                     }
                     profUid = p.paraUid || p.profUid || p.profissionalUid || p.profissional_uid || p.profissionalId || p.profissional_id;
                     profRowId = p.profissional_id || p.profissionalId || null;
+                    anuncioId = p.anuncioId || p.anuncio_id || p.anuncioid || p.anuncio || p.servico_id || p.servicoId || p.servico || null;
 
                     let profData = {};
                     if (profRowId) {
@@ -539,6 +541,7 @@
                 const fullPayload = useIdSchema
                     ? {
                         pedidoId: pedidoId,
+                        anuncioId: anuncioId,
                         profissional_id: profRowId,
                         cliente_id: clienteRowId || userCheck.uid,
                         detalhes: detalhesPayload,
@@ -551,6 +554,7 @@
                     }
                     : {
                         pedidoId: pedidoId,
+                        anuncioId: anuncioId,
                         profUid: profUid,
                         clienteUid: userCheck.uid,
                         clienteNome: clienteNome,
@@ -564,8 +568,10 @@
                 if (useIdSchema) {
                     if (!fullPayload.profissional_id) delete fullPayload.profissional_id;
                     if (!fullPayload.cliente_id) delete fullPayload.cliente_id;
+                    if (!fullPayload.anuncioId) delete fullPayload.anuncioId;
                 } else {
                     if (!fullPayload.profUid) delete fullPayload.profUid;
+                    if (!fullPayload.anuncioId) delete fullPayload.anuncioId;
                 }
 
                 let insertOk = false;
@@ -576,6 +582,7 @@
                     console.warn('Inserção completa falhou, tentando payload reduzido:', err && err.message);
                     const reduced = useIdSchema
                         ? {
+                            anuncioId: anuncioId,
                             profissional_id: profRowId,
                             cliente_id: clienteRowId || userCheck.uid,
                             detalhes: detalhesPayload,
@@ -584,6 +591,7 @@
                             data: new Date().toISOString()
                         }
                         : {
+                            anuncioId: anuncioId,
                             profUid: profUid,
                             clienteUid: userCheck.uid,
                             detalhes: detalhesPayload,
@@ -594,8 +602,10 @@
                     if (useIdSchema) {
                         if (!reduced.profissional_id) delete reduced.profissional_id;
                         if (!reduced.cliente_id) delete reduced.cliente_id;
+                        if (!reduced.anuncioId) delete reduced.anuncioId;
                     } else {
                         if (!reduced.profUid) delete reduced.profUid;
+                        if (!reduced.anuncioId) delete reduced.anuncioId;
                     }
                     try {
                         await g.ADDDOC(g.COLLECTION(g.DB, "avaliacoes"), reduced);

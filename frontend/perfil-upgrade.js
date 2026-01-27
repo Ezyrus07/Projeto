@@ -681,6 +681,175 @@ function hideIf(selector, cond){
       box.innerHTML = `<div class="dp-empty">Sem avaliações ainda.</div>`;
       return;
     }
+
+    const allData = Array.isArray(data) ? data.slice() : [];
+    const getPedidoId = (a)=> a?.pedidoId || a?.pedido_id || a?.pedidoid || a?.pedido;
+    const getAnuncioId = (a)=> a?.anuncioId || a?.anuncio_id || a?.anuncioid || a?.anuncio || a?.servico_id || a?.servicoId || a?.servico;
+
+    const pedidoIds = new Set();
+    allData.forEach(a=>{
+      const aid = getAnuncioId(a);
+      if(aid) a.__anuncioId = String(aid);
+      if(!aid){
+        const pid = getPedidoId(a);
+        if(pid) pedidoIds.add(String(pid));
+      }
+    });
+
+    if(pedidoIds.size && client?.from){
+      try{
+        const ids = Array.from(pedidoIds);
+        const { data: pedidos, error } = await client
+          .from("pedidos")
+          .select("id,anuncioId,anuncio_id,anuncioid,anuncio")
+          .in("id", ids);
+        if(!error && Array.isArray(pedidos)){
+          const map = new Map();
+          pedidos.forEach(p=>{
+            const pid = p?.id;
+            const aid = p?.anuncioId || p?.anuncio_id || p?.anuncioid || p?.anuncio;
+            if(pid && aid) map.set(String(pid), String(aid));
+          });
+          allData.forEach(a=>{
+            if(a.__anuncioId) return;
+            const pid = getPedidoId(a);
+            const aid = pid ? map.get(String(pid)) : null;
+            if(aid) a.__anuncioId = String(aid);
+          });
+        }
+      }catch(e){ /* ignore */ }
+    }
+
+    // Fallback: tenta mapear pedidoId -> anuncioId via Firebase (quando pedidos não existe no Supabase)
+    try{
+      const pendentes = new Set();
+      allData.forEach(a=>{
+        if(a.__anuncioId) return;
+        const pid = getPedidoId(a);
+        if(pid) pendentes.add(String(pid));
+      });
+      if(pendentes.size && window.db && window.getDoc && window.doc){
+        const ids = Array.from(pendentes);
+        const snaps = await Promise.all(ids.map(id=>{
+          try{ return window.getDoc(window.doc(window.db, "pedidos", id)); }catch(_){ return null; }
+        }));
+        const map = new Map();
+        snaps.forEach((snap, idx)=>{
+          if(!snap || !snap.exists?.()) return;
+          const d = snap.data ? snap.data() : null;
+          const aid = d?.anuncioId || d?.anuncio_id || d?.anuncioid || d?.anuncio || d?.servico_id || d?.servicoId || d?.servico;
+          if(aid) map.set(String(ids[idx]), String(aid));
+        });
+        allData.forEach(a=>{
+          if(a.__anuncioId) return;
+          const pid = getPedidoId(a);
+          const aid = pid ? map.get(String(pid)) : null;
+          if(aid) a.__anuncioId = String(aid);
+        });
+      }
+    }catch(_){ /* ignore */ }
+
+    // Se ainda não tiver anúncio, agrupa como "sem serviço"
+    allData.forEach(a=>{
+      if(!a.__anuncioId) a.__anuncioId = "__sem_servico";
+    });
+
+    const servicoIdsRaw = Array.from(new Set(allData.map(a=>a.__anuncioId).filter(Boolean)));
+    const servicoIdsReal = servicoIdsRaw.filter(id => String(id) !== "__sem_servico");
+    const showSemServico = servicoIdsReal.length > 0 && servicoIdsRaw.includes("__sem_servico");
+    const servicoIds = showSemServico ? servicoIdsRaw : servicoIdsReal;
+    let anunciosMap = new Map();
+
+    if(servicoIds.length){
+      try{
+        let anuncios = [];
+        if(client?.from){
+          const { data: rows, error } = await client
+            .from("anuncios")
+            .select("id,titulo,categoria,preco,descricao,img,fotos")
+            .in("id", servicoIds);
+          if(!error && Array.isArray(rows)) anuncios = rows;
+        }
+        if(!anuncios.length && profUid){
+          anuncios = await fetchAnunciosByUid(profUid);
+        }
+        (anuncios || []).forEach(a=>{
+          const id = a?.id || a?.uid;
+          if(id) anunciosMap.set(String(id), a);
+        });
+      }catch(e){ /* ignore */ }
+    }
+
+    const getServicoInfo = (id)=>{
+      if(String(id) === "__sem_servico"){
+        return {
+          titulo: "Avaliações sem vínculo",
+          categoria: "",
+          preco: "",
+          img: ""
+        };
+      }
+      const a = anunciosMap.get(String(id)) || {};
+      const fotos = Array.isArray(a.fotos) ? a.fotos : (a.fotos ? [a.fotos] : []);
+      const img = fotos[0] || a.img || "";
+      return {
+        titulo: a.titulo || `Serviço ${id}`,
+        categoria: a.categoria || "",
+        preco: a.preco || "",
+        img
+      };
+    };
+
+    const buildFilterBar = (activeId)=>{
+      if(!servicoIds.length) return "";
+      const cards = servicoIds.map(id=>{
+        const info = getServicoInfo(id);
+        const active = String(activeId) === String(id) ? "active" : "";
+        const foto = info.img ? `<div class="fr-servico-thumb" style="background-image:url('${info.img}')"></div>` : `<div class="fr-servico-thumb empty"></div>`;
+        const meta = [info.categoria, info.preco].filter(Boolean).join(" • ");
+        return `
+          <button class="fr-servico-card ${active}" type="button" data-servico="${id}">
+            ${foto}
+            <div class="fr-servico-info">
+              <div class="fr-servico-title">${escapeHtml(info.titulo)}</div>
+              <div class="fr-servico-meta">${escapeHtml(meta)}</div>
+            </div>
+          </button>`;
+      }).join("");
+      const allActive = activeId === "all" ? "active" : "";
+      return `
+        <div class="fr-servico-bar">
+          <button class="fr-servico-card ${allActive}" type="button" data-servico="all">
+            <div class="fr-servico-thumb empty"></div>
+            <div class="fr-servico-info">
+              <div class="fr-servico-title">Todas as avaliações</div>
+              <div class="fr-servico-meta">${allData.length} avaliações</div>
+            </div>
+          </button>
+          ${cards}
+        </div>`;
+    };
+
+    const bindFilter = ()=>{
+      if(!servicoIds.length) return;
+      box.querySelectorAll(".fr-servico-card").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          const id = btn.getAttribute("data-servico") || "all";
+          renderAvaliacoes(id);
+        });
+      });
+    };
+
+    const renderAvaliacoes = (activeId="all")=>{
+      data = (activeId === "all") ? allData : allData.filter(a=>String(a.__anuncioId) === String(activeId));
+      const filterHtml = buildFilterBar(activeId);
+      if(!data || !data.length){
+        box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliações para este serviço.</div>`;
+        bindFilter();
+        const countEl = document.getElementById("dpReviews");
+        if (countEl) countEl.textContent = String((data && data.length) || 0);
+        return;
+      }
     const criterios = [
       { id: 'pontualidade', label: 'Pontualidade' },
       { id: 'profissionalismo', label: 'Profissionalismo' },
@@ -817,6 +986,7 @@ function hideIf(selector, cond){
     }).join("");
 
     box.innerHTML = `
+      ${filterHtml}
       <div class="fr-rating">
         <div class="fr-score">
           <div class="fr-score-num">${avg.toFixed(1)}</div>
@@ -925,6 +1095,10 @@ function hideIf(selector, cond){
     if(!hasMsgs){
       list.innerHTML = `<div class="fr-empty">Sem mensagens.</div>`;
     }
+    bindFilter();
+  };
+
+  renderAvaliacoes("all");
   }
 
   // -----------------------------
@@ -1741,14 +1915,22 @@ function hideIf(selector, cond){
       // target
       const params = new URLSearchParams(location.search);
       const targetIdParam = params.get("id");
+      const targetUidParam = params.get("uid");
       const targetUserParam = params.get("user");
       let targetId = null;
 
       if(targetIdParam){
         targetId = targetIdParam;
+      } else if(targetUidParam){
+        targetId = targetUidParam;
       } else if(targetUserParam){
-        // Busca por username
-        const uRes = await getUsuarioByUsername(client, targetUserParam);
+        // Busca por username (aceita com ou sem @)
+        const raw = String(targetUserParam || "");
+        const clean = raw.startsWith("@") ? raw.slice(1) : raw;
+        let uRes = await getUsuarioByUsername(client, clean);
+        if(!uRes.usuario && raw.startsWith("@")){
+          uRes = await getUsuarioByUsername(client, raw);
+        }
         if(uRes.error){
           console.error(uRes.error);
           toast("Erro ao buscar usuário por username.");

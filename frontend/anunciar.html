@@ -318,10 +318,10 @@
         :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos):checked{
             border-color: rgba(11,119,104,.75);
             background: linear-gradient(135deg, var(--cor2, #0095f6), var(--cor0, #2ecc71));
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M9.0 16.2 4.8 12l-1.4 1.4L9 19 21 7l-1.4-1.4z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: center;
-            background-size: 16px 16px;
+            background-size: 14px 14px;
         }
 
         /* Linha toggle (emergência / termos) */
@@ -1046,7 +1046,11 @@ h3#dokeAlertTitle{
         e.target.value = valor;
     });
 
-    window.toggleTime = function(dia) { document.getElementById(`time-${dia}`).classList.toggle('show'); }
+    window.toggleTime = function(dia) {
+        const box = document.getElementById(`time-${dia}`);
+        const chk = document.getElementById(`chk-${dia}`);
+        if(box) box.classList.toggle('show', !!(chk && chk.checked));
+    }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
         document.getElementById('price-input-wrapper').style.display = (val === 'Preço Fixo') ? 'block' : 'none';
@@ -1220,31 +1224,91 @@ h3#dokeAlertTitle{
         } catch (e) { console.error("Erro ao buscar:", e); }
     }
 
+    function normalizeLista(valor) {
+        if (!valor) return [];
+        if (Array.isArray(valor)) return valor.map(v => String(v).trim()).filter(Boolean);
+        if (typeof valor === 'string') return valor.split(',').map(v => v.trim()).filter(Boolean);
+        return [];
+    }
+
+    // helper global para validacoes fora do bloco de enhancements
+    function onlyDigits(valor){
+        return String(valor || '').replace(/\D/g,'');
+    }
+
+    function formatCPF(d){
+        d = onlyDigits(d).slice(0,11);
+        d = d.replace(/(\d{3})(\d)/,'$1.$2');
+        d = d.replace(/(\d{3})(\d)/,'$1.$2');
+        d = d.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+        return d;
+    }
+    function formatCNPJ(d){
+        d = onlyDigits(d).slice(0,14);
+        d = d.replace(/(\d{2})(\d)/,'$1.$2');
+        d = d.replace(/(\d{3})(\d)/,'$1.$2');
+        d = d.replace(/(\d{3})(\d)/,'$1/$2');
+        d = d.replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+        return d;
+    }
+    function validarCPF(cpf){
+        cpf = onlyDigits(cpf);
+        if(cpf.length !== 11) return false;
+        if(/^(\d)\1+$/.test(cpf)) return false;
+        let soma=0;
+        for(let i=0;i<9;i++) soma += parseInt(cpf.charAt(i))*(10-i);
+        let dv1 = (soma*10)%11; if(dv1===10) dv1=0;
+        if(dv1 !== parseInt(cpf.charAt(9))) return false;
+        soma=0;
+        for(let i=0;i<10;i++) soma += parseInt(cpf.charAt(i))*(11-i);
+        let dv2 = (soma*10)%11; if(dv2===10) dv2=0;
+        return dv2 === parseInt(cpf.charAt(10));
+    }
+    function validarCNPJ(cnpj){
+        cnpj = onlyDigits(cnpj);
+        if(cnpj.length !== 14) return false;
+        if(/^(\d)\1+$/.test(cnpj)) return false;
+        const calc = (base) => {
+            const pesos = base===12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
+            let soma=0;
+            for(let i=0;i<pesos.length;i++) soma += parseInt(cnpj.charAt(i))*pesos[i];
+            const r = soma % 11;
+            return r < 2 ? 0 : 11 - r;
+        }
+        const dv1 = calc(12);
+        if(dv1 !== parseInt(cnpj.charAt(12))) return false;
+        const dv2 = calc(13);
+        return dv2 === parseInt(cnpj.charAt(13));
+    }
+    function setValidity(el, ok, msg){
+        if(!el) return ok;
+        el.classList.toggle('is-invalid', !ok);
+        el.classList.toggle('is-valid', ok);
+        el.setCustomValidity(ok ? '' : (msg || 'Campo inválido'));
+        return ok;
+    }
+
     function preencherCampos(dados) {
         document.getElementById('titulo').value = dados.titulo || "";
         // Tags: aceita array (jsonb) ou string
-        if (Array.isArray(dados.tags)) {
-            document.getElementById('tags').value = dados.tags.filter(Boolean).join(', ');
-        } else if (typeof dados.tags === 'string') {
-            document.getElementById('tags').value = dados.tags;
-        } else {
-            document.getElementById('tags').value = "";
-        }
+        const tagsLista = normalizeLista(dados.tags || dados.tags_lista || dados.tagsList);
+        document.getElementById('tags').value = tagsLista.join(', ');
         document.getElementById('descricao').value = dados.descricao || "";
 
-        if (dados.categorias) {
-            const cats = dados.categorias.split(',');
-            categoriasSelecionadas = cats.filter(c => c.trim() !== "");
+        const catsLista = normalizeLista(dados.categorias || dados.categoria || dados.categorias_lista || dados.category);
+        if (catsLista.length) {
+            categoriasSelecionadas = catsLista;
             if(window.atualizarTags) window.atualizarTags();
         }
 
-        if (dados.modo_atend) {
-            const radio = document.querySelector(`input[name="modo_atend"][value="${dados.modo_atend}"]`);
+        if (dados.modo_atend || dados.modoAtend) {
+            const modoValor = Array.isArray(dados.modo_atend) ? dados.modo_atend[0] : (dados.modo_atend || dados.modoAtend);
+            const radio = document.querySelector(`input[name="modo_atend"][value="${modoValor}"]`);
             if(radio) radio.checked = true;
         }
 
         // Tipo de preco (preferencialmente pelo campo tipoPreco)
-        const tipoPrecoSalvo = dados.tipoPreco || null;
+        const tipoPrecoSalvo = dados.tipoPreco || dados.tipo_preco || null;
         if (tipoPrecoSalvo === 'Preço Fixo') {
             document.getElementById('fixo').checked = true;
             if(window.togglePriceInput) window.togglePriceInput();
@@ -1263,12 +1327,12 @@ h3#dokeAlertTitle{
                 if(window.togglePriceInput) window.togglePriceInput();
             }
         }
-
-        if (dados.fotos && dados.fotos.length > 0) {
-            window.fotosParaEnviar = dados.fotos; 
+        const fotosLista = Array.isArray(dados.fotos) ? dados.fotos : (dados.img ? [dados.img] : []);
+        if (fotosLista.length > 0) {
+            window.fotosParaEnviar = fotosLista; 
             const container = document.getElementById('preview-galeria');
             container.innerHTML = "";
-            dados.fotos.forEach(fotoUrl => {
+            fotosLista.forEach(fotoUrl => {
                 const div = document.createElement('div');
                 div.style.position = "relative";
                 div.innerHTML = `<img src="${fotoUrl}" class="foto-thumb"><div class="btn-remove-foto" onclick="removerFoto(this, '${fotoUrl}')">×</div>`;
@@ -1279,33 +1343,41 @@ h3#dokeAlertTitle{
         if(document.getElementById('experiencia')) document.getElementById('experiencia').value = dados.experiencia || "";
         if(document.getElementById('prazo')) document.getElementById('prazo').value = "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
-        if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || "Flexível";
-        if(document.getElementById('emergencia')) document.getElementById('emergencia').checked = (dados.atendeEmergencia === true);
+        if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || dados.politica_cancelamento || "FlexÃ­vel";
+        if(document.getElementById('emergencia')) {
+            const v = dados.atendeEmergencia ?? dados.atende_emergencia;
+            document.getElementById('emergencia').checked = (v === true || v === 1 || v === '1' || v === 'true');
+        }
 
-        // Preenche info do DIPLOMA (apenas texto visual se já existir)
+        // Preenche info do DIPLOMA (apenas texto visual se ja existir)
         if(dados.diplomaUrl) {
             const ui = document.getElementById('diploma-ui');
             const box = document.getElementById('box-diploma');
-            ui.innerHTML = `<i class='bx bxs-check-circle' style="font-size:2rem; color:var(--cor0);"></i><div style="text-align:left;"><strong style="color:var(--cor0);">Diploma Anexado</strong><br><span style="font-size:0.8rem; color:#666;">Já existe um arquivo salvo. Envie outro para substituir.</span></div>`;
+            ui.innerHTML = `<i class='bx bxs-check-circle' style="font-size:2rem; color:var(--cor0);"></i><div style="text-align:left;"><strong style="color:var(--cor0);">Diploma Anexado</strong><br><span style="font-size:0.8rem; color:#666;">Ja existe um arquivo salvo. Envie outro para substituir.</span></div>`;
             box.classList.add('attached');
         }
 
         if(document.getElementById('cep')) document.getElementById('cep').value = dados.cep || "";
-        if(document.getElementById('cidade')) document.getElementById('cidade').value = dados.cidade || dados.ciudad || ""; 
+        if(document.getElementById('cidade')) document.getElementById('cidade').value = dados.cidade || dados.ciudad || "";
         if(document.getElementById('uf')) document.getElementById('uf').value = dados.uf || "";
         if(document.getElementById('bairro')) document.getElementById('bairro').value = dados.bairro || "";
         if(document.getElementById('telefone')) document.getElementById('telefone').value = dados.whatsapp || "";
 
-        if (dados.pagamentosAceitos && Array.isArray(dados.pagamentosAceitos)) {
-            dados.pagamentosAceitos.forEach(pg => {
+        const pagamentos = normalizeLista(dados.pagamentosAceitos || dados.pagamentos_aceitos);
+        if (pagamentos.length) {
+            pagamentos.forEach(pg => {
                 const chk = document.querySelector(`input[id^="pg-"][value="${pg}"]`);
                 if(chk) chk.checked = true;
             });
         }
 
-        if (dados.agenda) {
-            Object.keys(dados.agenda).forEach(dia => {
-                const info = dados.agenda[dia];
+        let agendaObj = dados.agenda;
+        if (typeof agendaObj === 'string') {
+            try { agendaObj = JSON.parse(agendaObj); } catch(e) { agendaObj = null; }
+        }
+        if (agendaObj && typeof agendaObj === 'object') {
+            Object.keys(agendaObj).forEach(dia => {
+                const info = agendaObj[dia];
                 if(info && info.ativo) {
                     const chk = document.getElementById(`chk-${dia}`);
                     if(chk) {
@@ -1318,10 +1390,11 @@ h3#dokeAlertTitle{
             });
         }
 
-        if (dados.perguntasFormularioJson) {
+        const perguntasRaw = dados.perguntasFormularioJson || dados.perguntas_formulario_json || dados.perguntasFormulario;
+        if (perguntasRaw) {
             try {
-                let perguntasRecuperadas = typeof dados.perguntasFormularioJson === 'string' ? JSON.parse(dados.perguntasFormularioJson) : dados.perguntasFormularioJson;
-                perguntasArray.length = 0; 
+                let perguntasRecuperadas = typeof perguntasRaw === 'string' ? JSON.parse(perguntasRaw) : perguntasRaw;
+                perguntasArray.length = 0;
                 perguntasRecuperadas.forEach(p => perguntasArray.push(p));
                 document.getElementById('perguntas-formulario-json').value = JSON.stringify(perguntasArray);
                 if(window.renderizarListaPerguntas) window.renderizarListaPerguntas();
@@ -1329,275 +1402,261 @@ h3#dokeAlertTitle{
         }
     }
 
-    // --- FUNÇÃO DE PUBLICAR NOVO ANÚNCIO ---
-    // ============================================================
-    // VERIFICAÇÃO (quando a tabela ainda não tem as colunas extras)
-    // ============================================================
-    async function verificarCamposExtrasSalvos(docId, esperado) {
-        try {
-            if (!docId) return;
-            const snap = await window.getDoc(window.doc(window.db, "anuncios", docId));
-            if (!snap || !snap.exists()) return;
-            const salvo = snap.data() || {};
+    function coletarDadosDoForm() {
+        const getVal = (id) => {
+            const el = document.getElementById(id);
+            return el ? (el.value || "") : "";
+        };
+        const getChecked = (id) => {
+            const el = document.getElementById(id);
+            return !!(el && el.checked);
+        };
 
-            const camposCriticos = [
-                "atendeEmergencia",
-                "pagamentosAceitos",
-                "agenda",
-                "tags",
-                "experiencia",
-                "garantia",
-                "politicaCancelamento",
-                "diplomaUrl"
-            ];
+        const titulo = getVal('titulo');
+        const descricao = getVal('descricao');
 
-            const faltando = camposCriticos.filter(k => (esperado && esperado[k] !== undefined) && (salvo[k] === undefined));
+        const categoriasStr = getVal('categorias-validacao') || '';
+        const primeiraCategoria = (categoriasStr.split(',').map(s => s.trim()).filter(Boolean)[0]) || '';
 
-            const mismatch = [];
-            if (esperado && esperado.atendeEmergencia !== undefined && salvo.atendeEmergencia !== undefined) {
-                if (!!salvo.atendeEmergencia !== !!esperado.atendeEmergencia) mismatch.push("atendeEmergencia");
-            }
+        const tagsStr = getVal('tags');
+        const tags = tagsStr ? tagsStr.split(',').map(t => t.trim()).filter(Boolean) : [];
 
-            if (faltando.length || mismatch.length) {
-                const amostra = [...new Set([...faltando, ...mismatch])].slice(0, 4).join(", ");
-                alert(
-                    `ATENÇÃO: Alguns campos não foram salvos no Supabase (ex: ${amostra}).\n\n` +
-                    `Isso acontece quando a tabela "anuncios" ainda não tem as colunas novas.\n\n` +
-                    `Rode o arquivo: supabase_migration_anuncios_v3.sql (na pasta do projeto) no SQL Editor do Supabase.`
-                );
-            }
-        } catch (e) { /* ignore */ }
+        const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value || "";
+        const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "";
+        const precoFinal = (tipoPreco === 'PreÃ§o Fixo') ? getVal('valor') : tipoPreco;
+
+        const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
+
+        const dias = ["seg","ter","qua","qui","sex","sab","dom"];
+        const agenda = {};
+        dias.forEach((d) => {
+            const chk = document.getElementById(`chk-${d}`);
+            const ini = document.getElementById(`${d}-inicio`);
+            const fim = document.getElementById(`${d}-fim`);
+            agenda[d] = {
+                ativo: chk ? chk.checked : false,
+                inicio: ini ? ini.value : "",
+                fim: fim ? fim.value : ""
+            };
+        });
+
+        const experiencia = getVal('experiencia');
+        const garantia = getVal('garantia');
+        const politicaCancelamento = getVal('politica');
+        const atendeEmergencia = getChecked('emergencia');
+
+        const cep = getVal('cep');
+        const cidade = getVal('cidade');
+        const uf = getVal('uf');
+        const bairro = getVal('bairro');
+        const telefone = getVal('telefone');
+
+        const perguntasFormulario = Array.isArray(perguntasArray) ? perguntasArray : [];
+
+        const fotos = Array.isArray(window.fotosParaEnviar) ? window.fotosParaEnviar : [];
+
+        return {
+            titulo,
+            descricao,
+            categoria: primeiraCategoria,
+            categorias: categoriasStr,
+            tags,
+            modo_atend: modoAtend,
+            tipoPreco,
+            preco: precoFinal,
+            cep,
+            cidade,
+            uf,
+            bairro,
+            whatsapp: telefone,
+            pagamentosAceitos,
+            agenda,
+            experiencia,
+            garantia,
+            politicaCancelamento,
+            atendeEmergencia,
+            fotos: fotos,
+            img: fotos[0] || "",
+            perguntasFormularioJson: perguntasFormulario,
+            temFormulario: perguntasFormulario.length > 0
+        };
     }
 
-    window.publicarAnuncio = async function(event) {
-        event.preventDefault();
+    function coletarDadosPessoais() {
+        const nomeEl = document.getElementById('nome_doc');
+        const docEl = document.getElementById('doc_num');
+        const nome = (nomeEl && !nomeEl.disabled) ? (nomeEl.value || "") : "";
+        const docNum = (docEl && !docEl.disabled) ? onlyDigits(docEl.value || "") : "";
+        return { nome, docNum };
+    }
+
+    async function uploadArquivoParaStorage(user, file, pasta) {
+        if (!file) return "";
+        const storage = window.getStorage();
+        const safeName = String(file.name || "arquivo").replace(/[^\w.\-]/g, '_');
+        const storageRef = window.ref(storage, `${pasta}/${user.uid}/${Date.now()}_${safeName}`);
+        await window.uploadBytes(storageRef, file);
+        return await window.getDownloadURL(storageRef);
+    }
+
+    function isDataUrl(v){
+        return typeof v === 'string' && v.startsWith('data:');
+    }
+    function dataUrlToBlob(dataUrl){
+        const parts = dataUrl.split(',');
+        const meta = parts[0] || '';
+        const mime = (meta.match(/data:([^;]+)/) || [,'application/octet-stream'])[1];
+        const bin = atob(parts[1] || '');
+        const len = bin.length;
+        const bytes = new Uint8Array(len);
+        for(let i=0;i<len;i++) bytes[i] = bin.charCodeAt(i);
+        return new Blob([bytes], { type: mime });
+    }
+    async function uploadFotosParaStorage(user, fotos){
+        const list = Array.isArray(fotos) ? fotos : [];
+        const out = [];
+        for(let i=0;i<list.length;i++){
+            const item = list[i];
+            if(!item) continue;
+            if(typeof item === 'string' && item.startsWith('http')){
+                out.push(item);
+                continue;
+            }
+            if(isDataUrl(item)){
+                const blob = dataUrlToBlob(item);
+                const ext = (blob.type || '').split('/')[1] || 'jpg';
+                const file = new File([blob], `foto_${i}.${ext}`, { type: blob.type || 'image/jpeg' });
+                const url = await uploadArquivoParaStorage(user, file, 'anuncios/fotos');
+                if(url) out.push(url);
+                continue;
+            }
+            if(item instanceof File || item instanceof Blob){
+                const fileObj = item instanceof File ? item : new File([item], `foto_${i}.jpg`, { type: item.type || 'image/jpeg' });
+                const url = await uploadArquivoParaStorage(user, fileObj, 'anuncios/fotos');
+                if(url) out.push(url);
+                continue;
+            }
+        }
+        return out;
+    }
+
+    async function publicarAnuncio(event) {
+        if(event && event.preventDefault) event.preventDefault();
         const btn = document.getElementById('btn-submit');
-        btn.innerText = "Publicando...";
-        btn.disabled = true;
+        if(btn){ btn.innerText = "Publicando..."; btn.disabled = true; }
 
         try {
             const auth = window.getAuth();
             const user = auth.currentUser;
-            if(!user) throw new Error("Usuário não autenticado");
+            if(!user) throw new Error("UsuÃ¡rio nÃ£o autenticado");
 
-            // 1. Upload Diploma
-            let diplomaUrlFinal = "";
-            if (window.diplomaFile) {
-                const storage = window.getStorage();
-                const storageRef = window.ref(storage, `diplomas/${user.uid}/${Date.now()}_${window.diplomaFile.name}`);
-                await window.uploadBytes(storageRef, window.diplomaFile);
-                diplomaUrlFinal = await window.getDownloadURL(storageRef);
-            }
-
-            // 2. Coleta Dados Comuns
             const dadosComuns = coletarDadosDoForm();
             dadosComuns.uid = user.uid;
-            dadosComuns.diplomaUrl = diplomaUrlFinal;
             dadosComuns.dataCriacao = new Date().toISOString();
-            
-            // DEBUG: Verificar se os dados estão sendo coletados
-            console.log('Dados coletados para publicação:', {
-                experiencia: dadosComuns.experiencia,
-                garantia: dadosComuns.garantia,
-                politicaCancelamento: dadosComuns.politicaCancelamento,
-                atendeEmergencia: dadosComuns.atendeEmergencia,
-                tags: dadosComuns.tags,
-                agenda: dadosComuns.agenda
-            });
-            
-            // Dados Autor
-            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-            dadosComuns.nomeAutor = perfilLocal.nome || "Anônimo";
-            dadosComuns.fotoAutor = perfilLocal.foto || "";
-            dadosComuns.userHandle = perfilLocal.userHandle || "";
 
-            const novoRef = await window.addDoc(window.collection(window.db, "anuncios"), dadosComuns);
-            await verificarCamposExtrasSalvos(novoRef.id, dadosComuns);
-            
-            alert("Anúncio publicado com sucesso!");
+            const { nome, docNum } = coletarDadosPessoais();
+            if(nome) dadosComuns.nome_doc = nome;
+            if(docNum) {
+                dadosComuns.cpf_cnpj = docNum;
+                dadosComuns.documento = docNum;
+            }
+
+            if (window.diplomaFile) {
+                const diplomaUrl = await uploadArquivoParaStorage(user, window.diplomaFile, 'diplomas');
+                if(diplomaUrl) dadosComuns.diplomaUrl = diplomaUrl;
+            }
+            if (window.documentoFile) {
+                const documentoUrl = await uploadArquivoParaStorage(user, window.documentoFile, 'documentos');
+                if(documentoUrl) dadosComuns.documentoUrl = documentoUrl;
+            }
+
+            // Fotos do anuncio: sobe para Storage se estiverem em base64
+            const fotosUrls = await uploadFotosParaStorage(user, dadosComuns.fotos || []);
+            dadosComuns.fotos = fotosUrls;
+            dadosComuns.img = fotosUrls[0] || "";
+
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
+            dadosComuns.nomeAutor = perfilLocal.nome || "AnÃ´nimo";
+            dadosComuns.fotoAutor = perfilLocal.foto || "";
+            dadosComuns.userHandle = perfilLocal.userHandle || perfilLocal.user || "";
+
+            await window.addDoc(window.collection(window.db, "anuncios"), dadosComuns);
+
+            alert("AnÃºncio publicado com sucesso!");
             window.location.href = "meuperfil.html";
-            
         } catch (erro) {
             console.error(erro);
             alert("Erro ao publicar: " + erro.message);
-            btn.innerText = "Publicar Anúncio";
-            btn.disabled = false;
+            if(btn){ btn.innerText = "Publicar AnÃºncio"; btn.disabled = false; }
         }
     }
+    window.publicarAnuncio = publicarAnuncio;
 
-    // --- FUNÇÃO DE ATUALIZAR (EDITAR) ---
-    window.atualizarAnuncioExistente = async function() {
+    async function atualizarAnuncioExistente() {
         const btn = document.getElementById('btn-submit');
-        btn.innerText = "Salvando...";
-        btn.disabled = true;
+        if(btn){ btn.innerText = "Salvando..."; btn.disabled = true; }
 
         try {
             const auth = window.getAuth();
             const user = auth.currentUser;
 
-            // 1. Upload Diploma se mudou
-            let diplomaUrlFinal = "";
-            
-            // Recupera URL antiga primeiro (precisamos ler o doc atual ou confiar que não mudou se diplomaFile for null)
-            // Para simplificar, vamos assumir que se não tem arquivo novo, mantém o antigo.
-            // Mas precisamos saber qual é o antigo. Vamos ler o doc novamente? Não, já lemos no load.
-            // Vamos fazer o seguinte: se diplomaFile existe, sobe e usa a nova URL. Se não, não enviamos o campo diplomaUrl (update parcial) ou enviamos o antigo se tivessemos salvo numa var global.
-            // Melhor: vamos ler o doc atual no banco rapidinho ou usar lógica condicional no update.
-            
-            let updateData = coletarDadosDoForm();
-            
-            if (window.diplomaFile) {
-                const storage = window.getStorage();
-                const storageRef = window.ref(storage, `diplomas/${user ? user.uid : 'edit'}/${Date.now()}_${window.diplomaFile.name}`);
-                await window.uploadBytes(storageRef, window.diplomaFile);
-                diplomaUrlFinal = await window.getDownloadURL(storageRef);
-                updateData.diplomaUrl = diplomaUrlFinal; // Só atualiza se tiver novo
-            }
-            // Se não tiver novo arquivo, o campo 'diplomaUrl' não vai no updateData? 
-            // A função coletarDadosDoForm não pega URL antiga. Então deletamos a chave se estiver vazia?
-            // Não, o updateDoc mescla. Se a gente não passar a chave, ele mantém a antiga.
-            // O problema é que coletarDadosDoForm não retorna a chave diplomaUrl. Entao está seguro.
-
+            const updateData = coletarDadosDoForm();
             updateData.dataAtualizacao = new Date().toISOString();
+
+            const { nome, docNum } = coletarDadosPessoais();
+            if(nome) updateData.nome_doc = nome;
+            if(docNum) {
+                updateData.cpf_cnpj = docNum;
+                updateData.documento = docNum;
+            }
+
+            if (user && window.diplomaFile) {
+                const diplomaUrl = await uploadArquivoParaStorage(user, window.diplomaFile, 'diplomas');
+                if(diplomaUrl) updateData.diplomaUrl = diplomaUrl;
+            }
+            if (user && window.documentoFile) {
+                const documentoUrl = await uploadArquivoParaStorage(user, window.documentoFile, 'documentos');
+                if(documentoUrl) updateData.documentoUrl = documentoUrl;
+            }
+
+            const fotosUrls = await uploadFotosParaStorage(user, updateData.fotos || []);
+            if(fotosUrls.length){
+                updateData.fotos = fotosUrls;
+                updateData.img = fotosUrls[0] || "";
+            }
 
             const docRef = window.doc(window.db, "anuncios", anuncioIdEdicao);
             await window.updateDoc(docRef, updateData);
-            await verificarCamposExtrasSalvos(anuncioId, updateData);
 
-            alert("Anúncio atualizado com sucesso!");
-            window.location.href = "meuperfil.html"; 
-
+            alert("AnÃºncio atualizado com sucesso!");
+            window.location.href = "meuperfil.html";
         } catch (erro) {
             console.error(erro);
             alert("Erro ao salvar: " + erro.message);
-            btn.innerText = "Salvar Alterações";
-            btn.disabled = false;
+            if(btn){ btn.innerText = "Salvar AlteraÃ§Ãµes"; btn.disabled = false; }
         }
     }
+    window.atualizarAnuncioExistente = atualizarAnuncioExistente;
 
-    function coletarDadosDoForm() {
-        const titulo = document.getElementById('titulo').value;
-        const descricao = document.getElementById('descricao').value;
-        const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value;
-        const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value;
-        let precoFinal = (tipoPreco === 'Preço Fixo') ? document.getElementById('valor').value : tipoPreco;
-        const tagsVal = document.getElementById('tags').value;
-        const cep = document.getElementById('cep').value;
-        const cidade = document.getElementById('cidade').value;
-        const uf = document.getElementById('uf').value;
-        const bairro = document.getElementById('bairro').value;
-        const telefone = document.getElementById('telefone').value;
-        const pags = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
-
-        // Categorias
-        const categoriasStr = document.getElementById('categorias-validacao').value || '';
-        const primeiraCategoria = (categoriasStr.split(',').map(s => s.trim()).filter(Boolean)[0]) || '';
-
-        // Tags (remove vazios)
-        const tagsArr = (tagsVal || '')
-          .split(',')
-          .map(t => t.trim())
-          .filter(Boolean);
-
-        const dias = ['seg', 'ter', 'qua', 'qui', 'sex', 'sab', 'dom'];
-        let agendaObj = {};
-        dias.forEach(d => {
-            const ativo = document.getElementById(`chk-${d}`).checked;
-            const ini = document.getElementById(`${d}-inicio`).value;
-            const fim = document.getElementById(`${d}-fim`).value;
-            agendaObj[d] = { ativo: ativo, inicio: ini, fim: fim };
-        });
-
-        return {
-            titulo: titulo,
-            descricao: descricao,
-            // compat: algumas bases usam "categoria" (singular) + "categorias" (string)
-            categoria: primeiraCategoria,
-            categorias: categoriasStr,
-            // tags (array)
-            tags: tagsArr,
-            modo_atend: modoAtend,
-            tipoPreco: tipoPreco,
-            preco: precoFinal,
-            cep: cep, cidade: cidade, uf: uf, bairro: bairro, whatsapp: telefone,
-            pagamentosAceitos: pags,
-            agenda: agendaObj,
-            experiencia: document.getElementById('experiencia').value,
-            garantia: document.getElementById('garantia').value,
-            politicaCancelamento: document.getElementById('politica').value,
-            atendeEmergencia: document.getElementById('emergencia').checked,
-            fotos: window.fotosParaEnviar,
-            img: window.fotosParaEnviar[0] || "",
-            perguntasFormularioJson: perguntasArray,
-            temFormulario: perguntasArray.length > 0
-        };
-    }
-    
-
-    // =============================
-    // UPGRADE: CPF/CNPJ + FOTO OBRIGATORIA + AGENDA PREMIUM
-    // =============================
-
-    function onlyDigits(v){ return (v||'').toString().replace(/\D/g,''); }
-
-    function formatCPF(d){
-      d = onlyDigits(d).slice(0,11);
-      d = d.replace(/(\d{3})(\d)/,'$1.$2');
-      d = d.replace(/(\d{3})(\d)/,'$1.$2');
-      d = d.replace(/(\d{3})(\d{1,2})$/,'$1-$2');
-      return d;
-    }
-    function formatCNPJ(d){
-      d = onlyDigits(d).slice(0,14);
-      d = d.replace(/(\d{2})(\d)/,'$1.$2');
-      d = d.replace(/(\d{3})(\d)/,'$1.$2');
-      d = d.replace(/(\d{3})(\d)/,'$1/$2');
-      d = d.replace(/(\d{4})(\d{1,2})$/,'$1-$2');
-      return d;
-    }
-
-    function validarCPF(cpf){
-      cpf = onlyDigits(cpf);
-      if(cpf.length !== 11) return false;
-      if(/^(\d)\1+$/.test(cpf)) return false;
-      let soma=0;
-      for(let i=0;i<9;i++) soma += parseInt(cpf.charAt(i))*(10-i);
-      let dv1 = (soma*10)%11; if(dv1===10) dv1=0;
-      if(dv1 !== parseInt(cpf.charAt(9))) return false;
-      soma=0;
-      for(let i=0;i<10;i++) soma += parseInt(cpf.charAt(i))*(11-i);
-      let dv2 = (soma*10)%11; if(dv2===10) dv2=0;
-      return dv2 === parseInt(cpf.charAt(10));
-    }
-
-    function validarCNPJ(cnpj){
-      cnpj = onlyDigits(cnpj);
-      if(cnpj.length !== 14) return false;
-      if(/^(\d)\1+$/.test(cnpj)) return false;
-      const calc = (base) => {
-        const pesos = base===12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
-        let soma=0;
-        for(let i=0;i<pesos.length;i++) soma += parseInt(cnpj.charAt(i))*pesos[i];
-        const r = soma % 11;
-        return r < 2 ? 0 : 11 - r;
-      }
-      const dv1 = calc(12);
-      if(dv1 !== parseInt(cnpj.charAt(12))) return false;
-      const dv2 = calc(13);
-      return dv2 === parseInt(cnpj.charAt(13));
-    }
-
-    function setValidity(el, ok, msg){
-      if(!el) return ok;
-      el.classList.toggle('is-invalid', !ok);
-      el.classList.toggle('is-valid', ok);
-      el.setCustomValidity(ok ? '' : (msg || 'Campo inválido'));
-      return ok;
+    function isEditMode(){
+      try{
+        if(typeof anuncioIdEdicao !== 'undefined' && anuncioIdEdicao) return true;
+      }catch(e){}
+      try{
+        const params = new URLSearchParams(window.location.search);
+        if(params.get('mode') === 'edit') return true;
+        if(params.get('id')) return true;
+      }catch(e){}
+      const btn = document.getElementById('btn-submit');
+      if(btn && /salvar/i.test(btn.textContent || '')) return true;
+      return false;
     }
 
     function validarDoc(show){
+      if(isEditMode()) return true;
       const el = document.getElementById('doc_num');
       if(!el) return true;
+      if(el.disabled || el.readOnly || el.getAttribute('aria-disabled') === 'true') return true;
       const d = onlyDigits(el.value);
       let ok=false;
       if(d.length <= 11){
@@ -1854,8 +1913,10 @@ h3#dokeAlertTitle{
   }
 
   function validateDoc(){
+    if(isEditMode()) return true;
     const docEl = $('doc_num');
     if(!docEl) return true;
+    if(docEl.disabled || docEl.readOnly || docEl.getAttribute('aria-disabled') === 'true') return true;
     // remove letras na digitação
     const raw = docEl.value;
     const digits = onlyDigits(raw);
@@ -1932,6 +1993,7 @@ h3#dokeAlertTitle{
 
   // --------- AGENDA: HORARIO PADRAO + APLICAR ---------
   function buildAgendaTools(){
+    if (document.querySelector('.agenda-tools')) return;
     const s4 = document.getElementById('step-4');
     const agendaList = s4 ? s4.querySelector('.agenda-list') : null;
     if(!agendaList) return;
@@ -1996,6 +2058,19 @@ h3#dokeAlertTitle{
     if(pvOverlay){ pvOverlay.style.display='none'; pvOverlay.setAttribute('aria-hidden','true'); }
   };
 
+  function updatePreviewLabels(){
+    const title = document.getElementById('dokePreviewTitle');
+    const btn = document.getElementById('pvConfirmBtn');
+    if(!title || !btn) return;
+    if(isEditMode()){
+      title.innerText = 'PrÃ©-visualizaÃ§Ã£o das alteraÃ§Ãµes';
+      btn.innerText = 'Confirmar e salvar';
+    } else {
+      title.innerText = 'PrÃ©-visualizaÃ§Ã£o do anÃºncio';
+      btn.innerText = 'Confirmar e publicar';
+    }
+  }
+
   function agendaResumo(){
     const dias = [
       ['seg','Seg'],['ter','Ter'],['qua','Qua'],['qui','Qui'],['sex','Sex'],['sab','Sáb'],['dom','Dom']
@@ -2054,6 +2129,7 @@ h3#dokeAlertTitle{
   function openPreview(actionFn){
     if(!pvOverlay) return;
     fillPreview();
+    updatePreviewLabels();
     pvOverlay.style.display='flex';
     pvOverlay.setAttribute('aria-hidden','false');
     const btn = document.getElementById('pvConfirmBtn');
@@ -2215,3 +2291,4 @@ function abrirPreview(){
 
 </body>
 </html>
+
