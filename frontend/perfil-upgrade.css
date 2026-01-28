@@ -75,6 +75,11 @@
   margin-left: auto;
   margin-right: auto;
 }
+.dp-tabs{
+  width: min(100%, var(--dp-content-width));
+  margin-left: auto;
+  margin-right: auto;
+}
 
 /* Capa */
 .dp-cover{
@@ -220,6 +225,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: nowrap;
 }
 .dp-stats{
   display:flex;
@@ -254,6 +260,7 @@
   cursor: default;
 }
 .dp-stat{
+  flex: 0 0 clamp(120px, 12vw, 160px);
   min-width: 120px;
   background: #fff;
   border: 1px solid var(--dp-border);
@@ -269,6 +276,7 @@
   margin-top: 2px;
   text-transform: uppercase;
   letter-spacing: .08em;
+  white-space: nowrap;
 }
 
 /* Ações */
@@ -284,8 +292,42 @@
 .dp-actionsRow{
   display:flex;
   gap: 10px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+  align-items: center;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.dp-actionsRow::-webkit-scrollbar{ display:none; }
+
+/* Perfil publico: actions abaixo do bloco de info para liberar largura */
+#dpRoot[data-mode="public"] .dp-body{
+  grid-template-columns: 220px minmax(0, 1fr);
+}
+#dpRoot[data-mode="public"] .dp-actions{
+  grid-column: 2 / 3;
+  grid-row: 2;
+  justify-self: start;
+  width: 100%;
+}
+#dpRoot[data-mode="public"] .dp-actionsRow{
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
+}
+.dp-actionsRow #dpOrcBtn{
+  padding: 14px 18px;
+  font-size: 0.95rem;
+  border-radius: 16px;
+}
+.dp-actionsRow #dpFollowBtn{
+  border-color: rgba(11,119,104,0.4);
+  color: #0b7768;
+  background: #eaf7f4;
+}
+.dp-actionsRow #dpFriendBtn{
+  border-color: rgba(42,95,144,0.35);
+  color: #1b4d73;
+  background: #eef4f9;
 }
 .dp-primary{
   background: linear-gradient(135deg, var(--cor0), #064e42);
@@ -314,6 +356,18 @@
   align-items:center;
 }
 .dp-secondary:hover{ filter: brightness(.98); }
+.dp-icon-only{
+  padding: 10px;
+  gap: 0;
+  min-width: 44px;
+  justify-content: center;
+}
+.dp-icon-only i{ font-size: 1.1rem; }
+.dp-primary.dp-icon-only{
+  padding: 10px;
+  min-width: 46px;
+  justify-content: center;
+}
 
 /* Toggle disponibilidade */
 .dp-availability{
@@ -462,22 +516,27 @@
   gap: 14px;
 }
 .dp-grid.lista-cards-premium{
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: nowrap;
   gap: 20px;
   width: 100%;
+  overflow-x: auto;
+  padding-bottom: 6px;
 }
 .dp-grid.lista-cards-premium .card-premium{
   width: 100%;
+  min-width: 320px;
+  max-width: 360px;
+  flex: 0 0 auto;
 }
 .dp-section[data-tab="servicos"]{
-  width: min(100%, var(--home-section-width, 1100px));
+  width: min(100%, var(--dp-content-width));
   margin-left: auto;
   margin-right: auto;
 }
 @media (max-width: 900px){
   .dp-grid.lista-cards-premium{
-    grid-template-columns: 1fr;
+    flex-wrap: nowrap;
   }
 }
 .dp-grid--masonry{

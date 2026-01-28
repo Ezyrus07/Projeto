@@ -814,29 +814,16 @@
                     dataAtualizacao: new Date().toISOString()
                 });
 
-                // Cria card de avaliação nas mensagens (para aparecer no chat)
-                try {
-                    const authUserUid = window.auth?.currentUser?.uid || localStorage.getItem('doke_uid') || "";
-                    await addDoc(collection(db, "pedidos", pedidoId, "mensagens"), {
-                        tipo: 'card_avaliacao',
-                        texto: "Pagamento confirmado. Avalie o profissional.",
-                        senderUid: authUserUid,
-                        timestamp: new Date()
-                    });
-                } catch (e) {
-                    console.warn("Falha ao criar card de avaliacao:", e);
-                }
-
                 // 4. Sucesso Visual
                 circulo.style.display = 'none';
                 icone.style.display = 'block';
                 texto.innerText = "Pagamento Concluído!";
                 texto.style.color = "#2ecc71"; // Verde sucesso
-                subTexto.innerText = "O profissional já foi notificado. Redirecionando...";
+                subTexto.innerText = "O profissional já foi notificado. Redirecionando para o chat...";
 
                 setTimeout(() => {
-                    window.location.href = `avaliar.html?pedidoId=${encodeURIComponent(pedidoId)}`;
-                }, 2500);
+                    window.location.href = `chat.html?pedidoId=${encodeURIComponent(pedidoId)}`;
+                }, 2200);
 
             } catch (e) {
                 console.error(e);

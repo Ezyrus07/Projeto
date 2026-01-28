@@ -35,6 +35,15 @@
     if(Number.isNaN(d.getTime())) return "";
     return d.toLocaleDateString('pt-BR');
   };
+  const setIconButton = (btn, icon, title)=>{
+    if(!btn) return;
+    btn.innerHTML = `<i class='bx ${icon}'></i>`;
+    if (title) {
+      btn.title = title;
+      btn.setAttribute("aria-label", title);
+    }
+    btn.classList.add("dp-icon-only");
+  };
 
   // -----------------------------
   // Toast
@@ -66,6 +75,333 @@
       return null;
     }
     return c;
+  }
+
+  // -----------------------------
+  // Amizades
+  // -----------------------------
+  async function getFriendStatus(client, meUid, otherUid){
+    if(!client || !meUid || !otherUid) return { status: "none" };
+    try{
+      const [outRes, inRes] = await Promise.all([
+        client.from("amizades").select("*").eq("deUid", meUid).eq("paraUid", otherUid).limit(1),
+        client.from("amizades").select("*").eq("deUid", otherUid).eq("paraUid", meUid).limit(1)
+      ]);
+      const outRow = outRes?.data?.[0] || null;
+      const inRow = inRes?.data?.[0] || null;
+
+      const outStatus = outRow ? String(outRow.status || "").toLowerCase() : "";
+      const inStatus = inRow ? String(inRow.status || "").toLowerCase() : "";
+
+      if (outStatus === "aceito" || inStatus === "aceito") {
+        return { status: "aceito", id: outRow?.id || inRow?.id || "", direction: outStatus === "aceito" ? "out" : "in" };
+      }
+      if (inStatus === "pendente") return { status: "pendente_in", id: inRow.id, direction: "in" };
+      if (outStatus === "pendente") return { status: "pendente_out", id: outRow.id, direction: "out" };
+      if (inStatus === "recusado") return { status: "recusado", id: inRow.id, direction: "in" };
+      if (outStatus === "recusado") return { status: "recusado", id: outRow.id, direction: "out" };
+      return { status: "none" };
+    }catch(e){
+      console.warn("Falha ao buscar amizade:", e);
+      return { status: "none" };
+    }
+  }
+
+  async function updateFriendButton(ctx){
+    const btn = $("#dpFriendBtn");
+    const msgBtn = $("#dpMessageBtn");
+    if(!btn) return;
+    if(ctx?.canEdit){
+      btn.style.display = "none";
+      if (msgBtn) msgBtn.style.display = "none";
+      return;
+    }
+    if(!ctx?.me){
+      btn.style.display = "inline-flex";
+      btn.dataset.friendStatus = "nologin";
+      setIconButton(btn, "bx-user-plus", "Entrar para adicionar");
+      if (msgBtn) msgBtn.style.display = "none";
+      return;
+    }
+    const meUid = ctx.me.uid || ctx.me.id;
+    const otherUid = ctx.target?.uid || ctx.target?.id;
+    if(!meUid || !otherUid){
+      btn.style.display = "none";
+      return;
+    }
+    const client = ctx.client;
+    const rel = await getFriendStatus(client, meUid, otherUid);
+    btn.style.display = "inline-flex";
+    btn.dataset.friendStatus = rel.status || "none";
+    btn.dataset.friendId = rel.id || "";
+    btn.dataset.friendDirection = rel.direction || "";
+
+    if (rel.status === "aceito") {
+      setIconButton(btn, "bx-user-minus", "Desfazer amizade");
+    } else if (rel.status === "pendente_out") {
+      setIconButton(btn, "bx-time", "Cancelar pedido de amizade");
+    } else if (rel.status === "pendente_in") {
+      setIconButton(btn, "bx-user-check", "Aceitar amizade");
+    } else if (rel.status === "recusado") {
+      setIconButton(btn, "bx-user-plus", "Novo pedido de amizade");
+    } else {
+      setIconButton(btn, "bx-user-plus", "Adicionar amizade");
+    }
+    if (msgBtn) {
+      const canMessage = rel.status === "aceito";
+      msgBtn.style.display = canMessage ? "inline-flex" : "none";
+      msgBtn.onclick = () => {
+        const otherUidMsg = ctx.target?.uid || ctx.target?.id;
+        if (!otherUidMsg) return;
+        window.location.href = `chat.html?uid=${encodeURIComponent(otherUidMsg)}`;
+      };
+      if (canMessage) setIconButton(msgBtn, "bx-message-rounded", "Enviar mensagem");
+    }
+  }
+
+  async function handleFriendAction(ctx){
+    const btn = $("#dpFriendBtn");
+    if(!btn) return;
+    const status = btn.dataset.friendStatus || "none";
+    if (status === "nologin") {
+      window.location.href = "login.html";
+      return;
+    }
+    const relId = btn.dataset.friendId || "";
+    const client = ctx.client;
+    const meUid = ctx.me.uid || ctx.me.id;
+    const otherUid = ctx.target?.uid || ctx.target?.id;
+    if(!client || !meUid || !otherUid) return;
+
+    const sendFriendNotif = async () => {
+      try{
+        if (typeof window.criarNotificacaoSocial === "function") {
+          await window.criarNotificacaoSocial({ acao: "pedido_amizade", paraUid: otherUid });
+          return;
+        }
+        if (!window.db || !window.addDoc || !window.collection) return;
+        const actorNome = ctx?.me?.nome || ctx?.me?.user || "Usuario";
+        const actorUser = ctx?.me?.user ? (String(ctx.me.user).startsWith("@") ? ctx.me.user : `@${ctx.me.user}`) : "@usuario";
+        const actorFoto = ctx?.me?.foto || "https://placehold.co/50";
+        await window.addDoc(window.collection(window.db, "notificacoes"), {
+          parauid: otherUid,
+          deuid: meUid,
+          denome: actorNome,
+          deuser: actorUser,
+          defoto: actorFoto,
+          acao: "pedido_amizade",
+          lida: false,
+          createdat: new Date().toISOString(),
+          link: `perfil-cliente.html?id=${encodeURIComponent(meUid)}`
+        });
+      }catch(e){}
+    };
+
+    try{
+      if (status === "aceito") {
+        if (!confirm("Remover amizade?")) return;
+        if (relId) {
+          await client.from("amizades").delete().eq("id", relId);
+        } else {
+          await client.from("amizades").delete().eq("deUid", meUid).eq("paraUid", otherUid);
+          await client.from("amizades").delete().eq("deUid", otherUid).eq("paraUid", meUid);
+        }
+        toast("Amizade removida.");
+      } else if (status === "pendente_in") {
+        await client.from("amizades").update({
+          status: "aceito",
+          accepted_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }).eq("id", relId);
+        toast("Amizade aceita!");
+      } else if (status === "pendente_out") {
+        await client.from("amizades").update({
+          status: "recusado",
+          updated_at: new Date().toISOString()
+        }).eq("id", relId);
+        toast("Pedido cancelado.");
+      } else {
+        if (status === "recusado" && relId) {
+          await client.from("amizades").update({
+            status: "pendente",
+            updated_at: new Date().toISOString()
+          }).eq("id", relId);
+          await sendFriendNotif();
+        } else {
+          await client.from("amizades").insert({
+            deUid: meUid,
+            paraUid: otherUid,
+            status: "pendente",
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+          await sendFriendNotif();
+        }
+        toast("Pedido de amizade enviado.");
+      }
+    }catch(e){
+      console.error(e);
+      toast("Nao foi possivel atualizar amizade.");
+    }
+    await updateFriendButton(ctx);
+  }
+
+  // -----------------------------
+  // Seguidores
+  // -----------------------------
+  async function getFollowStatus(client, meUid, otherUid){
+    if(!client || !meUid || !otherUid) return { following: false, isFollower: false };
+    try{
+      const [outRes, inRes] = await Promise.all([
+        client
+          .from("seguidores")
+          .select("id")
+          .eq("seguidorUid", meUid)
+          .eq("seguidoUid", otherUid)
+          .limit(1),
+        client
+          .from("seguidores")
+          .select("id")
+          .eq("seguidorUid", otherUid)
+          .eq("seguidoUid", meUid)
+          .limit(1)
+      ]);
+      const following = !!(outRes?.data && outRes.data[0]);
+      const isFollower = !!(inRes?.data && inRes.data[0]);
+      return { following, isFollower, id: outRes?.data?.[0]?.id || "" };
+    }catch(e){
+      return { following: false, isFollower: false };
+    }
+  }
+
+  async function updateFollowButton(ctx){
+    const btn = $("#dpFollowBtn");
+    if(!btn) return;
+    if(ctx?.canEdit){
+      btn.style.display = "none";
+      return;
+    }
+    if(!ctx?.me){
+      btn.style.display = "inline-flex";
+      btn.dataset.following = "nologin";
+      btn.classList.remove("dp-icon-only");
+      btn.innerHTML = "<i class='bx bx-heart'></i> Entrar para seguir";
+      btn.title = "Entrar para seguir";
+      return;
+    }
+    const meUid = ctx.me.uid || ctx.me.id;
+    const otherUid = ctx.target?.uid || ctx.target?.id;
+    if(!meUid || !otherUid){
+      btn.style.display = "none";
+      return;
+    }
+    const rel = await getFollowStatus(ctx.client, meUid, otherUid);
+    btn.style.display = "inline-flex";
+    btn.dataset.following = rel.following ? "1" : "0";
+    btn.dataset.followId = rel.id || "";
+    btn.classList.remove("dp-icon-only");
+    if (rel.following) {
+      btn.innerHTML = "<i class='bx bx-heart'></i> Deixar de seguir";
+      btn.title = "Deixar de seguir";
+    } else if (rel.isFollower) {
+      btn.innerHTML = "<i class='bx bx-heart'></i> Seguir de volta";
+      btn.title = "Seguir de volta";
+    } else {
+      btn.innerHTML = "<i class='bx bx-heart'></i> Seguir";
+      btn.title = "Seguir";
+    }
+  }
+
+  async function handleFollowAction(ctx){
+    const btn = $("#dpFollowBtn");
+    if(!btn) return;
+    if (btn.dataset.following === "nologin") {
+      window.location.href = "login.html";
+      return;
+    }
+    const following = btn.dataset.following === "1";
+    const followId = btn.dataset.followId || "";
+    const meUid = ctx.me.uid || ctx.me.id;
+    const otherUid = ctx.target?.uid || ctx.target?.id;
+    const client = ctx.client;
+    if(!client || !meUid || !otherUid) return;
+
+    const sendFollowNotif = async () => {
+      try{
+        if (typeof window.criarNotificacaoSocial === "function") {
+          await window.criarNotificacaoSocial({ acao: "seguir_usuario", paraUid: otherUid });
+          return;
+        }
+        if (!window.db || !window.addDoc || !window.collection) return;
+        const actorNome = ctx?.me?.nome || ctx?.me?.user || "Usuario";
+        const actorUser = ctx?.me?.user ? (String(ctx.me.user).startsWith("@") ? ctx.me.user : `@${ctx.me.user}`) : "@usuario";
+        const actorFoto = ctx?.me?.foto || "https://placehold.co/50";
+        await window.addDoc(window.collection(window.db, "notificacoes"), {
+          parauid: otherUid,
+          deuid: meUid,
+          denome: actorNome,
+          deuser: actorUser,
+          defoto: actorFoto,
+          acao: "seguir_usuario",
+          lida: false,
+          createdat: new Date().toISOString(),
+          link: `perfil-cliente.html?id=${encodeURIComponent(meUid)}`
+        });
+      }catch(e){}
+    };
+
+    try{
+      if (following && followId) {
+        btn.dataset.following = "0";
+        btn.innerHTML = "<i class='bx bx-heart'></i> Seguir";
+        const fEl = $("#dpFollowers");
+        if (fEl && /^\d+$/.test(String(fEl.textContent || ""))) {
+          fEl.textContent = String(Math.max(0, Number(fEl.textContent) - 1));
+        }
+        await client.from("seguidores").delete().eq("id", followId);
+        toast("Deixou de seguir.");
+      } else {
+        btn.dataset.following = "1";
+        btn.innerHTML = "<i class='bx bx-heart'></i> Seguindo";
+        const fEl = $("#dpFollowers");
+        if (fEl && /^\d+$/.test(String(fEl.textContent || ""))) {
+          fEl.textContent = String(Number(fEl.textContent) + 1);
+        }
+        await client.from("seguidores").insert({
+          seguidorUid: meUid,
+          seguidoUid: otherUid,
+          created_at: new Date().toISOString()
+        });
+        await sendFollowNotif();
+        toast("Agora você está seguindo.");
+      }
+    }catch(e){
+      console.error(e);
+      toast("Nao foi possivel atualizar seguir.");
+    }
+    await updateFollowButton(ctx);
+    await updateFollowCounts(ctx);
+  }
+
+  async function updateFollowCounts(ctx){
+    const client = ctx?.client;
+    if(!client) return;
+    const targetUid = ctx?.target?.uid || ctx?.target?.id;
+    const meUid = ctx?.me?.uid || ctx?.me?.id;
+    if(!targetUid) return;
+    try{
+      const [followersRes, followingRes] = await Promise.all([
+        client.from("seguidores").select("id", { count: "exact", head: true }).eq("seguidoUid", targetUid),
+        client.from("seguidores").select("id", { count: "exact", head: true }).eq("seguidorUid", targetUid)
+      ]);
+      const followers = typeof followersRes.count === "number" ? followersRes.count : 0;
+      const following = typeof followingRes.count === "number" ? followingRes.count : 0;
+      setText("#dpFollowers", String(followers));
+      setText("#dpFollowing", String(following));
+      if (meUid && meUid === targetUid) {
+        // para o próprio perfil, mantém visível o número atualizado
+      }
+    }catch(e){}
   }
 
   // -----------------------------
@@ -1729,6 +2065,18 @@ function hideIf(selector, cond){
       const id = ctx.target?.id || "";
       window.location.href = `orcamento.html?prof=${encodeURIComponent(id)}`;
     });
+
+    // Amizade (para visitante)
+    updateFriendButton(ctx);
+    $("#dpFriendBtn")?.addEventListener("click", async ()=>{
+      await handleFriendAction(ctx);
+    });
+
+    // Seguir (para visitante)
+    updateFollowButton(ctx);
+    $("#dpFollowBtn")?.addEventListener("click", async ()=>{
+      await handleFollowAction(ctx);
+    });
   }
 
   // -----------------------------
@@ -1778,9 +2126,27 @@ function hideIf(selector, cond){
     hideIf("[data-pro-hide]", isPro);
 
     // actions for visitor
-    const canEdit = ctx.canEdit;
-    showIf("#dpOrcBtn", !canEdit && isPro);
-    hideIf("#dpEditBtn", !canEdit);
+    const isOwner = ctx.canEdit;
+    const allowEdit = !!(isOwner && ctx.pageMode !== "public");
+    showIf("#dpOrcBtn", !isOwner && isPro);
+    showIf("#dpFriendBtn", !isOwner);
+    showIf("#dpFollowBtn", !isOwner);
+    hideIf("#dpEditBtn", !allowEdit);
+    showIf("#dpMoreBtn", allowEdit);
+    showIf("#dpCoverBtn", allowEdit);
+    showIf("#dpAvatarBtn", allowEdit);
+    showIf("#dpAvailabilityRow", allowEdit);
+    showIf("#dpNewPublicacao", allowEdit);
+    showIf("#dpNewServico", allowEdit);
+    showIf("#dpNewPortfolio", allowEdit);
+    showIf("#dpNewReel", allowEdit);
+    const orcBtn = $("#dpOrcBtn");
+    if (orcBtn && !isOwner && isPro) {
+      orcBtn.classList.remove("dp-icon-only");
+      orcBtn.innerHTML = "<i class='bx bx-receipt'></i> Solicitar orçamento";
+      orcBtn.title = "Solicitar orçamento";
+      orcBtn.setAttribute("aria-label", "Solicitar orçamento");
+    }
 
     // availability
     initAvailability(ctx);
@@ -1860,7 +2226,8 @@ function hideIf(selector, cond){
   async function updateProfileCounts(ctx){
     await Promise.allSettled([
       updateServicosCountQuick(ctx),
-      updateAvaliacoesCountQuick(ctx)
+      updateAvaliacoesCountQuick(ctx),
+      updateFollowCounts(ctx)
     ]);
   }
 
@@ -1978,7 +2345,8 @@ function hideIf(selector, cond){
         target,
         targetId: target.id,
         canEdit,
-        pageTheme
+        pageTheme,
+        pageMode
       };
 
       // Top button (Entrar/Perfil)

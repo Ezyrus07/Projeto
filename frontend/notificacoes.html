@@ -631,6 +631,16 @@
                 desc = `${actor} curtiu seu comentario.`;
                 iconClass = "bx-like";
                 colorClass = "ni-success";
+            } else if (data.acao === "pedido_amizade") {
+                titulo = "Novo pedido de amizade";
+                desc = `${actor} enviou um pedido de amizade.`;
+                iconClass = "bx-user-plus";
+                colorClass = "ni-info";
+            } else if (data.acao === "seguir_usuario") {
+                titulo = "Novo seguidor";
+                desc = `${actor} começou a seguir você.`;
+                iconClass = "bx-heart";
+                colorClass = "ni-success";
             }
 
             const timeRaw = data.createdAt || data.createdat;
@@ -646,7 +656,7 @@
                 time: timeValue,
                 iconClass,
                 colorClass,
-                link: data.link || "index.html",
+                link: data.link || (deUid ? `perfil-usuario.html?id=${encodeURIComponent(deUid)}` : "index.html"),
                 actor,
                 avatar,
                 postId,
@@ -1049,6 +1059,19 @@ async function carregarNotificacoes(uid) {
             );
         }
 
+        async function abrirPerfilPorUid(uid) {
+            if (!uid) return;
+            try {
+                const snap = await getDoc(doc(db, "usuarios", uid));
+                const data = snap.exists() ? snap.data() : {};
+                const isPro = !!data.isProfissional;
+                const dest = isPro ? "perfil-profissional.html" : "perfil-cliente.html";
+                window.location.href = `${dest}?id=${encodeURIComponent(uid)}`;
+            } catch (_) {
+                window.location.href = `perfil-cliente.html?id=${encodeURIComponent(uid)}`;
+            }
+        }
+
         const listaEl = document.getElementById('lista-notificacoes');
         if (listaEl) {
             listaEl.addEventListener('click', async (event) => {
@@ -1063,6 +1086,10 @@ async function carregarNotificacoes(uid) {
                     event.stopPropagation();
                     const action = btn.dataset.action;
                     if (action === 'open') {
+                        if (notif.acao === 'seguir_usuario' || notif.acao === 'pedido_amizade') {
+                            const uid = notif.deUid || notif.deuid;
+                            if (uid) return abrirPerfilPorUid(uid);
+                        }
                         window.location.href = notif.link;
                     } else if (action === 'read') {
                         await marcarNotificacaoLida(notif);

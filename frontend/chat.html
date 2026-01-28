@@ -963,14 +963,14 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: 0.3s;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
     box-shadow: 0 4px 10px rgba(11, 119, 104, 0.2);
     margin-right: 10px;
 }
 
 .btn-conclusao-topo:hover {
     background: #085a4f;
-    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(11, 119, 104, 0.28);
 }
 
 /* Tooltip do Dinheiro Retido */
@@ -1077,6 +1077,58 @@
         font-weight: 600; cursor: pointer;
     }
     .btn-secondary-modal:hover { color: #333; }
+
+    .finalizar-upload {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #f8fafc;
+        border: 1px dashed #cbd5f5;
+        border-radius: 14px;
+        padding: 12px;
+        text-align: left;
+        margin: 12px 0 16px;
+    }
+    .finalizar-upload .btn-upload {
+        background: #e8f5f1;
+        color: #0b7768;
+        border: 1px solid rgba(11,119,104,0.3);
+        padding: 10px 12px;
+        border-radius: 10px;
+        font-weight: 800;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        width: fit-content;
+    }
+    .finalizar-upload small { color: #6b7280; }
+    .finalizar-preview {
+        margin-top: 10px;
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px;
+        display: none;
+        align-items: center;
+        gap: 10px;
+    }
+    .finalizar-preview img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+    }
+    .finalizar-preview button {
+        background: #fee2e2;
+        color: #b91c1c;
+        border: none;
+        padding: 6px 10px;
+        border-radius: 8px;
+        font-weight: 700;
+        cursor: pointer;
+    }
 
     @keyframes bounceIn {
         0% { transform: scale(0.8); opacity: 0; }
@@ -1621,13 +1673,19 @@
                         <button class="chat-menu-btn" onclick="toggleChatMenuOptions(event)" aria-label="Mais opções">
                             <i class='bx bx-dots-vertical-rounded'></i>
                         </button>
-                        <div class="chat-menu-dropdown">
-                            <button id="menuArquivar" class="chat-menu-item" onclick="arquivarConversaAtual()">Arquivar conversa</button>
-                            <button id="menuDesarquivar" class="chat-menu-item" onclick="desarquivarConversaAtual()" style="display:none;">Desarquivar conversa</button>
-                            <button id="menuLimpar" class="chat-menu-item" onclick="limparHistoricoLocal()">Limpar mensagens (só pra você)</button>
-                            <button id="menuRestaurar" class="chat-menu-item" onclick="restaurarHistoricoLocal()" style="display:none;">Restaurar mensagens</button>
-                        </div>
-                    </div>
+                          <div class="chat-menu-dropdown">
+                              <button id="menuArquivar" class="chat-menu-item" onclick="arquivarConversaAtual()">Arquivar conversa</button>
+                              <button id="menuDesarquivar" class="chat-menu-item" onclick="desarquivarConversaAtual()" style="display:none;">Desarquivar conversa</button>
+                              <button id="menuLimpar" class="chat-menu-item" onclick="limparHistoricoLocal()">Limpar mensagens (só pra você)</button>
+                              <button id="menuRestaurar" class="chat-menu-item" onclick="restaurarHistoricoLocal()" style="display:none;">Restaurar mensagens</button>
+                              <button id="menuReembolso" class="chat-menu-item danger" onclick="solicitarReembolso(); fecharMenuChat();" style="display:none;">Solicitar reembolso</button>
+                              <div id="menuAmizadeDivider" style="border-top:1px solid #eef2f7; margin:6px 4px; display:none;"></div>
+                              <button id="menuAmizadeEnviar" class="chat-menu-item" onclick="enviarPedidoAmizade()" style="display:none;">Enviar pedido de amizade</button>
+                              <button id="menuAmizadeCancelar" class="chat-menu-item" onclick="cancelarPedidoAmizade()" style="display:none;">Cancelar pedido de amizade</button>
+                              <button id="menuAmizadeAceitar" class="chat-menu-item" onclick="aceitarPedidoAmizade()" style="display:none;">Aceitar pedido de amizade</button>
+                              <button id="menuAmizadeRecusar" class="chat-menu-item danger" onclick="recusarPedidoAmizade()" style="display:none;">Recusar pedido de amizade</button>
+                          </div>
+                      </div>
                   </div>
                   <div id="chatContextBar" class="chat-context-bar">
                       <div id="chatContextText"></div>
@@ -1742,6 +1800,38 @@
     </div>
 </div>
 
+<div id="modalFinalizarPedido" class="modal-overlay-custom" style="display:none;">
+    <div class="modal-box-custom bounceIn" style="max-width: 460px; text-align: left;">
+        <div class="modal-icon-top" style="background:#e8f5f1; color:#0b7768;">
+            <i class='bx bx-check-double'></i>
+        </div>
+        <h3 style="text-align:center;">Finalizar pedido</h3>
+        <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
+            Confirme a conclusao do servico. Se quiser, anexe uma foto do resultado.
+        </p>
+
+        <div class="finalizar-upload">
+            <label class="btn-upload" for="finalizarAnexo">
+                <i class='bx bx-image-add'></i> Anexar imagem (opcional)
+            </label>
+            <small id="finalizarNomeArquivo">Nenhum arquivo selecionado</small>
+            <input id="finalizarAnexo" type="file" accept="image/*" style="display:none;" />
+
+            <div id="finalizarPreview" class="finalizar-preview">
+                <img id="finalizarPreviewImg" alt="Preview" />
+                <button type="button" onclick="limparAnexoFinalizacao()">Remover</button>
+            </div>
+        </div>
+
+        <div class="modal-actions-col">
+            <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
+                <i class='bx bx-check'></i> Finalizar servico
+            </button>
+            <button class="btn-secondary-modal" onclick="fecharModalFinalizarPedido()">Cancelar</button>
+        </div>
+    </div>
+</div>
+
     </div>
 </div>
             </div>
@@ -1793,6 +1883,9 @@
     let conversaArquivadaAtual = false;
     let replyContext = null;
     const avaliacaoCache = {};
+    let pedidoFinalizarId = null;
+    let finalizacaoFile = null;
+    let finalizacaoPreviewUrl = null;
 
     window.abrirPerfilUsuario = function(uid, isProfissional){
         if (!uid) return;
@@ -1814,11 +1907,26 @@
             else alert("Serviço já avaliado.");
             return;
         }
-        window.location.href = `avaliar.html?pedidoId=${pedidoId}`;
+        window.pedidoIdParaAvaliar = pedidoId;
+        const modalSucesso = document.getElementById('modalSucessoAvaliacao');
+        if(modalSucesso) {
+            modalSucesso.style.display = 'flex';
+        } else {
+            window.location.href = `avaliar.html?pedidoId=${pedidoId}`;
+        }
     };
 
     async function checarAvaliacaoPedido(pedidoId){
         if (!pedidoId) return false;
+        const lsKey = `doke_avaliado_${pedidoId}`;
+        if (localStorage.getItem(lsKey) === '1') {
+            avaliadoPedidoAtual = true;
+            if (pedidoAtualData) pedidoAtualData.avaliado = true;
+            if (colecaoAtual === 'pedidos' && chatIdAtual === pedidoId && pedidoAtualData) {
+                atualizarContextoChat(pedidoAtualData);
+            }
+            return true;
+        }
         const cache = avaliacaoCache[pedidoId];
         const agora = Date.now();
         if (cache && (agora - cache.ts) < 60000) {
@@ -1836,8 +1944,10 @@
             if (found) {
                 avaliadoPedidoAtual = true;
                 if (pedidoAtualData) pedidoAtualData.avaliado = true;
+                try { localStorage.setItem(lsKey, '1'); } catch (_) {}
                 try { await updateDoc(doc(db, "pedidos", pedidoId), { avaliado: true }); } catch (_) {}
                 if (colecaoAtual === 'pedidos' && chatIdAtual === pedidoId) {
+                    if (pedidoAtualData) atualizarContextoChat(pedidoAtualData);
                     carregarMensagens(colecaoAtual, chatIdAtual);
                 }
             }
@@ -1937,6 +2047,8 @@
         if (t === 'arquivo') return '📎 Arquivo';
         if (t === 'audio' || t === 'áudio' || t === 'voz') return '🎤 Áudio';
         if (t === 'pagamento') return '💳 Cobrança';
+        if (t === 'card_finalizado') return '✅ Pedido finalizado';
+        if (t === 'card_avaliacao') return '⭐ Avaliação';
         return (texto || '').slice(0, 140);
     }
     function buildReplyHtml(replyTo){
@@ -2295,6 +2407,12 @@
         const btnArquivar = document.getElementById('menuArquivar');
         const btnDesarquivar = document.getElementById('menuDesarquivar');
         const btnRestaurar = document.getElementById('menuRestaurar');
+        const btnReembolso = document.getElementById('menuReembolso');
+        const divAmizade = document.getElementById('menuAmizadeDivider');
+        const btnAmizadeEnviar = document.getElementById('menuAmizadeEnviar');
+        const btnAmizadeCancelar = document.getElementById('menuAmizadeCancelar');
+        const btnAmizadeAceitar = document.getElementById('menuAmizadeAceitar');
+        const btnAmizadeRecusar = document.getElementById('menuAmizadeRecusar');
         const clearAt = getClearTime(colecaoAtual, chatIdAtual);
         if (btnRestaurar) btnRestaurar.style.display = clearAt ? 'block' : 'none';
         if (conversaArquivadaAtual) {
@@ -2303,6 +2421,30 @@
         } else {
             if (btnArquivar) btnArquivar.style.display = 'block';
             if (btnDesarquivar) btnDesarquivar.style.display = 'none';
+        }
+
+        const souClientePedido = !!(pedidoAtualData && String(pedidoAtualData.deUid || '') === String(currentUserUid || ''));
+        const showReembolso = (colecaoAtual === 'pedidos' && String(statusPedidoAtual || '').toLowerCase() === 'pago' && souClientePedido);
+        if (btnReembolso) btnReembolso.style.display = showReembolso ? 'block' : 'none';
+
+        const showAmizade = !!amizadeOutroUidAtual;
+        if (divAmizade) divAmizade.style.display = showAmizade ? 'block' : 'none';
+        if (btnAmizadeEnviar) btnAmizadeEnviar.style.display = 'none';
+        if (btnAmizadeCancelar) btnAmizadeCancelar.style.display = 'none';
+        if (btnAmizadeAceitar) btnAmizadeAceitar.style.display = 'none';
+        if (btnAmizadeRecusar) btnAmizadeRecusar.style.display = 'none';
+
+        if (showAmizade) {
+            if (amizadeStatusAtual === 'pendente_out') {
+                if (btnAmizadeCancelar) btnAmizadeCancelar.style.display = 'block';
+            } else if (amizadeStatusAtual === 'pendente_in') {
+                if (btnAmizadeAceitar) btnAmizadeAceitar.style.display = 'block';
+                if (btnAmizadeRecusar) btnAmizadeRecusar.style.display = 'block';
+            } else if (amizadeStatusAtual === 'aceito') {
+                // Sem ação no menu
+            } else {
+                if (btnAmizadeEnviar) btnAmizadeEnviar.style.display = 'block';
+            }
         }
     }
 
@@ -2532,7 +2674,7 @@
           return map;
       }
 
-      async function atualizarContextoAmizade(uidOutro){
+      async function atualizarContextoAmizade(uidOutro, opts){
           const bar = document.getElementById('chatContextBar');
           const text = document.getElementById('chatContextText');
           const actions = document.getElementById('chatContextActions');
@@ -2544,11 +2686,20 @@
           amizadeIdAtual = rel.id || '';
           amizadeDirecaoAtual = rel.direction || '';
 
+          const blockInput = !(opts && opts.blockInput === false);
           actions.innerHTML = '';
+          if (!blockInput) {
+              bar.classList.remove('show');
+              bar.style.display = 'none';
+              setChatInputEnabled(true);
+              atualizarMenuConversa();
+              return;
+          }
           if (amizadeStatusAtual === 'aceito') {
               bar.classList.remove('show');
               bar.style.display = 'none';
               setChatInputEnabled(true);
+              atualizarMenuConversa();
               return;
           }
 
@@ -2559,6 +2710,7 @@
           if (amizadeStatusAtual === 'pendente_out') {
               text.textContent = 'Pedido de amizade enviado. Aguarde a aprovação.';
               actions.innerHTML = `<button onclick="cancelarPedidoAmizade()">Cancelar pedido</button>`;
+              atualizarMenuConversa();
               return;
           }
           if (amizadeStatusAtual === 'pendente_in') {
@@ -2567,15 +2719,18 @@
                   <button class="primary" onclick="aceitarPedidoAmizade()">Aceitar</button>
                   <button class="danger" onclick="recusarPedidoAmizade()">Recusar</button>
               `;
+              atualizarMenuConversa();
               return;
           }
           if (amizadeStatusAtual === 'recusado') {
               text.textContent = 'Conversa bloqueada. Envie um novo pedido de amizade.';
               actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar pedido</button>`;
+              atualizarMenuConversa();
               return;
           }
           text.textContent = 'Envie um pedido de amizade para liberar as mensagens.';
           actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar pedido</button>`;
+          atualizarMenuConversa();
       }
 
       function isConversaBloqueadaPorAmizade(){
@@ -2599,6 +2754,29 @@
                       updated_at: new Date().toISOString()
                   });
               }
+              try {
+                  if (typeof window.criarNotificacaoSocial === "function") {
+                      await window.criarNotificacaoSocial({ acao: "pedido_amizade", paraUid: amizadeOutroUidAtual });
+                  } else if (window.addDoc && window.collection && window.db) {
+                      const perfil = (function(){
+                          try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {}; } catch (_) { return {}; }
+                      })();
+                      const nome = perfil.nome || perfil.user || "Usuario";
+                      const user = perfil.user ? (String(perfil.user).startsWith("@") ? perfil.user : `@${perfil.user}`) : "@usuario";
+                      const foto = perfil.foto || "https://placehold.co/50";
+                      await addDoc(collection(db, "notificacoes"), {
+                          parauid: amizadeOutroUidAtual,
+                          deuid: currentUserUid,
+                          denome: nome,
+                          deuser: user,
+                          defoto: foto,
+                          acao: "pedido_amizade",
+                          lida: false,
+                          createdat: new Date().toISOString(),
+                          link: `perfil-cliente.html?id=${encodeURIComponent(currentUserUid)}`
+                      });
+                  }
+              } catch (_) {}
               await atualizarContextoAmizade(amizadeOutroUidAtual);
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
@@ -2653,7 +2831,7 @@
           }
       };
 
-      function atualizarContextoChat(p){
+    function atualizarContextoChat(p){
         const bar = document.getElementById('chatContextBar');
         const text = document.getElementById('chatContextText');
         const actions = document.getElementById('chatContextActions');
@@ -2675,11 +2853,14 @@
             msg = 'Pedido aceito. Combine detalhes no chat.';
         } else if (status === 'pago') {
             msg = 'Pagamento em garantia. Finalize quando o serviço estiver concluído.';
-            if (souCliente) btns.push(`<button class="danger" onclick="solicitarReembolso()">Solicitar reembolso</button>`);
         } else if (status === 'finalizado') {
-            msg = 'Serviço finalizado.';
-            if (souCliente && !p.avaliado) btns.push(`<button onclick="abrirAvaliacaoPedido('${chatIdAtual}')">Avaliar</button>`);
-            if (souCliente) btns.push(`<button class="primary" onclick="repetirPedidoAtual()">Repetir pedido</button>`);
+            if (souCliente) {
+                msg = p.avaliado ? 'Pedido finalizado e avaliado com sucesso.' : 'Servico finalizado. Sua avaliacao ajuda a comunidade.';
+                if (!p.avaliado) btns.push(`<button onclick="abrirAvaliacaoPedido('${chatIdAtual}')">Avaliar</button>`);
+                btns.push(`<button class="primary" onclick="repetirPedidoAtual()">Repetir pedido</button>`);
+            } else {
+                msg = p.avaliado ? 'Pedido finalizado e avaliado pelo cliente.' : 'Pedido finalizado. Aguardando avaliacao do cliente.';
+            }
         } else if (status === 'recusado' || status === 'cancelado') {
             msg = 'Pedido encerrado.';
             if (souCliente) btns.push(`<button class="primary" onclick="repetirPedidoAtual()">Repetir pedido</button>`);
@@ -3372,55 +3553,96 @@ window.apagarDocumentoPedido = async function(id) {
             console.error(e);
             window.dokeAlert("Erro ao remover.");
         }
-    };
+};
 
 // EM CHAT.HTML
 window.liberarPagamento = async (id) => {
-    // Pergunta de confirmação
-    if(!await window.dokeConfirm("Deseja finalizar o serviço e liberar o valor?", "Concluir Serviço")) return;
+    if (!id) return;
+    pedidoFinalizarId = id;
+    const modal = document.getElementById('modalFinalizarPedido');
+    if (modal) modal.style.display = 'flex';
+};
+window.fecharModalFinalizarPedido = () => {
+    const modal = document.getElementById('modalFinalizarPedido');
+    if (modal) modal.style.display = 'none';
+    window.limparAnexoFinalizacao();
+    pedidoFinalizarId = null;
+};
+window.limparAnexoFinalizacao = () => {
+    finalizacaoFile = null;
+    const input = document.getElementById('finalizarAnexo');
+    const nameEl = document.getElementById('finalizarNomeArquivo');
+    const preview = document.getElementById('finalizarPreview');
+    const img = document.getElementById('finalizarPreviewImg');
+    if (input) input.value = "";
+    if (nameEl) nameEl.textContent = "Nenhum arquivo selecionado";
+    if (preview) preview.style.display = 'none';
+    if (img) img.src = "";
+    if (finalizacaoPreviewUrl) {
+        try { URL.revokeObjectURL(finalizacaoPreviewUrl); } catch (_) {}
+        finalizacaoPreviewUrl = null;
+    }
+};
+
+window.confirmarFinalizacaoPedido = async () => {
+    const id = pedidoFinalizarId;
+    if (!id) return;
+    const btn = document.querySelector('#modalFinalizarPedido .btn-primary-modal');
+    if (btn) { btn.disabled = true; btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Finalizando..."; }
 
     try {
-        // 1. Atualiza status no banco
+        let fotoUrl = "";
+        if (finalizacaoFile) {
+            const storage = getStorage();
+            const safeName = String(finalizacaoFile.name || 'resultado').replace(/[^a-zA-Z0-9._-]/g, '_');
+            const path = `chat/pedidos/${id}/finalizado_${Date.now()}_${safeName}`;
+            const r = ref(storage, path);
+            await uploadBytes(r, finalizacaoFile);
+            fotoUrl = await getDownloadURL(r);
+        }
+
         await updateDoc(doc(db, "pedidos", id), { 
             status: 'finalizado',
             dataConclusao: new Date().toISOString(),
             notificacaoLidaProfissional: false,
             notificacaoLidaCliente: false,
-            avaliado: false
+            avaliado: false,
+            dataAtualizacao: new Date().toISOString(),
+            ultimaMensagem: "Pedido finalizado"
         });
 
-        // 2. Manda mensagem automática no chat
         try {
             const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
-            tipo: 'card_avaliacao',
-            texto: "Serviço finalizado. Aguardando avaliação.",
-            senderUid,
-            timestamp: new Date()
-        });
+                tipo: 'card_finalizado',
+                texto: "Pedido finalizado pelo cliente.",
+                url: fotoUrl || "",
+                senderUid,
+                timestamp: new Date()
+            });
         } catch (e) {
-            console.warn("Falha ao registrar card de avaliacao no chat.", e);
+            console.warn("Falha ao registrar card de finalizacao no chat.", e);
         }
 
-        // 3. ABRE O MODAL DE AVALIAÇÃO IMEDIATAMENTE
-        // Certifique-se de ter colado o HTML do 'modalSucessoAvaliacao' no final do body do chat.html (passo anterior)
+        window.fecharModalFinalizarPedido();
+
         window.pedidoIdParaAvaliar = id;
         const modalSucesso = document.getElementById('modalSucessoAvaliacao');
-        
-        if(modalSucesso) {
+        if (modalSucesso) {
             modalSucesso.style.display = 'flex';
         } else {
-            // Fallback se o modal não existir: vai direto
             window.location.href = `avaliar.html?pedidoId=${id}`;
         }
-        
     } catch (e) {
         console.error(e);
         window.dokeAlert("Erro ao finalizar.");
+    } finally {
+        if (btn) { btn.disabled = false; btn.innerHTML = "<i class='bx bx-check'></i> Finalizar servico"; }
     }
 };
     // Funções do Modal
     window.irParaAvaliacaoDireta = () => {
+        try { window.fecharModalSucesso(); } catch (_) {}
         window.location.href = `avaliar.html?pedidoId=${window.pedidoIdParaAvaliar}`;
     };
     window.fecharModalSucesso = () => {
@@ -3577,6 +3799,13 @@ window.liberarPagamento = async (id) => {
         } catch (e) { console.error(e); }
     }
 
+      function getConversaUpdated(data){
+          if (!data) return 0;
+          const raw = data.dataAtualizacao || data.updatedat || data.dataCriacao || data.createdat || data.created_at || null;
+          const t = raw ? new Date(raw).getTime() : 0;
+          return Number.isFinite(t) ? t : 0;
+      }
+
       window.carregarListaConversas = async function() {
           const container = document.getElementById('lista-conversas');
           if(!container) return;
@@ -3588,19 +3817,19 @@ window.liberarPagamento = async (id) => {
               const qConv = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
               const snapConv = await getDocs(qConv);
  
-              // Junta e ordena (client-side)
-              const itens = [];
+              // Junta e remove duplicados por outroUid (client-side)
+              const map = new Map();
               for (const d of snapConv.docs) {
                   const data = d.data() || {};
-                  const updated = data.dataAtualizacao || data.updatedat || data.createdat || null;
-                  itens.push({ kind:'conversa', id:d.id, data, updated });
+                  const outroUid = (data.participantes || []).find(u => u !== currentUserUid);
+                  if(!outroUid) continue;
+                  const updatedTs = getConversaUpdated(data);
+                  const existing = map.get(outroUid);
+                  if (!existing || updatedTs > (existing.updatedTs || 0)) {
+                      map.set(outroUid, { kind:'conversa', id:d.id, data, updatedTs, outroUid });
+                  }
               }
-  
-              itens.sort((a,b) => {
-                  const ta = a.updated ? new Date(a.updated).getTime() : 0;
-                  const tb = b.updated ? new Date(b.updated).getTime() : 0;
-                  return tb - ta;
-              });
+              const itens = Array.from(map.values()).sort((a,b) => (b.updatedTs || 0) - (a.updatedTs || 0));
   
               container.innerHTML = itens.length ? "" : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
   
@@ -3611,12 +3840,13 @@ window.liberarPagamento = async (id) => {
                       const isArquivado = isArquivadoPorUser(data, it.id);
                       if (listaModo === 'arquivados' && !isArquivado) continue;
                       if (listaModo !== 'arquivados' && isArquivado) continue;
-                      const outroUid = (data.participantes || []).find(u => u !== currentUserUid);
+                      const outroUid = it.outroUid;
                       if(!outroUid) continue;
                       const rel = friendMap.get(outroUid);
                       const isAmigo = rel && rel.status === 'aceito';
+                      const lastMsg = data.ultimaMensagem || data.ultimamensagem || '';
                       const previewText = isAmigo
-                          ? (data.ultimaMensagem || '')
+                          ? (lastMsg || '')
                           : (rel && rel.status === 'pendente_in')
                               ? 'Pedido de amizade recebido'
                               : (rel && rel.status === 'pendente_out')
@@ -3624,8 +3854,8 @@ window.liberarPagamento = async (id) => {
                                   : 'Envie pedido de amizade para conversar';
                       const uD = await getDoc(doc(db, "usuarios", outroUid));
                       const u = uD.exists() ? uD.data() : {};
-                      if (!matchBusca(u.user, data.ultimaMensagem)) continue;
-                      const unreadHtml = isNaoLido(it.updated, 'conversas', it.id) ? '<span class="unread-dot"></span>' : "";
+                      if (!matchBusca(u.user, lastMsg)) continue;
+                      const unreadHtml = isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id) ? '<span class="unread-dot"></span>' : "";
                       const archiveBtn = isArquivado
                           ? `<button class="archive-btn" title="Desarquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', false)"><i class='bx bx-undo'></i></button>`
                           : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', true)"><i class='bx bx-archive'></i></button>`;
@@ -3682,10 +3912,10 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         if(aviso) aviso.remove();
 
         // 1. LÓGICA DE PEDIDOS (BLOQUEIO/STATUS)
-        if (colecao === 'pedidos') {
-            onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
-                if (docSnap.exists()) {
-                    const p = docSnap.data();
+          if (colecao === 'pedidos') {
+              onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
+                  if (docSnap.exists()) {
+                      const p = docSnap.data();
                     const prevStatus = statusPedidoAtual;
                     const prevAvaliado = avaliadoPedidoAtual;
                     statusPedidoAtual = p.status || 'pendente';
@@ -3728,13 +3958,14 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     const btnP = document.getElementById('btn-pagamento');
                     if(btnC) btnC.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
                     if(btnP) btnP.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
-                }
-            });
+                  }
+              });
+              await atualizarContextoAmizade(uidOutro, { blockInput: false });
           } else {
               chatFooter.style.display = 'flex';
               pedidoAtualData = null;
               atualizarContextoChat(null);
-              await atualizarContextoAmizade(uidOutro);
+              await atualizarContextoAmizade(uidOutro, { blockInput: true });
               try {
                   const snapConv = await getDoc(doc(db, "conversas", idDoc));
                   if (snapConv.exists()) {
@@ -3987,16 +4218,32 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             // --- CARD AVALIAÇÃO (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
-                const textoCard = pedidoAvaliado
-                    ? "Serviço já avaliado."
-                    : (m.texto || "Serviço finalizado. Aguardando avaliação.");
-                const btnHtml = pedidoAvaliado
-                    ? `<div style="margin-top:6px; color:#777; font-size:0.85rem;">Avaliação já registrada.</div>`
-                    : `<button onclick="abrirAvaliacaoPedido('${docId}')" style="background:#fbc02d; border:none; padding:8px 15px; border-radius:20px; font-weight:bold; cursor:pointer; color:#333;">Avaliar Agora</button>`;
+                // Card amarelo removido (o card com foto de finalização já cobre essa necessidade)
+                return;
+            }
+            // --- CARD FINALIZADO ---
+            else if (m.tipo === 'card_finalizado') {
+                const souClientePedido = pedidoAtualData && String(pedidoAtualData.deUid || '') === String(currentUserUid || '');
+                const titulo = pedidoAvaliado ? "Pedido avaliado com sucesso" : "Pedido finalizado";
+                const subt = pedidoAvaliado
+                    ? "Sua avaliação ajudou a comunidade."
+                    : (souClientePedido ? "Que tal avaliar o profissional agora?" : "Aguardando avaliação do cliente.");
+                const imgHtml = m.url
+                    ? `<div style="margin-top:10px;">
+                            <img src="${m.url}" alt="resultado" style="max-width:280px; width:100%; border-radius:12px; border:1px solid #e5e7eb; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
+                       </div>`
+                    : "";
+                const btnHtml = (!pedidoAvaliado && souClientePedido)
+                    ? `<button onclick="abrirAvaliacaoPedido('${docId}')" style="margin-top:10px; background:#0b7768; color:#fff; border:none; padding:9px 16px; border-radius:20px; font-weight:800; cursor:pointer;">Avaliar agora</button>`
+                    : `<div style="margin-top:8px; color:${pedidoAvaliado ? '#166534' : '#64748b'}; font-size:0.85rem; font-weight:700;">${pedidoAvaliado ? 'Obrigado!' : ' '}</div>`;
                 htmlParts.push(`
-                <div style="align-self:center; background:#fff9c4; border:1px solid #fbc02d; padding:15px; border-radius:12px; margin:15px 0; text-align:center;">
-                    <i class='bx bxs-star' style="color:#f9a825; font-size:1.5rem;"></i>
-                    <p style="margin:5px 0; font-weight:600; color:#333;">${textoCard}</p>
+                <div style="align-self:center; background:#ffffff; border:1px solid #e5e7eb; padding:16px; border-radius:14px; margin:14px 0; text-align:center; box-shadow:0 6px 18px rgba(15,23,42,0.06);">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:800; color:#0f172a;">
+                        <i class='bx bx-badge-check' style="color:#0b7768; font-size:1.3rem;"></i>
+                        ${titulo}
+                    </div>
+                    <div style="margin-top:6px; color:#475569; font-size:0.9rem;">${subt}</div>
+                    ${imgHtml}
                     ${btnHtml}
                 </div>`);
             }
@@ -4193,7 +4440,7 @@ window.gerarPagamento = async function() {
             if (draftKey) localStorage.removeItem(draftKey);
             if(colecaoAtual === 'conversas') {
                 try {
-                    await updateDoc(doc(db, "conversas", chatIdAtual), { ultimamensagem: txt, dataatualizacao: new Date() });
+                    await updateDoc(doc(db, "conversas", chatIdAtual), { ultimaMensagem: txt, dataAtualizacao: new Date().toISOString() });
                 } catch (e) { console.warn("Falha ao atualizar conversa:", e); }
             } else if (colecaoAtual === 'pedidos') {
                 try {
@@ -4274,6 +4521,29 @@ window.gerarPagamento = async function() {
                 await enviarAnexoArquivo(file);
             });
         }
+        const finalizarInput = document.getElementById('finalizarAnexo');
+        if (finalizarInput) {
+            finalizarInput.addEventListener('change', (e) => {
+                const file = e.target.files && e.target.files[0];
+                finalizacaoFile = file || null;
+                const nameEl = document.getElementById('finalizarNomeArquivo');
+                const preview = document.getElementById('finalizarPreview');
+                const img = document.getElementById('finalizarPreviewImg');
+                if (!file) {
+                    window.limparAnexoFinalizacao();
+                    return;
+                }
+                if (nameEl) nameEl.textContent = file.name;
+                if (preview) preview.style.display = 'flex';
+                if (img) {
+                    if (finalizacaoPreviewUrl) {
+                        try { URL.revokeObjectURL(finalizacaoPreviewUrl); } catch (_) {}
+                    }
+                    finalizacaoPreviewUrl = URL.createObjectURL(file);
+                    img.src = finalizacaoPreviewUrl;
+                }
+            });
+        }
         const msgInput = document.getElementById('inputMsg');
         if (msgInput) msgInput.addEventListener('input', salvarRascunhoChat);
         initScrollDownButton();
@@ -4313,9 +4583,48 @@ window.gerarPagamento = async function() {
 
 
 
+    async function abrirConversaComUid(uidOutro) {
+        if (!uidOutro || !currentUserUid) return;
+        try {
+            const q = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
+            const snap = await getDocs(q);
+            let convo = null;
+            snap.forEach((d) => {
+                const data = d.data() || {};
+                const parts = Array.isArray(data.participantes) ? data.participantes : [];
+                if (parts.includes(uidOutro)) {
+                    const updatedTs = getConversaUpdated(data);
+                    if (!convo || updatedTs > (convo.updatedTs || 0)) {
+                        convo = { id: d.id, data, updatedTs };
+                    }
+                }
+            });
+            if (!convo) {
+                const payload = {
+                    participantes: [currentUserUid, uidOutro],
+                    dataCriacao: new Date().toISOString(),
+                    dataAtualizacao: new Date().toISOString(),
+                    ultimaMensagem: ''
+                };
+                const ref = await addDoc(collection(db, "conversas"), payload);
+                convo = { id: ref.id, data: payload, updatedTs: getConversaUpdated(payload) };
+            }
+            await window.abrirChat(convo.id, uidOutro, '', '', 'conversas', '');
+            if (abaAtual !== 'conversas') trocarAba('conversas');
+        } catch (e) {
+            console.error('Falha ao abrir conversa por uid:', e);
+        }
+    }
+
     async function abrirChatDeepLink() {
         const params = new URLSearchParams(window.location.search);
         const chatId = params.get('chatId') || params.get('pedidoId');
+        const uidOutro = params.get('uid') || params.get('userUid');
+
+        if (uidOutro && currentUserUid) {
+            await abrirConversaComUid(uidOutro);
+            return;
+        }
         if (!chatId || !currentUserUid) return;
 
         try {
@@ -4460,8 +4769,8 @@ window.enviarAudio = function() {
             if(colecaoAtual === 'conversas') {
                 try {
                     await updateDoc(doc(db, "conversas", chatIdAtual), { 
-                        ultimamensagem: "🎤 Mensagem de voz",
-                        dataatualizacao: new Date()
+                        ultimaMensagem: "🎤 Mensagem de voz",
+                        dataAtualizacao: new Date().toISOString()
                     });
                 } catch (e) { console.warn("Falha ao atualizar conversa:", e); }
             } else if (colecaoAtual === 'pedidos') {

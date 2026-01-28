@@ -792,6 +792,9 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
     const user = auth?.currentUser;
     if (!user || !paraUid || user.uid === paraUid) return;
     const perfil = getActorPerfil();
+    const baseLink = (acao === "seguir_usuario" || acao === "pedido_amizade")
+        ? `perfil-cliente.html?id=${encodeURIComponent(user.uid)}`
+        : buildSocialNotifLink(postTipo, postFonte, postId, comentarioId, acao);
     const payload = {
         parauid: paraUid,
         deuid: user.uid,
@@ -806,7 +809,7 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
         comentariotexto: comentarioTexto || null,
         lida: false,
         createdat: new Date().toISOString(),
-        link: buildSocialNotifLink(postTipo, postFonte, postId, comentarioId, acao)
+        link: baseLink
     };
 
     try {

@@ -619,6 +619,7 @@
                 if(!insertOk) throw new Error('Falha ao inserir avaliação. Schema possivelmente desatualizado.');
 
                 await g.UPDATEDOC(g.DOC(g.DB, "pedidos", pedidoId), { avaliado: true });
+                try { localStorage.setItem(`doke_avaliado_${pedidoId}`, '1'); } catch (_) {}
 
                 const profRef = g.DOC(g.DB, "usuarios", profRowId || profUid);
                 try {

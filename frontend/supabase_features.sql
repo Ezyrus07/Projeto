@@ -123,20 +123,54 @@ alter table public.pedidos
 alter table public.conversas
   add column if not exists arquivadoPor text[] default '{}';
 alter table public.conversas
-  add column if not exists "ocultoChatPor" text[] default '{}';
+  add column if not exists "ocultoChatPor" text[] default '{}',
+  add column if not exists "ultimaMensagem" text,
+  add column if not exists "dataAtualizacao" timestamptz,
+  add column if not exists "dataCriacao" timestamptz;
 
 -- Replies nas mensagens (pedidos/conversas)
-alter table public.pedidos_mensagens
+alter table if exists public.pedidos_mensagens
   add column if not exists reply_to text,
   add column if not exists reply_preview text,
   add column if not exists reply_user text,
   add column if not exists reply_tipo text;
 
-alter table public.conversas_mensagens
+alter table if exists public.conversas_mensagens
   add column if not exists reply_to text,
   add column if not exists reply_preview text,
   add column if not exists reply_user text,
   add column if not exists reply_tipo text;
+
+-- Mensagens de conversas (caso não exista)
+create table if not exists public.conversas_mensagens (
+  id uuid primary key default gen_random_uuid(),
+  conversaid uuid not null,
+  senderuid text,
+  texto text,
+  tipo text,
+  url text,
+  timestamp timestamptz not null default now(),
+  lido boolean default false
+);
+
+do $$
+declare col_conv text;
+begin
+  select column_name into col_conv
+  from information_schema.columns
+  where table_schema = 'public'
+    and table_name = 'conversas_mensagens'
+    and column_name in ('conversaId','conversaid','conversa_id')
+  order by case column_name when 'conversaId' then 1 when 'conversaid' then 2 else 3 end
+  limit 1;
+  if col_conv is not null then
+    execute format('create index if not exists conversas_mensagens_conversaid_idx on public.conversas_mensagens (%I);', col_conv);
+  end if;
+end $$;
+create index if not exists conversas_mensagens_timestamp_idx on public.conversas_mensagens (timestamp);
+
+-- Se o id em "conversas" for TEXT e não UUID, ajuste a coluna:
+-- alter table public.conversas_mensagens alter column conversaid type text using conversaid::text;
 
 -- ============================================================
 -- DOKE Amizades (mensagens privadas)
@@ -156,6 +190,20 @@ create index if not exists idx_amizades_de on public.amizades ("deUid", status, 
 create index if not exists idx_amizades_para on public.amizades ("paraUid", status, created_at desc);
 
 -- ============================================================
+-- DOKE Seguidores
+-- ============================================================
+create table if not exists public.seguidores (
+  id uuid primary key default gen_random_uuid(),
+  "seguidorUid" text not null,
+  "seguidoUid" text not null,
+  created_at timestamptz not null default now(),
+  unique ("seguidorUid", "seguidoUid")
+);
+
+create index if not exists idx_seguidores_seguidor on public.seguidores ("seguidorUid", created_at desc);
+create index if not exists idx_seguidores_seguido on public.seguidores ("seguidoUid", created_at desc);
+
+-- ============================================================
 -- DOKE Pedidos - Orçamento detalhado (orcamento.html)
 -- ============================================================
 alter table public.pedidos
@@ -167,7 +215,11 @@ alter table public.pedidos
   add column if not exists "turno" text,
   add column if not exists "localizacao" jsonb,
   add column if not exists "modoAtend" text,
-  add column if not exists "respostasTriagem" jsonb;
+  add column if not exists "respostasTriagem" jsonb,
+  add column if not exists "dataAtualizacao" timestamptz,
+  add column if not exists "dataConclusao" timestamptz,
+  add column if not exists "ultimaMensagem" text,
+  add column if not exists "avaliado" boolean default false;
 
 -- RLS: ajuste se usar row level security nessas tabelas
 -- Exemplo (permissivo) para update das colunas de arquivamento:
