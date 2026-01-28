@@ -13,9 +13,10 @@
     <title>Grupo | Doke</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="grupo-refeito.css">
     <script src="script.js" defer></script>
-    <script src="comunidades-supabase-patch.js" defer></script>
-    <style>
+    <script src="grupo-refeito.js" defer></script>
+<style>
         /* ======================================================
            ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
            ====================================================== */
@@ -470,7 +471,6 @@
 
 </style>
 
-    <link rel="stylesheet" href="doke-chat-grupo-ui.css?v=20260126">
 </head>
 <body>
 
@@ -554,7 +554,23 @@
             </div>
           </div>
 
+          
+          <div class="join-gate" id="joinGate" style="display:none;">
+            <div class="join-gate-title" id="joinGateTitle">Entre no grupo</div>
+            <div class="join-gate-sub" id="joinGateSub">Toque para entrar e começar a postar.</div>
+            <button class="join-gate-btn" id="btnJoinGate">Entrar no grupo</button>
+          </div>
+
           <div class="grupo-composer" id="composerBox">
+            
+            <div class="reply-bar" id="replyBar" style="display:none;">
+              <div class="reply-bar-info">
+                <div class="reply-bar-title" id="replyBarTitle">Respondendo</div>
+                <div class="reply-bar-preview" id="replyBarPreview"></div>
+              </div>
+              <button class="reply-bar-close" id="btnCloseReply" title="Cancelar">×</button>
+            </div>
+
             <div class="composer-row">
               <label class="btn-icon" title="Anexar">
                 <i class='bx bx-paperclip'></i>
@@ -1049,13 +1065,13 @@
     if(empty) empty.style.display='none';
 
     for(const p of posts){
-      const user = (p.autorUser || p.autor_user || (p.autorNome ? String(p.autorNome).split(" ")[0].toLowerCase() : "") || "usuario");
-      const foto = (p.autorFoto || p.autor_foto || "");
-      const initial = (String(user).trim()[0] || 'u').toUpperCase();
+      const nome = p.autorNome || p.autor_nome || p.autor_user || 'Usuário';
+      const foto = p.autorFoto || p.autor_foto || '';
+      const initial = (String(nome).trim()[0] || 'U').toUpperCase();
 
       const texto = p.texto || '';
       const created = p.data || p.created_at || p.criado_em || null;
-      const time = created ? (window.DOKE_UI ? DOKE_UI.timeHHMM(created) : new Date(created).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})) : '';
+      const time = created ? new Date(created).toLocaleString('pt-BR') : '';
 
       const mediaUrl = p.midia_url || p.imagem || null;
       const mediaType = p.midia_tipo || inferMediaType(mediaUrl) || '';
@@ -1068,7 +1084,7 @@
       head.innerHTML = `
         <div class="post-user">
           <div class="avatar">${foto ? `<img src="${foto}" onerror="this.remove()">` : initial}</div>
-          <div class="name">@${safeText((String(user||"usuario")).replace(/^@+/, ""))}</div>
+          <div class="name">${safeText(nome)}</div>
         </div>
         <div class="post-time">${safeText(time)}</div>
       `;
@@ -1559,6 +1575,5 @@
 })();
 </script>
 
-    <script src="doke-chat-grupo-ui.js?v=20260126"></script>
 </body>
 </html>

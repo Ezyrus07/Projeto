@@ -631,8 +631,9 @@ window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricao
 
 try {
         const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        
-        await addDoc(collection(db, "pedidos"), {
+
+        const pedidoExistente = await encontrarPedidoExistenteBase(user.uid, idPrestador, null);
+        const pedidoPayload = {
             deUid: user.uid,
             paraUid: idPrestador,
             paraNome: nomePrestador,
@@ -643,12 +644,25 @@ try {
             respostasDoFormulario: respostasFormulario,
             status: "pendente",
             dataPedido: new Date().toISOString(),
+            dataAtualizacao: new Date().toISOString(),
+            ultimaMensagem: msg || "Novo pedido enviado",
             visualizado: false,
             
             // ADICIONE ESTES CAMPOS: Garante que nasce não lido
             notificacaoLidaProfissional: false, 
             notificacaoLidaCliente: true // Eu (cliente) já li o que acabei de enviar
-        });
+        };
+
+        if (pedidoExistente && pedidoExistente.id) {
+            const statusAtual = String(pedidoExistente.data?.status || "").toLowerCase();
+            const reabrir = ['recusado','cancelado','finalizado'];
+            if (!reabrir.includes(statusAtual)) {
+                pedidoPayload.status = pedidoExistente.data?.status || pedidoPayload.status;
+            }
+            await updateDoc(doc(db, "pedidos", pedidoExistente.id), pedidoPayload);
+        } else {
+            await addDoc(collection(db, "pedidos"), pedidoPayload);
+        }
 
         alert(`✅ Solicitação enviada! Aguarde o retorno no chat.`);
         
@@ -1013,6 +1027,244 @@ window.dokeBuildCardPremium = function(anuncio) {
 return card;
 };
 
+function __dokeNormalizeText(value) {
+    return String(value || '')
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .trim();
+}
+
+function __dokeTokenize(term) {
+    const base = __dokeNormalizeText(term);
+    if (!base) return [];
+    const rawTokens = base.split(/[\s,;:.|/\\]+/).filter(Boolean);
+    const tokens = new Set();
+    rawTokens.forEach(t => {
+        tokens.add(t);
+        if (t.endsWith('s') && t.length > 3) tokens.add(t.slice(0, -1));
+    });
+    return Array.from(tokens);
+}
+
+function __dokeBuildSearchText(anuncio) {
+    if (!anuncio) return '';
+    if (anuncio.__searchText) return anuncio.__searchText;
+    const parts = [
+        anuncio.titulo,
+        anuncio.descricao,
+        anuncio.categoria,
+        anuncio.categorias,
+        anuncio.tags,
+        anuncio.palavrasChave,
+        anuncio.palavras_chave,
+        anuncio.servico,
+        anuncio.servicos,
+        anuncio.nomeAutor,
+        anuncio.userHandle,
+        anuncio.cidade,
+        anuncio.bairro,
+        anuncio.uf
+    ];
+    const text = __dokeNormalizeText(parts.filter(Boolean).join(' '));
+    anuncio.__searchText = text;
+    return text;
+}
+
+function __dokeScoreAnuncio(anuncio, tokens) {
+    if (!tokens.length) return 0;
+    const titulo = __dokeNormalizeText(anuncio.titulo || '');
+    const desc = __dokeNormalizeText(anuncio.descricao || '');
+    const cat = __dokeNormalizeText(`${anuncio.categoria || ''} ${anuncio.categorias || ''}`);
+    const loc = __dokeNormalizeText(`${anuncio.cidade || ''} ${anuncio.bairro || ''} ${anuncio.uf || ''}`);
+
+    let score = 0;
+    tokens.forEach(t => {
+        if (titulo.includes(t)) score += 6;
+        if (cat.includes(t)) score += 4;
+        if (desc.includes(t)) score += 3;
+        if (loc.includes(t)) score += 2;
+    });
+
+    const full = __dokeBuildSearchText(anuncio);
+    const fullTerm = tokens.join(' ');
+    if (full.includes(fullTerm)) score += 5;
+
+    return score;
+}
+
+function __dokeFilterByTerm(lista, term) {
+    const tokens = __dokeTokenize(term);
+    if (!tokens.length) return lista.slice();
+    const ranked = lista.map(a => {
+        const hay = __dokeBuildSearchText(a);
+        const okAll = tokens.every(t => hay.includes(t));
+        const okAny = tokens.some(t => hay.includes(t));
+        const score = okAll || okAny ? __dokeScoreAnuncio(a, tokens) : 0;
+        return { anuncio: a, score, okAll, okAny };
+    });
+
+    let filtered = ranked.filter(x => x.okAll);
+    if (!filtered.length) filtered = ranked.filter(x => x.okAny);
+
+    return filtered
+        .sort((a, b) => b.score - a.score)
+        .map(x => x.anuncio);
+}
+
+function __dokeParsePreco(value) {
+    if (value === null || value === undefined) return null;
+    const s = String(value).toLowerCase();
+    if (s.includes('orc') || s.includes('combinar')) return null;
+    const cleaned = s.replace(/[^0-9,\.]/g, '');
+    const normalized = cleaned.replace(/\.(?=.*\.)/g, '').replace(',', '.');
+    const n = parseFloat(normalized);
+    return Number.isFinite(n) ? n : null;
+}
+
+function __dokeApplyFilters(lista, opts = {}) {
+    let out = lista.slice();
+    const term = opts.term ? String(opts.term).trim() : '';
+    if (term) out = __dokeFilterByTerm(out, term);
+
+    const tipoAtend = (opts.tipoAtend || '').toLowerCase();
+    if (tipoAtend && tipoAtend !== 'todos') {
+        out = out.filter(a => {
+            const modo = __dokeNormalizeText(a.modo_atend || a.modoAtend || a.atendimento || a.tipoAtendimento || '');
+            if (tipoAtend === 'online') return modo.includes('online') || modo.includes('ambos');
+            if (tipoAtend === 'presencial') return modo.includes('presencial') || modo.includes('ambos');
+            if (tipoAtend === 'ambos') return modo.includes('ambos');
+            return modo.includes(__dokeNormalizeText(tipoAtend));
+        });
+    }
+
+    const categoria = __dokeNormalizeText(opts.categoria || '');
+    if (categoria && categoria !== 'todas') {
+        out = out.filter(a => {
+            const cat = __dokeNormalizeText(a.categoria || '');
+            const cats = __dokeNormalizeText(a.categorias || '');
+            return cat === categoria || cats.split(',').some(c => __dokeNormalizeText(c) === categoria);
+        });
+    }
+
+    const tipoPreco = __dokeNormalizeText(opts.tipoPreco || '');
+    if (tipoPreco && tipoPreco !== 'todos') {
+        out = out.filter(a => {
+            const tipoRaw = __dokeNormalizeText(a.tipoPreco || a.tipo_preco || '');
+            const precoRaw = String(a.preco || '');
+            const precoNorm = __dokeNormalizeText(precoRaw);
+            const isOrc = tipoRaw.includes('sob orcamento') || precoNorm.includes('orcamento');
+            const isFixo = tipoRaw.includes('preco fixo') || (!isOrc && __dokeParsePreco(precoRaw) !== null);
+            if (tipoPreco === 'sob_orcamento') return isOrc;
+            if (tipoPreco === 'preco_fixo') return isFixo;
+            return true;
+        });
+    }
+
+    let uf = __dokeNormalizeText(opts.uf || '');
+    let cidade = __dokeNormalizeText(opts.cidade || '');
+    let bairro = __dokeNormalizeText(opts.bairro || '');
+
+    const chip = __dokeNormalizeText(opts.chip || '');
+    if (chip === 'perto' && !uf && !cidade && !bairro) {
+        uf = __dokeNormalizeText(localStorage.getItem('doke_loc_uf') || '');
+        cidade = __dokeNormalizeText(localStorage.getItem('doke_loc_cidade') || '');
+        bairro = __dokeNormalizeText(localStorage.getItem('doke_loc_bairro') || '');
+    }
+
+    if (uf) out = out.filter(a => __dokeNormalizeText(a.uf || '') === uf);
+    if (cidade) out = out.filter(a => __dokeNormalizeText(a.cidade || '') === cidade);
+    if (bairro) out = out.filter(a => __dokeNormalizeText(a.bairro || '') === bairro);
+
+    const pagamentos = opts.pagamentos || {};
+    if (pagamentos.pix || pagamentos.credito || pagamentos.debito) {
+        out = out.filter(a => {
+            const raw = Array.isArray(a.pagamentosAceitos) ? a.pagamentosAceitos : (a.pagamentos_aceitos || []);
+            const list = Array.isArray(raw)
+                ? raw.map(p => __dokeNormalizeText(p))
+                : __dokeNormalizeText(raw).split(',').map(p => p.trim()).filter(Boolean);
+            if (pagamentos.pix && !list.some(p => p.includes('pix'))) return false;
+            if (pagamentos.credito && !list.some(p => p.includes('credito'))) return false;
+            if (pagamentos.debito && !list.some(p => p.includes('debito'))) return false;
+            return true;
+        });
+    }
+
+    const extras = opts.extras || {};
+    if (extras.garantia) {
+        out = out.filter(a => String(a.garantia || '').trim().length > 0);
+    }
+    if (extras.emergencia) {
+        out = out.filter(a => a.atendeEmergencia === true || a.emergencia === true);
+    }
+    if (extras.formulario) {
+        out = out.filter(a => a.temFormulario === true || (Array.isArray(a.perguntasFormularioJson) && a.perguntasFormularioJson.length > 0));
+    }
+
+    if (Number.isFinite(opts.maxPrice)) {
+        out = out.filter(a => {
+            const p = __dokeParsePreco(a.preco);
+            return p === null ? true : p <= opts.maxPrice;
+        });
+    }
+
+    if (chip === 'super') {
+        out = out.filter(a => (a.mediaAvaliacao || 0) >= 4.5 || (a.numAvaliacoes || 0) >= 5);
+    } else if (chip === 'recem') {
+        const now = Date.now();
+        out = out.filter(a => {
+            const d = new Date(a.dataCriacao || a.dataAtualizacao || 0).getTime();
+            return d && (now - d) <= 30 * 24 * 60 * 60 * 1000;
+        });
+    } else if (chip === 'verificados') {
+        out = out.filter(a => a.verificado === true || a.verified === true || a.isVerified === true);
+    }
+
+    const ord = opts.order || '';
+    if (ord === 'preco_menor' || ord === 'menor_preco') {
+        out.sort((a, b) => (__dokeParsePreco(a.preco) ?? 1e12) - (__dokeParsePreco(b.preco) ?? 1e12));
+    } else if (ord === 'preco_maior') {
+        out.sort((a, b) => (__dokeParsePreco(b.preco) ?? -1) - (__dokeParsePreco(a.preco) ?? -1));
+    } else if (ord === 'melhor_avaliacao') {
+        out.sort((a, b) => (b.mediaAvaliacao || 0) - (a.mediaAvaliacao || 0));
+    } else if (ord === 'mais_recente' || ord === 'recente') {
+        out.sort((a, b) => {
+            const da = new Date(a.dataCriacao || a.dataAtualizacao || 0).getTime();
+            const db = new Date(b.dataCriacao || b.dataAtualizacao || 0).getTime();
+            return db - da;
+        });
+    }
+
+    if (chip === 'tendencias') {
+        out = out
+            .map(a => ({ a, s: (a.views || 0) + (a.cliques || 0) }))
+            .sort((x, y) => y.s - x.s)
+            .map(x => x.a);
+        if (out.length > 24) out = out.slice(0, 24);
+    }
+
+    return out;
+}
+
+window.dokePopulateCategoryFilters = function() {
+    const selects = document.querySelectorAll('#filtroCategoria');
+    if (!selects.length) return;
+    const full = Array.isArray(window.__dokeAnunciosCacheFull) ? window.__dokeAnunciosCacheFull : [];
+    const set = new Set();
+    full.forEach(a => {
+        const cat = String(a.categoria || '').trim();
+        if (cat) set.add(cat);
+        const cats = String(a.categorias || '').split(',').map(s => s.trim()).filter(Boolean);
+        cats.forEach(c => set.add(c));
+    });
+    const list = Array.from(set).sort((a, b) => a.localeCompare(b));
+    selects.forEach(sel => {
+        const current = sel.value || 'todas';
+        sel.innerHTML = '<option value="todas">Todas</option>' + list.map(c => `<option value="${c}">${c}</option>`).join('');
+        sel.value = list.includes(current) ? current : 'todas';
+    });
+};
+
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
     const tituloSecao = document.getElementById('categorias-title'); 
@@ -1036,27 +1288,35 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
 
         window.__dokeAnunciosCacheFull = listaAnuncios.slice();
+        if (typeof window.dokePopulateCategoryFilters === 'function') {
+            window.dokePopulateCategoryFilters();
+        }
 
+        const isBuscaPage = !!document.getElementById('filtroOrdenacao');
+        if (isBuscaPage) {
+            window.__dokeBuscaTermoAtual = termoBusca || '';
+            if (typeof window.aplicarFiltrosBusca === 'function') {
+                window.aplicarFiltrosBusca();
+                return;
+            }
+        }
+
+        let listaFinal = listaAnuncios;
         if (termoBusca && termoBusca.trim() !== "") {
-            const termo = termoBusca.toLowerCase().trim();
             if(tituloSecao) tituloSecao.innerHTML = `Resultados para: <span style="color:var(--cor2)">"${termoBusca}"</span>`;
-            listaAnuncios = listaAnuncios.filter(anuncio => {
-                const titulo = (anuncio.titulo || "").toLowerCase();
-                const desc = (anuncio.descricao || "").toLowerCase();
-                return titulo.includes(termo) || desc.includes(termo);
-            });
+            listaFinal = __dokeApplyFilters(listaAnuncios, { term: termoBusca });
         } else {
             if(tituloSecao) tituloSecao.innerText = "Categorias em alta:";
         }
 
         feed.innerHTML = ""; 
 
-        if (listaAnuncios.length === 0) {
+        if (listaFinal.length === 0) {
             feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
             return;
         }
 
-        listaAnuncios.forEach((anuncio) => {
+        listaFinal.forEach((anuncio) => {
             const card = window.dokeBuildCardPremium(anuncio);
             feed.appendChild(card);
         });
@@ -1065,6 +1325,88 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
     }
 }
+
+window.aplicarFiltrosBusca = function() {
+    const feed = document.getElementById('feedAnuncios');
+    if (!feed) return;
+
+    const full = Array.isArray(window.__dokeAnunciosCacheFull) ? window.__dokeAnunciosCacheFull.slice() : [];
+    const inputBusca = document.getElementById('inputBusca');
+    const termo = (inputBusca?.value || window.__dokeBuscaTermoAtual || '').trim();
+
+    const maxRaw = (document.getElementById('filtroPreco')?.value || '').trim();
+    const maxPrice = maxRaw ? parseFloat(maxRaw.replace(',', '.')) : null;
+
+    const order = document.getElementById('filtroOrdenacao')?.value || 'recente';
+    const tipoAtend = document.querySelector('input[name="tipoAtend"]:checked')?.value || 'todos';
+    const tipoPreco = document.getElementById('filtroTipoPreco')?.value || 'todos';
+    const categoria = document.getElementById('filtroCategoria')?.value || 'todas';
+    const chip = window.__dokeChipFiltro || 'todos';
+    const pagamentos = {
+        pix: !!document.getElementById('filtroPgPix')?.checked,
+        credito: !!document.getElementById('filtroPgCredito')?.checked,
+        debito: !!document.getElementById('filtroPgDebito')?.checked
+    };
+    const extras = {
+        garantia: !!document.getElementById('filtroGarantia')?.checked,
+        emergencia: !!document.getElementById('filtroEmergencia')?.checked,
+        formulario: !!document.getElementById('filtroFormulario')?.checked
+    };
+
+    const uf = document.getElementById('selectEstado')?.value || '';
+    const cidade = document.getElementById('selectCidade')?.value || '';
+    const bairro = document.getElementById('selectBairro')?.value || '';
+
+    const lista = __dokeApplyFilters(full, {
+        term: termo,
+        maxPrice: Number.isFinite(maxPrice) ? maxPrice : null,
+        order,
+        tipoPreco,
+        categoria,
+        pagamentos,
+        extras,
+        chip,
+        tipoAtend,
+        uf,
+        cidade,
+        bairro
+    });
+
+    feed.innerHTML = '';
+    if (!lista.length) {
+        feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anúncio encontrado com esses filtros.</p></div>';
+    } else {
+        const frag = document.createDocumentFragment();
+        lista.forEach(anuncio => {
+            const card = window.dokeBuildCardPremium(anuncio);
+            frag.appendChild(card);
+        });
+        feed.appendChild(frag);
+    }
+
+    const titulo = document.getElementById('categorias-title');
+    if (titulo) {
+        titulo.innerHTML = termo ? `Resultados para: <span style="color:var(--cor2)">"${termo}"</span>` : 'Resultados da busca';
+    }
+    const contador = document.getElementById('contador-resultados');
+    if (contador) {
+        contador.textContent = `Mostrando ${lista.length} resultados`;
+    }
+};
+
+window.novaBusca = function() {
+    const input = document.getElementById('inputBusca');
+    const termo = (input?.value || '').trim();
+    if (termo) {
+        try { salvarBusca(termo); } catch (_) {}
+    }
+    const url = new URL(window.location.href);
+    if (termo) url.searchParams.set('q', termo);
+    else url.searchParams.delete('q');
+    window.history.replaceState({}, '', url.toString());
+    window.__dokeBuscaTermoAtual = termo;
+    window.carregarAnunciosDoFirebase(termo);
+};
 
 // ============================================================
 // 8. FUNÇÕES GERAIS (CARREGAMENTO, AUTH, ETC) - MANTIDAS
@@ -1418,6 +1760,38 @@ window.toggleDropdown = function(event) {
     drop.classList.toggle('show');
 }
 
+function ensureDokeLoadingOverlay() {
+    let overlay = document.getElementById('dokeLoadingOverlay');
+    if (overlay) return overlay;
+    overlay = document.createElement('div');
+    overlay.id = 'dokeLoadingOverlay';
+    overlay.className = 'doke-loading-overlay';
+    overlay.innerHTML = `
+        <div class="doke-loading-card">
+            <div class="doke-loader" aria-hidden="true"></div>
+            <div class="doke-loading-texts">
+                <div class="doke-loading-title">Carregando...</div>
+                <div class="doke-loading-sub">Aguarde um instante</div>
+            </div>
+        </div>`;
+    document.body.appendChild(overlay);
+    return overlay;
+}
+
+window.dokeShowLoading = function(opts = {}) {
+    const overlay = ensureDokeLoadingOverlay();
+    const title = overlay.querySelector('.doke-loading-title');
+    const sub = overlay.querySelector('.doke-loading-sub');
+    if (title) title.textContent = opts.title || 'Carregando...';
+    if (sub) sub.textContent = opts.subtitle || 'Aguarde um instante';
+    overlay.classList.add('show');
+};
+
+window.dokeHideLoading = function() {
+    const overlay = document.getElementById('dokeLoadingOverlay');
+    if (overlay) overlay.classList.remove('show');
+};
+
 if (!window.__dokeDropdownBound) {
     window.__dokeDropdownBound = true;
     document.addEventListener('click', () => {
@@ -1515,9 +1889,28 @@ window.toggleFiltrosExtras = function() {
         btn.style.background = "var(--cor0)"; btn.style.color = "white";
     }
 }
+window.__dokeChipFiltro = window.__dokeChipFiltro || 'todos';
 window.ativarChip = function(el) {
-    el.parentElement.querySelectorAll('.chip-tag').forEach(c => c.classList.remove('ativo'));
+    if (!el) return;
+    const wrap = el.parentElement;
+    if (wrap) wrap.querySelectorAll('.chip-tag').forEach(c => c.classList.remove('ativo'));
     el.classList.add('ativo');
+    const chip = el.getAttribute('data-chip') || 'todos';
+    window.__dokeChipFiltro = chip;
+    if (document.getElementById('filtroOrdenacao')) {
+        if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
+    } else {
+        if (window.dokeApplyHomeFilters) window.dokeApplyHomeFilters();
+    }
+}
+
+window.scrollChips = function(btn) {
+    if (!btn) return;
+    const wrapper = btn.closest('.filtros-rapidos');
+    const container = wrapper?.querySelector('[data-chips]') || btn.parentElement?.nextElementSibling;
+    if (!container) return;
+    const amount = Math.max(160, Math.floor(container.clientWidth * 0.7));
+    container.scrollBy({ left: amount, behavior: 'smooth' });
 }
 
 function salvarBusca(termo) {
@@ -1832,12 +2225,14 @@ window.carregarFiltrosLocalizacao = async function() {
             selBairro.innerHTML = '<option value="" disabled selected>Bairro</option>';
             selCidade.disabled = false;
             selBairro.disabled = true;
+            try { localStorage.setItem('doke_loc_uf', ufSel || ''); } catch (e) {}
 
             if (locaisMap[ufSel]) {
                 Object.keys(locaisMap[ufSel]).sort().forEach(cidade => {
                     selCidade.innerHTML += `<option value="${cidade}">${cidade}</option>`;
                 });
             }
+            filtrarAnunciosPorLocal(ufSel, '', '');
         };
 
         selCidade.onchange = function() {
@@ -1845,6 +2240,10 @@ window.carregarFiltrosLocalizacao = async function() {
             const cidSel = this.value;
             selBairro.innerHTML = '<option value="" disabled selected>Bairro</option>';
             selBairro.disabled = false;
+            try {
+                localStorage.setItem('doke_loc_uf', ufSel || '');
+                localStorage.setItem('doke_loc_cidade', cidSel || '');
+            } catch (e) {}
 
             if (locaisMap[ufSel] && locaisMap[ufSel][cidSel]) {
                 const bairros = Array.from(locaisMap[ufSel][cidSel]).sort();
@@ -1856,6 +2255,7 @@ window.carregarFiltrosLocalizacao = async function() {
         };
 
         selBairro.onchange = function() {
+            try { localStorage.setItem('doke_loc_bairro', this.value || ''); } catch (e) {}
             filtrarAnunciosPorLocal(selEstado.value, selCidade.value, this.value);
         };
 
@@ -1863,7 +2263,12 @@ window.carregarFiltrosLocalizacao = async function() {
 }
 
 window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
-    console.log("Filtrando por:", uf, cidade, bairro);
+    window.__dokeFiltroLocal = { uf, cidade, bairro };
+    if (document.getElementById('filtroOrdenacao')) {
+        if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
+    } else {
+        if (window.dokeApplyHomeFilters) window.dokeApplyHomeFilters();
+    }
 }
 
 // ============================================================
@@ -2656,7 +3061,8 @@ async function finalizarPedidoComQuiz(idPrestador, nomePrestador, servico, formu
     const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
     try {
-        await addDoc(collection(db, "pedidos"), {
+        const pedidoExistente = await encontrarPedidoExistenteBase(user.uid, idPrestador, null);
+        const pedidoPayload = {
             deUid: user.uid,
             paraUid: idPrestador,
             paraNome: nomePrestador,
@@ -2665,12 +3071,49 @@ async function finalizarPedidoComQuiz(idPrestador, nomePrestador, servico, formu
             servicoReferencia: servico,
             formularioRespostas: formularioRespondido, // ARRAY DE OBJETOS [{pergunta, resposta}]
             status: "pendente",
-            dataPedido: new Date().toISOString()
-        });
+            dataPedido: new Date().toISOString(),
+            dataAtualizacao: new Date().toISOString(),
+            ultimaMensagem: servico || "Novo pedido enviado"
+        };
+        if (pedidoExistente && pedidoExistente.id) {
+            const statusAtual = String(pedidoExistente.data?.status || "").toLowerCase();
+            const reabrir = ['recusado','cancelado','finalizado'];
+            if (!reabrir.includes(statusAtual)) {
+                pedidoPayload.status = pedidoExistente.data?.status || pedidoPayload.status;
+            }
+            await updateDoc(doc(db, "pedidos", pedidoExistente.id), pedidoPayload);
+        } else {
+            await addDoc(collection(db, "pedidos"), pedidoPayload);
+        }
         alert("✅ Solicitação enviada com sucesso!");
     } catch (e) {
         console.error(e);
         alert("Erro ao salvar no Firestore.");
+    }
+}
+
+async function encontrarPedidoExistenteBase(deUid, paraUid, anuncioId) {
+    try {
+        if (!db || !deUid || !paraUid) return null;
+        const q = query(collection(db, "pedidos"), where("deUid", "==", deUid), where("paraUid", "==", paraUid));
+        const snap = await getDocs(q);
+        if (snap.empty) return null;
+        const candidatos = [];
+        snap.forEach((d) => {
+            const data = d.data() || {};
+            if (anuncioId && data.anuncioId && data.anuncioId !== anuncioId) return;
+            candidatos.push({ id: d.id, data });
+        });
+        if (!candidatos.length) return null;
+        candidatos.sort((a, b) => {
+            const ta = Date.parse(a.data.dataAtualizacao || a.data.dataPedido || 0) || 0;
+            const tb = Date.parse(b.data.dataAtualizacao || b.data.dataPedido || 0) || 0;
+            return tb - ta;
+        });
+        return candidatos[0];
+    } catch (e) {
+        console.warn("find pedido existente falhou:", e);
+        return null;
     }
 }
 
@@ -8266,51 +8709,48 @@ async function carregarComentariosSupabase(publicacaoId) {
     }catch(e){}
   }
 
-  // Filtros da home (max preco + ordenacao) - sem mexer no UX do card
-  function parsePreco(value){
-    if(value === null || value === undefined) return null;
-    const s = String(value).toLowerCase();
-    if(s.includes('orc') || s.includes('combinar')) return null;
-    const cleaned = s.replace(/[^0-9,\.]/g, '');
-    // formato BR: 1.234,56
-    const normalized = cleaned.replace(/\.(?=.*\.)/g, '').replace(',', '.');
-    const n = parseFloat(normalized);
-    return Number.isFinite(n) ? n : null;
-  }
-
   window.dokeApplyHomeFilters = function(){
     const full = Array.isArray(window.__dokeAnunciosCacheFull) ? window.__dokeAnunciosCacheFull.slice() : [];
-    const termo = (byId('inputBusca')?.value || '').trim().toLowerCase();
-
-    let lista = full;
-    if(termo){
-      lista = lista.filter(a => {
-        const hay = ((a.titulo||'') + ' ' + (a.descricao||'') + ' ' + (a.categorias||'')).toLowerCase();
-        return hay.includes(termo);
-      });
-    }
+    const termo = (byId('inputBusca')?.value || '').trim();
 
     const maxStr = (byId('maxPreco')?.value || '').trim();
-    const max = parseFloat(maxStr.replace(',', '.'));
-    if(Number.isFinite(max)){
-      lista = lista.filter(a => {
-        const p = parsePreco(a.preco);
-        return p === null ? true : p <= max;
-      });
-    }
+    const max = maxStr ? parseFloat(maxStr.replace(',', '.')) : null;
+    const ord = byId('ordenacao')?.value || 'mais_recente';
 
-    const ord = byId('ordenacao')?.value || 'relevancia';
-    if(ord === 'preco_menor'){
-      lista.sort((a,b) => (parsePreco(a.preco) ?? 1e12) - (parsePreco(b.preco) ?? 1e12));
-    } else if(ord === 'preco_maior'){
-      lista.sort((a,b) => (parsePreco(b.preco) ?? -1) - (parsePreco(a.preco) ?? -1));
-    } else if(ord === 'mais_recente'){
-      lista.sort((a,b) => {
-        const da = new Date(a.dataCriacao || a.dataAtualizacao || 0).getTime();
-        const db = new Date(b.dataCriacao || b.dataAtualizacao || 0).getTime();
-        return db - da;
-      });
-    }
+    const uf = byId('selectEstado')?.value || '';
+    const cidade = byId('selectCidade')?.value || '';
+    const bairro = byId('selectBairro')?.value || '';
+    const tipoAtend = byId('filtroTipoAtend')?.value || 'todos';
+    const tipoPreco = byId('filtroTipoPreco')?.value || 'todos';
+    const categoria = byId('filtroCategoria')?.value || 'todas';
+    const chip = window.__dokeChipFiltro || 'todos';
+    const pagamentos = {
+      pix: !!byId('filtroPgPix')?.checked,
+      credito: !!byId('filtroPgCredito')?.checked,
+      debito: !!byId('filtroPgDebito')?.checked
+    };
+    const extras = {
+      garantia: !!byId('filtroGarantia')?.checked,
+      emergencia: !!byId('filtroEmergencia')?.checked,
+      formulario: !!byId('filtroFormulario')?.checked
+    };
+
+    const lista = (typeof __dokeApplyFilters === 'function')
+      ? __dokeApplyFilters(full, {
+          term: termo,
+          maxPrice: Number.isFinite(max) ? max : null,
+          order: ord,
+          tipoAtend,
+          tipoPreco,
+          categoria,
+          pagamentos,
+          extras,
+          chip,
+          uf,
+          cidade,
+          bairro
+        })
+      : full;
 
     const feed = byId('feedAnuncios');
     if(feed){

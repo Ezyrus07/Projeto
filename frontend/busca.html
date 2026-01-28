@@ -250,6 +250,60 @@
                         <label class="radio-item">
                             <input type="radio" name="tipoAtend" value="Presencial" onchange="aplicarFiltrosBusca()"> Presencial
                         </label>
+                        <label class="radio-item">
+                            <input type="radio" name="tipoAtend" value="Ambos" onchange="aplicarFiltrosBusca()"> Ambos
+                        </label>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <div class="filtros-rapidos">
+                        <div class="filtros-rapidos-header">
+                            <span>Filtros rápidos</span>
+                            <button class="chips-arrow" type="button" onclick="scrollChips(this)"><i class='bx bx-chevron-right'></i></button>
+                        </div>
+                        <div class="filtros-chips-scroll" data-chips>
+                            <button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
+                            <button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class='bx bx-trending-up'></i> Tendências</button>
+                            <button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class='bx bx-map'></i> Perto de você</button>
+                            <button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class='bx bx-star'></i> Super Profissionais</button>
+                            <button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class='bx bx-time'></i> Recém-chegados</button>
+                            <button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class='bx bx-badge-check'></i> Verificados</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Categoria</span>
+                    <select id="filtroCategoria" class="select-sidebar" onchange="aplicarFiltrosBusca()">
+                        <option value="todas">Todas</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Tipo de Preço</span>
+                    <select id="filtroTipoPreco" class="select-sidebar" onchange="aplicarFiltrosBusca()">
+                        <option value="todos">Todos</option>
+                        <option value="preco_fixo">Preço Fixo</option>
+                        <option value="sob_orcamento">Sob Orçamento</option>
+                    </select>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Pagamentos aceitos</span>
+                    <div class="filtro-checks-row">
+                        <label><input type="checkbox" id="filtroPgPix" onchange="aplicarFiltrosBusca()"> Pix</label>
+                        <label><input type="checkbox" id="filtroPgCredito" onchange="aplicarFiltrosBusca()"> Crédito</label>
+                        <label><input type="checkbox" id="filtroPgDebito" onchange="aplicarFiltrosBusca()"> Débito</label>
+                    </div>
+                </div>
+
+                <div class="filter-group">
+                    <span class="filter-label">Extras</span>
+                    <div class="filtro-checks-row">
+                        <label><input type="checkbox" id="filtroGarantia" onchange="aplicarFiltrosBusca()"> Com garantia</label>
+                        <label><input type="checkbox" id="filtroEmergencia" onchange="aplicarFiltrosBusca()"> Emergência</label>
+                        <label><input type="checkbox" id="filtroFormulario" onchange="aplicarFiltrosBusca()"> Tem formulário</label>
                     </div>
                 </div>
 
@@ -280,7 +334,22 @@
             document.getElementById('filtroOrdenacao').value = "recente";
             document.getElementById('selectEstado').value = "";
             document.getElementById('selectCidade').value = "";
+            document.getElementById('selectCidade').disabled = true;
+            document.getElementById('selectBairro').value = "";
+            document.getElementById('selectBairro').disabled = true;
+            document.getElementById('filtroCategoria').value = "todas";
+            document.getElementById('filtroTipoPreco').value = "todos";
+            document.getElementById('filtroPgPix').checked = false;
+            document.getElementById('filtroPgCredito').checked = false;
+            document.getElementById('filtroPgDebito').checked = false;
+            document.getElementById('filtroGarantia').checked = false;
+            document.getElementById('filtroEmergencia').checked = false;
+            document.getElementById('filtroFormulario').checked = false;
             document.querySelector('input[name="tipoAtend"][value="todos"]').checked = true;
+            window.__dokeChipFiltro = 'todos';
+            document.querySelectorAll('.chip-tag').forEach(c => c.classList.remove('ativo'));
+            const chipTodos = document.querySelector('.chip-tag[data-chip="todos"]');
+            if (chipTodos) chipTodos.classList.add('ativo');
             if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
         }
         

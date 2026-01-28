@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
 
@@ -30,31 +30,14 @@
         
         html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
 
-        /* AJUSTE DO HEADER PARA O CHAT (Mantendo o visual padrão, mas posicionado) */
-        .navbar-desktop {
-            position: fixed;
-            top: 0;
-            left: 270px; /* Começa após a sidebar */
-            width: calc(100% - 270px);
-            height: 80px;
-            background: #fff;
-            z-index: 50;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 40px;
-            box-sizing: border-box;
-        }
-
         /* Container Principal do Chat (Abaixo do Header) */
         .messenger-layout {
             display: grid;
             grid-template-columns: 380px 1fr; /* 380px Lista | Resto Chat */
-            height: calc(100vh - 80px); /* Altura total MENOS o header */
-            width: calc(100vw - 270px); /* Largura total MENOS a sidebar */
-            margin-left: 270px; /* Espaço da Sidebar */
-            margin-top: 80px; /* Espaço do Header */
+            height: calc(100vh - var(--navbar-height-desktop)); /* Altura total MENOS o header */
+            width: calc(100vw - var(--sidebar-width)); /* Largura total MENOS a sidebar */
+            margin-left: var(--sidebar-width); /* Espaço da Sidebar */
+            margin-top: var(--navbar-height-desktop); /* Espaço do Header */
             background-color: #fff;
             position: relative;
         }
@@ -346,6 +329,128 @@
         }
         .chat-menu-item:hover{ background:#f3f4f6; }
         .chat-menu-item.danger{ color:#b91c1c; }
+        .chat-menu{ position: relative; z-index: 60; }
+        .chat-menu-dropdown{ z-index: 99999; }
+        .chat-header{ position: relative; z-index: 60; overflow: visible; }
+        .mensagens-body{ position: relative; z-index: 1; }
+        .coluna-chat, #box-conversa-real{ overflow: visible; }
+
+        .archive-btn{
+            width:28px;
+            height:28px;
+            border-radius:8px;
+            border:1px solid #e2e8f0;
+            background:#fff;
+            color:#64748b;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            transition:all .15s ease;
+        }
+        .archive-btn:hover{ background:#f1f5f9; color:var(--cor0); }
+
+        .reply-bar{
+            display:none;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            padding:8px 12px;
+            border:1px solid #e2e8f0;
+            background:#f8fafc;
+            border-radius:12px;
+            margin:8px 16px 0 16px;
+        }
+        .reply-bar.show{ display:flex; }
+        .reply-bar .rb-left{ min-width:0; flex:1; }
+        .reply-bar .rb-user{ font-weight:800; font-size:0.85rem; }
+        .reply-bar .rb-text{ font-size:0.82rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .reply-bar .rb-close{
+            width:32px; height:32px; border-radius:10px;
+            border:1px solid #e2e8f0; background:#fff; cursor:pointer;
+        }
+        .reply-preview{
+            border-left:3px solid rgba(255,255,255,0.35);
+            padding-left:8px;
+            margin-bottom:6px;
+            font-size:0.78rem;
+            color: rgba(247,255,251,0.9);
+        }
+        .msg-recebida .reply-preview{
+            border-left-color: rgba(17,24,39,0.18);
+            color: #64748b;
+        }
+        .msg-reply-btn{
+            border:none; background:transparent; cursor:pointer;
+            color:#94a3b8; padding:2px 4px; border-radius:6px;
+            float:right; margin-left:6px; font-size:0.85rem;
+        }
+        .msg-reply-btn:hover{ background:#f1f5f9; color:#0b7768; }
+        .pedido-info-card, .pedido-recusa-card{
+            align-self: center;
+            width: min(520px, 92%);
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 14px 16px;
+            box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+            margin: 6px auto 10px;
+        }
+        .pedido-info-card .pi-header{
+            display:flex; align-items:center; justify-content:space-between; gap:10px;
+            margin-bottom: 8px;
+        }
+        .pedido-info-card .pi-title{
+            font-weight: 800; color:#0f172a; font-size:0.95rem;
+        }
+        .pedido-info-card .pi-chip{
+            background:#e0f2f1; color:#0b7768; border-radius:999px;
+            padding:4px 10px; font-size:0.7rem; font-weight:800;
+        }
+        .pedido-info-card .pi-desc{
+            font-size:0.82rem; color:#475569; margin-bottom: 10px;
+        }
+        .pedido-info-card .pi-grid{
+            display:grid; grid-template-columns: 1fr 1fr; gap:10px;
+            margin-bottom: 10px;
+        }
+        .pedido-info-card .pi-label{ font-size:0.7rem; color:#94a3b8; text-transform:uppercase; font-weight:800; }
+        .pedido-info-card .pi-value{ font-size:0.82rem; color:#1f2937; font-weight:700; }
+        .pedido-info-card .pi-block{
+            background:#f8fafc; border:1px dashed #e2e8f0; border-radius:12px;
+            padding:10px;
+        }
+        .pedido-info-card .pi-list{
+            display:flex; flex-direction:column; gap:6px; font-size:0.8rem; color:#475569;
+        }
+        .pedido-info-card .pi-anexos-grid{
+            display:grid;
+            grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+            gap:8px;
+            margin-top:6px;
+        }
+        .pedido-info-card .pi-anexos-grid img{
+            width:100%;
+            height:72px;
+            object-fit:cover;
+            border-radius:10px;
+            border:1px solid #e2e8f0;
+            background:#f1f5f9;
+            cursor:pointer;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+        .pedido-info-card .pi-anexos-grid img:hover{
+            transform: translateY(-1px);
+            box-shadow: 0 8px 16px rgba(15, 23, 42, 0.12);
+        }
+        .pedido-info-card .pi-qa b{ color:#0f172a; font-size:0.78rem; display:block; margin-bottom:2px; }
+        .pedido-info-card .pi-links a{ color:var(--cor0); font-weight:700; text-decoration:none; }
+        .pedido-recusa-card{
+            border-color:#fecaca;
+            background:#fff1f2;
+        }
+        .pedido-recusa-card .pr-title{ font-weight:800; color:#b91c1c; font-size:0.9rem; margin-bottom:6px; }
+        .pedido-recusa-card .pr-text{ color:#7f1d1d; font-size:0.85rem; }
         .chat-context-bar{
             display:none;
             align-items:center;
@@ -1302,27 +1407,106 @@
     }
 }
 
+    /* Chat bubble overrides (smaller + readable) */
+    .mensagens-body {
+        background-color: #f5f7fa !important;
+        background-image: none !important;
+        padding: 12px 18px !important;
+    }
+    .msg-bubble {
+        max-width: 52% !important;
+        padding: 6px 10px !important;
+        border-radius: 12px !important;
+        font-size: 0.76rem !important;
+        line-height: 1.2 !important;
+        width: fit-content !important;
+        display: inline-block !important;
+        word-break: break-word !important;
+        white-space: normal !important;
+    }
+    .msg-bubble img {
+        max-width: 180px !important;
+    }
+    .msg-enviada {
+        background: #0b7768 !important;
+        color: #ffffff !important;
+    }
+    .msg-recebida {
+        background: #ffffff !important;
+        color: #1f2937 !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    .msg-footer {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        margin-top: 4px;
+        font-size: 0.66rem;
+        color: #94a3b8;
+    }
+    .msg-recebida .msg-footer { justify-content: flex-start; }
+    .msg-footer .msg-hora { float: none; margin: 0; color: inherit; font-size: 0.7rem; }
+    .msg-reply-btn { float: none; }
+    .msg-enviada .reply-preview {
+        color: rgba(255, 255, 255, 0.85);
+        border-left-color: rgba(255, 255, 255, 0.4);
+    }
+    .reply-preview .rp-user { font-weight: 700; font-size: 0.66rem; }
+    .reply-preview .rp-text {
+        font-size: 0.66rem;
+        opacity: 0.85;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+    .audio-bubble { min-width: 140px !important; }
+
     </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-    <link rel="stylesheet" href="doke-chat-grupo-ui.css?v=20260126">
 </head>
 <body>
 
     <aside class="sidebar-icones">
-        <div id="logo"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="item"><a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a></div>
-        <div class="item"><a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul"><span>Notificações</span></a></div>
-        <div class="item active"><img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul"><a href="chat.html"><span>Mensagens</span></a></div>
-                <div class="item">
+        <div id="logo">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
+            </a>
+        </div>
+
+        <div class="item">
+            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
+            <span>Início</span></a>
+        </div>
+
+        <div class="item">
             <a href="empresas.html">
                 <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
                 <span>Empresas</span>
             </a>
         </div>
-        <div class="item"><a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde"><span>Comunidades</span></a></div>
-        <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a></div>
-        <div class="item"><a href="mais.html"><img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul"><span>Mais</span></a></div>
+
+        <div class="item">
+            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
+            <span>Notificações</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
+            <a href="chat.html"><span>Mensagens</span></a>
+        </div>
+        <div class="item">
+            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
+            <span>Comunidades</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
+            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
+        </div>
+        <div class="item">
+            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
+            <a href="mais.html"><span>Mais</span></a>
+        </div>
     </aside>
 
     <header class="navbar-desktop">
@@ -1387,7 +1571,7 @@
                 <div class="lista-tools">
                     <div class="lista-search">
                         <i class='bx bx-search'></i>
-                        <input type="text" id="inputBuscaLista" placeholder="Buscar por nome ou serviÃ§o">
+                        <input type="text" id="inputBuscaLista" placeholder="Buscar por nome ou serviço">
                     </div>
                     <div class="lista-archive-toggle" id="listaArchiveToggle">
                         <button class="pf-btn active" data-archive="ativos">Ativos</button>
@@ -1433,12 +1617,37 @@
                         <button class="btn-header btn-recusar-mini" onclick="acaoPedido('recusado')">Recusar</button>
                         <button class="btn-header btn-aceitar-mini" onclick="acaoPedido('aceito')">Aceitar Pedido</button>
                     </div>
-                </div>
+                    <div class="chat-menu" id="chatMenu">
+                        <button class="chat-menu-btn" onclick="toggleChatMenuOptions(event)" aria-label="Mais opções">
+                            <i class='bx bx-dots-vertical-rounded'></i>
+                        </button>
+                        <div class="chat-menu-dropdown">
+                            <button id="menuArquivar" class="chat-menu-item" onclick="arquivarConversaAtual()">Arquivar conversa</button>
+                            <button id="menuDesarquivar" class="chat-menu-item" onclick="desarquivarConversaAtual()" style="display:none;">Desarquivar conversa</button>
+                            <button id="menuLimpar" class="chat-menu-item" onclick="limparHistoricoLocal()">Limpar mensagens (só pra você)</button>
+                            <button id="menuRestaurar" class="chat-menu-item" onclick="restaurarHistoricoLocal()" style="display:none;">Restaurar mensagens</button>
+                        </div>
+                    </div>
+                  </div>
+                  <div id="chatContextBar" class="chat-context-bar">
+                      <div id="chatContextText"></div>
+                      <div id="chatContextActions" class="chat-context-actions"></div>
+                  </div>
 
-                <div class="mensagens-body" id="areaMensagens"></div>
+                  <div class="mensagens-body" id="areaMensagens"></div>
                 <button class="scroll-down" id="scrollDownBtn" type="button" title="Descer para a ultima mensagem">
                     <i class='bx bx-chevron-down'></i>
                 </button>
+
+                <div id="replyBar" class="reply-bar">
+                    <div class="rb-left">
+                        <div class="rb-user" id="replyUser">@usuario</div>
+                        <div class="rb-text" id="replyPreview"></div>
+                    </div>
+                    <button class="rb-close" type="button" onclick="cancelarResposta()" aria-label="Cancelar resposta">
+                        <i class='bx bx-x'></i>
+                    </button>
+                </div>
 
 <div class="chat-footer" id="chatFooter">
     
@@ -1567,6 +1776,7 @@
     window.storage = storage;
 
     let currentUserUid = null;
+    const getUserUid = () => currentUserUid || auth.currentUser?.uid || localStorage.getItem('doke_uid') || null;
     let chatIdAtual = null;
     let colecaoAtual = 'pedidos'; 
     let chatUnsubscribe = null;
@@ -1581,6 +1791,7 @@
     let listaModo = 'ativos';
     let pedidoAtualData = null;
     let conversaArquivadaAtual = false;
+    let replyContext = null;
     const avaliacaoCache = {};
 
     window.abrirPerfilUsuario = function(uid, isProfissional){
@@ -1699,6 +1910,225 @@
         });
     }
 
+    const REPLY_MARK_START = '[[reply]]';
+    const REPLY_MARK_END = '[[/reply]]';
+    function encodeReplyMeta(meta){
+        try { return btoa(unescape(encodeURIComponent(JSON.stringify(meta || {})))); }
+        catch (e) { return ''; }
+    }
+    function decodeReplyMeta(raw){
+        try { return JSON.parse(decodeURIComponent(escape(atob(raw)))); }
+        catch (e) { return null; }
+    }
+    function extractReplyFromText(rawText){
+        const raw = String(rawText || '');
+        if (!raw.startsWith(REPLY_MARK_START)) return { meta: null, text: raw };
+        const endIdx = raw.indexOf(REPLY_MARK_END);
+        if (endIdx === -1) return { meta: null, text: raw };
+        const metaRaw = raw.slice(REPLY_MARK_START.length, endIdx);
+        const meta = decodeReplyMeta(metaRaw);
+        const text = raw.slice(endIdx + REPLY_MARK_END.length).replace(/^\n+/, '');
+        return { meta, text };
+    }
+
+    function getTipoPreview(tipo, texto, url){
+        const t = String(tipo || '').toLowerCase();
+        if (t === 'imagem') return '📷 Imagem';
+        if (t === 'arquivo') return '📎 Arquivo';
+        if (t === 'audio' || t === 'áudio' || t === 'voz') return '🎤 Áudio';
+        if (t === 'pagamento') return '💳 Cobrança';
+        return (texto || '').slice(0, 140);
+    }
+    function buildReplyHtml(replyTo){
+        if (!replyTo) return '';
+        const user = escapeHtml(replyTo.user || 'Usuário');
+        const preview = escapeHtml(replyTo.preview || '');
+        return `<div class="reply-preview"><div class="rp-user">${user}</div><div class="rp-text">${preview}</div></div>`;
+    }
+    function normalizeUrlForCompare(url){
+        const raw = String(url || '').trim();
+        if (!raw) return '';
+        const noHash = raw.split('#')[0];
+        const noQuery = noHash.split('?')[0];
+        return noQuery.replace(/\/+$/, '').toLowerCase();
+    }
+    function getPedidoAnexosFromTriagem(p){
+        const triagem = (function(){
+            const raw = p?.formularioRespostas || p?.respostasTriagem || p?.formulario_respostas || p?.respostas_triagem || p?.formulariorespostas || p?.respostastriagem || null;
+            if (!raw) return [];
+            let list = raw;
+            if (typeof list === 'string') {
+                try { list = JSON.parse(list); } catch (e) { return []; }
+            }
+            if (!Array.isArray(list)) list = [list];
+            return list;
+        })();
+        const anexosTriagem = triagem.filter(r => /anex/i.test(String(r?.pergunta || "")));
+        if (!anexosTriagem.length) return [];
+        const linhas = [];
+        anexosTriagem.forEach((r) => {
+            const texto = String(r?.resposta || "");
+            texto.split(/\n+/).forEach((linha) => {
+                const clean = linha.trim();
+                if (clean) linhas.push(clean);
+            });
+        });
+        if (!linhas.length) return [];
+        return linhas.map((linha) => {
+            const parts = linha.split(' - ');
+            const nome = parts[0] ? parts[0].trim() : linha;
+            const url = parts[1] ? parts[1].trim() : "";
+            return { nome, url };
+        }).filter(x => x.url);
+    }
+    function buildPedidoInfoCard(p){
+        if (!p) return '';
+        const titulo = escapeHtml(p.servicoReferencia || p.titulo || 'Pedido');
+        const descricaoBase = (function(){
+            if (p.descricaoBase) return String(p.descricaoBase || '').trim();
+            const msg = String(p.mensagemInicial || '');
+            const idx = msg.toLowerCase().indexOf('local do serviço:');
+            if (idx === -1) return msg.trim();
+            return msg.slice(0, idx).trim();
+        })();
+        const desc = escapeHtml(descricaoBase || 'Sem descrição');
+        const prazo = escapeHtml(p.paraQuando || 'A combinar');
+        const turno = escapeHtml(p.turno || 'Livre');
+        const modo = escapeHtml(p.modoAtend || p.modo_atend || '—');
+        const dataEspecifica = p.dataEspecifica ? (() => {
+            const d = parseDataHora(p.dataEspecifica) || new Date(p.dataEspecifica);
+            return isNaN(d.getTime()) ? p.dataEspecifica : d.toLocaleDateString('pt-BR');
+        })() : '';
+
+        const localizacao = (function(){
+            if (p.localizacao && typeof p.localizacao === 'object') return p.localizacao;
+            return null;
+        })();
+        let localHtml = '';
+        if (localizacao) {
+            let linha = '';
+            if (localizacao.endereco && localizacao.numero) linha = `${localizacao.endereco}, Nº ${localizacao.numero}`;
+            else if (localizacao.endereco) linha = localizacao.endereco;
+            else if (localizacao.numero) linha = `Nº ${localizacao.numero}`;
+            if (localizacao.complemento) linha += `${linha ? ', ' : ''}${localizacao.complemento}`;
+            if (localizacao.cep) linha += `${linha ? ' ' : ''}(CEP ${localizacao.cep})`;
+            const extras = [];
+            if (localizacao.referencia) extras.push(`Ponto de referência: ${localizacao.referencia}`);
+            if (localizacao.info) extras.push(`Mais informações: ${localizacao.info}`);
+            const extraHtml = extras.length ? `<div class="pi-list">${extras.map(e => `<span>${escapeHtml(e)}</span>`).join('')}</div>` : '';
+            if (linha || extraHtml) {
+                localHtml = `<div class="pi-block"><div class="pi-label">Local</div><div class="pi-value">${escapeHtml(linha)}</div>${extraHtml}</div>`;
+            }
+        }
+
+        const triagemRespostas = (function(){
+            const raw = p.formularioRespostas || p.respostasTriagem || p.formulario_respostas || p.respostas_triagem || p.formulariorespostas || p.respostastriagem || null;
+            if (!raw) return [];
+            let list = raw;
+            if (typeof list === 'string') {
+                try { list = JSON.parse(list); } catch (e) { return []; }
+            }
+            if (!Array.isArray(list)) list = [list];
+            const out = [];
+            list.forEach((item) => {
+                if (!item) return;
+                if (typeof item === 'string') {
+                    out.push({ pergunta: 'Pergunta', resposta: item });
+                    return;
+                }
+                const pergunta = item.pergunta || item.question || item.titulo || item.label || item.q;
+                const resposta = item.resposta || item.answer || item.valor || item.a;
+                if (pergunta || resposta) {
+                    out.push({ pergunta: pergunta || 'Pergunta', resposta: (resposta != null ? String(resposta) : '-') });
+                }
+            });
+            return out;
+        })();
+
+        const anexosList = getPedidoAnexosFromTriagem(p);
+        const anexosHtml = (function(){
+            if (!anexosList.length) return '';
+            const isImg = (url) => /\.(png|jpe?g|gif|webp|bmp|svg)$/i.test(url) || /\/image\/|image%2F/i.test(url);
+            const imagens = anexosList.filter(a => isImg(a.url));
+            const files = anexosList.filter(a => !isImg(a.url));
+            const imgsHtml = imagens.length
+                ? `<div class="pi-anexos-grid">${imagens.map(a => `<img src="${escapeHtml(a.url)}" alt="${escapeHtml(a.nome)}" onclick="abrirGaleria(['${escapeHtml(a.url)}'], 0)" />`).join('')}</div>`
+                : '';
+            const filesHtml = files.length
+                ? `<div class="pi-links pi-list">${files.map(a => `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(a.nome)}</a>`).join('')}</div>`
+                : '';
+            return `<div class="pi-block"><div class="pi-label">Anexos</div>${imgsHtml}${filesHtml}</div>`;
+        })();
+
+        const triagemHtml = (function(){
+            const list = triagemRespostas.filter(r => !/anex/i.test(String(r.pergunta || "")));
+            if (!list.length) return '';
+            return `<div class="pi-block"><div class="pi-label">Triagem</div><div class="pi-list">${list.map(r => `<div class="pi-qa"><b>${escapeHtml(r.pergunta)}</b><span>${escapeHtml(r.resposta)}</span></div>`).join('')}</div></div>`;
+        })();
+
+        return `
+            <div class="pedido-info-card">
+                <div class="pi-header">
+                    <div class="pi-title">${titulo}</div>
+                    <span class="pi-chip">ORÇAMENTO</span>
+                </div>
+                <div class="pi-desc">${desc}</div>
+                <div class="pi-grid">
+                    <div>
+                        <div class="pi-label">Prazo</div>
+                        <div class="pi-value">${prazo}</div>
+                    </div>
+                    <div>
+                        <div class="pi-label">Turno</div>
+                        <div class="pi-value">${turno}</div>
+                    </div>
+                    <div>
+                        <div class="pi-label">Modo</div>
+                        <div class="pi-value">${modo}</div>
+                    </div>
+                    ${dataEspecifica ? `<div><div class="pi-label">Data</div><div class="pi-value">${escapeHtml(dataEspecifica)}</div></div>` : ''}
+                </div>
+                ${localHtml}
+                ${triagemHtml}
+                ${anexosHtml}
+            </div>`;
+    }
+    function buildRecusaCard(p){
+        if (!p || String(p.status || '').toLowerCase() !== 'recusado' || !p.motivoRecusa) return '';
+        return `
+            <div class="pedido-recusa-card">
+                <div class="pr-title">Pedido recusado</div>
+                <div class="pr-text">${escapeHtml(p.motivoRecusa)}</div>
+            </div>`;
+    }
+    function updateReplyBar(){
+        const bar = document.getElementById('replyBar');
+        if (!bar) return;
+        if (!replyContext) { bar.classList.remove('show'); return; }
+        const userEl = document.getElementById('replyUser');
+        const prevEl = document.getElementById('replyPreview');
+        if (userEl) userEl.textContent = `@${replyContext.user || 'Usuário'}`;
+        if (prevEl) prevEl.textContent = replyContext.preview || '';
+        bar.classList.add('show');
+    }
+    window.responderMensagem = function(idEnc, userEnc, tipoEnc, previewEnc){
+        const id = decodeURIComponent(idEnc || '');
+        const user = decodeURIComponent(userEnc || '');
+        const tipo = decodeURIComponent(tipoEnc || '');
+        const preview = decodeURIComponent(previewEnc || '');
+        replyContext = { id, user, tipo, preview };
+        updateReplyBar();
+    };
+    window.cancelarResposta = function(){
+        replyContext = null;
+        updateReplyBar();
+    };
+    function applyReplyMetaToText(baseText){
+        if (!replyContext) return String(baseText || '');
+        const metaText = encodeReplyMeta(replyContext);
+        return `${REPLY_MARK_START}${metaText}${REPLY_MARK_END}\n${String(baseText || '')}`;
+    }
+
     function matchBusca(...campos){
         const needle = normalizarTexto(listaBusca);
         if (!needle) return true;
@@ -1753,8 +2183,9 @@
         return upd.getTime() > last.getTime();
     }
     function getOcultosLocal(field){
-        if (!currentUserUid) return [];
-        const key = `doke_${field || 'ocultoPor'}_${currentUserUid}`;
+        const uid = getUserUid();
+        if (!uid) return [];
+        const key = `doke_${field || 'ocultoPor'}_${uid}`;
         try {
             const raw = JSON.parse(localStorage.getItem(key) || "[]");
             return Array.isArray(raw) ? raw : [];
@@ -1763,8 +2194,9 @@
         }
     }
     function setOcultosLocal(field, list){
-        if (!currentUserUid) return;
-        const key = `doke_${field || 'ocultoPor'}_${currentUserUid}`;
+        const uid = getUserUid();
+        if (!uid) return;
+        const key = `doke_${field || 'ocultoPor'}_${uid}`;
         localStorage.setItem(key, JSON.stringify(list || []));
     }
     function isOcultoPorUser(data, field, docId){
@@ -1772,22 +2204,44 @@
         const arr = data && Array.isArray(data[key]) ? data[key] : [];
         const local = getOcultosLocal(key);
         const ocultoLocal = docId ? local.includes(docId) : false;
-        return (currentUserUid && arr.includes(currentUserUid)) || ocultoLocal;
+        const uid = getUserUid();
+        return (uid && arr.includes(uid)) || ocultoLocal;
     }
-    function isArquivadoPorUser(data){
+    function getArquivadosLocal(){
+        const uid = getUserUid();
+        if (!uid) return [];
+        const key = `doke_arquivado_${uid}`;
+        try {
+            const raw = JSON.parse(localStorage.getItem(key) || "[]");
+            return Array.isArray(raw) ? raw : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    function setArquivadosLocal(list){
+        const uid = getUserUid();
+        if (!uid) return;
+        const key = `doke_arquivado_${uid}`;
+        localStorage.setItem(key, JSON.stringify(list || []));
+    }
+    function isArquivadoPorUser(data, docId){
         const arr = data && Array.isArray(data.arquivadoPor) ? data.arquivadoPor : [];
-        return currentUserUid && arr.includes(currentUserUid);
+        const local = getArquivadosLocal();
+        const localHas = docId ? local.includes(docId) : false;
+        const uid = getUserUid();
+        return (uid && arr.includes(uid)) || localHas;
     }
 
     async function atualizarArrayUsuario(ref, field, add){
         try {
-            if (!currentUserUid) return [];
+            const uid = getUserUid();
+            if (!uid) return [];
             const snap = await getDoc(ref);
             if (!snap.exists()) return [];
             const data = snap.data() || {};
             const arr = Array.isArray(data[field]) ? data[field].slice() : [];
-            const idx = arr.indexOf(currentUserUid);
-            if (add && idx === -1) arr.push(currentUserUid);
+            const idx = arr.indexOf(uid);
+            if (add && idx === -1) arr.push(uid);
             if (!add && idx !== -1) arr.splice(idx, 1);
             await updateDoc(ref, { [field]: arr });
             if (field === 'ocultoPedidosPor' || field === 'ocultoChatPor') {
@@ -1800,6 +2254,16 @@
                     setOcultosLocal(field, local);
                 }
             }
+            if (field === 'arquivadoPor') {
+                const local = getArquivadosLocal();
+                const id = ref && ref.id ? ref.id : null;
+                if (id) {
+                    const has = local.includes(id);
+                    if (add && !has) local.push(id);
+                    if (!add && has) local.splice(local.indexOf(id), 1);
+                    setArquivadosLocal(local);
+                }
+            }
             return arr;
         } catch(e){
             console.error(e);
@@ -1809,6 +2273,16 @@
                 if (id && !local.includes(id)) {
                     local.push(id);
                     setOcultosLocal(field, local);
+                }
+            }
+            if (field === 'arquivadoPor') {
+                const local = getArquivadosLocal();
+                const id = ref && ref.id ? ref.id : null;
+                if (id) {
+                    const has = local.includes(id);
+                    if (add && !has) local.push(id);
+                    if (!add && has) local.splice(local.indexOf(id), 1);
+                    setArquivadosLocal(local);
                 }
             }
             return null;
@@ -1847,7 +2321,7 @@
 
     window.ocultarConversaAtual = async function(){
         if (!chatIdAtual || !colecaoAtual) return;
-        if (!await window.dokeConfirm('Ocultar esta conversa? Ela continuarÃ¡ disponÃ­vel para o outro usuÃ¡rio.', 'Ocultar', 'danger')) return;
+        if (!await window.dokeConfirm('Ocultar esta conversa? Ela continuará disponível para o outro usuário.', 'Ocultar', 'danger')) return;
         const ref = doc(db, colecaoAtual, chatIdAtual);
         await atualizarArrayUsuario(ref, 'ocultoChatPor', true);
         fecharMenuChat();
@@ -1877,9 +2351,25 @@
         else if (window.carregarListaConversas) window.carregarListaConversas();
     };
 
+    window.toggleArquivamentoItem = async function(colecao, id, arquivar){
+        if (!colecao || !id) return;
+        try {
+            const ref = doc(db, colecao, id);
+            await atualizarArrayUsuario(ref, 'arquivadoPor', !!arquivar);
+            if (chatIdAtual === id && colecaoAtual === colecao) {
+                conversaArquivadaAtual = !!arquivar;
+                atualizarMenuConversa();
+            }
+            if (abaAtual === 'pedidos') carregarListaPedidos();
+            else if (window.carregarListaConversas) window.carregarListaConversas();
+        } catch (e) {
+            console.error('Falha ao arquivar/desarquivar:', e);
+        }
+    };
+
     window.limparHistoricoLocal = async function(){
         if (!chatIdAtual || !colecaoAtual) return;
-        if (!await window.dokeConfirm('Excluir mensagens apenas para vocÃª? Isso nÃ£o apaga para o outro usuÃ¡rio.', 'Excluir mensagens', 'danger')) return;
+        if (!await window.dokeConfirm('Excluir mensagens apenas para você? Isso não apaga para o outro usuário.', 'Excluir mensagens', 'danger')) return;
         setClearTime(colecaoAtual, chatIdAtual, new Date().toISOString());
         fecharMenuChat();
         atualizarMenuConversa();
@@ -1905,7 +2395,7 @@
 
     window.solicitarReembolso = async function(){
         if (!chatIdAtual || !pedidoAtualData) return;
-        const motivo = await window.dokePrompt('Informe o motivo do reembolso/solicitaÃ§Ã£o:', 'Ex: serviÃ§o incompleto', 'Solicitar reembolso');
+        const motivo = await window.dokePrompt('Informe o motivo do reembolso/solicitação:', 'Ex: serviço incompleto', 'Solicitar reembolso');
         if (!motivo) return;
         try {
             await addDoc(collection(db, "pedidos", chatIdAtual, "mensagens"), {
@@ -1929,7 +2419,7 @@
         if (pedidoAtualData.paraUid) {
             try { await window.criarNotificacaoPedido(pedidoAtualData.paraUid, 'pedido_reembolso', chatIdAtual); } catch (_) {}
         }
-        window.dokeAlert('SolicitaÃ§Ã£o enviada. Vamos analisar.');
+        window.dokeAlert('Solicitação enviada. Vamos analisar.');
     };
 
     window.irRepetirPedido = function(idPedido, profUid, anuncioId){
@@ -1941,7 +2431,229 @@
         window.location.href = url;
     };
 
-    function atualizarContextoChat(p){
+      let amizadeStatusAtual = 'none';
+      let amizadeIdAtual = '';
+      let amizadeDirecaoAtual = '';
+      let amizadeOutroUidAtual = '';
+
+      function setChatInputEnabled(enabled, placeholderText){
+          const input = document.getElementById('inputMsg');
+          const btnSend = document.getElementById('btn-send-txt');
+          const btnMic = document.getElementById('btn-mic');
+          const btnAttach = document.getElementById('btn-attach');
+          if (input) input.disabled = !enabled;
+          if (btnSend) btnSend.disabled = !enabled;
+          if (btnMic) btnMic.disabled = !enabled;
+          if (btnAttach) btnAttach.disabled = !enabled;
+          if (!enabled) cancelarResposta();
+          if (input) {
+              input.placeholder = enabled
+                  ? 'Digite uma mensagem...'
+                  : (placeholderText || 'Envie pedido de amizade para conversar.');
+          }
+      }
+
+      async function getAmizadeStatus(uidOutro){
+          if (!uidOutro || !currentUserUid) return { status: 'none' };
+          try{
+              const qOut = query(collection(db, "amizades"), where("deUid", "==", currentUserUid), where("paraUid", "==", uidOutro));
+              const qIn = query(collection(db, "amizades"), where("deUid", "==", uidOutro), where("paraUid", "==", currentUserUid));
+              const [sOut, sIn] = await Promise.all([getDocs(qOut), getDocs(qIn)]);
+              const outDoc = sOut.docs[0];
+              const inDoc = sIn.docs[0];
+              const outData = outDoc ? (outDoc.data() || {}) : null;
+              const inData = inDoc ? (inDoc.data() || {}) : null;
+
+              const outStatus = outData ? String(outData.status || '').toLowerCase() : '';
+              const inStatus = inData ? String(inData.status || '').toLowerCase() : '';
+
+              if (outStatus === 'aceito' || inStatus === 'aceito') {
+                  return { status: 'aceito', id: (outDoc?.id || inDoc?.id || ''), direction: outStatus === 'aceito' ? 'out' : 'in' };
+              }
+              if (inStatus === 'pendente') {
+                  return { status: 'pendente_in', id: inDoc.id, direction: 'in' };
+              }
+              if (outStatus === 'pendente') {
+                  return { status: 'pendente_out', id: outDoc.id, direction: 'out' };
+              }
+              if (inStatus === 'recusado') {
+                  return { status: 'recusado', id: inDoc.id, direction: 'in' };
+              }
+              if (outStatus === 'recusado') {
+                  return { status: 'recusado', id: outDoc.id, direction: 'out' };
+              }
+              return { status: 'none' };
+          } catch (e) {
+              console.warn('Falha ao consultar amizade:', e);
+              return { status: 'none' };
+          }
+      }
+
+      async function carregarMapaAmizades(){
+          const map = new Map();
+          if (!currentUserUid) return map;
+          try{
+              const qOut = query(collection(db, "amizades"), where("deUid", "==", currentUserUid));
+              const qIn = query(collection(db, "amizades"), where("paraUid", "==", currentUserUid));
+              const [sOut, sIn] = await Promise.all([getDocs(qOut), getDocs(qIn)]);
+
+              sOut.forEach((docSnap) => {
+                  const data = docSnap.data() || {};
+                  const outroUid = data.paraUid;
+                  if (!outroUid) return;
+                  const status = String(data.status || '').toLowerCase();
+                  map.set(outroUid, {
+                      status: status === 'aceito' ? 'aceito' : (status === 'pendente' ? 'pendente_out' : status || 'none'),
+                      id: docSnap.id,
+                      direction: 'out'
+                  });
+              });
+
+              sIn.forEach((docSnap) => {
+                  const data = docSnap.data() || {};
+                  const outroUid = data.deUid;
+                  if (!outroUid) return;
+                  const status = String(data.status || '').toLowerCase();
+                  const existing = map.get(outroUid);
+                  if (status === 'aceito') {
+                      map.set(outroUid, { status: 'aceito', id: docSnap.id, direction: 'in' });
+                      return;
+                  }
+                  if (existing && existing.status === 'aceito') return;
+                  if (status === 'pendente') {
+                      map.set(outroUid, { status: 'pendente_in', id: docSnap.id, direction: 'in' });
+                      return;
+                  }
+                  map.set(outroUid, { status: status || 'none', id: docSnap.id, direction: 'in' });
+              });
+          } catch (e) {
+              console.warn('Falha ao carregar mapa de amizades:', e);
+          }
+          return map;
+      }
+
+      async function atualizarContextoAmizade(uidOutro){
+          const bar = document.getElementById('chatContextBar');
+          const text = document.getElementById('chatContextText');
+          const actions = document.getElementById('chatContextActions');
+          if (!bar || !text || !actions) return;
+          amizadeOutroUidAtual = uidOutro || '';
+
+          const rel = await getAmizadeStatus(uidOutro);
+          amizadeStatusAtual = rel.status || 'none';
+          amizadeIdAtual = rel.id || '';
+          amizadeDirecaoAtual = rel.direction || '';
+
+          actions.innerHTML = '';
+          if (amizadeStatusAtual === 'aceito') {
+              bar.classList.remove('show');
+              bar.style.display = 'none';
+              setChatInputEnabled(true);
+              return;
+          }
+
+          bar.style.display = 'flex';
+          bar.classList.add('show');
+          setChatInputEnabled(false, 'Envie pedido de amizade para conversar.');
+
+          if (amizadeStatusAtual === 'pendente_out') {
+              text.textContent = 'Pedido de amizade enviado. Aguarde a aprovação.';
+              actions.innerHTML = `<button onclick="cancelarPedidoAmizade()">Cancelar pedido</button>`;
+              return;
+          }
+          if (amizadeStatusAtual === 'pendente_in') {
+              text.textContent = 'Você recebeu um pedido de amizade.';
+              actions.innerHTML = `
+                  <button class="primary" onclick="aceitarPedidoAmizade()">Aceitar</button>
+                  <button class="danger" onclick="recusarPedidoAmizade()">Recusar</button>
+              `;
+              return;
+          }
+          if (amizadeStatusAtual === 'recusado') {
+              text.textContent = 'Conversa bloqueada. Envie um novo pedido de amizade.';
+              actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar pedido</button>`;
+              return;
+          }
+          text.textContent = 'Envie um pedido de amizade para liberar as mensagens.';
+          actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar pedido</button>`;
+      }
+
+      function isConversaBloqueadaPorAmizade(){
+          return colecaoAtual === 'conversas' && amizadeStatusAtual !== 'aceito';
+      }
+
+      window.enviarPedidoAmizade = async function(){
+          if (!amizadeOutroUidAtual || !currentUserUid) return;
+          try{
+              if (amizadeIdAtual && amizadeDirecaoAtual === 'out') {
+                  await updateDoc(doc(db, "amizades", amizadeIdAtual), {
+                      status: 'pendente',
+                      updated_at: new Date().toISOString()
+                  });
+              } else {
+                  await addDoc(collection(db, "amizades"), {
+                      deUid: currentUserUid,
+                      paraUid: amizadeOutroUidAtual,
+                      status: 'pendente',
+                      created_at: new Date().toISOString(),
+                      updated_at: new Date().toISOString()
+                  });
+              }
+              await atualizarContextoAmizade(amizadeOutroUidAtual);
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao enviar pedido de amizade:', e);
+              window.dokeAlert ? window.dokeAlert('Não foi possível enviar o pedido de amizade.') : alert('Não foi possível enviar o pedido de amizade.');
+          }
+      };
+
+      window.cancelarPedidoAmizade = async function(){
+          if (!amizadeIdAtual) return;
+          try{
+              await updateDoc(doc(db, "amizades", amizadeIdAtual), {
+                  status: 'recusado',
+                  updated_at: new Date().toISOString()
+              });
+              await atualizarContextoAmizade(amizadeOutroUidAtual);
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao cancelar pedido:', e);
+          }
+      };
+
+      window.aceitarPedidoAmizade = async function(){
+          if (!amizadeIdAtual) return;
+          try{
+              await updateDoc(doc(db, "amizades", amizadeIdAtual), {
+                  status: 'aceito',
+                  accepted_at: new Date().toISOString(),
+                  updated_at: new Date().toISOString()
+              });
+              await atualizarContextoAmizade(amizadeOutroUidAtual);
+              if (colecaoAtual === 'conversas' && chatIdAtual) {
+                  carregarMensagens(colecaoAtual, chatIdAtual);
+              }
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao aceitar amizade:', e);
+          }
+      };
+
+      window.recusarPedidoAmizade = async function(){
+          if (!amizadeIdAtual) return;
+          try{
+              await updateDoc(doc(db, "amizades", amizadeIdAtual), {
+                  status: 'recusado',
+                  updated_at: new Date().toISOString()
+              });
+              await atualizarContextoAmizade(amizadeOutroUidAtual);
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao recusar amizade:', e);
+          }
+      };
+
+      function atualizarContextoChat(p){
         const bar = document.getElementById('chatContextBar');
         const text = document.getElementById('chatContextText');
         const actions = document.getElementById('chatContextActions');
@@ -1962,17 +2674,16 @@
         } else if (status === 'aceito') {
             msg = 'Pedido aceito. Combine detalhes no chat.';
         } else if (status === 'pago') {
-            msg = 'Pagamento em garantia. Finalize quando o serviÃ§o estiver concluÃ­do.';
+            msg = 'Pagamento em garantia. Finalize quando o serviço estiver concluído.';
             if (souCliente) btns.push(`<button class="danger" onclick="solicitarReembolso()">Solicitar reembolso</button>`);
         } else if (status === 'finalizado') {
-            msg = 'ServiÃ§o finalizado.';
+            msg = 'Serviço finalizado.';
             if (souCliente && !p.avaliado) btns.push(`<button onclick="abrirAvaliacaoPedido('${chatIdAtual}')">Avaliar</button>`);
             if (souCliente) btns.push(`<button class="primary" onclick="repetirPedidoAtual()">Repetir pedido</button>`);
         } else if (status === 'recusado' || status === 'cancelado') {
             msg = 'Pedido encerrado.';
             if (souCliente) btns.push(`<button class="primary" onclick="repetirPedidoAtual()">Repetir pedido</button>`);
         }
-        btns.push(`<button onclick="abrirDetalhesPedido('${chatIdAtual}')">Detalhes</button>`);
         text.textContent = msg;
         actions.innerHTML = btns.join('');
         bar.style.display = 'flex';
@@ -2382,7 +3093,7 @@
                 return d ? d.toLocaleDateString('pt-BR') : '';
             };
             const timelineSteps = [
-                { label: 'SolicitaÃ§Ã£o enviada', done: !!p.dataPedido, date: p.dataPedido },
+                { label: 'Solicitação enviada', done: !!p.dataPedido, date: p.dataPedido },
                 { label: 'Pedido aceito', done: ['aceito','pago','finalizado'].includes(statusNorm), date: p.dataAceite || p.dataAtualizacao },
                 { label: 'Pagamento', done: ['pago','finalizado'].includes(statusNorm), date: p.dataPagamento || p.dataPago },
                 { label: 'Finalizado', done: statusNorm === 'finalizado', date: p.dataConclusao || p.dataFinalizado }
@@ -2540,6 +3251,7 @@
                     <div><div class="md-label">Prazo</div><div class="md-value">${escapeHtml(p.paraQuando || "A combinar")}</div></div>
                     <div><div class="md-label">Turno</div><div class="md-value">${escapeHtml(p.turno || "Livre")}</div></div>
                 </div>
+                <div class="md-row"><div class="md-label">Modo de atendimento</div><div class="md-value">${escapeHtml(p.modoAtend || p.modo_atend || "—")}</div></div>
                 ${dataEspecificaHtml}
                 ${localHtml}
                 ${anexosHtml}
@@ -2750,7 +3462,7 @@ window.liberarPagamento = async (id) => {
                 const id = item.d.id;
                 const p = item.d.data();
                 if (isOcultoPorUser(p, 'ocultoPedidosPor', id)) continue;
-                const isArquivado = isArquivadoPorUser(p);
+                const isArquivado = isArquivadoPorUser(p, id);
                 if (listaModo === 'arquivados' && !isArquivado) continue;
                 if (listaModo !== 'arquivados' && isArquivado) continue;
                 const statusRaw = String(p.status || '').toLowerCase();
@@ -2783,6 +3495,9 @@ window.liberarPagamento = async (id) => {
                     ? `<i class='bx bx-trash' style="color:#e74c3c; cursor:pointer; font-size:1.1rem;" onclick="event.stopPropagation(); apagarDocumentoPedido('${id}')"></i>` : "";
                 const updatedPedido = p.dataAtualizacao || p.dataPedido || p.createdat || null;
                 const unreadHtml = isNaoLido(updatedPedido, 'pedidos', id) ? '<span class="unread-dot"></span>' : "";
+                const archiveBtn = isArquivado
+                    ? `<button class="archive-btn" title="Desarquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('pedidos', '${id}', false)"><i class='bx bx-undo'></i></button>`
+                    : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('pedidos', '${id}', true)"><i class='bx bx-archive'></i></button>`;
 
                 // Info Saldo (Visual Clean Solicitado)
                 let infoSaldo = (item.papel === 'profissional' && p.status === 'pago') ? `
@@ -2822,7 +3537,8 @@ window.liberarPagamento = async (id) => {
                         ? '<div class=\"ip-sub\">Aguardando resposta do profissional.</div>'
                         : '<div class=\"ip-sub\">Novo pedido. Analise e aceite para liberar o chat.</div>';
                 } else if (p.status === 'recusado' && item.papel === 'cliente') {
-                    subMsg = '<div class=\"ip-sub\">Pedido recusado. Veja o motivo em “Mais detalhes”.</div>';
+                    const motivo = p.motivoRecusa ? ` Motivo: ${escapeHtml(String(p.motivoRecusa).slice(0, 90))}${String(p.motivoRecusa).length > 90 ? '...' : ''}` : '';
+                    subMsg = `<div class="ip-sub">Pedido recusado.${motivo}</div>`;
                 } else if (p.status === 'aceito' && item.papel === 'cliente') {
                     subMsg = '<div class=\"ip-sub\">Chat liberado. Você já pode negociar com o profissional.</div>';
                 }
@@ -2838,15 +3554,14 @@ window.liberarPagamento = async (id) => {
                             </div>
                             <div style="flex:1; min-width:0;">
                                 <div style="font-weight:800; color:#111; font-size:0.92rem;">${label}</div>
-                                <div style="font-size:0.78rem; color:#6b7280;">Toque em “Detalhes” para ver informações do orçamento.</div>
+                                <div style="font-size:0.78rem; color:#6b7280;">As informações do orçamento estão no chat.</div>
                             </div>
-                            <button class="btn-detalhes-card" onclick="event.stopPropagation(); abrirDetalhesPedido('${id}')" style="margin:0;">Detalhes</button>
                         </div>`;
                 }
 
                 container.insertAdjacentHTML('beforeend', `
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
-                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${unreadHtml}${bApagar}${badgeHtml}</div></div>
+                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${unreadHtml}${archiveBtn}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user" onclick="abrirPerfilUsuario('${uDoc.id}', ${!!dU.isProfissional})"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
                         <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
                             <h4>${p.servicoReferencia}</h4>
@@ -2862,102 +3577,77 @@ window.liberarPagamento = async (id) => {
         } catch (e) { console.error(e); }
     }
 
-    window.carregarListaConversas = async function() {
-        const container = document.getElementById('lista-conversas');
-        if(!container) return;
-        container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
-
-        try {
-            // 1) Conversas diretas
-            const qConv = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
-            const snapConv = await getDocs(qConv);
-
-            // 2) Pedidos aceitos/em andamento também aparecem como conversas
-            const statusChat = ['aceito','pago','finalizado','cancelado','recusado'];
-            const qP1 = query(collection(db, "pedidos"), where("deUid", "==", currentUserUid), where("status", "in", statusChat));
-            const qP2 = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid), where("status", "in", statusChat));
-            const [snapP1, snapP2] = await Promise.all([getDocs(qP1), getDocs(qP2)]);
-
-            // Junta e ordena (client-side)
-            const itens = [];
-            for (const d of snapConv.docs) {
-                const data = d.data() || {};
-                const updated = data.dataAtualizacao || data.updatedat || data.createdat || null;
-                itens.push({ kind:'conversa', id:d.id, data, updated });
-            }
-            const pedidosMap = new Map();
-            [...snapP1.docs, ...snapP2.docs].forEach(d => { if(d?.id) pedidosMap.set(d.id, d); });
-            for (const d of pedidosMap.values()) {
-                const p = d.data() || {};
-                const updated = p.dataAtualizacao || p.dataPedido || p.createdat || null;
-                itens.push({ kind:'pedido', id:d.id, data:p, updated });
-            }
-
-            itens.sort((a,b) => {
-                const ta = a.updated ? new Date(a.updated).getTime() : 0;
-                const tb = b.updated ? new Date(b.updated).getTime() : 0;
-                return tb - ta;
-            });
-
-            container.innerHTML = itens.length ? "" : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
-
-            for (const it of itens) {
-                if (it.kind === 'conversa') {
-                    const data = it.data;
-                    if (isOcultoPorUser(data, 'ocultoChatPor', it.id)) continue;
-                    const isArquivado = isArquivadoPorUser(data);
-                    if (listaModo === 'arquivados' && !isArquivado) continue;
-                    if (listaModo !== 'arquivados' && isArquivado) continue;
-                    const outroUid = (data.participantes || []).find(u => u !== currentUserUid);
-                    if(!outroUid) continue;
-                    const uD = await getDoc(doc(db, "usuarios", outroUid));
-                    const u = uD.exists() ? uD.data() : {};
-                    if (!matchBusca(u.user, data.ultimaMensagem)) continue;
-                    const unreadHtml = isNaoLido(it.updated, 'conversas', it.id) ? '<span class="unread-dot"></span>' : "";
-                    container.insertAdjacentHTML('beforeend', `
-                      <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')">
-                        <img src="${u.foto || 'https://placehold.co/150'}">
-                        <div class="ic-info">
-                          <div class="ic-nome" onclick="event.stopPropagation(); abrirPerfilUsuario('${outroUid}', ${!!u.isProfissional})">${u.user || 'Usuário'}</div>
-                          <div class="ic-msg">${data.ultimaMensagem || ''}</div>
-                        </div>
-                        <div class="ic-meta">${unreadHtml}</div>
-                      </div>`);
-                } else {
-                    const p = it.data;
-                    if (isOcultoPorUser(p, 'ocultoChatPor', it.id)) continue;
-                    const isArquivado = isArquivadoPorUser(p);
-                    if (listaModo === 'arquivados' && !isArquivado) continue;
-                    if (listaModo !== 'arquivados' && isArquivado) continue;
-                    const statusRaw = String(p.status || '').toLowerCase();
-                    const isFinal = ['finalizado','cancelado','recusado'].includes(statusRaw);
-                    const isAndamento = ['aceito','pago'].includes(statusRaw);
-                    if (conversasFiltro === 'andamento' && !isAndamento) continue;
-                    if (conversasFiltro === 'finalizado' && !isFinal) continue;
-                    const outroUid = (p.deUid === currentUserUid) ? p.paraUid : p.deUid;
-                    if(!outroUid) continue;
-                    const uD = await getDoc(doc(db, "usuarios", outroUid));
-                    const u = uD.exists() ? uD.data() : {};
-                    if (!matchBusca(u.user, p.servicoReferencia, p.mensagemInicial, p.ultimaMensagem)) continue;
-                    const unreadHtml = isNaoLido(it.updated, 'pedidos', it.id) ? '<span class="unread-dot"></span>' : "";
-                    const statusLabel = (p.status === 'pago') ? 'PAGO' : (p.status === 'finalizado' ? 'FINALIZADO' : (p.status === 'cancelado' ? 'CANCELADO' : (p.status === 'recusado' ? 'RECUSADO' : 'EM ANDAMENTO')));
-                    const preview = p.ultimaMensagem || p.mensagemInicial || p.servicoReferencia || 'Pedido';
-                    container.insertAdjacentHTML('beforeend', `
-                      <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'pedidos', '${p.status || ''}')">
-                        <img src="${u.foto || 'https://placehold.co/150'}">
-                        <div class="ic-info">
-                          <div class="ic-nome" onclick="event.stopPropagation(); abrirPerfilUsuario('${outroUid}', ${!!u.isProfissional})">${u.user || 'Usuário'} <span style="margin-left:8px; font-size:.65rem; font-weight:900; color:var(--cor0);">• ORÇAMENTO</span></div>
-                          <div class="ic-msg">${preview}</div>
-                        </div>
-                        <div class="ic-meta">${unreadHtml}<span class="ip-badge" style="align-self:flex-start;">${statusLabel}</span></div>
-                      </div>`);
-                }
-            }
-        } catch (e) {
-            console.error(e);
-            container.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Erro ao carregar mensagens.</p>";
-        }
-    };
+      window.carregarListaConversas = async function() {
+          const container = document.getElementById('lista-conversas');
+          if(!container) return;
+          container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+  
+          try {
+              const friendMap = await carregarMapaAmizades();
+              // 1) Conversas diretas
+              const qConv = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
+              const snapConv = await getDocs(qConv);
+ 
+              // Junta e ordena (client-side)
+              const itens = [];
+              for (const d of snapConv.docs) {
+                  const data = d.data() || {};
+                  const updated = data.dataAtualizacao || data.updatedat || data.createdat || null;
+                  itens.push({ kind:'conversa', id:d.id, data, updated });
+              }
+  
+              itens.sort((a,b) => {
+                  const ta = a.updated ? new Date(a.updated).getTime() : 0;
+                  const tb = b.updated ? new Date(b.updated).getTime() : 0;
+                  return tb - ta;
+              });
+  
+              container.innerHTML = itens.length ? "" : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
+  
+              for (const it of itens) {
+                  if (it.kind === 'conversa') {
+                      const data = it.data;
+                      if (isOcultoPorUser(data, 'ocultoChatPor', it.id)) continue;
+                      const isArquivado = isArquivadoPorUser(data, it.id);
+                      if (listaModo === 'arquivados' && !isArquivado) continue;
+                      if (listaModo !== 'arquivados' && isArquivado) continue;
+                      const outroUid = (data.participantes || []).find(u => u !== currentUserUid);
+                      if(!outroUid) continue;
+                      const rel = friendMap.get(outroUid);
+                      const isAmigo = rel && rel.status === 'aceito';
+                      const previewText = isAmigo
+                          ? (data.ultimaMensagem || '')
+                          : (rel && rel.status === 'pendente_in')
+                              ? 'Pedido de amizade recebido'
+                              : (rel && rel.status === 'pendente_out')
+                                  ? 'Pedido de amizade enviado'
+                                  : 'Envie pedido de amizade para conversar';
+                      const uD = await getDoc(doc(db, "usuarios", outroUid));
+                      const u = uD.exists() ? uD.data() : {};
+                      if (!matchBusca(u.user, data.ultimaMensagem)) continue;
+                      const unreadHtml = isNaoLido(it.updated, 'conversas', it.id) ? '<span class="unread-dot"></span>' : "";
+                      const archiveBtn = isArquivado
+                          ? `<button class="archive-btn" title="Desarquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', false)"><i class='bx bx-undo'></i></button>`
+                          : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', true)"><i class='bx bx-archive'></i></button>`;
+                      container.insertAdjacentHTML('beforeend', `
+                        <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')">
+                          <img src="${u.foto || 'https://placehold.co/150'}">
+                          <div class="ic-info">
+                            <div class="ic-nome" onclick="event.stopPropagation(); abrirPerfilUsuario('${outroUid}', ${!!u.isProfissional})">${u.user || 'Usuário'}</div>
+                            <div class="ic-msg">${previewText}</div>
+                          </div>
+                          <div class="ic-meta">${unreadHtml}${archiveBtn}</div>
+                        </div>`);
+                  }
+              }
+              if (!container.children.length) {
+                  container.innerHTML = "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
+              }
+          } catch (e) {
+              console.error(e);
+              container.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Erro ao carregar mensagens.</p>";
+          }
+      };
 
 // Função auxiliar para formatar a data (Coloque fora ou antes do abrirChat)
 // Função auxiliar de data (Mantenha ou adicione se não tiver)
@@ -3001,7 +3691,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     statusPedidoAtual = p.status || 'pendente';
                     avaliadoPedidoAtual = !!p.avaliado;
                     pedidoAtualData = p;
-                    conversaArquivadaAtual = isArquivadoPorUser(p);
+                    conversaArquivadaAtual = isArquivadoPorUser(p, idDoc);
                     atualizarMenuConversa();
                     atualizarContextoChat(p);
                     if (!avaliadoPedidoAtual && String(p.status || '').toLowerCase() === 'finalizado') {
@@ -3040,18 +3730,19 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     if(btnP) btnP.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
                 }
             });
-        } else {
-            chatFooter.style.display = 'flex';
-            pedidoAtualData = null;
-            atualizarContextoChat(null);
-            try {
-                const snapConv = await getDoc(doc(db, "conversas", idDoc));
-                if (snapConv.exists()) {
-                    conversaArquivadaAtual = isArquivadoPorUser(snapConv.data() || {});
-                    atualizarMenuConversa();
-                }
-            } catch (e) {}
-        }
+          } else {
+              chatFooter.style.display = 'flex';
+              pedidoAtualData = null;
+              atualizarContextoChat(null);
+              await atualizarContextoAmizade(uidOutro);
+              try {
+                  const snapConv = await getDoc(doc(db, "conversas", idDoc));
+                  if (snapConv.exists()) {
+                      conversaArquivadaAtual = isArquivadoPorUser(snapConv.data() || {}, idDoc);
+                      atualizarMenuConversa();
+                  }
+              } catch (e) {}
+          }
 
         // 2. CARREGA DADOS DO USUÁRIO + STATUS ONLINE (VISUAL MELHORADO)
         onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
@@ -3148,12 +3839,17 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
     }
 // EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens
 
-function carregarMensagens(colecao, docId) {
-    const container = document.getElementById('areaMensagens');
-    if (!container) return;
-    if (window.chatUnsubscribe) window.chatUnsubscribe();
-    
-    const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
+      function carregarMensagens(colecao, docId) {
+          const container = document.getElementById('areaMensagens');
+          if (!container) return;
+          if (window.chatUnsubscribe) window.chatUnsubscribe();
+          if (colecao === 'conversas' && amizadeStatusAtual !== 'aceito') {
+              container.innerHTML = `<div style="text-align:center; padding:30px; color:#888;">Envie pedido de amizade para liberar esta conversa.</div>`;
+              updateScrollDownButton();
+              return;
+          }
+          
+          const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
     let lastSig = "";
     const clearAt = getClearTime(colecao, docId);
     const clearTs = clearAt ? clearAt.getTime() : null;
@@ -3168,29 +3864,47 @@ function carregarMensagens(colecao, docId) {
         return String(v);
     };
     
-    window.chatUnsubscribe = onSnapshot(q, (snapshot) => {
-        const wasNearBottom = isNearBottom(container, 120);
-        const prevOffset = container.scrollHeight - container.scrollTop;
-        
-        let statusPedido = (colecao === 'pedidos') ? (statusPedidoAtual || 'pendente') : 'pendente';
-        const pedidoAvaliado = (colecao === 'pedidos') ? !!avaliadoPedidoAtual : false;
-        const htmlParts = [];
-        const sigParts = [];
+        window.chatUnsubscribe = onSnapshot(q, (snapshot) => {
+            const wasNearBottom = isNearBottom(container, 120);
+            const prevOffset = container.scrollHeight - container.scrollTop;
+            const anexosUrlSet = new Set();
+            if (colecao === 'pedidos' && pedidoAtualData) {
+                const anexosBase = getPedidoAnexosFromTriagem(pedidoAtualData);
+                anexosBase.forEach((a) => {
+                    const norm = normalizeUrlForCompare(a.url);
+                    if (norm) anexosUrlSet.add(norm);
+                });
+            }
+            
+            let statusPedido = (colecao === 'pedidos') ? (statusPedidoAtual || 'pendente') : 'pendente';
+            const pedidoAvaliado = (colecao === 'pedidos') ? !!avaliadoPedidoAtual : false;
+            const htmlParts = [];
+            const sigParts = [];
         sigParts.push(`clear@${clearTs || ''}`);
-        const __perfilMe = (window.DOKE_UI ? DOKE_UI.meProfile() : (()=>{ try{return JSON.parse(localStorage.getItem('doke_usuario_perfil')||'{}')||{};}catch(e){return {};}})());
-        const __meUser = (window.DOKE_UI ? DOKE_UI.stripAt(__perfilMe.user || __perfilMe.username || __perfilMe.nome || '') : String(__perfilMe.user||'').replace(/^@+/, '')) || 'voce';
-        const __meFoto = (__perfilMe.foto || __perfilMe.avatar || 'https://i.pravatar.cc/150');
-        const __wrapMsg = (souEu, user, foto, hora, bubbleHtml) => {
-            const u = user || (souEu ? __meUser : 'usuario');
-            const f = foto || (souEu ? __meFoto : 'https://i.pravatar.cc/150');
-            if (window.DOKE_UI) return DOKE_UI.wrap({me: !!souEu, user: u, foto: f, time: hora, bubbleHtml});
-            return bubbleHtml;
-        };
+        if (colecao === 'pedidos' && pedidoAtualData) {
+            sigParts.push([
+                'pedido',
+                sigValue(pedidoAtualData.status),
+                sigValue(pedidoAtualData.motivoRecusa),
+                sigValue(pedidoAtualData.descricaoBase),
+                sigValue(pedidoAtualData.paraQuando),
+                sigValue(pedidoAtualData.dataEspecifica),
+                sigValue(pedidoAtualData.turno),
+                sigValue(pedidoAtualData.modoAtend || pedidoAtualData.modo_atend),
+                sigValue(pedidoAtualData.localizacao),
+                sigValue(pedidoAtualData.respostasTriagem)
+            ].join("|"));
+            const infoCard = buildPedidoInfoCard(pedidoAtualData);
+            if (infoCard) htmlParts.push(infoCard);
+            const recusaCard = buildRecusaCard(pedidoAtualData);
+            if (recusaCard) htmlParts.push(recusaCard);
+        }
 
         snapshot.forEach(docSnap => {
             const m = docSnap.data();
             const msgDate = parseDataHora(m.timestamp);
             if (clearTs && msgDate && msgDate.getTime() <= clearTs) return;
+            const shouldSkipAttachment = !!(anexosUrlSet.size && m.url && (m.tipo === 'imagem' || m.tipo === 'arquivo') && anexosUrlSet.has(normalizeUrlForCompare(m.url)));
             sigParts.push([
                 docSnap.id || "",
                 sigValue(m.timestamp),
@@ -3200,6 +3914,7 @@ function carregarMensagens(colecao, docId) {
                 sigValue(m.valor),
                 sigValue(m.maxParcelas || m.maxparcelas)
             ].join("|"));
+            if (shouldSkipAttachment) return;
             // Verifica se a mensagem foi enviada por MIM (usuário logado)
             const sender = m.senderUid || m.senderuid || m.senderUID || m.sender;
             const souEu = String(sender||'') === String(currentUserUid);
@@ -3209,6 +3924,24 @@ function carregarMensagens(colecao, docId) {
             try {
                 if (msgDate && !isNaN(msgDate.getTime())) horaMsg = msgDate.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
             } catch(e) {}
+
+            const parsedText = extractReplyFromText(m.texto || '');
+            const cleanText = parsedText.text;
+            const senderUserRaw = m.senderUser || m.sender_user || "";
+            const senderUser = (senderUserRaw || (souEu ? 'Você' : 'Usuário'));
+            const msgPreview = getTipoPreview(m.tipo, cleanText || '', m.url || '');
+            const enc = (v) => encodeURIComponent(String(v || ""));
+            const replyBtn = docSnap.id
+                ? `<button class="msg-reply-btn" title="Responder" onclick="responderMensagem('${enc(docSnap.id)}','${enc(senderUser)}','${enc(m.tipo || 'texto')}','${enc(msgPreview)}')"><i class='bx bx-reply'></i></button>`
+                : "";
+            let replyData = parsedText.meta;
+            if (!replyData && m.reply_user && m.reply_preview) {
+                replyData = { user: m.reply_user, preview: m.reply_preview };
+            }
+            if (!replyData && m.replyTo) {
+                replyData = m.replyTo;
+            }
+            const replyHtml = buildReplyHtml(replyData);
 
             // --- CARD PAGAMENTO (VERDE) ---
             if (m.tipo === 'pagamento') {
@@ -3279,59 +4012,78 @@ function carregarMensagens(colecao, docId) {
             }
             // --- IMAGEM ---
             else if (m.tipo === 'imagem' && m.url) {
-                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
-                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
-                const bubble = `
-                <div class="msg-bubble" style="padding:8px;">
-                    <img class="msg-media" src="${m.url}" alt="imagem" onclick="abrirGaleria(['${m.url}'], 0)" />
+                const htmlImg = `
+                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" style="padding:8px;">
+                    ${replyHtml}
+                    <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
+                    <div class="msg-footer">
+                        ${replyBtn}
+                        <span class="msg-hora">${horaMsg}</span>
+                    </div>
                 </div>`;
-                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
+                htmlParts.push(htmlImg);
             }
             // --- ARQUIVO ---
             else if (m.tipo === 'arquivo' && m.url) {
-                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
-                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
-                const nome = (m.texto || 'Arquivo');
-                const bubble = `
-                <div class="msg-bubble">
-                    <a href="${m.url}" target="_blank" style="text-decoration:none; color:inherit; display:block;">
-                      <div class="msg-file">
-                          <div class="msg-file-ico"><i class='bx bx-file'></i></div>
-                          <div style="min-width:0;">
-                              <div class="msg-file-name">${nome}</div>
-                              <div class="msg-file-sub">Abrir / baixar</div>
-                          </div>
-                      </div>
-                    </a>
+                const nome = escapeHtml(cleanText || 'Arquivo');
+                const htmlFile = `
+                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                    ${replyHtml}
+                    <div style="display:flex; align-items:center; gap:10px;">
+                        <div style="width:38px; height:38px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center;">
+                            <i class='bx bx-file' style="font-size:20px; color:#3949ab"></i>
+                        </div>
+                        <div style="flex:1; min-width:0;">
+                            <div style="font-weight:700; color:#111; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${nome}</div>
+                            <a href="${m.url}" target="_blank" style="font-size:0.82rem; color:var(--cor0); font-weight:700; text-decoration:none;">Baixar / abrir</a>
+                        </div>
+                    </div>
+                    <div class="msg-footer">
+                        ${replyBtn}
+                        <span class="msg-hora">${horaMsg}</span>
+                    </div>
                 </div>`;
-                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
+                htmlParts.push(htmlFile);
             }
             // --- MENSAGEM DE ÁUDIO ---
-            else if ((m.tipo === 'audio' || m.tipo === 'áudio' || m.tipo === 'voz') && m.url) {
-                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
-                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
-                const bubble = `
-                <div class="msg-bubble">
-                  <div class="audio-bubble">
-                    <button class="audio-btn" onclick="DOKE_playAudio('${m.url}', this)"><i class='bx bx-play'></i></button>
-                    <div class="audio-time">0:00 / 0:00</div>
-                    <div class="audio-bar"><i></i></div>
-                  </div>
+            else if (m.tipo === 'audio') {
+                const corWave = souEu ? 'white' : '#555';
+                const corIcone = souEu ? 'var(--cor0)' : '#555';
+                
+                const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
+                const htmlAudio = `
+                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                    ${replyHtml}
+                    <div class="audio-bubble" data-audio-id="${audioId}">
+                        <button class="btn-play-audio" onclick="tocarAudio(this, '${m.url}', '${audioId}')" style="color:${corIcone}">
+                            <i class='bx bx-play'></i>
+                        </button>
+                        <div style="display:flex; flex-direction:column; justify-content:center; flex:1;">
+                            <div class="audio-wave" style="background:${corWave}; opacity:0.3; height:3px; width:100px; margin-bottom:3px;"></div>
+                            <span id="audio-time-${audioId}" style="font-size:0.7rem; opacity:0.8;">0:00 / 0:00</span>
+                        </div>
+                    </div>
+                    <div class="msg-footer">
+                        ${replyBtn}
+                        <span class="msg-hora">${horaMsg}</span>
+                    </div>
                 </div>`;
-                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
+                htmlParts.push(htmlAudio);
             }
             // --- TEXTO NORMAL ---
             else {
-                const otherUser = (window.DOKE_UI ? DOKE_UI.stripAt(m.senderUser || m.sender_user || "") : String(m.senderUser||m.sender_user||"").replace(/^@+/, "")) || "usuario";
-                const otherFoto = (m.senderFoto || m.sender_foto || m.foto || "");
-                const bubble = `
-                <div class="msg-bubble">
-                    ${escapeHtml(m.texto || '').replace(/
-/g, '<br>')}
-                </div>`;
-                htmlParts.push(__wrapMsg(souEu, souEu ? __meUser : otherUser, souEu ? __meFoto : otherFoto, horaMsg, bubble));
+                const textoSeguro = escapeHtml(cleanText).replace(/\n/g, '<br>');
+                htmlParts.push(`
+                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                    ${replyHtml}
+                    ${textoSeguro}
+                    <div class="msg-footer">
+                        ${replyBtn}
+                        <span class="msg-hora">${horaMsg}</span>
+                    </div>
+                </div>`);
             }
-});
+        });
 
         const nextSig = sigParts.join("||") + "||" + statusPedido + "|" + (pedidoAvaliado ? "1" : "0");
         if (nextSig === lastSig) {
@@ -3340,7 +4092,7 @@ function carregarMensagens(colecao, docId) {
         }
         lastSig = nextSig;
         const emptyHtml = clearTs
-            ? `<div style="text-align:center; padding:30px; color:#888;">HistÃ³rico limpo para vocÃª. Novas mensagens aparecerÃ£o aqui.</div>`
+            ? `<div style="text-align:center; padding:30px; color:#888;">Histórico limpo para você. Novas mensagens aparecerão aqui.</div>`
             : `<div style="text-align:center; padding:30px; color:#888;">Nenhuma mensagem.</div>`;
         const nextHtml = htmlParts.length ? htmlParts.join("") : emptyHtml;
         container.innerHTML = nextHtml;
@@ -3418,20 +4170,25 @@ window.gerarPagamento = async function() {
     }
 };
 
-    window.enviarMensagemTexto = async () => {
-        const inp = document.getElementById('inputMsg'); if(!inp.value.trim()) return;
-        const txt = inp.value; inp.value = "";
-        try {
-            if (!chatIdAtual || !colecaoAtual) {
+      window.enviarMensagemTexto = async () => {
+          const inp = document.getElementById('inputMsg'); if(!inp.value.trim()) return;
+          const txt = inp.value; inp.value = "";
+          try {
+              if (!chatIdAtual || !colecaoAtual) {
                 window.dokeAlert ? window.dokeAlert('Abra um chat antes de enviar.') : alert('Abra um chat antes de enviar.');
                 return;
             }
             const uid = currentUserUid || auth.currentUser?.uid || null;
             if (!uid) {
-                window.dokeAlert ? window.dokeAlert('Faça login para enviar mensagens.') : alert('Faça login para enviar mensagens.');
-                return;
-            }
-            await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), { tipo: 'texto', texto: txt, senderUid: uid, timestamp: new Date() });
+                  window.dokeAlert ? window.dokeAlert('Faça login para enviar mensagens.') : alert('Faça login para enviar mensagens.');
+                  return;
+              }
+              if (isConversaBloqueadaPorAmizade()) {
+                  window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+                  return;
+              }
+              const textoFinal = applyReplyMetaToText(txt);
+            await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), { tipo: 'texto', texto: textoFinal, senderUid: uid, timestamp: new Date() });
             const draftKey = getDraftKey();
             if (draftKey) localStorage.removeItem(draftKey);
             if(colecaoAtual === 'conversas') {
@@ -3444,6 +4201,7 @@ window.gerarPagamento = async function() {
                 } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
             }
             marcarChatComoLido(colecaoAtual, chatIdAtual);
+            cancelarResposta();
         } catch (e) {
             console.error(e);
             window.dokeAlert ? window.dokeAlert("Falha ao enviar. Verifique permissões (RLS) / colunas do Supabase.") : alert("Falha ao enviar. Verifique permissões (RLS).");
@@ -3453,22 +4211,30 @@ window.gerarPagamento = async function() {
     // =============================
     // ANEXOS (imagem/arquivo)
     // =============================
-    window.abrirSeletorAnexo = () => {
-        if (!chatIdAtual || !colecaoAtual) {
-            window.dokeAlert ? window.dokeAlert('Abra um chat antes de anexar.') : alert('Abra um chat antes de anexar.');
-            return;
-        }
-        const input = document.getElementById('inputAnexo');
-        if (!input) return;
-        input.value = "";
-        input.click();
-    };
+      window.abrirSeletorAnexo = () => {
+          if (!chatIdAtual || !colecaoAtual) {
+              window.dokeAlert ? window.dokeAlert('Abra um chat antes de anexar.') : alert('Abra um chat antes de anexar.');
+              return;
+          }
+          if (isConversaBloqueadaPorAmizade()) {
+              window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+              return;
+          }
+          const input = document.getElementById('inputAnexo');
+          if (!input) return;
+          input.value = "";
+          input.click();
+      };
 
-    async function enviarAnexoArquivo(file){
-        if (!file) return;
-        if (!chatIdAtual || !colecaoAtual) return;
+      async function enviarAnexoArquivo(file){
+          if (!file) return;
+          if (!chatIdAtual || !colecaoAtual) return;
+          if (isConversaBloqueadaPorAmizade()) {
+              window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+              return;
+          }
 
-        try {
+          try {
             const storage = getStorage();
             const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g, '_');
             const path = `chat/${colecaoAtual}/${chatIdAtual}/${Date.now()}_${safeName}`;
@@ -3477,9 +4243,10 @@ window.gerarPagamento = async function() {
             const url = await getDownloadURL(r);
 
             const isImg = (file.type || '').startsWith('image/');
+            const textoFinal = applyReplyMetaToText(safeName);
             await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
                 tipo: isImg ? 'imagem' : 'arquivo',
-                texto: safeName,
+                texto: textoFinal,
                 url,
                 senderUid: currentUserUid,
                 timestamp: new Date()
@@ -3491,6 +4258,7 @@ window.gerarPagamento = async function() {
                 } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
             }
             marcarChatComoLido(colecaoAtual, chatIdAtual);
+            cancelarResposta();
         } catch (e) {
             console.error(e);
             window.dokeAlert ? window.dokeAlert('Falha ao enviar anexo. Verifique o Storage (bucket/policies).') : alert('Falha ao enviar anexo.');
@@ -3585,6 +4353,10 @@ window.timerInterval = null;
 
 // 1. Iniciar Gravação
 window.iniciarGravacao = async function() {
+    if (isConversaBloqueadaPorAmizade()) {
+        window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+        return;
+    }
     // Verifica suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
         alert("Seu navegador não suporta gravação de áudio.");
@@ -3640,6 +4412,10 @@ window.cancelarGravacao = function() {
 // 3. Enviar Áudio (Salvar no Firebase)
 window.enviarAudio = function() {
     if (!window.mediaRecorder) return;
+    if (isConversaBloqueadaPorAmizade()) {
+        window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+        return;
+    }
 
     // Quando o áudio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
@@ -3670,10 +4446,11 @@ window.enviarAudio = function() {
             const downloadUrl = await getDownloadURL(snapshot.ref);
 
             // Salvar mensagem no Firestore
+            const textoAudio = applyReplyMetaToText("Mensagem de voz");
             await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
                 tipo: 'audio',
                 url: downloadUrl, // Link do áudio
-                texto: "Mensagem de voz", // Texto de fallback
+                texto: textoAudio, // Texto de fallback + reply meta
                 senderUid: user.uid,
                 timestamp: new Date(),
                 lido: false
@@ -3696,6 +4473,7 @@ window.enviarAudio = function() {
                 } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
             }
             marcarChatComoLido(colecaoAtual, chatIdAtual);
+            cancelarResposta();
 
         } catch (e) {
             console.error("Erro no upload do áudio:", e);
@@ -3813,9 +4591,9 @@ window.tocarAudio = function(btn, url, audioId) {
         <div class="galeria-thumbnails" id="areaThumbnails"></div>
     </div>
 
-    <script src="doke-chat-grupo-ui.js?v=20260126"></script>
 </body>
 </html>  
+
 
 
 

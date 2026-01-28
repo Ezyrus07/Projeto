@@ -462,7 +462,7 @@
                 </div>
                 <label class="notif-search">
                     <i class='bx bx-search'></i>
-                    <input id="notif-search" type="text" placeholder="Buscar notificacoes" />
+                    <input id="notif-search" type="text" placeholder="Buscar notificações" />
                 </label>
             </div>
 
@@ -473,7 +473,7 @@
             <div class="empty-state" id="empty-state">
                 <i class='bx bx-bell-off'></i>
                 <h3>Tudo limpo por aqui!</h3>
-                <p>Voce nao tem novas notificacoes no momento.</p>
+                <p>Você não tem novas notificações no momento.</p>
             </div>
         </div>
     </main>
@@ -657,6 +657,14 @@
 
 // EM NOTIFICACOES.HTML
 
+function parseNotifDate(v) {
+    if (!v) return new Date();
+    if (v instanceof Date) return v;
+    if (typeof v === 'object' && typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+    const d = new Date(v);
+    return isNaN(d.getTime()) ? new Date() : d;
+}
+
 async function carregarNotificacoes(uid) {
     const container = document.getElementById('lista-notificacoes');
     todasNotificacoes = [];
@@ -679,14 +687,15 @@ async function carregarNotificacoes(uid) {
             const statusLido = data.notificacaoLidaProfissional === true ? 'read' : 'unread';
 
             if(data.status === 'pendente') {
+                const servico = data.servicoReferencia || data.descricaoBase || data.titulo || 'Serviço';
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'profissional',
-                    titulo: "Novo Orcamento",
-                    desc: `${data.clienteNome || 'Cliente'} solicitou um orcamento.`,
+                    titulo: "Novo Orçamento",
+                    desc: `${data.clienteNome || 'Cliente'} solicitou um orçamento de ${servico}.`,
                     tipo: 'pedidos',
                     status: statusLido,
-                    time: new Date(data.dataPedido),
+                    time: parseNotifDate(data.dataPedido),
                     iconClass: 'bx-file-blank', colorClass: 'ni-pedido', link: `chat.html?chatId=${doc.id}`,
                     actor: data.clienteNome || 'Cliente',
                     avatar: data.clienteFoto || ''
@@ -700,7 +709,7 @@ async function carregarNotificacoes(uid) {
                     desc: "O cliente realizou o pagamento. Valor retido.",
                     tipo: 'financeiro',
                     status: statusLido,
-                    time: new Date(data.dataPagamento || new Date()),
+                    time: parseNotifDate(data.dataPagamento || new Date()),
                     iconClass: 'bx-shield-quarter', colorClass: 'ni-money', link: `chat.html?chatId=${doc.id}`,
                     actor: data.clienteNome || 'Cliente',
                     avatar: data.clienteFoto || ''
@@ -711,10 +720,10 @@ async function carregarNotificacoes(uid) {
                     id: doc.id,
                     role: 'profissional',
                     titulo: "Pagamento Liberado!",
-                    desc: `Servico concluido! O valor de ${data.valorFinal || ''} foi liberado.`,
+                    desc: `Serviço concluído! O valor de ${data.valorFinal || ''} foi liberado.`,
                     tipo: 'financeiro',
                     status: statusLido,
-                    time: new Date(data.dataConclusao || new Date()),
+                    time: parseNotifDate(data.dataConclusao || new Date()),
                     iconClass: 'bx-check-double', colorClass: 'ni-success', link: `carteira.html`,
                     actor: data.clienteNome || 'Cliente',
                     avatar: data.clienteFoto || ''
@@ -731,24 +740,25 @@ async function carregarNotificacoes(uid) {
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
-                    titulo: "Orcamento Aceito!",
+                    titulo: "Orçamento Aceito!",
                     desc: `O profissional aceitou seu pedido.`,
                     tipo: 'pedidos',
                     status: statusLido,
-                    time: new Date(data.dataAtualizacao || data.dataPedido),
+                    time: parseNotifDate(data.dataAtualizacao || data.dataPedido),
                     iconClass: 'bx-check-circle', colorClass: 'ni-info', link: `chat.html?chatId=${doc.id}`,
                     actor: data.profissionalNome || data.nomeProfissional || data.paraNome || 'Profissional',
                     avatar: data.profissionalFoto || data.paraFoto || data.fotoProfissional || ''
                 });
             } else if (data.status === 'recusado') {
+                const motivo = data.motivoRecusa ? `Motivo: ${data.motivoRecusa}` : "O profissional não pode atender no momento.";
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
                     titulo: "Pedido Recusado",
-                    desc: `O profissional nao pode atender no momento.`,
+                    desc: motivo,
                     tipo: 'pedidos',
                     status: statusLido,
-                    time: new Date(data.dataAtualizacao || data.dataPedido),
+                    time: parseNotifDate(data.dataAtualizacao || data.dataPedido),
                     iconClass: 'bx-x-circle', colorClass: 'ni-alerta', link: `chat.html?chatId=${doc.id}`,
                     actor: data.profissionalNome || data.nomeProfissional || data.paraNome || 'Profissional',
                     avatar: data.profissionalFoto || data.paraFoto || data.fotoProfissional || ''
@@ -757,7 +767,7 @@ async function carregarNotificacoes(uid) {
                 todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
-                    titulo: "Avalie o Servico",
+                    titulo: "Avalie o Serviço",
                     desc: "O servico foi concluido. Deixe sua avaliacao.",
                     tipo: 'pedidos',
                     status: 'unread',

@@ -1116,6 +1116,12 @@
             const textoOriginal = novoBtn.innerHTML;
             novoBtn.innerHTML = "Enviando...";
             novoBtn.disabled = true;
+            if (window.dokeShowLoading) {
+                window.dokeShowLoading({
+                    title: "Enviando pedido...",
+                    subtitle: "Estamos preparando seu orçamento"
+                });
+            }
 
             try {
                 console.log("💾 Salvando no banco...");
@@ -1140,7 +1146,8 @@
                     return getInputValue('data-especifica');
                 })();
 
-                const docRef = await addDoc(collection(db, "pedidos"), {
+                const pedidoExistente = await encontrarPedidoExistente(db, user.uid, paraUid, anuncioIdFinal);
+                const pedidoPayload = {
                     deUid: user.uid,
                     paraUid: paraUid,
                     paraNome: prestador.user || prestador.nome || "",
@@ -1196,18 +1203,36 @@ Local do serviço: ${loc}${extra}`;
                     clienteFoto: perfil.foto || "https://i.pravatar.cc/150",
                     status: "pendente",
                     dataPedido: new Date().toISOString(),
-                    notificacaoLidaProfissional: false
-                });
+                    dataAtualizacao: new Date().toISOString(),
+                    ultimaMensagem: descricao || "Novo pedido enviado",
+                    notificacaoLidaProfissional: false,
+                    notificacaoLidaCliente: true
+                };
 
-                console.log("🎉 Sucesso! ID:", docRef.id);
+                let pedidoIdFinal = "";
+                if (pedidoExistente && pedidoExistente.id) {
+                    const statusAtual = String(pedidoExistente.data?.status || "").toLowerCase();
+                    const reabrir = ['recusado','cancelado','finalizado'];
+                    if (!reabrir.includes(statusAtual)) {
+                        pedidoPayload.status = pedidoExistente.data?.status || pedidoPayload.status;
+                    }
+                    const pedidoRef = doc(db, "pedidos", pedidoExistente.id);
+                    await updateDoc(pedidoRef, pedidoPayload);
+                    pedidoIdFinal = pedidoExistente.id;
+                } else {
+                    const docRef = await addDoc(collection(db, "pedidos"), pedidoPayload);
+                    pedidoIdFinal = docRef.id;
+                }
+
+                console.log("🎉 Sucesso! ID:", pedidoIdFinal);
 
                 // Envia anexos como mensagens no chat do pedido (se houver)
                 try {
-                    const anexosEnviados = await uploadAnexos(user.uid, docRef.id);
+                    const anexosEnviados = await uploadAnexos(user.uid, pedidoIdFinal);
                     if (anexosEnviados.length) {
                         for (const a of anexosEnviados) {
                             const tipoMsg = String(a.tipo || '').startsWith('image/') ? 'imagem' : 'arquivo';
-                            await addDoc(collection(db, "pedidos", docRef.id, "mensagens"), {
+                            await addDoc(collection(db, "pedidos", pedidoIdFinal, "mensagens"), {
                                 tipo: tipoMsg,
                                 texto: a.nome,
                                 url: a.url,
@@ -1219,7 +1244,7 @@ Local do serviço: ${loc}${extra}`;
                         const anexosResumo = anexosEnviados.map(a => `${a.nome} - ${a.url}`).join('\\n');
                         const triagemAtual = respostasTriagem.slice();
                         triagemAtual.push({ pergunta: 'Anexos', resposta: anexosResumo });
-                        await updateDoc(doc(db, "pedidos", docRef.id), {
+                        await updateDoc(doc(db, "pedidos", pedidoIdFinal), {
                             respostasTriagem: triagemAtual,
                             ultimaMensagem: '📎 Anexos enviados',
                             dataAtualizacao: new Date().toISOString()
@@ -1234,15 +1259,42 @@ Local do serviço: ${loc}${extra}`;
 
                 // Sucesso
                 localStorage.setItem('doke_pedido_enviado', 'true');
-                mostrarModalPedidoEnviado(docRef.id);
+                if (window.dokeHideLoading) window.dokeHideLoading();
+                mostrarModalPedidoEnviado(pedidoIdFinal);
 
             } catch (erro) {
                 console.error("❌ ERRO FATAL:", erro);
                 alert("Erro ao enviar: " + erro.message);
+                if (window.dokeHideLoading) window.dokeHideLoading();
                 novoBtn.innerHTML = textoOriginal;
                 novoBtn.disabled = false;
             }
         });
+    }
+
+    async function encontrarPedidoExistente(db, deUid, paraUid, anuncioId) {
+        try {
+            if (!db || !deUid || !paraUid) return null;
+            const q = query(collection(db, "pedidos"), where("deUid", "==", deUid), where("paraUid", "==", paraUid));
+            const snap = await getDocs(q);
+            if (snap.empty) return null;
+            const candidatos = [];
+            snap.forEach((d) => {
+                const data = d.data() || {};
+                if (anuncioId && data.anuncioId && data.anuncioId !== anuncioId) return;
+                candidatos.push({ id: d.id, data });
+            });
+            if (!candidatos.length) return null;
+            candidatos.sort((a, b) => {
+                const ta = Date.parse(a.data.dataAtualizacao || a.data.dataPedido || 0) || 0;
+                const tb = Date.parse(b.data.dataAtualizacao || b.data.dataPedido || 0) || 0;
+                return tb - ta;
+            });
+            return candidatos[0];
+        } catch (e) {
+            console.warn("find pedido existente falhou:", e);
+            return null;
+        }
     }
 
 

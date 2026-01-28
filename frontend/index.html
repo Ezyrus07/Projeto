@@ -243,29 +243,68 @@
             <div class="grid-extras">
                 <div>
                     <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Preço Máximo</label>
-                    <input type="number" class="input-premium" placeholder="R$ 0,00">
+                    <input type="number" id="maxPreco" class="input-premium" placeholder="R$ 0,00">
                 </div>
                 <div>
                     <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Ordenar Por</label>
-                    <select class="input-premium">
-                        <option>Mais Recentes</option>
-                        <option>Menor Preço</option>
-                        <option>Melhor Avaliação</option>
+                    <select id="ordenacao" class="input-premium">
+                        <option value="mais_recente">Mais Recentes</option>
+                        <option value="preco_menor">Menor Preço</option>
+                        <option value="melhor_avaliacao">Melhor Avaliação</option>
                     </select>
                 </div>
-                <button class="btn-aplicar">Aplicar</button>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Categoria</label>
+                    <select id="filtroCategoria" class="input-premium">
+                        <option value="todas">Todas</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Serviço</label>
+                    <select id="filtroTipoAtend" class="input-premium">
+                        <option value="todos">Todos</option>
+                        <option value="online">Online</option>
+                        <option value="presencial">Presencial</option>
+                        <option value="ambos">Ambos</option>
+                    </select>
+                </div>
+                <div>
+                    <label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Preço</label>
+                    <select id="filtroTipoPreco" class="input-premium">
+                        <option value="todos">Todos</option>
+                        <option value="preco_fixo">Preço Fixo</option>
+                        <option value="sob_orcamento">Sob Orçamento</option>
+                    </select>
+                </div>
+                <div class="filtro-checks">
+                    <label class="filtro-label">Pagamentos aceitos</label>
+                    <div class="filtro-checks-row">
+                        <label><input type="checkbox" id="filtroPgPix"> Pix</label>
+                        <label><input type="checkbox" id="filtroPgCredito"> Crédito</label>
+                        <label><input type="checkbox" id="filtroPgDebito"> Débito</label>
+                    </div>
+                </div>
+                <div class="filtro-checks">
+                    <label class="filtro-label">Extras</label>
+                    <div class="filtro-checks-row">
+                        <label><input type="checkbox" id="filtroGarantia"> Com garantia</label>
+                        <label><input type="checkbox" id="filtroEmergencia"> Emergência</label>
+                        <label><input type="checkbox" id="filtroFormulario"> Tem formulário</label>
+                    </div>
+                </div>
+                <button class="btn-aplicar" id="btn-aplicar" type="button">Aplicar</button>
             </div>
         </div>
 
-        <div class="filtros-localizacao">
+            <div class="filtros-localizacao">
             <span class="label-loc">Localização</span>
             <div class="grid-loc">
-                <select id="selectEstado" class="select-premium" onchange="carregarCidades()">
+                <select id="selectEstado" class="select-premium">
                     <option value="" disabled selected>Selecionar UF</option>
                     <option value="BA">Bahia</option>
                     <option value="SP">São Paulo</option>
                 </select>
-                <select id="selectCidade" class="select-premium" onchange="carregarBairros()" disabled>
+                <select id="selectCidade" class="select-premium" disabled>
                     <option value="" disabled selected>Cidade</option>
                 </select>
                 <select id="selectBairro" class="select-premium" disabled>
@@ -274,13 +313,19 @@
             </div>
         </div>
 
-        <div class="filtros-chips-scroll">
-            <button class="chip-tag ativo" onclick="ativarChip(this)">Todos</button>
-            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-trending-up'></i> Tendências</button>
-            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-map'></i> Perto de você</button>
-            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-star'></i> Super Profissionais</button>
-            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-time'></i> Recém-chegados</button>
-            <button class="chip-tag" onclick="ativarChip(this)"><i class='bx bx-badge-check'></i> Verificados</button>
+        <div class="filtros-rapidos">
+            <div class="filtros-rapidos-header">
+                <span>Filtros rápidos</span>
+                <button class="chips-arrow" type="button" onclick="scrollChips(this)"><i class='bx bx-chevron-right'></i></button>
+            </div>
+            <div class="filtros-chips-scroll" data-chips>
+                <button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
+                <button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class='bx bx-trending-up'></i> Tendências</button>
+                <button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class='bx bx-map'></i> Perto de você</button>
+                <button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class='bx bx-star'></i> Super Profissionais</button>
+                <button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class='bx bx-time'></i> Recém-chegados</button>
+                <button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class='bx bx-badge-check'></i> Verificados</button>
+            </div>
         </div>
 
     </div>
@@ -390,10 +435,6 @@
 
     <div class="footer-bottom">
         <p>&copy; 2026 Doke Serviços e Tecnologia. Todos os direitos reservados.</p>
-        <div class="payment-icons">
-            <span>💳 Crédito</span>
-            <span>🔒 Pix Seguro</span>
-        </div>
     </div>
 </footer>
 

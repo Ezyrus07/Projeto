@@ -1544,6 +1544,12 @@ h3#dokeAlertTitle{
         if(event && event.preventDefault) event.preventDefault();
         const btn = document.getElementById('btn-submit');
         if(btn){ btn.innerText = "Publicando..."; btn.disabled = true; }
+        if (window.dokeShowLoading) {
+            window.dokeShowLoading({
+                title: "Publicando anúncio...",
+                subtitle: "Estamos enviando suas informações"
+            });
+        }
 
         try {
             const auth = window.getAuth();
@@ -1582,11 +1588,13 @@ h3#dokeAlertTitle{
 
             await window.addDoc(window.collection(window.db, "anuncios"), dadosComuns);
 
+            if (window.dokeHideLoading) window.dokeHideLoading();
             alert("AnÃºncio publicado com sucesso!");
             window.location.href = "meuperfil.html";
         } catch (erro) {
             console.error(erro);
             alert("Erro ao publicar: " + erro.message);
+            if (window.dokeHideLoading) window.dokeHideLoading();
             if(btn){ btn.innerText = "Publicar AnÃºncio"; btn.disabled = false; }
         }
     }
@@ -1595,6 +1603,12 @@ h3#dokeAlertTitle{
     async function atualizarAnuncioExistente() {
         const btn = document.getElementById('btn-submit');
         if(btn){ btn.innerText = "Salvando..."; btn.disabled = true; }
+        if (window.dokeShowLoading) {
+            window.dokeShowLoading({
+                title: "Salvando anúncio...",
+                subtitle: "Atualizando suas informações"
+            });
+        }
 
         try {
             const auth = window.getAuth();
@@ -1628,11 +1642,13 @@ h3#dokeAlertTitle{
             const docRef = window.doc(window.db, "anuncios", anuncioIdEdicao);
             await window.updateDoc(docRef, updateData);
 
+            if (window.dokeHideLoading) window.dokeHideLoading();
             alert("AnÃºncio atualizado com sucesso!");
             window.location.href = "meuperfil.html";
         } catch (erro) {
             console.error(erro);
             alert("Erro ao salvar: " + erro.message);
+            if (window.dokeHideLoading) window.dokeHideLoading();
             if(btn){ btn.innerText = "Salvar AlteraÃ§Ãµes"; btn.disabled = false; }
         }
     }
