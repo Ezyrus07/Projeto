@@ -1125,6 +1125,55 @@ function __dokeParsePreco(value) {
     return Number.isFinite(n) ? n : null;
 }
 
+function __dokeGetStoredLoc(){
+    const lat = parseFloat(localStorage.getItem('doke_loc_lat') || '');
+    const lng = parseFloat(localStorage.getItem('doke_loc_lng') || '');
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+    return { lat, lng };
+}
+function __dokeSetStoredLoc(lat, lng){
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    localStorage.setItem('doke_loc_lat', String(lat));
+    localStorage.setItem('doke_loc_lng', String(lng));
+}
+function __dokeDistanceKm(a, b){
+    if (!a || !b) return null;
+    const toRad = (v) => (v * Math.PI) / 180;
+    const R = 6371;
+    const dLat = toRad(b.lat - a.lat);
+    const dLng = toRad(b.lng - a.lng);
+    const s1 = Math.sin(dLat / 2) ** 2;
+    const s2 = Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2;
+    const c = 2 * Math.atan2(Math.sqrt(s1 + s2), Math.sqrt(1 - (s1 + s2)));
+    return R * c;
+}
+function __dokeGetAnuncioLatLng(a){
+    if (!a) return null;
+    let loc = a.localizacao || a.localizacao_json || a.location || null;
+    if (typeof loc === 'string') {
+        try { loc = JSON.parse(loc); } catch (_) {}
+    }
+    const lat = a.lat || a.latitude || loc?.lat || loc?.latitude || null;
+    const lng = a.lng || a.lon || a.longitude || loc?.lng || loc?.longitude || null;
+    if (!Number.isFinite(parseFloat(lat)) || !Number.isFinite(parseFloat(lng))) return null;
+    return { lat: parseFloat(lat), lng: parseFloat(lng) };
+}
+function __dokeScoreQualidade(a){
+    const nota = Number(a.mediaAvaliacao || a.rating || 0);
+    const reviews = Number(a.numAvaliacoes || a.reviews || 0);
+    let taxa = Number(a.taxaResposta || a.responseRate || a.taxa_resposta || 0);
+    let conversao = Number(a.conversao || a.conversionRate || a.taxaConversao || 0);
+    const tempoMs = Number(a.tempoMedioResposta || a.avgResponseTimeMs || a.tempo_resposta_ms || 0);
+    if (taxa > 1) taxa = taxa / 100;
+    if (conversao > 1) conversao = conversao / 100;
+    const score = (nota * 20)
+        + (Math.log10(reviews + 1) * 8)
+        + (taxa * 20)
+        + (conversao * 12)
+        - (tempoMs ? Math.min(tempoMs / 60000, 240) * 0.03 : 0);
+    return score;
+}
+
 function __dokeApplyFilters(lista, opts = {}) {
     let out = lista.slice();
     const term = opts.term ? String(opts.term).trim() : '';
@@ -1179,6 +1228,17 @@ function __dokeApplyFilters(lista, opts = {}) {
     if (cidade) out = out.filter(a => __dokeNormalizeText(a.cidade || '') === cidade);
     if (bairro) out = out.filter(a => __dokeNormalizeText(a.bairro || '') === bairro);
 
+    const raioKm = Number.isFinite(opts.raioKm) ? opts.raioKm : null;
+    const userLoc = opts.userLoc || __dokeGetStoredLoc();
+    if (raioKm && userLoc) {
+        out = out.filter(a => {
+            const loc = __dokeGetAnuncioLatLng(a);
+            if (!loc) return false;
+            const dist = __dokeDistanceKm(userLoc, loc);
+            return Number.isFinite(dist) ? dist <= raioKm : false;
+        });
+    }
+
     const pagamentos = opts.pagamentos || {};
     if (pagamentos.pix || pagamentos.credito || pagamentos.debito) {
         out = out.filter(a => {
@@ -1228,6 +1288,8 @@ function __dokeApplyFilters(lista, opts = {}) {
         out.sort((a, b) => (__dokeParsePreco(a.preco) ?? 1e12) - (__dokeParsePreco(b.preco) ?? 1e12));
     } else if (ord === 'preco_maior') {
         out.sort((a, b) => (__dokeParsePreco(b.preco) ?? -1) - (__dokeParsePreco(a.preco) ?? -1));
+    } else if (ord === 'qualidade' || ord === 'melhor_qualidade') {
+        out.sort((a, b) => __dokeScoreQualidade(b) - __dokeScoreQualidade(a));
     } else if (ord === 'melhor_avaliacao') {
         out.sort((a, b) => (b.mediaAvaliacao || 0) - (a.mediaAvaliacao || 0));
     } else if (ord === 'mais_recente' || ord === 'recente') {
@@ -1359,6 +1421,15 @@ window.aplicarFiltrosBusca = function() {
     const uf = document.getElementById('selectEstado')?.value || '';
     const cidade = document.getElementById('selectCidade')?.value || '';
     const bairro = document.getElementById('selectBairro')?.value || '';
+    const raioRaw = (document.getElementById('filtroRaio')?.value || '').trim();
+    const raioKm = raioRaw ? parseFloat(raioRaw.replace(',', '.')) : null;
+    const userLoc = window.__dokeUserLoc || __dokeGetStoredLoc();
+    const radiusStatus = document.getElementById('radiusStatus');
+    if (radiusStatus) {
+        if (raioKm && !userLoc) radiusStatus.textContent = 'Ative a localizacao para usar o raio.';
+        else if (raioKm && userLoc) radiusStatus.textContent = `Raio ativo: ${raioKm} km.`;
+        else radiusStatus.textContent = '';
+    }
 
     const lista = __dokeApplyFilters(full, {
         term: termo,
@@ -1372,7 +1443,9 @@ window.aplicarFiltrosBusca = function() {
         tipoAtend,
         uf,
         cidade,
-        bairro
+        bairro,
+        raioKm: Number.isFinite(raioKm) ? raioKm : null,
+        userLoc
     });
 
     feed.innerHTML = '';
@@ -1395,6 +1468,29 @@ window.aplicarFiltrosBusca = function() {
     if (contador) {
         contador.textContent = `Mostrando ${lista.length} resultados`;
     }
+};
+
+window.usarMinhaLocalizacao = function() {
+    const statusEl = document.getElementById('radiusStatus');
+    if (!navigator.geolocation) {
+        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponivel no navegador.';
+        return;
+    }
+    if (statusEl) statusEl.textContent = 'Obtendo localizacao...';
+    navigator.geolocation.getCurrentPosition(
+        (pos) => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            window.__dokeUserLoc = { lat, lng };
+            __dokeSetStoredLoc(lat, lng);
+            if (statusEl) statusEl.textContent = 'Localizacao atualizada.';
+            if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
+        },
+        () => {
+            if (statusEl) statusEl.textContent = 'Nao foi possivel obter a localizacao.';
+        },
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
+    );
 };
 
 window.novaBusca = function() {

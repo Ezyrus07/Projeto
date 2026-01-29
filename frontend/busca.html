@@ -67,6 +67,19 @@
             margin-bottom: 10px; outline: none;
         }
         .input-sidebar:focus { border-color: var(--cor2); background: white; }
+        .radius-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .btn-loc {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #0b7768;
+            font-weight: 700;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-loc:hover { background: #f0fdfa; }
+        .radius-status { font-size: 0.75rem; color: #64748b; margin-top: 6px; }
 
         /* Radio buttons estilizados como lista */
         .radio-list { display: flex; flex-direction: column; gap: 10px; }
@@ -215,6 +228,7 @@
                     <span class="filter-label">Ordenar por</span>
                     <select id="filtroOrdenacao" class="select-sidebar" onchange="aplicarFiltrosBusca()">
                         <option value="recente">Mais Recentes</option>
+                        <option value="qualidade">Maior Qualidade</option>
                         <option value="menor_preco">Menor Preço</option>
                         <option value="melhor_avaliacao">Melhor Avaliação</option>
                     </select>
@@ -236,6 +250,18 @@
                     <select id="selectBairro" class="select-sidebar" onchange="aplicarFiltrosBusca()" disabled>
                         <option value="">Todos Bairros</option>
                     </select>
+                    <div class="radius-row">
+                        <select id="filtroRaio" class="select-sidebar" onchange="aplicarFiltrosBusca()">
+                            <option value="">Sem raio</option>
+                            <option value="1">Até 1 km</option>
+                            <option value="3">Até 3 km</option>
+                            <option value="5">Até 5 km</option>
+                            <option value="10">Até 10 km</option>
+                            <option value="25">Até 25 km</option>
+                        </select>
+                        <button class="btn-loc" type="button" onclick="usarMinhaLocalizacao()">Usar minha localização</button>
+                    </div>
+                    <div class="radius-status" id="radiusStatus"></div>
                 </div>
 
                 <div class="filter-group">
@@ -337,6 +363,9 @@
             document.getElementById('selectCidade').disabled = true;
             document.getElementById('selectBairro').value = "";
             document.getElementById('selectBairro').disabled = true;
+            document.getElementById('filtroRaio').value = "";
+            const rs = document.getElementById('radiusStatus');
+            if (rs) rs.textContent = "";
             document.getElementById('filtroCategoria').value = "todas";
             document.getElementById('filtroTipoPreco').value = "todos";
             document.getElementById('filtroPgPix').checked = false;

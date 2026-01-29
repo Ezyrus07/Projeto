@@ -10,6 +10,8 @@
   const MEMBERS_TABLE = 'comunidade_membros';
   const GROUPS_TABLE = 'comunidades';
   const REACTIONS_TABLE = 'comunidade_post_reacoes';
+  const CARGOS_TABLE = 'comunidade_cargos';
+  const MUTES_TABLE = 'comunidade_mutes';
 
   // UI
   const feedEl = $('#grupoFeed');
@@ -32,7 +34,58 @@ const requestsSub = $('#requestsSub');
 const requestsList = $('#listaSolicitacoes');
 const btnRefreshReq = $('#btnRefreshSolicitacoes');
 
+// Membros
+const membrosSub = $('#membrosSub');
+const listaOnline = $('#listaOnline');
+const listaOffline = $('#listaOffline');
+const countOnline = $('#countOnline');
+const countOffline = $('#countOffline');
+const grupoMembrosCount = $('#grupoMembrosCount');
+
+// Grupo header
+const grupoCover = $('#grupoCover');
+const grupoAvatar = $('#grupoAvatar');
+const grupoNome = $('#grupoNome');
+const grupoDesc = $('#grupoDesc');
+const grupoTipo = $('#grupoTipo');
+
+// Config modal
+const btnConfigGrupo = $('#btnConfigGrupo');
+const modalGrupoConfig = $('#modalGrupoConfig');
+const btnFecharConfig = $('#btnFecharConfig');
+const tabCfgEditar = $('#tabCfgEditar');
+const tabCfgCargos = $('#tabCfgCargos');
+const tabCfgSilenciados = $('#tabCfgSilenciados');
+const cfgEditar = $('#cfgEditar');
+const cfgCargos = $('#cfgCargos');
+const cfgSilenciados = $('#cfgSilenciados');
+
+const cfgNome = $('#cfgNome');
+const cfgDesc = $('#cfgDesc');
+const btnSalvarGrupo = $('#btnSalvarGrupo');
+
+const cargoNome = $('#cargoNome');
+const cargoCor = $('#cargoCor');
+const btnCriarCargo = $('#btnCriarCargo');
+const listaCargos = $('#listaCargos');
+
+const btnTrocarFotoGrupo = $('#btnTrocarFotoGrupo');
+const btnTrocarCapaGrupo = $('#btnTrocarCapaGrupo');
+const inputFotoGrupo = $('#inputFotoGrupo');
+const inputCapaGrupo = $('#inputCapaGrupo');
+const previewFotoGrupo = $('#previewFotoGrupo');
+const previewCapaGrupo = $('#previewCapaGrupo');
+
+const listaSilenciados = $('#listaSilenciados');
+const btnRefreshSilenciados = $('#btnRefreshSilenciados');
+
 let isAdmin = false;
+let groupData = null;
+let ownerUid = null;
+let cargosCache = [];
+let mutesCache = new Set();
+let memberDisplaySchema = null;
+let groupSchema = null;
 
   let client = null;
   let grupoId = null;
@@ -628,6 +681,778 @@ function wireRequestActions(rows){
     return { postIdCol: postIdCol||'post_id', userCol: userCol||'user_uid', emojiCol: emojiCol||'emoji' };
   }
 
+
+  // ------ group schema + header + membros + cargos + mutes ------
+
+  async function detectGroupSchema(){
+    // columns may vary; we detect common ones
+    const nameCandidates = ['nome','titulo','name','title'];
+    const descCandidates = ['descricao','descrição','description','desc'];
+    const typeCandidates = ['tipo','type'];
+    const avatarCandidates = ['foto','avatar','imagem','foto_url','avatar_url','image_url'];
+    const coverCandidates = ['capa','cover','banner','capa_url','cover_url','banner_url'];
+    const privateCandidates = ['privado','is_private','publico','publica'];
+
+    const ownerCandidates = ['donoUid','dono_uid','owner_uid','ownerUid','criado_por','criadoPor','created_by','createdBy','user_uid','userUid','autorUid','autor_uid'];
+
+    const pick = async (cands) => {
+      for (const c of cands){
+        try{
+          if (await hasColumn(GROUPS_TABLE, c)) return c;
+        }catch(e){}
+      }
+      return null;
+    };
+
+    return {
+      nameCol: await pick(nameCandidates) || 'nome',
+      descCol: await pick(descCandidates) || 'descricao',
+      typeCol: await pick(typeCandidates) || 'tipo',
+      avatarCol: await pick(avatarCandidates),
+      coverCol: await pick(coverCandidates),
+      privateCol: await pick(privateCandidates),
+      ownerCol: await pick(ownerCandidates)
+    };
+  }
+
+  async function detectMemberDisplaySchema(){
+    const nameCandidates = ['nome','user','username','autorUser','autor_user','handle','apelido'];
+    const fotoCandidates = ['foto','avatar','photo','foto_url','avatar_url','photo_url'];
+    const roleCandidates = ['cargo','cargo_nome','cargoName','role','nivel','cargo_id','cargoId'];
+
+    const pick = async (cands) => {
+      for (const c of cands){
+        try{ if (await hasColumn(MEMBERS_TABLE, c)) return c; }catch(e){}
+      }
+      return null;
+    };
+
+    return {
+      nameCol: await pick(nameCandidates),
+      fotoCol: await pick(fotoCandidates),
+      roleCol: await pick(roleCandidates)
+    };
+  }
+
+  function setPreviewBox(el, url, mode){
+    if (!el) return;
+    el.innerHTML = '';
+    if (!url){
+      el.innerHTML = '<div style="width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#7a8696; font-weight:900;">Sem imagem</div>';
+      return;
+    }
+    const img = document.createElement('img');
+    img.src = url;
+    img.style.width = '100%';
+    img.style.height = '100%';
+    img.style.objectFit = mode || 'cover';
+    el.appendChild(img);
+  }
+
+  function renderGroupHeader(){
+    if (!groupData) return;
+
+    const name = groupData[groupSchema.nameCol] || 'Grupo';
+    const desc = groupData[groupSchema.descCol] || '';
+    const tipo = groupData[groupSchema.typeCol] || (groupData.privado ? 'Privado' : 'Público');
+
+    if (grupoNome) grupoNome.textContent = name;
+    if (grupoDesc) grupoDesc.textContent = desc;
+    if (grupoTipo) grupoTipo.textContent = tipo;
+
+    // cover
+    const coverUrl = groupSchema.coverCol ? groupData[groupSchema.coverCol] : (groupData.capa || groupData.cover || '');
+    if (grupoCover){
+      if (coverUrl){
+        grupoCover.style.backgroundImage = `url('${coverUrl}')`;
+        grupoCover.style.backgroundSize = 'cover';
+        grupoCover.style.backgroundPosition = 'center';
+      } else {
+        grupoCover.style.backgroundImage = '';
+      }
+    }
+
+    // avatar
+    const avatarUrl = groupSchema.avatarCol ? groupData[groupSchema.avatarCol] : (groupData.foto || groupData.avatar || '');
+    if (grupoAvatar){
+      grupoAvatar.innerHTML = '';
+      if (avatarUrl){
+        const img = document.createElement('img');
+        img.src = avatarUrl;
+        img.alt = name;
+        img.style.width='100%';
+        img.style.height='100%';
+        img.style.objectFit='cover';
+        img.style.borderRadius='18px';
+        grupoAvatar.appendChild(img);
+      }else{
+        const initial = document.createElement('div');
+        initial.className='initial';
+        initial.textContent = (name || 'G').trim().slice(0,1).toUpperCase();
+        grupoAvatar.appendChild(initial);
+      }
+    }
+
+    // previews in config modal
+    setPreviewBox(previewFotoGrupo, avatarUrl, 'cover');
+    setPreviewBox(previewCapaGrupo, coverUrl, 'cover');
+  }
+
+  async function loadGroup(){
+    groupSchema = groupSchema || await detectGroupSchema();
+    const { data, error } = await client.from(GROUPS_TABLE).select('*').eq('id', grupoId).maybeSingle();
+    if (error || !data){
+      console.warn('[DOKE] loadGroup error', error);
+      return;
+    }
+    groupData = data;
+    ownerUid = groupSchema.ownerCol ? String(groupData[groupSchema.ownerCol] || '') : null;
+    renderGroupHeader();
+  }
+
+  function makeMemberRow(member, isMuted){
+    const uid = String(member[memberSchema.userCol] ?? member.user_uid ?? member.user_id ?? '');
+    const name = (memberDisplaySchema?.nameCol ? member[memberDisplaySchema.nameCol] : null) || member.nome || member.user || uid;
+    const foto = (memberDisplaySchema?.fotoCol ? member[memberDisplaySchema.fotoCol] : null) || member.foto || '';
+
+    const item = document.createElement('div');
+    item.className = 'membro-item';
+    item.style.position = 'relative';
+
+    const left = document.createElement('div');
+    left.className = 'membro-left';
+
+    const avatar = document.createElement('div');
+    avatar.className = 'membro-avatar';
+    if (foto){
+      const img = document.createElement('img');
+      img.src = foto;
+      img.alt = name;
+      avatar.appendChild(img);
+    }else{
+      avatar.textContent = (String(name).trim().slice(0,1) || 'U').toUpperCase();
+    }
+
+    const info = document.createElement('div');
+    info.className = 'membro-info';
+    info.style.minWidth='0';
+
+    const nm = document.createElement('div');
+    nm.className = 'membro-name';
+    nm.style.fontWeight='900';
+    nm.style.color='#1d2b3a';
+    nm.style.whiteSpace='nowrap';
+    nm.style.overflow='hidden';
+    nm.style.textOverflow='ellipsis';
+    nm.textContent = name;
+
+    const sub = document.createElement('div');
+    sub.className = 'membro-handle';
+    sub.style.fontWeight='800';
+    sub.style.color='#7a8696';
+    sub.style.fontSize='0.85rem';
+    sub.textContent = uid === String(currentUid) ? 'Você' : shortUid(uid);
+
+    info.appendChild(nm);
+    info.appendChild(sub);
+    left.appendChild(avatar);
+    left.appendChild(info);
+
+    const actions = document.createElement('div');
+    actions.className = 'membro-actions';
+
+    const badge = document.createElement('div');
+    badge.className = 'membro-badge';
+    // show role
+    let roleText = 'Membro';
+    let roleLower = '';
+    try{
+      if (ownerUid && uid === ownerUid) { roleText='Dono'; badge.classList.add('dono'); }
+      else{
+        const roleCol = memberDisplaySchema?.roleCol;
+        if (roleCol && member[roleCol]!=null && String(member[roleCol]).trim()!==''){
+          roleText = String(member[roleCol]);
+        }
+      }
+      roleLower = String(roleText).toLowerCase();
+      if (roleLower.includes('dono')) badge.classList.add('dono');
+    }catch(e){}
+    if (isMuted){
+      badge.classList.add('mute');
+      roleText = roleText + ' · Silenciado';
+    }
+    badge.textContent = roleText;
+
+    actions.appendChild(badge);
+
+    if (isAdmin && uid !== String(currentUid)){
+      const menuBtn = document.createElement('button');
+      menuBtn.className = 'membro-menu-btn';
+      menuBtn.innerHTML = '<i class="bx bx-dots-vertical-rounded"></i>';
+
+      const menu = document.createElement('div');
+      menu.className = 'membro-menu';
+      menu.style.display='none';
+
+      const btnCargo = document.createElement('button');
+      btnCargo.textContent = 'Atribuir cargo';
+      btnCargo.addEventListener('click', async ()=>{
+        menu.style.display='none';
+        await openAssignCargo(uid, name);
+      });
+
+      const btnMute = document.createElement('button');
+      btnMute.textContent = isMuted ? 'Remover silêncio' : 'Silenciar';
+      btnMute.addEventListener('click', async ()=>{
+        menu.style.display='none';
+        if (isMuted) await unmuteMember(uid);
+        else await muteMember(uid);
+        await loadMutes();
+        await loadMembers();
+      });
+
+      const btnKick = document.createElement('button');
+      btnKick.textContent = 'Expulsar do grupo';
+      btnKick.addEventListener('click', async ()=>{
+        menu.style.display='none';
+        if (!confirm('Expulsar este membro do grupo?')) return;
+        await kickMember(uid);
+        await loadMembers();
+      });
+
+      menu.appendChild(btnCargo);
+      menu.appendChild(btnMute);
+      menu.appendChild(btnKick);
+
+      menuBtn.addEventListener('click', ()=>{
+        // close others
+        document.querySelectorAll('.membro-menu').forEach(el=>{ if (el!==menu) el.style.display='none'; });
+        menu.style.display = (menu.style.display==='none') ? 'block' : 'none';
+      });
+
+      document.addEventListener('click', (ev)=>{
+        if (!item.contains(ev.target)) menu.style.display='none';
+      });
+
+      actions.appendChild(menuBtn);
+      item.appendChild(menu);
+    }
+
+    item.appendChild(left);
+    item.appendChild(actions);
+    return item;
+  }
+
+  async function loadMembers(){
+    if (!listaOnline || !listaOffline) return;
+
+    memberDisplaySchema = memberDisplaySchema || await detectMemberDisplaySchema();
+    await loadMutes(); // update mutesCache
+
+    const { communityCol, userCol, statusCol } = memberSchema;
+    const q = client.from(MEMBERS_TABLE).select('*').eq(communityCol, grupoId);
+
+    const { data, error } = await q;
+    if (error){
+      console.warn('[DOKE] loadMembers error', error);
+      listaOnline.innerHTML = '<div style="padding:10px; color:#7a8696; font-weight:800;">Não foi possível carregar membros.</div>';
+      listaOffline.innerHTML = '';
+      return;
+    }
+
+    const rows = Array.isArray(data) ? data : [];
+    // if status col exists, exclude pendente from visible list for non-admin
+    let visible = rows;
+    if (statusCol && !isAdmin){
+      visible = rows.filter(r => String(r[statusCol]||'').toLowerCase() !== 'pendente');
+    }
+
+    // determine online: use col 'online' or last_seen within 5min; else treat all online
+    const hasOnline = await hasColumn(MEMBERS_TABLE, 'online').catch(()=>false);
+    const hasLastSeen = await hasColumn(MEMBERS_TABLE, 'last_seen').catch(()=>false);
+
+    const now = Date.now();
+    const online=[], offline=[];
+    for (const r of visible){
+      const uid = String(r[userCol] ?? '');
+      const muted = mutesCache.has(uid);
+      let isOn = true;
+      if (hasOnline && typeof r.online === 'boolean') isOn = r.online;
+      else if (hasLastSeen && r.last_seen){
+        const t = new Date(r.last_seen).getTime();
+        isOn = isFinite(t) && (now - t) < 5*60*1000;
+      }
+      (isOn ? online : offline).push({ r, muted });
+    }
+
+    if (countOnline) countOnline.textContent = String(online.length);
+    if (countOffline) countOffline.textContent = String(offline.length);
+    if (membrosSub) membrosSub.textContent = String(visible.length) + ' no total';
+    if (grupoMembrosCount) grupoMembrosCount.textContent = visible.length + ' membros';
+
+    listaOnline.innerHTML = '';
+    listaOffline.innerHTML = '';
+    online.forEach(({r, muted})=> listaOnline.appendChild(makeMemberRow(r, muted)));
+    offline.forEach(({r, muted})=> listaOffline.appendChild(makeMemberRow(r, muted)));
+  }
+
+  // ------ cargos ------
+  async function loadCargos(){
+    if (!listaCargos) return;
+    const commCol = (await hasColumn(CARGOS_TABLE, 'comunidade_id')) ? 'comunidade_id' : (await hasColumn(CARGOS_TABLE,'comunidadeId')?'comunidadeId':'comunidade_id');
+    const { data, error } = await client.from(CARGOS_TABLE).select('*').eq(commCol, grupoId).order('nivel', { ascending: false });
+    if (error){
+      console.warn('[DOKE] loadCargos error', error);
+      listaCargos.innerHTML = '<div style="padding:10px; color:#7a8696; font-weight:800;">Não foi possível carregar cargos.</div>';
+      cargosCache=[];
+      return;
+    }
+    cargosCache = Array.isArray(data)?data:[];
+    renderCargos();
+  }
+
+  function renderCargos(){
+    if (!listaCargos) return;
+    if (!cargosCache.length){
+      listaCargos.innerHTML = '<div style="padding:10px; color:#7a8696; font-weight:800;">Nenhum cargo criado.</div>';
+      return;
+    }
+    listaCargos.innerHTML = '';
+    cargosCache.forEach(c=>{
+      const row = document.createElement('div');
+      row.style.display='flex';
+      row.style.alignItems='center';
+      row.style.justifyContent='space-between';
+      row.style.gap='10px';
+      row.style.padding='10px 12px';
+      row.style.border='1px solid #eef0f4';
+      row.style.borderRadius='14px';
+      const left = document.createElement('div');
+      left.style.display='flex';
+      left.style.alignItems='center';
+      left.style.gap='10px';
+      const dot = document.createElement('div');
+      dot.style.width='12px'; dot.style.height='12px'; dot.style.borderRadius='6px';
+      dot.style.background = c.cor || '#2a5f90';
+      const nm = document.createElement('div');
+      nm.style.fontWeight='900';
+      nm.style.color='#1d2b3a';
+      nm.textContent = c.nome || c.name || 'Cargo';
+      const lvl = document.createElement('div');
+      lvl.style.fontWeight='900';
+      lvl.style.color='#7a8696';
+      lvl.style.fontSize='0.85rem';
+      lvl.textContent = (c.nivel!=null) ? ('Nível ' + c.nivel) : '';
+      left.appendChild(dot); left.appendChild(nm); left.appendChild(lvl);
+
+      const right = document.createElement('div');
+      right.style.display='flex'; right.style.gap='8px'; right.style.alignItems='center';
+
+      if (isAdmin){
+        const del = document.createElement('button');
+        del.className='tab-btn';
+        del.type='button';
+        del.textContent='Excluir';
+        del.addEventListener('click', async ()=>{
+          if (!confirm('Excluir este cargo?')) return;
+          await deleteCargo(c);
+          await loadCargos();
+        });
+        right.appendChild(del);
+      }
+
+      row.appendChild(left);
+      row.appendChild(right);
+      listaCargos.appendChild(row);
+    });
+  }
+
+  async function createCargo(){
+    if (!cargoNome) return;
+    const nome = (cargoNome.value||'').trim();
+    if (!nome){ toast('Digite um nome de cargo.'); return; }
+    const cor = (cargoCor?.value||'').trim() || '#2a5f90';
+    const commCol = (await hasColumn(CARGOS_TABLE, 'comunidade_id')) ? 'comunidade_id' : (await hasColumn(CARGOS_TABLE,'comunidadeId')?'comunidadeId':'comunidade_id');
+    const payload = {};
+    payload[commCol] = grupoId;
+    payload['nome'] = nome;
+    if (await hasColumn(CARGOS_TABLE,'cor')) payload['cor'] = cor;
+    if (await hasColumn(CARGOS_TABLE,'nivel')) payload['nivel'] = 1;
+    if (await hasColumn(CARGOS_TABLE,'criado_por')) payload['criado_por'] = String(currentUid);
+    if (await hasColumn(CARGOS_TABLE,'criado_em')) payload['criado_em'] = new Date().toISOString();
+
+    const { error } = await client.from(CARGOS_TABLE).insert(payload);
+    if (error){
+      console.warn('[DOKE] createCargo error', error);
+      toast('Não foi possível criar o cargo.');
+      return;
+    }
+    cargoNome.value='';
+    if (cargoCor) cargoCor.value='';
+    await loadCargos();
+    toast('Cargo criado.');
+  }
+
+  async function deleteCargo(c){
+    const idCol = (await hasColumn(CARGOS_TABLE,'id')) ? 'id' : null;
+    let q = client.from(CARGOS_TABLE).delete();
+    if (idCol && c[idCol]!=null) q = q.eq(idCol, c[idCol]);
+    else q = q.eq('nome', c.nome);
+    const { error } = await q;
+    if (error) console.warn('[DOKE] deleteCargo error', error);
+  }
+
+  // ------ assign cargo to member ------
+  async function openAssignCargo(targetUid, targetName){
+    await loadCargos();
+    if (!cargosCache.length){
+      toast('Crie um cargo primeiro (aba Cargos).');
+      return;
+    }
+    // modal simple
+    const overlay = document.createElement('div');
+    overlay.style.position='fixed';
+    overlay.style.inset='0';
+    overlay.style.background='rgba(0,0,0,.35)';
+    overlay.style.zIndex='99999';
+    overlay.style.display='flex';
+    overlay.style.alignItems='center';
+    overlay.style.justifyContent='center';
+    const card = document.createElement('div');
+    card.style.background='#fff';
+    card.style.borderRadius='16px';
+    card.style.padding='14px';
+    card.style.width='min(520px, 92vw)';
+    card.style.boxShadow='0 24px 60px rgba(0,0,0,.25)';
+    card.innerHTML = `<div style="font-weight:900; color:#1d2b3a; font-size:1.1rem; margin-bottom:4px;">Atribuir cargo</div>
+      <div style="color:#667085; font-weight:800; margin-bottom:12px;">Para: <b>${escapeHtml(targetName || targetUid)}</b></div>`;
+    const sel = document.createElement('select');
+    sel.className='form-input';
+    sel.style.width='100%';
+    sel.style.margin='0 0 12px 0';
+    cargosCache.forEach(c=>{
+      const opt=document.createElement('option');
+      opt.value = (c.id!=null)?String(c.id):String(c.nome||'');
+      opt.textContent = (c.nome||'Cargo') + (c.nivel!=null?` (nível ${c.nivel})`:'');
+      sel.appendChild(opt);
+    });
+    const row = document.createElement('div');
+    row.style.display='flex'; row.style.gap='10px'; row.style.justifyContent='flex-end';
+    const btnCancel=document.createElement('button');
+    btnCancel.className='tab-btn'; btnCancel.type='button'; btnCancel.textContent='Cancelar';
+    const btnOk=document.createElement('button');
+    btnOk.className='btn-submit-modal'; btnOk.type='button'; btnOk.textContent='Aplicar';
+    row.appendChild(btnCancel); row.appendChild(btnOk);
+    card.appendChild(sel); card.appendChild(row);
+    overlay.appendChild(card);
+    document.body.appendChild(overlay);
+
+    btnCancel.onclick=()=>overlay.remove();
+    overlay.addEventListener('click',(e)=>{ if(e.target===overlay) overlay.remove(); });
+
+    btnOk.onclick=async ()=>{
+      btnOk.disabled=true;
+      try{
+        const val = sel.value;
+        const cargo = cargosCache.find(c=>String((c.id!=null)?c.id:c.nome)===String(val)) || cargosCache[0];
+        await assignCargoToMember(targetUid, cargo);
+        toast('Cargo aplicado.');
+        overlay.remove();
+        await loadMembers();
+      }catch(e){
+        console.warn('[DOKE] assign cargo error', e);
+        toast('Não foi possível atribuir cargo.');
+      }finally{
+        btnOk.disabled=false;
+      }
+    };
+  }
+
+  async function assignCargoToMember(targetUid, cargo){
+    // find role column in membros table
+    const roleCols = ['cargo_id','cargoId','cargo','cargo_nome','cargoName','role','nivel'];
+    let roleCol = null;
+    for (const c of roleCols){
+      if (await hasColumn(MEMBERS_TABLE, c)){ roleCol=c; break; }
+    }
+    if (!roleCol){
+      toast('Sua tabela comunidade_membros não tem coluna de cargo. Adicione uma coluna "cargo" ou "cargo_id".');
+      return;
+    }
+
+    const { communityCol, userCol } = memberSchema;
+    const patch = {};
+    if (roleCol.toLowerCase().includes('id')) patch[roleCol] = cargo.id ?? null;
+    else if (roleCol === 'nivel') patch[roleCol] = cargo.nivel ?? 1;
+    else patch[roleCol] = cargo.nome || cargo.name || 'Membro';
+
+    const { error } = await client.from(MEMBERS_TABLE).update(patch).eq(communityCol, grupoId).eq(userCol, targetUid);
+    if (error) throw error;
+  }
+
+  // ------ mutes ------
+  async function detectMutesSchema(){
+    const communityColCandidates = ['comunidade_id','comunidadeId','community_id','communityId','grupo_id','grupoId'];
+    const userColCandidates = ['user_uid','userUid','user_id','userId','uid','usuario_id','autor_uid','autorUid'];
+    const byCandidates = ['criado_por','muted_by','mutedBy','autor_uid','autorUid'];
+    const atCandidates = ['criado_em','created_at','createdAt','muted_at','mutedAt'];
+
+    const pick = async (cands) => {
+      for (const c of cands){
+        try{ if (await hasColumn(MUTES_TABLE, c)) return c; }catch(e){}
+      }
+      return null;
+    };
+
+    return {
+      communityCol: await pick(communityColCandidates) || 'comunidade_id',
+      userCol: await pick(userColCandidates) || 'user_uid',
+      byCol: await pick(byCandidates),
+      atCol: await pick(atCandidates)
+    };
+  }
+
+  let mutesSchema = null;
+
+  async function loadMutes(){
+    if (!client) return;
+    mutesSchema = mutesSchema || await detectMutesSchema();
+    const { communityCol, userCol } = mutesSchema;
+    const { data, error } = await client.from(MUTES_TABLE).select('*').eq(communityCol, grupoId);
+    if (error){
+      console.warn('[DOKE] loadMutes error', error);
+      mutesCache = new Set();
+      return;
+    }
+    const set = new Set();
+    (Array.isArray(data)?data:[]).forEach(r=>{
+      const uid = String(r[userCol] ?? '');
+      if (uid) set.add(uid);
+    });
+    mutesCache = set;
+    renderSilenciados(data || []);
+  }
+
+  async function muteMember(targetUid){
+    mutesSchema = mutesSchema || await detectMutesSchema();
+    const { communityCol, userCol, byCol, atCol } = mutesSchema;
+    const payload = {};
+    payload[communityCol] = grupoId;
+    payload[userCol] = String(targetUid);
+    if (byCol) payload[byCol] = String(currentUid);
+    if (atCol) payload[atCol] = new Date().toISOString();
+
+    // try upsert
+    try{
+      const { error } = await client.from(MUTES_TABLE).upsert(payload, { onConflict: `${communityCol},${userCol}` });
+      if (error) throw error;
+    }catch(e){
+      const { error } = await client.from(MUTES_TABLE).insert(payload);
+      if (error) console.warn('[DOKE] mute insert error', error);
+    }
+    toast('Usuário silenciado.');
+  }
+
+  async function unmuteMember(targetUid){
+    mutesSchema = mutesSchema || await detectMutesSchema();
+    const { communityCol, userCol } = mutesSchema;
+    const { error } = await client.from(MUTES_TABLE).delete().eq(communityCol, grupoId).eq(userCol, String(targetUid));
+    if (error) console.warn('[DOKE] unmute error', error);
+    toast('Silêncio removido.');
+  }
+
+  function renderSilenciados(rows){
+    if (!listaSilenciados) return;
+    const data = Array.isArray(rows)?rows:[];
+    if (!data.length){
+      listaSilenciados.innerHTML = '<div style="padding:10px; color:#7a8696; font-weight:800;">Nenhum usuário silenciado.</div>';
+      return;
+    }
+    listaSilenciados.innerHTML = '';
+    data.forEach(r=>{
+      const uid = String(r[mutesSchema.userCol] ?? '');
+      const row = document.createElement('div');
+      row.style.display='flex';
+      row.style.alignItems='center';
+      row.style.justifyContent='space-between';
+      row.style.gap='10px';
+      row.style.padding='10px 12px';
+      row.style.border='1px solid #eef0f4';
+      row.style.borderRadius='14px';
+      const left = document.createElement('div');
+      left.style.fontWeight='900';
+      left.style.color='#1d2b3a';
+      left.textContent = shortUid(uid);
+      const right = document.createElement('div');
+      if (isAdmin){
+        const btn = document.createElement('button');
+        btn.className='tab-btn';
+        btn.type='button';
+        btn.textContent='Remover';
+        btn.onclick = async ()=>{ await unmuteMember(uid); await loadMutes(); await loadMembers(); };
+        right.appendChild(btn);
+      }
+      row.appendChild(left);
+      row.appendChild(right);
+      listaSilenciados.appendChild(row);
+    });
+  }
+
+  async function isCurrentUserMuted(){
+    if (!String(currentUid)) return false;
+    await loadMutes();
+    return mutesCache.has(String(currentUid));
+  }
+
+  // ------ kick ------
+  async function kickMember(targetUid){
+    const { communityCol, userCol } = memberSchema;
+    const { error } = await client.from(MEMBERS_TABLE).delete().eq(communityCol, grupoId).eq(userCol, String(targetUid));
+    if (error){
+      console.warn('[DOKE] kick error', error);
+      toast('Não foi possível expulsar.');
+      return;
+    }
+    // remove mute if any
+    try{ await unmuteMember(targetUid); }catch(e){}
+    toast('Membro removido.');
+  }
+
+  // ------ avatar/cover update ------
+  async function uploadGroupImage(file, kind){
+    if (!file) return '';
+    const bucket = 'comunidades_posts'; // reusing existing bucket
+    const safeName = String(file.name||'img').replaceAll(' ','_');
+    const path = `grupos/${grupoId}/meta/${kind}_${Date.now()}_${safeName}`;
+    const { error } = await client.storage.from(bucket).upload(path, file, { upsert:true });
+    if (error) throw error;
+    const { data } = client.storage.from(bucket).getPublicUrl(path);
+    return data.publicUrl;
+  }
+
+  async function updateGroupField(url, kind){
+    groupSchema = groupSchema || await detectGroupSchema();
+    // choose field candidates
+    const avatarCands = ['foto','avatar','imagem','foto_url','avatar_url','image_url'];
+    const coverCands = ['capa','cover','banner','capa_url','cover_url','banner_url'];
+    const candidates = (kind==='avatar') ? avatarCands : coverCands;
+    let col = null;
+    for (const c of candidates){
+      if (await hasColumn(GROUPS_TABLE, c)){ col=c; break; }
+    }
+    if (!col){
+      toast('A tabela comunidades não tem coluna para ' + (kind==='avatar'?'foto':'capa') + '. Adicione uma coluna (ex: foto/capa).');
+      return;
+    }
+    const patch = {};
+    patch[col] = url;
+    const { error } = await client.from(GROUPS_TABLE).update(patch).eq('id', grupoId);
+    if (error){
+      console.warn('[DOKE] updateGroupField error', error);
+      toast('Não foi possível atualizar.');
+      return;
+    }
+    // update local data
+    groupData = groupData || {};
+    groupData[col] = url;
+    renderGroupHeader();
+    toast((kind==='avatar'?'Foto':'Capa') + ' atualizada.');
+  }
+
+  function wireConfigModal(){
+    if (!btnConfigGrupo || !modalGrupoConfig) return;
+
+    const open = ()=>{
+      modalGrupoConfig.setAttribute('aria-hidden','false');
+      modalGrupoConfig.style.display='flex';
+      // default tab
+      showCfgTab('editar');
+      // fill inputs
+      if (cfgNome && groupSchema?.nameCol) cfgNome.value = groupData?.[groupSchema.nameCol] || '';
+      if (cfgDesc && groupSchema?.descCol) cfgDesc.value = groupData?.[groupSchema.descCol] || '';
+      loadCargos();
+      loadMutes();
+    };
+    const close = ()=>{
+      modalGrupoConfig.setAttribute('aria-hidden','true');
+      modalGrupoConfig.style.display='none';
+    };
+
+    btnConfigGrupo.addEventListener('click', open);
+    btnFecharConfig?.addEventListener('click', close);
+    modalGrupoConfig.addEventListener('click', (e)=>{ if (e.target===modalGrupoConfig) close(); });
+
+    tabCfgEditar?.addEventListener('click', ()=>showCfgTab('editar'));
+    tabCfgCargos?.addEventListener('click', ()=>showCfgTab('cargos'));
+    tabCfgSilenciados?.addEventListener('click', ()=>showCfgTab('silenciados'));
+
+    btnCriarCargo?.addEventListener('click', createCargo);
+    btnRefreshSilenciados?.addEventListener('click', loadMutes);
+
+    btnTrocarFotoGrupo?.addEventListener('click', ()=>inputFotoGrupo?.click());
+    btnTrocarCapaGrupo?.addEventListener('click', ()=>inputCapaGrupo?.click());
+
+    inputFotoGrupo?.addEventListener('change', async ()=>{
+      const file = inputFotoGrupo.files && inputFotoGrupo.files[0];
+      if (!file) return;
+      try{
+        const url = await uploadGroupImage(file, 'avatar');
+        await updateGroupField(url, 'avatar');
+      }catch(e){
+        console.warn('[DOKE] upload avatar error', e);
+        toast('Falha ao enviar foto.');
+      }finally{
+        inputFotoGrupo.value='';
+      }
+    });
+
+    inputCapaGrupo?.addEventListener('change', async ()=>{
+      const file = inputCapaGrupo.files && inputCapaGrupo.files[0];
+      if (!file) return;
+      try{
+        const url = await uploadGroupImage(file, 'cover');
+        await updateGroupField(url, 'cover');
+      }catch(e){
+        console.warn('[DOKE] upload cover error', e);
+        toast('Falha ao enviar capa.');
+      }finally{
+        inputCapaGrupo.value='';
+      }
+    });
+
+    btnSalvarGrupo?.addEventListener('click', async ()=>{
+      if (!isAdmin){ toast('Sem permissão.'); return; }
+      groupSchema = groupSchema || await detectGroupSchema();
+      const patch = {};
+      if (groupSchema.nameCol && cfgNome) patch[groupSchema.nameCol] = cfgNome.value.trim();
+      if (groupSchema.descCol && cfgDesc) patch[groupSchema.descCol] = cfgDesc.value.trim();
+      const { error } = await client.from(GROUPS_TABLE).update(patch).eq('id', grupoId);
+      if (error){
+        console.warn('[DOKE] save group error', error);
+        toast('Não foi possível salvar.');
+        return;
+      }
+      Object.assign(groupData, patch);
+      renderGroupHeader();
+      toast('Grupo atualizado.');
+    });
+  }
+
+  function showCfgTab(which){
+    const setActive = (btn, on)=>{ if(!btn) return; btn.classList.toggle('active', !!on); };
+    if (cfgEditar) cfgEditar.style.display = (which==='editar') ? 'block' : 'none';
+    if (cfgCargos) cfgCargos.style.display = (which==='cargos') ? 'block' : 'none';
+    if (cfgSilenciados) cfgSilenciados.style.display = (which==='silenciados') ? 'block' : 'none';
+
+    setActive(tabCfgEditar, which==='editar');
+    setActive(tabCfgCargos, which==='cargos');
+    setActive(tabCfgSilenciados, which==='silenciados');
+  }
+
+  function escapeHtml(s){
+    return String(s||'').replace(/[&<>"]/g, (c)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;' }[c]||c));
+  }
+
   async function toggleReaction(postId, emoji){
     if (!reactionsEnabled) return;
     const { postIdCol, userCol, emojiCol } = reactSchema;
@@ -735,6 +1560,14 @@ function wireRequestActions(rows){
     if (!membership.ok || membership.pending){
       toast('Entre no grupo para postar.');
       return;
+
+    // muted?
+    try{
+      if (await isCurrentUserMuted()){
+        toast('Você está silenciado neste grupo.');
+        return;
+      }
+    }catch(e){}
     }
     const text = (inputEl.value || '').trim();
     const file = fileEl.files && fileEl.files[0];
@@ -840,6 +1673,12 @@ reactSchema = await detectReactionsSchema();
 // admin / solicitações
 isAdmin = await detectAdmin();
 btnRefreshReq?.addEventListener('click', loadJoinRequests);
+    // header + membros + config
+    await loadGroup();
+    if (btnConfigGrupo) btnConfigGrupo.style.display = isAdmin ? 'inline-flex' : 'none';
+    wireConfigModal();
+    await loadMembers();
+
     // wire UI
     joinBtn?.addEventListener('click', requestJoin);
     sendBtn?.addEventListener('click', sendMessage);
