@@ -173,6 +173,35 @@ create index if not exists conversas_mensagens_timestamp_idx on public.conversas
 -- alter table public.conversas_mensagens alter column conversaid type text using conversaid::text;
 
 -- ============================================================
+-- RLS (mensagens) - permitir apagar/editar somente o autor
+-- ============================================================
+do $$
+begin
+  if to_regclass('public.pedidos_mensagens') is not null then
+    execute 'alter table public.pedidos_mensagens enable row level security';
+    execute 'drop policy if exists pedidos_msg_select on public.pedidos_mensagens';
+    execute 'drop policy if exists pedidos_msg_insert on public.pedidos_mensagens';
+    execute 'drop policy if exists pedidos_msg_update on public.pedidos_mensagens';
+    execute 'drop policy if exists pedidos_msg_delete on public.pedidos_mensagens';
+    execute 'create policy pedidos_msg_select on public.pedidos_mensagens for select to authenticated using (true)';
+    execute 'create policy pedidos_msg_insert on public.pedidos_mensagens for insert to authenticated with check (true)';
+    execute 'create policy pedidos_msg_update on public.pedidos_mensagens for update to authenticated using (senderuid::text = auth.uid()::text) with check (senderuid::text = auth.uid()::text)';
+    execute 'create policy pedidos_msg_delete on public.pedidos_mensagens for delete to authenticated using (senderuid::text = auth.uid()::text)';
+  end if;
+  if to_regclass('public.conversas_mensagens') is not null then
+    execute 'alter table public.conversas_mensagens enable row level security';
+    execute 'drop policy if exists conversas_msg_select on public.conversas_mensagens';
+    execute 'drop policy if exists conversas_msg_insert on public.conversas_mensagens';
+    execute 'drop policy if exists conversas_msg_update on public.conversas_mensagens';
+    execute 'drop policy if exists conversas_msg_delete on public.conversas_mensagens';
+    execute 'create policy conversas_msg_select on public.conversas_mensagens for select to authenticated using (true)';
+    execute 'create policy conversas_msg_insert on public.conversas_mensagens for insert to authenticated with check (true)';
+    execute 'create policy conversas_msg_update on public.conversas_mensagens for update to authenticated using (senderuid::text = auth.uid()::text) with check (senderuid::text = auth.uid()::text)';
+    execute 'create policy conversas_msg_delete on public.conversas_mensagens for delete to authenticated using (senderuid::text = auth.uid()::text)';
+  end if;
+end $$;
+
+-- ============================================================
 -- DOKE Amizades (mensagens privadas)
 -- ============================================================
 create table if not exists public.amizades (

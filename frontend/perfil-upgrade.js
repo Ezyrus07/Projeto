@@ -1116,25 +1116,26 @@ function hideIf(selector, cond){
       }catch(e){ /* ignore */ }
     }
 
-    const getServicoInfo = (id)=>{
-      if(String(id) === "__sem_servico"){
+      const getServicoInfo = (id)=>{
+        if(String(id) === "__sem_servico"){
+          return {
+            titulo: "Avaliações sem vínculo",
+            categoria: "",
+            preco: "",
+            img: ""
+          };
+        }
+        const a = anunciosMap.get(String(id)) || {};
+        const fotos = Array.isArray(a.fotos) ? a.fotos : (a.fotos ? [a.fotos] : []);
+        const img = fotos[0] || a.img || "";
         return {
-          titulo: "Avaliações sem vínculo",
-          categoria: "",
-          preco: "",
-          img: ""
+          titulo: a.titulo || `Serviço ${id}`,
+          categoria: a.categoria || "",
+          preco: a.preco || "",
+          img,
+          id: a.id || id
         };
-      }
-      const a = anunciosMap.get(String(id)) || {};
-      const fotos = Array.isArray(a.fotos) ? a.fotos : (a.fotos ? [a.fotos] : []);
-      const img = fotos[0] || a.img || "";
-      return {
-        titulo: a.titulo || `Serviço ${id}`,
-        categoria: a.categoria || "",
-        preco: a.preco || "",
-        img
       };
-    };
 
     const buildFilterBar = (activeId)=>{
       if(!servicoIds.length) return "";
@@ -1176,16 +1177,16 @@ function hideIf(selector, cond){
       });
     };
 
-    const renderAvaliacoes = (activeId="all")=>{
-      data = (activeId === "all") ? allData : allData.filter(a=>String(a.__anuncioId) === String(activeId));
-      const filterHtml = buildFilterBar(activeId);
-      if(!data || !data.length){
-        box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliações para este serviço.</div>`;
-        bindFilter();
-        const countEl = document.getElementById("dpReviews");
-        if (countEl) countEl.textContent = String((data && data.length) || 0);
-        return;
-      }
+      const renderAvaliacoes = (activeId="all")=>{
+        data = (activeId === "all") ? allData : allData.filter(a=>String(a.__anuncioId) === String(activeId));
+        const filterHtml = buildFilterBar(activeId);
+        if(!data || !data.length){
+          box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliações para este serviço.</div>`;
+          bindFilter();
+          const countEl = document.getElementById("dpReviews");
+          if (countEl) countEl.textContent = String((data && data.length) || 0);
+          return;
+        }
     const criterios = [
       { id: 'pontualidade', label: 'Pontualidade' },
       { id: 'profissionalismo', label: 'Profissionalismo' },
@@ -1395,39 +1396,46 @@ function hideIf(selector, cond){
       });
     });
 
-    const list = $("#dpAvalList");
-    let hasMsgs = false;
-    data.forEach(a=>{
-      const mediaVal = Number(a.media ?? a.nota ?? 0);
-      const dateText = getDateText(a);
-      const mensagens = [];
-      const comentarioGeral = getComentarioGeral(a);
-      if(comentarioGeral) mensagens.push({ label: "Comentario geral", text: comentarioGeral });
-      if(!mensagens.length) return;
-      hasMsgs = true;
-      const nomeCliente = getNomeCliente(a);
-      const fotoCliente = getFotoCliente(a);
-      const el = document.createElement("div");
-      el.className = "fr-comment";
-      const msgsHtml = mensagens.map(m=>(
-        `<div class="fr-msg"><span class="fr-msg-label">${m.label}:</span> ${escapeHtml(m.text)}</div>`
-      )).join("");
-      el.innerHTML = `
-        <div class="fr-comment-head">
-          <img class="fr-review-avatar" src="${fotoCliente}" alt="">
-          <div>
-            <div class="fr-review-name">${escapeHtml(nomeCliente)}</div>
-            <div class="fr-review-date">${dateText}</div>
+      const list = $("#dpAvalList");
+      let hasMsgs = false;
+      data.forEach(a=>{
+        const mediaVal = Number(a.media ?? a.nota ?? 0);
+        const dateText = getDateText(a);
+        const mensagens = [];
+        const comentarioGeral = getComentarioGeral(a);
+        if(comentarioGeral) mensagens.push({ label: "Comentario geral", text: comentarioGeral });
+        if(!mensagens.length) return;
+        hasMsgs = true;
+        const nomeCliente = getNomeCliente(a);
+        const fotoCliente = getFotoCliente(a);
+        const servInfo = getServicoInfo(a.__anuncioId);
+        const servTitle = servInfo?.titulo || "Serviço";
+        const servId = servInfo?.id;
+        const servLink = (servId && String(a.__anuncioId) !== "__sem_servico")
+          ? `detalhes.html?id=${encodeURIComponent(servId)}`
+          : "";
+        const el = document.createElement("div");
+        el.className = "fr-comment";
+        const msgsHtml = mensagens.map(m=>(
+          `<div class="fr-msg"><span class="fr-msg-label">${m.label}:</span> ${escapeHtml(m.text)}</div>`
+        )).join("");
+        el.innerHTML = `
+          <div class="fr-comment-head">
+            <img class="fr-review-avatar" src="${fotoCliente}" alt="">
+            <div>
+              <div class="fr-review-name">${escapeHtml(nomeCliente)}</div>
+              <div class="fr-review-date">${dateText}</div>
+              <div class="fr-review-service">${servLink ? `<a href="${servLink}">${escapeHtml(servTitle)}</a>` : escapeHtml(servTitle)}</div>
+            </div>
+            <div class="fr-review-score">
+              ${starHtml(mediaVal, "fr-stars-sm")}
+              <div class="fr-review-score-num">${mediaVal.toFixed(1)}</div>
+            </div>
           </div>
-          <div class="fr-review-score">
-            ${starHtml(mediaVal, "fr-stars-sm")}
-            <div class="fr-review-score-num">${mediaVal.toFixed(1)}</div>
-          </div>
-        </div>
-        <div class="fr-comment-body">${msgsHtml}</div>
-      `;
-      list.appendChild(el);
-    });
+          <div class="fr-comment-body">${msgsHtml}</div>
+        `;
+        list.appendChild(el);
+      });
     if(!hasMsgs){
       list.innerHTML = `<div class="fr-empty">Sem mensagens.</div>`;
     }

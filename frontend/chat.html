@@ -369,21 +369,25 @@
             width:32px; height:32px; border-radius:10px;
             border:1px solid #e2e8f0; background:#fff; cursor:pointer;
         }
+        /* Reply estilo Direct */
         .reply-preview{
-            border-left:3px solid rgba(255,255,255,0.35);
-            padding-left:8px;
-            margin-bottom:6px;
+            background: rgba(255,255,255,0.12);
+            border-left:3px solid rgba(255,255,255,0.5);
+            padding:6px 10px;
+            margin-bottom:8px;
+            border-radius:10px;
             font-size:0.78rem;
             color: rgba(247,255,251,0.9);
         }
         .msg-recebida .reply-preview{
-            border-left-color: rgba(17,24,39,0.18);
+            background:#f1f5f9;
+            border-left-color: var(--cor0);
             color: #64748b;
         }
         .msg-reply-btn{
             border:none; background:transparent; cursor:pointer;
             color:#94a3b8; padding:2px 4px; border-radius:6px;
-            float:right; margin-left:6px; font-size:0.85rem;
+            float:right; margin-left:6px; font-size:0.72rem;
         }
         .msg-reply-btn:hover{ background:#f1f5f9; color:#0b7768; }
         .pedido-info-card, .pedido-recusa-card{
@@ -1254,7 +1258,7 @@
             from { transform: translateY(6px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        .msg-bubble{ animation: msgPop .18s ease-out; }
+        .msg-bubble{ animation: msgPop .18s ease-out; font-size:1rem; }
 
         /* Botao flutuante para descer (aparece via JS) */
         .scroll-down{
@@ -1494,7 +1498,7 @@
         justify-content: flex-end;
         gap: 6px;
         margin-top: 4px;
-        font-size: 0.66rem;
+        font-size: 0.6rem;
         color: #94a3b8;
     }
     .msg-recebida .msg-footer { justify-content: flex-start; }
@@ -1502,9 +1506,9 @@
     .msg-reply-btn { float: none; }
     .msg-enviada .reply-preview {
         color: rgba(255, 255, 255, 0.85);
-        border-left-color: rgba(255, 255, 255, 0.4);
+        border-left-color: rgba(255, 255, 255, 0.55);
     }
-    .reply-preview .rp-user { font-weight: 700; font-size: 0.66rem; }
+    .reply-preview .rp-user { font-weight: 800; font-size: 0.66rem; }
     .reply-preview .rp-text {
         font-size: 0.66rem;
         opacity: 0.85;
@@ -1512,6 +1516,38 @@
         overflow: hidden;
         text-overflow: ellipsis;
     }
+    /* Menu 3 pontinhos por mensagem */
+    .msg-bubble{ position:relative; }
+    .msg-menu-btn{
+        border:none; background:transparent; cursor:pointer;
+        width:26px; height:26px; border-radius:50%;
+        display:inline-flex; align-items:center; justify-content:center;
+        color:inherit; opacity:.7;
+    }
+    .msg-menu-btn:hover{ background:rgba(15,23,42,0.08); opacity:1; }
+    .msg-menu{
+        position:absolute; z-index:30; top:6px;
+        display:none; flex-direction:column;
+        background:#ffffff;
+        border:1px solid rgba(11,119,104,.2);
+        border-radius:14px; box-shadow:0 14px 28px rgba(2,6,23,.12);
+        min-width:190px; overflow:hidden;
+    }
+    .msg-menu .menu-title{
+        padding:7px 12px; font-size:.7rem; letter-spacing:.04em;
+        color:#0b7768; text-transform:uppercase; font-weight:800;
+        background:rgba(11,119,104,.08);
+        border-bottom:1px solid rgba(11,119,104,.12);
+    }
+    .msg-menu button{
+        padding:11px 12px; border:none; background:transparent; text-align:left;
+        font-size:.9rem; cursor:pointer; color:#0f172a;
+        display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .msg-menu button:hover{ background:rgba(11,119,104,.08); }
+    .msg-menu .danger{ color:#b42318; font-weight:800; }
+    .msg-menu-right{ right:100%; margin-right:8px; }
+    .msg-menu-left{ left:100%; margin-left:8px; }
     .audio-bubble { min-width: 140px !important; }
 
     </style>
@@ -1883,9 +1919,10 @@
     let conversaArquivadaAtual = false;
     let replyContext = null;
     const avaliacaoCache = {};
-    let pedidoFinalizarId = null;
-    let finalizacaoFile = null;
-    let finalizacaoPreviewUrl = null;
+      let pedidoFinalizarId = null;
+      let finalizacaoFile = null;
+      let finalizacaoPreviewUrl = null;
+      let pedidoInfoRenderId = null;
 
     window.abrirPerfilUsuario = function(uid, isProfissional){
         if (!uid) return;
@@ -2051,12 +2088,64 @@
         if (t === 'card_avaliacao') return '⭐ Avaliação';
         return (texto || '').slice(0, 140);
     }
-    function buildReplyHtml(replyTo){
-        if (!replyTo) return '';
-        const user = escapeHtml(replyTo.user || 'Usuário');
-        const preview = escapeHtml(replyTo.preview || '');
-        return `<div class="reply-preview"><div class="rp-user">${user}</div><div class="rp-text">${preview}</div></div>`;
-    }
+      function buildReplyHtml(replyTo){
+          if (!replyTo) return '';
+          const user = escapeHtml(replyTo.user || 'Usuário');
+          const preview = escapeHtml(replyTo.preview || '');
+          return `<div class="reply-preview"><div class="rp-user">${user}</div><div class="rp-text">${preview}</div></div>`;
+      }
+      function closeMsgMenus(){
+          document.querySelectorAll('.msg-menu').forEach((m) => { m.style.display = 'none'; });
+      }
+      window.toggleMsgMenu = function(id, ev){
+          if (ev) ev.stopPropagation();
+          const el = document.getElementById(`msg-menu-${id}`);
+          if (!el) return;
+          const isOpen = el.style.display === 'flex';
+          closeMsgMenus();
+          el.style.display = isOpen ? 'none' : 'flex';
+      };
+      window.excluirMensagem = async function(msgId){
+          if (!msgId || !chatIdAtual || !colecaoAtual) return;
+          if (!await window.dokeConfirm('Excluir esta mensagem?', 'Excluir', 'danger')) return;
+          try {
+              await deleteDoc(doc(db, colecaoAtual, chatIdAtual, "mensagens", msgId));
+              closeMsgMenus();
+              carregarMensagens(colecaoAtual, chatIdAtual);
+          } catch (e) {
+              try {
+                  await updateDoc(doc(db, colecaoAtual, chatIdAtual, "mensagens", msgId), {
+                      tipo: 'apagada',
+                      texto: '',
+                      apagadaEm: new Date().toISOString()
+                  });
+                  closeMsgMenus();
+                  carregarMensagens(colecaoAtual, chatIdAtual);
+                  return;
+              } catch (e2) {
+                  console.error('Falha ao excluir mensagem:', e);
+                  console.error('Falha ao marcar como apagada:', e2);
+                  addHiddenMsgId(colecaoAtual, chatIdAtual, msgId);
+                  closeMsgMenus();
+                  carregarMensagens(colecaoAtual, chatIdAtual);
+                  window.dokeAlert ? window.dokeAlert('Mensagem ocultada para você (sem permissão para apagar no servidor).') : alert('Mensagem ocultada para você.');
+              }
+          }
+      };
+      window.copiarMensagem = async function(texto){
+          try {
+              const raw = decodeURIComponent(String(texto || ''));
+              await navigator.clipboard.writeText(raw);
+              closeMsgMenus();
+              window.dokeToast ? window.dokeToast('Mensagem copiada') : null;
+          } catch (e) {
+              console.warn('Falha ao copiar mensagem:', e);
+          }
+      };
+      window.encaminharMensagem = function(){
+          closeMsgMenus();
+          window.dokeAlert ? window.dokeAlert('Encaminhar: em breve.') : alert('Encaminhar: em breve.');
+      };
     function normalizeUrlForCompare(url){
         const raw = String(url || '').trim();
         if (!raw) return '';
@@ -3153,10 +3242,30 @@
         renderHeaderUser(perfil);
     }
 
-    function getDraftKey() {
-        if (!chatIdAtual || !colecaoAtual) return null;
-        return `doke_chat_draft_${colecaoAtual}_${chatIdAtual}`;
-    }
+      function getDraftKey() {
+          if (!chatIdAtual || !colecaoAtual) return null;
+          return `doke_chat_draft_${colecaoAtual}_${chatIdAtual}`;
+      }
+      function getHiddenMsgsKey(colecao, id){
+          return `doke_chat_hidden_${colecao || ''}_${id || ''}`;
+      }
+      function getHiddenMsgs(colecao, id){
+          try {
+              const raw = localStorage.getItem(getHiddenMsgsKey(colecao, id));
+              const arr = raw ? JSON.parse(raw) : [];
+              return Array.isArray(arr) ? arr : [];
+          } catch (e) { return []; }
+      }
+      function addHiddenMsgId(colecao, id, msgId){
+          if (!colecao || !id || !msgId) return;
+          const list = getHiddenMsgs(colecao, id);
+          if (!list.includes(msgId)) list.push(msgId);
+          try { localStorage.setItem(getHiddenMsgsKey(colecao, id), JSON.stringify(list)); } catch (e) {}
+      }
+      function isHiddenMsgId(colecao, id, msgId){
+          if (!colecao || !id || !msgId) return false;
+          return getHiddenMsgs(colecao, id).includes(msgId);
+      }
 
     function salvarRascunhoChat() {
         const input = document.getElementById('inputMsg');
@@ -3927,9 +4036,12 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     if (!avaliadoPedidoAtual && String(p.status || '').toLowerCase() === 'finalizado') {
                         checarAvaliacaoPedido(idDoc);
                     }
-                    if (prevStatus !== statusPedidoAtual || prevAvaliado !== avaliadoPedidoAtual) {
-                        carregarMensagens(colecao, idDoc);
-                    }
+                      if (pedidoInfoRenderId !== idDoc) {
+                          pedidoInfoRenderId = idDoc;
+                          carregarMensagens(colecao, idDoc);
+                      } else if (prevStatus !== statusPedidoAtual || prevAvaliado !== avaliadoPedidoAtual) {
+                          carregarMensagens(colecao, idDoc);
+                      }
                     
                     // Lógica de bloqueio do chat
                     if (p.status === 'pendente') {
@@ -4131,10 +4243,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             if (recusaCard) htmlParts.push(recusaCard);
         }
 
-        snapshot.forEach(docSnap => {
-            const m = docSnap.data();
-            const msgDate = parseDataHora(m.timestamp);
-            if (clearTs && msgDate && msgDate.getTime() <= clearTs) return;
+          snapshot.forEach(docSnap => {
+              const m = docSnap.data();
+              if (isHiddenMsgId(colecao, docId, docSnap.id)) return;
+              const msgDate = parseDataHora(m.timestamp);
+              if (clearTs && msgDate && msgDate.getTime() <= clearTs) return;
             const shouldSkipAttachment = !!(anexosUrlSet.size && m.url && (m.tipo === 'imagem' || m.tipo === 'arquivo') && anexosUrlSet.has(normalizeUrlForCompare(m.url)));
             sigParts.push([
                 docSnap.id || "",
@@ -4164,6 +4277,18 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const enc = (v) => encodeURIComponent(String(v || ""));
             const replyBtn = docSnap.id
                 ? `<button class="msg-reply-btn" title="Responder" onclick="responderMensagem('${enc(docSnap.id)}','${enc(senderUser)}','${enc(m.tipo || 'texto')}','${enc(msgPreview)}')"><i class='bx bx-reply'></i></button>`
+                : "";
+            const menuId = docSnap.id ? `msg-menu-${docSnap.id}` : "";
+            const menuSide = souEu ? "msg-menu-right" : "msg-menu-left";
+            const menuBtn = (souEu && docSnap.id)
+                ? `<button class="msg-menu-btn" title="Opções" style="position:absolute; top:6px; ${souEu ? "right:6px" : "left:6px"}" onclick="toggleMsgMenu('${docSnap.id}', event)"><i class='bx bx-dots-vertical-rounded'></i></button>`
+                : "";
+            const menuHtml = (souEu && docSnap.id)
+                ? `<div class="msg-menu ${menuSide}" id="${menuId}">
+                        <div class="menu-title">${horaMsg || 'Agora'}</div>
+                        <button onclick="copiarMensagem('${enc(cleanText)}')">Copiar <i class='bx bx-copy'></i></button>
+                        <button class="danger" onclick="excluirMensagem('${docSnap.id}')">Apagar mensagem <i class='bx bx-trash'></i></button>
+                   </div>`
                 : "";
             let replyData = parsedText.meta;
             if (!replyData && m.reply_user && m.reply_preview) {
@@ -4247,8 +4372,15 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     ${btnHtml}
                 </div>`);
             }
-            // --- SOLICITAÇÃO DE REEMBOLSO ---
-            else if (m.tipo === 'reembolso') {
+              // --- MENSAGEM APAGADA ---
+              if (m.tipo === 'apagada') {
+                  htmlParts.push(`
+                  <div style="align-self:${souEu ? 'flex-end' : 'flex-start'}; font-size:0.78rem; color:#94a3b8; font-style:italic; margin:6px 0;">
+                      Mensagem apagada
+                  </div>`);
+              }
+              // --- SOLICITAÇÃO DE REEMBOLSO ---
+              else if (m.tipo === 'reembolso') {
                 const motivo = m.texto ? escapeHtml(m.texto) : "Solicitação registrada.";
                 htmlParts.push(`
                 <div style="align-self:center; background:#fee2e2; border:1px solid #fecaca; padding:14px; border-radius:12px; margin:12px 0; text-align:center;">
@@ -4258,25 +4390,29 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 </div>`);
             }
             // --- IMAGEM ---
-            else if (m.tipo === 'imagem' && m.url) {
-                const htmlImg = `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" style="padding:8px;">
-                    ${replyHtml}
-                    <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
-                    <div class="msg-footer">
-                        ${replyBtn}
+              else if (m.tipo === 'imagem' && m.url) {
+                  const htmlImg = `
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" style="padding:8px;">
+                      ${menuBtn}
+                      ${menuHtml}
+                      ${replyHtml}
+                      <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
+                      <div class="msg-footer">
+                          ${replyBtn}
                         <span class="msg-hora">${horaMsg}</span>
                     </div>
                 </div>`;
                 htmlParts.push(htmlImg);
             }
             // --- ARQUIVO ---
-            else if (m.tipo === 'arquivo' && m.url) {
-                const nome = escapeHtml(cleanText || 'Arquivo');
-                const htmlFile = `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    ${replyHtml}
-                    <div style="display:flex; align-items:center; gap:10px;">
+              else if (m.tipo === 'arquivo' && m.url) {
+                  const nome = escapeHtml(cleanText || 'Arquivo');
+                  const htmlFile = `
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                      ${menuBtn}
+                      ${menuHtml}
+                      ${replyHtml}
+                      <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:38px; height:38px; border-radius:10px; background:#eef2ff; display:flex; align-items:center; justify-content:center;">
                             <i class='bx bx-file' style="font-size:20px; color:#3949ab"></i>
                         </div>
@@ -4293,15 +4429,17 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 htmlParts.push(htmlFile);
             }
             // --- MENSAGEM DE ÁUDIO ---
-            else if (m.tipo === 'audio') {
-                const corWave = souEu ? 'white' : '#555';
-                const corIcone = souEu ? 'var(--cor0)' : '#555';
+              else if (m.tipo === 'audio') {
+                  const corWave = souEu ? 'white' : '#555';
+                  const corIcone = souEu ? 'var(--cor0)' : '#555';
                 
                 const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
-                const htmlAudio = `
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    ${replyHtml}
-                    <div class="audio-bubble" data-audio-id="${audioId}">
+                  const htmlAudio = `
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                      ${menuBtn}
+                      ${menuHtml}
+                      ${replyHtml}
+                      <div class="audio-bubble" data-audio-id="${audioId}">
                         <button class="btn-play-audio" onclick="tocarAudio(this, '${m.url}', '${audioId}')" style="color:${corIcone}">
                             <i class='bx bx-play'></i>
                         </button>
@@ -4318,13 +4456,15 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 htmlParts.push(htmlAudio);
             }
             // --- TEXTO NORMAL ---
-            else {
-                const textoSeguro = escapeHtml(cleanText).replace(/\n/g, '<br>');
-                htmlParts.push(`
-                <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
-                    ${replyHtml}
-                    ${textoSeguro}
-                    <div class="msg-footer">
+              else {
+                  const textoSeguro = escapeHtml(cleanText).replace(/\n/g, '<br>');
+                  htmlParts.push(`
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}">
+                      ${menuBtn}
+                      ${menuHtml}
+                      ${replyHtml}
+                      ${textoSeguro}
+                      <div class="msg-footer">
                         ${replyBtn}
                         <span class="msg-hora">${horaMsg}</span>
                     </div>
@@ -4498,12 +4638,17 @@ window.gerarPagamento = async function() {
                 senderUid: currentUserUid,
                 timestamp: new Date()
             });
-            if (colecaoAtual === 'pedidos') {
-                try {
-                    const preview = isImg ? '📷 Imagem' : `📎 ${safeName}`;
-                    await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
-                } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
-            }
+              if (colecaoAtual === 'pedidos') {
+                  try {
+                      const preview = isImg ? '📷 Imagem' : `📎 ${safeName}`;
+                      await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
+                  } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
+              } else if (colecaoAtual === 'conversas') {
+                  try {
+                      const preview = isImg ? '📷 Imagem' : `📎 ${safeName}`;
+                      await updateDoc(doc(db, "conversas", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
+                  } catch (e) { console.warn("Falha ao atualizar conversa:", e); }
+              }
             marcarChatComoLido(colecaoAtual, chatIdAtual);
             cancelarResposta();
         } catch (e) {
@@ -4513,19 +4658,23 @@ window.gerarPagamento = async function() {
     }
 
     // Listener do input de anexo
-    document.addEventListener('DOMContentLoaded', () => {
-        const input = document.getElementById('inputAnexo');
-        if (input) {
-            input.addEventListener('change', async (e) => {
-                const file = e.target.files && e.target.files[0];
-                await enviarAnexoArquivo(file);
-            });
-        }
-        const finalizarInput = document.getElementById('finalizarAnexo');
-        if (finalizarInput) {
-            finalizarInput.addEventListener('change', (e) => {
-                const file = e.target.files && e.target.files[0];
-                finalizacaoFile = file || null;
+      document.addEventListener('DOMContentLoaded', () => {
+          const input = document.getElementById('inputAnexo');
+          if (input) {
+              input.addEventListener('change', async (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  await enviarAnexoArquivo(file);
+              });
+          }
+          if (!document.body.dataset.msgMenuBound) {
+              document.body.dataset.msgMenuBound = "1";
+              document.addEventListener('click', closeMsgMenus);
+          }
+          const finalizarInput = document.getElementById('finalizarAnexo');
+          if (finalizarInput) {
+              finalizarInput.addEventListener('change', (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  finalizacaoFile = file || null;
                 const nameEl = document.getElementById('finalizarNomeArquivo');
                 const preview = document.getElementById('finalizarPreview');
                 const img = document.getElementById('finalizarPreviewImg');

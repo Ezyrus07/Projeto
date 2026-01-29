@@ -26,6 +26,14 @@
   const replyPreview = $('#replyBarPreview');
   const replyClose = $('#btnCloseReply');
 
+// Admin: solicitações (grupos privados)
+const requestsPane = $('#requestsPane');
+const requestsSub = $('#requestsSub');
+const requestsList = $('#listaSolicitacoes');
+const btnRefreshReq = $('#btnRefreshSolicitacoes');
+
+let isAdmin = false;
+
   let client = null;
   let grupoId = null;
 
@@ -145,6 +153,212 @@
       return false;
     }catch(e){ return false; }
   }
+
+
+async function detectAdmin(){
+  try{
+    const { data, error } = await client.from(GROUPS_TABLE).select('*').eq('id', grupoId).maybeSingle();
+    if (error || !data) return false;
+
+    const uid = String(currentUid);
+
+    // candidatos comuns
+    const candidates = [
+      data.donoUid, data.dono_uid, data.owner_uid, data.ownerUid,
+      data.criado_por, data.criadoPor, data.created_by, data.createdBy,
+      data.user_uid, data.userUid, data.autorUid, data.autor_uid
+    ].filter(Boolean).map(v => String(v));
+
+    if (candidates.includes(uid)) return true;
+
+    // se tiver "nivel_admin" ou algo parecido
+    if (typeof data.admins === 'object' && Array.isArray(data.admins)){
+      if (data.admins.map(String).includes(uid)) return true;
+    }
+
+    return false;
+  }catch(e){
+    return false;
+  }
+}
+
+function shortUid(u){
+  const s = String(u||'');
+  if (s.length <= 10) return s;
+  return s.slice(0,6) + '…' + s.slice(-4);
+}
+
+async function loadJoinRequests(){
+  if (!requestsPane || !requestsList) return;
+
+  const privateGroup = await isGroupPrivate();
+  if (!privateGroup){
+    requestsPane.style.display='none';
+    return;
+  }
+
+  if (!isAdmin){
+    requestsPane.style.display='none';
+    return;
+  }
+
+  // precisa de coluna de status
+  if (!memberSchema.statusCol){
+    requestsPane.style.display='block';
+    requestsSub.textContent = 'Coluna de status não encontrada na tabela de membros.';
+    requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Para aprovar solicitações, adicione uma coluna <b>status</b> (ex: pendente/ativo) na tabela <b>comunidade_membros</b>.</div>';
+    return;
+  }
+
+  requestsPane.style.display='block';
+  requestsSub.textContent = 'Carregando…';
+  requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Buscando solicitações pendentes…</div>';
+
+  const { communityCol, userCol, statusCol } = memberSchema;
+
+  // tenta pegar colunas úteis se existirem
+  const possibleNameCols = ['user','username','autorUser','autor_user','nome','name','handle'];
+  const possibleFotoCols = ['foto','photo','avatar','autorFoto','autor_foto'];
+
+  try{
+    const { data, error } = await client
+      .from(MEMBERS_TABLE)
+      .select('*')
+      .eq(communityCol, grupoId)
+      .ilike(statusCol, '%pend%');
+
+    if (error){
+      console.error('[REQ] select error', error);
+      requestsSub.textContent = 'Não foi possível listar (RLS/perm).';
+      requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Sem permissão para listar solicitações.</div>';
+      return;
+    }
+
+    const rows = (data || []);
+    requestsSub.textContent = rows.length ? `${rows.length} pendente(s)` : 'Nenhuma pendente';
+    if (!rows.length){
+      requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Nenhuma solicitação pendente no momento.</div>';
+      return;
+    }
+
+    const html = rows.map(r=>{
+      const uid = r[userCol] || r.uid || r.user_uid || r.userId || '';
+      let nome = '';
+      for (const c of possibleNameCols){ if (r[c]) { nome = String(r[c]); break; } }
+      nome = nome ? (nome.startsWith('@') ? nome : '@'+nome.replace(/^@/,'') ) : ('Usuário ' + shortUid(uid));
+
+      let foto = '';
+      for (const c of possibleFotoCols){ if (r[c]) { foto = String(r[c]); break; } }
+
+      const avatar = foto ? `<img src="${foto}" alt="">` : `<span>${(nome.replace('@','')[0]||'U').toUpperCase()}</span>`;
+
+      const rowId = r.id || r.uuid || r._id || '';
+      // fallback: composite key (uid+grupo) for actions if no id
+      const key = rowId ? `id:${rowId}` : `ck:${uid}`;
+
+      return `
+        <div class="req-item" data-req-key="${key}">
+          <div class="req-avatar">${avatar}</div>
+          <div class="req-info">
+            <div class="req-user">${escapeHtml(nome)}</div>
+            <div class="req-sub">Solicitou entrar</div>
+          </div>
+          <div class="req-actions">
+            <button class="btn-req approve" data-action="approve">Aprovar</button>
+            <button class="btn-req reject" data-action="reject">Recusar</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    requestsList.innerHTML = html;
+    wireRequestActions(rows);
+  }catch(e){
+    console.error('[REQ] exception', e);
+    requestsSub.textContent = 'Erro';
+    requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Erro ao buscar solicitações.</div>';
+  }
+}
+
+function wireRequestActions(rows){
+  const { communityCol, userCol, statusCol } = memberSchema;
+
+  const mapByKey = new Map();
+  rows.forEach(r=>{
+    const uid = r[userCol] || r.uid || r.user_uid || '';
+    const rowId = r.id || r.uuid || r._id || '';
+    const key = rowId ? `id:${rowId}` : `ck:${uid}`;
+    mapByKey.set(key, r);
+  });
+
+  $$('.req-item', requestsList).forEach(el=>{
+    const key = el.dataset.reqKey;
+    const approveBtn = el.querySelector('[data-action="approve"]');
+    const rejectBtn = el.querySelector('[data-action="reject"]');
+
+    async function setLoading(on){
+      approveBtn.disabled = on;
+      rejectBtn.disabled = on;
+    }
+
+    approveBtn?.addEventListener('click', async ()=>{
+      const r = mapByKey.get(key);
+      if (!r) return;
+      await setLoading(true);
+      try{
+        // update status to ativo
+        const upd = {};
+        upd[statusCol] = 'ativo';
+
+        let q = client.from(MEMBERS_TABLE).update(upd);
+
+        if (r.id) q = q.eq('id', r.id);
+        else {
+          const uid = r[userCol] || r.uid || r.user_uid;
+          q = q.eq(communityCol, grupoId).eq(userCol, uid);
+        }
+
+        const { error } = await q;
+        if (error){
+          console.error('[REQ] approve error', error);
+          toast('Não consegui aprovar: ' + (error.message||''));
+          return;
+        }
+        toast('Aprovado ✅');
+        el.remove();
+        // refresh counter
+        btnRefreshReq?.click();
+      } finally {
+        await setLoading(false);
+      }
+    });
+
+    rejectBtn?.addEventListener('click', async ()=>{
+      const r = mapByKey.get(key);
+      if (!r) return;
+      await setLoading(true);
+      try{
+        let q = client.from(MEMBERS_TABLE).delete();
+        if (r.id) q = q.eq('id', r.id);
+        else {
+          const uid = r[userCol] || r.uid || r.user_uid;
+          q = q.eq(communityCol, grupoId).eq(userCol, uid);
+        }
+        const { error } = await q;
+        if (error){
+          console.error('[REQ] reject error', error);
+          toast('Não consegui recusar: ' + (error.message||''));
+          return;
+        }
+        toast('Recusado.');
+        el.remove();
+        btnRefreshReq?.click();
+      } finally {
+        await setLoading(false);
+      }
+    });
+  });
+}
 
   // ------ membership gating ------
   let memberSchema=null;
@@ -617,11 +831,15 @@
 
     currentUid = await getUid();
 
-    // schema
-    memberSchema = await detectMembersSchema();
-    postsSchema = await detectPostsSchema();
-    reactSchema = await detectReactionsSchema();
+    
+// schema
+memberSchema = await detectMembersSchema();
+postsSchema = await detectPostsSchema();
+reactSchema = await detectReactionsSchema();
 
+// admin / solicitações
+isAdmin = await detectAdmin();
+btnRefreshReq?.addEventListener('click', loadJoinRequests);
     // wire UI
     joinBtn?.addEventListener('click', requestJoin);
     sendBtn?.addEventListener('click', sendMessage);
@@ -630,6 +848,7 @@
 
     await refreshGate();
     await loadPosts();
+    await loadJoinRequests();
     setupRealtime();
   }
 

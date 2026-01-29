@@ -85,6 +85,93 @@
 
         .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
         
+
+/* ===========================
+   Compat com render do script.js
+   (classes .com-card / .my-group-cover)
+   =========================== */
+.com-card{
+    background: white; border-radius: 16px; overflow: hidden;
+    border: 1px solid #eee; transition: 0.3s; cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    display:flex; flex-direction: column;
+}
+.com-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+.com-cover{ height: 110px; background-size: cover; background-position: center; background-color: #eee; }
+.com-body{
+    padding: 16px 16px 14px;
+    display:flex; gap: 14px; align-items: flex-start;
+}
+.com-avatar{
+    width: 64px; height: 64px; border-radius: 16px; background: white;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+    border: 1px solid #eef0f4;
+    flex: 0 0 auto;
+    margin-top: -34px;
+    overflow:hidden;
+}
+.com-avatar img{ width:100%; height:100%; object-fit:cover; }
+.com-avatar i{ font-size: 28px; color: var(--cor2); }
+.com-info{ min-width:0; flex:1; }
+.com-title{ font-size: 1.15rem; font-weight: 800; color: #1d2b3a; margin-bottom: 6px; }
+.com-desc{ font-size: 0.92rem; font-weight: 700; color: #5a6676; line-height: 1.35; margin-bottom: 10px; }
+.com-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.pill{
+    font-size: 0.72rem; font-weight: 900; border-radius: 999px;
+    padding: 6px 10px; border: 1px solid #e6e9ef; background:#fff; color:#1d2b3a;
+}
+.meta-small{ font-size: 0.78rem; color:#7a8797; font-weight: 800; }
+.btn-ver-grupo{
+    margin-left:auto;
+    align-self:center;
+    padding: 10px 12px;
+    border: 1px solid #e6e9ef;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #0b7768, #2f80ed);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+    white-space: nowrap;
+}
+.btn-ver-grupo:hover{ filter: brightness(1.02); }
+
+/* Meus grupos (render novo do script.js) */
+.my-group-item{
+    min-width: 220px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 16px;
+    padding: 10px;
+    display:flex;
+    gap: 10px;
+    align-items:center;
+}
+.my-group-cover{
+    width: 54px; height: 54px;
+    border-radius: 14px;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(255,255,255,0.20);
+    border: 1px solid rgba(255,255,255,0.20);
+    flex: 0 0 auto;
+}
+.my-group-info{ min-width:0; flex:1; }
+.my-group-title{ color:#fff; font-weight: 900; font-size: 0.95rem; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.my-group-sub{ color: rgba(255,255,255,0.8); font-weight: 800; font-size: 0.78rem; margin-top: 2px; }
+.btn-abrir-grupo{
+    border:none;
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.14);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+    border: 1px solid rgba(255,255,255,0.18);
+}
+.btn-abrir-grupo:hover{ background: rgba(255,255,255,0.20); }
+
+
         .card-comm {
             background: white; border-radius: 16px; overflow: hidden;
             border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
@@ -260,7 +347,7 @@
                     <button class="tab-btn" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
                 </div>
 
-                <div class="grid-comunidades" id="listaComunidadesGeral">
+                <div class="grid-comunidades" id="listaComunidades">
                     <div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">
                         <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
                         <p>Buscando comunidades...</p>
@@ -313,33 +400,55 @@
     </div>
 
     <script>
-        window.abrirModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'flex'; }
-        window.fecharModalCriarComm = function() { document.getElementById('modalCriarComm').style.display = 'none'; }
-        
-        window.filtrarComunidadesTela = function(termo) {
-            const cards = document.querySelectorAll('.card-comm');
-            cards.forEach(card => {
-                const titulo = card.querySelector('.card-title').innerText.toLowerCase();
-                card.style.display = titulo.includes(termo.toLowerCase()) ? 'flex' : 'none';
-            });
-        }
+  window.abrirModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'flex';
+  }
+  window.fecharModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'none';
+  }
 
-        window.filtrarComunidadesTipo = function(tipo, btn) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            
-            const cards = document.querySelectorAll('.card-comm');
-            cards.forEach(card => {
-                const tag = card.getAttribute('data-tipo');
-                if(tipo === 'todos' || tag === tipo) card.style.display = 'flex';
-                else card.style.display = 'none';
-            });
-        }
+  function _getCardTitle(card){
+    const t = card.querySelector('.com-title') || card.querySelector('.card-title') || card.querySelector('[data-title]');
+    return (t ? t.textContent : '').trim();
+  }
 
-        // Inicia carregamento
-        setTimeout(() => {
-            if(window.carregarDadosComunidade) window.carregarDadosComunidade();
-        }, 1000);
-    </script>
+  function _getCardTipo(card){
+    const attr = (card.getAttribute('data-tipo') || '').trim();
+    if (attr) return attr;
+    const pill = card.querySelector('.pill');
+    return (pill ? pill.textContent : '').trim();
+  }
+
+  window.filtrarComunidadesTela = function(termo) {
+    const q = (termo || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.com-card, .card-comm');
+    cards.forEach(card => {
+      const titulo = _getCardTitle(card).toLowerCase();
+      card.style.display = (!q || titulo.includes(q)) ? '' : 'none';
+    });
+  }
+
+  window.filtrarComunidadesTipo = function(tipo, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const target = (tipo || 'todos').toLowerCase();
+    const cards = document.querySelectorAll('.com-card, .card-comm');
+
+    cards.forEach(card => {
+      const t = _getCardTipo(card).toLowerCase();
+      const ok = (target === 'todos') || (t === target) || (t.includes(target));
+      card.style.display = ok ? '' : 'none';
+    });
+  }
+
+  // Inicia carregamento (dados reais)
+  document.addEventListener('DOMContentLoaded', () => {
+    try{
+      if (window.carregarComunidadesGerais) window.carregarComunidadesGerais();
+      if (window.carregarMeusGrupos) window.carregarMeusGrupos();
+    }catch(e){ console.warn(e); }
+  });
+</script>
 </body>
 </html>

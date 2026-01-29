@@ -513,7 +513,7 @@
 
                 // 3. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
                 if(data.uid) {
-                    carregarAvaliacoesReais(data.uid); // <--- AQUI ESTÁ A MÁGICA
+                    carregarAvaliacoesReais(data.uid, data.id || data.anuncioId || data.anuncio_id || data.anuncioid || null);
                     carregarPrazoMedio(data.uid);
                 }
 
@@ -668,9 +668,9 @@
         // ===========================================
         // BUSCA DE AVALIAÇÕES REAIS (SEM DADOS FALSOS)
         // ===========================================
-        async function carregarAvaliacoesReais(uidProfissional) {
-            const list = document.getElementById('reviews-list');
-            const dash = document.getElementById('reviews-dashboard');
+          async function carregarAvaliacoesReais(uidProfissional, anuncioId) {
+              const list = document.getElementById('reviews-list');
+              const dash = document.getElementById('reviews-dashboard');
 
             try {
                 // 1. Busca estatísticas do Usuário (Para pegar Total Contratações)
@@ -689,16 +689,41 @@
                 document.getElementById('prov-since').innerText = `Membro desde ${membroDesde}`;
 
 
-                // 2. Busca Avaliações no Firestore
-                const q = query(
-                    collection(db, "avaliacoes"), 
-                    where("paraUid", "==", uidProfissional),
-                    orderBy("data", "desc")
-                );
-                
-                const snapshot = await getDocs(q);
+                  // 2. Busca Avaliações (prioriza anuncioId, fallback por profissional)
+                  let snapshot = null;
+                  let lastError = null;
+                  const tryQuery = async (field, value) => {
+                      try {
+                          const q = query(
+                              collection(db, "avaliacoes"),
+                              where(field, "==", value),
+                              orderBy("data", "desc")
+                          );
+                          return await getDocs(q);
+                      } catch (e) {
+                          lastError = e;
+                          return null;
+                      }
+                  };
 
-                list.innerHTML = ""; // Limpa texto de carregamento
+                  if (anuncioId) {
+                      const anuncioFields = ["anuncioId", "anuncio_id", "anuncioid", "anuncio", "servico_id", "servicoId", "servico"];
+                      for (const f of anuncioFields) {
+                          const res = await tryQuery(f, anuncioId);
+                          if (res && res.size) { snapshot = res; break; }
+                      }
+                  }
+
+                  if (!snapshot) {
+                      const profFields = ["profUid", "prof_uid", "profissional_id", "paraUid"];
+                      for (const f of profFields) {
+                          const res = await tryQuery(f, uidProfissional);
+                          if (res) { snapshot = res; break; }
+                      }
+                  }
+                  if (!snapshot && lastError) throw lastError;
+
+                  list.innerHTML = ""; // Limpa texto de carregamento
 
                 // SE NÃO TIVER DADOS REAIS
                 if(snapshot.empty) {

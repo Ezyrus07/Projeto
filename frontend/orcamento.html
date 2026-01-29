@@ -1146,7 +1146,7 @@
                     return getInputValue('data-especifica');
                 })();
 
-                const pedidoExistente = await encontrarPedidoExistente(db, user.uid, paraUid, anuncioIdFinal);
+                const refPedidoId = params.get('refPedido') || params.get('pedidoId');
                 const pedidoPayload = {
                     deUid: user.uid,
                     paraUid: paraUid,
@@ -1210,15 +1210,10 @@ Local do serviço: ${loc}${extra}`;
                 };
 
                 let pedidoIdFinal = "";
-                if (pedidoExistente && pedidoExistente.id) {
-                    const statusAtual = String(pedidoExistente.data?.status || "").toLowerCase();
-                    const reabrir = ['recusado','cancelado','finalizado'];
-                    if (!reabrir.includes(statusAtual)) {
-                        pedidoPayload.status = pedidoExistente.data?.status || pedidoPayload.status;
-                    }
-                    const pedidoRef = doc(db, "pedidos", pedidoExistente.id);
+                if (refPedidoId) {
+                    const pedidoRef = doc(db, "pedidos", refPedidoId);
                     await updateDoc(pedidoRef, pedidoPayload);
-                    pedidoIdFinal = pedidoExistente.id;
+                    pedidoIdFinal = refPedidoId;
                 } else {
                     const docRef = await addDoc(collection(db, "pedidos"), pedidoPayload);
                     pedidoIdFinal = docRef.id;
