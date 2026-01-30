@@ -11,8 +11,13 @@ create table if not exists public.pedidos_mensagens (
   tipo text,
   url text,
   timestamp timestamptz not null default now(),
-  lido boolean default false
+  lido boolean default false,
+  "lidoEm" jsonb not null default '{}'
 );
+
+-- Garante a coluna case-sensitive usada pelo app
+alter table if exists public.pedidos_mensagens
+  add column if not exists "lidoEm" jsonb default '{}';
 
 -- 2) Índices para performance
 do $$

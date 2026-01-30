@@ -28,7 +28,20 @@
            LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRÃO)
            ========================================================================= */
         
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background-color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+        :root{
+            --ux-bg: #eef2f7;
+            --ux-panel: #ffffff;
+            --ux-ink: #0f172a;
+            --ux-muted: #64748b;
+            --ux-line: #e2e8f0;
+            --ux-brand: #0b7768;
+            --ux-brand-weak: rgba(11,119,104,0.12);
+            --ux-warm: #fff7ed;
+            --ux-warm-line: #fde7c7;
+            --ux-card-shadow: 0 10px 24px rgba(15,23,42,0.08);
+        }
+
+        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--ux-bg); font-family: 'Segoe UI', sans-serif; color: var(--ux-ink); }
 
         .navbar-mobile { justify-content: space-between; align-items: center; }
         .navbar-mobile .mobile-controls { display: flex; align-items: center; gap: 12px; }
@@ -42,14 +55,15 @@
             width: calc(100vw - var(--sidebar-width)); /* Largura total MENOS a sidebar */
             margin-left: var(--sidebar-width); /* Espaço da Sidebar */
             margin-top: var(--navbar-height-desktop); /* Espaço do Header */
-            background-color: #fff;
+            background: var(--ux-panel);
             position: relative;
+            border-left: 1px solid var(--ux-line);
         }
 
         /* --- COLUNA ESQUERDA: LISTA --- */
         .coluna-lista {
-            border-right: 1px solid #e0e0e0;
-            background: #fff;
+            border-right: 1px solid var(--ux-line);
+            background: var(--ux-panel);
             display: flex;
             flex-direction: column;
             z-index: 10;
@@ -58,26 +72,35 @@
         }
 
         .lista-header {
-            padding: 15px 20px;
-            background: #f0f2f5;
-            border-bottom: 1px solid #e0e0e0;
+            padding: 18px 20px 16px;
+            background: linear-gradient(180deg, #ffffff 0%, #f7fafc 100%);
+            border-bottom: 1px solid var(--ux-line);
             flex-shrink: 0;
-        }
-        .lista-header {
-            background: #ffffff;
             position: sticky;
             top: 0;
             z-index: 5;
         }
+        .lista-top{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+        }
+        .lista-quick{
+            margin-top:10px;
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
 
-        .titulo-msg { margin: 0 0 10px 0; color: #333; font-size: 1.4rem; }
+        .titulo-msg { margin: 0 0 10px 0; color: var(--ux-ink); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
 
         /* Abas */
         .abas-container {
             display: flex;
-            background: #e0e0e0;
+            background: #eef2f7;
             padding: 4px;
-            border-radius: 8px;
+            border-radius: 999px;
         }
         .aba-btn {
             flex: 1;
@@ -86,15 +109,15 @@
             padding: 8px;
             font-size: 0.9rem;
             font-weight: 600;
-            color: #555;
-            border-radius: 6px;
+            color: #475569;
+            border-radius: 999px;
             cursor: pointer;
             transition: 0.2s;
         }
         .aba-btn.active {
-            background: #fff;
-            color: #009688;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            background: #ffffff;
+            color: var(--ux-brand);
+            box-shadow: 0 6px 14px rgba(15,23,42,0.08);
         }
         .pedidos-filtros{
             display:flex;
@@ -114,7 +137,7 @@
         }
         .pf-btn.active{
             border-color: rgba(11,119,104,0.35);
-            background: rgba(11,119,104,0.12);
+            background: var(--ux-brand-weak);
             color:#064e42;
         }
         .lista-tools{
@@ -125,6 +148,7 @@
         }
         .lista-search{
             position:relative;
+            flex:1;
         }
         .lista-search i{
             position:absolute;
@@ -144,6 +168,32 @@
             color:#111;
             outline:none;
         }
+        .filter-btn{
+            border:1px solid #e2e8f0;
+            background:#fff;
+            color:#0f172a;
+            padding:8px 12px;
+            border-radius:10px;
+            font-size:0.78rem;
+            font-weight:800;
+            cursor:pointer;
+            display:flex;
+            align-items:center;
+            gap:6px;
+            white-space:nowrap;
+        }
+        .filter-btn:hover{ background:#f8fafc; }
+        .lista-filters-panel{
+            margin-top:12px;
+            padding:10px;
+            border:1px solid var(--ux-line);
+            border-radius:12px;
+            background:#fff;
+            display:none;
+            gap:10px;
+            flex-direction:column;
+        }
+        .lista-filters-panel.open{ display:flex; }
         .lista-search input:focus{
             border-color: rgba(11,119,104,0.35);
             box-shadow: 0 0 0 3px rgba(11,119,104,0.12);
@@ -158,40 +208,37 @@
         .lista-scroll {
             flex: 1;
             overflow-y: auto;
-            background: #fff;
+            background: #f8fafc;
             min-height: 0; /* permite a lista encolher e ativar o overflow */
             overscroll-behavior: contain;
         }
-        .lista-scroll {
-            background: #f8fafc;
-            padding: 8px 8px 20px;
-        }
+        .lista-scroll { padding: 10px 10px 24px; }
 
         /* CARD DE PEDIDO */
         .item-pedido {
-            padding: 15px;
-            border: 1px solid #edf2f7;
+            padding: 10px 12px;
+            border: 1px solid #e2e8f0;
             cursor: pointer;
             border-left: 4px solid transparent;
             transition: 0.2s;
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
             background: #fff;
-            border-radius: 14px;
-            margin: 8px 6px;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+            border-radius: 12px;
+            margin: 6px 6px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
         }
-        .item-pedido:hover { background-color: #f8fafc; }
-        .item-pedido.active { background-color: #f0fdf4; border-color: rgba(11,119,104,0.35); }
+        .item-pedido:hover { background-color: #f8fafc; transform: translateY(-1px); }
+        .item-pedido.active { background-color: #f0fdf4; border-color: rgba(11,119,104,0.35); box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); }
 
         .status-border-pendente { border-left-color: #ff9800; }
         .status-border-aceito { border-left-color: #2e7d32; }
         .status-border-recusado { border-left-color: #c62828; }
 
         .ip-header { display: flex; justify-content: space-between; align-items: center; }
-        .ip-user { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #333; font-size: 0.9rem; }
-        .ip-user img { width: 28px; height: 28px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
+        .ip-user { display: flex; align-items: center; gap: 8px; font-weight: 600; color: #333; font-size: 0.82rem; }
+        .ip-user img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 1px solid #eee; }
         
         .ip-badge { font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
         .badge-pendente { background: #fff3e0; color: #ef6c00; }
@@ -219,22 +266,22 @@
         .chip-recusado{ background:#ffebee; color:#c62828; border:1px solid #ffcdd2; }
         .chip-cancelado{ background:#ffebee; color:#c62828; border:1px solid #ffcdd2; }
 
-        .ip-body h4 { margin: 0; font-size: 0.95rem; color: #111; font-weight: 700; }
-        .ip-body p { margin: 2px 0 0 0; font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ip-body h4 { margin: 0; font-size: 0.88rem; color: #111; font-weight: 700; }
+        .ip-body p { margin: 2px 0 0 0; font-size: 0.78rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ip-date { font-size: 0.75rem; color: #999; text-align: right; margin-top: 4px; }
 
         /* CARD DE CONVERSA */
         .item-conversa {
-            display: flex; padding: 15px; gap: 12px; cursor: pointer; transition: 0.2s; align-items: center;
-            border: 1px solid #edf2f7; background: #fff; border-radius: 14px; margin: 8px 6px;
-            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.04);
+            display: flex; padding: 10px 12px; gap: 10px; cursor: pointer; transition: 0.2s; align-items: center;
+            border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; margin: 6px 6px;
+            box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
         }
-        .item-conversa:hover { background-color: #f8fafc; }
-        .item-conversa.active { background-color: #f0fdf4; border-color: rgba(11,119,104,0.35); }
-        .item-conversa img { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; }
+        .item-conversa:hover { background-color: #f8fafc; transform: translateY(-1px); }
+        .item-conversa.active { background-color: #f0fdf4; border-color: rgba(11,119,104,0.35); box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); }
+        .item-conversa img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
         .ic-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
-        .ic-nome { font-weight: 600; color: #111; font-size: 1rem; }
-        .ic-msg { font-size: 0.85rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ic-nome { font-weight: 600; color: #111; font-size: 0.9rem; }
+        .ic-msg { font-size: 0.78rem; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .ic-meta { display:flex; align-items:center; gap:8px; margin-left:auto; }
         .unread-dot{
             width:10px;
@@ -259,9 +306,9 @@
 
         /* --- COLUNA DIREITA: CHAT --- */
         .coluna-chat {
-            background-color: #e4eef5;
-            background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
-            background-blend-mode: soft-light;
+            background-color: #f1f5f9;
+            background-image: radial-gradient(#dce3ee 0.5px, transparent 0.5px);
+            background-size: 24px 24px;
             position: relative;
             display: flex;
             flex-direction: column;
@@ -278,8 +325,9 @@
         #box-conversa-real { display: none; flex-direction: column; height: 100%; overflow: hidden; }
 
         .chat-header {
-            height: 60px; background: #f0f2f5; border-bottom: 1px solid #d1d7db;
+            height: 64px; background: rgba(255,255,255,0.92); border-bottom: 1px solid var(--ux-line);
             display: flex; align-items: center; padding: 0 20px; gap: 15px; flex-shrink: 0;
+            backdrop-filter: blur(10px);
         }
         .chat-header h4 { margin: 0; font-size: 1rem; color: #111; }
         .chat-header span { font-size: 0.8rem; color: #666; }
@@ -680,31 +728,29 @@
 
         .mensagens-body {
             flex: 1;
-            overflow-y: auto; /* Garante o scroll vertical */
-            height: 100%;     /* Força a ocupar o espaço disponível */
-            padding: 20px 40px;
+            overflow-y: auto;
+            height: 100%;
+            padding: 26px 46px;
             display: flex;
             flex-direction: column;
-            gap: 8px;
-            min-height: 0; /* importante para o scroll funcionar dentro do flex */
-            
-            /* Melhoria visual para o scrollbar */
-            scrollbar-width: thin; 
-            scrollbar-color: #009688 #f0f2f5;
+            gap: 10px;
+            min-height: 0;
+            scrollbar-width: thin;
+            scrollbar-color: #94a3b8 #f1f5f9;
         }
 
         .chat-footer {
-            min-height: 60px; background: #f0f2f5; border-top: 1px solid #d1d7db;
-            display: flex; align-items: center; padding: 10px 20px; gap: 10px; flex-shrink: 0;
+            min-height: 64px; background: #ffffff; border-top: 1px solid var(--ux-line);
+            display: flex; align-items: center; padding: 12px 20px; gap: 10px; flex-shrink: 0;
         }
         .input-msg { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; }
         .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
         .btn-attach { background: #e0e0e0; color: #555; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
         .btn-attach:hover { filter: brightness(0.98); }
 
-        .msg-bubble { max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 0.95rem; position: relative; box-shadow: 0 1px 1px rgba(0,0,0,0.1); line-height: 1.4; }
-        .msg-enviada { align-self: flex-end; background: #e3ffeb; border-top-right-radius: 0; }
-        .msg-recebida { align-self: flex-start; background: #fff; border-top-left-radius: 0; }
+        .msg-bubble { max-width: 68%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; position: relative; box-shadow: 0 4px 12px rgba(15,23,42,0.08); line-height: 1.45; }
+        .msg-enviada { align-self: flex-end; background: var(--ux-brand); color: #fff; border-top-right-radius: 6px; }
+        .msg-recebida { align-self: flex-start; background: #ffffff; color: #0f172a; border-top-left-radius: 6px; }
         .msg-hora { font-size: 0.7rem; color: #999; float: right; margin-top: 5px; margin-left: 10px; }
 
         .btn-voltar-mobile { display: none; }
@@ -1800,11 +1846,7 @@
     </aside>
 
     <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
+        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
         <nav class="menu">
             <div class="cep-wrapper">
                 <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
@@ -1813,31 +1855,26 @@
                     </svg>
                     <span id="textoCepSpan">Informe seu CEP</span>
                 </a>
-
                 <div class="cep-popup" id="boxCep">
                     <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
+                    <div class="cep-input-group"><input type="text" id="inputCep" placeholder="00000-000" maxlength="9"><button onclick="salvarCep()">OK</button></div>
                 </div>
             </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
+            <a href="escolheranuncio.html">Anunciar</a>
+            <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
             <a href="novidades.html">Novidades</a>
         </nav>
-
-        <div class="botoes-direita" id="header-user-area">
-            <a href="login.html" class="entrar">Entrar</a>
-        </div>
+        <div class="botoes-direita" id="header-user-area"><a href="login.html" class="entrar">Entrar</a></div>
     </header>
 
     <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
-        <div class="mobile-controls">
-            <button id="btn-menu-mobile" onclick="abrirMenuMobile()" aria-label="Abrir menu"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-            <a id="header-user-mobile" href="login.html" aria-label="Perfil"><i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i></a>
+        <div id="logo-mobile">
+            <a href="index.html">
+                <img src="assets/Imagens/doke-logo.png" alt="Doke">
+            </a>           
+        </div>
+        <div class="botoes-direita">
+            <a id="header-user-mobile" href="login.html" class="entrar">Entrar</a>
         </div>
     </header>
     <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
@@ -1846,35 +1883,42 @@
         
         <div class="coluna-lista">
             <div class="lista-header">
-                <h2 class="titulo-msg">Mensagens</h2>
-                <div class="abas-container">
-                    <button class="aba-btn active" onclick="trocarAba('pedidos')">Pedidos</button>
-                    <button class="aba-btn" onclick="trocarAba('conversas')">Mensagens</button>
+                <div class="lista-top">
+                    <h2 class="titulo-msg">Mensagens</h2>
+                    <div class="abas-container">
+                        <button class="aba-btn active" onclick="trocarAba('pedidos')">Pedidos</button>
+                        <button class="aba-btn" onclick="trocarAba('conversas')">Mensagens</button>
+                    </div>
                 </div>
-                <div class="pedidos-filtros" id="pedidosFilters">
-                    <button class="pf-btn active" data-status="todos">Todos</button>
-                    <button class="pf-btn" data-status="pendente">Pendentes</button>
-                    <button class="pf-btn" data-status="andamento">Em andamento</button>
-                    <button class="pf-btn" data-status="finalizado">Finalizados</button>
-                </div>
-                <div class="pedidos-filtros" id="conversasFilters" style="display:none;">
-                    <button class="pf-btn active" data-status="todos">Todos</button>
-                    <button class="pf-btn" data-status="andamento">Em andamento</button>
-                    <button class="pf-btn" data-status="finalizado">Finalizados</button>
-                </div>
-                <div class="lista-tools">
+                <div class="lista-quick">
                     <div class="lista-search">
                         <i class='bx bx-search'></i>
                         <input type="text" id="inputBuscaLista" placeholder="Buscar por nome ou serviço">
+                    </div>
+                    <button class="filter-btn" id="toggleFilters" onclick="toggleListaFilters(event)">
+                        Filtros <i class='bx bx-slider-alt'></i>
+                    </button>
+                </div>
+                <div class="lista-filters-panel" id="listaFiltersPanel">
+                    <div class="pedidos-filtros" id="pedidosFilters">
+                        <button class="pf-btn active" data-status="todos">Todos</button>
+                        <button class="pf-btn" data-status="pendente">Pendentes</button>
+                        <button class="pf-btn" data-status="andamento">Em andamento</button>
+                        <button class="pf-btn" data-status="finalizado">Finalizados</button>
+                    </div>
+                    <div class="pedidos-filtros" id="conversasFilters" style="display:none;">
+                        <button class="pf-btn active" data-status="todos">Todos</button>
+                        <button class="pf-btn" data-status="andamento">Em andamento</button>
+                        <button class="pf-btn" data-status="finalizado">Finalizados</button>
                     </div>
                     <div class="lista-archive-toggle" id="listaArchiveToggle">
                         <button class="pf-btn active" data-archive="ativos">Ativos</button>
                         <button class="pf-btn" data-archive="arquivados">Arquivados</button>
                     </div>
-                </div>
-                <div class="lista-view-toggle" id="listaViewToggle">
-                    <button class="pf-btn active" data-view="lista" onclick="trocarViewLista('lista')">Lista</button>
-                    <button class="pf-btn" data-view="agenda" onclick="trocarViewLista('agenda')">Agenda</button>
+                    <div class="lista-view-toggle" id="listaViewToggle">
+                        <button class="pf-btn active" data-view="lista" onclick="trocarViewLista('lista')">Lista</button>
+                        <button class="pf-btn" data-view="agenda" onclick="trocarViewLista('agenda')">Agenda</button>
+                    </div>
                 </div>
             </div>
 
@@ -2137,6 +2181,7 @@
     let chatIdAtual = null;
     let colecaoAtual = 'pedidos'; 
     let chatUnsubscribe = null;
+    let pedidoDocUnsub = null;
     let conversaDocUnsub = null;
     let idPedidoParaAcao = null;
     let pedidosRenderToken = 0;
@@ -2280,6 +2325,13 @@
             });
         }
     }
+
+    window.toggleListaFilters = function(ev){
+        if (ev) ev.stopPropagation();
+        const panel = document.getElementById('listaFiltersPanel');
+        if (!panel) return;
+        panel.classList.toggle('open');
+    };
 
     window.trocarViewLista = function(view){
         listaView = view || 'lista';
@@ -2729,11 +2781,18 @@
             </div>`;
     }
     function buildRecusaCard(p){
-        if (!p || String(p.status || '').toLowerCase() !== 'recusado' || !p.motivoRecusa) return '';
+        if (!p || String(p.status || '').toLowerCase() !== 'recusado') return '';
+        const motivo =
+            p.motivoRecusa ||
+            p.motivo_recusa ||
+            p.respostaRecusa ||
+            p.resposta_recusa ||
+            '';
+        const texto = motivo ? escapeHtml(motivo) : 'O profissional não informou o motivo da recusa.';
         return `
             <div class="pedido-recusa-card">
                 <div class="pr-title">Pedido recusado</div>
-                <div class="pr-text">${escapeHtml(p.motivoRecusa)}</div>
+                <div class="pr-text">${texto}</div>
             </div>`;
     }
     function updateReplyBar(){
@@ -3627,6 +3686,13 @@
         initConversasFilters();
         initListaTools();
         document.addEventListener('click', fecharMenuChat);
+        document.addEventListener('click', (e) => {
+            const panel = document.getElementById('listaFiltersPanel');
+            const btn = document.getElementById('toggleFilters');
+            if (!panel || !panel.classList.contains('open')) return;
+            if (panel.contains(e.target) || (btn && btn.contains(e.target))) return;
+            panel.classList.remove('open');
+        });
         if (!document.getElementById('dokeGlobalModal')) {
             const html = `
                 <div id="dokeGlobalModal" class="doke-overlay">
@@ -3784,6 +3850,14 @@
             document.body.insertAdjacentHTML('beforeend', disputaHtml);
         }
     });
+
+    function ensurePedidosLoaded() {
+        const container = document.getElementById('lista-pedidos');
+        if (!container) return;
+        const hasSpinner = !!container.querySelector('.bx-spin');
+        const hasContent = !!container.dataset.sig;
+        if (hasSpinner || !hasContent) carregarListaPedidos();
+    }
 
     window.abrirModalGarantia = () => { const m = document.getElementById('modalGarantiaInfo'); if(m) m.style.display = 'flex'; };
     window.fecharModalGarantia = () => { const m = document.getElementById('modalGarantiaInfo'); if(m) m.style.display = 'none'; };
@@ -4515,14 +4589,32 @@ window.confirmarFinalizacaoPedido = async () => {
         }
 
         try {
-            const q1 = query(collection(db, "pedidos"), where("deUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
-            const q2 = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid), orderBy("dataPedido", "desc"));
-            const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+            if (!currentUserUid) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Faça login para ver seus pedidos.</div>`;
+                return;
+            }
+            const deField = await resolvePedidosField('de');
+            const paraField = await resolvePedidosField('para');
+            if (!deField && !paraField) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Não foi possível identificar os campos do pedido.</div>`;
+                return;
+            }
+            pedidosFieldsDirty = false;
+            const base = collection(db, "pedidos");
+            const qDe = deField ? query(base, where(deField, "==", currentUserUid)) : null;
+            const qPara = paraField ? query(base, where(paraField, "==", currentUserUid)) : null;
+            const [s1, s2] = await Promise.all([
+                qDe ? safeGetDocsWithField(qDe, deField) : emptySnap(),
+                qPara ? safeGetDocsWithField(qPara, paraField) : emptySnap()
+            ]);
 
             if (token !== pedidosRenderToken) return;
             const sigParts = [listaModo, pedidosFiltro, listaBusca];
             let htmlOut = "";
-            const itensRaw = [...s1.docs.map(d=>({d, papel:'cliente'})), ...s2.docs.map(d=>({d, papel:'profissional'}))];
+            const itensRaw = [
+                ...s1.docs.map(d=>({d, papel:'cliente'})),
+                ...s2.docs.map(d=>({d, papel:'profissional'}))
+            ];
             const map = new Map();
             for (const it of itensRaw) {
                 const pid = it?.d?.id;
@@ -4532,24 +4624,35 @@ window.confirmarFinalizacaoPedido = async () => {
                     map.set(pid, it);
                 }
             }
-            const itens = Array.from(map.values());
+            const itens = Array.from(map.values()).sort((a, b) => {
+                const ta = getPedidoSortTs(a?.d?.data?.());
+                const tb = getPedidoSortTs(b?.d?.data?.());
+                return tb - ta;
+            });
             const agendaItems = [];
 
             if(itens.length === 0) {
                 htmlOut = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido.</div>`;
                 pedidosAgendaCache = [];
                 renderAgenda();
-                if (container.dataset.sig !== 'empty') {
+                if (container.dataset.sig !== 'empty' || container.querySelector('.bx-spin')) {
                     container.innerHTML = htmlOut;
                     container.dataset.sig = 'empty';
                 }
                 return;
             }
 
+            const itemsForRender = [];
+            const userIdsToLoad = new Set();
             for (const item of itens) {
                 if (token !== pedidosRenderToken) return;
                 const id = item.d.id;
                 const p = item.d.data();
+                const deUid = getDeUid(p);
+                const paraUid = getParaUid(p);
+                const papelReal = (deUid && deUid === currentUserUid) ? 'cliente'
+                    : (paraUid && paraUid === currentUserUid) ? 'profissional'
+                    : item.papel;
                 if (isOcultoPorUser(p, 'ocultoPedidosPor', id)) continue;
                 const isArquivado = isArquivadoPorUser(p, id);
                 if (listaModo === 'arquivados' && !isArquivado) continue;
@@ -4562,14 +4665,27 @@ window.confirmarFinalizacaoPedido = async () => {
                 if (pedidosFiltro === 'andamento' && !isAndamento) continue;
                 if (pedidosFiltro === 'finalizado' && !isFinal) continue;
 
-                if (item.papel === 'profissional' && p.status === 'recusado') continue;
+                if (papelReal === 'profissional' && p.status === 'recusado') continue;
 
-                const uDoc = await getDoc(doc(db, "usuarios", item.papel === 'cliente' ? p.paraUid : p.deUid));
-                const dU = uDoc.exists() ? uDoc.data() : {};
-                if (!matchBusca(dU.user, p.servicoReferencia, p.mensagemInicial, p.paraNome, p.paraUser, p.deNome, p.deUser)) continue;
+                const outroUid = (papelReal === 'cliente') ? paraUid : deUid;
+                if (outroUid) userIdsToLoad.add(outroUid);
+                itemsForRender.push({ id, p, papelReal, deUid, paraUid, outroUid, isArquivado });
+            }
+
+            const loadPromises = Array.from(userIdsToLoad).map(async (uid) => {
+                if (userCache.has(uid)) return;
+                await getUserCached(uid);
+            });
+            if (loadPromises.length) await Promise.all(loadPromises);
+
+            for (const item of itemsForRender) {
+                if (token !== pedidosRenderToken) return;
+                const { id, p, papelReal, deUid, paraUid, outroUid, isArquivado } = item;
+                const dU = (await getUserCached(outroUid)) || {};
+                if (!matchBusca(dU?.user, p.servicoReferencia, p.mensagemInicial, p.paraNome, p.paraUser, p.deNome, p.deUser)) continue;
                 
                 let sT = p.status;
-                if(p.status === 'aceito' && item.papel === 'profissional') sT = "Em andamento";
+                if(p.status === 'aceito' && papelReal === 'profissional') sT = "Em andamento";
                 
                 // Badge Clicável (Abre Modal de Garantia)
                 let badgeHtml = (p.status === 'pago') ? `
@@ -4589,7 +4705,7 @@ window.confirmarFinalizacaoPedido = async () => {
                     : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('pedidos', '${id}', true)"><i class='bx bx-archive'></i></button>`;
 
                 // Info Saldo (Visual Clean Solicitado)
-                let infoSaldo = (item.papel === 'profissional' && p.status === 'pago') ? `
+                let infoSaldo = (papelReal === 'profissional' && p.status === 'pago') ? `
                     <div style="background:#ffffff; padding:12px; border-radius:12px; margin-top:12px; border:1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display:flex; align-items:center; gap:12px;">
                         <div style="width:38px; height:38px; background:#e0f2f1; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#0b7768;">
                             <i class='bx bx-lock-alt' style="font-size:1.3rem;"></i>
@@ -4602,14 +4718,14 @@ window.confirmarFinalizacaoPedido = async () => {
 
                 // Botões de Ação
                 let acoesHtml = "";
-                if (item.papel === 'profissional' && p.status === 'pendente') {
+                if (papelReal === 'profissional' && p.status === 'pendente') {
                     acoesHtml = `<div style="display:flex; gap:10px; margin-top:10px;">
                         <button onclick="event.stopPropagation(); prepararRecusa('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#ffebee; color:#e74c3c; font-weight:700; cursor:pointer;">Recusar</button>
                         <button onclick="event.stopPropagation(); aceitarPedidoProfissional('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#e8f5e9; color:#2e7d32; font-weight:700; cursor:pointer;">Aceitar</button>
                     </div>`;
-                } else if (item.papel === 'cliente' && p.status === 'pendente') {
+                } else if (papelReal === 'cliente' && p.status === 'pendente') {
                     acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicitação</button>`;
-                } else if (item.papel === 'cliente' && p.status === 'pago') {
+                } else if (papelReal === 'cliente' && p.status === 'pago') {
                      // Botão de Conclusão (Design Compacto)
                      acoesHtml = `
                         <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
@@ -4622,13 +4738,13 @@ window.confirmarFinalizacaoPedido = async () => {
                 // Mensagem curta (cliente/profissional)
                 let subMsg = "";
                 if (p.status === 'pendente') {
-                    subMsg = (item.papel === 'cliente')
+                    subMsg = (papelReal === 'cliente')
                         ? '<div class=\"ip-sub\">Aguardando resposta do profissional.</div>'
                         : '<div class=\"ip-sub\">Novo pedido. Analise e aceite para liberar o chat.</div>';
-                } else if (p.status === 'recusado' && item.papel === 'cliente') {
+                } else if (p.status === 'recusado' && papelReal === 'cliente') {
                     const motivo = p.motivoRecusa ? ` Motivo: ${escapeHtml(String(p.motivoRecusa).slice(0, 90))}${String(p.motivoRecusa).length > 90 ? '...' : ''}` : '';
                     subMsg = `<div class="ip-sub">Pedido recusado.${motivo}</div>`;
-                } else if (p.status === 'aceito' && item.papel === 'cliente') {
+                } else if (p.status === 'aceito' && papelReal === 'cliente') {
                     subMsg = '<div class=\"ip-sub\">Chat liberado. Você já pode negociar com o profissional.</div>';
                 }
 
@@ -4660,15 +4776,18 @@ window.confirmarFinalizacaoPedido = async () => {
                         statusRaw: p.status || '',
                         statusLabel: sT || p.status || '',
                         status: getAgendaStatus(p),
-                        uidOutro: uDoc.id || ''
+                        uidOutro: outroUid || ''
                     });
                 }
 
                 const rowHtml = `
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
                         <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${unreadHtml}${archiveBtn}${bApagar}${badgeHtml}</div></div>
-                        <div class="ip-user" onclick="abrirPerfilUsuario('${uDoc.id}', ${!!dU.isProfissional})"><img src="${dU.foto || 'https://placehold.co/150'}"><span>${dU.user || 'Usuário'}</span></div>
-                        <div class="ip-body" onclick="abrirChat('${id}', '${uDoc.id}', '', '', 'pedidos', '${p.status}')">
+                        <div class="ip-user">
+                            <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar">
+                            <span>${dU.user || 'Usuário'}</span>
+                        </div>
+                        <div class="ip-body" onclick="abrirChat('${id}', '${outroUid || ''}', '', '', 'pedidos', '${p.status}')">
                             <h4>${p.servicoReferencia}</h4>
                             ${subMsg}
                             ${cardAndamento}
@@ -4684,18 +4803,38 @@ window.confirmarFinalizacaoPedido = async () => {
             pedidosAgendaCache = agendaItems;
             renderAgenda();
             const sig = sigParts.join('|');
-            if (container.dataset.sig !== sig) {
+            if (container.dataset.sig !== sig || container.querySelector('.bx-spin')) {
                 container.innerHTML = htmlOut;
                 container.dataset.sig = sig;
             }
-        } catch (e) { console.error(e); }
+            if (pedidosFieldsDirty) restartPedidosRealtime();
+            else if (!pedidosRealtimeUnsubs.length) startPedidosRealtime();
+        } catch (e) {
+            console.warn("Falha ao carregar pedidos:", e);
+            if (container) {
+                container.innerHTML = `
+                    <div style="text-align:center; padding:30px; color:#999;">
+                        Não foi possível carregar os pedidos.
+                        <button style="margin-top:10px; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; cursor:pointer;" onclick="carregarListaPedidos()">Tentar novamente</button>
+                    </div>`;
+            }
+        }
     }
 
     let pedidosRealtimeUnsubs = [];
+    function restartPedidosRealtime(){
+        pedidosRealtimeUnsubs.forEach((fn) => { try { fn(); } catch (_) {} });
+        pedidosRealtimeUnsubs = [];
+        startPedidosRealtime();
+    }
     function startPedidosRealtime(){
         if (!currentUserUid || pedidosRealtimeUnsubs.length) return;
-        const q1 = query(collection(db, "pedidos"), where("deUid", "==", currentUserUid));
-        const q2 = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid));
+        const deField = pedidosFieldResolved.de;
+        const paraField = pedidosFieldResolved.para;
+        if (!deField && !paraField) return;
+        const base = collection(db, "pedidos");
+        const q1 = deField ? query(base, where(deField, "==", currentUserUid)) : null;
+        const q2 = paraField ? query(base, where(paraField, "==", currentUserUid)) : null;
         const onUpdate = () => {
             if (window.__pedidosRealtimeTimer) return;
             window.__pedidosRealtimeTimer = setTimeout(() => {
@@ -4703,7 +4842,10 @@ window.confirmarFinalizacaoPedido = async () => {
                 if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
             }, 250);
         };
-        pedidosRealtimeUnsubs = [onSnapshot(q1, onUpdate), onSnapshot(q2, onUpdate)];
+        const subs = [];
+        if (q1) subs.push(onSnapshot(q1, onUpdate));
+        if (q2) subs.push(onSnapshot(q2, onUpdate));
+        pedidosRealtimeUnsubs = subs;
     }
 
       function getConversaUpdated(data){
@@ -4768,9 +4910,9 @@ window.confirmarFinalizacaoPedido = async () => {
                           : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', true)"><i class='bx bx-archive'></i></button>`;
                       container.insertAdjacentHTML('beforeend', `
                         <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')">
-                          <img src="${u.foto || 'https://placehold.co/150'}">
+                          <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar">
                           <div class="ic-info">
-                            <div class="ic-nome" onclick="event.stopPropagation(); abrirPerfilUsuario('${outroUid}', ${!!u.isProfissional})">${u.user || 'Usuário'}</div>
+                            <div class="ic-nome">${u.user || 'Usuário'}</div>
                             <div class="ic-msg">${previewText}</div>
                           </div>
                           <div class="ic-meta">${unreadHtml}${archiveBtn}</div>
@@ -4803,6 +4945,118 @@ window.confirmarFinalizacaoPedido = async () => {
         } catch (e) { return "Offline"; }
     }
 
+    async function withTimeout(promise, ms, label) {
+        let t;
+        const timeout = new Promise((_, reject) => {
+            t = setTimeout(() => reject(new Error(`Timeout: ${label || 'operacao'}`)), ms);
+        });
+        try {
+            return await Promise.race([promise, timeout]);
+        } finally {
+            clearTimeout(t);
+        }
+    }
+
+    function getDeUid(p) {
+        return p?.deUid || p?.deuid || '';
+    }
+
+    function getParaUid(p) {
+        return p?.paraUid || p?.parauid || '';
+    }
+
+    const userCache = new Map();
+    async function getUserCached(uid) {
+        if (!uid) return null;
+        if (userCache.has(uid)) return userCache.get(uid);
+        try {
+            const snap = await getDoc(doc(db, "usuarios", uid));
+            const data = snap.exists() ? snap.data() : null;
+            userCache.set(uid, data);
+            return data;
+        } catch (e) {
+            return null;
+        }
+    }
+
+    const pedidosFieldCaps = {
+        deUid: true,
+        paraUid: true,
+        deuid: true,
+        parauid: true
+    };
+    let pedidosFieldsDirty = false;
+    const pedidosFieldResolved = { de: null, para: null };
+
+    function isMissingColumnErr(err) {
+        const msg = String(err?.message || err?.details || err?.hint || "").toLowerCase();
+        return err?.status === 400 && (msg.includes("does not exist") || msg.includes("could not find") || msg.includes("column"));
+    }
+
+    function emptySnap() {
+        return { empty: true, size: 0, docs: [], forEach: () => {} };
+    }
+
+    async function safeGetDocsWithField(q, fieldKey) {
+        if (fieldKey && !pedidosFieldCaps[fieldKey]) return emptySnap();
+        try {
+            return await withTimeout(getDocs(q), 10000, `getDocs:${fieldKey || 'generic'}`);
+        } catch (e) {
+            if (fieldKey && isMissingColumnErr(e)) {
+                pedidosFieldCaps[fieldKey] = false;
+                pedidosFieldsDirty = true;
+                return emptySnap();
+            }
+            throw e;
+        }
+    }
+
+    async function resolvePedidosField(kind) {
+        if (pedidosFieldResolved[kind]) return pedidosFieldResolved[kind];
+        const base = collection(db, "pedidos");
+        if (kind === 'de') {
+            const q1 = query(base, where("deUid", "==", currentUserUid), limit(1));
+            await safeGetDocsWithField(q1, 'deUid');
+            if (pedidosFieldCaps.deUid) return (pedidosFieldResolved.de = 'deUid');
+            const q2 = query(base, where("deuid", "==", currentUserUid), limit(1));
+            await safeGetDocsWithField(q2, 'deuid');
+            if (pedidosFieldCaps.deuid) return (pedidosFieldResolved.de = 'deuid');
+        } else {
+            const q1 = query(base, where("paraUid", "==", currentUserUid), limit(1));
+            await safeGetDocsWithField(q1, 'paraUid');
+            if (pedidosFieldCaps.paraUid) return (pedidosFieldResolved.para = 'paraUid');
+            const q2 = query(base, where("parauid", "==", currentUserUid), limit(1));
+            await safeGetDocsWithField(q2, 'parauid');
+            if (pedidosFieldCaps.parauid) return (pedidosFieldResolved.para = 'parauid');
+        }
+        return null;
+    }
+
+    function getPedidoSortTs(p) {
+        const raw = p?.dataPedido || p?.data_pedido || p?.dataAtualizacao || p?.dataAtualizacao || p?.createdat || p?.dataCriacao || p?.created_at || null;
+        const dt = parseDataHora(raw);
+        return dt ? dt.getTime() : 0;
+    }
+
+    async function hydratePedidoInicial(idDoc) {
+        if (!idDoc || pedidoAtualData) return;
+        try {
+            const snap = await getDoc(doc(db, "pedidos", idDoc));
+            if (!snap.exists()) return;
+            const p = snap.data() || {};
+            pedidoAtualData = p;
+            statusPedidoAtual = p.status || statusPedidoAtual || 'pendente';
+            conversaArquivadaAtual = isArquivadoPorUser(p, idDoc);
+            pinnedAtual = Array.isArray(p.pinned) ? p.pinned : [];
+            renderPinnedBar();
+            atualizarMenuConversa();
+            atualizarContextoChat(p);
+            carregarMensagens('pedidos', idDoc);
+        } catch (e) {
+            console.warn("Falha ao carregar pedido:", e);
+        }
+    }
+
 window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
         // UI Inicial
         document.getElementById('chat-placeholder').style.display = 'none';
@@ -4821,9 +5075,13 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
         // 1. LÓGICA DE PEDIDOS (BLOQUEIO/STATUS)
           if (colecao === 'pedidos') {
-              onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
+              await hydratePedidoInicial(idDoc);
+              if (pedidoDocUnsub) { try { pedidoDocUnsub(); } catch (_) {} }
+              pedidoDocUnsub = onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
                   if (docSnap.exists()) {
                       const p = docSnap.data();
+                    const deUid = getDeUid(p);
+                    const paraUid = getParaUid(p);
                     const prevStatus = statusPedidoAtual;
                     const prevAvaliado = avaliadoPedidoAtual;
                     statusPedidoAtual = p.status || 'pendente';
@@ -4849,7 +5107,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     // Lógica de bloqueio do chat
                     if (p.status === 'pendente') {
                         chatFooter.style.display = 'none'; 
-                        if (currentUserUid === p.paraUid) mostrarAvisoBloqueio("Pedido em espera. Aceite o pedido para liberar o chat.");
+                        if (currentUserUid === paraUid) mostrarAvisoBloqueio("Pedido em espera. Aceite o pedido para liberar o chat.");
                         else mostrarAvisoBloqueio("Pedido em espera. Aguardando aceite do profissional.");
                     } else if (['recusado', 'cancelado'].includes(p.status)) {
                         chatFooter.style.display = 'none'; 
@@ -4861,22 +5119,30 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
                     // Botões Header (Finalizar / Aceitar / Recusar)
                     if(containerAcao) {
-                        containerAcao.innerHTML = (p.deUid === currentUserUid && p.status === 'pago') 
+                        containerAcao.innerHTML = (deUid === currentUserUid && p.status === 'pago') 
                             ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
                         
                         const divAcoesPro = document.getElementById('acoes-profissional-header');
-                        if(divAcoesPro) divAcoesPro.style.display = (p.paraUid === currentUserUid && p.status === 'pendente') ? 'flex' : 'none';
+                        if(divAcoesPro) divAcoesPro.style.display = (paraUid === currentUserUid && p.status === 'pendente') ? 'flex' : 'none';
                     }
                     
                     // Botões Cobrança
                     const btnC = document.getElementById('btn-cobranca-topo');
                     const btnP = document.getElementById('btn-pagamento');
-                    if(btnC) btnC.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
-                    if(btnP) btnP.style.display = (p.paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
+                    if(btnC) btnC.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
+                    if(btnP) btnP.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
+                  } else {
+                      mostrarAvisoBloqueio("Pedido não encontrado.");
+                      if (chatFooter) chatFooter.style.display = 'none';
                   }
+              }, (err) => {
+                  console.warn("Falha ao ouvir pedido:", err);
+                  mostrarAvisoBloqueio("Não foi possível carregar o pedido.");
+                  if (chatFooter) chatFooter.style.display = 'none';
               });
               await atualizarContextoAmizade(uidOutro, { blockInput: false });
           } else {
+              if (pedidoDocUnsub) { try { pedidoDocUnsub(); } catch (_) {} pedidoDocUnsub = null; }
               chatFooter.style.display = 'flex';
               pedidoAtualData = null;
               atualizarContextoChat(null);
@@ -5099,7 +5365,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const pinLabel = isPinned ? 'Desafixar' : 'Fixar';
             const pinPreview = normalizePinPreview(msgPreview || cleanText || getTipoPreview(m.tipo, cleanText || '', m.url || ''));
             const menuBtn = msgId
-                ? `<button class="msg-menu-btn" title="Opções" style="position:absolute; top:6px; ${souEu ? "right:6px" : "left:6px"}" onclick="toggleMsgMenu('${msgId}', event)"><i class='bx bx-dots-vertical-rounded'></i></button>`
+                ? `<button class="msg-menu-btn" title="Opções" style="position:absolute; top:6px; right:6px;" onclick="toggleMsgMenu('${msgId}', event)"><i class='bx bx-dots-vertical-rounded'></i></button>`
                 : "";
             const menuHtml = msgId
                 ? `<div class="msg-menu ${menuSide}" id="${menuId}">
@@ -5616,7 +5882,9 @@ window.gerarPagamento = async function() {
             const p = pSnap.data();
 
             // Descobre o outro usuário
-            const outroUid = (p.deUid === currentUserUid) ? p.paraUid : p.deUid;
+            const deUid = getDeUid(p);
+            const paraUid = getParaUid(p);
+            const outroUid = (deUid === currentUserUid) ? paraUid : deUid;
 
             // Abre como pedido (isso vai mostrar o status e travar/destravar o chat)
             await window.abrirChat(chatId, outroUid, '', '', 'pedidos', p.status || '');
@@ -5638,6 +5906,20 @@ window.gerarPagamento = async function() {
             renderHeaderUser(null);
             window.location.href = "login.html"; 
         } 
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+            if (!currentUserUid) {
+                const uid = getUserUid();
+                if (uid) currentUserUid = uid;
+            }
+            ensurePedidosLoaded();
+        }, 800);
+    });
+
+    window.addEventListener('focus', () => {
+        if (abaAtual === 'pedidos') ensurePedidosLoaded();
     });
 
     // --- VARIÁVEIS GLOBAIS PARA ÁUDIO ---

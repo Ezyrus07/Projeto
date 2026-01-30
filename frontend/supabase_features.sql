@@ -133,13 +133,15 @@ alter table if exists public.pedidos_mensagens
   add column if not exists reply_to text,
   add column if not exists reply_preview text,
   add column if not exists reply_user text,
-  add column if not exists reply_tipo text;
+  add column if not exists reply_tipo text,
+  add column if not exists "lidoEm" jsonb default '{}';
 
 alter table if exists public.conversas_mensagens
   add column if not exists reply_to text,
   add column if not exists reply_preview text,
   add column if not exists reply_user text,
-  add column if not exists reply_tipo text;
+  add column if not exists reply_tipo text,
+  add column if not exists "lidoEm" jsonb default '{}';
 
 -- Mensagens de conversas (caso não exista)
 create table if not exists public.conversas_mensagens (
@@ -150,7 +152,8 @@ create table if not exists public.conversas_mensagens (
   tipo text,
   url text,
   timestamp timestamptz not null default now(),
-  lido boolean default false
+  lido boolean default false,
+  "lidoEm" jsonb not null default '{}'
 );
 
 do $$

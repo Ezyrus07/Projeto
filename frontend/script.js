@@ -918,6 +918,9 @@ window.dokeBuildCardPremium = function(anuncio) {
             <div style="margin-right:auto;">
                 <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
                 <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+                <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none; margin-top:6px; font-size:0.72rem; color:#64748b;">
+                    Preço médio (5+ serviços): <b style="color:#0f172a;"></b>
+                </div>
             </div>
             
             <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
@@ -940,6 +943,13 @@ window.dokeBuildCardPremium = function(anuncio) {
             favBtn.innerHTML = "<i class='bx bx-heart'></i>";
             card.appendChild(favBtn);
         } catch(e) {}
+
+        // Preço médio (5+ serviços) - calculado a partir de cobranças pagas
+        try {
+            if (anuncio.id) {
+                window.__dokeUpdatePrecoMedioCard?.(card, anuncio.id);
+            }
+        } catch (_) {}
 
         try {
             const menuWrap = document.createElement('div');
@@ -7153,6 +7163,83 @@ window.navegarReel = function(direcao) {
         });
     }
 }
+
+// ============================================================
+// Preço médio (5+ serviços) por anúncio
+// ============================================================
+window.__dokeAvgPrecoCache = window.__dokeAvgPrecoCache || new Map();
+
+function __dokeParseMoeda(valor) {
+  if (valor == null) return null;
+  if (typeof valor === "number") return Number.isFinite(valor) ? valor : null;
+  const raw = String(valor).trim();
+  if (!raw) return null;
+  let s = raw.replace(/[^\d,.-]/g, "");
+  if (!s) return null;
+  if (s.includes(",") && s.includes(".")) {
+    // assume pt-BR: '.' milhar, ',' decimal
+    s = s.replace(/\./g, "").replace(",", ".");
+  } else if (s.includes(",")) {
+    s = s.replace(",", ".");
+  }
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : null;
+}
+
+function __dokeFmtMoeda(n) {
+  if (!Number.isFinite(n)) return "";
+  try {
+    return n.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+  } catch (_) {
+    return `R$ ${n.toFixed(2)}`;
+  }
+}
+
+async function __dokeFetchPrecoMedio(anuncioId) {
+  if (!anuncioId) return null;
+  const cache = window.__dokeAvgPrecoCache;
+  if (cache.has(anuncioId)) return cache.get(anuncioId);
+
+  const statuses = ["pago", "finalizado"];
+  const base = collection(db, "pedidos");
+  const snaps = [];
+  try {
+    snaps.push(await getDocs(query(base, where("anuncioId", "==", anuncioId), where("status", "in", statuses))));
+  } catch (_) {}
+  try {
+    snaps.push(await getDocs(query(base, where("anuncio_id", "==", anuncioId), where("status", "in", statuses))));
+  } catch (_) {}
+
+  const map = new Map();
+  snaps.forEach((s) => (s?.docs || []).forEach((d) => map.set(d.id, d)));
+  const values = [];
+  map.forEach((docSnap) => {
+    const p = docSnap.data() || {};
+    const v = __dokeParseMoeda(p.valorFinal || p.valor_final || p.valor || p.total || null);
+    if (Number.isFinite(v) && v > 0) values.push(v);
+  });
+
+  if (!values.length) {
+    cache.set(anuncioId, { count: 0, avg: null });
+    return cache.get(anuncioId);
+  }
+  const count = values.length;
+  const avg = values.reduce((a, b) => a + b, 0) / count;
+  const result = { count, avg };
+  cache.set(anuncioId, result);
+  return result;
+}
+
+window.__dokeUpdatePrecoMedioCard = async function(cardEl, anuncioId) {
+  if (!cardEl || !anuncioId) return;
+  const el = cardEl.querySelector('.cp-avg-price');
+  if (!el) return;
+  const data = await __dokeFetchPrecoMedio(anuncioId);
+  if (!data || !Number.isFinite(data.avg) || data.count < 5) return;
+  const valueEl = el.querySelector('b');
+  if (valueEl) valueEl.textContent = __dokeFmtMoeda(data.avg);
+  el.style.display = 'block';
+};
 
 window.fecharModalVideoForce = function() {
     const v = document.getElementById('playerPrincipal');

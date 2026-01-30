@@ -4166,10 +4166,10 @@ body.dark-mode {
     width: 100%;
     max-width: 100%;
     margin: 0;
-    padding: 0;
+    padding: 12px 0 8px;
     display: grid;
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 14px;
+    gap: 16px;
     grid-auto-flow: row;
 }
 
@@ -4247,10 +4247,11 @@ body.dark-mode {
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemInfo p {
-    font-size: 12px;
-    color: #65676b;
+    font-size: 13px;
+    color: #6b7280;
     margin: 0;
-    text-transform: uppercase; /* Para o "TESTER" do print */
+    text-transform: none;
+    letter-spacing: normal;
 }
 
 #feed-global-container.feed-publicacoes-grid .dp-itemBody {
@@ -4276,6 +4277,73 @@ body.dark-mode {
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
+}
+
+/* Override para visual minimalista (substitui layout tipo feed social) */
+#feed-global-container.feed-publicacoes-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 16px;
+    padding: 12px 0 8px;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-item {
+    width: auto;
+    flex: initial;
+    border-radius: 14px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: #fff;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.04);
+    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-item--clickable:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 24px rgba(0,0,0,.06);
+    border-color: rgba(11,119,104,.28);
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemMedia {
+    aspect-ratio: 4 / 5;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemInfo {
+    padding: 12px 12px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemInfo b {
+    font-size: 13px;
+    color: #111;
+    font-weight: 700;
+    letter-spacing: .01em;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemInfo p {
+    font-size: 11px;
+    color: #7a848e;
+    letter-spacing: .06em;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemBody {
+    padding: 8px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemBody b {
+    font-size: 0.95rem;
+    font-weight: 700;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemBody p {
+    margin: 6px 0 0;
+    line-height: 1.35;
+    font-size: 13px;
+    color: #6b7280;
 }
 
 .modal-footer-actions .modal-actions-bar {
@@ -6999,6 +7067,187 @@ body.dark-mode {
     .typing-container {
         display: none;
     }
+}
+
+/* ===============================
+   MODAL PUBLICACOES - DOKE
+   =============================== */
+#modalPostDetalhe {
+    background: rgba(10, 18, 20, 0.32);
+    backdrop-filter: blur(6px);
+}
+
+#modalPostDetalhe .modal-content {
+    border-radius: 18px;
+    border: 1px solid rgba(11, 119, 104, 0.12);
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35);
+    overflow: hidden;
+}
+
+#modalPostDetalhe .modal-media-area {
+    background: #0b0f12;
+}
+
+#modalPostDetalhe .modal-info-area {
+    background: #f7faf9;
+}
+
+#modalPostDetalhe .modal-header {
+    background: #ffffff;
+    border-bottom: 1px solid rgba(11, 119, 104, 0.12);
+}
+
+#modalPostDetalhe .modal-comments-section {
+    background: #f7faf9;
+}
+
+#modalPostDetalhe .modal-actions-bar {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 14px !important;
+    padding: 6px 0 2px !important;
+    font-size: 22px !important;
+}
+
+#modalPostDetalhe .modal-actions-bar i {
+    color: #0f1f1c !important;
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+#modalPostDetalhe .modal-actions-bar i:hover {
+    transform: translateY(-1px);
+    color: #0b7768 !important;
+}
+
+#modalPostDetalhe .modal-actions-bar i.bxs-heart {
+    color: #e74c3c !important;
+}
+
+#modalPostDetalhe #modalLikesCount {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #0f1f1c;
+    margin: 8px 0 10px;
+}
+
+#modalPostDetalhe #inputComentarioModal {
+    flex: 1;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    font-size: 0.92rem !important;
+    color: #0f1f1c;
+}
+
+#modalPostDetalhe .modal-footer-actions > div:last-child {
+    display: flex;
+    gap: 10px;
+    border-top: 1px solid rgba(11, 119, 104, 0.12);
+    padding-top: 12px;
+    margin-top: 6px;
+}
+
+#modalPostDetalhe .modal-footer-actions button[onclick*="postarComentarioModal"] {
+    background: #0b7768 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 14px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+}
+
+#modalPostDetalhe .modal-footer-actions button[onclick*="postarComentarioModal"]:hover {
+    filter: brightness(0.95);
+}
+
+/* DOKE: alinhar modal de videos (reels) ao mesmo visual */
+#modalPlayerVideo.modal-overlay {
+    background: rgba(10, 18, 20, 0.32) !important;
+    backdrop-filter: blur(6px) !important;
+}
+
+#modalPlayerVideo .modal-content {
+    border-radius: 18px !important;
+    border: 1px solid rgba(11, 119, 104, 0.12) !important;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.35) !important;
+    overflow: hidden !important;
+}
+
+#modalPlayerVideo .modal-media-area {
+    background: #0b0f12 !important;
+}
+
+#modalPlayerVideo .modal-info-area {
+    background: #f7faf9 !important;
+    border-left: 1px solid rgba(11, 119, 104, 0.12) !important;
+}
+
+#modalPlayerVideo .modal-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid rgba(11, 119, 104, 0.12) !important;
+}
+
+#modalPlayerVideo .modal-comments-section {
+    background: #f7faf9 !important;
+}
+
+#modalPlayerVideo .modal-footer-actions > div:first-child {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 14px !important;
+    margin-bottom: 10px !important;
+}
+
+#modalPlayerVideo .modal-footer-actions i {
+    font-size: 22px !important;
+    color: #0f1f1c !important;
+    cursor: pointer;
+    transition: transform 0.2s ease, color 0.2s ease;
+}
+
+#modalPlayerVideo .modal-footer-actions i:hover {
+    transform: translateY(-1px);
+    color: #0b7768 !important;
+}
+
+#modalPlayerVideo #btnLikeReel.bxs-heart {
+    color: #e74c3c !important;
+}
+
+#modalPlayerVideo #reelLikesCount {
+    display: block;
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: #0f1f1c;
+    margin-bottom: 8px;
+}
+
+#modalPlayerVideo #inputComentarioReel {
+    flex: 1;
+    border: none !important;
+    outline: none !important;
+    background: transparent !important;
+    font-size: 0.92rem !important;
+    color: #0f1f1c;
+}
+
+#modalPlayerVideo .modal-footer-actions button[onclick*="enviarComentarioReel"] {
+    background: #0b7768 !important;
+    color: #fff !important;
+    border: none !important;
+    padding: 8px 14px !important;
+    border-radius: 10px !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+}
+
+#modalPlayerVideo .modal-footer-actions button[onclick*="enviarComentarioReel"]:hover {
+    filter: brightness(0.95);
 }
 
 /* Badge de Criador nos Comentários */
