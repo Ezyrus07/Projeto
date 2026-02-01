@@ -129,38 +129,6 @@ let groupSchema = null;
     setTimeout(()=>t.remove(), 3500);
   }
 
-  // Notificações (best-effort) - se existir tabela "notificacoes".
-  async function tryNotify(toUid, payload){
-    if (!toUid) return;
-    const table = 'notificacoes';
-    try{
-      const { error: probeErr } = await client.from(table).select('id').limit(1);
-      const probeMsg = String(probeErr?.message || '').toLowerCase();
-      if (probeErr && (probeMsg.includes('does not exist') || probeMsg.includes('could not find'))) return;
-    }catch(_){ return; }
-
-    const candidates = [
-      { userCol:'user_id', tipoCol:'tipo', tituloCol:'titulo', msgCol:'mensagem', linkCol:'link', fromCol:'remetente_uid', seenCol:'visto' },
-      { userCol:'para_uid', tipoCol:'tipo', tituloCol:'titulo', msgCol:'mensagem', linkCol:'url',  fromCol:'de_uid',       seenCol:'lida' },
-      { userCol:'uid',     tipoCol:'type', tituloCol:'title',  msgCol:'body',    linkCol:'link', fromCol:'from_uid',    seenCol:'seen' },
-    ];
-
-    for (const c of candidates){
-      const row = {};
-      row[c.userCol] = toUid;
-      row[c.tipoCol] = payload?.tipo || 'grupo';
-      row[c.tituloCol] = payload?.titulo || 'Notificação';
-      row[c.msgCol] = payload?.mensagem || '';
-      if (payload?.link) row[c.linkCol] = payload.link;
-      if (payload?.deUid && c.fromCol) row[c.fromCol] = payload.deUid;
-      if (c.seenCol) row[c.seenCol] = false;
-      try{
-        const { error } = await client.from(table).insert(row);
-        if (!error) return;
-      }catch(_){ }
-    }
-  }
-
   // ------ schema detection helpers (avoid breaking on camelCase/snake_case) ------
   async function hasColumn(table, col){
     const { error } = await client.from(table).select(col).limit(1);
@@ -410,19 +378,6 @@ function wireRequestActions(rows){
           return;
         }
         toast('Aprovado ✅');
-
-        // notifica solicitante (best-effort)
-        try{
-          const uidTo = r[userCol] || r.uid || r.user_uid;
-          const gName = (groupData && groupSchema && groupSchema.nameCol) ? (groupData[groupSchema.nameCol] || 'Grupo') : 'Grupo';
-          tryNotify(uidTo, {
-            tipo: 'grupo_aprovado',
-            titulo: 'Entrada aprovada',
-            mensagem: `Você foi aprovado(a) no grupo: ${gName}`,
-            link: `grupo.html?id=${encodeURIComponent(grupoId)}`,
-            deUid: currentUid
-          });
-        }catch(_){ }
         el.remove();
         // refresh counter
         btnRefreshReq?.click();
@@ -449,19 +404,6 @@ function wireRequestActions(rows){
           return;
         }
         toast('Recusado.');
-
-        // notifica solicitante (best-effort)
-        try{
-          const uidTo = r[userCol] || r.uid || r.user_uid;
-          const gName = (groupData && groupSchema && groupSchema.nameCol) ? (groupData[groupSchema.nameCol] || 'Grupo') : 'Grupo';
-          tryNotify(uidTo, {
-            tipo: 'grupo_recusado',
-            titulo: 'Solicitação recusada',
-            mensagem: `Sua solicitação foi recusada no grupo: ${gName}`,
-            link: `comunidade.html`,
-            deUid: currentUid
-          });
-        }catch(_){ }
         el.remove();
         btnRefreshReq?.click();
       } finally {
@@ -545,41 +487,18 @@ function wireRequestActions(rows){
         payloadBase[memberSchema.statusCol] = privateGroup ? 'pendente' : 'ativo';
       }
 
-      // try insert (se já existir, faz update)
-      let { error } = await client.from(MEMBERS_TABLE).insert(payloadBase);
-      if (error){
-        const msg = String(error.message||'').toLowerCase();
-        if (msg.includes('duplicate') || msg.includes('already') || msg.includes('unique')){
-          // atualiza linha existente
-          let q = client.from(MEMBERS_TABLE).update(payloadBase)
-            .eq(memberSchema.communityCol, grupoId)
-            .eq(memberSchema.userCol, currentUid);
-          const up = await q;
-          if (up?.error) error = up.error;
-          else error = null;
-        }
-      }
+      // try insert
+      const { error } = await client.from(MEMBERS_TABLE).insert(payloadBase);
 
       if (error){
-        console.error('[JOIN] insert/update failed', error);
+        console.error('[JOIN] insert failed', error);
+        // show real reason
         toast('Não consegui entrar/solicitar. Detalhe: ' + (error.message || 'erro'));
         joinBtn.disabled = false;
         return;
       }
 
       toast(privateGroup ? 'Solicitação enviada ✅' : 'Entrou no grupo ✅');
-
-      // notifica dono (best-effort)
-      if (privateGroup && ownerUid && ownerUid !== currentUid){
-        const gName = (groupData && groupSchema && groupSchema.nameCol) ? (groupData[groupSchema.nameCol] || 'Grupo') : 'Grupo';
-        tryNotify(ownerUid, {
-          tipo: 'grupo_solicitacao',
-          titulo: 'Solicitação para entrar no grupo',
-          mensagem: `Solicitaram entrada em: ${gName}`,
-          link: `grupo.html?id=${encodeURIComponent(grupoId)}`,
-          deUid: currentUid
-        });
-      }
       await refreshGate();
     } finally {
       joinBtn.disabled = false;

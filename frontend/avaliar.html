@@ -14,6 +14,11 @@
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="script.js" defer></script>
+    <!-- DOKE patches (feed/cards) -->
+    <link rel="stylesheet" href="doke-feedpatch.css?v=20260201">
+    <script src="doke-cardpatch.js?v=20260201" defer></script>
+    <script src="doke-feedpatch.js?v=20260201" defer></script>
+
 
     <style>
         body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
@@ -492,6 +497,8 @@
             const clienteNome = anonimo ? "Anônimo" : (perfilCliente.user || "Cliente");
             const clienteFoto = anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || "");
             const detalhesPayload = { ...window.avaliacaoState };
+                try { if (anuncioId) detalhesPayload.__anuncioId = anuncioId; } catch (_) {}
+
             const metaFallback = {};
             if (comentarioGeral) metaFallback.comentarioGeral = comentarioGeral;
             if (!anonimo && clienteNome) metaFallback.clienteNome = clienteNome;
@@ -541,7 +548,7 @@
                 const fullPayload = useIdSchema
                     ? {
                         pedidoId: pedidoId,
-                        anuncioId: anuncioId,
+                        pedidoid: pedidoId,
                         profissional_id: profRowId,
                         cliente_id: clienteRowId || userCheck.uid,
                         detalhes: detalhesPayload,
@@ -554,7 +561,7 @@
                     }
                     : {
                         pedidoId: pedidoId,
-                        anuncioId: anuncioId,
+                        pedidoid: pedidoId,
                         profUid: profUid,
                         clienteUid: userCheck.uid,
                         clienteNome: clienteNome,
@@ -582,7 +589,7 @@
                     console.warn('Inserção completa falhou, tentando payload reduzido:', err && err.message);
                     const reduced = useIdSchema
                         ? {
-                            anuncioId: anuncioId,
+                            pedidoid: pedidoId,
                             profissional_id: profRowId,
                             cliente_id: clienteRowId || userCheck.uid,
                             detalhes: detalhesPayload,
@@ -591,7 +598,7 @@
                             data: new Date().toISOString()
                         }
                         : {
-                            anuncioId: anuncioId,
+                            pedidoid: pedidoId,
                             profUid: profUid,
                             clienteUid: userCheck.uid,
                             detalhes: detalhesPayload,

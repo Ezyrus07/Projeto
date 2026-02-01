@@ -14,9 +14,15 @@
     <link rel="stylesheet" href="style.css">
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <script src="script.js" defer></script>
+    <!-- DOKE patches (feed/cards) -->
+    <link rel="stylesheet" href="doke-feedpatch.css?v=20260201">
+    <script src="doke-cardpatch.js?v=20260201" defer></script>
+    <script src="doke-feedpatch.js?v=20260201" defer></script>
+
     <style>
         /* ===========================================
            ESTILOS DA GALERIA DE VÍDEOS
+           (Patch v3: tópicos/carrosséis)
            =========================================== */
         
         /* Ajuste do Main para compensar Sidebar Desktop */
@@ -121,6 +127,15 @@
             .video-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
             .gv-play { font-size: 30px; }
         }
+    
+        .vg-topicos{ max-width: var(--home-section-width, 1100px); margin: 18px auto; padding: 0 16px; }
+        .vg-head h2{ margin:0; font-size:1.35rem; }
+        .vg-head p{ margin:6px 0 0; color:rgba(0,0,0,.6); }
+        .vg-topic{ margin-top: 14px; }
+        .vg-topic-title{ font-weight: 900; color: #102a28; margin: 10px 0; }
+        .vg-row{ display:flex; gap: 12px; overflow:auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+        .vg-row > * { scroll-snap-align: start; }
+        .vg-empty{ padding: 14px; background:#fff; border:1px dashed rgba(0,0,0,.18); border-radius: 14px; color:rgba(0,0,0,.65); margin-top: 12px;}
     </style>
 
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
@@ -181,6 +196,34 @@
     </header>
 
     <main>
+    <section class="vg-topicos" id="vgTopicos">
+      <div class="vg-head">
+        <h2>Vídeos curtos</h2>
+        <p>Explore tópicos com rolagem horizontal</p>
+      </div>
+      <div class="vg-topic" data-topic="Em alta">
+        <div class="vg-topic-title">Em alta</div>
+        <div class="vg-row" id="vgReelsEmAlta"></div>
+      </div>
+      <div class="vg-topic" data-topic="Para você">
+        <div class="vg-topic-title">Para você</div>
+        <div class="vg-row" id="vgReelsParaVoce"></div>
+      </div>
+      <div class="vg-empty" id="vgReelsEmpty" style="display:none;">Sem vídeos curtos ainda.</div>
+    </section>
+
+    <section class="vg-topicos" id="vgPublicacoes">
+      <div class="vg-head">
+        <h2>Publicações</h2>
+        <p>Galeria por tópicos (fotos e vídeos)</p>
+      </div>
+      <div class="vg-topic" data-topic="Recentes">
+        <div class="vg-topic-title">Recentes</div>
+        <div class="vg-row" id="vgPubsRecentes"></div>
+      </div>
+      <div class="vg-empty" id="vgPubsEmpty" style="display:none;">Sem publicações ainda.</div>
+    </section>
+
         
         <div class="page-header">
             <div class="page-breadcrumb">

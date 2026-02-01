@@ -4536,6 +4536,76 @@ window.confirmarFinalizacaoPedido = async () => {
             dataAtualizacao: new Date().toISOString(),
             ultimaMensagem: "Pedido finalizado"
         });
+        // ------------------------------------------------------------
+        // PORTFÓLIO (Supabase): quando o cliente finaliza e envia imagem,
+        // adiciona automaticamente na aba "Portfólio" do prestador.
+        // ------------------------------------------------------------
+        try {
+            if (fotoUrl && window.sb && typeof window.sb.from === "function") {
+                const sb = window.sb;
+
+                // Puxa dados do pedido (paraUid/anuncioId) para vincular corretamente
+                let pedidoData = null;
+                try {
+                    const snap = await getDoc(doc(db, "pedidos", id));
+                    if (snap && snap.exists && snap.exists()) {
+                        pedidoData = snap.data ? snap.data() : null;
+                    }
+                } catch (e) {}
+
+                const normalizeUuid = (v) => {
+                    if (!v) return "";
+                    let s = String(v).trim();
+                    if (s.startsWith("sb-")) s = s.slice(3);
+                    const m = s.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+                    return m ? m[0] : s;
+                };
+
+                const anuncioId = normalizeUuid(
+                    (pedidoData && (pedidoData.anuncioId || pedidoData.anuncio_id || pedidoData.anuncioid || pedidoData.anuncio)) || ""
+                );
+
+                const profUid = (pedidoData && (pedidoData.paraUid || pedidoData.profUid || pedidoData.profissionalUid || pedidoData.prof_uid || pedidoData.profissional_uid)) || "";
+
+                // profissional_id do portfólio é o ID (uuid) da tabela usuarios
+                let profissionalId = (pedidoData && (pedidoData.profissional_id || pedidoData.profissionalId || pedidoData.profissionalid || pedidoData.paraId)) || "";
+
+                if (!profissionalId && profUid) {
+                    // tenta por uid -> usuarios.id
+                    const r1 = await sb.from("usuarios").select("id").eq("uid", profUid).maybeSingle();
+                    if (!r1.error && r1.data && r1.data.id) profissionalId = r1.data.id;
+
+                    // fallback: se profUid já for o id
+                    if (!profissionalId) {
+                        const r2 = await sb.from("usuarios").select("id").eq("id", profUid).maybeSingle();
+                        if (!r2.error && r2.data && r2.data.id) profissionalId = r2.data.id;
+                    }
+                }
+
+                // Título do serviço (anúncio)
+                let tituloServico = "Serviço concluído";
+                if (anuncioId) {
+                    const ar = await sb.from("anuncios").select("titulo").eq("id", anuncioId).maybeSingle();
+                    if (!ar.error && ar.data && ar.data.titulo) tituloServico = ar.data.titulo;
+                }
+
+                if (profissionalId) {
+                    const when = new Date();
+                    const descricao = `Entrega concluída em ${when.toLocaleDateString("pt-BR")}`;
+                    await sb.from("portfolio").insert({
+                        profissional_id: profissionalId,
+                        titulo: tituloServico,
+                        descricao: descricao,
+                        media_url: fotoUrl,
+                        created_at: when.toISOString()
+                    });
+                }
+            }
+        } catch (e) {
+            console.warn("Portfólio: falha ao inserir item automaticamente.", e);
+        }
+
+
 
         try {
             const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';

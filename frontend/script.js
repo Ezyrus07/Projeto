@@ -1387,14 +1387,64 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         feed.innerHTML = ""; 
 
         if (listaFinal.length === 0) {
-            feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
+            // Nada encontrado: sugere alguns anúncios embaixo (quando houver termo de busca)
+            if (termoBusca && termoBusca.trim() !== "" && listaAnuncios.length) {
+                const sugest = listaAnuncios.slice(0, 8);
+                feed.innerHTML = `
+                  <div style="text-align:center; padding:16px; color:#666;">
+                    Nenhum anúncio encontrado para <b>${escapeHtml(termoBusca)}</b>.
+                  </div>
+                  <div style="padding:6px 0 10px; font-weight:800; color:#0b7768;">Sugestões para você</div>
+                `;
+                sugest.forEach((a) => {
+                    const card = window.dokeBuildCardPremium(a);
+                    feed.insertAdjacentHTML('beforeend', card);
+                });
+            } else {
+                feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
+            }
             return;
         }
 
-        listaFinal.forEach((anuncio) => {
-            const card = window.dokeBuildCardPremium(anuncio);
-            feed.appendChild(card);
-        });
+        // Paginação simples (home/header) — carrega por lotes
+        window.__dokeAnunciosListaAtual = listaFinal;
+        window.__dokeAnunciosCursor = 0;
+
+        function renderMais(qtd = 8){
+            const list = window.__dokeAnunciosListaAtual || [];
+            const start = window.__dokeAnunciosCursor || 0;
+            const end = Math.min(start + qtd, list.length);
+            for (let i = start; i < end; i++){
+                const anuncio = list[i];
+                const card = window.dokeBuildCardPremium(anuncio);
+                feed.insertAdjacentHTML('beforeend', card);
+            }
+            window.__dokeAnunciosCursor = end;
+            const btn = document.getElementById('btnVerMaisAnuncios');
+            if (btn) btn.style.display = (end < list.length) ? '' : 'none';
+        }
+
+        // limpa e renderiza o primeiro lote
+        feed.innerHTML = "";
+        renderMais(8);
+
+        // botão Ver mais
+        if (!document.getElementById('btnVerMaisAnuncios')) {
+            const wrap = document.createElement('div');
+            wrap.style.textAlign = 'center';
+            wrap.style.padding = '14px 0 6px';
+            wrap.innerHTML = `<button id="btnVerMaisAnuncios" class="btn-pro-action" type="button" style="min-width:220px;">Ver mais</button>`;
+            feed.parentNode && feed.parentNode.insertBefore(wrap, feed.nextSibling);
+            wrap.querySelector('#btnVerMaisAnuncios')?.addEventListener('click', ()=> renderMais(8));
+        } else {
+            const btn = document.getElementById('btnVerMaisAnuncios');
+            if (btn) {
+                btn.onclick = ()=> renderMais(8);
+                btn.style.display = (window.__dokeAnunciosCursor < (window.__dokeAnunciosListaAtual||[]).length) ? '' : 'none';
+            }
+        }
+
+        return;
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
         feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
@@ -1458,16 +1508,55 @@ window.aplicarFiltrosBusca = function() {
         userLoc
     });
 
+    // Render robusto: dokeBuildCardPremium pode devolver Node OU string (HTML)
     feed.innerHTML = '';
     if (!lista.length) {
         feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anúncio encontrado com esses filtros.</p></div>';
     } else {
-        const frag = document.createDocumentFragment();
-        lista.forEach(anuncio => {
-            const card = window.dokeBuildCardPremium(anuncio);
-            frag.appendChild(card);
-        });
-        feed.appendChild(frag);
+        try {
+            const renderOne = (anuncio) => {
+                try {
+                    return window.dokeBuildCardPremium(anuncio);
+                } catch (e) {
+                    console.warn('[DOKE] Falha ao montar card:', e);
+                    return null;
+                }
+            };
+
+            const first = renderOne(lista[0]);
+            const isNode = first && typeof first === 'object' && (first.nodeType === 1 || first.nodeType === 11);
+
+            if (isNode) {
+                const frag = document.createDocumentFragment();
+                frag.appendChild(first);
+                for (let i = 1; i < lista.length; i++) {
+                    const c = renderOne(lista[i]);
+                    if (!c) continue;
+                    if (c && typeof c === 'object' && (c.nodeType === 1 || c.nodeType === 11)) {
+                        frag.appendChild(c);
+                    } else if (typeof c === 'string') {
+                        const tmp = document.createElement('div');
+                        tmp.innerHTML = c.trim();
+                        if (tmp.firstElementChild) frag.appendChild(tmp.firstElementChild);
+                    }
+                }
+                feed.appendChild(frag);
+            } else {
+                // string (HTML) ou outro -> usa innerHTML
+                let html = '';
+                if (typeof first === 'string') html += first;
+                else if (first != null) html += String(first);
+                for (let i = 1; i < lista.length; i++) {
+                    const c = renderOne(lista[i]);
+                    if (typeof c === 'string') html += c;
+                    else if (c != null) html += String(c);
+                }
+                feed.innerHTML = html;
+            }
+        } catch (e) {
+            console.error('[DOKE] Erro ao renderizar resultados:', e);
+            feed.innerHTML = '<div class="empty-state"><i class="bx bx-error"></i><p>Erro ao renderizar anúncios. Atualize a página.</p></div>';
+        }
     }
 
     const titulo = document.getElementById('categorias-title');
@@ -1848,12 +1937,90 @@ window.verificarEstadoLogin = async function() {
 }
 
 
-window.alternarConta = function() {
-    window.auth.signOut().then(() => {
+window.alternarConta = async function() {
+    // Mostra contas salvas (desktop). Não salva senha; só e-mail/uid/foto.
+    const saved = (() => {
+        try { return JSON.parse(localStorage.getItem('doke_saved_accounts') || '[]') || []; } catch { return []; }
+    })();
+
+    // fallback: se não houver contas salvas, apenas sair e ir para login
+    async function doSignOut(){
+        try { window.sb?.auth?.signOut && await window.sb.auth.signOut(); } catch(e){}
+        try { window.auth?.signOut && await window.auth.signOut(); } catch(e){}
         localStorage.removeItem('usuarioLogado');
-        window.location.href = 'login.html'; 
-    }).catch((error) => {
-        console.error("Erro ao alternar conta:", error);
+    }
+
+    if (!saved.length || window.innerWidth < 768) {
+        await doSignOut();
+        window.location.href = 'login.html';
+        return;
+    }
+
+    // Modal simples
+    let modal = document.getElementById('dokeSwitchModal');
+    if (modal) modal.remove();
+
+    modal = document.createElement('div');
+    modal.id = 'dokeSwitchModal';
+    modal.style.position = 'fixed';
+    modal.style.inset = '0';
+    modal.style.background = 'rgba(0,0,0,.45)';
+    modal.style.zIndex = '9999';
+    modal.innerHTML = `
+      <div style="max-width:520px; margin:7vh auto; background:#fff; border-radius:18px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,.25);">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
+          <div style="font-size:1.2rem; font-weight:900;">Alternar conta</div>
+          <button id="dokeSwitchClose" type="button" style="width:40px;height:40px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;cursor:pointer;">✕</button>
+        </div>
+        <div style="margin-top:10px; color:rgba(0,0,0,.65);">Escolha uma conta salva</div>
+        <div id="dokeSwitchList" style="margin-top:14px; display:flex; flex-direction:column; gap:10px;"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+          <button id="dokeSwitchOther" type="button" class="btn-pro-action" style="background:#fff;color:#0b7768;border:1px solid rgba(0,0,0,.12);">Outra conta</button>
+          <button id="dokeSwitchLogout" type="button" class="btn-pro-action">Sair</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+
+    const list = modal.querySelector('#dokeSwitchList');
+    saved.slice(0,6).forEach(acc => {
+        const foto = acc.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(acc.uid||acc.email||'u'))}`;
+        const nome = acc.user || acc.nome || acc.email || 'Conta';
+        const email = acc.email || '';
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.style.display = 'flex';
+        row.style.alignItems = 'center';
+        row.style.gap = '12px';
+        row.style.padding = '12px';
+        row.style.border = '1px solid rgba(0,0,0,.12)';
+        row.style.borderRadius = '14px';
+        row.style.background = '#fff';
+        row.style.cursor = 'pointer';
+        row.innerHTML = `
+          <img src="${foto}" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,0,0,.10);" />
+          <div style="text-align:left; min-width:0;">
+            <div style="font-weight:900; color:#102a28; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(nome)}</div>
+            <div style="color:rgba(0,0,0,.6); font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(email)}</div>
+          </div>
+        `;
+        row.addEventListener('click', async ()=>{
+            await doSignOut();
+            window.location.href = `login.html?email=${encodeURIComponent(email)}`;
+        });
+        list.appendChild(row);
+    });
+
+    function close(){ modal.remove(); }
+    modal.querySelector('#dokeSwitchClose')?.addEventListener('click', close);
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) close(); });
+    modal.querySelector('#dokeSwitchOther')?.addEventListener('click', async ()=>{
+        await doSignOut();
+        window.location.href = 'login.html';
+    });
+    modal.querySelector('#dokeSwitchLogout')?.addEventListener('click', async ()=>{
+        await doSignOut();
+        window.location.href = 'login.html';
     });
 }
 
@@ -1961,8 +2128,13 @@ window.preencherTodosCeps = function(cep) {
 window.atualizarTelaCep = function(cep) {
     const s = document.getElementById('textoCepSpan');
     const i = document.getElementById('inputCep');
-    if (s) { s.innerText = "Alterar CEP"; s.style.fontWeight = "600"; s.style.color = "var(--cor0)"; }
-    if (i) i.value = cep;
+    if (s) {
+        const txt = cep ? `CEP: ${cep}` : 'Inserir CEP';
+        s.innerText = txt;
+        s.style.fontWeight = '700';
+        s.style.color = 'var(--cor0)';
+    }
+    if (i) i.value = cep || '';
 }
 window.toggleCep = function(e) {
     if(e) e.preventDefault(); 
@@ -2792,44 +2964,93 @@ window.carregarFeedGlobal = async function() {
                 : (post.imagem ? `<img src="${post.imagem}" loading="lazy" alt="">` : "");
             if (!mediaHtml) return;
 
-            const titulo = normalizeHandle(post.autorUser || post.autorNome || "usuario");
-            const descricao = post.texto || "";
+            
+            const uidDestino = post.uid || "";
+            const autorHandle = normalizeHandle(post.autorUser || post.autorNome || "usuario");
+            const autorFoto = post.autorFoto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(uidDestino||idPost||"u"))}`;
+            const when = formatFeedDate(post.data || entry.createdAt || "");
+            const authorHtml = `
+              <div class="dp-itemAuthor">
+                <img class="dp-itemAvatar" src="${autorFoto}" alt="">
+                <div>
+                  <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
+                  ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
+                </div>
+              </div>
+            `;
+            // título/descrição: evita duplicar @user
+            const rawTitle = (post.titulo && post.titulo !== post.autorUser && post.titulo !== post.autorNome) ? post.titulo : "";
+            const rawText = post.texto || post.descricao || "";
+            const title = rawTitle || (rawText ? String(rawText).split("\n")[0].slice(0, 80) : "Publicação");
+            const desc = rawTitle ? rawText : (rawText && rawText.length > 90 ? rawText : "");
+
 
             const html = `
                 <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPost('${idPost}', 'posts')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
                     <div class="dp-itemMedia">${mediaHtml}</div>
                     <div class="dp-itemBody">
-                        <b>${escapeHtml(titulo)}</b>
-                        <p>${escapeHtml(descricao)}</p>
+                        ${authorHtml}
+                        <b>${escapeHtml(title)}</b>
+                        ${desc ? `<p>${escapeHtml(desc)}</p>` : ``}
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
             return;
         }
-
         const item = entry.data || {};
-        if (!item.media_url) return;
+        const beforeUrl = item.before_url || item.before__url || item.media_url || "";
+        const afterUrl = item.after_url || item.after__url || item.thumb_url || "";
+        const primaryUrl = item.tipo === "antes_depois" ? beforeUrl : (item.media_url || "");
+        if (!primaryUrl) return;
         const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
-        const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
-        const titulo = item.titulo || autorNome;
-        const descricao = item.descricao || item.legenda || "";
+        const autorHandle = normalizeHandle(autor.user || autor.nome || "usuario");
+        const autorFoto = autor.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(autor.uid||autor.id||item.user_id||entry.id||"u"))}`;
+        const when = formatFeedDate(item.created_at || item.data || entry.createdAt || "");
+        const authorHtml = `
+          <div class="dp-itemAuthor">
+            <img class="dp-itemAvatar" src="${autorFoto}" alt="">
+            <div>
+              <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
+              ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
+            </div>
+          </div>
+        `;
+
+        const title = (item.titulo || item.legenda || "Publicação");
+        const desc = item.descricao || (item.titulo ? (item.legenda || "") : "") || "";
+
         const mediaHtml = item.tipo === "video"
-            ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
-            : `<img src="${item.media_url}" loading="lazy" alt="">`;
+            ? `<video src="${item.media_url || beforeUrl}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
+            : (item.tipo === "antes_depois" && afterUrl
+                ? `<div class="js-antes-depois" data-before="${beforeUrl}" data-after="${afterUrl}" data-ba-auto="1"></div>`
+                : `<img src="${item.media_url || beforeUrl}" loading="lazy" alt="">`);
 
         const html = `
             <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPublicacao('${entry.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
                 <div class="dp-itemMedia">${mediaHtml}</div>
                 <div class="dp-itemBody">
-                    <b>${escapeHtml(titulo)}</b>
-                    <p>${escapeHtml(descricao)}</p>
+                    ${authorHtml}
+                    <b>${escapeHtml(title)}</b>
+                    ${desc ? `<p>${escapeHtml(desc)}</p>` : ``}
                 </div>
             </div>`;
         container.insertAdjacentHTML('beforeend', html);
     });
 
     setupFeedVideoPreview(container);
+    setupAntesDepois(container);
 }
+
+function setupAntesDepois(container){
+    try{
+        if(window.__DOKE_BA && typeof window.__DOKE_BA_ENHANCE === "function"){
+            window.__DOKE_BA_ENHANCE(container || document);
+            return;
+        }
+    }catch(_){ }
+}
+
+
 
 function setupFeedVideoPreview(container) {
     if (!container) return;
@@ -5958,9 +6179,52 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
-        mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
+        mediaBox.innerHTML = `<video src="${item.media_url || ""}" poster="${item.thumb_url || ""}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
+    } else if (item.tipo === "antes_depois") {
+        const beforeUrl = item.before_url || item.before__url || item.media_url || "";
+        const afterUrl = item.after_url || item.after__url || item.thumb_url || "";
+        if (!beforeUrl || !afterUrl) {
+            mediaBox.innerHTML = `<img src="${beforeUrl || item.media_url || ""}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+        } else {
+            // Renderiza o mesmo componente do feed/perfil (consistência total)
+            mediaBox.innerHTML = `<div class="js-antes-depois" data-before="${beforeUrl}" data-after="${afterUrl}" data-ba-auto="1"></div>`;
+            try{ setupAntesDepois(mediaBox); }catch(_){ }
+
+            const baEl = mediaBox.querySelector('.js-antes-depois');
+            if (baEl) {
+                // adiciona setas no modal (o enhancer não cria setas)
+                const prev = document.createElement('button');
+                prev.type = 'button';
+                prev.className = 'dp-ba-arrow dp-ba-arrow--prev';
+                prev.setAttribute('aria-label', 'Ver Antes');
+                prev.textContent = '‹';
+                const next = document.createElement('button');
+                next.type = 'button';
+                next.className = 'dp-ba-arrow dp-ba-arrow--next';
+                next.setAttribute('aria-label', 'Ver Depois');
+                next.textContent = '›';
+                baEl.appendChild(prev);
+                baEl.appendChild(next);
+
+                const baSet = (mode)=>{
+                    const isAfter = mode === 'after';
+                    baEl.classList.toggle('is-after', isAfter);
+                    const badge = baEl.querySelector('.dp-ba-badge');
+                    if (badge) badge.textContent = isAfter ? 'Depois' : 'Antes';
+                    baEl.querySelectorAll('.dp-dot').forEach((d)=>{
+                        const should = d.getAttribute('data-show') === (isAfter ? 'after' : 'before');
+                        d.classList.toggle('is-active', should);
+                    });
+                };
+
+                prev.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); baSet('before'); });
+                next.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); baSet('after'); });
+                // garante estado inicial
+                baSet('before');
+            }
+        }
     } else {
-        mediaBox.innerHTML = `<img src="${item.media_url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+        mediaBox.innerHTML = `<img src="${item.media_url || ""}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
     }
 
     const captionText = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
@@ -8941,22 +9205,58 @@ async function carregarComentariosSupabase(publicacaoId) {
     const feed = byId('feedAnuncios');
     if(feed){
       feed.innerHTML = '';
-      const frag = document.createDocumentFragment();
-      lista.forEach(anuncio => {
-        try{
-          const card = window.dokeBuildCardPremium(anuncio);
-          // melhorias de performance sem alterar layout
-          const img = card.querySelector('img');
-          if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
-          const video = card.querySelector('video');
-          if(video){ video.preload = 'metadata'; }
-          frag.appendChild(card);
-        }catch(e){}
-      });
-      if(lista.length){
-        feed.appendChild(frag);
-      }else{
+
+      if(!lista.length){
         feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anuncio encontrado com esses filtros.</p></div>';
+      }else{
+        // dokeBuildCardPremium pode retornar Node OU HTML string, dependendo da página.
+        let sample = null;
+        try{ sample = window.dokeBuildCardPremium(lista[0]); }catch(e){ sample = null; }
+
+        if(sample && typeof sample === 'object' && sample.nodeType === 1){
+          const frag = document.createDocumentFragment();
+          try{
+            const img = sample.querySelector('img');
+            if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
+            const video = sample.querySelector('video');
+            if(video){ video.preload = 'metadata'; }
+          }catch(_){}
+          frag.appendChild(sample);
+
+          for(let i=1;i<lista.length;i++){
+            try{
+              const card = window.dokeBuildCardPremium(lista[i]);
+              if(card && typeof card === 'object' && card.nodeType === 1){
+                const img = card.querySelector('img');
+                if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
+                const video = card.querySelector('video');
+                if(video){ video.preload = 'metadata'; }
+                frag.appendChild(card);
+              }
+            }catch(e){}
+          }
+          feed.appendChild(frag);
+        }else{
+          // string (ou fallback): monta HTML
+          const buildStr = (an) => {
+            try{
+              const out = window.dokeBuildCardPremium(an);
+              if (typeof out === 'string') return out;
+              if (out && typeof out === 'object' && out.nodeType === 1) return out.outerHTML;
+              return '';
+            }catch(e){
+              return '';
+            }
+          };
+          let html = buildStr(lista[0]);
+          for(let i=1;i<lista.length;i++) html += buildStr(lista[i]);
+          feed.innerHTML = html;
+          // melhorias de performance sem alterar layout
+          try{
+            feed.querySelectorAll('img').forEach(img=>{ img.loading='lazy'; img.decoding='async'; });
+            feed.querySelectorAll('video').forEach(v=>{ v.preload='metadata'; });
+          }catch(e){}
+        }
       }
     }
 
@@ -9410,7 +9710,116 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ----------------------------
   // PARA VOCE + CTA CONTEXTUAL
   // ----------------------------
-  function buildParaVoceSection() {
+  
+  // ----------------------------
+  // BUSCA PEQUENA (USUÁRIOS/PROFISSIONAIS) — após "Para você"
+  // ----------------------------
+  function isEditableEl(el){
+    if(!el) return false;
+    const tag = (el.tagName||'').toLowerCase();
+    return tag === 'input' || tag === 'textarea' || el.isContentEditable;
+  }
+
+  async function sbSearchUsuarios(term){
+    const sb = (window.sb && window.sb.from) ? window.sb : (window.getSupabaseClient ? window.getSupabaseClient() : null);
+    if(!sb || !term) return [];
+    const t = String(term).trim();
+    if(t.length < 2) return [];
+    const safe = t.replace(/[%_]/g, '\\$&');
+    const { data, error } = await sb
+      .from('usuarios')
+      .select('id, uid, user, nome, foto, isProfissional, categoria_profissional, stats')
+      .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
+      .limit(12);
+    if(error){ console.warn('[DOKE] busca usuarios:', error); return []; }
+    return data || [];
+  }
+
+  function buildUserCardMini(u){
+    const foto = u.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(u.uid||u.id||'u'))}`;
+    const handle = normalizeHandle(u.user || (u.nome ? String(u.nome).split(' ')[0] : 'usuario'));
+    const isProf = u.isProfissional === true;
+    const categoria = u.categoria_profissional || 'Profissional';
+    const st = (u.stats && typeof u.stats === 'object') ? u.stats : {};
+    const n = Number(st.avaliacoes || st.qtd || 0) || 0;
+    const m = Number(st.media || st.nota || 0) || 0;
+    const meta = isProf ? `★ ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
+    const sub = isProf ? categoria : (u.nome || '');
+    const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+    return `
+      <div class="pv-user-card" role="button" tabindex="0" onclick="window.location.href='${goto}'" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+        <img class="pv-user-avatar" src="${foto}" alt="">
+        <div class="pv-user-main">
+          <div class="pv-user-handle">${escapeHtml(handle)}</div>
+          <div class="pv-user-sub">${escapeHtml(sub)}</div>
+        </div>
+        ${meta ? `<div class="pv-user-meta">${escapeHtml(meta)}</div>` : ``}
+      </div>
+    `;
+  }
+
+  function buildPvQuickSearchSection(anchorSection){
+    if (!isHome()) return;
+    if (document.getElementById('pvQuickSearchSection')) return;
+    const sec = document.createElement('section');
+    sec.className = 'para-voce-section';
+    sec.id = 'pvQuickSearchSection';
+    sec.innerHTML = `
+      <div class="para-voce-inner">
+        <div class="pv-head">
+          <h2>Buscar profissionais e usuários</h2>
+          <div class="pv-sub">Digite pelo menos 2 letras</div>
+        </div>
+        <div class="pv-search">
+          <div class="pv-search-box">
+            <i class='bx bx-search'></i>
+            <input id="pvQuickSearchInput" type="text" placeholder="Ex: eletricista, @gabriel, manicure..." autocomplete="off" />
+          </div>
+        </div>
+        <div class="pv-quick-results" id="pvQuickResults"></div>
+      </div>
+    `;
+    // insere logo após o Para você
+    const pv = document.getElementById('paraVoceSection');
+    if (pv && pv.parentNode) {
+      pv.parentNode.insertBefore(sec, pv.nextSibling);
+    } else if (anchorSection && anchorSection.parentNode) {
+      anchorSection.parentNode.insertBefore(sec, anchorSection);
+    }
+
+    const input = sec.querySelector('#pvQuickSearchInput');
+    const results = sec.querySelector('#pvQuickResults');
+
+    let timer = null;
+    async function run(){
+      const term = input.value.trim();
+      results.innerHTML = '';
+      if (term.length < 2) return;
+      results.innerHTML = `<div style="padding:10px 0; color:rgba(0,0,0,.55);">Buscando...</div>`;
+      const list = await sbSearchUsuarios(term);
+      if (!list.length) {
+        results.innerHTML = `<div style="padding:10px 0; color:rgba(0,0,0,.6);">Nenhum usuário encontrado.</div>`;
+        return;
+      }
+      results.innerHTML = list.map(buildUserCardMini).join('');
+    }
+
+    input.addEventListener('input', ()=>{
+      if(timer) clearTimeout(timer);
+      timer = setTimeout(run, 250);
+    });
+
+    // Atalho de teclado seguro (Ctrl+K) — sem usar "/"
+    document.addEventListener('keydown', (e)=>{
+      if((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'k'){
+        if (isEditableEl(e.target)) return;
+        e.preventDefault();
+        input.focus();
+      }
+    });
+  }
+
+function buildParaVoceSection() {
     if (!isHome()) return;
     if (document.getElementById('paraVoceSection')) return;
 
@@ -9480,6 +9889,8 @@ async function carregarComentariosSupabase(publicacaoId) {
     `;
 
     anchor.parentNode.insertBefore(sec, anchor);
+    // Insere busca pequena logo após o 'Para você'
+    try { buildPvQuickSearchSection(anchor); } catch(e) { console.warn(e); }
 
     sec.querySelectorAll('.pv-chip').forEach((b) => {
       b.addEventListener('click', () => {

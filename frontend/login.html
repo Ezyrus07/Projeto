@@ -12,6 +12,11 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js"></script>
 <script src="script.js"></script>
+    <!-- DOKE patches (feed/cards) -->
+    <link rel="stylesheet" href="doke-feedpatch.css?v=20260201">
+    <script src="doke-cardpatch.js?v=20260201" defer></script>
+    <script src="doke-feedpatch.js?v=20260201" defer></script>
+
 
   <style>
     :root{
@@ -380,7 +385,18 @@
   return sb;
 }
 
-    function showMsg(type, text){
+    
+  // Prefill e-mail via querystring (?email=)
+  try{
+    const params = new URLSearchParams(window.location.search);
+    const e = params.get('email');
+    if(e){
+      const input = document.getElementById('email');
+      if(input) input.value = e;
+    }
+  }catch(e){}
+
+function showMsg(type, text){
       const el = document.getElementById("msg");
       el.className = "msg show " + (type === "ok" ? "ok" : "err");
       el.textContent = text;

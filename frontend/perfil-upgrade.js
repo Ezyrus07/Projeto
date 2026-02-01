@@ -698,7 +698,154 @@ function hideIf(selector, cond){
     }
   }
 
+
   // -----------------------------
+  // Helpers: query by user id/uid + resilient ordering
+  // -----------------------------
+  function __dpGetUserKeys(user){
+    return {
+      id: (user && user.id !== undefined && user.id !== null) ? user.id : null,
+      uid: safeStr(user && (user.uid ?? user.user_uid ?? user.userUid ?? user.auth_uid ?? user.authUid)) || null
+    };
+  }
+
+  function __dpLooksLikeMissingColumn(error){
+    if(!error) return false;
+    const code = String(error.code || error.error_code || "");
+    if(code === "PGRST204") return true;
+    const blob = (
+      String(error.message || "") + " " +
+      String(error.details || "") + " " +
+      String(error.hint || "") + " " +
+      (()=>{ try{ return JSON.stringify(error); }catch(_){ return ""; } })()
+    ).toLowerCase();
+    // PostgREST / Supabase padrões
+    if(blob.includes("could not find") || blob.includes("does not exist") || blob.includes("column") || blob.includes("schema cache") || blob.includes("unknown")) return true;
+    // alguns erros não trazem status; quando trouxer, 400 costuma ser coluna/order inválidos
+    const st = Number(error.status || error.statusCode || 0);
+    if(st === 400 && (blob.includes("select") || blob.includes("order") || blob.includes("eq(") || blob.includes("invalid"))) return true;
+    return false;
+  }
+
+  async function __dpQueryByUser(client, table, user, opts){
+    const options = opts || {};
+    const select = options.select || "*";
+    const limit = options.limit || 40;
+    const orders = Array.isArray(options.orders) && options.orders.length
+      ? options.orders
+      : ["created_at","createdAt","createdat","data_criacao","dataCriacao","data","updated_at","updatedAt","updatedat"];
+
+    const keys = __dpGetUserKeys(user);
+    const filters = [];
+
+    if(keys.id !== null){
+      filters.push(["user_id", keys.id], ["profissional_id", keys.id], ["cliente_id", keys.id], ["id_usuario", keys.id]);
+    }
+    if(keys.uid){
+      filters.push(["uid", keys.uid], ["user_uid", keys.uid], ["userId", keys.uid], ["usuario_uid", keys.uid], ["prof_uid", keys.uid], ["profissional_uid", keys.uid], ["owner_uid", keys.uid], ["dono_uid", keys.uid], ["owner", keys.uid], ["id_usuario", keys.uid]);
+    }
+
+    // Se não tiver chaves, não consulta
+    if(!filters.length){
+      return { data: [], error: null, missing: false, used: null };
+    }
+
+    let lastErr = null;
+
+    for(const [col, val] of filters){
+      for(const ord of [...orders, null]){
+        try{
+          let q = client.from(table).select(select).eq(col, val).limit(limit);
+          if(ord) q = q.order(ord, { ascending: false });
+          const { data, error } = await q;
+          if(!error){
+            return { data: Array.isArray(data) ? data : [], error: null, missing: false, used: { col, ord } };
+          }
+          if(isMissingTableError(error)){
+            return { data: [], error: null, missing: true, used: null };
+          }
+          lastErr = error;
+
+          // coluna inexistente (tanto filtro quanto order) => tenta próximo
+          if(__dpLooksLikeMissingColumn(error)) continue;
+
+          // outros erros (RLS, validação, etc)
+          return { data: [], error, missing: false, used: { col, ord } };
+        }catch(e){
+          lastErr = e;
+          // se parecer coluna inexistente, continua
+          if(__dpLooksLikeMissingColumn(e)) continue;
+          return { data: [], error: e, missing: false, used: { col, ord } };
+        }
+      }
+    }
+
+    return { data: [], error: lastErr, missing: false, used: null };
+  }
+  // Compat: expor helper de query global (algumas versões chamam _dpQueryByUser)
+  try{ window.__dpQueryByUser = __dpQueryByUser; window._dpQueryByUser = __dpQueryByUser; }catch(_){ }
+
+
+  function __dpEnsureNode(v){
+    try{
+      if(v instanceof Node) return v;
+      if(typeof v === "string"){
+        const tmp = document.createElement("div");
+        tmp.innerHTML = String(v).trim();
+        return tmp.firstElementChild || document.createTextNode("");
+      }
+      if(v && v.el && (v.el instanceof Node)) return v.el;
+      // tenta converter objetos comuns que expõem outerHTML
+      if(v && typeof v.outerHTML === "string"){
+        const tmp = document.createElement("div");
+        tmp.innerHTML = v.outerHTML.trim();
+        return tmp.firstElementChild || document.createTextNode("");
+      }
+    }catch(_){}
+    return document.createTextNode("");
+  }
+
+  function __dpInitAntesDepois(scope){
+    // Preferencial: usa o enhancer compartilhado (index + perfil ficam 100% iguais)
+    try{
+      if(window.__DOKE_BA && typeof window.__DOKE_BA_ENHANCE === "function"){
+        window.__DOKE_BA_ENHANCE(scope || document);
+        return;
+      }
+    }catch(_){ }
+
+    // Fallback (caso o arquivo compartilhado não esteja carregado)
+    const root = scope || document;
+    const items = root.querySelectorAll(".js-antes-depois");
+    items.forEach((el)=>{
+      try{
+        if(el.__dp_inited) return;
+        el.__dp_inited = true;
+        const badge = el.querySelector(".dp-ba-badge");
+        const dots = Array.from(el.querySelectorAll(".dp-dot"));
+        const setMode = (mode)=>{
+          const isAfter = mode === "after";
+          el.classList.toggle("is-after", isAfter);
+          if(badge) badge.textContent = isAfter ? "Depois" : "Antes";
+          dots.forEach((d)=> d.classList.toggle("is-active", d.dataset.show === (isAfter ? "after" : "before")));
+        };
+        dots.forEach((d)=>{
+          d.addEventListener("click", (ev)=>{
+            ev.preventDefault();
+            ev.stopPropagation();
+            setMode(d.dataset.show === "after" ? "after" : "before");
+          });
+        });
+        el.addEventListener("click", (ev)=>{
+          if(ev.target && ev.target.classList && ev.target.classList.contains("dp-dot")) return;
+          setMode(el.classList.contains("is-after") ? "before" : "after");
+        });
+        setMode("before");
+      }catch(_){ }
+    });
+  }
+
+// -----------------------------
   // Sections loaders
   // -----------------------------
   async function loadPublicacoes(client, userId, ctx){
@@ -706,12 +853,14 @@ function hideIf(selector, cond){
     if(!grid) return;
     grid.classList.add("dp-grid--masonry");
     grid.innerHTML = `<div class="dp-empty">Carregando publicações...</div>`;
-    const { data, error } = await client
-      .from("publicacoes")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending:false })
-      .limit(40);
+    const userKey = { id: userId, uid: (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : null };
+    const qres = await __dpQueryByUser(client, "publicacoes", userKey, { select: "*", limit: 40 });
+    const data = qres.data;
+    const error = qres.error;
+    if(qres.missing){
+      grid.innerHTML = `<div class="dp-empty">Nenhuma publicação ainda.</div>`;
+      return;
+    }
     if(error){
       if(isMissingTableError(error)){
         grid.innerHTML = `<div class="dp-empty">Nenhuma publicação ainda.</div>`;
@@ -728,10 +877,17 @@ function hideIf(selector, cond){
     grid.innerHTML = "";
     const canEdit = !!ctx?.canEdit;
     for(const item of data){
-      const poster = item.thumb_url ? ` poster="${item.thumb_url}"` : "";
+      const beforeUrl = item.before_url || item.media_url || item.before__url || "";
+      const afterUrl = item.after_url || item.after__url || item.thumb_url || "";
+
+      const _imgSrc = (item.media_url || beforeUrl || item.thumb_url || "");
       const media = item.tipo === "video"
-        ? `<video src="${item.media_url}"${poster} preload="metadata" muted playsinline></video>`
-        : `<img src="${item.media_url}" alt="">`;
+        ? `<video src="${beforeUrl || item.media_url || ""}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ``} preload="metadata" muted playsinline></video>`
+        : (item.tipo === "antes_depois" && afterUrl
+            ? `<div class="js-antes-depois" data-before="${beforeUrl || item.media_url || ""}" data-after="${afterUrl}" data-ba-auto="1"></div>`
+            : (_imgSrc
+                ? `<img src="${_imgSrc}" loading="lazy" alt="">`
+                : `<div class="dp-mediaPlaceholder">Sem mídia</div>`));
       const card = document.createElement("div");
       card.className = "dp-item dp-item--clickable";
       card.setAttribute("role", "button");
@@ -741,6 +897,16 @@ function hideIf(selector, cond){
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
+          ${(() => {
+            const u = (ctx && ctx.target) ? (ctx.target.user || (ctx.target.nome ? String(ctx.target.nome).split(" ")[0] : "")) : "";
+            const f = (ctx && ctx.target) ? (ctx.target.foto || "") : "";
+            if(!u && !f) return "";
+            const avatar = f ? `<img src="${f}" alt="">` : `<img src="https://i.pravatar.cc/80?u=${encodeURIComponent(String(userId||""))}" alt="">`;
+            const meta = item.created_at || item.data || item.createdAt || item.createdat;
+            const dt = meta ? new Date(meta) : null;
+            const when = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString("pt-BR") : "";
+            return `<div class="dp-itemAuthor">${avatar}<div><div class="dp-itemUser">@${escapeHtml(u||"usuario")}</div>${when ? `<span class="dp-itemMeta">${when}</span>` : ``}</div></div>`;
+          })()}
           <b>${escapeHtml(title)}</b>
           <p>${escapeHtml(desc)}</p>
         </div>
@@ -800,6 +966,7 @@ function hideIf(selector, cond){
       });
       grid.appendChild(card);
     }
+    __dpInitAntesDepois(grid);
   }
 
     async function loadReels(client, userId){
@@ -807,12 +974,16 @@ function hideIf(selector, cond){
     if(!grid) return;
     grid.classList.add("dp-grid--reels");
     grid.innerHTML = `<div class="dp-empty">Carregando videos curtos...</div>`;
-    const { data, error } = await client
-      .from("videos_curtos")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending:false })
-      .limit(40);
+    const userKey = { id: userId, uid: null };
+    // se existir contexto global de perfil, tenta pegar uid do alvo
+    try { if(window.__dpProfileCtx && window.__dpProfileCtx.target && window.__dpProfileCtx.target.uid) userKey.uid = window.__dpProfileCtx.target.uid; } catch(_){}
+    const qres = await __dpQueryByUser(client, "videos_curtos", userKey, { select: "*", limit: 40 });
+    const data = qres.data;
+    const error = qres.error;
+    if(qres.missing){
+      grid.innerHTML = `<div class="dp-empty">Nenhum video curto ainda.</div>`;
+      return;
+    }
     if(error){
       if(isMissingTableError(error)){
         grid.innerHTML = `<div class="dp-empty">Nenhum video curto ainda.</div>`;
@@ -899,6 +1070,12 @@ function hideIf(selector, cond){
         <div class="dp-itemBody">
           <b>${escapeHtml(item.titulo || "")}</b>
           <p>${escapeHtml(item.descricao || "")}</p>
+          ${(() => {
+            const d = item.data_entrega || item.dataEntrega || item.delivered_at || item.created_at || item.createdAt || item.createdat;
+            const dt = d ? new Date(d) : null;
+            const when = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString("pt-BR") : "";
+            return when ? `<div class="dp-portfolioDate">Entregue em ${when}</div>` : ``;
+          })()}
         </div>
       `;
       grid.appendChild(card);
@@ -1022,10 +1199,22 @@ function hideIf(selector, cond){
     const getPedidoId = (a)=> a?.pedidoId || a?.pedido_id || a?.pedidoid || a?.pedido;
     const getAnuncioId = (a)=> a?.anuncioId || a?.anuncio_id || a?.anuncioid || a?.anuncio || a?.servico_id || a?.servicoId || a?.servico;
 
+    const normalizeAnuncioId = (v)=>{
+      if(!v) return "";
+      let s = String(v).trim();
+      // normaliza ids do feed (ex: "sb-<uuid>")
+      if(s.startsWith("sb-")) s = s.slice(3);
+      // remove lixo comum
+      s = s.replace(/^[^a-f0-9]+/i, "");
+      // mantém apenas uuid se tiver
+      const m = s.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
+      return m ? m[0] : s;
+    };
+
     const pedidoIds = new Set();
     allData.forEach(a=>{
       const aid = getAnuncioId(a);
-      if(aid) a.__anuncioId = String(aid);
+      if(aid) a.__anuncioId = normalizeAnuncioId(aid);
       if(!aid){
         const pid = getPedidoId(a);
         if(pid) pedidoIds.add(String(pid));
@@ -1044,13 +1233,13 @@ function hideIf(selector, cond){
           pedidos.forEach(p=>{
             const pid = p?.id;
             const aid = p?.anuncioId || p?.anuncio_id || p?.anuncioid || p?.anuncio;
-            if(pid && aid) map.set(String(pid), String(aid));
+            if(pid && aid) map.set(String(pid), normalizeAnuncioId(aid));
           });
           allData.forEach(a=>{
             if(a.__anuncioId) return;
             const pid = getPedidoId(a);
             const aid = pid ? map.get(String(pid)) : null;
-            if(aid) a.__anuncioId = String(aid);
+            if(aid) a.__anuncioId = normalizeAnuncioId(aid);
           });
         }
       }catch(e){ /* ignore */ }
@@ -1074,13 +1263,13 @@ function hideIf(selector, cond){
           if(!snap || !snap.exists?.()) return;
           const d = snap.data ? snap.data() : null;
           const aid = d?.anuncioId || d?.anuncio_id || d?.anuncioid || d?.anuncio || d?.servico_id || d?.servicoId || d?.servico;
-          if(aid) map.set(String(ids[idx]), String(aid));
+          if(aid) map.set(String(ids[idx]), normalizeAnuncioId(aid));
         });
         allData.forEach(a=>{
           if(a.__anuncioId) return;
           const pid = getPedidoId(a);
           const aid = pid ? map.get(String(pid)) : null;
-          if(aid) a.__anuncioId = String(aid);
+          if(aid) a.__anuncioId = normalizeAnuncioId(aid);
         });
       }
     }catch(_){ /* ignore */ }
@@ -1096,14 +1285,14 @@ function hideIf(selector, cond){
     const servicoIds = showSemServico ? servicoIdsRaw : servicoIdsReal;
     let anunciosMap = new Map();
 
-    if(servicoIds.length){
+    if(servicoIdsReal.length){
       try{
         let anuncios = [];
         if(client?.from){
           const { data: rows, error } = await client
             .from("anuncios")
             .select("id,titulo,categoria,preco,descricao,img,fotos")
-            .in("id", servicoIds);
+            .in("id", servicoIdsReal);
           if(!error && Array.isArray(rows)) anuncios = rows;
         }
         if(!anuncios.length && profUid){
@@ -1447,94 +1636,263 @@ function hideIf(selector, cond){
 
   // -----------------------------
   // Create items
-  // -----------------------------
-  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, capaFile }){
-    // upload to storage
-    const storageId = ctx.me?.uid || ctx.me?.id;
-    let thumbUrl = null;
-    if(capaFile){
+
+// -----------------------------
+async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, afterFile, capaFile }){
+  const storageId = ctx.me?.uid || ctx.me?.id;
+
+  // validações básicas
+  const isImage = (f)=> !!f && String(f.type||"").startsWith("image/");
+  const isVideo = (f)=> !!f && String(f.type||"").startsWith("video/");
+
+  if (tipo === "antes_depois") {
+    if (!isImage(file)) throw new Error("Selecione a foto do Antes (imagem).");
+    if (!isImage(afterFile)) throw new Error("Selecione a foto do Depois (imagem).");
+  } else if (tipo === "foto") {
+    if (!isImage(file)) throw new Error("Selecione uma imagem.");
+  } else if (tipo === "video" || tipo === "curto") {
+    if (!isVideo(file)) throw new Error("Selecione um vídeo.");
+  }
+
+  // Uploads
+  let mediaUrl = null;
+  let thumbUrl = null;
+
+  // Antes x Depois: salva 'antes' como media_url e 'depois' como thumb_url (e tenta alternativas de colunas se necessário)
+  if (tipo === "antes_depois") {
+    const upBefore = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/antes/${crypto.randomUUID()}`, file });
+    if (upBefore.error) throw upBefore.error;
+    const upAfter = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/depois/${crypto.randomUUID()}`, file: afterFile });
+    if (upAfter.error) throw upAfter.error;
+    mediaUrl = upBefore.url;
+    thumbUrl = upAfter.url;
+  } else {
+    // capa opcional para vídeo
+    if (capaFile && (tipo === "video")) {
       const upCover = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
-      if(upCover.error) throw upCover.error;
+      if (upCover.error) throw upCover.error;
       thumbUrl = upCover.url;
     }
-    const up = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/${crypto.randomUUID()}`, file });
-    if(up.error) throw up.error;
-    const payload = {
-      user_id: ctx.me.id,
-      tipo,
-      titulo,
-      legenda,
-      media_url: up.url
-    };
-    if(thumbUrl) payload.thumb_url = thumbUrl;
-    let { error } = await client.from("publicacoes").insert(payload);
-    if(error && error.code === "PGRST204"){
-      const msg = String(error.message || "").toLowerCase();
-      const retry = {
-        user_id: ctx.me.id,
+    const folder = tipo === "video" ? "videos" : (tipo === "foto" ? "fotos" : "midia");
+    const up = await uploadToStorage(client, { bucket:"perfil", path:`publicacoes/${storageId}/${folder}/${crypto.randomUUID()}`, file });
+    if (up.error) throw up.error;
+    mediaUrl = up.url;
+  }
+
+    // tentativa de insert robusta (suporta schemas diferentes)
+  const meKeys = __dpGetUserKeys(ctx.me || {});
+  const who = [];
+
+  if (meKeys.id !== null) {
+    who.push({ user_id: meKeys.id });
+    who.push({ profissional_id: meKeys.id });
+    who.push({ id_usuario: meKeys.id });
+  }
+  if (meKeys.uid) {
+    who.push({ uid: meKeys.uid });
+    who.push({ user_uid: meKeys.uid });
+    who.push({ owner_uid: meKeys.uid });
+    who.push({ prof_uid: meKeys.uid });
+    who.push({ profissional_uid: meKeys.uid });
+  }
+  if (!who.length) who.push({}); // vai falhar com mensagem útil, se não tiver usuário
+
+  const candidates = [];
+
+  const baseContentA = (whoPart)=>({
+    ...whoPart,
+    tipo,
+    titulo: titulo || undefined,
+    legenda: legenda || undefined,
+    media_url: mediaUrl,
+    thumb_url: thumbUrl || undefined
+  });
+
+  const baseContentB = (whoPart)=>({
+    ...whoPart,
+    tipo,
+    titulo: titulo || undefined,
+    descricao: legenda || undefined,
+    media_url: mediaUrl,
+    thumb_url: thumbUrl || undefined
+  });
+
+  for (const whoPart of who) {
+    candidates.push(baseContentA(whoPart));
+    candidates.push(baseContentB(whoPart));
+
+    // antes/depois com colunas alternativas
+    if (tipo === "antes_depois") {
+      candidates.push({
+        ...whoPart,
         tipo,
-        media_url: up.url
-      };
-      if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
-      if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
-      if(legenda){
-        if(!msg.includes("legenda")) {
-          retry.legenda = legenda;
-        } else if(!msg.includes("descricao")) {
-          retry.descricao = legenda;
-        }
-      }
-      const r2 = await client.from("publicacoes").insert(retry);
-      error = r2.error || null;
+        titulo: titulo || undefined,
+        legenda: legenda || undefined,
+        antes_url: mediaUrl,
+        depois_url: thumbUrl
+      });
+      candidates.push({
+        ...whoPart,
+        tipo,
+        titulo: titulo || undefined,
+        descricao: legenda || undefined,
+        antes_url: mediaUrl,
+        depois_url: thumbUrl
+      });
+      candidates.push({
+        ...whoPart,
+        tipo,
+        titulo: titulo || undefined,
+        legenda: legenda || undefined,
+        before_url: mediaUrl,
+        after_url: thumbUrl
+      });
+      candidates.push({
+        ...whoPart,
+        tipo,
+        titulo: titulo || undefined,
+        descricao: legenda || undefined,
+        before_url: mediaUrl,
+        after_url: thumbUrl
+      });
     }
-    if(error) throw error;
   }
 
-  async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
-    const storageId = ctx.me?.uid || ctx.me?.id;
-    let thumbUrl = null;
-    if(capaFile){
-      const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
-      if(upCover.error) throw upCover.error;
-      thumbUrl = upCover.url;
-    }
-    const up = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/${crypto.randomUUID()}`, file });
-    if(up.error) throw up.error;
-    const payload = {
+  let lastErr = null;
+  for (const payload of candidates) {
+    // remove undefined para não brigar com colunas not null/validação
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    const res = await client.from("publicacoes").insert(payload);
+    if (!res.error) return;
+
+    lastErr = res.error;
+    // Se for erro de coluna inexistente, tenta próximo candidato
+    if (__dpLooksLikeMissingColumn(res.error)) continue;
+
+    // Outras falhas: para aqui (ex: RLS, tipo inválido, etc)
+    break;
+  }
+  throw lastErr || new Error("Falha ao publicar.");
+}
+
+async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
+  const storageId = ctx.me?.uid || ctx.me?.id;
+
+  const isVideo = (f)=> !!f && String(f.type||"").startsWith("video/");
+  if (!isVideo(file)) throw new Error("Selecione um vídeo.");
+
+  let thumbUrl = null;
+  if (capaFile) {
+    const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
+    if (upCover.error) throw upCover.error;
+    thumbUrl = upCover.url;
+  }
+
+  const up = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/${crypto.randomUUID()}`, file });
+  if (up.error) throw up.error;
+
+  const candidates = [
+    {
       user_id: ctx.me.id,
-      titulo,
-      descricao,
-      video_url: up.url
-    };
-    if(thumbUrl) payload.thumb_url = thumbUrl;
-    let { error } = await client.from("videos_curtos").insert(payload);
-    if(error && error.code === "PGRST204"){
-      const msg = String(error.message || "").toLowerCase();
-      const retry = {
-        user_id: ctx.me.id,
-        video_url: up.url
-      };
-      if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
-      if(descricao && !msg.includes("descricao")) retry.descricao = descricao;
-      if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
-      const r2 = await client.from("videos_curtos").insert(retry);
-      error = r2.error || null;
+      titulo: titulo || undefined,
+      descricao: descricao || undefined,
+      video_url: up.url,
+      thumb_url: thumbUrl || undefined
+    },
+    // alternativa: algumas tabelas usam media_url ao invés de video_url
+    {
+      user_id: ctx.me.id,
+      titulo: titulo || undefined,
+      descricao: descricao || undefined,
+      media_url: up.url,
+      thumb_url: thumbUrl || undefined
     }
-    if(error) throw error;
+  ];
+
+
+  // Se o schema usa uid/user_uid ao invés de user_id
+  const myUid = safeStr(ctx && ctx.me && (ctx.me.uid ?? ctx.me.user_uid ?? ctx.me.userUid ?? ctx.me.auth_uid ?? ctx.me.authUid)) || null;
+  const myId = (ctx && ctx.me && ctx.me.id !== undefined && ctx.me.id !== null) ? ctx.me.id : null;
+
+  if(myUid){
+    const uidCopies = candidates.map((p)=>{
+      const q = { ...p };
+      if("user_id" in q) delete q.user_id;
+      q.uid = myUid;
+      return q;
+    });
+    const userUidCopies = candidates.map((p)=>{
+      const q = { ...p };
+      if("user_id" in q) delete q.user_id;
+      q.user_uid = myUid;
+      return q;
+    });
+    candidates.push(...uidCopies, ...userUidCopies);
   }
 
-  async function createPortfolioItem(client, ctx, { titulo, descricao, file }){
-    const storageId = ctx.me?.uid || ctx.me?.id;
-    const up = await uploadToStorage(client, { bucket:"perfil", path:`portfolio/${storageId}/${crypto.randomUUID()}`, file });
-    if(up.error) throw up.error;
-    const { error } = await client.from("portfolio").insert({
-      profissional_id: ctx.me.id,
-      titulo,
-      descricao,
-      media_url: up.url
+  if(myId !== null){
+    const profIdCopies = candidates.map((p)=>{
+      const q = { ...p };
+      if("user_id" in q) delete q.user_id;
+      q.profissional_id = myId;
+      return q;
     });
-    if(error) throw error;
+    candidates.push(...profIdCopies);
   }
+
+
+  let lastErr = null;
+  for (const payload of candidates) {
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+    const res = await client.from("videos_curtos").insert(payload);
+    if (!res.error) return;
+    lastErr = res.error;
+    if (__dpLooksLikeMissingColumn(res.error)) continue;
+    break;
+  }
+  throw lastErr || new Error("Falha ao publicar vídeo curto.");
+}
+
+async function createPortfolioItem(client, ctx, { titulo, descricao, file }){
+  const storageId = ctx.me?.uid || ctx.me?.id;
+
+  const up = await uploadToStorage(client, { bucket:"perfil", path:`portfolio/${storageId}/${crypto.randomUUID()}`, file });
+  if(up.error) throw up.error;
+
+  const meKeys = __dpGetUserKeys(ctx.me || {});
+  const who = [];
+  if(meKeys.id !== null){
+    who.push({ profissional_id: meKeys.id });
+    who.push({ user_id: meKeys.id });
+    who.push({ id_usuario: meKeys.id });
+  }
+  if(meKeys.uid){
+    who.push({ uid: meKeys.uid });
+    who.push({ user_uid: meKeys.uid });
+    who.push({ owner_uid: meKeys.uid });
+    who.push({ profissional_uid: meKeys.uid });
+  }
+  if(!who.length) who.push({});
+
+  const candidates = who.map(w=>({
+    ...w,
+    titulo,
+    descricao,
+    media_url: up.url
+  }));
+
+  let lastErr = null;
+  for(const payload of candidates){
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+    const res = await client.from("portfolio").insert(payload);
+    if(!res.error) return;
+    lastErr = res.error;
+    if(__dpLooksLikeMissingColumn(res.error)) continue;
+    break;
+  }
+  throw lastErr || new Error("Falha ao adicionar item ao portfólio.");
+}
 
   async function createServico(client, ctx, { titulo, categoria, preco, descricao }){
     const { error } = await client.from("servicos").insert({
@@ -1898,11 +2256,16 @@ function hideIf(selector, cond){
                 <option value="foto">Foto</option>
                 <option value="video">Vídeo</option>
                 <option value="curto">Video curto</option>
+                <option value="antes_depois">Antes x Depois</option>
               </select>
             </div>
             <div>
-              <label>Arquivo</label>
+              <label id="dpPubFileLabel">Arquivo</label>
               <input class="dp-input" type="file" id="dpPubFile" accept="image/*,video/*"/>
+            <div id="dpPubAfterRow" style="display:none; margin-top:10px;">
+              <label id="dpPubAfterLabel">📎 Anexar foto Depois</label>
+              <input class="dp-input" type="file" id="dpPubAfterFile" accept="image/*"/>
+            </div>
             </div>
           </div>
           <div id="dpPubCoverRow" style="display:none;">
@@ -1924,7 +2287,9 @@ function hideIf(selector, cond){
         const tipo = $("#dpPubTipo")?.value || "foto";
         const file = $("#dpPubFile")?.files?.[0];
         const capaFile = $("#dpPubCover")?.files?.[0] || null;
-        if(!file) return toast("Selecione um arquivo.");
+        const afterFile = $("#dpPubAfterFile")?.files?.[0] || null;
+        if(!file) return toast(tipo === "antes_depois" ? "Selecione a foto do Antes." : "Selecione um arquivo.");
+        if((tipo === "antes_depois") && !afterFile) return toast("Selecione a foto do Depois.");
         try{
           if(tipo === "curto"){
             if(!ctx.me.isProfissional) return toast("Disponivel para perfil profissional.");
@@ -1944,6 +2309,7 @@ function hideIf(selector, cond){
             titulo: safeStr($("#dpPubTitulo")?.value),
             legenda: safeStr($("#dpPubDesc")?.value),
             file,
+            afterFile: tipo === "antes_depois" ? afterFile : null,
             capaFile: tipo === "video" ? capaFile : null
           });
           modal.close();
@@ -1951,17 +2317,32 @@ function hideIf(selector, cond){
           loadPublicacoes(ctx.client, ctx.target.id, ctx);
         }catch(e){
           console.error(e);
-          toast("Erro ao publicar.");
+          toast((e && e.message) ? e.message : "Erro ao publicar.");
         }
       }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
 
       const tipoEl = $("#dpPubTipo");
       const coverRow = $("#dpPubCoverRow");
       const coverInput = $("#dpPubCover");
+      const afterRow = $("#dpPubAfterRow");
+      const afterInput = $("#dpPubAfterFile");
+      const fileInput = $("#dpPubFile");
       const updateCover = ()=>{
-        const show = (tipoEl?.value || "foto") !== "foto";
-        if(coverRow) coverRow.style.display = show ? "" : "none";
-        if(!show && coverInput) coverInput.value = "";
+        const tipo = (tipoEl?.value || "foto");
+        const showCover = (tipo === "video" || tipo === "curto");
+        if(coverRow) coverRow.style.display = showCover ? "" : "none";
+        if(!showCover && coverInput) coverInput.value = "";
+        // Antes x Depois: precisa de 2 imagens
+        const showAfter = (tipo === "antes_depois");
+        if(afterRow) afterRow.style.display = showAfter ? "" : "none";
+        if(!showAfter && afterInput) afterInput.value = "";
+        if(fileInput){
+          fileInput.accept = showAfter ? "image/*" : "image/*,video/*";
+        }
+        const beforeLabel = $("#dpPubFileLabel");
+        const afterLabel = $("#dpPubAfterLabel");
+        if (beforeLabel) beforeLabel.textContent = showAfter ? "📎 Anexar foto Antes" : "Arquivo";
+        if (afterLabel) afterLabel.textContent = "📎 Anexar foto Depois";
       };
       tipoEl?.addEventListener("change", updateCover);
       updateCover();
@@ -2008,7 +2389,7 @@ function hideIf(selector, cond){
           loadReels(ctx.client, ctx.target.id);
         }catch(e){
           console.error(e);
-          toast("Erro ao publicar.");
+          toast((e && e.message) ? e.message : "Erro ao publicar.");
         }
       }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
     });
@@ -2357,6 +2738,9 @@ function hideIf(selector, cond){
         pageMode
       };
 
+      try{ window.__dpProfileCtx = ctx; }catch(_){ }
+
+
       // Top button (Entrar/Perfil)
       const topBtn = document.getElementById("dpTopAuthBtn");
       if(topBtn){
@@ -2400,21 +2784,41 @@ async function loadServicosPerfil(ctx) {
   const grid = document.getElementById("dpGridServicos");
   if (!grid) return;
 
+  const ensureNode = (v) => {
+    try{
+      if(v instanceof Node) return v;
+      if(typeof v === "string"){
+        const tmp = document.createElement("div");
+        tmp.innerHTML = String(v).trim();
+        return tmp.firstElementChild || document.createTextNode("");
+      }
+      if(v && v.el && (v.el instanceof Node)) return v.el;
+      if(v && typeof v.outerHTML === "string"){
+        const tmp = document.createElement("div");
+        tmp.innerHTML = v.outerHTML.trim();
+        return tmp.firstElementChild || document.createTextNode("");
+      }
+    }catch(_){ }
+    return document.createTextNode("");
+  };
+
   try { window.dokeSetupGerenciarBtn && window.dokeSetupGerenciarBtn(ctx); } catch (_) {}
 
-  // garante o mesmo layout do feed do index
+  // tenta manter o mesmo visual do feed do index
   try { grid.classList.add("lista-cards-premium"); } catch (_) {}
 
   grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
 
-  // fallback simples (caso o builder do index nao exista por algum motivo)
+  // fallback simples (caso o builder do index nao exista)
   const fallbackCard = (anuncio) => {
     const card = document.createElement("div");
     card.className = "card-premium";
     const titulo = anuncio.titulo || "Sem titulo";
     const descricao = anuncio.descricao || "";
     const preco = anuncio.preco || "A combinar";
-    const img = (anuncio.fotos && anuncio.fotos[0]) || anuncio.img || "https://placehold.co/600x400";
+    const fotos = Array.isArray(anuncio.fotos) ? anuncio.fotos : (anuncio.fotos ? [anuncio.fotos] : []);
+    const img = fotos[0] || anuncio.img || "https://placehold.co/600x400";
+    const uid = anuncio.uid || anuncio.user_uid || anuncio.useruid || anuncio.prof_uid || "";
     card.innerHTML = `
       <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
         <i class='bx bx-info-circle'></i> Mais Informacoes
@@ -2433,69 +2837,138 @@ async function loadServicosPerfil(ctx) {
           <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
           <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
         </div>
-        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">Solicitar Orçamento</button>
+        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar Orçamento</button>
       </div>
     `;
     return card;
   };
 
+  const client = ctx && ctx.client;
+  const donoUid = (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : (ctx && ctx.targetUid) ? ctx.targetUid : (ctx && ctx.targetId) ? ctx.targetId : null;
+
+  if (!client || !client.from || !donoUid) {
+    grid.innerHTML = `<div class="dp-empty">Não foi possível carregar os serviços.</div>`;
+    return;
+  }
+
   try {
-    // Busca na coleção 'anuncios' onde o 'uid' é o do perfil atual
-    const donoUid = (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : ctx.targetId;
-    const clauses = [collection(window.db, "anuncios"), where("uid", "==", donoUid)];
-    if (typeof window.limit === "function") clauses.push(window.limit(200));
-    const q = query(...clauses);
+    const userKey = { id: (ctx && ctx.target) ? ctx.target.id : null, uid: donoUid };
 
-    const snapshot = await getDocs(q);
+    const tablesToTry = ["anuncios", "anuncios_empresas", "anuncios_negocios", "servicos"];
+    const ownerCols = [
+      "uid","user_uid","useruid","prof_uid","profissional_uid","dono_uid",
+      "user_id","usuario_id","profissional_id","owner_id"
+    ];
 
-    // atualiza o contador (se existir)
+    const isMissingTable = (e)=>{
+      const msg = String(e?.message || e?.details || "").toLowerCase();
+      return msg.includes("relation") && msg.includes("does not exist");
+    };
+    const isMissingColumn = (e)=>{
+      const msg = String(e?.message || e?.details || "").toLowerCase();
+      return msg.includes("column") && msg.includes("does not exist")
+        || msg.includes("schema cache")
+        || String(e?.code || "").toUpperCase() === "PGRST204"
+        || String(e?.code || "") === "42703";
+    };
+
+    let data = [];
+    let lastErr = null;
+
+    for(const table of tablesToTry){
+      // tenta filtrar no servidor pelo dono (variações de coluna)
+      let foundThisTable = false;
+
+      for(const col of ownerCols){
+        const val = col.endsWith("_id") ? (userKey.id || userKey.uid) : (userKey.uid || userKey.id);
+        if(!val) continue;
+
+        const { data: d, error: e } = await client.from(table).select("*").eq(col, val).limit(200);
+        if(e){
+          if(isMissingTable(e)){ lastErr = e; break; }
+          if(isMissingColumn(e)){ continue; }
+          lastErr = e;
+          continue;
+        }
+        if(Array.isArray(d)){
+          data = d;
+          lastErr = null;
+          foundThisTable = true;
+          break;
+        }
+      }
+
+      // se achou algo nesse table, para; se o table existe mas não achou linhas, ainda para (perfil do usuário)
+      if(foundThisTable) break;
+
+      // table não existe, tenta o próximo
+      if(lastErr && isMissingTable(lastErr)){ lastErr = null; continue; }
+    }
+
+    if(lastErr){
+      console.error("Erro ao carregar serviços:", lastErr);
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
+      return;
+    }
+
+    const anuncios = Array.isArray(data) ? data : [];
+
+    // contador (se existir)
     const countEl = document.getElementById("dpServicesCount");
-    if (countEl) countEl.textContent = String(snapshot.size || 0);
+    if (countEl) countEl.textContent = String(anuncios.length || 0);
 
-    if (snapshot.empty) {
+    if (!anuncios.length) {
       grid.innerHTML = `<div class="dp-empty">Nenhum serviço publicado.</div>`;
       return;
     }
 
-    grid.innerHTML = "";
-
-    const anuncios = [];
-    snapshot.forEach((docSnap) => {
-      anuncios.push({ id: docSnap.id, ...docSnap.data() });
-    });
-
-    // cache para o gerenciador
+    // cache p/ gerenciador (se existir)
     try { window.__dpCachedAnuncios = anuncios.slice(); } catch (_) {}
 
-    // Publico: nao mostra desativados
-    const listaParaRender = (ctx && ctx.canEdit) ? anuncios : anuncios.filter(a => a && a.ativo !== false);
+    // Público: não mostra desativados
+    const listaParaRender = (ctx && ctx.canEdit)
+      ? anuncios
+      : anuncios.filter(a => {
+          if (!a) return false;
+          // cobre variações comuns de "ativo"
+          if (a.ativo === false) return false;
+          if (a.active === false) return false;
+          if (a.isActive === false) return false;
+          return true;
+        });
 
-    // Ordena (mais recentes primeiro)
-    listaParaRender.sort((a,b) => {
-      const da = new Date(a.updatedAt || a.createdAt || 0).getTime();
-      const db = new Date(b.updatedAt || b.createdAt || 0).getTime();
-      return db - da;
+    // Ordena (mais recentes primeiro) — tenta vários campos
+    listaParaRender.sort((a, b) => {
+      const pick = (o) => o?.updatedat || o?.updatedAt || o?.dataAtualizacao || o?.dataCriacao || o?.dataCriacaoISO || o?.created_at || o?.createdAt || o?.createdat || 0;
+      const da = new Date(pick(a)).getTime();
+      const db = new Date(pick(b)).getTime();
+      return (db || 0) - (da || 0);
     });
 
+    grid.innerHTML = "";
+
     listaParaRender.forEach((anuncio) => {
-      const card = (typeof window.dokeBuildCardPremium === "function")
+      const rawCard = (typeof window.dokeBuildCardPremium === "function")
         ? window.dokeBuildCardPremium(anuncio)
         : fallbackCard(anuncio);
 
+      const card = ensureNode(rawCard);
+
       // Visual de "desativado" no perfil do dono
       try {
-        if (ctx && ctx.canEdit && anuncio && anuncio.ativo === false) {
+        if (card && card.classList && ctx && ctx.canEdit && anuncio && (anuncio.ativo === false || anuncio.active === false)) {
           card.classList.add("dp-anuncio-inativo");
         }
       } catch (_) {}
 
       grid.appendChild(card);
     });
-  } catch (error) {
-    console.error("Erro ao carregar serviços:", error);
+  } catch (e) {
+    console.error(e);
     grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
   }
 }
+
 
 // ============================================================
 // GERENCIAR ANÚNCIOS (UX MELHORADA)
@@ -3182,4 +3655,15 @@ async function loadServicosPerfil(ctx) {
 })();
 
 
+
+
+
+// Antes x Depois (controlado por doke-beforeafter.js)
+function setupAntesDepois(container){
+  try{
+    if(window.__DOKE_BA && typeof window.__DOKE_BA_ENHANCE === "function"){
+      window.__DOKE_BA_ENHANCE(container || document);
+    }
+  }catch(_){ }
+}
 
