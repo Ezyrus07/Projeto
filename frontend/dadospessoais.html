@@ -13,13 +13,9 @@
     <title>Dados Pessoais | Doke</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="doke-layout-fix.css">
     
     <script src="script.js" defer></script>
-    <!-- DOKE patches (feed/cards) -->
-    <link rel="stylesheet" href="doke-feedpatch.css?v=20260201">
-    <script src="doke-cardpatch.js?v=20260201" defer></script>
-    <script src="doke-feedpatch.js?v=20260201" defer></script>
-
     
     <style>
         /* ================= VARIÁVEIS E RESET ================= */
@@ -333,101 +329,210 @@
     </nav>
 
     <script>
-        const { doc, updateDoc, getDoc } = window;
-        
-        // Carrega dados ao iniciar
-        document.addEventListener("DOMContentLoaded", async function() {
-            // Verifica se está logado (proteção simples)
-            const logado = localStorage.getItem('usuarioLogado');
-            if(!logado) {
-                window.location.href = "login.html";
-                return;
-            }
+        // Dados Pessoais (Supabase) — carrega do Auth + tabela usuarios + validacao (tornar-profissional)
+        // Objetivo: o que você preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
 
-            // Tenta pegar do cache local primeiro (mais rápido)
-            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-            if (perfilLocal) {
-                preencherCampos(perfilLocal);
-            } else {
-                // Se não tiver no cache, tenta buscar do banco (fallback)
-                // OBS: O ideal é ter no cache vindo do login ou script.js
-                alert("Erro ao carregar perfil. Faça login novamente.");
-                window.location.href = "login.html";
+        const safeJSON = (k, fallback = null) => {
+            try { return JSON.parse(localStorage.getItem(k) || '') || fallback; } catch { return fallback; }
+        };
+
+        const normalizeHandle = (h, nome) => {
+            let v = (h || '').trim();
+            if (!v && nome) v = nome.split(' ')[0];
+            if (!v) v = 'usuario';
+            if (!v.startsWith('@')) v = '@' + v;
+            return v;
+        };
+
+        const pickBestName = (...cands) => {
+            const list = cands.map(v => String(v || '').trim()).filter(Boolean);
+            if (!list.length) return '';
+            let best = list[0];
+            let bestScore = -1;
+            for (const v of list) {
+                const hasSpace = v.includes(' ') ? 10 : 0;
+                const score = hasSpace + Math.min(v.length, 40) / 4;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = v;
+                }
             }
-        });
+            return best;
+        };
 
         function preencherCampos(dados) {
             document.getElementById('inputNome').value = dados.nome || "";
             document.getElementById('inputEmail').value = dados.email || "";
             document.getElementById('inputDoc').value = dados.cpf_cnpj || "Não informado";
-            document.getElementById('inputTel').value = dados.telefone_comercial || dados.telefone || "";
+            document.getElementById('inputTel').value = dados.telefone || dados.telefone_comercial || "";
             document.getElementById('inputNasc').value = dados.data_nascimento || "";
-            
-            if(dados.foto) {
+
+            if (dados.foto) {
                 document.getElementById('profilePreview').src = dados.foto;
                 document.getElementById('hiddenFotoBase64').value = dados.foto;
             }
         }
+
+        async function carregarPerfilReal() {
+            // proteção simples
+            const logado = localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
+            if (!logado) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (!window.sb?.auth) {
+                alert('Supabase não inicializado.');
+                return;
+            }
+
+            const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
+
+            // 1) Auth
+            const { data: authData, error: authErr } = await window.sb.auth.getUser();
+            const authUser = authData?.user || null;
+            if (authErr || !authUser) {
+                // tenta ao menos usar o cache local
+                if (perfilLocal && (perfilLocal.nome || perfilLocal.email)) {
+                    preencherCampos(perfilLocal);
+                    return;
+                }
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const uid = authUser.id;
+            const email = authUser.email || perfilLocal.email || '';
+
+            // 2) usuarios
+            let usr = null;
+            try {
+                const { data, error } = await window.sb
+                    .from('usuarios')
+                    .select('*')
+                    .or(`uid.eq.${uid},id.eq.${uid}`)
+                    .maybeSingle();
+                if (!error) usr = data || null;
+            } catch (_) {}
+
+            // 3) profissional_validacao (dados do tornar-profissional)
+            let val = null;
+            try {
+                const usuarioId = usr?.id || uid;
+                const { data, error } = await window.sb
+                    .from('profissional_validacao')
+                    .select('*')
+                    .or(`usuario_id.eq.${usuarioId},user_id.eq.${uid},uid.eq.${uid}`)
+                    .limit(1);
+                if (!error && Array.isArray(data) && data.length) val = data[0];
+            } catch (_) {}
+
+            // 4) Merge (prioridade: usuarios -> validacao -> auth meta -> cache)
+            const meta = authUser.user_metadata || {};
+            const nome = pickBestName(
+                usr?.nome,
+                meta.full_name,
+                meta.nome_completo,
+                meta.name,
+                meta.nome,
+                val?.nome,
+                perfilLocal.nome,
+                (email ? email.split('@')[0] : '')
+            );
+
+            const userHandle = normalizeHandle(
+                usr?.user || meta.user || meta.username || perfilLocal.user,
+                nome
+            );
+
+            const cpfCnpj = (usr?.cpf_cnpj || usr?.cpf || usr?.cnpj || val?.cpf || val?.cnpj || perfilLocal.cpf_cnpj || '');
+            const telefone = (usr?.telefone || usr?.telefone_comercial || val?.telefone || val?.whatsapp || perfilLocal.telefone || perfilLocal.telefone_comercial || '');
+            const nasc = (usr?.data_nascimento || val?.data_nascimento || val?.nascimento || perfilLocal.data_nascimento || '');
+            const foto = (usr?.foto || meta.foto || perfilLocal.foto || '');
+
+            const merged = {
+                ...perfilLocal,
+                uid,
+                id: usr?.id || perfilLocal.id || uid,
+                email,
+                nome,
+                user: userHandle,
+                foto,
+                cpf_cnpj: cpfCnpj || 'Não informado',
+                telefone,
+                data_nascimento: nasc,
+            };
+
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
+            localStorage.setItem('usuarioLogado', 'true');
+
+            preencherCampos(merged);
+        }
+
+        document.addEventListener('DOMContentLoaded', carregarPerfilReal);
 
         // Função global para salvar (chamada pelo form)
         window.salvarDados = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSalvar');
             const textoOriginal = btn.innerText;
-            
+
             btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Salvando...";
             btn.disabled = true;
 
             try {
-                // 1. Coleta os novos valores
-                const nome = document.getElementById('inputNome').value;
-                const telefone = document.getElementById('inputTel').value;
+                const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
+                const { data: authData } = await window.sb.auth.getUser();
+                const authUser = authData?.user || null;
+                if (!authUser) throw new Error('Sessão expirada. Faça login novamente.');
+
+                const uid = authUser.id;
+                const nome = document.getElementById('inputNome').value.trim();
+                const telefone = document.getElementById('inputTel').value.trim();
                 const nasc = document.getElementById('inputNasc').value;
-                const novaFoto = document.getElementById('hiddenFotoBase64').value;
+                const foto = document.getElementById('hiddenFotoBase64').value || perfilLocal.foto || '';
 
-                // 2. Prepara objeto de atualização
-                const uid = localStorage.getItem('doke_uid');
-                if(!uid) throw new Error("Usuário não identificado");
-
-                // Mantém os dados antigos e atualiza os novos
-                const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-                
-                const atualizacao = {
-                    nome: nome,
-                    telefone_comercial: telefone, // Padronizando nome do campo
-                    data_nascimento: nasc
+                // Atualiza cache local imediatamente
+                const merged = {
+                    ...perfilLocal,
+                    nome,
+                    telefone,
+                    data_nascimento: nasc,
+                    foto,
                 };
-                
-                // Se trocou a foto, inclui ela
-                if(novaFoto) {
-                    atualizacao.foto = novaFoto;
-                }
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
 
-                // 3. Atualiza no Firestore
-                const docRef = doc(window.db, "usuarios", uid);
-                await updateDoc(docRef, atualizacao);
+                // Melhor esforço: atualiza tabela usuarios (se existir colunas)
+                const patch = { nome, telefone, data_nascimento: nasc, foto };
+                try {
+                    await window.sb
+                        .from('usuarios')
+                        .update(patch)
+                        .or(`uid.eq.${uid},id.eq.${uid}`);
+                } catch (_) {}
 
-                // 4. Atualiza localStorage (para refletir em outras páginas sem reload)
-                const perfilNovo = { ...perfilAntigo, ...atualizacao };
-                localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilNovo));
+                // Melhor esforço: espelha no Auth metadata
+                try {
+                    await window.sb.auth.updateUser({
+                        data: {
+                            nome,
+                            nome_completo: nome,
+                            full_name: nome,
+                            foto
+                        }
+                    });
+                } catch (_) {}
 
-                // 5. Feedback Sucesso
-                btn.innerHTML = "<i class='bx bx-check'></i> Dados Atualizados!";
-                btn.style.background = "#2ecc71";
-                
-                setTimeout(() => {
-                    btn.innerText = textoOriginal;
-                    btn.style.background = "var(--cor0)";
-                    btn.disabled = false;
-                }, 2000);
-
-            } catch (erro) {
-                console.error("Erro ao salvar:", erro);
-                alert("Erro ao salvar alterações: " + erro.message);
+                btn.innerHTML = "<i class='bx bx-check'></i> Salvo!";
+                setTimeout(() => (btn.innerText = textoOriginal), 1200);
+            } catch (err) {
+                console.error(err);
+                alert(err?.message || 'Erro ao salvar.');
                 btn.innerText = textoOriginal;
+            } finally {
                 btn.disabled = false;
             }
-        }
+        };
     </script>
 
     <script>

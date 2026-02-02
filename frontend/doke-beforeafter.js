@@ -36,6 +36,13 @@
 
     el.classList.add("dp-ba", "js-antes-depois");
 
+    // marca o container de mídia (remove bordas/linhas indesejadas)
+    try {
+      const mediaWrap = el.closest && el.closest('.dp-itemMedia');
+      if (mediaWrap) mediaWrap.classList.add('has-ba');
+    } catch (_) {}
+
+
     // stack
     let stack = el.querySelector(".dp-ba-stack");
     if (!stack) {

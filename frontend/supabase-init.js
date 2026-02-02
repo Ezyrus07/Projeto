@@ -55,3 +55,47 @@ if (!key || key.startsWith("sb_publishable")) {
     warn("Falha ao criar cliente Supabase: " + (e && e.message ? e.message : e));
   }
 })();
+
+// ============================================================
+// Legacy Firebase API shims (para não quebrar o script.js antigo)
+// ============================================================
+(function(){
+  try{
+    // onAuthStateChanged(auth, callback) (Firebase v9 style)
+    if(typeof window.onAuthStateChanged !== "function"){
+      window.onAuthStateChanged = function(_authObj, callback){
+        try{
+          const sb = window.sb || window.supabaseClient || window.supabase;
+          if(sb && sb.auth){
+            // callback imediato com usuário atual
+            sb.auth.getUser()
+              .then(({ data })=>{
+                const u = data?.user || null;
+                callback(u ? { uid: u.id, email: u.email } : null);
+              })
+              .catch(()=> callback(null));
+
+            // subscription
+            const { data: sub } = sb.auth.onAuthStateChange((_event, session)=>{
+              const u = session?.user || null;
+              callback(u ? { uid: u.id, email: u.email } : null);
+            });
+
+            return function(){
+              try{ sub?.subscription?.unsubscribe?.(); }catch(e){}
+            };
+          }
+        }catch(e){}
+
+        // fallback: sem auth
+        setTimeout(()=>{ try{ callback(null); }catch(e){} }, 0);
+        return function(){};
+      };
+    }
+
+    // Evita ReferenceError em scripts antigos
+    if(typeof window.initializeApp !== "function"){
+      window.initializeApp = function(){ return {}; };
+    }
+  }catch(e){}
+})();

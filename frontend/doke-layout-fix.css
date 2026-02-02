@@ -1,0 +1,54 @@
+/* ============================================================
+   Doke – Layout Fix (Centralização + Responsividade Desktop)
+   ------------------------------------------------------------
+   - Corrige páginas "coladas" à esquerda em telas grandes
+   - Centraliza o conteúdo dentro da área útil (padrão anunciar.html)
+   - Mantém sidebar fixa (~270px)
+   - Seguro: só mexe em layout/spacing
+   ============================================================ */
+
+:root{
+  --doke-sidebar-w: 270px;
+  --doke-page-max: 1200px;
+  --doke-page-padding-x: 24px;
+}
+
+@media (min-width: 1024px){
+  main,
+  .main-content{
+    margin-left: var(--doke-sidebar-w) !important;
+    width: calc(100% - var(--doke-sidebar-w)) !important;
+    max-width: none !important;
+    box-sizing: border-box;
+    padding-left: var(--doke-page-padding-x) !important;
+    padding-right: var(--doke-page-padding-x) !important;
+  }
+
+  main{ padding-top: 30px !important; padding-bottom: 40px !important; }
+  .main-content{ padding-top: 30px !important; padding-bottom: 40px !important; }
+
+  /* Centraliza o conteúdo principal */
+  main > *:not(script):not(style):not(.doke-wide),
+  .main-content > *:not(script):not(style):not(.doke-wide){
+    width: min(100%, var(--doke-page-max));
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Use .doke-wide quando uma seção precisar ser mais larga */
+  main > .doke-wide,
+  .main-content > .doke-wide{
+    width: min(100%, 1600px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 1023px){
+  main,
+  .main-content{
+    margin-left: 0 !important;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+}

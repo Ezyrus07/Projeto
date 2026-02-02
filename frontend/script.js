@@ -30,29 +30,64 @@ const firebaseConfig = {
     appId: "1:997098339190:web:a865b696278be21f069857"
 };
 
-// Inicializa o Firebase (com fallback quando SDKs nÇœo estiverem disponÇðveis)
-const app = initializeApp(firebaseConfig);
-const analytics = (typeof getAnalytics === "function") ? getAnalytics(app) : null;
-const db = getFirestore(app);
-const auth = getAuth(app);
-const storage = (typeof getStorage === "function") ? getStorage(app) : null;
+// Inicializa o Firebase (safe). Se o SDK não estiver presente, mantém compat/Supabase sem quebrar a página.
+let app = null;
+let analytics = null;
+let db = (window.db || null);
+let auth = (window.auth || null);
+let storage = (window.storage || null);
 
-// Garante acesso global das funções
+// [DOKE] Shim: onAuthStateChanged (evita crash quando Firebase não existe)
+if (typeof window.onAuthStateChanged !== "function") {
+  window.onAuthStateChanged = function(_ignoredAuth, callback){
+    const sb = window.sb || window.supabaseClient;
+    if (sb && sb.auth && sb.auth.onAuthStateChange){
+      // dispara estado atual
+      if (sb.auth.getUser){
+        sb.auth.getUser().then(({data})=>{
+          const u = data && data.user ? data.user : null;
+          try{ callback(u ? { uid: u.id, email: u.email } : null); }catch(_e){}
+        }).catch(()=>{});
+      }
+      const sub = sb.auth.onAuthStateChange((_event, session)=>{
+        const u = session && session.user ? session.user : null;
+        try{ callback(u ? { uid: u.id, email: u.email } : null); }catch(_e){}
+      });
+      return sub && sub.data ? sub.data.subscription : null;
+    }
+    try{ callback(null); }catch(_e){}
+    return null;
+  }
+}
+
+try {
+  if (typeof initializeApp === "function") {
+    app = initializeApp(firebaseConfig);
+    if (typeof getAnalytics === "function") {
+      try { analytics = getAnalytics(app); } catch (_e) { analytics = null; }
+    }
+    if (typeof getFirestore === "function") db = getFirestore(app);
+    if (typeof getAuth === "function") auth = getAuth(app);
+    if (typeof getStorage === "function") storage = getStorage(app);
+  } else {
+    console.warn("[DOKE] Firebase SDK não encontrado; usando compat/Supabase (window.auth/db).");
+  }
+} catch (e) {
+  console.warn("[DOKE] Falha ao inicializar Firebase. Usando compat/Supabase.", e);
+}
+
 window.db = db;
 window.auth = auth;
 window.storage = storage;
-window.collection = collection;
-window.query = query;
-window.getDocs = getDocs;
-window.orderBy = orderBy;
-window.where = where;
-window.limit = limit;
-window.deleteDoc = deleteDoc;
-window.updateDoc = updateDoc;
-window.addDoc = addDoc;
-window.setDoc = setDoc;
-window.getDoc = getDoc;
-window.doc = doc;
+
+// Protege export helpers caso o SDK não exista
+if (typeof collection === "function") window.collection = collection;
+if (typeof addDoc === "function") window.addDoc = addDoc;
+if (typeof getDocs === "function") window.getDocs = getDocs;
+if (typeof query === "function") window.query = query;
+if (typeof where === "function") window.where = where;
+if (typeof orderBy === "function") window.orderBy = orderBy;
+if (typeof doc === "function") window.doc = doc;
 
 // Reforça globals compat caso tenham sido sobrescritos por IDs no DOM
 if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
@@ -1040,6 +1075,26 @@ window.dokeBuildCardPremium = function(anuncio) {
 return card;
 };
 
+// Helper: permite inserir string OU HTMLElement sem virar "[object HTMLDivElement]"
+window.__dokeAppendHTMLorNode = window.__dokeAppendHTMLorNode || function(container, content){
+    try {
+        if (!container || content == null) return;
+        if (typeof content === 'string') {
+            container.insertAdjacentHTML('beforeend', content);
+            return;
+        }
+        if (content && content.nodeType === 1) {
+            container.appendChild(content);
+            return;
+        }
+        if (content && typeof content.outerHTML === 'string') {
+            container.insertAdjacentHTML('beforeend', content.outerHTML);
+        }
+    } catch (e) {
+        console.warn('Falha ao inserir card:', e);
+    }
+};
+
 function __dokeNormalizeText(value) {
     return String(value || '')
         .toLowerCase()
@@ -1398,7 +1453,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 `;
                 sugest.forEach((a) => {
                     const card = window.dokeBuildCardPremium(a);
-                    feed.insertAdjacentHTML('beforeend', card);
+                    window.__dokeAppendHTMLorNode(feed, card);
                 });
             } else {
                 feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
@@ -1410,6 +1465,24 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         window.__dokeAnunciosListaAtual = listaFinal;
         window.__dokeAnunciosCursor = 0;
 
+        function updateVerMaisUI(){
+            const list = window.__dokeAnunciosListaAtual || [];
+            const cursor = Number(window.__dokeAnunciosCursor || 0);
+            const hasMore = cursor < list.length;
+            const btn = document.getElementById('btnVerMaisAnuncios');
+            const wrap = document.getElementById('wrapVerMaisAnuncios') || btn?.closest?.('#wrapVerMaisAnuncios') || null;
+
+            if (!hasMore) {
+                if (btn) btn.style.display = 'none';
+                // Remove para não sobrar "linha" vazia no layout
+                if (wrap) wrap.remove();
+                return;
+            }
+
+            if (wrap) wrap.style.display = '';
+            if (btn) btn.style.display = '';
+        }
+
         function renderMais(qtd = 8){
             const list = window.__dokeAnunciosListaAtual || [];
             const start = window.__dokeAnunciosCursor || 0;
@@ -1417,31 +1490,44 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             for (let i = start; i < end; i++){
                 const anuncio = list[i];
                 const card = window.dokeBuildCardPremium(anuncio);
-                feed.insertAdjacentHTML('beforeend', card);
+                window.__dokeAppendHTMLorNode(feed, card);
             }
             window.__dokeAnunciosCursor = end;
-            const btn = document.getElementById('btnVerMaisAnuncios');
-            if (btn) btn.style.display = (end < list.length) ? '' : 'none';
+            updateVerMaisUI();
         }
 
         // limpa e renderiza o primeiro lote
         feed.innerHTML = "";
         renderMais(8);
 
-        // botão Ver mais
+        // botão Ver mais (só aparece quando houver itens a carregar)
+        const __listLen = (window.__dokeAnunciosListaAtual || []).length;
+        const __cursor = Number(window.__dokeAnunciosCursor || 0);
+        const __hasMore = __cursor < __listLen;
+
         if (!document.getElementById('btnVerMaisAnuncios')) {
-            const wrap = document.createElement('div');
-            wrap.style.textAlign = 'center';
-            wrap.style.padding = '14px 0 6px';
-            wrap.innerHTML = `<button id="btnVerMaisAnuncios" class="btn-pro-action" type="button" style="min-width:220px;">Ver mais</button>`;
-            feed.parentNode && feed.parentNode.insertBefore(wrap, feed.nextSibling);
-            wrap.querySelector('#btnVerMaisAnuncios')?.addEventListener('click', ()=> renderMais(8));
+            // Se não tem mais anúncios além do primeiro lote, não cria o botão
+            if (__hasMore) {
+                const wrap = document.createElement('div');
+                wrap.id = 'wrapVerMaisAnuncios';
+                wrap.style.textAlign = 'center';
+                wrap.style.padding = '14px 0 6px';
+                wrap.innerHTML = `<button id="btnVerMaisAnuncios" class="btn-pro-action" type="button" style="min-width:220px;">Ver mais</button>`;
+                feed.parentNode && feed.parentNode.insertBefore(wrap, feed.nextSibling);
+                const btn = wrap.querySelector('#btnVerMaisAnuncios');
+                if (btn) {
+                    btn.addEventListener('click', ()=> renderMais(8));
+                    updateVerMaisUI();
+                }
+            }
         } else {
             const btn = document.getElementById('btnVerMaisAnuncios');
+            const wrap = document.getElementById('wrapVerMaisAnuncios') || btn?.closest?.('#wrapVerMaisAnuncios') || btn?.parentElement;
             if (btn) {
                 btn.onclick = ()=> renderMais(8);
-                btn.style.display = (window.__dokeAnunciosCursor < (window.__dokeAnunciosListaAtual||[]).length) ? '' : 'none';
             }
+            // garante atualização correta mesmo quando filtros mudam
+            updateVerMaisUI();
         }
 
         return;
@@ -1508,55 +1594,16 @@ window.aplicarFiltrosBusca = function() {
         userLoc
     });
 
-    // Render robusto: dokeBuildCardPremium pode devolver Node OU string (HTML)
     feed.innerHTML = '';
     if (!lista.length) {
         feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anúncio encontrado com esses filtros.</p></div>';
     } else {
-        try {
-            const renderOne = (anuncio) => {
-                try {
-                    return window.dokeBuildCardPremium(anuncio);
-                } catch (e) {
-                    console.warn('[DOKE] Falha ao montar card:', e);
-                    return null;
-                }
-            };
-
-            const first = renderOne(lista[0]);
-            const isNode = first && typeof first === 'object' && (first.nodeType === 1 || first.nodeType === 11);
-
-            if (isNode) {
-                const frag = document.createDocumentFragment();
-                frag.appendChild(first);
-                for (let i = 1; i < lista.length; i++) {
-                    const c = renderOne(lista[i]);
-                    if (!c) continue;
-                    if (c && typeof c === 'object' && (c.nodeType === 1 || c.nodeType === 11)) {
-                        frag.appendChild(c);
-                    } else if (typeof c === 'string') {
-                        const tmp = document.createElement('div');
-                        tmp.innerHTML = c.trim();
-                        if (tmp.firstElementChild) frag.appendChild(tmp.firstElementChild);
-                    }
-                }
-                feed.appendChild(frag);
-            } else {
-                // string (HTML) ou outro -> usa innerHTML
-                let html = '';
-                if (typeof first === 'string') html += first;
-                else if (first != null) html += String(first);
-                for (let i = 1; i < lista.length; i++) {
-                    const c = renderOne(lista[i]);
-                    if (typeof c === 'string') html += c;
-                    else if (c != null) html += String(c);
-                }
-                feed.innerHTML = html;
-            }
-        } catch (e) {
-            console.error('[DOKE] Erro ao renderizar resultados:', e);
-            feed.innerHTML = '<div class="empty-state"><i class="bx bx-error"></i><p>Erro ao renderizar anúncios. Atualize a página.</p></div>';
-        }
+        const frag = document.createDocumentFragment();
+        lista.forEach(anuncio => {
+            const card = window.dokeBuildCardPremium(anuncio);
+            frag.appendChild(card);
+        });
+        feed.appendChild(frag);
     }
 
     const titulo = document.getElementById('categorias-title');
@@ -2097,18 +2144,61 @@ function formatarCepInput(e) {
     if (valor.length > 5) valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
     e.target.value = valor;
 }
-window.salvarCep = function() {
+window.salvarCep = async function() {
     const i = document.getElementById('inputCep');
     if(!i) return;
-    const cepLimpo = i.value.replace(/\D/g, ''); 
-    if(cepLimpo.length === 8) {
-        const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
-        localStorage.setItem('meu_cep_doke', cepFormatado); 
-        window.atualizarTelaCep(cepFormatado);
-        window.preencherTodosCeps(cepFormatado);
-        document.getElementById('boxCep').style.display = 'none';
-    } else { alert("CEP inválido! Digite 8 números."); i.focus(); }
+    const cepLimpo = (i.value || '').replace(/\D/g, '');
+    if(cepLimpo.length !== 8) { 
+        alert("CEP inválido! Digite 8 números."); 
+        i.focus(); 
+        return; 
+    }
+
+    const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
+
+    // Salva CEP rápido (fallback)
+    localStorage.setItem('meu_cep_doke', cepFormatado);
+
+    // Atualiza UI imediatamente
+    window.atualizarTelaCep(cepFormatado);
+    window.preencherTodosCeps(cepFormatado);
+
+    // Fecha popup
+    const box = document.getElementById('boxCep');
+    if(box) box.style.display = 'none';
+
+    // Busca bairro/cidade (ViaCEP) e salva em cache
+    try {
+        const r = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { cache: 'no-store' });
+        if(r.ok) {
+            const data = await r.json();
+            if(data && !data.erro) {
+                const payload = {
+                    cep: cepFormatado,
+                    cidade: data.localidade || '',
+                    bairro: data.bairro || '',
+                    uf: data.uf || ''
+                };
+                localStorage.setItem('doke_localizacao', JSON.stringify(payload));
+                window.atualizarTelaCep(payload);
+
+                // (Opcional) Se tiver Supabase e colunas existirem, tenta persistir no perfil
+                try {
+                    if(window.sb && window.sb.auth) {
+                        const { data: sess } = await window.sb.auth.getSession();
+                        const user = sess && sess.session && sess.session.user;
+                        if(user) {
+                            await window.sb.from('usuarios')
+                                .update({ cep: payload.cep, cidade: payload.cidade, bairro: payload.bairro, uf: payload.uf })
+                                .eq('uid', user.id);
+                        }
+                    }
+                } catch(_) {}
+            }
+        }
+    } catch(_) {}
 }
+
 window.preencherTodosCeps = function(cep) {
     if (!cep) return;
     // Preencher todos os inputs com ID 'inputCep' na página
@@ -2125,11 +2215,36 @@ window.preencherTodosCeps = function(cep) {
         }
     });
 }
-window.atualizarTelaCep = function(cep) {
+window.atualizarTelaCep = function(payload) {
     const s = document.getElementById('textoCepSpan');
     const i = document.getElementById('inputCep');
+
+    // payload can be string CEP or object { cep, cidade, bairro, uf }
+    let cep = '';
+    let cidade = '';
+    let bairro = '';
+    try {
+        if (typeof payload === 'object' && payload) {
+            cep = payload.cep || '';
+            cidade = payload.cidade || '';
+            bairro = payload.bairro || '';
+            const uf = payload.uf || '';
+            localStorage.setItem('doke_localizacao', JSON.stringify({ cep, cidade, bairro, uf }));
+        } else {
+            cep = payload || '';
+            const saved = JSON.parse(localStorage.getItem('doke_localizacao') || 'null');
+            if (saved) {
+                cidade = saved.cidade || '';
+                bairro = saved.bairro || '';
+                if (!cep) cep = saved.cep || '';
+            }
+        }
+    } catch (_) {}
+
     if (s) {
-        const txt = cep ? `CEP: ${cep}` : 'Inserir CEP';
+        let txt = 'Inserir CEP';
+        if (bairro && cidade) txt = `${bairro}, ${cidade}`;
+        else if (cep) txt = `CEP: ${cep}`;
         s.innerText = txt;
         s.style.fontWeight = '700';
         s.style.color = 'var(--cor0)';
@@ -2998,10 +3113,7 @@ window.carregarFeedGlobal = async function() {
             return;
         }
         const item = entry.data || {};
-        const beforeUrl = item.before_url || item.before__url || item.media_url || "";
-        const afterUrl = item.after_url || item.after__url || item.thumb_url || "";
-        const primaryUrl = item.tipo === "antes_depois" ? beforeUrl : (item.media_url || "");
-        if (!primaryUrl) return;
+        if (!item.media_url) return;
         const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
         const autorHandle = normalizeHandle(autor.user || autor.nome || "usuario");
         const autorFoto = autor.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(autor.uid||autor.id||item.user_id||entry.id||"u"))}`;
@@ -3020,10 +3132,10 @@ window.carregarFeedGlobal = async function() {
         const desc = item.descricao || (item.titulo ? (item.legenda || "") : "") || "";
 
         const mediaHtml = item.tipo === "video"
-            ? `<video src="${item.media_url || beforeUrl}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
-            : (item.tipo === "antes_depois" && afterUrl
-                ? `<div class="js-antes-depois" data-before="${beforeUrl}" data-after="${afterUrl}" data-ba-auto="1"></div>`
-                : `<img src="${item.media_url || beforeUrl}" loading="lazy" alt="">`);
+            ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
+            : (item.tipo === "antes_depois" && item.thumb_url
+                ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""><span class="dp-ba-badge">Antes</span></div>`
+                : `<img src="${item.media_url}" loading="lazy" alt="">`);
 
         const html = `
             <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPublicacao('${entry.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
@@ -3042,14 +3154,24 @@ window.carregarFeedGlobal = async function() {
 }
 
 function setupAntesDepois(container){
-    try{
-        if(window.__DOKE_BA && typeof window.__DOKE_BA_ENHANCE === "function"){
-            window.__DOKE_BA_ENHANCE(container || document);
-            return;
-        }
-    }catch(_){ }
+    if(!container) return;
+    const els = container.querySelectorAll(".js-antes-depois");
+    els.forEach((el)=>{
+        if(el.dataset.bound === "1") return;
+        el.dataset.bound = "1";
+        const before = el.dataset.before;
+        const after = el.dataset.after;
+        const img = el.querySelector("img");
+        const badge = el.querySelector(".dp-ba-badge");
+        if(!img || !before || !after) return;
+        let state = "before";
+        setInterval(()=>{
+            state = (state === "before") ? "after" : "before";
+            img.src = (state === "before") ? before : after;
+            if(badge) badge.textContent = (state === "before") ? "Antes" : "Depois";
+        }, 2000);
+    });
 }
-
 
 
 function setupFeedVideoPreview(container) {
@@ -3171,14 +3293,24 @@ document.addEventListener("DOMContentLoaded", async function() {
         carregarReelsHome();
         enableVideosCurtosPageScroll();
     }
-
-    const cepSalvo = localStorage.getItem('meu_cep_doke');
-    if (cepSalvo) {
-        window.atualizarTelaCep(cepSalvo);
-        window.preencherTodosCeps(cepSalvo);
+    // CEP / Localização (header)
+    let cepSalvo = localStorage.getItem('meu_cep_doke');
+    try {
+        const loc = JSON.parse(localStorage.getItem('doke_localizacao') || 'null');
+        if (loc && (loc.bairro || loc.cidade || loc.cep)) {
+            if (loc.cep) cepSalvo = loc.cep;
+            window.atualizarTelaCep(loc);
+        } else if (cepSalvo) {
+            window.atualizarTelaCep(cepSalvo);
+        }
+    } catch(_) {
+        if (cepSalvo) window.atualizarTelaCep(cepSalvo);
     }
 
-    // Adicionar listener a todos os inputs de CEP para sincronizar automaticamente
+    if (cepSalvo) {
+        window.preencherTodosCeps(cepSalvo);
+    }
+// Adicionar listener a todos os inputs de CEP para sincronizar automaticamente
     document.querySelectorAll('input[id="inputCep"], input[id="cepOrcamento"], input[id="cepEndereco"], input[id="cepBusca"]').forEach(input => {
         // Preencher com o CEP salvo ao carregar
         if (cepSalvo && !input.value) {
@@ -6179,52 +6311,9 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
-        mediaBox.innerHTML = `<video src="${item.media_url || ""}" poster="${item.thumb_url || ""}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
-    } else if (item.tipo === "antes_depois") {
-        const beforeUrl = item.before_url || item.before__url || item.media_url || "";
-        const afterUrl = item.after_url || item.after__url || item.thumb_url || "";
-        if (!beforeUrl || !afterUrl) {
-            mediaBox.innerHTML = `<img src="${beforeUrl || item.media_url || ""}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
-        } else {
-            // Renderiza o mesmo componente do feed/perfil (consistência total)
-            mediaBox.innerHTML = `<div class="js-antes-depois" data-before="${beforeUrl}" data-after="${afterUrl}" data-ba-auto="1"></div>`;
-            try{ setupAntesDepois(mediaBox); }catch(_){ }
-
-            const baEl = mediaBox.querySelector('.js-antes-depois');
-            if (baEl) {
-                // adiciona setas no modal (o enhancer não cria setas)
-                const prev = document.createElement('button');
-                prev.type = 'button';
-                prev.className = 'dp-ba-arrow dp-ba-arrow--prev';
-                prev.setAttribute('aria-label', 'Ver Antes');
-                prev.textContent = '‹';
-                const next = document.createElement('button');
-                next.type = 'button';
-                next.className = 'dp-ba-arrow dp-ba-arrow--next';
-                next.setAttribute('aria-label', 'Ver Depois');
-                next.textContent = '›';
-                baEl.appendChild(prev);
-                baEl.appendChild(next);
-
-                const baSet = (mode)=>{
-                    const isAfter = mode === 'after';
-                    baEl.classList.toggle('is-after', isAfter);
-                    const badge = baEl.querySelector('.dp-ba-badge');
-                    if (badge) badge.textContent = isAfter ? 'Depois' : 'Antes';
-                    baEl.querySelectorAll('.dp-dot').forEach((d)=>{
-                        const should = d.getAttribute('data-show') === (isAfter ? 'after' : 'before');
-                        d.classList.toggle('is-active', should);
-                    });
-                };
-
-                prev.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); baSet('before'); });
-                next.addEventListener('click', (ev)=>{ ev.preventDefault(); ev.stopPropagation(); baSet('after'); });
-                // garante estado inicial
-                baSet('before');
-            }
-        }
+        mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
     } else {
-        mediaBox.innerHTML = `<img src="${item.media_url || ""}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
+        mediaBox.innerHTML = `<img src="${item.media_url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
     }
 
     const captionText = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
@@ -9205,58 +9294,22 @@ async function carregarComentariosSupabase(publicacaoId) {
     const feed = byId('feedAnuncios');
     if(feed){
       feed.innerHTML = '';
-
-      if(!lista.length){
-        feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anuncio encontrado com esses filtros.</p></div>';
-      }else{
-        // dokeBuildCardPremium pode retornar Node OU HTML string, dependendo da página.
-        let sample = null;
-        try{ sample = window.dokeBuildCardPremium(lista[0]); }catch(e){ sample = null; }
-
-        if(sample && typeof sample === 'object' && sample.nodeType === 1){
-          const frag = document.createDocumentFragment();
-          try{
-            const img = sample.querySelector('img');
-            if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
-            const video = sample.querySelector('video');
-            if(video){ video.preload = 'metadata'; }
-          }catch(_){}
-          frag.appendChild(sample);
-
-          for(let i=1;i<lista.length;i++){
-            try{
-              const card = window.dokeBuildCardPremium(lista[i]);
-              if(card && typeof card === 'object' && card.nodeType === 1){
-                const img = card.querySelector('img');
-                if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
-                const video = card.querySelector('video');
-                if(video){ video.preload = 'metadata'; }
-                frag.appendChild(card);
-              }
-            }catch(e){}
-          }
-          feed.appendChild(frag);
-        }else{
-          // string (ou fallback): monta HTML
-          const buildStr = (an) => {
-            try{
-              const out = window.dokeBuildCardPremium(an);
-              if (typeof out === 'string') return out;
-              if (out && typeof out === 'object' && out.nodeType === 1) return out.outerHTML;
-              return '';
-            }catch(e){
-              return '';
-            }
-          };
-          let html = buildStr(lista[0]);
-          for(let i=1;i<lista.length;i++) html += buildStr(lista[i]);
-          feed.innerHTML = html;
+      const frag = document.createDocumentFragment();
+      lista.forEach(anuncio => {
+        try{
+          const card = window.dokeBuildCardPremium(anuncio);
           // melhorias de performance sem alterar layout
-          try{
-            feed.querySelectorAll('img').forEach(img=>{ img.loading='lazy'; img.decoding='async'; });
-            feed.querySelectorAll('video').forEach(v=>{ v.preload='metadata'; });
-          }catch(e){}
-        }
+          const img = card.querySelector('img');
+          if(img){ img.loading = 'lazy'; img.decoding = 'async'; }
+          const video = card.querySelector('video');
+          if(video){ video.preload = 'metadata'; }
+          frag.appendChild(card);
+        }catch(e){}
+      });
+      if(lista.length){
+        feed.appendChild(frag);
+      }else{
+        feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anuncio encontrado com esses filtros.</p></div>';
       }
     }
 
@@ -10209,3 +10262,9 @@ async function carregarProfissionaisIndex() {
  * INIT
  *************************************************/
 document.addEventListener("DOMContentLoaded", carregarProfissionaisIndex);
+
+
+// Atualiza o header com bairro/cidade quando disponível
+document.addEventListener('DOMContentLoaded', function(){
+  try{ window.atualizarTelaCep(''); }catch(_e){}
+});

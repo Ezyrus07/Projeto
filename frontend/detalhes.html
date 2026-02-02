@@ -13,7 +13,8 @@
     <title>Detalhes do Serviço | Doke</title>
     
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="doke-layout-fix.css"> 
 
     <style>
         /* ======================================================
@@ -689,169 +690,99 @@
                 document.getElementById('prov-since').innerText = `Membro desde ${membroDesde}`;
 
 
-                  // 2. Busca Avaliações REAIS (Supabase) — sem inventar dados
-                  list.innerHTML = ""; // limpa texto de carregamento
-
-                  let reviews = [];
+                  // 2. Busca Avaliações (prioriza anuncioId, fallback por profissional)
+                  let snapshot = null;
                   let lastError = null;
-
-                  // Primeiro tenta Supabase (tabela public.avaliacoes)
-                  if (window.sb && typeof window.sb.from === 'function') {
-                      const selectCols = 'id, profUid, clienteUid, anuncioId, clienteNome, clienteFoto, detalhes, comentarioGeral, media, data';
-                      // Prioriza avaliações do anúncio; se não tiver, cai pro perfil do profissional
-                      if (anuncioId) {
-                          const { data: byAnuncio, error: errA } = await window.sb
-                              .from('avaliacoes')
-                              .select(selectCols)
-                              .eq('anuncioId', String(anuncioId))
-                              .order('data', { ascending: false })
-                              .limit(50);
-                          if (errA) lastError = errA;
-                          if (Array.isArray(byAnuncio) && byAnuncio.length) {
-                              reviews = byAnuncio;
-                          }
-                      }
-                      if (!reviews.length) {
-                          const { data: byProf, error: errP } = await window.sb
-                              .from('avaliacoes')
-                              .select(selectCols)
-                              .eq('profUid', String(uidProfissional))
-                              .order('data', { ascending: false })
-                              .limit(50);
-                          if (errP) lastError = errP;
-                          if (Array.isArray(byProf)) reviews = byProf;
-                      }
-                  }
-
-                  // Fallback: caso o cliente SB não exista, tenta Firestore-compat (mantém compatibilidade)
-                  if (!reviews.length && (!window.sb || typeof window.sb.from !== 'function')) {
-                      let snapshot = null;
-                      const tryQuery = async (field, value) => {
-                          try {
-                              const q = query(
-                                  collection(db, "avaliacoes"),
-                                  where(field, "==", value),
-                                  orderBy("data", "desc")
-                              );
-                              return await getDocs(q);
-                          } catch (e) {
-                              lastError = e;
-                              return null;
-                          }
-                      };
-                      if (anuncioId) {
-                          const anuncioFields = ["anuncioId", "anuncio_id", "anuncioid", "anuncio", "servico_id", "servicoId", "servico"];
-                          for (const f of anuncioFields) {
-                              const res = await tryQuery(f, anuncioId);
-                              if (res && res.size) { snapshot = res; break; }
-                          }
-                      }
-                      if (!snapshot) {
-                          const profFields = ["profUid", "prof_uid", "profissional_id", "paraUid"];
-                          for (const f of profFields) {
-                              const res = await tryQuery(f, uidProfissional);
-                              if (res) { snapshot = res; break; }
-                          }
-                      }
-                      if (snapshot) {
-                          snapshot.forEach(d => reviews.push({ id: d.id, ...(d.data() || {}) }));
-                      }
-                  }
-
-                  if (lastError && !reviews.length) throw lastError;
-
-                  // Limpa estado "Carregando..." antes de renderizar
-                  list.innerHTML = '';
-
-                  // Se não tiver avaliações
-                  if (!reviews.length) {
-                      list.innerHTML = `<div style="padding:20px; background:#f9f9f9; border-radius:10px; text-align:center; color:#777;">Este profissional ainda não possui avaliações registradas na plataforma.</div>`;
-                      document.getElementById('meta-rating').innerText = "0.0";
-                      document.getElementById('meta-count').innerText = "0";
-                      document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(0);
-                      // dashboard mini oculta
-                      dash.style.display = 'none';
-                      atualizarBarra('bar-quali', 'val-quali', 0);
-                      atualizarBarra('bar-price', 'val-price', 0);
-                      atualizarBarra('bar-time', 'val-time', 0);
-                      return;
-                  }
-
-                  // Calcula médias
-                  const pick = (obj, keys) => {
-                      if (!obj) return undefined;
-                      for (const k of keys) {
-                          if (obj[k] != null && obj[k] !== '') return obj[k];
-                      }
-                      return undefined;
-                  };
-                  const toNum = (v) => {
-                      const n = Number(v);
-                      return Number.isFinite(n) ? n : 0;
-                  };
-
-                  let total = reviews.length;
-                  let somaGeral = 0, somaQuali = 0, somaPreco = 0, somaTime = 0;
-
-                  // Renderiza itens
-                  reviews.forEach((r) => {
-                      const det = (r.detalhes && typeof r.detalhes === 'object') ? r.detalhes : {};
-                      const nota = toNum(pick(r, ['media', 'nota']));
-                      const qualidade = toNum(pick(det, ['qualidade', 'q', 'quality'])) || toNum(pick(r, ['qualidade'])) || nota;
-                      const preco = toNum(pick(det, ['custo', 'preco', 'price', 'c'])) || toNum(pick(r, ['preco'])) || nota;
-                      const pontualidade = toNum(pick(det, ['pontualidade', 'tempo', 'time', 'p'])) || toNum(pick(r, ['pontualidade'])) || nota;
-
-                      somaGeral += nota;
-                      somaQuali += qualidade;
-                      somaPreco += preco;
-                      somaTime += pontualidade;
-
-                      const nome = escapeHTML(pick(r, ['clienteNome', 'deNome', 'nome']) || 'Cliente Doke');
-                      const foto = pick(r, ['clienteFoto', 'foto']) || 'https://i.pravatar.cc/100?img=12';
-                      const comentario = escapeHTML(pick(r, ['comentarioGeral', 'comentario']) || '');
-
-                      let dataF = '-';
+                  const tryQuery = async (field, value) => {
                       try {
-                          const raw = pick(r, ['data', 'created_at', 'createdAt']);
-                          if (raw) {
-                              const d = (typeof raw === 'string' || typeof raw === 'number') ? new Date(raw) : new Date(raw);
-                              if (!isNaN(d.getTime())) dataF = d.toLocaleDateString('pt-BR');
-                          }
-                      } catch (_) {}
+                          const q = query(
+                              collection(db, "avaliacoes"),
+                              where(field, "==", value),
+                              orderBy("data", "desc")
+                          );
+                          return await getDocs(q);
+                      } catch (e) {
+                          lastError = e;
+                          return null;
+                      }
+                  };
 
-                      const htmlItem = `
-                        <div class="review-item">
-                          <div class="review-header">
-                            <div style="display:flex; align-items:center; gap:10px;">
-                              <img src="${foto}" alt="${nome}" style="width:36px; height:36px; border-radius:999px; object-fit:cover;" onerror="this.src='https://i.pravatar.cc/100?img=12'" />
-                              <span class="reviewer-name">${nome}</span>
-                            </div>
+                  if (anuncioId) {
+                      const anuncioFields = ["anuncioId", "anuncio_id", "anuncioid", "anuncio", "servico_id", "servicoId", "servico"];
+                      for (const f of anuncioFields) {
+                          const res = await tryQuery(f, anuncioId);
+                          if (res && res.size) { snapshot = res; break; }
+                      }
+                  }
+
+                  if (!snapshot) {
+                      const profFields = ["profUid", "prof_uid", "profissional_id", "paraUid"];
+                      for (const f of profFields) {
+                          const res = await tryQuery(f, uidProfissional);
+                          if (res) { snapshot = res; break; }
+                      }
+                  }
+                  if (!snapshot && lastError) throw lastError;
+
+                  list.innerHTML = ""; // Limpa texto de carregamento
+
+                // SE NÃO TIVER DADOS REAIS
+                if(snapshot.empty) {
+                    list.innerHTML = `<div style="padding:20px; background:#f9f9f9; border-radius:10px; text-align:center; color:#777;">Este profissional ainda não possui avaliações registradas na plataforma.</div>`;
+                    document.getElementById('meta-rating').innerText = "0.0";
+                    document.getElementById('meta-count').innerText = "0";
+                    document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(0);
+                    return;
+                }
+
+                // SE TIVER DADOS REAIS -> CALCULA MÉDIAS
+                let total = snapshot.size;
+                let somaGeral = 0;
+                let somaQuali = 0;
+                let somaPreco = 0;
+                let somaTime = 0;
+
+                snapshot.forEach(doc => {
+                    const r = doc.data();
+                    const nota = r.media || r.nota || 0;
+                    
+                    somaGeral += nota;
+                    somaQuali += r.qualidade || nota;
+                    somaPreco += r.preco || nota;
+                    somaTime  += r.pontualidade || nota;
+
+                    // Renderiza o comentário individual
+                    const dataF = r.data ? new Date(r.data).toLocaleDateString() : '-';
+                    const htmlItem = `
+                    <div class="review-item">
+                        <div class="review-header">
+                            <span class="reviewer-name">${r.deNome || "Cliente Doke"}</span>
                             <span class="review-date">${dataF}</span>
-                          </div>
-                          <div class="review-stars">${gerarEstrelasHTML(nota)}</div>
-                          ${comentario ? `<p class="review-text">"${comentario}"</p>` : ''}
-                        </div>`;
-                      list.insertAdjacentHTML('beforeend', htmlItem);
-                  });
+                        </div>
+                        <div class="review-stars">${gerarEstrelasHTML(nota)}</div>
+                        <p class="review-text">"${r.comentarioGeral || r.comentario || ''}"</p>
+                    </div>`;
+                    list.insertAdjacentHTML('beforeend', htmlItem);
+                });
 
-                  const mediaFinalNum = total ? (somaGeral / total) : 0;
-                  const mediaFinal = mediaFinalNum.toFixed(1);
+                // Atualiza Dashboard com Médias Reais
+                const mediaFinal = (somaGeral / total).toFixed(1);
+                
+                // Topo da página
+                document.getElementById('meta-rating').innerText = mediaFinal;
+                document.getElementById('meta-count').innerText = total;
+                document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(mediaFinal);
 
-                  // Topo
-                  document.getElementById('meta-rating').innerText = mediaFinal;
-                  document.getElementById('meta-count').innerText = String(total);
-                  document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(mediaFinalNum);
+                // Dashboard Mini
+                dash.style.display = 'flex';
+                document.getElementById('dash-score').innerText = mediaFinal;
+                document.getElementById('dash-total').innerText = `${total} avaliações`;
+                document.getElementById('dash-stars').innerHTML = gerarEstrelasHTML(mediaFinal);
 
-                  // Dashboard Mini
-                  dash.style.display = 'flex';
-                  document.getElementById('dash-score').innerText = mediaFinal;
-                  document.getElementById('dash-total').innerText = `${total} avaliações`;
-                  document.getElementById('dash-stars').innerHTML = gerarEstrelasHTML(mediaFinalNum);
-
-                  // Barras (médias)
-                  atualizarBarra('bar-quali', 'val-quali', (somaQuali / total).toFixed(1));
-                  atualizarBarra('bar-price', 'val-price', (somaPreco / total).toFixed(1));
-                  atualizarBarra('bar-time', 'val-time', (somaTime / total).toFixed(1));
+                // Barras de Progresso
+                atualizarBarra('bar-quali', 'val-quali', (somaQuali/total).toFixed(1));
+                atualizarBarra('bar-price', 'val-price', (somaPreco/total).toFixed(1));
+                atualizarBarra('bar-time', 'val-time', (somaTime/total).toFixed(1));
 
             } catch (e) {
                 console.error("Erro ao buscar reviews:", e);
