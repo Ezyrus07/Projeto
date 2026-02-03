@@ -19,6 +19,9 @@
     if (host) return host;
     host = document.createElement('div');
     host.className = 'ui-toast-host';
+    host.setAttribute('role', 'status');
+    host.setAttribute('aria-live', 'polite');
+    host.setAttribute('aria-atomic', 'true');
     document.body.appendChild(host);
     return host;
   }
@@ -39,6 +42,11 @@
     const host = ensureToastHost();
     const el = document.createElement('div');
     el.className = 'ui-toast';
+    const type = String(opts.type || '').toLowerCase();
+    const isError = type === 'error' || type === 'erro' || type === 'warn' || type === 'warning' || /erro|falha|falhou|problema/i.test(String(title || ''));
+    el.setAttribute('role', isError ? 'alert' : 'status');
+    el.setAttribute('aria-live', isError ? 'assertive' : 'polite');
+    el.setAttribute('aria-atomic', 'true');
 
     const h = document.createElement('h4');
     h.textContent = title || 'Aviso';
@@ -111,12 +119,12 @@
 
   window.addEventListener('error', (ev)=>{
     const details = ev && (ev.error || ev.message || ev);
-    uiToast('Erro', 'Algo deu errado. Toque em “Ver detalhes” para ver o erro.', { details, duration: 9000 });
+    uiToast('Erro', 'Algo deu errado. Toque em “Ver detalhes” para ver o erro.', { details, duration: 9000, type: 'error' });
   });
 
   window.addEventListener('unhandledrejection', (ev)=>{
     const details = ev && (ev.reason || ev);
-    uiToast('Erro', 'Falha em uma operação assíncrona. Toque em “Ver detalhes” para ver o erro.', { details, duration: 9000 });
+    uiToast('Erro', 'Falha em uma operação assíncrona. Toque em “Ver detalhes” para ver o erro.', { details, duration: 9000, type: 'error' });
   });
 
   /* -----------------------------

@@ -1864,7 +1864,7 @@ body[data-page="home"] .reveal.is-visible {
 
 /* --- Categorias --- */
 .categorias-container {
-  width: 100%; max-width: 1120px;
+  width: 100%; max-width: var(--doke-container-max, 1200px);
   margin: 0 auto; padding: 20px;
 }
 
@@ -2733,6 +2733,7 @@ body.dark-mode {
     border-top: 1px solid #333; 
   }
 }
+
 
 /* ==================== STORIES PREMIUM ==================== */
 
@@ -8568,6 +8569,18 @@ body[data-page="home"] .secao-busca{
 }
 .skip-link:focus{ left:12px; }
 
+.sr-only{
+  position:absolute !important;
+  width:1px !important;
+  height:1px !important;
+  padding:0 !important;
+  margin:-1px !important;
+  overflow:hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space:nowrap !important;
+  border:0 !important;
+}
+
 .net-banner{
   position:fixed;
   top:12px;
@@ -8614,6 +8627,67 @@ body[data-page="home"] .secao-busca{
 .skeleton-line.lg{width:95%}
 
 .skeleton-trabalho{width:170px; min-width:170px; height:220px; border-radius:20px}
+
+/* Skeletons consistentes (home) */
+.skeleton-grid{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+@media (max-width: 900px){
+  .skeleton-grid{ grid-template-columns: 1fr; }
+}
+
+#feed-global-container .pub-skel{
+  background:#fff;
+  border:1px solid #e2e8f0;
+  border-radius:14px;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+  pointer-events:none;
+}
+#feed-global-container .pub-skel-media{
+  width:100%;
+  aspect-ratio: 4 / 5;
+}
+#feed-global-container .pub-skel-body{
+  padding: 12px;
+  display:grid;
+  gap: 10px;
+}
+#feed-global-container .pub-skel{
+  flex: 0 0 260px;
+  width: 260px;
+  min-width: 260px;
+}
+@media (max-width: 900px){
+  #feed-global-container .pub-skel{
+    flex-basis: 220px;
+    width: 220px;
+    min-width: 220px;
+  }
+}
+@media (max-width: 600px){
+  #feed-global-container .pub-skel{
+    flex-basis: 230px;
+    width: 230px;
+    min-width: 230px;
+  }
+}
+
+.tiktok-card.is-skeleton{
+  background:#fff;
+  border:1px solid #eef2f6;
+  box-shadow:0 10px 24px rgba(0,0,0,0.06);
+  pointer-events:none;
+}
+.tiktok-card.is-skeleton .tiktok-skel-media{
+  position:absolute;
+  inset:0;
+  border-radius:12px;
+}
+.tiktok-card.is-skeleton:hover{ transform:none; }
 
 /* Quick chips */
 .quick-chips{display:flex; gap:10px; overflow:auto; padding:10px 2px 0; scrollbar-width:none}
@@ -9107,10 +9181,10 @@ body[data-page="home"] .secao-busca{
 
 /* Titulos (premium) */
 .sec-title{
-  font-weight: 900;
+  font-weight: 800;
   letter-spacing: -0.02em;
   color: var(--cor0);
-  font-size: clamp(1.35rem, 2.1vw, 1.9rem);
+  font-size: var(--doke-type-h2, clamp(1.35rem, 2.1vw, 1.9rem));
   margin: 0;
 }
 .sec-title-light{ color:#fff !important; }
@@ -9880,4 +9954,411 @@ body[data-page="home"] .btn-solicitar:active{
 }
 @media (max-width: 520px){
   .pv-user-card{ min-width: 100%; }
+}
+
+
+
+/* ==========================================================
+   DOKE FIX - PUBLICACOES/Videos cards clean + carrossel
+   ========================================================== */
+:root{
+  --doke-container-max: 1200px;
+  --doke-card-radius: 14px;
+}
+
+/* garante largura padrão nas seções do index */
+.fotos-container,
+.videos-container,
+.anuncio-container{
+  max-width: var(--doke-container-max) !important;
+}
+
+/* Publicações: carrossel horizontal (estilo categorias) */
+#feed-global-container{
+  display:flex !important;
+  gap:16px !important;
+  overflow-x:auto !important;
+  padding: 10px 0 6px 0 !important;
+  scroll-snap-type:x mandatory;
+  scroll-behavior:smooth;
+  overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width:none;
+  max-width: 100% !important;
+  margin: 0 !important;
+}
+#feed-global-container::-webkit-scrollbar{display:none;}
+
+#feed-global-container .card-feed-global{
+  flex: 0 0 260px;
+  width: 260px;
+  scroll-snap-align:start;
+  border-radius: var(--doke-card-radius);
+}
+
+/* quando o feed for renderizado com o layout novo (.feed-publicacao-card/.dp-item)
+   garante que os cards NÃO encolham (evita aqueles dois fininhos bugados) */
+#feed-global-container .feed-publicacao-card,
+#feed-global-container .dp-item{
+  flex: 0 0 260px !important;
+  width: 260px !important;
+  min-width: 260px !important;
+  flex-shrink: 0 !important;
+  scroll-snap-align: start;
+}
+@media (max-width: 900px){
+  #feed-global-container .feed-publicacao-card,
+  #feed-global-container .dp-item{
+    flex-basis: 220px !important;
+    width: 220px !important;
+    min-width: 220px !important;
+  }
+  #feed-global-container .card-feed-global{
+    flex-basis: 220px;
+    width: 220px;
+  }
+}
+@media (max-width: 600px){
+  #feed-global-container .feed-publicacao-card,
+  #feed-global-container .dp-item{
+    flex-basis: 230px !important;
+    width: 230px !important;
+    min-width: 230px !important;
+  }
+}
+@media (max-width: 600px){
+  #feed-global-container .card-feed-global{
+    flex-basis: 230px;
+    width: 230px;
+  }
+}
+
+/* mídia do post: não pode ficar gigante */
+.midia-post{
+  height: clamp(170px, 28vw, 240px) !important;
+  border-top: 1px solid #f1f3f5;
+  border-bottom: 1px solid #f1f3f5;
+}
+
+/* Antes/Depois - bolinhas (indicadores) */
+.dp-ba{ position: relative; }
+.dp-ba-dots{
+  position:absolute;
+  left: 12px;
+  bottom: 12px;
+  display:flex;
+  gap:8px;
+  padding: 6px 8px;
+  background: rgba(255,255,255,.88);
+  border: 1px solid rgba(255,255,255,.6);
+  border-radius: 999px;
+  backdrop-filter: blur(8px);
+}
+.dp-ba-dot{
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1px solid rgba(0,0,0,.12);
+  background: rgba(0,0,0,.18);
+  cursor: pointer;
+}
+.dp-ba-dot.is-active{
+  background: #0b7768;
+  border-color: rgba(11,119,104,.45);
+}
+
+/* truncamento forte do texto (evita quebrar layout) */
+.feed-body p{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-word;
+}
+
+.feed-user-info h4{
+  max-width: 170px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* header das seções com ações */
+.sec-head-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom: 14px;
+}
+.sec-head-actions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+a.btn-mini{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background:#fff;
+  border:1px solid #e8edf0;
+  color:#0b7768;
+  font-weight:600;
+  font-size: 12px;
+  text-decoration:none;
+}
+a.btn-mini:hover{filter:brightness(0.98);}
+
+button.carousel-nav{
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border:1px solid #e8edf0;
+  background:#fff;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+}
+button.carousel-nav:disabled{opacity:.35; cursor:default;}
+
+/* Publicações (HOME): mantém o padrão verde/teal do site (como era antes)
+   e evita que o bloco fique poluído/fora do lugar */
+.fotos-container{
+  background: linear-gradient(135deg, rgba(11,119,104,.95), rgba(11,119,104,.55)) !important;
+  border-radius: 18px;
+  padding: 16px 16px 12px;
+  box-shadow: 0 12px 36px rgba(0,0,0,.12);
+}
+
+/* deixa o header da seção alinhado (título à esquerda / ações à direita) */
+.fotos-container .sec-head-row{
+  width: 100%;
+  margin-bottom: 12px;
+}
+
+/* título branco quando estiver sobre fundo verde */
+.sec-title-light{ color: #fff !important; }
+
+/* botões (ver mais / setas) no verde: fundo branco com leve transparência */
+.fotos-container a.btn-mini,
+.fotos-container button.carousel-nav{
+  background: rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.55);
+}
+
+/* Nome do autor + @user no cabeçalho do card */
+.feed-handle{
+  color:#0b7768;
+  font-weight: 900;
+}
+.feed-user-info span{
+  color:#6b7280;
+}
+
+/* Vídeos-curtos: mantém carrossel e garante card compacto */
+#galeria-dinamica{
+  scroll-behavior:smooth;
+}
+
+
+/* Página dedicada: publicações/vídeos */
+body.page-publicacoes #feed-global-container{
+  display:grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
+  overflow: visible !important;
+}
+body.page-publicacoes #feed-global-container .card-feed-global{
+  width: auto !important;
+  flex: initial !important;
+}
+body.page-videos #galeria-dinamica{
+  display:grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)) !important;
+  overflow: visible !important;
+}
+
+/* HOME: alinhar largura de todas as seções/containers */
+body[data-page="home"] .secao-busca,
+body[data-page="home"] .categorias-container,
+body[data-page="home"] .videos-container,
+body[data-page="home"] .fotos-container,
+body[data-page="home"] .anuncio-container,
+body[data-page="home"] .rodape-container,
+body[data-page="home"] .rodape-container2 {
+  width: 100%;
+  max-width: var(--doke-container-max, 1200px) !important;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Tipografia refinada (escala consistente) */
+:root{
+  --doke-type-h1: clamp(1.75rem, 2.6vw, 2.6rem);
+  --doke-type-h2: clamp(1.35rem, 2.1vw, 1.9rem);
+  --doke-type-h3: clamp(1.05rem, 1.5vw, 1.25rem);
+  --doke-type-body: 1rem;
+  --doke-type-small: 0.9rem;
+  --doke-type-xs: 0.82rem;
+}
+
+body{
+  line-height: 1.55;
+  text-rendering: optimizeLegibility;
+}
+
+h1, h2, h3{
+  letter-spacing: -0.015em;
+  line-height: 1.18;
+}
+h1{ font-size: var(--doke-type-h1); font-weight: 800; }
+h2{ font-size: var(--doke-type-h2); font-weight: 800; }
+h3{ font-size: var(--doke-type-h3); font-weight: 700; }
+
+p{
+  font-size: var(--doke-type-body);
+  line-height: 1.6;
+}
+
+/* Home: títulos e subtítulos alinhados */
+body[data-page="home"] .sec-title,
+body[data-page="home"] .section-feed-title h2,
+body[data-page="home"] .videos-header-top h2,
+body[data-page="home"] .categories-section h2,
+body[data-page="home"] .pv-head h2{
+  font-size: var(--doke-type-h2);
+}
+
+body[data-page="home"] .pv-sub,
+body[data-page="home"] .busca-hint,
+body[data-page="home"] .feed-user-info span{
+  font-size: var(--doke-type-small);
+}
+
+@supports (content-visibility: auto){
+  body[data-page="home"] .categorias-container,
+  body[data-page="home"] .videos-container,
+  body[data-page="home"] .fotos-container,
+  body[data-page="home"] .anuncio-container,
+  body[data-page="home"] .para-voce-section,
+  body[data-page="home"] .pros-section,
+  body[data-page="home"] .rodape-container,
+  body[data-page="home"] .rodape-container2{
+    content-visibility: auto;
+    contain-intrinsic-size: 800px 600px;
+  }
+}
+
+/* Microinterações consistentes (home) */
+body[data-page="home"] .btn-procurar,
+body[data-page="home"] .btn-anunciar,
+body[data-page="home"] .btn-search-circle,
+body[data-page="home"] .btn-solicitar,
+body[data-page="home"] .btn-toggle-filtros,
+body[data-page="home"] .btn-aplicar,
+body[data-page="home"] .carousel-nav,
+body[data-page="home"] .pro-arrow,
+body[data-page="home"] .cat-arrow,
+body[data-page="home"] .chip-tag,
+body[data-page="home"] .pv-chip,
+body[data-page="home"] .quick-chip{
+  transition: transform var(--doke-fast), box-shadow var(--doke-fast), filter var(--doke-fast), background var(--doke-fast), border-color var(--doke-fast), color var(--doke-fast);
+}
+
+body[data-page="home"] .btn-procurar:hover,
+body[data-page="home"] .btn-anunciar:hover,
+body[data-page="home"] .btn-search-circle:hover,
+body[data-page="home"] .btn-solicitar:hover,
+body[data-page="home"] .btn-toggle-filtros:hover,
+body[data-page="home"] .btn-aplicar:hover,
+body[data-page="home"] .carousel-nav:hover,
+body[data-page="home"] .pro-arrow:hover,
+body[data-page="home"] .cat-arrow:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(0,0,0,0.12);
+}
+
+body[data-page="home"] .btn-procurar:active,
+body[data-page="home"] .btn-anunciar:active,
+body[data-page="home"] .btn-search-circle:active,
+body[data-page="home"] .btn-solicitar:active,
+body[data-page="home"] .btn-toggle-filtros:active,
+body[data-page="home"] .btn-aplicar:active,
+body[data-page="home"] .carousel-nav:active,
+body[data-page="home"] .pro-arrow:active,
+body[data-page="home"] .cat-arrow:active,
+body[data-page="home"] .chip-tag:active,
+body[data-page="home"] .pv-chip:active,
+body[data-page="home"] .quick-chip:active{
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 6px 14px rgba(0,0,0,0.10);
+}
+
+body[data-page="home"] .card-premium,
+body[data-page="home"] .feed-publicacao-card,
+body[data-page="home"] .dp-item,
+body[data-page="home"] .tiktok-card,
+body[data-page="home"] .pro-card,
+body[data-page="home"] .category-card,
+body[data-page="home"] .cat-card,
+body[data-page="home"] .pv-user-card{
+  transition: transform var(--doke-fast), box-shadow var(--doke-fast), border-color var(--doke-fast);
+}
+
+body[data-page="home"] .card-premium:hover,
+body[data-page="home"] .feed-publicacao-card:hover,
+body[data-page="home"] .dp-item:hover,
+body[data-page="home"] .tiktok-card:hover,
+body[data-page="home"] .pro-card:hover,
+body[data-page="home"] .category-card:hover,
+body[data-page="home"] .cat-card:hover,
+body[data-page="home"] .pv-user-card:hover{
+  transform: translateY(-3px);
+  box-shadow: 0 16px 30px rgba(0,0,0,0.12);
+}
+
+body[data-page="home"] .card-premium:active,
+body[data-page="home"] .feed-publicacao-card:active,
+body[data-page="home"] .dp-item:active,
+body[data-page="home"] .tiktok-card:active,
+body[data-page="home"] .pro-card:active,
+body[data-page="home"] .category-card:active,
+body[data-page="home"] .cat-card:active,
+body[data-page="home"] .pv-user-card:active{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.10);
+}
+
+@media (prefers-reduced-motion: reduce){
+  body[data-page="home"] *{
+    transition: none !important;
+  }
+}
+
+/* Layout grid consistente (larguras + gutters padronizados) */
+:root {
+  --doke-container-gutter: 24px;
+}
+@media (max-width: 900px) {
+  :root { --doke-container-gutter: 16px; }
+}
+@media (max-width: 600px) {
+  :root { --doke-container-gutter: 14px; }
+}
+
+.doke-container,
+.secao-busca,
+.categorias-container,
+.videos-container,
+.fotos-container,
+.anuncio-container,
+.rodape-container,
+.rodape-container2 {
+  width: 100%;
+  max-width: var(--doke-container-max, 1200px);
+  margin-left: auto;
+  margin-right: auto;
+  padding-inline: var(--doke-container-gutter);
 }

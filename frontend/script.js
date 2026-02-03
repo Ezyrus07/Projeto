@@ -460,7 +460,7 @@ window.carregarTrabalhosHome = async function() {
                  onclick="abrirPlayerTikTok(${dadosModal})">
                 <div class="badge-status">${data.categoria || "Portfólio"}</div>
                 <input type="hidden" class="video-src-hidden" value="${data.videoUrl}">
-                <img src="${data.capa}" class="video-bg">
+                <img src="${data.capa}" class="video-bg" loading="lazy" decoding="async">
                 <div class="play-icon"><i class='bx bx-play'></i></div>
                 <div class="video-ui-layer">
                     <div class="video-bottom-info">
@@ -473,6 +473,7 @@ window.carregarTrabalhosHome = async function() {
             container.insertAdjacentHTML('beforeend', html);
         });
     } catch (e) { console.error(e); }
+    finally { container.setAttribute('aria-busy', 'false'); }
 }
 // ============================================================
 // ABRIR PLAYER TIKTOK (CORRIGIDO: RECEBE FOTO E LINK)
@@ -1075,26 +1076,6 @@ window.dokeBuildCardPremium = function(anuncio) {
 return card;
 };
 
-// Helper: permite inserir string OU HTMLElement sem virar "[object HTMLDivElement]"
-window.__dokeAppendHTMLorNode = window.__dokeAppendHTMLorNode || function(container, content){
-    try {
-        if (!container || content == null) return;
-        if (typeof content === 'string') {
-            container.insertAdjacentHTML('beforeend', content);
-            return;
-        }
-        if (content && content.nodeType === 1) {
-            container.appendChild(content);
-            return;
-        }
-        if (content && typeof content.outerHTML === 'string') {
-            container.insertAdjacentHTML('beforeend', content.outerHTML);
-        }
-    } catch (e) {
-        console.warn('Falha ao inserir card:', e);
-    }
-};
-
 function __dokeNormalizeText(value) {
     return String(value || '')
         .toLowerCase()
@@ -1441,6 +1422,12 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 
         feed.innerHTML = ""; 
 
+        function appendAnuncioCard(target, card) {
+            if (!target || !card) return;
+            if (typeof card === 'string') target.insertAdjacentHTML('beforeend', card);
+            else target.appendChild(card);
+        }
+
         if (listaFinal.length === 0) {
             // Nada encontrado: sugere alguns anúncios embaixo (quando houver termo de busca)
             if (termoBusca && termoBusca.trim() !== "" && listaAnuncios.length) {
@@ -1453,35 +1440,18 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 `;
                 sugest.forEach((a) => {
                     const card = window.dokeBuildCardPremium(a);
-                    window.__dokeAppendHTMLorNode(feed, card);
+                    appendAnuncioCard(feed, card);
                 });
             } else {
                 feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
             }
+            feed.setAttribute('aria-busy', 'false');
             return;
         }
 
         // Paginação simples (home/header) — carrega por lotes
         window.__dokeAnunciosListaAtual = listaFinal;
         window.__dokeAnunciosCursor = 0;
-
-        function updateVerMaisUI(){
-            const list = window.__dokeAnunciosListaAtual || [];
-            const cursor = Number(window.__dokeAnunciosCursor || 0);
-            const hasMore = cursor < list.length;
-            const btn = document.getElementById('btnVerMaisAnuncios');
-            const wrap = document.getElementById('wrapVerMaisAnuncios') || btn?.closest?.('#wrapVerMaisAnuncios') || null;
-
-            if (!hasMore) {
-                if (btn) btn.style.display = 'none';
-                // Remove para não sobrar "linha" vazia no layout
-                if (wrap) wrap.remove();
-                return;
-            }
-
-            if (wrap) wrap.style.display = '';
-            if (btn) btn.style.display = '';
-        }
 
         function renderMais(qtd = 8){
             const list = window.__dokeAnunciosListaAtual || [];
@@ -1490,50 +1460,43 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             for (let i = start; i < end; i++){
                 const anuncio = list[i];
                 const card = window.dokeBuildCardPremium(anuncio);
-                window.__dokeAppendHTMLorNode(feed, card);
+                appendAnuncioCard(feed, card);
             }
             window.__dokeAnunciosCursor = end;
-            updateVerMaisUI();
+            const btn = document.getElementById('btnVerMaisAnuncios');
+            if (btn) btn.style.display = (end < list.length) ? '' : 'none';
         }
 
         // limpa e renderiza o primeiro lote
         feed.innerHTML = "";
         renderMais(8);
 
-        // botão Ver mais (só aparece quando houver itens a carregar)
-        const __listLen = (window.__dokeAnunciosListaAtual || []).length;
-        const __cursor = Number(window.__dokeAnunciosCursor || 0);
-        const __hasMore = __cursor < __listLen;
-
+        // botão Ver mais
         if (!document.getElementById('btnVerMaisAnuncios')) {
-            // Se não tem mais anúncios além do primeiro lote, não cria o botão
-            if (__hasMore) {
-                const wrap = document.createElement('div');
-                wrap.id = 'wrapVerMaisAnuncios';
-                wrap.style.textAlign = 'center';
-                wrap.style.padding = '14px 0 6px';
-                wrap.innerHTML = `<button id="btnVerMaisAnuncios" class="btn-pro-action" type="button" style="min-width:220px;">Ver mais</button>`;
-                feed.parentNode && feed.parentNode.insertBefore(wrap, feed.nextSibling);
-                const btn = wrap.querySelector('#btnVerMaisAnuncios');
-                if (btn) {
-                    btn.addEventListener('click', ()=> renderMais(8));
-                    updateVerMaisUI();
-                }
+            const wrap = document.createElement('div');
+            wrap.style.textAlign = 'center';
+            wrap.style.padding = '14px 0 6px';
+            wrap.innerHTML = `<button id="btnVerMaisAnuncios" class="btn-pro-action" type="button" style="min-width:220px;">Ver mais</button>`;
+            feed.parentNode && feed.parentNode.insertBefore(wrap, feed.nextSibling);
+            const btnEl = wrap.querySelector('#btnVerMaisAnuncios');
+            btnEl?.addEventListener('click', ()=> renderMais(8));
+            if (btnEl) {
+                btnEl.style.display = (window.__dokeAnunciosCursor < (window.__dokeAnunciosListaAtual||[]).length) ? '' : 'none';
             }
         } else {
             const btn = document.getElementById('btnVerMaisAnuncios');
-            const wrap = document.getElementById('wrapVerMaisAnuncios') || btn?.closest?.('#wrapVerMaisAnuncios') || btn?.parentElement;
             if (btn) {
                 btn.onclick = ()=> renderMais(8);
+                btn.style.display = (window.__dokeAnunciosCursor < (window.__dokeAnunciosListaAtual||[]).length) ? '' : 'none';
             }
-            // garante atualização correta mesmo quando filtros mudam
-            updateVerMaisUI();
         }
 
+        feed.setAttribute('aria-busy', 'false');
         return;
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
         feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
+        feed.setAttribute('aria-busy', 'false');
     }
 }
 
@@ -2144,61 +2107,18 @@ function formatarCepInput(e) {
     if (valor.length > 5) valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
     e.target.value = valor;
 }
-window.salvarCep = async function() {
+window.salvarCep = function() {
     const i = document.getElementById('inputCep');
     if(!i) return;
-    const cepLimpo = (i.value || '').replace(/\D/g, '');
-    if(cepLimpo.length !== 8) { 
-        alert("CEP inválido! Digite 8 números."); 
-        i.focus(); 
-        return; 
-    }
-
-    const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
-
-    // Salva CEP rápido (fallback)
-    localStorage.setItem('meu_cep_doke', cepFormatado);
-
-    // Atualiza UI imediatamente
-    window.atualizarTelaCep(cepFormatado);
-    window.preencherTodosCeps(cepFormatado);
-
-    // Fecha popup
-    const box = document.getElementById('boxCep');
-    if(box) box.style.display = 'none';
-
-    // Busca bairro/cidade (ViaCEP) e salva em cache
-    try {
-        const r = await fetch(`https://viacep.com.br/ws/${cepLimpo}/json/`, { cache: 'no-store' });
-        if(r.ok) {
-            const data = await r.json();
-            if(data && !data.erro) {
-                const payload = {
-                    cep: cepFormatado,
-                    cidade: data.localidade || '',
-                    bairro: data.bairro || '',
-                    uf: data.uf || ''
-                };
-                localStorage.setItem('doke_localizacao', JSON.stringify(payload));
-                window.atualizarTelaCep(payload);
-
-                // (Opcional) Se tiver Supabase e colunas existirem, tenta persistir no perfil
-                try {
-                    if(window.sb && window.sb.auth) {
-                        const { data: sess } = await window.sb.auth.getSession();
-                        const user = sess && sess.session && sess.session.user;
-                        if(user) {
-                            await window.sb.from('usuarios')
-                                .update({ cep: payload.cep, cidade: payload.cidade, bairro: payload.bairro, uf: payload.uf })
-                                .eq('uid', user.id);
-                        }
-                    }
-                } catch(_) {}
-            }
-        }
-    } catch(_) {}
+    const cepLimpo = i.value.replace(/\D/g, ''); 
+    if(cepLimpo.length === 8) {
+        const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
+        localStorage.setItem('meu_cep_doke', cepFormatado); 
+        window.atualizarTelaCep(cepFormatado);
+        window.preencherTodosCeps(cepFormatado);
+        document.getElementById('boxCep').style.display = 'none';
+    } else { alert("CEP inválido! Digite 8 números."); i.focus(); }
 }
-
 window.preencherTodosCeps = function(cep) {
     if (!cep) return;
     // Preencher todos os inputs com ID 'inputCep' na página
@@ -2864,7 +2784,11 @@ window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
 
-    container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
+    if (typeof window.dokeRenderPublicacoesSkeleton === 'function') {
+        window.dokeRenderPublicacoesSkeleton(container);
+    } else {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
+    }
 
     const feedItems = [];
 
@@ -2915,6 +2839,7 @@ window.carregarFeedGlobal = async function() {
 
     if (feedItems.length === 0) {
         container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publicação ainda.</p>";
+        container.setAttribute('aria-busy', 'false');
         return;
     }
 
@@ -2935,8 +2860,8 @@ window.carregarFeedGlobal = async function() {
 
             const html = `
                 <div class="card-feed-global">
-                    <div class="feed-header">
-                        <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User" class="js-user-link" data-uid="${uidDestino}" ${linkPerfil} ${cursorStyle}>
+                <div class="feed-header">
+                    <img src="${post.autorFoto || 'https://placehold.co/50'}" alt="User" width="40" height="40" loading="lazy" decoding="async" class="js-user-link" data-uid="${uidDestino}" ${linkPerfil} ${cursorStyle}>
                         <div class="feed-user-info">
                             <h4 class="js-user-link" data-uid="${uidDestino}" ${linkPerfil} ${cursorStyle}>${post.autorUser || post.autorNome}</h4>
                             <span>${dataPost}</span>
@@ -2984,7 +2909,7 @@ window.carregarFeedGlobal = async function() {
         const html = `
             <div class="card-feed-global">
                 <div class="feed-header">
-                    <img src="${autor.foto || 'https://placehold.co/50'}" alt="User" class="js-user-link" ${uidAttr} ${userAttr}>
+                    <img src="${autor.foto || 'https://placehold.co/50'}" alt="User" width="40" height="40" loading="lazy" decoding="async" class="js-user-link" ${uidAttr} ${userAttr}>
                     <div class="feed-user-info">
                         <h4 class="js-user-link" ${uidAttr} ${userAttr}>${escapeHtml(autorNome)}</h4>
                         <span>${dataPost}</span>
@@ -3008,6 +2933,7 @@ window.carregarFeedGlobal = async function() {
             </div>`;
         container.insertAdjacentHTML('beforeend', html);
     });
+    container.setAttribute('aria-busy', 'false');
 }
 
 // Funções extras para perfil
@@ -3016,7 +2942,11 @@ window.carregarFeedGlobal = async function() {
     if (!container) return;
 
     container.classList.add("feed-publicacoes-grid");
-    container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
+    if (typeof window.dokeRenderPublicacoesSkeleton === 'function') {
+        window.dokeRenderPublicacoesSkeleton(container);
+    } else {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
+    }
 
     const feedItems = [];
 
@@ -3067,6 +2997,7 @@ window.carregarFeedGlobal = async function() {
 
     if (feedItems.length === 0) {
         container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
+        container.setAttribute('aria-busy', 'false');
         return;
     }
 
@@ -3085,8 +3016,8 @@ window.carregarFeedGlobal = async function() {
             const autorFoto = post.autorFoto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(uidDestino||idPost||"u"))}`;
             const when = formatFeedDate(post.data || entry.createdAt || "");
             const authorHtml = `
-              <div class="dp-itemAuthor">
-                <img class="dp-itemAvatar" src="${autorFoto}" alt="">
+                <div class="dp-itemAuthor">
+                <img class="dp-itemAvatar" src="${autorFoto}" alt="" width="34" height="34" loading="lazy" decoding="async">
                 <div>
                   <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
                   ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
@@ -3120,7 +3051,7 @@ window.carregarFeedGlobal = async function() {
         const when = formatFeedDate(item.created_at || item.data || entry.createdAt || "");
         const authorHtml = `
           <div class="dp-itemAuthor">
-            <img class="dp-itemAvatar" src="${autorFoto}" alt="">
+            <img class="dp-itemAvatar" src="${autorFoto}" alt="" width="34" height="34" loading="lazy" decoding="async">
             <div>
               <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
               ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
@@ -3149,12 +3080,22 @@ window.carregarFeedGlobal = async function() {
         container.insertAdjacentHTML('beforeend', html);
     });
 
+    container.setAttribute('aria-busy', 'false');
     setupFeedVideoPreview(container);
     setupAntesDepois(container);
 }
 
 function setupAntesDepois(container){
     if(!container) return;
+    // Se o módulo dedicado (doke-beforeafter.js) estiver carregado,
+    // delega para ele (mais suave, com controles e sem "piscando" imagens).
+    if (window.DokeAntesDepois && typeof window.DokeAntesDepois.refresh === 'function') {
+        window.DokeAntesDepois.refresh(container);
+        return;
+    }
+
+    // Fallback MUITO simples (caso a página não tenha carregado doke-beforeafter.js)
+    // - aumenta o tempo para ficar mais confortável
     const els = container.querySelectorAll(".js-antes-depois");
     els.forEach((el)=>{
         if(el.dataset.bound === "1") return;
@@ -3165,11 +3106,11 @@ function setupAntesDepois(container){
         const badge = el.querySelector(".dp-ba-badge");
         if(!img || !before || !after) return;
         let state = "before";
-        setInterval(()=>{
+        window.setInterval(()=>{
             state = (state === "before") ? "after" : "before";
             img.src = (state === "before") ? before : after;
             if(badge) badge.textContent = (state === "before") ? "Antes" : "Depois";
-        }, 2000);
+        }, 8000);
     });
 }
 
@@ -3293,24 +3234,14 @@ document.addEventListener("DOMContentLoaded", async function() {
         carregarReelsHome();
         enableVideosCurtosPageScroll();
     }
-    // CEP / Localização (header)
-    let cepSalvo = localStorage.getItem('meu_cep_doke');
-    try {
-        const loc = JSON.parse(localStorage.getItem('doke_localizacao') || 'null');
-        if (loc && (loc.bairro || loc.cidade || loc.cep)) {
-            if (loc.cep) cepSalvo = loc.cep;
-            window.atualizarTelaCep(loc);
-        } else if (cepSalvo) {
-            window.atualizarTelaCep(cepSalvo);
-        }
-    } catch(_) {
-        if (cepSalvo) window.atualizarTelaCep(cepSalvo);
-    }
 
+    const cepSalvo = localStorage.getItem('meu_cep_doke');
     if (cepSalvo) {
+        window.atualizarTelaCep(cepSalvo);
         window.preencherTodosCeps(cepSalvo);
     }
-// Adicionar listener a todos os inputs de CEP para sincronizar automaticamente
+
+    // Adicionar listener a todos os inputs de CEP para sincronizar automaticamente
     document.querySelectorAll('input[id="inputCep"], input[id="cepOrcamento"], input[id="cepEndereco"], input[id="cepBusca"]').forEach(input => {
         // Preencher com o CEP salvo ao carregar
         if (cepSalvo && !input.value) {
@@ -9348,36 +9279,44 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ---------- Skeletons ----------
   window.dokeRenderAnunciosSkeleton = function(feed){
     if (!feed) return;
+    feed.setAttribute('aria-busy', 'true');
     const count = window.innerWidth < 600 ? 2 : 4;
     const cards = Array.from({length: count}).map(()=>
-      '<div class="cp-card cp-card-v2" style="position:relative;">'
-      + '<div class="cp-header-clean">'
-      + '  <div class="cp-avatar skeleton" style="width:46px;height:46px;border-radius:14px;"></div>'
-      + '  <div style="flex:1">'
-      + '    <div class="skeleton" style="height:14px;width:48%;margin-bottom:10px;"></div>'
-      + '    <div class="skeleton" style="height:12px;width:32%;"></div>'
+      '<div class="skeleton-premium-card" aria-hidden="true">'
+      + '  <div class="skeleton skeleton-premium-cover"></div>'
+      + '  <div class="skeleton-premium-body">'
+      + '    <div class="skeleton skeleton-line lg"></div>'
+      + '    <div class="skeleton skeleton-line md"></div>'
+      + '    <div class="skeleton skeleton-line sm"></div>'
       + '  </div>'
       + '</div>'
-      + '<div class="cp-body">'
-      + '  <div class="skeleton" style="height:14px;width:70%;margin-bottom:10px;"></div>'
-      + '  <div class="skeleton" style="height:12px;width:90%;margin-bottom:8px;"></div>'
-      + '  <div class="skeleton" style="height:12px;width:80%;"></div>'
-      + '</div>'
-      + '<div class="cp-actions">'
-      + '  <div class="skeleton" style="height:44px;width:100%;border-radius:14px;"></div>'
-      + '</div>'
-      + '</div>'
     ).join('');
-    feed.innerHTML = '<div class="skeleton-grid">' + cards + '</div>';
+    feed.innerHTML = cards;
   };
 
   window.dokeRenderTrabalhosSkeleton = function(container){
     if (!container) return;
-    const count = window.innerWidth < 600 ? 4 : 7;
+    container.setAttribute('aria-busy', 'true');
+    const count = window.innerWidth < 600 ? 3 : 6;
     const items = Array.from({length: count}).map(()=>
-      '<div class="video-card" style="width:160px;">'
-      + '<div class="video-thumb skeleton" style="width:160px;height:90px;border-radius:14px;"></div>'
-      + '<div class="skeleton" style="height:12px;width:90%;margin-top:10px;"></div>'
+      '<div class="tiktok-card is-skeleton" aria-hidden="true">'
+      + '  <div class="tiktok-skel-media skeleton"></div>'
+      + '</div>'
+    ).join('');
+    container.innerHTML = items;
+  };
+
+  window.dokeRenderPublicacoesSkeleton = function(container){
+    if (!container) return;
+    container.setAttribute('aria-busy', 'true');
+    const count = window.innerWidth < 600 ? 3 : 5;
+    const items = Array.from({length: count}).map(()=>
+      '<div class="pub-skel" aria-hidden="true">'
+      + '  <div class="pub-skel-media skeleton"></div>'
+      + '  <div class="pub-skel-body">'
+      + '    <div class="skeleton skeleton-line sm"></div>'
+      + '    <div class="skeleton skeleton-line md"></div>'
+      + '  </div>'
       + '</div>'
     ).join('');
     container.innerHTML = items;
@@ -9760,6 +9699,86 @@ async function carregarComentariosSupabase(publicacaoId) {
     });
   }
 
+  function addVideosArrows() {
+    if (!isHome()) return;
+    const track = document.getElementById('galeria-dinamica');
+    const prev = document.querySelector('.vid-prev');
+    const next = document.querySelector('.vid-next');
+    if (!track || !prev || !next) return;
+    if (track.dataset.videoCarouselReady === '1') return;
+    track.dataset.videoCarouselReady = '1';
+
+    enableDragScroll(track);
+
+    const scrollByPage = (dir) => {
+      const amount = Math.max(240, Math.floor(track.clientWidth * 0.85));
+      track.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    };
+
+    prev.addEventListener('click', () => scrollByPage(-1));
+    next.addEventListener('click', () => scrollByPage(1));
+
+    const updateArrows = () => {
+      const maxLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+      prev.disabled = track.scrollLeft <= 2;
+      next.disabled = track.scrollLeft >= maxLeft - 2;
+    };
+
+    track.addEventListener('scroll', updateArrows, { passive: true });
+
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(updateArrows);
+      ro.observe(track);
+    }
+
+    if ('MutationObserver' in window) {
+      const mo = new MutationObserver(updateArrows);
+      mo.observe(track, { childList: true });
+    }
+
+    setTimeout(updateArrows, 80);
+  }
+
+  function addPublicacoesArrows() {
+    if (!isHome()) return;
+    const track = document.getElementById('feed-global-container');
+    const prev = document.querySelector('.pub-prev');
+    const next = document.querySelector('.pub-next');
+    if (!track || !prev || !next) return;
+    if (track.dataset.pubCarouselReady === '1') return;
+    track.dataset.pubCarouselReady = '1';
+
+    enableDragScroll(track);
+
+    const scrollByPage = (dir) => {
+      const amount = Math.max(240, Math.floor(track.clientWidth * 0.85));
+      track.scrollBy({ left: dir * amount, behavior: 'smooth' });
+    };
+
+    prev.addEventListener('click', () => scrollByPage(-1));
+    next.addEventListener('click', () => scrollByPage(1));
+
+    const updateArrows = () => {
+      const maxLeft = Math.max(0, track.scrollWidth - track.clientWidth);
+      prev.disabled = track.scrollLeft <= 2;
+      next.disabled = track.scrollLeft >= maxLeft - 2;
+    };
+
+    track.addEventListener('scroll', updateArrows, { passive: true });
+
+    if ('ResizeObserver' in window) {
+      const ro = new ResizeObserver(updateArrows);
+      ro.observe(track);
+    }
+
+    if ('MutationObserver' in window) {
+      const mo = new MutationObserver(updateArrows);
+      mo.observe(track, { childList: true });
+    }
+
+    setTimeout(updateArrows, 80);
+  }
+
   // ----------------------------
   // PARA VOCE + CTA CONTEXTUAL
   // ----------------------------
@@ -10088,6 +10107,8 @@ function buildParaVoceSection() {
 
     // profissionais: setas + drag + sem corte
     addProsArrows();
+    addVideosArrows();
+    addPublicacoesArrows();
 
     // drag no carrossel de categorias tb
     const catTrack = document.getElementById('categoriesCarousel');
@@ -10268,3 +10289,293 @@ document.addEventListener("DOMContentLoaded", carregarProfissionaisIndex);
 document.addEventListener('DOMContentLoaded', function(){
   try{ window.atualizarTelaCep(''); }catch(_e){}
 });
+
+
+/*************************************************
+ * NEGÓCIOS (negocios.html / perfil-empresa.html / negocio.html)
+ * - Sem WhatsApp: CTA sempre leva para chat.html
+ * - Localização: usa CEP salvo e botão "Usar localização atual" (geo)
+ *************************************************/
+(function(){
+  const PAGE = document.body?.dataset?.page;
+  const sb = () => (window.supabase || null);
+
+  function getLocal(){
+    try { return JSON.parse(localStorage.getItem('doke_localizacao')||'null'); } catch { return null; }
+  }
+  function setGeo(coords){
+    try { localStorage.setItem('doke_geo', JSON.stringify({
+      lat: coords.latitude,
+      lng: coords.longitude,
+      acc: coords.accuracy,
+      ts: Date.now()
+    })); } catch(_){}
+  }
+  function getGeo(){
+    try { return JSON.parse(localStorage.getItem('doke_geo')||'null'); } catch { return null; }
+  }
+
+  async function usarLocalizacaoAtual(btn){
+    if (!('geolocation' in navigator)) {
+      toast('Seu navegador não suporta geolocalização.');
+      return;
+    }
+    if (btn) {
+      btn.disabled = true;
+      btn.classList.add('is-loading');
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos)=>{
+        setGeo(pos.coords);
+        try{ window.atualizarTelaCep(''); }catch(_e){}
+        toast('Localização atual salva (modo beta).');
+        if(btn){ btn.disabled=false; btn.classList.remove('is-loading'); }
+      },
+      (err)=>{
+        console.warn('geo error', err);
+        toast('Não consegui acessar sua localização. Verifique as permissões do navegador.');
+        if(btn){ btn.disabled=false; btn.classList.remove('is-loading'); }
+      },
+      { enableHighAccuracy:true, timeout: 10000, maximumAge: 30000 }
+    );
+  }
+
+  function toast(msg){
+    // usa o toast já existente no projeto, se tiver
+    if (typeof window.mostrarToast === 'function') { window.mostrarToast(msg); return; }
+    const el = document.createElement('div');
+    el.textContent = msg;
+    el.style.cssText = 'position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#0b7768;color:#fff;padding:10px 14px;border-radius:999px;z-index:9999;font-weight:700;box-shadow:0 14px 30px rgba(0,0,0,.22);';
+    document.body.appendChild(el);
+    setTimeout(()=>{ el.remove(); }, 2600);
+  }
+
+  function renderLocal(el){
+    if (!el) return;
+    const loc = getLocal();
+    const geo = getGeo();
+    const bairroCidade = (loc && (loc.bairro || loc.cidade))
+      ? [loc.bairro, loc.cidade].filter(Boolean).join(', ')
+      : 'Informe seu CEP';
+    const mode = geo ? ' • local atual' : '';
+    el.textContent = bairroCidade + mode;
+  }
+
+  function buildNegocioCard(n){
+    const foto = n?.foto_capa || n?.logo_url || 'assets/Imagens/doke-logo.png';
+    const nome = n?.nome || 'Negócio';
+    const cat = n?.categoria || 'Estabelecimento';
+    const bairro = n?.bairro || '';
+    const cidade = n?.cidade || '';
+    const loc = [bairro, cidade].filter(Boolean).join(', ');
+    const id = n?.id;
+    return `
+      <article class="neg-card" data-id="${id||''}">
+        <div class="neg-media"><img src="${foto}" alt="${escapeHtml(nome)}" loading="lazy"/></div>
+        <div class="neg-body">
+          <div class="neg-top">
+            <div class="neg-name">${escapeHtml(nome)}</div>
+            <div class="neg-cat">${escapeHtml(cat)}</div>
+          </div>
+          <div class="neg-loc">${escapeHtml(loc||'')}&nbsp;</div>
+          <div class="neg-actions">
+            <a class="btn btn-primary" href="negocio.html?id=${encodeURIComponent(id||'')}">Ver</a>
+            <a class="btn btn-ghost" href="chat.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
+          </div>
+        </div>
+      </article>
+    `;
+  }
+
+  async function fetchNegocios(params){
+    const client = sb();
+    if (!client) throw new Error('supabase não inicializado');
+
+    // tenta localizar pelo CEP salvo (bairro/cidade). Se não existir, lista geral.
+    const loc = getLocal();
+    const q = (params?.q || '').trim();
+    const cat = params?.cat || 'Tudo';
+
+    let query = client.from('negocios').select('*').order('created_at', { ascending:false }).limit(60);
+    if (loc?.cidade) query = query.ilike('cidade', `%${loc.cidade}%`);
+    if (cat && cat !== 'Tudo') query = query.ilike('categoria', `%${cat}%`);
+    if (q.length >= 2) query = query.or(`nome.ilike.%${q}%,descricao.ilike.%${q}%,categoria.ilike.%${q}%`);
+
+    const { data, error } = await query;
+    if (error) throw error;
+    return data || [];
+  }
+
+  function wireChips(root, onChange){
+    const chips = Array.from(root.querySelectorAll('[data-chip]'));
+    chips.forEach((c)=>{
+      c.addEventListener('click', ()=>{
+        chips.forEach(x=>x.classList.remove('is-active'));
+        c.classList.add('is-active');
+        onChange(c.dataset.chip);
+      });
+    });
+    return () => (chips.find(x=>x.classList.contains('is-active'))?.dataset?.chip || 'Tudo');
+  }
+
+  async function initNegociosPage(){
+    const root = document.querySelector('[data-negocios]');
+    if (!root) return;
+
+    const locText = document.querySelector('[data-neg-local]');
+    renderLocal(locText);
+
+    const geoBtn = document.querySelector('[data-geo]');
+    if (geoBtn) geoBtn.addEventListener('click', ()=>usarLocalizacaoAtual(geoBtn));
+
+    const listEl = document.querySelector('[data-neg-list]');
+    const emptyEl = document.querySelector('[data-neg-empty]');
+    const input = document.querySelector('[data-neg-q]');
+    const limpar = document.querySelector('[data-neg-clear]');
+    let activeCat = 'Tudo';
+
+    wireChips(root, (cat)=>{ activeCat = cat; load(); });
+
+    if (limpar) limpar.addEventListener('click', ()=>{
+      if (input) input.value = '';
+      activeCat = 'Tudo';
+      root.querySelectorAll('[data-chip]').forEach((c,i)=>{
+        c.classList.toggle('is-active', i===0);
+      });
+      load();
+    });
+
+    let t = null;
+    if (input) input.addEventListener('input', ()=>{
+      clearTimeout(t);
+      t = setTimeout(load, 240);
+    });
+
+    async function load(){
+      if (!listEl) return;
+      listEl.innerHTML = '';
+      if (emptyEl) emptyEl.style.display = 'none';
+
+      root.classList.add('is-loading');
+      try{
+        const data = await fetchNegocios({ q: input?.value || '', cat: activeCat });
+        if (!data.length) {
+          if (emptyEl) {
+            emptyEl.style.display = 'block';
+            emptyEl.querySelector('strong').textContent = 'Nenhum negócio encontrado.';
+          }
+        } else {
+          listEl.innerHTML = data.map(buildNegocioCard).join('');
+        }
+      }catch(err){
+        console.warn('negocios fetch error', err);
+        if (emptyEl) {
+          emptyEl.style.display = 'block';
+          emptyEl.querySelector('strong').textContent = 'Ainda não conseguimos listar negócios.';
+          const small = emptyEl.querySelector('small');
+          if (small) small.textContent = 'Provável motivo: tabela negocios não existe ou RLS bloqueando.';
+        }
+      }finally{
+        root.classList.remove('is-loading');
+      }
+    }
+
+    load();
+  }
+
+  async function initPerfilEmpresaPage(){
+    const root = document.querySelector('[data-perfil-empresa]');
+    if (!root) return;
+    const client = sb();
+    if (!client) return;
+
+    const list = root.querySelector('[data-minhas-lojas]');
+    const empty = root.querySelector('[data-empty]');
+
+    try{
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+
+      const { data, error } = await client
+        .from('negocios')
+        .select('*')
+        .eq('owner_uid', user.id)
+        .order('created_at', { ascending:false });
+
+      if (error) throw error;
+      const arr = data || [];
+      if (!arr.length) {
+        if (empty) empty.style.display='block';
+        if (list) list.innerHTML='';
+      } else {
+        if (empty) empty.style.display='none';
+        if (list) list.innerHTML = arr.map((n)=>{
+          const cover = n.foto_capa || n.logo_url || 'assets/Imagens/doke-logo.png';
+          const nome = escapeHtml(n.nome || 'Meu negócio');
+          const cat = escapeHtml(n.categoria || '');
+          const id = n.id;
+          return `
+            <div class="loja-row">
+              <div class="loja-thumb"><img src="${cover}" alt="${nome}" loading="lazy"/></div>
+              <div class="loja-main">
+                <div class="loja-title">${nome}</div>
+                <div class="loja-meta">${cat}</div>
+              </div>
+              <div class="loja-actions">
+                <a class="btn btn-ghost" href="negocio.html?id=${encodeURIComponent(id)}">Ver</a>
+                <a class="btn btn-primary" href="anunciar-negocio.html?edit=${encodeURIComponent(id)}">Editar</a>
+              </div>
+            </div>
+          `;
+        }).join('');
+      }
+    }catch(err){
+      console.warn('perfil empresa error', err);
+      if (empty) empty.style.display='block';
+    }
+  }
+
+  async function initNegocioPage(){
+    const root = document.querySelector('[data-negocio-page]');
+    if (!root) return;
+    const client = sb();
+    if (!client) return;
+
+    const id = new URLSearchParams(window.location.search).get('id');
+    const title = root.querySelector('[data-title]');
+    const cover = root.querySelector('[data-cover]');
+    const desc = root.querySelector('[data-desc]');
+    const meta = root.querySelector('[data-meta]');
+
+    if (!id) {
+      if (title) title.textContent = 'Negócio';
+      return;
+    }
+    try{
+      const { data, error } = await client.from('negocios').select('*').eq('id', id).maybeSingle();
+      if (error) throw error;
+      if (!data) throw new Error('not found');
+      if (title) title.textContent = data.nome || 'Negócio';
+      if (cover) cover.src = data.foto_capa || data.logo_url || cover.src;
+      if (desc) desc.textContent = data.descricao || 'Sem descrição.';
+      if (meta) meta.textContent = [data.bairro, data.cidade, data.estado].filter(Boolean).join(', ');
+      const chatBtn = root.querySelector('[data-chat]');
+      if (chatBtn) chatBtn.href = `chat.html?negocio_id=${encodeURIComponent(id)}`;
+    }catch(err){
+      console.warn('negocio load error', err);
+    }
+  }
+
+  // init por página
+  document.addEventListener('DOMContentLoaded', ()=>{
+    if (PAGE === 'negocios') initNegociosPage();
+    if (PAGE === 'perfil-empresa') initPerfilEmpresaPage();
+    if (PAGE === 'negocio') initNegocioPage();
+  });
+
+  // expõe
+  try{ window.DokeNegocios = { usarLocalizacaoAtual }; }catch(_e){}
+})();

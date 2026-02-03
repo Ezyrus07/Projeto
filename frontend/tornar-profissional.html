@@ -4,6 +4,11 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Tornar-se Profissional | Doke</title>
+  <meta name="description" content="Valide sua conta para se tornar profissional na Doke. Processo seguro, com etapas claras e envio de documento para verificação.">
+  <meta property="og:title" content="Tornar-se Profissional | Doke">
+  <meta property="og:description" content="Valide sua conta para se tornar profissional na Doke com etapas claras e seguras.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="assets/Imagens/doke-logo.png">
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-init.js"></script>
@@ -199,6 +204,63 @@
     }
     .locked-field { background: #e2e8f0 !important; color: #64748b !important; cursor: not-allowed; }
 
+    /* TRUST STRIP */
+    .tp-trust-row{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+      margin: 18px 0 6px;
+    }
+    .tp-trust-item{
+      background: rgba(255,255,255,0.85);
+      border: 1px solid rgba(255,255,255,0.6);
+      border-radius: 14px;
+      padding: 12px 14px;
+      display:flex;
+      gap: 10px;
+      align-items: center;
+      box-shadow: 0 8px 20px rgba(2,6,23,0.06);
+      color:#1f2937;
+      font-size: 0.88rem;
+      font-weight: 600;
+    }
+    .tp-trust-item i{ font-size: 1.1rem; color: var(--cor0, #0b7768); }
+
+    /* STEPS */
+    .tp-steps{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+    .tp-step{
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: #f8fafc;
+      border: 1px dashed #e2e8f0;
+      font-size: 0.85rem;
+      color: #475569;
+      display:flex;
+      gap:8px;
+      align-items:flex-start;
+    }
+    .tp-step b{ color:#0f172a; }
+
+    .tp-consent{
+      margin-top: 14px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      font-size: 0.85rem;
+      color:#475569;
+    }
+    .tp-consent input{ margin-top: 3px; }
+    .tp-help{
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color:#64748b;
+    }
+
     /* FOOTER NAV */
     .form-nav {
       position: sticky; bottom: 18px; z-index: 10;
@@ -247,6 +309,7 @@
       .anuncio-hero-container { padding: 28px 18px; }
       main { margin-left: 0; padding: 18px; margin-top: 60px; }
       .btn-prev, .btn-next { min-width: 0; flex: 1; }
+      .tp-trust-row, .tp-steps{ grid-template-columns: 1fr; }
     }
 
     /* Toast / modal leve (para evitar alert nativo) */
@@ -372,6 +435,12 @@
         </div>
       </div>
 
+      <div class="tp-trust-row" aria-label="Segurança e transparência">
+        <div class="tp-trust-item"><i class='bx bx-lock-alt'></i><span>Dados protegidos e uso exclusivo para validação</span></div>
+        <div class="tp-trust-item"><i class='bx bx-shield-quarter'></i><span>Documento guardado com segurança</span></div>
+        <div class="tp-trust-item"><i class='bx bx-badge-check'></i><span>Mais confiança para seus clientes</span></div>
+      </div>
+
       <div class="anuncio-card">
         <form id="tpForm" autocomplete="off">
 
@@ -465,6 +534,19 @@
             <div><strong>Privacidade garantida:</strong> seus documentos são usados apenas para validação da conta.</div>
           </div>
 
+          <div class="tp-steps" aria-label="Etapas da validação">
+            <div class="tp-step"><b>1.</b> Envio dos dados e documento.</div>
+            <div class="tp-step"><b>2.</b> Análise de segurança da conta.</div>
+            <div class="tp-step"><b>3.</b> Você recebe a confirmação quando finalizar.</div>
+          </div>
+
+          <label class="tp-consent">
+            <input id="tpConsent" type="checkbox" required>
+            <span>Confirmo que os dados e documentos enviados são verdadeiros e correspondem ao meu perfil.</span>
+          </label>
+
+          <div class="tp-help">Precisa de ajuda? Use o chat ou a página “Ajuda” no menu.</div>
+
           <div class="form-nav">
             <button type="button" class="btn-prev" onclick="window.history.back()">Cancelar</button>
             <button type="submit" class="btn-next" id="btnEnviarValidar">Enviar e Validar <i class='bx bx-right-arrow-alt'></i></button>
@@ -515,6 +597,9 @@
         w = document.createElement("div");
         w.className = "doke-toast-wrap";
         w.id = toastWrapId;
+        w.setAttribute("role", "status");
+        w.setAttribute("aria-live", "polite");
+        w.setAttribute("aria-atomic", "true");
         document.body.appendChild(w);
       }
       return w;
@@ -525,6 +610,10 @@
       const wrap = ensureToastWrap();
       const t = document.createElement("div");
       t.className = "doke-toast " + (type || "info");
+      const isError = (type === "error" || type === "warn");
+      t.setAttribute("role", isError ? "alert" : "status");
+      t.setAttribute("aria-live", isError ? "assertive" : "polite");
+      t.setAttribute("aria-atomic", "true");
       const icon = document.createElement("div");
       icon.className = "icon";
       icon.innerHTML = type === "success" ? "<i class='bx bxs-check-circle'></i>" : (type === "error" ? "<i class='bx bxs-error'></i>" : "<i class='bx bxs-info-circle'></i>");

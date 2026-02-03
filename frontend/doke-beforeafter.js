@@ -4,6 +4,8 @@
   try { window.__DOKE_BA = true; } catch (_) {}
 
   const SELECTOR = ".js-antes-depois,[data-before][data-after],[data-before-url][data-after-url]";
+  const AUTO_MS = 8000;        // tempo entre trocas (mais confortável)
+  const RESUME_MS = 12000;     // retoma autoplay depois de interação
 
   function makeImg(cls, src, alt) {
     const img = document.createElement("img");
@@ -85,7 +87,19 @@
       if (after) a.src = after;
     }
 
-    // dots
+    // Toggle (melhor UX) + bolinhas (rápido)
+    let toggle = el.querySelector(".dp-ba-toggle");
+    if (!toggle) {
+      toggle = document.createElement("div");
+      toggle.className = "dp-ba-toggle";
+      toggle.setAttribute("aria-label", "Alternar antes/depois");
+      toggle.innerHTML = `
+        <button type="button" class="dp-ba-tbtn is-active" data-show="before" aria-label="Mostrar Antes">Antes</button>
+        <button type="button" class="dp-ba-tbtn" data-show="after" aria-label="Mostrar Depois">Depois</button>
+      `;
+      el.appendChild(toggle);
+    }
+
     let dots = el.querySelector(".dp-ba-dots");
     if (!dots) {
       dots = document.createElement("div");
@@ -109,12 +123,16 @@
 
     const btnBefore = dots.querySelector('[data-show="before"]');
     const btnAfter = dots.querySelector('[data-show="after"]');
+    const tBefore = toggle.querySelector('[data-show="before"]');
+    const tAfter = toggle.querySelector('[data-show="after"]');
 
     function setMode(mode) {
       const isAfter = mode === "after";
       el.classList.toggle("is-after", isAfter);
       if (btnBefore) btnBefore.classList.toggle("is-active", !isAfter);
       if (btnAfter) btnAfter.classList.toggle("is-active", isAfter);
+      if (tBefore) tBefore.classList.toggle("is-active", !isAfter);
+      if (tAfter) tAfter.classList.toggle("is-active", isAfter);
       badge.textContent = isAfter ? "Depois" : "Antes";
     }
 
@@ -124,6 +142,14 @@
 
       dots.addEventListener("click", (ev) => {
         const t = ev.target && ev.target.closest && ev.target.closest(".dp-dot");
+        if (!t) return;
+        ev.preventDefault();
+        ev.stopPropagation();
+        setMode(t.getAttribute("data-show") === "after" ? "after" : "before");
+      });
+
+      toggle.addEventListener("click", (ev) => {
+        const t = ev.target && ev.target.closest && ev.target.closest(".dp-ba-tbtn");
         if (!t) return;
         ev.preventDefault();
         ev.stopPropagation();
@@ -141,13 +167,12 @@
     if (el.dataset && el.dataset.baAuto !== "0" && el.dataset.baAutoBound !== "1") {
       try { el.dataset.baAutoBound = "1"; } catch (_) {}
       let t = 0;
-      const delay = 5200; // tempo entre trocas
       const schedule = () => {
         clearTimeout(t);
         t = setTimeout(() => {
           setMode(el.classList.contains("is-after") ? "before" : "after");
           schedule();
-        }, delay);
+        }, AUTO_MS);
       };
       const pause = () => { clearTimeout(t); };
       schedule();
@@ -157,11 +182,12 @@
 
       // Mobile: pausa no toque e volta depois de um tempinho
       el.addEventListener("touchstart", pause, { passive: true });
-      el.addEventListener("touchend", () => { setTimeout(schedule, 900); }, { passive: true });
+      el.addEventListener("touchend", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
 
       // Quando interagir, reinicia o timer (pra não trocar “no susto”)
-      dots.addEventListener("click", () => { setTimeout(schedule, 900); }, { passive: true });
-      el.addEventListener("click", () => { setTimeout(schedule, 900); }, { passive: true });
+      dots.addEventListener("click", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
+      toggle.addEventListener("click", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
+      el.addEventListener("click", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
     }
 // modo inicial
     setMode("before");
@@ -174,7 +200,11 @@
   }
 
   // expõe para páginas que renderizam depois
-  try { window.__DOKE_BA_ENHANCE = enhanceIn; } catch (_) {}
+  try {
+    window.__DOKE_BA_ENHANCE = enhanceIn;
+    window.DokeAntesDepois = window.DokeAntesDepois || {};
+    window.DokeAntesDepois.refresh = enhanceIn;
+  } catch (_) {}
 
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => enhanceIn(document));

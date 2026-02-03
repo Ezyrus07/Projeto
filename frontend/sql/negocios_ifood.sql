@@ -18,7 +18,6 @@ create table if not exists public.negocios (
   tags text[] default '{}',
 
   telefone text,
-  whatsapp text,
   website text,
   instagram text,
 
