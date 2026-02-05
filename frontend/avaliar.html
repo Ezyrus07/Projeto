@@ -1,22 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Avaliar Serviço | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="doke-layout-fix.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="script.js" defer></script>
-
-    <style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Avaliar Serviço | Doke</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js"></script>
+<style>
         body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
 
         @media (min-width: 1024px) {
@@ -201,87 +199,82 @@
         }
         .btn-alert-ok:hover { background: #096356; transform: translateY(-2px); }
 
-    </style>
+    
+        /* Microanimação ao selecionar nota */
+        @keyframes dokePop {
+            0% { transform: scale(0.98); }
+            55% { transform: scale(1.08); }
+            100% { transform: scale(1.00); }
+        }
+        .star-btn.active { animation: dokePop 220ms ease-out; }
 
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-</head>
+</style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/></head>
 <body>
-
-    <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" style="height: 25px;"></a></div>
-    </header>
-
-    <main style="padding-top: 80px;">
-        
-        <div class="eval-hero">
-            <h1>Avaliação de Serviço</h1>
-            <p>Sua opinião ajuda a manter a qualidade da comunidade.</p>
-        </div>
-
-        <div class="eval-container">
-            
-            <div class="prof-card">
-                <img id="imgProf" src="https://placehold.co/150" class="prof-img">
-                <h2 id="nomeProf" class="prof-name">Carregando...</h2>
-                <span id="infoServico" class="service-info">Serviço realizado em --/--/----</span>
-            </div>
-            <div id="avaliacaoAviso" class="avaliacao-ja" style="display:none;">
+<header class="navbar-mobile">
+<div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="height: 25px;"/></a></div>
+</header>
+<main style="padding-top: 80px;">
+<div class="eval-hero">
+<h1>Avaliação de Serviço</h1>
+<p>Sua opinião ajuda a manter a qualidade da comunidade.</p>
+</div>
+<div class="eval-container">
+<div class="prof-card">
+<img class="prof-img" decoding="async" id="imgProf" loading="lazy" src="https://placehold.co/150"/>
+<h2 class="prof-name" id="nomeProf">Carregando...</h2>
+<span class="service-info" id="infoServico">Serviço realizado em --/--/----</span>
+</div>
+<div class="avaliacao-ja" id="avaliacaoAviso" style="display:none;">
                 Serviço já foi avaliado.
                 <small>Você não pode avaliar este serviço novamente.</small>
-            </div>
-
-            <div class="criteria-card overall-card" id="overallCard">
-                <div class="cc-header">
-                    <div class="cc-label"><i class='bx bx-star'></i> Avaliação Geral</div>
-                    <div class="cc-rating-area">
-                        <span class="star-btn" data-val="1" onclick="setGeralRating(1, this)">★</span>
-                        <span class="star-btn" data-val="2" onclick="setGeralRating(2, this)">★</span>
-                        <span class="star-btn" data-val="3" onclick="setGeralRating(3, this)">★</span>
-                        <span class="star-btn" data-val="4" onclick="setGeralRating(4, this)">★</span>
-                        <span class="star-btn" data-val="5" onclick="setGeralRating(5, this)">★</span>
-                    </div>
-                </div>
-            </div>
-
-            <div id="criteria-list">
-                <div style="text-align:center; padding:20px; color:#999;">Carregando critérios...</div>
-            </div>
-
-            <div class="final-comment-box">
-                <label class="fc-label">Considerações Finais (Opcional)</label>
-                <textarea id="textoComentario" class="cc-input" placeholder="Resumo geral da sua experiência..."></textarea>
-                
-                <div class="doke-tooltip-wrapper">
-                    <label class="label-anonimo">
-                        <input type="checkbox" id="checkAnonimo"> 
-                        <span>Avaliar anonimamente</span>
-                        <i class='bx bx-help-circle' style="color:#999; font-size:1.1rem;"></i>
-                    </label>
-                    
-                    <div class="doke-tooltip-box">
+</div>
+<div class="criteria-card overall-card" id="overallCard">
+<div class="cc-header">
+<div class="cc-label"><i class="bx bx-star"></i> Avaliação Geral</div>
+<div class="cc-rating-area">
+<span class="star-btn" data-val="1" onclick="setGeralRating(1, this)">★</span>
+<span class="star-btn" data-val="2" onclick="setGeralRating(2, this)">★</span>
+<span class="star-btn" data-val="3" onclick="setGeralRating(3, this)">★</span>
+<span class="star-btn" data-val="4" onclick="setGeralRating(4, this)">★</span>
+<span class="star-btn" data-val="5" onclick="setGeralRating(5, this)">★</span>
+</div>
+</div>
+</div>
+<div id="criteria-list">
+<div style="text-align:center; padding:20px; color:#999;">Carregando critérios...</div>
+</div>
+<div class="final-comment-box">
+<label class="fc-label">Considerações Finais (Opcional)</label>
+<textarea class="cc-input" id="textoComentario" placeholder="Resumo geral da sua experiência..."></textarea>
+<div class="doke-tooltip-wrapper">
+<label class="label-anonimo">
+<input id="checkAnonimo" type="checkbox"/>
+<span>Avaliar anonimamente</span>
+<i class="bx bx-help-circle" style="color:#999; font-size:1.1rem;"></i>
+</label>
+<div class="doke-tooltip-box">
                         Se marcar esta opção, seu nome e foto não aparecerão publicamente na avaliação.
                     </div>
-                </div>
-            </div>
-
-            <button class="btn-submit-eval" onclick="enviarAvaliacao()">
-                <i class='bx bx-send'></i> Enviar Avaliação Completa
+</div>
+</div>
+<button class="btn-submit-eval" onclick="enviarAvaliacao()">
+<i class="bx bx-send"></i> Enviar Avaliação Completa
             </button>
-
-        </div>
-
-    </main>
-
-    <div id="customAlert" class="custom-alert-overlay">
-        <div class="custom-alert-box">
-            <div class="alert-icon-circle"><i class='bx bx-check'></i></div>
-            <h3 class="alert-title">Sucesso!</h3>
-            <p class="alert-desc">Sua avaliação foi enviada. Obrigado pela colaboração!</p>
-            <button class="btn-alert-ok" onclick="fecharAlertERedirecionar()">OK</button>
-        </div>
-    </div>
-
-    <script>
+</div>
+</main>
+<div class="custom-alert-overlay" id="customAlert">
+<div class="custom-alert-box">
+<div class="alert-icon-circle"><i class="bx bx-check"></i></div>
+<h3 class="alert-title">Sucesso!</h3>
+<p class="alert-desc">Sua avaliação foi enviada. Obrigado pela colaboração!</p>
+<button class="btn-alert-ok" onclick="fecharAlertERedirecionar()">OK</button>
+</div>
+</div>
+<script>
         // Helpers: access latest globals from script.js at use-time (avoid early capture)
         const getGlobals = () => ({
             DB: window.db,
@@ -663,6 +656,7 @@
             window.location.href = "index.html";
         }
     </script>
-</body>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
 </html>
-

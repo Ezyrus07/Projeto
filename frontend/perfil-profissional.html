@@ -1,292 +1,373 @@
-﻿<!doctype html>
+﻿<!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Perfil Profissional | Doke</title>
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="perfil-upgrade.css" />
-  <link rel="stylesheet" href="doke-beforeafter.css?v=20260202" />
-
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-  <script src="doke-beforeafter.js?v=20260202" defer></script>
-  <script src="script.js" defer></script>
-</head>
-
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Perfil Profissional | Doke</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="perfil-upgrade.css" rel="stylesheet"/>
+<link href="doke-beforeafter.css?v=20260202" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<script defer="" src="doke-beforeafter.js?v=20260202"></script>
+<script defer="" src="script.js"></script>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/></head>
 <body class="dp-page">
-  <!-- Sidebar (mantém padrão do site) -->
-    <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
-
-        <div class="item">
-            <a href="empresas.html">
-                <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
-                <span>Empresas</span>
-            </a>
-        </div>
-
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
-    </aside>
-  <!-- Conteúdo principal -->
-  <header class="navbar-desktop">
-  <div id="logo-desktop">
+<!-- Sidebar (mantém padrão do site) -->
+<aside class="sidebar-icones">
+  <div id="logo">
     <a href="index.html">
-      <img src="assets/Imagens/doke-logo.png" alt="Doke">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
     </a>
   </div>
-  <nav class="menu">
-    <div class="cep-wrapper">
-      <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-          <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-        </svg>
-        <span id="textoCepSpan">Informe seu CEP</span>
-      </a>
-      <div class="cep-popup" id="boxCep">
-        <p>Digite seu CEP:</p>
-        <div class="cep-input-group">
-          <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-          <button onclick="salvarCep()">OK</button>
-        </div>
-      </div>
-    </div>
-    <a href="anunciar.html">Anuncie seu serviço</a>
-    <a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
-    <a href="novidades.html">Novidades</a>
-  </nav>
-  <div class="botoes-direita">
-    <a id="dpTopAuthBtn" href="login.html" class="entrar">Entrar</a>
+
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
   </div>
+
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+<!-- Conteúdo principal -->
+<header class="navbar-desktop">
+<div id="logo-desktop">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group">
+<input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/>
+<button onclick="salvarCep()">OK</button>
+</div>
+</div>
+</div>
+<a href="anunciar.html">Anuncie seu serviço</a>
+<a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita">
+<a class="entrar" href="login.html" id="dpTopAuthBtn">Entrar</a>
+</div>
 </header>
-
 <main class="dp-wrap">
-      <div id="dpRoot" class="dp-skeleton dp-theme-profissional" data-mode="public" data-theme="profissional">
-        <section class="dp-card">
-          <div id="dpCover" class="dp-cover">
-            <div class="dp-coverActions">
-              <button id="dpCoverBtn" class="dp-btn" type="button"><i class='bx bx-image-add'></i> Alterar capa</button>
-              <input id="dpCoverInput" type="file" accept="image/*" hidden />
-            </div>
-          </div>
+<div class="dp-skeleton dp-theme-profissional" data-mode="public" data-theme="profissional" id="dpRoot">
+<section class="dp-card">
+<div class="dp-cover" id="dpCover">
+<div class="dp-coverActions">
+<button class="dp-btn" id="dpCoverBtn" type="button"><i class="bx bx-image-add"></i> Alterar capa</button>
+<input accept="image/*" hidden="" id="dpCoverInput" type="file">
+</input></div>
+</div>
+<div class="dp-body">
+<div class="dp-avatarWrap">
+<div class="dp-avatar">
+<img alt="Foto" decoding="async" id="dpAvatarImg" loading="lazy" style="display:none">
+<div id="dpAvatarLetter" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:52px;color:#9aa6b2;">U</div>
+</img></div>
+<button class="dp-avatarBtn" id="dpAvatarBtn" title="Alterar foto" type="button"><i class="bx bx-camera"></i></button>
+<input accept="image/*" hidden="" id="dpAvatarInput" type="file"/>
+</div>
+<div class="dp-info">
+<h1 class="dp-name" id="dpName">Carregando…</h1>
+<div class="dp-handle" id="dpHandle">@usuario</div>
+<div class="dp-bio" id="dpBio">Carregando…</div>
+<div class="dp-meta" id="dpChips"></div>
+<div aria-label="Estatísticas" class="dp-statsWrap">
+<button aria-label="Ver estatisticas anteriores" class="dp-statsNav dp-statsPrev" type="button"><i class="bx bx-chevron-left"></i></button>
+<div aria-label="Estatísticas" class="dp-stats">
+<div class="dp-stat"><b id="dpFollowers">0</b><span>Seguidores</span></div>
+<div class="dp-stat"><b id="dpFollowing">0</b><span>Seguindo</span></div>
+<div class="dp-stat" data-pro-only=""><b id="dpReviews">0</b><span>Avaliações</span></div>
+<div class="dp-stat" data-pro-only=""><b id="dpServicesCount">0</b><span>Serviços</span></div>
+</div>
+<button aria-label="Ver estatisticas seguintes" class="dp-statsNav dp-statsNext" type="button"><i class="bx bx-chevron-right"></i></button>
+</div>
+</div>
+<div class="dp-actions">
+<div class="dp-availability" id="dpAvailabilityRow">
+<span id="dpStatusText">Disponível</span>
+<div class="dp-switch" id="dpSwitch"><span></span></div>
+</div>
+<div class="dp-actionsRow">
+<button class="dp-primary" data-sticky-cta data-sticky-cta-label="Solicitar orçamento" id="dpOrcBtn" style="display:none;" type="button"><i class="bx bx-receipt"></i> Solicitar orçamento</button>
+<button class="dp-secondary" id="dpFriendBtn" style="display:none;" type="button"><i class="bx bx-user-plus"></i> Amizade</button>
+<button class="dp-secondary" id="dpFollowBtn" style="display:none;" type="button"><i class="bx bx-heart"></i> Seguir</button>
+<button class="dp-secondary" id="dpMessageBtn" style="display:none;" type="button"><i class="bx bx-message-rounded"></i> Mensagem</button>
+<button class="dp-secondary" id="dpEditBtn" type="button"><i class="bx bx-edit"></i> Editar perfil</button>
+<button class="dp-secondary" id="dpMoreBtn" title="Mais" type="button"><i class="bx bx-dots-horizontal-rounded"></i></button>
+</div>
+</div>
+</div>
+</section>
+<div aria-label="Seções do perfil" class="dp-tabs" role="tablist">
+<button class="dp-tab active" data-tab="publicacoes" type="button"><i class="bx bx-grid-alt"></i> Publicações</button>
+<button class="dp-tab" data-pro-only="" data-tab="reels" type="button"><i class="bx bx-video"></i> Vídeos curtos</button>
+<button class="dp-tab" data-pro-only="" data-tab="servicos" type="button"><i class="bx bx-briefcase"></i> Serviços</button>
+<button class="dp-tab" data-pro-only="" data-tab="portfolio" type="button"><i class="bx bx-collection"></i> Portfólio</button>
+<button class="dp-tab" data-pro-only="" data-tab="avaliacoes" type="button"><i class="bx bx-star"></i> Avaliações</button>
+<button class="dp-tab" data-pro-owner-only="" data-tab="estatisticas" type="button"><i class="bx bx-line-chart"></i> Estatísticas <span class="dp-betaPill">BETA</span></button>
+<button class="dp-tab" data-tab="sobre" type="button"><i class="bx bx-info-circle"></i> Sobre</button>
+</div>
+<!-- Sections -->
+<section class="dp-section" data-tab="publicacoes">
+<div class="dp-sectionHeader">
+<h2>Publicações</h2>
+<button class="dp-newBtn" id="dpNewPublicacao" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid" id="dpGridPublicacoes">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-grid-alt"></i>
+<div>
+<b>Nenhuma publicação ainda</b>
+<span>Quando você postar algo, vai aparecer aqui.</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="reels" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Vídeos curtos</h2>
+<button class="dp-newBtn" id="dpNewReel" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid" id="dpGridReels">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-video"></i>
+<div>
+<b>Sem vídeos curtos</b>
+<span>Poste vídeos curtos para ganhar destaque.</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="servicos" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Serviços</h2>
+<button class="dp-newBtn" id="dpNewServico" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid lista-cards-premium" id="dpGridServicos">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-briefcase"></i>
+<div>
+<b>Nenhum serviço ainda</b>
+<span>Serviços</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="portfolio" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Portfólio</h2>
+<button class="dp-newBtn" id="dpNewPortfolio" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid" id="dpGridPortfolio">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-collection"></i>
+<div>
+<b>Portfólio vazio</b>
+<span>Adicione imagens e projetos para aumentar confiança.</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="avaliacoes" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Avaliações</h2>
+<button class="dp-newBtn" id="dpWriteAvaliacao" style="display:none;" type="button"><i class="bx bx-star"></i> Avaliar</button>
+</div>
+<div id="dpBoxAvaliacoes"></div>
+</section>
 
-          <div class="dp-body">
-            <div class="dp-avatarWrap">
-              <div class="dp-avatar">
-                <img id="dpAvatarImg" alt="Foto" style="display:none" />
-                <div id="dpAvatarLetter" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:52px;color:#9aa6b2;">U</div>
-              </div>
-              <button id="dpAvatarBtn" class="dp-avatarBtn" type="button" title="Alterar foto"><i class='bx bx-camera'></i></button>
-              <input id="dpAvatarInput" type="file" accept="image/*" hidden />
-            </div>
-
-            <div class="dp-info">
-              <h1 id="dpName" class="dp-name">Carregando…</h1>
-              <div id="dpHandle" class="dp-handle">@usuario</div>
-              <div id="dpBio" class="dp-bio">Carregando…</div>
-
-              <div id="dpChips" class="dp-meta"></div>
-
-
-
-              <div class="dp-statsWrap" aria-label="Estatísticas">
-
-
-                <button class="dp-statsNav dp-statsPrev" type="button" aria-label="Ver estatisticas anteriores"><i class='bx bx-chevron-left'></i></button>
-
-
-                <div class="dp-stats" aria-label="Estatísticas">
-
-
-                  <div class="dp-stat"><b id="dpFollowers">0</b><span>Seguidores</span></div>
-
-
-                  <div class="dp-stat"><b id="dpFollowing">0</b><span>Seguindo</span></div>
-
-
-                  <div class="dp-stat" data-pro-only><b id="dpReviews">0</b><span>Avaliações</span></div>
-
-
-                  <div class="dp-stat" data-pro-only><b id="dpServicesCount">0</b><span>Serviços</span></div>
-
-
-                </div>
-
-
-                <button class="dp-statsNav dp-statsNext" type="button" aria-label="Ver estatisticas seguintes"><i class='bx bx-chevron-right'></i></button>
-
-
-              </div>
-            </div>
-
-            <div class="dp-actions">
-              <div id="dpAvailabilityRow" class="dp-availability">
-                <span id="dpStatusText">Disponível</span>
-                <div id="dpSwitch" class="dp-switch"><span></span></div>
-              </div>
-
-              <div class="dp-actionsRow">
-                <button id="dpOrcBtn" class="dp-primary" type="button" style="display:none;"><i class='bx bx-receipt'></i> Solicitar orçamento</button>
-                <button id="dpFriendBtn" class="dp-secondary" type="button" style="display:none;"><i class='bx bx-user-plus'></i> Amizade</button>
-                <button id="dpFollowBtn" class="dp-secondary" type="button" style="display:none;"><i class='bx bx-heart'></i> Seguir</button>
-                <button id="dpMessageBtn" class="dp-secondary" type="button" style="display:none;"><i class='bx bx-message-rounded'></i> Mensagem</button>
-                <button id="dpEditBtn" class="dp-secondary" type="button"><i class='bx bx-edit'></i> Editar perfil</button>
-                <button id="dpMoreBtn" class="dp-secondary" type="button" title="Mais"><i class='bx bx-dots-horizontal-rounded'></i></button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-                <div class="dp-tabs" role="tablist" aria-label="Seções do perfil">
-          <button class="dp-tab active" data-tab="publicacoes" type="button"><i class='bx bx-grid-alt'></i> Publicações</button>
-          <button class="dp-tab" data-tab="reels" type="button" data-pro-only><i class='bx bx-video'></i> Vídeos curtos</button>
-          <button class="dp-tab" data-tab="servicos" type="button" data-pro-only><i class='bx bx-briefcase'></i> Serviços</button>
-          <button class="dp-tab" data-tab="portfolio" type="button" data-pro-only><i class='bx bx-collection'></i> Portfólio</button>
-          <button class="dp-tab" data-tab="avaliacoes" type="button" data-pro-only><i class='bx bx-star'></i> Avaliações</button>
-          <button class="dp-tab" data-tab="sobre" type="button"><i class='bx bx-info-circle'></i> Sobre</button>
-        </div>
-
-        <!-- Sections -->
-        <section class="dp-section" data-tab="publicacoes">
-          <div class="dp-sectionHeader">
-            <h2>Publicações</h2>
-            <button id="dpNewPublicacao" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
-          </div>
-          <div id="dpGridPublicacoes" class="dp-grid">
-            <div class="dp-empty dp-emptyState">
-              <i class='bx bx-grid-alt'></i>
-              <div>
-                <b>Nenhuma publicação ainda</b>
-                <span>Quando você postar algo, vai aparecer aqui.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="dp-section" data-tab="reels" style="display:none;">
-          <div class="dp-sectionHeader">
-            <h2>Vídeos curtos</h2>
-            <button id="dpNewReel" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
-          </div>
-          <div id="dpGridReels" class="dp-grid">
-            <div class="dp-empty dp-emptyState">
-              <i class='bx bx-video'></i>
-              <div>
-                <b>Sem vídeos curtos</b>
-                <span>Poste vídeos curtos para ganhar destaque.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="dp-section" data-tab="servicos" style="display:none;">
-          <div class="dp-sectionHeader">
-            <h2>Serviços</h2>
-            <button id="dpNewServico" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
-          </div>
-          <div id="dpGridServicos" class="dp-grid lista-cards-premium">
-            <div class="dp-empty dp-emptyState">
-              <i class='bx bx-briefcase'></i>
-              <div>
-                <b>Nenhum serviço ainda</b>
-                <span>Serviços</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="dp-section" data-tab="portfolio" style="display:none;">
-          <div class="dp-sectionHeader">
-            <h2>Portfólio</h2>
-            <button id="dpNewPortfolio" class="dp-newBtn" type="button"><i class='bx bx-plus'></i> Novo</button>
-          </div>
-          <div id="dpGridPortfolio" class="dp-grid">
-            <div class="dp-empty dp-emptyState">
-              <i class='bx bx-collection'></i>
-              <div>
-                <b>Portfólio vazio</b>
-                <span>Adicione imagens e projetos para aumentar confiança.</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section class="dp-section" data-tab="avaliacoes" style="display:none;">
-          <div class="dp-sectionHeader">
-            <h2>Avaliações</h2>
-            <button id="dpWriteAvaliacao" class="dp-newBtn" type="button" style="display:none;"><i class='bx bx-star'></i> Avaliar</button>
-          </div>
-          <div id="dpBoxAvaliacoes"></div>
-        </section>
-
-        <section class="dp-section" data-tab="sobre" style="display:none;">
-          <div class="dp-sectionHeader">
-            <h2>Sobre</h2>
-          </div>
-          <div class="dp-card" style="padding:18px;">
-            <p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">
-              <span id="dpAboutText">As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão "Editar perfil".)</span>
-            </p>
-          </div>
-        </section>
-      </div>
-    </main>
-
-  <!-- Modal -->
-  <div id="dpModalOverlay" class="dp-modalOverlay" aria-hidden="true">
-    <div class="dp-modal" role="dialog" aria-modal="true">
-      <div class="dp-modalHead">
-        <b id="dpModalTitle">Modal</b>
-        <button id="dpModalClose" class="dp-x" type="button">✕</button>
-      </div>
-      <div id="dpModalBody" class="dp-modalBody"></div>
-      <div class="dp-modalFoot">
-        <button id="dpModalCancel" class="dp-ghost" type="button">Cancelar</button>
-        <button id="dpModalSave" class="dp-save" type="button">Salvar</button>
-      </div>
+<section class="dp-section" data-pro-owner-only="" data-tab="estatisticas" style="display:none;">
+  <div class="dp-sectionHeader dp-sectionHeader--analytics">
+    <div>
+      <h2>Estatísticas</h2>
+      <span class="dp-subtle">Acompanhe o desempenho do perfil e anúncios.</span>
+    </div>
+    <div class="dp-analyticsControls">
+      <label class="dp-analyticsLabel">
+        Período
+        <select class="dp-select" id="dpAnalyticsRange">
+          <option value="7">7 dias</option>
+          <option value="14" selected>14 dias</option>
+          <option value="30">30 dias</option>
+          <option value="90">90 dias</option>
+        </select>
+      </label>
+      <button class="dp-secondary dp-analyticsRefresh" id="dpAnalyticsRefresh" type="button">
+        <i class="bx bx-refresh"></i> Atualizar
+      </button>
     </div>
   </div>
 
-  <script src="perfil-upgrade.js"></script>
-</body>
+  <div class="dp-analyticsGrid">
+    <div class="dp-analyticsLeft">
+      <div class="dp-kpiRow" id="dpKpiRow"></div>
+
+      <div class="dp-chartGrid">
+        <div class="dp-card dp-chartCard">
+          <div class="dp-chartHead">
+            <div>
+              <b>Orçamentos e mensagens</b>
+              <span class="dp-subtle" id="dpChartSubtitle">Últimos 14 dias</span>
+            </div>
+            <div class="dp-chartLegend">
+              <span><i class="dp-dot dp-dot--views"></i> Orçamentos</span>
+              <span><i class="dp-dot dp-dot--clicks"></i> Mensagens</span>
+            </div>
+          </div>
+          <canvas class="dp-chartCanvas" id="dpChartViews" width="900" height="260"></canvas>
+        </div>
+
+        <div class="dp-card dp-chartCard">
+          <div class="dp-chartHead">
+            <div>
+              <b>Top categorias</b>
+              <span class="dp-subtle">Onde você mais aparece</span>
+            </div>
+          </div>
+          <div class="dp-bars" id="dpTopCats"></div>
+        </div>
+
+        <div class="dp-card dp-chartCard">
+          <div class="dp-chartHead">
+            <div>
+              <b>Funil</b>
+              <span class="dp-subtle">Impressões → Cliques → Orçamentos</span>
+            </div>
+          </div>
+          <div class="dp-funnel" id="dpFunnel"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dp-analyticsRight">
+      <div class="dp-card dp-aiCard" id="dpAiCard">
+        <div class="dp-aiHead">
+          <div class="dp-aiTitleRow">
+            <div class="dp-aiBrand">
+              <span class="dp-aiIcon"><i class="bx bx-bot"></i></span>
+              <b>DOKE-AI</b>
+              <span class="dp-betaPill">BETA</span>
+            </div>
+            <button class="dp-aiToggle" id="dpAiToggle" type="button" aria-label="Ocultar DOKE-AI"><i class="bx bx-chevron-down"></i></button>
+          </div>
+          <span class="dp-subtle">Peça sugestões para melhorar anúncios e perfil (demo, sem IA real ainda).</span>
+        </div>
+
+        <div class="dp-aiMsgs" id="dpAiMsgs" aria-live="polite"></div>
+
+        <div class="dp-aiQuick">
+          <button class="dp-aiChip" data-q="Como melhorar meu anúncio para vender mais?">Melhorar anúncio</button>
+          <button class="dp-aiChip" data-q="O que falta no meu perfil para passar mais confiança?">Melhorar perfil</button>
+          <button class="dp-aiChip" data-q="Me dê ideias de títulos e descrições para meus serviços.">Títulos & descrições</button>
+          <button class="dp-aiChip" data-q="Como conseguir mais avaliações e seguidores?">Crescer</button>
+        </div>
+
+        <div class="dp-aiInputRow">
+          <input class="dp-aiInput" id="dpAiInput" placeholder="Escreva sua pergunta..." type="text" />
+          <button class="dp-aiSend" id="dpAiSend" type="button" aria-label="Enviar">
+            <i class="bx bx-send"></i>
+          </button>
+        </div>
+      </div>
+</div>
+  </div>
+</section>
+
+<section class="dp-section" data-tab="sobre" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Sobre</h2>
+</div>
+<div class="dp-card" style="padding:18px;">
+<p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">
+<span id="dpAboutText">As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão "Editar perfil".)</span>
+</p>
+</div>
+</section>
+</div>
+</main>
+<!-- Modal -->
+<div aria-hidden="true" class="dp-modalOverlay" id="dpModalOverlay">
+<div aria-modal="true" class="dp-modal" role="dialog">
+<div class="dp-modalHead">
+<b id="dpModalTitle">Modal</b>
+<button class="dp-x" id="dpModalClose" type="button">✕</button>
+</div>
+<div class="dp-modalBody" id="dpModalBody"></div>
+<div class="dp-modalFoot">
+<button class="dp-ghost" id="dpModalCancel" type="button">Cancelar</button>
+<button class="dp-save" id="dpModalSave" type="button">Salvar</button>
+</div>
+</div>
+</div>
+<script src="perfil-upgrade.js?v=20260204"></script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
 </html>
-
-
-
-
-
-
-
-

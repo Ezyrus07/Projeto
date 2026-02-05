@@ -1,21 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Solicitar Orçamento | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="doke-layout-fix.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="script.js" defer></script>
-    <style>/* ==========================================================================
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Solicitar Orçamento | Doke</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js"></script>
+<style>/* ==========================================================================
    PÁGINA DE ORÇAMENTO
    ========================================================================== */
 
@@ -405,268 +404,260 @@
 }
 }
 </style>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-</head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/></head>
 <body>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" onerror="this.src='https://placehold.co/100x40?text=Doke'" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="mobile-controls" style="display: flex; align-items: center; gap: 15px;">
+<button id="btn-menu-mobile" onclick="abrirMenuMobile()">
+<i class="bx bx-menu" style="font-size: 30px; color: var(--cor2);"></i>
+</button>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'">
-            </a>           
-        </div>
-        <div class="mobile-controls" style="display: flex; align-items: center; gap: 15px;">
-            <button id="btn-menu-mobile" onclick="abrirMenuMobile()">
-                <i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i>
-            </button>
-        </div>
-    </header>
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
 
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-    
-    <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="empresas.html">
-                <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
-                <span>Empresas</span>
-            </a>
-        </div>
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
-    </aside>
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
 
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
 
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html">Comunidades <span class="badge-novo1  ">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
-    </header>
-
-    <main class="main-orcamento">
-        
-        <div class="orc-top">
-            <div class="orc-top-card">
-                <div>
-                    <h1 class="orc-top-title">Solicitar orçamento</h1>
-                    <p class="orc-top-sub">Envie os detalhes e aguarde o profissional aceitar para liberar o chat.</p>
-                </div>
-            </div>
-        </div>
-        </div>
-
-        <div class="layout-orcamento">
-            
-            <section class="form-section">
-                
-                <div class="card-branco">
-                    <h3 class="titulo-sessao">1. Detalhes do Pedido</h3>
-                    
-                    <div class="input-group">
-                        <label>O que você precisa?</label>
-                        <input type="text" class="input-premium" id="titulo-pedido" placeholder="Ex: Instalação de 3 tomadas e 1 chuveiro">
-                    </div>
-
-                    <div id="container-perguntas-extras" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-                        <h4 style="color: var(--cor2); margin-bottom: 15px; font-size: 1rem;">Perguntas de Triagem (Do Profissional)</h4>
-                        <div id="lista-perguntas-dinamicas">
-                            </div>
-                    </div>
-                    <div class="input-group" style="margin-top: 20px;">
-                        <label>Descrição detalhada(Opcional)</label>
-                        <textarea class="input-premium area-texto" id="descricao-pedido" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
-                    </div>
-                    <div class="input-group">
-                        <label>Anexos (opcional)</label>
-                        <input type="file" id="anexos-pedido" class="input-premium" multiple accept="image/*,application/pdf,.doc,.docx,.zip,.rar">
-                        <div class="anexo-hint">Envie fotos, PDFs ou arquivos que ajudem no orçamento.</div>
-                        <div id="lista-anexos" class="anexos-list"></div>
-                    </div>
-
-                    <div class="grid-duplo">
-                        <div class="input-group">
-                            <label>Para quando?</label>
-                            <select class="input-premium" id="para-quando">
-                                <option>O quanto antes</option>
-                                <option>Para esta semana</option>
-                                <option>Para o próximo mês</option>
-                                <option>Data específica</option>
-                            </select>
-
-                            <div id="wrap-data-especifica" style="display:none; margin-top:12px;">
-                                <label style="margin-bottom:8px; font-weight:600; color:#555;">Qual dia?</label>
-                                <input type="date" class="input-premium" id="data-especifica">
-                            </div>
-                        </div>
-                        <div class="input-group">
-                            <label>Turno de preferência</label>
-                            <select class="input-premium" id="turno">
-                                <option>Manhã (08h - 12h)</option>
-                                <option>Tarde (13h - 18h)</option>
-                                <option>Noite (após 18h)</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card-branco" id="card-localizacao">
-                    <h3 class="titulo-sessao">2. Localização</h3>
-
-                    <div class="input-group">
-                        <label>CEP do serviço</label>
-                        <div style="display:flex; gap:10px;">
-                            <input type="text" id="cepOrcamento" class="input-premium" placeholder="00000-000">
-                            <button class="btn-outline" type="button" onclick="buscarEndereco()">Buscar</button>
-                        </div>
-                    </div>
-
-                    <div class="grid-duplo">
-                        <div class="input-group">
-                            <label>Endereço</label>
-                            <input type="text" id="endereco-completo" class="input-premium" placeholder="Rua, bairro - cidade">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Número</label>
-                            <input type="text" id="numero-residencia" class="input-premium" placeholder="Ex: 120">
-                        </div>
-                    </div>
-
-                    <div class="grid-duplo">
-                        <div class="input-group">
-                            <label>Complemento (opcional)</label>
-                            <input type="text" id="complemento-residencia" class="input-premium" placeholder="Apto, bloco, casa, etc">
-                        </div>
-
-                        <div class="input-group">
-                            <label>Ponto de referência (opcional)</label>
-                            <input type="text" id="referencia-residencia" class="input-premium" placeholder="Ex: perto do mercado">
-                        </div>
-                    </div>
-
-                    <div class="input-group">
-                        <label>Mais informações (opcional)</label>
-                        <textarea id="info-local" class="input-premium area-texto" placeholder="Ex: portão azul, interfone não funciona, falar com o porteiro..." style="min-height:90px;"></textarea>
-                    </div>
-                </div>
-
-            </section>
-
-<aside class="resumo-section">
-    <div class="card-prestador-resumo">
-        <div class="header-resumo">
-            <img src="https://placehold.co/150" alt="Prestador" id="imgPrestadorResumo">
-            <div>
-                <h4 id="nomePrestadorResumo">Carregando...</h4>
-                <span id="userPrestadorResumo">@...</span>
-            </div>
-        </div>
-        
-        <div class="stats-resumo">
-            <div><i class='bx bxs-star'></i> <span id="notaPrestadorResumo">--</span></div>
-            <div><i class='bx bx-briefcase'></i> <span id="jobsPrestadorResumo">0</span> Jobs</div>
-        </div>
-
-        <hr class="divisor">
-
-        <ul class="lista-vantagens">
-            <li><i class='bx bx-check-shield'></i> <strong>Garantia Doke:</strong> Só liberamos o pagamento quando você aprovar o serviço.</li>
-            <li><i class='bx bx-time-five'></i> Resposta média em 20 min.</li>
-        </ul>
-
-        <button class="btn-enviar-orcamento" id="btnEnviarOrcamento">
-            Enviar Solicitação
-        </button>
-        <p class="aviso-legal">Ao enviar, você concorda com nossos termos.</p>
-    </div>
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
 </aside>
 
-        </div>
-    </main>
+<header class="navbar-desktop">
+<div id="logo-desktop">
+<a href="projeto.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group">
+<input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/>
+<button onclick="salvarCep()">OK</button>
+</div>
+</div>
+</div>
+<a href="anunciar.html">Anuncie seu serviço</a>
+<a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<main class="main-orcamento">
+<div class="orc-top">
+<div class="orc-top-card">
+<div>
+<h1 class="orc-top-title">Solicitar orçamento</h1>
+<p class="orc-top-sub">Envie os detalhes e aguarde o profissional aceitar para liberar o chat.</p>
+</div>
+</div>
+</div>
 
-        <nav class="bottom-nav">
-        <a href="index.html" class="item active">
-            <img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span>
-        </a>
-        <a href="explorar.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde" alt="Explorar">
-            <span>Explorar</span>
-        </a>
-        <a href="anunciar.html" class="item">
-            <img src="assets/Imagens/icone-anunciar.png" class="icon azul" alt="Anunciar" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'">
-            <span>Anunciar</span>
-        </a>
-        <a href="notificacoes.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span>
-        </a>
-        <a href="perfil.html" class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Perfil">
-            <span>Perfil</span>
-        </a>
-    </nav>
-
+<div class="layout-orcamento">
+<section class="form-section">
+<div class="card-branco">
+<h3 class="titulo-sessao">1. Detalhes do Pedido</h3>
+<div class="input-group">
+<label>O que você precisa?</label>
+<input class="input-premium" id="titulo-pedido" placeholder="Ex: Instalação de 3 tomadas e 1 chuveiro" type="text"/>
+</div>
+<div id="container-perguntas-extras" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
+<h4 style="color: var(--cor2); margin-bottom: 15px; font-size: 1rem;">Perguntas de Triagem (Do Profissional)</h4>
+<div id="lista-perguntas-dinamicas">
+</div>
+</div>
+<div class="input-group" style="margin-top: 20px;">
+<label>Descrição detalhada(Opcional)</label>
+<textarea class="input-premium area-texto" id="descricao-pedido" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
+</div>
+<div class="input-group">
+<label>Anexos (opcional)</label>
+<input accept="image/*,application/pdf,.doc,.docx,.zip,.rar" class="input-premium" id="anexos-pedido" multiple="" type="file"/>
+<div class="anexo-hint">Envie fotos, PDFs ou arquivos que ajudem no orçamento.</div>
+<div class="anexos-list" id="lista-anexos"></div>
+</div>
+<div class="grid-duplo">
+<div class="input-group">
+<label>Para quando?</label>
+<select class="input-premium" id="para-quando">
+<option>O quanto antes</option>
+<option>Para esta semana</option>
+<option>Para o próximo mês</option>
+<option>Data específica</option>
+</select>
+<div id="wrap-data-especifica" style="display:none; margin-top:12px;">
+<label style="margin-bottom:8px; font-weight:600; color:#555;">Qual dia?</label>
+<input class="input-premium" id="data-especifica" type="date"/>
+</div>
+</div>
+<div class="input-group">
+<label>Turno de preferência</label>
+<select class="input-premium" id="turno">
+<option>Manhã (08h - 12h)</option>
+<option>Tarde (13h - 18h)</option>
+<option>Noite (após 18h)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="card-branco" id="card-localizacao">
+<h3 class="titulo-sessao">2. Localização</h3>
+<div class="input-group">
+<label>CEP do serviço</label>
+<div style="display:flex; gap:10px;">
+<input class="input-premium" id="cepOrcamento" placeholder="00000-000" type="text"/>
+<button class="btn-outline" onclick="buscarEndereco()" type="button">Buscar</button>
+</div>
+</div>
+<div class="grid-duplo">
+<div class="input-group">
+<label>Endereço</label>
+<input class="input-premium" id="endereco-completo" placeholder="Rua, bairro - cidade" type="text"/>
+</div>
+<div class="input-group">
+<label>Número</label>
+<input class="input-premium" id="numero-residencia" placeholder="Ex: 120" type="text"/>
+</div>
+</div>
+<div class="grid-duplo">
+<div class="input-group">
+<label>Complemento (opcional)</label>
+<input class="input-premium" id="complemento-residencia" placeholder="Apto, bloco, casa, etc" type="text"/>
+</div>
+<div class="input-group">
+<label>Ponto de referência (opcional)</label>
+<input class="input-premium" id="referencia-residencia" placeholder="Ex: perto do mercado" type="text"/>
+</div>
+</div>
+<div class="input-group">
+<label>Mais informações (opcional)</label>
+<textarea class="input-premium area-texto" id="info-local" placeholder="Ex: portão azul, interfone não funciona, falar com o porteiro..." style="min-height:90px;"></textarea>
+</div>
+</div>
+</section>
+<aside class="resumo-section">
+<div class="card-prestador-resumo">
+<div class="header-resumo">
+<img alt="Prestador" decoding="async" id="imgPrestadorResumo" loading="lazy" src="https://placehold.co/150"/>
+<div>
+<h4 id="nomePrestadorResumo">Carregando...</h4>
+<span id="userPrestadorResumo">@...</span>
+</div>
+</div>
+<div class="stats-resumo">
+<div><i class="bx bxs-star"></i> <span id="notaPrestadorResumo">--</span></div>
+<div><i class="bx bx-briefcase"></i> <span id="jobsPrestadorResumo">0</span> Jobs</div>
+</div>
+<hr class="divisor"/>
+<ul class="lista-vantagens">
+<li><i class="bx bx-check-shield"></i> <strong>Garantia Doke:</strong> Só liberamos o pagamento quando você aprovar o serviço.</li>
+<li><i class="bx bx-time-five"></i> Resposta média em 20 min.</li>
+</ul>
+<button class="btn-enviar-orcamento" id="btnEnviarOrcamento">
+            Enviar Solicitação
+        </button>
+<p class="aviso-legal">Ao enviar, você concorda com nossos termos.</p>
+</div>
+</aside>
+</div>
+</main>
+<nav class="bottom-nav">
+<a class="item active" href="index.html">
+<img alt="Início" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
+<span>Início</span>
+</a>
+<a class="item" href="explorar.html">
+<img alt="Explorar" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/>
+<span>Explorar</span>
+</a>
+<a class="item" href="anunciar.html">
+<img alt="Anunciar" class="icon azul" decoding="async" loading="lazy" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" src="assets/Imagens/icone-anunciar.png"/>
+<span>Anunciar</span>
+</a>
+<a class="item" href="notificacoes.html">
+<img alt="Notificações" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
+<span>Notificações</span>
+</a>
+<a class="item" href="perfil.html">
+<img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
+<span>Perfil</span>
+</a>
+</nav>
 <script>
     // 1. IMPORTAÇÕES NECESSÁRIAS (inicializadas após carregar script.js)
     let doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc;
@@ -1437,41 +1428,33 @@ Local do serviço: ${loc}${extra}`;
         }
     }
 </script>
-
-
 <!-- Modal: Pedido enviado / aguardando aceite -->
-<div class="orc-modal-overlay" id="modalPedidoEnviado" role="dialog" aria-modal="true" aria-labelledby="orcModalTitle">
-    <div class="orc-modal">
-        <div class="orc-modal-header">
-            <div class="orc-modal-icon"><i class='bx bx-check-circle'></i></div>
-            <div>
-                <h3 class="orc-modal-title" id="orcModalTitle">Solicitação enviada</h3>
-                <div style="font-size:0.85rem; color:#666; font-weight:600;">Pedido em espera</div>
-            </div>
-        </div>
-        <div class="orc-modal-body">
-            <p>Pronto! Seu pedido foi enviado para o profissional.</p>
-            <div class="orc-wait">
-                <i class='bx bx-time-five'></i>
-                <div>
-                    <strong>Aguarde o aceite</strong>
-                    <span>Assim que o profissional aceitar, o chat será liberado e vocês poderão negociar por aqui.</span>
-                </div>
-            </div>
-        </div>
-        <div class="orc-modal-footer">
-            <a class="orc-btn orc-btn-ghost" id="btnAcompanharPedidos" href="chat.html"><i class='bx bx-chat'></i> Ver em Mensagens</a>
-            <a class="orc-btn orc-btn-primary" id="btnIrChatDireto" href="chat.html"><i class='bx bx-message-dots'></i> Abrir pedido</a>
-        </div>
-    </div>
+<div aria-labelledby="orcModalTitle" aria-modal="true" class="orc-modal-overlay" id="modalPedidoEnviado" role="dialog">
+<div class="orc-modal">
+<div class="orc-modal-header">
+<div class="orc-modal-icon"><i class="bx bx-check-circle"></i></div>
+<div>
+<h3 class="orc-modal-title" id="orcModalTitle">Solicitação enviada</h3>
+<div style="font-size:0.85rem; color:#666; font-weight:600;">Pedido em espera</div>
 </div>
-
-</body>
+</div>
+<div class="orc-modal-body">
+<p>Pronto! Seu pedido foi enviado para o profissional.</p>
+<div class="orc-wait">
+<i class="bx bx-time-five"></i>
+<div>
+<strong>Aguarde o aceite</strong>
+<span>Assim que o profissional aceitar, o chat será liberado e vocês poderão negociar por aqui.</span>
+</div>
+</div>
+</div>
+<div class="orc-modal-footer">
+<a class="orc-btn orc-btn-ghost" href="chat.html" id="btnAcompanharPedidos"><i class="bx bx-chat"></i> Ver em Mensagens</a>
+<a class="orc-btn orc-btn-primary" href="chat.html" id="btnIrChatDireto"><i class="bx bx-message-dots"></i> Abrir pedido</a>
+</div>
+</div>
+</div>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
 </html>
-
-
-
-
-
-
-

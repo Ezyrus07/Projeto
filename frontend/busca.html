@@ -1,22 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Busca | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="doke-layout-fix.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="script.js" defer></script>
-    
-    <style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Busca | Doke</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js"></script>
+<style>
         /* =========================================
            ESTILOS ESPECÍFICOS DA PÁGINA DE BUSCA
            ========================================= */
@@ -108,253 +106,267 @@
             main { margin-left: 0; padding: 20px; }
         }
     </style>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/>
+<link href="doke-feedpatch.css" rel="stylesheet"/>
 </head>
 <body>
+<header class="navbar-mobile">
+<div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<div class="mobile-controls">
+<button onclick="abrirMenuMobile()"><i class="bx bx-menu" style="font-size: 30px; color: var(--cor2);"></i></button>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile"><a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <div class="mobile-controls">
-            <button onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-        </div>
-    </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
 
-    <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="empresas.html">
-                <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
-                <span>Empresas</span>
-            </a>
-        </div>
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
-    </aside>
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
 
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop">
-            <a href="projeto.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Doke">
-            </a>
-        </div>
-        <nav class="menu">
-            <div class="cep-wrapper">
-                <a href="#" class="cep" id="linkCep" onclick="toggleCep(event)">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>
-                    </svg>
-                    <span id="textoCepSpan">Informe seu CEP</span>
-                </a>
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
 
-                <div class="cep-popup" id="boxCep">
-                    <p>Digite seu CEP:</p>
-                    <div class="cep-input-group">
-                        <input type="text" id="inputCep" placeholder="00000-000" maxlength="9">
-                        <button onclick="salvarCep()">OK</button>
-                    </div>
-                </div>
-            </div>
-            
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
 
-        <div class="botoes-direita">
-            <a href="login.html" class="entrar">Entrar</a>
-            <a href="login.html">
-            </a>
-        </div>
-    </header>
-
-    <main>
-        
-        <section class="secao-busca">
-            
-            <div class="busca-wrapper active" id="buscaWrapper">
-                <div class="busca-input-container">
-                    <input type="text" id="inputBusca" placeholder="Descreva o que você está procurando" autocomplete="off" onkeypress="verificarEnterBusca(event)">
-                    
-                    <button class="btn-search-circle" onclick="novaBusca()">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
-                </div>
-            </div>
-        </section>
-
-        <div class="search-layout">
-            
-            <aside class="filters-sidebar">
-                <div class="filters-header">
-                    <h3><i class='bx bx-filter-alt'></i> Filtros</h3>
-                    <button class="btn-clean-filters" onclick="limparFiltros()">Limpar</button>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Ordenar por</span>
-                    <select id="filtroOrdenacao" class="select-sidebar" onchange="aplicarFiltrosBusca()">
-                        <option value="recente">Mais Recentes</option>
-                        <option value="qualidade">Maior Qualidade</option>
-                        <option value="menor_preco">Menor Preço</option>
-                        <option value="melhor_avaliacao">Melhor Avaliação</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Faixa de Preço</span>
-                    <input type="number" id="filtroPreco" class="input-sidebar" placeholder="Preço Máximo (R$)" onchange="aplicarFiltrosBusca()">
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Localização</span>
-                    <select id="selectEstado" class="select-sidebar" onchange="aplicarFiltrosBusca()">
-                        <option value="">Todos Estados</option>
-                    </select>
-                    <select id="selectCidade" class="select-sidebar" onchange="aplicarFiltrosBusca()">
-                        <option value="">Todas Cidades</option>
-                    </select>
-                    <select id="selectBairro" class="select-sidebar" onchange="aplicarFiltrosBusca()" disabled>
-                        <option value="">Todos Bairros</option>
-                    </select>
-                    <div class="radius-row">
-                        <select id="filtroRaio" class="select-sidebar" onchange="aplicarFiltrosBusca()">
-                            <option value="">Sem raio</option>
-                            <option value="1">Até 1 km</option>
-                            <option value="3">Até 3 km</option>
-                            <option value="5">Até 5 km</option>
-                            <option value="10">Até 10 km</option>
-                            <option value="25">Até 25 km</option>
-                        </select>
-                        <button class="btn-loc" type="button" onclick="usarMinhaLocalizacao()">Usar minha localização</button>
-                    </div>
-                    <div class="radius-status" id="radiusStatus"></div>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Tipo de Serviço</span>
-                    <div class="radio-list">
-                        <label class="radio-item">
-                            <input type="radio" name="tipoAtend" value="todos" checked onchange="aplicarFiltrosBusca()"> Todos
+<header class="navbar-desktop">
+<div id="logo-desktop">
+<a href="projeto.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group">
+<input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/>
+<button onclick="salvarCep()">OK</button>
+</div>
+</div>
+</div>
+<a href="anunciar.html">Anuncie seu serviço</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<main>
+<section class="secao-busca">
+<div class="busca-wrapper active" id="buscaWrapper">
+<div class="busca-input-container">
+<input autocomplete="off" id="inputBusca" onkeypress="verificarEnterBusca(event)" placeholder="Descreva o que você está procurando" type="text"/>
+<button class="btn-search-circle" onclick="novaBusca()">
+<svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+<polyline points="12 5 19 12 12 19"></polyline>
+</svg>
+</button>
+</div>
+</div>
+</section>
+<div class="search-layout">
+<aside class="filters-sidebar">
+<div class="filters-header">
+<h3><i class="bx bx-filter-alt"></i> Filtros</h3>
+<button class="btn-clean-filters" onclick="limparFiltros()">Limpar</button>
+</div>
+<div class="filter-group">
+<span class="filter-label">Ordenar por</span>
+<select class="select-sidebar" id="filtroOrdenacao" onchange="aplicarFiltrosBusca()">
+<option value="recente">Mais Recentes</option>
+<option value="qualidade">Maior Qualidade</option>
+<option value="menor_preco">Menor Preço</option>
+<option value="melhor_avaliacao">Melhor Avaliação</option>
+</select>
+</div>
+<div class="filter-group">
+<span class="filter-label">Faixa de Preço</span>
+<input class="input-sidebar" id="filtroPreco" onchange="aplicarFiltrosBusca()" placeholder="Preço Máximo (R$)" type="number"/>
+</div>
+<div class="filter-group">
+<span class="filter-label">Localização</span>
+<select class="select-sidebar" id="selectEstado" onchange="aplicarFiltrosBusca()">
+<option value="">Todos Estados</option>
+</select>
+<select class="select-sidebar" id="selectCidade" onchange="aplicarFiltrosBusca()">
+<option value="">Todas Cidades</option>
+</select>
+<select class="select-sidebar" disabled="" id="selectBairro" onchange="aplicarFiltrosBusca()">
+<option value="">Todos Bairros</option>
+</select>
+<div class="radius-row">
+<select class="select-sidebar" id="filtroRaio" onchange="aplicarFiltrosBusca()">
+<option value="">Sem raio</option>
+<option value="1">Até 1 km</option>
+<option value="3">Até 3 km</option>
+<option value="5">Até 5 km</option>
+<option value="10">Até 10 km</option>
+<option value="25">Até 25 km</option>
+</select>
+<button class="btn-loc" onclick="usarMinhaLocalizacao()" type="button">Usar minha localização</button>
+</div>
+<div class="radius-status" id="radiusStatus"></div>
+</div>
+<div class="filter-group">
+<span class="filter-label">Tipo de Serviço</span>
+<div class="radio-list">
+<label class="radio-item">
+<input checked="" name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="todos"/> Todos
                         </label>
-                        <label class="radio-item">
-                            <input type="radio" name="tipoAtend" value="Online" onchange="aplicarFiltrosBusca()"> Online
+<label class="radio-item">
+<input name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="Online"/> Online
                         </label>
-                        <label class="radio-item">
-                            <input type="radio" name="tipoAtend" value="Presencial" onchange="aplicarFiltrosBusca()"> Presencial
+<label class="radio-item">
+<input name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="Presencial"/> Presencial
                         </label>
-                        <label class="radio-item">
-                            <input type="radio" name="tipoAtend" value="Ambos" onchange="aplicarFiltrosBusca()"> Ambos
+<label class="radio-item">
+<input name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="Ambos"/> Ambos
                         </label>
-                    </div>
-                </div>
-
-                <div class="filter-group">
-                    <div class="filtros-rapidos">
-                        <div class="filtros-rapidos-header">
-                            <span>Filtros rápidos</span>
-                            <button class="chips-arrow" type="button" onclick="scrollChips(this)"><i class='bx bx-chevron-right'></i></button>
-                        </div>
-                        <div class="filtros-chips-scroll" data-chips>
-                            <button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
-                            <button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class='bx bx-trending-up'></i> Tendências</button>
-                            <button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class='bx bx-map'></i> Perto de você</button>
-                            <button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class='bx bx-star'></i> Super Profissionais</button>
-                            <button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class='bx bx-time'></i> Recém-chegados</button>
-                            <button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class='bx bx-badge-check'></i> Verificados</button>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Categoria</span>
-                    <select id="filtroCategoria" class="select-sidebar" onchange="aplicarFiltrosBusca()">
-                        <option value="todas">Todas</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Tipo de Preço</span>
-                    <select id="filtroTipoPreco" class="select-sidebar" onchange="aplicarFiltrosBusca()">
-                        <option value="todos">Todos</option>
-                        <option value="preco_fixo">Preço Fixo</option>
-                        <option value="sob_orcamento">Sob Orçamento</option>
-                    </select>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Pagamentos aceitos</span>
-                    <div class="filtro-checks-row">
-                        <label><input type="checkbox" id="filtroPgPix" onchange="aplicarFiltrosBusca()"> Pix</label>
-                        <label><input type="checkbox" id="filtroPgCredito" onchange="aplicarFiltrosBusca()"> Crédito</label>
-                        <label><input type="checkbox" id="filtroPgDebito" onchange="aplicarFiltrosBusca()"> Débito</label>
-                    </div>
-                </div>
-
-                <div class="filter-group">
-                    <span class="filter-label">Extras</span>
-                    <div class="filtro-checks-row">
-                        <label><input type="checkbox" id="filtroGarantia" onchange="aplicarFiltrosBusca()"> Com garantia</label>
-                        <label><input type="checkbox" id="filtroEmergencia" onchange="aplicarFiltrosBusca()"> Emergência</label>
-                        <label><input type="checkbox" id="filtroFormulario" onchange="aplicarFiltrosBusca()"> Tem formulário</label>
-                    </div>
-                </div>
-
-            </aside>
-
-            <div class="results-content">
-                <div class="results-header">
-                    <h2 id="categorias-title" class="results-query">Resultados da busca</h2>
-                    <span id="contador-resultados" class="results-count">Mostrando 0 resultados</span>
-                </div>
-
-                <div class="lista-cards-premium" id="feedAnuncios">
-                    <div style="padding:40px; text-align:center; width:100%; color:#999;">
-                        <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i>
-                        <p>Carregando...</p>
-                    </div>
-                </div>
-            </div>
-
-        </div>
-
-    </main>
-
-    <script>
+</div>
+</div>
+<div class="filter-group">
+<div class="filtros-rapidos">
+<div class="filtros-rapidos-header">
+<span>Filtros rápidos</span>
+<button class="chips-arrow" onclick="scrollChips(this)" type="button"><i class="bx bx-chevron-right"></i></button>
+</div>
+<div class="filtros-chips-scroll" data-chips="">
+<button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
+<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> Tendências</button>
+<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de você</button>
+<button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class="bx bx-star"></i> Super Profissionais</button>
+<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> Recém-chegados</button>
+<button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class="bx bx-badge-check"></i> Verificados</button>
+</div>
+</div>
+</div>
+<div class="filter-group">
+<span class="filter-label">Categoria</span>
+<select class="select-sidebar" id="filtroCategoria" onchange="aplicarFiltrosBusca()">
+<option value="todas">Todas</option>
+</select>
+</div>
+<div class="filter-group">
+<span class="filter-label">Tipo de Preço</span>
+<select class="select-sidebar" id="filtroTipoPreco" onchange="aplicarFiltrosBusca()">
+<option value="todos">Todos</option>
+<option value="preco_fixo">Preço Fixo</option>
+<option value="sob_orcamento">Sob Orçamento</option>
+</select>
+</div>
+<div class="filter-group">
+<span class="filter-label">Pagamentos aceitos</span>
+<div class="filtro-checks-row">
+<label><input id="filtroPgPix" onchange="aplicarFiltrosBusca()" type="checkbox"/> Pix</label>
+<label><input id="filtroPgCredito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Crédito</label>
+<label><input id="filtroPgDebito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Débito</label>
+</div>
+</div>
+<div class="filter-group">
+<span class="filter-label">Extras</span>
+<div class="filtro-checks-row">
+<label><input id="filtroGarantia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Com garantia</label>
+<label><input id="filtroEmergencia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Emergência</label>
+<label><input id="filtroFormulario" onchange="aplicarFiltrosBusca()" type="checkbox"/> Tem formulário</label>
+</div>
+</div>
+</aside>
+<div class="results-content">
+<div class="results-header">
+<h2 class="results-query" id="categorias-title">Resultados da busca</h2>
+<span class="results-count" id="contador-resultados">Mostrando 0 resultados</span>
+</div>
+<div class="doke-toolbar" id="dokeBuscaToolbar" style="max-width: 1100px; margin: 0 auto;">
+  <div class="doke-toolbar__chips" aria-label="Filtros rápidos">
+    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroGarantia"><i class='bx bx-badge-check'></i>Garantia</button>
+    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroEmergencia"><i class='bx bx-bolt-circle'></i>Emergência</button>
+    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroFormulario"><i class='bx bx-list-check'></i>Com formulário</button>
+  </div>
+  <div class="doke-toolbar__sort">
+    <select id="dokeSortMirror" aria-label="Ordenar">
+      <option value="recente">Mais recente</option>
+      <option value="avaliado">Melhor avaliado</option>
+      <option value="perto">Mais perto</option>
+      <option value="preco">Menor preço</option>
+    </select>
+  </div>
+</div>
+<div class="lista-cards-premium" id="feedAnuncios">
+<div style="padding:40px; text-align:center; width:100%; color:#999;">
+<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i>
+<p>Carregando...</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
         // Função auxiliar para limpar filtros visualmente
         function limparFiltros() {
             document.getElementById('filtroPreco').value = "";
@@ -389,6 +401,7 @@
             }
         }
     </script>
-
-</body>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script></body>
 </html>

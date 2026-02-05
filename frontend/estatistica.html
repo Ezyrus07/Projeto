@@ -1,22 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Estatísticas | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="doke-layout-fix.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script> <script src="script.js" defer></script>
-
-    <style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Estatísticas | Doke</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="https://cdn.jsdelivr.net/npm/chart.js"></script> <script defer="" src="script.js"></script>
+<style>
         body { background: #f4f6f8; font-family: 'Segoe UI', sans-serif; }
         
         @media (min-width: 1024px) {
@@ -77,125 +75,144 @@
         }
         .ts-item:last-child { border: none; }
     </style>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-</head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/></head>
 <body>
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
 
-    <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="empresas.html">
-                <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
-                <span>Empresas</span>
-            </a>
-        </div>
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
-    </aside>
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
 
-    <main>
-        <div class="stats-header">
-            <div>
-                <h1>Painel de Desempenho</h1>
-                <p style="color:#666; margin-top:5px;">Acompanhe faturamento, resposta e conversão.</p>
-            </div>
-            <div class="date-filter">
-                <button class="filter-btn active" onclick="filtrarDados('hoje', this)">Hoje</button>
-                <button class="filter-btn" onclick="filtrarDados('semana', this)">Semana</button>
-                <button class="filter-btn" onclick="filtrarDados('mes', this)">Mês</button>
-                <button class="filter-btn" onclick="filtrarDados('ano', this)">Ano</button>
-            </div>
-        </div>
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
 
-        <div class="kpi-grid">
-            <div class="kpi-card">
-                <div class="kpi-icon kpi-green"><i class='bx bx-money'></i></div>
-                <div class="kpi-info">
-                    <h4>Faturamento Total</h4>
-                    <strong id="kpiFaturamento">R$ 0,00</strong>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon kpi-blue"><i class='bx bx-briefcase-alt-2'></i></div>
-                <div class="kpi-info">
-                    <h4>Serviços Realizados</h4>
-                    <strong id="kpiServicos">0</strong>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon kpi-orange"><i class='bx bx-trending-up'></i></div>
-                <div class="kpi-info">
-                    <h4>Ticket Médio</h4>
-                    <strong id="kpiTicket">R$ 0,00</strong>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon kpi-blue"><i class='bx bx-check-circle'></i></div>
-                <div class="kpi-info">
-                    <h4>Taxa de Resposta</h4>
-                    <strong id="kpiResposta">0%</strong>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon kpi-orange"><i class='bx bx-time-five'></i></div>
-                <div class="kpi-info">
-                    <h4>Tempo Médio de Resposta</h4>
-                    <strong id="kpiTempoResposta">0h</strong>
-                </div>
-            </div>
-            <div class="kpi-card">
-                <div class="kpi-icon kpi-green"><i class='bx bx-transfer-alt'></i></div>
-                <div class="kpi-info">
-                    <h4>Conversão</h4>
-                    <strong id="kpiConversao">0%</strong>
-                </div>
-            </div>
-        </div>
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
 
-        <div class="chart-container">
-            <h3 style="margin-bottom:20px; color:#333;">Evolução de Ganhos</h3>
-            <canvas id="graficoGanhos"></canvas>
-        </div>
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
 
-        <div class="top-services">
-            <h3 style="margin-bottom:20px; color:#333;">Histórico Recente</h3>
-            <div id="listaHistoricoRecente">
-                <p style="color:#999; text-align:center;">Carregando...</p>
-            </div>
-        </div>
-    </main>
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
 
-    <script>
+<main>
+<div class="stats-header">
+<div>
+<h1>Painel de Desempenho</h1>
+<p style="color:#666; margin-top:5px;">Acompanhe faturamento, resposta e conversão.</p>
+</div>
+<div class="date-filter">
+<button class="filter-btn active" onclick="filtrarDados('hoje', this)">Hoje</button>
+<button class="filter-btn" onclick="filtrarDados('semana', this)">Semana</button>
+<button class="filter-btn" onclick="filtrarDados('mes', this)">Mês</button>
+<button class="filter-btn" onclick="filtrarDados('ano', this)">Ano</button>
+</div>
+</div>
+<div class="kpi-grid">
+<div class="kpi-card">
+<div class="kpi-icon kpi-green"><i class="bx bx-money"></i></div>
+<div class="kpi-info">
+<h4>Faturamento Total</h4>
+<strong id="kpiFaturamento">R$ 0,00</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon kpi-blue"><i class="bx bx-briefcase-alt-2"></i></div>
+<div class="kpi-info">
+<h4>Serviços Realizados</h4>
+<strong id="kpiServicos">0</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon kpi-orange"><i class="bx bx-trending-up"></i></div>
+<div class="kpi-info">
+<h4>Ticket Médio</h4>
+<strong id="kpiTicket">R$ 0,00</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon kpi-blue"><i class="bx bx-check-circle"></i></div>
+<div class="kpi-info">
+<h4>Taxa de Resposta</h4>
+<strong id="kpiResposta">0%</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon kpi-orange"><i class="bx bx-time-five"></i></div>
+<div class="kpi-info">
+<h4>Tempo Médio de Resposta</h4>
+<strong id="kpiTempoResposta">0h</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon kpi-green"><i class="bx bx-transfer-alt"></i></div>
+<div class="kpi-info">
+<h4>Conversão</h4>
+<strong id="kpiConversao">0%</strong>
+</div>
+</div>
+</div>
+<div class="chart-container">
+<h3 style="margin-bottom:20px; color:#333;">Evolução de Ganhos</h3>
+<canvas id="graficoGanhos"></canvas>
+</div>
+<div class="top-services">
+<h3 style="margin-bottom:20px; color:#333;">Histórico Recente</h3>
+<div id="listaHistoricoRecente">
+<p style="color:#999; text-align:center;">Carregando...</p>
+</div>
+</div>
+</main>
+<script>
         const { getFirestore, collection, query, where, getDocs } = window;
         const { getAuth, onAuthStateChanged } = window;
 
@@ -413,5 +430,7 @@
             });
         }
     </script>
-</body>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
 </html>

@@ -1,4 +1,8 @@
 
+  <link rel="stylesheet" href="doke-toast.css">
+  <link rel="stylesheet" href="doke-alerts.css">
+  <link rel="stylesheet" href="doke-ux.css">
+
 <script>
 (function(){
   // ============================================================
@@ -11,8 +15,10 @@
   const sb = (SB && (SB.createClient ? SB.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : (window.sb||window.supabaseClient))) || window.sb;
 
   function toast(msg, type='info'){
-    if(window.dokeToast){ window.dokeToast(msg, type); return; }
-    alert(msg);
+    if (typeof window.dokeToast === 'function') return window.dokeToast(msg, type);
+    if (typeof window.mostrarToast === 'function') return window.mostrarToast(msg, type);
+    try{ console.log('[toast]', msg); }catch(e){}
+    try{ alert(msg); }catch(e){}
   }
 
   function onlyDigits(v){ return (v||'').replace(/\D/g,''); }
@@ -130,7 +136,7 @@
     if(!input) return;
     input.addEventListener('change', ()=>{
       const f = input.files && input.files[0];
-      if(hint) hint.textContent = f ? f.name : 'Nenhum arquivo selecionado';
+      if(hint) hint.textContent = f ? f.name : '';
     });
   }
 
@@ -207,5 +213,12 @@
 })();
 </script>
 
+
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js"></script>
+
 </body>
 </html>
+
+  <script src="doke-config.js" defer></script>
+  <script src="doke-ux.js" defer></script>

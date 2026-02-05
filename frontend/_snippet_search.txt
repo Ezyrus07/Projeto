@@ -1,0 +1,531 @@
+             data-isprof="${isProf ? '1' : '0'}"
+             data-goto="${escapeHtml(goto)}"
+             role="button" tabindex="0"
+             onclick="window.location.href='${goto}'"
+             onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+          <img class="pv-user-avatar" src="${foto}" alt="">
+          <div class="pv-user-main">
+            <div class="pv-user-handle">${escapeHtml(handle)}</div>
+            <div class="pv-user-sub">${escapeHtml(sub)}</div>
+          </div>
+          ${meta ? `<div class="pv-user-meta">${escapeHtml(meta)}</div>` : ``}
+        </div>
+      `;
+    }
+  
+  // ----------------------------
+  // PESQUISA ESTILO INSTAGRAM (NO MENU LATERAL)
+  // - Abre dentro do menu lateral (sem navegar)
+  // - Recentes separados: Usuários e Anúncios
+  // ----------------------------
+  function initIgSidebarSearch(){
+    const sidebar = document.querySelector('aside.sidebar-icones');
+    if(!sidebar || sidebar.dataset.igSearchBound) return;
+    sidebar.dataset.igSearchBound = '1';
+
+    const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // já usado na busca inline
+    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de anúncios
+    const MODE_KEY      = 'doke_ig_search_mode_v1';
+
+    const readKey = (key, fb=[]) => {
+      try{
+        const raw = localStorage.getItem(key);
+        const v = raw ? JSON.parse(raw) : fb;
+        return Array.isArray(v) ? v : fb;
+      }catch(e){ return fb; }
+    };
+    const writeKey = (key, v) => { try{ localStorage.setItem(key, JSON.stringify(v)); }catch(e){} };
+
+    // cria/garante o item no menu
+    let item = sidebar.querySelector('#pvSearchSidebarItem');
+    if(!item){
+      item = document.createElement('div');
+      item.className = 'item pv-search-item';
+      item.id = 'pvSearchSidebarItem';
+      item.innerHTML = `
+        <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+          <i class='bx bx-search-alt-2 icon azul'></i>
+          <span>Pesquisar</span>
+        </a>
+      `;
+      const logo = sidebar.querySelector('#logo');
+      // coloca "Pesquisar" logo abaixo do item "Início" (padrão do menu)
+      const links = Array.from(sidebar.querySelectorAll('.item a'));
+      const inicioLink = links.find(a => {
+        const sp = a.querySelector('span');
+        const label = (sp ? sp.textContent : '').trim().toLowerCase();
+        const href = (a.getAttribute('href') || '').trim().toLowerCase();
+        return label === 'início' || label === 'inicio' || href === 'index.html';
+      });
+      const inicioItem = inicioLink ? inicioLink.closest('.item') : null;
+      if (inicioItem && inicioItem.parentNode === sidebar) {
+        sidebar.insertBefore(item, inicioItem.nextSibling);
+      } else if (logo && logo.parentNode === sidebar) {
+        sidebar.insertBefore(item, logo.nextSibling);
+      } else {
+        sidebar.insertBefore(item, sidebar.firstChild);
+      }
+}
+
+    // cria a "tela" de pesquisa dentro do menu
+    let screen = sidebar.querySelector('.ig-search-screen');
+    if(!screen){
+      screen = document.createElement('div');
+      screen.className = 'ig-search-screen';
+      screen.innerHTML = `
+        <div class="ig-search-top">
+          <div class="ig-search-title">Pesquisa</div>
+          <button class="ig-search-close" type="button" aria-label="Fechar">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+
+        <div class="ig-search-inputwrap" role="search">
+          <i class='bx bx-search'></i>
+          <input class="ig-search-input" type="text" placeholder="Pesquisar usuários" autocomplete="off" />
+          <button class="ig-search-clear" type="button" aria-label="Limpar">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+
+        <div class="ig-search-tabs" role="tablist" aria-label="Tipo de pesquisa">
+          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usuários</button>
+          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">Anúncios</button>
+        </div>
+
+        <div class="ig-search-body">
+          <div class="ig-recents-head">
+            <div class="ig-recents-title">Recentes</div>
+            <button class="ig-recents-clearall" type="button">Limpar tudo</button>
+          </div>
+
+          <div class="ig-recents-list" role="list"></div>
+          <div class="ig-search-results" role="list" aria-live="polite"></div>
+        </div>
+      `;
+      sidebar.appendChild(screen);
+
+      // garante que a tela de pesquisa não cubra o logo da Doke
+      try{
+        const logoEl = sidebar.querySelector('#logo');
+        if(logoEl){
+          const h = (logoEl.getBoundingClientRect && logoEl.getBoundingClientRect().height) || logoEl.offsetHeight || 0;
+          const top = Math.max(64, Math.round(h + 10));
+          sidebar.style.setProperty('--ig-search-top', top + 'px');
+        }
+      }catch(e){}
+    }
+
+    const input     = screen.querySelector('.ig-search-input');
+    const btnClose  = screen.querySelector('.ig-search-close');
+    const btnClear  = screen.querySelector('.ig-search-clear');
+    const clearAll  = screen.querySelector('.ig-recents-clearall');
+    const recentsEl = screen.querySelector('.ig-recents-list');
+    const resultsEl = screen.querySelector('.ig-search-results');
+    const tabs      = Array.from(screen.querySelectorAll('.ig-tab'));
+
+    let mode = (readKey(MODE_KEY, ['users'])[0] || 'users');
+    if(mode !== 'users' && mode !== 'ads') mode = 'users';
+
+    function setMode(next){
+      mode = next === 'ads' ? 'ads' : 'users';
+      writeKey(MODE_KEY, [mode]);
+      tabs.forEach(t=>{
+        const on = t.dataset.mode === mode;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      input.placeholder = mode === 'ads' ? 'Pesquisar anúncios' : 'Pesquisar usuários';
+      render();
+      input.focus();
+      input.select();
+    }
+
+    function readUserRecents(){
+      const arr = readKey(USER_HIST_KEY, []);
+      return arr.filter(x => x && typeof x === 'object' && x.t === 'user');
+    }
+    function writeUserRecents(list){
+      // mantém o formato usado pela busca inline
+      const others = readKey(USER_HIST_KEY, []).filter(x => !(x && typeof x === 'object' && x.t === 'user'));
+      writeKey(USER_HIST_KEY, [...list, ...others].slice(0, 18));
+    }
+
+    function readAdsRecents(){
+      const arr = readKey(ADS_HIST_KEY, []);
+      // aceita string antiga ou objeto
+      return arr.map(x=>{
+        if(!x) return null;
+        if(typeof x === 'string') return { q:x, ts:0 };
+        if(typeof x === 'object') return x;
+        return null;
+      }).filter(Boolean);
+    }
+    function writeAdsRecents(list){
+      // salva como array de strings (compatível com a busca inline)
+      const arr = (list||[]).map(x=>{
+        if(!x) return null;
+        if(typeof x === 'string') return x;
+        if(typeof x === 'object') return (x.q||'');
+        return null;
+      }).filter(Boolean).map(s=>String(s).trim()).filter(Boolean);
+      writeKey(ADS_HIST_KEY, arr.slice(0, 12));
+    }
+
+    function rememberAdTerm(term){
+      const t = String(term||'').trim();
+      if(t.length < 2) return;
+
+      // Mantém em sincronia com o histórico global da busca
+      try{ if(typeof window.salvarBusca === 'function') window.salvarBusca(t); }catch(_){}
+
+      let arr = readAdsRecents();
+      arr = arr.filter(x => String(x.q||'').toLowerCase() !== t.toLowerCase());
+      arr = [{ q:t, ts:Date.now() }, ...arr];
+      writeAdsRecents(arr);
+    }
+
+    function removeUser(uid){
+      const u = String(uid||'').trim();
+      if(!u) return;
+      const arr = readUserRecents().filter(x => String(x.uid||'') !== u);
+      writeUserRecents(arr);
+      renderRecents();
+    }
+    function removeAd(q){
+      const t = String(q||'').trim().toLowerCase();
+      const arr = readAdsRecents().filter(x => String(x.q||'').trim().toLowerCase() !== t);
+      writeAdsRecents(arr);
+      renderRecents();
+    }
+
+    function clearAllRecents(){
+      if(mode === 'users'){
+        // remove só os "user"
+        const others = readKey(USER_HIST_KEY, []).filter(x => !(x && typeof x === 'object' && x.t === 'user'));
+        writeKey(USER_HIST_KEY, others);
+      } else {
+        writeKey(ADS_HIST_KEY, []);
+        try{ if(typeof window.atualizarListaHistorico === 'function') window.atualizarListaHistorico(); }catch(_){}
+}
+      renderRecents();
+      resultsEl.innerHTML = '';
+    }
+
+    function rowEmpty(){
+      return `
+        <div class="ig-empty">
+          <i class='bx bx-time-five'></i>
+          <div>
+            <div class="ig-empty-title">Sem histórico</div>
+            <div class="ig-empty-sub">Suas pesquisas recentes aparecem aqui.</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRecents(){
+      resultsEl.innerHTML = '';
+      const term = input.value.trim();
+
+      if(mode === 'users'){
+        const users = readUserRecents();
+        if(!users.length){
+          recentsEl.innerHTML = rowEmpty();
+          return;
+        }
+        recentsEl.innerHTML = users.slice(0, 12).map(u=>{
+          const uid = escapeHtml(String(u.uid||''));
+          const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
+          const handle = escapeHtml(u.handle || '@usuario');
+          const nome = escapeHtml(u.nome || '');
+          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
+          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+          return `
+            <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
+              <img class="ig-avatar" src="${foto}" alt="">
+              <div class="ig-main">
+                <div class="ig-line1">${handle}</div>
+                <div class="ig-line2">${nome || sub}</div>
+              </div>
+              <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
+            </div>
+          `;
+        }).join('');
+
+        recentsEl.querySelectorAll('.ig-row').forEach(row=>{
+          const goto = row.getAttribute('data-goto') || '';
+          const uid  = row.getAttribute('data-uid') || '';
+          row.addEventListener('click', (e)=>{
+            if(e.target && (e.target.closest('.ig-remove'))) return;
+            if(goto) window.location.href = goto;
+          });
+          const rm = row.querySelector('.ig-remove');
+          rm && rm.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); removeUser(uid); });
+        });
+
+      } else {
+        const ads = readAdsRecents();
+        if(!ads.length){
+          recentsEl.innerHTML = rowEmpty();
+          return;
+        }
+        recentsEl.innerHTML = ads.slice(0, 12).map(a=>{
+          const q = escapeHtml(String(a.q||''));
+          return `
+            <div class="ig-row ig-row-term" role="listitem" data-q="${q}">
+              <div class="ig-ico"><i class='bx bx-search'></i></div>
+              <div class="ig-main">
+                <div class="ig-line1">${q}</div>
+                <div class="ig-line2">Pesquisar anúncios</div>
+              </div>
+              <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
+            </div>
+          `;
+        }).join('');
+
+        recentsEl.querySelectorAll('.ig-row-term').forEach(row=>{
+          const q = row.getAttribute('data-q') || '';
+          row.addEventListener('click', (e)=>{
+            if(e.target && (e.target.closest('.ig-remove'))) return;
+            input.value = q;
+            input.focus();
+            showAdSearchAction(q);
+          });
+          const rm = row.querySelector('.ig-remove');
+          rm && rm.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); removeAd(q); });
+        });
+      }
+    }
+
+    function showAdSearchAction(q){
+      const term = String(q||'').trim();
+      resultsEl.innerHTML = '';
+      if(term.length < 2) return;
+      resultsEl.innerHTML = `
+        <div class="ig-row ig-row-action" role="listitem" data-q="${escapeHtml(term)}">
+          <div class="ig-ico"><i class='bx bx-right-arrow-alt'></i></div>
+          <div class="ig-main">
+            <div class="ig-line1">Pesquisar anúncios por “${escapeHtml(term)}”</div>
+            <div class="ig-line2">Abrir resultados</div>
+          </div>
+        </div>
+      `;
+      resultsEl.querySelector('.ig-row-action')?.addEventListener('click', ()=>{
+        rememberAdTerm(term);
+        window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sidebar`;
+      });
+    }
+
+    async function runUserSearch(q){
+      const term = String(q||'').trim();
+      resultsEl.innerHTML = '';
+      if(term.length < 2) return;
+
+      resultsEl.innerHTML = `<div class="ig-loading"><span></span><small>Buscando…</small></div>`;
+      let list = [];
+      try{
+        list = await sbSearchUsuarios(term);
+      }catch(e){
+        console.warn('[DOKE] ig search users error', e);
+      }
+      if(!list.length){
+        resultsEl.innerHTML = `
+          <div class="ig-empty">
+            <i class='bx bx-search'></i>
+            <div>
+              <div class="ig-empty-title">Nada encontrado</div>
+              <div class="ig-empty-sub">Tente outro nome ou @usuário.</div>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      resultsEl.innerHTML = list.map(u=>{
+        const uid = String(u.uid || u.id || '').trim();
+        const foto = u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`;
+        const nomeFull = u.nome || '';
+        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+        const isProf = u.isProfissional === true;
+        const categoria = u.categoria_profissional || 'Profissional';
+        const sub = isProf ? categoria : (nomeFull || 'Usuário');
+        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+        return `
+          <div class="ig-row ig-row-user" role="listitem"
+               data-uid="${escapeHtml(uid)}"
+               data-handle="${escapeHtml(handle)}"
+               data-nome="${escapeHtml(nomeFull)}"
+               data-foto="${escapeHtml(foto)}"
+               data-isprof="${isProf ? '1' : '0'}"
+               data-goto="${escapeHtml(goto)}">
+            <img class="ig-avatar" src="${escapeHtml(foto)}" alt="">
+            <div class="ig-main">
+              <div class="ig-line1">${escapeHtml(handle)}</div>
+              <div class="ig-line2">${escapeHtml(sub)}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      resultsEl.querySelectorAll('.ig-row-user').forEach(row=>{
+        row.addEventListener('click', ()=>{
+          const uid = row.getAttribute('data-uid') || '';
+          const handle = row.getAttribute('data-handle') || '';
+          const nome = row.getAttribute('data-nome') || '';
+          const foto = row.getAttribute('data-foto') || '';
+          const isProf = row.getAttribute('data-isprof') === '1';
+          const goto = row.getAttribute('data-goto') || '';
+          // salva no histórico
+          let arr = readUserRecents();
+          arr = arr.filter(x => String(x.uid||'') !== String(uid));
+          arr = [{
+            t:'user', uid, handle, nome, foto, isProf, ts: Date.now()
+          }, ...arr];
+          writeUserRecents(arr);
+          // navega
+          if(goto) window.location.href = goto;
+        });
+      });
+    }
+
+    function render(){
+      renderRecents();
+      // se tiver texto, mostra ação/busca
+      const term = input.value.trim();
+      if(term.length >= 2){
+        if(mode === 'ads') showAdSearchAction(term);
+        else runUserSearch(term);
+      }
+    }
+
+    // open/close
+    function open(){
+      // garante menu aberto (caso o usuário dispare por atalho)
+      try{
+        sidebar.classList.add('menu-aberto');
+        document.body.classList.add('menu-ativo');
+      }catch(e){}
+      sidebar.classList.add('ig-search-open');
+      setMode(mode); // também renderiza
+      setTimeout(()=>{ try{ input.focus(); input.select(); }catch(e){} }, 50);
+    }
+    function close(){
+      sidebar.classList.remove('ig-search-open');
+      input.value = '';
+      resultsEl.innerHTML = '';
+      renderRecents();
+    }
+
+    // expõe global pra atalho Ctrl/Cmd+K
+    window.openDokeSidebarSearch = open;
+
+    // eventos
+    item.querySelector('.pv-search-toggle')?.addEventListener('click', (e)=>{ e.preventDefault(); open(); });
+    btnClose?.addEventListener('click', close);
+    btnClear?.addEventListener('click', ()=>{
+      input.value = '';
+      resultsEl.innerHTML = '';
+      renderRecents();
+      input.focus();
+    });
+
+    clearAll?.addEventListener('click', clearAllRecents);
+
+    tabs.forEach(t=>{
+      t.addEventListener('click', ()=> setMode(t.dataset.mode));
+    });
+
+    let timer = null;
+    input?.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      timer = setTimeout(render, 220);
+    });
+
+    input?.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){ e.preventDefault(); close(); return; }
+      if(e.key === 'Enter'){
+        const term = input.value.trim();
+        if(mode === 'ads' && term.length >= 2){
+          rememberAdTerm(term);
+          window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sidebar`;
+        }
+      }
+    });
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && sidebar.classList.contains('ig-search-open')) close();
+    });
+
+    // estado inicial
+    setMode(mode);
+  }
+
+function buildPvQuickSearchSection(anchorSection, mountEl){
+      if (!isHome()) return;
+      // Busca rápida (dentro do "Para você" por padrão)
+      if (document.getElementById('pvQuickSearchSection')) return;
+
+      // ---- Pesquisa estilo Instagram no menu lateral (abre dentro do menu) ----
+      try { initIgSidebarSearch(); } catch(e) { /* ignore */ }
+
+
+      const wrap = document.createElement(mountEl ? 'div' : 'section');
+      wrap.id = 'pvQuickSearchSection';
+      wrap.className = mountEl ? 'pv-inline-search' : 'pv-inline-search-section pv-inline-search-section--stealth';
+
+      // UI mais "escondida": menor, alinhada à esquerda, abre ao focar
+      wrap.innerHTML = `
+        <div class="pv-inline-top">
+          <div class="pv-inline-title">
+            <div class="pv-inline-label"><i class='bx bx-search'></i> Pesquisar</div>
+            <div class="pv-inline-help" id="pvQuickHint" aria-live="polite"></div>
+          </div>
+
+          <div class="pv-inline-toggles" role="tablist" aria-label="Filtrar busca">
+            <button type="button" class="pv-toggle is-active" data-mode="pro" role="tab" aria-selected="true">Profissionais</button>
+            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usuários</button>
+          </div>
+        </div>
+
+        <div class="pv-search pv-search--inline pv-search--compact">
+          <div class="pv-search-box pv-search-box--blue pv-search-box--compact">
+            <i class='bx bx-search'></i>
+            <input id="pvQuickSearchInput" type="text" placeholder="Buscar profissionais..." autocomplete="off" />
+            <button type="button" class="pv-search-clear" title="Limpar" aria-label="Limpar">
+              <i class='bx bx-x-circle'></i>
+            </button>
+          </div>
+
+          <div class="pv-collapsible">
+            <div class="pv-history" id="pvHistoryWrap" style="display:none;">
+              <div class="pv-history-title">Histórico</div>
+              <div class="quick-chips pv-quick-chips" id="pvQuickChips"></div>
+            </div>
+            <div class="pv-quick-results" id="pvQuickResults"></div>
+          </div>
+        </div>
+      `;
+
+      // Mount
+      if (mountEl) {
+        mountEl.appendChild(wrap);
+      } else {
+        const pv = document.getElementById('paraVoceSection');
+        if (pv) pv.insertAdjacentElement('afterend', wrap);
+        else if (anchorSection && anchorSection.parentNode) anchorSection.parentNode.insertBefore(wrap, anchorSection);
+      }
+
+      const input = wrap.querySelector('#pvQuickSearchInput');
+      const results = wrap.querySelector('#pvQuickResults');
+      const chipsWrap = wrap.querySelector('#pvHistoryWrap');
+      const chips = wrap.querySelector('#pvQuickChips');
+      const clearBtn = wrap.querySelector('.pv-search-clear');
+      const hint = wrap.querySelector('#pvQuickHint');
+      const toggles = wrap.querySelectorAll('.pv-toggle');
+
+      let mode = 'pro'; // 'pro' | 'user'
+
+      const setMode = (m) => {
+        mode = (m === 'user') ? 'user' : 'pro';
+        toggles.forEach(b=>{

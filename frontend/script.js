@@ -1433,8 +1433,14 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             if (termoBusca && termoBusca.trim() !== "" && listaAnuncios.length) {
                 const sugest = listaAnuncios.slice(0, 8);
                 feed.innerHTML = `
-                  <div style="text-align:center; padding:16px; color:#666;">
-                    Nenhum anúncio encontrado para <b>${escapeHtml(termoBusca)}</b>.
+                  <div class="doke-empty">
+                    <div class="doke-empty__icon">🔎</div>
+                    <div class="doke-empty__title">Nenhum anúncio encontrado</div>
+                    <div class="doke-empty__subtitle">Não achamos resultados para <b>${escapeHtml(termoBusca)}</b>. Tente ajustar seus filtros ou buscar por outro termo.</div>
+                    <div class="doke-empty__actions">
+                      <button class="doke-empty__btn" type="button" onclick="try{document.querySelector(\'#buscaInput\')?.focus()}catch(e){}">Nova busca</button>
+                      <button class="doke-empty__btn doke-empty__btn--primary" type="button" onclick="try{window.location.href=\'busca.html\'}catch(e){}">Explorar</button>
+                    </div>
                   </div>
                   <div style="padding:6px 0 10px; font-weight:800; color:#0b7768;">Sugestões para você</div>
                 `;
@@ -1500,6 +1506,35 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     }
 }
 
+
+// Reset rápido dos filtros da busca (usado no estado vazio)
+window.__dokeResetBuscaFiltros = function(){
+    try{
+        const idsText = ['inputBusca','filtroPreco','filtroTipoPreco','filtroCategoria','filtroRaio','selectEstado','selectCidade','selectBairro'];
+        idsText.forEach(id=>{
+            const el = document.getElementById(id);
+            if(!el) return;
+            if(el.tagName === 'SELECT') el.selectedIndex = 0;
+            else el.value = '';
+            el.dispatchEvent(new Event('change', {bubbles:true}));
+            el.dispatchEvent(new Event('input', {bubbles:true}));
+        });
+        const ord = document.getElementById('filtroOrdenacao');
+        if(ord) { ord.value = 'relevancia'; ord.dispatchEvent(new Event('change', {bubbles:true})); }
+
+        // chips
+        window.__dokeChipFiltro = 'todos';
+        document.querySelectorAll('.chip-tag.ativo').forEach(c=>c.classList.remove('ativo'));
+        const first = document.querySelector('.chip-tag[data-chip="todos"]');
+        if(first) first.classList.add('ativo');
+
+        // url
+        const url = new URL(window.location.href);
+        url.searchParams.delete('q');
+        window.history.replaceState({}, '', url.toString());
+    }catch(e){}
+};
+
 window.aplicarFiltrosBusca = function() {
     const feed = document.getElementById('feedAnuncios');
     if (!feed) return;
@@ -1559,7 +1594,16 @@ window.aplicarFiltrosBusca = function() {
 
     feed.innerHTML = '';
     if (!lista.length) {
-        feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anúncio encontrado com esses filtros.</p></div>';
+        feed.innerHTML = `
+          <div class="doke-empty doke-soft-card doke-empty-state">
+            <div class="ico"><i class='bx bx-search-alt'></i></div>
+            <h3>Nenhum anúncio encontrado</h3>
+            <p>Tente ajustar os filtros, ampliar o raio ou buscar por outro termo.</p>
+            <div class="actions">
+              <button class="doke-btn primary" type="button" onclick="window.__dokeResetBuscaFiltros(); if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();">Limpar filtros</button>
+              <button class="doke-btn ghost" type="button" onclick="const i=document.getElementById('inputBusca'); if(i){ i.focus(); i.select(); }">Nova busca</button>
+            </div>
+          </div>`;
     } else {
         const frag = document.createDocumentFragment();
         lista.forEach(anuncio => {
@@ -2232,10 +2276,13 @@ window.scrollChips = function(btn) {
 function salvarBusca(termo) {
     let h = JSON.parse(localStorage.getItem('doke_historico_busca') || '[]');
     h = h.filter(i => i.toLowerCase() !== termo.toLowerCase());
-    h.unshift(termo); if (h.length > 5) h.pop();
+    h.unshift(termo);
+    h = h.slice(0, 12);
     localStorage.setItem('doke_historico_busca', JSON.stringify(h));
     atualizarListaHistorico();
 }
+window.salvarBusca = salvarBusca;
+
 function atualizarListaHistorico() {
     const l = document.getElementById('listaRecentes');
     const c = document.getElementById('containerHistorico');
@@ -2253,6 +2300,7 @@ function atualizarListaHistorico() {
         l.appendChild(d);
     });
 }
+window.atualizarListaHistorico = atualizarListaHistorico;
 window.limparHistorico = function(e) {
     if(e) e.stopPropagation();
     localStorage.removeItem('doke_historico_busca');
@@ -3352,7 +3400,24 @@ document.addEventListener("DOMContentLoaded", async function() {
     // 7. Efeito Typewriter
     const elementoTexto = document.getElementById('typewriter');
     if (elementoTexto) {
-        const frases = ["Chefes de cozinha próximos", "Eletricistas na pituba", "Aulas de Inglês Online", "Manutenção de Ar condicionado"];
+        const kind = document.body?.dataset?.kind;
+        const frases = kind === "negocios"
+          ? [
+              "✨ Restaurantes próximos",
+              "✨ Mercados abertos agora",
+              "✨ Cafés e padarias",
+              "✨ Farmácias 24h",
+              "✨ Lojas na sua região",
+              "✨ Delivery na sua rua"
+            ]
+          : [
+              "✨ Chefs de cozinha próximos",
+              "✨ Eletricistas na pituba",
+              "✨ Aulas de Inglês Online",
+              "✨ Manutenção de Ar condicionado",
+              "✨ Personal Trainers",
+              "✨ Advogados"
+            ];
         let fraseIndex = 0, charIndex = 0, isDeleting = false;
         function typeEffect() {
             const currentPhrase = frases[fraseIndex];
@@ -4483,7 +4548,8 @@ window.stopReelPreview = function(card) {
     if (!video) return;
     const timer = reelPreviewTimers.get(video);
     if (timer) {
-        window.clearTimeout(timer);
+        window.syncClear();
+      clearTimeout(timer);
         reelPreviewTimers.delete(video);
     }
     video.pause();
@@ -9240,7 +9306,16 @@ async function carregarComentariosSupabase(publicacaoId) {
       if(lista.length){
         feed.appendChild(frag);
       }else{
-        feed.innerHTML = '<div class="empty-state"><i class="bx bx-search-alt"></i><p>Nenhum anuncio encontrado com esses filtros.</p></div>';
+        feed.innerHTML = `
+          <div class="doke-empty doke-soft-card doke-empty-state">
+            <div class="ico"><i class='bx bx-search-alt'></i></div>
+            <h3>Nenhum anúncio encontrado</h3>
+            <p>Tente ajustar os filtros, ampliar o raio ou buscar por outro termo.</p>
+            <div class="actions">
+              <button class="doke-btn primary" type="button" onclick="window.__dokeResetBuscaFiltros(); if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();">Limpar filtros</button>
+              <button class="doke-btn ghost" type="button" onclick="const i=document.getElementById('inputBusca'); if(i){ i.focus(); i.select(); }">Nova busca</button>
+            </div>
+          </div>`;
       }
     }
 
@@ -9807,172 +9882,912 @@ async function carregarComentariosSupabase(publicacaoId) {
     return data || [];
   }
 
-  function buildUserCardMini(u){
-    const foto = u.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(u.uid||u.id||'u'))}`;
-    const handle = normalizeHandle(u.user || (u.nome ? String(u.nome).split(' ')[0] : 'usuario'));
-    const isProf = u.isProfissional === true;
-    const categoria = u.categoria_profissional || 'Profissional';
-    const st = (u.stats && typeof u.stats === 'object') ? u.stats : {};
-    const n = Number(st.avaliacoes || st.qtd || 0) || 0;
-    const m = Number(st.media || st.nota || 0) || 0;
-    const meta = isProf ? `★ ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
-    const sub = isProf ? categoria : (u.nome || '');
-    const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
-    return `
-      <div class="pv-user-card" role="button" tabindex="0" onclick="window.location.href='${goto}'" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
-        <img class="pv-user-avatar" src="${foto}" alt="">
-        <div class="pv-user-main">
-          <div class="pv-user-handle">${escapeHtml(handle)}</div>
-          <div class="pv-user-sub">${escapeHtml(sub)}</div>
-        </div>
-        ${meta ? `<div class="pv-user-meta">${escapeHtml(meta)}</div>` : ``}
-      </div>
-    `;
-  }
-
-  function buildPvQuickSearchSection(anchorSection){
-    if (!isHome()) return;
-    if (document.getElementById('pvQuickSearchSection')) return;
-    const sec = document.createElement('section');
-    sec.className = 'para-voce-section';
-    sec.id = 'pvQuickSearchSection';
-    sec.innerHTML = `
-      <div class="para-voce-inner">
-        <div class="pv-head">
-          <h2>Buscar profissionais e usuários</h2>
-          <div class="pv-sub">Digite pelo menos 2 letras</div>
-        </div>
-        <div class="pv-search">
-          <div class="pv-search-box">
-            <i class='bx bx-search'></i>
-            <input id="pvQuickSearchInput" type="text" placeholder="Ex: eletricista, @gabriel, manicure..." autocomplete="off" />
+    function buildUserCardMini(u){
+      const uid = String(u.uid || u.id || '').trim();
+      const foto = u.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(uid || 'u')}`;
+      const nomeFull = u.nome || '';
+      const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+      const isProf = u.isProfissional === true;
+      const categoria = u.categoria_profissional || 'Profissional';
+      const st = (u.stats && typeof u.stats === 'object') ? u.stats : {};
+      const n = Number(st.avaliacoes || st.qtd || 0) || 0;
+      const m = Number(st.media || st.nota || 0) || 0;
+      const meta = isProf ? `★ ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
+      const sub = isProf ? categoria : (nomeFull || '');
+      const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+      return `
+        <div class="pv-user-card"
+             data-uid="${escapeHtml(uid)}"
+             data-handle="${escapeHtml(handle)}"
+             data-nome="${escapeHtml(nomeFull)}"
+             data-foto="${escapeHtml(foto)}"
+             data-isprof="${isProf ? '1' : '0'}"
+             data-goto="${escapeHtml(goto)}"
+             role="button" tabindex="0"
+             onclick="window.location.href='${goto}'"
+             onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+          <img class="pv-user-avatar" src="${foto}" alt="">
+          <div class="pv-user-main">
+            <div class="pv-user-handle">${escapeHtml(handle)}</div>
+            <div class="pv-user-sub">${escapeHtml(sub)}</div>
           </div>
+          ${meta ? `<div class="pv-user-meta">${escapeHtml(meta)}</div>` : ``}
         </div>
-        <div class="pv-quick-results" id="pvQuickResults"></div>
-      </div>
-    `;
-    // insere logo após o Para você
-    const pv = document.getElementById('paraVoceSection');
-    if (pv && pv.parentNode) {
-      pv.parentNode.insertBefore(sec, pv.nextSibling);
-    } else if (anchorSection && anchorSection.parentNode) {
-      anchorSection.parentNode.insertBefore(sec, anchorSection);
+      `;
+    }
+  
+  // ----------------------------
+  // PESQUISA ESTILO INSTAGRAM (NO MENU LATERAL)
+  // - Abre dentro do menu lateral (sem navegar)
+  // - Recentes separados: Usuários e Anúncios
+  // ----------------------------
+  function initIgSidebarSearch(){
+    const sidebar = document.querySelector('aside.sidebar-icones');
+    if(!sidebar || sidebar.dataset.igSearchBound) return;
+    sidebar.dataset.igSearchBound = '1';
+
+    const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // já usado na busca inline
+    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de anúncios
+    const MODE_KEY      = 'doke_ig_search_mode_v1';
+
+    const readKey = (key, fb=[]) => {
+      try{
+        const raw = localStorage.getItem(key);
+        const v = raw ? JSON.parse(raw) : fb;
+        return Array.isArray(v) ? v : fb;
+      }catch(e){ return fb; }
+    };
+    const writeKey = (key, v) => { try{ localStorage.setItem(key, JSON.stringify(v)); }catch(e){} };
+
+    // cria/garante o item no menu
+    let item = sidebar.querySelector('#pvSearchSidebarItem');
+    if(!item){
+      item = document.createElement('div');
+      item.className = 'item pv-search-item';
+      item.id = 'pvSearchSidebarItem';
+      item.innerHTML = `
+        <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+          <i class='bx bx-search-alt-2 icon azul'></i>
+          <span>Pesquisar</span>
+        </a>
+      `;
+      const logo = sidebar.querySelector('#logo');
+      // coloca "Pesquisar" logo abaixo do item "Início" (padrão do menu)
+      const links = Array.from(sidebar.querySelectorAll('.item a'));
+      const inicioLink = links.find(a => {
+        const sp = a.querySelector('span');
+        const label = (sp ? sp.textContent : '').trim().toLowerCase();
+        const href = (a.getAttribute('href') || '').trim().toLowerCase();
+        return label === 'início' || label === 'inicio' || href === 'index.html';
+      });
+      const inicioItem = inicioLink ? inicioLink.closest('.item') : null;
+      if (inicioItem && inicioItem.parentNode === sidebar) {
+        sidebar.insertBefore(item, inicioItem.nextSibling);
+      } else if (logo && logo.parentNode === sidebar) {
+        sidebar.insertBefore(item, logo.nextSibling);
+      } else {
+        sidebar.insertBefore(item, sidebar.firstChild);
+      }
+}
+
+    // cria a "tela" de pesquisa dentro do menu
+    let screen = sidebar.querySelector('.ig-search-screen');
+    if(!screen){
+      screen = document.createElement('div');
+      screen.className = 'ig-search-screen';
+      screen.innerHTML = `
+        <div class="ig-search-top">
+          <div class="ig-search-title">Pesquisa</div>
+          <button class="ig-search-close" type="button" aria-label="Fechar">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+
+        <div class="ig-search-inputwrap" role="search">
+          <i class='bx bx-search'></i>
+          <input class="ig-search-input" type="text" placeholder="Pesquisar usuários" autocomplete="off" />
+          <button class="ig-search-clear" type="button" aria-label="Limpar">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+
+        <div class="ig-search-tabs" role="tablist" aria-label="Tipo de pesquisa">
+          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usuários</button>
+          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">Anúncios</button>
+        </div>
+
+        <div class="ig-search-body">
+          <div class="ig-recents-head">
+            <div class="ig-recents-title">Recentes</div>
+            <button class="ig-recents-clearall" type="button">Limpar tudo</button>
+          </div>
+
+          <div class="ig-recents-list" role="list"></div>
+          <div class="ig-search-results" role="list" aria-live="polite"></div>
+        </div>
+      `;
+      sidebar.appendChild(screen);
+
+      // garante que a tela de pesquisa não cubra o logo da Doke
+      try{
+        const logoEl = sidebar.querySelector('#logo');
+        if(logoEl){
+          const h = (logoEl.getBoundingClientRect && logoEl.getBoundingClientRect().height) || logoEl.offsetHeight || 0;
+          const top = Math.max(64, Math.round(h + 10));
+          sidebar.style.setProperty('--ig-search-top', top + 'px');
+        }
+      }catch(e){}
     }
 
-    const input = sec.querySelector('#pvQuickSearchInput');
-    const results = sec.querySelector('#pvQuickResults');
+    const input     = screen.querySelector('.ig-search-input');
+    const inputWrap = screen.querySelector('.ig-search-inputwrap');
+    const btnClose  = screen.querySelector('.ig-search-close');
+    const btnClear  = screen.querySelector('.ig-search-clear');
+    const clearAll  = screen.querySelector('.ig-recents-clearall');
+    const recentsEl = screen.querySelector('.ig-recents-list');
+    const resultsEl = screen.querySelector('.ig-search-results');
+    const tabs      = Array.from(screen.querySelectorAll('.ig-tab'));
 
-    let timer = null;
-    async function run(){
+    let mode = (readKey(MODE_KEY, ['users'])[0] || 'users');
+    if(mode !== 'users' && mode !== 'ads') mode = 'users';
+
+function syncClear(){
+  try{
+    const has = !!(input && input.value && input.value.trim());
+    inputWrap && inputWrap.classList.toggle('has-value', has);
+  }catch(e){}
+}
+
+
+    function setMode(next){
+      mode = next === 'ads' ? 'ads' : 'users';
+      writeKey(MODE_KEY, [mode]);
+      tabs.forEach(t=>{
+        const on = t.dataset.mode === mode;
+        t.classList.toggle('is-active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      input.placeholder = mode === 'ads' ? 'Pesquisar anúncios' : 'Pesquisar usuários';
+      syncClear();
+      render();
+      input.focus();
+      input.select();
+    }
+
+    function readUserRecents(){
+      const arr = readKey(USER_HIST_KEY, []);
+      return arr.filter(x => x && typeof x === 'object' && x.t === 'user');
+    }
+    function writeUserRecents(list){
+      // mantém o formato usado pela busca inline
+      const others = readKey(USER_HIST_KEY, []).filter(x => !(x && typeof x === 'object' && x.t === 'user'));
+      writeKey(USER_HIST_KEY, [...list, ...others].slice(0, 18));
+    }
+
+    function readAdsRecents(){
+      const arr = readKey(ADS_HIST_KEY, []);
+      // aceita string antiga ou objeto
+      return arr.map(x=>{
+        if(!x) return null;
+        if(typeof x === 'string') return { q:x, ts:0 };
+        if(typeof x === 'object') return x;
+        return null;
+      }).filter(Boolean);
+    }
+    function writeAdsRecents(list){
+      // salva como array de strings (compatível com a busca inline)
+      const arr = (list||[]).map(x=>{
+        if(!x) return null;
+        if(typeof x === 'string') return x;
+        if(typeof x === 'object') return (x.q||'');
+        return null;
+      }).filter(Boolean).map(s=>String(s).trim()).filter(Boolean);
+      writeKey(ADS_HIST_KEY, arr.slice(0, 12));
+    }
+
+    function rememberAdTerm(term){
+      const t = String(term||'').trim();
+      if(t.length < 2) return;
+
+      // Mantém em sincronia com o histórico global da busca
+      try{ if(typeof window.salvarBusca === 'function') window.salvarBusca(t); }catch(_){}
+
+      let arr = readAdsRecents();
+      arr = arr.filter(x => String(x.q||'').toLowerCase() !== t.toLowerCase());
+      arr = [{ q:t, ts:Date.now() }, ...arr];
+      writeAdsRecents(arr);
+    }
+
+    function removeUser(uid){
+      const u = String(uid||'').trim();
+      if(!u) return;
+      const arr = readUserRecents().filter(x => String(x.uid||'') !== u);
+      writeUserRecents(arr);
+      renderRecents();
+    }
+    function removeAd(q){
+      const t = String(q||'').trim().toLowerCase();
+      const arr = readAdsRecents().filter(x => String(x.q||'').trim().toLowerCase() !== t);
+      writeAdsRecents(arr);
+      renderRecents();
+    }
+
+    function clearAllRecents(){
+      if(mode === 'users'){
+        // remove só os "user"
+        const others = readKey(USER_HIST_KEY, []).filter(x => !(x && typeof x === 'object' && x.t === 'user'));
+        writeKey(USER_HIST_KEY, others);
+      } else {
+        writeKey(ADS_HIST_KEY, []);
+        try{ if(typeof window.atualizarListaHistorico === 'function') window.atualizarListaHistorico(); }catch(_){}
+}
+      renderRecents();
+      resultsEl.innerHTML = '';
+    }
+
+    function rowEmpty(){
+      return `
+        <div class="ig-empty">
+          <i class='bx bx-time-five'></i>
+          <div>
+            <div class="ig-empty-title">Sem histórico</div>
+            <div class="ig-empty-sub">Suas pesquisas recentes aparecem aqui.</div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderRecents(){
+      resultsEl.innerHTML = '';
       const term = input.value.trim();
-      results.innerHTML = '';
-      if (term.length < 2) return;
-      results.innerHTML = `<div style="padding:10px 0; color:rgba(0,0,0,.55);">Buscando...</div>`;
-      const list = await sbSearchUsuarios(term);
-      if (!list.length) {
-        results.innerHTML = `<div style="padding:10px 0; color:rgba(0,0,0,.6);">Nenhum usuário encontrado.</div>`;
+
+      if(mode === 'users'){
+        const users = readUserRecents();
+        if(!users.length){
+          recentsEl.innerHTML = rowEmpty();
+          return;
+        }
+        recentsEl.innerHTML = users.slice(0, 12).map(u=>{
+          const uid = escapeHtml(String(u.uid||''));
+          const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
+          const handle = escapeHtml(u.handle || '@usuario');
+          const nome = escapeHtml(u.nome || '');
+          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
+          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+          return `
+            <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
+              <img class="ig-avatar" src="${foto}" alt="">
+              <div class="ig-main">
+                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usuário'}</span></div>
+                <div class="ig-line2">${nome || (u.isProf ? 'Conta profissional' : 'Conta')}</div>
+              </div>
+              <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
+            </div>
+          `;
+        }).join('');
+
+        recentsEl.querySelectorAll('.ig-row').forEach(row=>{
+          const goto = row.getAttribute('data-goto') || '';
+          const uid  = row.getAttribute('data-uid') || '';
+          row.addEventListener('click', (e)=>{
+            if(e.target && (e.target.closest('.ig-remove'))) return;
+            if(goto) window.location.href = goto;
+          });
+          const rm = row.querySelector('.ig-remove');
+          rm && rm.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); removeUser(uid); });
+        });
+
+      } else {
+        const ads = readAdsRecents();
+        if(!ads.length){
+          recentsEl.innerHTML = rowEmpty();
+          return;
+        }
+        recentsEl.innerHTML = ads.slice(0, 12).map(a=>{
+          const q = escapeHtml(String(a.q||''));
+          return `
+            <div class="ig-row ig-row-term" role="listitem" data-q="${q}">
+              <div class="ig-ico"><i class='bx bx-search'></i></div>
+              <div class="ig-main">
+                <div class="ig-line1">${q}</div>
+                <div class="ig-line2">Pesquisar anúncios</div>
+              </div>
+              <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
+            </div>
+          `;
+        }).join('');
+
+        recentsEl.querySelectorAll('.ig-row-term').forEach(row=>{
+          const q = row.getAttribute('data-q') || '';
+          row.addEventListener('click', (e)=>{
+            if(e.target && (e.target.closest('.ig-remove'))) return;
+            input.value = q;
+            input.focus();
+            showAdSearchAction(q);
+          });
+          const rm = row.querySelector('.ig-remove');
+          rm && rm.addEventListener('click', (e)=>{ e.preventDefault(); e.stopPropagation(); removeAd(q); });
+        });
+      }
+    }
+
+    function showAdSearchAction(q){
+      const term = String(q||'').trim();
+      resultsEl.innerHTML = '';
+      if(term.length < 2) return;
+      resultsEl.innerHTML = `
+        <div class="ig-row ig-row-action" role="listitem" data-q="${escapeHtml(term)}">
+          <div class="ig-ico"><i class='bx bx-right-arrow-alt'></i></div>
+          <div class="ig-main">
+            <div class="ig-line1">Pesquisar anúncios por “${escapeHtml(term)}”</div>
+            <div class="ig-line2">Abrir resultados</div>
+          </div>
+        </div>
+      `;
+      resultsEl.querySelector('.ig-row-action')?.addEventListener('click', ()=>{
+        rememberAdTerm(term);
+        window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sidebar`;
+      });
+    }
+
+    async function runUserSearch(q){
+      const term = String(q||'').trim();
+      resultsEl.innerHTML = '';
+      if(term.length < 2) return;
+
+      resultsEl.innerHTML = `<div class="ig-loading"><span></span><small>Buscando…</small></div>`;
+      let list = [];
+      try{
+        list = await sbSearchUsuarios(term);
+      }catch(e){
+        console.warn('[DOKE] ig search users error', e);
+      }
+      if(!list.length){
+        resultsEl.innerHTML = `
+          <div class="ig-empty">
+            <i class='bx bx-search'></i>
+            <div>
+              <div class="ig-empty-title">Nada encontrado</div>
+              <div class="ig-empty-sub">Tente outro nome ou @usuário.</div>
+            </div>
+          </div>
+        `;
         return;
       }
-      results.innerHTML = list.map(buildUserCardMini).join('');
+
+      resultsEl.innerHTML = list.map(u=>{
+        const uid = String(u.uid || u.id || '').trim();
+        const foto = u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`;
+        const nomeFull = u.nome || '';
+        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+        const isProf = u.isProfissional === true;
+        const categoria = u.categoria_profissional || 'Profissional';
+        const sub = isProf ? categoria : (nomeFull || 'Usuário');
+        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+        return `
+          <div class="ig-row ig-row-user" role="listitem"
+               data-uid="${escapeHtml(uid)}"
+               data-handle="${escapeHtml(handle)}"
+               data-nome="${escapeHtml(nomeFull)}"
+               data-foto="${escapeHtml(foto)}"
+               data-isprof="${isProf ? '1' : '0'}"
+               data-goto="${escapeHtml(goto)}">
+            <img class="ig-avatar" src="${escapeHtml(foto)}" alt="">
+            <div class="ig-main">
+              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usuário'}</span></div>
+              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usuário'))}</div>
+            </div>
+          </div>
+        `;
+      }).join('');
+
+      resultsEl.querySelectorAll('.ig-row-user').forEach(row=>{
+        row.addEventListener('click', ()=>{
+          const uid = row.getAttribute('data-uid') || '';
+          const handle = row.getAttribute('data-handle') || '';
+          const nome = row.getAttribute('data-nome') || '';
+          const foto = row.getAttribute('data-foto') || '';
+          const isProf = row.getAttribute('data-isprof') === '1';
+          const goto = row.getAttribute('data-goto') || '';
+          // salva no histórico
+          let arr = readUserRecents();
+          arr = arr.filter(x => String(x.uid||'') !== String(uid));
+          arr = [{
+            t:'user', uid, handle, nome, foto, isProf, ts: Date.now()
+          }, ...arr];
+          writeUserRecents(arr);
+          // navega
+          if(goto) window.location.href = goto;
+        });
+      });
     }
 
-    input.addEventListener('input', ()=>{
-      if(timer) clearTimeout(timer);
-      timer = setTimeout(run, 250);
+    function render(){
+      renderRecents();
+      // se tiver texto, mostra ação/busca
+      const term = input.value.trim();
+      if(term.length >= 2){
+        if(mode === 'ads') showAdSearchAction(term);
+        else runUserSearch(term);
+      }
+    }
+
+    // open/close
+    function open(){
+      // garante menu aberto (caso o usuário dispare por atalho)
+      try{
+        sidebar.classList.add('menu-aberto');
+        document.body.classList.add('menu-ativo');
+      }catch(e){}
+      sidebar.classList.add('ig-search-open');
+      setMode(mode); // também renderiza
+      setTimeout(()=>{ try{ input.focus(); input.select(); }catch(e){} }, 50);
+    }
+    function close(){
+      sidebar.classList.remove('ig-search-open');
+      input.value = '';
+      syncClear();
+      syncClear();
+      resultsEl.innerHTML = '';
+      renderRecents();
+    }
+
+    // expõe global pra atalho Ctrl/Cmd+K
+    window.openDokeSidebarSearch = open;
+
+    // eventos
+    item.querySelector('.pv-search-toggle')?.addEventListener('click', (e)=>{ e.preventDefault(); open(); });
+    btnClose?.addEventListener('click', close);
+    btnClear?.addEventListener('click', ()=>{
+      input.value = '';
+      resultsEl.innerHTML = '';
+      renderRecents();
+      input.focus();
     });
 
-    // Atalho de teclado seguro (Ctrl+K) — sem usar "/"
-    document.addEventListener('keydown', (e)=>{
-      if((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'k'){
-        if (isEditableEl(e.target)) return;
-        e.preventDefault();
-        input.focus();
+    clearAll?.addEventListener('click', clearAllRecents);
+
+    tabs.forEach(t=>{
+      t.addEventListener('click', ()=> setMode(t.dataset.mode));
+    });
+
+    let timer = null;
+    input?.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      timer = setTimeout(render, 220);
+    });
+
+    input?.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){ e.preventDefault(); close(); return; }
+      if(e.key === 'Enter'){
+        const term = input.value.trim();
+        if(mode === 'ads' && term.length >= 2){
+          rememberAdTerm(term);
+          window.location.href = `busca.html?q=${encodeURIComponent(term)}&src=sidebar`;
+        }
       }
     });
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape' && sidebar.classList.contains('ig-search-open')) close();
+    });
+
+    // estado inicial
+    setMode(mode);
   }
 
-function buildParaVoceSection() {
-    if (!isHome()) return;
-    if (document.getElementById('paraVoceSection')) return;
 
-    // Melhor posicao: antes de "Profissionais em Destaque".
-    // Se nao existir (por algum motivo), cai para categorias/videos.
-    const anchor = document.querySelector('.pros-section') || document.querySelector('.categories-section') || document.querySelector('.videos-container');
-    if (!anchor) return;
+  // [DOKE] garante inicialização do painel de Pesquisa no menu lateral em todas as páginas
+  // (o menu lateral existe em múltiplos HTMLs, então não pode depender do 'Para você')
+  document.addEventListener('DOMContentLoaded', ()=>{ try{ initIgSidebarSearch(); }catch(e){} });
 
-    const sec = document.createElement('section');
-    sec.className = 'para-voce-section';
-    sec.id = 'paraVoceSection';
+function buildPvQuickSearchSection(anchorSection, mountEl){
+      if (!isHome()) return;
+      // Busca rápida (dentro do "Para você" por padrão)
+      if (document.getElementById('pvQuickSearchSection')) return;
 
-    const historico = readJSON('doke_historico_busca', []);
-    const clicks = readJSON('doke_categorias_click', []);
+      // ---- Pesquisa estilo Instagram no menu lateral (abre dentro do menu) ----
+      try { initIgSidebarSearch(); } catch(e) { /* ignore */ }
 
-    const sugeridos = [...new Set([
-      ...clicks.slice(0, 6),
-      ...historico.slice(0, 6),
-      ...(window.__dokeTopCats || []).slice(0, 6),
-    ].filter(Boolean))].slice(0, 10);
 
-    const logado = getLogado();
-    const perfil = getPerfilLocal();
-    const eProf = perfil?.isProfissional === true;
+      const wrap = document.createElement(mountEl ? 'div' : 'section');
+      wrap.id = 'pvQuickSearchSection';
+      wrap.className = mountEl ? 'pv-inline-search' : 'pv-inline-search-section pv-inline-search-section--stealth';
 
-    let ctaTitle = 'Encontre o serviço ideal';
-    let ctaSub = 'Use as categorias e a busca para achar exatamente o que precisa.';
-    let ctaHref = 'busca.html';
-    let ctaLabel = 'Procurar agora';
+      // UI mais "escondida": menor, alinhada à esquerda, abre ao focar
+      wrap.innerHTML = `
+        <div class="pv-inline-top">
+          <div class="pv-inline-title">
+            <div class="pv-inline-label"><i class='bx bx-search'></i> Pesquisar</div>
+            <div class="pv-inline-help" id="pvQuickHint" aria-live="polite"></div>
+          </div>
 
-    if (!logado) {
-      ctaTitle = 'Entre para aproveitar melhor a Doke';
-      ctaSub = 'Salve buscas, veja recomendações e tenha uma experiência mais rápida.';
-      ctaHref = 'login.html';
-      ctaLabel = 'Entrar / Criar conta';
-    } else if (eProf) {
-      ctaTitle = 'Pronto para vender mais?';
-      ctaSub = 'Publique seu primeiro serviço e apareça no topo para clientes próximos.';
-      ctaHref = 'anunciar.html';
-      ctaLabel = 'Publicar serviço';
-    } else {
-      ctaTitle = 'Peça orçamento em 1 clique';
-      ctaSub = 'Entre em contato com profissionais e acompanhe tudo com segurança.';
-      ctaHref = 'explorar.html';
-      ctaLabel = 'Explorar profissionais';
+          <div class="pv-inline-toggles" role="tablist" aria-label="Filtrar busca">
+            <button type="button" class="pv-toggle is-active" data-mode="pro" role="tab" aria-selected="true">Profissionais</button>
+            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usuários</button>
+          </div>
+        </div>
+
+        <div class="pv-search pv-search--inline pv-search--compact">
+          <div class="pv-search-box pv-search-box--blue pv-search-box--compact">
+            <i class='bx bx-search'></i>
+            <input id="pvQuickSearchInput" type="text" placeholder="Buscar profissionais..." autocomplete="off" />
+            <button type="button" class="pv-search-clear" title="Limpar" aria-label="Limpar">
+              <i class='bx bx-x-circle'></i>
+            </button>
+          </div>
+
+          <div class="pv-collapsible">
+            <div class="pv-history" id="pvHistoryWrap" style="display:none;">
+              <div class="pv-history-title">Histórico</div>
+              <div class="quick-chips pv-quick-chips" id="pvQuickChips"></div>
+            </div>
+            <div class="pv-quick-results" id="pvQuickResults"></div>
+          </div>
+        </div>
+      `;
+
+      // Mount
+      if (mountEl) {
+        mountEl.appendChild(wrap);
+      } else {
+        const pv = document.getElementById('paraVoceSection');
+        if (pv) pv.insertAdjacentElement('afterend', wrap);
+        else if (anchorSection && anchorSection.parentNode) anchorSection.parentNode.insertBefore(wrap, anchorSection);
+      }
+
+      const input = wrap.querySelector('#pvQuickSearchInput');
+      const results = wrap.querySelector('#pvQuickResults');
+      const chipsWrap = wrap.querySelector('#pvHistoryWrap');
+      const chips = wrap.querySelector('#pvQuickChips');
+      const clearBtn = wrap.querySelector('.pv-search-clear');
+      const hint = wrap.querySelector('#pvQuickHint');
+      const toggles = wrap.querySelectorAll('.pv-toggle');
+
+      let mode = 'pro'; // 'pro' | 'user'
+
+      const setMode = (m) => {
+        mode = (m === 'user') ? 'user' : 'pro';
+        toggles.forEach(b=>{
+          const on = (b.getAttribute('data-mode') === mode);
+          b.classList.toggle('is-active', on);
+          b.setAttribute('aria-selected', on ? 'true' : 'false');
+        });
+        input.placeholder = mode === 'pro' ? 'Buscar profissionais...' : 'Buscar usuários...';
+        results.innerHTML = '';
+        renderHistory();
+        if (input.value.trim().length >= 2) run();
+      };
+
+      toggles.forEach(btn=>{
+        btn.addEventListener('click', ()=>{
+          setMode(btn.getAttribute('data-mode') || 'pro');
+          try{ input.focus(); }catch(e){}
+        });
+      });
+
+      const open = () => wrap.classList.add('is-open');
+      const close = () => {
+        // fecha só se vazio (pra não atrapalhar quem está digitando)
+        const t = input.value.trim();
+        if (t.length < 1) wrap.classList.remove('is-open');
+      };
+
+      // ---- Histórico (prioriza perfis clicados; sem sugestões fixas) ----
+      const HIST_KEY = 'doke_user_quicksearch_hist_v2';
+      const readHist = () => {
+        try{
+          const raw = localStorage.getItem(HIST_KEY);
+          const arr = raw ? JSON.parse(raw) : [];
+          if(!Array.isArray(arr)) return [];
+          return arr.map(x=>{
+            if(!x) return null;
+            if(typeof x === 'string') return { t:'term', q:x, ts:0 };
+            if(typeof x === 'object') return x;
+            return null;
+          }).filter(Boolean);
+        }catch(e){ return []; }
+      };
+      const writeHist = (arr) => {
+        try{ localStorage.setItem(HIST_KEY, JSON.stringify(arr.slice(0,10))); }catch(e){}
+      };
+      const rememberTerm = (term) => {
+        const t = (term||'').trim();
+        if (t.length < 2) return;
+        let arr = readHist();
+        arr = arr.filter(x => !(x.t === 'term' && String(x.q||'').toLowerCase() === t.toLowerCase()));
+        arr = [{ t:'term', q:t, ts: Date.now() }, ...arr];
+        writeHist(arr);
+      };
+      const rememberUser = (obj) => {
+        if(!obj) return;
+        const uid = String(obj.uid||'').trim();
+        if(!uid) return;
+        let arr = readHist();
+        arr = arr.filter(x => !(x.t === 'user' && String(x.uid||'') === uid));
+        arr = [{
+          t:'user',
+          uid,
+          handle: obj.handle || '',
+          nome: obj.nome || '',
+          foto: obj.foto || '',
+          isProf: !!obj.isProf,
+          ts: Date.now()
+        }, ...arr];
+        writeHist(arr);
+      };
+
+      function renderHistory(){
+        if (!chips || !chipsWrap) return;
+        const arr = readHist();
+        const users = arr.filter(x => x.t === 'user');
+        const terms = arr.filter(x => x.t === 'term');
+
+        // regra: mostrar histórico "de usuários" primeiro; termos só se não houver usuários
+        const showUsers = users.length > 0;
+        const list = showUsers ? users : terms;
+
+        if (!list.length){
+          chipsWrap.style.display = 'none';
+          chips.innerHTML = '';
+          return;
+        }
+
+        chipsWrap.style.display = 'block';
+
+        if (showUsers){
+          chips.innerHTML = list.slice(0,7).map(u=>{
+            const goto = (u.isProf || mode === 'pro') ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+            const foto = u.foto || `https://i.pravatar.cc/60?u=${encodeURIComponent(u.uid||'u')}`;
+            const label = u.handle || (u.nome ? '@'+String(u.nome).split(' ')[0] : '@usuario');
+            return `<button type="button" class="pv-hist-chip" data-goto="${escapeHtml(goto)}" title="${escapeHtml(u.nome||label)}">
+                      <img src="${escapeHtml(foto)}" alt="">
+                      <span>${escapeHtml(label)}</span>
+                    </button>`;
+          }).join('');
+          chips.querySelectorAll('.pv-hist-chip').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+              const goto = btn.getAttribute('data-goto') || '';
+              if(goto) window.location.href = goto;
+            });
+          });
+        } else {
+          chips.innerHTML = list.slice(0,7).map(t=>{
+            const q = t.q || '';
+            return `<button type="button" class="quick-chip" data-q="${escapeHtml(q)}"><i class='bx bx-time-five'></i> ${escapeHtml(q)}</button>`;
+          }).join('');
+          chips.querySelectorAll('button').forEach(btn=>{
+            btn.addEventListener('click', ()=>{
+              input.value = btn.getAttribute('data-q') || '';
+              input.focus();
+              run();
+            });
+          });
+        }
+      }
+
+      clearBtn && clearBtn.addEventListener('click', ()=>{
+        input.value = '';
+        results.innerHTML = '';
+        if (hint) hint.textContent = '';
+        renderHistory();
+        input.focus();
+      });
+
+      let timer = null;
+      let lastRunTerm = '';
+
+      async function run(){
+        const term = input.value.trim();
+        results.innerHTML = '';
+        if (hint) hint.textContent = '';
+        if (term.length < 2){
+          renderHistory();
+          return;
+        }
+        lastRunTerm = term;
+        results.innerHTML = `<div class="pv-loading">Buscando...</div>`;
+        let list = await sbSearchUsuarios(term);
+        if (term !== lastRunTerm) return; // stale
+
+        // filtra por modo
+        if (mode === 'pro') list = (list||[]).filter(u => u && u.isProfissional === true);
+        else list = (list||[]).filter(u => u && u.isProfissional !== true);
+
+        if (!list.length) {
+          results.innerHTML = `<div class="pv-empty-mini">${mode === 'pro' ? 'Nenhum profissional encontrado.' : 'Nenhum usuário encontrado.'}</div>`;
+          return;
+        }
+
+        results.innerHTML = list.map(buildUserCardMini).join('');
+
+        // captura clique pra salvar histórico de perfil antes do redirect
+        results.querySelectorAll('.pv-user-card').forEach(card=>{
+          card.addEventListener('click', ()=>{
+            try{
+              const uid = card.getAttribute('data-uid') || '';
+              if(uid){
+                rememberUser({
+                  uid,
+                  handle: card.getAttribute('data-handle') || '',
+                  nome: card.getAttribute('data-nome') || '',
+                  foto: card.getAttribute('data-foto') || '',
+                  isProf: card.getAttribute('data-isprof') === '1'
+                });
+                renderHistory();
+              } else {
+                rememberTerm(term);
+                renderHistory();
+              }
+            }catch(e){}
+          }, { capture:true });
+        });
+      }
+
+      input.addEventListener('input', ()=>{
+        open();
+        if(timer) clearTimeout(timer);
+        timer = setTimeout(run, 260);
+      });
+
+      input.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter'){
+          const term = input.value.trim();
+          if (term.length < 2){
+            try{ window.dokeToast ? window.dokeToast('Digite pelo menos 2 letras para buscar.', 'warning') : (window.mostrarToast ? window.mostrarToast('Digite pelo menos 2 letras para buscar.', 'warning') : null); }catch(_e){}
+            wrap.classList.add('pv-shake');
+            setTimeout(()=>wrap.classList.remove('pv-shake'), 350);
+            if (hint) hint.textContent = 'Digite pelo menos 2 letras.';
+            e.preventDefault();
+            return;
+          }
+          rememberTerm(term);
+          renderHistory();
+        }
+      });
+
+      input.addEventListener('focus', ()=>{
+        open();
+        renderHistory();
+      });
+
+      input.addEventListener('blur', ()=>{
+        // delay pra permitir clique em chips/resultados
+        setTimeout(close, 160);
+      });
+
+      const focusInline = () => {
+        try{
+          const host = document.getElementById('paraVoceSection') || wrap;
+          host.scrollIntoView({ behavior:'smooth', block:'start' });
+        }catch(_e){}
+        setTimeout(()=>{
+          try{ input.focus(); input.select(); }catch(_e){}
+          try{ open(); renderHistory(); }catch(_e){}
+        }, 220);
+      };
+
+      // Atalho Ctrl/Cmd + K para focar a busca
+      document.addEventListener('keydown', (e)=>{
+        if (!isHome()) return;
+        if ((e.ctrlKey || e.metaKey) && String(e.key).toLowerCase() === 'k') {
+          if (isEditableEl(e.target)) return;
+          e.preventDefault();
+          if (typeof window.openDokeSidebarSearch === 'function') window.openDokeSidebarSearch();
+          else focusInline();
+        }
+      });
+    }
+  function buildParaVoceSection() {
+      if (!isHome()) return;
+      if (document.getElementById('paraVoceSection')) return;
+
+      // Melhor posicao: antes de "Profissionais em Destaque".
+      // Se nao existir (por algum motivo), cai para categorias/videos.
+      const anchor = document.querySelector('.pros-section') || document.querySelector('.categories-section') || document.querySelector('.videos-container');
+      if (!anchor) return;
+
+      const sec = document.createElement('section');
+      sec.className = 'para-voce-section';
+      sec.id = 'paraVoceSection';
+
+      const historico = readJSON('doke_historico_busca', []);
+      const clicks = readJSON('doke_categorias_click', []);
+
+      let sugeridos = [...new Set([
+        ...clicks.slice(0, 6),
+        ...historico.slice(0, 6),
+        ...(window.__dokeTopCats || []).slice(0, 6),
+      ].filter(Boolean))].slice(0, 10);
+
+      const semHist = !sugeridos.length;
+      if (semHist) {
+        const fallback = (window.__dokeTopCats || []).slice(0, 8);
+        const base = fallback.length ? fallback : ['Eletricista','Diarista','Encanador','Pintor','Manicure','Limpeza','Reforma','Aulas'];
+        sugeridos = [...new Set(base)].slice(0, 10);
+      }
+
+      const logado = getLogado();
+      const perfil = getPerfilLocal();
+      const eProf = perfil?.isProfissional === true;
+
+      let ctaTitle = 'Encontre o serviço ideal';
+      let ctaSub = 'Use as categorias e a busca para achar exatamente o que precisa.';
+      let ctaHref = 'busca.html';
+      let ctaLabel = 'Procurar agora';
+
+      if (!logado) {
+        ctaTitle = 'Entre para aproveitar melhor a Doke';
+        ctaSub = 'Salve buscas, veja recomendações e tenha uma experiência mais rápida.';
+        ctaHref = 'login.html';
+        ctaLabel = 'Entrar / Criar conta';
+      } else if (eProf) {
+        ctaTitle = 'Pronto para vender mais?';
+        ctaSub = 'Publique seu primeiro serviço e apareça no topo para clientes próximos.';
+        ctaHref = 'anunciar.html';
+        ctaLabel = 'Publicar serviço';
+      } else {
+        ctaTitle = 'Peça orçamento em 1 clique';
+        ctaSub = 'Entre em contato com profissionais e acompanhe tudo com segurança.';
+        ctaHref = 'explorar.html';
+        ctaLabel = 'Explorar profissionais';
+      }
+
+          let ctaIcon = 'bx-search-alt';
+      if (!logado) ctaIcon = 'bx-user';
+      else if (eProf) ctaIcon = 'bx-trending-up';
+      else ctaIcon = 'bx-bolt-circle';
+
+      sec.innerHTML = `
+        <div class="para-voce-inner pv-stack">
+          <div class="pv-stack-grid">
+            <div class="pv-stack-main">
+              <div class="pv-head">
+                <div class="pv-title-row">
+                  <h2>Para você</h2>
+                  <span class="pv-badge">${semHist ? 'Comece agora' : 'Personalizado'}</span>
+                </div>
+                <div class="pv-sub">Sugestões com base nas suas interações recentes</div>
+              </div>
+
+              <div class="pv-chips" id="pvChips">
+                ${semHist ? `<div class="pv-empty-row"><i class='bx bx-sparkle'></i><div><b>Sem histórico ainda.</b> Clique em uma sugestão para começar.</div></div>` : ``}
+                <div class="pv-chips-row">
+                  ${sugeridos.map(t => `<button type="button" class="pv-chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}
+                </div>
+              </div>
+
+                          </div>
+
+            <div class="pv-stack-side">
+              <div class="pv-cta">
+                <div class="pv-cta-left">
+                  <div class="pv-cta-icon"><i class='bx ${esc(ctaIcon)}'></i></div>
+                  <div class="pv-cta-text">
+                    <div class="pv-cta-title">${esc(ctaTitle)}</div>
+                    <div class="pv-cta-sub">${esc(ctaSub)}</div>
+                  </div>
+                </div>
+                <a class="pv-cta-btn" href="${ctaHref}">${esc(ctaLabel)}</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+
+      anchor.parentNode.insertBefore(sec, anchor);
+      // Insere busca pequena logo após o 'Para você'
+sec.querySelectorAll('.pv-chip').forEach((b) => {
+        b.addEventListener('click', () => {
+          const q = b.getAttribute('data-q') || '';
+          if (!q) return;
+          try { window.salvarBusca?.(q); } catch {}
+          window.location.href = `busca.html?q=${encodeURIComponent(q)}&src=para_voce`;
+        });
+      });
     }
 
-    sec.innerHTML = `
-      <div class="para-voce-inner">
-        <div class="pv-head">
-          <h2>Para você</h2>
-          <div class="pv-sub">Sugestões com base nas suas interações recentes</div>
-        </div>
-
-        <div class="pv-chips" id="pvChips">
-          ${sugeridos.length ? sugeridos.map(t => `<button type="button" class="pv-chip" data-q="${esc(t)}">${esc(t)}</button>`).join('') : `<div class="pv-empty">Sem histórico ainda. Clique em uma categoria para começar.</div>`}
-        </div>
-
-        <div class="pv-cta">
-          <div class="pv-cta-text">
-            <div class="pv-cta-title">${esc(ctaTitle)}</div>
-            <div class="pv-cta-sub">${esc(ctaSub)}</div>
-          </div>
-          <a class="pv-cta-btn" href="${ctaHref}">${esc(ctaLabel)}</a>
-        </div>
-      </div>
-    `;
-
-    anchor.parentNode.insertBefore(sec, anchor);
-    // Insere busca pequena logo após o 'Para você'
-    try { buildPvQuickSearchSection(anchor); } catch(e) { console.warn(e); }
-
-    sec.querySelectorAll('.pv-chip').forEach((b) => {
-      b.addEventListener('click', () => {
-        const q = b.getAttribute('data-q') || '';
-        if (!q) return;
-        try { window.salvarBusca?.(q); } catch {}
-        window.location.href = `busca.html?q=${encodeURIComponent(q)}&src=para_voce`;
-      });
-    });
-  }
+    // ----------------------------
 
   // ----------------------------
   // BUSCA MAIS VIVA: autocomplete + pins
@@ -10272,11 +11087,29 @@ async function carregarProfissionaisIndex() {
 
   destaqueEl.innerHTML = destaque.length
     ? destaque.map(cardPro).join("")
-    : `<div class="pros-empty">Nenhum profissional em destaque no momento.</div>`;
+    : `
+      <div class="pros-empty">
+        <i class='bx bx-award'></i>
+        <div class="pros-empty-text">
+          <div class="pros-empty-title">Nenhum profissional em destaque no momento.</div>
+          <div class="pros-empty-sub">Assim que receberem avaliações, eles aparecem aqui.</div>
+        </div>
+        <a class="pros-empty-btn" href="explorar.html">Explorar</a>
+      </div>
+    `;
 
   novosEl.innerHTML = novos.length
     ? novos.map(cardPro).join("")
-    : `<div class="pros-empty">Ainda não há profissionais novos cadastrados.</div>`;
+    : `
+      <div class="pros-empty">
+        <i class='bx bx-user-plus'></i>
+        <div class="pros-empty-text">
+          <div class="pros-empty-title">Ainda não há profissionais novos cadastrados.</div>
+          <div class="pros-empty-sub">Quer aparecer aqui? Complete seu cadastro profissional.</div>
+        </div>
+        <a class="pros-empty-btn" href="tornar-profissional.html">Começar</a>
+      </div>
+    `;
 }
 
 /*************************************************
@@ -10579,3 +11412,8 @@ document.addEventListener('DOMContentLoaded', function(){
   // expõe
   try{ window.DokeNegocios = { usarLocalizacaoAtual }; }catch(_e){}
 })();
+
+// IG search no menu lateral (global)
+document.addEventListener('DOMContentLoaded', function(){
+  try{ initIgSidebarSearch(); }catch(e){}
+});

@@ -1,28 +1,24 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Histórico | Doke</title>
-
-  <link rel="stylesheet" href="style.css?v=20260117" />
-    <link rel="stylesheet" href="doke-layout-fix.css">
-  <link rel="stylesheet" href="doke-fixes.css?v=20260117" />
-  <link rel="stylesheet" href="doke-feedpatch.css?v=20260201" />
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-
-  <script src="script.js?v=20260117" defer></script>
-  <script src="doke-cardpatch.js?v=20260201" defer></script>
-  <script src="doke-feedpatch.js?v=20260201" defer></script>
-
-  <style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Histórico | Doke</title>
+<link href="style.css?v=20260117" rel="stylesheet"/>
+<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="doke-fixes.css?v=20260117" rel="stylesheet">
+<link href="doke-feedpatch.css?v=20260201" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260117"></script>
+<script defer="" src="doke-cardpatch.js?v=20260201"></script>
+<script defer="" src="doke-feedpatch.js?v=20260201"></script>
+<style>
     @media (min-width: 1024px) {
       main {
         margin-left: 270px;
@@ -94,37 +90,96 @@
       margin-top: 16px;
     }
   </style>
-</head>
-
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+</link><link href="doke-ux.css" rel="stylesheet"/></head>
 <body data-page="historico">
-  <!-- Sidebar (mesmo padrão do site) -->
-  <aside class="sidebar-icones">
-    <a href="index.html" class="sidebar-link" title="Início"><i class='bx bx-home'></i></a>
-    <a href="busca.html" class="sidebar-link" title="Buscar"><i class='bx bx-search'></i></a>
-    <a href="meuperfil.html" class="sidebar-link" title="Meu perfil"><i class='bx bx-user'></i></a>
-    <a href="historico.html" class="sidebar-link active" title="Histórico"><i class='bx bx-bookmark'></i></a>
-  </aside>
+<!-- Sidebar (mesmo padrão do site) -->
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
 
-  <main>
-    <div class="hist-wrap">
-      <div class="hist-head">
-        <h1 class="hist-title">Histórico</h1>
-        <div class="hist-actions">
-          <div class="hist-tabs">
-            <button class="hist-tab active" data-h-tab="salvos" type="button"><i class='bx bx-bookmark'></i> Salvos</button>
-            <button class="hist-tab" data-h-tab="recentes" type="button"><i class='bx bx-time-five'></i> Recentes</button>
-          </div>
-          <button id="hist-clear" class="hist-clear" type="button"><i class='bx bx-trash'></i> Limpar</button>
-        </div>
-      </div>
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
 
-      <section data-h-pane="salvos">
-        <div id="hist-salvos" class="hist-grid"></div>
-      </section>
-      <section data-h-pane="recentes" style="display:none">
-        <div id="hist-recentes" class="hist-grid"></div>
-      </section>
-    </div>
-  </main>
-</body>
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+<main>
+<div class="hist-wrap">
+<div class="hist-head">
+<h1 class="hist-title">Histórico</h1>
+<div class="hist-actions">
+<div class="hist-tabs">
+<button class="hist-tab active" data-h-tab="salvos" type="button"><i class="bx bx-bookmark"></i> Salvos</button>
+<button class="hist-tab" data-h-tab="recentes" type="button"><i class="bx bx-time-five"></i> Recentes</button>
+</div>
+<button class="hist-clear" id="hist-clear" type="button"><i class="bx bx-trash"></i> Limpar</button>
+</div>
+</div>
+<section data-h-pane="salvos">
+<div class="hist-grid" id="hist-salvos"></div>
+</section>
+<section data-h-pane="recentes" style="display:none">
+<div class="hist-grid" id="hist-recentes"></div>
+</section>
+</div>
+</main>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
 </html>

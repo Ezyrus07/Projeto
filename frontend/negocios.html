@@ -1,345 +1,586 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Negócios | Doke</title>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Negócios - Doke</title>
+<meta name="description" content="Descubra estabelecimentos locais e fale direto pelo chat da Doke.">
+<meta property="og:title" content="Negócios - Doke"/>
+<meta property="og:description" content="Encontre estabelecimentos e negócios perto de você com confiança na Doke."/>
+<meta content="website" property="og:type"/>
+<meta content="assets/Imagens/doke-logo.png" property="og:image"/>
+<link href="manifest.webmanifest" rel="manifest"/>
+<meta content="#0b7768" name="theme-color"/>
+<link href="style.css?v=20260117" rel="stylesheet"/>
+<link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
+<link href="doke-beforeafter.css?v=20260202" rel="stylesheet"/>
+<!-- Estilos globais do projeto -->
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="doke-beforeafter.js?v=20260202"></script>
+<script defer="" src="script.js?v=20260117"></script>
+<style>
+        .cat-track { pointer-events: none; }
+        .cat-card { pointer-events: auto; }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/>
+<link href="doke-feedpatch.css" rel="stylesheet"/>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-  <link rel="stylesheet" href="style.css" />
-  <link rel="stylesheet" href="doke-fixes.css" />
-  <link rel="stylesheet" href="doke-beforeafter.css?v=20260202" />
-  <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-
-  <!-- Leaflet (Mapa) -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-  <style>
-    body{
-      background: radial-gradient(1200px 600px at 10% 0%, rgba(42,95,144,.18), transparent 55%),
-                  radial-gradient(900px 500px at 90% 10%, rgba(11,119,104,.16), transparent 55%),
-                  #f4f6f8;
-      font-family: "Poppins", sans-serif;
-    }
-
-    main{
-      padding: 30px 20px;
-      margin-top: 80px;
-      display:flex;
-      justify-content:center;
-    }
-    @media (min-width: 1024px){
-      main{ margin-left:270px; margin-top:0; padding:40px; }
-    }
-
-    .content-wrapper{ width:100%; max-width:1200px; }
-
-    .neg-hero{
-      position:relative;
-      overflow:hidden;
-      border-radius: 22px;
-      padding: 28px;
-      background:
-        radial-gradient(1100px 480px at 50% 0%, rgba(255,255,255,0.18), transparent 55%),
-        linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
-      box-shadow: 0 12px 34px rgba(42,95,144,0.22);
-      color:#fff;
-    }
-    .neg-hero h1{ font-size: 1.7rem; margin:0 0 6px; letter-spacing:-0.4px; }
-    .neg-hero p{ margin:0; opacity:.92; }
-
-    .neg-hero-top{ display:flex; align-items:flex-start; justify-content:space-between; gap:14px; flex-wrap:wrap; }
-
-    .neg-actions{ display:flex; gap:10px; flex-wrap:wrap; }
-
-    .btn{
-      border:0;
-      cursor:pointer;
-      padding: 10px 14px;
-      border-radius: 999px;
-      font-weight:700;
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      text-decoration:none;
-      line-height:1;
-      transition: transform .15s ease, box-shadow .15s ease, background .15s ease;
-      user-select:none;
-      white-space:nowrap;
-    }
-    .btn:active{ transform: scale(.98); }
-    .btn-primary{ background: linear-gradient(135deg,#0b7768,#1f4d75); color:#fff; box-shadow: 0 10px 22px rgba(11,119,104,0.25); }
-    .btn-ghost{ background: rgba(255,255,255,0.14); color:#fff; border:1px solid rgba(255,255,255,0.24); }
-    .btn-light{ background:#fff; color:#11334e; border:1px solid rgba(17,51,78,0.10); }
-
-    .neg-toolbar{
-      margin-top:18px;
-      background: rgba(255,255,255,0.12);
-      border:1px solid rgba(255,255,255,0.20);
-      border-radius: 18px;
-      padding: 14px;
-      backdrop-filter: blur(10px);
-    }
-
-    .neg-row{ display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
-
-    .neg-loc-pill{
-      display:inline-flex;
-      gap:10px;
-      align-items:center;
-      padding: 8px 12px;
-      border-radius: 999px;
-      background: rgba(0,0,0,0.18);
-      border: 1px solid rgba(255,255,255,0.18);
-      font-size: .95rem;
-    }
-    .neg-loc-pill strong{ font-weight:800; }
-
-    .neg-search{
-      margin-top: 12px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    .neg-searchbar{
-      flex: 1 1 520px;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      background:#fff;
-      border-radius:999px;
-      padding: 10px 12px;
-      box-shadow: 0 12px 24px rgba(0,0,0,0.12);
-    }
-    .neg-searchbar i{ color:#1f4d75; font-size: 1.2rem; }
-    .neg-searchbar input{
-      flex:1;
-      border:0;
-      outline:0;
-      font-size: 1rem;
-      background:transparent;
-    }
-
-    .chips{ display:flex; gap:10px; flex-wrap:wrap; margin-top: 12px; }
-    .chip{
-      background: rgba(255,255,255,0.14);
-      border: 1px solid rgba(255,255,255,0.22);
-      color:#fff;
-      padding: 8px 12px;
-      border-radius: 999px;
-      font-weight: 700;
-      cursor: pointer;
-      transition: .15s ease;
-      user-select:none;
-    }
-    .chip.is-active{ background: rgba(255,255,255,0.95); color:#0b2d44; }
-
-    .section{
-      margin-top: 22px;
-      background: rgba(255,255,255,0.92);
-      border: 1px solid rgba(17,51,78,0.08);
-      border-radius: 22px;
-      padding: 18px;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.06);
-    }
-
-    .section h2{ margin:0 0 12px; font-size: 1.25rem; letter-spacing:-0.3px; }
-
-    .neg-grid{
-      display:grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 14px;
-    }
-    @media (max-width: 1200px){ .neg-grid{ grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-    @media (max-width: 860px){ .neg-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 520px){ .neg-grid{ grid-template-columns: 1fr; } }
-
-    .neg-card{
-      background:#fff;
-      border:1px solid rgba(17,51,78,0.08);
-      border-radius: 18px;
-      overflow:hidden;
-      box-shadow: 0 8px 18px rgba(0,0,0,0.06);
-      display:flex;
-      flex-direction:column;
-      min-height: 230px;
-    }
-    .neg-media{ height: 120px; background:#f1f4f6; }
-    .neg-media img{ width:100%; height:100%; object-fit:cover; display:block; }
-    .neg-body{ padding: 12px; display:flex; flex-direction:column; gap:8px; }
-    .neg-name{ font-weight:800; font-size: 1rem; }
-    .neg-cat{ font-size:.85rem; color:#1f4d75; font-weight:700; }
-    .neg-loc{ font-size:.85rem; color:#6b7a88; }
-    .neg-actions{ display:flex; gap:8px; margin-top:auto; }
-    .neg-actions .btn{ padding: 9px 12px; font-size:.9rem; }
-    .neg-actions .btn-ghost{ background:#f4f7f6; border:1px solid rgba(11,119,104,0.25); color:#0b7768; }
-
-    .empty{
-      margin-top: 12px;
-      border-radius: 18px;
-      padding: 16px;
-      border: 1px dashed rgba(17,51,78,0.22);
-      background: rgba(244,247,246,0.8);
-      text-align:center;
-    }
-    .empty strong{ display:block; font-size: 1.05rem; }
-    .empty small{ display:block; margin-top: 6px; color:#6b7a88; }
-
-    /* Loading state */
-    [data-negocios].is-loading .neg-grid{ opacity:.6; filter: grayscale(.2); }
-
-    /* Modal mapa (placeholder clean) */
-    .map-modal{ position:fixed; inset:0; background: rgba(0,0,0,0.40); display:none; align-items:center; justify-content:center; z-index: 9999; }
-    .map-modal.is-open{ display:flex; }
-    .map-card{ width:min(980px, calc(100vw - 28px)); height:min(640px, calc(100vh - 28px)); background:#fff; border-radius: 22px; overflow:hidden; box-shadow: 0 24px 60px rgba(0,0,0,0.25); }
-    .map-head{ display:flex; align-items:center; justify-content:space-between; padding: 12px 14px; border-bottom:1px solid rgba(17,51,78,0.08); }
-    .map-head strong{ font-size: 1rem; }
-    .map-head button{ border:0; background:#f1f4f6; border-radius: 10px; padding: 8px 10px; cursor:pointer; }
-    #negMap{ width:100%; height: calc(100% - 50px); }
-
-  </style>
-
-  <script src="doke-beforeafter.js?v=20260202" defer></script>
-  <script src="script.js" defer></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
+<link href="doke-negocios.css" rel="stylesheet"/>
 </head>
-<body data-page="negocios">
-
-  <!-- Sidebar (mesmo padrão do site) -->
-  <aside class="sidebar">
-      <div class="sidebar-header">
-          <a href="index.html" class="logo">doke</a>
-      </div>
-      <nav class="sidebar-nav">
-          <a href="index.html" class="nav-link"><i class='bx bxs-home'></i> Início</a>
-          <a href="empresas.html" class="nav-link active"><i class='bx bxs-store'></i> Empresas</a>
-          <a href="notificacoes.html" class="nav-link"><i class='bx bxs-bell'></i> Notificações <span class="badge" id="notification-count">0</span></a>
-          <a href="conversas.html" class="nav-link"><i class='bx bxs-chat'></i> Mensagens</a>
-          <a href="comunidade.html" class="nav-link"><i class='bx bxs-group'></i> Comunidades</a>
-          <a href="meuperfil.html" class="nav-link"><i class='bx bxs-user'></i> Perfil</a>
-          <a href="#" class="nav-link" id="btn-mais"><i class='bx bx-menu'></i> Mais</a>
-      </nav>
-  </aside>
-
-  <main>
-    <div class="content-wrapper" data-negocios>
-
-      <section class="neg-hero">
-        <div class="neg-hero-top">
-          <div>
-            <h1>Negócios perto de você</h1>
-            <p>Descubra estabelecimentos por <strong>bairro/cidade</strong> (via CEP) — e fale direto no <strong>chat</strong> da Doke.</p>
-          </div>
-
-          <div class="neg-actions">
-            <a class="btn btn-primary" href="anunciar-negocio.html"><i class='bx bx-plus-circle'></i> Anunciar negócio</a>
-            <button class="btn btn-ghost" id="btn-open-map"><i class='bx bx-map'></i> Mapa</button>
-          </div>
-        </div>
-
-        <div class="neg-toolbar">
-          <div class="neg-row">
-            <div class="neg-loc-pill">
-              <i class='bx bx-current-location'></i>
-              <span>Local:</span>
-              <strong data-neg-local>Informe seu CEP</strong>
+<body data-page="negocios" data-kind="negocios">
+<a class="skip-link" href="#feedAnuncios">Pular para o conteúdo</a>
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<div class="cookie-banner" id="cookieBanner">
+<div class="cookie-container">
+<div class="cookie-text">
+                A DOKE usa Cookies, pequenos arquivos para aprimorar e proteger a sua experiência :)
+                <br/>
+<strong>Clique aqui</strong> para mudar suas preferências ou saiba mais na nossa 
+                <a href="#">Termos de Uso e Política de Privacidade</a> e 
+                <a href="#">Política de Cookies</a>.
             </div>
+<button class="cookie-btn" id="acceptBtn">Entendi</button>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
 
-            <div class="neg-actions">
-              <button class="btn btn-light" data-geo><i class='bx bx-target-lock'></i> Usar localização atual</button>
-              <button class="btn btn-light" onclick="document.getElementById('cepModal')?.classList.add('active')"><i class='bx bx-map-pin'></i> Trocar CEP</button>
-              <button class="btn btn-light" data-neg-clear><i class='bx bx-x'></i> Limpar</button>
-            </div>
-          </div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
 
-          <div class="neg-search">
-            <div class="neg-searchbar">
-              <i class='bx bx-search'></i>
-              <input type="text" data-neg-q placeholder="Buscar restaurante, barbearia, petshop..." />
-            </div>
-          </div>
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
 
-          <div class="chips">
-            <div class="chip is-active" data-chip="Tudo">Tudo</div>
-            <div class="chip" data-chip="Restaurantes">Restaurantes</div>
-            <div class="chip" data-chip="Mercados">Mercados</div>
-            <div class="chip" data-chip="Lanches">Lanches</div>
-            <div class="chip" data-chip="Farmácias">Farmácias</div>
-            <div class="chip" data-chip="Serviços">Serviços</div>
-          </div>
-        </div>
-      </section>
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
 
-      <section class="section">
-        <h2>Resultados</h2>
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
 
-        <div class="neg-grid" data-neg-list></div>
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
 
-        <div class="empty" data-neg-empty style="display:none;">
-          <strong>Ainda não conseguimos listar negócios.</strong>
-          <small>Provável motivo: tabela <b>negocios</b> não existe ou RLS bloqueando.</small>
-          <div style="margin-top:12px;">
-            <a class="btn btn-primary" href="anunciar-negocio.html"><i class='bx bx-plus-circle'></i> Criar meu primeiro negócio</a>
-          </div>
-        </div>
-      </section>
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
 
-      <!-- Modal CEP (reaproveita o mesmo id e funções do script.js) -->
-      <div class="cep-modal" id="cepModal">
-          <div class="cep-modal-content">
-              <button class="close-modal" onclick="document.getElementById('cepModal')?.classList.remove('active')">×</button>
-              <h3>Informe seu CEP</h3>
-              <p>Vamos usar o CEP para ajustar resultados e sugestões.</p>
-              <input type="text" id="modalCepInput" placeholder="00000-000" />
-              <button class="btn btn-primary" id="modalCepBtn" style="width:100%; justify-content:center;">Salvar CEP</button>
-          </div>
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+<main class="dp-wrap">
+<section class="secao-busca secao-busca-negocios">
+  <div class="neg-hero-container">
+    <div class="neg-hero-top">
+      <div class="neg-hero-left">
+        <h1 class="neg-title">Negócios</h1>
+        <p class="neg-subtitle">Descubra estabelecimentos e fale direto pelo chat da Doke.</p>
       </div>
-
-      <!-- Modal Mapa (placeholder — evoluímos depois) -->
-      <div class="map-modal" id="mapModal" aria-hidden="true">
-        <div class="map-card">
-          <div class="map-head">
-            <strong>Mapa — perto de você</strong>
-            <button id="btn-close-map"><i class='bx bx-x'></i></button>
-          </div>
-          <div id="negMap"></div>
-        </div>
+      <div class="neg-hero-actions">
+        <button class="btn-ghost-green" id="btnGeoNegocios" type="button">
+          <i class='bx bx-current-location'></i>
+          <span>Usar localização</span>
+        </button>
+        <a class="btn btn-primary" href="anunciar-negocio.html" style="text-decoration:none;">
+          <i class='bx bx-plus'></i>
+          <span>Anunciar negócio</span>
+        </a>
       </div>
-
     </div>
-  </main>
 
-  <script>
-    // Mapa (placeholder) — abre/fecha e inicializa uma vez.
-    (function(){
-      const modal = document.getElementById('mapModal');
-      const openBtn = document.getElementById('btn-open-map');
-      const closeBtn = document.getElementById('btn-close-map');
-      let map = null;
+    <div class="neg-loc-line">
+      <span class="neg-loc-pill" id="negLocPill">
+        <i class='bx bx-map-pin'></i>
+        <span id="negLocText">Defina sua localização para ver negócios perto de você.</span>
+      </span>
+    </div>
 
-      function open(){
-        modal.classList.add('is-open');
-        modal.setAttribute('aria-hidden','false');
-        if (!map) {
-          map = L.map('negMap').setView([-12.9718, -38.5011], 13);
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(map);
-        }
-        setTimeout(()=>map && map.invalidateSize(), 180);
-      }
-      function close(){
-        modal.classList.remove('is-open');
-        modal.setAttribute('aria-hidden','true');
-      }
+    <!-- mesma UX do index (typewriter), só que com contexto de negócios -->
+    <div class="typing-container">
+      <span class="static-text">Busque por</span>
+      <span class="icon">✨</span>
+      <span class="dynamic-text" id="typewriter"></span>
+      <span class="cursor">&nbsp;</span>
+    </div>
 
-      if (openBtn) openBtn.addEventListener('click', open);
-      if (closeBtn) closeBtn.addEventListener('click', close);
-      if (modal) modal.addEventListener('click', (e)=>{ if (e.target === modal) close(); });
-    })();
-  </script>
+    <div class="busca-wrapper busca-wrapper-negocios" id="buscaWrapperNegocios">
+      <div class="busca-input-container">
+        <input autocomplete="off" id="inputBuscaNegocios" placeholder="Descreva o que você está procurando" type="text"/>
+        <button class="btn-search-circle" id="btnSearchCircleNegocios" type="button" aria-label="Pesquisar negócios">
+          <svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="24">
+            <line x1="5" x2="19" y1="12" y2="12"></line>
+            <polyline points="12 5 19 12 12 19"></polyline>
+          </svg>
+        </button>
+      </div>
+
+      <div class="busca-hint">
+        <i class='bx bx-info-circle'></i>
+        <span>Busque por <b>nome</b>, <b>categoria</b>, <b>bairro</b> ou uma <b>descrição</b>.</span>
+      </div>
+    </div>
+
+    <div class="botoes-busca">
+      <button class="btn-procurar btn-procurar-negocios" id="btnProcurarNegocios" type="button">Procurar negócios</button>
+      <a href="anunciar-negocio.html" target="_blank"><button class="btn-anunciar btn-anunciar-negocios" type="button">Anunciar meu negócio</button></a>
+    </div>
+
+    <!-- chips: diferentes do index (só negócios) -->
+    <div class="chips-negocios" role="tablist" aria-label="Filtros rápidos">
+      <button class="chip is-active" data-chip="Tudo" type="button">Tudo</button>
+      <button class="chip" data-chip="Restaurantes" type="button">Restaurantes</button>
+      <button class="chip" data-chip="Cafés" type="button">Cafés</button>
+      <button class="chip" data-chip="Mercados" type="button">Mercados</button>
+      <button class="chip" data-chip="Lojas" type="button">Lojas</button>
+      <button class="chip" data-chip="Saúde" type="button">Saúde</button>
+      <button class="chip" data-chip="Beleza" type="button">Beleza</button>
+      <button class="chip" data-chip="Auto" type="button">Auto</button>
+      <button class="chip" data-chip="Delivery" type="button">Delivery</button>
+      <button class="chip" data-chip="Perto" type="button"><i class='bx bx-navigation'></i>&nbsp;Perto</button>
+    </div>
+  </div>
+</section>
+
+<section class="secao-categorias secao-categorias-negocios" aria-label="Categorias de negócios">
+  <div class="secao-topo">
+    <h2 class="secao-titulo">Categorias de negócios</h2>
+    <a class="secao-link" href="empresas.html">Ver anúncios</a>
+  </div>
+
+  <div class="cat-carousel">
+    <button class="seta seta-esq" id="negCatPrev" aria-label="Anterior"><i class='bx bx-chevron-left'></i></button>
+    <div class="cat-track" id="listaCategoriasNegocios" role="list"></div>
+    <button class="seta seta-dir" id="negCatNext" aria-label="Próximo"><i class='bx bx-chevron-right'></i></button>
+  </div>
+</section>
+
+<section class="secao-videos secao-videos-negocios" aria-label="Vídeos de negócios">
+  <div class="secao-topo">
+    <h2 class="secao-titulo">Vídeos curtos</h2>
+    <span class="secao-sub">BETA</span>
+  </div>
+  <div class="videos-box">
+    <button class="seta seta-esq" id="negVidPrev" aria-label="Anterior"><i class='bx bx-chevron-left'></i></button>
+    <div class="tiktok-scroll" id="tiktokScrollNegocios"></div>
+    <button class="seta seta-dir" id="negVidNext" aria-label="Próximo"><i class='bx bx-chevron-right'></i></button>
+  </div>
+  <div class="empty-state" id="negVideosEmpty" hidden>
+    <i class='bx bx-video-off'></i>
+    <div>
+      <strong>Nenhum vídeo curto disponível por aqui ainda.</strong>
+      <div class="muted">Quando você anunciar um negócio, poderá postar vídeos curtos (em breve).</div>
+    </div>
+  </div>
+</section>
+
+<section class="secao-destaques secao-destaques-negocios" aria-label="Estabelecimentos em destaque">
+  <div class="secao-topo">
+    <h2 class="secao-titulo">Em destaque</h2>
+    <a class="secao-link" href="empresas.html">Ver todos</a>
+  </div>
+
+  <div class="neg-grid" id="negDestaques"></div>
+
+  <div class="empty-state" id="negDestaquesEmpty" hidden>
+    <i class='bx bx-store-alt'></i>
+    <div>
+      <strong>Nenhum anúncio de empresa encontrado.</strong>
+      <div class="muted">Anuncie seu negócio para aparecer aqui.</div>
+    </div>
+  </div>
+</section>
+
+<section class="secao-resultados secao-resultados-negocios" aria-label="Resultados de negócios">
+  <div class="secao-topo">
+    <h2 class="secao-titulo">Resultados</h2>
+    <span class="secao-sub" id="negResultadosMeta">Digite pelo menos 2 letras.</span>
+  </div>
+
+  <div class="neg-grid neg-grid-results" id="negResultados"></div>
+
+  <div class="empty-state" id="negResultadosEmpty">
+    <i class='bx bx-search-alt-2'></i>
+    <div>
+      <strong>Nenhum resultado por enquanto.</strong>
+      <div class="muted">Tente buscar por categoria, bairro ou nome.</div>
+    </div>
+  </div>
+</section>
+
+<section class="secao-mapa secao-mapa-negocios" aria-label="Mapa (beta)">
+  <div class="secao-topo">
+    <h2 class="secao-titulo">Mapa</h2>
+    <span class="secao-sub">Localização (beta)</span>
+  </div>
+
+  <div class="map-wrap">
+    <div id="negMap" class="map"></div>
+    <div class="map-note" id="negMapNote">
+      <i class='bx bx-info-circle'></i>
+      <span>Ative a localização para ver negócios perto de você no mapa.</span>
+    </div>
+  </div>
+</section>
+
+</main>
+<footer class="main-footer">
+<div class="footer-content">
+<div class="footer-col brand-col">
+<img alt="Doke Logo" class="footer-logo" decoding="async" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" src="assets/Imagens/doke-logo.png"/>
+<h2 class="footer-logo-text" style="display:none; color:white;">doke</h2>
+<p class="footer-desc">
+                A DOKE revoluciona a prestação de serviços com o <strong>Pagamento Garantido</strong>. 
+                Seu dinheiro protegido até a conclusão do serviço. Segurança, inovação e pontos exclusivos para você.
+            </p>
+<div class="social-links">
+<a aria-label="Instagram" href="#">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><rect height="20" rx="5" ry="5" width="20" x="2" y="2"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
+</a>
+<a aria-label="LinkedIn" href="#">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect height="12" width="4" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
+</a>
+<a aria-label="WhatsApp" href="#">
+<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
+</a>
+</div>
+</div>
+<div class="footer-col">
+<h4>Empresa</h4>
+<ul>
+<li><a href="#">Quem somos</a></li>
+<li><a href="#">Carreiras</a></li>
+<li><a href="#">Imprensa</a></li>
+<li><a href="#">Doke Pontos</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h4>Suporte</h4>
+<ul>
+<li><a href="#">Central de Ajuda</a></li>
+<li><a href="#">Segurança</a></li>
+<li><a href="#">Regras da Comunidade</a></li>
+<li><a href="#">Disputas e Reembolsos</a></li>
+</ul>
+</div>
+<div class="footer-col">
+<h4>Legal</h4>
+<ul>
+<li><a href="#">Termos de Uso</a></li>
+<li><a href="#">Política de Privacidade</a></li>
+<li><a href="#">LGPD</a></li>
+</ul>
+<div class="app-buttons">
+<button class="btn-app">
+<span class="small-text">Baixe no</span>
+<span class="big-text">Google Play</span>
+</button>
+</div>
+</div>
+</div>
+<div class="footer-bottom">
+<p>© 2026 Doke Serviços e Tecnologia. Todos os direitos reservados.</p>
+</div>
+</footer>
+
+<div class="modal-overlay" id="modalPlayerVideo" onclick="fecharPlayerVideo(event)">
+<button class="nav-arrow nav-up" onclick="navegarReel(-1)"><i class="bx bx-chevron-up"></i></button>
+<button class="nav-arrow nav-down" onclick="navegarReel(1)"><i class="bx bx-chevron-down"></i></button>
+<div class="modal-content" onclick="event.stopPropagation()">
+<div class="modal-media-area" id="reelVideoArea" onwheel="handleReelScroll(event)">
+<video id="playerPrincipal" loop="" onclick="togglePlayVideo(event)" playsinline=""></video>
+<div id="iconPlayOverlay" style="position: absolute; font-size: 80px; color: rgba(255,255,255,0.5); opacity: 0;"><i class="bx bx-play"></i></div>
+</div>
+<div class="modal-info-area">
+<div class="modal-header">
+<div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+<img decoding="async" id="reelAvatar" loading="lazy" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"/>
+<div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">@usuario</div>
+</div>
+</div>
+<div class="modal-comments-section" id="reelCommentsBody">
+<div id="reelDesc" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
+<div id="listaComentariosReel"></div>
+</div>
+<div class="modal-footer-actions">
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+<div style="display: flex; gap: 15px; font-size: 1.6rem;">
+<i class="bx bx-heart" id="btnLikeReel" onclick="darLikeReel()" style="cursor:pointer;"></i>
+<i class="bx bx-paper-plane" onclick="compartilharReelAtual()" style="cursor:pointer;"></i>
+</div>
+<button class="btn-orcar-v" onclick="irOrcamentoReel()">
+<i class="bx bx-dollar"></i> Solicitar Orçamento
+        </button>
+</div>
+<span id="reelLikesCount" style="font-weight: bold; font-size: 0.9rem;">0 curtidas</span>
+<div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
+<input id="inputComentarioReel" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none;" type="text"/>
+<button onclick="enviarComentarioReel()" style="background:none; border:none; color:#0095f6; font-weight:bold; cursor:pointer;">Publicar</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<nav class="bottom-nav">
+<a class="item active" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Inicio</span></a>
+<a class="item" href="explorar.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<div class="galeria-overlay" id="modalGaleria" onclick="fecharGaleria(event)" style="display: none;">
+<span class="btn-fechar-galeria">×</span>
+<div class="nav-seta esq" onclick="mudarImagem(-1)"><i class="bx bx-chevron-left"></i></div>
+<div class="galeria-conteudo"><img decoding="async" id="imgExpandida" loading="lazy" src=""/></div>
+<div class="nav-seta dir" onclick="mudarImagem(1)"><i class="bx bx-chevron-right"></i></div>
+<div class="galeria-thumbnails" id="areaThumbnails"></div>
+</div>
+<div class="modal-overlay" id="modalSolicitacao" style="display: none; z-index: 15000;">
+</div>
+<div class="story-overlay" id="modalStoryViewer" style="display:none;">
+<div class="story-content">
+<div class="story-progress-bar">
+<div class="story-progress-fill" id="storyProgress"></div>
+</div>
+<div class="story-header">
+<img class="story-avatar" decoding="async" id="storyUserImg" loading="lazy" src=""/>
+<span id="storyUserName" style="font-weight:bold;">Usuario</span>
+<span id="storyTime" style="opacity:0.7; font-size:0.8rem; margin-left:10px;"></span>
+<button onclick="fecharStory()" style="margin-left:auto; background:none; border:none; color:white; font-size:2rem; cursor:pointer; z-index:100;">×</button>
+</div>
+<div class="story-media-box" id="storyMediaContainer"></div>
+</div>
+</div>
+<div class="modal-overlay" id="modalPostDetalhe" onclick="fecharModalPost(event)">
+<div class="modal-content" onclick="event.stopPropagation()">
+<div class="modal-media-area" id="modalMediaContainer"></div>
+<div class="modal-info-area">
+<div class="modal-header">
+<div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
+<img decoding="async" id="modalAvatar" loading="lazy" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"/>
+<div id="modalUsername" style="font-weight: bold; font-size: 0.95rem;">User</div>
+</div>
+</div>
+<div class="modal-comments-section" id="modalCommentsList">
+<div id="modalCaption" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
+</div>
+<div class="modal-footer-actions">
+<div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
+<i class="bx bx-heart" id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
+<i class="bx bx-message-rounded" onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
+<i class="bx bx-paper-plane" onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
+</div>
+<span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
+<div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
+<input id="inputComentarioModal" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none; font-size:0.9rem;" type="text"/>
+<button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+
+
+
+<style>
+/* =====================================================
+     CATEGORIAS - CARROSSEL (CIRCULO + ICON + HOVER GLOW)
+     ===================================================== */
+  .cat-carousel{
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+  }
+  .cat-nav{
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    border: 1px solid rgba(11,119,104,0.15);
+    background: rgba(255,255,255,0.9);
+    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
+    flex: 0 0 auto;
+  }
+  .cat-nav i{ font-size: 26px; color: var(--cor2,#2a5f90); }
+  .cat-nav:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(0,0,0,0.10); }
+  .cat-nav:active{ transform: translateY(0); filter: brightness(.98); }
+  .cat-nav:disabled{ opacity: .35; cursor: not-allowed; box-shadow: none; }
+
+  .cat-track{
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding: 6px 2px;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+  }
+  .cat-track::-webkit-scrollbar{ height: 8px; }
+  .cat-track::-webkit-scrollbar-thumb{ background: rgba(11,119,104,0.20); border-radius: 999px; }
+  .cat-track::-webkit-scrollbar-track{ background: transparent; }
+
+    .cat-card{
+        min-width: 108px;
+        max-width: 132px;
+        border: 1px solid rgba(11,119,104,0.12);
+        background: rgba(255,255,255,0.85);
+        border-radius: 18px;
+        padding: 14px 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+        cursor: pointer;
+        scroll-snap-align: start;
+        transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
+        position: relative;
+        user-select: none;
+    }
+  .cat-card:hover{
+    transform: translateY(-2px);
+    border-color: rgba(11,119,104,0.35);
+    box-shadow: 0 18px 36px rgba(11,119,104,0.12);
+    background: rgba(255,255,255,0.98);
+  }
+  .cat-card:active{ transform: translateY(0); }
+
+
+  .cat-label{
+    font-weight: 800;
+    font-size: 0.95rem;
+    color: #1f2d3d;
+    text-align: center;
+    line-height: 1.15;
+    width: 100%;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .cat-dots{
+    display: flex;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 12px;
+  }
+
+  .cat-dots .dot.ativo{ width: 18px; opacity: 1; }
+
+  @media (max-width: 600px){
+    .cat-nav{ display: none; }
+    .cat-track{ padding: 4px 2px; }
+    .cat-card{ min-width: 96px; }
+  }
+
+</style>
+<div aria-atomic="true" aria-live="polite" class="doke-toast" id="dokeToast"></div>
+<div class="doke-fabs">
+<button aria-label="Voltar ao topo" class="fab" id="btnScrollTop" title="Voltar ao topo" type="button"><i class="bx bx-up-arrow-alt"></i></button>
+<button aria-label="Instalar app" class="fab" id="btnInstallPWA" style="display:none" title="Instalar app" type="button"><i class="bx bx-download"></i></button>
+</div>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+<script defer src="doke-negocios.js"></script>
 </body>
 </html>

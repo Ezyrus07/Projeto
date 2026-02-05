@@ -2341,7 +2341,42 @@ function hideIf(selector, cond){
       </div>
     `).join("");
   }
+    if(leads === 0 && views >= 150){
+      items.push({ cls:"todo", icon:"bx bx-target-lock", title:"Fortaleça o CTA", text:"Você tem visualizações no período, mas nenhum orçamento. Ajuste preço/descrição e botão de contato." });
+    }
+    if(rr !== null && leads >= 3 && rr < 0.6){
+      items.push({ cls:"todo", icon:"bx bx-message-rounded-dots", title:"Responda mais rápido", text:`Sua taxa de resposta está em ${pct(rr)}. Configure notificações e responda em até 1h.` });
+    }
+    if(replyMins !== null && replyMins >= 120){
+      items.push({ cls:"todo", icon:"bx bx-time-five", title:"Reduza o tempo de resposta", text:`Mediana de ${Math.round(replyMins)} min. Respostas rápidas aumentam fechamentos.` });
+    }
+    if(ratingAvg !== null && ratingCount){
+      if(ratingAvg < 4.5){
+        items.push({ cls:"todo", icon:"bx bx-star", title:"Suba sua nota", text:`Sua média (30d) é ${ratingAvg.toFixed(1)}. Peça avaliações após concluir o serviço.` });
+      }else{
+        items.push({ cls:"ok", icon:"bx bx-star", title:"Boa reputação", text:`Média ${ratingAvg.toFixed(1)} nas últimas avaliações.` });
+      }
+    }else{
+      items.push({ cls:"todo", icon:"bx bx-star", title:"Peça avaliações", text:"Após fechar um serviço, peça para o cliente avaliar. Isso melhora seu ranking." });
+    }
 
+    if(items.length === 0){
+      items.push({ cls:"ok", icon:"bx bx-check-circle", title:"Perfil bem completo", text:"Seu perfil está com boa base. Continue postando e respondendo rápido." });
+      items.push({ cls:"ok", icon:"bx bx-rocket", title:"Próximo passo", text:"Teste um novo título e thumbnail no anúncio com mais visualizações." });
+    }
+
+    listEl.innerHTML = items.slice(0,8).map(it=>`
+      <li class="dp-insight ${it.cls}">
+        <i class="${it.icon}"></i>
+        <div>
+          <b>${escapeHtml(it.title)}</b>
+          <div class="dp-subtle">${escapeHtml(it.text)}</div>
+        </div>
+      </li>
+    `).join("");
+  }
+
+)
   function aiReply(text){
     const t = String(text||"").toLowerCase();
     if(t.includes("titulo") || t.includes("descri")){

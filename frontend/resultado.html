@@ -1,21 +1,20 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js"></script>
-  <script src="firebase-compat-supabase.js"></script>
-  <script src="firebase-auth-compat-supabase.js"></script>
-
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resultados da Busca | Doke</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="doke-layout-fix.css">
-    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
-    <script src="script.js" defer></script>
-    <style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js"></script>
+<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-auth-compat-supabase.js"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Resultados da Busca | Doke</title>
+<link href="style.css" rel="stylesheet"/>
+<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js"></script>
+<style>
         /* Estilos específicos desta página */
         .resultados-header {
             max-width: 1100px;
@@ -64,108 +63,127 @@
             display: inline-block;
         }
     </style>
-
-  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css" rel="stylesheet"/>
+<link href="doke-feedpatch.css" rel="stylesheet"/>
 </head>
 <body>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html"><img alt="Doke" decoding="async" loading="lazy" onerror="this.src='https://placehold.co/100x40?text=Doke'" src="assets/Imagens/doke-logo.png"/></a>
+</div>
+<div class="mobile-controls">
+<button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class="bx bx-menu" style="font-size: 30px; color: var(--cor2);"></i></button>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html"><img alt="Doke" decoding="async" loading="lazy" onerror="this.src='https://placehold.co/100x40?text=Doke'" src="assets/Imagens/doke-logo.png"/></a>
+</div>
+<div class="mobile-controls">
+<button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class="bx bx-menu" style="font-size: 30px; color: var(--cor2);"></i></button>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile">
-            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a>
-        </div>
-        <div class="mobile-controls">
-            <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-        </div>
-    </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
 
-    <header class="navbar-mobile">
-        <div id="logo-mobile">
-            <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Doke" onerror="this.src='https://placehold.co/100x40?text=Doke'"></a>
-        </div>
-        <div class="mobile-controls">
-            <button id="btn-menu-mobile" onclick="abrirMenuMobile()"><i class='bx bx-menu' style="font-size: 30px; color: var(--cor2);"></i></button>
-        </div>
-    </header>
-    <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
 
-    <aside class="sidebar-icones">
-        <div id="logo">
-            <a href="index.html">
-                <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke">
-            </a>
-        </div>
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="index.html"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul" alt="Início">
-            <span>Início</span></a>
-        </div>
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="empresas.html">
-                <i class='bx bx-store' style="color: var(--cor2); font-size: 26px;"></i>
-                <span>Empresas</span>
-            </a>
-        </div>
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
 
-        <div class="item">
-            <a href="notificacoes.html"><img src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" class="icon azul" alt="Notificações">
-            <span>Notificações</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/561/561127.png" class="icon azul" alt="Mensagens">
-            <a href="chat.html"><span>Mensagens</span></a>
-        </div>
-        <div class="item">
-            <a href="comunidade.html"><img src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" class="icon verde" alt="Comunidades">
-            <span>Comunidades</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde" alt="Comunidades">
-            <a href="#" onclick="irParaMeuPerfil(event)"><span>Perfil</span></a>
-        </div>
-        <div class="item">
-            <img src="https://cdn-icons-png.flaticon.com/512/56/56763.png" class="icon azul" alt="Mais">
-            <a href="mais.html"><span>Mais</span></a>
-        </div>
-    </aside>
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
 
-    
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
 
-    <header class="navbar-desktop">
-        <div id="logo-desktop"><a href="projeto.html"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
-        <nav class="menu">
-            <div class="cep-wrapper"><a href="#" class="cep"><span>Informe seu CEP</span></a></div>
-            <a href="anunciar.html">Anuncie seu serviço</a>
-            <a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
-            <a href="novidades.html">Novidades</a>
-        </nav>
-        <div class="botoes-direita" id="header-user-area">
-            </div>
-    </header>     
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
 
-    <main>
-        <div class="resultados-header">
-            <h2 id="titulo-busca">Buscando...</h2>
-        </div>
-
-        <div class="lista-cards-premium" id="container-resultados" style="max-width: 1100px; margin: 0 auto;">
-            <div style="padding:40px; text-align:center;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem; color:#777;"></i></div>
-        </div>
-    </main>
-
-    <nav class="bottom-nav">
-        <a href="index.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" class="icon azul"><span>Início</span></a>
-        <a href="explorar.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/622/622669.png" class="icon verde"><span>Busca</span></a>
-        <a href="anunciar.html" class="item"><img src="assets/Imagens/icone-anunciar.png" class="icon azul"><span>Anunciar</span></a>
-        <a href="meuperfil.html" class="item"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
-    </nav>
-
-    <script>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper"><a class="cep" href="#"><span>Informe seu CEP</span></a></div>
+<a href="anunciar.html">Anuncie seu serviço</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita" id="header-user-area">
+</div>
+</header>
+<main>
+<div class="resultados-header">
+<h2 id="titulo-busca">Buscando...</h2>
+</div>
+<div class="lista-cards-premium" data-empty-icon="bx bx-search" data-empty-state="Tente mudar o termo, ampliar o raio ou remover filtros." data-empty-title="Nenhum resultado encontrado" id="container-resultados" style="max-width: 1100px; margin: 0 auto;">
+<div style="padding:40px; text-align:center;"><i class="bx bx-loader-alt bx-spin" style="font-size:2rem; color:#777;"></i></div>
+</div>
+</main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item active" href="explorar.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Busca</span></a>
+<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<script>
         document.addEventListener("DOMContentLoaded", () => {
             // Se o script.js principal exportar a função, ela será chamada lá.
             // Caso contrário, o script.js detecta a página e roda.
         });
     </script>
-</body>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script></body>
 </html>
