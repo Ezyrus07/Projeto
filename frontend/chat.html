@@ -1308,7 +1308,9 @@
         display: flex; align-items: center; justify-content: center; gap: 8px;
         transition: 0.2s;
     }
-    .btn-primary-modal:hover { background: #096356; transform: scale(1.02); }
+    /* Evita "piscar" no hover (principalmente em alguns mobiles/Chromium) */
+    .btn-primary-modal{ transform: translateZ(0); }
+    .btn-primary-modal:hover { background: #096356; transform: translateZ(0); }
     
     .btn-secondary-modal {
         background: transparent; color: #777; border: none; padding: 12px;
@@ -1801,7 +1803,11 @@
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css" rel="stylesheet"/></head>
+<link href="doke-ux.css" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260206">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260206">
+</head>
 <body>
 <aside class="sidebar-icones">
   <div id="logo">
@@ -5112,6 +5118,8 @@ window.confirmarFinalizacaoPedido = async () => {
     }
 
 window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
+        // Mobile: quando abrir conversa, traz o painel de chat para frente
+        try{ document.body.classList.add('mobile-chat-open'); }catch(e){}
         // UI Inicial
         document.getElementById('chat-placeholder').style.display = 'none';
         document.getElementById('box-conversa-real').style.display = 'flex';
@@ -5480,6 +5488,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     ${btnHtml}
                 </div>`;
                 htmlParts.push(html);
+                return; // evita gerar mensagem vazia embaixo do card
             }
             // --- CARD AVALIAÇÃO (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
@@ -5511,6 +5520,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     ${imgHtml}
                     ${btnHtml}
                 </div>`);
+                return; // evita bolha vazia após o card
             }
               // --- MENSAGEM APAGADA ---
               if (m.tipo === 'apagada') {
@@ -5853,6 +5863,12 @@ window.gerarPagamento = async function() {
     });
 
     window.verificarEnter = (e) => { if(e.key === 'Enter') window.enviarMensagemTexto(); };
+
+    // Mobile: abrir/fechar painel de conversa (lista -> conversa)
+    window.fecharChatMobile = function(){
+        try{ document.body.classList.remove('mobile-chat-open'); }catch(e){}
+    };
+
 
     function isNearBottom(el, threshold){
         if (!el) return true;
@@ -6222,5 +6238,7 @@ window.tocarAudio = function(btn, url, audioId) {
 </div>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260206"></script>
+</body>
 </html>

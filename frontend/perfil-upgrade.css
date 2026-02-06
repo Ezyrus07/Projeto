@@ -1095,6 +1095,49 @@
   .dp-stat{ flex: 0 0 auto !important; }
 }
 
+/* ============================================================
+   PATCH 2026-02-06 — Corrige “stats grudados/quebrando”
+   Motivo: em alguns navegadores (principalmente mobile), gap em flex
+   pode falhar/ser ignorado → cards ficam colados e quebram layout.
+   Solução: forçar GRID responsivo com gap (robusto) em todas as telas.
+   ============================================================ */
+
+/* Base: 4 colunas quando há espaço */
+.dp-stats{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 14px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  scroll-snap-type: none !important;
+}
+.dp-stat{
+  min-width: 0 !important;
+  width: 100% !important;
+}
+.dp-statsWrap{
+  display: block !important;
+}
+.dp-statsNav{
+  display: none !important;
+}
+
+/* Tablet / telas médias: 2 colunas (mais legível) */
+@media (max-width: 900px){
+  .dp-stats{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+}
+
+/* Celulares muito pequenos: espaçamento e tipografia mais compactos */
+@media (max-width: 420px){
+  .dp-stats{ gap: 10px !important; }
+  .dp-stat{ padding: 10px 12px !important; border-radius: 12px !important; }
+  .dp-stat b{ font-size: 16px !important; }
+  .dp-stat span{ font-size: 11px !important; }
+}
+
 /* Serviços: 2 cards por fileira no desktop, 1 no mobile */
 #dpGridServicos{
   display: grid !important;
@@ -1640,3 +1683,45 @@
 .dp-aiMsgs{
   overscroll-behavior: auto;
 }
+
+
+/* ============================================================
+   MOBILE — Compactação + Sem quebras (nome/chips)
+   - Evita quebra/hifenização no nome no celular
+   - Chips em uma linha (scroll horizontal)
+   ============================================================ */
+.dp-info{min-width:0;}
+@media (max-width: 520px){
+  .dp-name, #dpName{
+    font-size: 24px;
+    line-height: 1.15;
+    margin-right: 0;
+    white-space: nowrap !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    overflow-wrap: normal !important;
+    word-break: keep-all !important;
+    hyphens: none !important;
+  }
+  .dp-handle{margin-top: 6px;}
+  .dp-bio{font-size: 14px; line-height: 1.35;}
+  .dp-meta{
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #dpChips{
+    display:flex;
+    gap: 10px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #dpChips .dp-chip{flex: 0 0 auto;}
+  /* esconde scrollbar horizontal em mobile */
+  #dpChips::-webkit-scrollbar,
+  .dp-meta::-webkit-scrollbar,
+  .dp-tabs::-webkit-scrollbar,
+  .dp-stats::-webkit-scrollbar{height:0;width:0;}
+}
+

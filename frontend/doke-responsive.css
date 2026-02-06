@@ -1,0 +1,125 @@
+/* ==========================================================
+   DOKE RESPONSIVE (Mobile/Tablet hardening)
+   Goal: nothing breaks in 320px phones, tablets (portrait/landscape)
+   ========================================================== */
+
+*{ box-sizing:border-box; }
+html, body{ max-width:100%; overflow-x:hidden; }
+img, video, canvas, svg{ max-width:100%; }
+
+/* Stop old headers/navs from duplicating when Shell is active */
+@media (max-width:1024px){
+  /* Desktop sidebars / navbars */
+  .navbar-desktop, .sidebar, .sidebar-icones, #sidebar, .menu-lateral, .nav-lateral{ display:none !important; }
+  /* Legacy bottom navs */
+  .bottom-nav, nav.bottom-nav, .mobile-bottom-nav, .menu-bottom, .bottomMenu{ display:none !important; }
+}
+
+/* =============================
+   PERFIL / STATS (não quebrar)
+   ============================= */
+@media (max-width:1024px){
+  .dp-stats, .perfil-stats, .stats, .stats-grid, .perfil-metrics{
+    display:grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+  }
+  .dp-stats > *, .perfil-stats > *, .stats > *, .stats-grid > *, .perfil-metrics > *{
+    margin: 0 !important;
+    min-width: 0 !important;
+  }
+}
+@media (min-width:1025px){
+  .dp-stats, .perfil-stats, .stats, .stats-grid, .perfil-metrics{
+    display:flex !important;
+    flex-wrap: nowrap !important;
+    gap: 14px !important;
+  }
+}
+
+/* =========================================
+   CHAT MOBILE (lista -> conversa)
+   ========================================= */
+@media (max-width:1024px){
+  body.mobile-chat-open{ overflow:hidden; }
+  body.mobile-chat-open .coluna-chat{ transform: translateX(0) !important; }
+}
+
+/* =========================================
+   MODAL DE PUBLICAÇÕES (imagem/vídeo + comentários)
+   Padrão mais usado: fullscreen no mobile/tablet
+   ========================================= */
+
+@keyframes dokeModalFadeIn{ from{opacity:0;} to{opacity:1;} }
+@keyframes dokeModalCardIn{ from{transform:translateY(10px) scale(.99); opacity:0;} to{transform:translateY(0) scale(1); opacity:1;} }
+
+@media (max-width:1024px){
+  /* Overlay ocupa tudo, sem padding */
+  .modal-overlay, .modal-video-overlay{
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+  /* Quando abrir (display:flex), anima */
+  .modal-overlay[style*="display: flex"],
+  .modal-overlay[style*="display:flex"],
+  .modal-video-overlay[style*="display: flex"],
+  .modal-video-overlay[style*="display:flex"]{
+    animation: dokeModalFadeIn .14s ease both;
+  }
+
+  /* Card vira fullscreen */
+  .modal-content, .modal-content-universal{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+    flex-direction: column !important;
+    animation: dokeModalCardIn .16s ease both;
+  }
+  /* Área de mídia (topo) */
+  .modal-media-area{
+    flex: 0 0 44vh !important;
+    height: 44vh !important;
+    min-height: 240px !important;
+  }
+  /* Mídia SEM cortar */
+  .modal-media-area img, .modal-media-area video{
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+  /* Lado info (comentários) */
+  .modal-info-area{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    border-left: none !important;
+    display:flex !important;
+    flex-direction: column !important;
+  }
+  /* Lista comentários: scroll interno */
+  .modal-comments-section, .modal-comments-list{
+    flex: 1 1 auto !important;
+    overflow:auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* Rodapé sticky: input + ações sempre visíveis */
+  .modal-footer-actions, .modal-actions, .modal-input-area{
+    position: sticky !important;
+    bottom: 0 !important;
+    background: #fff !important;
+    z-index: 2 !important;
+  }
+}
+
+/* Gallery fullscreen (mobile) */
+@media (max-width:1024px){
+  #modalGaleria .galeria-container, #modalGaleria .galeria-content{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+  }
+}

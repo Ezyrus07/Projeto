@@ -9,10 +9,10 @@
 <script src="firebase-auth-compat-supabase.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Negócios - Doke</title>
-<meta name="description" content="Descubra estabelecimentos locais e fale direto pelo chat da Doke.">
-<meta property="og:title" content="Negócios - Doke"/>
-<meta property="og:description" content="Encontre estabelecimentos e negócios perto de você com confiança na Doke."/>
+<title>Negócios | Doke</title>
+<meta content="Descubra negócios e estabelecimentos locais e fale direto pelo chat da Doke." name="description"/>
+<meta content="Doke" property="og:title"/>
+<meta content="Descubra negócios perto de você e fale direto pelo chat da Doke." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <link href="manifest.webmanifest" rel="manifest"/>
@@ -34,10 +34,11 @@
 <link href="doke-ux.css" rel="stylesheet"/>
 <link href="doke-feedpatch.css" rel="stylesheet"/>
 
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin=""/>
-<link href="doke-negocios.css" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260206">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260206">
 </head>
-<body data-page="negocios" data-kind="negocios">
+<body data-page="home" data-kind="negocios">
 <a class="skip-link" href="#feedAnuncios">Pular para o conteúdo</a>
 <div class="popup" id="popup">
 <div class="popup-content">
@@ -162,159 +163,229 @@
 </aside>
 
 <main class="dp-wrap">
-<section class="secao-busca secao-busca-negocios">
-  <div class="neg-hero-container">
-    <div class="neg-hero-top">
-      <div class="neg-hero-left">
-        <h1 class="neg-title">Negócios</h1>
-        <p class="neg-subtitle">Descubra estabelecimentos e fale direto pelo chat da Doke.</p>
-      </div>
-      <div class="neg-hero-actions">
-        <button class="btn-ghost-green" id="btnGeoNegocios" type="button">
-          <i class='bx bx-current-location'></i>
-          <span>Usar localização</span>
-        </button>
-        <a class="btn btn-primary" href="anunciar-negocio.html" style="text-decoration:none;">
-          <i class='bx bx-plus'></i>
-          <span>Anunciar negócio</span>
-        </a>
-      </div>
-    </div>
-
-    <div class="neg-loc-line">
-      <span class="neg-loc-pill" id="negLocPill">
-        <i class='bx bx-map-pin'></i>
-        <span id="negLocText">Defina sua localização para ver negócios perto de você.</span>
-      </span>
-    </div>
-
-    <!-- mesma UX do index (typewriter), só que com contexto de negócios -->
-    <div class="typing-container">
-      <span class="static-text">Busque por</span>
-      <span class="icon">✨</span>
-      <span class="dynamic-text" id="typewriter"></span>
-      <span class="cursor">&nbsp;</span>
-    </div>
-
-    <div class="busca-wrapper busca-wrapper-negocios" id="buscaWrapperNegocios">
-      <div class="busca-input-container">
-        <input autocomplete="off" id="inputBuscaNegocios" placeholder="Descreva o que você está procurando" type="text"/>
-        <button class="btn-search-circle" id="btnSearchCircleNegocios" type="button" aria-label="Pesquisar negócios">
-          <svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewBox="0 0 24 24" width="24">
-            <line x1="5" x2="19" y1="12" y2="12"></line>
-            <polyline points="12 5 19 12 12 19"></polyline>
-          </svg>
-        </button>
-      </div>
-
-      <div class="busca-hint">
-        <i class='bx bx-info-circle'></i>
-        <span>Busque por <b>nome</b>, <b>categoria</b>, <b>bairro</b> ou uma <b>descrição</b>.</span>
-      </div>
-    </div>
-
-    <div class="botoes-busca">
-      <button class="btn-procurar btn-procurar-negocios" id="btnProcurarNegocios" type="button">Procurar negócios</button>
-      <a href="anunciar-negocio.html" target="_blank"><button class="btn-anunciar btn-anunciar-negocios" type="button">Anunciar meu negócio</button></a>
-    </div>
-
-    <!-- chips: diferentes do index (só negócios) -->
-    <div class="chips-negocios" role="tablist" aria-label="Filtros rápidos">
-      <button class="chip is-active" data-chip="Tudo" type="button">Tudo</button>
-      <button class="chip" data-chip="Restaurantes" type="button">Restaurantes</button>
-      <button class="chip" data-chip="Cafés" type="button">Cafés</button>
-      <button class="chip" data-chip="Mercados" type="button">Mercados</button>
-      <button class="chip" data-chip="Lojas" type="button">Lojas</button>
-      <button class="chip" data-chip="Saúde" type="button">Saúde</button>
-      <button class="chip" data-chip="Beleza" type="button">Beleza</button>
-      <button class="chip" data-chip="Auto" type="button">Auto</button>
-      <button class="chip" data-chip="Delivery" type="button">Delivery</button>
-      <button class="chip" data-chip="Perto" type="button"><i class='bx bx-navigation'></i>&nbsp;Perto</button>
-    </div>
-  </div>
+<section class="secao-busca">
+<div class="typing-container">
+<span class="static-text">Busque por</span>
+<span class="icon">✨</span>
+<span class="dynamic-text" id="typewriter"></span>
+<span class="cursor"> </span>
+</div>
+<div class="busca-wrapper" id="buscaWrapper">
+<div class="busca-input-container">
+<input autocomplete="off" id="inputBusca" placeholder="Descreva o que você está procurando" type="text"/>
+<button class="btn-search-circle" onclick="document.querySelector('.btn-procurar').click()">
+<svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+<polyline points="12 5 19 12 12 19"></polyline>
+</svg>
+</button>
+</div>
+<div class="busca-dropdown" id="buscaDropdown">
+<div class="busca-hint">
+                        Busque por <i>nome, categoria, bairro ou uma descrição detalhada</i>
+</div>
+<div class="recentes-container" id="containerHistorico" style="display: none;">
+<h4>Buscas recentes</h4>
+<div id="listaRecentes"></div>
+<div class="limpar-historico" id="limparHistoricoBtn">Limpar histórico</div>
+</div>
+</div>
+</div>
+<div class="botoes-busca">
+<button class="btn-procurar">Procurar negócios</button>
+<a href="anunciar-negocio.html" target="_blank"><button class="btn-anunciar">Anunciar meu negócio</button></a>
+</div>
+<!-- Linha de confiança (mobile-first) -->
+<!-- chips rápidos removidos (poluía a área de busca) -->
 </section>
-
-<section class="secao-categorias secao-categorias-negocios" aria-label="Categorias de negócios">
-  <div class="secao-topo">
-    <h2 class="secao-titulo">Categorias de negócios</h2>
-    <a class="secao-link" href="empresas.html">Ver anúncios</a>
-  </div>
-
-  <div class="cat-carousel">
-    <button class="seta seta-esq" id="negCatPrev" aria-label="Anterior"><i class='bx bx-chevron-left'></i></button>
-    <div class="cat-track" id="listaCategoriasNegocios" role="list"></div>
-    <button class="seta seta-dir" id="negCatNext" aria-label="Próximo"><i class='bx bx-chevron-right'></i></button>
-  </div>
+<section aria-label="Categorias em alta" class="categorias-container estilo-lojas">
+<div class="secao-title-row">
+<h2 class="sec-title">Categorias em alta</h2>
+</div>
+<div class="categorias-em-alta categorias-min">
+<!-- Setas no MESMO padrão dos carrosseis de profissionais -->
+<button aria-label="Categoria anterior" class="pro-arrow left cat-prev" type="button">❮</button>
+<div class="cat-carousel">
+<div aria-label="Lista de categorias" class="cat-track" id="listaCategorias" role="list"></div>
+</div>
+<button aria-label="Próxima categoria" class="pro-arrow right cat-next" type="button">❯</button>
+</div>
 </section>
+<section class="videos-container">
+<div class="videos-header-top sec-head-row">
+<h2 class="sec-title" id="categorias-title2">Videos-curtos</h2>
+<div class="sec-head-actions">
+<button aria-label="Videos-curtos anteriores" class="carousel-nav vid-prev" type="button">❮</button>
+<button aria-label="Próximos videos-curtos" class="carousel-nav vid-next" type="button">❯</button>
+</div>
+</div>
+<div class="tiktok-scroll-wrapper" id="galeria-dinamica">
+<div aria-hidden="true" class="tiktok-card is-skeleton"><div class="tiktok-skel-media skeleton"></div></div>
+<div aria-hidden="true" class="tiktok-card is-skeleton"><div class="tiktok-skel-media skeleton"></div></div>
+<div aria-hidden="true" class="tiktok-card is-skeleton"><div class="tiktok-skel-media skeleton"></div></div>
+<div aria-hidden="true" class="tiktok-card is-skeleton"><div class="tiktok-skel-media skeleton"></div></div>
+</div>
 
-<section class="secao-videos secao-videos-negocios" aria-label="Vídeos de negócios">
-  <div class="secao-topo">
-    <h2 class="secao-titulo">Vídeos curtos</h2>
-    <span class="secao-sub">BETA</span>
-  </div>
-  <div class="videos-box">
-    <button class="seta seta-esq" id="negVidPrev" aria-label="Anterior"><i class='bx bx-chevron-left'></i></button>
-    <div class="tiktok-scroll" id="tiktokScrollNegocios"></div>
-    <button class="seta seta-dir" id="negVidNext" aria-label="Próximo"><i class='bx bx-chevron-right'></i></button>
-  </div>
-  <div class="empty-state" id="negVideosEmpty" hidden>
-    <i class='bx bx-video-off'></i>
-    <div>
-      <strong>Nenhum vídeo curto disponível por aqui ainda.</strong>
-      <div class="muted">Quando você anunciar um negócio, poderá postar vídeos curtos (em breve).</div>
-    </div>
-  </div>
 </section>
-
-<section class="secao-destaques secao-destaques-negocios" aria-label="Estabelecimentos em destaque">
-  <div class="secao-topo">
-    <h2 class="secao-titulo">Em destaque</h2>
-    <a class="secao-link" href="empresas.html">Ver todos</a>
-  </div>
-
-  <div class="neg-grid" id="negDestaques"></div>
-
-  <div class="empty-state" id="negDestaquesEmpty" hidden>
-    <i class='bx bx-store-alt'></i>
-    <div>
-      <strong>Nenhum anúncio de empresa encontrado.</strong>
-      <div class="muted">Anuncie seu negócio para aparecer aqui.</div>
-    </div>
-  </div>
+<section class="fotos-container">
+<div class="section-feed-title sec-head-row" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
+<h2 class="sec-title sec-title-light">Publicações</h2>
+<div class="sec-head-actions">
+<button aria-label="Publicações anteriores" class="carousel-nav pub-prev" type="button">❮</button>
+<button aria-label="Próximas publicações" class="carousel-nav pub-next" type="button">❯</button>
+</div>
+</div>
+<div id="feed-global-container"></div>
 </section>
-
-<section class="secao-resultados secao-resultados-negocios" aria-label="Resultados de negócios">
-  <div class="secao-topo">
-    <h2 class="secao-titulo">Resultados</h2>
-    <span class="secao-sub" id="negResultadosMeta">Digite pelo menos 2 letras.</span>
-  </div>
-
-  <div class="neg-grid neg-grid-results" id="negResultados"></div>
-
-  <div class="empty-state" id="negResultadosEmpty">
-    <i class='bx bx-search-alt-2'></i>
-    <div>
-      <strong>Nenhum resultado por enquanto.</strong>
-      <div class="muted">Tente buscar por categoria, bairro ou nome.</div>
-    </div>
-  </div>
+<div class="anuncio-container" style="background: transparent; box-shadow: none;">
+<div class="filtros-container-premium">
+<div class="filtros-header-row">
+<h3 class="filtros-titulo"><i class="bx bx-filter"></i> Filtrar Resultados</h3>
+<button class="btn-toggle-filtros" onclick="toggleFiltrosExtras()">
+<i class="bx bx-slider-alt"></i> Filtros Avançados
+            </button>
+</div>
+<div class="filtros-expandidos" id="filtrosExtras">
+<div class="grid-extras">
+<div>
+<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Preço Máximo</label>
+<input class="input-premium" id="maxPreco" placeholder="R$ 0,00" type="number"/>
+</div>
+<div>
+<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Ordenar Por</label>
+<select class="input-premium" id="ordenacao">
+<option value="mais_recente">Mais Recentes</option>
+<option value="preco_menor">Menor Preço</option>
+<option value="melhor_avaliacao">Melhor Avaliação</option>
+</select>
+</div>
+<div>
+<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Categoria</label>
+<select class="input-premium" id="filtroCategoria">
+<option value="todas">Todas</option>
+</select>
+</div>
+<div>
+<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Serviço</label>
+<select class="input-premium" id="filtroTipoAtend">
+<option value="todos">Todos</option>
+<option value="online">Online</option>
+<option value="presencial">Presencial</option>
+<option value="ambos">Ambos</option>
+</select>
+</div>
+<div>
+<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Preço</label>
+<select class="input-premium" id="filtroTipoPreco">
+<option value="todos">Todos</option>
+<option value="preco_fixo">Preço Fixo</option>
+<option value="sob_orcamento">Sob Orçamento</option>
+</select>
+</div>
+<div class="filtro-checks">
+<label class="filtro-label">Pagamentos aceitos</label>
+<div class="filtro-checks-row">
+<label><input id="filtroPgPix" type="checkbox"/> Pix</label>
+<label><input id="filtroPgCredito" type="checkbox"/> Crédito</label>
+<label><input id="filtroPgDebito" type="checkbox"/> Débito</label>
+</div>
+</div>
+<div class="filtro-checks">
+<label class="filtro-label">Extras</label>
+<div class="filtro-checks-row">
+<label><input id="filtroGarantia" type="checkbox"/> Com garantia</label>
+<label><input id="filtroEmergencia" type="checkbox"/> Emergência</label>
+<label><input id="filtroFormulario" type="checkbox"/> Tem formulário</label>
+</div>
+</div>
+<button class="btn-aplicar" id="btn-aplicar" type="button">Aplicar</button>
+</div>
+</div>
+<div class="filtros-localizacao">
+<span class="label-loc">Localização</span>
+<div class="grid-loc">
+<select class="select-premium" id="selectEstado">
+<option disabled="" selected="" value="">Selecionar UF</option>
+<option value="BA">Bahia</option>
+<option value="SP">São Paulo</option>
+</select>
+<select class="select-premium" disabled="" id="selectCidade">
+<option disabled="" selected="" value="">Cidade</option>
+</select>
+<select class="select-premium" disabled="" id="selectBairro">
+<option disabled="" selected="" value="">Bairro</option>
+</select>
+</div>
+</div>
+<div class="filtros-rapidos">
+<div class="filtros-rapidos-header">
+<span>Filtros rápidos</span>
+<button class="chips-arrow" onclick="scrollChips(this)" type="button"><i class="bx bx-chevron-right"></i></button>
+</div>
+<div class="filtros-chips-scroll" data-chips="">
+<button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
+<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> Tendências</button>
+<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de você</button>
+<button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class="bx bx-star"></i> Super Profissionais</button>
+<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> Recém-chegados</button>
+<button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class="bx bx-badge-check"></i> Verificados</button>
+</div>
+</div>
+</div>
+<div class="lista-cards-premium" id="feedAnuncios">
+<div aria-hidden="true" class="skeleton-premium-card">
+<div class="skeleton skeleton-premium-cover"></div>
+<div class="skeleton-premium-body">
+<div class="skeleton skeleton-line lg"></div>
+<div class="skeleton skeleton-line md"></div>
+<div class="skeleton skeleton-line sm"></div>
+</div>
+</div>
+<div aria-hidden="true" class="skeleton-premium-card">
+<div class="skeleton skeleton-premium-cover"></div>
+<div class="skeleton-premium-body">
+<div class="skeleton skeleton-line lg"></div>
+<div class="skeleton skeleton-line md"></div>
+<div class="skeleton skeleton-line sm"></div>
+</div>
+</div>
+<div aria-hidden="true" class="skeleton-premium-card">
+<div class="skeleton skeleton-premium-cover"></div>
+<div class="skeleton-premium-body">
+<div class="skeleton skeleton-line lg"></div>
+<div class="skeleton skeleton-line md"></div>
+<div class="skeleton skeleton-line sm"></div>
+</div>
+</div>
+<div aria-hidden="true" class="skeleton-premium-card">
+<div class="skeleton skeleton-premium-cover"></div>
+<div class="skeleton-premium-body">
+<div class="skeleton skeleton-line lg"></div>
+<div class="skeleton skeleton-line md"></div>
+<div class="skeleton skeleton-line sm"></div>
+</div>
+</div>
+</div>
+</div>
+<script>
+    function abrirGaleria() {
+        alert("Aqui abriria um modal em tela cheia com todas as fotos!");
+    }
+</script>
+ 
+<!-- ================= PROFISSIONAIS EM DESTAQUE ================= -->
+<section class="pros-section">
+<div class="pros-header">
+<h2 class="sec-title">Profissionais em Destaque</h2>
+</div>
+<div class="pros-carousel" id="prosDestaque"></div>
 </section>
-
-<section class="secao-mapa secao-mapa-negocios" aria-label="Mapa (beta)">
-  <div class="secao-topo">
-    <h2 class="secao-titulo">Mapa</h2>
-    <span class="secao-sub">Localização (beta)</span>
-  </div>
-
-  <div class="map-wrap">
-    <div id="negMap" class="map"></div>
-    <div class="map-note" id="negMapNote">
-      <i class='bx bx-info-circle'></i>
-      <span>Ative a localização para ver negócios perto de você no mapa.</span>
-    </div>
-  </div>
+<section class="pros-section">
+<div class="pros-header">
+<h2 class="sec-title">Profissionais Novos</h2>
+</div>
+<div class="pros-carousel" id="prosNovos"></div>
 </section>
-
 </main>
 <footer class="main-footer">
 <div class="footer-content">
@@ -418,8 +489,8 @@
 
 <nav class="bottom-nav">
 <a class="item active" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Inicio</span></a>
-<a class="item" href="explorar.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
-<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+<a class="item" href="anunciar-negocio.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
 <a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
@@ -580,7 +651,7 @@
 </div>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
-<script defer src="doke-negocios.js"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script>
+<script src="doke-shell.js?v=20260206"></script>
 </body>
 </html>

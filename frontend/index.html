@@ -33,6 +33,10 @@
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css" rel="stylesheet"/>
 <link href="doke-feedpatch.css" rel="stylesheet"/>
+
+<link rel="stylesheet" href="doke-shell.css?v=20260206">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260206">
 </head>
 <body data-page="home">
 <a class="skip-link" href="#feedAnuncios">Pular para o conteúdo</a>
@@ -194,6 +198,22 @@
 <!-- Linha de confiança (mobile-first) -->
 <!-- chips rápidos removidos (poluía a área de busca) -->
 </section>
+
+<!-- ============================
+     PROMO: Pagamento seguro + recompensas (primeiro acesso)
+     ============================ -->
+<section class="doke-promo" id="dokePromo" style="display:none;">
+  <div class="doke-promo__icon"><i class='bx bxs-shield-check'></i></div>
+  <div class="doke-promo__body">
+    <strong>Pagamento seguro via Doke</strong>
+    <div class="doke-promo__text">Ganhe confiança, histórico de serviços e vantagens. Profissional recebe mais rápido e o cliente fica protegido.</div>
+    <div class="doke-promo__actions">
+      <a class="doke-promo__btn" href="pagamentos.html"><i class='bx bx-crown'></i> Ver benefícios</a>
+      <button class="doke-promo__close" type="button" id="dokePromoClose">Agora não</button>
+    </div>
+  </div>
+</section>
+
 <section aria-label="Categorias em alta" class="categorias-container estilo-lojas">
 <div class="secao-title-row">
 <h2 class="sec-title">Categorias em alta</h2>
@@ -485,7 +505,7 @@
 
 <nav class="bottom-nav">
 <a class="item active" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Inicio</span></a>
-<a class="item" href="explorar.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
 <a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
@@ -647,5 +667,22 @@
 </div>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script></body>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script>
+<script>
+  (function(){
+    try{
+      const key = 'doke_promo_seen_v1';
+      const promo = document.getElementById('dokePromo');
+      const close = document.getElementById('dokePromoClose');
+      if(!promo) return;
+      const seen = localStorage.getItem(key) === '1';
+      if(!seen){ promo.style.display = 'flex'; }
+      close?.addEventListener('click', ()=>{ promo.style.display='none'; localStorage.setItem(key,'1'); });
+      // se clicar no CTA, marca visto também
+      promo.querySelectorAll('a').forEach(a => a.addEventListener('click', ()=> localStorage.setItem(key,'1')));
+    }catch(e){}
+  })();
+</script>
+<script src="doke-shell.js?v=20260206"></script>
+</body>
 </html>

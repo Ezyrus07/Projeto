@@ -7136,6 +7136,7 @@ window.fecharModalPostForce = function() {
         const mediaBox = document.getElementById('modalMediaContainer');
         if(mediaBox) mediaBox.innerHTML = "";
     }
+    try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostSource = "firebase";
     window.currentSupaPublicacaoId = null;
     window.currentSupaPublicacaoAuthorId = null;
@@ -7595,6 +7596,7 @@ window.fecharModalVideoForce = function() {
     const v = document.getElementById('playerPrincipal');
     if(v) { v.pause(); v.src = ""; }
     document.getElementById('modalPlayerVideo').style.display = 'none';
+    try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
 }
 window.fecharModalVideo = function(e) {
     if(e.target.id === 'modalPlayerVideo') fecharModalVideoForce();
@@ -7680,9 +7682,9 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
 
   mediaArea.innerHTML = '';
   if (dados.videoUrl || dados.video || tipo === 'video') {
-    mediaArea.innerHTML = `<video src="${dados.videoUrl || dados.video}" controls autoplay style="width:100%;height:100%;object-fit:cover;"></video>`;
+    mediaArea.innerHTML = `<video src="${dados.videoUrl || dados.video}" controls autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000;"></video>`;
   } else if (dados.imagem) {
-    mediaArea.innerHTML = `<img src="${dados.imagem}" style="width:100%;height:100%;object-fit:cover;">`;
+    mediaArea.innerHTML = `<img src="${dados.imagem}" style="width:100%;height:100%;object-fit:contain;background:#000;">`;
   }
 
   const modalUsername = document.getElementById('modalUsername');
@@ -7712,6 +7714,7 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
   }
 
   modal.style.display = 'flex';
+  try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
 };
 
 // ================== SOCIAL ACTIONS (COMMENTS/REPORT/PIN) ==================
@@ -10729,7 +10732,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       } else {
         ctaTitle = 'Peça orçamento em 1 clique';
         ctaSub = 'Entre em contato com profissionais e acompanhe tudo com segurança.';
-        ctaHref = 'explorar.html';
+        ctaHref = 'busca.html';
         ctaLabel = 'Explorar profissionais';
       }
 
@@ -11094,7 +11097,7 @@ async function carregarProfissionaisIndex() {
           <div class="pros-empty-title">Nenhum profissional em destaque no momento.</div>
           <div class="pros-empty-sub">Assim que receberem avaliações, eles aparecem aqui.</div>
         </div>
-        <a class="pros-empty-btn" href="explorar.html">Explorar</a>
+        <a class="pros-empty-btn" href="busca.html">Explorar</a>
       </div>
     `;
 

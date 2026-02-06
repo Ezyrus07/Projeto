@@ -197,11 +197,82 @@
             border-radius: 20px; font-size: 0.8rem; font-weight: 700;
             display: inline-flex; align-items: center; gap: 5px;
         }
+
+        /* Perguntas e Respostas (estilo marketplace) */
+        #qa-section .qa-ask{
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            padding: 12px;
+            background: #fff;
+        }
+        #qa-section textarea{
+            width: 100%;
+            min-height: 92px;
+            resize: vertical;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 10px 12px;
+            font-family: inherit;
+            outline: none;
+        }
+        #qa-section textarea:focus{
+            border-color: rgba(0,138,123,.6);
+            box-shadow: 0 0 0 4px rgba(0,138,123,.12);
+        }
+        #qa-section .qa-ask-actions{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #qa-section .qa-btn{
+            border: none;
+            border-radius: 999px;
+            padding: 10px 14px;
+            font-weight: 800;
+            color: #fff;
+            background: linear-gradient(135deg, var(--primary), #0B5FA6);
+            cursor: pointer;
+            display:flex;
+            align-items:center;
+            gap:8px;
+        }
+        #qa-section .qa-list{ margin-top: 14px; display:flex; flex-direction:column; gap: 12px; }
+        #qa-section .qa-item{
+            background:#fff;
+            border: 1px solid #eee;
+            border-radius: 18px;
+            padding: 14px;
+        }
+        #qa-section .qa-top{ display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+        #qa-section .qa-q{ margin-top: 10px; color:#111827; font-weight:700; }
+        #qa-section .qa-a{
+            margin-top: 10px;
+            background: #f4f7f6;
+            border: 1px solid rgba(11,119,104,.12);
+            border-radius: 14px;
+            padding: 12px;
+            color:#0f172a;
+        }
+        #qa-section .qa-reply{
+            margin-top: 10px;
+            display:flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+        #qa-section .qa-reply textarea{ min-height: 76px; }
+        #qa-section .qa-meta{ color:#6b7280; font-size:.85rem; }
+        #qa-section .qa-empty{ display:flex; align-items:center; gap: 10px; padding: 12px; border-radius: 16px; background: #fff; border: 1px dashed #e5e7eb; }
     </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css" rel="stylesheet"/></head>
+<link href="doke-ux.css" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260206">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260206">
+</head>
 <body>
 <aside class="sidebar-icones">
   <div id="logo">
@@ -364,6 +435,36 @@
 </a>
 </div>
 </div>
+
+<!-- ============================
+     PERGUNTAS & RESPOSTAS (Marketplaces)
+     ============================ -->
+<div class="content-section" id="qa-section">
+  <h2 class="section-title">Perguntas e respostas</h2>
+
+  <div class="qa-ask">
+    <textarea id="qaInput" placeholder="Tire suas dúvidas com o profissional..." maxlength="400"></textarea>
+    <div class="qa-ask-actions">
+      <small id="qaHint" style="color:#777;">Seja objetivo. Você pode perguntar sobre preço, prazo, materiais, etc.</small>
+      <button id="qaSend" type="button" class="qa-btn">
+        <i class='bx bx-send'></i> Enviar
+      </button>
+    </div>
+  </div>
+
+  <div id="qaList" class="qa-list">
+    <p style="color:#777; font-style: italic;">Carregando perguntas...</p>
+  </div>
+
+  <div class="qa-empty" id="qaEmpty" style="display:none;">
+    <i class='bx bx-chat' style="font-size:22px; color:var(--primary);"></i>
+    <div>
+      <strong>Nenhuma pergunta ainda.</strong>
+      <div style="color:#777; font-size:.9rem;">Seja o primeiro a perguntar.</div>
+    </div>
+  </div>
+</div>
+
 <div class="content-section">
 <h2 class="section-title">Agenda Semanal</h2>
 <div class="agenda-grid" id="agenda-container">
@@ -456,7 +557,7 @@
         async function initPage() {
             if(!idAnuncio) {
                 alert("Serviço não encontrado.");
-                window.location.href = "explorar.html";
+                window.location.href = "busca.html";
                 return;
             }
 
@@ -504,6 +605,9 @@
                 }
 
                 renderizarDetalhes({ ...data, __perfil: perfil });
+
+                // Perguntas & Respostas (Supabase)
+                try{ initPerguntasRespostas(idAnuncio, data.uid, perfil); }catch(e){ console.warn(e); }
 
                 // 3. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
                 if(data.uid) {
@@ -859,10 +963,142 @@
             }
         }
 
+        // ============================================================
+        // PERGUNTAS & RESPOSTAS (Supabase) — padrão marketplace
+        // Tabela: perguntas_respostas (SQL incluído no projeto)
+        // ============================================================
+        async function initPerguntasRespostas(anuncioId, uidProfissional, perfilProf){
+            const qaList = document.getElementById('qaList');
+            const qaEmpty = document.getElementById('qaEmpty');
+            const btnSend = document.getElementById('qaSend');
+            const input = document.getElementById('qaInput');
+            if(!qaList || !btnSend || !input) return;
+
+            const sb = window.sb;
+            if(!sb || !sb.from){
+                qaList.innerHTML = '<p style="color:#777;">Supabase não inicializado.</p>';
+                return;
+            }
+
+            const me = await sb.auth.getUser().then(r=>r.data?.user||null).catch(()=>null);
+            const isOwner = !!(me && uidProfissional && String(me.id) === String(uidProfissional));
+
+            async function load(){
+                qaList.innerHTML = '<p style="color:#777; font-style: italic;">Carregando perguntas...</p>';
+                qaEmpty.style.display = 'none';
+                const { data, error } = await sb
+                  .from('perguntas_respostas')
+                  .select('*')
+                  .eq('anuncio_id', anuncioId)
+                  .order('created_at', { ascending: false });
+
+                if (error) {
+                    // Se a tabela não existir ainda, mostra orientação (sem quebrar a página)
+                    qaList.innerHTML = `<p style="color:#b91c1c;">Não consegui carregar as perguntas (tabela ausente ou permissão). Rode o SQL: <b>supabase_sql/perguntas_respostas.sql</b></p>`;
+                    return;
+                }
+
+                if (!data || data.length === 0){
+                    qaList.innerHTML = '';
+                    qaEmpty.style.display = 'flex';
+                    return;
+                }
+
+                qaList.innerHTML = '';
+                data.forEach(row => {
+                    const name = row.perguntador_nome || 'Usuário';
+                    const dt = row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Recente';
+                    const answered = !!(row.resposta && String(row.resposta).trim());
+                    const canReply = isOwner && !answered;
+
+                    const el = document.createElement('div');
+                    el.className = 'qa-item';
+                    el.innerHTML = `
+                      <div class="qa-top">
+                        <div>
+                          <div style="font-weight:900; color:#111827;">${escapeHtml(name)}</div>
+                          <div class="qa-meta">${dt}</div>
+                        </div>
+                        <div class="qa-meta">${answered ? '<i class="bx bxs-check-circle" style="color:#16a34a;"></i> Respondida' : '<i class="bx bx-help-circle"></i> Em aberto'}</div>
+                      </div>
+                      <div class="qa-q">${escapeHtml(row.pergunta || '')}</div>
+                      ${answered ? `<div class="qa-a"><b>Resposta do profissional:</b><div style="margin-top:6px;">${escapeHtml(row.resposta)}</div></div>` : ''}
+                      ${canReply ? `
+                        <div class="qa-reply">
+                          <textarea id="qaReply-${row.id}" maxlength="600" placeholder="Responder..."></textarea>
+                          <button class="qa-btn" type="button" data-reply="${row.id}"><i class='bx bx-reply'></i> Responder</button>
+                        </div>
+                      ` : ''}
+                    `;
+                    qaList.appendChild(el);
+                });
+
+                // bind reply buttons
+                qaList.querySelectorAll('button[data-reply]').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        const id = btn.getAttribute('data-reply');
+                        const ta = document.getElementById(`qaReply-${id}`);
+                        const resposta = (ta?.value || '').trim();
+                        if(!resposta) return;
+                        btn.disabled = true; btn.style.opacity = '0.7';
+                        const { error } = await sb
+                          .from('perguntas_respostas')
+                          .update({ resposta })
+                          .eq('id', id);
+                        btn.disabled = false; btn.style.opacity = '1';
+                        if(error){ alert('Não consegui enviar a resposta.'); return; }
+                        await load();
+                    });
+                });
+            }
+
+            // enviar pergunta
+            btnSend.addEventListener('click', async () => {
+                const texto = (input.value || '').trim();
+                if(!texto) return;
+                if(!me){
+                    alert('Faça login para perguntar.');
+                    window.location.href = 'login.html';
+                    return;
+                }
+                btnSend.disabled = true; btnSend.style.opacity = '0.7';
+                const nome = (JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null')?.user) || me.email || 'Usuário';
+                const { error } = await sb
+                  .from('perguntas_respostas')
+                  .insert({
+                      anuncio_id: anuncioId,
+                      uid_profissional: uidProfissional || null,
+                      perguntador_uid: me.id,
+                      perguntador_nome: String(nome).slice(0, 60),
+                      pergunta: texto
+                  });
+                btnSend.disabled = false; btnSend.style.opacity = '1';
+                if(error){
+                    alert('Não consegui enviar a pergunta. Rode o SQL do projeto (supabase_sql/perguntas_respostas.sql).');
+                    return;
+                }
+                input.value = '';
+                await load();
+            });
+
+            await load();
+        }
+
+        function escapeHtml(str){
+            return String(str || '')
+              .replaceAll('&','&amp;')
+              .replaceAll('<','&lt;')
+              .replaceAll('>','&gt;')
+              .replaceAll('"','&quot;')
+              .replaceAll("'",'&#039;');
+        }
+
         // Inicia
         document.addEventListener("DOMContentLoaded", initPage);
     </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script></body>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260206"></script>
+</body>
 </html>

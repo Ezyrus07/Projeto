@@ -508,7 +508,7 @@
     });
 
     // marca "Pesquisar" como ativo em páginas de busca/resultado/explorar
-    if(["busca.html","resultado.html","explorar.html"].includes(file)){
+    if(["busca.html","resultado.html","busca.html"].includes(file)){
       const it = sidebar.querySelector("#pvSearchSidebarItem");
       if(it) it.classList.add("active");
     }
