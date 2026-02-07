@@ -12,6 +12,7 @@
   --doke-shadow:0 10px 25px rgba(2,6,23,.08);
   --doke-h:56px;
   --doke-btm:66px;
+  --doke-btm-real:66px;
 }
 
 @media (max-width:1024px){
@@ -19,8 +20,8 @@
   body{
     background: var(--doke-bg);
     padding-top: var(--doke-h);
-    padding-bottom: calc(var(--doke-btm) + env(safe-area-inset-bottom));
-  }
+    padding-bottom: 0 !important;
+}
   body.doke-shell-no-padding{ padding-top:0; padding-bottom:0; }
 
   /* Mobile Header */
@@ -62,6 +63,8 @@
     border: 1px solid rgba(2,6,23,.08);
     background:#fff;
     position:relative;
+    text-decoration: none;
+    color: inherit;
   }
   .doke-badge{
     position:absolute;
@@ -90,14 +93,36 @@
     border:2px solid rgba(11,119,104,.35);
     background:#e2e8f0;
   }
+  /* Reduce oversized avatar/ring inside mobile header */
+  .doke-mobile-header .profile-container{ display:flex; align-items:center; }
+  .doke-mobile-header .profile-img-btn{
+    width:38px; height:38px;
+    border-radius:999px;
+    border:0;
+    box-shadow:none;
+    transform:none;
+  }
+  .doke-mobile-header .profile-img-btn:hover{ transform:none; }
+  .doke-mobile-header .doke-avatar-btn{
+    width:38px; height:38px;
+    border-radius:999px;
+    border:1px solid rgba(2,6,23,.12);
+    background:#fff;
+  }
+  .doke-mobile-header .doke-avatar{
+    width:38px; height:38px;
+    border:0;
+  }
 
   /* Bottom Nav */
   .doke-bottom-nav{
+    padding: 8px 0 calc(env(safe-area-inset-bottom) + 10px);
+    height: auto;
+    min-height: var(--doke-btm);
+
     position:fixed;
     left:0; right:0; bottom:0;
     z-index: 9999;
-    height: calc(var(--doke-btm) + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
     background: rgba(255,255,255,.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
@@ -307,4 +332,12 @@
   }
   .doke-recent .doke-recent-item:hover{ background: rgba(11,119,104,.08); }
   .doke-recent .bx-time-five{ color: var(--doke-muted); font-size:18px; }
+}
+
+
+@media (max-width:1024px){
+  /* Spacer real no final do documento para NUNCA deixar o rodapé atrás do bottom-nav */
+  .doke-bottom-spacer{
+    height: calc(var(--doke-btm-real) + 24px);
+  }
 }

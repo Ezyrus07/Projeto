@@ -330,22 +330,22 @@ function updateScrollLock() {
         '#modalGaleria',
         '#modalPlayerVideo',
         '#modalPostDetalhe',
+        '#modalSolicitacao',
         '#modalStoryViewer',
         '#modalStoryViewerPerfil',
         '#modalOrcamento',
         '#modalDetalhesPedido',
         '#dokeModalOverlay',
         '#dokeGlobalModal',
-        '.modal-overlay',
-        '.doke-overlay',
-        '.notif-settings-modal',
         '#dpModalOverlay'
     ];
     const aberto = selectors.some((sel) => {
-        const el = document.querySelector(sel);
-        if (!el) return false;
-        const style = window.getComputedStyle(el);
-        return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        const els = Array.from(document.querySelectorAll(sel));
+        return els.some((el) => {
+            if (!el) return false;
+            const style = window.getComputedStyle(el);
+            return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+        });
     });
     setScrollLock(aberto);
 }
@@ -2313,20 +2313,52 @@ function initHomeEnhancements() {
     const revealEls = Array.from(document.querySelectorAll(
         '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .rodape-container, .rodape-container2'
     ));
-    revealEls.forEach(el => el.classList.add('reveal'));
-
-    if ('IntersectionObserver' in window) {
-        const io = new IntersectionObserver((entries) => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    entry.target.classList.add('is-visible');
-                    io.unobserve(entry.target);
-                }
-            });
-        }, { threshold: 0.12 });
-        revealEls.forEach(el => io.observe(el));
+    const isMobileHome = window.matchMedia("(max-width: 1024px)").matches;
+    if (isMobileHome) {
+        // No mobile, priorizamos estabilidade: evita telas "vazias" por animação/reflow.
+        const stableEls = Array.from(document.querySelectorAll(
+            '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .pros-section, .para-voce-section'
+        ));
+        stableEls.forEach(el => {
+            try {
+                el.classList.remove('reveal', 'is-visible');
+                if (window.getComputedStyle(el).display === 'none') el.style.display = 'block';
+                el.style.visibility = 'visible';
+                el.style.opacity = '1';
+                el.style.transform = 'none';
+                el.style.contentVisibility = 'visible';
+                el.style.containIntrinsicSize = 'auto';
+            } catch (_) {}
+        });
+        const footer = document.querySelector('footer.main-footer');
+        if (footer) {
+            footer.style.marginLeft = '0';
+            footer.style.width = '100%';
+        }
     } else {
-        revealEls.forEach(el => el.classList.add('is-visible'));
+        // Ativa animação "reveal" só quando o JS estiver rodando (desktop/tablet grande)
+        document.body.classList.add("reveal-enabled");
+        revealEls.forEach(el => el.classList.add('reveal'));
+
+        if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                        io.unobserve(entry.target);
+                    }
+                });
+            }, { threshold: 0.12 });
+            revealEls.forEach(el => io.observe(el));
+        } else {
+            revealEls.forEach(el => el.classList.add('is-visible'));
+        }
+
+        setTimeout(() => {
+            try {
+                revealEls.forEach(el => el.classList.add('is-visible'));
+            } catch (e) {}
+        }, 900);
     }
 
     const scrollers = [

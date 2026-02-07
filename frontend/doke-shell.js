@@ -53,6 +53,18 @@
     // Header
     const header = document.createElement("header");
     header.className = "doke-mobile-header";
+    const profile = getProfile();
+    const isLogged = !!profile;
+    const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
+    const nomePerfil = (profile && (profile.user || profile.nome || profile.name)) || "Minha conta";
+    const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
+    const labelAnunciar = isPro ? "Anunciar" : "Seja Profissional";
+    const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
+    const itemAlternar = isLogged ? `<a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
+    const itemSair = isLogged
+      ? `<a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>`
+      : `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+
     header.innerHTML = `
       <button class="doke-hamb" type="button" aria-label="Abrir menu">
         <i class='bx bx-menu'></i>
@@ -61,7 +73,21 @@
       <div class="doke-h-actions">
         <a class="doke-icon-btn" href="${PAGES.notif}" aria-label="Notificações"><i class='bx bx-bell'></i><span class="doke-badge" style="display:none">0</span></a>
         <a class="doke-icon-btn" href="${PAGES.chat}" aria-label="Mensagens"><i class='bx bx-message-rounded-dots'></i><span class="doke-badge" style="display:none">0</span></a>
-        <a class="doke-avatar-btn" href="${PAGES.perfil}" aria-label="Perfil"><img class="doke-avatar" alt="Perfil"></a>
+        <div class="profile-container doke-mobile-profile">
+          <button class="doke-avatar-btn" type="button" aria-label="Perfil">
+            <img class="doke-avatar profile-img-btn" alt="Perfil">
+          </button>
+          <div class="dropdown-profile doke-mobile-dropdown">
+            <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+              ${nomePerfil}
+            </div>
+            <a href="${PAGES.perfil}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+            ${itemCarteira}
+            ${itemAlternar}
+            <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>
+            ${itemSair}
+          </div>
+        </div>
       </div>
     `;
     document.body.prepend(header);
@@ -77,6 +103,37 @@
       <a href="${PAGES.perfil}" data-nav="perfil"><span><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
     `;
     document.body.appendChild(bottom);
+    // --- Sync real height + Spacer (evita rodapé atrás do bottom-nav) ---
+    function ensureBottomSpacer(){
+      let sp = document.querySelector(".doke-bottom-spacer");
+      if(!sp){
+        sp = document.createElement("div");
+        sp.className = "doke-bottom-spacer";
+        // Preferir colocar dentro do <footer> para manter a cor de fundo no final
+        const host = document.querySelector("footer.main-footer") || document.querySelector(".main-footer") || document.body;
+        host.appendChild(sp);
+      }
+    }
+    function syncBottomNavHeight(){
+      const nav = document.querySelector(".doke-bottom-nav");
+      if(!nav) return;
+      // mede a altura real (inclui safe-area via padding-bottom no CSS)
+      const h = Math.ceil(nav.getBoundingClientRect().height || nav.offsetHeight || 84);
+      document.documentElement.style.setProperty("--doke-btm-real", h + "px");
+      ensureBottomSpacer();
+    }
+
+    syncBottomNavHeight();
+    requestAnimationFrame(syncBottomNavHeight);
+    setTimeout(syncBottomNavHeight, 350);
+    setTimeout(syncBottomNavHeight, 1200);
+
+    window.addEventListener('resize', ()=>{ if(MQ.matches) syncBottomNavHeight();
+    requestAnimationFrame(syncBottomNavHeight);
+    setTimeout(syncBottomNavHeight, 350);
+    setTimeout(syncBottomNavHeight, 1200);
+ });
+
 
     // Drawer
     const backdrop = document.createElement("div");
@@ -204,7 +261,6 @@
     });
 
     // Avatar
-    const profile = getProfile();
     const avatarUrl = getAvatarUrl(profile);
     const headerImg = header.querySelector(".doke-avatar");
     const navImg = bottom.querySelector(".doke-nav-avatar");
@@ -221,6 +277,22 @@
 
     // Active state
     setActive(bottom);
+
+    // Profile dropdown (mobile header)
+    const profileContainer = header.querySelector(".profile-container");
+    const profileBtn = header.querySelector(".doke-avatar-btn");
+    const profileMenu = header.querySelector(".dropdown-profile");
+    if(profileContainer && profileBtn && profileMenu){
+      const toggleMenu = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        profileMenu.classList.toggle("show");
+      };
+      profileBtn.addEventListener("click", toggleMenu);
+      document.addEventListener("click", (e) => {
+        if (!profileContainer.contains(e.target)) profileMenu.classList.remove("show");
+      });
+    }
 
     // Swipe to close drawer/search (basic)
     document.addEventListener("keydown", (e)=>{
