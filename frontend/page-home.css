@@ -1,0 +1,105 @@
+/* ============================================================
+   Page — Home (index / home-like)
+   Responsividade + compactação
+   Data: 2026-02-07
+   ============================================================ */
+
+body[data-page="home"]{
+  --home-card-media-h: 260px;
+}
+
+@media (max-width: 1024px){
+  body[data-page="home"] .secao-busca,
+  body[data-page="home"] .videos-container,
+  body[data-page="home"] .anuncio-container,
+  body[data-page="home"] .fotos-container,
+  body[data-page="home"] .rodape-container,
+  body[data-page="home"] .rodape-container2{
+    padding: 16px !important;
+    border-radius: 18px !important;
+  }
+
+  /* Chips/filtros — mais compactos e com ellipsis */
+  body[data-page="home"] .filtros-chips-scroll{
+    gap: 8px !important;
+    padding: 8px !important;
+  }
+  body[data-page="home"] .chip-tag,
+  body[data-page="home"] .filter-chip,
+  body[data-page="home"] .quick-chip{
+    height: var(--chip-h);
+    padding: 0 12px !important;
+    font-size: var(--text-sm);
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Grid de anúncios: 1 coluna até 480, 2 colunas acima */
+  body[data-page="home"] .lista-cards-premium{
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+  @media (min-width: 481px) and (max-width: 1024px){
+    body[data-page="home"] .lista-cards-premium{ grid-template-columns: 1fr 1fr !important; }
+  }
+
+  body[data-page="home"] .card-premium{
+    border-radius: 14px;
+    box-shadow: 0 8px 20px rgba(15,23,42,0.06) !important;
+  }
+
+  /* Avatares e header do card */
+  body[data-page="home"] .cp-header-clean{
+    padding: 12px 12px 6px 12px !important;
+  }
+  body[data-page="home"] .cp-avatar{
+    width: var(--avatar-md) !important;
+    height: var(--avatar-md) !important;
+  }
+  body[data-page="home"] .cp-body{
+    padding: 6px 12px 10px 12px !important;
+  }
+  body[data-page="home"] .cp-desc-clean{ -webkit-line-clamp: 2 !important; }
+
+  /* Mídia do card — altura menor no mobile */
+  body[data-page="home"] .cp-carousel,
+  body[data-page="home"] .cp-media-grid{
+    height: 240px !important;
+  }
+  @media (max-width: 480px){
+    body[data-page="home"] .cp-carousel,
+    body[data-page="home"] .cp-media-grid{ height: 210px !important; }
+  }
+
+  /* CTA: botão 100% no mobile */
+  @media (max-width: 480px){
+    body[data-page="home"] .cp-footer{
+      padding: 12px 12px !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+    }
+    body[data-page="home"] .btn-premium{
+      width: 100% !important;
+      height: var(--btn-h) !important;
+      border-radius: 14px !important;
+    }
+  }
+
+  /* Carrosséis: setas escondidas no mobile (swipe é o padrão) */
+  @media (max-width: 480px){
+    body[data-page="home"] .cp-btn-nav,
+    body[data-page="home"] .carousel-nav,
+    body[data-page="home"] .cp-prev,
+    body[data-page="home"] .cp-next{ display: none !important; }
+  }
+}
+
+/* Publicações (home) — deixa mais proporcional aos vídeos-curtos */
+@media (max-width: 1024px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    padding: 10px 0 6px !important;
+  }
+}

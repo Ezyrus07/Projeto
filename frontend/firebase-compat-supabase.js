@@ -542,15 +542,34 @@
     return data?.publicUrl || "";
   };
 
-  // "Realtime" (polling). Supabase Realtime channels demand more setup; polling keeps the legacy API working.
-  const DEFAULT_POLL_MS = 800;
+  // "Realtime" (polling) — versão leve.
+  // Motivo: polling muito agressivo causava "net::ERR_INSUFFICIENT_RESOURCES" e falhas de fetch.
+  const DEFAULT_POLL_MS = 5000;
 
   window.onSnapshot = function(refOrQuery, cb, options){
     let active = true;
-    const pollMs = (options && typeof options.pollMs === 'number') ? options.pollMs : DEFAULT_POLL_MS;
+    let timer = null;
+    let inFlight = false;
+    const pollMs = (options && typeof options.pollMs === 'number') ? Math.max(800, options.pollMs) : DEFAULT_POLL_MS;
+
+    const schedule = (ms) => {
+      if (!active) return;
+      clearTimeout(timer);
+      timer = setTimeout(run, ms);
+    };
 
     const run = async () => {
       if (!active) return;
+      // Evita loop agressivo quando a aba está em background
+      if (typeof document !== "undefined" && document.hidden) {
+        schedule(Math.max(pollMs, 10000));
+        return;
+      }
+      if (inFlight) {
+        schedule(pollMs);
+        return;
+      }
+      inFlight = true;
       try {
         if (refOrQuery && refOrQuery.table && refOrQuery.clauses) {
           const snap = await window.getDocs(refOrQuery);
@@ -561,12 +580,25 @@
         }
       } catch (e) {
         if (active) console.error(e);
+      } finally {
+        inFlight = false;
+        schedule(pollMs);
       }
     };
 
+    // Primeira execução imediata + agenda as próximas
     run();
-    const t = setInterval(run, pollMs);
-    return function unsubscribe(){ active = false; clearInterval(t); };
+    schedule(pollMs);
+
+    // Quando volta para o foco, puxa uma atualização rápida
+    const onVis = () => { if (active && !document.hidden) schedule(250); };
+    if (typeof document !== "undefined") document.addEventListener('visibilitychange', onVis);
+
+    return function unsubscribe(){
+      active = false;
+      clearTimeout(timer);
+      if (typeof document !== "undefined") document.removeEventListener('visibilitychange', onVis);
+    };
   };
 
   // placeholders to reduce crashes

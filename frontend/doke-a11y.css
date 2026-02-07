@@ -1,0 +1,90 @@
+/* ============================================================
+   Doke — Acessibilidade + Consistência (A11Y)
+   Data: 2026-02-07
+   ============================================================ */
+
+:root{
+  /* Tamanhos consistentes */
+  --btn-h: 44px;
+  --chip-h: 34px;
+  --avatar-xs: 24px;
+  --avatar-sm: 32px;
+  --avatar-md: 42px;
+  --icon-sm: 18px;
+  --icon-md: 22px;
+
+  /* Raio/spacing */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+
+  --space-1: 6px;
+  --space-2: 10px;
+  --space-3: 14px;
+  --space-4: 18px;
+
+  /* Tipografia (escala simples) */
+  --text-xs: .78rem;
+  --text-sm: .86rem;
+  --text-md: .95rem;
+  --text-lg: 1.08rem;
+  --text-xl: 1.32rem;
+
+  /* Foco */
+  --focus-outline: rgba(11,119,104,.78);
+  --focus-ring: 0 0 0 4px rgba(11,119,104,.18);
+}
+
+*,*::before,*::after{ box-sizing: border-box; }
+
+html{
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body{ overflow-x: hidden; }
+
+img, video{
+  max-width: 100%;
+  height: auto;
+}
+
+:where(input,select,textarea,button){ font: inherit; }
+:where(input,select,textarea){ min-width: 0; }
+
+/* Foco visível acessível */
+:where(a,button,[role="button"],input,select,textarea,[tabindex]):focus{ outline: none; }
+:where(a,button,[role="button"],input,select,textarea,[tabindex]):focus-visible{
+  outline: 2px solid var(--focus-outline);
+  outline-offset: 2px;
+  box-shadow: var(--focus-ring);
+  border-radius: 12px;
+}
+
+/* Utilidades */
+.min-w-0{ min-width: 0 !important; }
+.doke-safe-bottom{ padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+
+/* Respeita preferências do usuário */
+@media (prefers-reduced-motion: reduce){
+  html{ scroll-behavior: auto !important; }
+  *,*::before,*::after{
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Touch devices: remove hovers que deslocam a UI */
+@media (hover: none){
+  .card-premium:hover,
+  .dp-item--clickable:hover,
+  .settings-item:hover,
+  .option-card:hover,
+  .btn-premium:hover,
+  .btn-hero-action:hover{
+    transform: none !important;
+  }
+  .cp-carousel:hover .cp-btn-nav{ opacity: 0 !important; }
+}

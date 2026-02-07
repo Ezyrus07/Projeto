@@ -5,23 +5,24 @@
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-compat-supabase.js?v=20260207v24"></script>
 <script src="firebase-auth-compat-supabase.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Feed | Doke</title>
-<link href="style.css" rel="stylesheet"/>
-<link href="doke-layout-fix.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css" rel="stylesheet"/>
-<link href="doke-feedpatch.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-feedpatch.css?v=20260207v26" rel="stylesheet"/>
 
-<link rel="stylesheet" href="doke-shell.css?v=20260206v13">
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
-<link rel="stylesheet" href="doke-responsive.css?v=20260206v13">
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
 </head>
 <body class="page-feed">
 <header class="navbar-mobile">
@@ -304,7 +305,7 @@ async function carregarReels() {
                     <div class="play-overlay"><i class='bx bx-play'></i></div>
                     <div class="video-info-overlay">
                         <div class="author-row" onclick="event.stopPropagation(); irParaPerfil('${uidSeguro}')">
-                            <img src="${perfilFoto}" class="author-avatar" onerror="this.src='https://placehold.co/150'">
+                            <img src="${perfilFoto}" class="author-avatar" onerror="this.src='https://placehold.co/150'" loading="lazy" decoding="async">
                             <span class="author-name">${autorNome}</span>
                         </div>
                         <div class="video-caption">${descricao}</div>
@@ -313,7 +314,7 @@ async function carregarReels() {
 
                 <div class="actions-column">
                     <button class="short-profile-btn" onclick="irParaPerfil('${uidSeguro}')">
-                        <img src="${perfilFoto}" class="short-avatar" onerror="this.src='https://placehold.co/150'">
+                        <img src="${perfilFoto}" class="short-avatar" onerror="this.src='https://placehold.co/150'" loading="lazy" decoding="async">
                     </button>
 
                     <button class="short-action-btn" onclick="curtirReel('${source}', '${entry.id}', this)" data-owner-uid="${uidSeguro}" data-owner-row="${autorRowId}">
@@ -473,7 +474,7 @@ async function carregarReels() {
                     const c = docSnap.data();
                     const html = `
                     <div class="reel-comment-item">
-                        <img src="${c.foto || 'https://placehold.co/32'}" alt="">
+                        <img src="${c.foto || 'https://placehold.co/32'}" alt="" loading="lazy" decoding="async">
                         <div>
                             <b>${c.user || 'Usuario'}</b>
                             <span>${c.texto || ''}</span>
@@ -1186,7 +1187,7 @@ async function carregarReels() {
                         </button>`;
                     const html = `
                     <div class="reply-item" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
-                        <img src="${foto}" style="width:24px; height:24px; border-radius:50%;">
+                        <img src="${foto}" style="width:24px; height:24px; border-radius:50%;" loading="lazy" decoding="async">
                         <div style="flex:1;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="font-size:0.8rem;">
@@ -1239,7 +1240,7 @@ async function carregarReels() {
                         </button>`;
                     const html = `
                     <div class="reply-item" style="display:flex; gap:8px; margin-bottom:10px; align-items:flex-start; animation: fadeIn 0.3s;">
-                        <img src="${r.foto || "https://placehold.co/50"}" style="width:24px; height:24px; border-radius:50%;">
+                        <img src="${r.foto || "https://placehold.co/50"}" style="width:24px; height:24px; border-radius:50%;" loading="lazy" decoding="async">
                         <div style="flex:1;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="font-size:0.8rem;">
@@ -1436,7 +1437,7 @@ async function carregarReels() {
                     const html = `
                     <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
                         <div class="comment-row">
-                            <img src="${c.foto || "https://placehold.co/50"}" class="comment-avatar" alt="">
+                            <img src="${c.foto || "https://placehold.co/50"}" class="comment-avatar" alt="" loading="lazy" decoding="async">
                             <div style="flex:1;">
                                 <div class="comment-header-row">
                                     <div class="comment-header-left">
@@ -1559,7 +1560,7 @@ async function carregarReels() {
                 const html = `
                 <div class="comment-block ${isPinned ? "comment-pinned" : ""}" id="comm-${cid}" data-comment-id="${cid}">
                     <div class="comment-row">
-                        <img src="${foto}" class="comment-avatar" alt="">
+                        <img src="${foto}" class="comment-avatar" alt="" loading="lazy" decoding="async">
                         <div style="flex:1;">
                             <div class="comment-header-row">
                                 <div class="comment-header-left">
@@ -1851,6 +1852,6 @@ async function carregarReels() {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script>
-<script src="doke-shell.js?v=20260206v11"></script>
+<script src="doke-shell.js?v=20260207v21"></script>
 </body>
 </html>

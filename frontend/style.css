@@ -4162,225 +4162,94 @@ body.dark-mode {
 
 
 /* ==============================
-   FEED PUBLICACOES (HOME)
+   FEED PUBLICACOES (HOME) — FIX (Responsivo/Consistente)
+   Data: 2026-02-07
+   - Desktop: grid
+   - Mobile/Tablet: carrossel horizontal (mais compacto)
    ============================== */
-#feed-global-container.feed-publicacoes-grid {
-    width: 100%;
-    max-width: 100%;
-    margin: 0;
-    padding: 12px 0 8px;
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-    grid-auto-flow: row;
+#feed-global-container.feed-publicacoes-grid{
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  padding: 12px 0 8px;
 }
 
-#feed-global-container.feed-publicacoes-grid .feed-publicacao-card {
-    width: 100%;
-    height: auto;
+#feed-global-container.feed-publicacoes-grid .dp-item{
+  width: 100%;
+  min-width: 0;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  aspect-ratio: 4 / 5;
+  width: 100%;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f1f5f9;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemMedia img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  padding: 8px 10px 10px;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+  font-weight: 900;
+  font-size: .96rem;
+  color: #0f172a;
+  margin: 0 0 6px;
+  line-height: 1.15;
+
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemMeta{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(15,23,42,.72);
+  font-size: .84rem;
+}
+
+#feed-global-container.feed-publicacoes-grid .dp-itemMeta .dp-avatar{
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+@media (max-width: 1024px){
+  #feed-global-container.feed-publicacoes-grid{
     display: flex;
-    flex-direction: column;
+    overflow-x: auto;
+    gap: 12px;
+    padding: 10px 0 8px;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+  #feed-global-container.feed-publicacoes-grid::-webkit-scrollbar{ display:none; }
+
+  #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex: 0 0 180px;
+    scroll-snap-align: start;
+  }
+
+  @media (max-width: 480px){
+    #feed-global-container.feed-publicacoes-grid .dp-item{ flex-basis: 165px; }
+  }
 }
 
-#feed-global-container.feed-publicacoes-grid .dp-item {
-    border-radius: 16px;
-    border: 1px solid rgba(0,0,0,0.08);
-    overflow: hidden;
-    background: #fff;
-    box-shadow: 0 10px 26px rgba(0,0,0,0.06);
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-item--clickable {
-    cursor: pointer;
-    transition: transform .18s ease, box-shadow .18s ease;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-item--clickable:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 16px 36px rgba(0,0,0,.10);
-}
-
-/* Container do Grid */
-#feed-global-container.feed-publicacoes-grid {
-    display: flex;
-    gap: 16px; /* Espaçamento entre os posts */
-    padding: 10px 0;
-}
-
-/* Card Individual */
-#feed-global-container.feed-publicacoes-grid .dp-item {
-    flex: 0 0 auto;
-    width: clamp(180px, calc((var(--home-section-width, 1100px) - 60px) / 4), 250px);
-    background: #fff; /* Fundo branco para a área do texto */
-    border-radius: 16px; /* Bordas arredondadas iguais ao print */
-    overflow: hidden;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.05); /* Sombra leve para dar profundidade */
-}
-
-/* Mídia (Imagem/Vídeo) */
-#feed-global-container.feed-publicacoes-grid .dp-itemMedia {
-    background: #f0f2f5;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-    aspect-ratio: 1 / 1; /* Quadrado perfeito costuma ser melhor para posts estáticos */
-    /* Se preferir mais alto, use 4 / 5 */
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemMedia img,
-#feed-global-container.feed-publicacoes-grid .dp-itemMedia video {
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Garante que a imagem preencha o quadrado sem sobras brancas */
-    display: block;
-}
-
-/* Área de Texto (Abaixo da imagem) */
-#feed-global-container.feed-publicacoes-grid .dp-itemInfo {
-    padding: 12px;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemInfo b {
-    display: block;
-    font-size: 14px;
-    color: #1a1a1a;
-    margin-bottom: 2px;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemInfo p {
-    font-size: 13px;
-    color: #6b7280;
-    margin: 0;
-    text-transform: none;
-    letter-spacing: normal;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemBody {
-    padding: 6px 10px 8px;
-    flex: 1;
-    overflow: hidden;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemBody b {
-    display: block;
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemBody p {
-    margin: 8px 0 0;
-    color: #6b7280;
-    font-size: 13px;
-    line-height: 1.25;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-}
-
-/* Override para visual minimalista (substitui layout tipo feed social) */
-#feed-global-container.feed-publicacoes-grid {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    gap: 16px;
-    padding: 12px 0 8px;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-item {
-    width: auto;
-    flex: initial;
-    border-radius: 14px;
-    border: 1px solid rgba(0,0,0,0.08);
-    background: #fff;
-    box-shadow: 0 6px 16px rgba(0,0,0,0.04);
-    transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-item--clickable:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 12px 24px rgba(0,0,0,.06);
-    border-color: rgba(11,119,104,.28);
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemMedia {
-    aspect-ratio: 4 / 5;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemInfo {
-    padding: 12px 12px 0;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemInfo b {
-    font-size: 13px;
-    color: #111;
-    font-weight: 700;
-    letter-spacing: .01em;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemInfo p {
-    font-size: 11px;
-    color: #7a848e;
-    letter-spacing: .06em;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemBody {
-    padding: 8px 12px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemBody b {
-    font-size: 0.95rem;
-    font-weight: 700;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-itemBody p {
-    margin: 6px 0 0;
-    line-height: 1.35;
-    font-size: 13px;
-    color: #6b7280;
-}
-
-.modal-footer-actions .modal-actions-bar {
-    justify-content: flex-start;
-    gap: 15px;
-    height: auto;
-}
-
-#feed-global-container.feed-publicacoes-grid .dp-empty {
-    grid-column: 1 / -1;
-    padding: 22px 18px;
-    border-radius: 16px;
-    background: #fff;
-    border: 1px dashed rgba(0,0,0,0.2);
-    color: #6b7280;
-    text-align: center;
-}
-
-@media (max-width: 1200px) {
-    #feed-global-container.feed-publicacoes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-}
-
-@media (max-width: 900px) {
-    #feed-global-container.feed-publicacoes-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-    #feed-global-container.feed-publicacoes-grid .dp-itemBody { padding: 10px 10px 12px; }
-    #feed-global-container.feed-publicacoes-grid .dp-itemBody p { font-size: 13px; }
-}
-
-@media (max-width: 600px) {
-    #feed-global-container.feed-publicacoes-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-    #feed-global-container.feed-publicacoes-grid .feed-publicacao-card { height: auto; }
-    #feed-global-container.feed-publicacoes-grid .dp-item { border-radius: 10px; }
-    #feed-global-container.feed-publicacoes-grid .dp-itemMedia { height: auto; flex-basis: auto; aspect-ratio: 4 / 5; }
-    #feed-global-container.feed-publicacoes-grid .dp-itemBody { display: none; }
-}
 
 /* ===========================================================
    CORREÇÃO PARA TABLET (IPAD LANDSCAPE - 1024px a 1280px)
@@ -4658,6 +4527,11 @@ body.dark-mode {
 /* Ajustar camadas para garantir que o texto fique por cima do vídeo */
 .tiktok-card .video-bg { z-index: 0; }
 .tiktok-card .video-ui-layer { z-index: 5; pointer-events: none; } /* Permite clicar através do texto */
+
+/* Mobile/tablet: manter preview estático (igual publicações) */
+@media (max-width: 1024px){
+  .tiktok-card .video-preview-hover{ display:none !important; }
+}
 .tiktok-card .video-ui-layer button { pointer-events: auto; } /* Reativa clique no botão */
 
 /* Esconde o ícone de Play quando passa o mouse (já que o vídeo vai tocar) */
@@ -6638,8 +6512,8 @@ body.dark-mode {
 
 .tiktok-card:hover { transform: scale(1.02); }
 
-/* VÍDEO DE FUNDO */
-.tiktok-card video.video-bg {
+/* VÍDEO/IMAGEM DE FUNDO (capa/preview) */
+.tiktok-card .video-bg {
     width: 100%;
     height: 100%;
     object-fit: cover;
@@ -9973,8 +9847,11 @@ body[data-page="home"] .btn-solicitar:active{
   max-width: var(--doke-container-max) !important;
 }
 
-/* Publicações: carrossel horizontal (estilo categorias) */
-#feed-global-container{
+/* Publicações: carrossel horizontal (estilo categorias)
+   IMPORTANTE: só quando NÃO estiver no novo grid (.feed-publicacoes-grid).
+   Caso contrário, o bloco antigo com !important quebrava o layout do feed novo.
+*/
+#feed-global-container:not(.feed-publicacoes-grid){
   display:flex !important;
   gap:16px !important;
   overflow-x:auto !important;
@@ -9987,9 +9864,9 @@ body[data-page="home"] .btn-solicitar:active{
   max-width: 100% !important;
   margin: 0 !important;
 }
-#feed-global-container::-webkit-scrollbar{display:none;}
+#feed-global-container:not(.feed-publicacoes-grid)::-webkit-scrollbar{display:none;}
 
-#feed-global-container .card-feed-global{
+#feed-global-container:not(.feed-publicacoes-grid) .card-feed-global{
   flex: 0 0 260px;
   width: 260px;
   scroll-snap-align:start;
@@ -9998,8 +9875,8 @@ body[data-page="home"] .btn-solicitar:active{
 
 /* quando o feed for renderizado com o layout novo (.feed-publicacao-card/.dp-item)
    garante que os cards NÃO encolham (evita aqueles dois fininhos bugados) */
-#feed-global-container .feed-publicacao-card,
-#feed-global-container .dp-item{
+#feed-global-container:not(.feed-publicacoes-grid) .feed-publicacao-card,
+#feed-global-container:not(.feed-publicacoes-grid) .dp-item{
   flex: 0 0 260px !important;
   width: 260px !important;
   min-width: 260px !important;
@@ -10007,27 +9884,27 @@ body[data-page="home"] .btn-solicitar:active{
   scroll-snap-align: start;
 }
 @media (max-width: 900px){
-  #feed-global-container .feed-publicacao-card,
-  #feed-global-container .dp-item{
+  #feed-global-container:not(.feed-publicacoes-grid) .feed-publicacao-card,
+  #feed-global-container:not(.feed-publicacoes-grid) .dp-item{
     flex-basis: 220px !important;
     width: 220px !important;
     min-width: 220px !important;
   }
-  #feed-global-container .card-feed-global{
+  #feed-global-container:not(.feed-publicacoes-grid) .card-feed-global{
     flex-basis: 220px;
     width: 220px;
   }
 }
 @media (max-width: 600px){
-  #feed-global-container .feed-publicacao-card,
-  #feed-global-container .dp-item{
+  #feed-global-container:not(.feed-publicacoes-grid) .feed-publicacao-card,
+  #feed-global-container:not(.feed-publicacoes-grid) .dp-item{
     flex-basis: 230px !important;
     width: 230px !important;
     min-width: 230px !important;
   }
 }
 @media (max-width: 600px){
-  #feed-global-container .card-feed-global{
+  #feed-global-container:not(.feed-publicacoes-grid) .card-feed-global{
     flex-basis: 230px;
     width: 230px;
   }
@@ -10627,4 +10504,58 @@ table{max-width:100%;}
     margin-left: 0 !important;
     width: 100% !important;
   }
+}
+
+/* ============================================================
+   DOKE PATCH v22 — Correção de overflow por texto sem espaços
+   (ex: "Testeeeeeeeeeeee...")
+   - Evita texto invadindo cards ao lado
+   - Garante wrap + min-width:0 em flex
+   ============================================================ */
+
+/* Regra global segura (só afeta textos em cards/publicações) */
+.dp-item,
+.feed-publicacao-card{
+  min-width: 0;
+}
+
+.dp-itemBody,
+.dp-itemTitle,
+.dp-itemBody b,
+.dp-itemBody p,
+.feed-publicacao-card b,
+.feed-publicacao-card p{
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Título/descrição: limita para não virar um bloco gigante no mobile */
+#feed-global-container.feed-publicacoes-grid .dp-itemTitle,
+#feed-global-container .feed-publicacao-card b,
+#feed-global-container .dp-itemBody b{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+#feed-global-container .feed-publicacao-card p,
+#feed-global-container .dp-itemBody p{
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* Linha do autor: não deixa username estourar */
+.dp-itemAuthor{
+  min-width: 0;
+}
+.dp-itemUser{
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

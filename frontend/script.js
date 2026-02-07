@@ -3116,8 +3116,8 @@ window.carregarFeedGlobal = async function() {
                     <div class="dp-itemMedia">${mediaHtml}</div>
                     <div class="dp-itemBody">
                         ${authorHtml}
-                        <b>${escapeHtml(title)}</b>
-                        ${desc ? `<p>${escapeHtml(desc)}</p>` : ``}
+                        <b class="dp-itemTitle">${escapeHtml(title)}</b>
+                        ${desc ? `<p class="dp-itemDesc">${escapeHtml(desc)}</p>` : ``}
                     </div>
                 </div>`;
             container.insertAdjacentHTML('beforeend', html);
@@ -3153,8 +3153,8 @@ window.carregarFeedGlobal = async function() {
                 <div class="dp-itemMedia">${mediaHtml}</div>
                 <div class="dp-itemBody">
                     ${authorHtml}
-                    <b>${escapeHtml(title)}</b>
-                    ${desc ? `<p>${escapeHtml(desc)}</p>` : ``}
+                    <b class="dp-itemTitle">${escapeHtml(title)}</b>
+                    ${desc ? `<p class="dp-itemDesc">${escapeHtml(desc)}</p>` : ``}
                 </div>
             </div>`;
         container.insertAdjacentHTML('beforeend', html);

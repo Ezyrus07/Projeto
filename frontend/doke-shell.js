@@ -38,6 +38,12 @@
     if(!MQ.matches) return;
     if(document.querySelector(".doke-mobile-header")) return;
 
+    // Marca páginas sem <main> para garantir padding inferior (evita rodapé/bottom-nav cobrindo conteúdo)
+    try{
+      if(!document.querySelector("main")) document.body.classList.add("doke-no-main");
+      else document.body.classList.remove("doke-no-main");
+    }catch(e){}
+
     // Ensure Boxicons CSS exists (some pages missed it -> icons break on mobile)
     try{
       const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
@@ -103,6 +109,21 @@
       <a href="${PAGES.perfil}" data-nav="perfil"><span><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
     `;
     document.body.appendChild(bottom);
+
+    // A11Y: aria-label em botões de ícone comuns (evita botões “sem nome”)
+    try{
+      document.querySelectorAll("button.cp-btn-nav:not([aria-label])").forEach(b=>{
+        b.setAttribute("aria-label", b.classList.contains("cp-prev") ? "Anterior" : (b.classList.contains("cp-next") ? "Próximo" : "Navegar"));
+      });
+      document.querySelectorAll("button.dp-tabsNav:not([aria-label])").forEach(b=>{
+        b.setAttribute("aria-label", b.classList.contains("dp-tabsPrev") ? "Abas anteriores" : "Próximas abas");
+      });
+      document.querySelectorAll("button.dp-statsNav:not([aria-label])").forEach(b=>{
+        b.setAttribute("aria-label", b.classList.contains("dp-statsPrev") ? "Estatísticas anteriores" : "Próximas estatísticas");
+      });
+      document.querySelectorAll("button.chips-arrow:not([aria-label])").forEach(b=>b.setAttribute("aria-label","Rolar filtros"));
+    }catch(e){}
+
     // --- Sync real height + Spacer (evita rodapé atrás do bottom-nav) ---
     function ensureBottomSpacer(){
       let sp = document.querySelector(".doke-bottom-spacer");

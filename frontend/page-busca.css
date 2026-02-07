@@ -1,0 +1,94 @@
+/* ============================================================
+   Page — Busca
+   Data: 2026-02-07
+   - Sidebar vira drawer no mobile/tablet
+   - Resultados em 1 coluna até 1024px
+   ============================================================ */
+
+body[data-page="busca"] .btn-filtros-mobile{ display: none; }
+
+@media (max-width: 1024px){
+  body[data-page="busca"] .search-layout{
+    display: block !important;
+  }
+
+  /* Botão mobile de filtros */
+  body[data-page="busca"] .btn-filtros-mobile{
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: var(--btn-h);
+    padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(15,23,42,.12);
+    background: #fff;
+    color: #0f172a;
+    font-weight: 800;
+    cursor: pointer;
+  }
+
+  /* Resultados sempre 1 coluna */
+  body[data-page="busca"] .lista-cards-premium{
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Sidebar (filters) vira drawer */
+  body[data-page="busca"] .filters-sidebar{
+    position: fixed !important;
+    top: calc(var(--doke-h) + 10px) !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: min(360px, 88vw) !important;
+    max-width: 420px;
+    z-index: 20020 !important;
+    transform: translateX(-110%);
+    transition: transform .22s ease;
+    overflow-y: auto !important;
+    background: #ffffff !important;
+    border-radius: 0 18px 0 0;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom));
+    box-shadow: 0 22px 60px rgba(15,23,42,.22);
+  }
+
+  body[data-page="busca"].filters-open .filters-sidebar{
+    transform: translateX(0);
+  }
+
+  body[data-page="busca"] .filters-backdrop{
+    position: fixed;
+    inset: 0;
+    background: rgba(15,23,42,.42);
+    z-index: 20010;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+  }
+  body[data-page="busca"].filters-open .filters-backdrop{
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  body[data-page="busca"].filters-open{
+    overflow: hidden;
+  }
+
+  /* Toolbar: quebra bem no mobile */
+  body[data-page="busca"] .doke-toolbar{
+    gap: 10px !important;
+  }
+  body[data-page="busca"] .doke-toolbar__row{
+    flex-wrap: wrap !important;
+  }
+  body[data-page="busca"] .doke-toolbar__inputWrap{
+    min-width: 0 !important;
+  }
+}
+
+/* Chips de busca com scroll horizontal */
+body[data-page="busca"] .doke-toolbar__chips{
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+body[data-page="busca"] .doke-toolbar__chips::-webkit-scrollbar{ display:none; }

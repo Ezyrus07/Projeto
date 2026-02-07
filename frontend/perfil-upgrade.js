@@ -753,8 +753,8 @@ function hideIf(selector, cond){
             const when = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString("pt-BR") : "";
             return `<div class="dp-itemAuthor">${avatar}<div><div class="dp-itemUser">@${escapeHtml(u||"usuario")}</div>${when ? `<span class="dp-itemMeta">${when}</span>` : ``}</div></div>`;
           })()}
-          <b>${escapeHtml(title)}</b>
-          <p>${escapeHtml(desc)}</p>
+          <b class="dp-itemTitle">${escapeHtml(title)}</b>
+          ${desc ? `<p class="dp-itemDesc">${escapeHtml(desc)}</p>` : ``}
         </div>
       `;
       if(canEdit){

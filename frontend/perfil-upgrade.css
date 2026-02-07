@@ -982,12 +982,19 @@
   .dp-actions{
     grid-column: 1 / -1;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 12px;
+    width: 100%;
   }
-  .dp-actionsRow{ justify-content: flex-start; }
-  .dp-availability{ width: auto; }
+  .dp-availability{ width: auto; flex: 0 0 auto; max-width: 220px; }
+  .dp-actionsRow{
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+  }
+  #dpRoot[data-mode="public"] .dp-actionsRow{ flex-wrap: nowrap; }
   .dp-grid--masonry{ column-count: 3; }
   .dp-grid--reels{ grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
@@ -1012,12 +1019,54 @@
   .dp-chip{ padding: 6px 10px; font-size: 0.85rem; }
   .dp-stat{ min-width: 96px; padding: 10px 12px; }
   .dp-stat b{ font-size: 16px; }
+  /* Ações do perfil (mobile/tablet): NÃO quebrar em colunas */
   .dp-actions{
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
     justify-content: flex-start;
+    gap: 10px;
+    width: 100%;
   }
-  .dp-actionsRow{ justify-content: flex-start; }
+  .dp-availability{
+    width: auto;
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: .9rem;
+    min-width: 0;
+    max-width: 200px;
+  }
+  #dpStatusText{
+    display:inline-block;
+    min-width: 0;
+    max-width: calc(100% - 58px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .dp-switch{ width: 44px; height: 26px; }
+  .dp-switch span{ top: 3px; left: 3px; width: 20px; height: 20px; }
+  .dp-switch.on span{ left: 21px; }
+  .dp-actionsRow{
+    flex: 1 1 auto;
+    min-width: 0;
+    justify-content: flex-end;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px;
+  }
+  /* Em perfil público, evita wrap (vira scroll horizontal) */
+  #dpRoot[data-mode="public"] .dp-actionsRow{ flex-wrap: nowrap; }
+  .dp-actionsRow > button{ white-space: nowrap; }
+  .dp-secondary, .dp-primary{
+    padding: 8px 10px;
+    border-radius: 12px;
+    font-size: .9rem;
+  }
+  /* Reduz sombra pesada no mobile */
+  .dp-primary{ box-shadow: 0 12px 26px rgba(0,0,0,.14); }
+  #dpMoreBtn{ padding: 8px; min-width: 40px; justify-content:center; }
   .dp-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dp-grid--masonry{ column-count: 2; }
   .dp-grid--reels{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1032,6 +1081,11 @@
   .dp-name{ font-size: 22px; }
   .dp-avatarWrap{ width: 96px; margin-top: -48px; }
   .dp-avatar{ width: 96px; height: 96px; }
+  /* Ações ainda mais compactas em celulares */
+  .dp-actions{ gap: 8px; }
+  .dp-availability{ max-width: 170px; padding: 7px 9px; font-size: .85rem; }
+  .dp-secondary, .dp-primary{ padding: 7px 9px; font-size: .85rem; }
+  #dpMoreBtn{ min-width: 38px; padding: 7px; }
   .dp-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
   .dp-grid--masonry{ column-count: 2; column-gap: 10px; }
   .dp-grid--reels{ grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -1058,6 +1112,69 @@
   .dp-grid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .dp-grid--masonry{ column-count: 2; }
   .dp-grid--reels{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+/* ============================================================
+   PATCH v24 (2026-02-07) — Ações do Perfil SEM quebra
+   Motivo: em alguns dispositivos menores os botões "Disponível" e
+   "Editar perfil" estavam indo para linhas diferentes e ficando grandes.
+   ============================================================ */
+
+@media (max-width: 1024px){
+  #dpRoot .dp-actions{
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 10px !important;
+    width: 100% !important;
+    overflow-x: hidden;
+  }
+  #dpRoot .dp-availability{
+    flex: 0 0 auto !important;
+    height: 36px;
+    padding: 0 10px !important;
+    border-radius: 12px;
+    max-width: 190px;
+  }
+  #dpRoot #dpStatusText{
+    max-width: calc(100% - 52px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  #dpRoot .dp-switch{ width: 42px; height: 24px; }
+  #dpRoot .dp-switch span{ top: 3px; left: 3px; width: 18px; height: 18px; }
+  #dpRoot .dp-switch.on span{ left: 21px; }
+
+  #dpRoot .dp-actionsRow{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    gap: 8px !important;
+    justify-content: flex-end;
+  }
+  #dpRoot .dp-actionsRow::-webkit-scrollbar{ display:none; }
+  #dpRoot[data-mode="public"] .dp-actionsRow{ flex-wrap: nowrap !important; }
+
+  #dpRoot .dp-secondary,
+  #dpRoot .dp-primary{
+    height: 36px;
+    padding: 0 12px !important;
+    border-radius: 12px;
+    font-size: .88rem;
+    white-space: nowrap;
+  }
+  #dpRoot #dpMoreBtn{
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 !important;
+    justify-content: center;
+  }
 }
 
 
@@ -1725,3 +1842,166 @@
   .dp-stats::-webkit-scrollbar{height:0;width:0;}
 }
 
+
+/* ============================================================
+   DOKE PATCH v22 — Overflow por texto sem espaços (perfil/cards)
+   ============================================================ */
+.dp-item,
+.dp-itemBody,
+.dp-itemBody b,
+.dp-itemBody p{
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.dp-itemAuthor{ min-width:0; }
+.dp-itemUser{
+  min-width:0;
+  max-width:100%;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* ============================================================
+   DOKE PATCH v25 — Perfil em telas menores
+   - Evita quebra da área de stats e ações
+   - Ações em uma linha (Disponível + botões)
+   - Publicações 1 coluna com altura travada (instagram-like)
+   ============================================================ */
+
+@media (max-width: 1024px){
+  /* dp-body vira coluna (o original era grid e quebrava em telas menores) */
+  .dp-body{
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+    padding: 16px 14px 14px !important;
+  }
+
+  /* Avatar e título menores */
+  .dp-avatarWrap{ width: 120px !important; margin-top: -56px !important; }
+  .dp-avatar{ width: 120px !important; height: 120px !important; border-width: 5px !important; }
+  .dp-name{ font-size: 22px !important; }
+
+  /* Stats: grid 2 colunas (sem scroll e sem quebrar) */
+  .dp-statsWrap{ flex-wrap: wrap !important; }
+  .dp-statsNav{ display: none !important; }
+  .dp-stats{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    scroll-snap-type: none !important;
+  }
+  .dp-stat{ min-width: 0 !important; flex: unset !important; padding: 10px 12px !important; }
+  .dp-stat span{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+  /* Ações: Disponível + botões na mesma linha */
+  .dp-actions{
+    width: 100% !important;
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    justify-self: stretch !important;
+    align-self: stretch !important;
+  }
+  .dp-availability{ flex: 0 0 auto !important; min-width: 156px !important; padding: 8px 10px !important; border-radius: 12px !important; }
+  .dp-actionsRow{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    gap: 8px !important;
+  }
+  .dp-actionsRow > button{ white-space: nowrap; }
+
+  /* Botões menores (mobile) */
+  .dp-primary, .dp-secondary{ padding: 9px 12px !important; border-radius: 12px !important; font-size: 13px !important; }
+  .dp-icon-only{ min-width: 40px !important; padding: 9px !important; }
+
+  /* Publicações: 1 coluna + altura travada */
+  #dpGridPublicacoes{ grid-template-columns: 1fr !important; }
+  #dpGridPublicacoes .dp-itemMedia{
+    width: 100% !important;
+    height: auto !important;
+  }
+  #dpGridPublicacoes .dp-itemBody{ padding: 8px 10px 10px !important; }
+  #dpGridPublicacoes .dp-itemBody b{
+    font-size: 0.92rem !important;
+    font-weight: 750 !important;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+  }
+  #dpGridPublicacoes .dp-itemBody p{
+    margin-top: 5px !important;
+    font-size: 12.5px !important;
+    line-height: 1.28 !important;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 480px){
+  .dp-availability{ min-width: 140px !important; }
+  .dp-switch{ width: 46px !important; height: 28px !important; }
+  .dp-switch span{ width: 20px !important; height: 20px !important; top:4px; left:4px; }
+  .dp-switch.on span{ left: 22px; }
+}
+
+/* ============================================================
+   PATCH v26 — Perfil em telas menores (stats estáveis + sem quebra)
+   Data: 2026-02-07
+   ============================================================ */
+.dp-page[data-page="perfil"] .dp-statsWrap{
+  display: block !important;
+}
+.dp-page[data-page="perfil"] .dp-stats{
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+  padding: 0 !important;
+  scroll-snap-type: none !important;
+}
+.dp-page[data-page="perfil"] .dp-stat{
+  min-width: 0 !important;
+  width: 100% !important;
+}
+@media (max-width: 1200px){
+  .dp-page[data-page="perfil"] .dp-stats{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+@media (max-width: 420px){
+  .dp-page[data-page="perfil"] .dp-stats{ gap: 10px !important; }
+  .dp-page[data-page="perfil"] .dp-stat{ padding: 10px 12px !important; border-radius: 12px !important; }
+}
+
+/* PATCH v26 — Limites de texto nas publicações do perfil (evita cards gigantes) */
+#dpGridPublicacoes .dp-itemTitle,
+#dpGridPublicacoes .dp-itemDesc{
+  max-width: 100%;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+#dpGridPublicacoes .dp-itemTitle{
+  -webkit-line-clamp: 1;
+}
+#dpGridPublicacoes .dp-itemDesc{
+  -webkit-line-clamp: 1;
+}

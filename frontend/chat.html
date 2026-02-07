@@ -12,13 +12,21 @@
       localStorage.getItem("DOKE_SUPABASE_STORAGE_BUCKET") ||
       'posts';
   </script>
-<script src="firebase-compat-supabase.js"></script>
+<script src="firebase-compat-supabase.js?v=20260207v24"></script>
 <script src="firebase-auth-compat-supabase.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Mensagens | Doke</title>
-<link href="style.css" rel="stylesheet"/>
-<link href="doke-layout-fix.css" rel="stylesheet"/>
+    <meta name="description" content="Converse com profissionais e clientes em um chat rápido e responsivo.">
+    <meta property="og:title" content="Doke — Chat">
+    <meta property="og:description" content="Converse com profissionais e clientes em um chat rápido e responsivo.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/Imagens/doke-logo.png">
+    <meta name="theme-color" content="#0b7768">
+
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-fixes.css" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <!-- script.js removido no chat para evitar conflitos/dobro de listeners (o chat já tem lógica própria aqui) -->
@@ -763,7 +771,9 @@
 
         @media (max-width: 1024px) {
             .navbar-desktop { display: none; }
-            .messenger-layout { margin-left: 0; margin-top: 0; width: 100vw; height: 100vh; display: block; }
+            /* Reserva espaço para header + bottom-nav (evita barra flutuando e gaps) */
+            /* v25 — evita "gap" entre barra de digitar e bottom-nav */
+            .messenger-layout { margin-left: 0; margin-top: 0; width: 100%; height: calc(100vh - var(--doke-h) - var(--doke-btm-real)); display: block; }
             .coluna-lista { width: 100%; height: 100%; position: relative; }
             .coluna-chat { 
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -1803,12 +1813,13 @@
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260206v13">
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
-<link rel="stylesheet" href="doke-responsive.css?v=20260206v13">
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+  <link rel="stylesheet" href="page-chat.css?v=20260207v21">
 </head>
-<body>
+<body data-page="chat">
 <aside class="sidebar-icones">
   <div id="logo">
     <a href="index.html">
@@ -2729,7 +2740,7 @@
             const imagens = anexosList.filter(a => isImg(a.url));
             const files = anexosList.filter(a => !isImg(a.url));
             const imgsHtml = imagens.length
-                ? `<div class="pi-anexos-grid">${imagens.map(a => `<img src="${escapeHtml(a.url)}" alt="${escapeHtml(a.nome)}" onclick="abrirGaleria(['${escapeHtml(a.url)}'], 0)" />`).join('')}</div>`
+                ? `<div class="pi-anexos-grid">${imagens.map(a => `<img src="${escapeHtml(a.url)}" alt="${escapeHtml(a.nome)}" onclick="abrirGaleria(['${escapeHtml(a.url)}'], 0)" / loading="lazy" decoding="async">`).join('')}</div>`
                 : '';
             const filesHtml = files.length
                 ? `<div class="pi-links pi-list">${files.map(a => `<a href="${escapeHtml(a.url)}" target="_blank" rel="noopener">${escapeHtml(a.nome)}</a>`).join('')}</div>`
@@ -3890,7 +3901,7 @@
 
         container.innerHTML = `
             <div class="profile-container">
-                <img src="${foto}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
+                <img src="${foto}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;" loading="lazy" decoding="async">
                 <div id="dropdownPerfil" class="dropdown-profile">
                     <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
                         ${userLabel}
@@ -3905,7 +3916,7 @@
 
         if (mobile) {
             mobile.href = perfilHref;
-            mobile.innerHTML = `<img src="${foto}" alt="Perfil" style="width:28px; height:28px; border-radius:50%; object-fit:cover;">`;
+            mobile.innerHTML = `<img src="${foto}" alt="Perfil" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" loading="lazy" decoding="async">`;
         }
     }
 
@@ -4844,7 +4855,7 @@ window.confirmarFinalizacaoPedido = async () => {
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
                         <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${unreadHtml}${archiveBtn}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user">
-                            <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar">
+                            <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                             <span>${dU.user || 'Usuário'}</span>
                         </div>
                         <div class="ip-body" onclick="abrirChat('${id}', '${outroUid || ''}', '', '', 'pedidos', '${p.status}')">
@@ -4970,7 +4981,7 @@ window.confirmarFinalizacaoPedido = async () => {
                           : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', true)"><i class='bx bx-archive'></i></button>`;
                       container.insertAdjacentHTML('beforeend', `
                         <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')">
-                          <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar">
+                          <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                           <div class="ic-info">
                             <div class="ic-nome">${u.user || 'Usuário'}</div>
                             <div class="ic-msg">${previewText}</div>
@@ -5504,7 +5515,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     : (souClientePedido ? "Que tal avaliar o profissional agora?" : "Aguardando avaliação do cliente.");
                 const imgHtml = m.url
                     ? `<div style="margin-top:10px;">
-                            <img src="${m.url}" alt="resultado" style="max-width:280px; width:100%; border-radius:12px; border:1px solid #e5e7eb; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
+                            <img src="${m.url}" alt="resultado" style="max-width:280px; width:100%; border-radius:12px; border:1px solid #e5e7eb; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" / loading="lazy" decoding="async">
                        </div>`
                     : "";
                 const btnHtml = (!pedidoAvaliado && souClientePedido)
@@ -5546,7 +5557,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                       ${menuBtn}
                       ${menuHtml}
                       ${replyHtml}
-                      <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" />
+                      <img src="${m.url}" alt="imagem" style="max-width:220px; border-radius:12px; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" / loading="lazy" decoding="async">
                       <div class="msg-footer">
                           ${replyBtn}
                         <span class="msg-hora">${horaMsg}</span>
@@ -6239,6 +6250,6 @@ window.tocarAudio = function(btn, url, audioId) {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260206v11"></script>
+<script src="doke-shell.js?v=20260207v21"></script>
 </body>
 </html>

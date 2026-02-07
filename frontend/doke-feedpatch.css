@@ -171,3 +171,120 @@
   color:#111827;
   font-weight: 700;
 }
+
+/* =========================================================
+   HOME — Publicações (deixar igual ao Perfil)
+   Corrige: cards "sem CSS" no index e tamanhos desproporcionais
+   ========================================================= */
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+  background: #fff;
+  border: 1px solid rgba(2,6,23,.08);
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 10px 25px rgba(2,6,23,.08);
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  height: auto;
+  aspect-ratio: 4 / 5;
+  border-radius: 0;
+}
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia > img,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia > video{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* v25 — dp-itemBody menor (não competir com a mídia) */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  padding: 9px 10px 10px;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody b{
+  font-size: 0.92rem;
+  font-weight: 750;
+}
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody p{
+  font-size: 12.5px;
+  line-height: 1.28;
+  margin-top: 5px;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody b,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody p{
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Limite de texto (título 1 linha, descrição 2 linhas) */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody b{
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  overflow: hidden;
+}
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody p{
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* v25 — reduzir altura das publicações em telas menores */
+@media (max-width: 1024px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1;
+  }
+}
+
+@media (max-width: 480px){
+  /* Publicações menores no mobile (mais próximas do tamanho de vídeo-curto) */
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex: 0 0 150px;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+    padding: 8px 9px 9px;
+  }
+}
+/* ============================================================
+   PATCH v26 — Home: dp-itemBody mais compacto (mídia em destaque)
+   Data: 2026-02-07
+   ============================================================ */
+#feed-global-container .feed-publicacao-card .dp-itemBody{
+  padding: 8px 10px 10px !important;
+}
+#feed-global-container .feed-publicacao-card .dp-itemAuthor{
+  gap: 8px !important;
+  margin-bottom: 6px !important;
+}
+#feed-global-container .feed-publicacao-card .dp-itemAvatar{
+  width: 26px !important;
+  height: 26px !important;
+}
+#feed-global-container .feed-publicacao-card .dp-itemTitle,
+#feed-global-container .feed-publicacao-card .dp-itemDesc{
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+#feed-global-container .feed-publicacao-card .dp-itemTitle{
+  -webkit-line-clamp: 1;
+  font-size: .92rem !important;
+  font-weight: 800 !important;
+  margin: 0 !important;
+}
+#feed-global-container .feed-publicacao-card .dp-itemDesc{
+  -webkit-line-clamp: 1;
+  font-size: 12.5px !important;
+  line-height: 1.28 !important;
+  color: #475569 !important;
+  margin-top: 5px !important;
+}
