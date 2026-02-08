@@ -872,13 +872,6 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
 window.dokeBuildCardPremium = function(anuncio) {
     const titulo = anuncio.titulo || "Sem título";
     const preco = anuncio.preco || "A combinar";
-    const __precoLabel = (() => {
-        const p = String(preco || "").toLowerCase();
-        // Se for "Sob orçamento" ou "A combinar", não faz sentido exibir "A partir de"
-        if (p.includes("sob") && p.includes("orc")) return "";
-        if (p.includes("a combinar")) return "";
-        return "A partir de";
-    })();
     const fotoAutor = anuncio.fotoAutor || "https://i.pravatar.cc/150";
     const descricao = anuncio.descricao || "";
 
@@ -958,8 +951,8 @@ window.dokeBuildCardPremium = function(anuncio) {
         </div>
         ${htmlFotos}
         <div class="cp-footer-right">
-            <div style="margin-right:auto; min-width:0;">
-                ${__precoLabel ? `<small style="display:block; color:#999; font-size:0.7rem;">${__precoLabel}</small>` : ``}
+            <div style="margin-right:auto;">
+                ${(String(preco||"").toLowerCase().includes("sob orçamento") || String(preco||"").toLowerCase().includes("a combinar")) ? `<small style="display:block; color:#999; font-size:0.7rem;">Preço</small>` : `<small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>`}
                 <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
                 <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none; margin-top:6px; font-size:0.72rem; color:#64748b;">
                     Preço médio (5+ serviços): <b style="color:#0f172a;"></b>

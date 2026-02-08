@@ -20,7 +20,7 @@
   body{
     background: var(--doke-bg);
     padding-top: var(--doke-h);
-    padding-bottom: 0 !important;
+    padding-bottom: calc(var(--doke-btm-real) + 14px + env(safe-area-inset-bottom)) !important;
 }
 
   /* When the shell is active, hide common native headers/bottom-nav to avoid duplicates.
@@ -122,24 +122,12 @@
     background:#e2e8f0;
   }
 
-  /* Avatar rendering hardening (prevents "thin strip" cropping)
-     Some pages inject the avatar image without explicit dimensions and the
-     header flex-row can shrink the avatar container. Force a stable square
-     and ensure the <img> fills it correctly. */
-  .doke-avatar-btn,
-  .profile-img-btn{
-    flex: 0 0 auto;
-    min-width: 38px;
-    min-height: 38px;
-  }
-  .doke-avatar-btn img,
-  .profile-img-btn img,
-  .doke-avatar{
-    width: 100% !important;
-    height: 100% !important;
-    display: block;
-    object-fit: cover;
-    object-position: center;
+  .doke-avatar-btn img{
+    width:100% !important;
+    height:100% !important;
+    object-fit: cover !important;
+    display:block;
+    max-width:none !important;
   }
   /* Reduce oversized avatar/ring inside mobile header */
   .doke-mobile-header .profile-container{ display:flex; align-items:center; }
