@@ -45,7 +45,15 @@
     return fallbackToast(message, opts);
   }
 
-  // Compat: muitos scripts usam mostrarToast()
+    function isDebug(){
+    try{
+      if(window.DOKE_CONFIG && window.DOKE_CONFIG.debug) return true;
+      if(localStorage.getItem("DOKE_DEBUG") === "1") return true;
+    }catch(e){}
+    return false;
+  }
+
+// Compat: muitos scripts usam mostrarToast()
   if(typeof window.mostrarToast !== "function"){
     window.mostrarToast = (msg, tipo="info", titulo="") => toast(msg, {type: tipo, title: titulo});
   }
@@ -55,14 +63,6 @@
   if(typeof window.mostrarErro !== "function"){
     window.mostrarErro = (msg, titulo="Erro") => toast(msg, {type:"error", title: titulo});
   }
-
-  // Patch do alert() -> toast
-  const nativeAlert = window.alert;
-  if(!window._nativeAlert) window._nativeAlert = nativeAlert;
-  window.alert = function(msg){
-    toast(safeStr(msg), {type:"info", title:"Aviso"});
-  };
-
   // Barra offline (discreta)
   function ensureOfflineBar(){
     let bar = document.querySelector(".doke-offlineBar");
@@ -118,23 +118,29 @@
   }
 
   // Captura erros globais para notificação (sem travar UX)
-  window.addEventListener("error", (e)=>{
+    window.addEventListener("error", (e)=>{
     const msg = e && (e.message || e.error && e.error.message) ? (e.message || e.error.message) : "Ocorreu um erro inesperado.";
-    toast(clamp(safeStr(msg), 220), {type:"error", title:"Erro"});
+    try{ console.error(e); }catch(_){}
+    if(isDebug()){
+      toast(clamp(safeStr(msg), 220), {type:"error", title:"Erro"});
+    }
   });
 
-  window.addEventListener("unhandledrejection", (e)=>{
+    window.addEventListener("unhandledrejection", (e)=>{
     const reason = e && e.reason ? (e.reason.message || safeStr(e.reason)) : "Falha inesperada.";
-    toast(clamp(safeStr(reason), 220), {type:"error", title:"Erro"});
+    try{ console.error(e); }catch(_){}
+    if(isDebug()){
+      toast(clamp(safeStr(reason), 220), {type:"error", title:"Erro"});
+    }
   });
 
-  window.addEventListener("online", ()=>{
+    window.addEventListener("online", ()=>{
     updateOnlineUI();
-    toast("Conexão restaurada.", {type:"success", title:"Online"});
+    if(isDebug()) toast("Conexão restaurada.", {type:"success", title:"Online"});
   });
-  window.addEventListener("offline", ()=>{
+    window.addEventListener("offline", ()=>{
     updateOnlineUI();
-    toast("Sem conexão no momento.", {type:"warning", title:"Offline"});
+    if(isDebug()) toast("Sem conexão no momento.", {type:"warning", title:"Offline"});
   });
 
   // Boot
