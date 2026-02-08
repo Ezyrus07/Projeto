@@ -101,14 +101,36 @@
 
     const body = document.body;
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
-    if (mode === "0" || mode === "off") return;
+    // Allow explicit opt-out (keeps native header/nav)
+    if (mode === "0" || mode === "off" || mode === "native") return;
+
+    // Quick opt-out for debugging
+    try{
+      if (new URLSearchParams(location.search).has("noshell")) return;
+    }catch(e){}
 
     const force = (mode === "1" || mode === "force");
-    const pageHasHeader = hasMeaningfulHeader();
-    const pageHasBottom = hasMeaningfulBottomNav();
 
-    if(!force && pageHasHeader && pageHasBottom) return;
-    if(document.querySelector(".doke-mobile-header") || document.querySelector(".doke-bottom-nav")) return;
+    // Avoid double-binding on the same page (but still allow force re-init)
+    if(!force){
+      try{
+        if(document.documentElement.dataset.dokeShellInit === "1") return;
+        document.documentElement.dataset.dokeShellInit = "1";
+      }catch(e){}
+    }
+
+    // IMPORTANT:
+    // Many pages have a desktop header/nav that becomes hidden on small screens.
+    // So we should not decide based only on "exists"; we ensure the shell exists.
+    // This keeps header + bottom nav present on mobile/tablet.
+    const existingShellHeader = document.querySelector(".doke-mobile-header");
+    const existingShellBottom = document.querySelector(".doke-bottom-nav");
+    const needHeader = force || !existingShellHeader;
+    const needBottom = force || !existingShellBottom;
+    // Always mark active on mobile/tablet. Even if shell is already present, we may need to bind handlers.
+    document.body.classList.add("doke-shell-active");
+    // Some pages don't have a <main>. Add safe bottom spacing so content doesn't hide behind bottom nav.
+    if(!document.querySelector("main")) document.body.classList.add("doke-no-main");
 
     // Boxicons
     try{
@@ -134,13 +156,14 @@
       ? `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`
       : `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
 
-    let header = null;
-    let bottom = null;
-    let backdrop = null;
-    let drawer = null;
-    let overlay = null;
+    // If the shell was already injected (e.g., navigating via history cache), reuse it.
+    let header = existingShellHeader || null;
+    let bottom = existingShellBottom || null;
+    let backdrop = document.querySelector(".doke-drawer-backdrop") || null;
+    let drawer = document.querySelector(".doke-drawer") || null;
+    let overlay = document.querySelector(".doke-search-overlay") || null;
 
-    if(force || !pageHasHeader){
+    if(needHeader){
       header = document.createElement("header");
       header.className = "doke-mobile-header";
       header.innerHTML = `
@@ -170,10 +193,15 @@
       `;
       document.body.prepend(header);
 
-      backdrop = document.createElement("div");
-      backdrop.className = "doke-drawer-backdrop";
-      drawer = document.createElement("aside");
-      drawer.className = "doke-drawer";
+      // Drawer + backdrop (only create if missing)
+      if(!backdrop){
+        backdrop = document.createElement("div");
+        backdrop.className = "doke-drawer-backdrop";
+      }
+      if(!drawer){
+        drawer = document.createElement("aside");
+        drawer.className = "doke-drawer";
+      }
       drawer.innerHTML = `
         <div class="doke-drawer-top">
           <div class="doke-logo"><img src="${LOGO_SRC}" alt="Doke" style="height:28px;width:auto;display:block;"></div>
@@ -191,11 +219,11 @@
           <a href="${PAGES.mais}"><i class='bx bx-dots-horizontal-rounded'></i> Mais</a>
         </nav>
       `;
-      document.body.appendChild(backdrop);
-      document.body.appendChild(drawer);
+      if(!document.body.contains(backdrop)) document.body.appendChild(backdrop);
+      if(!document.body.contains(drawer)) document.body.appendChild(drawer);
     }
 
-    if(force || !pageHasBottom){
+    if(needBottom){
       bottom = document.createElement("nav");
       bottom.className = "doke-bottom-nav";
       bottom.innerHTML = `
@@ -222,7 +250,27 @@
       });
     }
 
-    if(header || bottom){
+    // If the bottom nav already existed, still sync height & spacer once.
+    if(bottom && !needBottom){
+      syncBottomNavHeight(bottom);
+      requestAnimationFrame(()=>syncBottomNavHeight(bottom));
+      setTimeout(()=>syncBottomNavHeight(bottom), 350);
+      setTimeout(()=>syncBottomNavHeight(bottom), 1200);
+      if(!bottom.dataset.dokeResizeBound){
+        bottom.dataset.dokeResizeBound = "1";
+        window.addEventListener("resize", ()=>{
+          if(MQ.matches) {
+            syncBottomNavHeight(bottom);
+            requestAnimationFrame(()=>syncBottomNavHeight(bottom));
+            setTimeout(()=>syncBottomNavHeight(bottom), 350);
+            setTimeout(()=>syncBottomNavHeight(bottom), 1200);
+          }
+        });
+      }
+    }
+
+    // Search overlay (create once; reuse if already exists)
+    if((header || bottom) && !overlay){
       overlay = document.createElement("div");
       overlay.className = "doke-search-overlay";
       overlay.innerHTML = `
