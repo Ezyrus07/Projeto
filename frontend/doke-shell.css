@@ -20,7 +20,7 @@
   body{
     background: var(--doke-bg);
     padding-top: var(--doke-h);
-    padding-bottom: calc(var(--doke-btm-real) + 14px + env(safe-area-inset-bottom)) !important;
+    padding-bottom: 0 !important;
 }
 
   /* When the shell is active, hide common native headers/bottom-nav to avoid duplicates.
@@ -116,18 +116,48 @@
   .doke-avatar-btn{
     width:40px;height:40px;
     border-radius:999px;
-    display:block;
+    display:flex;
+    align-items:center;
+    justify-content:center;
     overflow:hidden;
     border:2px solid rgba(11,119,104,.35);
     background:#e2e8f0;
   }
 
-  .doke-avatar-btn img{
-    width:100% !important;
-    height:100% !important;
-    object-fit: cover !important;
-    display:block;
-    max-width:none !important;
+  /* Avatar rendering hardening (prevents "thin strip" cropping)
+     Some pages inject the avatar image without explicit dimensions and the
+     header flex-row can shrink the avatar container. Force a stable square
+     and ensure the <img> fills it correctly. */
+  .doke-avatar-btn,
+  .profile-img-btn{
+    flex: 0 0 auto;
+    min-width: 38px;
+    min-height: 38px;
+  }
+  .doke-avatar-btn img,
+  .profile-img-btn img,
+  .doke-avatar{
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    object-fit: cover;
+    object-position: center;
+    max-width: none !important;
+    min-width: 100% !important;
+  }
+
+  /* Quando o avatar � o pr�prio <img class="profile-img-btn"> (sem wrapper) */
+  img.profile-img-btn{
+    width: 38px !important;
+    height: 38px !important;
+    min-width: 38px !important;
+    max-width: 38px !important;
+    min-height: 38px !important;
+    max-height: 38px !important;
+    border-radius: 999px;
+    object-fit: cover;
+    object-position: center;
+    display: block;
   }
   /* Reduce oversized avatar/ring inside mobile header */
   .doke-mobile-header .profile-container{ display:flex; align-items:center; }
@@ -137,6 +167,8 @@
     border:0;
     box-shadow:none;
     transform:none;
+    object-fit: cover;
+    object-position: center;
   }
   .doke-mobile-header .profile-img-btn:hover{ transform:none; }
   .doke-mobile-header .doke-avatar-btn{

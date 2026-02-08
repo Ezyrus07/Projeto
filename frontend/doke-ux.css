@@ -4,6 +4,9 @@
    - máscaras, autosave, FAB suporte, sticky CTA, empty state, password meter
    ============================================================ */
 
+/* Boxicons: evita desalinhamento vertical em botões */
+.bx{ line-height: 1; }
+
 .doke-hidden{display:none!important;}
 .doke-soft-card{
   background:#fff;border:1px solid rgba(2,6,23,.08);
@@ -660,6 +663,50 @@ body[data-page="home"] .pv-hist-chip span{font-weight:900;color:#0f172a;font-siz
 /* Ajuste de avatar em linhas */
 .ig-row .ig-avatar{ width:42px;height:42px; }
 
+/* Avatar do header (páginas com header nativo) — evita foto "cortada" */
+.profile-img-btn{
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.profile-img-btn img{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+  object-position: center;
+  max-width: none !important;
+  display:block;
+}
+
+/* Botões icônicos (setas / 3 pontinhos / nav): centraliza ícone em qualquer página */
+.pro-arrow,
+.carousel-nav,
+.chips-arrow,
+.dp-statsNav,
+.dp-tabsNav,
+button[aria-label][class*="Prev"],
+button[aria-label][class*="Next"]{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+/* Comunidade: tabs responsivos (texto sempre centralizado) */
+.filter-tabs{ overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.filter-tabs .tab-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 1;
+}
+
 
 .ig-search-clear{
   width: 30px;
@@ -911,4 +958,42 @@ body[data-page="home"] .pv-inline-search-section--stealth .pv-search.pv-search--
   color: var(--cor2);
   border: 1px solid rgba(42,95,144,0.25);
   box-shadow:none;
+}
+
+/* ------------------------------------------------------------
+   Global alignment fixes (mobile/desktop)
+   ------------------------------------------------------------ */
+
+/* Carrossel nav arrows: center glyphs consistently */
+.carousel-nav{
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+/* Buttons that include icons: keep icon and label centered */
+.btn-toggle-filtros,
+.btn-solicitar,
+.btn-aplicar,
+.btn-create-comm,
+.dp-primary,
+.dp-secondary,
+.dp-newBtn,
+.dp-btn,
+.dp-tabsNav,
+.dp-statsNav,
+.cp-more-btn,
+.dp-itemMenuBtn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  line-height: 1;
+}
+
+/* Pure icon-only buttons: enforce square tap targets */
+.cp-more-btn,
+.dp-itemMenuBtn,
+#dpMoreBtn{
+  aspect-ratio: 1 / 1;
 }

@@ -464,26 +464,200 @@ body[data-page="perfil"] .dp-portfolioIntroBody p + p{
   }
 }
 
-@media (max-width: 520px){
-  body[data-page="perfil"] .dp-actionsRow{
-    flex-wrap: wrap !important;
-    overflow-x: visible !important;
-  }
-  body[data-page="perfil"] .dp-actions{
-    flex-wrap: wrap !important;
+/* Phone — compacta o topo + corrige botões/ícones */
+@media (max-width: 760px){
+  body[data-page="perfil"] .dp-cover{ height: 170px !important; }
+  body[data-page="perfil"] .dp-coverActions{ right: 12px !important; bottom: 12px !important; }
+  body[data-page="perfil"] .dp-btn{ padding: 8px 12px !important; gap: 8px !important; font-size: .88rem; }
+
+  body[data-page="perfil"] .dp-name{ font-size: 1.25rem !important; line-height: 1.1 !important; }
+  body[data-page="perfil"] .dp-bio{ font-size: .92rem !important; }
+
+  /* Botões: centraliza ícones e evita "ícone fora" */
+  body[data-page="perfil"] .dp-primary,
+  body[data-page="perfil"] .dp-secondary,
+  body[data-page="perfil"] .dp-newBtn,
+  body[data-page="perfil"] .dp-statsNav,
+  body[data-page="perfil"] .dp-tabsNav{
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     gap: 8px !important;
+    line-height: 1 !important;
   }
   body[data-page="perfil"] #dpMoreBtn{
-    min-width: 44px;
-    width: 44px;
-    padding: 10px !important;
-    justify-content: center !important;
+    width: 42px !important;
+    padding: 0 !important;
   }
-  body[data-page="perfil"] #dpMoreBtn i{ margin:0 !important; }
-  /* Reduce button text truncation */
-  body[data-page="perfil"] .dp-secondary,
-  body[data-page="perfil"] .dp-primary{
-    padding: 10px 12px !important;
-    font-size: .92rem !important;
+
+  /* Vídeos-curtos: 2 colunas no mobile, mesmo footprint do index */
+  body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  body[data-page="perfil"] .dp-reelCard{ border-radius: 12px !important; }
+
+  /* Portfólio: não pode ficar "gigante" — vira grade de mídia */
+  body[data-page="perfil"] #dpGridPortfolio{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  body[data-page="perfil"] #dpGridPortfolio .dp-itemBody{ display: none !important; }
+  body[data-page="perfil"] #dpGridPortfolio .dp-itemMedia{ aspect-ratio: 1 / 1 !important; }
+}
+
+
+/* ==========================================================
+   STEP 4 (A + B) — Perfil
+   A) Publicações e Portfólio no mesmo layout do Index
+      - mídia 4:5 + infos abaixo (não "quadrado instagram")
+      - desktop e tablet horizontal: 3 colunas
+   B) Vídeos-curtos como grade (grid), com tamanho consistente
+      - desktop e tablet horizontal: 3 colunas
+      - mobile: 2 colunas
+   ========================================================== */
+
+/* A — Publicações e Portfólio: cards com corpo visível */
+body[data-page="perfil"] #dpGridPublicacoes,
+body[data-page="perfil"] #dpGridPortfolio{
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+body[data-page="perfil"] #dpGridPublicacoes .dp-item,
+body[data-page="perfil"] #dpGridPortfolio .dp-item{
+  background: #fff;
+  border: 1px solid rgba(2,6,23,.08);
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemMedia,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemMedia{
+  aspect-ratio: 4 / 5 !important;
+}
+
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemBody,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemBody{
+  display: block !important;
+  padding: 10px 12px 12px !important;
+}
+
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemTitle,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemTitle{
+  font-size: .98rem;
+  line-height: 1.2;
+}
+
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemMeta,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemMeta{
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* B — Vídeos-curtos em grid */
+body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+  display: grid !important;
+  grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+/* Mantém proporção consistente e evita card gigante */
+body[data-page="perfil"] .dp-reelCard{
+  width: 100% !important;
+  aspect-ratio: 9 / 16;
+  height: auto !important;
+}
+
+/* Breakpoints */
+@media (max-width: 820px){
+  body[data-page="perfil"] #dpGridPublicacoes,
+  body[data-page="perfil"] #dpGridPortfolio{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 10px !important;
   }
 }
+
+@media (max-width: 520px){
+  /* Mantém 2 colunas no celular para não ficar gigante */
+  body[data-page="perfil"] #dpGridPublicacoes,
+  body[data-page="perfil"] #dpGridPortfolio{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+  body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+}
+
+
+/* ============================================================
+   PASSO 5 — Compactar cards no PERFIL (desktop/tablet landscape)
+   Objetivo: mesmo tamanho visual do Index, sem cards gigantes.
+   Regras:
+   - Desktop + tablet landscape: 3 colunas com largura controlada
+   - Mobile/tablet retrato: media queries existentes mantêm 2 col
+   ============================================================ */
+
+body[data-page="perfil"]{
+  --dp-maxw: 1100px;
+  --dp-card-min: 230px;
+  --dp-card-max: 260px;
+  --dp-grid-gap: 14px;
+}
+
+body[data-page="perfil"] main.dp-wrap{
+  max-width: var(--dp-maxw) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+/* Base (>=821px): 3 colunas com tamanho fixo/estável */
+@media (min-width: 821px){
+  body[data-page="perfil"] #dpGridPublicacoes,
+  body[data-page="perfil"] #dpGridPortfolio{
+    grid-template-columns: repeat(3, minmax(var(--dp-card-min), var(--dp-card-max))) !important;
+    gap: var(--dp-grid-gap) !important;
+    justify-content: center !important;
+    align-content: start !important;
+  }
+
+  body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+    grid-template-columns: repeat(3, minmax(var(--dp-card-min), var(--dp-card-max))) !important;
+    gap: var(--dp-grid-gap) !important;
+    justify-content: center !important;
+    align-content: start !important;
+  }
+
+  /* Garante que cada card não “estoure” a coluna */
+  body[data-page="perfil"] #dpGridPublicacoes .dp-item,
+  body[data-page="perfil"] #dpGridPortfolio .dp-item,
+  body[data-page="perfil"] #dpGridReels .dp-reelCard{
+    width: 100% !important;
+    max-width: var(--dp-card-max) !important;
+  }
+}
+
+/* Ajuste fino: em telas muito largas, evita “conteúdo espalhado” */
+@media (min-width: 1400px){
+  body[data-page="perfil"] main.dp-wrap{ padding-left: 24px !important; padding-right: 24px !important; }
+}
+
+/* Reforço: mídia sempre cobre o card corretamente */
+body[data-page="perfil"] .dp-reelCard video,
+body[data-page="perfil"] .dp-reelCard img{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+  display: block !important;
+}
+
