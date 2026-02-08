@@ -8,6 +8,10 @@ body[data-page="home"]{
   --home-card-media-h: 260px;
 }
 
+body[data-page="home"] .typing-container .cursor{
+  height: 1.05em;
+}
+
 @media (max-width: 1024px){
   body[data-page="home"] .secao-busca,
   body[data-page="home"] .videos-container,
@@ -36,12 +40,12 @@ body[data-page="home"]{
     white-space: nowrap;
   }
 
-  /* Grid de anúncios: 1 coluna até 480, 2 colunas acima */
+  /* Grid de anúncios: evita cards finos em telas intermediárias */
   body[data-page="home"] .lista-cards-premium{
     grid-template-columns: 1fr !important;
     gap: 12px !important;
   }
-  @media (min-width: 481px) and (max-width: 1024px){
+  @media (min-width: 760px) and (max-width: 1024px){
     body[data-page="home"] .lista-cards-premium{ grid-template-columns: 1fr 1fr !important; }
   }
 
@@ -68,6 +72,17 @@ body[data-page="home"]{
   body[data-page="home"] .cp-media-grid{
     height: 240px !important;
   }
+
+  /* Card real de anúncios usa grid-fotos-doke (não cp-carousel) */
+  body[data-page="home"] .grid-fotos-doke{
+    grid-template-rows: 1fr 1fr !important;
+    height: clamp(210px, 56vw, 290px) !important;
+  }
+  @media (min-width: 760px) and (max-width: 1024px){
+    body[data-page="home"] .grid-fotos-doke{
+      height: clamp(170px, 30vw, 220px) !important;
+    }
+  }
   @media (max-width: 480px){
     body[data-page="home"] .cp-carousel,
     body[data-page="home"] .cp-media-grid{ height: 210px !important; }
@@ -88,10 +103,9 @@ body[data-page="home"]{
     }
   }
 
-  /* Carrosséis: setas escondidas no mobile (swipe é o padrão) */
+  /* Carrosseis premium internos podem ocultar setas no mobile */
   @media (max-width: 480px){
     body[data-page="home"] .cp-btn-nav,
-    body[data-page="home"] .carousel-nav,
     body[data-page="home"] .cp-prev,
     body[data-page="home"] .cp-next{ display: none !important; }
   }
@@ -101,5 +115,658 @@ body[data-page="home"]{
 @media (max-width: 1024px){
   body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
     padding: 10px 0 6px !important;
+  }
+}
+
+/* Aproxima titulo "Categorias em alta" dos cards */
+body[data-page="home"] .categorias-container.estilo-lojas .sec-title{
+  margin-bottom: 12px !important;
+}
+
+body[data-page="home"] .categorias-em-alta.categorias-min{
+  margin-top: 0 !important;
+}
+
+/* Publicacoes: mais destaque para foto/video/antesxdepois */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  aspect-ratio: 4 / 5 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  padding: 6px 8px 8px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAuthor{
+  margin-bottom: 4px !important;
+  gap: 6px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAvatar{
+  width: 22px !important;
+  height: 22px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+  font-size: .84rem !important;
+  line-height: 1.15 !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+  font-size: 11.5px !important;
+  line-height: 1.2 !important;
+  margin-top: 3px !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+@media (max-width: 768px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex: 0 0 168px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.08 !important;
+  }
+}
+
+@media (max-width: 480px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex: 0 0 158px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+    display: none !important;
+  }
+}
+
+/* Filtros compactos no mobile */
+@media (max-width: 760px){
+  body[data-page="home"] .filtros-container-premium{
+    padding: 12px !important;
+    border-radius: 14px !important;
+  }
+
+  body[data-page="home"] .filtros-header-row{
+    gap: 6px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body[data-page="home"] .filtros-titulo{
+    font-size: 1.1rem !important;
+  }
+
+  body[data-page="home"] .btn-toggle-filtros{
+    height: 40px !important;
+    font-size: .85rem !important;
+    padding: 0 12px !important;
+  }
+
+  body[data-page="home"] .filtros-expandidos{
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  body[data-page="home"] .grid-extras{
+    gap: 8px !important;
+  }
+
+  body[data-page="home"] .grid-extras label,
+  body[data-page="home"] .filtro-label{
+    font-size: .77rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  body[data-page="home"] .input-premium,
+  body[data-page="home"] .select-premium{
+    min-height: 40px !important;
+    font-size: .86rem !important;
+    padding: 0 10px !important;
+  }
+
+  body[data-page="home"] .filtro-checks-row{
+    gap: 6px !important;
+  }
+
+  body[data-page="home"] .filtro-checks-row label{
+    font-size: .8rem !important;
+  }
+}
+
+/* Modal de publicacoes melhor em telas menores */
+@media (max-width: 760px){
+  body[data-page="home"] #modalPostDetalhe{
+    align-items: flex-end !important;
+    padding: 0 !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-content{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-media-area{
+    flex: 0 0 52dvh !important;
+    max-height: 58dvh !important;
+    background: #05090f !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-info-area{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    margin-top: -16px !important;
+    border-radius: 20px 20px 0 0 !important;
+    overflow: auto !important;
+    padding-bottom: calc(84px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-header{
+    padding: 14px 14px 10px !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-comments-section{
+    min-height: 0 !important;
+    max-height: none !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-footer-actions{
+    position: sticky !important;
+    bottom: 0 !important;
+    background: #fff !important;
+    border-top: 1px solid #e6edf5 !important;
+  }
+}
+
+/* Home cards: same visual language as profile publications */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+  background: #fff !important;
+  border: 1px solid rgba(2,6,23,.08) !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  box-shadow: 0 6px 16px rgba(0,0,0,.05) !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  aspect-ratio: 4 / 5 !important;
+  border-radius: 0 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  padding: 10px 12px 12px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+  font-size: .95rem !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+  font-size: 13px !important;
+  line-height: 1.3 !important;
+  margin-top: 6px !important;
+  -webkit-line-clamp: 1 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMeta{
+  font-size: .78rem !important;
+  line-height: 1.15 !important;
+}
+
+/* iPad and iPad Pro 11: keep home balanced */
+@media (min-width: 768px) and (max-width: 1194px){
+  body[data-page="home"] .secao-busca{
+    padding: 20px !important;
+    border-radius: 20px !important;
+  }
+
+  body[data-page="home"] .botoes-busca{
+    display: flex !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+  }
+
+  body[data-page="home"] .botoes-busca .btn-procurar,
+  body[data-page="home"] .botoes-busca .btn-anunciar{
+    width: 100% !important;
+    min-height: 48px !important;
+  }
+
+  body[data-page="home"] .categorias-min .cat-track{
+    padding: 4px 24px !important;
+  }
+}
+
+/* Mobile search visual aligned with desktop/sidebar search language */
+@media (max-width: 760px){
+  body[data-page="home"] .busca-input-container{
+    background: #f8fafc !important;
+    border: 1px solid #dbe6f2 !important;
+    border-radius: 999px !important;
+    box-shadow: 0 10px 24px rgba(15,23,42,.10) !important;
+    min-height: 54px !important;
+    padding: 4px 6px !important;
+  }
+
+  body[data-page="home"] .busca-input-container:focus-within{
+    background: #fff !important;
+    border-color: rgba(42,95,144,.35) !important;
+    box-shadow: 0 14px 28px rgba(42,95,144,.15) !important;
+    transform: none !important;
+  }
+
+  body[data-page="home"] .busca-input-container input{
+    color: #0f172a !important;
+    font-size: .95rem !important;
+    padding: 0 14px !important;
+  }
+
+  body[data-page="home"] .btn-search-circle{
+    width: 44px !important;
+    height: 44px !important;
+  }
+}
+
+/* Modal de publicacoes: fullscreen real + close sempre visivel (all responsive) */
+body[data-page="home"] #modalPostDetalhe .btn-close-modal-fixed{
+  position: fixed !important;
+  top: calc(env(safe-area-inset-top) + 10px) !important;
+  right: 10px !important;
+  z-index: 2147483647 !important;
+  width: 38px !important;
+  height: 38px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255,255,255,.35) !important;
+  background: rgba(15,23,42,.72) !important;
+  color: #fff !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 24px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+}
+
+@media (max-width: 1200px){
+  body[data-page="home"] #modalPostDetalhe{
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-content{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    min-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    margin: 0 !important;
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(50dvh, 62dvh) 1fr !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-media-area{
+    height: auto !important;
+    max-height: none !important;
+    flex: initial !important;
+    min-height: 0 !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-info-area{
+    margin-top: 0 !important;
+    border-radius: 0 !important;
+    min-height: 0 !important;
+    overflow: auto !important;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom)) !important;
+  }
+}
+
+/* Final overrides: requested behavior */
+body[data-page="home"] .categorias-container.estilo-lojas .sec-title{
+  margin-bottom: 8px !important;
+}
+
+body[data-page="home"] .categorias-min .cat-carousel{
+  margin-top: 4px !important;
+}
+
+@media (max-width: 1024px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.18 !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+    padding: 8px 10px 10px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+    display: -webkit-box !important;
+    -webkit-line-clamp: 1 !important;
+    margin-top: 4px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media (max-width: 480px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 8px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.22 !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1194px){
+  body[data-page="home"] main.dp-wrap{
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  body[data-page="home"] .typing-container{
+    font-size: clamp(1.2rem, 2.2vw, 1.55rem) !important;
+  }
+
+  body[data-page="home"] .busca-input-container{
+    min-height: 58px !important;
+    padding: 5px 6px !important;
+  }
+
+  body[data-page="home"] .btn-search-circle{
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  body[data-page="home"] .fotos-container .section-feed-title{
+    margin-top: 14px !important;
+    margin-bottom: 14px !important;
+    padding: 0 !important;
+  }
+}
+
+/* iPad portrait (como no print 575x767): botoes com metrica regular */
+@media (min-width: 520px) and (max-width: 900px){
+  body[data-page="home"] .secao-busca{
+    padding: 16px 16px 14px !important;
+  }
+
+  body[data-page="home"] .typing-container{
+    margin-bottom: 10px !important;
+    font-size: clamp(.98rem, 2.15vw, 1.35rem) !important;
+    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    justify-content: center !important;
+    line-height: 1.2 !important;
+  }
+
+  body[data-page="home"] .typing-container .static-text{
+    white-space: nowrap !important;
+  }
+
+  body[data-page="home"] .typing-container .icon{
+    font-size: 1.05em !important;
+  }
+
+  body[data-page="home"] .typing-container .dynamic-text{
+    max-width: clamp(160px, 44vw, 280px) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+
+  body[data-page="home"] .typing-container .cursor{
+    height: 1.05em !important;
+    margin-left: 0 !important;
+  }
+
+  body[data-page="home"] .busca-input-container{
+    min-height: 56px !important;
+    padding: 5px 6px !important;
+  }
+
+  body[data-page="home"] .busca-input-container input{
+    font-size: clamp(.95rem, 1.65vw, 1.06rem) !important;
+    padding: 0 16px !important;
+  }
+
+  body[data-page="home"] .btn-search-circle{
+    width: 50px !important;
+    height: 50px !important;
+  }
+
+  body[data-page="home"] .botoes-busca{
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+    align-items: stretch !important;
+    justify-content: initial !important;
+    width: 100% !important;
+  }
+
+  body[data-page="home"] .botoes-busca > *{
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  body[data-page="home"] .botoes-busca > a{
+    display: block !important;
+    width: 100% !important;
+  }
+
+  body[data-page="home"] .botoes-busca .btn-procurar,
+  body[data-page="home"] .botoes-busca .btn-anunciar{
+    width: 100% !important;
+    min-height: 52px !important;
+    max-width: none !important;
+    border-radius: 12px !important;
+    padding: 0 12px !important;
+    display: inline-flex !important;
+    flex: 1 1 auto !important;
+    align-items: center !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    font-size: clamp(.92rem, 1.45vw, 1rem) !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+  }
+}
+
+@media (min-width: 520px) and (max-width: 680px){
+  body[data-page="home"] .typing-container{
+    font-size: .98rem !important;
+    gap: 5px !important;
+  }
+
+  body[data-page="home"] .typing-container .dynamic-text{
+    max-width: min(40vw, 220px) !important;
+  }
+
+  body[data-page="home"] .botoes-busca{
+    gap: 10px !important;
+  }
+
+  body[data-page="home"] .botoes-busca .btn-procurar,
+  body[data-page="home"] .botoes-busca .btn-anunciar{
+    min-height: 50px !important;
+    font-size: .92rem !important;
+  }
+}
+
+/* iPad Pro 11 portrait (581x832): compactacao adicional do topo */
+@media (min-width: 560px) and (max-width: 620px){
+  body[data-page="home"] .secao-busca{
+    padding: 14px 14px 12px !important;
+  }
+
+  body[data-page="home"] .typing-container{
+    margin-bottom: 8px !important;
+    font-size: .95rem !important;
+    gap: 4px !important;
+  }
+
+  body[data-page="home"] .typing-container .dynamic-text{
+    max-width: 42vw !important;
+  }
+
+  body[data-page="home"] .botoes-busca{
+    gap: 10px !important;
+  }
+}
+
+/* Publicacoes no index: SEMPRE horizontal (nunca quebrar para baixo) */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  overflow-x: auto !important;
+  overflow-y: hidden !important;
+  scroll-snap-type: x mandatory !important;
+  gap: 12px !important;
+  padding: 8px 0 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid::-webkit-scrollbar{
+  display: none !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+  flex: 0 0 clamp(176px, 31vw, 248px) !important;
+  min-width: clamp(176px, 31vw, 248px) !important;
+  width: auto !important;
+  scroll-snap-align: start !important;
+}
+
+@media (max-width: 900px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex-basis: clamp(164px, 42vw, 212px) !important;
+    min-width: clamp(164px, 42vw, 212px) !important;
+  }
+}
+
+@media (max-width: 600px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex-basis: clamp(158px, 72vw, 198px) !important;
+    min-width: clamp(158px, 72vw, 198px) !important;
+  }
+}
+
+/* Setas do desktop tambem em telas menores (index) */
+body[data-page="home"] .fotos-container .sec-head-actions .carousel-nav{
+  display: inline-flex !important;
+}
+
+@media (max-width: 1024px){
+  body[data-page="home"] .sec-head-actions .carousel-nav{
+    display: inline-flex !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 999px !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  body[data-page="home"] .pros-carousel .pro-arrow,
+  body[data-page="home"] .categorias-min .pro-arrow{
+    display: inline-flex !important;
+  }
+}
+
+/* Busca (index): corrige conflito de camada do dropdown com categorias */
+body[data-page="home"] main.dp-wrap{
+  overflow: visible !important;
+}
+
+body[data-page="home"] .categorias-container,
+body[data-page="home"] .videos-container,
+body[data-page="home"] .fotos-container,
+body[data-page="home"] .anuncio-container{
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+body[data-page="home"] .secao-busca{
+  position: relative !important;
+  z-index: 120 !important;
+  overflow: visible !important;
+}
+
+body[data-page="home"] .busca-wrapper{
+  position: relative !important;
+  z-index: 180 !important;
+  isolation: isolate;
+}
+
+body[data-page="home"] .busca-wrapper.active{
+  z-index: 5000 !important;
+}
+
+body[data-page="home"] .busca-wrapper .busca-dropdown{
+  position: absolute !important;
+  top: calc(100% + 10px) !important;
+  left: 0 !important;
+  right: 0 !important;
+  z-index: 5100 !important;
+  background: #fff !important;
+  border: 1px solid #dbe4ee !important;
+  box-shadow: 0 20px 48px rgba(15,23,42,.16) !important;
+  max-height: min(360px, calc(100dvh - 210px)) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
+
+/* Home: busca nunca colada no header (todas as telas) */
+body[data-page="home"] .secao-busca{
+  margin-top: clamp(10px, 1.6vw, 18px) !important;
+}
+
+/* Lote 1: hardening responsivo (home) */
+body[data-page="home"] main.dp-wrap{
+  padding-top: clamp(10px, 1.6vw, 20px) !important;
+}
+
+/* Quando main vira block no mobile, preserva ritmo vertical entre secoes */
+body[data-page="home"] main.dp-wrap > section + section,
+body[data-page="home"] main.dp-wrap > .anuncio-container{
+  margin-top: clamp(14px, 2vw, 22px) !important;
+}
+
+/* Evita "grudar" cards no limite lateral em tablets menores */
+@media (min-width: 768px) and (max-width: 1194px){
+  body[data-page="home"] main.dp-wrap{
+    padding-left: clamp(14px, 2.2vw, 24px) !important;
+    padding-right: clamp(14px, 2.2vw, 24px) !important;
+  }
+}
+
+/* Busca com margem inferior consistente antes das categorias */
+body[data-page="home"] .secao-busca{
+  margin-bottom: clamp(8px, 1.3vw, 14px) !important;
+}
+
+/* Lote 2: evitar conflito entre shell mobile e header/nav legados */
+@media (max-width: 1024px){
+  body[data-page="home"] .navbar-mobile,
+  body[data-page="home"] .bottom-nav,
+  body[data-page="home"] #overlay-menu{
+    display: none !important;
   }
 }

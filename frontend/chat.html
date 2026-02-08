@@ -1370,6 +1370,14 @@
         border-radius: 10px;
         border: 1px solid #e5e7eb;
     }
+    .finalizar-preview video {
+        width: 120px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
+        background: #000;
+    }
     .finalizar-preview button {
         background: #fee2e2;
         color: #b91c1c;
@@ -1378,6 +1386,36 @@
         border-radius: 8px;
         font-weight: 700;
         cursor: pointer;
+    }
+    .finalizar-modo {
+        display: flex;
+        gap: 14px;
+        flex-wrap: wrap;
+        margin-top: 12px;
+    }
+    .finalizar-modo label {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 700;
+        color: #334155;
+        font-size: 0.9rem;
+    }
+    .finalizar-dupla {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+    }
+    .finalizar-slot {
+        background: #fff;
+        border: 1px solid #e5e7eb;
+        border-radius: 12px;
+        padding: 10px;
+    }
+    @media (max-width: 560px) {
+        .finalizar-dupla {
+            grid-template-columns: 1fr;
+        }
     }
 
     @keyframes bounceIn {
@@ -1817,7 +1855,7 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-  <link rel="stylesheet" href="page-chat.css?v=20260207v21">
+  <link rel="stylesheet" href="page-chat.css?v=20260207v25">
 </head>
 <body data-page="chat">
 <aside class="sidebar-icones">
@@ -2057,7 +2095,7 @@
 <button class="btn-enviar" id="btn-send-txt" onclick="enviarMensagemTexto()">
 <i class="bx bxs-send"></i>
 </button>
-</input></div>
+</div>
 <div id="uiGravando" style="display:none; flex:1; align-items:center; gap:15px; background:#fff; padding:0 10px;">
 <div class="recording-indicator">
 <div class="red-dot"></div>
@@ -2126,19 +2164,52 @@
 </div>
 <h3 style="text-align:center;">Finalizar pedido</h3>
 <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
-            Confirme a conclusao do servico. Se quiser, anexe uma foto do resultado.
+            Confirme a conclusao do servico. Anexe uma midia unica ou um par antes/depois.
         </p>
-<div class="finalizar-upload">
-<label class="btn-upload" for="finalizarAnexo">
-<i class="bx bx-image-add"></i> Anexar imagem (opcional)
+<div class="finalizar-modo">
+<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Midia unica</label>
+<label><input name="finalizarModo" onclick="alterarModoFinalizacao('antes_depois')" type="radio" value="antes_depois"/> Antes e depois</label>
+</div>
+<div class="finalizar-upload" id="finalizarUploadUnico">
+<label class="btn-upload" for="finalizarAnexoUnico">
+<i class="bx bx-image-add"></i> Anexar midia (opcional)
             </label>
-<small id="finalizarNomeArquivo"></small>
-<input accept="image/*" id="finalizarAnexo" style="display:none;" type="file">
-<div class="finalizar-preview" id="finalizarPreview">
-<img alt="Preview" decoding="async" id="finalizarPreviewImg" loading="lazy">
-<button onclick="limparAnexoFinalizacao()" type="button">Remover</button>
-</img></div>
-</input></div>
+<small id="finalizarNomeArquivoUnico"></small>
+<input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file">
+<div class="finalizar-preview" id="finalizarPreviewUnico">
+<img alt="Preview" decoding="async" id="finalizarPreviewImgUnico" loading="lazy" style="display:none;">
+<video controls="" id="finalizarPreviewVideoUnico" muted="" playsinline="" preload="metadata" style="display:none;"></video>
+<button onclick="limparArquivoFinalizacao('unico')" type="button">Remover</button>
+</div>
+</div>
+<div class="finalizar-upload" id="finalizarUploadAntesDepois" style="display:none;">
+<div class="finalizar-dupla">
+<div class="finalizar-slot">
+<label class="btn-upload" for="finalizarAnexoAntes">
+<i class="bx bx-image-add"></i> Anexar antes
+</label>
+<small id="finalizarNomeArquivoAntes"></small>
+<input accept="image/*,video/*" id="finalizarAnexoAntes" style="display:none;" type="file">
+<div class="finalizar-preview" id="finalizarPreviewAntes">
+<img alt="Preview antes" decoding="async" id="finalizarPreviewImgAntes" loading="lazy" style="display:none;">
+<video controls="" id="finalizarPreviewVideoAntes" muted="" playsinline="" preload="metadata" style="display:none;"></video>
+<button onclick="limparArquivoFinalizacao('antes')" type="button">Remover</button>
+</div>
+</div>
+<div class="finalizar-slot">
+<label class="btn-upload" for="finalizarAnexoDepois">
+<i class="bx bx-image-add"></i> Anexar depois
+</label>
+<small id="finalizarNomeArquivoDepois"></small>
+<input accept="image/*,video/*" id="finalizarAnexoDepois" style="display:none;" type="file">
+<div class="finalizar-preview" id="finalizarPreviewDepois">
+<img alt="Preview depois" decoding="async" id="finalizarPreviewImgDepois" loading="lazy" style="display:none;">
+<video controls="" id="finalizarPreviewVideoDepois" muted="" playsinline="" preload="metadata" style="display:none;"></video>
+<button onclick="limparArquivoFinalizacao('depois')" type="button">Remover</button>
+</div>
+</div>
+</div>
+</div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
 <i class="bx bx-check"></i> Finalizar servico
@@ -2204,8 +2275,13 @@
     let replyContext = null;
     const avaliacaoCache = {};
       let pedidoFinalizarId = null;
-      let finalizacaoFile = null;
-      let finalizacaoPreviewUrl = null;
+      let finalizacaoModo = 'unico';
+      let finalizacaoFileUnico = null;
+      let finalizacaoFileAntes = null;
+      let finalizacaoFileDepois = null;
+      let finalizacaoPreviewUrlUnico = null;
+      let finalizacaoPreviewUrlAntes = null;
+      let finalizacaoPreviewUrlDepois = null;
       let pedidoInfoRenderId = null;
 
     window.abrirPerfilUsuario = function(uid, isProfissional){
@@ -2514,6 +2590,9 @@
         if (t === 'pagamento') return '💳 Cobrança';
         if (t === 'card_finalizado') return '✅ Pedido finalizado';
         if (t === 'card_avaliacao') return '⭐ Avaliação';
+        if (t === 'solicitacao_portfolio') return '🖼️ Solicitação de portfólio';
+        if (t === 'portfolio_consent_result') return '✅ Resposta de portfólio';
+        if (t === 'portfolio_publicado') return '📁 Publicado no portfólio';
         return (texto || '').slice(0, 140);
     }
     function normalizePinPreview(text){
@@ -4367,8 +4446,81 @@
 
     window.fecharModalDetalhes = () => document.getElementById('modalOrcamento').style.display = 'none';
 
-    // Ações de Pedido (Agora usando DokePrompt e DokeConfirm)
-    window.criarNotificacaoPedido = async function(paraUid, acao, pedidoId) {
+    function inferMediaTipoByUrl(url) {
+        const u = String(url || '').toLowerCase();
+        if (!u) return 'imagem';
+        if (u.includes('.mp4') || u.includes('.webm') || u.includes('.mov') || u.includes('.m4v') || u.includes('.ogg')) return 'video';
+        return 'imagem';
+    }
+
+    async function obterMidiaFinalizacaoDoPedido(pedidoId, pedidoData) {
+        const fromAfter = (pedidoData && (pedidoData.finalizacaoDepoisUrl || pedidoData.finalizacaoDepoisURL)) || "";
+        const fromMain = (pedidoData && (pedidoData.finalizacaoMediaUrl || pedidoData.finalizacaoMediaURL)) || "";
+        const fromBefore = (pedidoData && (pedidoData.finalizacaoAntesUrl || pedidoData.finalizacaoAntesURL)) || "";
+        const fromPedido = fromAfter || fromMain || fromBefore;
+        if (fromPedido) {
+            return {
+                url: fromPedido,
+                tipo: (
+                    (fromAfter ? pedidoData.finalizacaoDepoisTipo : '') ||
+                    pedidoData.finalizacaoMediaTipo ||
+                    (fromBefore ? pedidoData.finalizacaoAntesTipo : '') ||
+                    inferMediaTipoByUrl(fromPedido) ||
+                    'imagem'
+                ),
+                nome: (
+                    (fromAfter ? pedidoData.finalizacaoDepoisNome : '') ||
+                    pedidoData.finalizacaoMediaNome ||
+                    (fromBefore ? pedidoData.finalizacaoAntesNome : '') ||
+                    ""
+                ),
+                beforeUrl: fromBefore || "",
+                afterUrl: fromAfter || ""
+            };
+        }
+        try {
+            const qMsgs = query(collection(db, "pedidos", pedidoId, "mensagens"), orderBy("timestamp", "desc"), limit(40));
+            const snap = await getDocs(qMsgs);
+            const found = snap.docs.find((d) => {
+                const m = d.data() || {};
+                return m.tipo === 'card_finalizado' && !!(m.afterUrl || m.url || m.beforeUrl);
+            });
+            if (!found) return null;
+            const m = found.data() || {};
+            const foundUrl = m.afterUrl || m.url || m.beforeUrl || "";
+            return {
+                url: foundUrl,
+                tipo: m.afterType || m.mediaType || m.beforeType || inferMediaTipoByUrl(foundUrl),
+                nome: m.afterName || m.mediaName || m.beforeName || "",
+                beforeUrl: m.beforeUrl || "",
+                afterUrl: m.afterUrl || ""
+            };
+        } catch (e) {
+            console.warn("Falha ao buscar midia de finalizacao no chat:", e);
+            return null;
+        }
+    }
+
+    async function resolverProfissionalIdPortfolio(pedidoData) {
+        const sb = window.sb || window.supabase;
+        if (!sb || typeof sb.from !== "function") return "";
+        let profissionalId = (pedidoData && (pedidoData.profissional_id || pedidoData.profissionalId || pedidoData.profissionalid || pedidoData.paraId)) || "";
+        if (profissionalId) return profissionalId;
+        const profUid = getParaUid(pedidoData || {});
+        if (!profUid) return "";
+        try {
+            const r1 = await sb.from("usuarios").select("id").eq("uid", profUid).maybeSingle();
+            if (!r1.error && r1.data && r1.data.id) return r1.data.id;
+        } catch (_) {}
+        try {
+            const r2 = await sb.from("usuarios").select("id").eq("id", profUid).maybeSingle();
+            if (!r2.error && r2.data && r2.data.id) return r2.data.id;
+        } catch (_) {}
+        return "";
+    }
+
+    // Acoes de Pedido (agora com payload opcional para casos especiais)
+    window.criarNotificacaoPedido = async function(paraUid, acao, pedidoId, extra = {}) {
         try {
             if(!paraUid || !pedidoId) return;
             const perfil = (function(){
@@ -4378,7 +4530,7 @@
                 const user = raw ? (raw.startsWith('@')? raw : '@'+raw) : '@usuario';
                 return { nome, user, foto: p.foto || 'https://placehold.co/50' };
             })();
-            await addDoc(collection(db, 'notificacoes'), {
+            const payload = {
                 parauid: paraUid,
                 deuid: currentUserUid,
                 denome: perfil.nome,
@@ -4391,8 +4543,288 @@
                 lida: false,
                 createdat: new Date().toISOString(),
                 link: `chat.html?chatId=${pedidoId}`
-            });
+            };
+            if (extra && typeof extra === "object") {
+                const allow = [
+                    "midia_url", "midia_tipo", "pedido_status_portfolio",
+                    "pedidoid", "solicitacao_id", "resultado"
+                ];
+                allow.forEach((k) => {
+                    if (extra[k] != null) payload[k] = extra[k];
+                });
+            }
+            await addDoc(collection(db, 'notificacoes'), payload);
         } catch(e) { /* ignora */ }
+    };
+
+    window.solicitarAdicionarNoPortfolio = async function(pedidoId) {
+        const id = pedidoId || chatIdAtual;
+        if (!id) return;
+        try {
+            const pedidoRef = doc(db, "pedidos", id);
+            const pedidoSnap = await getDoc(pedidoRef);
+            if (!pedidoSnap.exists()) {
+                window.dokeAlert("Pedido nao encontrado.");
+                return;
+            }
+            const p = pedidoSnap.data() || {};
+            const paraUid = getParaUid(p);
+            const deUid = getDeUid(p);
+            if (!paraUid || String(paraUid) !== String(currentUserUid || '')) {
+                window.dokeAlert("Somente o profissional pode solicitar.");
+                return;
+            }
+
+            if (p.portfolioAddedAt || p.portfolioItemId) {
+                window.dokeAlert("Este item ja foi publicado no portfolio.");
+                return;
+            }
+
+            let media = await obterMidiaFinalizacaoDoPedido(id, p);
+            if (!media || !media.url) {
+                window.dokeAlert("Nao ha imagem/video de finalizacao para este pedido.");
+                return;
+            }
+
+            const consent = String(p.portfolioConsentStatus || '').toLowerCase();
+            if (consent === 'pendente') {
+                window.dokeAlert("Solicitacao ja enviada. Aguarde a resposta do cliente.");
+                return;
+            }
+            if (consent === 'aprovado') {
+                await window.publicarMidiaNoPortfolio(id);
+                return;
+            }
+
+            const qRecentes = query(
+                collection(db, "pedidos", id, "mensagens"),
+                orderBy("timestamp", "desc"),
+                limit(25)
+            );
+            const recentesSnap = await getDocs(qRecentes);
+            const solicitacaoPendente = recentesSnap.docs.find((d) => {
+                const item = d.data() || {};
+                return item.tipo === 'solicitacao_portfolio' && String(item.status || '').toLowerCase() === 'pendente';
+            });
+            if (solicitacaoPendente) {
+                window.dokeAlert("Solicitacao ja enviada. Aguarde a resposta do cliente.");
+                return;
+            }
+
+            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            const nowIso = new Date().toISOString();
+            const msgRef = await addDoc(collection(db, "pedidos", id, "mensagens"), {
+                tipo: 'solicitacao_portfolio',
+                texto: 'Profissional solicitou autorizacao para usar a midia no portfolio.',
+                status: 'pendente',
+                mediaUrl: media.url,
+                mediaType: media.tipo || 'imagem',
+                mediaName: media.nome || '',
+                senderUid,
+                targetUid: deUid || '',
+                timestamp: new Date(),
+                lidoEm: senderUid ? { [senderUid]: nowIso } : {}
+            });
+
+            await updateDoc(pedidoRef, {
+                finalizacaoMediaUrl: media.url,
+                finalizacaoMediaTipo: media.tipo || 'imagem',
+                finalizacaoMediaNome: media.nome || '',
+                portfolioConsentStatus: 'pendente',
+                portfolioConsentRequestedAt: nowIso,
+                portfolioConsentRequestedBy: senderUid,
+                portfolioConsentMsgId: msgRef.id,
+                dataAtualizacao: nowIso,
+                ultimaMensagem: "Solicitacao de portfolio enviada"
+            });
+
+            if (deUid) {
+                await window.criarNotificacaoPedido(deUid, 'portfolio_consent_request', id, {
+                    midia_url: media.url,
+                    midia_tipo: media.tipo || 'imagem',
+                    pedido_status_portfolio: 'pendente',
+                    solicitacao_id: msgRef.id
+                });
+            }
+
+            window.dokeAlert("Solicitacao enviada para o cliente.");
+            if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
+        } catch (e) {
+            console.error("Erro ao solicitar portfolio:", e);
+            window.dokeAlert("Nao foi possivel enviar a solicitacao.");
+        }
+    };
+
+    window.responderSolicitacaoPortfolio = async function(pedidoId, mensagemId, decisao) {
+        const id = pedidoId || chatIdAtual;
+        const msgId = mensagemId || "";
+        if (!id || !msgId) return;
+        const statusFinal = (String(decisao || '').toLowerCase() === 'aprovar') ? 'aprovado' : 'recusado';
+        const confirmTxt = statusFinal === 'aprovado'
+            ? "Permitir que esta midia apareca no portfolio do profissional?"
+            : "Recusar uso desta midia no portfolio?";
+        if (!await window.dokeConfirm(confirmTxt, "Portfolio")) return;
+
+        try {
+            const pedidoRef = doc(db, "pedidos", id);
+            const msgRef = doc(db, "pedidos", id, "mensagens", msgId);
+            const [pedidoSnap, msgSnap] = await Promise.all([getDoc(pedidoRef), getDoc(msgRef)]);
+            if (!pedidoSnap.exists() || !msgSnap.exists()) {
+                window.dokeAlert("Solicitacao nao encontrada.");
+                return;
+            }
+            const p = pedidoSnap.data() || {};
+            const deUid = getDeUid(p);
+            const paraUid = getParaUid(p);
+            if (!deUid || String(deUid) !== String(currentUserUid || '')) {
+                window.dokeAlert("Somente o cliente pode responder.");
+                return;
+            }
+            const m = msgSnap.data() || {};
+            const atual = String(m.status || p.portfolioConsentStatus || '').toLowerCase();
+            if (atual && atual !== 'pendente') {
+                window.dokeAlert("Essa solicitacao ja foi respondida.");
+                return;
+            }
+
+            const nowIso = new Date().toISOString();
+            await updateDoc(msgRef, {
+                status: statusFinal,
+                decidedAt: nowIso,
+                decidedBy: currentUserUid || ''
+            });
+
+            await updateDoc(pedidoRef, {
+                portfolioConsentStatus: statusFinal,
+                portfolioConsentDecisionAt: nowIso,
+                portfolioConsentDecisionBy: currentUserUid || '',
+                dataAtualizacao: nowIso,
+                ultimaMensagem: statusFinal === 'aprovado'
+                    ? "Cliente autorizou uso no portfolio"
+                    : "Cliente recusou uso no portfolio"
+            });
+
+            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            await addDoc(collection(db, "pedidos", id, "mensagens"), {
+                tipo: 'portfolio_consent_result',
+                texto: statusFinal === 'aprovado'
+                    ? "Cliente autorizou o uso da midia no portfolio."
+                    : "Cliente recusou o uso da midia no portfolio.",
+                status: statusFinal,
+                mediaUrl: m.mediaUrl || '',
+                mediaType: m.mediaType || inferMediaTipoByUrl(m.mediaUrl || ''),
+                senderUid,
+                timestamp: new Date(),
+                lidoEm: senderUid ? { [senderUid]: nowIso } : {}
+            });
+
+            if (paraUid) {
+                await window.criarNotificacaoPedido(
+                    paraUid,
+                    statusFinal === 'aprovado' ? 'portfolio_consent_approved' : 'portfolio_consent_rejected',
+                    id,
+                    { pedido_status_portfolio: statusFinal }
+                );
+            }
+
+            window.dokeAlert(statusFinal === 'aprovado' ? "Autorizacao enviada ao profissional." : "Recusa enviada ao profissional.");
+            if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
+        } catch (e) {
+            console.error("Erro ao responder solicitacao de portfolio:", e);
+            window.dokeAlert("Nao foi possivel responder agora.");
+        }
+    };
+
+    window.publicarMidiaNoPortfolio = async function(pedidoId) {
+        const id = pedidoId || chatIdAtual;
+        if (!id) return;
+        try {
+            const sb = window.sb || window.supabase;
+            if (!sb || typeof sb.from !== "function") {
+                window.dokeAlert("Integracao com portfolio indisponivel.");
+                return;
+            }
+            const pedidoRef = doc(db, "pedidos", id);
+            const pedidoSnap = await getDoc(pedidoRef);
+            if (!pedidoSnap.exists()) {
+                window.dokeAlert("Pedido nao encontrado.");
+                return;
+            }
+            const p = pedidoSnap.data() || {};
+            const paraUid = getParaUid(p);
+            const deUid = getDeUid(p);
+            if (!paraUid || String(paraUid) !== String(currentUserUid || '')) {
+                window.dokeAlert("Somente o profissional pode publicar no portfolio.");
+                return;
+            }
+            if (String(p.portfolioConsentStatus || '').toLowerCase() !== 'aprovado') {
+                window.dokeAlert("Aguardando autorizacao do cliente.");
+                return;
+            }
+            if (p.portfolioAddedAt || p.portfolioItemId) {
+                window.dokeAlert("Este item ja esta no portfolio.");
+                return;
+            }
+
+            let media = await obterMidiaFinalizacaoDoPedido(id, p);
+            if (!media || !media.url) {
+                window.dokeAlert("Nao foi encontrada midia para publicar.");
+                return;
+            }
+
+            const profissionalId = await resolverProfissionalIdPortfolio(p);
+            if (!profissionalId) {
+                window.dokeAlert("Nao foi possivel identificar o perfil do profissional.");
+                return;
+            }
+
+            const whenIso = p.dataConclusao || new Date().toISOString();
+            const payload = {
+                profissional_id: profissionalId,
+                titulo: p.servicoReferencia || "Servico concluido",
+                descricao: `Entrega concluida em ${new Date(whenIso).toLocaleDateString("pt-BR")}`,
+                media_url: media.url
+            };
+            const ins = await sb.from("portfolio").insert(payload).select("id").maybeSingle();
+            if (ins.error) throw ins.error;
+
+            const nowIso = new Date().toISOString();
+            await updateDoc(pedidoRef, {
+                finalizacaoMediaUrl: media.url,
+                finalizacaoMediaTipo: media.tipo || 'imagem',
+                finalizacaoMediaNome: media.nome || '',
+                portfolioAddedAt: nowIso,
+                portfolioAddedBy: currentUserUid || '',
+                portfolioItemId: ins.data?.id || '',
+                dataAtualizacao: nowIso,
+                ultimaMensagem: "Midia publicada no portfolio"
+            });
+
+            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            await addDoc(collection(db, "pedidos", id, "mensagens"), {
+                tipo: 'portfolio_publicado',
+                texto: 'Midia publicada no portfolio do profissional.',
+                mediaUrl: media.url,
+                mediaType: media.tipo || 'imagem',
+                senderUid,
+                timestamp: new Date(),
+                lidoEm: senderUid ? { [senderUid]: nowIso } : {}
+            });
+
+            if (deUid) {
+                await window.criarNotificacaoPedido(deUid, 'portfolio_published', id, {
+                    midia_url: media.url,
+                    midia_tipo: media.tipo || 'imagem',
+                    pedido_status_portfolio: 'publicado'
+                });
+            }
+
+            window.dokeAlert("Midia adicionada ao portfolio com sucesso.");
+            if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
+        } catch (e) {
+            console.error("Erro ao publicar no portfolio:", e);
+            window.dokeAlert("Nao foi possivel publicar no portfolio.");
+        }
     };
 
     // Ações de Pedido (Profissional: recusa com motivo)
@@ -4495,21 +4927,153 @@ window.fecharModalFinalizarPedido = () => {
     window.limparAnexoFinalizacao();
     pedidoFinalizarId = null;
 };
-window.limparAnexoFinalizacao = () => {
-    finalizacaoFile = null;
-    const input = document.getElementById('finalizarAnexo');
-    const nameEl = document.getElementById('finalizarNomeArquivo');
-    const preview = document.getElementById('finalizarPreview');
-    const img = document.getElementById('finalizarPreviewImg');
-    if (input) input.value = "";
-    if (nameEl) nameEl.textContent = "";
-    if (preview) preview.style.display = 'none';
-    if (img) img.src = "";
-    if (finalizacaoPreviewUrl) {
-        try { URL.revokeObjectURL(finalizacaoPreviewUrl); } catch (_) {}
-        finalizacaoPreviewUrl = null;
-    }
+
+window.alterarModoFinalizacao = (modo) => {
+    finalizacaoModo = (modo === 'antes_depois') ? 'antes_depois' : 'unico';
+    const blocoUnico = document.getElementById('finalizarUploadUnico');
+    const blocoDuplo = document.getElementById('finalizarUploadAntesDepois');
+    if (blocoUnico) blocoUnico.style.display = finalizacaoModo === 'unico' ? 'flex' : 'none';
+    if (blocoDuplo) blocoDuplo.style.display = finalizacaoModo === 'antes_depois' ? 'flex' : 'none';
 };
+
+function getFinalizacaoRefs(tipo) {
+    if (tipo === 'antes') {
+        return {
+            input: document.getElementById('finalizarAnexoAntes'),
+            nameEl: document.getElementById('finalizarNomeArquivoAntes'),
+            preview: document.getElementById('finalizarPreviewAntes'),
+            img: document.getElementById('finalizarPreviewImgAntes'),
+            video: document.getElementById('finalizarPreviewVideoAntes')
+        };
+    }
+    if (tipo === 'depois') {
+        return {
+            input: document.getElementById('finalizarAnexoDepois'),
+            nameEl: document.getElementById('finalizarNomeArquivoDepois'),
+            preview: document.getElementById('finalizarPreviewDepois'),
+            img: document.getElementById('finalizarPreviewImgDepois'),
+            video: document.getElementById('finalizarPreviewVideoDepois')
+        };
+    }
+    return {
+        input: document.getElementById('finalizarAnexoUnico'),
+        nameEl: document.getElementById('finalizarNomeArquivoUnico'),
+        preview: document.getElementById('finalizarPreviewUnico'),
+        img: document.getElementById('finalizarPreviewImgUnico'),
+        video: document.getElementById('finalizarPreviewVideoUnico')
+    };
+}
+
+function limparPreviewMidiaFinalizacao(tipo) {
+    const refs = getFinalizacaoRefs(tipo);
+    if (refs.input) refs.input.value = "";
+    if (refs.nameEl) refs.nameEl.textContent = "";
+    if (refs.preview) refs.preview.style.display = 'none';
+    if (refs.img) {
+        refs.img.src = "";
+        refs.img.style.display = 'none';
+    }
+    if (refs.video) {
+        refs.video.pause();
+        refs.video.removeAttribute('src');
+        refs.video.load();
+        refs.video.style.display = 'none';
+    }
+
+    if (tipo === 'antes') {
+        if (finalizacaoPreviewUrlAntes) {
+            try { URL.revokeObjectURL(finalizacaoPreviewUrlAntes); } catch (_) {}
+            finalizacaoPreviewUrlAntes = null;
+        }
+    } else if (tipo === 'depois') {
+        if (finalizacaoPreviewUrlDepois) {
+            try { URL.revokeObjectURL(finalizacaoPreviewUrlDepois); } catch (_) {}
+            finalizacaoPreviewUrlDepois = null;
+        }
+    } else {
+        if (finalizacaoPreviewUrlUnico) {
+            try { URL.revokeObjectURL(finalizacaoPreviewUrlUnico); } catch (_) {}
+            finalizacaoPreviewUrlUnico = null;
+        }
+    }
+}
+
+window.limparArquivoFinalizacao = (tipo) => {
+    if (tipo === 'antes') finalizacaoFileAntes = null;
+    else if (tipo === 'depois') finalizacaoFileDepois = null;
+    else finalizacaoFileUnico = null;
+    limparPreviewMidiaFinalizacao(tipo || 'unico');
+};
+
+window.limparAnexoFinalizacao = () => {
+    finalizacaoFileUnico = null;
+    finalizacaoFileAntes = null;
+    finalizacaoFileDepois = null;
+    limparPreviewMidiaFinalizacao('unico');
+    limparPreviewMidiaFinalizacao('antes');
+    limparPreviewMidiaFinalizacao('depois');
+    finalizacaoModo = 'unico';
+    const radioUnico = document.querySelector('input[name="finalizarModo"][value="unico"]');
+    if (radioUnico) radioUnico.checked = true;
+    window.alterarModoFinalizacao('unico');
+};
+
+function preencherPreviewMidiaFinalizacao(tipo, file) {
+    const refs = getFinalizacaoRefs(tipo);
+    if (!file) {
+        window.limparArquivoFinalizacao(tipo);
+        return;
+    }
+    if (refs.nameEl) refs.nameEl.textContent = file.name || "";
+    if (refs.preview) refs.preview.style.display = 'flex';
+
+    let blobUrl = URL.createObjectURL(file);
+    if (tipo === 'antes') {
+        if (finalizacaoPreviewUrlAntes) {
+            try { URL.revokeObjectURL(finalizacaoPreviewUrlAntes); } catch (_) {}
+        }
+        finalizacaoPreviewUrlAntes = blobUrl;
+    } else if (tipo === 'depois') {
+        if (finalizacaoPreviewUrlDepois) {
+            try { URL.revokeObjectURL(finalizacaoPreviewUrlDepois); } catch (_) {}
+        }
+        finalizacaoPreviewUrlDepois = blobUrl;
+    } else {
+        if (finalizacaoPreviewUrlUnico) {
+            try { URL.revokeObjectURL(finalizacaoPreviewUrlUnico); } catch (_) {}
+        }
+        finalizacaoPreviewUrlUnico = blobUrl;
+    }
+
+    const isVideo = String(file.type || '').toLowerCase().startsWith('video/');
+    if (refs.img) {
+        refs.img.style.display = isVideo ? 'none' : 'block';
+        refs.img.src = isVideo ? '' : blobUrl;
+    }
+    if (refs.video) {
+        refs.video.style.display = isVideo ? 'block' : 'none';
+        if (isVideo) {
+            refs.video.src = blobUrl;
+            refs.video.load();
+        } else {
+            refs.video.pause();
+            refs.video.removeAttribute('src');
+            refs.video.load();
+        }
+    }
+}
+
+async function uploadArquivoFinalizacao(pedidoId, file, sufixo) {
+    if (!file) return { url: "", tipo: "", nome: "" };
+    const storage = getStorage();
+    const safeName = String(file.name || 'resultado').replace(/[^a-zA-Z0-9._-]/g, '_');
+    const path = `chat/pedidos/${pedidoId}/finalizado_${sufixo}_${Date.now()}_${safeName}`;
+    const r = ref(storage, path);
+    await uploadBytes(r, file);
+    const url = await getDownloadURL(r);
+    const tipo = String(file.type || '').toLowerCase().startsWith('video/') ? 'video' : 'imagem';
+    return { url, tipo, nome: file.name || '' };
+}
 
 window.confirmarFinalizacaoPedido = async () => {
     const id = pedidoFinalizarId;
@@ -4518,15 +5082,25 @@ window.confirmarFinalizacaoPedido = async () => {
     if (btn) { btn.disabled = true; btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Finalizando..."; }
 
     try {
-        let fotoUrl = "";
-        if (finalizacaoFile) {
-            const storage = getStorage();
-            const safeName = String(finalizacaoFile.name || 'resultado').replace(/[^a-zA-Z0-9._-]/g, '_');
-            const path = `chat/pedidos/${id}/finalizado_${Date.now()}_${safeName}`;
-            const r = ref(storage, path);
-            await uploadBytes(r, finalizacaoFile);
-            fotoUrl = await getDownloadURL(r);
+        const modoAtual = finalizacaoModo === 'antes_depois' ? 'antes_depois' : 'unico';
+        let mediaUnica = { url: "", tipo: "", nome: "" };
+        let mediaAntes = { url: "", tipo: "", nome: "" };
+        let mediaDepois = { url: "", tipo: "", nome: "" };
+
+        if (modoAtual === 'antes_depois') {
+            if (!finalizacaoFileAntes || !finalizacaoFileDepois) {
+                window.dokeAlert("Anexe os dois arquivos: antes e depois.");
+                return;
+            }
+            mediaAntes = await uploadArquivoFinalizacao(id, finalizacaoFileAntes, 'antes');
+            mediaDepois = await uploadArquivoFinalizacao(id, finalizacaoFileDepois, 'depois');
+            mediaUnica = mediaDepois.url ? { ...mediaDepois } : { ...mediaAntes };
+        } else if (finalizacaoFileUnico) {
+            mediaUnica = await uploadArquivoFinalizacao(id, finalizacaoFileUnico, 'midia');
         }
+
+        const temMidia = !!(mediaUnica.url || mediaAntes.url || mediaDepois.url);
+        const consentInicial = temMidia ? 'nenhum' : '';
 
         await updateDoc(doc(db, "pedidos", id), { 
             status: 'finalizado',
@@ -4534,86 +5108,41 @@ window.confirmarFinalizacaoPedido = async () => {
             notificacaoLidaProfissional: false,
             notificacaoLidaCliente: false,
             avaliado: false,
+            finalizacaoModo: modoAtual,
+            finalizacaoMediaUrl: mediaUnica.url || "",
+            finalizacaoMediaTipo: mediaUnica.tipo || "",
+            finalizacaoMediaNome: mediaUnica.nome || "",
+            finalizacaoAntesUrl: mediaAntes.url || "",
+            finalizacaoAntesTipo: mediaAntes.tipo || "",
+            finalizacaoAntesNome: mediaAntes.nome || "",
+            finalizacaoDepoisUrl: mediaDepois.url || "",
+            finalizacaoDepoisTipo: mediaDepois.tipo || "",
+            finalizacaoDepoisNome: mediaDepois.nome || "",
+            portfolioConsentStatus: consentInicial,
+            portfolioConsentRequestedAt: "",
+            portfolioConsentRequestedBy: "",
+            portfolioConsentDecisionAt: "",
+            portfolioConsentDecisionBy: "",
+            portfolioAddedAt: "",
+            portfolioAddedBy: "",
+            portfolioItemId: "",
             dataAtualizacao: new Date().toISOString(),
             ultimaMensagem: "Pedido finalizado"
         });
-        // ------------------------------------------------------------
-        // PORTFÓLIO (Supabase): quando o cliente finaliza e envia imagem,
-        // adiciona automaticamente na aba "Portfólio" do prestador.
-        // ------------------------------------------------------------
-        try {
-            if (fotoUrl && window.sb && typeof window.sb.from === "function") {
-                const sb = window.sb;
-
-                // Puxa dados do pedido (paraUid/anuncioId) para vincular corretamente
-                let pedidoData = null;
-                try {
-                    const snap = await getDoc(doc(db, "pedidos", id));
-                    if (snap && snap.exists && snap.exists()) {
-                        pedidoData = snap.data ? snap.data() : null;
-                    }
-                } catch (e) {}
-
-                const normalizeUuid = (v) => {
-                    if (!v) return "";
-                    let s = String(v).trim();
-                    if (s.startsWith("sb-")) s = s.slice(3);
-                    const m = s.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i);
-                    return m ? m[0] : s;
-                };
-
-                const anuncioId = normalizeUuid(
-                    (pedidoData && (pedidoData.anuncioId || pedidoData.anuncio_id || pedidoData.anuncioid || pedidoData.anuncio)) || ""
-                );
-
-                const profUid = (pedidoData && (pedidoData.paraUid || pedidoData.profUid || pedidoData.profissionalUid || pedidoData.prof_uid || pedidoData.profissional_uid)) || "";
-
-                // profissional_id do portfólio é o ID (uuid) da tabela usuarios
-                let profissionalId = (pedidoData && (pedidoData.profissional_id || pedidoData.profissionalId || pedidoData.profissionalid || pedidoData.paraId)) || "";
-
-                if (!profissionalId && profUid) {
-                    // tenta por uid -> usuarios.id
-                    const r1 = await sb.from("usuarios").select("id").eq("uid", profUid).maybeSingle();
-                    if (!r1.error && r1.data && r1.data.id) profissionalId = r1.data.id;
-
-                    // fallback: se profUid já for o id
-                    if (!profissionalId) {
-                        const r2 = await sb.from("usuarios").select("id").eq("id", profUid).maybeSingle();
-                        if (!r2.error && r2.data && r2.data.id) profissionalId = r2.data.id;
-                    }
-                }
-
-                // Título do serviço (anúncio)
-                let tituloServico = "Serviço concluído";
-                if (anuncioId) {
-                    const ar = await sb.from("anuncios").select("titulo").eq("id", anuncioId).maybeSingle();
-                    if (!ar.error && ar.data && ar.data.titulo) tituloServico = ar.data.titulo;
-                }
-
-                if (profissionalId) {
-                    const when = new Date();
-                    const descricao = `Entrega concluída em ${when.toLocaleDateString("pt-BR")}`;
-                    await sb.from("portfolio").insert({
-                        profissional_id: profissionalId,
-                        titulo: tituloServico,
-                        descricao: descricao,
-                        media_url: fotoUrl,
-                        created_at: when.toISOString()
-                    });
-                }
-            }
-        } catch (e) {
-            console.warn("Portfólio: falha ao inserir item automaticamente.", e);
-        }
-
-
-
         try {
             const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
                 tipo: 'card_finalizado',
                 texto: "Pedido finalizado pelo cliente.",
-                url: fotoUrl || "",
+                url: mediaUnica.url || "",
+                mediaType: mediaUnica.tipo || "",
+                mediaName: mediaUnica.nome || "",
+                beforeUrl: mediaAntes.url || "",
+                beforeType: mediaAntes.tipo || "",
+                beforeName: mediaAntes.nome || "",
+                afterUrl: mediaDepois.url || "",
+                afterType: mediaDepois.tipo || "",
+                afterName: mediaDepois.nome || "",
                 senderUid,
                 timestamp: new Date(),
                 lidoEm: senderUid ? { [senderUid]: new Date().toISOString() } : {}
@@ -4803,6 +5332,20 @@ window.confirmarFinalizacaoPedido = async () => {
                                 style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                             <i class='bx bx-check'></i> Confirmar Conclusão
                         </button>`;
+                } else if (papelReal === 'profissional' && p.status === 'finalizado') {
+                    const hasMedia = !!(p.finalizacaoMediaUrl || p.finalizacaoMediaURL);
+                    const consent = String(p.portfolioConsentStatus || '').toLowerCase();
+                    if (!hasMedia) {
+                        acoesHtml = `<div style="margin-top:8px; font-size:0.78rem; color:#64748b; font-weight:700;">Sem midia anexada na finalizacao.</div>`;
+                    } else if (p.portfolioAddedAt || p.portfolioItemId) {
+                        acoesHtml = `<div style="margin-top:8px; font-size:0.78rem; color:#166534; font-weight:800;"><i class='bx bx-check-circle'></i> Midia ja publicada no portfolio.</div>`;
+                    } else if (consent === 'pendente') {
+                        acoesHtml = `<div style="margin-top:8px; font-size:0.78rem; color:#475569; font-weight:700;"><i class='bx bx-time-five'></i> Aguardando autorizacao do cliente.</div>`;
+                    } else if (consent === 'aprovado') {
+                        acoesHtml = `<button onclick="event.stopPropagation(); publicarMidiaNoPortfolio('${id}')" style="margin-top:8px; width:fit-content; background:#0b7768; color:#fff; border:none; padding:7px 15px; border-radius:20px; font-weight:800; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:6px;"><i class='bx bx-collection'></i> Publicar no portfolio</button>`;
+                    } else {
+                        acoesHtml = `<button onclick="event.stopPropagation(); solicitarAdicionarNoPortfolio('${id}')" style="margin-top:8px; width:fit-content; background:#1f4d75; color:#fff; border:none; padding:7px 15px; border-radius:20px; font-weight:800; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:6px;"><i class='bx bx-send'></i> Adicionar no portfolio</button>`;
+                    }
                 }
 
 
@@ -5389,6 +5932,17 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const recusaCard = buildRecusaCard(pedidoAtualData);
             if (recusaCard) htmlParts.push(recusaCard);
         }
+        const latestSolicitacaoPortfolioId = (() => {
+            let latest = { id: "", ts: 0 };
+            (snapshot.docs || []).forEach((d) => {
+                const mData = d.data() || {};
+                if (mData.tipo !== 'solicitacao_portfolio') return;
+                const dt = parseDataHora(mData.timestamp);
+                const ts = dt && !isNaN(dt.getTime()) ? dt.getTime() : 0;
+                if (!latest.id || ts >= latest.ts) latest = { id: d.id || "", ts };
+            });
+            return latest.id || "";
+        })();
 
           snapshot.forEach(docSnap => {
               const m = docSnap.data();
@@ -5508,19 +6062,56 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             // --- CARD FINALIZADO ---
             else if (m.tipo === 'card_finalizado') {
-                const souClientePedido = pedidoAtualData && String(pedidoAtualData.deUid || '') === String(currentUserUid || '');
+                const souClientePedido = pedidoAtualData && String(getDeUid(pedidoAtualData) || '') === String(currentUserUid || '');
+                const souProfissionalPedido = pedidoAtualData && String(getParaUid(pedidoAtualData) || '') === String(currentUserUid || '');
                 const titulo = pedidoAvaliado ? "Pedido avaliado com sucesso" : "Pedido finalizado";
                 const subt = pedidoAvaliado
                     ? "Sua avaliação ajudou a comunidade."
                     : (souClientePedido ? "Que tal avaliar o profissional agora?" : "Aguardando avaliação do cliente.");
-                const imgHtml = m.url
-                    ? `<div style="margin-top:10px;">
-                            <img src="${m.url}" alt="resultado" style="max-width:280px; width:100%; border-radius:12px; border:1px solid #e5e7eb; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" / loading="lazy" decoding="async">
-                       </div>`
-                    : "";
+                const mediaType = m.mediaType || inferMediaTipoByUrl(m.url || "");
+                const beforeUrl = m.beforeUrl || (pedidoAtualData && pedidoAtualData.finalizacaoAntesUrl) || "";
+                const afterUrl = m.afterUrl || (pedidoAtualData && pedidoAtualData.finalizacaoDepoisUrl) || "";
+                const hasBeforeAfter = !!(beforeUrl || afterUrl);
+                let mediaHtml = "";
+                if (hasBeforeAfter) {
+                    const beforeType = m.beforeType || inferMediaTipoByUrl(beforeUrl);
+                    const afterType = m.afterType || inferMediaTipoByUrl(afterUrl);
+                    const beforeBox = beforeUrl
+                        ? (beforeType === 'video'
+                            ? `<video src="${beforeUrl}" controls playsinline preload="metadata" style="width:100%; border-radius:10px; border:1px solid #e5e7eb; display:block; background:#000; aspect-ratio:4/3; object-fit:cover;"></video>`
+                            : `<img src="${beforeUrl}" alt="antes" style="width:100%; border-radius:10px; border:1px solid #e5e7eb; display:block; cursor:pointer; aspect-ratio:4/3; object-fit:cover;" onclick="abrirGaleria(['${beforeUrl}'], 0)" loading="lazy" decoding="async">`)
+                        : `<div style="height:100%; min-height:100px; display:flex; align-items:center; justify-content:center; border:1px dashed #d1d5db; border-radius:10px; color:#94a3b8; font-size:0.8rem;">Sem midia</div>`;
+                    const afterBox = afterUrl
+                        ? (afterType === 'video'
+                            ? `<video src="${afterUrl}" controls playsinline preload="metadata" style="width:100%; border-radius:10px; border:1px solid #e5e7eb; display:block; background:#000; aspect-ratio:4/3; object-fit:cover;"></video>`
+                            : `<img src="${afterUrl}" alt="depois" style="width:100%; border-radius:10px; border:1px solid #e5e7eb; display:block; cursor:pointer; aspect-ratio:4/3; object-fit:cover;" onclick="abrirGaleria(['${afterUrl}'], 0)" loading="lazy" decoding="async">`)
+                        : `<div style="height:100%; min-height:100px; display:flex; align-items:center; justify-content:center; border:1px dashed #d1d5db; border-radius:10px; color:#94a3b8; font-size:0.8rem;">Sem midia</div>`;
+                    mediaHtml = `
+                        <div style="margin-top:10px; display:grid; grid-template-columns:1fr 1fr; gap:8px; text-align:left;">
+                            <div><div style="font-size:0.72rem; color:#64748b; font-weight:800; margin-bottom:4px;">ANTES</div>${beforeBox}</div>
+                            <div><div style="font-size:0.72rem; color:#64748b; font-weight:800; margin-bottom:4px;">DEPOIS</div>${afterBox}</div>
+                        </div>`;
+                } else if (m.url) {
+                    mediaHtml = mediaType === 'video'
+                        ? `<div style="margin-top:10px;"><video src="${m.url}" controls playsinline preload="metadata" style="max-width:320px; width:100%; border-radius:12px; border:1px solid #e5e7eb; display:block; background:#000;"></video></div>`
+                        : `<div style="margin-top:10px;"><img src="${m.url}" alt="resultado" style="max-width:280px; width:100%; border-radius:12px; border:1px solid #e5e7eb; display:block; cursor:pointer;" onclick="abrirGaleria(['${m.url}'], 0)" loading="lazy" decoding="async"></div>`;
+                }
                 const btnHtml = (!pedidoAvaliado && souClientePedido)
                     ? `<button onclick="abrirAvaliacaoPedido('${docId}')" style="margin-top:10px; background:#0b7768; color:#fff; border:none; padding:9px 16px; border-radius:20px; font-weight:800; cursor:pointer;">Avaliar agora</button>`
                     : `<div style="margin-top:8px; color:${pedidoAvaliado ? '#166534' : '#64748b'}; font-size:0.85rem; font-weight:700;">${pedidoAvaliado ? 'Obrigado!' : ' '}</div>`;
+                let portfolioBtnHtml = "";
+                if (souProfissionalPedido) {
+                    const hasMedia = !!((pedidoAtualData && pedidoAtualData.finalizacaoMediaUrl) || m.url);
+                    const consent = String((pedidoAtualData && pedidoAtualData.portfolioConsentStatus) || '').toLowerCase();
+                    const pedidoJaPublicado = !!(pedidoAtualData && (pedidoAtualData.portfolioAddedAt || pedidoAtualData.portfolioItemId));
+                    if (hasMedia && !pedidoJaPublicado) {
+                        if (consent === 'aprovado') {
+                            portfolioBtnHtml = `<button onclick="publicarMidiaNoPortfolio('${docId}')" style="margin-top:8px; background:#0b7768; color:#fff; border:none; padding:8px 14px; border-radius:999px; font-weight:800; cursor:pointer;"><i class='bx bx-collection'></i> Publicar no portfolio</button>`;
+                        } else if (consent !== 'pendente') {
+                            portfolioBtnHtml = `<button onclick="solicitarAdicionarNoPortfolio('${docId}')" style="margin-top:8px; background:#1f4d75; color:#fff; border:none; padding:8px 14px; border-radius:999px; font-weight:800; cursor:pointer;"><i class='bx bx-send'></i> Adicionar no portfolio</button>`;
+                        }
+                    }
+                }
                 htmlParts.push(`
                 <div ${msgIdAttr} style="align-self:center; background:#ffffff; border:1px solid #e5e7eb; padding:16px; border-radius:14px; margin:14px 0; text-align:center; box-shadow:0 6px 18px rgba(15,23,42,0.06);">
                     <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:800; color:#0f172a;">
@@ -5528,10 +6119,71 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         ${titulo}
                     </div>
                     <div style="margin-top:6px; color:#475569; font-size:0.9rem;">${subt}</div>
-                    ${imgHtml}
+                    ${mediaHtml}
                     ${btnHtml}
+                    ${portfolioBtnHtml}
                 </div>`);
                 return; // evita bolha vazia após o card
+            }
+            // --- SOLICITACAO DE PORTFOLIO ---
+            else if (m.tipo === 'solicitacao_portfolio') {
+                if (latestSolicitacaoPortfolioId && msgId && msgId !== latestSolicitacaoPortfolioId) return;
+                const souClientePedido = pedidoAtualData && String(getDeUid(pedidoAtualData) || '') === String(currentUserUid || '');
+                const statusReq = String(m.status || '').toLowerCase() || String((pedidoAtualData && pedidoAtualData.portfolioConsentStatus) || '').toLowerCase() || 'pendente';
+                const mediaType = m.mediaType || inferMediaTipoByUrl(m.mediaUrl || m.url || "");
+                const mediaUrl = m.mediaUrl || m.url || "";
+                const mediaHtml = mediaUrl
+                    ? (mediaType === 'video'
+                        ? `<video src="${mediaUrl}" controls playsinline preload="metadata" style="max-width:320px; width:100%; border-radius:12px; border:1px solid #e5e7eb; background:#000;"></video>`
+                        : `<img src="${mediaUrl}" alt="midia solicitada" style="max-width:280px; width:100%; border-radius:12px; border:1px solid #e5e7eb; cursor:pointer;" onclick="abrirGaleria(['${mediaUrl}'], 0)" loading="lazy" decoding="async">`)
+                    : "";
+                let actions = "";
+                if (statusReq === 'pendente' && souClientePedido) {
+                    actions = `
+                        <div style="display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:10px;">
+                            <button onclick="responderSolicitacaoPortfolio('${docId}','${msgId}','aprovar')" style="background:#0b7768; color:#fff; border:none; padding:8px 14px; border-radius:999px; font-weight:800; cursor:pointer;">Permitir</button>
+                            <button onclick="responderSolicitacaoPortfolio('${docId}','${msgId}','recusar')" style="background:#fff; color:#b91c1c; border:1px solid #fecaca; padding:8px 14px; border-radius:999px; font-weight:800; cursor:pointer;">Recusar</button>
+                        </div>`;
+                } else if (statusReq === 'aprovado') {
+                    actions = `<div style="margin-top:8px; color:#166534; font-weight:800; font-size:0.85rem;"><i class='bx bx-check-circle'></i> Cliente autorizou.</div>`;
+                } else if (statusReq === 'recusado') {
+                    actions = `<div style="margin-top:8px; color:#b91c1c; font-weight:800; font-size:0.85rem;"><i class='bx bx-x-circle'></i> Cliente recusou.</div>`;
+                } else {
+                    actions = `<div style="margin-top:8px; color:#64748b; font-weight:700; font-size:0.84rem;"><i class='bx bx-time-five'></i> Aguardando resposta.</div>`;
+                }
+                htmlParts.push(`
+                <div ${msgIdAttr} style="align-self:center; background:#ffffff; border:1px solid #cfe5e1; padding:16px; border-radius:14px; margin:14px 0; text-align:center; box-shadow:0 6px 18px rgba(15,23,42,0.06);">
+                    <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:800; color:#0f172a;">
+                        <i class='bx bx-collection' style="color:#0b7768; font-size:1.3rem;"></i>
+                        Autorizacao para portfolio
+                    </div>
+                    <div style="margin-top:6px; color:#475569; font-size:0.9rem;">O profissional quer usar esta midia no portfolio.</div>
+                    <div style="margin-top:10px;">${mediaHtml}</div>
+                    ${actions}
+                </div>`);
+                return;
+            }
+            // --- RESPOSTA DA SOLICITACAO DE PORTFOLIO ---
+            else if (m.tipo === 'portfolio_consent_result') {
+                const souProfissionalPedido = pedidoAtualData && String(getParaUid(pedidoAtualData) || '') === String(currentUserUid || '');
+                if (!souProfissionalPedido) return;
+                const statusReq = String(m.status || '').toLowerCase();
+                const ok = statusReq === 'aprovado';
+                htmlParts.push(`
+                <div ${msgIdAttr} style="align-self:center; background:${ok ? '#ecfdf5' : '#fef2f2'}; border:1px solid ${ok ? '#bbf7d0' : '#fecaca'}; padding:12px 14px; border-radius:12px; margin:12px 0; text-align:center;">
+                    <i class='bx ${ok ? 'bx-check-circle' : 'bx-x-circle'}' style="color:${ok ? '#166534' : '#b91c1c'}; font-size:1.1rem;"></i>
+                    <span style="font-size:0.88rem; color:${ok ? '#166534' : '#7f1d1d'}; font-weight:700; margin-left:6px;">${escapeHtml(m.texto || (ok ? 'Cliente autorizou o portfolio.' : 'Cliente recusou o portfolio.'))}</span>
+                </div>`);
+                return;
+            }
+            // --- MIDIA PUBLICADA NO PORTFOLIO ---
+            else if (m.tipo === 'portfolio_publicado') {
+                htmlParts.push(`
+                <div ${msgIdAttr} style="align-self:center; background:#eff6ff; border:1px solid #bfdbfe; padding:12px 14px; border-radius:12px; margin:12px 0; text-align:center;">
+                    <i class='bx bx-check-shield' style="color:#1d4ed8; font-size:1.1rem;"></i>
+                    <span style="font-size:0.88rem; color:#1e3a8a; font-weight:700; margin-left:6px;">Midia publicada no portfolio do profissional.</span>
+                </div>`);
+                return;
             }
               // --- MENSAGEM APAGADA ---
               if (m.tipo === 'apagada') {
@@ -5845,29 +6497,31 @@ window.gerarPagamento = async function() {
               document.body.dataset.msgMenuBound = "1";
               document.addEventListener('click', closeMsgMenus);
           }
-          const finalizarInput = document.getElementById('finalizarAnexo');
-          if (finalizarInput) {
-              finalizarInput.addEventListener('change', (e) => {
+          const finalizarInputUnico = document.getElementById('finalizarAnexoUnico');
+          if (finalizarInputUnico) {
+              finalizarInputUnico.addEventListener('change', (e) => {
                   const file = e.target.files && e.target.files[0];
-                  finalizacaoFile = file || null;
-                const nameEl = document.getElementById('finalizarNomeArquivo');
-                const preview = document.getElementById('finalizarPreview');
-                const img = document.getElementById('finalizarPreviewImg');
-                if (!file) {
-                    window.limparAnexoFinalizacao();
-                    return;
-                }
-                if (nameEl) nameEl.textContent = file.name;
-                if (preview) preview.style.display = 'flex';
-                if (img) {
-                    if (finalizacaoPreviewUrl) {
-                        try { URL.revokeObjectURL(finalizacaoPreviewUrl); } catch (_) {}
-                    }
-                    finalizacaoPreviewUrl = URL.createObjectURL(file);
-                    img.src = finalizacaoPreviewUrl;
-                }
-            });
-        }
+                  finalizacaoFileUnico = file || null;
+                  preencherPreviewMidiaFinalizacao('unico', file);
+              });
+          }
+          const finalizarInputAntes = document.getElementById('finalizarAnexoAntes');
+          if (finalizarInputAntes) {
+              finalizarInputAntes.addEventListener('change', (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  finalizacaoFileAntes = file || null;
+                  preencherPreviewMidiaFinalizacao('antes', file);
+              });
+          }
+          const finalizarInputDepois = document.getElementById('finalizarAnexoDepois');
+          if (finalizarInputDepois) {
+              finalizarInputDepois.addEventListener('change', (e) => {
+                  const file = e.target.files && e.target.files[0];
+                  finalizacaoFileDepois = file || null;
+                  preencherPreviewMidiaFinalizacao('depois', file);
+              });
+          }
+          window.alterarModoFinalizacao(finalizacaoModo);
         const msgInput = document.getElementById('inputMsg');
         if (msgInput) msgInput.addEventListener('input', salvarRascunhoChat);
         initScrollDownButton();

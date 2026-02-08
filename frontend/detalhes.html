@@ -7,7 +7,7 @@
 <script src="supabase-init.js"></script>
 <script src="firebase-compat-supabase.js?v=20260207v24"></script>
 <script src="firebase-auth-compat-supabase.js"></script>
-<script defer="" src="script.js?v=20260207v26"></script>
+<script defer="" src="script.js?v=20260207v30"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Detalhes do Serviço | Doke</title>
@@ -143,24 +143,6 @@
         .day-name { font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px; }
         .day-time { font-size: 0.8rem; color: #2d3436; }
 
-        /* Avaliações */
-        .review-dashboard-mini {
-            display: flex; gap: 20px; padding: 20px; background: #f8f9fa; 
-            border-radius: 12px; margin-bottom: 25px; align-items: center;
-        }
-        .big-score { font-size: 2.5rem; font-weight: 800; color: #333; line-height: 1; }
-        .review-bars { flex: 1; display: flex; flex-direction: column; gap: 8px; }
-        .bar-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: #666; }
-        .progress-bg { flex: 1; height: 6px; background: #e0e0e0; border-radius: 3px; overflow: hidden; }
-        .progress-fill { height: 100%; background: #f1c40f; width: 0%; }
-
-        .review-item { padding: 20px 0; border-bottom: 1px solid #eee; }
-        .review-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
-        .reviewer-name { font-weight: 700; font-size: 0.95rem; color: #333; }
-        .review-date { font-size: 0.8rem; color: #999; }
-        .review-stars { color: #f1c40f; font-size: 0.9rem; }
-        .review-text { color: #555; font-size: 0.95rem; line-height: 1.5; font-style: italic; }
-
         /* --- COLUNA DIREITA (SIDEBAR FIXA) --- */
         .sidebar-sticky {
             position: sticky; top: 30px;
@@ -263,6 +245,12 @@
             gap: 8px;
         }
         #qa-section .qa-reply textarea{ min-height: 76px; }
+        #qa-section .qa-reply .qa-btn{
+            align-self: flex-end;
+            width: auto;
+            min-width: 148px;
+            justify-content: center;
+        }
         #qa-section .qa-meta{ color:#6b7280; font-size:.85rem; }
         #qa-section .qa-empty{ display:flex; align-items:center; gap: 10px; padding: 12px; border-radius: 16px; background: #fff; border: 1px dashed #e5e7eb; }
     </style>
@@ -297,9 +285,9 @@
   </div>
 
   <div class="item">
-    <a href="empresas.html">
+    <a href="negocios.html">
       <i class='bx bx-store icon verde'></i>
-      <span>Empresas</span>
+      <span>Negócios</span>
     </a>
   </div>
 
@@ -473,30 +461,6 @@
 </div>
 <div class="content-section">
 <h2 class="section-title">Avaliações de Clientes</h2>
-<div class="review-dashboard-mini" id="reviews-dashboard" style="display:none;">
-<div style="text-align:center;">
-<div class="big-score" id="dash-score">0.0</div>
-<div id="dash-stars" style="color:#f1c40f; font-size:0.9rem;"></div>
-<small id="dash-total" style="color:#777;">0 avaliações</small>
-</div>
-<div class="review-bars">
-<div class="bar-row">
-<span style="width:80px;">Qualidade</span>
-<div class="progress-bg"><div class="progress-fill" id="bar-quali"></div></div>
-<span id="val-quali">0.0</span>
-</div>
-<div class="bar-row">
-<span style="width:80px;">Preço</span>
-<div class="progress-bg"><div class="progress-fill" id="bar-price"></div></div>
-<span id="val-price">0.0</span>
-</div>
-<div class="bar-row">
-<span style="width:80px;">Pontual.</span>
-<div class="progress-bg"><div class="progress-fill" id="bar-time"></div></div>
-<span id="val-time">0.0</span>
-</div>
-</div>
-</div>
 <div id="reviews-list">
 <p style="color:#777; font-style: italic;">Carregando avaliações...</p>
 </div>
@@ -533,24 +497,19 @@
 </div>
 </main>
 <script>
-        const { initializeApp } = window;
-        const { getFirestore, doc, getDoc, collection, query, where, getDocs, orderBy } = window;
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-            authDomain: "doke-site.firebaseapp.com",
-            projectId: "doke-site",
-            storageBucket: "doke-site.firebasestorage.app",
-            messagingSenderId: "997098339190",
-            appId: "1:997098339190:web:a865b696278be21f069857"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        const { doc, getDoc, collection, query, where, getDocs, orderBy } = window;
+        const getDbRef = () => (window.db || null);
 
         // Pega ID da URL
         const params = new URLSearchParams(window.location.search);
         const idAnuncio = params.get('id');
+            let detalhesAvaliacaoCtx = {
+                id: idAnuncio || "",
+                titulo: "Serviço",
+                categoria: "",
+                preco: "",
+                img: ""
+            };
 
         // ===========================================
         // FUNÇÃO PRINCIPAL
@@ -564,7 +523,7 @@
 
             try {
                 // 1. Busca Dados do Anúncio (Firebase)
-                const docRef = doc(db, "anuncios", idAnuncio);
+                const docRef = doc(getDbRef(), "anuncios", idAnuncio);
                 const snap = await getDoc(docRef);
 
                 if (!snap.exists()) {
@@ -579,7 +538,7 @@
                 if (data.uid) {
                     try {
                         // 1) tenta pelo id (caso o id do usuario seja o uid)
-                        const uSnap = await getDoc(doc(db, "usuarios", data.uid));
+                        const uSnap = await getDoc(doc(getDbRef(), "usuarios", data.uid));
                         if (uSnap.exists()) perfil = uSnap.data();
                     } catch (e) {
                         console.warn("Falha ao carregar perfil por id:", e);
@@ -587,7 +546,7 @@
                     try {
                         // 2) tenta por coluna uid (caso a tabela use id separado)
                         if (!perfil) {
-                            const q = query(collection(db, "usuarios"), where("uid", "==", data.uid));
+                            const q = query(collection(getDbRef(), "usuarios"), where("uid", "==", data.uid));
                             const s = await getDocs(q);
                             if (s && !s.empty) perfil = s.docs[0].data();
                         }
@@ -612,7 +571,7 @@
 
                 // 3. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
                 if(data.uid) {
-                    carregarAvaliacoesReais(data.uid, data.id || data.anuncioId || data.anuncio_id || data.anuncioid || null);
+                    carregarAvaliacoesReais(data.uid, idAnuncio);
                     carregarPrazoMedio(data.uid);
                 }
 
@@ -722,10 +681,18 @@
                 }
             }
 
-            document.getElementById('prov-name').innerText = d.nomeAutor || "Profissional Doke";
-            document.getElementById('prov-img').src = d.fotoAutor || "assets/Imagens/user_placeholder.png";
-            document.getElementById('link-perfil').href = `perfil-profissional.html?uid=${d.uid}`;
+            const provUid = d.uid || perfil.uid || perfil.id || "";
+            document.getElementById('prov-name').innerText = d.nomeAutor || perfil.nome || perfil.user || "Profissional Doke";
+            document.getElementById('prov-img').src = d.fotoAutor || perfil.foto || perfil.foto_url || perfil.avatar || "assets/Imagens/user_placeholder.png";
+            document.getElementById('link-perfil').href = provUid ? `perfil-profissional.html?uid=${encodeURIComponent(provUid)}` : "perfil-profissional.html";
             document.getElementById('policy-text').innerText = d.politicaCancelamento || "Padrão da plataforma";
+            detalhesAvaliacaoCtx = {
+                id: String(idAnuncio || d.id || d.anuncioId || ""),
+                titulo: d.titulo || "Serviço",
+                categoria: String(d.categorias || d.categoria || "Geral").split(",")[0].trim(),
+                preco: (d.preco && d.preco !== "Sob Orçamento") ? `R$ ${d.preco}` : "Sob Orcamento",
+                img: fotos[0] || d.img || d.imagem || ""
+            };
             
             // Botão Contato
             document.getElementById('btn-contact').onclick = () => {
@@ -767,128 +734,337 @@
         // ===========================================
         // BUSCA DE AVALIAÇÕES REAIS (SEM DADOS FALSOS)
         // ===========================================
-          async function carregarAvaliacoesReais(uidProfissional, anuncioId) {
-              const list = document.getElementById('reviews-list');
-              const dash = document.getElementById('reviews-dashboard');
+        async function carregarAvaliacoesReais(uidProfissional, anuncioId) {
+            const list = document.getElementById('reviews-list');
+            if (!list) return;
+
+            const defaultAvatar = "https://cdn-icons-png.flaticon.com/512/847/847969.png";
+            const anuncioFields = ["anuncioId", "anuncio_id", "anuncioid", "anuncio", "servico_id", "servicoId", "servico"];
+            const criterios = [
+                { id: "pontualidade", label: "Pontualidade" },
+                { id: "profissionalismo", label: "Profissionalismo" },
+                { id: "qualidade", label: "Qualidade" },
+                { id: "preco", label: "Preco / Valor" },
+                { id: "atendimento", label: "Atendimento" }
+            ];
+            const critLabels = ["Pessimo", "Ruim", "Regular", "Bom", "Otimo"];
+
+            const matchByFields = (row, fields, value) => {
+                if (!value) return false;
+                const target = String(value);
+                return fields.some((field) => {
+                    const current = row?.[field];
+                    return current != null && String(current) === target;
+                });
+            };
+            const parseReviewDate = (row) => {
+                const raw = row?.data || row?.created_at || row?.createdAt || row?.timestamp || row?.updated_at;
+                if (!raw) return 0;
+                if (raw instanceof Date) return raw.getTime();
+                if (typeof raw === "object" && typeof raw.seconds === "number") return raw.seconds * 1000;
+                const asDate = new Date(raw);
+                return Number.isFinite(asDate.getTime()) ? asDate.getTime() : 0;
+            };
+            const getScore = (row) => Number(row.media ?? row.nota ?? 0) || 0;
+            const classifySentiment = (row) => {
+                const score = getScore(row);
+                if (score >= 4) return "positive";
+                if (score <= 2) return "negative";
+                return "neutral";
+            };
+            const filterBySentiment = (rows, sentiment) => {
+                if (sentiment === "positive") return rows.filter((row) => classifySentiment(row) === "positive");
+                if (sentiment === "negative") return rows.filter((row) => classifySentiment(row) === "negative");
+                return rows;
+            };
+            const sentimentCount = (rows, sentiment) => {
+                if (sentiment === "positive") return rows.filter((row) => classifySentiment(row) === "positive").length;
+                if (sentiment === "negative") return rows.filter((row) => classifySentiment(row) === "negative").length;
+                return rows.length;
+            };
+            const starHtml = (value, extraClass = "") => {
+                const pct = Math.max(0, Math.min(100, (Number(value || 0) / 5) * 100));
+                return `
+                    <span class="fr-stars ${extraClass}">
+                        <span class="fr-stars-base">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                        <span class="fr-stars-fill" style="width:${pct}%;">&#9733;&#9733;&#9733;&#9733;&#9733;</span>
+                    </span>`;
+            };
+            const getMeta = (row) => (row && row.detalhes && row.detalhes._meta) ? row.detalhes._meta : {};
+            const getComentarioGeral = (row) => {
+                const meta = getMeta(row);
+                return row.comentarioGeral || row.comentario || meta.comentarioGeral || meta.comentario || "";
+            };
+            const getNomeCliente = (row) => {
+                const meta = getMeta(row);
+                if (meta.anonimo) return "Anonimo";
+                return row.clienteNome || row.deNome || row.deNomeUser || meta.clienteNome || "Cliente";
+            };
+            const getFotoCliente = (row) => {
+                const meta = getMeta(row);
+                return row.clienteFoto || meta.clienteFoto || defaultAvatar;
+            };
+            const getDateText = (row) => {
+                const raw = row.data || row.created_at || row.createdAt || row.createdat || row.timestamp || row.updated_at;
+                if (!raw) return "";
+                if (typeof raw === "object" && typeof raw.seconds === "number") return new Date(raw.seconds * 1000).toLocaleDateString("pt-BR");
+                const dt = new Date(raw);
+                return Number.isFinite(dt.getTime()) ? dt.toLocaleDateString("pt-BR") : "";
+            };
+            const buildSentimentBar = (rows, activeSentiment) => {
+                const allCount = sentimentCount(rows, "all");
+                const positiveCount = sentimentCount(rows, "positive");
+                const negativeCount = sentimentCount(rows, "negative");
+                const toneBtn = (id, label, count) => {
+                    const active = activeSentiment === id ? "active" : "";
+                    return `<button class="fr-sentiment-chip ${active}" type="button" data-sentiment="${id}">${label} (${count})</button>`;
+                };
+                return `
+                    <div class="fr-sentiment-bar">
+                        ${toneBtn("all", "Todas", allCount)}
+                        ${toneBtn("positive", "Positivas", positiveCount)}
+                        ${toneBtn("negative", "Negativas", negativeCount)}
+                    </div>`;
+            };
 
             try {
-                // 1. Busca estatísticas do Usuário (Para pegar Total Contratações)
-                // Isso garante que o número "48 contratações" seja real
-                const userDoc = await getDoc(doc(db, "usuarios", uidProfissional));
+                const userDoc = await getDoc(doc(getDbRef(), "usuarios", uidProfissional));
                 let totalContratacoes = 0;
                 let membroDesde = "2024";
-
                 if (userDoc.exists()) {
                     const uData = userDoc.data();
-                    // Se tiver campo stats.servicosRealizados, usa ele. Se não, usa 0 (NÃO INVENTA)
                     totalContratacoes = (uData.stats && uData.stats.servicosRealizados) ? uData.stats.servicosRealizados : 0;
-                    if(uData.membroDesde) membroDesde = uData.membroDesde;
+                    if (uData.membroDesde) membroDesde = uData.membroDesde;
                 }
-                document.getElementById('meta-hired').innerText = `${totalContratacoes} contratações na Doke`;
+                document.getElementById('meta-hired').innerText = `${totalContratacoes} contratacoes na Doke`;
                 document.getElementById('prov-since').innerText = `Membro desde ${membroDesde}`;
 
+                const allSnap = await getDocs(collection(getDbRef(), "avaliacoes"));
+                const allRows = (allSnap?.docs || []).map((d) => d.data() || {});
+                const allData = allRows
+                    .filter((row) => matchByFields(row, anuncioFields, anuncioId))
+                    .slice()
+                    .sort((a, b) => parseReviewDate(b) - parseReviewDate(a));
 
-                  // 2. Busca Avaliações (prioriza anuncioId, fallback por profissional)
-                  let snapshot = null;
-                  let lastError = null;
-                  const tryQuery = async (field, value) => {
-                      try {
-                          const q = query(
-                              collection(db, "avaliacoes"),
-                              where(field, "==", value),
-                              orderBy("data", "desc")
-                          );
-                          return await getDocs(q);
-                      } catch (e) {
-                          lastError = e;
-                          return null;
-                      }
-                  };
-
-                  if (anuncioId) {
-                      const anuncioFields = ["anuncioId", "anuncio_id", "anuncioid", "anuncio", "servico_id", "servicoId", "servico"];
-                      for (const f of anuncioFields) {
-                          const res = await tryQuery(f, anuncioId);
-                          if (res && res.size) { snapshot = res; break; }
-                      }
-                  }
-
-                  if (!snapshot) {
-                      const profFields = ["profUid", "prof_uid", "profissional_id", "paraUid"];
-                      for (const f of profFields) {
-                          const res = await tryQuery(f, uidProfissional);
-                          if (res) { snapshot = res; break; }
-                      }
-                  }
-                  if (!snapshot && lastError) throw lastError;
-
-                  list.innerHTML = ""; // Limpa texto de carregamento
-
-                // SE NÃO TIVER DADOS REAIS
-                if(snapshot.empty) {
-                    list.innerHTML = `<div style="padding:20px; background:#f9f9f9; border-radius:10px; text-align:center; color:#777;">Este profissional ainda não possui avaliações registradas na plataforma.</div>`;
+                if (!allData.length) {
                     document.getElementById('meta-rating').innerText = "0.0";
                     document.getElementById('meta-count').innerText = "0";
                     document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(0);
+                    list.innerHTML = `<div class="fr-empty" style="padding:14px 8px;">Este anuncio ainda nao possui avaliacoes.</div>`;
                     return;
                 }
 
-                // SE TIVER DADOS REAIS -> CALCULA MÉDIAS
-                let total = snapshot.size;
-                let somaGeral = 0;
-                let somaQuali = 0;
-                let somaPreco = 0;
-                let somaTime = 0;
+                const bindCriteriaControls = () => {
+                    const viewport = list.querySelector(".fr-criteria-viewport");
+                    const track = list.querySelector(".fr-criteria-track");
+                    const prevBtn = list.querySelector(".fr-nav-btn[data-dir='-1']");
+                    const nextBtn = list.querySelector(".fr-nav-btn[data-dir='1']");
+                    if (viewport && track && prevBtn && nextBtn) {
+                        const updateNav = () => {
+                            const maxScroll = track.scrollWidth - viewport.clientWidth;
+                            const x = viewport.scrollLeft;
+                            prevBtn.disabled = x <= 4;
+                            nextBtn.disabled = x >= maxScroll - 4;
+                        };
+                        const getStep = () => {
+                            const first = track.children[0];
+                            if (!first) return viewport.clientWidth;
+                            const style = getComputedStyle(track);
+                            const gap = parseFloat(style.gap || style.columnGap || "0");
+                            return first.getBoundingClientRect().width + gap;
+                        };
+                        prevBtn.addEventListener("click", () => viewport.scrollBy({ left: -getStep(), behavior: "smooth" }));
+                        nextBtn.addEventListener("click", () => viewport.scrollBy({ left: getStep(), behavior: "smooth" }));
+                        viewport.addEventListener("scroll", updateNav, { passive: true });
+                        updateNav();
+                    }
+                    list.querySelectorAll(".fr-crit-comment-btn").forEach((btn) => {
+                        const targetId = btn.getAttribute("data-target");
+                        const panel = targetId ? list.querySelector(`#${targetId}`) : null;
+                        if (!panel) return;
+                        btn.addEventListener("click", () => {
+                            const isOpen = panel.classList.toggle("open");
+                            btn.classList.toggle("active", isOpen);
+                            btn.setAttribute("aria-expanded", isOpen ? "true" : "false");
+                            panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
+                        });
+                    });
+                };
 
-                snapshot.forEach(doc => {
-                    const r = doc.data();
-                    const nota = r.media || r.nota || 0;
-                    
-                    somaGeral += nota;
-                    somaQuali += r.qualidade || nota;
-                    somaPreco += r.preco || nota;
-                    somaTime  += r.pontualidade || nota;
+                const renderAvaliacoes = (activeSentiment = "all") => {
+                    const data = filterBySentiment(allData, activeSentiment);
+                    const filterHtml = buildSentimentBar(allData, activeSentiment);
+                    if (!data.length) {
+                        list.innerHTML = `${filterHtml}<div class="fr-empty" style="padding:14px 8px;">Sem avaliacoes para este filtro.</div>`;
+                        list.querySelectorAll(".fr-sentiment-chip").forEach((btn) => {
+                            btn.addEventListener("click", () => {
+                                const sentiment = btn.getAttribute("data-sentiment") || "all";
+                                renderAvaliacoes(sentiment);
+                            });
+                        });
+                        return;
+                    }
 
-                    // Renderiza o comentário individual
-                    const dataF = r.data ? new Date(r.data).toLocaleDateString() : '-';
-                    const htmlItem = `
-                    <div class="review-item">
-                        <div class="review-header">
-                            <span class="reviewer-name">${r.deNome || "Cliente Doke"}</span>
-                            <span class="review-date">${dataF}</span>
+                    let avg = data.reduce((acc, row) => acc + getScore(row), 0) / data.length;
+                    avg = Number.isFinite(avg) ? avg : 0;
+                    document.getElementById('meta-rating').innerText = avg.toFixed(1);
+                    document.getElementById('meta-count').innerText = String(data.length);
+                    document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(avg);
+
+                    const ratingCounts = [0, 0, 0, 0, 0];
+                    const critTotals = {};
+                    const critDistrib = {};
+                    criterios.forEach((c) => {
+                        critTotals[c.id] = 0;
+                        critDistrib[c.id] = [0, 0, 0, 0, 0];
+                    });
+                    data.forEach((row) => {
+                        const rounded = Math.round(getScore(row));
+                        if (rounded >= 1 && rounded <= 5) ratingCounts[rounded - 1] += 1;
+                        if (!row.detalhes) return;
+                        criterios.forEach((c) => {
+                            const note = Number(row.detalhes?.[c.id]?.nota || 0);
+                            if (note <= 0) return;
+                            critTotals[c.id] += note;
+                            if (note >= 1 && note <= 5) critDistrib[c.id][note - 1] += 1;
+                        });
+                    });
+
+                    const histRows = [5, 4, 3, 2, 1].map((n) => {
+                        const count = ratingCounts[n - 1] || 0;
+                        const pct = data.length ? (count / data.length) * 100 : 0;
+                        return `
+                            <div class="fr-bar-row">
+                                <span class="fr-bar-label">${n}</span>
+                                <div class="fr-bar"><span class="fr-bar-fill" style="width:${pct}%;"></span></div>
+                                <span class="fr-bar-count">${count}</span>
+                            </div>`;
+                    }).join("");
+
+                    const buildCritComments = (critId) => {
+                        const entries = [];
+                        data.forEach((row) => {
+                            const text = row.detalhes?.[critId]?.comentario;
+                            if (!text) return;
+                            entries.push({ nome: getNomeCliente(row), foto: getFotoCliente(row), dataText: getDateText(row), text });
+                        });
+                        return entries;
+                    };
+
+                    const criteriaCards = criterios.map((c) => {
+                        const dist = critDistrib[c.id] || [0, 0, 0, 0, 0];
+                        const total = dist.reduce((sum, n) => sum + n, 0);
+                        const avgCrit = total ? (critTotals[c.id] / total) : 0;
+                        const avgCritText = total ? avgCrit.toFixed(1) : "-";
+                        const distRows = critLabels.map((label, i) => {
+                            const count = dist[i] || 0;
+                            const pct = total ? (count / total) * 100 : 0;
+                            return `
+                                <div class="fr-crit-dist-row">
+                                    <span class="fr-crit-dist-label">${label}</span>
+                                    <div class="fr-crit-dist-bar"><span class="fr-crit-dist-fill" style="width:${pct}%;"></span></div>
+                                    <span class="fr-crit-dist-count">${count}</span>
+                                </div>`;
+                        }).join("");
+                        const comments = buildCritComments(c.id);
+                        const commentsHtml = comments.length
+                            ? comments.map((item) => `
+                                <div class="fr-crit-comment-item">
+                                    <div class="fr-crit-comment-head">
+                                        <img class="fr-crit-comment-avatar" src="${item.foto}" alt="">
+                                        <div>
+                                            <div class="fr-crit-comment-name">${escapeHtml(item.nome)}</div>
+                                            <div class="fr-crit-comment-date">${item.dataText}</div>
+                                        </div>
+                                    </div>
+                                    <div class="fr-crit-comment-text">${escapeHtml(item.text)}</div>
+                                </div>`).join("")
+                            : `<div class="fr-crit-comment-empty">Sem comentarios neste criterio.</div>`;
+                        const disabled = comments.length ? "" : " disabled";
+                        return `
+                            <div class="fr-crit-card">
+                                <div class="fr-crit-card-title">${c.label}</div>
+                                <div class="fr-crit-card-score">
+                                    <div class="fr-crit-card-value">${avgCritText}</div>
+                                    ${starHtml(avgCrit, "fr-stars-sm")}
+                                    <div class="fr-crit-card-meta">${total ? `${total} votos` : "sem voto"}</div>
+                                </div>
+                                <div class="fr-crit-dist">${distRows}</div>
+                                <button class="fr-crit-comment-btn" type="button" data-target="fr-crit-comments-${c.id}" aria-expanded="false"${disabled}>
+                                    Comentarios <span class="fr-crit-comment-count">${comments.length}</span>
+                                </button>
+                                <div class="fr-crit-comments" id="fr-crit-comments-${c.id}" aria-hidden="true">${commentsHtml}</div>
+                            </div>`;
+                    }).join("");
+
+                    const comments = data
+                        .map((row) => ({ row, mediaVal: getScore(row), dateText: getDateText(row), comentario: getComentarioGeral(row) }))
+                        .filter((entry) => !!entry.comentario);
+                    const commentsHtml = comments.length
+                        ? comments.map((entry) => {
+                            const row = entry.row;
+                            return `
+                                <div class="fr-comment">
+                                    <div class="fr-comment-head">
+                                        <img class="fr-review-avatar" src="${getFotoCliente(row)}" alt="">
+                                        <div>
+                                            <div class="fr-review-name">${escapeHtml(getNomeCliente(row))}</div>
+                                            <div class="fr-review-date">${entry.dateText}</div>
+                                        </div>
+                                        <div class="fr-review-score">
+                                            ${starHtml(entry.mediaVal, "fr-stars-sm")}
+                                            <div class="fr-review-score-num">${entry.mediaVal.toFixed(1)}</div>
+                                        </div>
+                                    </div>
+                                    <div class="fr-comment-body">
+                                        <div class="fr-msg"><span class="fr-msg-label">Comentario geral:</span> ${escapeHtml(entry.comentario)}</div>
+                                    </div>
+                                </div>`;
+                        }).join("")
+                        : `<div class="fr-empty">Sem mensagens.</div>`;
+
+                    list.innerHTML = `
+                        ${filterHtml}
+                        <div class="fr-rating">
+                            <div class="fr-score">
+                                <div class="fr-score-num">${avg.toFixed(1)}</div>
+                                ${starHtml(avg)}
+                                <div class="fr-score-meta">${data.length} avaliacoes</div>
+                            </div>
+                            <div class="fr-hist">${histRows}</div>
                         </div>
-                        <div class="review-stars">${gerarEstrelasHTML(nota)}</div>
-                        <p class="review-text">"${r.comentarioGeral || r.comentario || ''}"</p>
-                    </div>`;
-                    list.insertAdjacentHTML('beforeend', htmlItem);
-                });
+                        <div class="fr-criteria">
+                            <div class="fr-criteria-head">
+                                <div class="fr-criteria-title">Detalhes por criterio</div>
+                                <div class="fr-criteria-nav">
+                                    <button class="fr-nav-btn" data-dir="-1" aria-label="Anterior">&#8249;</button>
+                                    <button class="fr-nav-btn" data-dir="1" aria-label="Proximo">&#8250;</button>
+                                </div>
+                            </div>
+                            <div class="fr-criteria-viewport">
+                                <div class="fr-criteria-track">${criteriaCards}</div>
+                            </div>
+                        </div>
+                        <div class="fr-comments">
+                            <div class="fr-comments-title">Mensagens</div>
+                            <div class="fr-comment-list">${commentsHtml}</div>
+                        </div>`;
 
-                // Atualiza Dashboard com Médias Reais
-                const mediaFinal = (somaGeral / total).toFixed(1);
-                
-                // Topo da página
-                document.getElementById('meta-rating').innerText = mediaFinal;
-                document.getElementById('meta-count').innerText = total;
-                document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(mediaFinal);
+                    list.querySelectorAll(".fr-sentiment-chip").forEach((btn) => {
+                        btn.addEventListener("click", () => {
+                            const sentiment = btn.getAttribute("data-sentiment") || "all";
+                            renderAvaliacoes(sentiment);
+                        });
+                    });
+                    bindCriteriaControls();
+                };
 
-                // Dashboard Mini
-                dash.style.display = 'flex';
-                document.getElementById('dash-score').innerText = mediaFinal;
-                document.getElementById('dash-total').innerText = `${total} avaliações`;
-                document.getElementById('dash-stars').innerHTML = gerarEstrelasHTML(mediaFinal);
-
-                // Barras de Progresso
-                atualizarBarra('bar-quali', 'val-quali', (somaQuali/total).toFixed(1));
-                atualizarBarra('bar-price', 'val-price', (somaPreco/total).toFixed(1));
-                atualizarBarra('bar-time', 'val-time', (somaTime/total).toFixed(1));
-
+                renderAvaliacoes("all");
             } catch (e) {
                 console.error("Erro ao buscar reviews:", e);
-                list.innerHTML = "Erro ao carregar avaliações.";
+                list.innerHTML = `<div class="fr-empty" style="padding:14px 8px; color:#b91c1c;">Erro ao carregar avaliacoes.</div>`;
             }
         }
-
-        // ===========================================
         // PRAZO MÉDIO (ACEITO -> FINALIZADO)
         // ===========================================
         async function carregarPrazoMedio(uidProfissional) {
@@ -896,7 +1072,7 @@
             if (!el || !uidProfissional) return;
             try {
                 const q = query(
-                    collection(db, "pedidos"),
+                    collection(getDbRef(), "pedidos"),
                     where("paraUid", "==", uidProfissional),
                     where("status", "==", "finalizado")
                 );
@@ -966,7 +1142,7 @@
 
         // ============================================================
         // PERGUNTAS & RESPOSTAS (Supabase) — padrão marketplace
-        // Tabela: perguntas_respostas (SQL incluído no projeto)
+        // Tabelas suportadas: perguntas_profissional (novo) e perguntas_respostas (legado)
         // ============================================================
         async function initPerguntasRespostas(anuncioId, uidProfissional, perfilProf){
             const qaList = document.getElementById('qaList');
@@ -983,19 +1159,56 @@
 
             const me = await sb.auth.getUser().then(r=>r.data?.user||null).catch(()=>null);
             const isOwner = !!(me && uidProfissional && String(me.id) === String(uidProfissional));
+            const isMissingTableError = (error) => {
+              const raw = String(error?.message || error?.details || error?.hint || "").toLowerCase();
+              return (
+                raw.includes("does not exist") ||
+                raw.includes("relation") ||
+                raw.includes("schema cache") ||
+                raw.includes("could not find the table")
+              );
+            };
+            let qaSource = "perguntas_profissional";
+            const toDateLabel = (value) => {
+              if (!value) return "Recente";
+              const dt = new Date(value);
+              return Number.isFinite(dt.getTime()) ? dt.toLocaleDateString() : "Recente";
+            };
 
             async function load(){
                 qaList.innerHTML = '<p style="color:#777; font-style: italic;">Carregando perguntas...</p>';
                 qaEmpty.style.display = 'none';
-                const { data, error } = await sb
-                  .from('perguntas_respostas')
-                  .select('*')
-                  .eq('anuncio_id', anuncioId)
-                  .order('created_at', { ascending: false });
+                if (qaSource === "perguntas_profissional" && !uidProfissional) {
+                  qaSource = "perguntas_respostas";
+                }
+                let queryBuilder = null;
+                if (qaSource === "perguntas_profissional") {
+                  queryBuilder = sb
+                    .from("perguntas_profissional")
+                    .select("*")
+                    .eq("profissional_id", uidProfissional)
+                    .eq("oculto", false)
+                    .order("created_at", { ascending: false });
+                } else {
+                  queryBuilder = sb
+                    .from("perguntas_respostas")
+                    .select("*")
+                    .eq("anuncio_id", anuncioId)
+                    .order("created_at", { ascending: false });
+                }
+                let { data, error } = await queryBuilder;
+                if (error && qaSource === "perguntas_profissional" && isMissingTableError(error)) {
+                  qaSource = "perguntas_respostas";
+                  ({ data, error } = await sb
+                    .from("perguntas_respostas")
+                    .select("*")
+                    .eq("anuncio_id", anuncioId)
+                    .order("created_at", { ascending: false }));
+                }
 
                 if (error) {
                     // Se a tabela não existir ainda, mostra orientação (sem quebrar a página)
-                    qaList.innerHTML = `<p style="color:#b91c1c;">Não consegui carregar as perguntas (tabela ausente ou permissão). Rode o SQL: <b>supabase_sql/perguntas_respostas.sql</b></p>`;
+                    qaList.innerHTML = `<p style="color:#b91c1c;">Não consegui carregar as perguntas (tabela ausente ou permissão). Rode o SQL: <b>supabase_perguntas_profissional.sql</b></p>`;
                     return;
                 }
 
@@ -1007,8 +1220,8 @@
 
                 qaList.innerHTML = '';
                 data.forEach(row => {
-                    const name = row.perguntador_nome || 'Usuário';
-                    const dt = row.created_at ? new Date(row.created_at).toLocaleDateString() : 'Recente';
+                    const name = row.perguntador_nome || row.asked_by_nome || 'Usuário';
+                    const dt = toDateLabel(row.created_at);
                     const answered = !!(row.resposta && String(row.resposta).trim());
                     const canReply = isOwner && !answered;
 
@@ -1042,10 +1255,18 @@
                         const resposta = (ta?.value || '').trim();
                         if(!resposta) return;
                         btn.disabled = true; btn.style.opacity = '0.7';
-                        const { error } = await sb
-                          .from('perguntas_respostas')
-                          .update({ resposta })
-                          .eq('id', id);
+                        let error = null;
+                        if (qaSource === "perguntas_profissional") {
+                          ({ error } = await sb
+                            .from("perguntas_profissional")
+                            .update({ resposta, answered_at: new Date().toISOString() })
+                            .eq("id", id));
+                        } else {
+                          ({ error } = await sb
+                            .from("perguntas_respostas")
+                            .update({ resposta })
+                            .eq("id", id));
+                        }
                         btn.disabled = false; btn.style.opacity = '1';
                         if(error){ alert('Não consegui enviar a resposta.'); return; }
                         await load();
@@ -1063,19 +1284,39 @@
                     return;
                 }
                 btnSend.disabled = true; btnSend.style.opacity = '0.7';
-                const nome = (JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null')?.user) || me.email || 'Usuário';
-                const { error } = await sb
-                  .from('perguntas_respostas')
-                  .insert({
+                const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null') || {};
+                const nome = perfilLocal.user || perfilLocal.nome || me.user_metadata?.nome || me.email || 'Usuário';
+                let error = null;
+                if (qaSource === "perguntas_profissional") {
+                  if (!uidProfissional) {
+                    btnSend.disabled = false; btnSend.style.opacity = '1';
+                    alert('Não foi possível identificar o profissional deste anúncio.');
+                    return;
+                  }
+                  ({ error } = await sb
+                    .from("perguntas_profissional")
+                    .insert({
+                      profissional_id: uidProfissional,
+                      asked_by_id: me.id,
+                      asked_by_nome: String(nome).slice(0, 60),
+                      asked_by_user: String(perfilLocal.user || "").slice(0, 60) || null,
+                      asked_by_avatar: perfilLocal.foto || null,
+                      pergunta: texto
+                    }));
+                } else {
+                  ({ error } = await sb
+                    .from('perguntas_respostas')
+                    .insert({
                       anuncio_id: anuncioId,
                       uid_profissional: uidProfissional || null,
                       perguntador_uid: me.id,
                       perguntador_nome: String(nome).slice(0, 60),
                       pergunta: texto
-                  });
+                    }));
+                }
                 btnSend.disabled = false; btnSend.style.opacity = '1';
                 if(error){
-                    alert('Não consegui enviar a pergunta. Rode o SQL do projeto (supabase_sql/perguntas_respostas.sql).');
+                    alert('Não consegui enviar a pergunta. Rode o SQL do projeto (supabase_perguntas_profissional.sql).');
                     return;
                 }
                 input.value = '';
@@ -1095,7 +1336,11 @@
         }
 
         // Inicia
-        document.addEventListener("DOMContentLoaded", initPage);
+        document.addEventListener("DOMContentLoaded", async () => {
+            try { await window.sincronizarSessaoSupabase?.(); } catch(_) {}
+            try { await window.verificarEstadoLogin?.(); } catch(_) {}
+            await initPage();
+        });
     </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
@@ -1103,3 +1348,4 @@
 <script src="doke-shell.js?v=20260207v21"></script>
 </body>
 </html>
+

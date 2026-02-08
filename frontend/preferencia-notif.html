@@ -178,8 +178,9 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+<link rel="stylesheet" href="page-ajustes.css?v=20260208v01">
 </head>
-<body>
+<body data-page="preferencia-notif">
 <aside class="sidebar-icones">
   <div id="logo">
     <a href="index.html">
@@ -246,7 +247,7 @@
 
 <header class="navbar-desktop">
 <div id="logo-desktop">
-<a href="projeto.html">
+<a href="index.html">
 <img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
 </a>
 </div>
@@ -293,7 +294,7 @@
 <p>Receber alertas no celular e navegador.</p>
 </div>
 <label class="switch">
-<input checked="" type="checkbox"/>
+<input checked="" data-pref-key="push" id="prefPush" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -303,7 +304,7 @@
 <p>Resumos semanais e avisos importantes.</p>
 </div>
 <label class="switch">
-<input checked="" type="checkbox"/>
+<input checked="" data-pref-key="email" id="prefEmail" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -313,7 +314,7 @@
 <p>Avisos urgentes sobre serviços e segurança.</p>
 </div>
 <label class="switch">
-<input type="checkbox"/>
+<input data-pref-key="whatsapp" id="prefWhatsapp" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -325,7 +326,7 @@
 <p>Quando alguém envia uma mensagem direta.</p>
 </div>
 <label class="switch">
-<input checked="" type="checkbox"/>
+<input checked="" data-pref-key="mensagens_chat" id="prefMensagens" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -335,7 +336,7 @@
 <p>Mudanças de status, novos orçamentos, etc.</p>
 </div>
 <label class="switch">
-<input checked="" type="checkbox"/>
+<input checked="" data-pref-key="pedidos" id="prefPedidos" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -345,7 +346,7 @@
 <p>Novidades nos grupos que você participa.</p>
 </div>
 <label class="switch">
-<input checked="" type="checkbox"/>
+<input checked="" data-pref-key="comunidade" id="prefComunidade" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -355,7 +356,7 @@
 <p>Descontos exclusivos e campanhas da Doke.</p>
 </div>
 <label class="switch">
-<input type="checkbox"/>
+<input data-pref-key="promocoes" id="prefPromocoes" type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -391,50 +392,180 @@
 <img alt="Notificações" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
 <span>Notificações</span>
 </a>
-<a class="item" href="perfil.html">
+<a class="item" href="#" onclick="irParaMeuPerfil(event)">
 <img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
 <span>Perfil</span>
 </a>
 </nav>
 <script>
-        function salvarPreferencias() {
-            const btn = document.querySelector('.btn-save');
+        const PREFS_KEY = "doke_notif_prefs_v1";
+        const DEFAULT_PREFS = {
+            push: true,
+            email: true,
+            whatsapp: false,
+            mensagens_chat: true,
+            pedidos: true,
+            comunidade: true,
+            promocoes: false
+        };
+
+        const readJSON = (key, fallback) => {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed ?? fallback;
+            } catch (_) {
+                return fallback;
+            }
+        };
+
+        const writeJSON = (key, value) => {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+        };
+
+        const getPrefInputs = () => Array.from(document.querySelectorAll("input[data-pref-key]"));
+
+        const applyPrefs = (prefs) => {
+            getPrefInputs().forEach((input) => {
+                const key = input.dataset.prefKey;
+                if (!key) return;
+                input.checked = !!prefs[key];
+            });
+        };
+
+        const collectPrefs = () => {
+            const prefs = { ...DEFAULT_PREFS };
+            getPrefInputs().forEach((input) => {
+                const key = input.dataset.prefKey;
+                if (!key) return;
+                prefs[key] = !!input.checked;
+            });
+            return prefs;
+        };
+
+        const savePrefsLocal = (prefs) => {
+            writeJSON(PREFS_KEY, prefs);
+            const perfil = readJSON("doke_usuario_perfil", {}) || {};
+            perfil.notif_prefs = prefs;
+            writeJSON("doke_usuario_perfil", perfil);
+        };
+
+        const getSupabaseClient = () => window.sb || window.supabaseClient || null;
+
+        const loadPrefsSupabase = async () => {
+            const sb = getSupabaseClient();
+            if (!sb?.auth?.getUser || !sb.from) return null;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return null;
+
+                const { data: row, error } = await sb
+                    .from("usuarios")
+                    .select("notif_prefs")
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`)
+                    .maybeSingle();
+
+                if (error) return null;
+                if (row && typeof row.notif_prefs === "object" && row.notif_prefs) {
+                    return row.notif_prefs;
+                }
+                return null;
+            } catch (_) {
+                return null;
+            }
+        };
+
+        const savePrefsSupabase = async (prefs) => {
+            const sb = getSupabaseClient();
+            if (!sb?.auth?.getUser || !sb.from) return;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return;
+
+                await sb
+                    .from("usuarios")
+                    .update({ notif_prefs: prefs })
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`);
+            } catch (error) {
+                // optional sync, ignore if schema does not have this field
+                console.warn("[prefs] sync supabase ignorado:", error?.message || error);
+            }
+        };
+
+        window.salvarPreferencias = async function() {
+            const btn = document.querySelector(".btn-save");
+            if (!btn) return;
+
             const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Salvando...";
 
-            btn.innerText = "Salvo com Sucesso!";
-            btn.style.background = "#28a745"; 
+            try {
+                const prefs = collectPrefs();
+                savePrefsLocal(prefs);
+                await savePrefsSupabase(prefs);
+                updatePreviewChannels();
 
-            setTimeout(() => {
-                btn.innerText = originalText;
-                btn.style.background = "var(--cor0)";
-            }, 2000);
-        }
+                btn.innerText = "Salvo com sucesso!";
+                btn.style.background = "#199e63";
+            } catch (error) {
+                console.error(error);
+                btn.innerText = "Nao foi possivel salvar";
+                btn.style.background = "#d9534f";
+            } finally {
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "var(--cor0)";
+                    btn.disabled = false;
+                }, 1800);
+            }
+        };
 
-        function updatePreviewChannels(){
-            const boxes = Array.from(document.querySelectorAll('.toggle-row .switch input[type="checkbox"]'));
-            const push = boxes[0], email = boxes[1], wa = boxes[2];
-            const el = document.getElementById('npChannels');
-            if(!el) return;
+        function updatePreviewChannels() {
+            const push = document.getElementById("prefPush");
+            const email = document.getElementById("prefEmail");
+            const wa = document.getElementById("prefWhatsapp");
+            const el = document.getElementById("npChannels");
+            if (!el) return;
 
             const chips = [];
-            if(push && push.checked) chips.push({txt:'Push', icon:'bx-mobile'});
-            if(email && email.checked) chips.push({txt:'E-mail', icon:'bx-envelope'});
-            if(wa && wa.checked) chips.push({txt:'WhatsApp/SMS', icon:'bx-message-square-dots'});
+            if (push?.checked) chips.push({ txt: "Push", icon: "bx-mobile" });
+            if (email?.checked) chips.push({ txt: "E-mail", icon: "bx-envelope" });
+            if (wa?.checked) chips.push({ txt: "WhatsApp/SMS", icon: "bx-message-square-dots" });
 
-            if(!chips.length){
-                el.innerHTML = `<span class="np-chip off"><i class='bx bx-bell-off'></i> Todos os canais desativados</span>`;
+            if (!chips.length) {
+                el.innerHTML = "<span class=\"np-chip off\"><i class='bx bx-bell-off'></i> Todos os canais desativados</span>";
                 return;
             }
-            el.innerHTML = chips.map(c => `<span class="np-chip"><i class='bx ${c.icon}'></i> ${c.txt}</span>`).join('');
+            el.innerHTML = chips
+                .map((c) => `<span class=\"np-chip\"><i class='bx ${c.icon}'></i> ${c.txt}</span>`)
+                .join("");
         }
 
-        // Atualiza preview ao mexer nos toggles
-        document.addEventListener('change', function(e){
-            if(e && e.target && e.target.matches('input[type="checkbox"]')){
+        document.addEventListener("change", function(e) {
+            if (e?.target?.matches("input[data-pref-key]")) {
                 updatePreviewChannels();
             }
         });
-        document.addEventListener('DOMContentLoaded', updatePreviewChannels);
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const localPrefs = { ...DEFAULT_PREFS, ...(readJSON(PREFS_KEY, {}) || {}) };
+            applyPrefs(localPrefs);
+            updatePreviewChannels();
+
+            const remotePrefs = await loadPrefsSupabase();
+            if (remotePrefs && typeof remotePrefs === "object") {
+                const merged = { ...DEFAULT_PREFS, ...remotePrefs };
+                applyPrefs(merged);
+                savePrefsLocal(merged);
+                updatePreviewChannels();
+            }
+        });
 
     </script>
 <script src="doke-toast.js"></script>

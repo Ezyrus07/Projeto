@@ -181,8 +181,9 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+<link rel="stylesheet" href="page-ajustes.css?v=20260208v01">
 </head>
-<body>
+<body data-page="senha">
 <aside class="sidebar-icones">
   <div id="logo">
     <a href="index.html">
@@ -333,101 +334,159 @@
 </nav>
 <script>
         const { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } = window;
-        
+
+        const getSupabaseClient = () => window.sb || window.supabaseClient || null;
+
+        async function tryAlterarSenhaSupabase(currentPass, newPass) {
+            const sb = getSupabaseClient();
+            if (!sb?.auth?.getUser || !sb.auth.signInWithPassword || !sb.auth.updateUser) return false;
+
+            const { data, error } = await sb.auth.getUser();
+            const user = data?.user;
+            if (error || !user?.email) return false;
+
+            const check = await sb.auth.signInWithPassword({
+                email: user.email,
+                password: currentPass
+            });
+            if (check.error) throw new Error("A senha atual esta incorreta.");
+
+            const upd = await sb.auth.updateUser({ password: newPass });
+            if (upd.error) throw upd.error;
+            return true;
+        }
+
+        async function tryAlterarSenhaFirebase(currentPass, newPass) {
+            if (!window.auth?.currentUser || !updatePassword || !reauthenticateWithCredential || !EmailAuthProvider) {
+                return false;
+            }
+
+            const user = window.auth.currentUser;
+            const credential = EmailAuthProvider.credential(user.email, currentPass);
+            await reauthenticateWithCredential(user, credential);
+            await updatePassword(user, newPass);
+            return true;
+        }
+
         window.alterarSenhaReal = async function(e) {
             e.preventDefault();
-            const btn = document.getElementById('btnSalvarSenha');
+            const btn = document.getElementById("btnSalvarSenha");
             const textoOriginal = btn.innerText;
-            const currentPass = document.getElementById('senhaAtual').value;
-            const newPass = document.getElementById('novaSenha').value;
-            const confirmPass = document.getElementById('confirmaSenha').value;
+            const currentPass = document.getElementById("senhaAtual").value;
+            const newPass = document.getElementById("novaSenha").value;
+            const confirmPass = document.getElementById("confirmaSenha").value;
 
-            // Validações Básicas
-            if(newPass.length < 6) {
+            if (newPass.length < 6) {
                 alert("A nova senha deve ter pelo menos 6 caracteres.");
                 return;
             }
-            if(newPass !== confirmPass) {
-                alert("As senhas não conferem.");
+            if (newPass !== confirmPass) {
+                alert("As senhas nao conferem.");
                 return;
             }
 
-            btn.innerText = "Verificando...";
+            btn.innerText = "Atualizando...";
             btn.disabled = true;
 
-            const user = window.auth.currentUser;
-            
-            if(!user) {
-                alert("Erro de sessão. Faça login novamente.");
-                window.location.href = "login.html";
-                return;
-            }
-
             try {
-                // 1. Reautenticar usuário (Necessário para trocar senha)
-                const credential = EmailAuthProvider.credential(user.email, currentPass);
-                await reauthenticateWithCredential(user, credential);
+                const usedSupabase = await tryAlterarSenhaSupabase(currentPass, newPass);
+                let usedFirebase = false;
 
-                // 2. Atualizar Senha
-                btn.innerText = "Atualizando...";
-                await updatePassword(user, newPass);
+                if (!usedSupabase) {
+                    usedFirebase = await tryAlterarSenhaFirebase(currentPass, newPass);
+                }
 
-                // 3. Sucesso
+                if (!usedSupabase && !usedFirebase) {
+                    throw new Error("Nao foi possivel alterar a senha com o provedor atual.");
+                }
+
                 btn.style.background = "#2ecc71";
-                btn.innerText = "Senha Alterada!";
-                
+                btn.innerText = "Senha alterada";
+
                 setTimeout(() => {
                     alert("Sua senha foi atualizada com sucesso.");
                     esconderFormulario();
                     btn.innerText = textoOriginal;
                     btn.style.background = "var(--cor0)";
                     btn.disabled = false;
-                }, 1000);
-
+                }, 900);
             } catch (error) {
                 console.error(error);
                 btn.innerText = textoOriginal;
                 btn.disabled = false;
-                
-                if(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                    alert("A senha atual está incorreta.");
+
+                const code = String(error?.code || "");
+                const msg = String(error?.message || "").toLowerCase();
+                if (
+                    code.includes("invalid-credential") ||
+                    code.includes("wrong-password") ||
+                    msg.includes("incorreta")
+                ) {
+                    alert("A senha atual esta incorreta.");
                 } else {
-                    alert("Erro ao alterar senha: " + error.message);
+                    alert("Erro ao alterar senha. Tente novamente.");
                 }
             }
+        };
+
+        async function tryExcluirContaFirebase(inputPass) {
+            if (!window.auth?.currentUser || !deleteUser || !reauthenticateWithCredential || !EmailAuthProvider) {
+                return false;
+            }
+
+            const user = window.auth.currentUser;
+            const credential = EmailAuthProvider.credential(user.email, inputPass);
+            await reauthenticateWithCredential(user, credential);
+            await deleteUser(user);
+            return true;
+        }
+
+        async function tryExcluirContaSupabase(inputPass) {
+            const sb = getSupabaseClient();
+            if (!sb?.auth?.getUser || !sb.auth.signInWithPassword || !sb.auth.signOut) {
+                return false;
+            }
+
+            const { data, error } = await sb.auth.getUser();
+            const user = data?.user;
+            if (error || !user?.email) return false;
+
+            const check = await sb.auth.signInWithPassword({
+                email: user.email,
+                password: inputPass
+            });
+            if (check.error) {
+                throw new Error("Senha incorreta. Nao foi possivel continuar.");
+            }
+
+            localStorage.setItem("doke_exclusao_solicitada_em", new Date().toISOString());
+            await sb.auth.signOut();
+            return true;
         }
 
         window.excluirContaReal = async function() {
-            if(confirm("TEM CERTEZA? Sua conta será excluída permanentemente e você perderá acesso a tudo. Não é possível desfazer.")) {
-                const user = window.auth.currentUser;
-                if(!user) return;
+            const ok = confirm("TEM CERTEZA? Essa acao remove o acesso da conta atual.");
+            if (!ok) return;
 
-                const inputPass = prompt("Por segurança, digite sua senha para confirmar a exclusão:");
-                if(!inputPass) return;
+            const inputPass = prompt("Digite sua senha para confirmar:");
+            if (!inputPass) return;
 
-                try {
-                    // Reautenticar antes de excluir
-                    const credential = EmailAuthProvider.credential(user.email, inputPass);
-                    await reauthenticateWithCredential(user, credential);
-                    
-                    // Excluir usuário
-                    await deleteUser(user);
-                    
-                    // Limpar dados locais
-                    localStorage.clear();
-                    alert("Sua conta foi excluída. Sentiremos sua falta!");
-                    window.location.href = "index.html";
-
-                } catch (error) {
-                    console.error(error);
-                    if(error.code === 'auth/invalid-credential' || error.code === 'auth/wrong-password') {
-                        alert("Senha incorreta. Não foi possível excluir a conta.");
-                    } else {
-                        alert("Erro ao excluir conta: " + error.message);
-                    }
+            try {
+                const removedByFirebase = await tryExcluirContaFirebase(inputPass);
+                if (!removedByFirebase) {
+                    const removedBySupabase = await tryExcluirContaSupabase(inputPass);
+                    if (!removedBySupabase) throw new Error("Nao foi possivel processar a exclusao agora.");
                 }
+
+                localStorage.removeItem("usuarioLogado");
+                localStorage.removeItem("doke_usuario_perfil");
+                alert("Sua sessao foi encerrada. Se pediu exclusao, vamos processar sua solicitacao.");
+                window.location.href = "index.html";
+            } catch (error) {
+                console.error(error);
+                alert(error?.message || "Erro ao excluir conta.");
             }
-        }
+        };
     </script>
 <script>
         function mostrarFormulario() {

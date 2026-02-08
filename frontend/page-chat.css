@@ -1,19 +1,63 @@
-/* ============================================================
-   Page — Chat
+﻿/* ============================================================
+   Page - Chat
    Data: 2026-02-07
-   - Ajustes de safe-area + evitar 100vw overflow
+   - Ajustes de safe-area + evitar overflow e gaps no mobile
    ============================================================ */
 
 @media (max-width: 1024px){
+  body[data-page="chat"] .navbar-mobile,
+  body[data-page="chat"] .bottom-nav,
+  body[data-page="chat"] #overlay-menu{
+    display: none !important;
+  }
+
+  /* Chat nao usa <main>; zera espacamento extra global do shell */
+  body[data-page="chat"].doke-no-main{
+    padding-bottom: 0 !important;
+  }
+
   body[data-page="chat"] .messenger-layout{
     width: 100% !important;
     max-width: 100% !important;
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    height: calc(100dvh - var(--doke-h)) !important;
+  }
+
+  /* Reserva a altura real do bottom-nav dentro das colunas
+     para a barra de envio ficar colada no menu inferior. */
+  body[data-page="chat"] .coluna-lista,
+  body[data-page="chat"] .coluna-chat{
+    height: 100% !important;
+    min-height: 0 !important;
+    padding-bottom: var(--doke-btm-real) !important;
+    box-sizing: border-box !important;
+  }
+
+  body[data-page="chat"] #box-conversa-real{
+    height: 100% !important;
+    min-height: 0 !important;
+  }
+
+  body[data-page="chat"] .mensagens-body{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    height: auto !important;
+  }
+
+  body[data-page="chat"] #area-input-texto,
+  body[data-page="chat"] #uiGravando{
+    min-width: 0 !important;
+  }
+
+  body[data-page="chat"] .input-msg{
+    min-width: 0 !important;
   }
 
   body[data-page="chat"] .chat-footer,
   body[data-page="chat"] .composer,
   body[data-page="chat"] .message-input-area{
-    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+    margin-bottom: 0 !important;
   }
 
   body[data-page="chat"] img,
@@ -21,4 +65,17 @@
   body[data-page="chat"] audio{
     max-width: 100% !important;
   }
+}
+
+/* Garante barra de envio colada no nav em qualquer largura */
+body[data-page="chat"] .chat-footer{
+  margin-top: auto !important;
+  margin-bottom: 0 !important;
+}
+
+/* Desktop/tablet grande: evita estouro horizontal em blocos internos */
+body[data-page="chat"] .messenger-layout,
+body[data-page="chat"] .coluna-lista,
+body[data-page="chat"] .coluna-chat{
+  min-width: 0 !important;
 }

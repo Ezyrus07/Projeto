@@ -898,14 +898,30 @@ function hideIf(selector, cond){
       grid.innerHTML = `<div class="dp-empty">Sem itens no portfólio ainda.</div>`;
       return;
     }
+    const ensureGalleryModal = () => {
+      if (document.getElementById("modalGaleria")) return;
+      const html = `
+      <div class="galeria-overlay" id="modalGaleria" onclick="fecharGaleria(event)" style="display:none;">
+        <button class="btn-fechar-galeria" onclick="fecharGaleria(event)">x</button>
+        <button class="btn-nav-esquerda" onclick="mudarImagem(-1); event.stopPropagation();">&lt;</button>
+        <div class="galeria-conteudo"><img id="imgExpandida" src="" alt="Imagem expandida"></div>
+        <button class="btn-nav-direita" onclick="mudarImagem(1); event.stopPropagation();">&gt;</button>
+        <div class="galeria-thumbnails" id="areaThumbnails"></div>
+      </div>`;
+      document.body.insertAdjacentHTML("beforeend", html);
+    };
+
     grid.innerHTML = "";
     for(const item of data){
-      const isVideo = /\.(mp4|webm|ogg)$/i.test(item.media_url || "");
+      const mediaUrl = String(item.media_url || "").trim();
+      const isVideo = /\.(mp4|webm|ogg|mov|m4v)$/i.test(mediaUrl);
       const media = isVideo
-        ? `<video src="${item.media_url}" controls preload="metadata"></video>`
-        : `<img src="${item.media_url}" alt="">`;
+        ? `<video src="${escapeHtml(mediaUrl)}" preload="metadata" muted playsinline></video>`
+        : `<img src="${escapeHtml(mediaUrl)}" alt="Item do portfolio" loading="lazy" decoding="async">`;
       const card = document.createElement("div");
-      card.className = "dp-item";
+      card.className = "dp-item dp-item--clickable";
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
@@ -919,6 +935,44 @@ function hideIf(selector, cond){
           })()}
         </div>
       `;
+      const openMedia = () => {
+        if(!mediaUrl) return;
+        if (!isVideo) {
+          ensureGalleryModal();
+          if (
+            typeof window.abrirGaleria === "function" &&
+            document.getElementById("modalGaleria") &&
+            document.getElementById("imgExpandida") &&
+            document.getElementById("areaThumbnails")
+          ) {
+            window.abrirGaleria([mediaUrl], 0);
+            return;
+          }
+          window.open(mediaUrl, "_blank", "noopener,noreferrer");
+          return;
+        }
+        const modal = document.getElementById("modalPlayerVideo");
+        const player = document.getElementById("playerPrincipal");
+        if (modal && player) {
+          player.src = mediaUrl;
+          modal.style.display = "flex";
+          if (typeof window.updateScrollLock === "function") window.updateScrollLock();
+          const p = player.play?.();
+          if (p && typeof p.catch === "function") p.catch(() => {});
+          return;
+        }
+        window.open(mediaUrl, "_blank", "noopener,noreferrer");
+      };
+      card.addEventListener("click", (event) => {
+        event.preventDefault();
+        openMedia();
+      });
+      card.addEventListener("keydown", (event) => {
+        if(event.key === "Enter" || event.key === " "){
+          event.preventDefault();
+          openMedia();
+        }
+      });
       grid.appendChild(card);
     }
   }
@@ -1197,24 +1251,62 @@ function hideIf(selector, cond){
         </div>`;
     };
 
+    const getScore = (a)=> Number(a.media ?? a.nota ?? 0) || 0;
+    const classifySentiment = (a)=>{
+      const score = getScore(a);
+      if(score >= 4) return "positive";
+      if(score <= 2) return "negative";
+      return "neutral";
+    };
+    const filterBySentiment = (rows, sentiment)=>{
+      if(sentiment === "positive") return rows.filter(a=> classifySentiment(a) === "positive");
+      if(sentiment === "negative") return rows.filter(a=> classifySentiment(a) === "negative");
+      return rows;
+    };
+    const sentimentCount = (rows, sentiment)=>{
+      if(sentiment === "positive") return rows.filter(a=> classifySentiment(a) === "positive").length;
+      if(sentiment === "negative") return rows.filter(a=> classifySentiment(a) === "negative").length;
+      return rows.length;
+    };
+    const buildSentimentBar = (rows, activeSentiment)=>{
+      const allCount = sentimentCount(rows, "all");
+      const positiveCount = sentimentCount(rows, "positive");
+      const negativeCount = sentimentCount(rows, "negative");
+      const toneBtn = (id, label, count)=>{
+        const active = activeSentiment === id ? "active" : "";
+        return `<button class="fr-sentiment-chip ${active}" type="button" data-sentiment="${id}">${label} (${count})</button>`;
+      };
+      return `
+        <div class="fr-sentiment-bar">
+          ${toneBtn("all","Todas", allCount)}
+          ${toneBtn("positive","Positivas", positiveCount)}
+          ${toneBtn("negative","Negativas", negativeCount)}
+        </div>`;
+    };
+    const reviewFilterState = { service: "all", sentiment: "all" };
+
     const bindFilter = ()=>{
-      if(!servicoIds.length) return;
       box.querySelectorAll(".fr-servico-card").forEach(btn=>{
         btn.addEventListener("click", ()=>{
-          const id = btn.getAttribute("data-servico") || "all";
-          renderAvaliacoes(id);
+          reviewFilterState.service = btn.getAttribute("data-servico") || "all";
+          renderAvaliacoes(reviewFilterState.service, reviewFilterState.sentiment);
+        });
+      });
+      box.querySelectorAll(".fr-sentiment-chip").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          reviewFilterState.sentiment = btn.getAttribute("data-sentiment") || "all";
+          renderAvaliacoes(reviewFilterState.service, reviewFilterState.sentiment);
         });
       });
     };
 
-      const renderAvaliacoes = (activeId="all")=>{
-        data = (activeId === "all") ? allData : allData.filter(a=>String(a.__anuncioId) === String(activeId));
-        const filterHtml = buildFilterBar(activeId);
+      const renderAvaliacoes = (activeId="all", activeSentiment="all")=>{
+        const baseData = (activeId === "all") ? allData : allData.filter(a=>String(a.__anuncioId) === String(activeId));
+        data = filterBySentiment(baseData, activeSentiment);
+        const filterHtml = `${buildFilterBar(activeId)}${buildSentimentBar(baseData, activeSentiment)}`;
         if(!data || !data.length){
-          box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliações para este serviço.</div>`;
+          box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliacoes para este filtro.</div>`;
           bindFilter();
-          const countEl = document.getElementById("dpReviews");
-          if (countEl) countEl.textContent = String((data && data.length) || 0);
           return;
         }
     const criterios = [
@@ -1472,7 +1564,7 @@ function hideIf(selector, cond){
     bindFilter();
   };
 
-  renderAvaliacoes("all");
+  renderAvaliacoes(reviewFilterState.service, reviewFilterState.sentiment);
   }
 
   // -----------------------------
@@ -3911,3 +4003,5 @@ function setupAntesDepois(container){
     }, 2000);
   });
 }
+
+

@@ -1666,16 +1666,47 @@ window.novaBusca = function() {
 // ============================================================
 // CATEGORIAS (carrossel em círculo, ícone + nome, hover glow)
 // ============================================================
+const __DOKE_ANUNCIAR_CATEGORIAS = [
+    "Eletricista",
+    "Encanador",
+    "Pintura",
+    "Limpeza",
+    "Frete",
+    "Tecnologia",
+    "Aulas",
+    "Beleza",
+    "Reforma"
+];
+
+function __dokeGetAnunciarCategorias(){
+    return [...__DOKE_ANUNCIAR_CATEGORIAS];
+}
+
+function __dokeEnsureCategoryIconGlyph(container){
+    if (!container) return;
+    const icons = container.querySelectorAll('.cat-ico i');
+    icons.forEach((el) => {
+        try {
+            const content = window.getComputedStyle(el, '::before').getPropertyValue('content');
+            if (!content || content === 'none' || content === '""' || content === "''") {
+                el.className = 'bx bx-category';
+            }
+        } catch (_) {
+            el.className = 'bx bx-category';
+        }
+    });
+}
+
 function __dokeIconForCategory(nome){
     const n = String(nome || '').toLowerCase();
     if (n.includes('reforma') || n.includes('constru')) return 'bx-home';
     if (n.includes('pint')) return 'bx-paint';
     if (n.includes('eletric')) return 'bx-bulb';
-    if (n.includes('encan') || n.includes('hidra')) return 'bx-water';
+    if (n.includes('encan') || n.includes('hidra')) return 'bx-wrench';
     if (n.includes('assist') || n.includes('técn') || n.includes('tecnic')) return 'bx-wrench';
     if (n.includes('aula') || n.includes('curso') || n.includes('particular')) return 'bx-book';
     if (n.includes('beleza') || n.includes('estetic') || n.includes('cabelo')) return 'bx-cut';
-    if (n.includes('limpeza')) return 'bx-broom';
+    if (n.includes('limpeza')) return 'bx-water';
     if (n.includes('mudan') || n.includes('frete') || n.includes('entreg')) return 'bx-package';
     if (n.includes('jardin') || n.includes('paisag') || n.includes('grama')) return 'bx-leaf';
     if (n.includes('pet') || n.includes('animal') || n.includes('dog') || n.includes('gato')) return 'bx-dog';
@@ -1760,8 +1791,9 @@ window.carregarCategorias = async function() {
     `;
 
     try {
-        // IMPORTANTE: não depende da tabela "categorias".
-        // Gera as categorias com base nos anúncios existentes.
+        const categoriasBase = __dokeGetAnunciarCategorias();
+        const baseLower = new Set(categoriasBase.map((c) => String(c || "").toLowerCase().trim()));
+
         const q = query(collection(window.db, "anuncios"));
         const snap = await getDocs(q);
 
@@ -1776,40 +1808,80 @@ window.carregarCategorias = async function() {
             });
         });
 
-        if (freq.size === 0) {
-            container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponíveis</div>`;
+        categoriasBase.forEach((nome) => {
+            if (!freq.has(nome)) freq.set(nome, 0);
+        });
+
+        const listaBase = categoriasBase.map((nome) => ({
+            nome,
+            count: Number(freq.get(nome) || 0),
+            icon: __dokeIconForCategory(nome)
+        }));
+
+        const listaExtras = [...freq.entries()]
+            .filter(([nome]) => !baseLower.has(String(nome || "").toLowerCase().trim()))
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 24)
+            .map(([nome, count]) => ({
+                nome,
+                count,
+                icon: __dokeIconForCategory(nome)
+            }));
+
+        const lista = [...listaBase, ...listaExtras];
+
+        if (!lista.length) {
+            container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponiveis</div>`;
             return;
         }
 
-        const lista = [...freq.entries()]
-            .sort((a,b) => b[1] - a[1])
-            .slice(0, 20)
-            .map(([nome, count]) => ({ nome, count, icon: __dokeIconForCategory(nome) }));
-
         container.innerHTML = '';
-        lista.forEach((cat) => {
+        lista.forEach((cat, idx) => {
+            const tone = `cat-tone-${(idx % 4) + 1}`;
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = 'cat-card';
             btn.setAttribute('data-cat', cat.nome);
             btn.innerHTML = `
-                <span class="cat-ico"><i class='bx ${cat.icon}'></i></span>
-                <span class="cat-label">${cat.nome}</span>
-                <span class="cat-count">${cat.count}</span>
+                <span class="cat-ico ${tone}">
+                    <i class='bx ${cat.icon}' aria-hidden="true"></i>
+                </span>
+                <span class="cat-label">${escapeHtml(cat.nome)}</span>
+                ${cat.count > 0 ? `<span class="cat-count">${cat.count}</span>` : ''}
             `;
             btn.addEventListener('click', () => {
-                try { window.filtrarPorCategoria(cat.nome); } catch { /* noop */ }
+                try { window.filtrarPorCategoria(cat.nome); } catch { }
             });
             container.appendChild(btn);
         });
 
+        __dokeEnsureCategoryIconGlyph(container);
         __dokeSetupCatCarousel();
     } catch (e) {
         console.error('Erro categorias:', e);
-        container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponíveis</div>`;
+        const listaFallback = __dokeGetAnunciarCategorias();
+        container.innerHTML = '';
+        listaFallback.forEach((nome, idx) => {
+            const tone = `cat-tone-${(idx % 4) + 1}`;
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.className = 'cat-card';
+            btn.setAttribute('data-cat', nome);
+            btn.innerHTML = `
+                <span class="cat-ico ${tone}">
+                    <i class='bx ${__dokeIconForCategory(nome)}' aria-hidden="true"></i>
+                </span>
+                <span class="cat-label">${escapeHtml(nome)}</span>
+            `;
+            btn.addEventListener('click', () => {
+                try { window.filtrarPorCategoria(nome); } catch { }
+            });
+            container.appendChild(btn);
+        });
+        __dokeEnsureCategoryIconGlyph(container);
+        __dokeSetupCatCarousel();
     }
 };
-
 window.sincronizarSessaoSupabase = async function() {
     if (!window.sb?.auth?.getSession) return null;
     try {
@@ -2771,6 +2843,12 @@ function formatFeedDate(data) {
     return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', hour: '2-digit', minute: '2-digit' });
 }
 
+function formatFeedDateShort(data) {
+    const d = new Date(data);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString('pt-BR');
+}
+
 async function getSupabaseUserRow() {
     const client = getSupabaseClient();
     const authUser = auth?.currentUser;
@@ -2927,7 +3005,7 @@ window.carregarFeedGlobal = async function() {
         if (entry.source === "firebase") {
             const post = entry.data;
             const idPost = entry.id;
-            const dataPost = formatFeedDate(post.data);
+            const dataPost = formatFeedDateShort(post.data);
             const imgHtml = post.imagem 
                 ? `<div class="midia-post" style="cursor:pointer;" onclick="abrirModalPost('${idPost}', 'posts')">
                      <img src="${post.imagem}" loading="lazy" style="width:100%; height:auto; display:block;">
@@ -2974,7 +3052,7 @@ window.carregarFeedGlobal = async function() {
         const autorUser = autor.user || autor.nome || "";
         const uidAttr = autorUid ? `data-uid="${autorUid}"` : "";
         const userAttr = !autorUid && autorUser ? `data-user="${autorUser}"` : "";
-        const dataPost = formatFeedDate(item.created_at);
+        const dataPost = formatFeedDateShort(item.created_at);
         const textoResumo = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
         const likesCount = (Array.isArray(item.publicacoes_curtidas) ? item.publicacoes_curtidas[0]?.count : item.publicacoes_curtidas?.count) || 0;
 
@@ -3094,7 +3172,7 @@ window.carregarFeedGlobal = async function() {
             const uidDestino = post.uid || "";
             const autorHandle = normalizeHandle(post.autorUser || post.autorNome || "usuario");
             const autorFoto = post.autorFoto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(uidDestino||idPost||"u"))}`;
-            const when = formatFeedDate(post.data || entry.createdAt || "");
+            const when = formatFeedDateShort(post.data || entry.createdAt || "");
             const authorHtml = `
                 <div class="dp-itemAuthor">
                 <img class="dp-itemAvatar" src="${autorFoto}" alt="" width="34" height="34" loading="lazy" decoding="async">
@@ -3128,7 +3206,7 @@ window.carregarFeedGlobal = async function() {
         const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
         const autorHandle = normalizeHandle(autor.user || autor.nome || "usuario");
         const autorFoto = autor.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(autor.uid||autor.id||item.user_id||entry.id||"u"))}`;
-        const when = formatFeedDate(item.created_at || item.data || entry.createdAt || "");
+        const when = formatFeedDateShort(item.created_at || item.data || entry.createdAt || "");
         const authorHtml = `
           <div class="dp-itemAuthor">
             <img class="dp-itemAvatar" src="${autorFoto}" alt="" width="34" height="34" loading="lazy" decoding="async">
@@ -3435,20 +3513,20 @@ document.addEventListener("DOMContentLoaded", async function() {
         const kind = document.body?.dataset?.kind;
         const frases = kind === "negocios"
           ? [
-              "✨ Restaurantes próximos",
-              "✨ Mercados abertos agora",
-              "✨ Cafés e padarias",
-              "✨ Farmácias 24h",
-              "✨ Lojas na sua região",
-              "✨ Delivery na sua rua"
+              "Restaurantes proximos",
+              "Mercados abertos agora",
+              "Cafes e padarias",
+              "Farmacias 24h",
+              "Lojas na sua regiao",
+              "Delivery na sua rua"
             ]
           : [
-              "✨ Chefs de cozinha próximos",
-              "✨ Eletricistas na pituba",
-              "✨ Aulas de Inglês Online",
-              "✨ Manutenção de Ar condicionado",
-              "✨ Personal Trainers",
-              "✨ Advogados"
+              "Chefs de cozinha proximos",
+              "Eletricistas na pituba",
+              "Aulas de ingles online",
+              "Manutencao de ar-condicionado",
+              "Personal trainers",
+              "Advogados"
             ];
         let fraseIndex = 0, charIndex = 0, isDeleting = false;
         function typeEffect() {
@@ -5689,10 +5767,19 @@ window.currentSupaPublicacaoAuthorUid = null;
 let processandoLike = false; // Trava para evitar cliques rápidos
 
 function ensureModalPostDetalhe() {
-    if (document.getElementById('modalPostDetalhe')) return;
+    const modalExistente = document.getElementById('modalPostDetalhe');
+    if (modalExistente) {
+        const jaTemBotao = modalExistente.querySelector('.btn-close-modal-fixed');
+        const modalContent = modalExistente.querySelector('.modal-content');
+        if (!jaTemBotao && modalContent) {
+            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">×</button>');
+        }
+        return;
+    }
     const modalHtml = `
     <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
+            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">×</button>
             <div class="modal-media-area" id="modalMediaContainer"></div>
             <div class="modal-info-area">
                 <div class="modal-header">
@@ -5839,7 +5926,6 @@ window.abrirModalPost = async function(id, colecao) {
             modalUsername.dataset.uid = data.uid || '';
             modalUsername.dataset.user = autorHandle || '';
         }
-        document.getElementById('modalDate').innerText = data.data ? new Date(data.data).toLocaleDateString() : 'Data';
         labelLike.innerText = `${data.likes || 0} curtidas`;
 
         // Legenda
@@ -9858,6 +9944,15 @@ async function carregarComentariosSupabase(publicacaoId) {
     if (track.dataset.pubCarouselReady === '1') return;
     track.dataset.pubCarouselReady = '1';
 
+    // Hardening: em alguns breakpoints havia CSS concorrente (grid/wrap).
+    // Forca o comportamento horizontal consistente.
+    track.style.display = 'flex';
+    track.style.flexWrap = 'nowrap';
+    track.style.overflowX = 'auto';
+    track.style.overflowY = 'hidden';
+    track.style.scrollSnapType = 'x mandatory';
+    track.style.scrollBehavior = 'smooth';
+
     enableDragScroll(track);
 
     const scrollByPage = (dir) => {
@@ -9869,6 +9964,15 @@ async function carregarComentariosSupabase(publicacaoId) {
     next.addEventListener('click', () => scrollByPage(1));
 
     const updateArrows = () => {
+      const vw = window.innerWidth || document.documentElement.clientWidth || 1024;
+      const cardBasis = vw <= 480
+        ? 'clamp(158px, 72vw, 198px)'
+        : (vw <= 900 ? 'clamp(164px, 42vw, 212px)' : 'clamp(176px, 31vw, 248px)');
+      track.querySelectorAll('.dp-item, .feed-publicacao-card').forEach((card) => {
+        card.style.flex = `0 0 ${cardBasis}`;
+        card.style.minWidth = cardBasis;
+        card.style.scrollSnapAlign = 'start';
+      });
       const maxLeft = Math.max(0, track.scrollWidth - track.clientWidth);
       prev.disabled = track.scrollLeft <= 2;
       next.disabled = track.scrollLeft >= maxLeft - 2;
@@ -11452,3 +11556,4 @@ document.addEventListener('DOMContentLoaded', function(){
 document.addEventListener('DOMContentLoaded', function(){
   try{ initIgSidebarSearch(); }catch(e){}
 });
+

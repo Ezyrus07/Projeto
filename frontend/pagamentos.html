@@ -183,8 +183,9 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+<link rel="stylesheet" href="page-ajustes.css?v=20260208v01">
 </head>
-<body>
+<body data-page="pagamentos">
 <aside class="sidebar-icones">
   <div id="logo">
     <a href="index.html">
@@ -335,43 +336,196 @@
 <a class="item active" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" width="24"/><span>Perfil</span></a>
 </nav>
 <script>
-        const { doc, updateDoc, getDoc } = window;
-
+        const LS_PROFILE_KEY = "doke_usuario_perfil";
+        const LS_PAYMENTS_KEY = "doke_pagamentos_metodos_v1";
         let listaCartoesLocal = [];
 
+        const readJSON = (key, fallback) => {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed ?? fallback;
+            } catch (_) {
+                return fallback;
+            }
+        };
+
+        const writeJSON = (key, value) => {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+        };
+
+        const getPerfil = () => readJSON(LS_PROFILE_KEY, {}) || {};
+        const setPerfil = (perfil) => writeJSON(LS_PROFILE_KEY, perfil || {});
+
+        const isLogged = () => (
+            localStorage.getItem("usuarioLogado") === "true" ||
+            !!localStorage.getItem(LS_PROFILE_KEY)
+        );
+
+        const showInfo = (msg) => {
+            if (window.dokeDelight?.toast) window.dokeDelight.toast(msg);
+            else alert(msg);
+        };
+
+        const guessBrand = (numero) => {
+            if (/^4/.test(numero)) return { brand: "Visa", icon: "bxl-visa" };
+            if (/^(5[1-5]|2[2-7])/.test(numero)) return { brand: "Mastercard", icon: "bxl-mastercard" };
+            if (/^3[47]/.test(numero)) return { brand: "Amex", icon: "bx-credit-card" };
+            if (/^(4011|4312|4389|4514|4576|5041|5066|5067|5090|6277|6362|6363)/.test(numero)) {
+                return { brand: "Elo", icon: "bx-credit-card" };
+            }
+            return { brand: "Cartao", icon: "bx-credit-card" };
+        };
+
+        const isValidCardByLuhn = (numero) => {
+            let sum = 0;
+            let doubleDigit = false;
+            for (let i = numero.length - 1; i >= 0; i -= 1) {
+                let digit = Number(numero.charAt(i));
+                if (Number.isNaN(digit)) return false;
+                if (doubleDigit) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
+                doubleDigit = !doubleDigit;
+            }
+            return sum % 10 === 0;
+        };
+
+        const normalizeValidity = (value) => {
+            const clean = String(value || "").replace(/\D/g, "").slice(0, 4);
+            if (clean.length < 3) return "";
+            const mm = clean.slice(0, 2);
+            const yy = clean.slice(2);
+            const month = Number(mm);
+            if (month < 1 || month > 12 || yy.length !== 2) return "";
+            return `${mm}/${yy}`;
+        };
+
+        const readCards = () => {
+            const perfil = getPerfil();
+            if (Array.isArray(perfil.metodos_pagamento)) return perfil.metodos_pagamento;
+            const lsCards = readJSON(LS_PAYMENTS_KEY, []);
+            return Array.isArray(lsCards) ? lsCards : [];
+        };
+
+        const persistCardsLocal = (cards) => {
+            writeJSON(LS_PAYMENTS_KEY, cards);
+            const perfil = getPerfil();
+            perfil.metodos_pagamento = cards;
+            setPerfil(perfil);
+        };
+
+        const getSupabaseClient = () => window.sb || window.supabaseClient || null;
+
+        const persistCardsSupabase = async (cards) => {
+            const sb = getSupabaseClient();
+            if (!sb?.auth?.getUser || !sb.from) return;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return;
+
+                await sb
+                    .from("usuarios")
+                    .update({ metodos_pagamento: cards })
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`);
+            } catch (error) {
+                console.warn("[pagamentos] sync supabase ignorado:", error?.message || error);
+            }
+        };
+
+        const persistCards = async (cards) => {
+            persistCardsLocal(cards);
+            await persistCardsSupabase(cards);
+        };
+
+        const renderPlanInfo = () => {
+            const perfil = getPerfil();
+            const nomePlano = document.getElementById("nome-plano");
+            const descPlano = document.getElementById("desc-plano");
+            const status = document.getElementById("status-renova");
+            if (!nomePlano || !descPlano || !status) return;
+
+            if (perfil.isProfissional) {
+                nomePlano.innerText = "Doke Profissional";
+                descPlano.innerText = "Conta validada para prestar servicos na plataforma.";
+                status.innerText = "Ativo";
+                return;
+            }
+
+            if (perfil.isEmpresa) {
+                nomePlano.innerText = "Doke Negocios";
+                descPlano.innerText = "Conta de estabelecimento com destaque local.";
+                status.innerText = "Ativo";
+                return;
+            }
+
+            nomePlano.innerText = "Doke Basico";
+            descPlano.innerText = "Voce esta no plano gratuito.";
+            status.innerText = "Free";
+        };
+
+        const hydrateCardsFromSupabase = async () => {
+            const sb = getSupabaseClient();
+            if (!sb?.auth?.getUser || !sb.from) return;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return;
+
+                const { data: row, error } = await sb
+                    .from("usuarios")
+                    .select("metodos_pagamento")
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`)
+                    .maybeSingle();
+
+                if (error) return;
+                if (Array.isArray(row?.metodos_pagamento)) {
+                    listaCartoesLocal = row.metodos_pagamento;
+                    persistCardsLocal(listaCartoesLocal);
+                    renderizarCartoes();
+                }
+            } catch (_) {}
+        };
+
         document.addEventListener("DOMContentLoaded", async () => {
-            const logado = localStorage.getItem('usuarioLogado');
-            if (!logado) { window.location.href = "login.html"; return; }
-
-            // Carrega plano e cartões do LocalStorage (Sincronizado com Firebase no Login)
-            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-            
-            // Atualiza Plano (Visual)
-            if(perfil.isProfissional) {
-                document.getElementById('nome-plano').innerText = "Doke Profissional";
-                document.getElementById('desc-plano').innerText = "Conta verificada para prestar serviços.";
-                document.getElementById('status-renova').innerText = "Ativo";
+            if (!isLogged()) {
+                window.location.href = "login.html";
+                return;
             }
 
-            // Carrega Cartões
-            if(perfil.metodos_pagamento && Array.isArray(perfil.metodos_pagamento)) {
-                listaCartoesLocal = perfil.metodos_pagamento;
-            } else {
-                listaCartoesLocal = [];
-            }
+            renderPlanInfo();
+            listaCartoesLocal = readCards();
             renderizarCartoes();
+            await hydrateCardsFromSupabase();
         });
 
-        // Função global de salvar
         window.salvarCartaoReal = async function() {
-            const numero = document.getElementById('cardNum').value.replace(/\s/g, '');
-            const validade = document.getElementById('cardVal').value;
-            const cvv = document.getElementById('cardCvv').value;
-            const nome = document.getElementById('cardNome').value;
-            const btn = document.getElementById('btnSalvarCartao');
+            const numero = document.getElementById("cardNum").value.replace(/\s/g, "");
+            const validade = normalizeValidity(document.getElementById("cardVal").value);
+            const cvv = document.getElementById("cardCvv").value.replace(/\D/g, "");
+            const nome = document.getElementById("cardNome").value.trim();
+            const btn = document.getElementById("btnSalvarCartao");
 
-            if(numero.length < 13 || !validade || !cvv || !nome) {
-                alert("Preencha todos os campos corretamente.");
+            if (!/^\d{13,19}$/.test(numero) || !isValidCardByLuhn(numero)) {
+                showInfo("Numero do cartao invalido.");
+                return;
+            }
+            if (!validade) {
+                showInfo("Validade invalida. Use MM/AA.");
+                return;
+            }
+            if (!/^\d{3,4}$/.test(cvv)) {
+                showInfo("CVV invalido.");
+                return;
+            }
+            if (!nome) {
+                showInfo("Informe o nome impresso no cartao.");
                 return;
             }
 
@@ -379,93 +533,87 @@
             btn.disabled = true;
 
             try {
-                // Identifica Bandeira (Simples)
-                let brand = "Genérico";
-                let iconClass = "bx-credit-card";
-                if(numero.startsWith('4')) { brand = "Visa"; iconClass = "bxl-visa"; }
-                else if(numero.startsWith('5')) { brand = "Mastercard"; iconClass = "bxl-mastercard"; }
-
+                const brandInfo = guessBrand(numero);
                 const novoCartao = {
-                    id: Date.now(), // ID único temporário
-                    brand: brand,
-                    icon: iconClass,
+                    id: Date.now(),
+                    brand: brandInfo.brand,
+                    icon: brandInfo.icon,
                     last4: numero.slice(-4),
-                    validade: validade
+                    validade,
+                    holder: nome
                 };
 
                 listaCartoesLocal.push(novoCartao);
-
-                // ATUALIZA NO FIREBASE
-                const uid = localStorage.getItem('doke_uid');
-                const docRef = doc(window.db, "usuarios", uid);
-                
-                await updateDoc(docRef, {
-                    metodos_pagamento: listaCartoesLocal
-                });
-
-                // ATUALIZA NO LOCALSTORAGE
-                const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-                perfilAntigo.metodos_pagamento = listaCartoesLocal;
-                localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilAntigo));
+                await persistCards(listaCartoesLocal);
 
                 renderizarCartoes();
                 toggleFormCartao();
                 limparForm();
-                alert("Cartão salvo com sucesso!");
-
-            } catch (e) {
-                console.error(e);
-                alert("Erro ao salvar cartão.");
+                showInfo("Cartao salvo com sucesso.");
+            } catch (error) {
+                console.error(error);
+                showInfo("Nao foi possivel salvar o cartao.");
             } finally {
-                btn.innerText = "Salvar Cartão";
+                btn.innerText = "Salvar Cartao";
                 btn.disabled = false;
             }
-        }
+        };
 
-        // Função global de remover
         window.removerCartaoReal = async function(id) {
-            if(!confirm("Remover este cartão?")) return;
+            if (!confirm("Remover este cartao?")) return;
 
-            listaCartoesLocal = listaCartoesLocal.filter(c => c.id !== id);
-
-            // Atualiza Firebase e Storage
-            const uid = localStorage.getItem('doke_uid');
-            const docRef = doc(window.db, "usuarios", uid);
-            const perfilAntigo = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-
-            await updateDoc(docRef, { metodos_pagamento: listaCartoesLocal });
-            perfilAntigo.metodos_pagamento = listaCartoesLocal;
-            localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfilAntigo));
-
-            renderizarCartoes();
-        }
+            try {
+                listaCartoesLocal = listaCartoesLocal.filter((c) => c.id !== id);
+                await persistCards(listaCartoesLocal);
+                renderizarCartoes();
+                showInfo("Cartao removido.");
+            } catch (error) {
+                console.error(error);
+                showInfo("Nao foi possivel remover o cartao.");
+            }
+        };
 
         function renderizarCartoes() {
-            const container = document.getElementById('listaCartoes');
+            const container = document.getElementById("listaCartoes");
+            if (!container) return;
             container.innerHTML = "";
 
-            if(listaCartoesLocal.length === 0) {
-                container.innerHTML = '<div style="text-align:center; color:#999; padding:20px;">Nenhum cartão cadastrado.</div>';
+            if (!listaCartoesLocal.length) {
+                container.innerHTML = '<div style="text-align:center; color:#667; padding:20px;">Nenhum cartao cadastrado.</div>';
                 return;
             }
 
-            listaCartoesLocal.forEach(card => {
+            listaCartoesLocal.forEach((card) => {
                 const html = `
                 <div class="payment-method">
                     <div style="display:flex; align-items:center;">
-                        <i class='bx ${card.icon || 'bx-credit-card'} method-icon'></i>
+                        <i class='bx ${card.icon || "bx-credit-card"} method-icon'></i>
                         <div class="method-info">
-                            <h4>${card.brand || 'Cartão'} final ${card.last4}</h4>
-                            <span>Validade: ${card.validade}</span>
+                            <h4>${card.brand || "Cartao"} final ${card.last4}</h4>
+                            <span>Validade: ${card.validade || "--/--"}</span>
                         </div>
                     </div>
                     <i class='bx bx-trash btn-trash' onclick="removerCartaoReal(${card.id})"></i>
                 </div>`;
-                container.insertAdjacentHTML('beforeend', html);
+                container.insertAdjacentHTML("beforeend", html);
             });
         }
     </script>
 <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const cardVal = document.getElementById("cardVal");
+            const cardCvv = document.getElementById("cardCvv");
+
+            if (cardVal) {
+                cardVal.addEventListener("input", () => formatarValidade(cardVal));
+            }
+            if (cardCvv) {
+                cardCvv.addEventListener("input", () => {
+                    cardCvv.value = cardCvv.value.replace(/\D/g, "").slice(0, 4);
+                });
+            }
+        });
+
         function toggleFormCartao() {
             const form = document.getElementById('form-cartao');
             const btn = document.getElementById('btn-add');
@@ -487,8 +635,14 @@
         }
 
         function formatarCartao(input) {
-            let v = input.value.replace(/\D/g, "");
-            v = v.replace(/(\d{4})/g, "$1 ").trim();
+            let v = input.value.replace(/\D/g, "").slice(0, 19);
+            v = v.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+            input.value = v;
+        }
+
+        function formatarValidade(input) {
+            let v = input.value.replace(/\D/g, "").slice(0, 4);
+            if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
             input.value = v;
         }
     </script>
