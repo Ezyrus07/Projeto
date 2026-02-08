@@ -44,6 +44,76 @@
     }
     btn.classList.add("dp-icon-only");
   };
+  let mobileActionsBound = false;
+  function placeProfileActionsForMobile(){
+    const rootEl = $("#dpRoot");
+    if(!rootEl) return;
+    const body = $(".dp-body", rootEl);
+    const info = $(".dp-info", rootEl);
+    const actions = $(".dp-actions", rootEl);
+    const actionsRow = $(".dp-actionsRow", rootEl);
+    const handle = $("#dpHandle", rootEl);
+    const followBtn = $("#dpFollowBtn", rootEl);
+    if(!body || !info || !actions) return;
+
+    if(actions.parentElement !== body){
+      body.appendChild(actions);
+    }
+
+    if(info.nextElementSibling !== actions){
+      body.insertBefore(actions, info.nextSibling);
+    }
+
+    if(!handle) return;
+
+    let handleRow = $(".dp-handleRow", info);
+    if(!handleRow){
+      handleRow = document.createElement("div");
+      handleRow.className = "dp-handleRow";
+      info.insertBefore(handleRow, handle);
+    }
+
+    if(handle.parentElement !== handleRow){
+      handleRow.insertBefore(handle, handleRow.firstChild || null);
+    }
+
+    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+    if(!followBtn || !actionsRow){
+      if(!isMobile && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
+        handleRow.replaceWith(handle);
+      }
+      return;
+    }
+
+    if(isMobile){
+      if(followBtn.parentElement !== handleRow){
+        handleRow.appendChild(followBtn);
+      }
+      followBtn.classList.add("dp-followCompact");
+      return;
+    }
+
+    followBtn.classList.remove("dp-followCompact");
+    if(followBtn.parentElement !== actionsRow){
+      actionsRow.insertBefore(followBtn, actionsRow.firstChild);
+    }
+
+    if(handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
+      handleRow.replaceWith(handle);
+    }
+  }
+  function bindMobileActionsPlacement(){
+    if(mobileActionsBound) return;
+    mobileActionsBound = true;
+
+    let rt;
+    const rerenderPlacement = ()=>{
+      clearTimeout(rt);
+      rt = setTimeout(placeProfileActionsForMobile, 80);
+    };
+    window.addEventListener("resize", rerenderPlacement, { passive: true });
+    window.addEventListener("orientationchange", ()=> setTimeout(placeProfileActionsForMobile, 120), { passive: true });
+  }
 
   // -----------------------------
   // Toast
@@ -180,7 +250,7 @@
           return;
         }
         if (!window.db || !window.addDoc || !window.collection) return;
-        const actorNome = ctx?.me?.nome || ctx?.me?.user || "Usuario";
+        const actorNome = ctx?.me?.nome || ctx?.me?.user || "Usuário";
         const actorUser = ctx?.me?.user ? (String(ctx.me.user).startsWith("@") ? ctx.me.user : `@${ctx.me.user}`) : "@usuario";
         const actorFoto = ctx?.me?.foto || "https://placehold.co/50";
         await window.addDoc(window.collection(window.db, "notificacoes"), {
@@ -241,7 +311,7 @@
       }
     }catch(e){
       console.error(e);
-      toast("Nao foi possivel atualizar amizade.");
+      toast("Não foi possível atualizar amizade.");
     }
     await updateFriendButton(ctx);
   }
@@ -333,7 +403,7 @@
           return;
         }
         if (!window.db || !window.addDoc || !window.collection) return;
-        const actorNome = ctx?.me?.nome || ctx?.me?.user || "Usuario";
+        const actorNome = ctx?.me?.nome || ctx?.me?.user || "Usuário";
         const actorUser = ctx?.me?.user ? (String(ctx.me.user).startsWith("@") ? ctx.me.user : `@${ctx.me.user}`) : "@usuario";
         const actorFoto = ctx?.me?.foto || "https://placehold.co/50";
         await window.addDoc(window.collection(window.db, "notificacoes"), {
@@ -377,7 +447,7 @@
       }
     }catch(e){
       console.error(e);
-      toast("Nao foi possivel atualizar seguir.");
+      toast("Não foi possível atualizar seguir.");
     }
     await updateFollowButton(ctx);
     await updateFollowCounts(ctx);
@@ -818,7 +888,7 @@ function hideIf(selector, cond){
     const grid = $("#dpGridReels");
     if(!grid) return;
     grid.classList.add("dp-grid--reels");
-    grid.innerHTML = `<div class="dp-empty">Carregando videos curtos...</div>`;
+    grid.innerHTML = `<div class="dp-empty">Carregando vídeos curtos...</div>`;
     const { data, error } = await client
       .from("videos_curtos")
       .select("*")
@@ -827,15 +897,15 @@ function hideIf(selector, cond){
       .limit(40);
     if(error){
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Nenhum video curto ainda.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhum vídeo curto ainda.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
       return;
     }
     if(!data?.length){
-      grid.innerHTML = `<div class="dp-empty">Sem videos curtos ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem vídeos curtos ainda.</div>`;
       return;
     }
     grid.innerHTML = "";
@@ -1854,7 +1924,7 @@ function hideIf(selector, cond){
         </div>
         <div>
           <label>Sobre</label>
-          <textarea class="dp-textarea" id="dpEditSobre" placeholder="Escreva algo sobre voce...">${escapeHtml(about)}</textarea>
+          <textarea class="dp-textarea" id="dpEditSobre" placeholder="Escreva algo sobre você...">${escapeHtml(about)}</textarea>
         </div>
       </div>
     `, async ()=>{
@@ -1876,7 +1946,7 @@ function hideIf(selector, cond){
       const { error: statsErr, stats: nextStats } = await patchStats(client, ctx.me.id, stats, { about: aboutNext });
       if(statsErr){
         console.error(statsErr);
-        toast("Sobre nao foi salvo.");
+        toast("Sobre não foi salvo.");
       }else{
         ctx.me.stats = nextStats;
         ctx.target.stats = nextStats;
@@ -2884,7 +2954,7 @@ if(!rangeSel || !refreshBtn) return;
     const bio = u.bio || (u.isProfissional ? "Profissional na Doke." : "Olá! Sou novo na comunidade Doke.");
     setText("#dpBio", bio);
     const aboutText = stats?.about || u.sobre || "";
-    const aboutFallback = "As informacoes do perfil aparecem aqui. (Bio, local e tempo de membro sao editaveis no botao \"Editar perfil\".)";
+    const aboutFallback = "As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão \"Editar perfil\".)";
     setText("#dpAboutText", aboutText || aboutFallback);
 
     // chips
@@ -3147,6 +3217,10 @@ if(!rangeSel || !refreshBtn) return;
 
       // Render (cada etapa protegida para não travar a UI)
       try{ renderHeader(ctx); }catch(e){ console.error(e); }
+      try{
+        placeProfileActionsForMobile();
+        bindMobileActionsPlacement();
+      }catch(e){ console.error(e); }
       updateProfileCounts(ctx).catch(e=>console.error(e));
       try{ initMedia(ctx); }catch(e){ console.error(e); }
       try{ initTabs(ctx); }catch(e){ console.error(e); }
@@ -3187,7 +3261,7 @@ async function loadServicosPerfil(ctx) {
   const fallbackCard = (anuncio) => {
     const card = document.createElement("div");
     card.className = "card-premium";
-    const titulo = anuncio.titulo || "Sem titulo";
+    const titulo = anuncio.titulo || "Sem título";
     const descricao = anuncio.descricao || "";
     const preco = anuncio.preco || "A combinar";
     const fotos = Array.isArray(anuncio.fotos) ? anuncio.fotos : (anuncio.fotos ? [anuncio.fotos] : []);

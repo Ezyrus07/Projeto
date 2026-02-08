@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Perfil Mobile Compacto</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-bg: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-dark: #1a1a1a;
+            --text-gray: #666666;
+            --border-color: #e0e0e0;
+            --primary-blue: #2563eb;
+            --radius: 12px;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }
+
+        body {
+            background-color: var(--primary-bg);
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Container Principal */
+        .profile-card {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 380px; /* Largura típica de mobile */
+            border-radius: var(--radius);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Área da Capa */
+        .cover-area {
+            height: 120px; /* Reduzido para ser compacto */
+            background-image: url('https://images.unsplash.com/photo-1496442226666-8d4a0e62e6e9?q=80&w=800&auto=format&fit=crop'); /* Imagem exemplo NYC */
+            background-size: cover;
+            background-position: center;
+            position: relative;
+        }
+
+        .btn-edit-cover {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            padding: 4px 10px;
+            font-size: 0.75rem;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Área do Avatar e Informações */
+        .profile-info {
+            padding: 0 16px 16px;
+            position: relative;
+            text-align: left; /* Alinhado à esquerda como na imagem, mas pode ser center */
+        }
+
+        .avatar-container {
+            width: 90px;
+            height: 90px;
+            margin-top: -45px; /* Puxa para cima da capa */
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 4px solid var(--card-bg);
+            object-fit: cover;
+        }
+
+        .btn-edit-avatar {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.8rem;
+            color: var(--text-dark);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        /* Textos */
+        .user-name {
+            font-size: 1.1rem;
+            font-weight: 800;
+            color: var(--text-dark);
+            line-height: 1.2;
+            margin-bottom: 4px;
+        }
+
+        .username-pill {
+            display: inline-block;
+            background: #f0f2f5;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 8px;
+        }
+
+        .user-role {
+            font-size: 0.9rem;
+            color: var(--text-gray);
+            margin-bottom: 10px;
+        }
+
+        /* Tags (Brasil, Data) */
+        .tags-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 16px;
+        }
+
+        .tag {
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-dark);
+        }
+
+        /* Grid de Estatísticas */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .stat-card {
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-value {
+            font-weight: 800;
+            font-size: 1rem;
+            color: var(--text-dark);
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: var(--text-gray);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
+        }
+
+        /* Toggle Disponível */
+        .availability-row {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .availability-label {
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+        }
+
+        /* Switch Toggle (CSS Puro) */
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 22px;
+        }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider { background-color: #2e5c8e; }
+        input:checked + .slider:before { transform: translateX(18px); }
+
+        /* Grid de Ações (Botões) */
+        .actions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .btn {
+            background: #fff;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            color: var(--text-dark);
+            transition: background 0.2s;
+        }
+        
+        .btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .btn i {
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="profile-card">
+        <div class="cover-area">
+            <button class="btn-edit-cover">
+                <i class="fas fa-image"></i> Alterar capa
+            </button>
+        </div>
+
+        <div class="profile-info">
+            <div class="avatar-container">
+                <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?q=80&w=300&auto=format&fit=crop" alt="Foto de Perfil" class="avatar-img">
+                <div class="btn-edit-avatar">
+                    <i class="fas fa-camera"></i>
+                </div>
+            </div>
+
+            <h1 class="user-name">Gabriel Antônio Martins Marques de Araújo</h1>
+            <span class="username-pill">gabriel</span>
+            <p class="user-role">Founder and CEO of Doke</p>
+
+            <div class="tags-row">
+                <span class="tag">Brasil</span>
+                <span class="tag">Membro desde 01/01/2026</span>
+            </div>
+
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value">1</span>
+                    <span class="stat-label">Seguidores</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">1</span>
+                    <span class="stat-label">Seguindo</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">4</span>
+                    <span class="stat-label">Avaliações</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value">2</span>
+                    <span class="stat-label">Serviços</span>
+                </div>
+            </div>
+
+            <div class="availability-row">
+                <span class="availability-label">Disponível</span>
+                <label class="switch">
+                    <input type="checkbox" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
+
+            <div class="actions-grid">
+                <button class="btn"><i class="fas fa-file-invoice-dollar"></i> Orçamento</button>
+                <button class="btn"><i class="fas fa-user-plus"></i> Amizade</button>
+                <button class="btn"><i class="far fa-heart"></i> Seguir</button>
+                <button class="btn"><i class="far fa-edit"></i> Editar perfil</button>
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -556,38 +556,53 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   margin-right: 15px;
 }
 .cep-wrapper::after {
-  content: '';
-  position: absolute;
-  bottom: -20px; left: 0;
-  width: 100%; height: 30px;
-  background: transparent;
+  content: none;
+  display: none;
 }
 .cep-popup {
   display: none;
   position: absolute;
-  top: 0%; left: 50%;
+  top: calc(100% + 10px);
+  left: 50%;
   transform: translateX(-50%);
   background: white;
-  width: 190px;
-  padding: 8px;
+  width: min(320px, calc(100vw - 24px));
+  min-width: 232px;
+  padding: 12px;
+  border: 1px solid #dbe4ee;
+  border-radius: 12px;
+  box-shadow: 0 14px 32px rgba(15,23,42,.14);
   z-index: 9999;
 }
 
 
-.cep-popup p { margin: 0 0 8px 0; font-size: 13px; color: #666; text-align: center; }
-.cep-input-group { display: flex; gap: 5px; }
+.cep-popup p { margin: 0 0 10px 0; font-size: 14px; color: #475569; text-align: center; }
+.cep-input-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
 .cep-popup input {
-  width: 100%; padding: 8px; border: 1px solid #ccc;
-  border-radius: 4px; font-size: 14px; outline: none;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 42px;
+  width: 100%;
+  padding: 0 12px;
+  border: 1px solid #cdd8e3;
+  border-radius: 10px;
+  font-size: 15px;
+  outline: none;
 }
 .cep-popup input:focus { border-color: var(--cor0); }
 
 .cep-popup button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  height: 42px;
+  min-width: 58px;
   background: var(--cor0); 
   color: white; 
   border: none;
-  padding: 0 16px; 
-  border-radius: 6px; 
+  padding: 0 14px; 
+  border-radius: 10px; 
   cursor: pointer; 
   font-weight: bold;
   transition: all 0.2s;
@@ -602,6 +617,12 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   gap: 8px;
   flex-shrink: 0;
   align-items: center;
+}
+
+@media (max-width: 1024px){
+  .cep-popup{
+    width: min(320px, calc(100vw - 28px));
+  }
 }
 
 /* ==========================================================================
@@ -10618,4 +10639,63 @@ table{max-width:100%;}
   white-space: nowrap;
 }
 
+/* ============================================================
+   PATCH 2026-02-08 — Header tablet (centrado) + avatar estável
+   ============================================================ */
+@media (min-width: 768px) and (max-width: 1194px){
+  .navbar-desktop{
+    display: grid !important;
+    grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(120px, 180px);
+    align-items: center;
+    gap: 12px;
+    padding: 0 14px !important;
+  }
 
+  .navbar-desktop #logo-desktop{
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin-right: 0;
+  }
+
+  .navbar-desktop .menu{
+    min-width: 0;
+    justify-content: center !important;
+    gap: clamp(8px, 1.6vw, 16px) !important;
+  }
+
+  .navbar-desktop .menu a,
+  .navbar-desktop .menu .cep{
+    line-height: 1.2 !important;
+    height: var(--navbar-height-desktop);
+    display: inline-flex;
+    align-items: center;
+    padding: 0 !important;
+  }
+
+  .navbar-desktop .botoes-direita{
+    justify-self: end;
+    margin-left: 0 !important;
+    min-width: 0 !important;
+  }
+
+  .navbar-desktop .profile-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .navbar-desktop .profile-img-btn{
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    min-height: 40px;
+    display: block;
+    border-radius: 50%;
+    object-fit: cover;
+  }
+
+  body[data-page="home"] main{
+    padding: 24px clamp(14px, 2.3vw, 28px) !important;
+  }
+}

@@ -2232,16 +2232,46 @@ function formatarCepInput(e) {
     if (valor.length > 5) valor = valor.substring(0, 5) + "-" + valor.substring(5, 8);
     e.target.value = valor;
 }
-window.salvarCep = function() {
+
+window.buscarEnderecoPorCep = async function(cepLimpo) {
+    const cep = String(cepLimpo || '').replace(/\D/g, '');
+    if (cep.length !== 8) return null;
+    try {
+        const resp = await fetch(`https://viacep.com.br/ws/${cep}/json/`, { method: 'GET', cache: 'no-store' });
+        if (!resp.ok) return null;
+        const data = await resp.json();
+        if (!data || data.erro) return null;
+        return {
+            cep: `${cep.substring(0, 5)}-${cep.substring(5, 8)}`,
+            cidade: (data.localidade || '').trim(),
+            bairro: (data.bairro || '').trim(),
+            uf: (data.uf || '').trim()
+        };
+    } catch (_e) {
+        return null;
+    }
+}
+
+window.salvarCep = async function() {
     const i = document.getElementById('inputCep');
     if(!i) return;
     const cepLimpo = i.value.replace(/\D/g, ''); 
     if(cepLimpo.length === 8) {
         const cepFormatado = cepLimpo.substring(0, 5) + "-" + cepLimpo.substring(5, 8);
-        localStorage.setItem('meu_cep_doke', cepFormatado); 
-        window.atualizarTelaCep(cepFormatado);
+        localStorage.setItem('meu_cep_doke', cepFormatado);
         window.preencherTodosCeps(cepFormatado);
-        document.getElementById('boxCep').style.display = 'none';
+        window.atualizarTelaCep(cepFormatado);
+        const boxCep = document.getElementById('boxCep');
+        if (boxCep) boxCep.style.display = 'none';
+
+        const payload = await window.buscarEnderecoPorCep(cepLimpo);
+        if (payload) {
+            localStorage.setItem('doke_localizacao', JSON.stringify(payload));
+            window.atualizarTelaCep(payload);
+        } else {
+            // Mantém consistência mesmo sem retorno da API de CEP.
+            try { localStorage.setItem('doke_localizacao', JSON.stringify({ cep: cepFormatado, cidade: '', bairro: '', uf: '' })); } catch (_e) {}
+        }
     } else { alert("CEP inválido! Digite 8 números."); i.focus(); }
 }
 window.preencherTodosCeps = function(cep) {
@@ -2268,12 +2298,13 @@ window.atualizarTelaCep = function(payload) {
     let cep = '';
     let cidade = '';
     let bairro = '';
+    let uf = '';
     try {
         if (typeof payload === 'object' && payload) {
             cep = payload.cep || '';
             cidade = payload.cidade || '';
             bairro = payload.bairro || '';
-            const uf = payload.uf || '';
+            uf = payload.uf || '';
             localStorage.setItem('doke_localizacao', JSON.stringify({ cep, cidade, bairro, uf }));
         } else {
             cep = payload || '';
@@ -2281,6 +2312,7 @@ window.atualizarTelaCep = function(payload) {
             if (saved) {
                 cidade = saved.cidade || '';
                 bairro = saved.bairro || '';
+                uf = saved.uf || '';
                 if (!cep) cep = saved.cep || '';
             }
         }
@@ -2289,6 +2321,8 @@ window.atualizarTelaCep = function(payload) {
     if (s) {
         let txt = 'Inserir CEP';
         if (bairro && cidade) txt = `${bairro}, ${cidade}`;
+        else if (cidade && uf) txt = `${cidade} - ${uf}`;
+        else if (cidade) txt = cidade;
         else if (cep) txt = `CEP: ${cep}`;
         s.innerText = txt;
         s.style.fontWeight = '700';
@@ -3422,6 +3456,20 @@ document.addEventListener("DOMContentLoaded", async function() {
     if (cepSalvo) {
         window.atualizarTelaCep(cepSalvo);
         window.preencherTodosCeps(cepSalvo);
+        try {
+            const locSalva = JSON.parse(localStorage.getItem('doke_localizacao') || 'null');
+            const semEndereco = !locSalva || (!locSalva.cidade && !locSalva.bairro);
+            if (semEndereco) {
+                const cepLimpo = String(cepSalvo).replace(/\D/g, '');
+                if (cepLimpo.length === 8) {
+                    window.buscarEnderecoPorCep(cepLimpo).then((payload) => {
+                        if (!payload) return;
+                        localStorage.setItem('doke_localizacao', JSON.stringify(payload));
+                        window.atualizarTelaCep(payload);
+                    }).catch(() => {});
+                }
+            }
+        } catch (_e) {}
     }
 
     // Adicionar listener a todos os inputs de CEP para sincronizar automaticamente
@@ -11581,4 +11629,3 @@ document.addEventListener('DOMContentLoaded', function(){
 document.addEventListener('DOMContentLoaded', function(){
   try{ initIgSidebarSearch(); }catch(e){}
 });
-
