@@ -426,3 +426,194 @@ img, video, canvas, svg{ max-width:100%; }
   }
   html{ scroll-padding-top: calc(var(--doke-h, 0px) + 12px); }
 }
+
+/* ============================================================
+   Skeletons - normalizacao responsiva (mobile/tablet/desktop)
+   ============================================================ */
+:root{
+  --doke-skel-radius: 14px;
+  --doke-skel-line-h: 12px;
+  --doke-skel-line-gap: 10px;
+}
+
+.skeleton,
+.skel,
+.ui-skeleton,
+.doke-skel,
+.cat-skel,
+.cat-skel-line{
+  border-radius: var(--doke-skel-radius);
+  position: relative;
+  overflow: hidden;
+  background: rgba(15,23,42,.08);
+}
+
+.skeleton::after,
+.skel::after{
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.55), transparent);
+  animation: dokeSkelSweep 1.2s infinite;
+}
+
+@keyframes dokeSkelSweep{
+  to { transform: translateX(100%); }
+}
+
+.skeleton-line,
+.skel-line,
+.doke-skelLine,
+.doke-skel-line{
+  height: var(--doke-skel-line-h) !important;
+  margin-top: var(--doke-skel-line-gap) !important;
+  margin-bottom: var(--doke-skel-line-gap) !important;
+  border-radius: 999px !important;
+}
+
+/* Desktop/grid: skeleton deve ocupar a mesma largura dos cards reais */
+#feed-global-container .pub-skel{
+  width: 100% !important;
+  min-width: 0 !important;
+  flex: 1 1 auto !important;
+}
+
+.pro-card.pro-skel{
+  pointer-events: none !important;
+}
+
+.pro-card.pro-skel .pro-avatar.skel{
+  border-radius: 999px !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+.pro-card.pro-skel .pro-name.skel,
+.pro-card.pro-skel .pro-role.skel,
+.pro-card.pro-skel .btn-ver-perfil.skel{
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+@media (max-width:1024px){
+  .skeleton-grid{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 14px !important;
+  }
+
+  .skeleton-premium-cover{
+    height: clamp(190px, 34vw, 240px) !important;
+  }
+
+  #feed-global-container.feed-publicacoes-grid .pub-skel{
+    --pub-skel-w: clamp(160px, 34vw, 220px) !important;
+    flex: 0 0 var(--pub-skel-w) !important;
+    width: var(--pub-skel-w) !important;
+    min-width: var(--pub-skel-w) !important;
+  }
+
+  .skeleton-trabalho{
+    width: 150px !important;
+    min-width: 150px !important;
+    height: 196px !important;
+    border-radius: 16px !important;
+  }
+
+  .doke-skel-wrap{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+
+  .doke-skel-media{
+    height: 130px !important;
+  }
+
+  .pro-card.pro-skel{
+    flex: 0 0 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+    padding: 14px 12px !important;
+    pointer-events: none !important;
+  }
+
+  .pro-card.pro-skel .pro-avatar.skel{
+    width: 74px !important;
+    height: 74px !important;
+    margin: 0 auto 10px !important;
+    border-radius: 999px !important;
+  }
+
+  .pro-card.pro-skel .pro-name.skel{
+    width: 80% !important;
+    height: 13px !important;
+    margin: 0 auto 8px !important;
+  }
+
+  .pro-card.pro-skel .pro-role.skel{
+    width: 62% !important;
+    height: 11px !important;
+    margin: 0 auto 10px !important;
+  }
+
+  .pro-card.pro-skel .btn-ver-perfil.skel{
+    width: 82% !important;
+    height: 30px !important;
+    margin: 0 auto !important;
+    border-radius: 10px !important;
+  }
+}
+
+@media (max-width:600px){
+  :root{
+    --doke-skel-radius: 12px;
+    --doke-skel-line-h: 10px;
+    --doke-skel-line-gap: 8px;
+  }
+
+  .skeleton-grid{
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  .skeleton-premium-cover{
+    height: clamp(160px, 52vw, 210px) !important;
+  }
+
+  #feed-global-container.feed-publicacoes-grid .pub-skel{
+    --pub-skel-w: clamp(138px, 44vw, 190px) !important;
+    flex: 0 0 var(--pub-skel-w) !important;
+    width: var(--pub-skel-w) !important;
+    min-width: var(--pub-skel-w) !important;
+  }
+
+  .skeleton-trabalho{
+    width: 126px !important;
+    min-width: 126px !important;
+    height: 170px !important;
+  }
+
+  .doke-skel-wrap{
+    grid-template-columns: 1fr !important;
+  }
+
+  .doke-skel-media{
+    height: 118px !important;
+  }
+
+  .pro-card.pro-skel{
+    flex-basis: 188px !important;
+    min-width: 188px !important;
+    max-width: 188px !important;
+    padding: 12px 10px !important;
+  }
+
+  .pro-card.pro-skel .pro-avatar.skel{
+    width: 64px !important;
+    height: 64px !important;
+  }
+
+  .pro-card.pro-skel .pro-name.skel{ height: 12px !important; }
+  .pro-card.pro-skel .pro-role.skel{ height: 10px !important; }
+  .pro-card.pro-skel .btn-ver-perfil.skel{ height: 28px !important; }
+}

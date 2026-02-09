@@ -5,10 +5,20 @@
    ============================================================ */
 
 @media (max-width: 1024px){
+  body[data-page="chat"]{
+    padding-bottom: 0 !important;
+    overflow: hidden !important;
+  }
+
   body[data-page="chat"] .navbar-mobile,
   body[data-page="chat"] .bottom-nav,
   body[data-page="chat"] #overlay-menu{
     display: none !important;
+  }
+
+  body[data-page="chat"] .doke-bottom-spacer{
+    display: none !important;
+    height: 0 !important;
   }
 
   /* Chat nao usa <main>; zera espacamento extra global do shell */
@@ -21,22 +31,32 @@
     max-width: 100% !important;
     margin-top: 0 !important;
     margin-left: 0 !important;
-    height: calc(100dvh - var(--doke-h)) !important;
+    /* Altura util = viewport - header shell - bottom nav real
+       (evita gap entre composer e nav e evita sobreposicao) */
+    height: calc(100vh - var(--doke-h) - var(--doke-btm-real)) !important;
+    height: calc(100svh - var(--doke-h) - var(--doke-btm-real)) !important;
+    height: calc(100dvh - var(--doke-h) - var(--doke-btm-real)) !important;
+    min-height: 0 !important;
+    margin-bottom: 0 !important;
+    overflow: hidden !important;
   }
 
-  /* Reserva a altura real do bottom-nav dentro das colunas
-     para a barra de envio ficar colada no menu inferior. */
+  /* Colunas com altura total do container (sem padding extra embaixo) */
   body[data-page="chat"] .coluna-lista,
   body[data-page="chat"] .coluna-chat{
     height: 100% !important;
     min-height: 0 !important;
-    padding-bottom: var(--doke-btm-real) !important;
+    padding-bottom: 0 !important;
     box-sizing: border-box !important;
+    overflow: hidden !important;
   }
 
   body[data-page="chat"] #box-conversa-real{
+    display: flex !important;
+    flex-direction: column !important;
     height: 100% !important;
     min-height: 0 !important;
+    overflow: hidden !important;
   }
 
   body[data-page="chat"] .mensagens-body{
@@ -60,6 +80,36 @@
     margin-bottom: 0 !important;
   }
 
+  /* Composer mais compacto/colado ao nav */
+  body[data-page="chat"] .chat-footer{
+    padding: 7px 10px !important;
+    min-height: 54px !important;
+    border-top: 1px solid rgba(2,6,23,.06) !important;
+  }
+
+  body[data-page="chat"] #area-input-texto{
+    gap: 8px !important;
+  }
+
+  body[data-page="chat"] .btn-attach,
+  body[data-page="chat"] .btn-enviar{
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  body[data-page="chat"] .input-msg{
+    padding: 10px 14px !important;
+    border-radius: 22px !important;
+  }
+
+  body[data-page="chat"] .mensagens-body{
+    padding-bottom: 2px !important;
+  }
+
+  body[data-page="chat"] .doke-bottom-nav{
+    padding-top: 3px !important;
+  }
+
   body[data-page="chat"] img,
   body[data-page="chat"] video,
   body[data-page="chat"] audio{
@@ -67,10 +117,18 @@
   }
 }
 
+body[data-page="chat"] .doke-bottom-spacer{
+  display: none !important;
+  height: 0 !important;
+}
+
 /* Garante barra de envio colada no nav em qualquer largura */
 body[data-page="chat"] .chat-footer{
   margin-top: auto !important;
   margin-bottom: 0 !important;
+  flex-shrink: 0 !important;
+  position: relative;
+  z-index: 2;
 }
 
 /* Desktop/tablet grande: evita estouro horizontal em blocos internos */

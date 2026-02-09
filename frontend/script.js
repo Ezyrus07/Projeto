@@ -1792,12 +1792,17 @@ window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
     if (!container) return;
 
-    container.innerHTML = `
-        <div style="padding: 18px; color:#777; display:flex; align-items:center; gap:10px;">
-            <i class='bx bx-loader-alt bx-spin' style="font-size:1.1rem; color:var(--cor0,#0b7768);"></i>
-            <span>Carregando categorias...</span>
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const skelCount = vw <= 520 ? 5 : (vw <= 1024 ? 6 : 8);
+    container.classList.add('is-loading');
+    container.setAttribute('aria-busy', 'true');
+    container.innerHTML = Array.from({ length: skelCount }).map(() => `
+        <div class="cat-card cat-skel" aria-hidden="true">
+            <span class="cat-ico cat-skel-circle skeleton"></span>
+            <span class="cat-label cat-skel-line skeleton"></span>
+            <span class="cat-count cat-skel-badge skeleton"></span>
         </div>
-    `;
+    `).join('');
 
     try {
         const categoriasBase = __dokeGetAnunciarCategorias();
@@ -1840,10 +1845,13 @@ window.carregarCategorias = async function() {
         const lista = [...listaBase, ...listaExtras];
 
         if (!lista.length) {
+            container.classList.remove('is-loading');
+            container.setAttribute('aria-busy', 'false');
             container.innerHTML = `<div style="padding:0 20px; color:#999;">Categorias indisponiveis</div>`;
             return;
         }
 
+        container.classList.remove('is-loading');
         container.innerHTML = '';
         lista.forEach((cat, idx) => {
             const tone = `cat-tone-${(idx % 4) + 1}`;
@@ -1864,11 +1872,13 @@ window.carregarCategorias = async function() {
             container.appendChild(btn);
         });
 
+        container.setAttribute('aria-busy', 'false');
         __dokeEnsureCategoryIconGlyph(container);
         __dokeSetupCatCarousel();
     } catch (e) {
         console.error('Erro categorias:', e);
         const listaFallback = __dokeGetAnunciarCategorias();
+        container.classList.remove('is-loading');
         container.innerHTML = '';
         listaFallback.forEach((nome, idx) => {
             const tone = `cat-tone-${(idx % 4) + 1}`;
@@ -1887,6 +1897,7 @@ window.carregarCategorias = async function() {
             });
             container.appendChild(btn);
         });
+        container.setAttribute('aria-busy', 'false');
         __dokeEnsureCategoryIconGlyph(container);
         __dokeSetupCatCarousel();
     }
@@ -9549,16 +9560,24 @@ async function carregarComentariosSupabase(publicacaoId) {
   window.dokeRenderAnunciosSkeleton = function(feed){
     if (!feed) return;
     feed.setAttribute('aria-busy', 'true');
-    const count = window.innerWidth < 600 ? 2 : 4;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const count = vw <= 600 ? 2 : (vw <= 1024 ? 3 : 4);
     const cards = Array.from({length: count}).map(()=>
-      '<div class="skeleton-premium-card" aria-hidden="true">'
-      + '  <div class="skeleton skeleton-premium-cover"></div>'
-      + '  <div class="skeleton-premium-body">'
+      '<article class="skeleton-premium-card skel-anuncio-card" aria-hidden="true">'
+      + '  <div class="skel-anuncio-head">'
+      + '    <span class="skeleton skel-anuncio-avatar"></span>'
+      + '    <span class="skeleton skel-anuncio-user"></span>'
+      + '  </div>'
+      + '  <div class="skeleton skeleton-premium-cover skel-anuncio-media"></div>'
+      + '  <div class="skeleton-premium-body skel-anuncio-body">'
       + '    <div class="skeleton skeleton-line lg"></div>'
       + '    <div class="skeleton skeleton-line md"></div>'
-      + '    <div class="skeleton skeleton-line sm"></div>'
+      + '    <div class="skel-anuncio-foot">'
+      + '      <div class="skeleton skeleton-line sm"></div>'
+      + '      <div class="skeleton skel-anuncio-cta"></div>'
+      + '    </div>'
       + '  </div>'
-      + '</div>'
+      + '</article>'
     ).join('');
     feed.innerHTML = cards;
   };
@@ -9566,10 +9585,21 @@ async function carregarComentariosSupabase(publicacaoId) {
   window.dokeRenderTrabalhosSkeleton = function(container){
     if (!container) return;
     container.setAttribute('aria-busy', 'true');
-    const count = window.innerWidth < 600 ? 3 : 6;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const count = vw <= 600 ? 2 : (vw <= 1024 ? 3 : 4);
     const items = Array.from({length: count}).map(()=>
       '<div class="tiktok-card is-skeleton" aria-hidden="true">'
       + '  <div class="tiktok-skel-media skeleton"></div>'
+      + '  <div class="tiktok-skel-badge skeleton"></div>'
+      + '  <div class="tiktok-skel-play skeleton"></div>'
+      + '  <div class="tiktok-skel-overlay">'
+      + '    <div class="tiktok-skel-userRow">'
+      + '      <span class="tiktok-skel-avatar skeleton"></span>'
+      + '      <span class="tiktok-skel-user skeleton"></span>'
+      + '    </div>'
+      + '    <div class="tiktok-skel-lineMd skeleton"></div>'
+      + '    <div class="tiktok-skel-lineSm skeleton"></div>'
+      + '  </div>'
       + '</div>'
     ).join('');
     container.innerHTML = items;
@@ -9578,13 +9608,23 @@ async function carregarComentariosSupabase(publicacaoId) {
   window.dokeRenderPublicacoesSkeleton = function(container){
     if (!container) return;
     container.setAttribute('aria-busy', 'true');
-    const count = window.innerWidth < 600 ? 3 : 5;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const count = vw <= 600 ? 3 : (vw <= 1024 ? 4 : 5);
     const items = Array.from({length: count}).map(()=>
-      '<div class="pub-skel" aria-hidden="true">'
-      + '  <div class="pub-skel-media skeleton"></div>'
-      + '  <div class="pub-skel-body">'
-      + '    <div class="skeleton skeleton-line sm"></div>'
-      + '    <div class="skeleton skeleton-line md"></div>'
+      '<div class="feed-publicacao-card dp-item pub-skel" aria-hidden="true">'
+      + '  <div class="dp-itemMedia pub-skel-media">'
+      + '    <span class="pub-skel-media-fill skeleton"></span>'
+      + '  </div>'
+      + '  <div class="dp-itemBody pub-skel-body">'
+      + '    <div class="dp-itemAuthor pub-skel-author">'
+      + '      <span class="skeleton dp-itemAvatar pub-skel-avatar"></span>'
+      + '      <span class="pub-skel-authorLines">'
+      + '        <span class="skeleton dp-itemUser pub-skel-user"></span>'
+      + '        <span class="skeleton dp-itemMeta pub-skel-date"></span>'
+      + '      </span>'
+      + '    </div>'
+      + '    <span class="skeleton dp-itemTitle pub-skel-title"></span>'
+      + '    <span class="skeleton dp-itemDesc pub-skel-desc"></span>'
       + '  </div>'
       + '</div>'
     ).join('');
@@ -9731,17 +9771,22 @@ async function carregarComentariosSupabase(publicacaoId) {
     return `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94c.04-.31.06-.63.06-.94s-.02-.63-.06-.94l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.6-.22l-2.39.96a7.2 7.2 0 0 0-1.63-.94l-.36-2.54A.5.5 0 0 0 12.9 1h-3.8a.5.5 0 0 0-.5.42l-.36 2.54c-.58.23-1.12.54-1.63.94l-2.39-.96a.5.5 0 0 0-.6.22L1.7 7.98a.5.5 0 0 0 .12.64l2.03 1.58c-.04.31-.06.63-.06.94s.02.63.06.94L1.82 14.52a.5.5 0 0 0-.12.64l1.92 3.32c.13.23.4.32.64.22l2.39-.96c.5.4 1.05.71 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.23 1.12-.54 1.63-.94l2.39.96c.24.1.51.01.64-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM11 15a3 3 0 1 1 0-6 3 3 0 0 1 0 6z" fill="currentColor"/></svg>`;
   }
 
-  function renderCategorySkeleton(carousel, count = 6) {
+  function renderCategorySkeleton(carousel, count) {
     if (!carousel) return;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const total = Number.isFinite(count) && count > 0
+      ? count
+      : (vw <= 520 ? 5 : (vw <= 1024 ? 6 : 8));
     carousel.innerHTML = '';
     carousel.classList.add('is-loading');
-    for (let i = 0; i < count; i++) {
+    for (let i = 0; i < total; i++) {
       const item = document.createElement('div');
       item.className = 'cat-item';
       item.innerHTML = `
         <div class="cat-card cat-skel" aria-hidden="true">
-          <div class="cat-icon-wrap cat-skel-circle"></div>
-          <div class="cat-name cat-skel-line"></div>
+          <div class="cat-icon-wrap cat-skel-circle skeleton"></div>
+          <div class="cat-name cat-skel-line skeleton"></div>
+          <div class="cat-badge cat-skel-badge skeleton"></div>
         </div>
       `;
       carousel.appendChild(item);
@@ -9872,7 +9917,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     if (!carousel) return;
 
     // evita "piscar": skeleton first
-    renderCategorySkeleton(carousel, 6);
+    renderCategorySkeleton(carousel);
     setupCatArrows(carousel);
 
     let lista = await getCategoriasPorDemanda();
@@ -11258,9 +11303,11 @@ async function carregarProfissionaisIndex() {
   // skeleton (estado vazio bonito)
   const proSkel = () => `
     <div class="pro-card pro-skel" aria-hidden="true">
+      <span class="skel pro-skel-topDot"></span>
       <div class="pro-avatar skel"></div>
       <div class="pro-name skel"></div>
       <div class="pro-role skel"></div>
+      <div class="skel pro-skel-rating"></div>
       <div class="btn-ver-perfil skel"></div>
     </div>
   `;

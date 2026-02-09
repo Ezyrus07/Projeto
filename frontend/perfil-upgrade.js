@@ -44,6 +44,23 @@
     }
     btn.classList.add("dp-icon-only");
   };
+  function isOwnProfile(ctx){
+    if(!ctx) return false;
+    if(ctx.pageMode === "self") return true;
+    if(ctx.canEdit) return true;
+
+    const me = ctx.me || {};
+    const target = ctx.target || {};
+    const meKeys = [
+      me.id, me.uid, me.auth_uid, me.authUid, me.user_uid
+    ].filter(Boolean).map(v => String(v));
+    const targetKeys = [
+      target.id, target.uid, target.auth_uid, target.authUid, target.user_uid
+    ].filter(Boolean).map(v => String(v));
+
+    if(!meKeys.length || !targetKeys.length) return false;
+    return meKeys.some(v => targetKeys.includes(v));
+  }
   let mobileActionsBound = false;
   function placeProfileActionsForMobile(){
     const rootEl = $("#dpRoot");
@@ -77,15 +94,15 @@
       handleRow.insertBefore(handle, handleRow.firstChild || null);
     }
 
-    const isMobile = window.matchMedia("(max-width: 640px)").matches;
+    const isCompactViewport = window.matchMedia("(max-width: 640px)").matches;
     if(!followBtn || !actionsRow){
-      if(!isMobile && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
+      if(!isCompactViewport && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
         handleRow.replaceWith(handle);
       }
       return;
     }
 
-    if(isMobile){
+    if(isCompactViewport){
       if(followBtn.parentElement !== handleRow){
         handleRow.appendChild(followBtn);
       }
@@ -181,7 +198,7 @@
     const btn = $("#dpFriendBtn");
     const msgBtn = $("#dpMessageBtn");
     if(!btn) return;
-    if(ctx?.canEdit){
+    if(isOwnProfile(ctx)){
       btn.style.display = "none";
       if (msgBtn) msgBtn.style.display = "none";
       return;
@@ -347,7 +364,7 @@
   async function updateFollowButton(ctx){
     const btn = $("#dpFollowBtn");
     if(!btn) return;
-    if(ctx?.canEdit){
+    if(isOwnProfile(ctx)){
       btn.style.display = "none";
       return;
     }
@@ -739,6 +756,108 @@ function hideIf(selector, cond){
 
   function safeStr(v){ return (v ?? "").toString().trim(); }
 
+  function getSkeletonCountByViewport(desktop = 4, tablet = 3, mobile = 2){
+    const w = window.innerWidth || document.documentElement.clientWidth || 1024;
+    if (w <= 600) return mobile;
+    if (w <= 1024) return tablet;
+    return desktop;
+  }
+
+  function renderPerfilGridSkeleton(grid, kind){
+    if(!grid) return;
+    const tpl = [];
+    grid.classList.remove("dp-grid--loading");
+    grid.classList.add("dp-grid--loading");
+
+    if(kind === "reels"){
+      const count = getSkeletonCountByViewport(4, 3, 2);
+      grid.classList.add("dp-grid--reels");
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="dp-reelCard dp-item dp-skelCard dp-skelCard--reel" aria-hidden="true">
+             <div class="dp-reelMedia dp-skelMedia dp-skelMedia--reel skeleton"></div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+
+    if(kind === "servicos"){
+      const count = getSkeletonCountByViewport(3, 2, 2);
+      try { grid.classList.add("lista-cards-premium"); } catch(_){}
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="card-premium skeleton-premium-card dp-serviceSkel" aria-hidden="true">
+             <div class="skeleton skeleton-premium-cover"></div>
+             <div class="skeleton-premium-body">
+               <div class="skeleton skeleton-line lg"></div>
+               <div class="skeleton skeleton-line md"></div>
+               <div class="skeleton skeleton-line sm"></div>
+             </div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+
+    if(kind === "portfolio"){
+      const count = getSkeletonCountByViewport(8, 6, 4);
+      grid.classList.add("dp-grid--masonry");
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="dp-item dp-skelCard dp-skelCard--portfolio" aria-hidden="true">
+             <div class="dp-itemMedia dp-skelMedia dp-skelMedia--portfolio skeleton"></div>
+             <div class="dp-itemBody dp-skelBody dp-skelBody--portfolio">
+               <div class="skeleton dp-skelLine dp-skelLine--md"></div>
+             </div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+
+    if(kind === "publicacoes"){
+      const count = getSkeletonCountByViewport(8, 6, 4);
+      grid.classList.add("dp-grid--masonry");
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="dp-item dp-skelCard dp-skelCard--publicacao" aria-hidden="true">
+             <div class="dp-itemMedia dp-skelMedia skeleton"></div>
+             <div class="dp-itemBody dp-skelBody">
+               <div class="dp-skelAuthor">
+                 <span class="skeleton dp-skelAvatar"></span>
+                 <span class="skeleton dp-skelLine dp-skelLine--author"></span>
+               </div>
+               <div class="skeleton dp-skelLine dp-skelLine--lg"></div>
+               <div class="skeleton dp-skelLine dp-skelLine--md"></div>
+             </div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+  }
+
+  function renderPerfilBoxSkeleton(box){
+    if(!box) return;
+    box.innerHTML = `
+      <div class="dp-empty dp-skelPanel" aria-hidden="true">
+        <div class="skeleton dp-skelLine dp-skelLine--lg"></div>
+        <div class="skeleton dp-skelLine dp-skelLine--md"></div>
+        <div class="skeleton dp-skelLine dp-skelLine--sm"></div>
+      </div>
+    `;
+  }
+
+  try{
+    window.renderPerfilGridSkeleton = renderPerfilGridSkeleton;
+    window.renderPerfilBoxSkeleton = renderPerfilBoxSkeleton;
+  }catch(_){}
+
   function roleFromUsuario(usuario){
     return usuario?.isProfissional ? "profissional" : "cliente";
   }
@@ -774,8 +893,7 @@ function hideIf(selector, cond){
   async function loadPublicacoes(client, userId, ctx){
     const grid = $("#dpGridPublicacoes");
     if(!grid) return;
-    grid.classList.add("dp-grid--masonry");
-    grid.innerHTML = `<div class="dp-empty">Carregando publicações...</div>`;
+    renderPerfilGridSkeleton(grid, "publicacoes");
     const { data, error } = await client
       .from("publicacoes")
       .select("*")
@@ -784,17 +902,18 @@ function hideIf(selector, cond){
       .limit(40);
     if(error){
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Nenhuma publicação ainda.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhuma publicacao ainda.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
       return;
     }
     if(!data?.length){
-      grid.innerHTML = `<div class="dp-empty">Sem publicações ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem publicacoes ainda.</div>`;
       return;
     }
+    grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
     const canEdit = !!ctx?.canEdit;
     for(const item of data){
@@ -848,7 +967,7 @@ function hideIf(selector, cond){
           event.preventDefault();
           event.stopPropagation();
           menuList?.classList.remove("open");
-          if(!confirm("Excluir esta publicação?")) return;
+          if(!confirm("Excluir esta publicacao?")) return;
           const { error: delErr } = await client
             .from("publicacoes")
             .delete()
@@ -858,7 +977,7 @@ function hideIf(selector, cond){
             toast("Erro ao excluir.");
             return;
           }
-          toast("Publicação excluída.");
+          toast("Publicacao excluida.");
           loadPublicacoes(client, userId, ctx);
         });
         card.appendChild(menu);
@@ -887,8 +1006,7 @@ function hideIf(selector, cond){
     async function loadReels(client, userId){
     const grid = $("#dpGridReels");
     if(!grid) return;
-    grid.classList.add("dp-grid--reels");
-    grid.innerHTML = `<div class="dp-empty">Carregando vídeos curtos...</div>`;
+    renderPerfilGridSkeleton(grid, "reels");
     const { data, error } = await client
       .from("videos_curtos")
       .select("*")
@@ -897,17 +1015,18 @@ function hideIf(selector, cond){
       .limit(40);
     if(error){
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Nenhum vídeo curto ainda.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhum Video curto ainda.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
       return;
     }
     if(!data?.length){
-      grid.innerHTML = `<div class="dp-empty">Sem vídeos curtos ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem videos curtos ainda.</div>`;
       return;
     }
+    grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
     for(const item of data){
       const card = document.createElement("div");
@@ -948,7 +1067,7 @@ function hideIf(selector, cond){
   async function loadPortfolio(client, profId){
     const grid = $("#dpGridPortfolio");
     if(!grid) return;
-    grid.innerHTML = `<div class="dp-empty">Carregando portfólio...</div>`;
+    renderPerfilGridSkeleton(grid, "portfolio");
     const { data, error } = await client
       .from("portfolio")
       .select("*")
@@ -957,15 +1076,15 @@ function hideIf(selector, cond){
       .limit(40);
     if(error){
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Portfólio vazio.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Portfolio vazio.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
       return;
     }
     if(!data?.length){
-      grid.innerHTML = `<div class="dp-empty">Sem itens no portfólio ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem itens no portfolio ainda.</div>`;
       return;
     }
     const ensureGalleryModal = () => {
@@ -981,6 +1100,7 @@ function hideIf(selector, cond){
       document.body.insertAdjacentHTML("beforeend", html);
     };
 
+    grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
     for(const item of data){
       const mediaUrl = String(item.media_url || "").trim();
@@ -1050,7 +1170,11 @@ function hideIf(selector, cond){
   async function loadServicos(client, profId){
     const grid = $("#dpGridServicos");
     if(!grid) return;
-    grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
+    if (typeof renderPerfilGridSkeleton === "function") {
+      renderPerfilGridSkeleton(grid, "servicos");
+    } else {
+      grid.innerHTML = `<div class="dp-empty">Carregando servicos...</div>`;
+    }
     const { data, error } = await client
       .from("servicos")
       .select("*")
@@ -1061,21 +1185,22 @@ function hideIf(selector, cond){
       const countEl = document.getElementById("dpServicesCount");
       if (countEl) countEl.textContent = "0";
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Nenhum serviço cadastrado.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhum servico cadastrado.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(error);
       return;
     }
     if(!data?.length){
       const countEl = document.getElementById("dpServicesCount");
       if (countEl) countEl.textContent = "0";
-      grid.innerHTML = `<div class="dp-empty">Sem serviços cadastrados ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem servicos cadastrados ainda.</div>`;
       return;
     }
     const countEl = document.getElementById("dpServicesCount");
     if (countEl) countEl.textContent = String(data.length || 0);
+    grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
     for(const s of data){
       const card = document.createElement("div");
@@ -1094,7 +1219,7 @@ function hideIf(selector, cond){
   async function loadAvaliacoes(client, prof){
     const box = $("#dpBoxAvaliacoes");
     if(!box) return;
-    box.innerHTML = `<div class="dp-empty">Carregando avaliações...</div>`;
+    renderPerfilBoxSkeleton(box);
     const profId = (typeof prof === "object" && prof) ? (prof.id || prof.profissional_id || prof.profissionalId) : prof;
     const profUid = (typeof prof === "object" && prof) ? (prof.uid || prof.user_uid || prof.auth_uid || prof.authUid) : null;
 
@@ -1375,7 +1500,7 @@ function hideIf(selector, cond){
         data = filterBySentiment(baseData, activeSentiment);
         const filterHtml = `${buildFilterBar(activeId)}${buildSentimentBar(baseData, activeSentiment)}`;
         if(!data || !data.length){
-          box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliacoes para este filtro.</div>`;
+          box.innerHTML = `${filterHtml}<div class="dp-empty">Sem avaliações para este filtro.</div>`;
           bindFilter();
           return;
         }
@@ -2758,7 +2883,7 @@ if(!rangeSel || !refreshBtn) return;
         if((tipo === "antes_depois") && !afterFile) return toast("Selecione a foto do Depois.");
         try{
           if(tipo === "curto"){
-            if(!ctx.me.isProfissional) return toast("Disponivel para perfil profissional.");
+            if(!ctx.me.isProfissional) return toast("Disponível para perfil profissional.");
             await createReel(client, ctx, {
               titulo: safeStr($("#dpPubTitulo")?.value),
               descricao: safeStr($("#dpPubDesc")?.value),
@@ -2814,7 +2939,7 @@ if(!rangeSel || !refreshBtn) return;
     $("#dpNewReel")?.addEventListener("click", ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
       if(!ctx.me.isProfissional) return toast("Disponível para perfil profissional.");
-      modal.open("Novo vídeo curto", `
+      modal.open("Novo video curto", `
         <div class="dp-form">
           <div>
             <label>Arquivo (vídeo)</label>
@@ -2847,7 +2972,7 @@ if(!rangeSel || !refreshBtn) return;
             capaFile
           });
           modal.close();
-          toast("Vídeo curto publicado!");
+          toast("Video curto publicado!");
           loadReels(ctx.client, ctx.target.id);
         }catch(e){
           console.error(e);
@@ -2911,7 +3036,7 @@ if(!rangeSel || !refreshBtn) return;
       openDropdown(e.currentTarget, ctx);
     });
 
-    // Solicitar orçamento (para visitante)
+    // Solicitar Orcamento (para visitante)
     $("#dpOrcBtn")?.addEventListener("click", ()=>{
       const id = ctx.target?.id || "";
       window.location.href = `orcamento.html?prof=${encodeURIComponent(id)}`;
@@ -2980,7 +3105,7 @@ if(!rangeSel || !refreshBtn) return;
     $$("[data-pro-owner-only]").forEach(el => { el.style.display = isProOwner ? "" : "none"; });
 
     // actions for visitor
-    const isOwner = ctx.canEdit;
+    const isOwner = isOwnProfile(ctx);
     const allowEdit = !!(isOwner && ctx.pageMode !== "public");
     showIf("#dpOrcBtn", !isOwner && isPro);
     showIf("#dpFriendBtn", !isOwner);
@@ -2997,9 +3122,9 @@ if(!rangeSel || !refreshBtn) return;
     const orcBtn = $("#dpOrcBtn");
     if (orcBtn && !isOwner && isPro) {
       orcBtn.classList.remove("dp-icon-only");
-      orcBtn.innerHTML = "<i class='bx bx-receipt'></i> Solicitar orçamento";
-      orcBtn.title = "Solicitar orçamento";
-      orcBtn.setAttribute("aria-label", "Solicitar orçamento");
+      orcBtn.innerHTML = "<i class='bx bx-receipt'></i> Solicitar Orcamento";
+      orcBtn.title = "Solicitar Orcamento";
+      orcBtn.setAttribute("aria-label", "Solicitar Orcamento");
     }
 
     // availability
@@ -3191,7 +3316,12 @@ if(!rangeSel || !refreshBtn) return;
         return;
       }
 
-      const canEdit = !!(me && me.id === target.id);
+      const canEdit = !!(me && (
+        pageMode === "self" ||
+        String(me.id || "") === String(target.id || "") ||
+        String(me.uid || me.auth_uid || me.authUid || me.user_uid || "") ===
+          String(target.uid || target.auth_uid || target.authUid || target.user_uid || "")
+      ));
 
       const ctx = {
         client,
@@ -3255,13 +3385,17 @@ async function loadServicosPerfil(ctx) {
   // tenta manter o mesmo visual do feed do index
   try { grid.classList.add("lista-cards-premium"); } catch (_) {}
 
-  grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
+  if (typeof window.renderPerfilGridSkeleton === "function") {
+    window.renderPerfilGridSkeleton(grid, "servicos");
+  } else {
+    grid.innerHTML = `<div class="dp-empty">Carregando servicos...</div>`;
+  }
 
   // fallback simples (caso o builder do index nao exista)
   const fallbackCard = (anuncio) => {
     const card = document.createElement("div");
     card.className = "card-premium";
-    const titulo = anuncio.titulo || "Sem título";
+    const titulo = anuncio.titulo || "Sem titulo";
     const descricao = anuncio.descricao || "";
     const preco = anuncio.preco || "A combinar";
     const fotos = Array.isArray(anuncio.fotos) ? anuncio.fotos : (anuncio.fotos ? [anuncio.fotos] : []);
@@ -3285,7 +3419,7 @@ async function loadServicosPerfil(ctx) {
           <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
           <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
         </div>
-        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar Orçamento</button>
+        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar Orcamento</button>
       </div>
     `;
     return card;
@@ -3295,7 +3429,7 @@ async function loadServicosPerfil(ctx) {
   const donoUid = (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : (ctx && ctx.targetUid) ? ctx.targetUid : (ctx && ctx.targetId) ? ctx.targetId : null;
 
   if (!client || !client.from || !donoUid) {
-    grid.innerHTML = `<div class="dp-empty">Não foi possível carregar os serviços.</div>`;
+    grid.innerHTML = `<div class="dp-empty">Nao foi possivel carregar os servicos.</div>`;
     return;
   }
 
@@ -3308,7 +3442,7 @@ async function loadServicosPerfil(ctx) {
 
     if (error) {
       console.error("Erro ao carregar serviços:", error);
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar servicos.</div>`;
       return;
     }
 
@@ -3319,7 +3453,7 @@ async function loadServicosPerfil(ctx) {
     if (countEl) countEl.textContent = String(anuncios.length || 0);
 
     if (!anuncios.length) {
-      grid.innerHTML = `<div class="dp-empty">Nenhum serviço publicado.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Nenhum servico publicado.</div>`;
       return;
     }
 
@@ -3346,6 +3480,7 @@ async function loadServicosPerfil(ctx) {
       return (db || 0) - (da || 0);
     });
 
+    grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
 
     listaParaRender.forEach((anuncio) => {
@@ -3364,7 +3499,7 @@ async function loadServicosPerfil(ctx) {
     });
   } catch (e) {
     console.error(e);
-    grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
+    grid.innerHTML = `<div class="dp-empty">Erro ao carregar servicos.</div>`;
   }
 }
 
@@ -3752,7 +3887,7 @@ async function loadServicosPerfil(ctx) {
         row.innerHTML = `
           <div class="dp-adthumb"><img src="${img}" onerror="this.src='https://placehold.co/600x400?text=Foto'" /></div>
           <div class="dp-admeta">
-            <b>${escapeHtml(a.titulo || "Sem título")}</b>
+            <b>${escapeHtml(a.titulo || "Sem titulo")}</b>
             <div class="dp-mini">${escapeHtml((a.preco || "A combinar"))} • ${escapeHtml((a.categoria || (a.categorias||"" ).split(',')[0] || "Geral").trim())}</div>
           </div>
           <div style="display:flex; gap:10px; align-items:center;">
@@ -4077,5 +4212,7 @@ function setupAntesDepois(container){
     }, 2000);
   });
 }
+
+
 
 
