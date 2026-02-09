@@ -1173,7 +1173,7 @@ function hideIf(selector, cond){
     if (typeof renderPerfilGridSkeleton === "function") {
       renderPerfilGridSkeleton(grid, "servicos");
     } else {
-      grid.innerHTML = `<div class="dp-empty">Carregando servicos...</div>`;
+      grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
     }
     const { data, error } = await client
       .from("servicos")
@@ -1185,7 +1185,7 @@ function hideIf(selector, cond){
       const countEl = document.getElementById("dpServicesCount");
       if (countEl) countEl.textContent = "0";
       if(isMissingTableError(error)){
-        grid.innerHTML = `<div class="dp-empty">Nenhum servico cadastrado.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhum serviço cadastrado.</div>`;
         return;
       }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
@@ -1195,7 +1195,7 @@ function hideIf(selector, cond){
     if(!data?.length){
       const countEl = document.getElementById("dpServicesCount");
       if (countEl) countEl.textContent = "0";
-      grid.innerHTML = `<div class="dp-empty">Sem servicos cadastrados ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem serviços cadastrados ainda.</div>`;
       return;
     }
     const countEl = document.getElementById("dpServicesCount");
@@ -3122,9 +3122,9 @@ if(!rangeSel || !refreshBtn) return;
     const orcBtn = $("#dpOrcBtn");
     if (orcBtn && !isOwner && isPro) {
       orcBtn.classList.remove("dp-icon-only");
-      orcBtn.innerHTML = "<i class='bx bx-receipt'></i> Solicitar Orcamento";
-      orcBtn.title = "Solicitar Orcamento";
-      orcBtn.setAttribute("aria-label", "Solicitar Orcamento");
+      orcBtn.innerHTML = "<i class='bx bx-receipt'></i> Solicitar orçamento";
+      orcBtn.title = "Solicitar orçamento";
+      orcBtn.setAttribute("aria-label", "Solicitar orçamento");
     }
 
     // availability
@@ -3388,7 +3388,7 @@ async function loadServicosPerfil(ctx) {
   if (typeof window.renderPerfilGridSkeleton === "function") {
     window.renderPerfilGridSkeleton(grid, "servicos");
   } else {
-    grid.innerHTML = `<div class="dp-empty">Carregando servicos...</div>`;
+    grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
   }
 
   // fallback simples (caso o builder do index nao exista)
@@ -3419,7 +3419,7 @@ async function loadServicosPerfil(ctx) {
           <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
           <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
         </div>
-        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar Orcamento</button>
+        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar orçamento</button>
       </div>
     `;
     return card;
@@ -3429,7 +3429,7 @@ async function loadServicosPerfil(ctx) {
   const donoUid = (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : (ctx && ctx.targetUid) ? ctx.targetUid : (ctx && ctx.targetId) ? ctx.targetId : null;
 
   if (!client || !client.from || !donoUid) {
-    grid.innerHTML = `<div class="dp-empty">Nao foi possivel carregar os servicos.</div>`;
+    grid.innerHTML = `<div class="dp-empty">Não foi possível carregar os serviços.</div>`;
     return;
   }
 
@@ -3442,7 +3442,7 @@ async function loadServicosPerfil(ctx) {
 
     if (error) {
       console.error("Erro ao carregar serviços:", error);
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar servicos.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
       return;
     }
 
@@ -3453,7 +3453,7 @@ async function loadServicosPerfil(ctx) {
     if (countEl) countEl.textContent = String(anuncios.length || 0);
 
     if (!anuncios.length) {
-      grid.innerHTML = `<div class="dp-empty">Nenhum servico publicado.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Nenhum serviço publicado.</div>`;
       return;
     }
 
@@ -3499,7 +3499,7 @@ async function loadServicosPerfil(ctx) {
     });
   } catch (e) {
     console.error(e);
-    grid.innerHTML = `<div class="dp-empty">Erro ao carregar servicos.</div>`;
+    grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
   }
 }
 

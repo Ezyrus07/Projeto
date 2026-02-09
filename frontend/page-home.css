@@ -1015,6 +1015,9 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel-de
 
 body[data-page="home"] .tiktok-card.is-skeleton{
   position: relative;
+  min-width: 240px !important;
+  width: 240px !important;
+  height: 450px !important;
   overflow: hidden;
   border: 1px solid rgba(255,255,255,.14);
   box-shadow: 0 10px 24px rgba(0,0,0,.10);
@@ -1049,51 +1052,30 @@ body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-play{
   z-index: 3;
 }
 
-body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-overlay{
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
+body[data-page="home"] .tiktok-card.is-skeleton .video-ui-layer.tiktok-skel-overlay{
   display: grid;
-  gap: 7px;
-  padding: 44px 12px 12px;
-  z-index: 3;
-  background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,.62) 74%, rgba(0,0,0,.74) 100%);
+  gap: 6px;
+  padding: 14px 12px 12px;
+  justify-content: flex-end;
+  background: linear-gradient(180deg, transparent 40%, rgba(0,0,0,0.62) 70%, rgba(0,0,0,0.95) 100%) !important;
 }
 
-body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-userRow{
-  display: flex;
-  align-items: center;
-  gap: 8px;
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-providerWrap{
+  margin-bottom: 2px;
 }
 
-body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-avatar{
-  width: 24px;
-  height: 24px;
-  border-radius: 999px;
-  display: block;
-  flex: 0 0 24px;
-}
-
-body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-user{
-  width: 54%;
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-provider{
+  width: 56%;
   height: 10px;
   border-radius: 999px;
   display: block;
 }
 
 body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-lineMd{
-  width: 76%;
-  height: 10px;
-  border-radius: 999px;
-  display: block;
-}
-
-body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-lineSm{
-  display: block;
-  width: 48%;
+  width: 68%;
   height: 9px;
   border-radius: 999px;
+  display: block;
 }
 
 body[data-page="home"] .pro-card.pro-skel{
@@ -1220,6 +1202,12 @@ body[data-page="home"] .cat-track.is-loading .cat-count.cat-skel-badge{
     border-radius: 16px;
   }
 
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    min-width: 200px !important;
+    width: 200px !important;
+    height: 320px !important;
+  }
+
   body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-play{
     width: 40px;
     height: 40px;
@@ -1237,8 +1225,14 @@ body[data-page="home"] .cat-track.is-loading .cat-count.cat-skel-badge{
     height: 16px;
   }
 
-  body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-overlay{
-    padding: 40px 10px 10px;
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    min-width: 210px !important;
+    width: 210px !important;
+    height: 390px !important;
+  }
+
+  body[data-page="home"] .tiktok-card.is-skeleton .video-ui-layer.tiktok-skel-overlay{
+    padding: 12px 10px 10px;
   }
 
   body[data-page="home"] .cat-track.is-loading .cat-card.cat-skel{
@@ -1256,4 +1250,104 @@ body[data-page="home"] .cat-track.is-loading .cat-count.cat-skel-badge{
     width: 46px;
     height: 16px;
   }
+}
+
+/* ============================================================
+   PATCH 2026-02-09B - Tablet/mobile consistency (home/index)
+   - video skeleton branco e mesmo tamanho dos cards reais
+   - cards de videos/publicacoes compactos no tablet (3 visiveis)
+   - filtros/localizacao em 1 linha (UF + Cidade + Bairro)
+   - gutters laterais melhores no tablet
+   ============================================================ */
+@media (max-width: 1024px){
+  body[data-page="home"] main.dp-wrap{
+    padding-left: clamp(14px, 2.4vw, 24px) !important;
+    padding-right: clamp(14px, 2.4vw, 24px) !important;
+  }
+
+  body[data-page="home"] .secao-busca,
+  body[data-page="home"] .categorias-container,
+  body[data-page="home"] .videos-container,
+  body[data-page="home"] .fotos-container,
+  body[data-page="home"] .anuncio-container{
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  body[data-page="home"] .filtros-localizacao .grid-loc{
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="home"] .filtros-localizacao .select-premium{
+    min-width: 0 !important;
+    height: 42px !important;
+    padding: 0 10px !important;
+    font-size: .84rem !important;
+  }
+
+  body[data-page="home"] .filtros-expandidos{
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+
+  body[data-page="home"] .filtros-expandidos .grid-extras{
+    gap: 10px !important;
+  }
+}
+
+@media (min-width: 560px) and (max-width: 1024px){
+  body[data-page="home"] .tiktok-scroll-wrapper{
+    gap: 10px !important;
+    padding: 12px 0 !important;
+  }
+
+  body[data-page="home"] .tiktok-card,
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    flex: 0 0 clamp(148px, 27vw, 182px) !important;
+    min-width: clamp(148px, 27vw, 182px) !important;
+    width: clamp(148px, 27vw, 182px) !important;
+    height: clamp(258px, 44vw, 304px) !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 10px !important;
+    padding: 8px 0 6px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex: 0 0 clamp(148px, 27vw, 182px) !important;
+    min-width: clamp(148px, 27vw, 182px) !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.16 !important;
+  }
+}
+
+body[data-page="home"] .tiktok-card.is-skeleton{
+  border: 1px solid rgba(15, 23, 42, 0.10) !important;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08) !important;
+  background: #ffffff !important;
+}
+
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-media{
+  background: linear-gradient(90deg, #f2f5f8 0%, #ffffff 50%, #f2f5f8 100%) !important;
+}
+
+body[data-page="home"] .tiktok-card.is-skeleton .video-ui-layer.tiktok-skel-overlay{
+  background: linear-gradient(180deg, rgba(255,255,255,0) 48%, rgba(255,255,255,.72) 76%, rgba(255,255,255,.95) 100%) !important;
+}
+
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-badge,
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-play{
+  background: #eef2f6 !important;
+  border: 1px solid rgba(15, 23, 42, 0.08) !important;
+}
+
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-provider,
+body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-lineMd{
+  background: #e7edf3 !important;
 }
