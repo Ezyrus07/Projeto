@@ -44,22 +44,36 @@
     }
     btn.classList.add("dp-icon-only");
   };
+  function normalizeIdentity(v){
+    if(v === null || v === undefined) return "";
+    return String(v).trim();
+  }
+  function collectIdentityKeys(user){
+    if(!user || typeof user !== "object") return [];
+    const values = [
+      user.id,
+      user.uid,
+      user.auth_uid,
+      user.authUid,
+      user.user_uid,
+      user.userId,
+      user.user_id,
+      user.profile_id
+    ].map(normalizeIdentity).filter(Boolean);
+    return Array.from(new Set(values));
+  }
+  function sameIdentity(a, b){
+    const left = collectIdentityKeys(a);
+    const right = collectIdentityKeys(b);
+    if(!left.length || !right.length) return false;
+    return left.some(v => right.includes(v));
+  }
   function isOwnProfile(ctx){
     if(!ctx) return false;
     if(ctx.pageMode === "self") return true;
     if(ctx.canEdit) return true;
 
-    const me = ctx.me || {};
-    const target = ctx.target || {};
-    const meKeys = [
-      me.id, me.uid, me.auth_uid, me.authUid, me.user_uid
-    ].filter(Boolean).map(v => String(v));
-    const targetKeys = [
-      target.id, target.uid, target.auth_uid, target.authUid, target.user_uid
-    ].filter(Boolean).map(v => String(v));
-
-    if(!meKeys.length || !targetKeys.length) return false;
-    return meKeys.some(v => targetKeys.includes(v));
+    return sameIdentity(ctx.me, ctx.target);
   }
   let mobileActionsBound = false;
   function placeProfileActionsForMobile(){
@@ -83,30 +97,15 @@
 
     if(!handle) return;
 
-    let handleRow = $(".dp-handleRow", info);
-    if(!handleRow){
-      handleRow = document.createElement("div");
-      handleRow.className = "dp-handleRow";
-      info.insertBefore(handleRow, handle);
-    }
-
-    if(handle.parentElement !== handleRow){
+    const handleRow = $(".dp-handleRow", info);
+    if(handleRow && handle.parentElement !== handleRow){
       handleRow.insertBefore(handle, handleRow.firstChild || null);
     }
 
-    const isCompactViewport = window.matchMedia("(max-width: 640px)").matches;
     if(!followBtn || !actionsRow){
-      if(!isCompactViewport && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
+      if(handleRow && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
         handleRow.replaceWith(handle);
       }
-      return;
-    }
-
-    if(isCompactViewport){
-      if(followBtn.parentElement !== handleRow){
-        handleRow.appendChild(followBtn);
-      }
-      followBtn.classList.add("dp-followCompact");
       return;
     }
 
@@ -115,7 +114,7 @@
       actionsRow.insertBefore(followBtn, actionsRow.firstChild);
     }
 
-    if(handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
+    if(handleRow && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
       handleRow.replaceWith(handle);
     }
   }
@@ -197,6 +196,20 @@
   async function updateFriendButton(ctx){
     const btn = $("#dpFriendBtn");
     const msgBtn = $("#dpMessageBtn");
+    const applyFriendLabel = (icon, label) => {
+      if (!btn) return;
+      btn.classList.remove("dp-icon-only");
+      btn.innerHTML = `<i class='bx ${icon}'></i> ${label}`;
+      btn.title = label;
+      btn.setAttribute("aria-label", label);
+    };
+    const applyMessageLabel = (label) => {
+      if (!msgBtn) return;
+      msgBtn.classList.remove("dp-icon-only");
+      msgBtn.innerHTML = `<i class='bx bx-message-rounded'></i> ${label}`;
+      msgBtn.title = label;
+      msgBtn.setAttribute("aria-label", label);
+    };
     if(!btn) return;
     if(isOwnProfile(ctx)){
       btn.style.display = "none";
@@ -206,7 +219,7 @@
     if(!ctx?.me){
       btn.style.display = "inline-flex";
       btn.dataset.friendStatus = "nologin";
-      setIconButton(btn, "bx-user-plus", "Entrar para adicionar");
+      applyFriendLabel("bx-user-plus", "Entrar para adicionar");
       if (msgBtn) msgBtn.style.display = "none";
       return;
     }
@@ -224,15 +237,15 @@
     btn.dataset.friendDirection = rel.direction || "";
 
     if (rel.status === "aceito") {
-      setIconButton(btn, "bx-user-minus", "Desfazer amizade");
+      applyFriendLabel("bx-user-minus", "Desfazer amizade");
     } else if (rel.status === "pendente_out") {
-      setIconButton(btn, "bx-time", "Cancelar pedido de amizade");
+      applyFriendLabel("bx-time", "Cancelar pedido");
     } else if (rel.status === "pendente_in") {
-      setIconButton(btn, "bx-user-check", "Aceitar amizade");
+      applyFriendLabel("bx-user-check", "Aceitar amizade");
     } else if (rel.status === "recusado") {
-      setIconButton(btn, "bx-user-plus", "Novo pedido de amizade");
+      applyFriendLabel("bx-user-plus", "Novo pedido");
     } else {
-      setIconButton(btn, "bx-user-plus", "Adicionar amizade");
+      applyFriendLabel("bx-user-plus", "Adicionar amizade");
     }
     if (msgBtn) {
       const canMessage = rel.status === "aceito";
@@ -242,7 +255,7 @@
         if (!otherUidMsg) return;
         window.location.href = `chat.html?uid=${encodeURIComponent(otherUidMsg)}`;
       };
-      if (canMessage) setIconButton(msgBtn, "bx-message-rounded", "Enviar mensagem");
+      if (canMessage) applyMessageLabel("Enviar mensagem");
     }
   }
 
@@ -635,13 +648,22 @@
   }
 
   async function getUsuarioByAuthUid(client, authUid){
-    const { data, error } = await client
+    const authKey = normalizeIdentity(authUid);
+    if(!authKey) return { usuario: null };
+    let r = await client
       .from("usuarios")
       .select("*")
-      .eq("uid", authUid)
+      .eq("uid", authKey)
       .maybeSingle();
-    if(error) return { error };
-    return { usuario: data || null };
+    if(!r.error && !r.data){
+      r = await client
+        .from("usuarios")
+        .select("*")
+        .eq("id", authKey)
+        .maybeSingle();
+    }
+    if(r.error) return { error: r.error };
+    return { usuario: r.data || null };
   }
 
   async function getUsuarioById(client, id){
@@ -784,7 +806,7 @@ function hideIf(selector, cond){
     }
 
     if(kind === "servicos"){
-      const count = getSkeletonCountByViewport(3, 2, 2);
+      const count = getSkeletonCountByViewport(2, 2, 1);
       try { grid.classList.add("lista-cards-premium"); } catch(_){}
       for(let i = 0; i < count; i++){
         tpl.push(
@@ -3106,10 +3128,15 @@ if(!rangeSel || !refreshBtn) return;
 
     // actions for visitor
     const isOwner = isOwnProfile(ctx);
+    const rootEl = $("#dpRoot");
+    if(rootEl){
+      rootEl.setAttribute("data-owner", isOwner ? "self" : "visitor");
+    }
     const allowEdit = !!(isOwner && ctx.pageMode !== "public");
     showIf("#dpOrcBtn", !isOwner && isPro);
     showIf("#dpFriendBtn", !isOwner);
     showIf("#dpFollowBtn", !isOwner);
+    if(isOwner) showIf("#dpMessageBtn", false);
     hideIf("#dpEditBtn", !allowEdit);
     showIf("#dpMoreBtn", allowEdit);
     showIf("#dpCoverBtn", allowEdit);
@@ -3240,8 +3267,14 @@ if(!rangeSel || !refreshBtn) return;
       }
 
       const root = rootEl;
-      const pageMode = root?.dataset?.mode || "self"; // self | public
+      const file = (location.pathname.split("/").pop() || "").toLowerCase();
+      const selfPages = new Set(["meuperfil.html", "perfil-usuario.html"]);
+      const declaredMode = String(root?.dataset?.mode || "").toLowerCase();
+      const pageMode = selfPages.has(file) ? "self" : (declaredMode || "public"); // self | public
       const pageTheme = root?.dataset?.theme || "cliente"; // cliente|profissional (visual)
+      if(root && root.dataset){
+        root.dataset.mode = pageMode;
+      }
 
       // Evita flicker suave
       root?.classList.remove("dp-ready");
@@ -3289,7 +3322,7 @@ if(!rangeSel || !refreshBtn) return;
         }
         targetId = usuario.id;
       } else {
-        targetId = me?.id || null;
+        targetId = me?.id || me?.uid || authUser?.id || null;
       }
 
       if(pageMode === "self" && !me){
@@ -3316,12 +3349,7 @@ if(!rangeSel || !refreshBtn) return;
         return;
       }
 
-      const canEdit = !!(me && (
-        pageMode === "self" ||
-        String(me.id || "") === String(target.id || "") ||
-        String(me.uid || me.auth_uid || me.authUid || me.user_uid || "") ===
-          String(target.uid || target.auth_uid || target.authUid || target.user_uid || "")
-      ));
+      const canEdit = !!(me && (pageMode === "self" || sameIdentity(me, target)));
 
       const ctx = {
         client,
@@ -3332,6 +3360,9 @@ if(!rangeSel || !refreshBtn) return;
         pageTheme,
         pageMode
       };
+      if(root && root.dataset){
+        root.dataset.owner = isOwnProfile(ctx) ? "self" : "visitor";
+      }
 
       // Top button (Entrar/Perfil)
       const topBtn = document.getElementById("dpTopAuthBtn");

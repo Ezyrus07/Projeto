@@ -332,6 +332,29 @@ img, video, canvas, svg{ max-width:100%; }
     grid-template-rows: 1fr 1fr;
   }
 
+  /* Anuncios em outras paginas (perfil/busca/etc): manter card compacto no mobile/tablet */
+  body[data-page]:not([data-page="home"]) .card-premium .grid-fotos-doke{
+    height: clamp(180px, 44vw, 220px) !important;
+    grid-template-rows: 1fr 1fr !important;
+  }
+
+  /* Trilhos horizontais: arraste por dedo sempre ativo */
+  body[data-page] .filtros-chips-scroll,
+  body[data-page] .filters-scroll,
+  body[data-page] .categories-carousel,
+  body[data-page] #categoriesCarousel,
+  body[data-page] .categorias-min .cat-track{
+    -webkit-overflow-scrolling: touch !important;
+    touch-action: pan-x !important;
+    overscroll-behavior-x: contain;
+  }
+
+  body[data-page] .filter-chip,
+  body[data-page] .chip-tag,
+  body[data-page] .cat-item{
+    flex: 0 0 auto;
+  }
+
   /* Home: anuncio-card grid proportions */
   body[data-page="home"] .anuncio-card .media-grid{
     grid-template-columns: 2fr 1fr !important;
@@ -377,6 +400,10 @@ img, video, canvas, svg{ max-width:100%; }
 }
 
 @media (max-width:600px){
+  body[data-page]:not([data-page="home"]) .card-premium .grid-fotos-doke{
+    height: clamp(164px, 50vw, 200px) !important;
+  }
+
   .sec-title{ font-size: 1.2rem; }
   .typing-container{ font-size: 16px; }
   .btn-procurar, .btn-anunciar{ font-size: 0.95rem; }

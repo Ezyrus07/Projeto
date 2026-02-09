@@ -25,15 +25,48 @@
     try{ return JSON.parse(json); }catch(e){ return null; }
   }
 
+  const AUTH_CACHE_KEYS = [
+    "doke_usuario_perfil",
+    "usuarioLogado",
+    "usuario_logado",
+    "perfil_usuario",
+    "doke_usuario_logado",
+    "userLogado"
+  ];
+
+  function clearAuthCache(){
+    for(const k of AUTH_CACHE_KEYS){
+      try{ localStorage.removeItem(k); }catch(e){}
+    }
+  }
+
   function getProfile(){
-    const keys = ["doke_usuario_perfil", "usuarioLogado", "usuario_logado", "perfil_usuario"];
-    for(const k of keys){
+    for(const k of AUTH_CACHE_KEYS){
       let v = null;
       try{ v = localStorage.getItem(k); }catch(e){}
       if(!v) continue;
       const obj = safeParse(v);
       if(obj && typeof obj === "object") return obj;
     }
+    return null;
+  }
+
+  async function getSessionUser(){
+    try{
+      const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase;
+      if(sb?.auth?.getUser){
+        const { data, error } = await sb.auth.getUser();
+        if(!error && data?.user) return data.user;
+      }
+      if(sb?.auth?.getSession){
+        const { data, error } = await sb.auth.getSession();
+        if(!error && data?.session?.user) return data.session.user;
+      }
+    }catch(e){}
+    try{
+      const fb = window.auth?.currentUser;
+      if(fb?.uid) return { id: fb.uid, email: fb.email || "" };
+    }catch(e){}
     return null;
   }
 
@@ -96,7 +129,7 @@
     }
   }
 
-  function ensureShell(){
+  async function ensureShell(){
     if(!MQ.matches) return;
 
     const body = document.body;
@@ -144,16 +177,24 @@
       }
     }catch(e){}
 
-    const profile = getProfile();
-    const isLogged = !!profile;
+    const sessionUser = await getSessionUser();
+    if(!sessionUser){
+      clearAuthCache();
+    }
+    const profile = sessionUser ? getProfile() : null;
+    const isLogged = !!sessionUser;
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
-    const nomePerfil = (profile && (profile.user || profile.nome || profile.name)) || "Minha conta";
-    const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
-    const labelAnunciar = isPro ? "Anunciar" : "Seja Profissional";
+    const nomePerfil = (profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante");
+    const profileHref = isLogged ? PAGES.perfil : "login.html";
+    const linkAnunciar = !isLogged ? "login.html" : (isPro ? "anunciar.html" : "tornar-profissional.html");
+    const labelAnunciar = !isLogged ? "Entrar" : (isPro ? "Anunciar" : "Seja Profissional");
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const itemAlternar = isLogged ? `<a href="#" class="dropdown-item" data-action="alternar-conta"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
     const itemSair = isLogged
       ? `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`
+      : `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+    const profileItemHTML = isLogged
+      ? `<a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`
       : `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
 
     // If the shell was already injected (e.g., navigating via history cache), reuse it.
@@ -182,7 +223,7 @@
               <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
                 ${nomePerfil}
               </div>
-              <a href="${PAGES.perfil}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+              ${profileItemHTML}
               ${itemCarteira}
               ${itemAlternar}
               <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>
@@ -215,7 +256,7 @@
           <a href="${PAGES.comunidades}"><i class='bx bx-group'></i> Comunidades</a>
           <a href="${PAGES.notif}"><i class='bx bx-bell'></i> Notificações</a>
           <a href="${PAGES.chat}"><i class='bx bx-message-rounded-dots'></i> Mensagens</a>
-          <a href="${PAGES.perfil}"><i class='bx bx-user'></i> Perfil</a>
+          <a href="${profileHref}"><i class='bx bx-user'></i> Perfil</a>
           <a href="${PAGES.mais}"><i class='bx bx-dots-horizontal-rounded'></i> Mais</a>
         </nav>
       `;
@@ -231,7 +272,7 @@
         <a href="#" data-nav="search"><i class='bx bx-search'></i><span>Pesquisar</span></a>
         <a href="${PAGES.comunidades}" data-nav="comunidades"><i class='bx bx-group'></i><span>Comunidades</span></a>
         <a href="${PAGES.negocios}" data-nav="negocios"><i class='bx bx-store-alt'></i><span>Negócios</span></a>
-        <a href="${PAGES.perfil}" data-nav="perfil"><span><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
+        <a href="${profileHref}" data-nav="perfil"><span><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
       `;
       document.body.appendChild(bottom);
 
@@ -390,9 +431,7 @@
         }
         if(act === "logout"){
           if(typeof window.fazerLogout === "function") return window.fazerLogout();
-          try{
-            ["usuarioLogado","usuario_logado","doke_usuario_perfil","perfil_usuario"].forEach(k=>localStorage.removeItem(k));
-          }catch(e){}
+          clearAuthCache();
           location.href = "login.html";
         }
       });
@@ -420,7 +459,7 @@
     }
 
     // Avatar (aplica no que existir)
-    const avatarUrl = getAvatarUrl(profile);
+    const avatarUrl = isLogged ? getAvatarUrl(profile) : null;
     if(header){
       const headerImg = header.querySelector(".doke-avatar");
       if(avatarUrl && headerImg){

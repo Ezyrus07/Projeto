@@ -10,6 +10,14 @@ body[data-page="perfil"] .dp-statsNav{
   display: inline-flex !important;
 }
 
+/* Evita ações de visitante no próprio perfil (inclusive mobile). */
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpOrcBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpFriendBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpFollowBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpMessageBtn{
+  display: none !important;
+}
+
 /* Lote 1: hardening responsivo (perfil) */
 body[data-page="perfil"] main.dp-wrap{
   padding-top: clamp(10px, 1.8vw, 22px) !important;
@@ -1545,5 +1553,260 @@ body[data-page="perfil"] .dp-statsNav{
   body[data-page="perfil"] #dpGridReels.dp-grid--reels .dp-reelCard{
     aspect-ratio: 9 / 15 !important;
     border-radius: 10px !important;
+  }
+}
+
+/* ============================================================
+   PATCH FINAL - Perfil self no mobile + serviços sem corte
+   ============================================================ */
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpOrcBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpFriendBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpFollowBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"] #dpMessageBtn,
+body[data-page="perfil"] #dpRoot[data-mode="self"] #dpOrcBtn,
+body[data-page="perfil"] #dpRoot[data-mode="self"] #dpFriendBtn,
+body[data-page="perfil"] #dpRoot[data-mode="self"] #dpFollowBtn,
+body[data-page="perfil"] #dpRoot[data-mode="self"] #dpMessageBtn{
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body[data-page="perfil"] #dpGridServicos.lista-cards-premium{
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+  overflow: visible !important;
+  align-items: stretch !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .card-premium{
+  width: 100% !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .cp-body{
+  padding: 10px 12px 8px !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .cp-desc-clean{
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .cp-footer-right{
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 8px !important;
+  align-items: center !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .cp-footer-right > div{
+  min-width: 0 !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .btn-solicitar{
+  max-width: 100% !important;
+  white-space: normal !important;
+  line-height: 1.2 !important;
+}
+
+@media (max-width: 900px){
+  body[data-page="perfil"] #dpGridServicos.lista-cards-premium{
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ============================================================
+   UNIFIED RESPONSIVE LAYER (perfil)
+   - breakpoints únicos
+   - ações mobile padronizadas (44px+)
+   - clamp consistente em todas as grades
+   ============================================================ */
+body[data-page="perfil"]{
+  --dp-break-desktop-min: 1025px;
+  --dp-break-tablet-min: 768px;
+  --dp-break-tablet-max: 1024px;
+  --dp-break-mobile-max: 767px;
+  --dp-action-min-h: 44px;
+}
+
+body[data-page="perfil"] #dpRoot .dp-actionsRow{
+  width: 100% !important;
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 8px !important;
+}
+
+body[data-page="perfil"] #dpRoot .dp-actionsRow > button{
+  min-height: var(--dp-action-min-h) !important;
+  border-radius: 12px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
+  padding: 0 14px !important;
+  font-weight: 800 !important;
+  line-height: 1.1 !important;
+}
+
+body[data-page="perfil"] #dpRoot .dp-actionsRow > button i{
+  font-size: 1rem !important;
+  line-height: 1 !important;
+}
+
+/* Ações com identidade visual única */
+body[data-page="perfil"] #dpRoot #dpOrcBtn{
+  background: linear-gradient(135deg, var(--cor0, #0b7768), var(--cor2, #2a5f90)) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpFollowBtn{
+  background: #fff !important;
+  color: #be123c !important;
+  border: 1px solid rgba(190, 18, 60, .35) !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpFollowBtn.dp-followCompact{
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 0 14px !important;
+  border-radius: 12px !important;
+  font-size: .86rem !important;
+  line-height: 1.1 !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpFriendBtn{
+  background: #eff6ff !important;
+  color: #1d4ed8 !important;
+  border: 1px solid rgba(59, 130, 246, .40) !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpMessageBtn{
+  background: #f8fafc !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, .14) !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpEditBtn{
+  background: #fff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15, 23, 42, .18) !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpMoreBtn{
+  width: var(--dp-action-min-h) !important;
+  min-width: var(--dp-action-min-h) !important;
+  max-width: var(--dp-action-min-h) !important;
+  padding: 0 !important;
+}
+
+/* Clamp consistente para cards em todas as grades do perfil */
+body[data-page="perfil"] #dpGridServicos .cp-titulo,
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemTitle,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemTitle{
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+body[data-page="perfil"] #dpGridServicos .cp-desc-clean,
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemDesc,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemDesc{
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* Desktop */
+@media (min-width: 1025px){
+  body[data-page="perfil"] #dpRoot .dp-body{
+    display: grid !important;
+    grid-template-columns: 170px minmax(0, 1fr) minmax(250px, 300px) !important;
+    gap: 14px !important;
+    align-items: start !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-info{
+    grid-column: 2 !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-actions{
+    grid-column: 3 !important;
+    width: 100% !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-actionsRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Tablet */
+@media (min-width: 768px) and (max-width: 1024px){
+  body[data-page="perfil"] #dpRoot .dp-body{
+    display: grid !important;
+    grid-template-columns: 120px minmax(0, 1fr) !important;
+    grid-template-areas:
+      "avatar info"
+      "actions actions" !important;
+    gap: 12px !important;
+    align-items: start !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-avatarWrap{ grid-area: avatar !important; }
+  body[data-page="perfil"] #dpRoot .dp-info{ grid-area: info !important; }
+  body[data-page="perfil"] #dpRoot .dp-actions{
+    grid-area: actions !important;
+    width: 100% !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-actionsRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  body[data-page="perfil"] #dpGridServicos.lista-cards-premium{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Mobile */
+@media (max-width: 767px){
+  body[data-page="perfil"] #dpRoot .dp-body{
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-actions{
+    width: 100% !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-actionsRow{
+    grid-template-columns: 1fr !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"] .dp-actionsRow{
+    grid-template-columns: minmax(0, 1fr) var(--dp-action-min-h) !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"] #dpEditBtn{
+    grid-column: 1 / 2 !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"] #dpMoreBtn{
+    display: inline-flex !important;
+    grid-column: 2 / 3 !important;
+  }
+
+  body[data-page="perfil"] #dpGridServicos.lista-cards-premium{
+    grid-template-columns: 1fr !important;
   }
 }

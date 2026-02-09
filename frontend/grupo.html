@@ -146,11 +146,12 @@
    DOKE - Grupo (layout)
    Mantém header/sidebar do site
    ========================= */
-.grupo-page{ padding: 14px 18px 30px; }
 .grupo-page{
-  /* deixa a coluna do meio (conversas/feed) mais larga */
-  max-width: 1600px;
-  margin: 0 auto;
+  padding: 14px 18px 30px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
 }
 .grupo-grid{
   display:grid;
@@ -210,6 +211,24 @@
 
 .grupo-center{ overflow:hidden; }
 .grupo-center .inner{ overflow:auto; padding-bottom: 16px; }
+
+.grupo-hero-toggle{
+  display:none;
+  width: calc(100% - 24px);
+  margin: 12px auto 0;
+  border:1px solid #d8e1ef;
+  background:#fff;
+  color:#1d2b3a;
+  border-radius: 14px;
+  min-height: 44px;
+  padding: 0 14px;
+  font-weight: 900;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+}
+.grupo-hero-toggle i{ color: var(--cor2); font-size: 18px; }
 
 .grupo-hero{ border-bottom: 1px solid #eef0f4; }
 .grupo-cover{
@@ -455,18 +474,43 @@
   .grupo-grid{ grid-template-columns: minmax(0, 1fr) 300px; }
   .grupo-members{ display:none; }
 }
-@media (max-width: 820px){
-  .grupo-page{ padding: 10px 10px 80px; }
-  .grupo-grid{ grid-template-columns: 1fr; }
-  .grupo-pane{ max-height: none; }
+@media (max-width: 1200px){
+  body[data-page="grupo"] main{
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body[data-page="grupo"] .grupo-page{
+    padding: 0 0 calc(var(--doke-btm-real, 66px) + 10px + env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: none;
+  }
+  .grupo-grid{ grid-template-columns: 1fr !important; gap: 0 !important; }
+  .grupo-grid,
+  .grupo-center,
+  .grupo-sidecol{ width: 100%; min-width: 0; }
+  .grupo-pane{
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .grupo-cover{ border-radius: 0; }
+  .grupo-hero-toggle{ display:inline-flex; }
+  #grupoCenterPane #grupoCover{ display:none; }
+  #grupoCenterPane.hero-open #grupoCover{ display:block; }
+  #grupoCenterPane.hero-open .grupo-hero-toggle{ margin-top: 8px; }
+  .grupo-pane.grupo-nav{
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+  }
   .grupo-sidecol{ order: 2; }
   .grupo-center{ order: 1; }
 }
 
-@media (min-width: 1024px){
-  main{ display:flex; justify-content:center; }
-  main > .grupo-page{ width: min(1280px, 100%); }
-}
+body[data-page="grupo"] main{ display:block !important; }
+body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: none !important; }
 
 </style>
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -475,8 +519,11 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
-<body>
+<body data-page="grupo">
 <header class="navbar-desktop">
 <div id="logo-desktop">
 <a href="projeto.html">
@@ -581,9 +628,13 @@
 <main>
 <div class="grupo-page">
 <div class="grupo-grid">
-<section class="grupo-pane grupo-center">
+<section class="grupo-pane grupo-center" id="grupoCenterPane">
 <div class="inner">
-<div class="grupo-hero">
+<button class="grupo-hero-toggle" id="btnToggleGrupoHero" type="button" aria-expanded="false">
+<i class="bx bx-image"></i>
+<span id="toggleHeroLabel">Mostrar capa</span>
+</button>
+<div class="grupo-hero" id="grupoHero">
 <div class="grupo-cover" id="grupoCover"></div>
 <div class="grupo-hero-info">
 <div class="grupo-hero-left">
@@ -797,6 +848,35 @@
   const qs = (k)=>new URLSearchParams(window.location.search).get(k);
 
   const WAIT_MS = 10000;
+
+  function wireMobileHeroToggle(){
+    const pane = $('grupoCenterPane');
+    const hero = $('grupoHero');
+    const btn = $('btnToggleGrupoHero');
+    const label = $('toggleHeroLabel');
+    if(!pane || !hero || !btn) return;
+
+    const mq = window.matchMedia('(max-width: 1200px)');
+    const setState = (open) => {
+      pane.classList.toggle('hero-open', !!open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(label) label.textContent = open ? 'Ocultar capa' : 'Mostrar capa';
+    };
+
+    const applyByViewport = () => {
+      if (mq.matches) setState(false);
+      else setState(true);
+    };
+
+    btn.addEventListener('click', () => {
+      setState(!pane.classList.contains('hero-open'));
+    });
+
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', applyByViewport);
+    else if (typeof mq.addListener === 'function') mq.addListener(applyByViewport);
+
+    applyByViewport();
+  }
 
   async function waitFor(predicate, timeout=WAIT_MS){
     const t0 = Date.now();
@@ -1340,6 +1420,8 @@
   }
 
   async function init(){
+    wireMobileHeroToggle();
+
     const okSB = await waitFor(()=>!!getSB());
     if(!okSB){
       toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');

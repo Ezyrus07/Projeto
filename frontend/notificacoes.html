@@ -17,11 +17,11 @@
     <meta property="og:image" content="assets/Imagens/doke-logo.png">
     <meta name="theme-color" content="#0b7768">
 
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="style.css?v=20260209v32" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260207v28"></script>
+<script defer="" src="script.js?v=20260209v38"></script>
 <style>
         /* ======================================================
            ESTILOS ESPECIFICOS DA PAGINA NOTIFICACOES
@@ -99,16 +99,18 @@
         /* FILTROS + BUSCA */
         .notif-toolbar {
             position: sticky;
-            top: 96px;
-            z-index: 5;
+            top: calc(var(--doke-h, 56px) + env(safe-area-inset-top) + 1px);
+            z-index: 460;
             display: flex;
-            flex-wrap: wrap;
-            gap: 12px;
-            align-items: center;
+            flex-direction: column;
+            flex-wrap: nowrap;
+            gap: 8px;
+            align-items: stretch;
             margin-bottom: 20px;
         }
         .filters-scroll {
             display: flex;
+            flex-wrap: nowrap;
             gap: 10px;
             overflow-x: auto;
             padding: 8px;
@@ -117,13 +119,14 @@
             border: 1px solid #eef1f4;
             box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
             scrollbar-width: none;
-            flex: 1;
+            width: 100%;
+            min-width: 0;
         }
         .filters-scroll::-webkit-scrollbar { display: none; }
         .filter-chip {
             background: white; border: 1px solid #e0e0e0; padding: 10px 24px;
             border-radius: 30px; font-size: 0.9rem; font-weight: 600; color: #555;
-            cursor: pointer; white-space: nowrap; transition: 0.2s;
+            cursor: pointer; white-space: nowrap; transition: 0.2s; min-height: 44px;
         }
         .filter-chip:hover { border-color: var(--cor2); color: var(--cor2); }
         .filter-chip.active { background: var(--cor2); color: white; border-color: var(--cor2); }
@@ -355,7 +358,7 @@
             .notif-btn { padding: 5px 8px; font-size: 0.72rem; }
             .notif-search { width: 100%; min-width: 0; }
             .filters-scroll { width: 100%; }
-            .notif-toolbar { top: 70px; }
+            .notif-toolbar { top: calc(var(--doke-h, 56px) + env(safe-area-inset-top) + 1px); }
             .settings-grid { grid-template-columns: 1fr; }
         }
     </style>
@@ -365,8 +368,11 @@
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-  <link rel="stylesheet" href="page-notificacoes.css?v=20260209v27">
+<link rel="stylesheet" href="doke-responsive.css?v=20260209v24">
+<link rel="stylesheet" href="page-notificacoes.css?v=20260209v39">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
 <body data-page="notificacoes">
 <header class="navbar-desktop">
@@ -484,18 +490,6 @@
 <strong id="summary-24h">0</strong>
 </div>
 </div>
-<div class="notif-toolbar">
-<div class="filters-scroll">
-<button class="filter-chip active" onclick="filtrar('todas', this)">Todas</button>
-<button class="filter-chip" id="filtro-financeiro" onclick="filtrar('financeiro', this)">Financeiro</button>
-<button class="filter-chip" onclick="filtrar('pedidos', this)">Pedidos</button>
-<button class="filter-chip" onclick="filtrar('social', this)">Interacoes</button>
-</div>
-<label class="notif-search">
-<i class="bx bx-search"></i>
-<input id="notif-search" placeholder="Buscar notificações" type="text">
-</input></label>
-</div>
 <div id="lista-notificacoes">
 <div style="text-align:center; padding:40px; color:#999;"><i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i><p>Buscando atualizacoes...</p></div>
 </div>
@@ -568,6 +562,7 @@
                     renderizarLista(aplicarFiltros());
                 });
             }
+
             onAuthStateChanged(auth, (user) => {
                 if (user) {
                     if (!localStorage.getItem('doke_usuario_perfil')) {
@@ -1181,11 +1176,6 @@ async function carregarNotificacoes(uid) {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260209v22"></script>
 </body>
 </html>
-
-
-
-
-

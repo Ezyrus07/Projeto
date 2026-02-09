@@ -1385,6 +1385,32 @@ window.dokePopulateCategoryFilters = function() {
     });
 };
 
+async function __dokeFetchAnunciosFallback() {
+    const client = (typeof getSupabaseClient === "function")
+        ? getSupabaseClient()
+        : (window.sb || window.supabaseClient || window.sbClient || window.supabase || null);
+    if (!client?.from) return { ok: false, data: [] };
+
+    const tableCandidates = ["anuncios", "servicos"];
+    for (const table of tableCandidates) {
+        try {
+            const res = await client
+                .from(table)
+                .select("*")
+                .limit(300);
+            if (res.error) continue;
+            if (!Array.isArray(res.data)) continue;
+            const normalized = res.data.map((row, idx) => ({
+                ...row,
+                id: row?.id || row?.anuncioId || row?.anuncio_id || row?.anuncioid || row?.servico_id || row?.servicoId || row?.servico || `${table}-${idx}`
+            }));
+            return { ok: true, data: normalized };
+        } catch (_) {}
+    }
+
+    return { ok: false, data: [] };
+}
+
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
     const tituloSecao = document.getElementById('categorias-title'); 
@@ -1393,15 +1419,46 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     window.dokeRenderAnunciosSkeleton(feed);
 
     try {
-        const q = query(collection(window.db, "anuncios"));
-        const querySnapshot = await getDocs(q);
-        
         let listaAnuncios = [];
-        querySnapshot.forEach((docSnap) => {
-            let dados = docSnap.data();
-            dados.id = docSnap.id; 
-            listaAnuncios.push(dados);
-        });
+        let fetched = false;
+        let lastLoadError = null;
+
+        const hasCompatDb = !!window.db
+            && typeof query === "function"
+            && typeof collection === "function"
+            && typeof getDocs === "function";
+
+        if (hasCompatDb) {
+            try {
+                const q = query(collection(window.db, "anuncios"));
+                const querySnapshot = await Promise.race([
+                    getDocs(q),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_firestore_anuncios")), 12000))
+                ]);
+
+                querySnapshot.forEach((docSnap) => {
+                    let dados = docSnap.data();
+                    dados.id = docSnap.id;
+                    listaAnuncios.push(dados);
+                });
+                fetched = true;
+            } catch (fireErr) {
+                lastLoadError = fireErr;
+                console.warn("Falha ao carregar anúncios via compat:", fireErr);
+            }
+        }
+
+        if (!fetched) {
+            const fallback = await __dokeFetchAnunciosFallback();
+            if (fallback.ok) {
+                listaAnuncios = Array.isArray(fallback.data) ? fallback.data : [];
+                fetched = true;
+            }
+        }
+
+        if (!fetched) {
+            throw (lastLoadError || new Error("Nao foi possivel carregar anuncios no momento."));
+        }
 
         // Não mostrar anúncios desativados no feed público
         // (anúncios antigos sem o campo 'ativo' continuam aparecendo)
@@ -1903,12 +1960,27 @@ window.carregarCategorias = async function() {
     }
 };
 window.sincronizarSessaoSupabase = async function() {
+    const clearAuthCache = () => {
+        try {
+            [
+                'usuarioLogado',
+                'usuario_logado',
+                'userLogado',
+                'doke_usuario_logado',
+                'doke_usuario_perfil',
+                'perfil_usuario'
+            ].forEach((k) => localStorage.removeItem(k));
+        } catch (_) {}
+    };
     if (!window.sb?.auth?.getSession) return null;
     try {
         const { data, error } = await window.sb.auth.getSession();
         if (error) return null;
         const user = data?.session?.user || null;
-        if (!user) return null;
+        if (!user) {
+            clearAuthCache();
+            return null;
+        }
         if (!localStorage.getItem('doke_usuario_perfil')) {
             const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario");
             localStorage.setItem('doke_usuario_perfil', JSON.stringify({
@@ -2222,11 +2294,37 @@ if (!window.__dokeDropdownBound) {
 }
 
 window.irParaMeuPerfil = function(event) {
+    const go = async () => {
+        let sessionUser = null;
+        try {
+            if (window.sb?.auth?.getSession) {
+                const { data, error } = await window.sb.auth.getSession();
+                if (!error) sessionUser = data?.session?.user || null;
+            }
+        } catch (_) {}
+
+        if (!sessionUser) {
+            try {
+                [
+                    'usuarioLogado',
+                    'usuario_logado',
+                    'userLogado',
+                    'doke_usuario_logado',
+                    'doke_usuario_perfil',
+                    'perfil_usuario'
+                ].forEach((k) => localStorage.removeItem(k));
+            } catch (_) {}
+            window.location.href = "login.html";
+            return;
+        }
+
+        let perfilLocal = null;
+        try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) { perfilLocal = null; }
+        if (perfilLocal?.isProfissional === true) window.location.href = "meuperfil.html";
+        else window.location.href = "perfil-usuario.html";
+    };
     if(event) event.preventDefault();
-    const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-    if (!perfilLocal) { window.location.href = "login.html"; return; }
-    if (perfilLocal.isProfissional === true) window.location.href = "meuperfil.html"; 
-    else window.location.href = "perfil-usuario.html";
+    go();
 }
 
 window.filtrarPorCategoria = function(categoria) {
@@ -2541,8 +2639,11 @@ function initHomeEnhancements() {
         let isDown = false;
         let startX = 0;
         let scrollLeft = 0;
+        let touchStartX = 0;
+        let touchScrollLeft = 0;
 
         container.style.cursor = 'grab';
+        container.style.touchAction = 'pan-x';
 
         container.addEventListener('mousedown', (e) => {
             isDown = true;
@@ -2564,6 +2665,20 @@ function initHomeEnhancements() {
             const walk = (x - startX) * 1.2;
             container.scrollLeft = scrollLeft - walk;
         });
+
+        container.addEventListener('touchstart', (e) => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            touchStartX = t.clientX;
+            touchScrollLeft = container.scrollLeft;
+        }, { passive: true });
+
+        container.addEventListener('touchmove', (e) => {
+            const t = e.touches && e.touches[0];
+            if (!t) return;
+            const walk = (t.clientX - touchStartX) * 1.15;
+            container.scrollLeft = touchScrollLeft - walk;
+        }, { passive: true });
     }
 }
 
@@ -4232,6 +4347,255 @@ window.criarNovaComunidade = async function(e) {
     }
 }
 
+let __dokeCommMembersSchemaCache = null;
+
+function dokeCommToast(msg) {
+    if (typeof window.mostrarToast === "function") {
+        window.mostrarToast(msg);
+        return;
+    }
+    if (typeof window.showToast === "function") {
+        window.showToast(msg);
+        return;
+    }
+    alert(msg);
+}
+
+async function dokeCommGetUid() {
+    try {
+        if (window.auth?.currentUser?.uid) return String(window.auth.currentUser.uid);
+    } catch (_e) {}
+
+    try {
+        const sb = window.supabase || window.supabaseClient || window.sb || null;
+        if (sb?.auth?.getUser) {
+            const { data } = await sb.auth.getUser();
+            if (data?.user?.id) return String(data.user.id);
+        }
+    } catch (_e) {}
+
+    try {
+        const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {};
+        const uid = perfil.uid || perfil.id || perfil.user_uid || perfil.userId || perfil.username || perfil.user;
+        if (uid) return String(uid).replace(/^@/, "");
+    } catch (_e) {}
+
+    return "";
+}
+
+function dokeCommEscapeHtml(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+}
+
+function dokeCommNormalizePrivacidade(comm) {
+    const boolPrivate = [comm?.privado, comm?.is_private, comm?.private].find(v => typeof v === "boolean");
+    if (typeof boolPrivate === "boolean") {
+        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "Público" };
+    }
+
+    if (typeof comm?.publico === "boolean") {
+        return { isPrivate: !comm.publico, label: comm.publico ? "Público" : "Privado" };
+    }
+    if (typeof comm?.publica === "boolean") {
+        return { isPrivate: !comm.publica, label: comm.publica ? "Público" : "Privado" };
+    }
+
+    const raw = String(comm?.privacidade || comm?.privacy || "").trim();
+    if (raw) {
+        const s = raw.toLowerCase();
+        if (s.includes("priv")) return { isPrivate: true, label: raw };
+        if (s.includes("pub")) return { isPrivate: false, label: raw };
+        return { isPrivate: false, label: raw };
+    }
+    return { isPrivate: false, label: "Público" };
+}
+
+async function dokeCommHasColumn(client, table, col) {
+    try {
+        const { error } = await client.from(table).select(col).limit(1);
+        if (!error) return true;
+        const msg = String(error.message || "").toLowerCase();
+        if (
+            msg.includes("does not exist") ||
+            msg.includes("could not find") ||
+            msg.includes("relation") && msg.includes("does not exist")
+        ) {
+            return false;
+        }
+        return true;
+    } catch (_e) {
+        return false;
+    }
+}
+
+async function dokeCommDetectMembersSchema(client) {
+    if (__dokeCommMembersSchemaCache) return __dokeCommMembersSchemaCache;
+
+    const pick = async (candidates, fallback = null) => {
+        for (const col of candidates) {
+            if (await dokeCommHasColumn(client, "comunidade_membros", col)) return col;
+        }
+        return fallback;
+    };
+
+    __dokeCommMembersSchemaCache = {
+        communityCol: await pick(['comunidade_id', 'comunidadeId', 'community_id', 'communityId', 'grupo_id', 'grupoId'], 'comunidade_id'),
+        userCol: await pick(['user_uid', 'userUid', 'user_id', 'userId', 'uid', 'usuario_id', 'autor_uid', 'autorUid'], 'user_uid'),
+        statusCol: await pick(['status', 'situacao', 'estado'], null)
+    };
+
+    return __dokeCommMembersSchemaCache;
+}
+
+async function dokeCommCarregarStatusMembro(list, uid) {
+    const statusByGroupId = new Map();
+    if (!uid || !Array.isArray(list) || !list.length) return statusByGroupId;
+
+    // Fallback local pela coluna "membros" dentro da comunidade.
+    list.forEach((comm) => {
+        const id = comm.id || comm.comunidade_id || comm.uuid || comm._id;
+        if (!id) return;
+        const membrosArr = Array.isArray(comm.membros) ? comm.membros : [];
+        const isMember = membrosArr.some((m) => String(m) === String(uid));
+        if (isMember) statusByGroupId.set(String(id), "active");
+    });
+
+    const client = window.supabase || window.supabaseClient || window.sb || null;
+    if (!client || typeof client.from !== "function") return statusByGroupId;
+
+    const ids = list
+        .map((comm) => comm.id || comm.comunidade_id || comm.uuid || comm._id)
+        .filter(Boolean)
+        .map((id) => String(id));
+    if (!ids.length) return statusByGroupId;
+
+    try {
+        const schema = await dokeCommDetectMembersSchema(client);
+        if (!schema.communityCol || !schema.userCol) return statusByGroupId;
+
+        const cols = [schema.communityCol];
+        if (schema.statusCol) cols.push(schema.statusCol);
+
+        const { data, error } = await client
+            .from('comunidade_membros')
+            .select(cols.join(','))
+            .eq(schema.userCol, uid)
+            .in(schema.communityCol, ids);
+
+        if (error) throw error;
+
+        (data || []).forEach((row) => {
+            const gid = String(row[schema.communityCol] || "");
+            if (!gid) return;
+
+            const rawStatus = schema.statusCol ? String(row[schema.statusCol] || "").toLowerCase() : "ativo";
+            if (rawStatus.includes("pend")) {
+                if (!statusByGroupId.has(gid)) statusByGroupId.set(gid, "pending");
+                return;
+            }
+            statusByGroupId.set(gid, "active");
+        });
+    } catch (e) {
+        console.warn("[DOKE] Falha ao ler comunidade_membros:", e);
+    }
+
+    return statusByGroupId;
+}
+
+window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember) {
+    let grupoId = "";
+    try {
+        grupoId = decodeURIComponent(String(grupoIdEncoded || ""));
+    } catch (_e) {
+        grupoId = String(grupoIdEncoded || "");
+    }
+    grupoId = grupoId.trim();
+    if (!grupoId) return;
+
+    if (isMember) {
+        abrirGrupo(grupoId);
+        return;
+    }
+
+    const uid = await dokeCommGetUid();
+    if (!uid) {
+        dokeCommToast("Faça login para continuar.");
+        return;
+    }
+
+    const client = window.supabase || window.supabaseClient || window.sb || null;
+    if (!client || typeof client.from !== "function") {
+        if (isPrivate) dokeCommToast("Não foi possível solicitar entrada agora.");
+        else abrirGrupo(grupoId);
+        return;
+    }
+
+    try {
+        const schema = await dokeCommDetectMembersSchema(client);
+        if (!schema.communityCol || !schema.userCol) throw new Error("Schema de membros não detectado.");
+
+        const payload = {};
+        payload[schema.communityCol] = grupoId;
+        payload[schema.userCol] = uid;
+        if (schema.statusCol) {
+            payload[schema.statusCol] = isPrivate ? "pendente" : "ativo";
+        }
+
+        const selectCols = ['id'];
+        if (schema.statusCol) selectCols.push(schema.statusCol);
+
+        const { data: existing, error: findError } = await client
+            .from('comunidade_membros')
+            .select(selectCols.join(','))
+            .eq(schema.communityCol, grupoId)
+            .eq(schema.userCol, uid)
+            .limit(1);
+
+        if (findError) throw findError;
+
+        if (Array.isArray(existing) && existing.length) {
+            const rowId = existing[0].id;
+            if (rowId) {
+                const updatePayload = { ...payload };
+                if (schema.statusCol) {
+                    const oldStatus = String(existing[0][schema.statusCol] || "").toLowerCase();
+                    if (oldStatus.includes("ativ")) updatePayload[schema.statusCol] = "ativo";
+                }
+                const { error: updError } = await client
+                    .from('comunidade_membros')
+                    .update(updatePayload)
+                    .eq('id', rowId);
+                if (updError) throw updError;
+            }
+        } else {
+            const { error: insError } = await client
+                .from('comunidade_membros')
+                .insert(payload);
+            if (insError) throw insError;
+        }
+
+        if (isPrivate) {
+            dokeCommToast("Solicitação de entrada enviada.");
+            await carregarComunidadesGerais();
+            return;
+        }
+
+        dokeCommToast("Você entrou no grupo.");
+        await carregarComunidadesGerais();
+        if (window.carregarMeusGrupos) await window.carregarMeusGrupos();
+        abrirGrupo(grupoId);
+    } catch (e) {
+        console.error("[DOKE] Erro ao entrar/solicitar grupo:", e);
+        if (isPrivate) dokeCommToast("Não foi possível solicitar entrada agora.");
+        else abrirGrupo(grupoId);
+    }
+};
+
 // 2. LISTAR TODAS AS COMUNIDADES (GERAL)
 async function carregarComunidadesGerais() {
     const container = document.getElementById('listaComunidades');
@@ -4241,12 +4605,12 @@ async function carregarComunidadesGerais() {
 
     const fallbackCover = () => `linear-gradient(120deg, var(--cor2), #7b3fa0)`;
 
-    const renderCard = (comm) => {
+    const renderCard = (comm, uid, statusByGroupId) => {
         const id = comm.id || comm.comunidade_id || comm.uuid || comm._id;
-        const nome = comm.nome || comm.titulo || "Comunidade";
-        const descricao = comm.descricao || "";
-        const tipo = comm.tipo || comm.tipo_comunidade || "Grupo";
-        const privacidade = comm.privacidade || "Pública";
+        const nome = dokeCommEscapeHtml(comm.nome || comm.titulo || "Comunidade");
+        const descricao = dokeCommEscapeHtml(comm.descricao || "");
+        const tipo = dokeCommEscapeHtml(comm.tipo || comm.tipo_comunidade || "Grupo");
+        const { isPrivate, label: privacidadeLabel } = dokeCommNormalizePrivacidade(comm);
         const capa = comm.capa_url || comm.capa || comm.imagem_capa || "";
         const thumb = comm.thumb_url || comm.icone_url || "";
         const membrosArr = Array.isArray(comm.membros) ? comm.membros : null;
@@ -4254,29 +4618,41 @@ async function carregarComunidadesGerais() {
                              typeof comm.membros_count === "number" ? comm.membros_count :
                              membrosArr ? membrosArr.length : (comm.membros_total || 0));
 
-        const capaStyle = capa ? `background-image:url('${capa}')` : `background-image:${fallbackCover()}`;
+        const idStr = String(id || "");
+        const status = statusByGroupId?.get(idStr) || "none";
+        const isMember = status === "active";
+        const btnLabel = isMember ? "Entrou" : (isPrivate ? "Solicitar entrada" : "Entrar");
+        const btnState = isMember ? "entered" : (isPrivate ? "request" : "join");
+
+        const safeCapa = String(capa || "").replace(/'/g, "\\'");
+        const capaStyle = capa ? `background-image:url('${safeCapa}')` : `background-image:${fallbackCover()}`;
+        const safeId = idStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+        const safeIdEncoded = encodeURIComponent(idStr);
+        const safePriv = dokeCommEscapeHtml(privacidadeLabel);
 
         return `
-          <div class="com-card" onclick="abrirGrupo('${id || ""}')">
+          <div class="com-card" onclick="abrirGrupo('${safeId}')">
             <div class="com-cover" style="${capaStyle}"></div>
             <div class="com-body">
-              <div class="com-avatar">${thumb ? `<img src="${thumb}" alt="">` : `<i class='bx bx-group'></i>`}</div>
+              <div class="com-avatar">${thumb ? `<img src="${dokeCommEscapeHtml(thumb)}" alt="">` : `<i class='bx bx-group'></i>`}</div>
               <div class="com-info">
                 <div class="com-title">${nome}</div>
                 <div class="com-desc">${descricao}</div>
                 <div class="com-meta">
                   <span class="pill">${tipo}</span>
-                  <span class="pill">${privacidade}</span>
+                  <span class="pill">${safePriv}</span>
                   <span class="meta-small">${membrosCount ? `+${membrosCount} membros` : `0 membros`}</span>
                 </div>
               </div>
-              <button class="btn-ver-grupo" onclick="event.stopPropagation(); abrirGrupo('${id || ""}')">Ver Grupo</button>
+              <button class="btn-ver-grupo" data-state="${btnState}" onclick="event.stopPropagation(); window.acaoComunidadeGrupo('${safeIdEncoded}', ${isPrivate ? "true" : "false"}, ${isMember ? "true" : "false"})">${btnLabel}</button>
             </div>
           </div>
         `;
     };
 
     try {
+        const uid = await dokeCommGetUid();
+
         // Preferir Supabase (dados reais)
         if (window.supabase) {
             // tentar ordenar, mas fazer fallback se a coluna não existir
@@ -4300,7 +4676,9 @@ async function carregarComunidadesGerais() {
                 container.innerHTML = `<div style="padding:18px; color:#777;">Nenhuma comunidade encontrada.</div>`;
                 return;
             }
-            container.innerHTML = list.map(renderCard).join('');
+
+            const statusByGroupId = await dokeCommCarregarStatusMembro(list, uid);
+            container.innerHTML = list.map((c) => renderCard(c, uid, statusByGroupId)).join('');
             return;
         }
 
@@ -4311,13 +4689,15 @@ async function carregarComunidadesGerais() {
             return;
         }
 
-        let html = "";
+        const list = [];
         snap.forEach((doc) => {
             const comm = doc.data();
             comm.id = doc.id;
-            html += renderCard(comm);
+            list.push(comm);
         });
-        container.innerHTML = html;
+
+        const statusByGroupId = await dokeCommCarregarStatusMembro(list, uid);
+        container.innerHTML = list.map((c) => renderCard(c, uid, statusByGroupId)).join('');
 
     } catch (e) {
         console.error("Erro ao listar comunidades:", e);
@@ -9561,7 +9941,22 @@ async function carregarComentariosSupabase(publicacaoId) {
     if (!feed) return;
     feed.setAttribute('aria-busy', 'true');
     const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
-    const count = vw <= 600 ? 2 : (vw <= 1024 ? 3 : 4);
+    const feedRectW = (typeof feed.getBoundingClientRect === 'function')
+      ? Math.round(feed.getBoundingClientRect().width || 0)
+      : 0;
+    const feedW = Math.max(feed.clientWidth || 0, feedRectW || 0, vw);
+    const isBuscaFeed = document.body?.dataset?.page === 'busca' && feed.id === 'feedAnuncios';
+    if (isBuscaFeed) {
+      const buscaCols = feedW <= 560 ? 1 : 2;
+      feed.style.display = 'grid';
+      feed.style.gridTemplateColumns = buscaCols === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
+      feed.style.gap = buscaCols === 1 ? '12px' : '14px';
+      feed.style.alignItems = 'stretch';
+      feed.style.justifyItems = 'stretch';
+    }
+    const count = isBuscaFeed
+      ? 2
+      : (vw <= 600 ? 2 : (vw <= 1024 ? 3 : 4));
     const cards = Array.from({length: count}).map(()=>
       '<article class="skeleton-premium-card skel-anuncio-card" aria-hidden="true">'
       + '  <div class="skel-anuncio-head">'
@@ -9936,6 +10331,9 @@ async function carregarComentariosSupabase(publicacaoId) {
     let isDown = false;
     let startX = 0;
     let scrollLeft = 0;
+    let touchStartX = 0;
+    let touchScrollLeft = 0;
+    el.style.touchAction = 'pan-x';
 
     el.addEventListener('mousedown', (e) => {
       isDown = true;
@@ -9961,6 +10359,20 @@ async function carregarComentariosSupabase(publicacaoId) {
       const walk = (x - startX) * 1.4;
       el.scrollLeft = scrollLeft - walk;
     });
+
+    el.addEventListener('touchstart', (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      touchStartX = t.clientX;
+      touchScrollLeft = el.scrollLeft;
+    }, { passive: true });
+
+    el.addEventListener('touchmove', (e) => {
+      const t = e.touches && e.touches[0];
+      if (!t) return;
+      const walk = (t.clientX - touchStartX) * 1.25;
+      el.scrollLeft = touchScrollLeft - walk;
+    }, { passive: true });
 
     // Wheel: nao travar scroll vertical da pagina.
     // Horizontal via wheel somente com SHIFT (padrao UX).

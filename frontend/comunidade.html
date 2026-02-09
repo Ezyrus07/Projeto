@@ -21,7 +21,7 @@
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260207v26"></script>
+<script defer="" src="script.js?v=20260209v35"></script>
 <script defer="" src="comunidades-supabase-patch.js"></script>
 <script defer="" src="comunidades-meusgrupos-fix.js"></script>
 <style>
@@ -241,7 +241,10 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-  <link rel="stylesheet" href="page-comunidade.css?v=20260209v22">
+  <link rel="stylesheet" href="page-comunidade.css?v=20260209v24">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
 <body data-page="comunidade">
 <header class="navbar-desktop">
@@ -369,11 +372,19 @@
 </div>
 <div class="comm-layout">
 <div class="main-feed-comm">
-<div class="filter-tabs">
+<div class="comm-filter-nav">
+<button aria-label="Categorias anteriores" class="chips-arrow comm-filter-arrow left" onclick="scrollCommFiltros(-1)" type="button">
+<i class="bx bx-chevron-left"></i>
+</button>
+<div class="filter-tabs" id="commFilterTabs">
 <button class="tab-btn active" onclick="filtrarComunidadesTipo('todos', this)">Descobrir</button>
 <button class="tab-btn" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
 <button class="tab-btn" onclick="filtrarComunidadesTipo('Condomínio', this)">Condomínios</button>
 <button class="tab-btn" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
+</div>
+<button aria-label="Próximas categorias" class="chips-arrow comm-filter-arrow right" onclick="scrollCommFiltros(1)" type="button">
+<i class="bx bx-chevron-right"></i>
+</button>
 </div>
 <div class="grid-comunidades" id="listaComunidades">
 <div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">
@@ -382,14 +393,6 @@
 </div>
 </div>
 </div>
-<aside class="comm-sidebar">
-<div class="widget-box">
-<h4 class="widget-title"><i class="bx bx-trending-up"></i> Tópicos em Alta</h4>
-<div class="topic-list" id="listaTopicos">
-<div style="padding:10px; color:#888; font-size:0.85rem;">Nenhum tópico no momento</div>
-</div>
-</div>
-</aside>
 </div>
 </main>
 <nav class="bottom-nav">
@@ -461,17 +464,41 @@
     });
   }
 
+  function atualizarSetasFiltrosComm() {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const prev = document.querySelector('.comm-filter-arrow.left');
+    const next = document.querySelector('.comm-filter-arrow.right');
+    const maxLeft = Math.max(0, tabs.scrollWidth - tabs.clientWidth);
+    if (prev) prev.disabled = tabs.scrollLeft <= 2;
+    if (next) next.disabled = tabs.scrollLeft >= maxLeft - 2;
+  }
+
+  window.scrollCommFiltros = function(dir) {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const amount = Math.max(150, Math.floor(tabs.clientWidth * 0.75));
+    tabs.scrollBy({ left: (dir < 0 ? -amount : amount), behavior: 'smooth' });
+  }
+
   // Inicia carregamento (dados reais)
   document.addEventListener('DOMContentLoaded', () => {
     try{
       if (window.carregarComunidadesGerais) window.carregarComunidadesGerais();
       if (window.carregarMeusGrupos) window.carregarMeusGrupos();
     }catch(e){ console.warn(e); }
+
+    const tabs = document.getElementById('commFilterTabs');
+    if (tabs) {
+      tabs.addEventListener('scroll', atualizarSetasFiltrosComm, { passive: true });
+      window.addEventListener('resize', atualizarSetasFiltrosComm);
+      setTimeout(atualizarSetasFiltrosComm, 40);
+    }
   });
 </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260209v22"></script>
 </body>
 </html>

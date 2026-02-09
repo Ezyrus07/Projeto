@@ -124,16 +124,16 @@ body[data-page="home"] .typing-container .cursor{
   /* Card real de anúncios usa grid-fotos-doke (não cp-carousel) */
   body[data-page="home"] .grid-fotos-doke{
     grid-template-rows: 1fr 1fr !important;
-    height: clamp(210px, 56vw, 290px) !important;
+    height: clamp(180px, 46vw, 230px) !important;
   }
   @media (min-width: 760px) and (max-width: 1024px){
     body[data-page="home"] .grid-fotos-doke{
-      height: clamp(170px, 30vw, 220px) !important;
+      height: clamp(165px, 28vw, 205px) !important;
     }
   }
   @media (max-width: 480px){
     body[data-page="home"] .cp-carousel,
-    body[data-page="home"] .cp-media-grid{ height: 210px !important; }
+    body[data-page="home"] .cp-media-grid{ height: 188px !important; }
   }
 
   /* CTA: botão 100% no mobile */
@@ -304,8 +304,16 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc
   }
 
   body[data-page="home"] .filtros-expandidos{
-    padding: 10px !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
     border-radius: 12px !important;
+  }
+
+  body[data-page="home"] .filtros-expandidos.aberto{
+    max-height: min(70vh, 620px) !important;
+    overflow: auto !important;
+    padding: 10px !important;
   }
 
   body[data-page="home"] .grid-extras{
@@ -1288,8 +1296,16 @@ body[data-page="home"] .cat-track.is-loading .cat-count.cat-skel-badge{
   }
 
   body[data-page="home"] .filtros-expandidos{
-    padding: 10px !important;
+    max-height: 0 !important;
+    overflow: hidden !important;
+    padding: 0 !important;
     border-radius: 12px !important;
+  }
+
+  body[data-page="home"] .filtros-expandidos.aberto{
+    max-height: min(70vh, 620px) !important;
+    overflow: auto !important;
+    padding: 10px !important;
   }
 
   body[data-page="home"] .filtros-expandidos .grid-extras{
@@ -1350,4 +1366,331 @@ body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-play{
 body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-provider,
 body[data-page="home"] .tiktok-card.is-skeleton .tiktok-skel-lineMd{
   background: #e7edf3 !important;
+}
+
+/* ============================================================
+   PATCH 2026-02-09C - Mobile/Tablet priority
+   - skeletons compactos (anuncios + videos + publicacoes)
+   - header notebook estavel (sem texto sobreposto)
+   ============================================================ */
+@media (max-width: 1024px){
+  /* Anuncios skeleton (feed principal) */
+  body[data-page="home"] #feedAnuncios .skeleton-premium-cover.skel-anuncio-media{
+    height: clamp(132px, 24vw, 164px) !important;
+  }
+
+  body[data-page="home"] #feedAnuncios .skel-anuncio-head{
+    padding: 9px 10px 6px !important;
+  }
+
+  body[data-page="home"] #feedAnuncios .skel-anuncio-avatar{
+    width: 26px !important;
+    height: 26px !important;
+    flex-basis: 26px !important;
+  }
+
+  body[data-page="home"] #feedAnuncios .skel-anuncio-user{
+    width: 44% !important;
+    height: 9px !important;
+  }
+
+  body[data-page="home"] #feedAnuncios .skeleton-premium-body.skel-anuncio-body{
+    padding: 8px 10px 9px !important;
+  }
+
+  body[data-page="home"] #feedAnuncios .skel-anuncio-cta{
+    width: 84px !important;
+    height: 26px !important;
+    border-radius: 9px !important;
+  }
+
+  /* Videos-curtos (real + skeleton alinhados) */
+  body[data-page="home"] .tiktok-card,
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    flex: 0 0 clamp(144px, 24vw, 172px) !important;
+    min-width: clamp(144px, 24vw, 172px) !important;
+    width: clamp(144px, 24vw, 172px) !important;
+    height: clamp(238px, 38vw, 286px) !important;
+    border-radius: 12px !important;
+  }
+
+  body[data-page="home"] .tiktok-card.is-skeleton .video-ui-layer.tiktok-skel-overlay{
+    padding: 10px 8px 8px !important;
+  }
+
+  /* Publicacoes (real + skeleton alinhados) */
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex: 0 0 clamp(142px, 24vw, 170px) !important;
+    min-width: clamp(142px, 24vw, 170px) !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel .dp-itemMedia{
+    aspect-ratio: 1 / 1.1 !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel-body{
+    padding: 7px 8px 8px !important;
+    gap: 5px !important;
+  }
+}
+
+@media (max-width: 600px){
+  body[data-page="home"] #feedAnuncios .skeleton-premium-cover.skel-anuncio-media{
+    height: clamp(118px, 40vw, 144px) !important;
+  }
+
+  body[data-page="home"] .tiktok-card,
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    flex: 0 0 clamp(132px, 42vw, 162px) !important;
+    min-width: clamp(132px, 42vw, 162px) !important;
+    width: clamp(132px, 42vw, 162px) !important;
+    height: clamp(212px, 68vw, 258px) !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex-basis: clamp(126px, 40vw, 154px) !important;
+    min-width: clamp(126px, 40vw, 154px) !important;
+  }
+}
+
+@media (max-width: 480px){
+  body[data-page="home"] .tiktok-card,
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    height: clamp(206px, 66vw, 246px) !important;
+  }
+}
+
+@media (min-width: 1025px) and (max-width: 1500px){
+  /* Header notebook: evita sobreposicao no menu */
+  body[data-page="home"] .navbar-desktop{
+    display: grid !important;
+    grid-template-columns: minmax(120px, 170px) minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 0 12px !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu{
+    min-width: 0 !important;
+    justify-content: flex-start !important;
+    gap: clamp(8px, 1vw, 12px) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu::-webkit-scrollbar{
+    display: none;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu a,
+  body[data-page="home"] .navbar-desktop .menu .cep{
+    display: inline-flex !important;
+    align-items: center !important;
+    height: var(--navbar-height-desktop) !important;
+    line-height: 1.15 !important;
+    padding: 0 2px !important;
+    flex: 0 0 auto !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .botoes-direita{
+    justify-self: end !important;
+    margin-left: 0 !important;
+    min-width: fit-content !important;
+    gap: 6px !important;
+  }
+}
+
+/* ============================================================
+   PATCH 2026-02-09D - Header desktop/home (fix final)
+   - remove compressao/sobreposicao de textos no topo
+   - estabiliza spacing do CEP + links no desktop/notebook
+   ============================================================ */
+@media (min-width: 1024px){
+  body[data-page="home"] .navbar-desktop{
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, clamp(420px, 58vw, 920px)) minmax(0, 1fr) !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 0 14px !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page="home"] .navbar-desktop #logo-desktop{
+    display: none !important;
+    margin: 0 !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu{
+    grid-column: 2 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    gap: clamp(8px, .85vw, 14px) !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    white-space: nowrap !important;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu::-webkit-scrollbar{
+    display: none !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu a,
+  body[data-page="home"] .navbar-desktop .menu .cep{
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    height: var(--navbar-height-desktop) !important;
+    line-height: 1.2 !important;
+    padding: 0 8px !important;
+    flex: 0 0 auto !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .cep-wrapper{
+    margin-right: 0 !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+  }
+
+  body[data-page="home"] #textoCepSpan{
+    display: inline-block !important;
+    max-width: clamp(130px, 20vw, 280px) !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    vertical-align: middle !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .botoes-direita{
+    grid-column: 3 !important;
+    justify-self: end !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    margin-left: 0 !important;
+    gap: 8px !important;
+    flex: 0 0 auto !important;
+    min-width: 0 !important;
+  }
+}
+
+@media (min-width: 1440px){
+  body[data-page="home"] .navbar-desktop{
+    grid-template-columns: minmax(0, 1fr) minmax(0, clamp(500px, 52vw, 980px)) minmax(0, 1fr) !important;
+  }
+
+  body[data-page="home"] .navbar-desktop .menu{
+    overflow-x: visible !important;
+  }
+}
+
+/* ============================================================
+   Modais (publicacoes + videos-curtos) - mobile/tablet hardening
+   ============================================================ */
+@media (max-width: 1024px){
+  body[data-page="home"] #modalPostDetalhe,
+  body[data-page="home"] #modalPlayerVideo.modal-overlay{
+    inset: 0 !important;
+    width: 100vw !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-content,
+  body[data-page="home"] #modalPlayerVideo .modal-content{
+    width: 100% !important;
+    max-width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-media-area,
+  body[data-page="home"] #modalPlayerVideo .modal-media-area{
+    flex: 0 0 clamp(220px, 44dvh, 54dvh) !important;
+    height: clamp(220px, 44dvh, 54dvh) !important;
+    min-height: 220px !important;
+    max-height: 58dvh !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-media-area img,
+  body[data-page="home"] #modalPostDetalhe .modal-media-area video,
+  body[data-page="home"] #modalPlayerVideo .modal-media-area img,
+  body[data-page="home"] #modalPlayerVideo .modal-media-area video{
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-info-area,
+  body[data-page="home"] #modalPlayerVideo .modal-info-area{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    width: 100% !important;
+    margin-top: 0 !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-top: 1px solid rgba(11, 119, 104, 0.12) !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-comments-section,
+  body[data-page="home"] #modalPlayerVideo .modal-comments-section{
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 14px !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe #modalCommentsList,
+  body[data-page="home"] #modalPlayerVideo #reelCommentsBody,
+  body[data-page="home"] #modalPlayerVideo #listaComentariosReel{
+    min-height: 0 !important;
+  }
+
+  body[data-page="home"] #modalPostDetalhe .modal-footer-actions,
+  body[data-page="home"] #modalPlayerVideo .modal-footer-actions{
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 4 !important;
+    background: #fff !important;
+    border-top: 1px solid rgba(11, 119, 104, 0.14) !important;
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body[data-page="home"] #modalPlayerVideo .nav-arrow{
+    display: none !important;
+  }
+}
+
+@media (max-width: 480px){
+  body[data-page="home"] #modalPostDetalhe .modal-media-area,
+  body[data-page="home"] #modalPlayerVideo .modal-media-area{
+    flex-basis: min(42dvh, 320px) !important;
+    height: min(42dvh, 320px) !important;
+    min-height: 200px !important;
+  }
 }

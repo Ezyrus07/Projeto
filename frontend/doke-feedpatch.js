@@ -25,6 +25,8 @@
 
   function showSkeleton(feed){
     if (!feed) return;
+    const isBuscaFeed = document.body?.dataset?.page === 'busca' && feed.id === 'feedAnuncios';
+    if (isBuscaFeed) return;
     if (feed.querySelector('[data-doke-skeleton="1"]')) return;
     // Só coloca se estiver carregando (spinner ou texto carregando)
     const t = (feed.innerText || '').toLowerCase();
