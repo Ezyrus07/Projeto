@@ -2057,7 +2057,7 @@
 <div id="box-conversa-real">
 <div class="chat-header">
 <button class="btn-voltar-mobile" onclick="fecharChatMobile()"><i class="bx bx-arrow-back"></i></button>
-<img decoding="async" id="chatAvatar" loading="lazy" src=""  alt="Foto do contato"/>
+<img decoding="async" id="chatAvatar" loading="lazy" src="" alt="Foto do contato" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';"/>
 <div class="chat-info">
 <h4 id="chatNome">Usuário</h4>
 <span id="chatStatus">Offline</span>
@@ -6045,7 +6045,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             const replyHtml = buildReplyHtml(replyData);
             const readHtml = buildReadReceiptHtml(m, souEu);
-            const peerAvatarSrcRaw = (m.senderFoto || m.sender_foto || m.foto || m.avatar || document.getElementById('chatAvatar')?.src || "https://i.pravatar.cc/80?img=12");
+            const peerAvatarSrcRaw = (m.senderFoto || m.sender_foto || m.avatar || document.getElementById('chatAvatar')?.src || "https://i.pravatar.cc/80?img=12");
             const peerAvatarSrc = escapeHtml(peerAvatarSrcRaw);
             const wrapMensagemComAvatar = (bubbleHtml) => {
                 if (souEu) return `<div class="msg-row msg-row-me">${bubbleHtml}</div>`;
@@ -6570,7 +6570,10 @@ window.gerarPagamento = async function() {
         if (msgInput) {
             msgInput.addEventListener('input', salvarRascunhoChat);
             const setKbState = (open) => {
-                try { document.body.classList.toggle('chat-kb-open', !!open); } catch (e) {}
+                try {
+                    document.body.classList.toggle('chat-kb-open', !!open);
+                    document.body.classList.toggle('chat-keyboard-open', !!open);
+                } catch (e) {}
             };
             msgInput.addEventListener('focus', () => setKbState(true));
             msgInput.addEventListener('blur', () => setKbState(false));
@@ -6965,6 +6968,48 @@ window.tocarAudio = function(btn, url, audioId) {
 <div class="nav-seta dir" onclick="mudarImagem(1)"><i class="bx bx-chevron-right"></i></div>
 <div class="galeria-thumbnails" id="areaThumbnails"></div>
 </div>
+<script>
+  (function () {
+    const syncChatTopOffset = () => {
+      const header = document.querySelector(".doke-mobile-header") || document.querySelector(".navbar-mobile");
+      if (!header) return;
+      const h = Math.round(header.getBoundingClientRect().height || 0);
+      if (h > 0) document.documentElement.style.setProperty("--chat-top-offset", `${h}px`);
+    };
+
+    window.addEventListener("resize", syncChatTopOffset);
+    window.addEventListener("orientationchange", () => setTimeout(syncChatTopOffset, 120));
+    requestAnimationFrame(syncChatTopOffset);
+
+    if (!window.visualViewport) return;
+
+    const body = document.body;
+    const isInput = (el) => {
+      if (!el) return false;
+      const tag = (el.tagName || "").toLowerCase();
+      return tag === "input" || tag === "textarea" || el.isContentEditable;
+    };
+
+    const refreshKeyboardState = () => {
+      const vv = window.visualViewport;
+      const keyboardOpen = (window.innerHeight - (vv.height + vv.offsetTop)) > 120;
+      body.classList.toggle("chat-keyboard-open", keyboardOpen);
+
+      if (keyboardOpen && isInput(document.activeElement)) {
+        const footer = document.getElementById("chatFooter");
+        if (footer) footer.scrollIntoView({ block: "nearest" });
+      }
+    };
+
+    window.visualViewport.addEventListener("resize", refreshKeyboardState);
+    window.visualViewport.addEventListener("scroll", refreshKeyboardState);
+    document.addEventListener("focusin", refreshKeyboardState);
+    document.addEventListener("focusout", () => setTimeout(refreshKeyboardState, 120));
+    window.addEventListener("orientationchange", () => setTimeout(refreshKeyboardState, 120));
+    window.visualViewport.addEventListener("resize", syncChatTopOffset);
+    refreshKeyboardState();
+  })();
+</script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
