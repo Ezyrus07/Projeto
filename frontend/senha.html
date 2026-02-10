@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -16,11 +16,11 @@
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260207v26"></script>
 <style>
-        /* ================= VARIÁVEIS E RESET ================= */
+        /* ================= VARIAVEIS E RESET ================= */
         :root {
             --cor0: #0b7768; /* Verde Principal */
             --cor1: #737373; /* Cinza Texto */
-            --cor2: #2a5f90; /* Azul Títulos */
+            --cor2: #2a5f90; /* Azul Titulos */
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
             --fonte-padrao: 'Poppins', sans-serif;
@@ -38,7 +38,7 @@
 
         a { text-decoration: none; }
 
-        /* ================= ÁREA PRINCIPAL ================= */
+        /* ================= AREA PRINCIPAL ================= */
         .main-content {
             flex: 1;
             padding: 40px;
@@ -67,12 +67,12 @@
         .btn-back:hover { background: white; color: var(--cor2); }
         .page-header h1 { color: white; font-size: 1.8rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
 
-        /* Container dos Formulários */
+        /* Container dos Formularios */
         .security-container {
             width: 100%; max-width: 600px; display: flex; flex-direction: column; gap: 20px;
         }
 
-        /* Cards Genéricos */
+        /* Cards Genericos */
         .card-box {
             background: white; padding: 30px; border-radius: 16px;
             box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid #f0f0f0;
@@ -99,14 +99,15 @@
             color: #999; cursor: pointer; font-size: 1.2rem;
         }
 
-        /* Barra de Força da Senha */
+        /* Barra de Forca da Senha */
         .password-strength {
             height: 4px; background: #eee; margin-top: 5px; border-radius: 2px; overflow: hidden;
             display: flex;
         }
         .strength-bar { width: 0%; height: 100%; transition: 0.3s; }
+        .doke-pw-meter { display: none !important; }
 
-        /* Botão Trigger (Abrir form) */
+        /* Botao Trigger (Abrir form) */
         .btn-expandir {
             width: 100%; padding: 15px; background: white;
             border: 1px dashed var(--cor1); color: var(--cor1);
@@ -116,7 +117,7 @@
         }
         .btn-expandir:hover { border-color: var(--cor2); color: var(--cor2); background: #f9fbfd; }
 
-        /* Botões de Ação do Form */
+        /* Botoes de Acao do Form */
         .form-actions { display: flex; gap: 10px; margin-top: 15px; }
         .btn-salvar {
             flex: 1; padding: 15px; background: var(--cor0); color: white;
@@ -162,6 +163,97 @@
             transition: 0.2s; margin-top: 10px;
         }
         .btn-danger:hover { background: var(--cor3); color: white; }
+
+        .danger-actions { display: flex; flex-direction: column; gap: 10px; }
+        .danger-copy { color: #666; font-size: 0.92rem; margin-bottom: 12px; line-height: 1.5; }
+
+        .danger-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 1200;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            background: rgba(11, 26, 42, 0.45);
+            padding: 20px;
+        }
+        .danger-modal.show { display: flex; }
+        .danger-modal-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid #ececec;
+            box-shadow: 0 16px 42px rgba(0, 0, 0, 0.2);
+            padding: 22px;
+        }
+        .danger-modal-card h3 {
+            color: #1f2b3a;
+            font-size: 1.2rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+        }
+        .danger-modal-card p {
+            color: #616b78;
+            font-size: 0.93rem;
+            line-height: 1.45;
+            margin-bottom: 14px;
+        }
+        .danger-modal-label {
+            display: block;
+            color: #3f4a57;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .danger-modal-input {
+            width: 100%;
+            padding: 12px 14px;
+            border: 1px solid #e0e3ea;
+            background: #fbfcff;
+            border-radius: 10px;
+            color: #26303d;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .danger-modal-input:focus { border-color: var(--cor2); background: #fff; }
+        .danger-modal-feedback {
+            min-height: 20px;
+            margin-top: 10px;
+            font-size: 0.88rem;
+            font-weight: 600;
+        }
+        .danger-modal-feedback.error { color: var(--cor3); }
+        .danger-modal-feedback.success { color: var(--cor0); }
+        .danger-modal-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 14px;
+        }
+        .danger-modal-cancel,
+        .danger-modal-confirm {
+            flex: 1;
+            padding: 12px;
+            border-radius: 10px;
+            border: 1px solid transparent;
+            font-weight: 700;
+            cursor: pointer;
+        }
+        .danger-modal-cancel {
+            background: #f5f7fa;
+            color: #475365;
+            border-color: #e1e6ee;
+        }
+        .danger-modal-confirm {
+            background: var(--cor3);
+            color: #fff;
+        }
+        .danger-modal-confirm:disabled,
+        .danger-modal-cancel:disabled {
+            opacity: 0.65;
+            cursor: not-allowed;
+        }
 
         @media (max-width: 768px) {
             body { flex-direction: column; padding-bottom: 80px; }
@@ -251,10 +343,6 @@
   </div>
 </aside>
 
-<header class="navbar-mobile">
-<div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="height: 25px;"/></a></div>
-<a href="mais.html"><i class="bx bx-x" style="font-size: 28px; color: #333;"></i></a>
-</header>
 <main class="main-content">
 <div class="page-header">
 <a class="btn-back" href="mais.html"><i class="bx bx-chevron-left"></i></a>
@@ -277,7 +365,7 @@
 <div class="input-group">
 <label>Nova Senha</label>
 <div class="password-wrapper">
-<input id="novaSenha" onkeyup="checkStrength(this.value)" placeholder="Mínimo de 6 caracteres" required="" type="password"/><div class="doke-pw-meter"><div class="row"><span class="label">Força da senha</span><span class="status">—</span></div><div class="bar"><i></i></div></div>
+<input id="novaSenha" onkeyup="checkStrength(this.value)" placeholder="Mínimo de 6 caracteres" required="" type="password"/>
 <i class="bx bx-show toggle-password" onclick="togglePass(this)"></i>
 </div>
 <div class="password-strength">
@@ -294,6 +382,7 @@
 <button class="btn-cancelar" onclick="esconderFormulario()" type="button">Cancelar</button>
 <button class="btn-salvar" id="btnSalvarSenha" type="submit">Atualizar</button>
 </div>
+<p id="senhaFeedback" style="font-size:0.9rem;font-weight:600;min-height:22px;margin-top:10px;"></p>
 </form>
 </div>
 <div class="card-box">
@@ -304,7 +393,7 @@
 <p>Receba um código via SMS/E-mail ao entrar.</p>
 </div>
 <label class="switch">
-<input onclick="alert('Funcionalidade em desenvolvimento!')" type="checkbox"/>
+<input type="checkbox"/>
 <span class="slider round"></span>
 </label>
 </div>
@@ -320,14 +409,28 @@
 </div>
 </div>
 <div class="card-box danger-zone">
-<div class="card-title"><i class="bx bx-error-circle"></i> Excluir Conta</div>
-<p style="color: #666; font-size: 0.9rem; margin-bottom: 15px; line-height: 1.5;">
-                    Ao excluir sua conta, todos os seus dados, histórico de serviços e pontos serão perdidos permanentemente. Essa ação não pode ser desfeita.
-                </p>
-<button class="btn-danger" onclick="excluirContaReal()">Excluir Minha Conta</button>
+<div class="card-title"><i class="bx bx-error-circle"></i> Zona de Perigo</div>
+<p class="danger-copy">Você pode desativar temporariamente ou excluir sua conta. Para confirmar, será necessário informar a senha novamente.</p>
+<div class="danger-actions">
+<button class="btn-danger" id="btnDesativarConta" type="button" style="margin-top:0;">Desativar minha conta</button>
+<button class="btn-danger" id="btnExcluirConta" type="button">Excluir minha conta</button>
+</div>
 </div>
 </div>
 </main>
+<div aria-hidden="true" class="danger-modal" id="dangerModal">
+<div class="danger-modal-card">
+<h3 id="dangerModalTitle">Confirmar ação</h3>
+<p id="dangerModalText">Digite sua senha para continuar.</p>
+<label class="danger-modal-label" for="dangerModalPassword">Confirme sua senha</label>
+<input class="danger-modal-input" id="dangerModalPassword" placeholder="Digite sua senha atual" type="password"/>
+<div class="danger-modal-feedback" id="dangerModalFeedback"></div>
+<div class="danger-modal-actions">
+<button class="danger-modal-cancel" id="dangerModalCancel" type="button">Cancelar</button>
+<button class="danger-modal-confirm" id="dangerModalConfirm" type="button">Confirmar</button>
+</div>
+</div>
+</div>
 <nav class="bottom-nav">
 <a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
@@ -337,6 +440,15 @@
 </nav>
 <script>
         const { updatePassword, reauthenticateWithCredential, EmailAuthProvider, deleteUser } = window;
+        const senhaFeedback = () => document.getElementById("senhaFeedback");
+        const dangerModal = () => document.getElementById("dangerModal");
+        const dangerModalTitle = () => document.getElementById("dangerModalTitle");
+        const dangerModalText = () => document.getElementById("dangerModalText");
+        const dangerModalPassword = () => document.getElementById("dangerModalPassword");
+        const dangerModalFeedback = () => document.getElementById("dangerModalFeedback");
+        const dangerModalConfirm = () => document.getElementById("dangerModalConfirm");
+        const dangerModalCancel = () => document.getElementById("dangerModalCancel");
+        let dangerAction = null;
 
         const getSupabaseClient = () => window.sb || window.supabaseClient || null;
 
@@ -352,7 +464,7 @@
                 email: user.email,
                 password: currentPass
             });
-            if (check.error) throw new Error("A senha atual esta incorreta.");
+            if (check.error) throw new Error("A senha atual está incorreta.");
 
             const upd = await sb.auth.updateUser({ password: newPass });
             if (upd.error) throw upd.error;
@@ -380,13 +492,14 @@
             const confirmPass = document.getElementById("confirmaSenha").value;
 
             if (newPass.length < 6) {
-                alert("A nova senha deve ter pelo menos 6 caracteres.");
+                setSenhaFeedback("A nova senha deve ter pelo menos 6 caracteres.", "error");
                 return;
             }
             if (newPass !== confirmPass) {
-                alert("As senhas nao conferem.");
+                setSenhaFeedback("As senhas não conferem.", "error");
                 return;
             }
+            setSenhaFeedback("", "");
 
             btn.innerText = "Atualizando...";
             btn.disabled = true;
@@ -400,14 +513,14 @@
                 }
 
                 if (!usedSupabase && !usedFirebase) {
-                    throw new Error("Nao foi possivel alterar a senha com o provedor atual.");
+                    throw new Error("Não foi possível alterar a senha com o provedor atual.");
                 }
 
                 btn.style.background = "#2ecc71";
                 btn.innerText = "Senha alterada";
 
                 setTimeout(() => {
-                    alert("Sua senha foi atualizada com sucesso.");
+                    setSenhaFeedback("Senha atualizada com sucesso.", "success");
                     esconderFormulario();
                     btn.innerText = textoOriginal;
                     btn.style.background = "var(--cor0)";
@@ -425,9 +538,9 @@
                     code.includes("wrong-password") ||
                     msg.includes("incorreta")
                 ) {
-                    alert("A senha atual esta incorreta.");
+                    setSenhaFeedback("A senha atual está incorreta.", "error");
                 } else {
-                    alert("Erro ao alterar senha. Tente novamente.");
+                    setSenhaFeedback("Erro ao alterar senha. Tente novamente.", "error");
                 }
             }
         };
@@ -444,50 +557,177 @@
             return true;
         }
 
-        async function tryExcluirContaSupabase(inputPass) {
+                async function reautenticarSupabase(inputPass) {
             const sb = getSupabaseClient();
-            if (!sb?.auth?.getUser || !sb.auth.signInWithPassword || !sb.auth.signOut) {
-                return false;
-            }
+            if (!sb?.auth?.getUser || !sb.auth.signInWithPassword || !sb.auth.signOut) return null;
 
             const { data, error } = await sb.auth.getUser();
             const user = data?.user;
-            if (error || !user?.email) return false;
+            if (error || !user?.email) return null;
 
             const check = await sb.auth.signInWithPassword({
                 email: user.email,
                 password: inputPass
             });
-            if (check.error) {
-                throw new Error("Senha incorreta. Nao foi possivel continuar.");
-            }
+            if (check.error) throw new Error("Senha incorreta. Não foi possível continuar.");
+
+            return { sb, user };
+        }
+
+        async function tryDesativarContaSupabase(inputPass) {
+            const authPack = await reautenticarSupabase(inputPass);
+            if (!authPack) return false;
+
+            const { sb, user } = authPack;
+            const upd = await sb.from("usuarios").update({
+                conta_status: "desativada",
+                conta_ativa: false,
+                conta_desativada_em: new Date().toISOString()
+                }).eq("uid", user.id);
+            if (upd.error) throw upd.error;
+
+            await sb.auth.signOut();
+            return true;
+        }
+
+        async function tryExcluirContaSupabase(inputPass) {
+            const authPack = await reautenticarSupabase(inputPass);
+            if (!authPack) return false;
+
+            const { sb, user } = authPack;
+
+            try {
+                await sb.from("usuarios").update({
+                    conta_status: "excluida",
+                    conta_ativa: false,
+                    conta_excluida_em: new Date().toISOString()
+                }).eq("uid", user.id);
+            } catch (_) {}
 
             localStorage.setItem("doke_exclusao_solicitada_em", new Date().toISOString());
             await sb.auth.signOut();
             return true;
         }
 
-        window.excluirContaReal = async function() {
-            const ok = confirm("TEM CERTEZA? Essa acao remove o acesso da conta atual.");
-            if (!ok) return;
+        function setSenhaFeedback(text, type) {
+            const el = senhaFeedback();
+            if (!el) return;
+            el.textContent = text || "";
+            el.style.color = type === "success" ? "var(--cor0)" : (type === "error" ? "var(--cor3)" : "#667085");
+        }
 
-            const inputPass = prompt("Digite sua senha para confirmar:");
-            if (!inputPass) return;
+        function setDangerFeedback(text, type) {
+            const el = dangerModalFeedback();
+            if (!el) return;
+            el.textContent = text || "";
+            el.className = "danger-modal-feedback" + (type ? " " + type : "");
+        }
 
+        function openDangerModal(action) {
+            dangerAction = action;
+            const modal = dangerModal();
+            const title = dangerModalTitle();
+            const text = dangerModalText();
+            const password = dangerModalPassword();
+            if (!modal || !title || !text || !password) return;
+
+            if (action === "desativar") {
+                title.textContent = "Desativar conta";
+                text.textContent = "Sua conta ficará desativada e poderá ser reativada no próximo login.";
+            } else {
+                title.textContent = "Excluir conta";
+                text.textContent = "Essa ação remove o acesso da conta atual. Digite a senha para confirmar.";
+            }
+
+            password.value = "";
+            setDangerFeedback("", "");
+            modal.classList.add("show");
+            modal.setAttribute("aria-hidden", "false");
+            setTimeout(() => password.focus(), 10);
+        }
+
+        function closeDangerModal() {
+            const modal = dangerModal();
+            if (!modal) return;
+            modal.classList.remove("show");
+            modal.setAttribute("aria-hidden", "true");
+            dangerAction = null;
+        }
+
+        async function executarAcaoPerigosa() {
+            const pass = (dangerModalPassword()?.value || "").trim();
+            if (!pass) {
+                setDangerFeedback("Informe sua senha para confirmar.", "error");
+                return;
+            }
+            const btnConfirm = dangerModalConfirm();
+            const btnCancel = dangerModalCancel();
+            if (btnConfirm) {
+                btnConfirm.disabled = true;
+                btnConfirm.textContent = "Processando...";
+            }
+            if (btnCancel) btnCancel.disabled = true;
+
+            try {
+                if (dangerAction === "desativar") {
+                    await window.desativarContaReal(pass);
+                    return;
+                }
+                if (dangerAction === "excluir") {
+                    await window.excluirContaReal(pass);
+                    return;
+                }
+            } finally {
+                if (btnConfirm) {
+                    btnConfirm.disabled = false;
+                    btnConfirm.textContent = "Confirmar";
+                }
+                if (btnCancel) btnCancel.disabled = false;
+            }
+        }
+
+        window.desativarContaReal = async function(inputPass) {
+            try {
+                const done = await tryDesativarContaSupabase(inputPass);
+                if (!done) throw new Error("Não foi possível desativar a conta agora.");
+
+                localStorage.removeItem("usuarioLogado");
+                localStorage.removeItem("doke_usuario_perfil");
+                localStorage.removeItem("doke_uid");
+                setDangerFeedback("Conta desativada com sucesso. Redirecionando...", "success");
+                window.location.href = "index.html";
+            } catch (error) {
+                console.error(error);
+                setDangerFeedback(error?.message || "Erro ao desativar conta.", "error");
+            }
+        };
+        // Fallback de clique para ambientes onde onclick inline falha.
+        document.addEventListener("DOMContentLoaded", function(){
+            const b1 = document.getElementById("btnDesativarConta");
+            const b2 = document.getElementById("btnExcluirConta");
+            if (b1) b1.addEventListener("click", function(e){ e.preventDefault(); openDangerModal("desativar"); });
+            if (b2) b2.addEventListener("click", function(e){ e.preventDefault(); openDangerModal("excluir"); });
+            const mCancel = dangerModalCancel();
+            const mConfirm = dangerModalConfirm();
+            if (mCancel) mCancel.addEventListener("click", closeDangerModal);
+            if (mConfirm) mConfirm.addEventListener("click", executarAcaoPerigosa);
+        });
+        window.excluirContaReal = async function(inputPass) {
             try {
                 const removedByFirebase = await tryExcluirContaFirebase(inputPass);
                 if (!removedByFirebase) {
                     const removedBySupabase = await tryExcluirContaSupabase(inputPass);
-                    if (!removedBySupabase) throw new Error("Nao foi possivel processar a exclusao agora.");
+                    if (!removedBySupabase) throw new Error("Não foi possível processar a exclusão agora.");
                 }
 
                 localStorage.removeItem("usuarioLogado");
                 localStorage.removeItem("doke_usuario_perfil");
-                alert("Sua sessao foi encerrada. Se pediu exclusao, vamos processar sua solicitacao.");
+                localStorage.removeItem("doke_uid");
+                setDangerFeedback("Sessão encerrada. Solicitação de exclusão registrada.", "success");
                 window.location.href = "index.html";
             } catch (error) {
                 console.error(error);
-                alert(error?.message || "Erro ao excluir conta.");
+                setDangerFeedback(error?.message || "Erro ao excluir conta.", "error");
             }
         };
     </script>
@@ -502,6 +742,7 @@
             document.getElementById('btn-abrir-form').style.display = 'flex';
             document.getElementById('form-senha').reset();
             document.getElementById('strengthBar').style.width = '0%';
+            setSenhaFeedback("", "");
         }
 
         function togglePass(icon) {
@@ -538,3 +779,10 @@
 <script src="doke-shell.js?v=20260207v21"></script>
 </body>
 </html>
+
+
+
+
+
+
+

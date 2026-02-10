@@ -44,6 +44,16 @@
       .auth-aside{ display:none; }
     }
 
+    @media (max-width: 1024px){
+      body.doke-shell-active{
+        place-items: start center;
+        padding-top: calc(var(--doke-h, 56px) + 18px);
+      }
+      body.doke-shell-active .auth-shell{
+        margin-top: 10px;
+      }
+    }
+
     .auth-card{
       background: #fff;
       border-radius: var(--card-radius);
@@ -113,7 +123,7 @@
     }
 
     .input-icon{ position:relative; }
-    .input-icon i{
+    .input-icon > i{
       position:absolute;
       left: 14px;
       top: 50%;
@@ -367,13 +377,17 @@
 <script>
 
     async function ensureSupabase(){
-  const sb = window.sb;
-  if (!sb) {
-    alert("Supabase não inicializado");
-    throw new Error("Supabase não inicializado");
-  }
-  return sb;
-}
+      const pick = () => window.sb || window.supabaseClient || window.sbClient || window.supabase;
+      let sb = pick();
+      if (!sb || typeof sb.from !== "function" || !sb.auth) {
+        await new Promise((r) => setTimeout(r, 80));
+        sb = pick();
+      }
+      if (!sb || typeof sb.from !== "function" || !sb.auth) {
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js.");
+      }
+      return sb;
+    }
 
     
   // Prefill e-mail via querystring (?email=)
@@ -391,8 +405,6 @@ function showMsg(type, text){
       el.className = "msg show " + (type === "ok" ? "ok" : "err");
       el.textContent = text;
     }
-
-ensureSupabase()
 
     const eye = document.getElementById("btn-senha");
     eye.addEventListener("click", () => {
@@ -433,6 +445,13 @@ ensureSupabase()
 
         if (perfilErr && perfilErr.code && perfilErr.code !== "PGRST116") {
           console.warn("[DOKE] Perfil não carregado:", perfilErr);
+        }
+
+        const statusConta = String(perfil?.conta_status || "").toLowerCase();
+        const contaBloqueada = statusConta === "desativada" || statusConta === "excluida" || perfil?.conta_ativa === false;
+        if (contaBloqueada) {
+          try { await supabase.auth.signOut(); } catch (_) {}
+          throw new Error("Sua conta está desativada ou excluída. Entre em contato com o suporte para reativação.");
         }
 
         if (perfil) {

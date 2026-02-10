@@ -85,7 +85,34 @@
 
         /* Layout Principal */
         .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
-        .filter-tabs { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; }
+        /* Filtros (chips) com setas – scroll horizontal com toque */
+        .comm-filter-nav{ position: relative; display:flex; align-items:center; gap: 10px; margin-bottom: 25px; }
+        .filter-tabs { 
+            display: flex; gap: 12px; 
+            overflow-x: auto; overflow-y: hidden;
+            flex: 1 1 auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            touch-action: pan-x;
+            padding: 0 52px; /* evita chips ficarem embaixo das setas */
+        }
+        .filter-tabs::-webkit-scrollbar{ display:none; }
+        .tab-btn{ scroll-snap-align: start; }
+        .chips-arrow.comm-filter-arrow{
+            width: 42px; height: 42px;
+            border-radius: 14px;
+            border: 1px solid #e6e9ef;
+            background: #fff;
+            display:flex; align-items:center; justify-content:center;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        }
+        .chips-arrow.comm-filter-arrow i{ font-size: 22px; color: var(--cor2); }
+        .chips-arrow.comm-filter-arrow:disabled{ opacity: .35; cursor: default; }
+        .comm-filter-arrow.left{ position:absolute; left: 6px; z-index: 5; }
+        .comm-filter-arrow.right{ position:absolute; right: 6px; z-index: 5; }
+
         .tab-btn {
             padding: 10px 24px; border: 1px solid #e0e0e0; background: white; border-radius: 30px;
             font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; transition: 0.2s;
@@ -210,6 +237,45 @@
         .card-footer { padding: 15px 18px; border-top: 1px solid #f5f5f5; background: #fafafa; }
         .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; }
         .btn-entrar:hover { background: var(--cor2); color: white; border-color: var(--cor2); }
+
+
+
+        /* ===========================
+           Ajustes Mobile/Touch (iPhone/Android)
+           - centraliza e evita overflow
+           - melhora toque nos filtros
+           - corrige botão Entrar/Entrou
+           =========================== */
+        @media (max-width: 640px) {
+            main{ padding: 14px; }
+            .comm-hero-container{ padding: 18px; border-radius: 18px; margin-bottom: 22px; }
+            .comm-header{ align-items: flex-start; }
+            .comm-title h1{ font-size: 1.8rem; }
+            .header-actions{ width: 100%; flex-direction: column; align-items: stretch; gap: 12px; }
+            .search-bar-comm{ width: 100%; }
+            .btn-create-comm{ width: 100%; justify-content: center; }
+
+            .groups-scroll{ gap: 12px; padding-bottom: 6px; }
+            .my-group-item{ min-width: 210px; }
+
+            .comm-layout{ grid-template-columns: 1fr; gap: 18px; }
+
+            /* chips com setas – garante que a área clicável não fique “presa” */
+            .comm-filter-nav{ margin-bottom: 18px; }
+            .filter-tabs{ padding: 0 56px; }
+
+            /* Card comunidade – botão entra como linha própria */
+            .com-body{ flex-wrap: wrap; }
+            .com-info{ min-width: 0; }
+            .com-meta{ width: 100%; }
+            .btn-ver-grupo{
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+                padding: 12px 14px;
+                border-radius: 14px;
+            }
+        }
 
         /* Sidebar Widgets */
         .widget-box { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }

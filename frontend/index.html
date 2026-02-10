@@ -17,6 +17,32 @@
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <link href="manifest.webmanifest" rel="manifest"/>
 <meta content="#0b7768" name="theme-color"/>
+<script>
+  (function () {
+    const RESET_KEY = "doke_sw_cache_reset_v1";
+    if (sessionStorage.getItem(RESET_KEY) === "1") return;
+    if (!("serviceWorker" in navigator)) return;
+    window.addEventListener("load", function () {
+      Promise.resolve()
+        .then(function () {
+          return navigator.serviceWorker.getRegistrations();
+        })
+        .then(function (regs) {
+          return Promise.all(regs.map(function (r) { return r.unregister(); }));
+        })
+        .catch(function () {})
+        .finally(function () {
+          if (!("caches" in window)) return;
+          caches.keys()
+            .then(function (keys) {
+              return Promise.all(keys.map(function (k) { return caches.delete(k); }));
+            })
+            .catch(function () {});
+        });
+      sessionStorage.setItem(RESET_KEY, "1");
+    });
+  })();
+</script>
 <link href="style.css?v=20260209v32" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
@@ -24,7 +50,7 @@
 <!-- Estilos globais do projeto -->
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="doke-beforeafter.js?v=20260202"></script>
-<script defer="" src="script.js?v=20260209v38"></script>
+<script defer="" src="script.js?v=20260209v41"></script>
     <style>
         .cat-track,
         #categoriesCarousel,
@@ -41,10 +67,10 @@
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-feedpatch.css?v=20260207v26" rel="stylesheet"/>
 
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+<link rel="stylesheet" href="doke-shell.css?v=20260209v22">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v24">
-  <link rel="stylesheet" href="page-home.css?v=20260209v47">
+  <link rel="stylesheet" href="page-home.css?v=20260209v48">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -792,6 +818,6 @@
     }catch(e){}
   })();
 </script>
-<script src="doke-shell.js?v=20260209v22"></script>
+<script src="doke-shell.js?v=20260209v25"></script>
 </body>
 </html>

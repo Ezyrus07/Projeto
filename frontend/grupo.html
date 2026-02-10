@@ -370,6 +370,36 @@
 #btnMic.recording{ background: #111827; }
 #btnMic.recording i{ color:#fff; }
 
+/* ============================================================
+   MOBILE: Composer sempre "preso" embaixo (sem sobrar espaço)
+   - Evita o "distanciamento" após enviar/focar no input
+   - Mantém acima do bottom-nav + safe-area
+   ============================================================ */
+@media (max-width: 1024px){
+  /* Garante que o feed não fique escondido atrás do composer fixo */
+  .grupo-page,
+  .grupo-pane.grupo-center .inner{
+    padding-bottom: calc(var(--doke-btm-real, 66px) + env(safe-area-inset-bottom) + 140px) !important;
+  }
+
+  /* Composer vira uma barra fixa acima do bottom-nav */
+  .grupo-composer{
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(var(--doke-btm-real, 66px) + env(safe-area-inset-bottom) + 8px) !important;
+    margin: 0 !important;
+    z-index: 999 !important;
+    border-radius: 18px !important;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.12) !important;
+  }
+
+  /* Ajuste de toque/altura no input para evitar "zoom" do iOS e melhorar UX */
+  .composer-input{ font-size: 16px !important; }
+
+  /* Feed precisa de espaço suficiente no final */
+  .grupo-feed{ padding-bottom: 140px !important; }
+}
 
 .grupo-feed{ padding: 0 16px 16px; display:flex; flex-direction:column; gap: 14px; }
 .post-card{

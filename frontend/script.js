@@ -443,9 +443,36 @@ window.carregarTrabalhosHome = async function() {
 
         if (snapshot.empty) return;
 
+        const escapeHtmlLocal = (value) => String(value ?? "")
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#39;");
+
+        const formatShortDuration = (raw) => {
+            if (raw == null || raw === "") return "0:30";
+            if (typeof raw === "number" && Number.isFinite(raw)) {
+                const total = Math.max(0, Math.floor(raw));
+                const min = Math.floor(total / 60);
+                const sec = String(total % 60).padStart(2, "0");
+                return `${min}:${sec}`;
+            }
+            const str = String(raw).trim();
+            if (/^\d+:\d{2}$/.test(str)) return str;
+            return "0:30";
+        };
+
         snapshot.forEach(doc => {
             const data = doc.data();
             const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${data.uid}'"`;
+            const titulo = (data.titulo || data.descricao || data.categoria || "Vídeo curto").toString();
+            const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
+            const categoria = (data.categoria || "Vídeo curto").toString();
+            const duracao = formatShortDuration(data.duracao || data.duracaoSegundos || data.tempo);
+            const capa = data.capa || "https://placehold.co/540x960?text=Video";
+            const fotoAutor = data.autorFoto || "https://placehold.co/120x120?text=User";
+            const autorNome = (data.autorNome || "@profissional").toString();
             
             // ... (código do dadosModal igual) ...
             const dadosModal = JSON.stringify({
@@ -458,15 +485,25 @@ window.carregarTrabalhosHome = async function() {
                  onmouseenter="iniciarPreview(this)" 
                  onmouseleave="pararPreview(this)"
                  onclick="abrirPlayerTikTok(${dadosModal})">
-                <div class="badge-status">${data.categoria || "Portfólio"}</div>
+                <div class="yt-chip-row">
+                    <span class="yt-chip">Vídeo-curto</span>
+                    <span class="yt-duration">${escapeHtmlLocal(duracao)}</span>
+                </div>
                 <input type="hidden" class="video-src-hidden" value="${data.videoUrl}">
-                <img src="${data.capa}" class="video-bg" loading="lazy" decoding="async">
-                <div class="play-icon"><i class='bx bx-play'></i></div>
+                <img src="${escapeHtmlLocal(capa)}" class="video-bg" loading="lazy" decoding="async" alt="${escapeHtmlLocal(tituloCurto)}">
+                <div class="play-icon yt-play-fab"><i class='bx bx-play'></i></div>
                 <div class="video-ui-layer">
-                    <div class="video-bottom-info">
-                        <div class="provider-info">
-                            <span class="provider-name js-user-link" data-uid="${data.uid}" ${linkPerfil} style="cursor:pointer; text-decoration:underline;">${data.autorNome}</span>
+                    <div class="provider-info">
+                        <img src="${escapeHtmlLocal(fotoAutor)}" alt="${escapeHtmlLocal(autorNome)}">
+                        <div class="info-col">
+                            <span class="provider-name js-user-link" data-uid="${data.uid}" ${linkPerfil}>${escapeHtmlLocal(autorNome)}</span>
+                            <span class="video-desc-mini">${escapeHtmlLocal(categoria)}</span>
                         </div>
+                    </div>
+                    <p class="yt-short-title">${escapeHtmlLocal(tituloCurto)}</p>
+                    <div class="yt-short-meta">
+                        <span><i class='bx bx-play-circle'></i> Preview</span>
+                        <span>Toque para assistir</span>
                     </div>
                 </div>
             </div>`;
@@ -2064,6 +2101,14 @@ window.verificarEstadoLogin = async function() {
         perfil = {};
     }
 
+    // Corrige cache antigo com HTML indevido no nome de usuário.
+    const nomeSeguroPerfil = sanitizePlainText(perfil.user || perfil.nome || "");
+    if (nomeSeguroPerfil) {
+        perfil.user = nomeSeguroPerfil;
+        if (!perfil.nome) perfil.nome = nomeSeguroPerfil;
+        try { localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil)); } catch(_) {}
+    }
+
     // Define foto padrão se não tiver
     if (!perfilSalvo && authUser) {
         const nomeFallback = authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : "Usuario");
@@ -2121,7 +2166,7 @@ window.verificarEstadoLogin = async function() {
                     <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
                     <div id="dropdownPerfil" class="dropdown-profile">
                         <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
-                            ${perfil.user || 'Usuário'}
+                            ${escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usuário'))}
                         </div>
                         <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
                         
@@ -2242,16 +2287,95 @@ window.alternarConta = async function() {
     });
 }
 
+function clearProfileDropdownInline(drop) {
+    if (!drop) return;
+    [
+        'position', 'top', 'left', 'right', 'z-index',
+        'max-height', 'max-width', 'overflow-y', 'overflow', 'min-width'
+    ].forEach((prop) => drop.style.removeProperty(prop));
+}
+
+function closeAllProfileDropdowns(except = null) {
+    document.querySelectorAll('.dropdown-profile.show').forEach((el) => {
+        if (el !== except) {
+            el.classList.remove('show');
+            clearProfileDropdownInline(el);
+        }
+    });
+    if (!except || !except.classList.contains('show')) {
+        window.__dokeProfileDropdownState = null;
+    }
+}
+
+function positionProfileDropdown(drop, anchor) {
+    if (!drop || !anchor) return;
+    const rect = anchor.getBoundingClientRect();
+    const margin = 10;
+
+    // Garante medida real antes de posicionar.
+    const width = Math.max(220, Math.round(drop.offsetWidth || 240));
+    let left = Math.round(rect.right - width);
+    if (left < margin) left = margin;
+    if (left + width > window.innerWidth - margin) {
+        left = Math.max(margin, window.innerWidth - margin - width);
+    }
+
+    const top = Math.round(rect.bottom + 10);
+    const available = Math.max(180, window.innerHeight - top - margin);
+
+    drop.style.position = 'fixed';
+    drop.style.top = `${top}px`;
+    drop.style.left = `${left}px`;
+    drop.style.right = 'auto';
+    drop.style.zIndex = '2147483646';
+    drop.style.minWidth = `${width}px`;
+    drop.style.maxWidth = `calc(100vw - ${margin * 2}px)`;
+    drop.style.maxHeight = `${available}px`;
+    drop.style.overflowY = 'auto';
+}
+
+function syncOpenProfileDropdown() {
+    const state = window.__dokeProfileDropdownState;
+    if (!state?.drop || !state?.anchor) return;
+    if (!state.drop.classList.contains('show')) return;
+    positionProfileDropdown(state.drop, state.anchor);
+}
+
+if (!window.__dokeProfileDropdownViewportBound) {
+    window.__dokeProfileDropdownViewportBound = true;
+    window.addEventListener('resize', syncOpenProfileDropdown, { passive: true });
+    window.addEventListener('scroll', syncOpenProfileDropdown, true);
+}
+
 window.toggleDropdown = function(event) {
-    if(event) event.stopPropagation();
+    if (event) event.stopPropagation();
     const target = event?.currentTarget || event?.target;
     const container = target ? target.closest('.profile-container') : null;
     const drop = (container && container.querySelector('.dropdown-profile')) || document.getElementById('dropdownPerfil');
     if (!drop) return;
-    document.querySelectorAll('.dropdown-profile.show').forEach((el) => {
-        if (el !== drop) el.classList.remove('show');
-    });
-    drop.classList.toggle('show');
+
+    const anchor = (container && container.querySelector('.profile-img-btn')) || target;
+    const willOpen = !drop.classList.contains('show');
+
+    closeAllProfileDropdowns(drop);
+
+    if (!willOpen) {
+        drop.classList.remove('show');
+        clearProfileDropdownInline(drop);
+        window.__dokeProfileDropdownState = null;
+        return;
+    }
+
+    drop.classList.add('show');
+    window.__dokeProfileDropdownState = { drop, anchor };
+    positionProfileDropdown(drop, anchor);
+}
+
+function sanitizePlainText(value) {
+    return String(value ?? "")
+        .replace(/<[^>]*>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
 function ensureDokeLoadingOverlay() {
@@ -2289,7 +2413,7 @@ window.dokeHideLoading = function() {
 if (!window.__dokeDropdownBound) {
     window.__dokeDropdownBound = true;
     document.addEventListener('click', () => {
-        document.querySelectorAll('.dropdown-profile.show').forEach((el) => el.classList.remove('show'));
+        closeAllProfileDropdowns();
     });
 }
 
@@ -2684,8 +2808,7 @@ function initHomeEnhancements() {
 
 window.onclick = function(e) {
     if (!e.target.matches('.profile-img-btn') && !e.target.matches('img')) {
-        const ds = document.getElementsByClassName("dropdown-profile");
-        for (let i = 0; i < ds.length; i++) { if (ds[i].classList.contains('show')) ds[i].classList.remove('show'); }
+        closeAllProfileDropdowns();
     }
     const p = document.getElementById('boxCep');
     const w = document.querySelector('.cep-wrapper');
@@ -5055,47 +5178,80 @@ window.validarTelefoneBR = function(telefone) {
 // ============================================================
 // FUNÇÕES DE PREVIEW DE VÍDEO (HOVER)
 // ============================================================
+const hoverPreviewTimers = new WeakMap();
+const HOVER_PREVIEW_DELAY_MS = 900;
 
 window.iniciarPreview = function(card) {
-    const videoSrc = card.querySelector('.video-src-hidden').value;
-    
+    if (!card) return;
+    const srcInput = card.querySelector('.video-src-hidden');
+    if (!srcInput) return;
+    const videoSrc = srcInput.value;
+
     // Se não tiver link de vídeo, não faz nada
     if (!videoSrc || videoSrc === "undefined") return;
+    if (hoverPreviewTimers.has(card)) return;
 
-    // Verifica se o vídeo já existe para não criar duplicado
-    let video = card.querySelector('.video-preview-hover');
+    // Garante apenas 1 preview por vez na tela.
+    document.querySelectorAll('.tiktok-card').forEach((otherCard) => {
+        if (otherCard !== card) {
+            window.pararPreview(otherCard);
+        }
+    });
 
-    if (!video) {
-        // Cria o elemento de vídeo dinamicamente
-        video = document.createElement('video');
-        video.src = videoSrc;
-        video.className = 'video-preview-hover';
-        video.muted = true; // OBRIGATÓRIO: Navegadores só dão autoplay se estiver mudo
-        video.loop = true;
-        video.playsInline = true;
-        
-        // Insere o vídeo antes do ícone de play (para ficar embaixo da UI layer)
-        const playIcon = card.querySelector('.play-icon');
-        card.insertBefore(video, playIcon);
-    }
+    const timer = window.setTimeout(() => {
+        hoverPreviewTimers.delete(card);
 
-    // Tenta reproduzir
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log('Autoplay prevenido pelo navegador (interaja com a página primeiro)');
-        });
-    }
-}
+        // Verifica se o vídeo já existe para não criar duplicado
+        let video = card.querySelector('.video-preview-hover');
+
+        if (!video) {
+            // Cria o elemento de vídeo dinamicamente
+            video = document.createElement('video');
+            video.src = videoSrc;
+            video.className = 'video-preview-hover';
+            video.muted = true; // OBRIGATÓRIO: Navegadores só dão autoplay se estiver mudo
+            video.loop = true;
+            video.playsInline = true;
+            
+            // Insere o vídeo antes do ícone de play (para ficar embaixo da UI layer)
+            const playIcon = card.querySelector('.play-icon');
+            if (playIcon) {
+                card.insertBefore(video, playIcon);
+            } else {
+                card.appendChild(video);
+            }
+        }
+
+        card.classList.add('preview-active');
+
+        // Tenta reproduzir
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(() => {
+                // Silencia erro de autoplay bloqueado
+            });
+        }
+    }, HOVER_PREVIEW_DELAY_MS);
+
+    hoverPreviewTimers.set(card, timer);
+};
 
 window.pararPreview = function(card) {
+    if (!card) return;
+    const timer = hoverPreviewTimers.get(card);
+    if (timer) {
+        clearTimeout(timer);
+        hoverPreviewTimers.delete(card);
+    }
+    card.classList.remove('preview-active');
+
     const video = card.querySelector('.video-preview-hover');
     if (video) {
         video.pause();
         video.currentTime = 0; // Volta para o início
         video.remove(); // Remove o elemento para economizar memória do navegador
     }
-}
+};
 
 // Função para alternar a visibilidade dos campos de endereço
 const reelPreviewTimers = new WeakMap();
@@ -11374,37 +11530,6 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
         sugeridos = [...new Set(base)].slice(0, 10);
       }
 
-      const logado = getLogado();
-      const perfil = getPerfilLocal();
-      const eProf = perfil?.isProfissional === true;
-
-      let ctaTitle = 'Encontre o serviço ideal';
-      let ctaSub = 'Use as categorias e a busca para achar exatamente o que precisa.';
-      let ctaHref = 'busca.html';
-      let ctaLabel = 'Procurar agora';
-
-      if (!logado) {
-        ctaTitle = 'Entre para aproveitar melhor a Doke';
-        ctaSub = 'Salve buscas, veja recomendações e tenha uma experiência mais rápida.';
-        ctaHref = 'login.html';
-        ctaLabel = 'Entrar / Criar conta';
-      } else if (eProf) {
-        ctaTitle = 'Pronto para vender mais?';
-        ctaSub = 'Publique seu primeiro serviço e apareça no topo para clientes próximos.';
-        ctaHref = 'anunciar.html';
-        ctaLabel = 'Publicar serviço';
-      } else {
-        ctaTitle = 'Peça orçamento em 1 clique';
-        ctaSub = 'Entre em contato com profissionais e acompanhe tudo com segurança.';
-        ctaHref = 'busca.html';
-        ctaLabel = 'Explorar profissionais';
-      }
-
-          let ctaIcon = 'bx-search-alt';
-      if (!logado) ctaIcon = 'bx-user';
-      else if (eProf) ctaIcon = 'bx-trending-up';
-      else ctaIcon = 'bx-bolt-circle';
-
       sec.innerHTML = `
         <div class="para-voce-inner pv-stack">
           <div class="pv-stack-grid">
@@ -11425,19 +11550,6 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
               </div>
 
                           </div>
-
-            <div class="pv-stack-side">
-              <div class="pv-cta">
-                <div class="pv-cta-left">
-                  <div class="pv-cta-icon"><i class='bx ${esc(ctaIcon)}'></i></div>
-                  <div class="pv-cta-text">
-                    <div class="pv-cta-title">${esc(ctaTitle)}</div>
-                    <div class="pv-cta-sub">${esc(ctaSub)}</div>
-                  </div>
-                </div>
-                <a class="pv-cta-btn" href="${ctaHref}">${esc(ctaLabel)}</a>
-              </div>
-            </div>
           </div>
         </div>
       `;

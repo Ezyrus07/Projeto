@@ -66,6 +66,7 @@
     align-items:center;
     gap:10px;
     padding: 0 12px;
+    overflow: visible;
   }
   .doke-mobile-header .doke-hamb{
     width:40px;height:40px;
@@ -83,6 +84,7 @@
   .doke-mobile-header .doke-logo img{ height:28px; width:auto; }
   .doke-mobile-header .doke-h-actions{
     display:flex; align-items:center; gap:8px;
+    overflow: visible;
   }
   .doke-mobile-header .doke-icon-btn{
     width:40px;height:40px;
@@ -160,7 +162,7 @@
     display: block;
   }
   /* Reduce oversized avatar/ring inside mobile header */
-  .doke-mobile-header .profile-container{ display:flex; align-items:center; }
+  .doke-mobile-header .profile-container{ display:flex; align-items:center; overflow: visible; }
   .doke-mobile-header .profile-img-btn{
     width:38px; height:38px;
     border-radius:999px;
@@ -180,6 +182,20 @@
   .doke-mobile-header .doke-avatar{
     width:38px; height:38px;
     border:0;
+  }
+
+  /* Dropdown do perfil no shell mobile:
+     usa camada fixa para evitar recorte por overflow em headers/containers. */
+  .doke-mobile-header .doke-mobile-profile .dropdown-profile{
+    position: fixed;
+    top: calc(var(--doke-h) + 8px);
+    right: 10px;
+    left: auto;
+    min-width: 220px;
+    max-width: calc(100vw - 20px);
+    max-height: none;
+    overflow: visible;
+    z-index: 10050;
   }
 
   /* Bottom Nav */
@@ -301,7 +317,8 @@
     background: var(--doke-bg);
     display:none;
     overflow:auto;
-    padding: 14px 14px calc(var(--doke-btm) + 18px + env(safe-area-inset-bottom));
+    /* mais confortável no iOS (safe-area) e evita "colar" no topo */
+    padding: calc(12px + env(safe-area-inset-top)) 14px calc(var(--doke-btm) + 18px + env(safe-area-inset-bottom));
   }
   body.doke-search-open .doke-search-overlay{ display:block; }
   .doke-search-sheet{
@@ -324,11 +341,11 @@
   }
   .doke-search-input{
     flex:1;
-    height:44px;
-    border-radius: 14px;
+    height:46px;
+    border-radius: 16px;
     border:1px solid rgba(2,6,23,.12);
     padding: 0 12px 0 40px;
-    font-size:14px;
+    font-size:15px;
     outline:none;
     background:#fff;
   }
@@ -339,6 +356,8 @@
   .doke-search-top .bx-search{
     position:absolute;
     margin-left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
     color: var(--doke-muted);
     font-size: 18px;
   }
@@ -347,13 +366,38 @@
     flex:1;
   }
   .doke-search-go{
-    height:44px;
+    height:46px;
     padding: 0 14px;
-    border-radius: 14px;
+    border-radius: 16px;
     border: none;
     background: linear-gradient(135deg, var(--doke-green), var(--doke-blue));
     color:#fff;
     font-weight:800;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:8px;
+  }
+
+  /* Mobile: deixa a barra de busca mais "app-like" (menos pesada) */
+  @media (max-width: 520px){
+    .doke-search-sheet{ padding: 12px; border-radius: 20px; }
+    .doke-search-top{ gap: 8px; }
+    .doke-search-back{ width:42px; height:42px; border-radius: 14px; }
+    /* No mobile o botão vira um ícone leve (não “invade” visualmente o campo) */
+    .doke-search-go{
+      width:44px;
+      padding: 0;
+      background:#fff;
+      border:1px solid rgba(2,6,23,.10);
+      color: var(--doke-green);
+      box-shadow:none;
+    }
+    .doke-search-go .bx{ color: var(--doke-green); font-size:20px; }
+    .doke-search-go span{ display:none; }
+    .doke-search-input{ height:48px; border-radius: 18px; }
+    .doke-chip-row{ padding: 2px 2px 6px; scroll-snap-type: x mandatory; }
+    .doke-chip{ scroll-snap-align: start; }
   }
   .doke-chip-row{
     display:flex;
@@ -441,5 +485,6 @@
   .doke-mobile-header .profile-container{
     display: flex;
     align-items: center;
+    overflow: visible;
   }
 }

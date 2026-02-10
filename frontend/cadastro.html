@@ -43,6 +43,16 @@
       .auth-aside{ display:none; }
     }
 
+    @media (max-width: 1024px){
+      body.doke-shell-active{
+        place-items: start center;
+        padding-top: calc(var(--doke-h, 56px) + 18px);
+      }
+      body.doke-shell-active .auth-shell{
+        margin-top: 10px;
+      }
+    }
+
     .auth-card{
       background: #fff;
       border-radius: var(--card-radius);
@@ -123,7 +133,7 @@
     }
 
     .input-icon{ position:relative; }
-    .input-icon i{
+    .input-icon > i{
       position:absolute;
       left: 14px;
       top: 50%;
@@ -182,6 +192,9 @@
       font-weight: 800;
       color:#8a96a3;
     }
+
+    /* Mantém apenas um indicador de força nesta página (o .pw-meter). */
+    .auth-card .doke-pw-meter{ display: none !important; }
 
     .btn-primary{
       width: 100%;
@@ -306,7 +319,7 @@
 <label for="usuario">Nome de Usuário (@)</label>
 <div class="input-icon">
 <i class="bx bx-at"></i>
-<input autocomplete="username" id="usuario" placeholder="ex: gabrielantonio" required="" type="text"/>
+<input autocomplete="username" id="usuario" placeholder="Seu usuário" required="" type="text"/>
 </div>
 <div class="hint">Sem espaços. Pode usar ponto e underline.</div>
 </div>
@@ -329,7 +342,7 @@
 <label for="senha">Senha</label>
 <div class="input-icon">
 <i class="bx bx-lock-alt"></i>
-<input autocomplete="new-password" id="senha" placeholder="Crie uma senha forte" required="" type="password"/><div class="doke-pw-meter"><div class="row"><span class="label">Força da senha</span><span class="status">—</span></div><div class="bar"><i></i></div></div>
+<input autocomplete="new-password" id="senha" placeholder="Crie uma senha forte" required="" type="password"/>
 </div>
 <div class="pw-meter">
 <div class="pw-bar"><div id="pwBar"></div></div>
@@ -406,6 +419,14 @@
       const bar = document.getElementById("pwBar");
       const label = document.getElementById("pwLabel");
 
+      if (!pw) {
+        bar.style.width = "0%";
+        bar.style.background = "#e5eaf0";
+        label.textContent = "";
+        label.style.color = "#8a96a3";
+        return;
+      }
+
       const pct = [0, 25, 45, 65, 85, 100][score] || 0;
       bar.style.width = pct + "%";
       bar.style.background = score <= 1 ? "var(--cor3)" : (score <= 3 ? "var(--cor2)" : "var(--cor0)");
@@ -419,7 +440,13 @@
     updatePwMeter();
 
     async function ensureSupabase(){
-      const sb = window.supabaseClient || window.sbClient || window.supabase;
+      const pick = () => window.sb || window.supabaseClient || window.sbClient || window.supabase;
+      let sb = pick();
+      if (!sb || typeof sb.from !== "function" || !sb.auth) {
+        // pequena espera para casos de carregamento assíncrono
+        await new Promise((r) => setTimeout(r, 80));
+        sb = pick();
+      }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
         throw new Error("Supabase não inicializado. Verifique supabase-init.js (URL + anon public key).");
       }

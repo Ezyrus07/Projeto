@@ -25,6 +25,22 @@
     try{ return JSON.parse(json); }catch(e){ return null; }
   }
 
+  function escapeHtml(value){
+    return String(value ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function sanitizePlainText(value){
+    return String(value ?? "")
+      .replace(/<[^>]*>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
   const AUTH_CACHE_KEYS = [
     "doke_usuario_perfil",
     "usuarioLogado",
@@ -184,18 +200,19 @@
     const profile = sessionUser ? getProfile() : null;
     const isLogged = !!sessionUser;
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
-    const nomePerfil = (profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante");
+    const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
+    const nomePerfilSafe = escapeHtml(nomePerfil);
     const profileHref = isLogged ? PAGES.perfil : "login.html";
-    const linkAnunciar = !isLogged ? "login.html" : (isPro ? "anunciar.html" : "tornar-profissional.html");
-    const labelAnunciar = !isLogged ? "Entrar" : (isPro ? "Anunciar" : "Seja Profissional");
+    const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
+    const labelAnunciar = isPro ? "Anunciar" : "Seja Profissional";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const itemAlternar = isLogged ? `<a href="#" class="dropdown-item" data-action="alternar-conta"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
-    const itemSair = isLogged
-      ? `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`
-      : `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
-    const profileItemHTML = isLogged
-      ? `<a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`
-      : `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+    const itemSair = `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`;
+    const profileItemHTML = `<a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>`;
+    const guestItemHTML = `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+    const dropdownItemsHTML = isLogged
+      ? `${profileItemHTML}${itemCarteira}${itemAlternar}<a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>${itemSair}`
+      : guestItemHTML;
 
     // If the shell was already injected (e.g., navigating via history cache), reuse it.
     let header = existingShellHeader || null;
@@ -221,13 +238,9 @@
             </button>
             <div class="dropdown-profile doke-mobile-dropdown">
               <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
-                ${nomePerfil}
+                ${nomePerfilSafe}
               </div>
-              ${profileItemHTML}
-              ${itemCarteira}
-              ${itemAlternar}
-              <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${labelAnunciar}</a>
-              ${itemSair}
+              ${dropdownItemsHTML}
             </div>
           </div>
         </div>
@@ -262,6 +275,19 @@
       `;
       if(!document.body.contains(backdrop)) document.body.appendChild(backdrop);
       if(!document.body.contains(drawer)) document.body.appendChild(drawer);
+    }
+
+    // Se o shell já existir (navegação com cache), atualiza conteúdo do dropdown.
+    if (header) {
+      const profileMenu = header.querySelector(".doke-mobile-dropdown");
+      if (profileMenu) {
+        profileMenu.innerHTML = `
+          <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+            ${nomePerfilSafe}
+          </div>
+          ${dropdownItemsHTML}
+        `;
+      }
     }
 
     if(needBottom){
@@ -322,7 +348,10 @@
               <i class='bx bx-search'></i>
               <input class="doke-search-input" type="search" placeholder="Buscar por nome ou serviço" />
             </div>
-            <button class="doke-search-go" type="button">Buscar</button>
+            <button class="doke-search-go" type="button" aria-label="Buscar">
+              <i class='bx bx-search-alt-2'></i>
+              <span>Buscar</span>
+            </button>
           </div>
           <div class="doke-chip-row" role="list">
             <button class="doke-chip active" type="button"><i class='bx bx-grid-alt'></i> Todos</button>
