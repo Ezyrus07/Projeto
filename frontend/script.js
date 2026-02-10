@@ -2737,10 +2737,10 @@ function initHomeEnhancements() {
     scrollers.forEach(el => {
         el.addEventListener('wheel', (ev) => {
             if (el.id === 'galeria-dinamica') return;
-            if (Math.abs(ev.deltaY) > Math.abs(ev.deltaX)) {
-                el.scrollLeft += ev.deltaY;
-                ev.preventDefault();
-            }
+            if (!ev.shiftKey) return;
+            const delta = Math.abs(ev.deltaX) > Math.abs(ev.deltaY) ? ev.deltaX : ev.deltaY;
+            el.scrollLeft += delta;
+            ev.preventDefault();
         }, { passive: false });
     });
 
@@ -2764,10 +2764,12 @@ function initHomeEnhancements() {
         let startX = 0;
         let scrollLeft = 0;
         let touchStartX = 0;
+        let touchStartY = 0;
         let touchScrollLeft = 0;
+        let touchMode = null; // 'x' | 'y' | null
 
         container.style.cursor = 'grab';
-        container.style.touchAction = 'pan-x';
+        container.style.touchAction = 'pan-y';
 
         container.addEventListener('mousedown', (e) => {
             isDown = true;
@@ -2794,14 +2796,30 @@ function initHomeEnhancements() {
             const t = e.touches && e.touches[0];
             if (!t) return;
             touchStartX = t.clientX;
+            touchStartY = t.clientY;
             touchScrollLeft = container.scrollLeft;
+            touchMode = null;
         }, { passive: true });
 
         container.addEventListener('touchmove', (e) => {
             const t = e.touches && e.touches[0];
             if (!t) return;
-            const walk = (t.clientX - touchStartX) * 1.15;
-            container.scrollLeft = touchScrollLeft - walk;
+            const dx = t.clientX - touchStartX;
+            const dy = t.clientY - touchStartY;
+
+            if (touchMode === null) {
+                const ax = Math.abs(dx);
+                const ay = Math.abs(dy);
+                if (ax < 8 && ay < 8) return;
+                touchMode = ax > ay ? 'x' : 'y';
+            }
+
+            if (touchMode !== 'x') return;
+            container.scrollLeft = touchScrollLeft - (dx * 1.15);
+        }, { passive: true });
+
+        container.addEventListener('touchend', () => {
+            touchMode = null;
         }, { passive: true });
     }
 }
@@ -10345,6 +10363,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   function renderCategories(carousel, lista) {
     carousel.classList.remove('is-loading');
     carousel.innerHTML = '';
+    carousel.scrollLeft = 0;
 
     if (!lista || !lista.length) {
       carousel.innerHTML = `
@@ -10387,6 +10406,9 @@ async function carregarComentariosSupabase(publicacaoId) {
 
       carousel.appendChild(item);
     });
+
+    // Garante início visual no primeiro item, sem "meio card" na esquerda.
+    carousel.scrollLeft = 0;
   }
 
   async function getCategoriasPorDemanda() {
@@ -10488,8 +10510,10 @@ async function carregarComentariosSupabase(publicacaoId) {
     let startX = 0;
     let scrollLeft = 0;
     let touchStartX = 0;
+    let touchStartY = 0;
     let touchScrollLeft = 0;
-    el.style.touchAction = 'pan-x';
+    let touchMode = null; // 'x' | 'y' | null
+    el.style.touchAction = 'pan-y';
 
     el.addEventListener('mousedown', (e) => {
       isDown = true;
@@ -10520,14 +10544,30 @@ async function carregarComentariosSupabase(publicacaoId) {
       const t = e.touches && e.touches[0];
       if (!t) return;
       touchStartX = t.clientX;
+      touchStartY = t.clientY;
       touchScrollLeft = el.scrollLeft;
+      touchMode = null;
     }, { passive: true });
 
     el.addEventListener('touchmove', (e) => {
       const t = e.touches && e.touches[0];
       if (!t) return;
-      const walk = (t.clientX - touchStartX) * 1.25;
-      el.scrollLeft = touchScrollLeft - walk;
+      const dx = t.clientX - touchStartX;
+      const dy = t.clientY - touchStartY;
+
+      if (touchMode === null) {
+        const ax = Math.abs(dx);
+        const ay = Math.abs(dy);
+        if (ax < 8 && ay < 8) return;
+        touchMode = ax > ay ? 'x' : 'y';
+      }
+
+      if (touchMode !== 'x') return;
+      el.scrollLeft = touchScrollLeft - (dx * 1.25);
+    }, { passive: true });
+
+    el.addEventListener('touchend', () => {
+      touchMode = null;
     }, { passive: true });
 
     // Wheel: nao travar scroll vertical da pagina.
