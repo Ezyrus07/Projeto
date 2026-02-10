@@ -2726,10 +2726,8 @@ function initHomeEnhancements() {
     }
 
     const scrollers = [
-        document.getElementById('listaCategorias'),
         document.getElementById('galeria-dinamica'),
-        document.querySelector('.stories-scroll'),
-        document.querySelector('.filtros-chips-scroll')
+        document.querySelector('.stories-scroll')
     ].filter(Boolean);
 
     scrollers.forEach(enableDragScroll);
@@ -2760,6 +2758,10 @@ function initHomeEnhancements() {
     }
 
     function enableDragScroll(container) {
+        const isCategorias = container?.id === 'listaCategorias' || container?.id === 'categoriesCarousel';
+        const isFiltrosRapidos = container?.classList?.contains('filtros-chips-scroll');
+        if (isCategorias || isFiltrosRapidos) return;
+
         let isDown = false;
         let startX = 0;
         let scrollLeft = 0;
@@ -10505,6 +10507,9 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ----------------------------
   function enableDragScroll(el) {
     if (!el || el.__dragReady) return;
+    const isCategorias = el.id === 'listaCategorias' || el.id === 'categoriesCarousel';
+    const isFiltrosRapidos = el.classList && el.classList.contains('filtros-chips-scroll');
+    if (isCategorias || isFiltrosRapidos) return;
     el.__dragReady = true;
     let isDown = false;
     let startX = 0;

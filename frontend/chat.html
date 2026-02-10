@@ -6001,7 +6001,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 ? `<div class="msg-menu ${menuSide}" id="${menuId}">
                         <div class="menu-title">${horaMsg || 'Agora'}</div>
                         <button onclick="togglePinMessage('${msgId}', '${enc(pinPreview)}', '${enc(m.tipo || 'texto')}')">${pinLabel} <i class='bx bx-pin'></i></button>
-                        <button onclick="copiarMensagem('${enc(cleanText)}')">Copiar <i class='bx bx-copy'></i></button>
+                        ${m.tipo === 'audio' ? '' : `<button onclick="copiarMensagem('${enc(cleanText)}')">Copiar <i class='bx bx-copy'></i></button>`}
                         ${souEu ? `<button class="danger" onclick="excluirMensagem('${msgId}')">Apagar mensagem <i class='bx bx-trash'></i></button>` : ""}
                    </div>`
                 : "";
@@ -6014,6 +6014,16 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             const replyHtml = buildReplyHtml(replyData);
             const readHtml = buildReadReceiptHtml(m, souEu);
+            const peerAvatarSrcRaw = (m.senderFoto || m.sender_foto || m.foto || m.avatar || document.getElementById('chatAvatar')?.src || "https://i.pravatar.cc/80?img=12");
+            const peerAvatarSrc = escapeHtml(peerAvatarSrcRaw);
+            const wrapMensagemComAvatar = (bubbleHtml) => {
+                if (souEu) return `<div class="msg-row msg-row-me">${bubbleHtml}</div>`;
+                return `
+                <div class="msg-row msg-row-peer">
+                    <img class="msg-peer-avatar" src="${peerAvatarSrc}" alt="Foto de perfil" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='https://i.pravatar.cc/80?img=12';">
+                    <div class="msg-row-bubble">${bubbleHtml}</div>
+                </div>`;
+            };
 
             // --- CARD PAGAMENTO (VERDE) ---
             if (m.tipo === 'pagamento') {
@@ -6219,7 +6229,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         ${readHtml}
                     </div>
                 </div>`;
-                htmlParts.push(htmlImg);
+                htmlParts.push(wrapMensagemComAvatar(htmlImg));
             }
             // --- ARQUIVO ---
               else if (m.tipo === 'arquivo' && m.url) {
@@ -6244,7 +6254,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         ${readHtml}
                     </div>
                 </div>`;
-                htmlParts.push(htmlFile);
+                htmlParts.push(wrapMensagemComAvatar(htmlFile));
             }
             // --- MENSAGEM DE ÁUDIO ---
               else if (m.tipo === 'audio') {
@@ -6272,12 +6282,12 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         ${readHtml}
                     </div>
                 </div>`;
-                htmlParts.push(htmlAudio);
+                htmlParts.push(wrapMensagemComAvatar(htmlAudio));
             }
             // --- TEXTO NORMAL ---
               else {
                   const textoSeguro = escapeHtml(cleanText).replace(/\n/g, '<br>');
-                  htmlParts.push(`
+                  htmlParts.push(wrapMensagemComAvatar(`
                   <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" ${msgIdAttr}>
                       ${menuBtn}
                       ${menuHtml}
@@ -6288,7 +6298,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         <span class="msg-hora">${horaMsg}</span>
                         ${readHtml}
                     </div>
-                </div>`);
+                </div>`));
             }
         });
 
