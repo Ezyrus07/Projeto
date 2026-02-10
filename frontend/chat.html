@@ -48,11 +48,21 @@
             --ux-card-shadow: 0 10px 24px rgba(15,23,42,0.08);
         }
 
-        html, body { height: 100%; margin: 0; padding: 0; overflow: hidden; background: var(--ux-bg); font-family: 'Segoe UI', sans-serif; color: var(--ux-ink); }
+        html, body { height: 100%; margin: 0; padding: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; overflow: hidden; background: var(--ux-bg); font-family: 'Segoe UI', sans-serif; color: var(--ux-ink); }
+
+        body[data-page="chat"], body[data-page="chat"].doke-shell-active{ padding-top: 0 !important; padding-bottom: 0 !important; }
 
         .navbar-mobile { justify-content: space-between; align-items: center; }
         .navbar-mobile .mobile-controls { display: flex; align-items: center; gap: 12px; }
         #btn-menu-mobile { background: none; border: none; cursor: pointer; }
+        /* Icon baseline fix (Boxicons) */
+        .bx{ line-height: 1; }
+        .archive-btn i, .chat-menu-btn i, .btn-enviar i, .btn-attach i{ line-height: 1; display: block; }
+        .btn-enviar, .btn-attach{ display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+        .archive-btn{ width: 34px; height: 34px; border-radius: 10px; }
+        .chat-menu-btn{ width: 40px; height: 40px; }
+        .chat-menu-btn i{ font-size: 22px; }
+
 
         /* Container Principal do Chat (Abaixo do Header) */
         .messenger-layout {
@@ -338,6 +348,26 @@
         }
         .chat-header h4 { margin: 0; font-size: 1rem; color: #111; }
         .chat-header span { font-size: 0.8rem; color: #666; }
+        #chatAvatar{
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            flex: 0 0 auto;
+        }
+        .chat-info{ flex: 1; min-width: 0; }
+        .chat-info h4{ line-height: 1.15; }
+        #chatStatus{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1.2;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+        }
+
 
         .header-actions { margin-left: auto; display: flex; gap: 10px; }
         .btn-header { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; font-weight: 600; font-size: 0.8rem; }
@@ -348,8 +378,8 @@
             margin-left: 6px;
         }
         .chat-menu-btn{
-            width:36px;
-            height:36px;
+            width:40px;
+            height:40px;
             border-radius:50%;
             border:1px solid #e2e8f0;
             background:#fff;
@@ -395,9 +425,9 @@
         .coluna-chat, #box-conversa-real{ overflow: hidden; }
 
         .archive-btn{
-            width:28px;
-            height:28px;
-            border-radius:8px;
+            width:34px;
+            height:34px;
+            border-radius:10px;
             border:1px solid #e2e8f0;
             background:#fff;
             color:#64748b;
@@ -773,7 +803,7 @@
             .navbar-desktop { display: none; }
             /* Reserva espaço para header + bottom-nav (evita barra flutuando e gaps) */
             /* v25 — evita "gap" entre barra de digitar e bottom-nav */
-            .messenger-layout { margin-left: 0; margin-top: var(--navbar-height-mobile); width: 100%; height: calc(100vh - var(--navbar-height-mobile)); height: calc(100svh - var(--navbar-height-mobile)); height: calc(100dvh - var(--navbar-height-mobile)); display: block; }
+            .messenger-layout { position: fixed; top: var(--navbar-height-mobile); left: 0; right: 0; bottom: var(--bottom-nav-height); width: auto; height: auto; margin: 0; display: block; border-left: 0; }
             .coluna-lista { width: 100%; height: 100%; position: relative; }
             .coluna-chat { 
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -783,6 +813,17 @@
             #chat-placeholder { display: none; }
             .btn-voltar-mobile { display: block; border: none; background: none; font-size: 1.5rem; color: #555; cursor: pointer; margin-right: 10px; }
         }
+        @media (max-width: 560px){
+            .chat-header{ height: auto; padding: 10px 12px; gap: 10px; flex-wrap: wrap; align-content: flex-start; }
+            #chatAvatar{ width: 36px; height: 36px; margin-right: 0 !important; }
+            .chat-info{ flex: 1 1 auto; min-width: 0; }
+            #chatNome{ max-width: 100% !important; font-size: 0.95rem; }
+            #chatStatus{ display:block; white-space: normal; overflow: visible; text-overflow: unset; font-size: 0.75rem; }
+            #container-acao-header, #btn-cobranca-topo, #acoes-profissional-header{ width: 100%; justify-content: flex-end; order: 10; }
+            .chat-menu{ margin-left: auto; order: 5; }
+            .chat-menu-btn{ width: 38px; height: 38px; }
+        }
+
 
         .btn-cobranca {
     background-color: #f1c40f; /* Amarelo Ouro */
@@ -1440,22 +1481,10 @@
     transition: all 0.2s;
 }
 
-#chatStatus {
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 5px; /* Espaço entre a bolinha e o texto */
-    transition: color 0.3s ease;
-}
+/* #chatStatus: regras definidas acima */
 
 /* Alinhamento do Status */
-#chatStatus {
-    font-size: 0.85rem;
-    display: flex;
-    align-items: center; /* Centraliza verticalmente */
-    gap: 6px; /* Espaço entre bolinha e texto */
-    line-height: 1; /* Remove altura de linha extra */
-}
+/* #chatStatus: regras definidas acima */
 
 /* Ajuste fino da bolinha */
 .status-dot {
@@ -2028,8 +2057,8 @@
 <div id="box-conversa-real">
 <div class="chat-header">
 <button class="btn-voltar-mobile" onclick="fecharChatMobile()"><i class="bx bx-arrow-back"></i></button>
-<img decoding="async" id="chatAvatar" loading="lazy" src="" style="width:40px; height:40px; border-radius:50%; object-fit:cover; margin-right:15px;"/>
-<div style="flex:1;">
+<img decoding="async" id="chatAvatar" loading="lazy" src=""  alt="Foto do contato"/>
+<div class="chat-info">
 <h4 id="chatNome">Usuário</h4>
 <span id="chatStatus">Offline</span>
 <div class="chip-pedido-status chip-pendente" id="chipPedidoStatus" style="display:none;">Pedido em espera</div>
