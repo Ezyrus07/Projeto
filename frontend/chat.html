@@ -392,7 +392,7 @@
         .chat-menu-dropdown{ z-index: 99999; }
         .chat-header{ position: relative; z-index: 60; overflow: visible; }
         .mensagens-body{ position: relative; z-index: 1; }
-        .coluna-chat, #box-conversa-real{ overflow: visible; }
+        .coluna-chat, #box-conversa-real{ overflow: hidden; }
 
         .archive-btn{
             width:28px;
@@ -773,7 +773,7 @@
             .navbar-desktop { display: none; }
             /* Reserva espaço para header + bottom-nav (evita barra flutuando e gaps) */
             /* v25 — evita "gap" entre barra de digitar e bottom-nav */
-            .messenger-layout { margin-left: 0; margin-top: 0; width: 100%; height: calc(100vh - var(--doke-h) - var(--doke-btm-real)); display: block; }
+            .messenger-layout { margin-left: 0; margin-top: var(--navbar-height-mobile); width: 100%; height: calc(100vh - var(--navbar-height-mobile)); height: calc(100svh - var(--navbar-height-mobile)); height: calc(100dvh - var(--navbar-height-mobile)); display: block; }
             .coluna-lista { width: 100%; height: 100%; position: relative; }
             .coluna-chat { 
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -2258,6 +2258,7 @@
     let chatUnsubscribe = null;
     let pedidoDocUnsub = null;
     let conversaDocUnsub = null;
+    let outroUserUnsub = null;
     let idPedidoParaAcao = null;
     let pedidosRenderToken = 0;
     let pedidosFiltro = 'todos';
@@ -5780,7 +5781,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
           }
 
         // 2. CARREGA DADOS DO USUÁRIO + STATUS ONLINE (VISUAL MELHORADO)
-        onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
+              if (outroUserUnsub) { try { outroUserUnsub(); } catch (_) {} outroUserUnsub = null; }
+              outroUserUnsub = onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
                 const d = docSnap.data();
                 

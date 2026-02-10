@@ -15,13 +15,19 @@
   --cor-bg-input: #f8f9fa;
   --cor-borda: #e0e0e0;
   --cor-texto: #333;
-  --cor-botton-azul: linear-gradient(90deg, #2a5f90, #7ca0c3);
-   --cor-botton-verde: linear-gradient(90deg, #0b7768, #6caea6);
+  --cor-botton-azul: linear-gradient(90deg, #2a5f90, #1f4873);
+   --cor-botton-verde: linear-gradient(90deg, #0b7768, #075c50);
 
   --sidebar-width: 0px;
   --navbar-height-desktop: 80px;
   --navbar-height-mobile: 80px;
   --bottom-nav-height: 80px;
+
+  /* Layout tokens (2026) */
+  --doke-container-max: 1200px;
+  --doke-container-gutter: clamp(14px, 2.6vw, 28px);
+  --doke-section-gap: clamp(14px, 2.4vw, 26px);
+  --doke-radius-lg: 16px;
 }
 
 html {
@@ -50,6 +56,13 @@ body {
   width: 100%;
 }
 
+/* When Doke Shell is active (mobile/tablet), let the shell control paddings */
+body.doke-shell-active{
+  padding-top: var(--doke-h, var(--navbar-height-mobile)) !important;
+  padding-bottom: 0 !important;
+}
+
+
 
 html, body {
   overflow-x: hidden; /* Impede rolagem horizontal indesejada */
@@ -76,10 +89,11 @@ body > footer {
 
 h2 {
   font-family: var(--fonte-padrao);
-  color: var(--cor0);
-  font-weight: bold;
+  color: var(--cor-texto);
+  font-weight: 700;
   font-size: 1.5rem;
 }
+
 
 .sobre {
   font-size: 0.9rem;
@@ -637,10 +651,11 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 .rodape-container,
 .rodape-container2 {
   width: 100%;
-  max-width: 750px;
-  margin: 30px auto 0 auto;
-  padding: 32px 20px;
-  background-color: white;
+  max-width: var(--doke-container-max, 1200px);
+  margin: var(--doke-section-gap, 20px) auto 0 auto;
+  padding: var(--doke-container-gutter, 20px);
+  background-color: #fff;
+  border-radius: var(--doke-radius-lg, 16px);
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.041);
 }
 .secao-busca { padding: 60px 40px; }
@@ -1950,6 +1965,13 @@ body[data-page="home"] .reveal.is-visible {
 /* --- An�ncios --- */
 .videos-container { background: var(--cor-botton-azul) }
 .anuncio-container { margin-top: 80px; }
+
+/* Home: wrapper sem inset extra (mantém mesma largura visual das outras seções) */
+body[data-page="home"] .anuncio-container.anuncio-container-home{
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
 .banner-pontos {
   text-decoration: none; font-size: 1em; text-align: center;
   color: var(--cor0); font-weight: bold; margin-bottom: 25px;
@@ -10697,5 +10719,43 @@ table{max-width:100%;}
 
   body[data-page="home"] main{
     padding: 24px clamp(14px, 2.3vw, 28px) !important;
+  }
+}
+
+
+/* ============================================================
+   Botão de Comunidade/Grupo (compartilhado)
+   - evita texto cortado ("Entrou") em cards e listas
+   ============================================================ */
+.btn-ver-grupo{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  border: 1px solid rgba(11, 119, 104, 0.28);
+  background: rgba(11, 119, 104, 0.10);
+  color: var(--cor0);
+  font-weight: 800;
+  font-size: 0.85rem;
+  line-height: 1;
+  white-space: nowrap;
+  width: auto !important;
+  min-width: max-content;
+  flex: 0 0 auto;
+  cursor: pointer;
+}
+.btn-ver-grupo:hover{ filter: brightness(0.98); }
+.btn-ver-grupo:active{ transform: translateY(1px); }
+.btn-ver-grupo.ativo{
+  background: var(--cor0);
+  border-color: var(--cor0);
+  color: #fff;
+}
+@media (max-width: 480px){
+  .btn-ver-grupo{
+    padding: 7px 12px;
+    font-size: 0.82rem;
   }
 }
