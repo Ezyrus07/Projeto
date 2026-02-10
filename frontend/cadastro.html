@@ -31,7 +31,7 @@
 
     .auth-shell{
       width: 100%;
-      max-width: 980px;
+      max-width: 940px;
       display: grid;
       grid-template-columns: 1.1fr .9fr;
       gap: 22px;
@@ -46,7 +46,7 @@
     @media (max-width: 1024px){
       body.doke-shell-active{
         place-items: start center;
-        padding-top: calc(var(--doke-h, 56px) + 18px);
+        padding-top: calc(var(--doke-h, 56px) + 20px);
       }
       body.doke-shell-active .auth-shell{
         margin-top: 10px;
@@ -63,9 +63,7 @@
     }
     @keyframes pop { from { opacity:0; transform: translateY(10px) scale(.99);} to {opacity:1; transform:none;} }
 
-    .auth-card-inner{
-      padding: 34px 34px 28px;
-    }
+    .auth-card-inner{ padding: 30px 30px 24px; }
 
     .btn-voltar{
       position:absolute;
@@ -123,7 +121,7 @@
       .grid{ grid-template-columns: 1fr; }
     }
 
-    .form-group{ margin-bottom: 14px; text-align:left; }
+    .form-group{ margin-bottom: 12px; text-align:left; }
     .form-group label{
       display:block;
       font-size: .9rem;
@@ -291,6 +289,74 @@
     }
     .aside-item b{ display:block; margin-bottom:2px; }
     .aside-item span{ color: rgba(255,255,255,.78); font-size: .9rem; }
+
+    @media (min-width: 901px) and (max-height: 920px){
+      body{
+        place-items: start center;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+      .auth-shell{
+        max-width: 900px;
+        gap: 16px;
+      }
+      .auth-card-inner{
+        padding: 24px 24px 18px;
+      }
+      .auth-title{
+        font-size: 1.56rem;
+        margin-top: 6px;
+      }
+      .auth-subtitle{
+        margin-bottom: 12px;
+        font-size: .92rem;
+      }
+      .form-group{
+        margin-bottom: 10px;
+      }
+      .input-icon input{
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      .btn-primary{
+        padding: 12px 14px;
+      }
+      .auth-aside{
+        padding: 18px 18px 14px;
+      }
+      .aside-list{
+        gap: 8px;
+      }
+      .aside-item{
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 900px){
+      body,
+      body.doke-shell-active{
+        background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.16), transparent 60%),
+                    linear-gradient(135deg, var(--cor0) 0%, #064e42 55%, #043a31 100%) !important;
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+      }
+      .auth-shell{
+        width: min(86vw, 430px);
+        max-width: 430px;
+        margin: 0 auto 12px;
+      }
+      .auth-card{
+        border: 1px solid rgba(255,255,255,.35);
+        box-shadow: 0 16px 42px rgba(2,6,23,.22);
+        background: rgba(255,255,255,.97);
+      }
+      .auth-card::before{
+        content: none;
+      }
+      .auth-card-inner{
+        padding: 22px 16px 18px;
+      }
+    }
   </style>
 <link href="doke-toast.css" rel="stylesheet">
 <link href="doke-alerts.css" rel="stylesheet"/>
@@ -330,6 +396,14 @@
 <input autocomplete="name" id="nome" placeholder="Seu nome" required="" type="text"/>
 </div>
 </div>
+</div>
+<div class="form-group">
+<label for="dataNascimento">Data de nascimento</label>
+<div class="input-icon">
+<i class="bx bx-calendar"></i>
+<input autocomplete="bday" id="dataNascimento" required="" type="date"/>
+</div>
+<div class="hint">Voce precisa ter pelo menos 18 anos.</div>
 </div>
 <div class="form-group">
 <label for="email">E-mail</label>
@@ -402,6 +476,16 @@
       return h;
     }
 
+    function isMissingColumnError(err){
+      const msg = String(err?.message || err || "").toLowerCase();
+      return (
+        (msg.includes("column") && msg.includes("does not exist")) ||
+        (msg.includes("could not find") && msg.includes("column")) ||
+        (msg.includes("schema cache") && msg.includes("column")) ||
+        (msg.includes("not found") && msg.includes("column"))
+      );
+    }
+
     function pwScore(pw){
       const s = String(pw || "");
       let score = 0;
@@ -439,6 +523,57 @@
     document.getElementById("senha").addEventListener("input", updatePwMeter);
     updatePwMeter();
 
+    function todayISO(){
+      const d = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    function calcAgeFromISO(iso){
+      const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return NaN;
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      const da = Number(m[3]);
+      if (!y || !mo || !da) return NaN;
+      const now = new Date();
+      let age = now.getFullYear() - y;
+      const beforeBirthday = (now.getMonth() + 1) < mo || ((now.getMonth() + 1) === mo && now.getDate() < da);
+      if (beforeBirthday) age -= 1;
+      return age;
+    }
+
+    const birthInput = document.getElementById("dataNascimento");
+    if (birthInput) birthInput.max = todayISO();
+
+    async function insertUserProfileWithFallback(supabase, perfilBase){
+      let perfilPersistido = { ...perfilBase };
+      let { error: insErr } = await supabase.from("usuarios").insert([perfilPersistido]);
+      if (insErr && isMissingColumnError(insErr)) {
+        const msg = String(insErr?.message || "").toLowerCase();
+        if (msg.includes("data_nascimento")) delete perfilPersistido.data_nascimento;
+        if (msg.includes("conta_status")) delete perfilPersistido.conta_status;
+        if (msg.includes("conta_ativa")) delete perfilPersistido.conta_ativa;
+        if (msg.includes("conta_excluida_em")) delete perfilPersistido.conta_excluida_em;
+        if (msg.includes("conta_desativada_em")) delete perfilPersistido.conta_desativada_em;
+
+        let retryInsert = await supabase.from("usuarios").insert([perfilPersistido]);
+        insErr = retryInsert.error;
+        if (insErr && isMissingColumnError(insErr)) {
+          delete perfilPersistido.data_nascimento;
+          delete perfilPersistido.conta_status;
+          delete perfilPersistido.conta_ativa;
+          delete perfilPersistido.conta_excluida_em;
+          delete perfilPersistido.conta_desativada_em;
+          retryInsert = await supabase.from("usuarios").insert([perfilPersistido]);
+          insErr = retryInsert.error;
+        }
+      }
+      if (insErr) throw insErr;
+      return perfilPersistido;
+    }
+
     async function ensureSupabase(){
       const pick = () => window.sb || window.supabaseClient || window.sbClient || window.supabase;
       let sb = pick();
@@ -461,13 +596,18 @@
       const usuarioRaw = document.getElementById("usuario").value;
       const email = document.getElementById("email").value.trim();
       const senha = document.getElementById("senha").value;
+      const dataNascimento = document.getElementById("dataNascimento").value;
 
       const handle = normalizeHandle(usuarioRaw);
+      const idade = calcAgeFromISO(dataNascimento);
 
       if (!nome || nome.length < 2) return showMsg("err", "Digite seu nome completo.");
       if (handle === "__INVALID__") return showMsg("err", "Nome de usuário inválido. Use apenas letras, números, ponto e underline.");
       if (handle === "__SHORT__") return showMsg("err", "Nome de usuário muito curto.");
       if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
+      if (!dataNascimento) return showMsg("err", "Informe sua data de nascimento.");
+      if (!Number.isFinite(idade)) return showMsg("err", "Data de nascimento invalida.");
+      if (idade < 18) return showMsg("err", "Voce precisa ter pelo menos 18 anos para criar conta.");
       if ((senha || "").length < 6) return showMsg("err", "A senha precisa ter no mínimo 6 caracteres.");
 
       btn.disabled = true;
@@ -477,11 +617,26 @@
         const supabase = await ensureSupabase();
 
         // Username uniqueness (table: usuarios)
-        const { data: existing, error: exErr } = await supabase
+        let existing = null;
+        let exErr = null;
+        const firstCheck = await supabase
           .from("usuarios")
-          .select("uid")
+          .select("uid, email, conta_status, conta_ativa, conta_excluida_em")
           .eq("user", handle)
           .maybeSingle();
+        existing = firstCheck.data;
+        exErr = firstCheck.error;
+
+        const missingDeleteCols = isMissingColumnError(exErr);
+        if (missingDeleteCols) {
+          const fallbackCheck = await supabase
+            .from("usuarios")
+            .select("uid, email")
+            .eq("user", handle)
+            .maybeSingle();
+          existing = fallbackCheck.data;
+          exErr = fallbackCheck.error;
+        }
 
         // ignore "no rows" variations (maybeSingle can return "no rows" codes depending on version)
         if (exErr && exErr.code && exErr.code !== "PGRST116") {
@@ -491,14 +646,20 @@
         }
 
         if (existing) {
-          showMsg("err", "Esse nome de usuário já está em uso.");
-          return;
+          const sameEmail = String(existing.email || "").trim().toLowerCase() === email.toLowerCase();
+          const status = String(existing.conta_status || "").toLowerCase();
+          const isInactive = status === "excluida" || status === "desativada" || !!existing.conta_excluida_em || existing.conta_ativa === false;
+
+          if (!isInactive && !sameEmail) {
+            showMsg("err", "Esse nome de usuário já está em uso.");
+            return;
+          }
         }
 
         const { data: signData, error: signErr } = await supabase.auth.signUp({
           email,
           password: senha,
-          options: { data: { nome, user: handle } }
+          options: { data: { nome, user: handle, data_nascimento: dataNascimento } }
         });
         if (signErr) throw signErr;
 
@@ -517,20 +678,22 @@ const novoPerfil = {
   nome,
   user: handle,
   email,
+  data_nascimento: dataNascimento,
   isProfissional: false,
   bio: "Olá! Sou novo na comunidade Doke.",
   local: "Brasil",
   foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
+  conta_status: "ativa",
+  conta_ativa: true,
   membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
   disponivel: true,
   stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
 };
 
 
-        const { error: insErr } = await supabase.from("usuarios").insert([novoPerfil]);
-        if (insErr) throw insErr;
+        const perfilPersistido = await insertUserProfileWithFallback(supabase, novoPerfil);
 
-        localStorage.setItem("doke_usuario_perfil", JSON.stringify(novoPerfil));
+        localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfilPersistido));
         localStorage.setItem("usuarioLogado", "true");
         localStorage.setItem("doke_uid", uid);
 
@@ -542,11 +705,18 @@ const novoPerfil = {
         const errCode = String(e?.code || "");
 
         if (errCode === "user_already_exists" || errMsg.toLowerCase().includes("already registered")) {
-          showMsg("err", "Este e-mail já está cadastrado. Faça login.");
+          showMsg("err", "Este e-mail já está cadastrado. Se a conta foi excluída, finalize a exclusão total e tente novamente.");
+        } else if (isMissingColumnError(e) && errMsg.toLowerCase().includes("conta_ativa")) {
+          showMsg("err", "Seu banco ainda nao tem o campo conta_ativa. Rode o SQL de atualizacao e tente novamente.");
         } else if (errMsg.toLowerCase().includes("password")) {
           showMsg("err", "Senha inválida ou muito fraca.");
         } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
           showMsg("err", "Permissão negada. Verifique as políticas (RLS) no Supabase para a tabela 'usuarios'.");
+        } else if (
+          errMsg.toLowerCase().includes("duplicate key") ||
+          errMsg.toLowerCase().includes("unique constraint")
+        ) {
+          showMsg("err", "Esse nome de usuário ainda está reservado. Tente outro nome de usuário.");
         } else {
           showMsg("err", errMsg || "Erro ao criar conta.");
         }
@@ -562,3 +732,6 @@ const novoPerfil = {
 <script src="doke-shell.js?v=20260207v21"></script>
 </body>
 </html>
+
+
+

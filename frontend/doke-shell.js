@@ -21,6 +21,26 @@
     try{ console[type==="error"?"error":"log"]("[DOKE]", msg); }catch(e){}
   }
 
+  function consumeFlashNotice(){
+    try{
+      const raw = localStorage.getItem("doke_flash_notice");
+      if(!raw) return;
+      localStorage.removeItem("doke_flash_notice");
+      const payload = safeParse(raw) || {};
+      const msg = String(payload.message || "").trim();
+      if(!msg) return;
+      const type = String(payload.type || "info");
+      const title = String(payload.title || "");
+      if(typeof window.dokeToast === "function"){
+        window.dokeToast(msg, { type, title });
+      }else if(typeof window.mostrarToast === "function"){
+        window.mostrarToast(msg, type, title);
+      }else{
+        toast(msg, type);
+      }
+    }catch(e){}
+  }
+
   function safeParse(json){
     try{ return JSON.parse(json); }catch(e){ return null; }
   }
@@ -204,7 +224,7 @@
     const nomePerfilSafe = escapeHtml(nomePerfil);
     const profileHref = isLogged ? PAGES.perfil : "login.html";
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
-    const labelAnunciar = isPro ? "Anunciar" : "Seja Profissional";
+    const labelAnunciar = "Anunciar";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const itemAlternar = isLogged ? `<a href="#" class="dropdown-item" data-action="alternar-conta"><i class='bx bx-user-pin'></i> Alternar Conta</a>` : "";
     const itemSair = `<a href="#" class="dropdown-item item-sair" data-action="logout"><i class='bx bx-log-out'></i> Sair</a>`;
@@ -516,8 +536,12 @@
 
   MQ.addEventListener?.("change", ()=>{ if(MQ.matches) ensureShell(); });
   if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", ensureShell);
+    document.addEventListener("DOMContentLoaded", ()=>{
+      consumeFlashNotice();
+      ensureShell();
+    });
   }else{
+    consumeFlashNotice();
     ensureShell();
   }
 })();

@@ -452,6 +452,56 @@
 
         const getSupabaseClient = () => window.sb || window.supabaseClient || null;
 
+        function notifyAction(message, type = "info", title = "") {
+            try {
+                if (type === "success" && typeof window.mostrarSucesso === "function") {
+                    window.mostrarSucesso(message, title || "Sucesso");
+                    return;
+                }
+                if (type === "error" && typeof window.mostrarErro === "function") {
+                    window.mostrarErro(message, title || "Erro");
+                    return;
+                }
+                if (typeof window.mostrarToast === "function") {
+                    window.mostrarToast(message, type, title || "Aviso");
+                    return;
+                }
+                if (typeof window.dokeToast === "function") {
+                    window.dokeToast(message, { type, title: title || "Aviso" });
+                    return;
+                }
+            } catch (_) {}
+
+            try { window.alert(message); } catch (_) {}
+        }
+
+        function clearAuthClientState() {
+            const keys = [
+                "usuarioLogado",
+                "usuario_logado",
+                "doke_usuario_perfil",
+                "doke_uid",
+                "perfil_usuario",
+                "doke_usuario_logado",
+                "userLogado"
+            ];
+            for (const key of keys) {
+                try { localStorage.removeItem(key); } catch (_) {}
+            }
+        }
+
+        function setFlashNotice(message, type = "success", title = "Aviso") {
+            try {
+                const payload = {
+                    message: String(message || ""),
+                    type: String(type || "info"),
+                    title: String(title || "Aviso"),
+                    at: Date.now()
+                };
+                localStorage.setItem("doke_flash_notice", JSON.stringify(payload));
+            } catch (_) {}
+        }
+
         async function tryAlterarSenhaSupabase(currentPass, newPass) {
             const sb = getSupabaseClient();
             if (!sb?.auth?.getUser || !sb.auth.signInWithPassword || !sb.auth.updateUser) return false;
@@ -595,18 +645,75 @@
             if (!authPack) return false;
 
             const { sb, user } = authPack;
+            const deletedAt = new Date().toISOString();
+            const uidChunk = String(user.id || "uid").replace(/[^a-zA-Z0-9]/g, "").slice(0, 8) || "user";
+            const tombHandle = `_excluido_${uidChunk}_${Date.now().toString(36).slice(-4)}`;
+            let perfilRemovido = false;
+            let authRemovida = false;
+
+            // Caminho principal: RPC com SECURITY DEFINER para excluir auth + perfil.
+            try {
+                if (typeof sb.rpc === "function") {
+                    const rpcRes = await sb.rpc("delete_my_account");
+                    if (!rpcRes.error) {
+                        const ok = rpcRes?.data?.ok !== false;
+                        if (ok) {
+                            const perfilOK = rpcRes?.data?.perfil_removido !== false;
+                            const authOK = rpcRes?.data?.auth_removido !== false;
+                            localStorage.setItem("doke_exclusao_solicitada_em", deletedAt);
+                            try { await sb.auth.signOut(); } catch (_) {}
+                            return { ok: true, perfilRemovido: perfilOK, authRemovida: authOK, viaRpc: true };
+                        }
+                    } else {
+                        console.warn("[DOKE] RPC delete_my_account indisponível ou falhou. Aplicando fallback.", rpcRes.error);
+                    }
+                }
+            } catch (rpcErr) {
+                console.warn("[DOKE] Erro ao chamar RPC delete_my_account. Aplicando fallback.", rpcErr);
+            }
 
             try {
-                await sb.from("usuarios").update({
+                // Libera o @usuario para reutilizacao e marca conta como excluida.
+                const primaryUpdate = await sb.from("usuarios").update({
+                    user: tombHandle,
                     conta_status: "excluida",
                     conta_ativa: false,
-                    conta_excluida_em: new Date().toISOString()
+                    conta_excluida_em: deletedAt
                 }).eq("uid", user.id);
+
+                if (primaryUpdate.error) {
+                    const msg = String(primaryUpdate.error?.message || "").toLowerCase();
+                    const missingColumn = msg.includes("column") && msg.includes("does not exist");
+
+                    // Fallback para schemas antigos sem colunas conta_*.
+                    const fallbackUpdate = await sb.from("usuarios").update({
+                        user: tombHandle
+                    }).eq("uid", user.id);
+
+                    if (fallbackUpdate.error && !missingColumn) throw primaryUpdate.error;
+                    if (fallbackUpdate.error) throw fallbackUpdate.error;
+                }
+            } catch (e) {
+                throw e;
+            }
+
+            // Tenta remover a linha de perfil para evitar "conta fantasma" no app.
+            try {
+                const delPerfil = await sb.from("usuarios").delete().eq("uid", user.id);
+                perfilRemovido = !delPerfil.error;
             } catch (_) {}
 
-            localStorage.setItem("doke_exclusao_solicitada_em", new Date().toISOString());
+            // Se estiver com client privilegiado (service role), tenta excluir auth user de fato.
+            try {
+                if (sb?.auth?.admin?.deleteUser) {
+                    const delAuth = await sb.auth.admin.deleteUser(user.id);
+                    authRemovida = !delAuth?.error;
+                }
+            } catch (_) {}
+
+            localStorage.setItem("doke_exclusao_solicitada_em", deletedAt);
             await sb.auth.signOut();
-            return true;
+            return { ok: true, perfilRemovido, authRemovida };
         }
 
         function setSenhaFeedback(text, type) {
@@ -691,14 +798,16 @@
                 const done = await tryDesativarContaSupabase(inputPass);
                 if (!done) throw new Error("Não foi possível desativar a conta agora.");
 
-                localStorage.removeItem("usuarioLogado");
-                localStorage.removeItem("doke_usuario_perfil");
-                localStorage.removeItem("doke_uid");
+                clearAuthClientState();
+                closeDangerModal();
                 setDangerFeedback("Conta desativada com sucesso. Redirecionando...", "success");
-                window.location.href = "index.html";
+                notifyAction("Conta desativada com sucesso.", "success", "Conta desativada");
+                setFlashNotice("Conta desativada com sucesso.", "success", "Conta desativada");
+                setTimeout(() => { window.location.href = "index.html"; }, 1100);
             } catch (error) {
                 console.error(error);
                 setDangerFeedback(error?.message || "Erro ao desativar conta.", "error");
+                notifyAction(error?.message || "Erro ao desativar conta.", "error", "Não foi possível concluir");
             }
         };
         // Fallback de clique para ambientes onde onclick inline falha.
@@ -714,20 +823,33 @@
         });
         window.excluirContaReal = async function(inputPass) {
             try {
-                const removedByFirebase = await tryExcluirContaFirebase(inputPass);
-                if (!removedByFirebase) {
-                    const removedBySupabase = await tryExcluirContaSupabase(inputPass);
-                    if (!removedBySupabase) throw new Error("Não foi possível processar a exclusão agora.");
+                // Prioriza Supabase: no modo compat, deleteUser() apenas desloga e nao exclui.
+                const removedBySupabase = await tryExcluirContaSupabase(inputPass);
+                let result = removedBySupabase;
+                if (!removedBySupabase) {
+                    const removedByFirebase = await tryExcluirContaFirebase(inputPass);
+                    if (!removedByFirebase) throw new Error("Não foi possível processar a exclusão agora.");
+                    result = { ok: true, perfilRemovido: false, authRemovida: true };
                 }
 
-                localStorage.removeItem("usuarioLogado");
-                localStorage.removeItem("doke_usuario_perfil");
-                localStorage.removeItem("doke_uid");
-                setDangerFeedback("Sessão encerrada. Solicitação de exclusão registrada.", "success");
-                window.location.href = "index.html";
+                clearAuthClientState();
+                closeDangerModal();
+                setDangerFeedback("Conta excluída com sucesso. Redirecionando...", "success");
+
+                const exclusaoTotal = !!(result && typeof result === "object" && result.authRemovida === true);
+                if (exclusaoTotal) {
+                    notifyAction("Conta excluída com sucesso.", "success", "Conta removida");
+                    setFlashNotice("Conta excluída com sucesso.", "success", "Conta removida");
+                } else {
+                    notifyAction("Conta excluída no app e sessão encerrada com sucesso.", "success", "Exclusão concluída");
+                    setFlashNotice("Conta excluída no app e sessão encerrada com sucesso.", "success", "Exclusão concluída");
+                }
+
+                setTimeout(() => { window.location.href = "index.html"; }, 1200);
             } catch (error) {
                 console.error(error);
                 setDangerFeedback(error?.message || "Erro ao excluir conta.", "error");
+                notifyAction(error?.message || "Erro ao excluir conta.", "error", "Não foi possível concluir");
             }
         };
     </script>

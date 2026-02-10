@@ -3138,6 +3138,7 @@ if(!rangeSel || !refreshBtn) return;
     showIf("#dpFollowBtn", !isOwner);
     if(isOwner) showIf("#dpMessageBtn", false);
     hideIf("#dpEditBtn", !allowEdit);
+    showIf("#dpBecomeProBtn", !!(allowEdit && !isPro));
     showIf("#dpMoreBtn", allowEdit);
     showIf("#dpCoverBtn", allowEdit);
     showIf("#dpAvatarBtn", allowEdit);
@@ -3154,6 +3155,10 @@ if(!rangeSel || !refreshBtn) return;
       orcBtn.setAttribute("aria-label", "Solicitar orçamento");
     }
 
+    const becomeBtn = $("#dpBecomeProBtn");
+    if (becomeBtn) {
+      becomeBtn.onclick = ()=>{ window.location.href = "tornar-profissional.html"; };
+    }
     // availability
     initAvailability(ctx);
   }
@@ -3882,10 +3887,13 @@ async function loadServicosPerfil(ctx) {
     const back = document.getElementById("dpMgrBackV2");
     const body = document.getElementById("dpMgrBodyV2");
     const foot = document.getElementById("dpMgrFootV2");
+    const canPublish = !!(ctx?.me?.isProfissional === true);
+    const novoAnuncioLink = document.querySelector("#dpMgrOverlayV2 .dp-xlink");
 
     if(title) title.textContent = "Gerenciar anúncios";
     if(back) back.style.display = "none";
     if(foot) { foot.style.display = "none"; foot.innerHTML = ""; }
+    if(novoAnuncioLink) novoAnuncioLink.style.display = canPublish ? "inline-flex" : "none";
 
     if(!body) return;
     body.innerHTML = `<div style="padding:10px 0; color:#666;">Carregando seus anúncios...</div>`;
@@ -3896,10 +3904,12 @@ async function loadServicosPerfil(ctx) {
       window.__dpCachedAnuncios = anuncios.slice();
 
       if(!anuncios.length){
+        const ctaHref = canPublish ? "anunciar.html" : "tornar-profissional.html";
+        const ctaLabel = canPublish ? "Anuncie seu serviço" : "Ative o perfil profissional";
         body.innerHTML = `
           <div style="padding:16px; border:1px dashed #ddd; border-radius:16px; color:#666;">
             <b>Nenhum anúncio encontrado.</b><br>
-            Publique seu primeiro anúncio em <a href="anunciar.html">Anuncie seu serviço</a>.
+            Publique seu primeiro anúncio em <a href="${ctaHref}">${ctaLabel}</a>.
           </div>
         `;
         return;

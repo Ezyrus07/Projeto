@@ -4006,7 +4006,7 @@
         const userLabel = perfil.user || perfil.nome || "Usuario";
         const perfilHref = perfil.isProfissional ? "meuperfil.html" : "perfil-usuario.html";
         const linkAnunciar = perfil.isProfissional ? "anunciar.html" : "tornar-profissional.html";
-        const textoAnunciar = perfil.isProfissional ? "Anunciar" : "Seja Profissional";
+        const textoAnunciar = "Anunciar";
         const itemCarteira = perfil.isProfissional
             ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>`
             : "";
@@ -5813,10 +5813,19 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
               if (outroUserUnsub) { try { outroUserUnsub(); } catch (_) {} outroUserUnsub = null; }
               outroUserUnsub = onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
-                const d = docSnap.data();
+                const d = docSnap.data() || {};
+                const pickName = (u) => u?.user || u?.nome || u?.username || u?.displayName || "";
+                const pickPhoto = (u) => u?.foto || u?.photoURL || u?.photoUrl || u?.avatar || u?.avatarUrl || u?.defoto || "";
+                const looksLikeBrandLogo = (url) => /doke-logo|logo-192|logo-512|assets\/imagens\/logo/i.test(String(url || ""));
+
+                const nomeContato = pickName(d) || nomePadrao || "Usuario";
+                let fotoContato = pickPhoto(d) || fotoPadrao || "assets/Imagens/user_placeholder.png";
+                if (looksLikeBrandLogo(fotoContato) && fotoPadrao && !looksLikeBrandLogo(fotoPadrao)) {
+                    fotoContato = fotoPadrao;
+                }
                 
-                document.getElementById('chatNome').innerText = d.user || d.nome || nomePadrao;
-                document.getElementById('chatAvatar').src = d.foto || fotoPadrao || "https://placehold.co/150";
+                document.getElementById('chatNome').innerText = nomeContato;
+                document.getElementById('chatAvatar').src = fotoContato;
 
                 const abrirPerfilOutro = () => window.abrirPerfilUsuario(uidOutro, !!d.isProfissional);
                 document.getElementById('chatAvatar').onclick = abrirPerfilOutro;

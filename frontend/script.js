@@ -2153,7 +2153,7 @@ window.verificarEstadoLogin = async function() {
     containers.forEach(container => {
         if (logado) {
             const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
-            const textoAnunciar = eProfissional ? "Anunciar" : "Seja Profissional";
+            const textoAnunciar = "Anunciar";
 
             // --- NOVO: LÓGICA DO BOTÃO CARTEIRA ---
             // Só aparece se for profissional
@@ -3827,16 +3827,8 @@ document.addEventListener("DOMContentLoaded", async function() {
         }
     }
 
-    // 6. Cookies e Popups
-    const banner = document.getElementById('cookieBanner');
-    const btnCookie = document.getElementById('acceptBtn');
-    if (banner && btnCookie) {
-        if (localStorage.getItem('cookiesAceitos') === 'true') banner.style.display = 'none';
-        else {
-            banner.style.display = 'flex';
-            btnCookie.onclick = function() { banner.style.display = 'none'; localStorage.setItem('cookiesAceitos', 'true'); };
-        }
-    }
+    // 6. Cookies
+    // Banner de cookies removido por decisão de produto.
 
 // CÓDIGO NOVO (COM VERIFICAÇÃO DE LOGIN)
     var dataHoje = new Date().toDateString();
@@ -12242,4 +12234,49 @@ document.addEventListener('DOMContentLoaded', function(){
 // IG search no menu lateral (global)
 document.addEventListener('DOMContentLoaded', function(){
   try{ initIgSidebarSearch(); }catch(e){}
+});
+
+// Bloqueia criacao/publicacao de anuncios para usuario nao profissional.
+document.addEventListener('DOMContentLoaded', function(){
+  function getPerfilLocal(){
+    try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {}; }
+    catch(_) { return {}; }
+  }
+
+  const perfil = getPerfilLocal();
+  const isPro = perfil && perfil.isProfissional === true;
+  if (isPro) return;
+
+  const toUpgrade = function(){
+    try{
+      if (typeof window.mostrarToast === 'function') {
+        window.mostrarToast('Para publicar, ative o perfil profissional.', 'info', 'Seja Profissional');
+      }
+    }catch(_){}
+    window.location.href = 'tornar-profissional.html';
+  };
+
+  // Troca links diretos para anunciar em todas as telas.
+  document.querySelectorAll('a[href]').forEach((a)=>{
+    const href = String(a.getAttribute('href') || '').trim().toLowerCase();
+    if (href === 'anunciar.html' || href.startsWith('anunciar.html?')) {
+      a.setAttribute('href', 'tornar-profissional.html');
+      const txt = (a.textContent || '').trim().toLowerCase();
+      if (txt === 'anunciar' || txt.includes('anuncie')) {
+        a.textContent = 'Anunciar';
+      }
+    }
+  });
+
+  // Guarda extra para cliques em botoes/links dinamicos.
+  document.addEventListener('click', function(ev){
+    const el = ev.target && ev.target.closest ? ev.target.closest('a,button') : null;
+    if (!el) return;
+    const href = String(el.getAttribute && el.getAttribute('href') || '').toLowerCase();
+    const txt = String(el.textContent || '').toLowerCase();
+    const tryPublish = href.includes('anunciar.html') || txt.includes('publicar anúncio') || txt.includes('publicar anuncio') || txt.includes('anunciar meu serviço') || txt.includes('anunciar meu servico');
+    if (!tryPublish) return;
+    ev.preventDefault();
+    toUpgrade();
+  }, true);
 });
