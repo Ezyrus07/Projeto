@@ -6536,7 +6536,27 @@ window.gerarPagamento = async function() {
           }
           window.alterarModoFinalizacao(finalizacaoModo);
         const msgInput = document.getElementById('inputMsg');
-        if (msgInput) msgInput.addEventListener('input', salvarRascunhoChat);
+        if (msgInput) {
+            msgInput.addEventListener('input', salvarRascunhoChat);
+            const setKbState = (open) => {
+                try { document.body.classList.toggle('chat-kb-open', !!open); } catch (e) {}
+            };
+            msgInput.addEventListener('focus', () => setKbState(true));
+            msgInput.addEventListener('blur', () => setKbState(false));
+            if (window.visualViewport) {
+                const syncKb = () => {
+                    try {
+                        const ae = document.activeElement;
+                        const isTyping = ae && (ae.id === 'inputMsg' || ae.tagName === 'TEXTAREA');
+                        const shrunk = window.visualViewport.height < (window.innerHeight - 90);
+                        setKbState(isTyping && shrunk);
+                    } catch (e) {}
+                };
+                window.visualViewport.addEventListener('resize', syncKb);
+                window.visualViewport.addEventListener('scroll', syncKb);
+                window.addEventListener('orientationchange', () => setKbState(false));
+            }
+        }
         initScrollDownButton();
     });
 
