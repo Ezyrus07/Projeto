@@ -1169,19 +1169,6 @@ window.dokeBuildCardPremium = function(anuncio) {
 
     
 
-        // Favoritos (coração) + estado inicial
-        try {
-            card.dataset.anuncioId = anuncio.id || '';
-            const favBtn = document.createElement('button');
-            favBtn.className = 'cp-fav-btn';
-            favBtn.type = 'button';
-            favBtn.setAttribute('aria-label', 'Favoritar');
-            favBtn.setAttribute('aria-pressed', 'false');
-            if (anuncio.id) favBtn.dataset.favId = anuncio.id;
-            favBtn.innerHTML = "<i class='bx bx-heart'></i>";
-            card.appendChild(favBtn);
-        } catch(e) {}
-
         // Preço médio (5+ serviços) - calculado a partir de cobranças pagas
         try {
             if (anuncio.id) {
@@ -1193,64 +1180,26 @@ window.dokeBuildCardPremium = function(anuncio) {
             const menuWrap = document.createElement('div');
             menuWrap.className = 'cp-more';
             menuWrap.innerHTML = `
-                <button class="cp-more-btn" type="button" aria-label="Mais opcoes">
-                    <i class='bx bx-dots-vertical-rounded'></i>
+                <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar anúncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
+                    <i class='bx bx-heart'></i>
                 </button>
-                <div class="cp-more-menu" role="menu">
-                    <button type="button" data-action="like" role="menuitem"><i class='bx bx-heart'></i> Curtir</button>
-                    <button type="button" data-action="share" role="menuitem"><i class='bx bx-share-alt'></i> Compartilhar</button>
-                    <button type="button" data-action="report" role="menuitem"><i class='bx bx-flag'></i> Denunciar</button>
-                </div>
             `;
             card.appendChild(menuWrap);
 
-            const menuBtn = menuWrap.querySelector('.cp-more-btn');
-            const menu = menuWrap.querySelector('.cp-more-menu');
-            menuWrap.addEventListener('mousedown', (e) => e.stopPropagation());
-
-            const handleMenuAction = (action) => {
-                if (action === "like") {
-                    menuBtn.classList.toggle('liked');
-                    if (window.dokeDelight?.toast) window.dokeDelight.toast('Curtido');
-                    return;
-                }
-                if (action === "share") {
-                    const url = `detalhes.html?id=${anuncio.id || ''}`;
-                    if (navigator.share) {
-                        navigator.share({ title: anuncio.titulo || 'Servico', url });
-                    } else if (navigator.clipboard?.writeText) {
-                        navigator.clipboard.writeText(url);
-                        if (window.dokeDelight?.toast) window.dokeDelight.toast('Link copiado');
-                    } else {
-                        window.prompt('Copie o link:', url);
+            const favBtn = menuWrap.querySelector('.cp-fav-btn');
+            const favId = anuncio.id ? String(anuncio.id) : '';
+            if (favBtn && favId) {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('doke:favoritos:anuncios') || '[]');
+                    const isFav = Array.isArray(saved) && saved.includes(favId);
+                    favBtn.classList.toggle('is-fav', !!isFav);
+                    favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+                    const icon = favBtn.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('bx-heart', !isFav);
+                        icon.classList.toggle('bxs-heart', !!isFav);
                     }
-                    return;
-                }
-                if (action === "report") {
-                    window.alert('Denuncia enviada. Obrigado!');
-                }
-            };
-
-            menuBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                menu.classList.toggle('open');
-            });
-
-            menu.addEventListener('click', (e) => {
-                e.stopPropagation();
-                const btn = e.target.closest('button');
-                if (!btn) return;
-                menu.classList.remove('open');
-                handleMenuAction(btn.dataset.action);
-            });
-
-            if (!window.__dokeAnuncioMenuCloseBound) {
-                window.__dokeAnuncioMenuCloseBound = true;
-                document.addEventListener('click', () => {
-                    document.querySelectorAll('.cp-more-menu.open').forEach((el) => {
-                        el.classList.remove('open');
-                    });
-                });
+                } catch (_) {}
             }
         } catch(e) {}
 
@@ -1315,7 +1264,7 @@ window.dokeBuildCardPremium = function(anuncio) {
             if (detalhesBaseUrl) {
                 card.addEventListener('click', (e) => {
                     const interactive = e.target && e.target.closest && e.target.closest(
-                        'button,a,input,textarea,select,label,.cp-more,.cp-more-menu,.img-cover,.overlay-count,.js-user-link'
+                        'button,a,input,textarea,select,label,.cp-more,.img-cover,.overlay-count,.js-user-link'
                     );
                     if (interactive) return;
                     window.location.href = detalhesBaseUrl;
@@ -2980,6 +2929,10 @@ function initHomeEnhancements() {
         const isCategorias = container?.id === 'listaCategorias' || container?.id === 'categoriesCarousel';
         const isFiltrosRapidos = container?.classList?.contains('filtros-chips-scroll');
         if (isCategorias || isFiltrosRapidos) return;
+        const useNativeTouch = !!(
+            (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+            (window.matchMedia && window.matchMedia('(max-width: 1024px)').matches)
+        );
 
         let isDown = false;
         let startX = 0;
@@ -2990,7 +2943,7 @@ function initHomeEnhancements() {
         let touchMode = null; // 'x' | 'y' | null
 
         container.style.cursor = 'grab';
-        container.style.touchAction = 'pan-y';
+        container.style.touchAction = useNativeTouch ? 'pan-x pan-y' : 'pan-y';
 
         container.addEventListener('mousedown', (e) => {
             isDown = true;
@@ -3013,35 +2966,37 @@ function initHomeEnhancements() {
             container.scrollLeft = scrollLeft - walk;
         });
 
-        container.addEventListener('touchstart', (e) => {
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            touchStartX = t.clientX;
-            touchStartY = t.clientY;
-            touchScrollLeft = container.scrollLeft;
-            touchMode = null;
-        }, { passive: true });
+        if (!useNativeTouch) {
+            container.addEventListener('touchstart', (e) => {
+                const t = e.touches && e.touches[0];
+                if (!t) return;
+                touchStartX = t.clientX;
+                touchStartY = t.clientY;
+                touchScrollLeft = container.scrollLeft;
+                touchMode = null;
+            }, { passive: true });
 
-        container.addEventListener('touchmove', (e) => {
-            const t = e.touches && e.touches[0];
-            if (!t) return;
-            const dx = t.clientX - touchStartX;
-            const dy = t.clientY - touchStartY;
+            container.addEventListener('touchmove', (e) => {
+                const t = e.touches && e.touches[0];
+                if (!t) return;
+                const dx = t.clientX - touchStartX;
+                const dy = t.clientY - touchStartY;
 
-            if (touchMode === null) {
-                const ax = Math.abs(dx);
-                const ay = Math.abs(dy);
-                if (ax < 8 && ay < 8) return;
-                touchMode = ax > ay ? 'x' : 'y';
-            }
+                if (touchMode === null) {
+                    const ax = Math.abs(dx);
+                    const ay = Math.abs(dy);
+                    if (ax < 8 && ay < 8) return;
+                    touchMode = ax > ay ? 'x' : 'y';
+                }
 
-            if (touchMode !== 'x') return;
-            container.scrollLeft = touchScrollLeft - (dx * 1.15);
-        }, { passive: true });
+                if (touchMode !== 'x') return;
+                container.scrollLeft = touchScrollLeft - (dx * 1.15);
+            }, { passive: true });
 
-        container.addEventListener('touchend', () => {
-            touchMode = null;
-        }, { passive: true });
+            container.addEventListener('touchend', () => {
+                touchMode = null;
+            }, { passive: true });
+        }
     }
 }
 
@@ -5702,7 +5657,7 @@ document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
 
         
         // 2. Badge de CHAT (Envelope) - Mantém lógica original
-document.querySelectorAll('a[href="chat.html"]').forEach(link => {
+        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
             let badge = link.parentNode.querySelector('.badge-chat-sidebar');
             if (!badge) {
                 badge = document.createElement('span');
@@ -5715,6 +5670,32 @@ document.querySelectorAll('a[href="chat.html"]').forEach(link => {
             if (totalChat > 0) { badge.innerText = totalChat; badge.style.display = 'flex'; } 
             else { badge.style.display = 'none'; }
         });
+
+        // 3. Badge no shell mobile (header)
+        const syncShellBadge = (href, total) => {
+            document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
+                let badge = link.querySelector('.doke-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'doke-badge';
+                    link.appendChild(badge);
+                }
+                if (total > 0) {
+                    badge.innerText = total > 99 ? '99+' : String(total);
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
+        };
+
+        syncShellBadge('notificacoes.html', totalNotif);
+        syncShellBadge('chat.html', totalChat);
+
+        try {
+            window.__dokeBadgeTotals = { notif: totalNotif, chat: totalChat };
+            window.dispatchEvent(new CustomEvent('doke:badges', { detail: window.__dokeBadgeTotals }));
+        } catch (_) {}
     };
 // ... (restante dos snapshots igual) ...
     let cacheRecebidos = [];
@@ -10776,6 +10757,10 @@ async function carregarComentariosSupabase(publicacaoId) {
     const isCategorias = el.id === 'listaCategorias' || el.id === 'categoriesCarousel';
     const isFiltrosRapidos = el.classList && el.classList.contains('filtros-chips-scroll');
     if (isCategorias || isFiltrosRapidos) return;
+    const useNativeTouch = !!(
+      (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+      (window.matchMedia && window.matchMedia('(max-width: 1024px)').matches)
+    );
     el.__dragReady = true;
     let isDown = false;
     let startX = 0;
@@ -10784,7 +10769,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     let touchStartY = 0;
     let touchScrollLeft = 0;
     let touchMode = null; // 'x' | 'y' | null
-    el.style.touchAction = 'pan-y';
+    el.style.touchAction = useNativeTouch ? 'pan-x pan-y' : 'pan-y';
 
     el.addEventListener('mousedown', (e) => {
       isDown = true;
@@ -10811,35 +10796,37 @@ async function carregarComentariosSupabase(publicacaoId) {
       el.scrollLeft = scrollLeft - walk;
     });
 
-    el.addEventListener('touchstart', (e) => {
-      const t = e.touches && e.touches[0];
-      if (!t) return;
-      touchStartX = t.clientX;
-      touchStartY = t.clientY;
-      touchScrollLeft = el.scrollLeft;
-      touchMode = null;
-    }, { passive: true });
+    if (!useNativeTouch) {
+      el.addEventListener('touchstart', (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        touchStartX = t.clientX;
+        touchStartY = t.clientY;
+        touchScrollLeft = el.scrollLeft;
+        touchMode = null;
+      }, { passive: true });
 
-    el.addEventListener('touchmove', (e) => {
-      const t = e.touches && e.touches[0];
-      if (!t) return;
-      const dx = t.clientX - touchStartX;
-      const dy = t.clientY - touchStartY;
+      el.addEventListener('touchmove', (e) => {
+        const t = e.touches && e.touches[0];
+        if (!t) return;
+        const dx = t.clientX - touchStartX;
+        const dy = t.clientY - touchStartY;
 
-      if (touchMode === null) {
-        const ax = Math.abs(dx);
-        const ay = Math.abs(dy);
-        if (ax < 8 && ay < 8) return;
-        touchMode = ax > ay ? 'x' : 'y';
-      }
+        if (touchMode === null) {
+          const ax = Math.abs(dx);
+          const ay = Math.abs(dy);
+          if (ax < 8 && ay < 8) return;
+          touchMode = ax > ay ? 'x' : 'y';
+        }
 
-      if (touchMode !== 'x') return;
-      el.scrollLeft = touchScrollLeft - (dx * 1.25);
-    }, { passive: true });
+        if (touchMode !== 'x') return;
+        el.scrollLeft = touchScrollLeft - (dx * 1.25);
+      }, { passive: true });
 
-    el.addEventListener('touchend', () => {
-      touchMode = null;
-    }, { passive: true });
+      el.addEventListener('touchend', () => {
+        touchMode = null;
+      }, { passive: true });
+    }
 
     // Wheel: nao travar scroll vertical da pagina.
     // Horizontal via wheel somente com SHIFT (padrao UX).

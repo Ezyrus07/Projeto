@@ -621,6 +621,41 @@
       });
     }
 
+    function applyShellBadges(totals){
+      const notif = Number(totals?.notif || 0) || 0;
+      const chat = Number(totals?.chat || 0) || 0;
+      const applyTo = (href, total) => {
+        if(!header) return;
+        header.querySelectorAll(`a.doke-icon-btn[href="${href}"]`).forEach((link) => {
+          let badge = link.querySelector(".doke-badge");
+          if(!badge){
+            badge = document.createElement("span");
+            badge.className = "doke-badge";
+            link.appendChild(badge);
+          }
+          if(total > 0){
+            badge.textContent = total > 99 ? "99+" : String(total);
+            badge.style.display = "flex";
+          }else{
+            badge.style.display = "none";
+          }
+        });
+      };
+      applyTo(PAGES.notif, notif);
+      applyTo(PAGES.chat, chat);
+    }
+
+    try{
+      applyShellBadges(window.__dokeBadgeTotals || null);
+    }catch(e){}
+
+    if(!window.__dokeShellBadgeListenerBound){
+      window.__dokeShellBadgeListenerBound = true;
+      window.addEventListener("doke:badges", (ev) => {
+        try{ applyShellBadges(ev?.detail || null); }catch(e){}
+      });
+    }
+
     // Avatar (aplica no que existir)
     const avatarUrl = isLogged ? getAvatarUrl(profile) : null;
     if(header){
