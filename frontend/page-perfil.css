@@ -2118,3 +2118,124 @@ body[data-page="perfil"] #dpRoot[data-owner="self"] #dpEditBtn{
     grid-template-columns: auto 32px !important;
   }
 }
+
+/* =========================================================
+   PATCH 2026-02-11 - visitante vs dono + largura uniforme
+   ========================================================= */
+body[data-page="perfil"] #dpRoot{
+  width: min(100%, var(--dp-content-width, 1200px)) !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
+
+body[data-page="perfil"] #dpRoot > .dp-card,
+body[data-page="perfil"] #dpRoot > .dp-tabsWrap,
+body[data-page="perfil"] #dpRoot > .dp-section{
+  width: 100% !important;
+  max-width: 100% !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  box-sizing: border-box !important;
+}
+
+/* Segurança extra: nunca mostrar controles de dono para visitante */
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpEditBtn,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpBecomeProBtn,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpMoreBtn,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpAvailabilityRow,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpNewPublicacao,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpNewServico,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpNewPortfolio,
+body[data-page="perfil"] #dpRoot[data-owner="visitor"] #dpNewReel{
+  display: none !important;
+}
+
+/* Setas sempre visíveis para manter padrão entre perfis */
+body[data-page="perfil"] #dpRoot .dp-tabsNav,
+body[data-page="perfil"] #dpRoot .dp-statsNav{
+  display: inline-flex !important;
+  visibility: visible !important;
+}
+
+/* Desktop: ações de visitante compactas quando não há orçamento
+   + seguir no mesmo formato do @user */
+@media (min-width: 1025px){
+  /* Seguir com o mesmo formato/altura do @user */
+  body[data-page="perfil"] #dpRoot .dp-handleRow #dpFollowBtn.dp-followCompact{
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 7px 12px !important;
+    border-radius: 999px !important;
+    font-size: 0.9rem !important;
+    font-weight: 800 !important;
+    line-height: 1.1 !important;
+    gap: 7px !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-handleRow #dpFollowBtn.dp-followCompact i{
+    font-size: 0.95rem !important;
+  }
+
+  /* Aproxima ações do nome quando não existe botão de orçamento */
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] .dp-body{
+    grid-template-columns: 170px minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] .dp-actions{
+    width: auto !important;
+    justify-self: start !important;
+    align-self: start !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] .dp-actionsRow{
+    grid-template-columns: 42px 42px !important;
+    width: auto !important;
+    justify-content: start !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] #dpFriendBtn,
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] #dpMessageBtn{
+    width: 42px !important;
+    min-width: 42px !important;
+    max-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    border-radius: 12px !important;
+    padding: 0 !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] #dpFriendBtn i,
+  body[data-page="perfil"] #dpRoot[data-owner="visitor"][data-has-orc="0"] #dpMessageBtn i{
+    font-size: 1.16rem !important;
+    line-height: 1 !important;
+    margin: 0 !important;
+  }
+}
+
+/* Follow - cor unificada (mobile + desktop) */
+body[data-page="perfil"] #dpRoot #dpFollowBtn,
+body[data-page="perfil"] #dpRoot .dp-handleRow #dpFollowBtn.dp-followCompact{
+  background: #fff !important;
+  color: #be123c !important;
+  border: 1px solid rgba(190, 18, 60, .35) !important;
+}
+
+body[data-page="perfil"] #dpRoot #dpFollowBtn i,
+body[data-page="perfil"] #dpRoot .dp-handleRow #dpFollowBtn.dp-followCompact i{
+  color: #be123c !important;
+}
+
+/* Handle + Follow com mesmo formato de pill */
+body[data-page="perfil"] #dpRoot .dp-handleRow #dpHandle,
+body[data-page="perfil"] #dpRoot .dp-handleRow #dpFollowBtn.dp-followCompact{
+  height: auto !important;
+  min-height: 0 !important;
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  border-width: 1px !important;
+  line-height: 1.15 !important;
+  box-sizing: border-box !important;
+}

@@ -70,9 +70,8 @@
   }
   function isOwnProfile(ctx){
     if(!ctx) return false;
-    if(ctx.pageMode === "self") return true;
     if(ctx.canEdit) return true;
-
+    if(!ctx.me || !ctx.target) return false;
     return sameIdentity(ctx.me, ctx.target);
   }
   let mobileActionsBound = false;
@@ -588,7 +587,7 @@
 
     // show/hide items
     const become = $("#dpMenuBecomePro", menu);
-    if(become) become.style.display = ctx.me?.isProfissional ? "none" : "flex";
+    if(become) become.style.display = isProfissionalUsuario(ctx.me) ? "none" : "flex";
 
     const viewAs = $("#dpMenuViewAs", menu);
     if(viewAs){
@@ -596,7 +595,7 @@
         e.preventDefault();
         // alterna para view público do próprio perfil (cliente)
         const id = ctx.target?.id || ctx.targetId;
-        const isPro = !!ctx.target?.isProfissional;
+        const isPro = isProfissionalUsuario(ctx.target);
         const dest = isPro ? "perfil-profissional.html" : "perfil-cliente.html";
         window.location.href = `${dest}?id=${encodeURIComponent(id)}`;
       };
@@ -773,12 +772,22 @@ function ensureTheme(ctx, theme){
   return t;
 }
 
-function hideIf(selector, cond){
-    $$(selector).forEach(el => el.style.display = cond ? "none" : "");
+  function setVisible(el, visible){
+    if(!el) return;
+    if(visible){
+      el.style.removeProperty("display");
+      return;
+    }
+    // Precisa de !important para vencer regras responsivas com display: inline-flex !important
+    el.style.setProperty("display", "none", "important");
+  }
+
+  function hideIf(selector, cond){
+    $$(selector).forEach(el => setVisible(el, !cond));
   }
 
   function showIf(selector, cond){
-    $$(selector).forEach(el => el.style.display = cond ? "" : "none");
+    $$(selector).forEach(el => setVisible(el, !!cond));
   }
 
   function safeStr(v){ return (v ?? "").toString().trim(); }
@@ -886,7 +895,25 @@ function hideIf(selector, cond){
   }catch(_){}
 
   function roleFromUsuario(usuario){
-    return usuario?.isProfissional ? "profissional" : "cliente";
+    return isProfissionalUsuario(usuario) ? "profissional" : "cliente";
+  }
+
+  function flagAtivo(v){
+    if (v === true || v === 1) return true;
+    if (v === false || v === 0 || v == null) return false;
+    const s = String(v).trim().toLowerCase();
+    return s === "true" || s === "1" || s === "sim" || s === "yes";
+  }
+
+  function isProfissionalUsuario(usuario){
+    if(!usuario || typeof usuario !== "object") return false;
+    return flagAtivo(
+      usuario.isProfissional ??
+      usuario.is_profissional ??
+      usuario.profissional ??
+      usuario.isProfessional ??
+      false
+    );
   }
 
   function isMissingTableError(err){
@@ -1934,7 +1961,7 @@ function hideIf(selector, cond){
     const text = $("#dpStatusText");
     if(!row || !sw || !text) return;
 
-    if(!ctx.canEdit || !ctx.target?.isProfissional){
+    if(!ctx.canEdit || !isProfissionalUsuario(ctx.target)){
       row.style.display = "none";
       return;
     }
@@ -2122,7 +2149,7 @@ function hideIf(selector, cond){
     const nextNav = $(".dp-tabsNext");
     let sectionsWrap = $(".dp-sections");
 
-    const isProOwnerTabs = !!(ctx?.target?.isProfissional && ctx?.canEdit);
+    const isProOwnerTabs = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     // Esconde aba/section de estatísticas para quem não é o dono profissional
     buttons.forEach(b=>{ if(b.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) b.style.display = "none"; });
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
@@ -2131,11 +2158,10 @@ function hideIf(selector, cond){
       const scrollAmount = () => Math.max(140, Math.round(tabsWrap.clientWidth * 0.6));
       const updateNav = () => {
         const maxScroll = tabsWrap.scrollWidth - tabsWrap.clientWidth;
-        const hide = maxScroll <= 1;
         prevNav.disabled = tabsWrap.scrollLeft <= 0;
         nextNav.disabled = tabsWrap.scrollLeft >= maxScroll - 1;
-        prevNav.style.visibility = hide ? "hidden" : "visible";
-        nextNav.style.visibility = hide ? "hidden" : "visible";
+        prevNav.style.visibility = "visible";
+        nextNav.style.visibility = "visible";
       };
 
       prevNav.addEventListener("click", ()=> {
@@ -2767,7 +2793,7 @@ function hideIf(selector, cond){
 
     async function initProDashboard(ctx){
     // somente profissional DONO
-    const isProOwner = !!(ctx?.target?.isProfissional && ctx?.canEdit);
+    const isProOwner = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     if(!isProOwner){
       toast("Área restrita ao profissional.");
       return;
@@ -2840,11 +2866,10 @@ if(!rangeSel || !refreshBtn) return;
     const scrollAmount = () => Math.max(120, Math.round(stats.clientWidth * 0.6));
     const updateNav = () => {
       const maxScroll = stats.scrollWidth - stats.clientWidth;
-      const hide = maxScroll <= 1;
       prev.disabled = stats.scrollLeft <= 0;
       next.disabled = stats.scrollLeft >= maxScroll - 1;
-      prev.style.visibility = hide ? "hidden" : "visible";
-      next.style.visibility = hide ? "hidden" : "visible";
+      prev.style.visibility = "visible";
+      next.style.visibility = "visible";
     };
 
     prev.addEventListener("click", ()=> {
@@ -2910,7 +2935,7 @@ if(!rangeSel || !refreshBtn) return;
         if((tipo === "antes_depois") && !afterFile) return toast("Selecione a foto do Depois.");
         try{
           if(tipo === "curto"){
-            if(!ctx.me.isProfissional) return toast("Disponível para perfil profissional.");
+            if(!isProfissionalUsuario(ctx.me)) return toast("Disponível para perfil profissional.");
             await createReel(client, ctx, {
               titulo: safeStr($("#dpPubTitulo")?.value),
               descricao: safeStr($("#dpPubDesc")?.value),
@@ -2965,7 +2990,7 @@ if(!rangeSel || !refreshBtn) return;
     // Novo Reel
     $("#dpNewReel")?.addEventListener("click", ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
-      if(!ctx.me.isProfissional) return toast("Disponível para perfil profissional.");
+      if(!isProfissionalUsuario(ctx.me)) return toast("Disponível para perfil profissional.");
       modal.open("Novo video curto", `
         <div class="dp-form">
           <div>
@@ -3103,7 +3128,7 @@ if(!rangeSel || !refreshBtn) return;
     setText("#dpName", u.nome || "Usuário");
     setText("#dpHandle", (u.user || "usuario"));
 
-    const bio = u.bio || (u.isProfissional ? "Profissional na Doke." : "Olá! Sou novo na comunidade Doke.");
+    const bio = u.bio || (isProfissionalUsuario(u) ? "Profissional na Doke." : "Olá! Sou novo na comunidade Doke.");
     setText("#dpBio", bio);
     const aboutText = stats?.about || u.sobre || "";
     const aboutFallback = "As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão \"Editar perfil\".)";
@@ -3124,7 +3149,7 @@ if(!rangeSel || !refreshBtn) return;
     setText("#dpServicesCount", "0");
 
     // buttons visibility
-    const isPro = !!u.isProfissional;
+    const isPro = isProfissionalUsuario(u);
     showIf("[data-pro-only]", isPro);
     hideIf("[data-pro-hide]", isPro);
     // elementos somente para PROFISSIONAL DONO (dashboard)
@@ -3152,6 +3177,9 @@ if(!rangeSel || !refreshBtn) return;
     showIf("#dpNewServico", allowEdit);
     showIf("#dpNewPortfolio", allowEdit);
     showIf("#dpNewReel", allowEdit);
+    if(rootEl){
+      rootEl.setAttribute("data-has-orc", (!isOwner && isPro) ? "1" : "0");
+    }
     const orcBtn = $("#dpOrcBtn");
     if (orcBtn && !isOwner && isPro) {
       orcBtn.classList.remove("dp-icon-only");
@@ -3278,13 +3306,10 @@ if(!rangeSel || !refreshBtn) return;
 
       const root = rootEl;
       const file = (location.pathname.split("/").pop() || "").toLowerCase();
-      const selfPages = new Set(["meuperfil.html", "perfil-usuario.html"]);
+      const selfPages = new Set(["meuperfil.html"]);
       const declaredMode = String(root?.dataset?.mode || "").toLowerCase();
-      const pageMode = selfPages.has(file) ? "self" : (declaredMode || "public"); // self | public
+      let pageMode = selfPages.has(file) ? "self" : (declaredMode || "public"); // self | public
       const pageTheme = root?.dataset?.theme || "cliente"; // cliente|profissional (visual)
-      if(root && root.dataset){
-        root.dataset.mode = pageMode;
-      }
 
       // Evita flicker suave
       root?.classList.remove("dp-ready");
@@ -3306,6 +3331,17 @@ if(!rangeSel || !refreshBtn) return;
       const targetIdParam = params.get("id");
       const targetUidParam = params.get("uid");
       const targetUserParam = params.get("user");
+      const hasExplicitTarget = !!(targetIdParam || targetUidParam || (targetUserParam && String(targetUserParam).trim()));
+      if (file === "meuperfil.html") {
+        pageMode = "self";
+      } else if (hasExplicitTarget) {
+        pageMode = "public";
+      } else if (file === "perfil-usuario.html") {
+        pageMode = "self";
+      }
+      if(root && root.dataset){
+        root.dataset.mode = pageMode;
+      }
       let targetId = null;
 
       if(targetIdParam){
@@ -3359,7 +3395,7 @@ if(!rangeSel || !refreshBtn) return;
         return;
       }
 
-      const canEdit = !!(me && (pageMode === "self" || sameIdentity(me, target)));
+      const canEdit = !!(me && sameIdentity(me, target));
 
       const ctx = {
         client,
@@ -3379,7 +3415,7 @@ if(!rangeSel || !refreshBtn) return;
       if(topBtn){
         if(me){
           topBtn.textContent = "Perfil";
-          topBtn.href = me.isProfissional ? "meuperfil.html" : "perfil-usuario.html";
+          topBtn.href = isProfissionalUsuario(me) ? "meuperfil.html" : "perfil-usuario.html";
         }else{
           topBtn.textContent = "Entrar";
           topBtn.href = "login.html";
@@ -3892,7 +3928,7 @@ async function loadServicosPerfil(ctx) {
     const back = document.getElementById("dpMgrBackV2");
     const body = document.getElementById("dpMgrBodyV2");
     const foot = document.getElementById("dpMgrFootV2");
-    const canPublish = !!(ctx?.me?.isProfissional === true);
+    const canPublish = isProfissionalUsuario(ctx?.me);
     const novoAnuncioLink = document.querySelector("#dpMgrOverlayV2 .dp-xlink");
 
     if(title) title.textContent = "Gerenciar anúncios";

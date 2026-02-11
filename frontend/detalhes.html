@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -7,12 +7,12 @@
 <script src="supabase-init.js"></script>
 <script src="firebase-compat-supabase.js?v=20260207v24"></script>
 <script src="firebase-auth-compat-supabase.js"></script>
-<script defer="" src="script.js?v=20260211v42"></script>
+<script defer="" src="script.js?v=20260211v43"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Detalhes do Serviço | Doke</title>
+<title>Detalhes do ServiÃ§o | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="style.css?v=20260211v43" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <style>
@@ -32,6 +32,11 @@
             font-family: 'Poppins', sans-serif; 
             margin: 0; 
             color: var(--text-dark);
+            overflow-x: hidden;
+            overflow-y: auto !important;
+        }
+        html {
+            overflow-y: auto !important;
         }
 
         /* LAYOUT GRID */
@@ -52,10 +57,11 @@
             main { grid-template-columns: 1fr; margin-left: 0; padding: 15px; width: 100%; box-sizing: border-box;}
         }
         @media (max-width: 900px) {
-            main { padding-bottom: calc(var(--bottom-nav-height, 66px) + 26px) !important; }
+            main { padding-bottom: calc(var(--doke-btm-real, var(--bottom-nav-height, 66px)) + 34px) !important; }
+            body[data-page="detalhes"] .doke-sticky-cta { display: none !important; }
         }
 
-        /* --- COLUNA ESQUERDA (CONTEÚDO) --- */
+        /* --- COLUNA ESQUERDA (CONTEÃšDO) --- */
         
         /* Galeria Estilo Airbnb */
         .gallery-wrapper {
@@ -88,7 +94,7 @@
         }
         .thumb:hover, .thumb.active { opacity: 1; border: 2px solid var(--primary); }
 
-        /* Cabeçalho do Serviço */
+        /* CabeÃ§alho do ServiÃ§o */
         .service-header { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
         .breadcrumb { font-size: 0.85rem; color: var(--text-light); margin-bottom: 10px; display: block; }
         h1.service-title { font-size: 2rem; margin: 5px 0 10px; font-weight: 700; line-height: 1.2; color: #0f3460; }
@@ -101,7 +107,7 @@
         .rating-badge i { color: #f1c40f; }
         .location-badge i { color: var(--text-light); }
 
-        /* Seções de Conteúdo */
+        /* SeÃ§Ãµes de ConteÃºdo */
         .content-section {
             background: white;
             padding: 30px;
@@ -112,7 +118,7 @@
         }
         .section-title { font-size: 1.25rem; margin-bottom: 20px; font-weight: 700; color: #2d3436; }
 
-        /* Grid de Destaques (Ícones) */
+        /* Grid de Destaques (Ãcones) */
         .highlights-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px;
         }
@@ -268,7 +274,7 @@
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
-<body>
+<body data-page="detalhes">
 <aside class="sidebar-icones">
   <div id="logo">
     <a href="index.html">
@@ -279,7 +285,7 @@
   <div class="item">
     <a href="index.html">
       <i class='bx bx-home-alt icon azul'></i>
-      <span>Início</span>
+      <span>InÃ­cio</span>
     </a>
   </div>
 
@@ -293,14 +299,14 @@
   <div class="item">
     <a href="negocios.html">
       <i class='bx bx-store icon verde'></i>
-      <span>Negócios</span>
+      <span>NegÃ³cios</span>
     </a>
   </div>
 
   <div class="item">
     <a href="notificacoes.html">
       <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
+      <span>NotificaÃ§Ãµes</span>
     </a>
   </div>
 
@@ -355,7 +361,7 @@
 </div>
 </div>
 </div>
-<a href="anunciar.html">Anuncie seu serviço</a>
+<a href="anunciar.html">Anuncie seu serviÃ§o</a>
 <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
 <a href="novidades.html">Novidades</a>
 </nav>
@@ -373,18 +379,18 @@
 <div id="main-content" style="display: none; contents: inherit;">
 <section class="left-col">
 <div class="gallery-wrapper">
-<img alt="Capa do Serviço" class="main-image" decoding="async" id="main-img" loading="lazy" src=""/>
+<img alt="Capa do ServiÃ§o" class="main-image" decoding="async" id="main-img" loading="lazy" src=""/>
 <div class="thumbnails" id="thumb-list"></div>
 </div>
 <div class="service-header">
-<span class="breadcrumb">Explorar &gt; Serviços &gt; <span id="bread-cat">Categoria</span></span>
+<span class="breadcrumb">Explorar &gt; ServiÃ§os &gt; <span id="bread-cat">Categoria</span></span>
 <div id="badges-area" style="margin-top: 10px;"></div>
 <h1 class="service-title" id="service-title">...</h1>
 <div class="meta-info">
 <div class="rating-badge">
 <div id="top-stars" style="color:#f1c40f; margin-right:5px;"></div>
 <span id="meta-rating">0.0</span>
-<span style="font-weight:400; color:#777; margin-left: 5px;">(<span id="meta-count">0</span> avaliações)</span>
+<span style="font-weight:400; color:#777; margin-left: 5px;">(<span id="meta-count">0</span> avaliaÃ§Ãµes)</span>
 </div>
 <div class="location-badge">
 <i class="bx bxs-map"></i> <span id="meta-location">...</span>
@@ -395,17 +401,17 @@
 </div>
 </div>
 <div class="content-section">
-<h2 class="section-title">Sobre o Serviço</h2>
+<h2 class="section-title">Sobre o ServiÃ§o</h2>
 <p id="service-desc" style="line-height: 1.8; color: #555; white-space: pre-line;">...</p>
 <div class="highlights-grid" style="margin-top: 30px;">
 <div class="highlight-item">
 <i class="bx bx-medal"></i>
-<span class="highlight-label">Experiência</span>
+<span class="highlight-label">ExperiÃªncia</span>
 <span class="highlight-value" id="hl-xp">--</span>
 </div>
 <div class="highlight-item">
 <i class="bx bx-time"></i>
-<span class="highlight-label">Prazo Médio</span>
+<span class="highlight-label">Prazo MÃ©dio</span>
 <span class="highlight-value" id="hl-time">--</span>
 </div>
 <div class="highlight-item">
@@ -438,9 +444,9 @@
   <h2 class="section-title">Perguntas e respostas</h2>
 
   <div class="qa-ask">
-    <textarea id="qaInput" placeholder="Tire suas dúvidas com o profissional..." maxlength="400"></textarea>
+    <textarea id="qaInput" placeholder="Tire suas dÃºvidas com o profissional..." maxlength="400"></textarea>
     <div class="qa-ask-actions">
-      <small id="qaHint" style="color:#777;">Seja objetivo. Você pode perguntar sobre preço, prazo, materiais, etc.</small>
+      <small id="qaHint" style="color:#777;">Seja objetivo. VocÃª pode perguntar sobre preÃ§o, prazo, materiais, etc.</small>
       <button id="qaSend" type="button" class="qa-btn">
         <i class='bx bx-send'></i> Enviar
       </button>
@@ -466,9 +472,9 @@
 </div>
 </div>
 <div class="content-section">
-<h2 class="section-title">Avaliações de Clientes</h2>
+<h2 class="section-title">AvaliaÃ§Ãµes de Clientes</h2>
 <div id="reviews-list">
-<p style="color:#777; font-style: italic;">Carregando avaliações...</p>
+<p style="color:#777; font-style: italic;">Carregando avaliaÃ§Ãµes...</p>
 </div>
 </div>
 </section>
@@ -476,9 +482,9 @@
 <div class="sidebar-sticky">
 <span class="price-label">Investimento a partir de</span>
 <div class="price-value" id="price-display">R$ --</div>
-<span class="price-sub" id="payment-display">Aceita Cartão, Pix e Boleto</span>
-<button class="btn-hire" data-sticky-cta="" data-sticky-cta-label="Solicitar Orçamento" id="btn-contact" style="margin-top: 20px;">
-<i class="bx bx-message-square-detail"></i> Solicitar Orçamento
+<span class="price-sub" id="payment-display">Aceita CartÃ£o, Pix e Boleto</span>
+<button class="btn-hire" id="btn-contact" style="margin-top: 20px;">
+<i class="bx bx-message-square-detail"></i> Solicitar OrÃ§amento
                     </button>
 <div style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: #888;">
 <i class="bx bx-shield-check"></i> Pagamento seguro via Doke
@@ -492,10 +498,10 @@
 </div>
 </div>
 <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-<strong style="font-size:0.9rem; display:block; margin-bottom:10px;">Política de Cancelamento</strong>
+<strong style="font-size:0.9rem; display:block; margin-bottom:10px;">PolÃ­tica de Cancelamento</strong>
 <div style="display:flex; align-items:center; gap:8px;">
 <i class="bx bx-info-circle" style="color:var(--primary);"></i>
-<span id="policy-text" style="font-size:0.85rem; color:#555;">Flexível</span>
+<span id="policy-text" style="font-size:0.85rem; color:#555;">FlexÃ­vel</span>
 </div>
 </div>
 </div>
@@ -511,29 +517,29 @@
         const idAnuncio = params.get('id');
             let detalhesAvaliacaoCtx = {
                 id: idAnuncio || "",
-                titulo: "Serviço",
+                titulo: "ServiÃ§o",
                 categoria: "",
                 preco: "",
                 img: ""
             };
 
         // ===========================================
-        // FUNÇÃO PRINCIPAL
+        // FUNÃ‡ÃƒO PRINCIPAL
         // ===========================================
         async function initPage() {
             if(!idAnuncio) {
-                alert("Serviço não encontrado.");
+                alert("ServiÃ§o nÃ£o encontrado.");
                 window.location.href = "busca.html";
                 return;
             }
 
             try {
-                // 1. Busca Dados do Anúncio (Firebase)
+                // 1. Busca Dados do AnÃºncio (Firebase)
                 const docRef = doc(getDbRef(), "anuncios", idAnuncio);
                 const snap = await getDoc(docRef);
 
                 if (!snap.exists()) {
-                    document.getElementById('loader').innerHTML = "<h3>Anúncio removido ou indisponível.</h3>";
+                    document.getElementById('loader').innerHTML = "<h3>AnÃºncio removido ou indisponÃ­vel.</h3>";
                     return;
                 }
 
@@ -575,7 +581,7 @@
                 // Perguntas & Respostas (Supabase)
                 try{ initPerguntasRespostas(idAnuncio, data.uid, perfil); }catch(e){ console.warn(e); }
 
-                // 3. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
+                // 3. Busca Dados REAIS do Profissional (Nota, Total de ServiÃ§os)
                 if(data.uid) {
                     carregarAvaliacoesReais(data.uid, idAnuncio);
                     carregarPrazoMedio(data.uid);
@@ -588,7 +594,7 @@
         }
 
         // ===========================================
-        // RENDERIZAÇÃO ESTÁTICA (DO ANÚNCIO)
+        // RENDERIZAÃ‡ÃƒO ESTÃTICA (DO ANÃšNCIO)
         // ===========================================
         function renderizarDetalhes(d) {
             document.getElementById('loader').style.display = 'none';
@@ -598,19 +604,19 @@
 
             // -- HEADER & TEXTOS --
             document.title = `${d.titulo} | Doke`;
-            document.getElementById('service-title').innerText = d.titulo || "Serviço sem título";
+            document.getElementById('service-title').innerText = d.titulo || "ServiÃ§o sem tÃ­tulo";
             document.getElementById('bread-cat').innerText = (d.categorias || "Geral").split(',')[0];
-            document.getElementById('meta-location').innerText = (d.cidade && d.uf) ? `${d.cidade}, ${d.uf}` : "Localização não informada";
-            document.getElementById('service-desc').innerText = d.descricao || "Sem descrição.";
+            document.getElementById('meta-location').innerText = (d.cidade && d.uf) ? `${d.cidade}, ${d.uf}` : "LocalizaÃ§Ã£o nÃ£o informada";
+            document.getElementById('service-desc').innerText = d.descricao || "Sem descriÃ§Ã£o.";
 
-            // -- TAGS DE EMERGÊNCIA --
+            // -- TAGS DE EMERGÃŠNCIA --
             if(d.atendeEmergencia) {
                 document.getElementById('badges-area').innerHTML += `
-                    <span class="tag-emergency"><i class='bx bxs-alarm-exclamation'></i> Atendimento de Emergência (24h)</span>
+                    <span class="tag-emergency"><i class='bx bxs-alarm-exclamation'></i> Atendimento de EmergÃªncia (24h)</span>
                 `;
             }
 
-            // -- GALERIA (ANÚNCIO + PERFIL) --
+            // -- GALERIA (ANÃšNCIO + PERFIL) --
             const fotos = (() => {
                 const lista = [];
                 const push = (v) => {
@@ -622,7 +628,7 @@
                     if (!lista.includes(src)) lista.push(src);
                 };
 
-                // Fotos do anúncio
+                // Fotos do anÃºncio
                 push(d.fotos || []);
                 push(d.img);
                 push(d.imagem);
@@ -674,8 +680,8 @@
                 document.getElementById('diploma-link').href = d.diplomaUrl;
             }
 
-            // -- SIDEBAR (PREÇO E AUTOR) --
-            const displayPrice = (d.preco && d.preco !== 'Sob Orçamento') ? `R$ ${d.preco}` : "Sob Orçamento";
+            // -- SIDEBAR (PREÃ‡O E AUTOR) --
+            const displayPrice = (d.preco && d.preco !== 'Sob OrÃ§amento') ? `R$ ${d.preco}` : "Sob OrÃ§amento";
             document.getElementById('price-display').innerText = displayPrice;
             
             if(d.pagamentosAceitos && d.pagamentosAceitos.length) {
@@ -691,16 +697,16 @@
             document.getElementById('prov-name').innerText = d.nomeAutor || perfil.nome || perfil.user || "Profissional Doke";
             document.getElementById('prov-img').src = d.fotoAutor || perfil.foto || perfil.foto_url || perfil.avatar || "assets/Imagens/user_placeholder.png";
             document.getElementById('link-perfil').href = provUid ? `perfil-profissional.html?uid=${encodeURIComponent(provUid)}` : "perfil-profissional.html";
-            document.getElementById('policy-text').innerText = d.politicaCancelamento || "Padrão da plataforma";
+            document.getElementById('policy-text').innerText = d.politicaCancelamento || "PadrÃ£o da plataforma";
             detalhesAvaliacaoCtx = {
                 id: String(idAnuncio || d.id || d.anuncioId || ""),
-                titulo: d.titulo || "Serviço",
+                titulo: d.titulo || "ServiÃ§o",
                 categoria: String(d.categorias || d.categoria || "Geral").split(",")[0].trim(),
-                preco: (d.preco && d.preco !== "Sob Orçamento") ? `R$ ${d.preco}` : "Sob Orcamento",
+                preco: (d.preco && d.preco !== "Sob OrÃ§amento") ? `R$ ${d.preco}` : "Sob Orcamento",
                 img: fotos[0] || d.img || d.imagem || ""
             };
             
-            // Botão Contato
+            // BotÃ£o Contato
             document.getElementById('btn-contact').onclick = () => {
                 const userLogado = localStorage.getItem('usuarioLogado');
                 if(!userLogado) {
@@ -716,10 +722,10 @@
 
         function renderizarAgenda(agenda) {
             const container = document.getElementById('agenda-container');
-            const diasMap = { 'seg':'SEG', 'ter':'TER', 'qua':'QUA', 'qui':'QUI', 'sex':'SEX', 'sab':'SÁB', 'dom':'DOM' };
+            const diasMap = { 'seg':'SEG', 'ter':'TER', 'qua':'QUA', 'qui':'QUI', 'sex':'SEX', 'sab':'SÃB', 'dom':'DOM' };
             
             if(!agenda) {
-                container.innerHTML = "<p>Horário a combinar.</p>";
+                container.innerHTML = "<p>HorÃ¡rio a combinar.</p>";
                 return;
             }
 
@@ -738,7 +744,7 @@
         }
 
         // ===========================================
-        // BUSCA DE AVALIAÇÕES REAIS (SEM DADOS FALSOS)
+        // BUSCA DE AVALIAÃ‡Ã•ES REAIS (SEM DADOS FALSOS)
         // ===========================================
         async function carregarAvaliacoesReais(uidProfissional, anuncioId) {
             const list = document.getElementById('reviews-list');
@@ -1071,7 +1077,7 @@
                 list.innerHTML = `<div class="fr-empty" style="padding:14px 8px; color:#b91c1c;">Erro ao carregar avaliacoes.</div>`;
             }
         }
-        // PRAZO MÉDIO (ACEITO -> FINALIZADO)
+        // PRAZO MÃ‰DIO (ACEITO -> FINALIZADO)
         // ===========================================
         async function carregarPrazoMedio(uidProfissional) {
             const el = document.getElementById('hl-time');
@@ -1083,7 +1089,7 @@
                     where("status", "==", "finalizado")
                 );
                 const snap = await getDocs(q);
-                if (!snap || snap.empty) { el.innerText = "—"; return; }
+                if (!snap || snap.empty) { el.innerText = "â€”"; return; }
 
                 const parseDate = (v) => {
                     if (!v) return null;
@@ -1109,7 +1115,7 @@
                     count += 1;
                 });
 
-                if (!count) { el.innerText = "—"; return; }
+                if (!count) { el.innerText = "â€”"; return; }
 
                 const avgMs = total / count;
                 const avgHours = avgMs / 36e5;
@@ -1121,8 +1127,8 @@
                     el.innerText = `${dias} dias`;
                 }
             } catch (e) {
-                console.warn("Erro ao calcular prazo médio:", e);
-                el.innerText = "—";
+                console.warn("Erro ao calcular prazo mÃ©dio:", e);
+                el.innerText = "â€”";
             }
         }
 
@@ -1130,7 +1136,7 @@
         function gerarEstrelasHTML(nota) {
             let html = "";
             for(let i=1; i<=5; i++) {
-                // Se a nota for maior ou igual a 'i', estrela cheia. Senão vazia.
+                // Se a nota for maior ou igual a 'i', estrela cheia. SenÃ£o vazia.
                 html += (i <= Math.round(nota)) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
             }
             return html;
@@ -1147,7 +1153,7 @@
         }
 
         // ============================================================
-        // PERGUNTAS & RESPOSTAS (Supabase) — padrão marketplace
+        // PERGUNTAS & RESPOSTAS (Supabase) â€” padrÃ£o marketplace
         // Tabelas suportadas: perguntas_profissional (novo) e perguntas_respostas (legado)
         // ============================================================
         async function initPerguntasRespostas(anuncioId, uidProfissional, perfilProf){
@@ -1159,7 +1165,7 @@
 
             const sb = window.sb;
             if(!sb || !sb.from){
-                qaList.innerHTML = '<p style="color:#777;">Supabase não inicializado.</p>';
+                qaList.innerHTML = '<p style="color:#777;">Supabase nÃ£o inicializado.</p>';
                 return;
             }
 
@@ -1213,8 +1219,8 @@
                 }
 
                 if (error) {
-                    // Se a tabela não existir ainda, mostra orientação (sem quebrar a página)
-                    qaList.innerHTML = `<p style="color:#b91c1c;">Não consegui carregar as perguntas (tabela ausente ou permissão). Rode o SQL: <b>supabase_perguntas_profissional.sql</b></p>`;
+                    // Se a tabela nÃ£o existir ainda, mostra orientaÃ§Ã£o (sem quebrar a pÃ¡gina)
+                    qaList.innerHTML = `<p style="color:#b91c1c;">NÃ£o consegui carregar as perguntas (tabela ausente ou permissÃ£o). Rode o SQL: <b>supabase_perguntas_profissional.sql</b></p>`;
                     return;
                 }
 
@@ -1226,7 +1232,7 @@
 
                 qaList.innerHTML = '';
                 data.forEach(row => {
-                    const name = row.perguntador_nome || row.asked_by_nome || 'Usuário';
+                    const name = row.perguntador_nome || row.asked_by_nome || 'UsuÃ¡rio';
                     const dt = toDateLabel(row.created_at);
                     const answered = !!(row.resposta && String(row.resposta).trim());
                     const canReply = isOwner && !answered;
@@ -1274,7 +1280,7 @@
                             .eq("id", id));
                         }
                         btn.disabled = false; btn.style.opacity = '1';
-                        if(error){ alert('Não consegui enviar a resposta.'); return; }
+                        if(error){ alert('NÃ£o consegui enviar a resposta.'); return; }
                         await load();
                     });
                 });
@@ -1285,18 +1291,18 @@
                 const texto = (input.value || '').trim();
                 if(!texto) return;
                 if(!me){
-                    alert('Faça login para perguntar.');
+                    alert('FaÃ§a login para perguntar.');
                     window.location.href = 'login.html';
                     return;
                 }
                 btnSend.disabled = true; btnSend.style.opacity = '0.7';
                 const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null') || {};
-                const nome = perfilLocal.user || perfilLocal.nome || me.user_metadata?.nome || me.email || 'Usuário';
+                const nome = perfilLocal.user || perfilLocal.nome || me.user_metadata?.nome || me.email || 'UsuÃ¡rio';
                 let error = null;
                 if (qaSource === "perguntas_profissional") {
                   if (!uidProfissional) {
                     btnSend.disabled = false; btnSend.style.opacity = '1';
-                    alert('Não foi possível identificar o profissional deste anúncio.');
+                    alert('NÃ£o foi possÃ­vel identificar o profissional deste anÃºncio.');
                     return;
                   }
                   ({ error } = await sb
@@ -1322,7 +1328,7 @@
                 }
                 btnSend.disabled = false; btnSend.style.opacity = '1';
                 if(error){
-                    alert('Não consegui enviar a pergunta. Rode o SQL do projeto (supabase_perguntas_profissional.sql).');
+                    alert('NÃ£o consegui enviar a pergunta. Rode o SQL do projeto (supabase_perguntas_profissional.sql).');
                     return;
                 }
                 input.value = '';
@@ -1372,3 +1378,4 @@
 </script>
 </body>
 </html>
+

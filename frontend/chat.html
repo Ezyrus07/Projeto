@@ -57,10 +57,11 @@
         #btn-menu-mobile { background: none; border: none; cursor: pointer; }
         /* Icon baseline fix (Boxicons) */
         .bx{ line-height: 1; }
-        .archive-btn i, .chat-menu-btn i, .btn-enviar i, .btn-attach i{ line-height: 1; display: block; }
-        .btn-enviar, .btn-attach{ display: inline-flex; align-items: center; justify-content: center; line-height: 1; }
+        .archive-btn i, .chat-menu-btn i, .btn-enviar i, .btn-attach i, .msg-menu-btn i{ line-height: 1; display: block; margin: 0; }
+        .archive-btn, .chat-menu-btn, .btn-enviar, .btn-attach, .msg-menu-btn{ padding: 0; }
+        .btn-enviar, .btn-attach{ display: grid; place-items: center; line-height: 1; }
         .archive-btn{ width: 34px; height: 34px; border-radius: 10px; }
-        .chat-menu-btn{ width: 40px; height: 40px; }
+        .chat-menu-btn{ width: 40px; height: 40px; display: grid; place-items: center; }
         .chat-menu-btn i{ font-size: 22px; }
 
 
@@ -384,9 +385,8 @@
             border:1px solid #e2e8f0;
             background:#fff;
             cursor:pointer;
-            display:flex;
-            align-items:center;
-            justify-content:center;
+            display:grid;
+            place-items:center;
             color:#444;
         }
         .chat-menu-btn:hover{ background:#f8fafc; }
@@ -431,13 +431,56 @@
             border:1px solid #e2e8f0;
             background:#fff;
             color:#64748b;
-            display:inline-flex;
-            align-items:center;
-            justify-content:center;
+            display:grid;
+            place-items:center;
             cursor:pointer;
             transition:all .15s ease;
         }
+        .archive-btn i{
+            font-size: 1.02rem;
+            line-height: 1 !important;
+            margin: 0 !important;
+            display: block;
+        }
         .archive-btn:hover{ background:#f1f5f9; color:var(--cor0); }
+
+        .lista-item-menu{
+            position: fixed;
+            z-index: 100000;
+            min-width: 180px;
+            background: #fff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            box-shadow: 0 16px 32px rgba(15,23,42,.16);
+            padding: 6px;
+            display: none;
+        }
+        .lista-item-menu.open{ display:block; }
+        .lista-item-menu button{
+            width: 100%;
+            border: none;
+            background: transparent;
+            text-align: left;
+            padding: 10px 12px;
+            border-radius: 8px;
+            font-size: .84rem;
+            font-weight: 700;
+            color: #1f2937;
+            cursor: pointer;
+        }
+        .lista-item-menu button:hover{ background:#f3f4f6; }
+        .lista-item-menu .danger{ color:#b91c1c; }
+        .muted-badge{
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            width:18px;
+            height:18px;
+            border-radius:999px;
+            background:#eef2f7;
+            color:#64748b;
+            font-size:.8rem;
+        }
 
         .reply-bar{
             display:none;
@@ -781,8 +824,9 @@
             display: flex; align-items: center; padding: 12px 20px; gap: 10px; flex-shrink: 0;
         }
         .input-msg { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; }
-        .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
-        .btn-attach { background: #e0e0e0; color: #555; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; }
+        .btn-attach { background: #e0e0e0; color: #555; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; }
+        .btn-enviar i, .btn-attach i, .chat-menu-btn i{ margin: 0; line-height: 1; display: block; }
         .btn-attach:hover { filter: brightness(0.98); }
 
         .msg-bubble { max-width: 68%; padding: 10px 14px; border-radius: 16px; font-size: 0.92rem; position: relative; box-shadow: 0 4px 12px rgba(15,23,42,0.08); line-height: 1.45; }
@@ -1848,8 +1892,14 @@
     .msg-menu-btn{
         border:none; background:transparent; cursor:pointer;
         width:26px; height:26px; border-radius:50%;
-        display:inline-flex; align-items:center; justify-content:center;
+        display:grid; place-items:center;
         color:inherit; opacity:.7;
+        line-height:1;
+    }
+    .msg-menu-btn i{
+        display:block;
+        margin:0;
+        line-height:1;
     }
     .msg-menu-btn:hover{ background:rgba(15,23,42,0.08); opacity:1; }
     .msg-menu{
@@ -1882,10 +1932,10 @@
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+<link rel="stylesheet" href="doke-shell.css?v=20260211v33">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v23">
-  <link rel="stylesheet" href="page-chat.css?v=20260211v31">
+  <link rel="stylesheet" href="page-chat.css?v=20260211v34">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -2736,7 +2786,19 @@
       function closeMsgMenus(){
           document.querySelectorAll('.msg-menu').forEach((m) => { m.style.display = 'none'; });
       }
+      function openMsgMenuById(id, ev){
+          if (!id) return;
+          if (ev) {
+              ev.preventDefault?.();
+              ev.stopPropagation?.();
+          }
+          const el = document.getElementById(`msg-menu-${id}`);
+          if (!el) return;
+          closeMsgMenus();
+          el.style.display = 'flex';
+      }
       window.toggleMsgMenu = function(id, ev){
+          if (!id) return;
           if (ev) ev.stopPropagation();
           const el = document.getElementById(`msg-menu-${id}`);
           if (!el) return;
@@ -2744,6 +2806,73 @@
           closeMsgMenus();
           el.style.display = isOpen ? 'none' : 'flex';
       };
+      function bindLongPressMensagens(container){
+          if (!container || container.dataset.longPressMsgReady === '1') return;
+          container.dataset.longPressMsgReady = '1';
+          let holdTimer = null;
+          let startX = 0;
+          let startY = 0;
+          let holdConsumed = false;
+
+          const clearHold = () => {
+              if (holdTimer) {
+                  clearTimeout(holdTimer);
+                  holdTimer = null;
+              }
+          };
+
+          const getMsgIdFromTarget = (target) => {
+              const host = target?.closest?.('[id^="msg-"]');
+              if (!host || !host.id) return '';
+              const id = host.id.replace(/^msg-/, '');
+              if (!id) return '';
+              const menu = document.getElementById(`msg-menu-${id}`);
+              return menu ? id : '';
+          };
+
+          container.addEventListener('touchstart', (e) => {
+              const target = e.target;
+              if (!target || target.closest('.msg-menu') || target.closest('.msg-menu-btn')) return;
+              const msgId = getMsgIdFromTarget(target);
+              if (!msgId) return;
+              const touch = e.touches && e.touches[0];
+              if (!touch) return;
+              startX = touch.clientX;
+              startY = touch.clientY;
+              holdConsumed = false;
+              clearHold();
+              holdTimer = setTimeout(() => {
+                  holdConsumed = true;
+                  openMsgMenuById(msgId, { preventDefault(){}, stopPropagation(){} });
+              }, 520);
+          }, { passive: true });
+
+          container.addEventListener('touchmove', (e) => {
+              const touch = e.touches && e.touches[0];
+              if (!touch) return;
+              const dx = Math.abs(touch.clientX - startX);
+              const dy = Math.abs(touch.clientY - startY);
+              if (dx > 10 || dy > 10) clearHold();
+          }, { passive: true });
+          container.addEventListener('touchend', clearHold, { passive: true });
+          container.addEventListener('touchcancel', clearHold, { passive: true });
+
+          container.addEventListener('click', (e) => {
+              if (!holdConsumed) return;
+              holdConsumed = false;
+              e.preventDefault();
+              e.stopPropagation();
+              if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+          }, true);
+
+          container.addEventListener('contextmenu', (e) => {
+              const target = e.target;
+              if (!target || target.closest('.msg-menu')) return;
+              const msgId = getMsgIdFromTarget(target);
+              if (!msgId) return;
+              openMsgMenuById(msgId, e);
+          });
+      }
       window.excluirMensagem = async function(msgId){
           if (!msgId || !chatIdAtual || !colecaoAtual) return;
           if (!await window.dokeConfirm('Excluir esta mensagem?', 'Excluir', 'danger')) return;
@@ -3085,6 +3214,27 @@
         const key = `doke_arquivado_${uid}`;
         localStorage.setItem(key, JSON.stringify(list || []));
     }
+    function getSilenciadosLocal(){
+        const uid = getUserUid();
+        if (!uid) return [];
+        const key = `doke_silenciado_${uid}`;
+        try {
+            const raw = JSON.parse(localStorage.getItem(key) || "[]");
+            return Array.isArray(raw) ? raw : [];
+        } catch (e) {
+            return [];
+        }
+    }
+    function setSilenciadosLocal(list){
+        const uid = getUserUid();
+        if (!uid) return;
+        const key = `doke_silenciado_${uid}`;
+        localStorage.setItem(key, JSON.stringify(list || []));
+    }
+    function isContatoSilenciado(outroUid){
+        if (!outroUid) return false;
+        return getSilenciadosLocal().includes(String(outroUid));
+    }
     function isArquivadoPorUser(data, docId){
         const arr = data && Array.isArray(data.arquivadoPor) ? data.arquivadoPor : [];
         const local = getArquivadosLocal();
@@ -3092,6 +3242,105 @@
         const uid = getUserUid();
         return (uid && arr.includes(uid)) || localHas;
     }
+
+    function fecharMenuItemLista(){
+        const menu = document.getElementById('listaItemMenu');
+        if (menu) {
+            menu.classList.remove('open');
+            menu.innerHTML = '';
+        }
+    }
+
+    function garantirMenuItemLista(){
+        let menu = document.getElementById('listaItemMenu');
+        if (menu) return menu;
+        menu = document.createElement('div');
+        menu.id = 'listaItemMenu';
+        menu.className = 'lista-item-menu';
+        document.body.appendChild(menu);
+        return menu;
+    }
+
+    window.abrirMenuItemLista = function(event, colecao, id, outroUid, isArquivado){
+        if (event) {
+            event.preventDefault?.();
+            event.stopPropagation?.();
+        }
+        if (!colecao || !id) return;
+        const menu = garantirMenuItemLista();
+        const arquivado = !!isArquivado;
+        const silenciado = colecao === 'conversas' ? isContatoSilenciado(outroUid) : false;
+        const silenciarLabel = silenciado ? 'Ativar notificações' : 'Silenciar';
+        const archiveLabel = arquivado ? 'Desarquivar' : 'Arquivar';
+        const excluirLabel = colecao === 'conversas' ? 'Excluir contato' : 'Excluir';
+
+        let html = `
+            <button onclick="executarAcaoMenuItemLista('archive', '${colecao}', '${id}', '${outroUid || ''}', ${arquivado ? 'true' : 'false'})">${archiveLabel}</button>
+        `;
+        if (colecao === 'conversas') {
+            html += `<button onclick="executarAcaoMenuItemLista('mute', '${colecao}', '${id}', '${outroUid || ''}', ${arquivado ? 'true' : 'false'})">${silenciarLabel}</button>`;
+            html += `<button class="danger" onclick="executarAcaoMenuItemLista('delete-contact', '${colecao}', '${id}', '${outroUid || ''}', ${arquivado ? 'true' : 'false'})">${excluirLabel}</button>`;
+        }
+        menu.innerHTML = html;
+
+        const px = Number(event?.clientX || 0);
+        const py = Number(event?.clientY || 0);
+        const x = px > 0 ? px : (window.innerWidth / 2);
+        const y = py > 0 ? py : (window.innerHeight / 2);
+        menu.style.left = '0px';
+        menu.style.top = '0px';
+        menu.classList.add('open');
+
+        const rect = menu.getBoundingClientRect();
+        const safeX = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
+        const safeY = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
+        menu.style.left = `${safeX}px`;
+        menu.style.top = `${safeY}px`;
+    };
+
+    window.executarAcaoMenuItemLista = async function(acao, colecao, id, outroUid, isArquivado){
+        fecharMenuItemLista();
+        if (!acao || !colecao || !id) return;
+        if (acao === 'archive') {
+            await window.toggleArquivamentoItem(colecao, id, !isArquivado);
+            return;
+        }
+        if (acao === 'mute') {
+            const key = String(outroUid || '');
+            if (!key) return;
+            const list = getSilenciadosLocal();
+            const has = list.includes(key);
+            if (has) {
+                setSilenciadosLocal(list.filter((x) => x !== key));
+            } else {
+                list.push(key);
+                setSilenciadosLocal(Array.from(new Set(list)));
+            }
+            if (window.dokeToast) window.dokeToast(has ? 'Notificações ativadas.' : 'Contato silenciado.');
+            if (window.carregarListaConversas) window.carregarListaConversas();
+            return;
+        }
+        if (acao === 'delete-contact' && colecao === 'conversas') {
+            const ok = await window.dokeConfirm('Excluir este contato da sua lista de mensagens?', 'Excluir contato', 'danger');
+            if (!ok) return;
+            try {
+                const ref = doc(db, "conversas", id);
+                await atualizarArrayUsuario(ref, 'ocultoChatPor', true);
+                if (chatIdAtual === id && colecaoAtual === 'conversas') {
+                    chatIdAtual = null;
+                    chatOutroUidAtual = '';
+                    const placeholder = document.getElementById('chat-placeholder');
+                    const conversa = document.getElementById('box-conversa-real');
+                    if (placeholder) placeholder.style.display = 'flex';
+                    if (conversa) conversa.style.display = 'none';
+                }
+                if (window.dokeToast) window.dokeToast('Contato excluído da sua lista.');
+            } catch (e) {
+                console.error(e);
+            }
+            if (window.carregarListaConversas) window.carregarListaConversas();
+        }
+    };
 
     async function atualizarArrayUsuario(ref, field, add){
         try {
@@ -3190,6 +3439,15 @@
         atualizarMenuConversa();
     };
 
+    document.addEventListener('click', (e) => {
+        const menu = document.getElementById('listaItemMenu');
+        if (!menu || !menu.classList.contains('open')) return;
+        if (menu.contains(e.target)) return;
+        fecharMenuItemLista();
+    });
+    window.addEventListener('resize', fecharMenuItemLista, { passive: true });
+    window.addEventListener('scroll', fecharMenuItemLista, { passive: true, capture: true });
+
     window.ocultarConversaAtual = async function(){
         if (!chatIdAtual || !colecaoAtual) return;
         if (!await window.dokeConfirm('Ocultar esta conversa? Ela continuará disponível para o outro usuário.', 'Ocultar', 'danger')) return;
@@ -3237,6 +3495,66 @@
             console.error('Falha ao arquivar/desarquivar:', e);
         }
     };
+
+    function bindLongPressConversas(container){
+        if (!container || container.dataset.longPressReady === '1') return;
+        container.dataset.longPressReady = '1';
+        let holdTimer = null;
+        let startX = 0;
+        let startY = 0;
+        let holdConsumed = false;
+
+        const clearHold = () => {
+            if (holdTimer) {
+                clearTimeout(holdTimer);
+                holdTimer = null;
+            }
+        };
+
+        container.addEventListener('touchstart', (e) => {
+            if (!window.matchMedia('(max-width: 900px)').matches) return;
+            const card = e.target.closest('.item-conversa');
+            if (!card) return;
+            const touch = e.touches && e.touches[0];
+            if (!touch) return;
+            startX = touch.clientX;
+            startY = touch.clientY;
+            holdConsumed = false;
+            clearHold();
+            holdTimer = setTimeout(() => {
+                holdConsumed = true;
+                const colecao = card.dataset.colecao || 'conversas';
+                const id = card.dataset.id || '';
+                const outroUid = card.dataset.outroUid || '';
+                const arquivado = card.dataset.arquivado === '1';
+                window.abrirMenuItemLista(
+                    { preventDefault(){}, stopPropagation(){}, clientX: startX, clientY: startY },
+                    colecao,
+                    id,
+                    outroUid,
+                    arquivado
+                );
+            }, 520);
+        }, { passive: true });
+
+        container.addEventListener('touchmove', (e) => {
+            const touch = e.touches && e.touches[0];
+            if (!touch) return;
+            const dx = Math.abs(touch.clientX - startX);
+            const dy = Math.abs(touch.clientY - startY);
+            if (dx > 10 || dy > 10) clearHold();
+        }, { passive: true });
+        container.addEventListener('touchend', clearHold, { passive: true });
+        container.addEventListener('touchcancel', clearHold, { passive: true });
+
+        container.addEventListener('click', (e) => {
+            if (!holdConsumed) return;
+            holdConsumed = false;
+            e.preventDefault();
+            e.stopPropagation();
+            if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+        }, true);
+    }
 
     window.limparHistoricoLocal = async function(){
         if (!chatIdAtual || !colecaoAtual) return;
@@ -5829,24 +6147,25 @@ window.confirmarFinalizacaoPedido = async () => {
                       const uD = await getDoc(doc(db, "usuarios", outroUid));
                       const u = uD.exists() ? uD.data() : {};
                       if (!matchBusca(u.user, lastMsg)) continue;
-                      const unreadHtml = isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id) ? '<span class="unread-dot"></span>' : "";
-                      const archiveBtn = isArquivado
-                          ? `<button class="archive-btn" title="Desarquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', false)"><i class='bx bx-undo'></i></button>`
-                          : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('conversas', '${it.id}', true)"><i class='bx bx-archive'></i></button>`;
+                      const silenciado = isContatoSilenciado(outroUid);
+                      const unreadHtml = (!silenciado && isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id)) ? '<span class="unread-dot"></span>' : "";
+                      const mutedHtml = silenciado ? `<span class="muted-badge" title="Contato silenciado"><i class='bx bx-bell-off'></i></span>` : "";
+                      const archiveBtn = `<button class="archive-btn" title="Opções" onclick="event.stopPropagation(); abrirMenuItemLista(event, 'conversas', '${it.id}', '${outroUid}', ${isArquivado ? 'true' : 'false'})"><i class='bx bx-archive'></i></button>`;
                       container.insertAdjacentHTML('beforeend', `
-                        <div class="item-conversa" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')">
+                        <div class="item-conversa" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')" oncontextmenu="abrirMenuItemLista(event, 'conversas', '${it.id}', '${outroUid}', ${isArquivado ? 'true' : 'false'}); return false;">
                           <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                           <div class="ic-info">
                             <div class="ic-nome">${u.user || 'Usuário'}</div>
                             <div class="ic-msg">${previewText}</div>
                           </div>
-                          <div class="ic-meta">${unreadHtml}${archiveBtn}</div>
+                          <div class="ic-meta">${unreadHtml}${mutedHtml}${archiveBtn}</div>
                         </div>`);
                   }
               }
               if (!container.children.length) {
                   container.innerHTML = "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
               }
+              bindLongPressConversas(container);
           } catch (e) {
               console.error(e);
               container.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Erro ao carregar mensagens.</p>";
@@ -6216,6 +6535,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
       function carregarMensagens(colecao, docId) {
           const container = document.getElementById('areaMensagens');
           if (!container) return;
+          bindLongPressMensagens(container);
           if (window.chatUnsubscribe) window.chatUnsubscribe();
           
           const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));

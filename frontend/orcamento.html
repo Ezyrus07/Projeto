@@ -10,11 +10,11 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Solicitar Orçamento | Doke</title>
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="style.css?v=20260211v44" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260207v26"></script>
+<script defer="" src="script.js?v=20260211v44"></script>
 <style>/* ==========================================================================
    PÁGINA DE ORÇAMENTO
    ========================================================================== */
@@ -108,7 +108,7 @@
 }
 .anexo-item{
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 10px;
     background: #f8fafc;
@@ -116,6 +116,38 @@
     border-radius: 8px;
     padding: 8px 10px;
     font-size: 0.82rem;
+}
+.anexo-item-main{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    flex: 1;
+}
+.anexo-thumb{
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 1px solid #dbe4ee;
+    background: #fff;
+    display: block;
+}
+.anexo-icon{
+    width: 52px;
+    height: 52px;
+    min-width: 52px;
+    min-height: 52px;
+    border-radius: 8px;
+    border: 1px solid #dbe4ee;
+    background: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #5f6b7a;
+    font-size: 1.2rem;
 }
 .anexo-item .anexo-name{
     overflow: hidden;
@@ -206,9 +238,15 @@
     margin-bottom: 15px;
 }
 .header-resumo img {
-    width: 60px; height: 60px;
-    border-radius: 50%;
+    width: 64px !important;
+    height: 64px !important;
+    min-width: 64px;
+    min-height: 64px;
+    aspect-ratio: 1 / 1;
+    border-radius: 999px !important;
     object-fit: cover;
+    display: block;
+    flex-shrink: 0;
 }
 .header-resumo h4 { margin: 0; font-size: 1rem; color: #333; }
 .header-resumo span { font-size: 0.85rem; color: #777; }
@@ -278,6 +316,21 @@
         margin-bottom: 25px;
     }
     .grid-duplo { grid-template-columns: 1fr; }
+}
+
+/* Scroll hardening da página de orçamento (evita travar ao voltar de outras telas) */
+body[data-page="orcamento"]{
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+}
+body[data-page="orcamento"].no-scroll{
+    overflow-y: auto !important;
+}
+body[data-page="orcamento"] main.main-orcamento{
+    display: block !important;
+    overflow: visible !important;
+    min-height: calc(100dvh - 120px);
+    padding-bottom: max(110px, env(safe-area-inset-bottom));
 }
 
 /* --- TOP HEADER (PASSOS) --- */
@@ -421,7 +474,7 @@
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
-<body>
+<body data-page="orcamento">
 <header class="navbar-mobile">
 <div id="logo-mobile">
 <a href="index.html">
@@ -734,6 +787,32 @@
         return false;
     }
 
+    function escapeHtmlAnexo(value){
+        return String(value ?? "")
+            .replaceAll("&", "&amp;")
+            .replaceAll("<", "&lt;")
+            .replaceAll(">", "&gt;")
+            .replaceAll('"', "&quot;")
+            .replaceAll("'", "&#039;");
+    }
+
+    function isImageFile(file){
+        if (!file) return false;
+        const type = String(file.type || "").toLowerCase();
+        if (type.startsWith("image/")) return true;
+        const name = String(file.name || "").toLowerCase();
+        return /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/.test(name);
+    }
+
+    function limparPreviewAnexos(){
+        (window.__orc_anexos_files || []).forEach((f) => {
+            if (f && f.__previewUrl) {
+                try { URL.revokeObjectURL(f.__previewUrl); } catch (_) {}
+                delete f.__previewUrl;
+            }
+        });
+    }
+
     function renderListaAnexos(){
         const list = document.getElementById('lista-anexos');
         if (!list) return;
@@ -743,7 +822,13 @@
         }
         list.innerHTML = window.__orc_anexos_files.map((f, idx) => `
             <div class="anexo-item">
-                <span class="anexo-name">${f.name}</span>
+                <div class="anexo-item-main">
+                    ${isImageFile(f)
+                        ? `<img src="${f.__previewUrl || (f.__previewUrl = URL.createObjectURL(f))}" class="anexo-thumb" alt="${escapeHtmlAnexo(f.name)}">`
+                        : `<span class="anexo-icon"><i class='bx bx-file'></i></span>`
+                    }
+                    <span class="anexo-name">${escapeHtmlAnexo(f.name)}</span>
+                </div>
                 <button type="button" onclick="removerAnexo(${idx})">Remover</button>
             </div>
         `).join('');
@@ -751,6 +836,10 @@
 
     window.removerAnexo = function(idx){
         if (idx < 0) return;
+        const f = window.__orc_anexos_files[idx];
+        if (f && f.__previewUrl) {
+            try { URL.revokeObjectURL(f.__previewUrl); } catch (_) {}
+        }
         window.__orc_anexos_files.splice(idx, 1);
         renderListaAnexos();
     };
@@ -762,7 +851,9 @@
         input.addEventListener('change', (e) => {
             const files = Array.from(e.target.files || []);
             files.forEach((file) => {
-                const exists = window.__orc_anexos_files.some(f => f.name === file.name && f.size === file.size);
+                const exists = window.__orc_anexos_files.some(
+                    f => f.name === file.name && f.size === file.size && f.lastModified === file.lastModified
+                );
                 if (!exists) window.__orc_anexos_files.push(file);
             });
             input.value = '';
@@ -904,6 +995,7 @@
     // --- 2. CARREGAMENTO DA PÁGINA ---
     window.addEventListener('load', async function() {
         console.log("🚀 Página Carregada. Buscando dados...");
+        liberarScrollOrcamento();
         initFirebaseHelpers();
 
         const db = window.db; 
@@ -1295,6 +1387,7 @@ Local do serviço: ${loc}${extra}`;
                             ultimaMensagem: '📎 Anexos enviados',
                             dataAtualizacao: new Date().toISOString()
                         });
+                        limparPreviewAnexos();
                         window.__orc_anexos_files = [];
 
                         renderListaAnexos();
@@ -1475,6 +1568,24 @@ Local do serviço: ${loc}${extra}`;
             btn.style.background = "#ccc";
         }
     }
+
+    function liberarScrollOrcamento() {
+        try {
+            document.documentElement.classList.remove('no-scroll');
+            if (document.body) {
+                document.body.classList.remove('no-scroll', 'chat-keyboard-open', 'doke-search-open', 'doke-drawer-open', 'doke-menu-open');
+                document.body.style.overflowY = 'auto';
+                document.body.style.overflowX = 'hidden';
+            }
+            if (typeof window.updateScrollLock === 'function') window.updateScrollLock();
+        } catch (_) {}
+    }
+    window.addEventListener('pageshow', liberarScrollOrcamento);
+    window.addEventListener('focus', liberarScrollOrcamento);
+    window.addEventListener('beforeunload', limparPreviewAnexos);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') liberarScrollOrcamento();
+    });
 
     window.buscarEndereco = function() {
         const cepEl = document.getElementById('cepOrcamento');

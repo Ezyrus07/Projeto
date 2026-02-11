@@ -515,7 +515,7 @@ window.carregarTrabalhosHome = async function() {
 
         snapshot.forEach(doc => {
             const data = doc.data();
-            const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${data.uid}'"`;
+            const linkPerfil = "";
             const titulo = (data.titulo || data.descricao || data.categoria || "Vídeo curto").toString();
             const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
             const categoria = (data.categoria || "Vídeo curto").toString();
@@ -546,7 +546,7 @@ window.carregarTrabalhosHome = async function() {
                     <div class="provider-info">
                         <img src="${escapeHtmlLocal(fotoAutor)}" alt="${escapeHtmlLocal(autorNome)}">
                         <div class="info-col">
-                            <span class="provider-name js-user-link" data-uid="${data.uid}" ${linkPerfil}>${escapeHtmlLocal(autorNome)}</span>
+                            <span class="provider-name js-user-link" data-uid="${data.uid || ''}" data-user="${escapeHtmlLocal(autorNome)}" ${linkPerfil}>${escapeHtmlLocal(autorNome)}</span>
                             <span class="video-desc-mini">${escapeHtmlLocal(categoria)}</span>
                         </div>
                     </div>
@@ -817,6 +817,7 @@ window.verificarNotificacoes = function(uid) {
 }
 
 const _dokeSupabaseUidCache = new Map();
+const _dokePerfilDestinoCache = new Map();
 
 function buildSocialNotifLink(postTipo, postFonte, postId, comentarioId, acao) {
     let extra = "";
@@ -866,6 +867,75 @@ async function getSupabaseUidByUserId(userId) {
     const uid = data?.uid || null;
     if (uid) _dokeSupabaseUidCache.set(userId, uid);
     return uid;
+}
+
+async function resolverDestinoPerfil(uid, user) {
+    const uidSafe = String(uid || "").trim();
+    const userRaw = String(user || "").trim();
+    const userSafe = userRaw.replace(/^@/, "");
+    const cacheKey = uidSafe ? `uid:${uidSafe}` : `user:${userSafe.toLowerCase()}`;
+    if (cacheKey && _dokePerfilDestinoCache.has(cacheKey)) {
+        return _dokePerfilDestinoCache.get(cacheKey);
+    }
+
+    let resolvedUid = uidSafe;
+    let isProf = null;
+    const client = getSupabaseClient();
+
+    if (client) {
+        try {
+            let row = null;
+            if (uidSafe) {
+                const byUid = await client
+                    .from("usuarios")
+                    .select("uid, isProfissional")
+                    .eq("uid", uidSafe)
+                    .maybeSingle();
+                if (!byUid.error) row = byUid.data || null;
+            }
+
+            if (!row && userSafe) {
+                let byUser = await client
+                    .from("usuarios")
+                    .select("uid, isProfissional")
+                    .in("user", [userSafe, `@${userSafe}`])
+                    .limit(1);
+                if (byUser.error || !Array.isArray(byUser.data) || byUser.data.length === 0) {
+                    byUser = await client
+                        .from("usuarios")
+                        .select("uid, isProfissional")
+                        .ilike("user", userSafe)
+                        .limit(1);
+                }
+                if (!byUser.error && Array.isArray(byUser.data) && byUser.data.length > 0) {
+                    row = byUser.data[0];
+                }
+            }
+
+            if (row) {
+                resolvedUid = String(row.uid || resolvedUid || "").trim();
+                isProf = row.isProfissional === true;
+            }
+        } catch (err) {
+            console.warn("Falha ao resolver destino de perfil:", err);
+        }
+    }
+
+    if (isProf == null) {
+        const perfilLocal = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "{}") || {};
+        const authUid = auth?.currentUser?.uid || "";
+        if (resolvedUid && authUid && resolvedUid === authUid) {
+            isProf = perfilLocal.isProfissional === true;
+        }
+    }
+
+    const base = isProf === true ? "perfil-profissional.html" : "perfil-usuario.html";
+    const query = resolvedUid
+        ? `uid=${encodeURIComponent(resolvedUid)}`
+        : `user=${encodeURIComponent(userSafe)}`;
+    const destino = `${base}?${query}`;
+    if (cacheKey) _dokePerfilDestinoCache.set(cacheKey, destino);
+    return destino;
 }
 
 async function resolverDonoComentarioUid(commentId, parentId, isReply) {
@@ -2955,15 +3025,16 @@ window.registrarCliquePerfil = async function(uidDestino) {
 }
 
 // 3. FUNÇÃO AUXILIAR PARA REDIRECIONAR E CONTAR (Use isso nos botões)
-window.irParaPerfilComContagem = function(uid) {
-    registrarCliquePerfil(uid); // Dispara contagem
-    window.location.href = `perfil-profissional.html?uid=${uid}`; // Vai para a página
+window.irParaPerfilComContagem = async function(uid, user) {
+    if (uid) registrarCliquePerfil(uid);
+    const destino = await resolverDestinoPerfil(uid, user);
+    window.location.href = destino;
 }
 
 // Delegação: clicar em @user abre perfil correto
 if (!window.__dokeUserLinkBound) {
     window.__dokeUserLinkBound = true;
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
         const el = e.target && e.target.closest ? e.target.closest('.js-user-link') : null;
         if (!el) return;
         const uid = el.getAttribute('data-uid') || '';
@@ -2971,17 +3042,12 @@ if (!window.__dokeUserLinkBound) {
         if (!uid && !user) return;
         e.preventDefault();
         e.stopPropagation();
-        if (uid) {
-            if (typeof window.irParaPerfilComContagem === 'function') {
-                window.irParaPerfilComContagem(uid);
-            } else {
-                window.location.href = `perfil-profissional.html?uid=${encodeURIComponent(uid)}`;
-            }
+        if (typeof window.irParaPerfilComContagem === 'function') {
+            await window.irParaPerfilComContagem(uid, user);
             return;
         }
-        const clean = String(user || '').replace(/^@/, '');
-        if (!clean) return;
-        window.location.href = `perfil-profissional.html?user=${encodeURIComponent(clean)}`;
+        const destino = await resolverDestinoPerfil(uid, user);
+        window.location.href = destino;
     });
 }
 
@@ -3391,7 +3457,7 @@ window.carregarFeedGlobal = async function() {
                 : '';
 
             const uidDestino = post.uid || ""; 
-            const linkPerfil = `onclick="event.stopPropagation(); window.location.href='perfil-profissional.html?uid=${uidDestino}'"`;
+            const linkPerfil = "";
             const cursorStyle = `style="cursor: pointer;"`;
 
             const html = `
@@ -6378,13 +6444,14 @@ function criarHTMLVideo(dados) {
     `;
 }
 
-window.irParaPerfil = function(uid) {
+window.irParaPerfil = function(uid, user) {
     if (!uid || uid === "undefined" || uid === "null") {
         alert("Perfil indisponível ou vídeo antigo.");
         return;
     }
-    // Redireciona corretamente
-    window.location.href = `perfil-profissional.html?uid=${uid}`;
+    resolverDestinoPerfil(uid, user || "")
+        .then((destino) => { window.location.href = destino; })
+        .catch(() => { window.location.href = `perfil-profissional.html?uid=${uid}`; });
 }
 
 window.irParaOrcamento = function(uid) {
@@ -7108,7 +7175,27 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
-        mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
+        mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls playsinline webkit-playsinline x5-playsinline preload="metadata" controlslist="nodownload noplaybackrate noremoteplayback nofullscreen" disablepictureinpicture disableremoteplayback style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
+        const modalVideo = mediaBox.querySelector("video");
+        if (modalVideo) {
+            const forceInlineMode = () => {
+                try {
+                    if (typeof modalVideo.webkitSetPresentationMode === "function" && modalVideo.webkitPresentationMode !== "inline") {
+                        modalVideo.webkitSetPresentationMode("inline");
+                    }
+                } catch (_) {}
+            };
+            modalVideo.setAttribute("playsinline", "");
+            modalVideo.setAttribute("webkit-playsinline", "");
+            modalVideo.setAttribute("x5-playsinline", "");
+            modalVideo.addEventListener("loadedmetadata", forceInlineMode);
+            modalVideo.addEventListener("play", forceInlineMode);
+            modalVideo.addEventListener("touchstart", forceInlineMode, { passive: true });
+            modalVideo.addEventListener("webkitbeginfullscreen", (ev) => {
+                if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
+                forceInlineMode();
+            });
+        }
     } else {
         mediaBox.innerHTML = `<img src="${item.media_url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
     }
@@ -7276,7 +7363,7 @@ async function carregarReelsNoIndex() {
                        muted loop 
                        onmouseover="this.play()" 
                        onmouseout="this.pause(); this.currentTime=0;"
-                       onclick="window.location.href='perfil-profissional.html?uid=${data.uid}'"
+                       onclick="irParaPerfil('${data.uid}', '${(data.autorUser || '').replace(/'/g, "\\'")}')"
                        style="width:100%; height:100%; object-fit:cover;">
                 </video>
                 
@@ -11824,7 +11911,9 @@ function abrirPerfil(uid) {
     window.irParaPerfilComContagem(uid);
     return;
   }
-  window.location.href = `perfil-profissional.html?uid=${encodeURIComponent(uid)}`;
+  resolverDestinoPerfil(uid, "")
+    .then((destino) => { window.location.href = destino; })
+    .catch(() => { window.location.href = `perfil-profissional.html?uid=${encodeURIComponent(uid)}`; });
 }
 
 /*************************************************
