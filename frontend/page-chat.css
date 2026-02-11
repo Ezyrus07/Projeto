@@ -2,7 +2,8 @@
 
 body[data-page="chat"]{
   overflow: hidden;
-  overscroll-behavior: none;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
   --chat-icon-btn-size: 42px;
   --chat-icon-font-size: 1.18rem;
   --chat-archive-btn-size: 42px;
@@ -93,7 +94,14 @@ body[data-page="chat"] .mensagens-body{
   padding: 12px 14px 14px !important;
   scroll-padding-bottom: 110px;
   -webkit-overflow-scrolling: touch;
-  overscroll-behavior: contain;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
+}
+
+body[data-page="chat"] .lista-scroll{
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: auto;
+  touch-action: pan-y;
 }
 
 body[data-page="chat"] .chat-footer{
@@ -193,6 +201,21 @@ body[data-page="chat"] .msg-bubble{
   word-break: break-word;
   overflow-wrap: anywhere;
   white-space: normal !important;
+  transition: background-color .14s ease, box-shadow .14s ease, transform .14s ease;
+}
+
+body[data-page="chat"] .msg-bubble.msg-touch-hover{
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(15,23,42,0.14);
+  filter: brightness(.985);
+}
+
+body[data-page="chat"] .msg-recebida.msg-touch-hover{
+  background: #f8fafc !important;
+}
+
+body[data-page="chat"] .msg-enviada.msg-touch-hover{
+  background: #0a6b5e !important;
 }
 
 body[data-page="chat"] .msg-bubble img{
@@ -275,6 +298,18 @@ body[data-page="chat"] .chat-context-bar,
 body[data-page="chat"] .reply-bar,
 body[data-page="chat"] .pinned-bar{
   max-width: 100%;
+}
+
+body[data-page="chat"] .scroll-down{
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+body[data-page="chat"] .scroll-down i{
+  display: block;
+  margin: 0;
+  line-height: 1;
 }
 
 body[data-page="chat"] .lista-quick{

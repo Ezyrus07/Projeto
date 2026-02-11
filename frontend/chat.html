@@ -24,7 +24,7 @@
     <meta property="og:image" content="assets/Imagens/doke-logo.png">
     <meta name="theme-color" content="#0b7768">
 
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="style.css?v=20260211v44" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-fixes.css" rel="stylesheet"/>
@@ -1935,7 +1935,7 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260211v33">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v23">
-  <link rel="stylesheet" href="page-chat.css?v=20260211v34">
+  <link rel="stylesheet" href="page-chat.css?v=20260211v35">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -2086,9 +2086,9 @@
 </div>
 <div class="agenda-panel" id="agendaPanel" style="display:none;">
 <div class="agenda-top">
-<button aria-label="Mes anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
+<button aria-label="Mês anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
 <div class="agenda-title" id="agendaTitle">Agenda</div>
-<button aria-label="Proximo mes" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Próximo mês" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="agenda-weekdays">
 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
@@ -2145,7 +2145,7 @@
 <div class="chat-context-actions" id="chatContextActions"></div>
 </div>
 <div class="mensagens-body" id="areaMensagens"></div>
-<button class="scroll-down" id="scrollDownBtn" title="Descer para a ultima mensagem" type="button">
+<button class="scroll-down" id="scrollDownBtn" title="Descer para a última mensagem" type="button">
 <i class="bx bx-chevron-down"></i>
 </button>
 <div class="reply-bar" id="replyBar">
@@ -2242,15 +2242,15 @@
 </div>
 <h3 style="text-align:center;">Finalizar pedido</h3>
 <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
-            Confirme a conclusao do servico. Anexe uma midia unica ou um par antes/depois.
+            Confirme a conclusão do serviço. Anexe uma mídia única ou um par antes/depois.
         </p>
 <div class="finalizar-modo">
-<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Midia unica</label>
+<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Mídia única</label>
 <label><input name="finalizarModo" onclick="alterarModoFinalizacao('antes_depois')" type="radio" value="antes_depois"/> Antes e depois</label>
 </div>
 <div class="finalizar-upload" id="finalizarUploadUnico">
 <label class="btn-upload" for="finalizarAnexoUnico">
-<i class="bx bx-image-add"></i> Anexar midia (opcional)
+<i class="bx bx-image-add"></i> Anexar mídia (opcional)
             </label>
 <small id="finalizarNomeArquivoUnico"></small>
 <input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file">
@@ -2290,7 +2290,7 @@
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
-<i class="bx bx-check"></i> Finalizar servico
+<i class="bx bx-check"></i> Finalizar serviço
             </button>
 <button class="btn-secondary-modal" onclick="fecharModalFinalizarPedido()">Cancelar</button>
 </div>
@@ -2813,6 +2813,7 @@
           let startX = 0;
           let startY = 0;
           let holdConsumed = false;
+          let hoverBubble = null;
 
           const clearHold = () => {
               if (holdTimer) {
@@ -2821,8 +2822,24 @@
               }
           };
 
+          const clearHover = () => {
+              if (!hoverBubble) return;
+              hoverBubble.classList.remove('msg-touch-hover');
+              hoverBubble = null;
+          };
+
+          const getMsgHostFromTarget = (target) => {
+              return target?.closest?.('[id^="msg-"]') || null;
+          };
+
+          const getBubbleFromHost = (host) => {
+              if (!host) return null;
+              if (host.classList?.contains('msg-bubble')) return host;
+              return host.querySelector?.('.msg-bubble') || null;
+          };
+
           const getMsgIdFromTarget = (target) => {
-              const host = target?.closest?.('[id^="msg-"]');
+              const host = getMsgHostFromTarget(target);
               if (!host || !host.id) return '';
               const id = host.id.replace(/^msg-/, '');
               if (!id) return '';
@@ -2841,9 +2858,13 @@
               startY = touch.clientY;
               holdConsumed = false;
               clearHold();
+              clearHover();
+              hoverBubble = getBubbleFromHost(getMsgHostFromTarget(target));
+              if (hoverBubble) hoverBubble.classList.add('msg-touch-hover');
               holdTimer = setTimeout(() => {
                   holdConsumed = true;
                   openMsgMenuById(msgId, { preventDefault(){}, stopPropagation(){} });
+                  setTimeout(clearHover, 140);
               }, 520);
           }, { passive: true });
 
@@ -2852,14 +2873,18 @@
               if (!touch) return;
               const dx = Math.abs(touch.clientX - startX);
               const dy = Math.abs(touch.clientY - startY);
-              if (dx > 10 || dy > 10) clearHold();
+              if (dx > 10 || dy > 10) {
+                  clearHold();
+                  clearHover();
+              }
           }, { passive: true });
-          container.addEventListener('touchend', clearHold, { passive: true });
-          container.addEventListener('touchcancel', clearHold, { passive: true });
+          container.addEventListener('touchend', () => { clearHold(); clearHover(); }, { passive: true });
+          container.addEventListener('touchcancel', () => { clearHold(); clearHover(); }, { passive: true });
 
           container.addEventListener('click', (e) => {
               if (!holdConsumed) return;
               holdConsumed = false;
+              clearHover();
               e.preventDefault();
               e.stopPropagation();
               if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
@@ -2870,6 +2895,7 @@
               if (!target || target.closest('.msg-menu')) return;
               const msgId = getMsgIdFromTarget(target);
               if (!msgId) return;
+              clearHover();
               openMsgMenuById(msgId, e);
           });
       }
@@ -7711,5 +7737,34 @@ window.tocarAudio = function(btn, url, audioId) {
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260209v22"></script>
+<script>
+  (function(){
+    function recoverPageScroll(){
+      try{
+        document.documentElement.classList.remove('no-scroll');
+        if (document.body) {
+          document.body.classList.remove('no-scroll', 'chat-keyboard-open', 'doke-search-open', 'doke-drawer-open', 'doke-menu-open', 'menu-ativo');
+          document.body.style.overflow = '';
+        }
+        document.documentElement.style.overflow = '';
+        const overlayMenu = document.getElementById('overlay-menu');
+        if (overlayMenu) overlayMenu.style.display = 'none';
+        const sidebar = document.querySelector('.sidebar-icones');
+        if (sidebar) sidebar.classList.remove('menu-aberto');
+      }catch(_){}
+    }
+
+    window.addEventListener('pageshow', recoverPageScroll);
+    window.addEventListener('focus', recoverPageScroll);
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) recoverPageScroll();
+    });
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', recoverPageScroll);
+    } else {
+      recoverPageScroll();
+    }
+  })();
+</script>
 </body>
 </html>

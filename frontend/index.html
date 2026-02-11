@@ -43,7 +43,7 @@
     });
   })();
 </script>
-<link href="style.css?v=20260211v43" rel="stylesheet"/>
+<link href="style.css?v=20260211v44" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
 <link href="doke-beforeafter.css?v=20260202" rel="stylesheet"/>
@@ -70,7 +70,7 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260209v22">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v24">
-  <link rel="stylesheet" href="page-home.css?v=20260211v49">
+  <link rel="stylesheet" href="page-home.css?v=20260211v50">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -254,10 +254,10 @@
 </section>
 <section class="videos-container">
 <div class="videos-header-top sec-head-row">
-<h2 class="sec-title" id="categorias-title2">Videos-curtos</h2>
+<h2 class="sec-title" id="categorias-title2">Vídeos curtos</h2>
 <div class="sec-head-actions">
-<button aria-label="Videos-curtos anteriores" class="carousel-nav vid-prev" type="button">&#10094;</button>
-<button aria-label="Próximos videos-curtos" class="carousel-nav vid-next" type="button">&#10095;</button>
+<button aria-label="Vídeos curtos anteriores" class="carousel-nav vid-prev" type="button">&#10094;</button>
+<button aria-label="Próximos vídeos curtos" class="carousel-nav vid-next" type="button">&#10095;</button>
 </div>
 </div>
 <div class="tiktok-scroll-wrapper" id="galeria-dinamica">
@@ -812,12 +812,21 @@
     function recoverPageScroll(){
       try{
         document.documentElement.classList.remove('no-scroll');
-        document.body && document.body.classList.remove('no-scroll', 'chat-keyboard-open', 'doke-search-open', 'doke-drawer-open', 'doke-menu-open');
+        document.body && document.body.classList.remove('no-scroll', 'chat-keyboard-open', 'doke-search-open', 'doke-drawer-open', 'doke-menu-open', 'menu-ativo');
+        const sidebar = document.querySelector('.sidebar-icones');
+        if (sidebar) sidebar.classList.remove('menu-aberto');
+        const overlayMenu = document.getElementById('overlay-menu');
+        if (overlayMenu) overlayMenu.style.display = 'none';
+        if (document.body) document.body.style.overflow = '';
+        document.documentElement.style.overflow = '';
         if (typeof window.updateScrollLock === 'function') window.updateScrollLock();
       }catch(_){}
     }
     window.addEventListener('pageshow', recoverPageScroll);
     window.addEventListener('focus', recoverPageScroll);
+    document.addEventListener('visibilitychange', function(){
+      if (!document.hidden) recoverPageScroll();
+    });
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', recoverPageScroll);
     } else {
