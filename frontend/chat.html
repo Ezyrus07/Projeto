@@ -819,7 +819,8 @@
             .chat-info{ flex: 1 1 auto; min-width: 0; }
             #chatNome{ max-width: 100% !important; font-size: 0.95rem; }
             #chatStatus{ display:block; white-space: normal; overflow: visible; text-overflow: unset; font-size: 0.75rem; }
-            #container-acao-header, #btn-cobranca-topo, #acoes-profissional-header{ width: 100%; justify-content: flex-end; order: 10; }
+            #container-acao-header, #acoes-profissional-header{ width: 100%; justify-content: flex-end; order: 10; }
+            #btn-cobranca-topo{ width: auto; max-width: 100%; }
             .chat-menu{ margin-left: auto; order: 5; }
             .chat-menu-btn{ width: 38px; height: 38px; }
         }
@@ -1884,7 +1885,7 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v23">
-  <link rel="stylesheet" href="page-chat.css?v=20260209v28">
+  <link rel="stylesheet" href="page-chat.css?v=20260211v31">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -2076,17 +2077,12 @@
 <i class="bx bx-dots-vertical-rounded"></i>
 </button>
 <div class="chat-menu-dropdown">
-<button class="chat-menu-item" id="menuArquivar" onclick="arquivarConversaAtual()">Arquivar conversa</button>
-<button class="chat-menu-item" id="menuDesarquivar" onclick="desarquivarConversaAtual()" style="display:none;">Desarquivar conversa</button>
-<button class="chat-menu-item" id="menuLimpar" onclick="limparHistoricoLocal()">Limpar mensagens (só pra você)</button>
+<button class="chat-menu-item" id="menuArquivar" onclick="arquivarConversaAtual()">Arquivar</button>
+<button class="chat-menu-item" id="menuDesarquivar" onclick="desarquivarConversaAtual()" style="display:none;">Desarquivar</button>
+<button class="chat-menu-item" id="menuLimpar" onclick="limparHistoricoLocal()">Limpar mensagens</button>
 <button class="chat-menu-item" id="menuRestaurar" onclick="restaurarHistoricoLocal()" style="display:none;">Restaurar mensagens</button>
 <button class="chat-menu-item danger" id="menuReembolso" onclick="solicitarReembolso(); fecharMenuChat();" style="display:none;">Solicitar reembolso</button>
 <button class="chat-menu-item" id="menuDisputa" onclick="abrirModalDisputa(); fecharMenuChat();" style="display:none;">Central de disputa</button>
-<div id="menuAmizadeDivider" style="border-top:1px solid #eef2f7; margin:6px 4px; display:none;"></div>
-<button class="chat-menu-item" id="menuAmizadeEnviar" onclick="enviarPedidoAmizade()" style="display:none;">Enviar pedido de amizade</button>
-<button class="chat-menu-item" id="menuAmizadeCancelar" onclick="cancelarPedidoAmizade()" style="display:none;">Cancelar pedido de amizade</button>
-<button class="chat-menu-item" id="menuAmizadeAceitar" onclick="aceitarPedidoAmizade()" style="display:none;">Aceitar pedido de amizade</button>
-<button class="chat-menu-item danger" id="menuAmizadeRecusar" onclick="recusarPedidoAmizade()" style="display:none;">Recusar pedido de amizade</button>
 </div>
 </div>
 </div>
@@ -2267,6 +2263,50 @@
 </button>
 </div>
 <div class="md-body" id="mdBody"></div>
+</div>
+</div>
+<div class="modal-detalhes" id="modalGerarCobranca" style="display:none; justify-content:center; align-items:center;">
+<div class="md-content" style="max-width: 420px; width:min(92vw,420px); text-align:left;">
+<div class="md-header">
+<div style="display:flex; align-items:center; gap:10px;">
+<i class="bx bx-dollar-circle" style="font-size:1.3rem; color:#d4a600;"></i>
+<strong>Gerar cobrança</strong>
+</div>
+<button onclick="fecharModalGerarCobranca()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
+<i class="bx bx-x"></i>
+</button>
+</div>
+<div class="md-body">
+<div class="input-group" style="margin-bottom:12px;">
+<label for="cobrancaValorInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Valor</label>
+<input class="input-premium" id="cobrancaValorInput" inputmode="decimal" placeholder="R$ 0,00" type="text"/>
+</div>
+<div class="input-group" style="margin-bottom:12px;">
+<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Título da cobrança</label>
+<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: Mão de obra elétrica" type="text"/>
+</div>
+<div class="input-group" style="margin-bottom:2px;">
+<label for="cobrancaParcelasInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Parcelas sem juros</label>
+<select class="input-premium" id="cobrancaParcelasInput">
+<option value="1">1x</option>
+<option value="2">2x</option>
+<option value="3">3x</option>
+<option value="4">4x</option>
+<option value="5">5x</option>
+<option value="6">6x</option>
+<option value="7">7x</option>
+<option value="8">8x</option>
+<option value="9">9x</option>
+<option value="10">10x</option>
+<option value="11">11x</option>
+<option value="12">12x</option>
+</select>
+</div>
+<div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+<button class="btn-dm btn-dm-cancel" onclick="fecharModalGerarCobranca()" type="button">Cancelar</button>
+<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobrança</button>
+</div>
+</div>
 </div>
 </div>
 <script>
@@ -3118,11 +3158,6 @@
         const btnRestaurar = document.getElementById('menuRestaurar');
         const btnReembolso = document.getElementById('menuReembolso');
         const btnDisputa = document.getElementById('menuDisputa');
-        const divAmizade = document.getElementById('menuAmizadeDivider');
-        const btnAmizadeEnviar = document.getElementById('menuAmizadeEnviar');
-        const btnAmizadeCancelar = document.getElementById('menuAmizadeCancelar');
-        const btnAmizadeAceitar = document.getElementById('menuAmizadeAceitar');
-        const btnAmizadeRecusar = document.getElementById('menuAmizadeRecusar');
         const clearAt = getClearTime(colecaoAtual, chatIdAtual);
         if (btnRestaurar) btnRestaurar.style.display = clearAt ? 'block' : 'none';
         if (conversaArquivadaAtual) {
@@ -3140,26 +3175,6 @@
         const statusPedidoLower = String(statusPedidoAtual || '').toLowerCase();
         const showDisputa = (colecaoAtual === 'pedidos' && (['pago','finalizado'].includes(statusPedidoLower) || disputaAtiva));
         if (btnDisputa) btnDisputa.style.display = showDisputa ? 'block' : 'none';
-
-        const showAmizade = !!amizadeOutroUidAtual;
-        if (divAmizade) divAmizade.style.display = showAmizade ? 'block' : 'none';
-        if (btnAmizadeEnviar) btnAmizadeEnviar.style.display = 'none';
-        if (btnAmizadeCancelar) btnAmizadeCancelar.style.display = 'none';
-        if (btnAmizadeAceitar) btnAmizadeAceitar.style.display = 'none';
-        if (btnAmizadeRecusar) btnAmizadeRecusar.style.display = 'none';
-
-        if (showAmizade) {
-            if (amizadeStatusAtual === 'pendente_out') {
-                if (btnAmizadeCancelar) btnAmizadeCancelar.style.display = 'block';
-            } else if (amizadeStatusAtual === 'pendente_in') {
-                if (btnAmizadeAceitar) btnAmizadeAceitar.style.display = 'block';
-                if (btnAmizadeRecusar) btnAmizadeRecusar.style.display = 'block';
-            } else if (amizadeStatusAtual === 'aceito') {
-                // Sem ação no menu
-            } else {
-                if (btnAmizadeEnviar) btnAmizadeEnviar.style.display = 'block';
-            }
-        }
     }
 
     function fecharMenuChat(){
@@ -3448,6 +3463,13 @@
       let amizadeIdAtual = '';
       let amizadeDirecaoAtual = '';
       let amizadeOutroUidAtual = '';
+      let dmPrivacidadeModoOutro = 'livre';
+      let dmSolicitacaoAtivaAtual = false;
+      let dmSolicitacaoStatusAtual = 'none';
+      let dmSolicitacaoByAtual = '';
+      let dmSolicitacaoTargetAtual = '';
+      let dmPodeEnviarAtual = true;
+      let dmOutroEhProfissionalAtual = false;
 
       function setChatInputEnabled(enabled, placeholderText){
           const input = document.getElementById('inputMsg');
@@ -3462,8 +3484,215 @@
           if (input) {
               input.placeholder = enabled
                   ? 'Digite uma mensagem...'
-                  : (placeholderText || 'Envie pedido de amizade para conversar.');
+                  : (placeholderText || 'Aguardando liberação para enviar mensagens.');
           }
+      }
+
+      function getDmPrivacidadeModo(data){
+          const raw = String(
+              (data && (
+                  data.dmPrivacidadeModo ||
+                  data.dm_privacidade_modo ||
+                  data.privacidadeDmModo ||
+                  data.privacidade_dm_modo ||
+                  data.privacidadeMensagens ||
+                  data.privacidade_mensagens
+              )) || ''
+          ).toLowerCase();
+          return raw === 'solicitacao' ? 'solicitacao' : 'livre';
+      }
+
+      function resetDmSolicitacaoState(){
+          dmPrivacidadeModoOutro = 'livre';
+          dmSolicitacaoAtivaAtual = false;
+          dmSolicitacaoStatusAtual = 'none';
+          dmSolicitacaoByAtual = '';
+          dmSolicitacaoTargetAtual = '';
+          dmPodeEnviarAtual = true;
+          dmOutroEhProfissionalAtual = false;
+      }
+
+      async function atualizarPrivacidadeDmConversa(uidOutro, opts){
+          const targetUid = uidOutro || chatOutroUidAtual || '';
+          if (!targetUid || colecaoAtual !== 'conversas' || !chatIdAtual) {
+              resetDmSolicitacaoState();
+              return;
+          }
+
+          let outroData = null;
+          try {
+              const outroSnap = await getDoc(doc(db, "usuarios", targetUid));
+              if (outroSnap.exists()) outroData = outroSnap.data() || {};
+          } catch (_) {}
+
+          const outroEhProf = !!(outroData && (outroData.isProfissional === true || outroData.isprofissional === true));
+          const modoOutro = outroEhProf ? getDmPrivacidadeModo(outroData) : 'livre';
+
+          let meuPerfilLocal = null;
+          try { meuPerfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) {}
+          let meuEhProf = !!(meuPerfilLocal && (meuPerfilLocal.isProfissional === true || String(meuPerfilLocal.isProfissional || '').toLowerCase() === 'true'));
+          let modoMeu = meuEhProf ? getDmPrivacidadeModo(meuPerfilLocal) : 'livre';
+          if (!meuEhProf || !meuPerfilLocal || !meuPerfilLocal.dmPrivacidadeModo) {
+              try {
+                  const meuSnap = await getDoc(doc(db, "usuarios", currentUserUid));
+                  if (meuSnap.exists()) {
+                      const meuData = meuSnap.data() || {};
+                      meuEhProf = meuData.isProfissional === true || meuData.isprofissional === true;
+                      modoMeu = meuEhProf ? getDmPrivacidadeModo(meuData) : 'livre';
+                  }
+              } catch (_) {}
+          }
+
+          let requestTarget = '';
+          if (outroEhProf && modoOutro === 'solicitacao') requestTarget = targetUid;
+          else if (meuEhProf && modoMeu === 'solicitacao') requestTarget = String(currentUserUid || '');
+
+          dmOutroEhProfissionalAtual = outroEhProf;
+          dmPrivacidadeModoOutro = modoOutro;
+          dmSolicitacaoAtivaAtual = !!requestTarget;
+          dmSolicitacaoStatusAtual = 'none';
+          dmSolicitacaoByAtual = '';
+          dmSolicitacaoTargetAtual = requestTarget || targetUid;
+          dmPodeEnviarAtual = true;
+
+          if (!dmSolicitacaoAtivaAtual) return;
+
+          let convData = (opts && opts.conversaData) ? (opts.conversaData || {}) : null;
+          if (!convData) {
+              try {
+                  const convSnap = await getDoc(doc(db, "conversas", chatIdAtual));
+                  convData = convSnap.exists() ? (convSnap.data() || {}) : {};
+              } catch (_) {
+                  convData = {};
+              }
+          }
+
+          const reqStatus = String(
+              convData.dmRequestStatus ||
+              convData.dm_request_status ||
+              convData.solicitacaoMensagemStatus ||
+              convData.solicitacao_mensagem_status ||
+              ''
+          ).toLowerCase();
+          const reqBy = String(
+              convData.dmRequestBy ||
+              convData.dm_request_by ||
+              convData.solicitacaoMensagemBy ||
+              convData.solicitacao_mensagem_by ||
+              ''
+          );
+          const reqTarget = String(
+              convData.dmRequestTarget ||
+              convData.dm_request_target ||
+              convData.solicitacaoMensagemTarget ||
+              convData.solicitacao_mensagem_target ||
+              targetUid
+          );
+
+          dmSolicitacaoStatusAtual = reqStatus || 'none';
+          dmSolicitacaoByAtual = reqBy;
+          dmSolicitacaoTargetAtual = reqTarget || targetUid;
+
+          const souAlvoSolicitacao = String(currentUserUid || '') === String(dmSolicitacaoTargetAtual || '');
+          if (souAlvoSolicitacao) {
+              dmPodeEnviarAtual = true;
+              return;
+          }
+
+          if (dmSolicitacaoStatusAtual === 'aprovado') {
+              dmPodeEnviarAtual = true;
+              return;
+          }
+
+          dmPodeEnviarAtual = false;
+      }
+
+      function renderContextoConversa(){
+          const bar = document.getElementById('chatContextBar');
+          const text = document.getElementById('chatContextText');
+          const actions = document.getElementById('chatContextActions');
+          if (!bar || !text || !actions) return;
+          if (colecaoAtual !== 'conversas') return;
+
+          actions.innerHTML = '';
+          const souAlvoSolicitacao = String(currentUserUid || '') === String(dmSolicitacaoTargetAtual || '');
+
+          if (dmSolicitacaoAtivaAtual) {
+              bar.style.display = 'flex';
+              bar.classList.add('show');
+
+              if (souAlvoSolicitacao && dmSolicitacaoStatusAtual === 'pendente') {
+                  text.textContent = 'Solicitação de mensagem recebida.';
+                  actions.innerHTML = `
+                      <button class="primary" onclick="aprovarSolicitacaoMensagem()">Aceitar</button>
+                      <button class="danger" onclick="recusarSolicitacaoMensagem()">Recusar</button>
+                  `;
+                  setChatInputEnabled(true);
+                  return;
+              }
+
+              if (!souAlvoSolicitacao && dmSolicitacaoStatusAtual === 'pendente') {
+                  text.textContent = 'Solicitação enviada. Aguarde aprovação do profissional.';
+                  actions.innerHTML = `<button onclick="enviarSolicitacaoMensagem()">Reenviar solicitação</button>`;
+                  setChatInputEnabled(false, 'Aguardando aprovação da solicitação de mensagem.');
+                  return;
+              }
+
+              if (!souAlvoSolicitacao && dmSolicitacaoStatusAtual === 'recusado') {
+                  text.textContent = 'Sua solicitação de mensagem foi recusada.';
+                  actions.innerHTML = `<button class="primary" onclick="enviarSolicitacaoMensagem()">Enviar nova solicitação</button>`;
+                  setChatInputEnabled(false, 'Solicitação recusada. Envie uma nova solicitação.');
+                  return;
+              }
+
+              if (!souAlvoSolicitacao && dmSolicitacaoStatusAtual !== 'aprovado') {
+                  text.textContent = 'Este profissional recebe mensagens por solicitação.';
+                  actions.innerHTML = `<button class="primary" onclick="enviarSolicitacaoMensagem()">Enviar solicitação</button>`;
+                  setChatInputEnabled(false, 'Envie uma solicitação para iniciar esta conversa.');
+                  return;
+              }
+
+              bar.classList.remove('show');
+              bar.style.display = 'none';
+              setChatInputEnabled(true);
+              return;
+          }
+
+          if (amizadeStatusAtual === 'pendente_out') {
+              bar.style.display = 'flex';
+              bar.classList.add('show');
+              text.textContent = 'Pedido de amizade enviado.';
+              actions.innerHTML = `<button onclick="cancelarPedidoAmizade()">Cancelar pedido</button>`;
+              setChatInputEnabled(true);
+              return;
+          }
+
+          if (amizadeStatusAtual === 'pendente_in') {
+              bar.style.display = 'flex';
+              bar.classList.add('show');
+              text.textContent = 'Você recebeu um pedido de amizade.';
+              actions.innerHTML = `
+                  <button class="primary" onclick="aceitarPedidoAmizade()">Aceitar</button>
+                  <button class="danger" onclick="recusarPedidoAmizade()">Recusar</button>
+              `;
+              setChatInputEnabled(true);
+              return;
+          }
+
+          if (amizadeStatusAtual === 'recusado') {
+              bar.style.display = 'flex';
+              bar.classList.add('show');
+              text.textContent = 'Pedido de amizade recusado.';
+              actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar novo pedido</button>`;
+              setChatInputEnabled(true);
+              return;
+          }
+
+          bar.classList.remove('show');
+          bar.style.display = 'none';
+          text.textContent = '';
+          actions.innerHTML = '';
+          setChatInputEnabled(true);
       }
 
       async function getAmizadeStatus(uidOutro){
@@ -3546,66 +3775,97 @@
       }
 
       async function atualizarContextoAmizade(uidOutro, opts){
-          const bar = document.getElementById('chatContextBar');
-          const text = document.getElementById('chatContextText');
-          const actions = document.getElementById('chatContextActions');
-          if (!bar || !text || !actions) return;
           amizadeOutroUidAtual = uidOutro || '';
 
           const rel = await getAmizadeStatus(uidOutro);
           amizadeStatusAtual = rel.status || 'none';
           amizadeIdAtual = rel.id || '';
           amizadeDirecaoAtual = rel.direction || '';
-
-          const blockInput = !(opts && opts.blockInput === false);
-          actions.innerHTML = '';
-          if (!blockInput) {
-              bar.classList.remove('show');
-              bar.style.display = 'none';
-              setChatInputEnabled(true);
-              atualizarMenuConversa();
-              return;
-          }
-          if (amizadeStatusAtual === 'aceito') {
-              bar.classList.remove('show');
-              bar.style.display = 'none';
-              setChatInputEnabled(true);
-              atualizarMenuConversa();
-              return;
-          }
-
-          bar.style.display = 'flex';
-          bar.classList.add('show');
-          setChatInputEnabled(false, 'Envie pedido de amizade para conversar.');
-
-          if (amizadeStatusAtual === 'pendente_out') {
-              text.textContent = 'Pedido de amizade enviado. Aguarde a aprovação.';
-              actions.innerHTML = `<button onclick="cancelarPedidoAmizade()">Cancelar pedido</button>`;
-              atualizarMenuConversa();
-              return;
-          }
-          if (amizadeStatusAtual === 'pendente_in') {
-              text.textContent = 'Você recebeu um pedido de amizade.';
-              actions.innerHTML = `
-                  <button class="primary" onclick="aceitarPedidoAmizade()">Aceitar</button>
-                  <button class="danger" onclick="recusarPedidoAmizade()">Recusar</button>
-              `;
-              atualizarMenuConversa();
-              return;
-          }
-          if (amizadeStatusAtual === 'recusado') {
-              text.textContent = 'Conversa bloqueada. Envie um novo pedido de amizade.';
-              actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar pedido</button>`;
-              atualizarMenuConversa();
-              return;
-          }
-          text.textContent = 'Envie um pedido de amizade para liberar as mensagens.';
-          actions.innerHTML = `<button class="primary" onclick="enviarPedidoAmizade()">Enviar pedido</button>`;
+          if (!(opts && opts.skipRender)) renderContextoConversa();
           atualizarMenuConversa();
       }
 
-      function isConversaBloqueadaPorAmizade(){
-          return colecaoAtual === 'conversas' && amizadeStatusAtual !== 'aceito';
+      function isConversaBloqueadaParaEnviar(){
+          return colecaoAtual === 'conversas' && dmSolicitacaoAtivaAtual && !dmPodeEnviarAtual;
+      }
+
+      function getMensagemBloqueioConversa(){
+          if (!(dmSolicitacaoAtivaAtual && !dmPodeEnviarAtual)) {
+              return 'Não foi possível enviar mensagem neste momento.';
+          }
+          if (dmSolicitacaoStatusAtual === 'pendente') {
+              return 'Aguardando aprovação da solicitação de mensagem.';
+          }
+          if (dmSolicitacaoStatusAtual === 'recusado') {
+              return 'Solicitação de mensagem recusada. Envie uma nova solicitação.';
+          }
+          return 'Este profissional recebe DM apenas por solicitação.';
+      }
+
+      window.enviarSolicitacaoMensagem = async function(){
+          if (colecaoAtual !== 'conversas' || !chatIdAtual || !currentUserUid) return;
+          const targetUid = dmSolicitacaoTargetAtual || chatOutroUidAtual || amizadeOutroUidAtual || '';
+          if (!targetUid) return;
+          try {
+              const agora = new Date().toISOString();
+              const payload = {
+                  dmRequestStatus: 'pendente',
+                  dmRequestBy: currentUserUid,
+                  dmRequestTarget: targetUid,
+                  dmRequestUpdatedAt: agora,
+                  ultimaMensagem: 'Solicitação de mensagem enviada',
+                  dataAtualizacao: agora
+              };
+              if (dmSolicitacaoStatusAtual !== 'pendente') payload.dmRequestRequestedAt = agora;
+              await updateDoc(doc(db, "conversas", chatIdAtual), payload);
+              try {
+                  if (typeof window.criarNotificacaoSocial === "function") {
+                      await window.criarNotificacaoSocial({ acao: "solicitacao_mensagem", paraUid: targetUid });
+                  }
+              } catch (_) {}
+              await atualizarPrivacidadeDmConversa(chatOutroUidAtual || targetUid);
+              renderContextoConversa();
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao enviar solicitação de mensagem:', e);
+              window.dokeAlert ? window.dokeAlert('Não foi possível enviar a solicitação de mensagem.') : alert('Não foi possível enviar a solicitação de mensagem.');
+          }
+      };
+
+      window.aprovarSolicitacaoMensagem = async function(){
+          if (colecaoAtual !== 'conversas' || !chatIdAtual || !currentUserUid) return;
+          try {
+              const agora = new Date().toISOString();
+              await updateDoc(doc(db, "conversas", chatIdAtual), {
+                  dmRequestStatus: 'aprovado',
+                  dmRequestUpdatedAt: agora,
+                  dmRequestResolvedAt: agora,
+                  dataAtualizacao: agora
+              });
+              await atualizarPrivacidadeDmConversa(chatOutroUidAtual || amizadeOutroUidAtual);
+              renderContextoConversa();
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao aprovar solicitação de mensagem:', e);
+          }
+      };
+
+      window.recusarSolicitacaoMensagem = async function(){
+          if (colecaoAtual !== 'conversas' || !chatIdAtual || !currentUserUid) return;
+          try {
+              const agora = new Date().toISOString();
+              await updateDoc(doc(db, "conversas", chatIdAtual), {
+                  dmRequestStatus: 'recusado',
+                  dmRequestUpdatedAt: agora,
+                  dmRequestResolvedAt: agora,
+                  dataAtualizacao: agora
+              });
+              await atualizarPrivacidadeDmConversa(chatOutroUidAtual || amizadeOutroUidAtual);
+              renderContextoConversa();
+              if (window.carregarListaConversas) window.carregarListaConversas();
+          } catch (e) {
+              console.error('Falha ao recusar solicitação de mensagem:', e);
+          }
       }
 
       window.enviarPedidoAmizade = async function(){
@@ -5508,7 +5768,6 @@ window.confirmarFinalizacaoPedido = async () => {
           container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
   
           try {
-              const friendMap = await carregarMapaAmizades();
               // 1) Conversas diretas
               const qConv = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
               const snapConv = await getDocs(qConv);
@@ -5538,16 +5797,35 @@ window.confirmarFinalizacaoPedido = async () => {
                       if (listaModo !== 'arquivados' && isArquivado) continue;
                       const outroUid = it.outroUid;
                       if(!outroUid) continue;
-                      const rel = friendMap.get(outroUid);
-                      const isAmigo = rel && rel.status === 'aceito';
                       const lastMsg = data.ultimaMensagem || data.ultimamensagem || '';
-                      const previewText = isAmigo
-                          ? (lastMsg || '')
-                          : (rel && rel.status === 'pendente_in')
-                              ? 'Pedido de amizade recebido'
-                              : (rel && rel.status === 'pendente_out')
-                                  ? 'Pedido de amizade enviado'
-                                  : 'Envie pedido de amizade para conversar';
+                      const reqStatus = String(
+                          data.dmRequestStatus ||
+                          data.dm_request_status ||
+                          data.solicitacaoMensagemStatus ||
+                          data.solicitacao_mensagem_status ||
+                          ''
+                      ).toLowerCase();
+                      const reqBy = String(
+                          data.dmRequestBy ||
+                          data.dm_request_by ||
+                          data.solicitacaoMensagemBy ||
+                          data.solicitacao_mensagem_by ||
+                          ''
+                      );
+                      const reqTarget = String(
+                          data.dmRequestTarget ||
+                          data.dm_request_target ||
+                          data.solicitacaoMensagemTarget ||
+                          data.solicitacao_mensagem_target ||
+                          outroUid
+                      );
+                      const souAlvoReq = String(currentUserUid || '') === String(reqTarget || '');
+                      const souSolicitanteReq = String(currentUserUid || '') === String(reqBy || '');
+                      const previewText = reqStatus === 'pendente'
+                          ? (souAlvoReq ? 'Solicitação de mensagem recebida' : (souSolicitanteReq ? 'Solicitação de mensagem pendente' : 'Solicitação de mensagem'))
+                          : (reqStatus === 'recusado'
+                              ? (souSolicitanteReq ? 'Solicitação recusada' : 'Solicitação recusada')
+                              : (lastMsg || 'Toque para conversar'));
                       const uD = await getDoc(doc(db, "usuarios", outroUid));
                       const u = uD.exists() ? uD.data() : {};
                       if (!matchBusca(u.user, lastMsg)) continue;
@@ -5712,11 +5990,22 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         document.getElementById('box-conversa-real').style.display = 'flex';
         const chatFooter = document.getElementById('chatFooter'); 
         const containerAcao = document.getElementById('container-acao-header');
+        const btnC = document.getElementById('btn-cobranca-topo');
+        const btnP = document.getElementById('btn-pagamento');
+        const divAcoesPro = document.getElementById('acoes-profissional-header');
 
         statusPedidoAtual = (colecao === 'pedidos') ? (statusDoc || 'pendente') : 'pendente';
         avaliadoPedidoAtual = false;
         conversaArquivadaAtual = false;
         chatOutroUidAtual = uidOutro || '';
+        chatIdAtual = idDoc;
+        colecaoAtual = colecao;
+        window.chatIdAtual = chatIdAtual;
+        window.colecaoAtual = colecaoAtual;
+        if (btnC) btnC.style.display = 'none';
+        if (btnP) btnP.style.display = 'none';
+        if (divAcoesPro) divAcoesPro.style.display = 'none';
+        if (containerAcao) containerAcao.innerHTML = '';
         
         // Remove avisos antigos
         const aviso = document.getElementById('aviso-bloqueio-chat');
@@ -5724,6 +6013,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
         // 1. LÓGICA DE PEDIDOS (BLOQUEIO/STATUS)
           if (colecao === 'pedidos') {
+              resetDmSolicitacaoState();
+              setChatInputEnabled(true);
               await hydratePedidoInicial(idDoc);
               if (pedidoDocUnsub) { try { pedidoDocUnsub(); } catch (_) {} }
               pedidoDocUnsub = onSnapshot(doc(db, "pedidos", idDoc), (docSnap) => {
@@ -5771,13 +6062,10 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         containerAcao.innerHTML = (deUid === currentUserUid && p.status === 'pago') 
                             ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
                         
-                        const divAcoesPro = document.getElementById('acoes-profissional-header');
                         if(divAcoesPro) divAcoesPro.style.display = (paraUid === currentUserUid && p.status === 'pendente') ? 'flex' : 'none';
                     }
                     
                     // Botões Cobrança
-                    const btnC = document.getElementById('btn-cobranca-topo');
-                    const btnP = document.getElementById('btn-pagamento');
                     if(btnC) btnC.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
                     if(btnP) btnP.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
                   } else {
@@ -5789,20 +6077,30 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                   mostrarAvisoBloqueio("Não foi possível carregar o pedido.");
                   if (chatFooter) chatFooter.style.display = 'none';
               });
-              await atualizarContextoAmizade(uidOutro, { blockInput: false });
+              await atualizarContextoAmizade(uidOutro);
+              renderContextoConversa();
           } else {
               if (pedidoDocUnsub) { try { pedidoDocUnsub(); } catch (_) {} pedidoDocUnsub = null; }
               chatFooter.style.display = 'flex';
               pedidoAtualData = null;
               atualizarContextoChat(null);
-              await atualizarContextoAmizade(uidOutro, { blockInput: true });
+              setChatInputEnabled(false, 'Carregando regras de mensagem...');
+              await atualizarContextoAmizade(uidOutro, { skipRender: true });
+              await atualizarPrivacidadeDmConversa(uidOutro);
+              renderContextoConversa();
               try {
                   if (conversaDocUnsub) conversaDocUnsub();
-                  conversaDocUnsub = onSnapshot(doc(db, "conversas", idDoc), (snapConv) => {
-                      if (!snapConv.exists()) return;
+                  conversaDocUnsub = onSnapshot(doc(db, "conversas", idDoc), async (snapConv) => {
+                      if (!snapConv.exists()) {
+                          resetDmSolicitacaoState();
+                          renderContextoConversa();
+                          return;
+                      }
                       const convData = snapConv.data() || {};
                       conversaArquivadaAtual = isArquivadoPorUser(convData, idDoc);
                       pinnedAtual = Array.isArray(convData.pinned) ? convData.pinned : [];
+                      await atualizarPrivacidadeDmConversa(uidOutro, { conversaData: convData });
+                      renderContextoConversa();
                       renderPinnedBar();
                       atualizarMenuConversa();
                   });
@@ -5859,15 +6157,16 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         elStatus.style.fontWeight = "400";
                     }
                 }
+                if (colecaoAtual === 'conversas' && String(uidOutro || '') === String(chatOutroUidAtual || '')) {
+                    atualizarPrivacidadeDmConversa(uidOutro).then(() => {
+                        renderContextoConversa();
+                        atualizarMenuConversa();
+                    }).catch(() => {});
+                }
             }
         });
 
-        chatIdAtual = idDoc; 
-        colecaoAtual = colecao;
         restaurarRascunhoChat();
-        // Mantém compat com trechos antigos que usam window.*
-        window.chatIdAtual = chatIdAtual;
-        window.colecaoAtual = colecaoAtual;
         carregarMensagens(colecao, idDoc);
         marcarChatComoLido(colecao, idDoc);
         atualizarMenuConversa();
@@ -5918,11 +6217,6 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
           const container = document.getElementById('areaMensagens');
           if (!container) return;
           if (window.chatUnsubscribe) window.chatUnsubscribe();
-          if (colecao === 'conversas' && amizadeStatusAtual !== 'aceito') {
-              container.innerHTML = `<div style="text-align:center; padding:30px; color:#888;">Envie pedido de amizade para liberar esta conversa.</div>`;
-              updateScrollDownButton();
-              return;
-          }
           
           const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
     let lastSig = "";
@@ -6067,6 +6361,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
             // --- CARD PAGAMENTO (VERDE) ---
             if (m.tipo === 'pagamento') {
+                if (colecao !== 'pedidos') return;
                 const jaPago = (statusPedido === 'pago' || statusPedido === 'finalizado');
                 const perfilLocal = (() => {
                     try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || "{}"); }
@@ -6371,27 +6666,91 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
 // SUBSTITUA A FUNÇÃO window.gerarPagamento NO CHAT.HTML POR ESTA:
 
+function formatCurrencyBRLFromDigits(digits){
+    const clean = String(digits || "").replace(/\D/g, "");
+    const n = Number(clean || "0") / 100;
+    return n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+function ensureCobrancaModalBehavior(){
+    const modal = document.getElementById('modalGerarCobranca');
+    const valorInput = document.getElementById('cobrancaValorInput');
+    if (!modal || !valorInput || modal.dataset.bound === "1") return;
+
+    modal.dataset.bound = "1";
+    valorInput.addEventListener('input', (e) => {
+        const raw = String(e.target.value || "");
+        e.target.value = formatCurrencyBRLFromDigits(raw);
+    });
+
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) window.fecharModalGerarCobranca();
+    });
+}
+
+window.fecharModalGerarCobranca = function(){
+    const modal = document.getElementById('modalGerarCobranca');
+    if (!modal) return;
+    modal.style.display = 'none';
+};
+
 window.gerarPagamento = async function() {
-    // CORREÇÃO 1: Usa a variável local 'chatIdAtual' que o chat.html já possui
-    // Removemos o 'window.' da frente
-    const idParaSalvar = chatIdAtual; 
-    
-    if (!idParaSalvar) { 
+    if (colecaoAtual !== 'pedidos') {
+        const msg = "Cobrança disponível apenas em pedidos/orçamentos.";
+        window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
+        return;
+    }
+    const idParaSalvar = chatIdAtual;
+    if (!idParaSalvar) {
         alert("Erro: Nenhuma conversa aberta. Selecione um cliente na lista."); 
-        return; 
+        return;
     }
 
-    // 1. Valor (Agora a máscara vai funcionar se você fizer o passo 2 abaixo)
-    let valorStr = await window.dokePrompt("Qual o valor do serviço?", "R$ 0,00", "Gerar Cobrança");
-    if(!valorStr) return;
+    ensureCobrancaModalBehavior();
+    const modal = document.getElementById('modalGerarCobranca');
+    const valorInput = document.getElementById('cobrancaValorInput');
+    const tituloInput = document.getElementById('cobrancaTituloInput');
+    const parcelasInput = document.getElementById('cobrancaParcelasInput');
+    if (!modal || !valorInput || !tituloInput || !parcelasInput) return;
 
-    // 2. Descrição
-    let descricao = await window.dokePrompt("Descrição do serviço:", "Ex: Mão de obra", "Descrição");
-    if(!descricao) return;
+    modal.dataset.pedidoId = idParaSalvar;
+    valorInput.value = "R$ 0,00";
+    tituloInput.value = "";
+    parcelasInput.value = "1";
+    modal.style.display = 'flex';
+    setTimeout(() => valorInput.focus(), 140);
+};
 
-    // 3. Parcelas
-    let maxParcelas = await window.dokePrompt("Máx. parcelas sem juros (1-12):", "1", "Parcelamento");
-    if(!maxParcelas) maxParcelas = "1";
+window.confirmarGerarCobranca = async function(){
+    const modal = document.getElementById('modalGerarCobranca');
+    const valorInput = document.getElementById('cobrancaValorInput');
+    const tituloInput = document.getElementById('cobrancaTituloInput');
+    const parcelasInput = document.getElementById('cobrancaParcelasInput');
+    const btnConfirmar = document.getElementById('btnConfirmarGerarCobranca');
+    if (!modal || !valorInput || !tituloInput || !parcelasInput || !btnConfirmar) return;
+
+    const idParaSalvar = modal.dataset.pedidoId || chatIdAtual || "";
+    if (!idParaSalvar) return;
+
+    const valorDigits = String(valorInput.value || "").replace(/\D/g, "");
+    const valorNum = Number(valorDigits || "0") / 100;
+    const valorStr = formatCurrencyBRLFromDigits(valorDigits);
+    const descricao = String(tituloInput.value || "").trim();
+    const maxParcelas = parseInt(String(parcelasInput.value || "1"), 10) || 1;
+
+    if (!valorNum || valorNum <= 0) {
+        window.dokeAlert ? window.dokeAlert("Informe um valor válido.") : alert("Informe um valor válido.");
+        valorInput.focus();
+        return;
+    }
+    if (!descricao) {
+        window.dokeAlert ? window.dokeAlert("Informe o título da cobrança.") : alert("Informe o título da cobrança.");
+        tituloInput.focus();
+        return;
+    }
+
+    btnConfirmar.disabled = true;
+    btnConfirmar.innerHTML = "Enviando...";
 
     const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     const nomeProfissional = perfil.user || perfil.nome || "Profissional";
@@ -6414,7 +6773,7 @@ window.gerarPagamento = async function() {
             tipo: 'pagamento', 
             valor: valorStr, 
             descricao: descricao,
-            maxparcelas: parseInt(maxParcelas.replace(/\D/g, "")) || 1, 
+            maxparcelas: maxParcelas,
             usernameProfissional: perfil.user, 
             profissionalNome: nomeProfissional,
             profissionalFoto: fotoProfissional,
@@ -6424,9 +6783,13 @@ window.gerarPagamento = async function() {
             timestamp: new Date(),
             lidoEm: currentUserUid ? { [currentUserUid]: new Date().toISOString() } : {}
         });
+        window.fecharModalGerarCobranca();
     } catch(e) {
         console.error(e);
         alert("Erro ao criar cobrança.");
+    } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = "Enviar cobrança";
     }
 };
 
@@ -6439,12 +6802,13 @@ window.gerarPagamento = async function() {
                 return;
             }
             const uid = currentUserUid || auth.currentUser?.uid || null;
-            if (!uid) {
+              if (!uid) {
                   window.dokeAlert ? window.dokeAlert('Faça login para enviar mensagens.') : alert('Faça login para enviar mensagens.');
                   return;
               }
-              if (isConversaBloqueadaPorAmizade()) {
-                  window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+              if (isConversaBloqueadaParaEnviar()) {
+                  const msg = getMensagemBloqueioConversa();
+                  window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
                   return;
               }
               const textoFinal = applyReplyMetaToText(txt);
@@ -6482,8 +6846,9 @@ window.gerarPagamento = async function() {
               window.dokeAlert ? window.dokeAlert('Abra um chat antes de anexar.') : alert('Abra um chat antes de anexar.');
               return;
           }
-          if (isConversaBloqueadaPorAmizade()) {
-              window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+          if (isConversaBloqueadaParaEnviar()) {
+              const msg = getMensagemBloqueioConversa();
+              window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
               return;
           }
           const input = document.getElementById('inputAnexo');
@@ -6495,8 +6860,9 @@ window.gerarPagamento = async function() {
       async function enviarAnexoArquivo(file){
           if (!file) return;
           if (!chatIdAtual || !colecaoAtual) return;
-          if (isConversaBloqueadaPorAmizade()) {
-              window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+          if (isConversaBloqueadaParaEnviar()) {
+              const msg = getMensagemBloqueioConversa();
+              window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
               return;
           }
 
@@ -6740,8 +7106,9 @@ window.timerInterval = null;
 
 // 1. Iniciar Gravação
 window.iniciarGravacao = async function() {
-    if (isConversaBloqueadaPorAmizade()) {
-        window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+    if (isConversaBloqueadaParaEnviar()) {
+        const msg = getMensagemBloqueioConversa();
+        window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         return;
     }
     // Verifica suporte
@@ -6799,8 +7166,9 @@ window.cancelarGravacao = function() {
 // 3. Enviar Áudio (Salvar no Firebase)
 window.enviarAudio = function() {
     if (!window.mediaRecorder) return;
-    if (isConversaBloqueadaPorAmizade()) {
-        window.dokeAlert ? window.dokeAlert('Envie pedido de amizade para conversar.') : alert('Envie pedido de amizade para conversar.');
+    if (isConversaBloqueadaParaEnviar()) {
+        const msg = getMensagemBloqueioConversa();
+        window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         return;
     }
 

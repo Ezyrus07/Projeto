@@ -7,7 +7,7 @@
 <script src="supabase-init.js"></script>
 <script src="firebase-compat-supabase.js?v=20260207v24"></script>
 <script src="firebase-auth-compat-supabase.js"></script>
-<script defer="" src="script.js?v=20260207v30"></script>
+<script defer="" src="script.js?v=20260211v42"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Detalhes do Serviço | Doke</title>
@@ -50,6 +50,9 @@
         }
         @media (max-width: 900px) {
             main { grid-template-columns: 1fr; margin-left: 0; padding: 15px; width: 100%; box-sizing: border-box;}
+        }
+        @media (max-width: 900px) {
+            main { padding-bottom: calc(var(--bottom-nav-height, 66px) + 26px) !important; }
         }
 
         /* --- COLUNA ESQUERDA (CONTEÚDO) --- */
@@ -1349,6 +1352,23 @@
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260207v21"></script>
+<script>
+  (function(){
+    function recoverPageScroll(){
+      try{
+        document.documentElement.classList.remove('no-scroll');
+        document.body && document.body.classList.remove('no-scroll', 'chat-keyboard-open', 'doke-search-open', 'doke-drawer-open', 'doke-menu-open');
+        if (typeof window.updateScrollLock === 'function') window.updateScrollLock();
+      }catch(_){}
+    }
+    window.addEventListener('pageshow', recoverPageScroll);
+    window.addEventListener('focus', recoverPageScroll);
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', recoverPageScroll);
+    } else {
+      recoverPageScroll();
+    }
+  })();
+</script>
 </body>
 </html>
-

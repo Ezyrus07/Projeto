@@ -311,6 +311,11 @@
 <div class="item-text">Idioma</div>
 <i class="bx bx-chevron-right item-arrow"></i>
 </a>
+<a class="settings-item" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<div class="item-icon"><i class="bx bx-shield-quarter"></i></div>
+<div class="item-text">Privacidade de Mensagens</div>
+<i class="bx bx-chevron-right item-arrow"></i>
+</a>
 </div>
 <div class="settings-section">
 <div class="section-title">Suporte</div>
@@ -370,6 +375,8 @@
             const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
             
             if (perfilLocal) {
+                const isProfissional = !!(perfilLocal.isProfissional === true || String(perfilLocal.isProfissional || '').toLowerCase() === 'true');
+
                 // Atualiza Foto
                 const img = document.getElementById('mais-foto');
                 if(img) img.src = perfilLocal.foto || "https://placehold.co/150";
@@ -381,6 +388,9 @@
                 // Atualiza User Handle
                 const userTxt = document.getElementById('mais-user');
                 if(userTxt) userTxt.innerText = perfilLocal.user || "@usuario";
+
+                const itemPrivacidade = document.getElementById('itemPrivacidadeProfissional');
+                if (itemPrivacidade) itemPrivacidade.style.display = isProfissional ? 'flex' : 'none';
             } else {
                 // Se não estiver logado, manda para o login ou mostra padrão
                 window.location.href = "login.html";

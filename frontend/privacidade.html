@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js"></script>
+  <script src="firebase-compat-supabase.js?v=20260207v24"></script>
+  <script src="firebase-auth-compat-supabase.js"></script>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Privacidade | Doke</title>
+  <meta name="description" content="Controle quem pode enviar mensagens para voce."/>
+  <link rel="stylesheet" href="style.css?v=20260207v26"/>
+  <link rel="stylesheet" href="doke-layout-fix.css?v=20260207v21"/>
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css"/>
+  <link rel="stylesheet" href="doke-toast.css"/>
+  <link rel="stylesheet" href="doke-alerts.css"/>
+  <link rel="stylesheet" href="doke-ux.css?v=20260207v21"/>
+  <link rel="stylesheet" href="doke-shell.css?v=20260207v21"/>
+  <link rel="stylesheet" href="doke-responsive.css?v=20260209v23"/>
+  <style>
+    body[data-page="privacidade"]{
+      background: linear-gradient(180deg, #eff5fb 0%, #f8fbff 220px);
+      color: #0f172a;
+    }
+
+    main.privacy-main{
+      margin-top: 0;
+      padding: 20px 16px 110px;
+    }
+
+    .privacy-wrap{
+      max-width: 860px;
+      margin: 0 auto;
+    }
+
+    .privacy-hero{
+      background: linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+      color: #fff;
+      border-radius: 20px;
+      padding: 24px 22px;
+      box-shadow: 0 18px 34px rgba(19, 50, 79, 0.22);
+      margin-bottom: 18px;
+    }
+
+    .privacy-hero h1{
+      margin: 0 0 8px;
+      font-size: 1.5rem;
+      line-height: 1.2;
+    }
+
+    .privacy-hero p{
+      margin: 0;
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .privacy-card{
+      background: #fff;
+      border: 1px solid #e6eef7;
+      border-radius: 18px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
+      padding: 18px;
+    }
+
+    .privacy-top{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .privacy-title{
+      margin: 0;
+      font-size: 1.08rem;
+      font-weight: 800;
+      color: #0f172a;
+    }
+
+    .privacy-sub{
+      margin: 4px 0 0;
+      color: #64748b;
+      font-size: 0.92rem;
+    }
+
+    .privacy-options{
+      display: grid;
+      gap: 10px;
+      margin-top: 6px;
+    }
+
+    .privacy-option{
+      border: 1px solid #dbe7f4;
+      border-radius: 14px;
+      padding: 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      cursor: pointer;
+      transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
+      background: #fff;
+    }
+
+    .privacy-option:hover{
+      border-color: rgba(11, 119, 104, 0.4);
+      box-shadow: 0 8px 18px rgba(11, 119, 104, 0.12);
+    }
+
+    .privacy-option input{
+      margin-top: 3px;
+      accent-color: #0b7768;
+    }
+
+    .privacy-option strong{
+      display: block;
+      color: #0f172a;
+      margin-bottom: 3px;
+    }
+
+    .privacy-option span{
+      color: #64748b;
+      font-size: 0.9rem;
+      line-height: 1.35;
+    }
+
+    .privacy-actions{
+      margin-top: 16px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .privacy-btn{
+      border: none;
+      border-radius: 12px;
+      padding: 11px 16px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .privacy-btn.primary{
+      background: #0b7768;
+      color: #fff;
+    }
+
+    .privacy-btn.ghost{
+      background: #eef2f7;
+      color: #0f172a;
+    }
+
+    .privacy-status{
+      margin-top: 12px;
+      font-size: 0.9rem;
+      color: #0f766e;
+      font-weight: 700;
+      min-height: 1.2rem;
+    }
+
+    .privacy-blocked{
+      margin-top: 14px;
+      padding: 12px;
+      border: 1px solid #fed7aa;
+      border-radius: 12px;
+      background: #fff7ed;
+      color: #9a3412;
+      display: none;
+      font-size: 0.9rem;
+    }
+
+    @media (min-width: 1025px){
+      main.privacy-main{
+        margin-left: 0;
+        margin-top: 0;
+        padding: 34px 26px 40px;
+      }
+    }
+
+    @media (max-width: 1024px){
+      body.doke-shell-active main.privacy-main{
+        margin-top: 0;
+        padding-top: 14px;
+      }
+    }
+  </style>
+</head>
+<body data-page="privacidade">
+  <main class="privacy-main">
+    <div class="privacy-wrap">
+      <section class="privacy-hero">
+        <h1>Privacidade de Mensagens</h1>
+        <p>Defina se qualquer pessoa pode iniciar conversa com voce ou se deve enviar solicitacao primeiro.</p>
+      </section>
+
+      <section class="privacy-card">
+        <div class="privacy-top">
+          <div>
+            <h2 class="privacy-title">DM do profissional</h2>
+            <p class="privacy-sub">Este ajuste vale para conversas na aba Mensagens, fora de pedidos/orcamentos.</p>
+          </div>
+        </div>
+
+        <div class="privacy-options" id="privacyOptions">
+          <label class="privacy-option" for="dmLivre">
+            <input checked id="dmLivre" name="dmMode" type="radio" value="livre"/>
+            <div>
+              <strong>DM livre</strong>
+              <span>Qualquer pessoa pode enviar mensagem diretamente.</span>
+            </div>
+          </label>
+
+          <label class="privacy-option" for="dmSolicitacao">
+            <input id="dmSolicitacao" name="dmMode" type="radio" value="solicitacao"/>
+            <div>
+              <strong>Solicitacao de mensagem</strong>
+              <span>A pessoa precisa enviar solicitacao e voce decide se aceita.</span>
+            </div>
+          </label>
+        </div>
+
+        <div class="privacy-actions">
+          <button class="privacy-btn primary" id="btnSalvarPrivacidade" type="button">Salvar configuracao</button>
+          <a class="privacy-btn ghost" href="mais.html" style="text-decoration:none; display:inline-flex; align-items:center;">Voltar para Mais</a>
+        </div>
+
+        <div class="privacy-status" id="privacyStatus"></div>
+        <div class="privacy-blocked" id="privacyBlocked">
+          Esta area e exclusiva para contas profissionais.
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js"></script>
+  <script>
+    (function(){
+      const { getFirestore, doc, getDoc, updateDoc, setDoc } = window;
+      const { getAuth, onAuthStateChanged } = window;
+      const db = window.db || getFirestore();
+      const auth = window.auth || getAuth();
+
+      const btnSalvar = document.getElementById('btnSalvarPrivacidade');
+      const statusEl = document.getElementById('privacyStatus');
+      const blockedEl = document.getElementById('privacyBlocked');
+      const optionsEl = document.getElementById('privacyOptions');
+      const radios = Array.from(document.querySelectorAll('input[name="dmMode"]'));
+
+      let currentUid = '';
+      let isProfissional = false;
+
+      function getModoSelecionado(){
+        const selected = radios.find((r) => r.checked);
+        return selected ? selected.value : 'livre';
+      }
+
+      function setModoSelecionado(modo){
+        const valor = String(modo || '').toLowerCase() === 'solicitacao' ? 'solicitacao' : 'livre';
+        radios.forEach((r) => { r.checked = r.value === valor; });
+      }
+
+      function resolverModoPrivacidade(data){
+        const raw = String(
+          (data && (
+            data.dmPrivacidadeModo ||
+            data.dm_privacidade_modo ||
+            data.privacidadeDmModo ||
+            data.privacidade_dm_modo ||
+            data.privacidadeMensagens ||
+            data.privacidade_mensagens
+          )) || ''
+        ).toLowerCase();
+        return raw === 'solicitacao' ? 'solicitacao' : 'livre';
+      }
+
+      function aplicarBloqueioProfissional(blocked){
+        if (blockedEl) blockedEl.style.display = blocked ? 'block' : 'none';
+        if (optionsEl) optionsEl.style.opacity = blocked ? '0.6' : '1';
+        radios.forEach((r) => { r.disabled = blocked; });
+        if (btnSalvar) btnSalvar.disabled = blocked;
+      }
+
+      async function carregarConfiguracao(uid){
+        try {
+          const snap = await getDoc(doc(db, 'usuarios', uid));
+          if (!snap.exists()) {
+            setModoSelecionado('livre');
+            statusEl.textContent = '';
+            return;
+          }
+          const data = snap.data() || {};
+          setModoSelecionado(resolverModoPrivacidade(data));
+          statusEl.textContent = '';
+        } catch (e) {
+          console.error('Falha ao carregar privacidade:', e);
+          statusEl.textContent = 'Nao foi possivel carregar sua configuracao.';
+        }
+      }
+
+      async function salvarConfiguracao(){
+        if (!currentUid) return;
+        if (!isProfissional) {
+          const msg = 'Somente profissional pode alterar esta configuracao.';
+          window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
+          return;
+        }
+
+        const modo = getModoSelecionado();
+        const agora = new Date().toISOString();
+        btnSalvar.disabled = true;
+        statusEl.textContent = 'Salvando...';
+
+        try {
+          const ref = doc(db, 'usuarios', currentUid);
+          const payload = {
+            dmPrivacidadeModo: modo,
+            dm_privacidade_modo: modo,
+            dmPrivacidadeAtualizadoEm: agora
+          };
+          const snap = await getDoc(ref);
+          if (snap.exists()) {
+            await updateDoc(ref, payload);
+          } else {
+            await setDoc(ref, { uid: currentUid, ...payload });
+          }
+
+          try {
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {};
+            perfil.dmPrivacidadeModo = modo;
+            perfil.dm_privacidade_modo = modo;
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+          } catch (_) {}
+
+          statusEl.textContent = modo === 'solicitacao'
+            ? 'Modo salvo: solicitacao de mensagem ativa.'
+            : 'Modo salvo: DM livre para todos.';
+        } catch (e) {
+          console.error('Falha ao salvar privacidade:', e);
+          statusEl.textContent = 'Erro ao salvar configuracao.';
+        } finally {
+          btnSalvar.disabled = false;
+        }
+      }
+
+      if (btnSalvar) btnSalvar.addEventListener('click', salvarConfiguracao);
+
+      onAuthStateChanged(auth, async (user) => {
+        if (!user) {
+          window.location.href = 'login.html';
+          return;
+        }
+
+        currentUid = user.uid;
+        let perfilLocal = null;
+        try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) {}
+
+        isProfissional = !!(perfilLocal && (perfilLocal.isProfissional === true || String(perfilLocal.isProfissional || '').toLowerCase() === 'true'));
+
+        if (!isProfissional) {
+          try {
+            const snap = await getDoc(doc(db, 'usuarios', currentUid));
+            if (snap.exists()) {
+              const d = snap.data() || {};
+              isProfissional = d.isProfissional === true || d.isprofissional === true;
+            }
+          } catch (_) {}
+        }
+
+        aplicarBloqueioProfissional(!isProfissional);
+        await carregarConfiguracao(currentUid);
+      });
+    })();
+  </script>
+  <script defer="true" src="doke-config.js"></script>
+  <script defer="true" src="doke-ux.js"></script>
+  <script src="doke-shell.js?v=20260209v22"></script>
+</body>
+</html>

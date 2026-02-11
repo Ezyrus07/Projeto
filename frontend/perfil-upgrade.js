@@ -97,25 +97,35 @@
 
     if(!handle) return;
 
-    const handleRow = $(".dp-handleRow", info);
-    if(handleRow && handle.parentElement !== handleRow){
+    let handleRow = $(".dp-handleRow", info);
+    if(!handleRow){
+      handleRow = document.createElement("div");
+      handleRow.className = "dp-handleRow";
+      if(handle.parentElement === info){
+        info.insertBefore(handleRow, handle);
+        handleRow.appendChild(handle);
+      }
+    }else if(handle.parentElement !== handleRow){
       handleRow.insertBefore(handle, handleRow.firstChild || null);
     }
 
-    if(!followBtn || !actionsRow){
-      if(handleRow && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
+    if(!followBtn || !actionsRow) return;
+
+    const ownerMode = rootEl.getAttribute("data-owner") || "";
+    const isVisitor = ownerMode !== "self";
+    if(isVisitor){
+      followBtn.classList.add("dp-followCompact");
+      if(followBtn.parentElement !== handleRow){
+        handleRow.appendChild(followBtn);
+      }
+    }else{
+      followBtn.classList.remove("dp-followCompact");
+      if(followBtn.parentElement !== actionsRow){
+        actionsRow.insertBefore(followBtn, actionsRow.firstChild || null);
+      }
+      if(handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
         handleRow.replaceWith(handle);
       }
-      return;
-    }
-
-    followBtn.classList.remove("dp-followCompact");
-    if(followBtn.parentElement !== actionsRow){
-      actionsRow.insertBefore(followBtn, actionsRow.firstChild);
-    }
-
-    if(handleRow && handleRow.parentElement && handleRow.childElementCount === 1 && handleRow.firstElementChild === handle){
-      handleRow.replaceWith(handle);
     }
   }
   function bindMobileActionsPlacement(){
@@ -203,12 +213,19 @@
       btn.title = label;
       btn.setAttribute("aria-label", label);
     };
-    const applyMessageLabel = (label) => {
+    const setupMessageButton = () => {
       if (!msgBtn) return;
-      msgBtn.classList.remove("dp-icon-only");
-      msgBtn.innerHTML = `<i class='bx bx-message-rounded'></i> ${label}`;
-      msgBtn.title = label;
-      msgBtn.setAttribute("aria-label", label);
+      const otherUidMsg = ctx?.target?.uid || ctx?.target?.id || "";
+      const canSend = !!(ctx?.me && otherUidMsg);
+      msgBtn.style.display = "inline-flex";
+      setIconButton(msgBtn, "bx-message-rounded", canSend ? "Mensagem" : "Entrar para enviar mensagem");
+      msgBtn.onclick = () => {
+        if (!canSend) {
+          window.location.href = "login.html";
+          return;
+        }
+        window.location.href = `chat.html?uid=${encodeURIComponent(otherUidMsg)}`;
+      };
     };
     if(!btn) return;
     if(isOwnProfile(ctx)){
@@ -216,11 +233,11 @@
       if (msgBtn) msgBtn.style.display = "none";
       return;
     }
+    setupMessageButton();
     if(!ctx?.me){
       btn.style.display = "inline-flex";
       btn.dataset.friendStatus = "nologin";
       applyFriendLabel("bx-user-plus", "Entrar para adicionar");
-      if (msgBtn) msgBtn.style.display = "none";
       return;
     }
     const meUid = ctx.me.uid || ctx.me.id;
@@ -247,16 +264,7 @@
     } else {
       applyFriendLabel("bx-user-plus", "Adicionar amizade");
     }
-    if (msgBtn) {
-      const canMessage = rel.status === "aceito";
-      msgBtn.style.display = canMessage ? "inline-flex" : "none";
-      msgBtn.onclick = () => {
-        const otherUidMsg = ctx.target?.uid || ctx.target?.id;
-        if (!otherUidMsg) return;
-        window.location.href = `chat.html?uid=${encodeURIComponent(otherUidMsg)}`;
-      };
-      if (canMessage) applyMessageLabel("Enviar mensagem");
-    }
+    setupMessageButton();
   }
 
   async function handleFriendAction(ctx){
@@ -385,7 +393,7 @@
       btn.style.display = "inline-flex";
       btn.dataset.following = "nologin";
       btn.classList.remove("dp-icon-only");
-      btn.innerHTML = "<i class='bx bx-heart'></i> Entrar para seguir";
+      btn.innerHTML = "<i class='bx bx-heart'></i> Seguir";
       btn.title = "Entrar para seguir";
       return;
     }
@@ -401,11 +409,8 @@
     btn.dataset.followId = rel.id || "";
     btn.classList.remove("dp-icon-only");
     if (rel.following) {
-      btn.innerHTML = "<i class='bx bx-heart'></i> Deixar de seguir";
-      btn.title = "Deixar de seguir";
-    } else if (rel.isFollower) {
-      btn.innerHTML = "<i class='bx bx-heart'></i> Seguir de volta";
-      btn.title = "Seguir de volta";
+      btn.innerHTML = "<i class='bx bx-heart'></i> Seguindo";
+      btn.title = "Seguindo";
     } else {
       btn.innerHTML = "<i class='bx bx-heart'></i> Seguir";
       btn.title = "Seguir";

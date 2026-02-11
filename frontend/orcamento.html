@@ -54,6 +54,11 @@
 .select-premium:focus-visible,
 .area-texto:focus-visible{ outline: none; box-shadow: 0 0 0 3px rgba(42,95,144,0.18); }
 
+.campo-faltando{
+    border-color: #e11d48 !important;
+    box-shadow: 0 0 0 3px rgba(225, 29, 72, 0.16) !important;
+}
+
 /* --- ESTILO DOS CARDS BRANCOS --- */
 .card-branco {
     background: #fff;
@@ -697,6 +702,38 @@
         return el ? el.value : "";
     }
 
+    function avisarValidacao(msg){
+        if (window.dokeAlert) {
+            window.dokeAlert(msg);
+            return;
+        }
+        alert(msg);
+    }
+
+    function irParaCampoFaltante(el, msg){
+        if (!el) {
+            avisarValidacao(msg || "Preencha os campos obrigatórios.");
+            return false;
+        }
+
+        el.classList.add("campo-faltando");
+        setTimeout(() => el.classList.remove("campo-faltando"), 2200);
+
+        try{
+            el.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+        }catch(_){
+            el.scrollIntoView();
+        }
+
+        setTimeout(() => {
+            if (typeof el.focus === "function") el.focus({ preventScroll: true });
+            if (typeof el.select === "function" && el.tagName === "INPUT") el.select();
+        }, 280);
+
+        avisarValidacao(msg || "Preencha o campo obrigatório.");
+        return false;
+    }
+
     function renderListaAnexos(){
         const list = document.getElementById('lista-anexos');
         if (!list) return;
@@ -1076,9 +1113,16 @@
             if (!paraUid) { alert("Erro: Profissional não identificado."); return; }
 
             // Validação Básica
-            const titulo = document.getElementById('titulo-pedido').value;
-            const descricao = document.getElementById('descricao-pedido').value;
-            if (!titulo || !descricao) { alert("Preencha título e descrição."); return; }
+            const tituloEl = document.getElementById('titulo-pedido');
+            const descricaoEl = document.getElementById('descricao-pedido');
+            const titulo = tituloEl ? tituloEl.value : "";
+            const descricao = descricaoEl ? descricaoEl.value : "";
+            if (!titulo || !titulo.trim()) {
+                return irParaCampoFaltante(tituloEl, "Preencha o título do pedido.");
+            }
+            if (!descricao || !descricao.trim()) {
+                return irParaCampoFaltante(descricaoEl, "Preencha a descrição do pedido.");
+            }
 
             // --- COLETA AS RESPOSTAS DA TRIAGEM ---
             let respostasTriagem = [];
@@ -1099,17 +1143,24 @@
             const pqVal = selPQ ? selPQ.value : "";
             const isEspecifica = String(pqVal).toLowerCase().includes('data específica') || String(pqVal).toLowerCase().includes('data especifica');
             if (isEspecifica) {
-                const d = getInputValue('data-especifica');
-                if (!d) { alert('Selecione o dia para a data específica.'); return; }
+                const dataEl = document.getElementById('data-especifica');
+                const d = dataEl ? dataEl.value : "";
+                if (!d) { return irParaCampoFaltante(dataEl, 'Selecione o dia para a data específica.'); }
             }
 
             // Validação: Localização (somente quando presencial/ambos)
             const precisaLoc = !!window.__orc_precisa_localizacao;
             if (precisaLoc) {
-                const cep = getInputValue('cepOrcamento').trim();
-                const end = getInputValue('endereco-completo').trim();
-                const num = getInputValue('numero-residencia').trim();
-                if (!cep || !end || !num) { alert('Preencha CEP, endereço e número do local do serviço.'); return; }
+                const cepEl = document.getElementById('cepOrcamento');
+                const endEl = document.getElementById('endereco-completo');
+                const numEl = document.getElementById('numero-residencia');
+                const cep = (cepEl ? cepEl.value : "").trim();
+                const end = (endEl ? endEl.value : "").trim();
+                const num = (numEl ? numEl.value : "").trim();
+
+                if (!cep) return irParaCampoFaltante(cepEl, 'Preencha o CEP do local do serviço.');
+                if (!end) return irParaCampoFaltante(endEl, 'Preencha o endereço do local do serviço.');
+                if (!num) return irParaCampoFaltante(numEl, 'Preencha o número do local do serviço.');
             }
 
             // Feedback Visual

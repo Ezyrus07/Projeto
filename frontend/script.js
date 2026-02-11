@@ -350,6 +350,43 @@ function updateScrollLock() {
     setScrollLock(aberto);
 }
 
+function recoverScrollLockState() {
+    try {
+        updateScrollLock();
+        // Fallback extra para retorno por bfcache/volta de rota:
+        // se nada deveria travar o scroll, remove classes residuais.
+        const root = document.documentElement;
+        const body = document.body;
+        const hasResidualLock = !!((root && root.classList.contains('no-scroll')) || (body && body.classList.contains('no-scroll')));
+        if (!hasResidualLock) return;
+
+        const lockSelectors = [
+            '#modalGaleria',
+            '#modalPlayerVideo',
+            '#modalPostDetalhe',
+            '#modalSolicitacao',
+            '#modalStoryViewer',
+            '#modalStoryViewerPerfil',
+            '#modalOrcamento',
+            '#modalDetalhesPedido',
+            '#dokeModalOverlay',
+            '#dokeGlobalModal',
+            '#dpModalOverlay',
+            '#modalGerarCobranca',
+            '#modalFinalizarPedido'
+        ];
+        const hasVisibleLocker = lockSelectors.some((sel) => {
+            const els = Array.from(document.querySelectorAll(sel));
+            return els.some((el) => {
+                if (!el) return false;
+                const style = window.getComputedStyle(el);
+                return style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0';
+            });
+        });
+        if (!hasVisibleLocker) setScrollLock(false);
+    } catch (_) {}
+}
+
 window.setScrollLock = setScrollLock;
 window.updateScrollLock = updateScrollLock;
 
@@ -363,12 +400,25 @@ function scheduleScrollLockUpdate() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    updateScrollLock();
+    recoverScrollLockState();
     if (document.body) {
         const observer = new MutationObserver(() => scheduleScrollLockUpdate());
         observer.observe(document.body, { subtree: true, attributes: true, attributeFilter: ['style', 'class'] });
         window._dokeScrollLockObserver = observer;
     }
+});
+
+window.addEventListener('pageshow', () => {
+    requestAnimationFrame(() => recoverScrollLockState());
+});
+window.addEventListener('focus', () => {
+    scheduleScrollLockUpdate();
+});
+window.addEventListener('popstate', () => {
+    requestAnimationFrame(() => recoverScrollLockState());
+});
+document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) scheduleScrollLockUpdate();
 });
 
 // ============================================================
