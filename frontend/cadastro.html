@@ -385,7 +385,7 @@
 <label for="usuario">Nome de Usuário (@)</label>
 <div class="input-icon">
 <i class="bx bx-at"></i>
-<input autocomplete="username" id="usuario" placeholder="Seu usuário" required="" type="text"/>
+<input autocomplete="username" id="usuario" maxlength="20" placeholder="Seu usuário" required="" type="text"/>
 </div>
 <div class="hint">Sem espaços. Pode usar ponto e underline.</div>
 </div>
@@ -393,7 +393,7 @@
 <label for="nome">Nome Completo</label>
 <div class="input-icon">
 <i class="bx bx-user"></i>
-<input autocomplete="name" id="nome" placeholder="Seu nome" required="" type="text"/>
+<input autocomplete="name" id="nome" maxlength="40" placeholder="Seu nome" required="" type="text"/>
 </div>
 </div>
 </div>
@@ -421,6 +421,13 @@
 <div class="pw-meter">
 <div class="pw-bar"><div id="pwBar"></div></div>
 <div class="pw-label" id="pwLabel">—</div>
+</div>
+</div>
+<div class="form-group">
+<label for="confirmarSenha">Confirmar senha</label>
+<div class="input-icon">
+<i class="bx bx-lock-alt"></i>
+<input autocomplete="new-password" id="confirmarSenha" placeholder="Repita sua senha" required="" type="password"/>
 </div>
 </div>
 <button class="btn-primary" id="btnCriar" type="submit">Criar Conta</button>
@@ -472,7 +479,9 @@
       if (!h) return "";
       if (!h.startsWith("@")) h = "@" + h;
       if (!/^@[a-z0-9._]+$/.test(h)) return "__INVALID__";
-      if (h.length < 4) return "__SHORT__";
+      const body = h.slice(1);
+      if (body.length < 3) return "__SHORT__";
+      if (body.length > 20) return "__LONG__";
       return h;
     }
 
@@ -592,10 +601,11 @@
       event.preventDefault();
 
       const btn = document.getElementById("btnCriar");
-      const nome = document.getElementById("nome").value.trim();
+      const nome = document.getElementById("nome").value.trim().slice(0, 40);
       const usuarioRaw = document.getElementById("usuario").value;
       const email = document.getElementById("email").value.trim();
       const senha = document.getElementById("senha").value;
+      const confirmarSenha = document.getElementById("confirmarSenha").value;
       const dataNascimento = document.getElementById("dataNascimento").value;
 
       const handle = normalizeHandle(usuarioRaw);
@@ -604,11 +614,13 @@
       if (!nome || nome.length < 2) return showMsg("err", "Digite seu nome completo.");
       if (handle === "__INVALID__") return showMsg("err", "Nome de usuário inválido. Use apenas letras, números, ponto e underline.");
       if (handle === "__SHORT__") return showMsg("err", "Nome de usuário muito curto.");
+      if (handle === "__LONG__") return showMsg("err", "Nome de usuário muito longo. Use até 20 caracteres.");
       if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
       if (!dataNascimento) return showMsg("err", "Informe sua data de nascimento.");
       if (!Number.isFinite(idade)) return showMsg("err", "Data de nascimento invalida.");
       if (idade < 18) return showMsg("err", "Voce precisa ter pelo menos 18 anos para criar conta.");
       if ((senha || "").length < 6) return showMsg("err", "A senha precisa ter no mínimo 6 caracteres.");
+      if (senha !== confirmarSenha) return showMsg("err", "As senhas não coincidem.");
 
       btn.disabled = true;
       btn.textContent = "Criando...";

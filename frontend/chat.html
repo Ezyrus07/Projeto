@@ -2809,6 +2809,7 @@
       function bindLongPressMensagens(container){
           if (!container || container.dataset.longPressMsgReady === '1') return;
           container.dataset.longPressMsgReady = '1';
+          const enableTouchLongPressMenu = false; // no web, abrir opções só pelo botão de 3 pontos
           let holdTimer = null;
           let startX = 0;
           let startY = 0;
@@ -2847,48 +2848,50 @@
               return menu ? id : '';
           };
 
-          container.addEventListener('touchstart', (e) => {
-              const target = e.target;
-              if (!target || target.closest('.msg-menu') || target.closest('.msg-menu-btn')) return;
-              const msgId = getMsgIdFromTarget(target);
-              if (!msgId) return;
-              const touch = e.touches && e.touches[0];
-              if (!touch) return;
-              startX = touch.clientX;
-              startY = touch.clientY;
-              holdConsumed = false;
-              clearHold();
-              clearHover();
-              hoverBubble = getBubbleFromHost(getMsgHostFromTarget(target));
-              if (hoverBubble) hoverBubble.classList.add('msg-touch-hover');
-              holdTimer = setTimeout(() => {
-                  holdConsumed = true;
-                  openMsgMenuById(msgId, { preventDefault(){}, stopPropagation(){} });
-                  setTimeout(clearHover, 140);
-              }, 520);
-          }, { passive: true });
-
-          container.addEventListener('touchmove', (e) => {
-              const touch = e.touches && e.touches[0];
-              if (!touch) return;
-              const dx = Math.abs(touch.clientX - startX);
-              const dy = Math.abs(touch.clientY - startY);
-              if (dx > 10 || dy > 10) {
+          if (enableTouchLongPressMenu) {
+              container.addEventListener('touchstart', (e) => {
+                  const target = e.target;
+                  if (!target || target.closest('.msg-menu') || target.closest('.msg-menu-btn')) return;
+                  const msgId = getMsgIdFromTarget(target);
+                  if (!msgId) return;
+                  const touch = e.touches && e.touches[0];
+                  if (!touch) return;
+                  startX = touch.clientX;
+                  startY = touch.clientY;
+                  holdConsumed = false;
                   clearHold();
                   clearHover();
-              }
-          }, { passive: true });
-          container.addEventListener('touchend', () => { clearHold(); clearHover(); }, { passive: true });
-          container.addEventListener('touchcancel', () => { clearHold(); clearHover(); }, { passive: true });
+                  hoverBubble = getBubbleFromHost(getMsgHostFromTarget(target));
+                  if (hoverBubble) hoverBubble.classList.add('msg-touch-hover');
+                  holdTimer = setTimeout(() => {
+                      holdConsumed = true;
+                      openMsgMenuById(msgId, { preventDefault(){}, stopPropagation(){} });
+                      setTimeout(clearHover, 140);
+                  }, 520);
+              }, { passive: true });
 
-          container.addEventListener('click', (e) => {
-              if (!holdConsumed) return;
-              holdConsumed = false;
-              clearHover();
-              e.preventDefault();
-              e.stopPropagation();
-              if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
-          }, true);
+              container.addEventListener('touchmove', (e) => {
+                  const touch = e.touches && e.touches[0];
+                  if (!touch) return;
+                  const dx = Math.abs(touch.clientX - startX);
+                  const dy = Math.abs(touch.clientY - startY);
+                  if (dx > 10 || dy > 10) {
+                      clearHold();
+                      clearHover();
+                  }
+              }, { passive: true });
+              container.addEventListener('touchend', () => { clearHold(); clearHover(); }, { passive: true });
+              container.addEventListener('touchcancel', () => { clearHold(); clearHover(); }, { passive: true });
+
+              container.addEventListener('click', (e) => {
+                  if (!holdConsumed) return;
+                  holdConsumed = false;
+                  clearHover();
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+              }, true);
+          }
 
           container.addEventListener('contextmenu', (e) => {
               const target = e.target;
@@ -2896,6 +2899,8 @@
               const msgId = getMsgIdFromTarget(target);
               if (!msgId) return;
               clearHover();
+              e.preventDefault();
+              e.stopPropagation();
               openMsgMenuById(msgId, e);
           });
       }
@@ -3106,12 +3111,17 @@
     function updateReplyBar(){
         const bar = document.getElementById('replyBar');
         if (!bar) return;
-        if (!replyContext) { bar.classList.remove('show'); return; }
+        if (!replyContext) {
+            bar.classList.remove('show');
+            updateScrollDownButton();
+            return;
+        }
         const userEl = document.getElementById('replyUser');
         const prevEl = document.getElementById('replyPreview');
         if (userEl) userEl.textContent = `@${replyContext.user || 'Usuário'}`;
         if (prevEl) prevEl.textContent = replyContext.preview || '';
         bar.classList.add('show');
+        updateScrollDownButton();
     }
     window.responderMensagem = function(idEnc, userEnc, tipoEnc, previewEnc){
         const id = decodeURIComponent(idEnc || '');
@@ -7332,7 +7342,12 @@ window.confirmarGerarCobranca = async function(){
     function updateScrollDownButton(){
         const btn = document.getElementById('scrollDownBtn');
         const area = document.getElementById('areaMensagens');
+        const replyBar = document.getElementById('replyBar');
         if (!btn || !area) return;
+        if (replyBar && replyBar.classList.contains('show')) {
+            btn.classList.remove('show');
+            return;
+        }
         if (isNearBottom(area, 80)) btn.classList.remove('show');
         else btn.classList.add('show');
     }

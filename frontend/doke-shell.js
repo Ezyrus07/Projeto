@@ -385,6 +385,7 @@
             <h4>Buscas recentes</h4>
             <div class="doke-recent-list"></div>
           </div>
+          <div class="doke-search-results" hidden></div>
         </div>
       `;
       document.body.appendChild(overlay);
@@ -392,7 +393,19 @@
 
     function openDrawer(){ document.body.classList.add("doke-drawer-open"); }
     function closeDrawer(){ document.body.classList.remove("doke-drawer-open"); }
-    function closeSearch(){ document.body.classList.remove("doke-search-open"); }
+    function closeSearch(){
+      document.body.classList.remove("doke-search-open");
+      if(!overlay) return;
+      const inp = overlay.querySelector(".doke-search-input");
+      const results = overlay.querySelector(".doke-search-results");
+      const recent = overlay.querySelector(".doke-recent");
+      if(inp) inp.value = "";
+      if(results){
+        results.hidden = true;
+        results.innerHTML = "";
+      }
+      if(recent) recent.style.display = "";
+    }
 
     function saveRecent(q){
       q = (q||"").trim();
@@ -425,6 +438,100 @@
       }
     }
 
+    async function searchUsers(term){
+      const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase
+        || (typeof window.getSupabaseClient === "function" ? window.getSupabaseClient() : null);
+      if(!sb?.from) return [];
+      const t = String(term || "").trim();
+      if(t.length < 2) return [];
+      const safe = t.replace(/[%_]/g, "\\$&");
+      try{
+        const { data, error } = await sb
+          .from("usuarios")
+          .select("id, uid, user, nome, foto, isProfissional, categoria_profissional")
+          .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
+          .limit(8);
+        if(error) return [];
+        return Array.isArray(data) ? data : [];
+      }catch(_){
+        return [];
+      }
+    }
+
+    let searchToken = 0;
+    async function renderSearchResults(term){
+      if(!overlay) return;
+      const results = overlay.querySelector(".doke-search-results");
+      const recent = overlay.querySelector(".doke-recent");
+      if(!results || !recent) return;
+
+      const q = String(term || "").trim();
+      if(q.length < 2){
+        searchToken += 1;
+        results.hidden = true;
+        results.innerHTML = "";
+        recent.style.display = "";
+        return;
+      }
+
+      recent.style.display = "none";
+      results.hidden = false;
+      const currentToken = ++searchToken;
+      results.innerHTML = `<div class="doke-search-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Buscando...</span></div>`;
+
+      const users = await searchUsers(q);
+      if(currentToken !== searchToken) return;
+
+      const actionHtml = `
+        <button class="doke-result-action" type="button" data-q="${escapeHtml(q)}">
+          <i class='bx bx-right-arrow-alt'></i>
+          <div>
+            <strong>Buscar servicos por "${escapeHtml(q)}"</strong>
+            <small>Abrir resultados de anuncios</small>
+          </div>
+        </button>
+      `;
+
+      const usersHtml = users.length
+        ? users.map((u) => {
+            const uid = String(u.uid || u.id || "").trim();
+            const nome = String(u.nome || "").trim();
+            const handleBase = String(u.user || (nome ? nome.split(" ")[0] : "usuario")).trim();
+            const handle = handleBase.startsWith("@") ? handleBase : `@${handleBase}`;
+            const foto = String(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid || handle)}`);
+            const isProf = u.isProfissional === true;
+            const subtitulo = isProf
+              ? String(u.categoria_profissional || "Profissional")
+              : (nome || "Usuario");
+            const perfil = isProf ? "perfil-profissional.html" : "perfil-usuario.html";
+            return `
+              <button class="doke-user-result" type="button" data-go="${perfil}?uid=${encodeURIComponent(uid)}">
+                <img src="${escapeHtml(foto)}" alt="">
+                <div class="doke-user-result-main">
+                  <strong>${escapeHtml(handle)}</strong>
+                  <small>${escapeHtml(subtitulo)}</small>
+                </div>
+                <span class="doke-user-pill">${isProf ? "Profissional" : "Usuario"}</span>
+              </button>
+            `;
+          }).join("")
+        : `<div class="doke-search-empty"><i class='bx bx-user-x'></i><span>Nenhum usuario encontrado.</span></div>`;
+
+      results.innerHTML = `
+        ${actionHtml}
+        <div class="doke-results-title">Usuarios</div>
+        ${usersHtml}
+      `;
+
+      results.querySelector(".doke-result-action")?.addEventListener("click", () => goSearch(q));
+      results.querySelectorAll(".doke-user-result").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const go = btn.getAttribute("data-go") || "";
+          if(go) location.href = go;
+        });
+      });
+    }
+
     function goSearch(q){
       if(!overlay) return;
       q = (q || overlay.querySelector(".doke-search-input")?.value || "").trim();
@@ -440,6 +547,7 @@
       const inp = overlay.querySelector(".doke-search-input");
       setTimeout(()=>inp && inp.focus(), 60);
       renderRecents();
+      renderSearchResults(inp?.value || "");
     }
 
     // Drawer binds
@@ -494,10 +602,16 @@
 
     // Overlay binds
     if(overlay){
+      let searchDebounce = null;
       overlay.querySelector(".doke-search-back")?.addEventListener("click", closeSearch);
       overlay.querySelector(".doke-search-go")?.addEventListener("click", ()=>goSearch());
       overlay.querySelector(".doke-search-input")?.addEventListener("keydown", (e)=>{
         if(e.key === "Enter"){ e.preventDefault(); goSearch(); }
+      });
+      overlay.querySelector(".doke-search-input")?.addEventListener("input", (e)=>{
+        const value = e.target?.value || "";
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(() => { renderSearchResults(value); }, 180);
       });
       overlay.querySelectorAll(".doke-chip").forEach(btn=>{
         btn.addEventListener("click", ()=>{

@@ -975,7 +975,7 @@ function ensureTheme(ctx, theme){
       const media = item.tipo === "video"
         ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ``} preload="metadata" muted playsinline></video>`
         : (item.tipo === "antes_depois" && item.thumb_url
-            ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""><span class="dp-ba-badge">Antes</span></div>`
+            ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""></div>`
             : `<img src="${item.media_url}" loading="lazy" alt="">`);
       const card = document.createElement("div");
       card.className = "dp-item dp-item--clickable";
@@ -1004,7 +1004,7 @@ function ensureTheme(ctx, theme){
         const menu = document.createElement("div");
         menu.className = "dp-itemMenu";
         menu.innerHTML = `
-          <button class="dp-itemMenuBtn" type="button" aria-label="Opcoes">...</button>
+          <button class="dp-itemMenuBtn" type="button" aria-label="Opções"><i class='bx bx-dots-horizontal-rounded' aria-hidden="true"></i></button>
           <div class="dp-itemMenuList">
             <button type="button" class="dp-itemMenuDelete">Excluir</button>
           </div>
@@ -2081,16 +2081,37 @@ function ensureTheme(ctx, theme){
     const u = ctx.me;
     const stats = parseStats(u);
     const about = stats?.about || u.sobre || "";
+    const USER_CHANGE_COOLDOWN_DAYS = 15;
+    const USER_CHANGE_COOLDOWN_MS = USER_CHANGE_COOLDOWN_DAYS * 24 * 60 * 60 * 1000;
+    const currentUser = safeStr(u.user || "").replace(/^@/, "").trim().toLowerCase();
+    const profileStats = (stats && typeof stats === "object" && stats.profile && typeof stats.profile === "object")
+      ? stats.profile
+      : {};
+    const lastUserChangeRaw = safeStr(
+      profileStats.userChangedAt ||
+      profileStats.user_changed_at ||
+      u.userChangedAt ||
+      u.user_changed_at
+    );
+    const lastUserChangeTs = lastUserChangeRaw ? Date.parse(lastUserChangeRaw) : NaN;
+    const hasUserChangeDate = Number.isFinite(lastUserChangeTs);
+    const nextUserChangeTs = hasUserChangeDate ? (lastUserChangeTs + USER_CHANGE_COOLDOWN_MS) : 0;
+    const canChangeUserNow = !hasUserChangeDate || Date.now() >= nextUserChangeTs;
+    const fmtDateBR = (ts) => {
+      try { return new Date(ts).toLocaleDateString("pt-BR"); } catch (_) { return ""; }
+    };
+
     modal.open("Editar perfil", `
       <div class="dp-form">
         <div>
           <label>Nome</label>
-          <input class="dp-input" id="dpEditNome" value="${escapeHtml(u.nome || "")}" />
+          <input class="dp-input" id="dpEditNome" maxlength="40" value="${escapeHtml(u.nome || "")}" />
         </div>
         <div class="dp-row2">
           <div>
-            <label>@usuário</label>
-            <input class="dp-input" id="dpEditUser" value="${escapeHtml(u.user || "")}" />
+            <label>@usu&aacute;rio</label>
+            <input class="dp-input" id="dpEditUser" maxlength="20" value="${escapeHtml(u.user || "")}" />
+            <div class="dp-fieldHint" id="dpEditUserHint">O @usu&aacute;rio pode ser alterado a cada 15 dias.</div>
           </div>
           <div>
             <label>Local</label>
@@ -2103,29 +2124,53 @@ function ensureTheme(ctx, theme){
         </div>
         <div>
           <label>Sobre</label>
-          <textarea class="dp-textarea" id="dpEditSobre" placeholder="Escreva algo sobre você...">${escapeHtml(about)}</textarea>
+          <textarea class="dp-textarea" id="dpEditSobre" placeholder="Escreva algo sobre voc&ecirc;...">${escapeHtml(about)}</textarea>
         </div>
       </div>
     `, async ()=>{
       const client = mustSupa();
       if(!client) return;
+      const inputUser = $("#dpEditUser");
+      const userCandidate = safeStr(inputUser?.value).replace(/^@/,"").trim().toLowerCase();
+      const userChanged = userCandidate !== currentUser;
+
+      if(userCandidate && !/^[a-z0-9._]{3,20}$/.test(userCandidate)){
+        toast("@usu\u00E1rio inv\u00E1lido. Use 3-20 caracteres: letras, n\u00FAmeros, ponto ou underline.");
+        return;
+      }
+      if(userChanged && !canChangeUserNow){
+        const msLeft = Math.max(0, nextUserChangeTs - Date.now());
+        const daysLeft = Math.max(1, Math.ceil(msLeft / (24 * 60 * 60 * 1000)));
+        const nextDateLabel = fmtDateBR(nextUserChangeTs);
+        toast(`Voc\u00EA poder\u00E1 alterar o @usu\u00E1rio em ${daysLeft} dia(s)${nextDateLabel ? ` (a partir de ${nextDateLabel})` : ""}.`);
+        return;
+      }
+
       const patch = {
-        nome: safeStr($("#dpEditNome")?.value),
-        user: safeStr($("#dpEditUser")?.value).replace(/^@/,""),
+        nome: safeStr($("#dpEditNome")?.value).slice(0, 40),
+        user: userCandidate.slice(0, 20),
         local: safeStr($("#dpEditLocal")?.value),
         bio: safeStr($("#dpEditBio")?.value),
       };
+      if(!patch.nome || patch.nome.length < 2){
+        toast("Nome inv\u00E1lido. Use pelo menos 2 caracteres.");
+        return;
+      }
       const { error } = await updateUsuario(client, ctx.me.id, patch);
       if(error){
         console.error(error);
-        toast("Sem permissão para salvar.");
+        toast("Sem permiss\u00E3o para salvar.");
         return;
       }
       const aboutNext = safeStr($("#dpEditSobre")?.value);
-      const { error: statsErr, stats: nextStats } = await patchStats(client, ctx.me.id, stats, { about: aboutNext });
+      const statsPatch = { about: aboutNext };
+      if(userChanged){
+        statsPatch.profile = { ...profileStats, userChangedAt: new Date().toISOString() };
+      }
+      const { error: statsErr, stats: nextStats } = await patchStats(client, ctx.me.id, stats, statsPatch);
       if(statsErr){
         console.error(statsErr);
-        toast("Sobre não foi salvo.");
+        toast("Sobre n\u00E3o foi salvo.");
       }else{
         ctx.me.stats = nextStats;
         ctx.target.stats = nextStats;
@@ -2136,11 +2181,18 @@ function ensureTheme(ctx, theme){
       modal.close();
       toast("Perfil atualizado!");
     });
+
+    const hintEl = $("#dpEditUserHint");
+    if(hintEl){
+      if(canChangeUserNow){
+        hintEl.textContent = "Voc\u00EA pode alterar o @usu\u00E1rio agora. Depois da troca, s\u00F3 poder\u00E1 mudar novamente em 15 dias.";
+      }else{
+        const nextDateLabel = fmtDateBR(nextUserChangeTs);
+        hintEl.textContent = `@usu\u00E1rio s\u00F3 pode ser alterado a cada 15 dias.${nextDateLabel ? ` Pr\u00F3xima altera\u00E7\u00E3o: ${nextDateLabel}.` : ""}`;
+      }
+    }
   }
 
-  // -----------------------------
-  // Tabs
-  // -----------------------------
   function initTabs(ctx){
     const buttons = $$(".dp-tab");
     const sections = $$(".dp-section[data-tab]");
@@ -4274,26 +4326,15 @@ async function loadServicosPerfil(ctx) {
 
 
 
-// Antes x Depois — alterna automaticamente (a cada 2s)
+// Compat legado: delega para o enhancer compartilhado quando existir.
 function setupAntesDepois(container){
-  if(!container) return;
-  const els = container.querySelectorAll('.js-antes-depois');
-  els.forEach((el)=>{
-    if(el.dataset.bound === '1') return;
-    el.dataset.bound = '1';
-    const before = el.dataset.before;
-    const after = el.dataset.after;
-    const img = el.querySelector('img');
-    const badge = el.querySelector('.dp-ba-badge');
-    if(!img || !before || !after) return;
-    let state = 'before';
-    setInterval(()=>{
-      state = (state === 'before') ? 'after' : 'before';
-      img.src = (state === 'before') ? before : after;
-      if(badge) badge.textContent = (state === 'before') ? 'Antes' : 'Depois';
-    }, 2000);
-  });
+  try{
+    if (window.DokeAntesDepois && typeof window.DokeAntesDepois.refresh === "function") {
+      window.DokeAntesDepois.refresh(container || document);
+    }
+  }catch(_){}
 }
+
 
 
 

@@ -4,7 +4,7 @@
   try { window.__DOKE_BA = true; } catch (_) {}
 
   const SELECTOR = ".js-antes-depois,[data-before][data-after],[data-before-url][data-after-url]";
-  const AUTO_MS = 8000;        // tempo entre trocas (mais confortável)
+  const AUTO_MS = 3200;        // tempo entre trocas (mais confortável)
   const RESUME_MS = 12000;     // retoma autoplay depois de interação
 
   function makeImg(cls, src, alt) {
@@ -112,14 +112,8 @@
       el.appendChild(dots);
     }
 
-    // badge
-    let badge = el.querySelector(".dp-ba-badge");
-    if (!badge) {
-      badge = document.createElement("span");
-      badge.className = "dp-ba-badge";
-      badge.textContent = "Antes";
-      el.appendChild(badge);
-    }
+    // remove indicador legado duplicado (badge inferior)
+    Array.from(el.querySelectorAll(".dp-ba-badge")).forEach((n) => n.remove());
 
     const btnBefore = dots.querySelector('[data-show="before"]');
     const btnAfter = dots.querySelector('[data-show="after"]');
@@ -133,7 +127,6 @@
       if (btnAfter) btnAfter.classList.toggle("is-active", isAfter);
       if (tBefore) tBefore.classList.toggle("is-active", !isAfter);
       if (tAfter) tAfter.classList.toggle("is-active", isAfter);
-      badge.textContent = isAfter ? "Depois" : "Antes";
     }
 
     // listeners (uma vez)
@@ -188,6 +181,10 @@
       dots.addEventListener("click", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
       toggle.addEventListener("click", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
       el.addEventListener("click", () => { setTimeout(schedule, RESUME_MS); }, { passive: true });
+      document.addEventListener("visibilitychange", () => {
+        if (document.hidden) pause();
+        else schedule();
+      });
     }
 // modo inicial
     setMode("before");

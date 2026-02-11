@@ -309,7 +309,7 @@
 <form onsubmit="salvarDados(event)">
 <div class="input-group">
 <label>Nome Completo</label>
-<input id="inputNome" placeholder="Carregando..." required="" type="text"/>
+<input id="inputNome" maxlength="40" placeholder="Carregando..." required="" type="text"/>
 </div>
 <div class="input-group">
 <label>E-mail</label>
@@ -372,7 +372,7 @@
         };
 
         function preencherCampos(dados) {
-            document.getElementById('inputNome').value = dados.nome || "";
+            document.getElementById('inputNome').value = String(dados.nome || "").slice(0, 40);
             document.getElementById('inputEmail').value = dados.email || "";
             document.getElementById('inputDoc').value = dados.cpf_cnpj || "Não informado";
             document.getElementById('inputTel').value = dados.telefone || dados.telefone_comercial || "";
@@ -498,7 +498,8 @@
                 if (!authUser) throw new Error('Sessão expirada. Faça login novamente.');
 
                 const uid = authUser.id;
-                const nome = document.getElementById('inputNome').value.trim();
+                const nome = document.getElementById('inputNome').value.trim().slice(0, 40);
+                if (!nome || nome.length < 2) throw new Error('Informe um nome válido (mínimo 2 caracteres).');
                 const telefone = document.getElementById('inputTel').value.trim();
                 const nasc = document.getElementById('inputNasc').value;
                 const foto = document.getElementById('hiddenFotoBase64').value || perfilLocal.foto || '';

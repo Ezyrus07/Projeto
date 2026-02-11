@@ -1046,10 +1046,38 @@ window.dokeBuildCardPremium = function(anuncio) {
 
     const nota = anuncio.mediaAvaliacao || 0;
     const qtdAvaliacoes = anuncio.numAvaliacoes || 0;
+    const notaNum = Number(nota) || 0;
 
-    let htmlAvaliacaoDisplay = qtdAvaliacoes === 0 
+    const categoriaRaw = anuncio.categoria || anuncio.categorias || anuncio.servico || "";
+    const categoria = Array.isArray(categoriaRaw) ? String(categoriaRaw[0] || "") : String(categoriaRaw || "");
+    const localLabel = [anuncio.bairro, anuncio.cidade, anuncio.uf]
+      .map(v => String(v || "").trim())
+      .filter(Boolean)
+      .slice(0, 2)
+      .join(" - ");
+
+    const tagsSource = anuncio.tags ?? anuncio.tag ?? anuncio.palavrasChave ?? anuncio.palavras_chave ?? anuncio.keywords ?? "";
+    const tagsList = (() => {
+      if (Array.isArray(tagsSource)) {
+        return tagsSource.map(t => String(t || "").trim()).filter(Boolean);
+      }
+      return String(tagsSource || "")
+        .split(/[,\n;|]+/)
+        .map(t => t.replace(/^#/, "").trim())
+        .filter(Boolean);
+    })().slice(0, 3);
+
+    const tagsFooter = tagsList.slice(0, 2);
+    const tagsOverflow = Math.max(0, tagsList.length - tagsFooter.length);
+
+    const htmlAvaliacaoDisplay = qtdAvaliacoes === 0 
         ? `<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Novo</span>`
-        : `<div class="cp-stars-dynamic" style="color:#f1c40f;"><i class='bx bxs-star'></i> ${nota} <span style="color:#999; font-size:0.75rem;">(${qtdAvaliacoes})</span></div>`;
+        : ``;
+
+    const starsInline = Array.from({ length: 5 }, (_, i) => {
+      const isOn = i < Math.round(Math.max(0, Math.min(5, notaNum)));
+      return `<i class='bx ${isOn ? "bxs-star" : "bx-star"}'></i>`;
+    }).join("");
 
     let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : [anuncio.img || "https://placehold.co/600x400"];
     const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
@@ -1084,6 +1112,8 @@ window.dokeBuildCardPremium = function(anuncio) {
     const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid}')"`;
     const estiloLink = `style="cursor: pointer;"`;
     const userDataAttr = anuncio.uid ? `data-uid="${anuncio.uid}"` : "";
+    const detalhesBaseUrl = anuncio.id ? `detalhes.html?id=${encodeURIComponent(anuncio.id)}` : "";
+    const detalhesReviewsUrl = detalhesBaseUrl ? `${detalhesBaseUrl}&scroll=avaliacoes#reviews-list` : "";
 
     const card = document.createElement('div');
     card.className = 'card-premium';
@@ -1094,19 +1124,21 @@ window.dokeBuildCardPremium = function(anuncio) {
     };
 
     card.innerHTML = `
-        <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
-            <i class='bx bx-info-circle'></i> Mais Informações
-        </button>
         <div class="cp-header-clean">
             <div style="display:flex; gap:12px; align-items:center;">
                 <img src="${fotoAutor}" class="cp-avatar js-user-link" loading="lazy" decoding="async" ${userDataAttr} ${linkPerfil} ${estiloLink}> 
                 <div class="cp-info-user">
                     <div class="cp-nome-row">
                         <h4 class="cp-nome-clean js-user-link" ${userDataAttr} ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
+                        ${categoria ? `<button type="button" class="cp-categoria-chip js-card-categoria" title="${escapeHtml(categoria)}" data-q="${encodeURIComponent(categoria)}">${escapeHtml(categoria)}</button>` : ``}
                         ${htmlAvaliacaoDisplay}
                     </div>
                     <div class="cp-tempo-online">
                         <div class="status-dot online"></div> Online
+                        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avaliações do anúncio">
+                          <span class="cp-mini-stars" aria-hidden="true">${starsInline}</span>
+                          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes})` : "Sem avaliações"}</span>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -1114,12 +1146,16 @@ window.dokeBuildCardPremium = function(anuncio) {
         <div class="cp-body">
             <h3 class="cp-titulo">${titulo}</h3>
             <p class="cp-desc-clean">${descricao}</p>
+            ${localLabel ? `<div class="cp-localizacao-line"><i class='bx bx-map-pin'></i><span>${escapeHtml(localLabel)}</span></div>` : ``}
         </div>
         ${htmlFotos}
         <div class="cp-footer-right">
             <div style="margin-right:auto; min-width:0;">
                 ${__precoLabel ? `<small style="display:block; color:#999; font-size:0.7rem;">${__precoLabel}</small>` : ``}
-                <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+                <div class="cp-price-tags-row">
+                    <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+                    ${(tagsFooter.length || tagsOverflow) ? `<div class="cp-footer-tags">${tagsFooter.map(t => `<button type="button" class="cp-footer-tag js-card-tag" data-q="${encodeURIComponent(t)}">#${escapeHtml(t)}</button>`).join("")}${tagsOverflow ? `<span class="cp-footer-tag cp-footer-tag-more">+${tagsOverflow}</span>` : ``}</div>` : ``}
+                </div>
                 <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none; margin-top:6px; font-size:0.72rem; color:#64748b;">
                     Preço médio (5+ serviços): <b style="color:#0f172a;"></b>
                 </div>
@@ -1218,6 +1254,40 @@ window.dokeBuildCardPremium = function(anuncio) {
             }
         } catch(e) {}
 
+        // Navegação contextual do card:
+        // - estrelas -> detalhes + seção de avaliações
+        // - categoria -> busca por categoria
+        // - tags -> busca por tag
+        try {
+            const ratingBtn = card.querySelector('.js-rating-open');
+            if (ratingBtn && detalhesReviewsUrl) {
+                ratingBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = detalhesReviewsUrl;
+                });
+            }
+
+            const catBtn = card.querySelector('.js-card-categoria');
+            if (catBtn) {
+                catBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const q = catBtn.dataset.q || '';
+                    if (q) window.location.href = `busca.html?q=${q}&src=categoria_card`;
+                });
+            }
+
+            card.querySelectorAll('.js-card-tag').forEach((tagBtn) => {
+                tagBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const q = tagBtn.dataset.q || '';
+                    if (q) window.location.href = `busca.html?q=${q}&src=tag_card`;
+                });
+            });
+        } catch(_) {}
+
         // Online real-time (melhor esforço: usa flags/timestamps se existirem)
         try {
             const dot = card.querySelector('.status-dot');
@@ -1239,6 +1309,19 @@ window.dokeBuildCardPremium = function(anuncio) {
                 dot.title = isOnline ? 'Online agora' : (lastMs ? ('Visto recentemente') : 'Offline');
             }
         } catch(e) {}
+
+        // Clique em área "neutra" do card -> detalhes do anúncio
+        try {
+            if (detalhesBaseUrl) {
+                card.addEventListener('click', (e) => {
+                    const interactive = e.target && e.target.closest && e.target.closest(
+                        'button,a,input,textarea,select,label,.cp-more,.cp-more-menu,.img-cover,.overlay-count,.js-user-link'
+                    );
+                    if (interactive) return;
+                    window.location.href = detalhesBaseUrl;
+                });
+            }
+        } catch(_) {}
 return card;
 };
 
@@ -1573,6 +1656,12 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const tituloSecao = document.getElementById('categorias-title'); 
     if (!feed) return; 
 
+    try {
+        if (typeof window.dokeSyncAnunciosFeedLayout === 'function') {
+            window.dokeSyncAnunciosFeedLayout(feed);
+        }
+    } catch (_) {}
+
     window.dokeRenderAnunciosSkeleton(feed);
 
     try {
@@ -1698,6 +1787,11 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 
         // limpa e renderiza o primeiro lote
         feed.innerHTML = "";
+        try {
+            if (typeof window.dokeSyncAnunciosFeedLayout === 'function') {
+                window.dokeSyncAnunciosFeedLayout(feed);
+            }
+        } catch (_) {}
         renderMais(8);
 
         // botão Ver mais
@@ -1761,6 +1855,11 @@ window.__dokeResetBuscaFiltros = function(){
 window.aplicarFiltrosBusca = function() {
     const feed = document.getElementById('feedAnuncios');
     if (!feed) return;
+    try {
+        if (typeof window.dokeSyncAnunciosFeedLayout === 'function') {
+            window.dokeSyncAnunciosFeedLayout(feed);
+        }
+    } catch (_) {}
 
     const full = Array.isArray(window.__dokeAnunciosCacheFull) ? window.__dokeAnunciosCacheFull.slice() : [];
     const inputBusca = document.getElementById('inputBusca');
@@ -3667,7 +3766,7 @@ window.carregarFeedGlobal = async function() {
         const mediaHtml = item.tipo === "video"
             ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
             : (item.tipo === "antes_depois" && item.thumb_url
-                ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""><span class="dp-ba-badge">Antes</span></div>`
+                ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""></div>`
                 : `<img src="${item.media_url}" loading="lazy" alt="">`);
 
         const html = `
@@ -3706,13 +3805,13 @@ function setupAntesDepois(container){
         const after = el.dataset.after;
         const img = el.querySelector("img");
         const badge = el.querySelector(".dp-ba-badge");
+        if (badge) badge.remove();
         if(!img || !before || !after) return;
         let state = "before";
         window.setInterval(()=>{
             state = (state === "before") ? "after" : "before";
             img.src = (state === "before") ? before : after;
-            if(badge) badge.textContent = (state === "before") ? "Antes" : "Depois";
-        }, 8000);
+        }, 3200);
     });
 }
 
@@ -10180,6 +10279,11 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     const feed = byId('feedAnuncios');
     if(feed){
+      try {
+        if (typeof window.dokeSyncAnunciosFeedLayout === 'function') {
+          window.dokeSyncAnunciosFeedLayout(feed);
+        }
+      } catch (_) {}
       feed.innerHTML = '';
       const frag = document.createDocumentFragment();
       lista.forEach(anuncio => {
@@ -10242,6 +10346,43 @@ async function carregarComentariosSupabase(publicacaoId) {
 /* ======================= INDEX_UPGRADE_PACK ======================= */
 (function(){
   // ---------- Skeletons ----------
+  window.dokeSyncAnunciosFeedLayout = function(feed){
+    if (!feed || feed.id !== 'feedAnuncios') return;
+    const feedRectW = (typeof feed.getBoundingClientRect === 'function')
+      ? Math.round(feed.getBoundingClientRect().width || 0)
+      : 0;
+    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const feedW = Math.max(feed.clientWidth || 0, feedRectW || 0, vw);
+    const isBuscaFeed = document.body?.dataset?.page === 'busca';
+    const isHomeFeed = document.body?.dataset?.page === 'home';
+    if (isBuscaFeed) {
+      const cols = feedW <= 560 ? 1 : 2;
+      feed.style.display = 'grid';
+      feed.style.gridTemplateColumns = cols === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
+      feed.style.gap = cols === 1 ? '12px' : '14px';
+      feed.style.alignItems = 'stretch';
+      feed.style.justifyItems = 'stretch';
+      return;
+    }
+    if (isHomeFeed) {
+      const cols = feedW >= 1200 ? 3 : (feedW >= 760 ? 2 : 1);
+      feed.style.display = 'grid';
+      feed.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
+      feed.style.gap = cols === 1 ? '12px' : (cols === 2 ? '14px' : '16px');
+      feed.style.alignItems = 'stretch';
+      feed.style.justifyItems = 'stretch';
+    }
+  };
+
+  if (!window.__dokeFeedLayoutResizeBound) {
+    window.__dokeFeedLayoutResizeBound = true;
+    window.addEventListener('resize', () => {
+      const feed = document.getElementById('feedAnuncios');
+      if (!feed) return;
+      try { window.dokeSyncAnunciosFeedLayout(feed); } catch (_) {}
+    }, { passive: true });
+  }
+
   window.dokeRenderAnunciosSkeleton = function(feed){
     if (!feed) return;
     feed.setAttribute('aria-busy', 'true');
@@ -10251,22 +10392,18 @@ async function carregarComentariosSupabase(publicacaoId) {
       : 0;
     const feedW = Math.max(feed.clientWidth || 0, feedRectW || 0, vw);
     const isBuscaFeed = document.body?.dataset?.page === 'busca' && feed.id === 'feedAnuncios';
-    if (isBuscaFeed) {
-      const buscaCols = feedW <= 560 ? 1 : 2;
-      feed.style.display = 'grid';
-      feed.style.gridTemplateColumns = buscaCols === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
-      feed.style.gap = buscaCols === 1 ? '12px' : '14px';
-      feed.style.alignItems = 'stretch';
-      feed.style.justifyItems = 'stretch';
-    }
+    try { window.dokeSyncAnunciosFeedLayout(feed); } catch (_) {}
     const count = isBuscaFeed
       ? 2
-      : (vw <= 600 ? 2 : (vw <= 1024 ? 3 : 4));
+      : (vw <= 600 ? 2 : (vw <= 1024 ? 3 : 3));
     const cards = Array.from({length: count}).map(()=>
       '<article class="skeleton-premium-card skel-anuncio-card" aria-hidden="true">'
       + '  <div class="skel-anuncio-head">'
       + '    <span class="skeleton skel-anuncio-avatar"></span>'
-      + '    <span class="skeleton skel-anuncio-user"></span>'
+      + '    <span class="skel-anuncio-userWrap">'
+      + '      <span class="skeleton skel-anuncio-user"></span>'
+      + '      <span class="skeleton skel-anuncio-userSub"></span>'
+      + '    </span>'
       + '  </div>'
       + '  <div class="skeleton skeleton-premium-cover skel-anuncio-media"></div>'
       + '  <div class="skeleton-premium-body skel-anuncio-body">'
@@ -11688,22 +11825,6 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       sec.className = 'para-voce-section';
       sec.id = 'paraVoceSection';
 
-      const historico = readJSON('doke_historico_busca', []);
-      const clicks = readJSON('doke_categorias_click', []);
-
-      let sugeridos = [...new Set([
-        ...clicks.slice(0, 6),
-        ...historico.slice(0, 6),
-        ...(window.__dokeTopCats || []).slice(0, 6),
-      ].filter(Boolean))].slice(0, 10);
-
-      const semHist = !sugeridos.length;
-      if (semHist) {
-        const fallback = (window.__dokeTopCats || []).slice(0, 8);
-        const base = fallback.length ? fallback : ['Eletricista','Diarista','Encanador','Pintor','Manicure','Limpeza','Reforma','Aulas'];
-        sugeridos = [...new Set(base)].slice(0, 10);
-      }
-
       sec.innerHTML = `
         <div class="para-voce-inner pv-stack">
           <div class="pv-stack-grid">
@@ -11711,16 +11832,9 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
               <div class="pv-head">
                 <div class="pv-title-row">
                   <h2>Para você</h2>
-                  <span class="pv-badge">${semHist ? 'Comece agora' : 'Personalizado'}</span>
+                  <span class="pv-badge">Busca rápida</span>
                 </div>
-                <div class="pv-sub">Sugestões com base nas suas interações recentes</div>
-              </div>
-
-              <div class="pv-chips" id="pvChips">
-                ${semHist ? `<div class="pv-empty-row"><i class='bx bx-sparkle'></i><div><b>Sem histórico ainda.</b> Clique em uma sugestão para começar.</div></div>` : ``}
-                <div class="pv-chips-row">
-                  ${sugeridos.map(t => `<button type="button" class="pv-chip" data-q="${esc(t)}">${esc(t)}</button>`).join('')}
-                </div>
+                <div class="pv-sub">Use a busca para encontrar serviços e profissionais.</div>
               </div>
 
                           </div>
@@ -11730,14 +11844,6 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
       anchor.parentNode.insertBefore(sec, anchor);
       // Insere busca pequena logo após o 'Para você'
-sec.querySelectorAll('.pv-chip').forEach((b) => {
-        b.addEventListener('click', () => {
-          const q = b.getAttribute('data-q') || '';
-          if (!q) return;
-          try { window.salvarBusca?.(q); } catch {}
-          window.location.href = `busca.html?q=${encodeURIComponent(q)}&src=para_voce`;
-        });
-      });
     }
 
     // ----------------------------
