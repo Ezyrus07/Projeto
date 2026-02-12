@@ -374,12 +374,9 @@
             </button>
           </div>
           <div class="doke-chip-row" role="list">
-            <button class="doke-chip active" type="button"><i class='bx bx-grid-alt'></i> Todos</button>
-            <button class="doke-chip" type="button"><i class='bx bx-time'></i> Atendimento rápido</button>
-            <button class="doke-chip" type="button"><i class='bx bx-map'></i> Perto</button>
-            <button class="doke-chip" type="button"><i class='bx bx-star'></i> Super</button>
-            <button class="doke-chip" type="button"><i class='bx bx-bolt-circle'></i> Recentes</button>
-            <button class="doke-chip" type="button"><i class='bx bx-badge-check'></i> Verificados</button>
+            <button class="doke-chip active" type="button" data-search-target="all"><i class='bx bx-grid-alt'></i> Todos</button>
+            <button class="doke-chip" type="button" data-search-target="users"><i class='bx bx-user'></i> Usuários</button>
+            <button class="doke-chip" type="button" data-search-target="ads"><i class='bx bx-store-alt'></i> Serviços</button>
           </div>
           <div class="doke-recent">
             <h4>Buscas recentes</h4>
@@ -399,6 +396,9 @@
       const inp = overlay.querySelector(".doke-search-input");
       const results = overlay.querySelector(".doke-search-results");
       const recent = overlay.querySelector(".doke-recent");
+      searchTarget = "all";
+      overlay.querySelectorAll(".doke-chip").forEach((b)=> b.classList.remove("active"));
+      overlay.querySelector('.doke-chip[data-search-target="all"]')?.classList.add("active");
       if(inp) inp.value = "";
       if(results){
         results.hidden = true;
@@ -459,6 +459,7 @@
     }
 
     let searchToken = 0;
+    let searchTarget = "all"; // all | users | ads
     async function renderSearchResults(term){
       if(!overlay) return;
       const results = overlay.querySelector(".doke-search-results");
@@ -479,18 +480,20 @@
       const currentToken = ++searchToken;
       results.innerHTML = `<div class="doke-search-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Buscando...</span></div>`;
 
-      const users = await searchUsers(q);
+      const shouldSearchUsers = searchTarget !== "ads";
+      const shouldShowAdsAction = searchTarget !== "users";
+      const users = shouldSearchUsers ? await searchUsers(q) : [];
       if(currentToken !== searchToken) return;
 
-      const actionHtml = `
+      const actionHtml = shouldShowAdsAction ? `
         <button class="doke-result-action" type="button" data-q="${escapeHtml(q)}">
           <i class='bx bx-right-arrow-alt'></i>
           <div>
-            <strong>Buscar servicos por "${escapeHtml(q)}"</strong>
-            <small>Abrir resultados de anuncios</small>
+            <strong>Buscar serviços por "${escapeHtml(q)}"</strong>
+            <small>Abrir resultados de anúncios</small>
           </div>
         </button>
-      `;
+      ` : ``;
 
       const usersHtml = users.length
         ? users.map((u) => {
@@ -502,7 +505,7 @@
             const isProf = u.isProfissional === true;
             const subtitulo = isProf
               ? String(u.categoria_profissional || "Profissional")
-              : (nome || "Usuario");
+              : (nome || "Usuário");
             const perfil = isProf ? "perfil-profissional.html" : "perfil-usuario.html";
             return `
               <button class="doke-user-result" type="button" data-go="${perfil}?uid=${encodeURIComponent(uid)}">
@@ -511,19 +514,18 @@
                   <strong>${escapeHtml(handle)}</strong>
                   <small>${escapeHtml(subtitulo)}</small>
                 </div>
-                <span class="doke-user-pill">${isProf ? "Profissional" : "Usuario"}</span>
+                <span class="doke-user-pill">${isProf ? "Profissional" : "Usuário"}</span>
               </button>
             `;
           }).join("")
-        : `<div class="doke-search-empty"><i class='bx bx-user-x'></i><span>Nenhum usuario encontrado.</span></div>`;
+        : `<div class="doke-search-empty"><i class='bx bx-user-x'></i><span>Nenhum usuário encontrado.</span></div>`;
 
       results.innerHTML = `
         ${actionHtml}
-        <div class="doke-results-title">Usuarios</div>
-        ${usersHtml}
+        ${shouldSearchUsers ? `<div class="doke-results-title">Usuários</div>${usersHtml}` : ``}
       `;
 
-      results.querySelector(".doke-result-action")?.addEventListener("click", () => goSearch(q));
+      results.querySelector(".doke-result-action")?.addEventListener("click", () => goSearch(q, { forceAds: true }));
       results.querySelectorAll(".doke-user-result").forEach((btn) => {
         btn.addEventListener("click", () => {
           const go = btn.getAttribute("data-go") || "";
@@ -532,10 +534,15 @@
       });
     }
 
-    function goSearch(q){
+    function goSearch(q, opts = {}){
       if(!overlay) return;
       q = (q || overlay.querySelector(".doke-search-input")?.value || "").trim();
       if(!q) return;
+      const forceAds = !!opts.forceAds;
+      if(searchTarget === "users" && !forceAds){
+        renderSearchResults(q);
+        return;
+      }
       saveRecent(q);
       location.href = `${PAGES.search}?q=${encodeURIComponent(q)}`;
     }
@@ -617,6 +624,11 @@
         btn.addEventListener("click", ()=>{
           overlay.querySelectorAll(".doke-chip").forEach(b=>b.classList.remove("active"));
           btn.classList.add("active");
+          const target = btn.getAttribute("data-search-target");
+          if(target === "all" || target === "users" || target === "ads"){
+            searchTarget = target;
+            renderSearchResults(overlay.querySelector(".doke-search-input")?.value || "");
+          }
         });
       });
     }

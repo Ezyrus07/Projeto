@@ -5,7 +5,7 @@
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js"></script>
-<!-- Storage bucket padrão (áudios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
+<!-- Storage bucket padrÃ£o (áudios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
 <script>
     window.__DOKE_SUPABASE_STORAGE_BUCKET__ =
       window.__DOKE_SUPABASE_STORAGE_BUCKET__ ||
@@ -17,9 +17,9 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Mensagens | Doke</title>
-    <meta name="description" content="Converse com profissionais e clientes em um chat rápido e responsivo.">
-    <meta property="og:title" content="Doke — Chat">
-    <meta property="og:description" content="Converse com profissionais e clientes em um chat rápido e responsivo.">
+    <meta name="description" content="Converse com profissionais e clientes em um chat r&aacute;pido e responsivo.">
+    <meta property="og:title" content="Doke - Chat">
+    <meta property="og:description" content="Converse com profissionais e clientes em um chat r&aacute;pido e responsivo.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="assets/Imagens/doke-logo.png">
     <meta name="theme-color" content="#0b7768">
@@ -29,10 +29,10 @@
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-fixes.css" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<!-- script.js removido no chat para evitar conflitos/dobro de listeners (o chat já tem lógica própria aqui) -->
+<!-- script.js removido no chat para evitar conflitos/dobro de listeners (o chat jÃ¡ tem lÃ³gica prÃ³pria aqui) -->
 <style>
         /* =========================================================================
-           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRÃO)
+           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRÃƒO)
            ========================================================================= */
         
         :root{
@@ -52,8 +52,29 @@
 
         body[data-page="chat"], body[data-page="chat"].doke-shell-active{ padding-top: 0 !important; padding-bottom: 0 !important; }
 
-        .navbar-mobile { justify-content: space-between; align-items: center; }
+        .navbar-mobile { justify-content: space-between; align-items: center; min-height: var(--navbar-height-mobile); }
         .navbar-mobile .mobile-controls { display: flex; align-items: center; gap: 12px; }
+        #logo-mobile{ display:flex; align-items:center; min-height:48px; }
+        #logo-mobile img{ display:block; height:32px; width:auto; }
+        .navbar-mobile .botoes-direita{ min-width:56px; display:flex; justify-content:flex-end; align-items:center; }
+        .header-mobile-avatar{
+            width: 48px;
+            height: 48px;
+            border-radius: 999px;
+            border: 2px solid var(--cor0);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            overflow: hidden;
+        }
+        .header-mobile-avatar img{
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            object-fit: cover;
+            display:block;
+        }
         #btn-menu-mobile { background: none; border: none; cursor: pointer; }
         /* Icon baseline fix (Boxicons) */
         .bx{ line-height: 1; }
@@ -71,8 +92,8 @@
             grid-template-columns: 380px 1fr; /* 380px Lista | Resto Chat */
             height: calc(100vh - var(--navbar-height-desktop)); /* Altura total MENOS o header */
             width: calc(100vw - var(--sidebar-width)); /* Largura total MENOS a sidebar */
-            margin-left: var(--sidebar-width); /* Espaço da Sidebar */
-            margin-top: var(--navbar-height-desktop); /* Espaço do Header */
+            margin-left: var(--sidebar-width); /* EspaÃ§o da Sidebar */
+            margin-top: var(--navbar-height-desktop); /* EspaÃ§o do Header */
             background: var(--ux-panel);
             position: relative;
             border-left: 1px solid var(--ux-line);
@@ -378,6 +399,13 @@
             position: relative;
             margin-left: 6px;
         }
+        .chat-header-tools{
+            margin-left: auto;
+            display:flex;
+            align-items:center;
+            gap:8px;
+            flex-shrink:0;
+        }
         .chat-menu-btn{
             width:40px;
             height:40px;
@@ -620,6 +648,36 @@
             color:#b91c1c;
             border-color:#fecaca;
         }
+        .chat-context-actions .close-card{
+            width:30px;
+            min-width:30px;
+            height:30px;
+            padding:0;
+            border-radius:999px;
+            font-size:1rem;
+            line-height:1;
+            font-weight:900;
+            color:#475569;
+        }
+        .ip-andamento{
+            position: relative;
+        }
+        .ip-andamento-close{
+            position:absolute;
+            right:8px;
+            top:8px;
+            width:24px;
+            height:24px;
+            border:none;
+            border-radius:999px;
+            background:#f1f5f9;
+            color:#64748b;
+            font-size:0.9rem;
+            cursor:pointer;
+            display:grid;
+            place-items:center;
+        }
+        .ip-andamento-close:hover{ background:#e2e8f0; color:#0f172a; }
 
         .pinned-bar{
             display:flex;
@@ -845,8 +903,8 @@
 
         @media (max-width: 1024px) {
             .navbar-desktop { display: none; }
-            /* Reserva espaço para header + bottom-nav (evita barra flutuando e gaps) */
-            /* v25 — evita "gap" entre barra de digitar e bottom-nav */
+            /* Reserva espaÃ§o para header + bottom-nav (evita barra flutuando e gaps) */
+            /* v25 â€” evita "gap" entre barra de digitar e bottom-nav */
             .messenger-layout { position: fixed; top: var(--navbar-height-mobile); left: 0; right: 0; bottom: var(--bottom-nav-height); width: auto; height: auto; margin: 0; display: block; border-left: 0; }
             .coluna-lista { width: 100%; height: 100%; position: relative; }
             .coluna-chat { 
@@ -881,10 +939,10 @@
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px; /* Espaço entre ícone e texto */
+    gap: 6px; /* EspaÃ§o entre Ã­cone e texto */
     transition: 0.2s;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-    margin-right: 10px; /* Espaço dos outros elementos */
+    margin-right: 0;
 }
 
 .btn-cobranca:hover {
@@ -899,7 +957,7 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     min-width: 280px;
     max-width: 320px;
-    /* Removido o overflow hidden para não cortar o botão se ele tiver sombra */
+    /* Removido o overflow hidden para nÃ£o cortar o botÃ£o se ele tiver sombra */
     margin: 12px 0;
     border: 1px solid #edf2f7;
     display: flex;
@@ -921,12 +979,12 @@
 }
 
 .cp-body {
-    padding: 20px; /* Reduzi um pouco para o botão subir */
+    padding: 20px; /* Reduzi um pouco para o botÃ£o subir */
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px; /* Espaçamento uniforme entre elementos */
+    gap: 12px; /* EspaÃ§amento uniforme entre elementos */
 }
 
 .cp-valor {
@@ -942,7 +1000,7 @@
     margin-bottom: 10px;
 }
 
-/* Botão ajustado para não cortar */
+/* BotÃ£o ajustado para nÃ£o cortar */
 .btn-pagar-card {
     width: 100%;
     background: #009688;
@@ -953,7 +1011,7 @@
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;
-    box-sizing: border-box; /* Garante que o padding não aumente o tamanho real */
+    box-sizing: border-box; /* Garante que o padding nÃ£o aumente o tamanho real */
 }
 
 /* Efeito de Vidro (Glassmorphism) no Header do Chat */
@@ -987,16 +1045,16 @@
     border-bottom-left-radius: 4px;
 }
 
-/* Área de Mensagens com Fundo Personalizado */
+/* Ãrea de Mensagens com Fundo Personalizado */
 .mensagens-body {
     background-color: #f0f2f5;
-    /* Adicionando um padrão leve de fundo que lembra o WhatsApp */
+    /* Adicionando um padrÃ£o leve de fundo que lembra o WhatsApp */
     background-image: radial-gradient(#d1d1d1 0.5px, transparent 0.5px);
     background-size: 20px 20px;
     padding: 25px 50px;
 }
 
-/* Customização da Scrollbar para ficar elegante */
+/* CustomizaÃ§Ã£o da Scrollbar para ficar elegante */
 .lista-scroll::-webkit-scrollbar, 
 .mensagens-body::-webkit-scrollbar {
     width: 6px;
@@ -1031,7 +1089,7 @@
 .input-msg {
     background: #f0f2f5;
     padding: 12px 20px;
-    border-radius: 25px; /* Estilo pílula */
+    border-radius: 25px; /* Estilo pÃ­lula */
     border: 1px solid transparent;
     font-family: inherit;
 }
@@ -1042,7 +1100,7 @@
     box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.1);
 }
 
-/* Feedback visual para elementos clicáveis no chat */
+/* Feedback visual para elementos clicÃ¡veis no chat */
 #chatAvatar, #chatNome, .ip-user, .ic-nome {
     cursor: pointer;
     transition: opacity 0.2s ease, transform 0.2s ease;
@@ -1053,7 +1111,7 @@
     transform: translateY(-1px);
 }
 
-/* Garante que o card de mensagem tenha a animação de entrada corrigida */
+/* Garante que o card de mensagem tenha a animaÃ§Ã£o de entrada corrigida */
 @keyframes slideIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
@@ -1063,7 +1121,7 @@
     animation: slideIn 0.3s ease-out forwards;
 }
 
-/* Estilo para Pedidos de Orçamento (Verde) */
+/* Estilo para Pedidos de OrÃ§amento (Verde) */
 .tipo-pedido {
     border-left: 5px solid #0b7768 !important;
     background-color: #f0f9f8;
@@ -1073,7 +1131,7 @@
     color: white;
 }
 
-/* Estilo para Solicitações de Conversa (Azul) */
+/* Estilo para SolicitaÃ§Ãµes de Conversa (Azul) */
 .tipo-conversa {
     border-left: 5px solid #2a5f90 !important;
     background-color: #f0f4f9;
@@ -1095,7 +1153,7 @@
 .tag-orcamento { background: #e0f2f1; color: #0b7768; }
 .tag-papo { background: #e3f2fd; color: #2a5f90; }
 
-/* Card de Orçamento (Verde) */
+/* Card de OrÃ§amento (Verde) */
 .card-orcamento {
     border-left: 5px solid #0b7768 !important;
     background-color: #f0f9f8 !important;
@@ -1117,7 +1175,7 @@
     display: inline-block;
 }
 
-/* Estilo para o botão de cancelar dentro do card */
+/* Estilo para o botÃ£o de cancelar dentro do card */
 .item-pedido .btn-recusar-mini {
     padding: 8px;
     font-size: 0.8rem;
@@ -1210,7 +1268,7 @@
 .detail-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .detail-value { color: #333; font-weight: 500; line-height: 1.4; }
 
-/* BOTÕES E LINKS DISCRETOS */
+/* BOTÃ•ES E LINKS DISCRETOS */
 .btn-detalhes {
     background: #f0fdfa; color: var(--cor0); border: 1px solid #ccfbf1;
     padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
@@ -1254,7 +1312,7 @@
 }
 .btn-cancelar-discreto:hover { background: #e74c3c; color: #fff; }
 
-/* BOTÃO MAIS DETALHES */
+/* BOTÃƒO MAIS DETALHES */
 .btn-detalhes-card {
     background: #f0f7f6; color: var(--cor0); border: 1px solid #d1e9e5;
     padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
@@ -1284,7 +1342,7 @@
     padding: 12px; border-radius: 12px; font-weight: 700; cursor: pointer;
 }
 
-/* Botão de Finalização no Topo */
+/* BotÃ£o de FinalizaÃ§Ã£o no Topo */
 .btn-conclusao-topo {
     background: #0b7768;
     color: white;
@@ -1316,7 +1374,7 @@
 .ip-badge.badge-pago {
     background: #0b7768;
     color: white;
-    cursor: help; /* Muda o mouse para indicar que há informação */
+    cursor: help; /* Muda o mouse para indicar que hÃ¡ informaÃ§Ã£o */
 }
 
 .tooltip-card {
@@ -1338,7 +1396,7 @@
     transition: opacity 0.3s;
 }
 
-/* Triângulo do card */
+/* TriÃ¢ngulo do card */
 .tooltip-card::after {
     content: "";
     position: absolute;
@@ -1511,7 +1569,7 @@
     }
     .bounceIn { animation: bounceIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
 
-    /* Botão Cancelar Discreto e Elegante */
+    /* BotÃ£o Cancelar Discreto e Elegante */
 .btn-cancelar-discreto {
     width: 100%;
     margin-top: 10px;
@@ -1539,7 +1597,7 @@
     top: 0px; /* Ajuste manual se precisar subir/descer */
 }
 
-/* Animação do Ponto Vermelho */
+/* AnimaÃ§Ã£o do Ponto Vermelho */
 .recording-indicator {
     display: flex; align-items: center; gap: 8px; color: #e74c3c; font-weight: bold;
 }
@@ -1570,7 +1628,7 @@
     background: currentColor; transition: width 0.1s linear;
 }
 
-/* Animação de Pulso para o Status Online */
+/* AnimaÃ§Ã£o de Pulso para o Status Online */
 .status-pulse {
     width: 10px;
     height: 10px;
@@ -1578,7 +1636,7 @@
     border-radius: 50%;
     position: relative;
     display: inline-block;
-    /* A mágica do pulso acontece aqui */
+    /* A mÃ¡gica do pulso acontece aqui */
     box-shadow: 0 0 0 rgba(46, 204, 113, 0.4);
     animation: pulse-green 2s infinite;
 }
@@ -1602,7 +1660,7 @@
 .status-container-online {
     display: flex;
     align-items: center;
-    gap: 8px; /* Espaço entre bolinha e texto */
+    gap: 8px; /* EspaÃ§o entre bolinha e texto */
     font-weight: 600;
     color: #2ecc71;
     font-size: 0.85rem;
@@ -1637,7 +1695,7 @@
         .scroll-down.show{ display: grid; }
         .scroll-down i{ font-size: 1.3rem; color: var(--cor0); }
         /* =====================
-           POLIMENTO VISUAL DOS CARDS (versão mais bonita, sem mexer no layout)
+           POLIMENTO VISUAL DOS CARDS (versÃ£o mais bonita, sem mexer no layout)
            ===================== */
         .coluna-lista { background: #f6f7f8; }
 
@@ -1725,7 +1783,7 @@
 
 .galeria-conteudo img {
     max-width: 100%;
-    max-height: 85vh; /* Altura máxima para não estourar a tela */
+    max-height: 85vh; /* Altura mÃ¡xima para nÃ£o estourar a tela */
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
     object-fit: contain;
@@ -1744,7 +1802,7 @@
 }
 .btn-fechar-galeria:hover { color: #ccc; }
 
-/* Setas de Navegação */
+/* Setas de NavegaÃ§Ã£o */
 .nav-seta {
     position: absolute;
     top: 50%;
@@ -1781,7 +1839,7 @@
     max-width: 90%;
     overflow-x: auto; /* Permite rolar se tiver muitas fotos */
     padding: 10px;
-    background: rgba(0,0,0,0.5); /* Fundo semi-transparente atrás das thumbs */
+    background: rgba(0,0,0,0.5); /* Fundo semi-transparente atrÃ¡s das thumbs */
     border-radius: 12px;
     z-index: 20002;
     scrollbar-width: none; /* Esconde barra de rolagem no Firefox */
@@ -1806,7 +1864,7 @@
     opacity: 1;
 }
 
-/* Quando a foto está selecionada */
+/* Quando a foto estÃ¡ selecionada */
 .thumb-item.ativo {
     opacity: 1;
     border: 2px solid #fff; /* Borda branca igual Webmotors */
@@ -1817,7 +1875,7 @@
 @media (max-width: 768px) {
     .galeria-thumbnails {
         bottom: 60px; /* Sobe um pouco no celular */
-        justify-content: flex-start; /* Alinha à esquerda para rolar */
+        justify-content: flex-start; /* Alinha Ã  esquerda para rolar */
     }
 }
 
@@ -1889,12 +1947,17 @@
     }
     /* Menu 3 pontinhos por mensagem */
     .msg-bubble{ position:relative; }
+    .msg-bubble.has-menu{ padding-right:42px !important; }
     .msg-menu-btn{
         border:none; background:transparent; cursor:pointer;
         width:26px; height:26px; border-radius:50%;
         display:grid; place-items:center;
         color:inherit; opacity:.7;
         line-height:1;
+        position:absolute;
+        top:6px;
+        right:6px;
+        z-index:3;
     }
     .msg-menu-btn i{
         display:block;
@@ -1935,7 +1998,7 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260211v33">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v23">
-  <link rel="stylesheet" href="page-chat.css?v=20260211v35">
+  <link rel="stylesheet" href="page-chat.css?v=20260212v37">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -1972,7 +2035,7 @@
   <div class="item">
     <a href="notificacoes.html">
       <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
+      <span>Notifica&ccedil;&otilde;es</span>
     </a>
   </div>
 
@@ -2029,13 +2092,30 @@
 <header class="navbar-mobile">
 <div id="logo-mobile">
 <a href="index.html">
-<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+<img alt="Doke" decoding="async" loading="eager" fetchpriority="high" src="assets/Imagens/doke-logo.png"/>
 </a>
 </div>
 <div class="botoes-direita">
-<a class="entrar" href="login.html" id="header-user-mobile">Entrar</a>
+<a class="header-mobile-avatar" href="login.html" id="header-user-mobile" aria-label="Perfil">
+<img id="header-mobile-avatar-img" alt="Entrar" decoding="async" loading="eager" src="assets/Imagens/user_placeholder.png" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';"/>
+</a>
 </div>
 </header>
+<script>
+    (function(){
+        try {
+            var perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null');
+            if (!perfil) return;
+            var mobileLink = document.getElementById('header-user-mobile');
+            var mobileImg = document.getElementById('header-mobile-avatar-img');
+            if (mobileLink) mobileLink.href = perfil.isProfissional ? 'meuperfil.html' : 'perfil-usuario.html';
+            if (mobileImg && perfil.foto) {
+                mobileImg.src = perfil.foto;
+                mobileImg.alt = 'Perfil';
+            }
+        } catch (_) {}
+    })();
+</script>
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 <div class="messenger-layout" id="messengerMaster">
 <div class="coluna-lista">
@@ -2050,7 +2130,7 @@
 <div class="lista-quick">
 <div class="lista-search">
 <i class="bx bx-search"></i>
-<input id="inputBuscaLista" placeholder="Buscar por nome ou serviço" type="text"/>
+<input id="inputBuscaLista" placeholder="Buscar por nome ou servi&ccedil;o" type="text"/>
 </div>
 <button class="filter-btn" id="toggleFilters" onclick="toggleListaFilters(event)">
                         Filtros <i class="bx bx-slider-alt"></i>
@@ -2086,9 +2166,9 @@
 </div>
 <div class="agenda-panel" id="agendaPanel" style="display:none;">
 <div class="agenda-top">
-<button aria-label="Mês anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
+<button aria-label="M&ecirc;s anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
 <div class="agenda-title" id="agendaTitle">Agenda</div>
-<button aria-label="Próximo mês" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Pr&oacute;ximo m&ecirc;s" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="agenda-weekdays">
 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
@@ -2103,27 +2183,28 @@
 <div class="coluna-chat">
 <div id="chat-placeholder">
 <img decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="opacity:0.5; margin-bottom:20px;" width="120"/>
-<p>Selecione uma conversa para começar.</p>
+<p>Selecione uma conversa para come&ccedil;ar.</p>
 </div>
 <div id="box-conversa-real">
 <div class="chat-header">
 <button class="btn-voltar-mobile" onclick="fecharChatMobile()"><i class="bx bx-arrow-back"></i></button>
 <img decoding="async" id="chatAvatar" loading="lazy" src="" alt="Foto do contato" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';"/>
 <div class="chat-info">
-<h4 id="chatNome">Usuário</h4>
+<h4 id="chatNome">Usu&aacute;rio</h4>
 <span id="chatStatus">Offline</span>
 <div class="chip-pedido-status chip-pendente" id="chipPedidoStatus" style="display:none;">Pedido em espera</div>
 </div>
 <div id="container-acao-header" style="display: flex; align-items: center;"></div>
-<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;">
-<i class="bx bx-dollar-circle"></i> Gerar Cobrança
-                        </button>
 <div class="header-actions" id="acoes-profissional-header" style="display:none;">
 <button class="btn-header btn-recusar-mini" onclick="acaoPedido('recusado')">Recusar</button>
 <button class="btn-header btn-aceitar-mini" onclick="acaoPedido('aceito')">Aceitar Pedido</button>
 </div>
+<div class="chat-header-tools">
+<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar Cobran&ccedil;a">
+<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar Cobran&ccedil;a</span>
+</button>
 <div class="chat-menu" id="chatMenu">
-<button aria-label="Mais opções" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
+<button aria-label="Mais op&ccedil;&otilde;es" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
 <i class="bx bx-dots-vertical-rounded"></i>
 </button>
 <div class="chat-menu-dropdown">
@@ -2136,6 +2217,7 @@
 </div>
 </div>
 </div>
+</div>
 <div class="pinned-bar" id="pinnedBar" style="display:none;">
 <div class="pinned-title"><i class="bx bx-pin"></i> Fixadas</div>
 <div class="pinned-list" id="pinnedList"></div>
@@ -2145,7 +2227,7 @@
 <div class="chat-context-actions" id="chatContextActions"></div>
 </div>
 <div class="mensagens-body" id="areaMensagens"></div>
-<button class="scroll-down" id="scrollDownBtn" title="Descer para a última mensagem" type="button">
+<button class="scroll-down" id="scrollDownBtn" title="Descer para a &uacute;ltima mensagem" type="button">
 <i class="bx bx-chevron-down"></i>
 </button>
 <div class="reply-bar" id="replyBar">
@@ -2158,7 +2240,7 @@
 </button>
 </div>
 <div class="chat-footer" id="chatFooter">
-<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobrança">
+<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobran&ccedil;a">
 <i class="bx bx-dollar"></i>
 </button>
 <div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
@@ -2179,7 +2261,7 @@
 <div class="red-dot"></div>
 <span id="timerGravacao">00:00</span>
 </div>
-<span style="flex:1; color:#666; font-size:0.9rem;">Gravando áudio...</span>
+<span style="flex:1; color:#666; font-size:0.9rem;">Gravando &aacute;udio...</span>
 <button onclick="cancelarGravacao()" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:1.5rem;">
 <i class="bx bx-trash"></i>
 </button>
@@ -2207,7 +2289,7 @@
 <div class="recusa-content">
 <h3 style="margin:0; color:#333;">Recusar Pedido</h3>
 <p style="color:#666; font-size:0.9rem; margin:10px 0 0;">Por favor, informe ao cliente o motivo da recusa:</p>
-<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: Não tenho disponibilidade nesta data..."></textarea>
+<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: N&atilde;o tenho disponibilidade nesta data..."></textarea>
 <div style="display:flex; gap:10px;">
 <button onclick="fecharModalRecusa()" style="flex:1; background:#f0f0f0; border:none; border-radius:12px; cursor:pointer; font-weight:600;">Voltar</button>
 <button class="btn-confirm-recusa" onclick="confirmarRecusaFinal()">Confirmar Recusa</button>
@@ -2219,11 +2301,11 @@
 <div class="modal-icon-top">
 <i class="bx bx-check"></i>
 </div>
-<h3>Serviço Finalizado!</h3>
-<p>O pagamento foi liberado para o profissional com segurança.</p>
+<h3>Servi&ccedil;o Finalizado!</h3>
+<p>O pagamento foi liberado para o profissional com seguran&ccedil;a.</p>
 <div style="background:#fff9db; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #ffe082;">
-<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experiência?</strong>
-<span style="font-size:0.9rem; color:#555;">Sua avaliação ajuda a comunidade a contratar com confiança.</span>
+<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experi&ecirc;ncia?</strong>
+<span style="font-size:0.9rem; color:#555;">Sua avalia&ccedil;&atilde;o ajuda a comunidade a contratar com confian&ccedil;a.</span>
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="irParaAvaliacaoDireta()">
@@ -2242,15 +2324,15 @@
 </div>
 <h3 style="text-align:center;">Finalizar pedido</h3>
 <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
-            Confirme a conclusão do serviço. Anexe uma mídia única ou um par antes/depois.
+            Confirme a conclus&atilde;o do servi&ccedil;o. Anexe uma m&iacute;dia &uacute;nica ou um par antes/depois.
         </p>
 <div class="finalizar-modo">
-<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Mídia única</label>
+<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> M&iacute;dia &uacute;nica</label>
 <label><input name="finalizarModo" onclick="alterarModoFinalizacao('antes_depois')" type="radio" value="antes_depois"/> Antes e depois</label>
 </div>
 <div class="finalizar-upload" id="finalizarUploadUnico">
 <label class="btn-upload" for="finalizarAnexoUnico">
-<i class="bx bx-image-add"></i> Anexar mídia (opcional)
+<i class="bx bx-image-add"></i> Anexar m&iacute;dia (opcional)
             </label>
 <small id="finalizarNomeArquivoUnico"></small>
 <input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file">
@@ -2290,8 +2372,7 @@
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
-<i class="bx bx-check"></i> Finalizar serviço
-            </button>
+<i class="bx bx-check"></i> Finalizar servi&ccedil;o</button>
 <button class="btn-secondary-modal" onclick="fecharModalFinalizarPedido()">Cancelar</button>
 </div>
 </div>
@@ -2320,7 +2401,7 @@
 <div class="md-header">
 <div style="display:flex; align-items:center; gap:10px;">
 <i class="bx bx-dollar-circle" style="font-size:1.3rem; color:#d4a600;"></i>
-<strong>Gerar cobrança</strong>
+<strong>Gerar cobran&ccedil;a</strong>
 </div>
 <button onclick="fecharModalGerarCobranca()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
 <i class="bx bx-x"></i>
@@ -2332,8 +2413,8 @@
 <input class="input-premium" id="cobrancaValorInput" inputmode="decimal" placeholder="R$ 0,00" type="text"/>
 </div>
 <div class="input-group" style="margin-bottom:12px;">
-<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Título da cobrança</label>
-<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: Mão de obra elétrica" type="text"/>
+<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">T&iacute;tulo da cobran&ccedil;a</label>
+<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: M&atilde;o de obra el&eacute;trica" type="text"/>
 </div>
 <div class="input-group" style="margin-bottom:2px;">
 <label for="cobrancaParcelasInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Parcelas sem juros</label>
@@ -2354,7 +2435,7 @@
 </div>
 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
 <button class="btn-dm btn-dm-cancel" onclick="fecharModalGerarCobranca()" type="button">Cancelar</button>
-<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobrança</button>
+<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobran&ccedil;a</button>
 </div>
 </div>
 </div>
@@ -2366,7 +2447,7 @@
 
     const db = window.db || getFirestore();
     const auth = window.auth || getAuth();
-    // Storage (Supabase Storage via compat). Bucket padrão definido no <head>.
+    // Storage (Supabase Storage via compat). Bucket padrÃ£o definido no <head>.
     const storage = window.storage || (window.getStorage ? getStorage() : { bucket: 'posts' });
     window.storage = storage;
 
@@ -2396,6 +2477,22 @@
     let pedidoAtualData = null;
     let conversaArquivadaAtual = false;
     let replyContext = null;
+    const andamentoCardHidden = (() => {
+        try {
+            const parsed = JSON.parse(localStorage.getItem('doke_andamento_hidden') || '{}');
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch (_) {
+            return {};
+        }
+    })();
+    const contextoCardHidden = (() => {
+        try {
+            const parsed = JSON.parse(localStorage.getItem('doke_context_hidden') || '{}');
+            return parsed && typeof parsed === 'object' ? parsed : {};
+        } catch (_) {
+            return {};
+        }
+    })();
     const avaliacaoCache = {};
       let pedidoFinalizarId = null;
       let finalizacaoModo = 'unico';
@@ -2406,6 +2503,32 @@
       let finalizacaoPreviewUrlAntes = null;
       let finalizacaoPreviewUrlDepois = null;
       let pedidoInfoRenderId = null;
+
+    const persistAndamentoHidden = () => {
+        try { localStorage.setItem('doke_andamento_hidden', JSON.stringify(andamentoCardHidden)); } catch (_) {}
+    };
+    const persistContextoHidden = () => {
+        try { localStorage.setItem('doke_context_hidden', JSON.stringify(contextoCardHidden)); } catch (_) {}
+    };
+
+    window.ocultarCardAndamento = function(pedidoId) {
+        if (!pedidoId) return;
+        andamentoCardHidden[String(pedidoId)] = true;
+        persistAndamentoHidden();
+        document.querySelectorAll(`.ip-andamento[data-pedido-id="${pedidoId}"]`).forEach((el) => el.remove());
+    };
+
+    window.fecharCardContextoPedido = function(status) {
+        if (!chatIdAtual || !status) return;
+        const key = `${chatIdAtual}:${String(status).toLowerCase()}`;
+        contextoCardHidden[key] = true;
+        persistContextoHidden();
+        const bar = document.getElementById('chatContextBar');
+        if (bar) {
+            bar.classList.remove('show');
+            bar.style.display = 'none';
+        }
+    };
 
     window.abrirPerfilUsuario = function(uid, isProfissional){
         if (!uid) return;
@@ -2707,15 +2830,15 @@
 
     function getTipoPreview(tipo, texto, url){
         const t = String(tipo || '').toLowerCase();
-        if (t === 'imagem') return '📷 Imagem';
-        if (t === 'arquivo') return '📎 Arquivo';
-        if (t === 'audio' || t === 'áudio' || t === 'voz') return '🎤 Áudio';
-        if (t === 'pagamento') return '💳 Cobrança';
-        if (t === 'card_finalizado') return '✅ Pedido finalizado';
-        if (t === 'card_avaliacao') return '⭐ Avaliação';
-        if (t === 'solicitacao_portfolio') return '🖼️ Solicitação de portfólio';
-        if (t === 'portfolio_consent_result') return '✅ Resposta de portfólio';
-        if (t === 'portfolio_publicado') return '📁 Publicado no portfólio';
+        if (t === 'imagem') return 'Imagem';
+        if (t === 'arquivo') return 'Arquivo';
+        if (t === 'audio' || t === 'áudio' || t === 'voz') return 'Áudio';
+        if (t === 'pagamento') return 'Cobrança';
+        if (t === 'card_finalizado') return 'Pedido finalizado';
+        if (t === 'card_avaliacao') return 'Avaliação';
+        if (t === 'solicitacao_portfolio') return 'Solicitação de portfólio';
+        if (t === 'portfolio_consent_result') return 'Resposta de portfólio';
+        if (t === 'portfolio_publicado') return 'Publicado no portfólio';
         return (texto || '').slice(0, 140);
     }
     function normalizePinPreview(text){
@@ -2809,7 +2932,7 @@
       function bindLongPressMensagens(container){
           if (!container || container.dataset.longPressMsgReady === '1') return;
           container.dataset.longPressMsgReady = '1';
-          const enableTouchLongPressMenu = false; // no web, abrir opções só pelo botão de 3 pontos
+          const enableTouchLongPressMenu = false; // no web, abrir opÃ§Ãµes sÃ³ pelo botÃ£o de 3 pontos
           let holdTimer = null;
           let startX = 0;
           let startY = 0;
@@ -2994,7 +3117,7 @@
         const desc = escapeHtml(descricaoBase || 'Sem descrição');
         const prazo = escapeHtml(p.paraQuando || 'A combinar');
         const turno = escapeHtml(p.turno || 'Livre');
-        const modo = escapeHtml(p.modoAtend || p.modo_atend || '—');
+        const modo = escapeHtml(p.modoAtend || p.modo_atend || 'â€”');
         const dataEspecifica = p.dataEspecifica ? (() => {
             const d = parseDataHora(p.dataEspecifica) || new Date(p.dataEspecifica);
             return isNaN(d.getTime()) ? p.dataEspecifica : d.toLocaleDateString('pt-BR');
@@ -4329,6 +4452,14 @@
             return;
         }
         const status = String(p.status || 'pendente').toLowerCase();
+        const contextHideKey = `${chatIdAtual || ''}:${status}`;
+        if (contextoCardHidden[contextHideKey]) {
+            bar.classList.remove('show');
+            bar.style.display = 'none';
+            text.textContent = '';
+            actions.innerHTML = '';
+            return;
+        }
         const souCliente = p.deUid === currentUserUid;
         let msg = '';
         const btns = [];
@@ -4354,6 +4485,9 @@
         if (['pago','finalizado'].includes(status) || disputaAtiva) {
             btns.push(`<button class="${disputaAtiva ? 'danger' : ''}" onclick="abrirModalDisputa()">Disputa</button>`);
         }
+        if (status === 'aceito') {
+            btns.push(`<button class="close-card" title="Ocultar card" aria-label="Ocultar card" onclick="fecharCardContextoPedido('aceito')">&times;</button>`);
+        }
         text.textContent = msg;
         actions.innerHTML = btns.join('');
         bar.style.display = 'flex';
@@ -4369,7 +4503,7 @@
     // 1. SISTEMA DE ALERTAS PERSONALIZADOS (SUBSTITUI NATIVOS)
     // =========================================================================
     
-    // Injeção de Estilos dos Modais
+    // InjeÃ§Ã£o de Estilos dos Modais
     const styleModal = document.createElement('style');
     styleModal.innerHTML = `
         .doke-overlay {
@@ -4407,7 +4541,7 @@
     `;
     document.head.appendChild(styleModal);
 
-    // HTML do Modal Genérico
+    // HTML do Modal GenÃ©rico
     document.addEventListener("DOMContentLoaded", () => {
         initPedidosFilters();
         initConversasFilters();
@@ -4442,10 +4576,10 @@
         }
     });
 
-    // Funções Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
-    // IMPORTANT: script.js (defer) também define window.dokeAlert/Confirm/Prompt.
-    // Para evitar conflito (modal some e fica travando a tela), nós reatribuímos
-    // as funções APÓS o DOMContentLoaded, garantindo que esta versão seja a final.
+    // FunÃ§Ãµes Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
+    // IMPORTANT: script.js (defer) tambÃ©m define window.dokeAlert/Confirm/Prompt.
+    // Para evitar conflito (modal some e fica travando a tela), nÃ³s reatribuÃ­mos
+    // as funÃ§Ãµes APÃ“S o DOMContentLoaded, garantindo que esta versÃ£o seja a final.
     function bindDokeModalAPI(){
         window.dokeAlert = (msg, title = "Aviso") => new Promise(resolve => setupModal(title, msg, 'alert', resolve));
         window.dokeConfirm = (msg, title = "Confirmação", type = 'normal') => new Promise(resolve => setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve));
@@ -4474,7 +4608,7 @@
         btnCancel.style.display = 'block';
         btnConfirm.className = 'btn-dm btn-dm-confirm'; // Reset classes
         
-        // Ícones e Cores
+        // Ãcones e Cores
         if(type === 'alert') {
             icon.className = 'bx bx-info-circle'; icon.style.color = '#0b7768';
             btnCancel.style.display = 'none';
@@ -4518,7 +4652,7 @@
     
 
     // =========================================================================
-    // 2. FUNÇÕES DE INJEÇÃO DO MODAL DE GARANTIA (INFO)
+    // 2. FUNÃ‡Ã•ES DE INJEÃ‡ÃƒO DO MODAL DE GARANTIA (INFO)
     // =========================================================================
     document.addEventListener("DOMContentLoaded", () => {
         if (!document.getElementById('modalGarantiaInfo')) {
@@ -4592,7 +4726,7 @@
     window.fecharModalDisputa = () => { const m = document.getElementById('modalDisputa'); if(m) m.style.display = 'none'; };
 
     // =========================================================================
-    // 3. FUNÇÕES GERAIS DA APLICAÇÃO
+    // 3. FUNÃ‡Ã•ES GERAIS DA APLICAÃ‡ÃƒO
     // =========================================================================
 
     window.irParaMeuPerfil = function(event) {
@@ -4605,13 +4739,17 @@
     function renderHeaderUser(perfil) {
         const container = document.getElementById('header-user-area');
         const mobile = document.getElementById('header-user-mobile');
+        const mobileImg = document.getElementById('header-mobile-avatar-img');
         if (!container) return;
 
         if (!perfil) {
             container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
             if (mobile) {
                 mobile.href = "login.html";
-                mobile.innerHTML = `<i class='bx bx-user-circle' style="font-size: 28px; color: #333;"></i>`;
+                if (mobileImg) {
+                    mobileImg.src = "assets/Imagens/user_placeholder.png";
+                    mobileImg.alt = "Entrar";
+                }
             }
             return;
         }
@@ -4642,7 +4780,10 @@
 
         if (mobile) {
             mobile.href = perfilHref;
-            mobile.innerHTML = `<img src="${foto}" alt="Perfil" style="width:28px; height:28px; border-radius:50%; object-fit:cover;" loading="lazy" decoding="async">`;
+            if (mobileImg) {
+                mobileImg.src = foto;
+                mobileImg.alt = "Perfil";
+            }
         }
     }
 
@@ -4901,7 +5042,7 @@
     };
 
     window.verDetalhesOrcamento = async function(idPedido) {
-        // Mantido por compatibilidade (abre a página de orçamento)
+        // Mantido por compatibilidade (abre a pÃ¡gina de orÃ§amento)
         
 
         const modal = document.getElementById('modalOrcamento');
@@ -5080,7 +5221,7 @@
                     <div><div class="md-label">Prazo</div><div class="md-value">${escapeHtml(p.paraQuando || "A combinar")}</div></div>
                     <div><div class="md-label">Turno</div><div class="md-value">${escapeHtml(p.turno || "Livre")}</div></div>
                 </div>
-                <div class="md-row"><div class="md-label">Modo de atendimento</div><div class="md-value">${escapeHtml(p.modoAtend || p.modo_atend || "—")}</div></div>
+                <div class="md-row"><div class="md-label">Modo de atendimento</div><div class="md-value">${escapeHtml(p.modoAtend || p.modo_atend || "â€”")}</div></div>
                 ${dataEspecificaHtml}
                 ${localHtml}
                 ${anexosHtml}
@@ -5474,7 +5615,7 @@
         }
     };
 
-    // Ações de Pedido (Profissional: recusa com motivo)
+    // AÃ§Ãµes de Pedido (Profissional: recusa com motivo)
     window.prepararRecusa = async (id) => {
         const motivo = await window.dokePrompt('Por favor, informe o motivo da recusa:', 'Ex: Indisponibilidade de agenda...', 'Recusar Pedido');
         if(!motivo) return;
@@ -5535,7 +5676,7 @@
 
     
 
-    // Ações rápidas no topo do chat (apenas quando o pedido estiver pendente e eu for o profissional)
+    // AÃ§Ãµes rÃ¡pidas no topo do chat (apenas quando o pedido estiver pendente e eu for o profissional)
     window.acaoPedido = async function(acao){
         if(!chatIdAtual) return;
         try {
@@ -5814,7 +5955,7 @@ window.confirmarFinalizacaoPedido = async () => {
         if (btn) { btn.disabled = false; btn.innerHTML = "<i class='bx bx-check'></i> Finalizar servico"; }
     }
 };
-    // Funções do Modal
+    // FunÃ§Ãµes do Modal
     window.irParaAvaliacaoDireta = () => {
         try { window.fecharModalSucesso(); } catch (_) {}
         window.location.href = `avaliar.html?pedidoId=${window.pedidoIdParaAvaliar}`;
@@ -5823,7 +5964,7 @@ window.confirmarFinalizacaoPedido = async () => {
         document.getElementById('modalSucessoAvaliacao').style.display = 'none';
     };
     // =========================================================================
-    // 4. RENDERIZAÇÃO E CHAT
+    // 4. RENDERIZAÃ‡ÃƒO E CHAT
     // =========================================================================
 
     async function carregarListaPedidos(opts = {}) {
@@ -5866,7 +6007,7 @@ window.confirmarFinalizacaoPedido = async () => {
             for (const it of itensRaw) {
                 const pid = it?.d?.id;
                 if (!pid) continue;
-                // Preferir "cliente" quando duplicar, pois é a visão mais comum para o usuário final.
+                // Preferir "cliente" quando duplicar, pois Ã© a visÃ£o mais comum para o usuário final.
                 if (!map.has(pid) || (map.get(pid).papel !== 'cliente' && it.papel === 'cliente')) {
                     map.set(pid, it);
                 }
@@ -5934,7 +6075,7 @@ window.confirmarFinalizacaoPedido = async () => {
                 let sT = p.status;
                 if(p.status === 'aceito' && papelReal === 'profissional') sT = "Em andamento";
                 
-                // Badge Clicável (Abre Modal de Garantia)
+                // Badge ClicÃ¡vel (Abre Modal de Garantia)
                 let badgeHtml = (p.status === 'pago') ? `
                     <span class="ip-badge" onclick="event.stopPropagation(); abrirModalGarantia()" 
                           title="Clique para saber mais sobre a garantia"
@@ -5963,7 +6104,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         </div>
                     </div>` : "";
 
-                // Botões de Ação
+                // BotÃµes de AÃ§Ã£o
                 let acoesHtml = "";
                 if (papelReal === 'profissional' && p.status === 'pendente') {
                     acoesHtml = `<div style="display:flex; gap:10px; margin-top:10px;">
@@ -5973,7 +6114,7 @@ window.confirmarFinalizacaoPedido = async () => {
                 } else if (papelReal === 'cliente' && p.status === 'pendente') {
                     acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicitação</button>`;
                 } else if (papelReal === 'cliente' && p.status === 'pago') {
-                     // Botão de Conclusão (Design Compacto)
+                     // BotÃ£o de ConclusÃ£o (Design Compacto)
                      acoesHtml = `
                         <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
                                 style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
@@ -6009,12 +6150,16 @@ window.confirmarFinalizacaoPedido = async () => {
                     subMsg = '<div class=\"ip-sub\">Chat liberado. Você já pode negociar com o profissional.</div>';
                 }
 
-                // Card "Pedido em andamento" (diferencia Orçamentos vs Mensagens)
+                // Card "Pedido em andamento" (diferencia OrÃ§amentos vs Mensagens)
                 let cardAndamento = "";
                 if (['aceito','pago','finalizado'].includes(String(p.status||'').toLowerCase())) {
+                    const pedidoStatusNorm = String(p.status || '').toLowerCase();
+                    const cardHidden = !!andamentoCardHidden[String(id)];
                     const label = (String(p.status||'').toLowerCase() === 'finalizado') ? 'Serviço finalizado' : 'Pedido em andamento';
-                    cardAndamento = `
-                        <div style="margin-top:10px; background:#ffffff; border:1px solid #e6e6e6; border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+                    if (!cardHidden) {
+                        cardAndamento = `
+                        <div class="ip-andamento" data-pedido-id="${id}" style="margin-top:10px; background:#ffffff; border:1px solid #e6e6e6; border-radius:14px; padding:12px; display:flex; align-items:center; gap:12px; box-shadow:0 2px 10px rgba(0,0,0,0.04);">
+                            ${pedidoStatusNorm === 'aceito' ? `<button class="ip-andamento-close" title="Ocultar card" onclick="event.stopPropagation(); ocultarCardAndamento('${id}')"><i class='bx bx-x'></i></button>` : ''}
                             <div style="width:38px; height:38px; border-radius:12px; background:#e0f2f1; display:flex; align-items:center; justify-content:center; color:var(--cor0);">
                                 <i class='bx bx-receipt' style="font-size:20px;"></i>
                             </div>
@@ -6023,6 +6168,7 @@ window.confirmarFinalizacaoPedido = async () => {
                                 <div style="font-size:0.78rem; color:#6b7280;">As informações do orçamento estão no chat.</div>
                             </div>
                         </div>`;
+                    }
                 }
 
                 const agendaDate = parseAgendaDate(p);
@@ -6043,7 +6189,7 @@ window.confirmarFinalizacaoPedido = async () => {
 
                 const rowHtml = `
                     <div class="item-pedido tipo-pedido status-border-${p.status}">
-                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div style="display:flex; gap:8px; align-items:center;">${unreadHtml}${archiveBtn}${bApagar}${badgeHtml}</div></div>
+                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div class="ip-header-actions" style="display:flex; gap:8px; align-items:center;">${unreadHtml}${archiveBtn}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user">
                             <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                             <span>${dU.user || 'Usuário'}</span>
@@ -6208,9 +6354,9 @@ window.confirmarFinalizacaoPedido = async () => {
           }
       };
 
-// Função auxiliar para formatar a data (Coloque fora ou antes do abrirChat)
-// Função auxiliar de data (Mantenha ou adicione se não tiver)
-// Função auxiliar de data (Mantenha igual a anterior)
+// FunÃ§Ã£o auxiliar para formatar a data (Coloque fora ou antes do abrirChat)
+// FunÃ§Ã£o auxiliar de data (Mantenha ou adicione se nÃ£o tiver)
+// FunÃ§Ã£o auxiliar de data (Mantenha igual a anterior)
     function formatarUltimaVez(dataIso) {
         if (!dataIso) return "Offline";
         try {
@@ -6337,6 +6483,14 @@ window.confirmarFinalizacaoPedido = async () => {
         }
     }
 
+    function syncChatHeaderLayout(){
+        const header = document.querySelector('.chat-header');
+        const btnC = document.getElementById('btn-cobranca-topo');
+        if (!header || !btnC) return;
+        const visivel = window.getComputedStyle(btnC).display !== 'none';
+        header.classList.toggle('chat-has-cobranca', visivel);
+    }
+
 window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colecao, statusDoc) {
         // Mobile: quando abrir conversa, traz o painel de chat para frente
         try{ document.body.classList.add('mobile-chat-open'); }catch(e){}
@@ -6361,12 +6515,13 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         if (btnP) btnP.style.display = 'none';
         if (divAcoesPro) divAcoesPro.style.display = 'none';
         if (containerAcao) containerAcao.innerHTML = '';
+        syncChatHeaderLayout();
         
         // Remove avisos antigos
         const aviso = document.getElementById('aviso-bloqueio-chat');
         if(aviso) aviso.remove();
 
-        // 1. LÓGICA DE PEDIDOS (BLOQUEIO/STATUS)
+        // 1. LÃ“GICA DE PEDIDOS (BLOQUEIO/STATUS)
           if (colecao === 'pedidos') {
               resetDmSolicitacaoState();
               setChatInputEnabled(true);
@@ -6399,7 +6554,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                           carregarMensagens(colecao, idDoc);
                       }
                     
-                    // Lógica de bloqueio do chat
+                    // LÃ³gica de bloqueio do chat
                     if (p.status === 'pendente') {
                         chatFooter.style.display = 'none'; 
                         if (currentUserUid === paraUid) mostrarAvisoBloqueio("Pedido em espera. Aceite o pedido para liberar o chat.");
@@ -6412,7 +6567,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         if(document.getElementById('aviso-bloqueio-chat')) document.getElementById('aviso-bloqueio-chat').remove();
                     }
 
-                    // Botões Header (Finalizar / Aceitar / Recusar)
+                    // BotÃµes Header (Finalizar / Aceitar / Recusar)
                     if(containerAcao) {
                         containerAcao.innerHTML = (deUid === currentUserUid && p.status === 'pago') 
                             ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
@@ -6420,17 +6575,20 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         if(divAcoesPro) divAcoesPro.style.display = (paraUid === currentUserUid && p.status === 'pendente') ? 'flex' : 'none';
                     }
                     
-                    // Botões Cobrança
+                    // BotÃµes Cobrança
                     if(btnC) btnC.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
                     if(btnP) btnP.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
+                    syncChatHeaderLayout();
                   } else {
                       mostrarAvisoBloqueio("Pedido não encontrado.");
                       if (chatFooter) chatFooter.style.display = 'none';
+                      syncChatHeaderLayout();
                   }
               }, (err) => {
                   console.warn("Falha ao ouvir pedido:", err);
                   mostrarAvisoBloqueio("Não foi possível carregar o pedido.");
                   if (chatFooter) chatFooter.style.display = 'none';
+                  syncChatHeaderLayout();
               });
               await atualizarContextoAmizade(uidOutro);
               renderContextoConversa();
@@ -6460,9 +6618,10 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                       atualizarMenuConversa();
                   });
               } catch (e) {}
+              syncChatHeaderLayout();
           }
 
-        // 2. CARREGA DADOS DO USUÁRIO + STATUS ONLINE (VISUAL MELHORADO)
+        // 2. CARREGA DADOS DO USUÃRIO + STATUS ONLINE (VISUAL MELHORADO)
               if (outroUserUnsub) { try { outroUserUnsub(); } catch (_) {} outroUserUnsub = null; }
               outroUserUnsub = onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
@@ -6491,11 +6650,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     const ultimaVez = d.ultimaVezOnline ? new Date(d.ultimaVezOnline) : new Date(0);
                     const diffMinutos = (agora - ultimaVez) / 1000 / 60;
 
-                    // Lógica para determinar se está online (banco diz online E atualizou em menos de 3 min)
+                    // LÃ³gica para determinar se estÃ¡ online (banco diz online E atualizou em menos de 3 min)
                     let isReallyOnline = (d.status === "Online" && diffMinutos < 3);
 
                     if (isReallyOnline) {
-                        // --- AQUI ESTÁ A MUDANÇA VISUAL ---
+                        // --- AQUI ESTÃ A MUDANÃ‡A VISUAL ---
                         elStatus.innerHTML = `
                             <div class="status-container-online">
                                 <div class="status-pulse"></div>
@@ -6506,7 +6665,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         elStatus.style.color = ""; 
                         elStatus.style.fontWeight = "";
                     } else {
-                        // Status Offline (Texto Cinza Padrão)
+                        // Status Offline (Texto Cinza PadrÃ£o)
                         elStatus.innerText = `Visto por último: ${formatarUltimaVez(d.ultimaVezOnline)}`;
                         elStatus.style.color = "#888";
                         elStatus.style.fontWeight = "400";
@@ -6553,10 +6712,10 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
     function mostrarAvisoBloqueio(texto) {
         const chatBox = document.getElementById('box-conversa-real');
         
-        // Remove aviso antigo se o texto for diferente (para atualizar de "aguardando" para "aceite" se necessário)
+        // Remove aviso antigo se o texto for diferente (para atualizar de "aguardando" para "aceite" se necessÃ¡rio)
         const avisoAntigo = document.getElementById('aviso-bloqueio-chat');
         if (avisoAntigo) {
-            if (avisoAntigo.innerText.includes(texto)) return; // Se for o mesmo texto, não faz nada
+            if (avisoAntigo.innerText.includes(texto)) return; // Se for o mesmo texto, nÃ£o faz nada
             avisoAntigo.remove(); // Se for diferente, remove para criar o novo
         }
 
@@ -6566,7 +6725,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         div.innerHTML = `<i class='bx bx-lock-alt'></i> ${texto}`;
         chatBox.appendChild(div);
     }
-// EM CHAT.HTML - SUBSTITUA A FUNÇÃO carregarMensagens
+// EM CHAT.HTML - SUBSTITUA A FUNÃ‡ÃƒO carregarMensagens
 
       function carregarMensagens(colecao, docId) {
           const container = document.getElementById('areaMensagens');
@@ -6685,7 +6844,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const pinLabel = isPinned ? 'Desafixar' : 'Fixar';
             const pinPreview = normalizePinPreview(msgPreview || cleanText || getTipoPreview(m.tipo, cleanText || '', m.url || ''));
             const menuBtn = msgId
-                ? `<button class="msg-menu-btn" title="Opções" style="position:absolute; top:6px; right:6px;" onclick="toggleMsgMenu('${msgId}', event)"><i class='bx bx-dots-vertical-rounded'></i></button>`
+                ? `<button class="msg-menu-btn" title="Opções" onclick="toggleMsgMenu('${msgId}', event)"><i class='bx bx-dots-vertical-rounded'></i></button>`
                 : "";
             const menuHtml = msgId
                 ? `<div class="msg-menu ${menuSide}" id="${menuId}">
@@ -6732,12 +6891,24 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 const fotoFinal = fotoAnuncio || fotoProf || "";
                 const anuncioId = m.anuncioId || m.anuncio_id || "";
                 const parcelas = m.maxParcelas || m.maxparcelas || 1;
-                const linkPagar = `pagar.html?pedidoId=${docId}&valor=${encodeURIComponent(m.valor || "")}&parcelas=${parcelas}&prof=${encodeURIComponent(profNome)}&user=${encodeURIComponent(clienteNome)}&desc=${encodeURIComponent(m.descricao || "")}&foto=${encodeURIComponent(fotoFinal)}&anuncioId=${encodeURIComponent(anuncioId)}`;
+                const linkPagar = `pagar.html?pedidoId=${encodeURIComponent(docId)}&valor=${encodeURIComponent(m.valor || "")}&parcelas=${encodeURIComponent(parcelas)}`;
+                try {
+                    sessionStorage.setItem(`doke_pagamento_${docId}`, JSON.stringify({
+                        valor: m.valor || "",
+                        parcelas,
+                        prof: profNome || "",
+                        user: clienteNome || "",
+                        desc: m.descricao || "",
+                        foto: fotoFinal || "",
+                        anuncioId: anuncioId || "",
+                        ts: Date.now()
+                    }));
+                } catch (_) {}
                 
                 let btnHtml = "";
 
                 if (jaPago) {
-                    // CASO 1: JÁ PAGO (Verde para ambos)
+                    // CASO 1: JÃ PAGO (Verde para ambos)
                     btnHtml = `<button style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold; cursor:default;"><i class='bx bx-check'></i> Pago</button>`;
                 } else if (souEu) {
                     // CASO 2: EU SOU O PROFISSIONAL QUE ENVIOU (Aviso Cinza)
@@ -6745,13 +6916,13 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                                 <i class='bx bx-time-five'></i> Aguardando Pagamento
                                </div>`;
                 } else {
-                    // CASO 3: EU SOU O CLIENTE (Botão Pagar)
+                    // CASO 3: EU SOU O CLIENTE (BotÃ£o Pagar)
                     btnHtml = `<button onclick="window.location.href='${linkPagar}'" style="width:100%; padding:10px; background:var(--cor0); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Pagar Agora</button>`;
                 }
 
                 const html = `
                 <div ${msgIdAttr} style="align-self:${souEu ? 'flex-end' : 'flex-start'}; background:white; border:1px solid #ddd; padding:15px; border-radius:12px; margin-bottom:10px; min-width:260px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
-                    <div style="color:var(--cor0); font-weight:bold; margin-bottom:5px;"><i class='bx bx-dollar-circle'></i> Cobrança</div>
+                    <div style="color:var(--cor0); font-weight:bold; margin-bottom:5px;"><i class='bx bx-dollar-circle'></i> Cobran\u00e7a</div>
                     <div style="font-size:1.6rem; font-weight:800; color:#333; text-align:center; margin:10px 0;">${m.valor}</div>
                     <div style="font-size:0.9rem; color:#666; margin-bottom:15px; text-align:center;">${m.descricao}</div>
                     ${btnHtml}
@@ -6759,9 +6930,9 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 htmlParts.push(html);
                 return; // evita gerar mensagem vazia embaixo do card
             }
-            // --- CARD AVALIAÇÃO (AMARELO) ---
+            // --- CARD AVALIAÃ‡ÃƒO (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
-                // Card amarelo removido (o card com foto de finalização já cobre essa necessidade)
+                // Card amarelo removido (o card com foto de finalizaÃ§Ã£o jÃ¡ cobre essa necessidade)
                 return;
             }
             // --- CARD FINALIZADO ---
@@ -6827,7 +6998,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     ${btnHtml}
                     ${portfolioBtnHtml}
                 </div>`);
-                return; // evita bolha vazia após o card
+                return; // evita bolha vazia apÃ³s o card
             }
             // --- SOLICITACAO DE PORTFOLIO ---
             else if (m.tipo === 'solicitacao_portfolio') {
@@ -6896,7 +7067,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                       Mensagem apagada
                   </div>`);
               }
-              // --- SOLICITAÇÃO DE REEMBOLSO ---
+              // --- SOLICITAÃ‡ÃƒO DE REEMBOLSO ---
               else if (m.tipo === 'reembolso') {
                 const motivo = m.texto ? escapeHtml(m.texto) : "Solicitação registrada.";
                 htmlParts.push(`
@@ -6909,7 +7080,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             // --- IMAGEM ---
               else if (m.tipo === 'imagem' && m.url) {
                   const htmlImg = `
-                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" ${msgIdAttr} style="padding:8px;">
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'} ${msgId ? 'has-menu' : ''}" ${msgIdAttr} style="padding:8px;">
                       ${menuBtn}
                       ${menuHtml}
                       ${replyHtml}
@@ -6926,7 +7097,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
               else if (m.tipo === 'arquivo' && m.url) {
                   const nome = escapeHtml(cleanText || 'Arquivo');
                   const htmlFile = `
-                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" ${msgIdAttr}>
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'} ${msgId ? 'has-menu' : ''}" ${msgIdAttr}>
                       ${menuBtn}
                       ${menuHtml}
                       ${replyHtml}
@@ -6947,14 +7118,14 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 </div>`;
                 htmlParts.push(wrapMensagemComAvatar(htmlFile));
             }
-            // --- MENSAGEM DE ÁUDIO ---
+            // --- MENSAGEM DE ÃUDIO ---
               else if (m.tipo === 'audio') {
                   const corWave = souEu ? 'white' : '#555';
                   const corIcone = souEu ? 'var(--cor0)' : '#555';
                 
                 const audioId = 'audio-' + Math.random().toString(36).substr(2, 9);
                   const htmlAudio = `
-                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" ${msgIdAttr}>
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'} ${msgId ? 'has-menu' : ''}" ${msgIdAttr}>
                       ${menuBtn}
                       ${menuHtml}
                       ${replyHtml}
@@ -6979,7 +7150,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
               else {
                   const textoSeguro = escapeHtml(cleanText).replace(/\n/g, '<br>');
                   htmlParts.push(wrapMensagemComAvatar(`
-                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'}" ${msgIdAttr}>
+                  <div class="msg-bubble ${souEu ? 'msg-enviada' : 'msg-recebida'} ${msgId ? 'has-menu' : ''}" ${msgIdAttr}>
                       ${menuBtn}
                       ${menuHtml}
                       ${replyHtml}
@@ -7020,7 +7191,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
     // Gerar Pagamento usando Modais Bonitos
 // EM CHAT.HTML
 
-// SUBSTITUA A FUNÇÃO window.gerarPagamento NO CHAT.HTML POR ESTA:
+// SUBSTITUA A FUNÃ‡ÃƒO window.gerarPagamento NO CHAT.HTML POR ESTA:
 
 function formatCurrencyBRLFromDigits(digits){
     const clean = String(digits || "").replace(/\D/g, "");
@@ -7242,12 +7413,12 @@ window.confirmarGerarCobranca = async function(){
             });
               if (colecaoAtual === 'pedidos') {
                   try {
-                      const preview = isImg ? '📷 Imagem' : `📎 ${safeName}`;
+                      const preview = isImg ? 'Imagem' : `Arquivo: ${safeName}`;
                       await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
                   } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
               } else if (colecaoAtual === 'conversas') {
                   try {
-                      const preview = isImg ? '📷 Imagem' : `📎 ${safeName}`;
+                      const preview = isImg ? 'Imagem' : `Arquivo: ${safeName}`;
                       await updateDoc(doc(db, "conversas", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
                   } catch (e) { console.warn("Falha ao atualizar conversa:", e); }
               }
@@ -7460,12 +7631,12 @@ window.confirmarGerarCobranca = async function(){
         if (abaAtual === 'pedidos') ensurePedidosLoaded();
     });
 
-    // --- VARIÁVEIS GLOBAIS PARA ÁUDIO ---
+    // --- VARIÃVEIS GLOBAIS PARA ÃUDIO ---
 window.mediaRecorder = null;
 window.audioChunks = [];
 window.timerInterval = null;
 
-// 1. Iniciar Gravação
+// 1. Iniciar GravaÃ§Ã£o
 window.iniciarGravacao = async function() {
     if (isConversaBloqueadaParaEnviar()) {
         const msg = getMensagemBloqueioConversa();
@@ -7510,7 +7681,7 @@ window.iniciarGravacao = async function() {
     }
 }
 
-// 2. Cancelar Gravação
+// 2. Cancelar GravaÃ§Ã£o
 window.cancelarGravacao = function() {
     if (window.mediaRecorder) {
         window.mediaRecorder.stop();
@@ -7536,7 +7707,7 @@ window.enviarAudio = function() {
     // Quando o áudio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
         // Cria o arquivo de áudio (Blob)
-        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm é padrão web
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm Ã© padrÃ£o web
         
         // Feedback visual
         document.getElementById('uiGravando').style.display = 'none';
@@ -7573,18 +7744,18 @@ window.enviarAudio = function() {
                 lidoEm: user?.uid ? { [user.uid]: new Date().toISOString() } : {}
             });
 
-            // Atualiza última mensagem da conversa
+            // Atualiza Ãºltima mensagem da conversa
             if(colecaoAtual === 'conversas') {
                 try {
                     await updateDoc(doc(db, "conversas", chatIdAtual), { 
-                        ultimaMensagem: "🎤 Mensagem de voz",
+                        ultimaMensagem: "Mensagem de voz",
                         dataAtualizacao: new Date().toISOString()
                     });
                 } catch (e) { console.warn("Falha ao atualizar conversa:", e); }
             } else if (colecaoAtual === 'pedidos') {
                 try {
                     await updateDoc(doc(db, "pedidos", chatIdAtual), {
-                        ultimaMensagem: "🎤 Mensagem de voz",
+                        ultimaMensagem: "Mensagem de voz",
                         dataAtualizacao: new Date().toISOString()
                     });
                 } catch (e) { console.warn("Falha ao atualizar pedido:", e); }
@@ -7600,7 +7771,7 @@ window.enviarAudio = function() {
         }
     };
 
-    // Para a gravação
+    // Para a gravaÃ§Ã£o
     window.mediaRecorder.stop();
     window.mediaRecorder.stream.getTracks().forEach(track => track.stop()); // Desliga mic
     clearInterval(window.timerInterval);
@@ -7661,7 +7832,7 @@ window.fecharGaleria = function(event) {
     }
 }
 
-// 4. Função para Tocar Áudio (Player customizado)
+// 4. FunÃ§Ã£o para Tocar Áudio (Player customizado)
 window.tocarAudio = function(btn, url, audioId) {
     const audio = new Audio(url);
     const icon = btn.querySelector('i');
@@ -7672,19 +7843,19 @@ window.tocarAudio = function(btn, url, audioId) {
     icon.className = 'bx bx-stop';
     btn.classList.add('playing');
 
-    // Função para formatar tempo
+    // FunÃ§Ã£o para formatar tempo
     const formatTime = (seconds) => {
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
     };
 
-    // Atualizar duração quando carregada
+    // Atualizar duraÃ§Ã£o quando carregada
     audio.onloadedmetadata = () => {
         if (timeSpan) timeSpan.textContent = `0:00 / ${formatTime(audio.duration)}`;
     };
 
-    // Atualizar tempo atual durante reprodução
+    // Atualizar tempo atual durante reproduÃ§Ã£o
     audio.ontimeupdate = () => {
         if (timeSpan) timeSpan.textContent = `${formatTime(audio.currentTime)} / ${formatTime(audio.duration)}`;
     };
@@ -7783,3 +7954,6 @@ window.tocarAudio = function(btn, url, audioId) {
 </script>
 </body>
 </html>
+
+
+

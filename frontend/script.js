@@ -6699,6 +6699,7 @@ window.abrirModalPost = async function(id, colecao) {
     
     // 1. Reset Visual e Exibição
     modal.style.display = 'flex'; 
+    try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostId = id;
     window.currentCollection = colecao;
     window.currentPostAuthorUid = null; // Reseta
@@ -7203,6 +7204,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     if (!modal || !mediaContainer || !commentsList) return;
 
     modal.style.display = 'flex';
+    try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostSource = "supabase";
     window.currentSupaPublicacaoId = publicacaoId;
     window.currentSupaPublicacaoAuthorId = null;

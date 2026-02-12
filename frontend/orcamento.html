@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -9,14 +9,14 @@
 <script src="firebase-auth-compat-supabase.js"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Solicitar Orçamento | Doke</title>
+<title>Solicitar Or&ccedil;amento | Doke</title>
 <link href="style.css?v=20260211v44" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260211v44"></script>
 <style>/* ==========================================================================
-   PÁGINA DE ORÇAMENTO
+   P?f?GINA DE OR??AMENTO
    ========================================================================== */
 
 /* Layout Grid Principal (2 Colunas) */
@@ -24,14 +24,20 @@
     display: grid;
     grid-template-columns: 1.8fr 1fr; /* Esquerda maior, direita menor */
     gap: 30px;
-    max-width: 1100px;
+    max-width: 100%;
+    margin: 0 auto;
+    width: 100%;
+}
+
+.main-orcamento{
+    width: min(1140px, calc(100% - clamp(20px, 4vw, 56px)));
     margin: 0 auto;
 }
 
-/* Espaçamento entre o Hero e o conteúdo */
+/* Espa?f?amento entre o Hero e o conte?f?do */
 .orc-top-card{ margin-bottom: 22px; }
 
-/* Inputs do orçamento: foco/hover mais discreto (remove o "verde" forte do :focus-visible global) */
+/* Inputs do or?f?amento: foco/hover mais discreto (remove o "verde" forte do :focus-visible global) */
 .input-premium,
 .select-premium,
 .area-texto{
@@ -65,7 +71,7 @@
     border-radius: 12px;
     padding: 25px;
     box-shadow: 0 2px 10px rgba(0,0,0,0.03);
-    margin-bottom: 25px;
+    margin-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 20px + env(safe-area-inset-bottom));
     border: 1px solid #f0f0f0;
 }
 
@@ -135,6 +141,18 @@
     background: #fff;
     display: block;
 }
+.anexo-thumb-btn{
+    border: none;
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    border-radius: 8px;
+    cursor: zoom-in;
+}
+.anexo-thumb-btn:focus-visible{
+    outline: 2px solid rgba(11, 119, 104, 0.4);
+    outline-offset: 2px;
+}
 .anexo-icon{
     width: 52px;
     height: 52px;
@@ -154,6 +172,42 @@
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+.anexo-picker{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border: 1px solid #dbe4ee;
+    border-radius: 12px;
+    padding: 8px 10px;
+    background: #fff;
+}
+.anexo-picker-input{
+    display: none !important;
+}
+.btn-anexo-picker{
+    border: none;
+    background: linear-gradient(135deg, var(--cor0), #0a8f7c);
+    color: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    white-space: nowrap;
+}
+.btn-anexo-picker:hover{
+    filter: brightness(1.03);
+}
+.anexo-picker-status{
+    min-width: 0;
+    flex: 1;
+    color: #5f6b7a;
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
 .anexo-item button{
     border: none;
     background: transparent;
@@ -162,39 +216,9 @@
     cursor: pointer;
 }
 
-/* Input de arquivo com botão estilizado */
+/* Input de arquivo nativo oculto no iOS para evitar texto em ingl?f?s */
 .input-premium[type="file"] {
-    padding: 8px 10px;
-    cursor: pointer;
-    background: #fff;
-}
-.input-premium[type="file"]::file-selector-button {
-    background: var(--cor0);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-right: 12px;
-    cursor: pointer;
-    font-weight: 600;
-    font-family: var(--fonte-padrao);
-}
-.input-premium[type="file"]:hover::file-selector-button {
-    background: var(--cor2);
-}
-.input-premium[type="file"]::-webkit-file-upload-button {
-    background: var(--cor0);
-    color: #fff;
-    border: none;
-    border-radius: 8px;
-    padding: 8px 12px;
-    margin-right: 12px;
-    cursor: pointer;
-    font-weight: 600;
-    font-family: var(--fonte-padrao);
-}
-.input-premium[type="file"]:hover::-webkit-file-upload-button {
-    background: var(--cor2);
+    display: none !important;
 }
 
 .grid-duplo {
@@ -203,18 +227,32 @@
     gap: 20px;
 }
 
-/* Botão Outline (Buscar CEP) */
+/* Bot?f?o Outline (Buscar CEP) */
 .btn-outline {
-    background: transparent;
-    border: 1px solid var(--cor0);
+    background: linear-gradient(180deg, #f9fefe 0%, #eef8f6 100%);
+    border: 1px solid rgba(11, 119, 104, 0.45);
     color: var(--cor0);
-    padding: 0 20px;
-    border-radius: 8px;
-    font-weight: 600;
+    padding: 0 18px;
+    border-radius: 12px;
+    font-weight: 800;
     cursor: pointer;
-    transition: 0.2s;
+    transition: transform .2s ease, box-shadow .2s ease, background-color .2s ease, color .2s ease;
+    height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    box-shadow: 0 10px 20px rgba(11, 119, 104, 0.12);
 }
-.btn-outline:hover { background: var(--cor0); color: white; }
+.btn-outline:hover { background: var(--cor0); color: white; transform: translateY(-1px); }
+.btn-buscar-cep{
+    min-width: 132px;
+}
+.cep-search-row{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
 
 /* --- CARD RESUMO (STICKY) --- */
 .resumo-section {
@@ -259,14 +297,14 @@
 .divisor { border: 0; border-top: 1px solid #eee; margin: 15px 0; }
 
 .lista-vantagens {
-    list-style: none; padding: 0; margin-bottom: 25px;
+    list-style: none; padding: 0; margin-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 20px + env(safe-area-inset-bottom));
 }
 .lista-vantagens li {
     font-size: 0.85rem; color: #666; margin-bottom: 12px; display: flex; gap: 8px; line-height: 1.4;
 }
 .lista-vantagens i { color: var(--cor0); font-size: 1.1rem; flex-shrink: 0; }
 
-/* Botão Principal */
+/* Bot?f?o Principal */
 .btn-enviar-orcamento {
     width: 100%;
     padding: 15px;
@@ -296,7 +334,7 @@
     display: flex; align-items: center; gap: 6px;
 }
 
-/* Estilo das Perguntas Dinâmicas */
+/* Estilo das Perguntas Din?f?micas */
 .pergunta-extra-item {
     margin-bottom: 15px;
     background: #fcfcfc;
@@ -304,49 +342,164 @@
     border-radius: 8px;
     border: 1px solid #eee;
 }
+.triagem-header{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.triagem-help-popover{
+    margin-left: auto;
+    position: relative;
+}
+.triagem-help-popover summary{
+    list-style: none;
+    width: 30px;
+    height: 30px;
+    border-radius: 999px;
+    border: 1px solid #c9d5e7;
+    background: #f6f9ff;
+    color: var(--cor2);
+    font-weight: 800;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    user-select: none;
+}
+.triagem-help-popover summary::-webkit-details-marker{ display: none; }
+.triagem-help-popover summary:hover{ background: #eaf2ff; }
+.triagem-help-box{
+    display: none;
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    width: min(300px, 80vw);
+    z-index: 12;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: #1f3f64;
+    color: #fff;
+    box-shadow: 0 12px 24px rgba(16, 34, 56, 0.35);
+    font-size: 0.83rem;
+    line-height: 1.45;
+}
+.triagem-help-popover[open] .triagem-help-box{ display: block; }
+@media (hover:hover){
+    .triagem-help-popover:hover .triagem-help-box{ display: block; }
+}
+.campo-dinamico{
+    pointer-events: auto !important;
+    user-select: text;
+    -webkit-user-select: text;
+    -webkit-touch-callout: default;
+    touch-action: manipulation;
+}
+.campo-dinamico[type="text"],
+textarea.campo-dinamico{
+    min-height: 46px;
+    font-size: 1rem;
+}
+textarea.campo-dinamico{
+    resize: vertical;
+    line-height: 1.4;
+}
+.pergunta-extra-item textarea,
+.pergunta-extra-item input,
+.pergunta-extra-item select{
+    position: relative;
+    z-index: 2;
+}
 
-/* --- RESPONSIVIDADE ORÇAMENTO --- */
+/* --- RESPONSIVIDADE OR??AMENTO --- */
 @media (max-width: 900px) {
     .layout-orcamento {
         grid-template-columns: 1fr; /* Empilha tudo */
+        padding-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 36px + env(safe-area-inset-bottom));
     }
     .card-prestador-resumo {
         position: static; /* Remove o sticky no mobile */
-        order: -1; /* Coloca o resumo acima do formulário no mobile */
-        margin-bottom: 25px;
+        order: -1; /* Coloca o resumo acima do formul?f?rio no mobile */
+        margin-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 20px + env(safe-area-inset-bottom));
     }
     .grid-duplo { grid-template-columns: 1fr; }
+    .anexo-picker{
+        align-items: stretch;
+        flex-direction: column;
+    }
+    .anexo-picker-status{
+        white-space: normal;
+    }
+    .cep-search-row{
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .cep-search-row .input-premium{
+        flex: 1;
+    }
+    .btn-buscar-cep{
+        min-width: 0;
+        width: 100%;
+        height: 44px;
+        border-radius: 12px;
+    }
+    .card-branco{ padding: 18px; }
+    .orc-top-card{
+        padding: 20px 18px;
+        border-radius: 18px;
+    }
+    .orc-top-title{ font-size: 1.6rem; }
+    .orc-top-sub{ font-size: 0.92rem; }
+    .input-group label{ font-size: 0.95rem; }
+    .titulo-sessao{ font-size: 1.05rem; margin-bottom: 16px; }
+    .triagem-help-box{
+        right: -6px;
+        width: min(270px, calc(100vw - 38px));
+    }
 }
 
-/* Scroll hardening da página de orçamento (evita travar ao voltar de outras telas) */
+/* Scroll hardening da p?f?gina de or?f?amento (evita travar ao voltar de outras telas) */
 body[data-page="orcamento"]{
     overflow-y: auto !important;
     overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
+    overscroll-behavior-y: auto;
 }
 body[data-page="orcamento"].no-scroll{
-    overflow-y: auto !important;
+    overflow: hidden !important;
 }
 body[data-page="orcamento"] main.main-orcamento{
     display: block !important;
     overflow: visible !important;
     min-height: calc(100dvh - 120px);
-    padding-bottom: max(110px, env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 128px + env(safe-area-inset-bottom));
+}
+body[data-page="orcamento"] main.main-orcamento::after{
+    content: "";
+    display: block;
+    height: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 40px + env(safe-area-inset-bottom));
 }
 
 /* --- TOP HEADER (PASSOS) --- */
 .orc-top {
     grid-column: 1 / -1;
     margin-bottom: 5px;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+    width: 100%;
 }
 .orc-top-card{
-    /* Hero no padrão do site (similar ao exemplo de Comunidades) */
+    /* Hero no padr?f?o do site (similar ao exemplo de Comunidades) */
     background:
         radial-gradient(900px 360px at 86% 18%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.0) 60%),
         radial-gradient(520px 520px at 100% 15%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 55%),
         linear-gradient(135deg, #244e73 0%, #0f3e56 55%, #0b7768 120%);
     border: 1px solid rgba(255,255,255,0.10);
     border-radius: 22px;
-    padding: 28px 30px;
+    padding: 26px 30px;
     display:flex;
     align-items:center;
     justify-content:space-between;
@@ -367,6 +520,59 @@ body[data-page="orcamento"] main.main-orcamento{
     font-weight: 600;
     max-width: 720px;
     line-height: 1.35;
+}
+.btn-buscar-cep{
+    min-width: 144px;
+    white-space: nowrap;
+    letter-spacing: 0.01em;
+    border-width: 1px;
+    font-size: 0.95rem;
+    font-weight: 800;
+    padding-inline: 16px;
+}
+.btn-buscar-cep i{ font-size: 1.15rem; }
+
+.anexo-preview-modal{
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 120000;
+}
+.anexo-preview-modal.show{ display: flex; }
+.anexo-preview-content{
+    position: relative;
+    width: min(96vw, 900px);
+    max-height: 92vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.anexo-preview-content img{
+    max-width: 100%;
+    max-height: 92vh;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: 0 16px 36px rgba(0,0,0,0.35);
+}
+.anexo-preview-close{
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.35);
+    background: rgba(15, 23, 42, 0.85);
+    color: #fff;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.25rem;
 }
 /* --- MODAL: PEDIDO ENVIADO / AGUARDANDO ACEITE --- */
 .orc-modal-overlay{
@@ -445,23 +651,6 @@ body[data-page="orcamento"] main.main-orcamento{
 .orc-btn-ghost{ background:#fff; border: 1px solid #e7e7e7; color:#444; }
 .orc-btn-ghost:hover{ background:#f7f7f7; }
 
-@media (max-width: 900px){
-    .orc-top-card{
-    /* Hero no padrão do site (similar ao exemplo de Comunidades) */
-    background:
-        radial-gradient(900px 360px at 86% 18%, rgba(255,255,255,0.14) 0%, rgba(255,255,255,0.0) 60%),
-        radial-gradient(520px 520px at 100% 15%, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 55%),
-        linear-gradient(135deg, #244e73 0%, #0f3e56 55%, #0b7768 120%);
-    border: 1px solid rgba(255,255,255,0.10);
-    border-radius: 22px;
-    padding: 28px 30px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    gap: 18px;
-    box-shadow: 0 18px 45px rgba(0,0,0,0.18);
-}
-}
 </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -498,7 +687,7 @@ body[data-page="orcamento"] main.main-orcamento{
   <div class="item">
     <a href="index.html">
       <i class='bx bx-home-alt icon azul'></i>
-      <span>Início</span>
+      <span>In&iacute;cio</span>
     </a>
   </div>
 
@@ -519,7 +708,7 @@ body[data-page="orcamento"] main.main-orcamento{
   <div class="item">
     <a href="notificacoes.html">
       <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
+      <span>Notifica&ccedil;&otilde;es</span>
     </a>
   </div>
 
@@ -574,7 +763,7 @@ body[data-page="orcamento"] main.main-orcamento{
 </div>
 </div>
 </div>
-<a href="anunciar.html">Anuncie seu serviço</a>
+<a href="anunciar.html">Anuncie seu servi&ccedil;o</a>
 <a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
 <a href="novidades.html">Novidades</a>
 </nav>
@@ -588,7 +777,7 @@ body[data-page="orcamento"] main.main-orcamento{
 <div class="orc-top">
 <div class="orc-top-card">
 <div>
-<h1 class="orc-top-title">Solicitar orçamento</h1>
+<h1 class="orc-top-title">Solicitar or&ccedil;amento</h1>
 <p class="orc-top-sub">Envie os detalhes e aguarde o profissional aceitar para liberar o chat.</p>
 </div>
 </div>
@@ -599,22 +788,32 @@ body[data-page="orcamento"] main.main-orcamento{
 <div class="card-branco">
 <h3 class="titulo-sessao">1. Detalhes do Pedido</h3>
 <div class="input-group">
-<label>O que você precisa?</label>
-<input class="input-premium" id="titulo-pedido" placeholder="Ex: Instalação de 3 tomadas e 1 chuveiro" type="text"/>
+<label>O que voc&ecirc; precisa?</label>
+<input class="input-premium" id="titulo-pedido" placeholder="Ex: Instala&ccedil;&atilde;o de 3 tomadas e 1 chuveiro" type="text"/>
 </div>
 <div id="container-perguntas-extras" style="display:none; margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee;">
-<h4 style="color: var(--cor2); margin-bottom: 15px; font-size: 1rem;">Perguntas de Triagem (Do Profissional)</h4>
+<div class="triagem-header">
+<h4 style="color: var(--cor2); margin: 0; font-size: 1rem;">Perguntas de Triagem (Do Profissional)</h4>
+<details class="triagem-help-popover">
+<summary aria-label="O que &eacute; a triagem?" title="O que &eacute; a triagem?">?</summary>
+<div class="triagem-help-box">S&atilde;o perguntas feitas pelo profissional para entender melhor seu pedido antes do or&ccedil;amento final.</div>
+</details>
+</div>
 <div id="lista-perguntas-dinamicas">
 </div>
 </div>
 <div class="input-group" style="margin-top: 20px;">
-<label>Descrição detalhada(Opcional)</label>
+<label>Descri&ccedil;&atilde;o detalhada (opcional)</label>
 <textarea class="input-premium area-texto" id="descricao-pedido" placeholder="Descreva o problema, o local, se precisa comprar material, etc..."></textarea>
 </div>
 <div class="input-group">
 <label>Anexos (opcional)</label>
-<input accept="image/*,application/pdf,.doc,.docx,.zip,.rar" class="input-premium" id="anexos-pedido" multiple="" type="file"/>
-<div class="anexo-hint">Envie fotos, PDFs ou arquivos que ajudem no orçamento.</div>
+<div class="anexo-picker">
+<input accept="image/*,application/pdf,.doc,.docx,.zip,.rar" class="input-premium anexo-picker-input" hidden="" id="anexos-pedido" multiple="" type="file"/>
+<button class="btn-anexo-picker" id="btn-anexos-pedido" type="button"><i class="bx bx-paperclip"></i> Escolher arquivos</button>
+<span class="anexo-picker-status" id="anexos-pedido-status">Nenhum arquivo selecionado</span>
+</div>
+<div class="anexo-hint">Envie fotos, PDFs ou arquivos que ajudem no or&ccedil;amento.</div>
 <div class="anexos-list" id="lista-anexos"></div>
 </div>
 <div class="grid-duplo">
@@ -623,8 +822,8 @@ body[data-page="orcamento"] main.main-orcamento{
 <select class="input-premium" id="para-quando">
 <option>O quanto antes</option>
 <option>Para esta semana</option>
-<option>Para o próximo mês</option>
-<option>Data específica</option>
+<option>Para o pr&oacute;ximo m&ecirc;s</option>
+<option>Data espec&iacute;fica</option>
 </select>
 <div id="wrap-data-especifica" style="display:none; margin-top:12px;">
 <label style="margin-bottom:8px; font-weight:600; color:#555;">Qual dia?</label>
@@ -632,31 +831,33 @@ body[data-page="orcamento"] main.main-orcamento{
 </div>
 </div>
 <div class="input-group">
-<label>Turno de preferência</label>
+<label>Turno de prefer&ecirc;ncia</label>
 <select class="input-premium" id="turno">
-<option>Manhã (08h - 12h)</option>
+<option>Manh&atilde; (08h - 12h)</option>
 <option>Tarde (13h - 18h)</option>
-<option>Noite (após 18h)</option>
+<option>Dia inteiro (08h - 18h)</option>
+<option>Noite (ap&oacute;s 18h)</option>
+<option>Sem prefer&ecirc;ncia</option>
 </select>
 </div>
 </div>
 </div>
 <div class="card-branco" id="card-localizacao">
-<h3 class="titulo-sessao">2. Localização</h3>
+<h3 class="titulo-sessao">2. Localiza&ccedil;&atilde;o</h3>
 <div class="input-group">
-<label>CEP do serviço</label>
-<div style="display:flex; gap:10px;">
+<label>CEP do servi&ccedil;o</label>
+<div class="cep-search-row">
 <input class="input-premium" id="cepOrcamento" placeholder="00000-000" type="text"/>
-<button class="btn-outline" onclick="buscarEndereco()" type="button">Buscar</button>
+<button class="btn-outline btn-buscar-cep" onclick="buscarEndereco()" type="button"><i class="bx bx-search"></i> Buscar CEP</button>
 </div>
 </div>
 <div class="grid-duplo">
 <div class="input-group">
-<label>Endereço</label>
+<label>Endere&ccedil;o</label>
 <input class="input-premium" id="endereco-completo" placeholder="Rua, bairro - cidade" type="text"/>
 </div>
 <div class="input-group">
-<label>Número</label>
+<label>N&uacute;mero</label>
 <input class="input-premium" id="numero-residencia" placeholder="Ex: 120" type="text"/>
 </div>
 </div>
@@ -666,13 +867,13 @@ body[data-page="orcamento"] main.main-orcamento{
 <input class="input-premium" id="complemento-residencia" placeholder="Apto, bloco, casa, etc" type="text"/>
 </div>
 <div class="input-group">
-<label>Ponto de referência (opcional)</label>
+<label>Ponto de refer&ecirc;ncia (opcional)</label>
 <input class="input-premium" id="referencia-residencia" placeholder="Ex: perto do mercado" type="text"/>
 </div>
 </div>
 <div class="input-group">
-<label>Mais informações (opcional)</label>
-<textarea class="input-premium area-texto" id="info-local" placeholder="Ex: portão azul, interfone não funciona, falar com o porteiro..." style="min-height:90px;"></textarea>
+<label>Mais informa&ccedil;&otilde;es (opcional)</label>
+<textarea class="input-premium area-texto" id="info-local" placeholder="Ex: port&atilde;o azul, interfone n&atilde;o funciona, falar com o porteiro..." style="min-height:90px;"></textarea>
 </div>
 </div>
 </section>
@@ -687,25 +888,25 @@ body[data-page="orcamento"] main.main-orcamento{
 </div>
 <div class="stats-resumo">
 <div><i class="bx bxs-star"></i> <span id="notaPrestadorResumo">--</span></div>
-<div><i class="bx bx-briefcase"></i> <span id="jobsPrestadorResumo">0</span> Jobs</div>
+<div><i class="bx bx-briefcase"></i> <span id="jobsPrestadorResumo">0</span> trabalhos</div>
 </div>
 <hr class="divisor"/>
 <ul class="lista-vantagens">
-<li><i class="bx bx-check-shield"></i> <strong>Garantia Doke:</strong> Só liberamos o pagamento quando você aprovar o serviço.</li>
-<li><i class="bx bx-time-five"></i> Resposta média em 20 min.</li>
+<li><i class="bx bx-check-shield"></i> <strong>Garantia Doke:</strong> S&oacute; liberamos o pagamento quando voc&ecirc; aprovar o servi&ccedil;o.</li>
+<li><i class="bx bx-time-five"></i> Resposta m&eacute;dia em 20 min.</li>
 </ul>
 <button class="btn-enviar-orcamento" id="btnEnviarOrcamento">
-            Enviar Solicitação
+            Enviar Solicita&ccedil;&atilde;o
         </button>
-<p class="aviso-legal">Ao enviar, você concorda com nossos termos.</p>
+<p class="aviso-legal">Ao enviar, voc&ecirc; concorda com nossos termos.</p>
 </div>
 </aside>
 </div>
 </main>
 <nav class="bottom-nav">
 <a class="item active" href="index.html">
-<img alt="Início" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
-<span>Início</span>
+<img alt="In&iacute;cio" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
+<span>In&iacute;cio</span>
 </a>
 <a class="item" href="busca.html">
 <img alt="Explorar" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/>
@@ -716,8 +917,8 @@ body[data-page="orcamento"] main.main-orcamento{
 <span>Anunciar</span>
 </a>
 <a class="item" href="notificacoes.html">
-<img alt="Notificações" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
-<span>Notificações</span>
+<img alt="Notifica&ccedil;&otilde;es" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
+<span>Notifica&ccedil;&otilde;es</span>
 </a>
 <a class="item" href="perfil.html">
 <img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
@@ -725,7 +926,7 @@ body[data-page="orcamento"] main.main-orcamento{
 </a>
 </nav>
 <script>
-    // 1. IMPORTAÇÕES NECESSÁRIAS (inicializadas após carregar script.js)
+    // 1. IMPORTA???.ES NECESS?f?RIAS (inicializadas ap?f?s carregar script.js)
     let doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc;
     let getStorage, ref, uploadBytes, getDownloadURL;
     let onAuthStateChanged;
@@ -738,7 +939,7 @@ body[data-page="orcamento"] main.main-orcamento{
         ({ onAuthStateChanged } = window);
     }
 
-    // Variável para guardar as perguntas carregadas (se houver)
+    // Vari?f?vel para guardar as perguntas carregadas (se houver)
     window.perguntasTriagem = [];
     window.__orc_anexos_files = [];
 
@@ -765,7 +966,7 @@ body[data-page="orcamento"] main.main-orcamento{
 
     function irParaCampoFaltante(el, msg){
         if (!el) {
-            avisarValidacao(msg || "Preencha os campos obrigatórios.");
+            avisarValidacao(msg || "Preencha os campos obrigat\u00f3rios.");
             return false;
         }
 
@@ -783,7 +984,7 @@ body[data-page="orcamento"] main.main-orcamento{
             if (typeof el.select === "function" && el.tagName === "INPUT") el.select();
         }, 280);
 
-        avisarValidacao(msg || "Preencha o campo obrigatório.");
+        avisarValidacao(msg || "Preencha o campo obrigat\u00f3rio.");
         return false;
     }
 
@@ -804,6 +1005,17 @@ body[data-page="orcamento"] main.main-orcamento{
         return /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)$/.test(name);
     }
 
+    function updateAnexosStatus(){
+        const status = document.getElementById('anexos-pedido-status');
+        if (!status) return;
+        const total = (window.__orc_anexos_files || []).length;
+        if (!total) {
+            status.textContent = "Nenhum arquivo selecionado";
+            return;
+        }
+        status.textContent = total === 1 ? "1 arquivo selecionado" : `${total} arquivos selecionados`;
+    }
+
     function limparPreviewAnexos(){
         (window.__orc_anexos_files || []).forEach((f) => {
             if (f && f.__previewUrl) {
@@ -818,13 +1030,14 @@ body[data-page="orcamento"] main.main-orcamento{
         if (!list) return;
         if (!window.__orc_anexos_files.length) {
             list.innerHTML = '';
+            updateAnexosStatus();
             return;
         }
         list.innerHTML = window.__orc_anexos_files.map((f, idx) => `
             <div class="anexo-item">
                 <div class="anexo-item-main">
                     ${isImageFile(f)
-                        ? `<img src="${f.__previewUrl || (f.__previewUrl = URL.createObjectURL(f))}" class="anexo-thumb" alt="${escapeHtmlAnexo(f.name)}">`
+                        ? `<button type="button" class="anexo-thumb-btn" onclick="abrirAnexoPreview(${idx})" title="Abrir imagem"><img src="${f.__previewUrl || (f.__previewUrl = URL.createObjectURL(f))}" class="anexo-thumb" alt="${escapeHtmlAnexo(f.name)}"></button>`
                         : `<span class="anexo-icon"><i class='bx bx-file'></i></span>`
                     }
                     <span class="anexo-name">${escapeHtmlAnexo(f.name)}</span>
@@ -832,7 +1045,37 @@ body[data-page="orcamento"] main.main-orcamento{
                 <button type="button" onclick="removerAnexo(${idx})">Remover</button>
             </div>
         `).join('');
+        updateAnexosStatus();
     }
+
+    window.abrirAnexoPreview = function(idx){
+        const f = (window.__orc_anexos_files || [])[idx];
+        if (!f) return;
+        const url = f.__previewUrl || (f.__previewUrl = URL.createObjectURL(f));
+        const modal = document.getElementById('anexoPreviewModal');
+        const img = document.getElementById('anexoPreviewImg');
+        if (modal && img) {
+            img.src = url;
+            img.alt = f.name || 'Anexo';
+            modal.classList.add('show');
+            document.body.classList.add('no-scroll');
+            return;
+        }
+        window.open(url, "_blank", "noopener,noreferrer");
+    }
+
+    window.fecharAnexoPreview = function(){
+        const modal = document.getElementById('anexoPreviewModal');
+        const img = document.getElementById('anexoPreviewImg');
+        if (!modal) return;
+        modal.classList.remove('show');
+        if (img) {
+            img.removeAttribute('src');
+            img.removeAttribute('alt');
+        }
+        document.body.classList.remove('no-scroll');
+        liberarScrollOrcamento();
+    };
 
     window.removerAnexo = function(idx){
         if (idx < 0) return;
@@ -842,12 +1085,21 @@ body[data-page="orcamento"] main.main-orcamento{
         }
         window.__orc_anexos_files.splice(idx, 1);
         renderListaAnexos();
+        updateAnexosStatus();
     };
 
     function initAnexosInput(){
         const input = document.getElementById('anexos-pedido');
+        const trigger = document.getElementById('btn-anexos-pedido');
         if (!input || input.dataset.bound === '1') return;
         input.dataset.bound = '1';
+        input.setAttribute('aria-hidden', 'true');
+        input.tabIndex = -1;
+
+        if (trigger) {
+            trigger.addEventListener('click', () => input.click());
+        }
+
         input.addEventListener('change', (e) => {
             const files = Array.from(e.target.files || []);
             files.forEach((file) => {
@@ -858,7 +1110,9 @@ body[data-page="orcamento"] main.main-orcamento{
             });
             input.value = '';
             renderListaAnexos();
+            updateAnexosStatus();
         });
+        updateAnexosStatus();
     }
 
     async function uploadAnexos(userUid, pedidoId){
@@ -895,7 +1149,7 @@ body[data-page="orcamento"] main.main-orcamento{
                 const opts = Array.from(selPQ.options || []);
                 const match = opts.find(o => o.textContent && pqVal.toLowerCase().includes(o.textContent.toLowerCase()));
                 if (match) selPQ.value = match.value;
-                if (pqVal.toLowerCase().includes('data específica') || pqVal.toLowerCase().includes('data especifica')) {
+                if (pqVal.toLowerCase().includes('data espec\u00edfica') || pqVal.toLowerCase().includes('data espec\u00edfica')) {
                     if (wrapData) wrapData.style.display = 'block';
                     const m = pqVal.match(/(\d{2})\/(\d{2})\/(\d{4})/);
                     if (m && inpData) inpData.value = `${m[3]}-${m[2]}-${m[1]}`;
@@ -909,7 +1163,7 @@ body[data-page="orcamento"] main.main-orcamento{
                 if (match) turno.value = match.value;
             }
 
-            // Tenta carregar o anúncio do pedido caso não tenha vindo pela URL
+            // Tenta carregar o an?f?ncio do pedido caso n?f?o tenha vindo pela URL
             const anuncioRefId = coalesce(
                 p.anuncioId,
                 p.anuncio_id,
@@ -926,7 +1180,7 @@ body[data-page="orcamento"] main.main-orcamento{
                 }
             }
         } catch (e) {
-            console.warn('Falha ao pré-preencher pedido:', e);
+            console.warn('Falha ao prÃƒÂ©-preencher pedido:', e);
         }
     }
 
@@ -968,10 +1222,6 @@ body[data-page="orcamento"] main.main-orcamento{
 
     function aplicarDadosAnuncio(dadosAnuncio) {
         if (!dadosAnuncio) return;
-        const inputTitulo = document.getElementById('titulo-pedido');
-        if(inputTitulo && dadosAnuncio.titulo) {
-            inputTitulo.value = "Orçamento: " + dadosAnuncio.titulo;
-        }
         aplicarConfiguracoesDoAnuncio(dadosAnuncio);
         const rawPerguntas = pickPerguntas(
             dadosAnuncio.perguntasFormularioJson,
@@ -992,16 +1242,16 @@ body[data-page="orcamento"] main.main-orcamento{
         }
     }
 
-    // --- 2. CARREGAMENTO DA PÁGINA ---
+    // --- 2. CARREGAMENTO DA P?f?GINA ---
     window.addEventListener('load', async function() {
-        console.log("🚀 Página Carregada. Buscando dados...");
+        console.log("?f??.??.??,? P?f?gina Carregada. Buscando dados...");
         liberarScrollOrcamento();
         initFirebaseHelpers();
 
         const db = window.db; 
         const auth = window.auth;
 
-        if (!db) { console.error("Firebase DB não carregou."); return; }
+        if (!db) { console.error("Firebase DB n?f?o carregou."); return; }
 
         const urlParams = new URLSearchParams(window.location.search);
         const anuncioId = urlParams.get('aid') || urlParams.get('id') || urlParams.get('anuncioId') || urlParams.get('anuncio_id'); 
@@ -1027,7 +1277,7 @@ body[data-page="orcamento"] main.main-orcamento{
             } catch (e) { console.error("Erro user:", e); }
         }
 
-        // B. Carrega Anúncio (Título, Regras e PERGUNTAS DE TRIAGEM)
+        // B. Carrega An?f?ncio (T?f?tulo, Regras e PERGUNTAS DE TRIAGEM)
         if (anuncioId) {
             await carregarAnuncioPorId(db, anuncioId);
         }
@@ -1035,7 +1285,7 @@ body[data-page="orcamento"] main.main-orcamento{
             await carregarAnuncioPorUid(db, prestadorUid);
         }
 
-        // C. Bloqueia APENAS se for o próprio dono tentando pedir orçamento pra si mesmo
+        // C. Bloqueia APENAS se for o pr?f?prio dono tentando pedir or?f?amento pra si mesmo
         onAuthStateChanged(auth, (user) => {
             if (user && prestadorUid && user.uid === prestadorUid) {
                 bloquearBotaoProprioAnuncio();
@@ -1046,18 +1296,18 @@ body[data-page="orcamento"] main.main-orcamento{
             await carregarPedidoReferencia(db, refPedidoId);
         }
 
-        // Configura o botão de enviar
+        // Configura o bot?f?o de enviar
         configurarBotaoEnviar();
         configurarCampoDataEspecifica();
     });
 
-    // --- FUNÇÃO PARA DESENHAR AS PERGUNTAS NA TELA ---
+    // --- FUN???fO PARA DESENHAR AS PERGUNTAS NA TELA ---
     function renderizarPerguntasDinamicas(perguntas) {
         const container = document.getElementById('lista-perguntas-dinamicas');
         const wrapper = document.getElementById('container-perguntas-extras');
         if (!container || !wrapper) return;
         container.innerHTML = ""; // Limpa
-        wrapper.style.display = "block"; // Mostra a seção
+        wrapper.style.display = "block"; // Mostra a se?f??f?o
 
         perguntas.forEach((p, index) => {
             const div = document.createElement('div');
@@ -1078,13 +1328,13 @@ body[data-page="orcamento"] main.main-orcamento{
                 select.className = "input-premium campo-dinamico";
                 select.dataset.pergunta = p.pergunta; // Guarda a pergunta no atributo data
                 
-                // Opção padrão
+                // Op?f??f?o padr?f?o
                 const optPadrao = document.createElement('option');
                 optPadrao.value = "";
-                optPadrao.innerText = "Selecione uma opção...";
+                optPadrao.innerText = "Selecione uma op\u00e7\u00e3o...";
                 select.appendChild(optPadrao);
 
-                // Opções do profissional
+                // Op?f??f?es do profissional
                 if(p.opcoes && Array.isArray(p.opcoes)) {
                     p.opcoes.forEach(op => {
                         const option = document.createElement('option');
@@ -1097,10 +1347,15 @@ body[data-page="orcamento"] main.main-orcamento{
 
             } else {
                 // Tipo 'aberta' -> Input Texto ou Textarea
-                const input = document.createElement('input');
-                input.type = "text";
+                const input = document.createElement('textarea');
+                input.rows = 2;
                 input.className = "input-premium campo-dinamico";
                 input.placeholder = "Sua resposta...";
+                input.autocapitalize = "sentences";
+                input.autocomplete = "off";
+                input.spellcheck = true;
+                input.disabled = false;
+                input.readOnly = false;
                 input.dataset.pergunta = p.pergunta;
                 div.appendChild(input);
             }
@@ -1179,7 +1434,7 @@ body[data-page="orcamento"] main.main-orcamento{
         return dadosAnuncio.img || dadosAnuncio.imagem || dadosAnuncio.foto || "";
     }
 
-    // --- FUNÇÃO DE ENVIO ---
+    // --- FUN???fO DE ENVIO ---
     function configurarBotaoEnviar() {
         const btnEnviar = document.getElementById('btnEnviarOrcamento');
         if (!btnEnviar) return;
@@ -1190,30 +1445,30 @@ body[data-page="orcamento"] main.main-orcamento{
 
         novoBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            console.log("🖱️ Clique no Enviar");
+            console.log("?f??.???"?,??f??,??,? Clique no Enviar");
             
             const db = window.db;
             const auth = window.auth;
             
             const user = auth.currentUser;
 
-            if (!user) { alert("Faça login para continuar."); return; }
+            if (!user) { alert("Fa\u00e7a login para continuar."); return; }
 
             const params = new URLSearchParams(window.location.search);
             const paraUid = params.get('uid');
 
-            if (!paraUid) { alert("Erro: Profissional não identificado."); return; }
+            if (!paraUid) { alert("Erro: Profissional n\u00e3o identificado."); return; }
 
-            // Validação Básica
+            // Valida?f??f?o B?f?sica
             const tituloEl = document.getElementById('titulo-pedido');
             const descricaoEl = document.getElementById('descricao-pedido');
             const titulo = tituloEl ? tituloEl.value : "";
             const descricao = descricaoEl ? descricaoEl.value : "";
             if (!titulo || !titulo.trim()) {
-                return irParaCampoFaltante(tituloEl, "Preencha o título do pedido.");
+                return irParaCampoFaltante(tituloEl, "Preencha o t\u00edtulo do pedido.");
             }
             if (!descricao || !descricao.trim()) {
-                return irParaCampoFaltante(descricaoEl, "Preencha a descrição do pedido.");
+                return irParaCampoFaltante(descricaoEl, "Preencha a descri\u00e7\u00e3o do pedido.");
             }
 
             // --- COLETA AS RESPOSTAS DA TRIAGEM ---
@@ -1230,17 +1485,17 @@ body[data-page="orcamento"] main.main-orcamento{
             });
 
 
-            // Validação: Data específica
+            // Valida?f??f?o: Data espec?f?fica
             const selPQ = document.getElementById('para-quando');
             const pqVal = selPQ ? selPQ.value : "";
-            const isEspecifica = String(pqVal).toLowerCase().includes('data específica') || String(pqVal).toLowerCase().includes('data especifica');
+            const isEspecifica = String(pqVal).toLowerCase().includes('data espec\u00edfica') || String(pqVal).toLowerCase().includes('data espec\u00edfica');
             if (isEspecifica) {
                 const dataEl = document.getElementById('data-especifica');
                 const d = dataEl ? dataEl.value : "";
-                if (!d) { return irParaCampoFaltante(dataEl, 'Selecione o dia para a data específica.'); }
+                if (!d) { return irParaCampoFaltante(dataEl, 'Selecione o dia para a data espec\u00edfica.'); }
             }
 
-            // Validação: Localização (somente quando presencial/ambos)
+            // Valida?f??f?o: Localiza?f??f?o (somente quando presencial/ambos)
             const precisaLoc = !!window.__orc_precisa_localizacao;
             if (precisaLoc) {
                 const cepEl = document.getElementById('cepOrcamento');
@@ -1250,9 +1505,9 @@ body[data-page="orcamento"] main.main-orcamento{
                 const end = (endEl ? endEl.value : "").trim();
                 const num = (numEl ? numEl.value : "").trim();
 
-                if (!cep) return irParaCampoFaltante(cepEl, 'Preencha o CEP do local do serviço.');
-                if (!end) return irParaCampoFaltante(endEl, 'Preencha o endereço do local do serviço.');
-                if (!num) return irParaCampoFaltante(numEl, 'Preencha o número do local do serviço.');
+                if (!cep) return irParaCampoFaltante(cepEl, 'Preencha o CEP do local do servi\u00e7o.');
+                if (!end) return irParaCampoFaltante(endEl, 'Preencha o endere\u00e7o do local do servi\u00e7o.');
+                if (!num) return irParaCampoFaltante(numEl, 'Preencha o n\u00famero do local do servi\u00e7o.');
             }
 
             // Feedback Visual
@@ -1262,12 +1517,12 @@ body[data-page="orcamento"] main.main-orcamento{
             if (window.dokeShowLoading) {
                 window.dokeShowLoading({
                     title: "Enviando pedido...",
-                    subtitle: "Estamos preparando seu orçamento"
+                    subtitle: "Estamos preparando seu or\u00e7amento"
                 });
             }
 
             try {
-                console.log("💾 Salvando no banco...");
+                console.log("?f??.???T?,? Salvando no banco...");
                 const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
                 const prestador = window.__orc_prestador || {};
                 const anuncio = window.__orc_anuncio || {};
@@ -1284,7 +1539,7 @@ body[data-page="orcamento"] main.main-orcamento{
                 const dataEspecifica = (function(){
                     const sel = document.getElementById('para-quando');
                     const v = sel ? sel.value : '';
-                    const isEspecifica = String(v).toLowerCase().includes('data específica') || String(v).toLowerCase().includes('data especifica');
+                    const isEspecifica = String(v).toLowerCase().includes('data espec\u00edfica') || String(v).toLowerCase().includes('data espec\u00edfica');
                     if (!isEspecifica) return '';
                     return getInputValue('data-especifica');
                 })();
@@ -1302,29 +1557,29 @@ body[data-page="orcamento"] main.main-orcamento{
                     mensagemInicial: (function(){
                         if (!precisaLoc) return descricao;
 
-                        let loc = `${end}, Nº ${num}`;
+                        let loc = `${end}, N\u00ba ${num}`;
                         if (comp) loc += `, ${comp}`;
                         if (cep) loc += ` (CEP ${cep})`;
 
                         let extra = '';
                         if (ref) extra += `
-Ponto de referência: ${ref}`;
+Ponto de refer\u00eancia: ${ref}`;
                         if (info) extra += `
-Mais informações: ${info}`;
+Mais informa\u00e7\u00f5es: ${info}`;
 
                         return `${descricao}
 
-Local do serviço: ${loc}${extra}`;
+Local do servi\u00e7o: ${loc}${extra}`;
                     })(),
                     descricaoBase: descricao,
-                    // Para quando (se for data específica, inclui o dia escolhido)
+                    // Para quando (se for data espec?f?fica, inclui o dia escolhido)
                     paraQuando: (function(){
                         const sel = document.getElementById('para-quando');
                         const v = sel ? sel.value : '';
-                        const isEspecifica = String(v).toLowerCase().includes('data específica') || String(v).toLowerCase().includes('data especifica');
+                        const isEspecifica = String(v).toLowerCase().includes('data espec\u00edfica') || String(v).toLowerCase().includes('data espec\u00edfica');
                         if (!isEspecifica) return v;
                         const d = getInputValue('data-especifica');
-                        return d ? (`Data específica: ${formatarDataBR(d)}`) : v;
+                        return d ? (`Data espec\u00edfica: ${formatarDataBR(d)}`) : v;
                     })(),
                     dataEspecifica: dataEspecifica || "",
                     turno: document.getElementById('turno').value,
@@ -1338,10 +1593,10 @@ Local do serviço: ${loc}${extra}`;
                     } : null,
                     modoAtend: window.__orc_modo_atend || "",
                     
-                    // AQUI VÃO AS RESPOSTAS DO FORMULÁRIO
+                    // AQUI V?fO AS RESPOSTAS DO FORMUL?f?RIO
                     respostasTriagem: respostasTriagem,
                     
-                    // anexos: removido (a coluna pode não existir no Supabase)
+                    // anexos: removido (a coluna pode n?f?o existir no Supabase)
                     clienteNome: perfil.nome || "Cliente",
                     clienteFoto: perfil.foto || "https://i.pravatar.cc/150",
                     status: "pendente",
@@ -1362,7 +1617,7 @@ Local do serviço: ${loc}${extra}`;
                     pedidoIdFinal = docRef.id;
                 }
 
-                console.log("🎉 Sucesso! ID:", pedidoIdFinal);
+                console.log("?f??.??.???? Sucesso! ID:", pedidoIdFinal);
 
                 // Envia anexos como mensagens no chat do pedido (se houver)
                 try {
@@ -1384,7 +1639,7 @@ Local do serviço: ${loc}${extra}`;
                         triagemAtual.push({ pergunta: 'Anexos', resposta: anexosResumo });
                         await updateDoc(doc(db, "pedidos", pedidoIdFinal), {
                             respostasTriagem: triagemAtual,
-                            ultimaMensagem: '📎 Anexos enviados',
+                            ultimaMensagem: 'Anexos enviados',
                             dataAtualizacao: new Date().toISOString()
                         });
                         limparPreviewAnexos();
@@ -1402,7 +1657,7 @@ Local do serviço: ${loc}${extra}`;
                 mostrarModalPedidoEnviado(pedidoIdFinal);
 
             } catch (erro) {
-                console.error("❌ ERRO FATAL:", erro);
+                console.error("?f??,??' ERRO FATAL:", erro);
                 alert("Erro ao enviar: " + erro.message);
                 if (window.dokeHideLoading) window.dokeHideLoading();
                 novoBtn.innerHTML = textoOriginal;
@@ -1453,7 +1708,7 @@ Local do serviço: ${loc}${extra}`;
 
         const atualizar = () => {
             const v = String(sel.value || "").toLowerCase();
-            const isEspecifica = v.includes('data específica') || v.includes('data especifica');
+            const isEspecifica = v.includes('data espec\u00edfica') || v.includes('data espec\u00edfica');
             wrap.style.display = isEspecifica ? 'block' : 'none';
             if (!isEspecifica) inp.value = "";
         };
@@ -1478,7 +1733,7 @@ Local do serviço: ${loc}${extra}`;
     }
 
 
-    // --- FUNÇÕES VISUAIS E HELPERS ---
+    // --- FUN???.ES VISUAIS E HELPERS ---
 
     function atualizarCardResumo(dados) {
         if(document.getElementById('nomePrestadorResumo'))
@@ -1488,7 +1743,7 @@ Local do serviço: ${loc}${extra}`;
         if(document.getElementById('imgPrestadorResumo'))
             document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
         
-        // Avaliação: evita "[object Object]" quando o campo vem como objeto (migração/serialização)
+        // Avalia?f??f?o: evita "[object Object]" quando o campo vem como objeto (migra?f??f?o/serializa?f??f?o)
         const stats = dados.stats || {};
 
         const numFromAny = (v) => {
@@ -1537,7 +1792,7 @@ Local do serviço: ${loc}${extra}`;
         const isOnline = (modo === 'online' || modo.includes('remoto') || modo.includes('online'));
         const isPresencialOuAmbos = (modo.includes('presencial') || modo.includes('presen') || modo.includes('ambos') || modo.includes('hibr'));
 
-        // Regra: localização somente quando for presencial ou ambos. Se o modo vier vazio/desconhecido, mantém a localização visível.
+        // Regra: localiza?f??f?o somente quando for presencial ou ambos. Se o modo vier vazio/desconhecido, mant?f?m a localiza?f??f?o vis?f?vel.
         const precisaLocalizacao = isOnline ? false : (isPresencialOuAmbos || !modo);
 
         window.__orc_precisa_localizacao = !!precisaLocalizacao;
@@ -1562,7 +1817,7 @@ Local do serviço: ${loc}${extra}`;
     function bloquearBotaoProprioAnuncio() {
         const btn = document.getElementById('btnEnviarOrcamento');
         if(btn) {
-            btn.innerText = "Você não pode solicitar para si mesmo.";
+            btn.innerText = "Voc\u00ea n\u00e3o pode solicitar para si mesmo.";
             btn.disabled = true;
             btn.style.cursor = "not-allowed";
             btn.style.background = "#ccc";
@@ -1591,11 +1846,22 @@ Local do serviço: ${loc}${extra}`;
         const cepEl = document.getElementById('cepOrcamento');
         if(!cepEl) return;
         const cep = cepEl.value.replace(/\D/g, '');
-        if(cep.length === 8) {
-            fetch(`https://viacep.com.br/ws/${cep}/json/`).then(r=>r.json()).then(d=>{
-                if(!d.erro) document.getElementById('endereco-completo').value = `${d.logradouro}, ${d.bairro} - ${d.localidade}`;
-            });
+        if(cep.length !== 8) {
+            avisarValidacao("Digite um CEP v\u00e1lido com 8 n\u00fameros.");
+            return;
         }
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(r=>r.json())
+            .then(d=>{
+                if(d.erro){
+                    avisarValidacao("CEP n\u00e3o encontrado.");
+                    return;
+                }
+                const rua = [d.logradouro, d.bairro].filter(Boolean).join(", ");
+                const cidade = [d.localidade, d.uf].filter(Boolean).join(" - ");
+                document.getElementById('endereco-completo').value = [rua, cidade].filter(Boolean).join(" - ");
+            })
+            .catch(() => avisarValidacao("N\u00e3o foi poss\u00edvel buscar o CEP agora."));
     }
 </script>
 <!-- Modal: Pedido enviado / aguardando aceite -->
@@ -1604,7 +1870,7 @@ Local do serviço: ${loc}${extra}`;
 <div class="orc-modal-header">
 <div class="orc-modal-icon"><i class="bx bx-check-circle"></i></div>
 <div>
-<h3 class="orc-modal-title" id="orcModalTitle">Solicitação enviada</h3>
+<h3 class="orc-modal-title" id="orcModalTitle">Solicita&ccedil;&atilde;o enviada</h3>
 <div style="font-size:0.85rem; color:#666; font-weight:600;">Pedido em espera</div>
 </div>
 </div>
@@ -1614,7 +1880,7 @@ Local do serviço: ${loc}${extra}`;
 <i class="bx bx-time-five"></i>
 <div>
 <strong>Aguarde o aceite</strong>
-<span>Assim que o profissional aceitar, o chat será liberado e vocês poderão negociar por aqui.</span>
+<span>Assim que o profissional aceitar, o chat ser&aacute; liberado e voc&ecirc;s poder&atilde;o negociar por aqui.</span>
 </div>
 </div>
 </div>
@@ -1624,9 +1890,25 @@ Local do serviço: ${loc}${extra}`;
 </div>
 </div>
 </div>
+<div class="anexo-preview-modal" id="anexoPreviewModal" onclick="if(event.target===this) fecharAnexoPreview()">
+<div class="anexo-preview-content">
+<button aria-label="Fechar imagem" class="anexo-preview-close" onclick="fecharAnexoPreview()" type="button"><i class="bx bx-x"></i></button>
+<img alt="" id="anexoPreviewImg" src=""/>
+</div>
+</div>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260207v21"></script>
+<script>
+document.addEventListener('keydown', function(evt){
+    if (evt.key === 'Escape') fecharAnexoPreview();
+});
+</script>
 </body>
 </html>
+
+
+
+
+

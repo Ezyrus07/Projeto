@@ -75,6 +75,10 @@
     return sameIdentity(ctx.me, ctx.target);
   }
   let mobileActionsBound = false;
+  let dpPubSelectMode = false;
+  let dpPubSelectedIds = new Set();
+  let dpPubVisibleIds = [];
+  let dpPubCtx = null;
   function placeProfileActionsForMobile(){
     const rootEl = $("#dpRoot");
     if(!rootEl) return;
@@ -941,10 +945,194 @@ function ensureTheme(ctx, theme){
     }
   }
 
+  function setPublicacoesSelectMode(on, opts = {}){
+    dpPubSelectMode = !!on;
+    if(!dpPubSelectMode){
+      dpPubSelectedIds.clear();
+    }
+
+    const grid = $("#dpGridPublicacoes");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpPubSelectMode);
+    }
+
+    const btn = $("#dpSelectPublicacoesBtn");
+    if(btn){
+      btn.classList.toggle("is-active", dpPubSelectMode);
+      btn.innerHTML = dpPubSelectMode
+        ? `<i class='bx bx-x'></i> Cancelar`
+        : `<i class='bx bx-check-square'></i> Selecionar`;
+      btn.setAttribute("aria-pressed", dpPubSelectMode ? "true" : "false");
+    }
+
+    const bar = $("#dpPubSelectionBar");
+    if(bar){
+      bar.hidden = !dpPubSelectMode;
+    }
+
+    refreshPublicacoesSelectionUI();
+    if(!opts.silent && !dpPubSelectMode){
+      // Mantido sem toast para não poluir a navegação.
+    }
+  }
+
+  function refreshPublicacoesSelectionUI(){
+    const grid = $("#dpGridPublicacoes");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpPubSelectMode);
+      $$(".dp-item[data-pub-id]", grid).forEach((card)=>{
+        const id = String(card.dataset.pubId || "");
+        const isSelected = !!(id && dpPubSelectedIds.has(id));
+        card.classList.toggle("dp-selected", isSelected);
+        card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
+    }
+
+    const count = dpPubSelectedIds.size;
+    const total = dpPubVisibleIds.length;
+    const countEl = $("#dpPubSelectionCount");
+    const deleteBtn = $("#dpPubDeleteSelBtn");
+    const allBtn = $("#dpPubSelectAllBtn");
+    const clearBtn = $("#dpPubClearSelBtn");
+
+    if(countEl){
+      countEl.textContent = count === 1 ? "1 selecionada" : `${count} selecionadas`;
+    }
+    if(deleteBtn){
+      deleteBtn.disabled = count < 1;
+    }
+    if(allBtn){
+      allBtn.disabled = total < 1;
+      allBtn.textContent = (total > 0 && count === total) ? "Desmarcar todas" : "Selecionar todas";
+    }
+    if(clearBtn){
+      clearBtn.disabled = count < 1;
+    }
+  }
+
+  function togglePublicacaoSelection(id){
+    const key = String(id || "").trim();
+    if(!key) return;
+    if(dpPubSelectedIds.has(key)){
+      dpPubSelectedIds.delete(key);
+    }else{
+      dpPubSelectedIds.add(key);
+    }
+    refreshPublicacoesSelectionUI();
+  }
+
+  async function deleteSelectedPublicacoes(){
+    const ids = Array.from(dpPubSelectedIds).filter(Boolean);
+    if(!ids.length){
+      toast("Selecione ao menos uma publicação.");
+      return;
+    }
+    if(!dpPubCtx?.client?.from || !dpPubCtx?.target?.id){
+      toast("Recarregue a página e tente novamente.");
+      return;
+    }
+
+    const plural = ids.length > 1;
+    if(!confirm(`Excluir ${ids.length} publica${plural ? "ções" : "ção"} selecionada${plural ? "s" : ""}?`)){
+      return;
+    }
+
+    const { error } = await dpPubCtx.client
+      .from("publicacoes")
+      .delete()
+      .in("id", ids);
+
+    if(error){
+      console.error(error);
+      toast("Erro ao excluir publicações.");
+      return;
+    }
+
+    setPublicacoesSelectMode(false, { silent: true });
+    toast(plural ? "Publicações excluídas." : "Publicação excluída.");
+    await loadPublicacoes(dpPubCtx.client, dpPubCtx.target.id, dpPubCtx);
+  }
+
+  function ensurePublicacoesSelectionControls(ctx){
+    const section = $('.dp-section[data-tab="publicacoes"]');
+    const header = section ? $(".dp-sectionHeader", section) : null;
+    const canEdit = !!ctx?.canEdit;
+
+    const oldBtn = $("#dpSelectPublicacoesBtn");
+    const oldBar = $("#dpPubSelectionBar");
+
+    if(!canEdit || !section || !header){
+      if(oldBtn) oldBtn.style.display = "none";
+      if(oldBar) oldBar.hidden = true;
+      setPublicacoesSelectMode(false, { silent: true });
+      return;
+    }
+
+    const newBtn = $("#dpNewPublicacao", header);
+    if(!newBtn) return;
+
+    let selectBtn = $("#dpSelectPublicacoesBtn");
+    if(!selectBtn){
+      selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.id = "dpSelectPublicacoesBtn";
+      selectBtn.className = "dp-newBtn dp-selectToggleBtn";
+      newBtn.insertAdjacentElement("afterend", selectBtn);
+    }
+    selectBtn.style.display = "inline-flex";
+
+    if(!selectBtn.dataset.bound){
+      selectBtn.dataset.bound = "1";
+      selectBtn.addEventListener("click", ()=>{
+        setPublicacoesSelectMode(!dpPubSelectMode);
+      });
+    }
+
+    let bar = $("#dpPubSelectionBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "dpPubSelectionBar";
+      bar.className = "dp-pubSelectionBar";
+      bar.hidden = true;
+      bar.innerHTML = `
+        <span class="dp-pubSelectionCount" id="dpPubSelectionCount">0 selecionadas</span>
+        <div class="dp-pubSelectionActions">
+          <button type="button" id="dpPubSelectAllBtn">Selecionar todas</button>
+          <button type="button" id="dpPubClearSelBtn">Limpar seleção</button>
+          <button type="button" class="danger" id="dpPubDeleteSelBtn" disabled>Excluir selecionadas</button>
+        </div>
+      `;
+      header.insertAdjacentElement("afterend", bar);
+    }
+
+    if(!bar.dataset.bound){
+      bar.dataset.bound = "1";
+      $("#dpPubSelectAllBtn", bar)?.addEventListener("click", ()=>{
+        const total = dpPubVisibleIds.length;
+        if(total < 1) return;
+        if(dpPubSelectedIds.size === total){
+          dpPubSelectedIds.clear();
+        }else{
+          dpPubSelectedIds = new Set(dpPubVisibleIds);
+        }
+        refreshPublicacoesSelectionUI();
+      });
+      $("#dpPubClearSelBtn", bar)?.addEventListener("click", ()=>{
+        dpPubSelectedIds.clear();
+        refreshPublicacoesSelectionUI();
+      });
+      $("#dpPubDeleteSelBtn", bar)?.addEventListener("click", deleteSelectedPublicacoes);
+    }
+
+    setPublicacoesSelectMode(dpPubSelectMode, { silent: true });
+  }
+
   // -----------------------------
   // Sections loaders
   // -----------------------------
   async function loadPublicacoes(client, userId, ctx){
+    dpPubCtx = ctx || null;
+    ensurePublicacoesSelectionControls(ctx);
     const grid = $("#dpGridPublicacoes");
     if(!grid) return;
     renderPerfilGridSkeleton(grid, "publicacoes");
@@ -955,6 +1143,9 @@ function ensureTheme(ctx, theme){
       .order("created_at", { ascending:false })
       .limit(40);
     if(error){
+      dpPubVisibleIds = [];
+      dpPubSelectedIds.clear();
+      refreshPublicacoesSelectionUI();
       if(isMissingTableError(error)){
         grid.innerHTML = `<div class="dp-empty">Nenhuma publicacao ainda.</div>`;
         return;
@@ -964,14 +1155,18 @@ function ensureTheme(ctx, theme){
       return;
     }
     if(!data?.length){
+      dpPubVisibleIds = [];
+      dpPubSelectedIds.clear();
+      refreshPublicacoesSelectionUI();
       grid.innerHTML = `<div class="dp-empty">Sem publicacoes ainda.</div>`;
       return;
     }
+    dpPubVisibleIds = data.map((item)=> String(item?.id || "")).filter(Boolean);
+    dpPubSelectedIds = new Set(Array.from(dpPubSelectedIds).filter((id)=> dpPubVisibleIds.includes(id)));
     grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
     const canEdit = !!ctx?.canEdit;
     for(const item of data){
-      const poster = item.thumb_url ? ` poster="${item.thumb_url}"` : "";
       const media = item.tipo === "video"
         ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ``} preload="metadata" muted playsinline></video>`
         : (item.tipo === "antes_depois" && item.thumb_url
@@ -981,6 +1176,7 @@ function ensureTheme(ctx, theme){
       card.className = "dp-item dp-item--clickable";
       card.setAttribute("role", "button");
       card.tabIndex = 0;
+      card.dataset.pubId = String(item.id || "");
       const title = item.titulo || item.legenda || "";
       const desc = item.descricao || (item.titulo ? item.legenda : "") || "";
       card.innerHTML = `
@@ -1001,40 +1197,10 @@ function ensureTheme(ctx, theme){
         </div>
       `;
       if(canEdit){
-        const menu = document.createElement("div");
-        menu.className = "dp-itemMenu";
-        menu.innerHTML = `
-          <button class="dp-itemMenuBtn" type="button" aria-label="Opções"><i class='bx bx-dots-horizontal-rounded' aria-hidden="true"></i></button>
-          <div class="dp-itemMenuList">
-            <button type="button" class="dp-itemMenuDelete">Excluir</button>
-          </div>
-        `;
-        const menuBtn = menu.querySelector(".dp-itemMenuBtn");
-        const menuList = menu.querySelector(".dp-itemMenuList");
-        const deleteBtn = menu.querySelector(".dp-itemMenuDelete");
-        menuBtn?.addEventListener("click", (event)=>{
-          event.preventDefault();
-          event.stopPropagation();
-          menuList?.classList.toggle("open");
-        });
-        deleteBtn?.addEventListener("click", async (event)=>{
-          event.preventDefault();
-          event.stopPropagation();
-          menuList?.classList.remove("open");
-          if(!confirm("Excluir esta publicacao?")) return;
-          const { error: delErr } = await client
-            .from("publicacoes")
-            .delete()
-            .eq("id", item.id);
-          if(delErr){
-            console.error(delErr);
-            toast("Erro ao excluir.");
-            return;
-          }
-          toast("Publicacao excluida.");
-          loadPublicacoes(client, userId, ctx);
-        });
-        card.appendChild(menu);
+        const marker = document.createElement("span");
+        marker.className = "dp-itemSelectMark";
+        marker.innerHTML = `<i class='bx bx-check'></i>`;
+        card.appendChild(marker);
       }
       const openModal = () => {
         if(typeof window.abrirModalPublicacao === "function"){
@@ -1045,16 +1211,25 @@ function ensureTheme(ctx, theme){
       };
       card.addEventListener("click", (event)=>{
         event.preventDefault();
+        if(canEdit && dpPubSelectMode){
+          togglePublicacaoSelection(item.id);
+          return;
+        }
         openModal();
       });
       card.addEventListener("keydown", (event)=>{
         if(event.key === "Enter" || event.key === " "){
           event.preventDefault();
+          if(canEdit && dpPubSelectMode){
+            togglePublicacaoSelection(item.id);
+            return;
+          }
           openModal();
         }
       });
       grid.appendChild(card);
     }
+    refreshPublicacoesSelectionUI();
   }
 
     async function loadReels(client, userId){
@@ -2271,6 +2446,9 @@ function ensureTheme(ctx, theme){
       if(sectionsWrap){
         updateWrapHeight(sectionsWrap.offsetHeight, true);
       }
+      if(tab !== "publicacoes" && dpPubSelectMode){
+        setPublicacoesSelectMode(false, { silent: true });
+      }
 
       buttons.forEach(b=> b.classList.toggle("active", b.dataset.tab === tab));
       sections.forEach(s=> {
@@ -2284,7 +2462,10 @@ function ensureTheme(ctx, theme){
       }
 
       // Lazy load
-      if(tab === "publicacoes") loadPublicacoes(ctx.client, ctx.target.id, ctx);
+      if(tab === "publicacoes"){
+        ensurePublicacoesSelectionControls(ctx);
+        loadPublicacoes(ctx.client, ctx.target.id, ctx);
+      }
       if(tab === "reels") loadReels(ctx.client, ctx.target.id);
       if(tab === "servicos") loadServicosPerfil(ctx);
       if(tab === "portfolio") loadPortfolio(ctx.client, ctx.target.id);
@@ -2910,35 +3091,17 @@ if(!rangeSel || !refreshBtn) return;
   }
 
   function initStatsNav(){
-    const stats = $(".dp-stats");
     const prev = $(".dp-statsPrev");
     const next = $(".dp-statsNext");
-    if(!stats || !prev || !next) return;
-
-    const scrollAmount = () => Math.max(120, Math.round(stats.clientWidth * 0.6));
-    const updateNav = () => {
-      const maxScroll = stats.scrollWidth - stats.clientWidth;
-      prev.disabled = stats.scrollLeft <= 0;
-      next.disabled = stats.scrollLeft >= maxScroll - 1;
-      prev.style.visibility = "visible";
-      next.style.visibility = "visible";
-    };
-
-    prev.addEventListener("click", ()=> {
-      stats.scrollBy({ left: -scrollAmount(), behavior: "smooth" });
-    });
-    next.addEventListener("click", ()=> {
-      stats.scrollBy({ left: scrollAmount(), behavior: "smooth" });
-    });
-    stats.addEventListener("scroll", updateNav, { passive: true });
-    window.addEventListener("resize", updateNav);
-    updateNav();
+    if(prev) prev.style.display = "none";
+    if(next) next.style.display = "none";
   }
 
   // -----------------------------
   // Section actions
   // -----------------------------
   function initSectionActions(ctx){
+    ensurePublicacoesSelectionControls(ctx);
     // Novo Publicação
     $("#dpNewPublicacao")?.addEventListener("click", ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
@@ -3226,6 +3389,7 @@ if(!rangeSel || !refreshBtn) return;
     showIf("#dpAvatarBtn", allowEdit);
     showIf("#dpAvailabilityRow", allowEdit);
     showIf("#dpNewPublicacao", allowEdit);
+    showIf("#dpSelectPublicacoesBtn", allowEdit);
     showIf("#dpNewServico", allowEdit);
     showIf("#dpNewPortfolio", allowEdit);
     showIf("#dpNewReel", allowEdit);

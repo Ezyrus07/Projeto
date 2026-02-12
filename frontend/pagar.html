@@ -510,10 +510,20 @@
     // --- CARREGAMENTO E CÃLCULOS ---
     window.onload = function() {
         const params = new URLSearchParams(window.location.search);
+        const pedidoId = params.get('pedidoId');
+        let pagamentoTemp = {};
+        if (pedidoId) {
+            try {
+                const raw = sessionStorage.getItem(`doke_pagamento_${pedidoId}`) || '{}';
+                pagamentoTemp = JSON.parse(raw) || {};
+            } catch (_) {
+                pagamentoTemp = {};
+            }
+        }
         
         // Pega valores da URL. Ex: "23" ou "R$ 23,00"
-        let valorBruto = params.get('valor') || "23,00";
-        let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas')) || 1;
+        let valorBruto = params.get('valor') || pagamentoTemp.valor || "23,00";
+        let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas') || pagamentoTemp.parcelas) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
         // Remove tudo que nÃ£o for nÃºmero ou vÃ­rgula
@@ -669,12 +679,22 @@
         if (document.querySelector('.botoes-direita .entrar')) aplicarHeaderPadrao();
 
         const params = new URLSearchParams(window.location.search);
+        const pedidoId = params.get('pedidoId');
+        let pagamentoTemp = {};
+        if (pedidoId) {
+            try {
+                const raw = sessionStorage.getItem(`doke_pagamento_${pedidoId}`) || '{}';
+                pagamentoTemp = JSON.parse(raw) || {};
+            } catch (_) {
+                pagamentoTemp = {};
+            }
+        }
         const resumo = {
-            profissional: safeDecode(params.get('prof') || ""),
-            cliente: safeDecode(params.get('user') || ""),
-            servico: safeDecode(params.get('desc') || ""),
-            foto: safeDecode(params.get('foto') || ""),
-            anuncioId: safeDecode(params.get('anuncioId') || params.get('aid') || "")
+            profissional: safeDecode(params.get('prof') || pagamentoTemp.prof || ""),
+            cliente: safeDecode(params.get('user') || pagamentoTemp.user || ""),
+            servico: safeDecode(params.get('desc') || pagamentoTemp.desc || ""),
+            foto: safeDecode(params.get('foto') || pagamentoTemp.foto || ""),
+            anuncioId: safeDecode(params.get('anuncioId') || params.get('aid') || pagamentoTemp.anuncioId || "")
         };
 
         if (!resumo.cliente) {
@@ -693,7 +713,6 @@
             }
         }
 
-        const pedidoId = params.get('pedidoId');
         if (pedidoId) {
             try {
                 const pedidoSnap = await getDoc(doc(db, "pedidos", pedidoId));
