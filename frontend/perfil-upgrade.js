@@ -2808,7 +2808,8 @@ function ensureTheme(ctx, theme){
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
 
     let updateTabsHint = ()=>{};
-    if(tabsWrap){
+    const enableTabsOverflowHint = false;
+    if(tabsWrap && enableTabsOverflowHint){
       const shouldUseHint = ()=>{
         if(!(prevNav && nextNav)) return true;
         const prevVisible = prevNav.offsetParent !== null;

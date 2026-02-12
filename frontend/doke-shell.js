@@ -131,6 +131,70 @@
     return false;
   }
 
+  function isVisibleModalLayer(el){
+    if(!el || !el.isConnected || el.hidden) return false;
+    if(el.getAttribute("aria-hidden") === "true") return false;
+    let st = null;
+    try{ st = getComputedStyle(el); }catch(_){}
+    if(!st) return true;
+    if(st.display === "none" || st.visibility === "hidden") return false;
+    if(Number(st.opacity || "1") <= 0) return false;
+    if(!el.getClientRects || !el.getClientRects().length){
+      if((el.offsetWidth || 0) <= 0 && (el.offsetHeight || 0) <= 0) return false;
+    }
+    return true;
+  }
+
+  function hasOpenModalLayer(){
+    const selectors = [
+      ".doke-overlay.active",
+      ".modal-overlay-custom",
+      ".modal-detalhes",
+      ".modal-disputa",
+      ".dp-xmodal.open",
+      ".swal2-container",
+      "[data-modal-open='1']"
+    ];
+    for(const sel of selectors){
+      const nodes = Array.from(document.querySelectorAll(sel));
+      if(nodes.some(isVisibleModalLayer)) return true;
+    }
+    return false;
+  }
+
+  function syncShellModalLayerClass(){
+    if(!MQ.matches){
+      document.body.classList.remove("doke-modal-open");
+      return;
+    }
+    document.body.classList.toggle("doke-modal-open", hasOpenModalLayer());
+  }
+
+  function initShellModalLayerObserver(){
+    if(window.__dokeShellModalObserverBound) return;
+    window.__dokeShellModalObserverBound = true;
+    let raf = null;
+    const queueSync = () => {
+      if(raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = null;
+        syncShellModalLayerClass();
+      });
+    };
+    const obs = new MutationObserver(queueSync);
+    try{
+      obs.observe(document.documentElement, {
+        subtree: true,
+        childList: true,
+        attributes: true,
+        attributeFilter: ["class","style","hidden","aria-hidden","open","data-modal-open"]
+      });
+    }catch(_){}
+    window.addEventListener("resize", queueSync, { passive: true });
+    document.addEventListener("click", queueSync, true);
+    setTimeout(queueSync, 0);
+  }
+
   function ensureBottomSpacer(){
     let sp = document.querySelector(".doke-bottom-spacer");
     if(!sp){
@@ -196,11 +260,6 @@
     const existingShellBottom = document.querySelector(".doke-bottom-nav");
     const needHeader = force || !existingShellHeader;
     const needBottom = force || !existingShellBottom;
-    // Always mark active on mobile/tablet. Even if shell is already present, we may need to bind handlers.
-    document.body.classList.add("doke-shell-active");
-    // Some pages don't have a <main>. Add safe bottom spacing so content doesn't hide behind bottom nav.
-    if(!document.querySelector("main")) document.body.classList.add("doke-no-main");
-
     // Boxicons
     try{
       const links = Array.from(document.querySelectorAll('link[rel="stylesheet"]'));
@@ -213,11 +272,16 @@
       }
     }catch(e){}
 
-    const sessionUser = await getSessionUser();
+    let profile = getProfile();
+    let sessionUser = profile ? { id: profile.uid || profile.id || "cached_user" } : null;
+    if(!sessionUser){
+      sessionUser = await getSessionUser();
+      profile = sessionUser ? getProfile() : null;
+    }
     if(!sessionUser){
       clearAuthCache();
+      profile = null;
     }
-    const profile = sessionUser ? getProfile() : null;
     const isLogged = !!sessionUser;
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
@@ -355,6 +419,10 @@
         });
       }
     }
+
+    // Ativa o shell somente depois de garantir a estrutura.
+    document.body.classList.add("doke-shell-active");
+    if(!document.querySelector("main")) document.body.classList.add("doke-no-main");
 
     // Search overlay (create once; reuse if already exists)
     if((header || bottom) && !overlay){
@@ -689,13 +757,19 @@
       }
     }
 
+    initShellModalLayerObserver();
+    syncShellModalLayerClass();
+
     // ESC fecha search/drawer
     document.addEventListener("keydown", (e)=>{
       if(e.key === "Escape"){ closeSearch(); closeDrawer(); }
     });
   }
 
-  MQ.addEventListener?.("change", ()=>{ if(MQ.matches) ensureShell(); });
+  MQ.addEventListener?.("change", ()=>{
+    if(MQ.matches) ensureShell();
+    else document.body.classList.remove("doke-modal-open");
+  });
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", ()=>{
       consumeFlashNotice();

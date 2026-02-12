@@ -172,7 +172,8 @@
   }
 
   async function insertWithMissingColumnRetry(client, table, payload){
-    const maxTries = 6;
+    const initialKeys = Object.keys(payload || {}).length;
+    const maxTries = Math.max(6, initialKeys + 2);
     let safe = { ...(payload||{}) };
     for (let attempt = 1; attempt <= maxTries; attempt++){
       const { data, error } = await client.from(table).insert(safe).select("*").maybeSingle();
@@ -189,7 +190,8 @@
   }
 
   async function updateWithMissingColumnRetry(client, table, id, payload){
-    const maxTries = 6;
+    const initialKeys = Object.keys(payload || {}).length;
+    const maxTries = Math.max(6, initialKeys + 2);
     let safe = { ...(payload||{}) };
     const hasKeys = (obj) => obj && Object.keys(obj).length > 0;
     if (!hasKeys(safe)) return { safe, skipped: true };
@@ -209,7 +211,8 @@
   }
 
   async function upsertWithMissingColumnRetry(client, table, payload){
-    const maxTries = 6;
+    const initialKeys = Object.keys(payload || {}).length;
+    const maxTries = Math.max(6, initialKeys + 2);
     let safe = { ...(payload||{}) };
     for (let attempt = 1; attempt <= maxTries; attempt++){
       const { error } = await client.from(table).upsert(safe);

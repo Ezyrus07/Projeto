@@ -255,10 +255,18 @@
             font-weight:800;
             cursor:pointer;
             white-space:nowrap;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            gap:6px;
+            line-height:1;
         }
         .bulk-btn i{
             font-size: 1rem;
             line-height: 1;
+        }
+        .bulk-btn .bulk-btn-label{
+            line-height:1;
         }
         .bulk-btn.bulk-icon{
             width: 34px;
@@ -268,6 +276,7 @@
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            gap: 0;
             border-radius: 10px;
         }
         .bulk-btn.bulk-primary{
@@ -1770,19 +1779,27 @@
         align-items: flex-start;
         justify-content: center;
         overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
         padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
         -webkit-overflow-scrolling: touch;
     }
     #modalFinalizarPedido .modal-box-custom{
-        width: min(94vw, 460px);
-        max-width: min(94vw, 460px);
+        width: min(94vw, 520px);
+        max-width: min(94vw, 520px);
         padding: 22px 18px 16px;
-        max-height: calc(100vh - 24px);
-        max-height: calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
-        max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100vh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100svh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: calc(100dvh - 16px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
         overflow-y: auto;
+        overflow-x: hidden;
+        overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
         margin: 0 auto;
+        padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    #modalFinalizarPedido .modal-actions-col{
+        flex-shrink: 0;
     }
     #modalFinalizarPedido .modal-icon-top{
         margin: 0 auto 14px !important;
@@ -1806,10 +1823,12 @@
             max-width: min(94vw, 460px) !important;
             border-radius: 20px !important;
             padding: 18px 16px 14px !important;
-            max-height: calc(100svh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            max-height: calc(100svh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
             overflow-y: auto;
             overflow-x: hidden;
             overscroll-behavior: contain;
+            padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
         }
         #modalFinalizarPedido .modal-icon-top{
             width: 64px;
@@ -1822,10 +1841,10 @@
             margin-bottom: 8px;
         }
         #modalFinalizarPedido .modal-actions-col{
-            position: sticky;
-            bottom: 0;
-            background: linear-gradient(180deg, rgba(255,255,255,0), #fff 22%);
-            padding-top: 8px;
+            position: static;
+            bottom: auto;
+            background: transparent;
+            padding-top: 6px;
         }
         #modalFinalizarPedido .btn-primary-modal{
             min-height: 52px;
@@ -2252,7 +2271,11 @@
         text-overflow: ellipsis;
     }
     /* Menu 3 pontinhos por mensagem */
-    .msg-bubble{ position:relative; }
+    .msg-bubble{ position:relative; overflow:visible; }
+    .msg-bubble.menu-open{
+        z-index: 1600;
+        isolation: isolate;
+    }
     .msg-bubble.has-menu{ padding-right:42px !important; }
     .msg-menu-btn{
         border:none; background:transparent; cursor:pointer;
@@ -2263,7 +2286,7 @@
         position:absolute;
         top:6px;
         right:6px;
-        z-index:3;
+        z-index:40;
     }
     .msg-menu-btn i{
         display:block;
@@ -2272,7 +2295,7 @@
     }
     .msg-menu-btn:hover{ background:rgba(15,23,42,0.08); opacity:1; }
     .msg-menu{
-        position:absolute; z-index:30; top:6px;
+        position:absolute; z-index:1700; top:6px;
         display:none; flex-direction:column;
         background:#ffffff;
         border:1px solid rgba(11,119,104,.2);
@@ -2449,12 +2472,12 @@
 </button>
 <div class="bulk-select-bar" id="pedidosBulkBar" style="display:none;">
 <span class="bulk-count" id="pedidosBulkCount">0 selecionados</span>
-<button class="bulk-btn bulk-primary" id="btnArquivarSelecionados" onclick="arquivarPedidosSelecionados()" type="button">Arquivar</button>
+<button class="bulk-btn bulk-primary" id="btnArquivarSelecionados" onclick="arquivarPedidosSelecionados()" type="button"><i class="bx bx-archive"></i><span class="bulk-btn-label">Arquivar</span></button>
 <button class="bulk-btn" id="btnCancelarSelecaoPedidos" onclick="cancelarSelecaoPedidos()" type="button">Cancelar</button>
 </div>
 <div class="bulk-select-bar" id="conversasBulkBar" style="display:none;">
 <span class="bulk-count" id="conversasBulkCount">0 selecionados</span>
-<button aria-label="Arquivar contatos selecionados" class="bulk-btn bulk-primary" id="btnArquivarConversasSelecionadas" onclick="arquivarConversasSelecionadas()" type="button"><i class="bx bx-archive"></i> Arquivar</button>
+<button aria-label="Arquivar contatos selecionados" class="bulk-btn bulk-primary" id="btnArquivarConversasSelecionadas" onclick="arquivarConversasSelecionadas()" type="button"><i class="bx bx-archive"></i><span class="bulk-btn-label">Arquivar</span></button>
 <button aria-label="Silenciar contatos selecionados" class="bulk-btn bulk-icon" id="btnSilenciarConversasSelecionadas" onclick="silenciarConversasSelecionadas()" type="button"><i class="bx bx-bell-off"></i></button>
 <button aria-label="Excluir contatos selecionados" class="bulk-btn bulk-danger bulk-icon" id="btnExcluirConversasSelecionadas" onclick="excluirConversasSelecionadas()" type="button"><i class="bx bx-trash"></i></button>
 <button aria-label="Cancelar seleção" class="bulk-btn bulk-icon" id="btnCancelarSelecaoConversas" onclick="cancelarSelecaoConversas()" type="button"><i class="bx bx-x"></i></button>
@@ -3016,12 +3039,19 @@
         if (btnFiltros) btnFiltros.style.display = ((emPedidosLista && pedidosSelecaoModo) || (emConversasLista && conversasSelecaoModo)) ? 'none' : 'inline-flex';
         if (pedidosCountEl) pedidosCountEl.textContent = `${pedidosSelecionados.size} selecionado${pedidosSelecionados.size === 1 ? '' : 's'}`;
         if (conversasCountEl) conversasCountEl.textContent = `${conversasSelecionadas.size} selecionado${conversasSelecionadas.size === 1 ? '' : 's'}`;
-        if (btnArquivar) btnArquivar.disabled = pedidosSelecionados.size === 0;
-        if (btnArquivar) btnArquivar.textContent = acaoModoArquivados ? 'Desarquivar' : 'Arquivar';
+        if (btnArquivar) {
+            const desarquivar = acaoModoArquivados;
+            btnArquivar.disabled = pedidosSelecionados.size === 0;
+            const icon = btnArquivar.querySelector('i');
+            const label = btnArquivar.querySelector('.bulk-btn-label');
+            if (icon) icon.className = `bx ${desarquivar ? 'bx-folder-open' : 'bx-archive'}`;
+            if (label) label.textContent = desarquivar ? 'Desarquivar' : 'Arquivar';
+            if (!label) btnArquivar.innerHTML = `<i class='bx ${desarquivar ? 'bx-folder-open' : 'bx-archive'}'></i><span class='bulk-btn-label'>${desarquivar ? 'Desarquivar' : 'Arquivar'}</span>`;
+        }
         if (btnArquivarConversas) {
             const desarquivar = (listaModo === 'arquivados');
             btnArquivarConversas.disabled = conversasSelecionadas.size === 0;
-            btnArquivarConversas.innerHTML = `<i class='bx ${desarquivar ? 'bx-folder-open' : 'bx-archive'}'></i> ${desarquivar ? 'Desarquivar' : 'Arquivar'}`;
+            btnArquivarConversas.innerHTML = `<i class='bx ${desarquivar ? 'bx-folder-open' : 'bx-archive'}'></i><span class='bulk-btn-label'>${desarquivar ? 'Desarquivar' : 'Arquivar'}</span>`;
             btnArquivarConversas.setAttribute('aria-label', desarquivar ? 'Desarquivar contatos selecionados' : 'Arquivar contatos selecionados');
         }
         if (btnExcluirConversas) btnExcluirConversas.disabled = conversasSelecionadas.size === 0;
@@ -3536,6 +3566,15 @@
       }
       function closeMsgMenus(){
           document.querySelectorAll('.msg-menu').forEach((m) => { m.style.display = 'none'; });
+          document.querySelectorAll('.msg-bubble.menu-open').forEach((b) => b.classList.remove('menu-open'));
+      }
+      function setMsgBubbleMenuState(id, isOpen){
+          if (!id) return;
+          const host = document.getElementById(`msg-${id}`);
+          if (!host) return;
+          const bubble = host.classList?.contains('msg-bubble') ? host : host.querySelector?.('.msg-bubble');
+          if (!bubble) return;
+          bubble.classList.toggle('menu-open', !!isOpen);
       }
       function openMsgMenuById(id, ev){
           if (!id) return;
@@ -3547,6 +3586,7 @@
           if (!el) return;
           closeMsgMenus();
           el.style.display = 'flex';
+          setMsgBubbleMenuState(id, true);
       }
       window.toggleMsgMenu = function(id, ev){
           if (!id) return;
@@ -3556,6 +3596,7 @@
           const isOpen = el.style.display === 'flex';
           closeMsgMenus();
           el.style.display = isOpen ? 'none' : 'flex';
+          setMsgBubbleMenuState(id, !isOpen);
       };
       function bindLongPressMensagens(container){
           if (!container || container.dataset.longPressMsgReady === '1') return;
@@ -5111,6 +5152,7 @@
 
         // Mostrar
         overlay.classList.add('active');
+        syncChatShellOverlayState();
         if(type === 'prompt') setTimeout(() => elInput.focus(), 100);
 
         // Handlers (Remove listeners antigos clonando o elemento)
@@ -5121,12 +5163,14 @@
 
         newConfirm.addEventListener('click', () => {
             overlay.classList.remove('active');
+            syncChatShellOverlayState();
             if(type === 'prompt') resolveCallback(elInput.value);
             else resolveCallback(true);
         });
 
         newCancel.addEventListener('click', () => {
             overlay.classList.remove('active');
+            syncChatShellOverlayState();
             if(type === 'prompt') resolveCallback(null);
             else resolveCallback(false);
         });
@@ -6193,18 +6237,39 @@ window.apagarDocumentoPedido = async function(id) {
         }
 };
 
+function isVisibleOverlayElement(el) {
+    if (!el || !el.isConnected || el.hidden) return false;
+    const st = window.getComputedStyle ? getComputedStyle(el) : null;
+    if (!st) return true;
+    if (st.display === 'none' || st.visibility === 'hidden') return false;
+    if (Number(st.opacity || '1') <= 0) return false;
+    return true;
+}
+
+function syncChatShellOverlayState() {
+    const modalFinalizar = document.getElementById('modalFinalizarPedido');
+    const modalSucesso = document.getElementById('modalSucessoAvaliacao');
+    const modalAlert = document.getElementById('dokeGlobalModal');
+    const overlays = [modalFinalizar, modalSucesso, modalAlert];
+    const detalhes = Array.from(document.querySelectorAll('.modal-detalhes, .modal-disputa, .modal-overlay-custom, .doke-overlay'));
+    const visivel = overlays.some(isVisibleOverlayElement) || detalhes.some(isVisibleOverlayElement);
+    document.body.classList.toggle('doke-modal-open', !!visivel);
+}
+
 // EM CHAT.HTML
 window.liberarPagamento = async (id) => {
     if (!id) return;
     pedidoFinalizarId = id;
     const modal = document.getElementById('modalFinalizarPedido');
     if (modal) modal.style.display = 'flex';
+    syncChatShellOverlayState();
 };
 window.fecharModalFinalizarPedido = () => {
     const modal = document.getElementById('modalFinalizarPedido');
     if (modal) modal.style.display = 'none';
     window.limparAnexoFinalizacao();
     pedidoFinalizarId = null;
+    syncChatShellOverlayState();
 };
 
 window.alterarModoFinalizacao = (modo) => {
@@ -6387,7 +6452,7 @@ window.confirmarFinalizacaoPedido = async () => {
         const temMidia = !!(mediaUnica.url || mediaAntes.url || mediaDepois.url);
         const consentInicial = temMidia ? 'nenhum' : '';
 
-        await updateDoc(doc(db, "pedidos", id), { 
+        const payloadFinalizacao = { 
             status: 'finalizado',
             dataConclusao: new Date().toISOString(),
             notificacaoLidaProfissional: false,
@@ -6413,7 +6478,25 @@ window.confirmarFinalizacaoPedido = async () => {
             portfolioItemId: "",
             dataAtualizacao: new Date().toISOString(),
             ultimaMensagem: "Pedido finalizado"
-        });
+        };
+        try {
+            await updateDoc(doc(db, "pedidos", id), payloadFinalizacao);
+        } catch (erroPayloadCompleto) {
+            console.warn("Falha no payload completo de finalização. Tentando fallback mínimo.", erroPayloadCompleto);
+            await updateDoc(doc(db, "pedidos", id), {
+                status: 'finalizado',
+                dataConclusao: new Date().toISOString(),
+                notificacaoLidaProfissional: false,
+                notificacaoLidaCliente: false,
+                avaliado: false,
+                finalizacaoModo: modoAtual,
+                finalizacaoMediaUrl: mediaUnica.url || "",
+                finalizacaoMediaTipo: mediaUnica.tipo || "",
+                finalizacaoMediaNome: mediaUnica.nome || "",
+                dataAtualizacao: new Date().toISOString(),
+                ultimaMensagem: "Pedido finalizado"
+            });
+        }
         try {
             const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
@@ -6442,6 +6525,7 @@ window.confirmarFinalizacaoPedido = async () => {
         const modalSucesso = document.getElementById('modalSucessoAvaliacao');
         if (modalSucesso) {
             modalSucesso.style.display = 'flex';
+            syncChatShellOverlayState();
         } else {
             window.location.href = `avaliar.html?pedidoId=${id}`;
         }
@@ -6459,7 +6543,9 @@ window.confirmarFinalizacaoPedido = async () => {
         window.location.href = `avaliar.html?pedidoId=${window.pedidoIdParaAvaliar}`;
     };
     window.fecharModalSucesso = () => {
-        document.getElementById('modalSucessoAvaliacao').style.display = 'none';
+        const modal = document.getElementById('modalSucessoAvaliacao');
+        if (modal) modal.style.display = 'none';
+        syncChatShellOverlayState();
     };
     // =========================================================================
     // 4. RENDERIZAÃ‡ÃƒO E CHAT
