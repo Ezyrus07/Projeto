@@ -1442,6 +1442,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function configurarBotaoEnviar() {
         const btnEnviar = document.getElementById('btnEnviarOrcamento');
         if (!btnEnviar) return;
+        const descricaoOpcional = document.getElementById('descricao-pedido');
+        if (descricaoOpcional) descricaoOpcional.removeAttribute('required');
 
         // Clone para limpar listeners antigos
         const novoBtn = btnEnviar.cloneNode(true);
@@ -1466,6 +1468,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             // Valida?f??f?o B?f?sica
             const tituloEl = document.getElementById('titulo-pedido');
             const descricaoEl = document.getElementById('descricao-pedido');
+            if (descricaoEl) descricaoEl.removeAttribute('required');
             const titulo = tituloEl ? tituloEl.value : "";
             const descricao = descricaoEl ? descricaoEl.value : "";
             if (!titulo || !titulo.trim()) {
