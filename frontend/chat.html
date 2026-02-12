@@ -2300,7 +2300,19 @@
         background:#ffffff;
         border:1px solid rgba(11,119,104,.2);
         border-radius:14px; box-shadow:0 14px 28px rgba(2,6,23,.12);
-        min-width:190px; overflow:hidden;
+        min-width:170px; max-width:min(78vw,230px); overflow:hidden;
+    }
+    .msg-menu-inline-right{
+        right: 6px !important;
+        left: auto !important;
+        top: 8px !important;
+        max-width: min(78vw, 230px);
+    }
+    .msg-menu-inline-left{
+        left: 6px !important;
+        right: auto !important;
+        top: 8px !important;
+        max-width: min(78vw, 230px);
     }
     .msg-menu .menu-title{
         padding:7px 12px; font-size:.7rem; letter-spacing:.04em;
@@ -2315,8 +2327,17 @@
     }
     .msg-menu button:hover{ background:rgba(11,119,104,.08); }
     .msg-menu .danger{ color:#b42318; font-weight:800; }
-    .msg-menu-right{ right:100%; margin-right:8px; }
-    .msg-menu-left{ left:100%; margin-left:8px; }
+    .msg-menu-right{ right:6px; left:auto; margin-right:0; margin-left:0; }
+    .msg-menu-left{ left:6px; right:auto; margin-left:0; margin-right:0; }
+    .msg-removing{
+        pointer-events: none !important;
+        animation: msgRemoveClean .24s cubic-bezier(.4,0,.2,1) forwards;
+        transform-origin: center center;
+    }
+    @keyframes msgRemoveClean {
+        0% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+        100% { opacity: 0; transform: translateY(-8px) scale(0.96); filter: blur(1px); }
+    }
     .audio-bubble { min-width: 140px !important; }
 
     </style>
@@ -2327,7 +2348,7 @@
 <link rel="stylesheet" href="doke-shell.css?v=20260211v33">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v23">
-  <link rel="stylesheet" href="page-chat.css?v=20260212v37">
+  <link rel="stylesheet" href="page-chat.css?v=20260212v38">
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
@@ -3576,6 +3597,18 @@
           if (!bubble) return;
           bubble.classList.toggle('menu-open', !!isOpen);
       }
+      function ajustarPosicaoMenuMsg(id){
+          if (!id) return;
+          const menu = document.getElementById(`msg-menu-${id}`);
+          if (!menu || menu.style.display !== 'flex') return;
+          menu.classList.remove('msg-menu-inline-left', 'msg-menu-inline-right');
+          const host = document.getElementById(`msg-${id}`);
+          const bubble = host?.classList?.contains('msg-bubble') ? host : host?.querySelector?.('.msg-bubble');
+          if (!bubble) return;
+          const isMine = bubble.classList.contains('msg-enviada');
+          // Mantém menu sempre "dentro" da bolha para não ser cortado por containers com overflow.
+          menu.classList.add(isMine ? 'msg-menu-inline-right' : 'msg-menu-inline-left');
+      }
       function openMsgMenuById(id, ev){
           if (!id) return;
           if (ev) {
@@ -3587,6 +3620,7 @@
           closeMsgMenus();
           el.style.display = 'flex';
           setMsgBubbleMenuState(id, true);
+          requestAnimationFrame(() => ajustarPosicaoMenuMsg(id));
       }
       window.toggleMsgMenu = function(id, ev){
           if (!id) return;
@@ -3597,6 +3631,7 @@
           closeMsgMenus();
           el.style.display = isOpen ? 'none' : 'flex';
           setMsgBubbleMenuState(id, !isOpen);
+          if (!isOpen) requestAnimationFrame(() => ajustarPosicaoMenuMsg(id));
       };
       function bindLongPressMensagens(container){
           if (!container || container.dataset.longPressMsgReady === '1') return;
@@ -3679,6 +3714,10 @@
 
               container.addEventListener('click', (e) => {
                   if (!holdConsumed) return;
+                  if (e.target && e.target.closest('.msg-menu')) {
+                      holdConsumed = false;
+                      return;
+                  }
                   holdConsumed = false;
                   clearHover();
                   e.preventDefault();
@@ -3698,31 +3737,54 @@
               openMsgMenuById(msgId, e);
           });
       }
+      function animarRemocaoMensagem(msgId){
+          return new Promise((resolve) => {
+              if (!msgId) { resolve(); return; }
+              const host = document.getElementById(`msg-${msgId}`);
+              if (!host) { resolve(); return; }
+              const alvo = host.closest('.msg-row') || host;
+              alvo.classList.add('msg-removing');
+              setTimeout(() => {
+                  try { alvo.remove(); } catch (_) {}
+                  resolve();
+              }, 240);
+          });
+      }
       window.excluirMensagem = async function(msgId){
           if (!msgId || !chatIdAtual || !colecaoAtual) return;
           const confirmado = (typeof window.dokeConfirm === 'function')
               ? await window.dokeConfirm('Excluir esta mensagem?', 'Excluir', 'danger')
               : confirm('Excluir esta mensagem?');
           if (!confirmado) return;
+          closeMsgMenus();
+          await animarRemocaoMensagem(msgId);
           try {
               await deleteDoc(doc(db, colecaoAtual, chatIdAtual, "mensagens", msgId));
-              closeMsgMenus();
               carregarMensagens(colecaoAtual, chatIdAtual);
           } catch (e) {
               try {
-                  await updateDoc(doc(db, colecaoAtual, chatIdAtual, "mensagens", msgId), {
-                      tipo: 'apagada',
-                      texto: '',
-                      apagadaEm: new Date().toISOString()
-                  });
-                  closeMsgMenus();
+                  const refMsg = doc(db, colecaoAtual, chatIdAtual, "mensagens", msgId);
+                  const nowIso = new Date().toISOString();
+                  let okMark = false;
+                  const tentativas = [
+                      { tipo: 'apagada', texto: 'Mensagem apagada', apagadaEm: nowIso },
+                      { tipo: 'apagada', texto: 'Mensagem apagada' },
+                      { tipo: 'apagada' }
+                  ];
+                  for (const payload of tentativas) {
+                      try {
+                          await updateDoc(refMsg, payload);
+                          okMark = true;
+                          break;
+                      } catch (_) {}
+                  }
+                  if (!okMark) throw new Error('Sem permissão para apagar no servidor.');
                   carregarMensagens(colecaoAtual, chatIdAtual);
                   return;
               } catch (e2) {
                   console.error('Falha ao excluir mensagem:', e);
                   console.error('Falha ao marcar como apagada:', e2);
                   addHiddenMsgId(colecaoAtual, chatIdAtual, msgId);
-                  closeMsgMenus();
                   carregarMensagens(colecaoAtual, chatIdAtual);
                   window.dokeAlert ? window.dokeAlert('Mensagem ocultada para você (sem permissão para apagar no servidor).') : alert('Mensagem ocultada para você.');
               }
@@ -3737,6 +3799,42 @@
           } catch (e) {
               console.warn('Falha ao copiar mensagem:', e);
           }
+      };
+      window.salvarImagemMensagem = async function(urlEnc, nomeEnc){
+          const rawUrl = safeDecodeURIComponent(String(urlEnc || ''));
+          if (!rawUrl) return;
+          const safeName = (safeDecodeURIComponent(String(nomeEnc || 'imagem_doke')) || 'imagem_doke')
+              .replace(/[^\w.-]+/g, '_')
+              .replace(/^_+|_+$/g, '') || 'imagem_doke';
+          closeMsgMenus();
+          try {
+              const resp = await fetch(rawUrl, { mode: 'cors' });
+              if (!resp.ok) throw new Error('Falha no download');
+              const blob = await resp.blob();
+              const blobUrl = URL.createObjectURL(blob);
+              const ext = blob.type && blob.type.includes('/') ? `.${blob.type.split('/')[1].split(';')[0]}` : '';
+              const a = document.createElement('a');
+              a.href = blobUrl;
+              a.download = safeName.includes('.') ? safeName : `${safeName}${ext || '.jpg'}`;
+              a.rel = 'noopener';
+              document.body.appendChild(a);
+              a.click();
+              a.remove();
+              setTimeout(() => { try { URL.revokeObjectURL(blobUrl); } catch (_) {} }, 1200);
+              window.dokeToast ? window.dokeToast('Imagem salva') : null;
+          } catch (_) {
+              try { window.open(rawUrl, '_blank', 'noopener'); } catch (_) {}
+              window.dokeToast ? window.dokeToast('Imagem aberta. Toque e segure para salvar.') : null;
+          }
+      };
+      window.explicarPortfolio = function(ev){
+          try {
+              ev?.preventDefault?.();
+              ev?.stopPropagation?.();
+          } catch (_) {}
+          const txt = 'Portfólio é a vitrine pública do profissional com trabalhos já concluídos. A autorização permite usar apenas esta mídia do pedido.';
+          if (typeof window.dokeAlert === 'function') window.dokeAlert(txt, 'Portfólio');
+          else alert(txt);
       };
       window.encaminharMensagem = function(){
           closeMsgMenus();
@@ -5880,6 +5978,22 @@
         } catch(e) { /* ignora */ }
     };
 
+    async function updatePedidoPortfolioComFallback(pedidoRef, payloadPrincipal, payloadFallback) {
+        try {
+            await updateDoc(pedidoRef, payloadPrincipal || {});
+            return true;
+        } catch (e1) {
+            if (!payloadFallback || !Object.keys(payloadFallback).length) throw e1;
+            try {
+                await updateDoc(pedidoRef, payloadFallback);
+                return true;
+            } catch (e2) {
+                e2.__fallbackOriginal = e1;
+                throw e2;
+            }
+        }
+    }
+
     window.solicitarAdicionarNoPortfolio = async function(pedidoId) {
         const id = pedidoId || chatIdAtual;
         if (!id) return;
@@ -5949,7 +6063,7 @@
                 lidoEm: senderUid ? { [senderUid]: nowIso } : {}
             });
 
-            await updateDoc(pedidoRef, {
+            const payloadPedidoPrincipal = {
                 finalizacaoMediaUrl: media.url,
                 finalizacaoMediaTipo: media.tipo || 'imagem',
                 finalizacaoMediaNome: media.nome || '',
@@ -5959,7 +6073,13 @@
                 portfolioConsentMsgId: msgRef.id,
                 dataAtualizacao: nowIso,
                 ultimaMensagem: "Solicitacao de portfolio enviada"
-            });
+            };
+            const payloadPedidoFallback = {
+                portfolioConsentStatus: 'pendente',
+                dataAtualizacao: nowIso,
+                ultimaMensagem: "Solicitacao de portfolio enviada"
+            };
+            await updatePedidoPortfolioComFallback(pedidoRef, payloadPedidoPrincipal, payloadPedidoFallback);
 
             if (deUid) {
                 await window.criarNotificacaoPedido(deUid, 'portfolio_consent_request', id, {
@@ -6004,20 +6124,28 @@
                 return;
             }
             const m = msgSnap.data() || {};
-            const atual = String(m.status || p.portfolioConsentStatus || '').toLowerCase();
+            const statusPedidoAtual = String(p.portfolioConsentStatus || '').toLowerCase();
+            const statusMensagemAtual = String(m.status || '').toLowerCase();
+            const atual = (statusPedidoAtual && statusPedidoAtual !== 'pendente')
+                ? statusPedidoAtual
+                : (statusMensagemAtual || statusPedidoAtual || '');
             if (atual && atual !== 'pendente') {
                 window.dokeAlert("Essa solicitacao ja foi respondida.");
                 return;
             }
 
             const nowIso = new Date().toISOString();
-            await updateDoc(msgRef, {
-                status: statusFinal,
-                decidedAt: nowIso,
-                decidedBy: currentUserUid || ''
-            });
+            try {
+                await updateDoc(msgRef, {
+                    status: statusFinal,
+                    decidedAt: nowIso,
+                    decidedBy: currentUserUid || ''
+                });
+            } catch (eMsg) {
+                console.warn("Falha ao atualizar status da mensagem de portfolio; seguindo com status no pedido.", eMsg);
+            }
 
-            await updateDoc(pedidoRef, {
+            const payloadPedidoPrincipal = {
                 portfolioConsentStatus: statusFinal,
                 portfolioConsentDecisionAt: nowIso,
                 portfolioConsentDecisionBy: currentUserUid || '',
@@ -6025,7 +6153,15 @@
                 ultimaMensagem: statusFinal === 'aprovado'
                     ? "Cliente autorizou uso no portfolio"
                     : "Cliente recusou uso no portfolio"
-            });
+            };
+            const payloadPedidoFallback = {
+                portfolioConsentStatus: statusFinal,
+                dataAtualizacao: nowIso,
+                ultimaMensagem: statusFinal === 'aprovado'
+                    ? "Cliente autorizou uso no portfolio"
+                    : "Cliente recusou uso no portfolio"
+            };
+            await updatePedidoPortfolioComFallback(pedidoRef, payloadPedidoPrincipal, payloadPedidoFallback);
 
             const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
@@ -6050,7 +6186,13 @@
                 );
             }
 
+            try {
+                if (pedidoAtualData) pedidoAtualData.portfolioConsentStatus = statusFinal;
+            } catch (_) {}
             window.dokeAlert(statusFinal === 'aprovado' ? "Autorizacao enviada ao profissional." : "Recusa enviada ao profissional.");
+            if (String(chatIdAtual || '') === String(id) && String(colecaoAtual || '') === 'pedidos') {
+                carregarMensagens('pedidos', id);
+            }
             if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
         } catch (e) {
             console.error("Erro ao responder solicitacao de portfolio:", e);
@@ -7445,12 +7587,30 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const isPinned = isMsgPinned(msgId);
             const pinLabel = isPinned ? 'Desafixar' : 'Fixar';
             const pinPreview = normalizePinPreview(msgPreview || cleanText || getTipoPreview(m.tipo, cleanText || '', m.url || ''));
+            const actionMsgExtra = (() => {
+                const tipoMsg = String(m.tipo || '').toLowerCase();
+                const mediaTipoInferido = inferMediaTipoByUrl(m.url || '');
+                const isImagem = !!(
+                    m.url &&
+                    (
+                        tipoMsg === 'imagem' ||
+                        mediaTipoInferido === 'imagem' ||
+                        /\.(png|jpe?g|gif|webp|bmp|svg|heic|heif)(?:$|\?)/i.test(String(m.url || ''))
+                    )
+                );
+                if (isImagem) {
+                    const nomeSug = cleanText || m.mediaName || 'imagem_doke';
+                    return `<button onclick="salvarImagemMensagem('${enc(m.url)}','${enc(nomeSug)}')">Salvar imagem <i class='bx bx-download'></i></button>`;
+                }
+                if (tipoMsg === 'audio') return '';
+                return `<button onclick="copiarMensagem('${enc(cleanText)}')">Copiar <i class='bx bx-copy'></i></button>`;
+            })();
             const menuBtn = "";
             const menuHtml = msgId
                 ? `<div class="msg-menu ${menuSide}" id="${menuId}">
                         <div class="menu-title">${horaMsg || 'Agora'}</div>
                         <button onclick="togglePinMessage('${msgId}', '${enc(pinPreview)}', '${enc(m.tipo || 'texto')}')">${pinLabel} <i class='bx bx-pin'></i></button>
-                        ${m.tipo === 'audio' ? '' : `<button onclick="copiarMensagem('${enc(cleanText)}')">Copiar <i class='bx bx-copy'></i></button>`}
+                        ${actionMsgExtra}
                         ${souEu ? `<button class="danger" onclick="excluirMensagem('${msgId}')">Apagar mensagem <i class='bx bx-trash'></i></button>` : ""}
                    </div>`
                 : "";
@@ -7616,7 +7776,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             else if (m.tipo === 'solicitacao_portfolio') {
                 if (latestSolicitacaoPortfolioId && msgId && msgId !== latestSolicitacaoPortfolioId) return;
                 const souClientePedido = pedidoAtualData && String(getDeUid(pedidoAtualData) || '') === String(currentUserUid || '');
-                const statusReq = String(m.status || '').toLowerCase() || String((pedidoAtualData && pedidoAtualData.portfolioConsentStatus) || '').toLowerCase() || 'pendente';
+                const pedidoConsent = String((pedidoAtualData && pedidoAtualData.portfolioConsentStatus) || '').toLowerCase();
+                const statusMsg = String(m.status || '').toLowerCase();
+                const statusReq = (pedidoConsent && pedidoConsent !== 'pendente')
+                    ? pedidoConsent
+                    : (statusMsg || pedidoConsent || 'pendente');
                 const mediaType = m.mediaType || inferMediaTipoByUrl(m.mediaUrl || m.url || "");
                 const mediaUrl = m.mediaUrl || m.url || "";
                 const mediaHtml = mediaUrl
@@ -7643,6 +7807,9 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     <div style="display:flex; align-items:center; justify-content:center; gap:8px; font-weight:800; color:#0f172a;">
                         <i class='bx bx-collection' style="color:#0b7768; font-size:1.3rem;"></i>
                         Autorizacao para portfolio
+                        <button type="button" onclick="explicarPortfolio(event)" title="O que é o portfólio?" style="border:none; background:#eef6ff; color:#1f4d75; width:22px; height:22px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; padding:0;">
+                            <i class='bx bx-help-circle' style="font-size:1rem;"></i>
+                        </button>
                     </div>
                     <div style="margin-top:6px; color:#475569; font-size:0.9rem;">O profissional quer usar esta midia no portfolio.</div>
                     <div style="margin-top:10px;">${mediaHtml}</div>

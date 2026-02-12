@@ -152,6 +152,7 @@
       ".modal-detalhes",
       ".modal-disputa",
       ".dp-xmodal.open",
+      ".custom-alert-overlay.active",
       ".swal2-container",
       "[data-modal-open='1']"
     ];

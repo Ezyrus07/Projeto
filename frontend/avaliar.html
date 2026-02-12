@@ -16,7 +16,20 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260207v26"></script>
 <style>
-        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
+        body[data-page="avaliar"] {
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
+            display: block !important;
+            min-height: 100dvh;
+            overflow-y: auto !important;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
+            padding-top: calc(var(--doke-h, var(--navbar-height-mobile)) + 14px) !important;
+            padding-bottom: calc(var(--doke-btm-real, 66px) + 22px + env(safe-area-inset-bottom)) !important;
+        }
+        body[data-page="avaliar"] main{
+            padding-top: 0 !important;
+            padding-bottom: calc(var(--doke-btm-real, 66px) + 26px + env(safe-area-inset-bottom)) !important;
+        }
 
         @media (min-width: 1024px) {
             main { margin-left: 270px; padding: 40px; max-width: 900px; margin: 0 auto; }
@@ -72,14 +85,35 @@
         .cc-rating-area {
             display: flex; gap: 5px; background: #f8f9fa;
             padding: 8px 15px; border-radius: 30px; border: 1px solid #eef2f6;
+            align-items: center;
         }
         .overall-card .cc-rating-area { justify-content: center; gap: 8px; }
         .overall-card .star-btn { font-size: 1rem; padding: 8px 12px; }
+        .cc-rating-area.cc-rating-area-text{
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            width: 100%;
+            gap: 6px;
+            padding: 6px;
+        }
+        .cc-rating-area.cc-rating-area-text .star-btn{
+            width: 100%;
+            min-width: 0;
+            padding: 8px 6px;
+            border-radius: 16px;
+        }
         
         .star-btn {
             font-size: 0.8rem; font-weight: 600; color: #999; cursor: pointer;
             padding: 6px 12px; border-radius: 20px; transition: all 0.2s ease;
             border: 1px solid transparent;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.15;
+            min-height: 34px;
+            user-select: none;
         }
         .star-btn:hover { background: #e0e0e0; }
 
@@ -141,6 +175,16 @@
         @media (max-width: 768px) {
             .cc-header { flex-direction: column; align-items: flex-start; }
             .cc-rating-area { width: 100%; justify-content: space-between; }
+            .cc-rating-area.cc-rating-area-text{
+                justify-content: initial;
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                gap: 4px;
+                padding: 6px 5px;
+            }
+            .cc-rating-area.cc-rating-area-text .star-btn{
+                font-size: 0.74rem;
+                padding: 8px 4px;
+            }
             .btn-toggle-comment { position: absolute; top: 20px; right: 20px; }
         }
 
@@ -221,7 +265,7 @@
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
-<body>
+<body data-page="avaliar">
 <header class="navbar-mobile">
 <div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="height: 25px;"/></a></div>
 </header>
@@ -365,7 +409,7 @@
                         <div class="criteria-card" id="card-${c.id}">
                             <div class="cc-header">
                                 <div class="cc-label"><i class='bx ${c.icon}'></i> ${c.label}</div>
-                                <div class="cc-rating-area">
+                                <div class="cc-rating-area cc-rating-area-text">
                                     <span class="star-btn" data-val="1" onclick="setRating('${c.id}', 1, this)">Péssimo</span>
                                     <span class="star-btn" data-val="2" onclick="setRating('${c.id}', 2, this)">Ruim</span>
                                     <span class="star-btn" data-val="3" onclick="setRating('${c.id}', 3, this)">Regular</span>
