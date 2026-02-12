@@ -79,6 +79,14 @@
   let dpPubSelectedIds = new Set();
   let dpPubVisibleIds = [];
   let dpPubCtx = null;
+  let dpReelSelectMode = false;
+  let dpReelSelectedIds = new Set();
+  let dpReelVisibleIds = [];
+  let dpReelCtx = null;
+  let dpSvcSelectMode = false;
+  let dpSvcSelectedIds = new Set();
+  let dpSvcVisibleIds = [];
+  let dpSvcCtx = null;
   function placeProfileActionsForMobile(){
     const rootEl = $("#dpRoot");
     if(!rootEl) return;
@@ -568,7 +576,7 @@
     dd.innerHTML = `
       <a href="#" id="dpMenuViewAs"><span></span> Ver como cliente</a>
       <a href="tornar-profissional.html" id="dpMenuBecomePro"><span></span> Quero ser Profissional</a>
-      <a href="anunciar.html" id="dpMenuAds"><span></span> Gerenciar anúncios</a>
+      <a href="anunciar.html" id="dpMenuAds"><span></span> Novo anúncio</a>
       <hr/>
       <button type="button" id="dpMenuLogout"><span></span> Sair</button>
     `;
@@ -603,6 +611,13 @@
         const dest = isPro ? "perfil-profissional.html" : "perfil-cliente.html";
         window.location.href = `${dest}?id=${encodeURIComponent(id)}`;
       };
+    }
+
+    const adsLink = $("#dpMenuAds", menu);
+    if(adsLink){
+      const canPublish = !!(ctx?.canEdit && isProfissionalUsuario(ctx?.me));
+      adsLink.style.display = canPublish ? "flex" : "none";
+      adsLink.setAttribute("href", canPublish ? "anunciar.html" : "tornar-profissional.html");
     }
 
     $("#dpMenuLogout", menu).onclick = async ()=>{
@@ -1127,6 +1142,395 @@ function ensureTheme(ctx, theme){
     setPublicacoesSelectMode(dpPubSelectMode, { silent: true });
   }
 
+  function setReelsSelectMode(on, opts = {}){
+    dpReelSelectMode = !!on;
+    if(!dpReelSelectMode){
+      dpReelSelectedIds.clear();
+    }
+
+    const grid = $("#dpGridReels");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpReelSelectMode);
+    }
+
+    const btn = $("#dpSelectReelsBtn");
+    if(btn){
+      btn.classList.toggle("is-active", dpReelSelectMode);
+      btn.innerHTML = dpReelSelectMode
+        ? `<i class='bx bx-x'></i> Cancelar`
+        : `<i class='bx bx-check-square'></i> Selecionar`;
+      btn.setAttribute("aria-pressed", dpReelSelectMode ? "true" : "false");
+    }
+
+    const bar = $("#dpReelSelectionBar");
+    if(bar){
+      bar.hidden = !dpReelSelectMode;
+    }
+
+    refreshReelsSelectionUI();
+    if(!opts.silent && !dpReelSelectMode){
+      // Sem toast para não poluir a navegação.
+    }
+  }
+
+  function refreshReelsSelectionUI(){
+    const grid = $("#dpGridReels");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpReelSelectMode);
+      $$(".dp-reelCard[data-reel-id]", grid).forEach((card)=>{
+        const id = String(card.dataset.reelId || "");
+        const isSelected = !!(id && dpReelSelectedIds.has(id));
+        card.classList.toggle("dp-selected", isSelected);
+        card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
+    }
+
+    const count = dpReelSelectedIds.size;
+    const total = dpReelVisibleIds.length;
+    const countEl = $("#dpReelSelectionCount");
+    const deleteBtn = $("#dpReelDeleteSelBtn");
+    const allBtn = $("#dpReelSelectAllBtn");
+    const clearBtn = $("#dpReelClearSelBtn");
+
+    if(countEl){
+      countEl.textContent = count === 1 ? "1 selecionado" : `${count} selecionados`;
+    }
+    if(deleteBtn){
+      deleteBtn.disabled = count < 1;
+    }
+    if(allBtn){
+      allBtn.disabled = total < 1;
+      allBtn.textContent = (total > 0 && count === total) ? "Desmarcar todos" : "Selecionar todos";
+    }
+    if(clearBtn){
+      clearBtn.disabled = count < 1;
+    }
+  }
+
+  function toggleReelSelection(id){
+    const key = String(id || "").trim();
+    if(!key) return;
+    if(dpReelSelectedIds.has(key)){
+      dpReelSelectedIds.delete(key);
+    }else{
+      dpReelSelectedIds.add(key);
+    }
+    refreshReelsSelectionUI();
+  }
+
+  async function deleteSelectedReels(){
+    const ids = Array.from(dpReelSelectedIds).filter(Boolean);
+    if(!ids.length){
+      toast("Selecione ao menos um vídeo curto.");
+      return;
+    }
+    if(!dpReelCtx?.client?.from || !dpReelCtx?.target?.id){
+      toast("Recarregue a página e tente novamente.");
+      return;
+    }
+    const plural = ids.length > 1;
+    if(!confirm(`Excluir ${ids.length} vídeo${plural ? "s" : ""} curto${plural ? "s" : ""} selecionado${plural ? "s" : ""}?`)){
+      return;
+    }
+    const { error } = await dpReelCtx.client
+      .from("videos_curtos")
+      .delete()
+      .in("id", ids);
+    if(error){
+      console.error(error);
+      toast("Erro ao excluir vídeos curtos.");
+      return;
+    }
+
+    setReelsSelectMode(false, { silent: true });
+    toast(plural ? "Vídeos curtos excluídos." : "Vídeo curto excluído.");
+    await loadReels(dpReelCtx.client, dpReelCtx.target.id, dpReelCtx);
+  }
+
+  function ensureReelsSelectionControls(ctx){
+    const section = $('.dp-section[data-tab="reels"]');
+    const header = section ? $(".dp-sectionHeader", section) : null;
+    const canEdit = !!ctx?.canEdit;
+
+    const oldBtn = $("#dpSelectReelsBtn");
+    const oldBar = $("#dpReelSelectionBar");
+
+    if(!canEdit || !section || !header){
+      if(oldBtn) oldBtn.style.display = "none";
+      if(oldBar) oldBar.hidden = true;
+      setReelsSelectMode(false, { silent: true });
+      return;
+    }
+
+    const newBtn = $("#dpNewReel", header);
+    if(!newBtn) return;
+
+    let selectBtn = $("#dpSelectReelsBtn");
+    if(!selectBtn){
+      selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.id = "dpSelectReelsBtn";
+      selectBtn.className = "dp-newBtn dp-selectToggleBtn";
+      newBtn.insertAdjacentElement("afterend", selectBtn);
+    }
+    selectBtn.style.display = "inline-flex";
+
+    if(!selectBtn.dataset.bound){
+      selectBtn.dataset.bound = "1";
+      selectBtn.addEventListener("click", ()=>{
+        setReelsSelectMode(!dpReelSelectMode);
+      });
+    }
+
+    let bar = $("#dpReelSelectionBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "dpReelSelectionBar";
+      bar.className = "dp-pubSelectionBar dp-reelSelectionBar";
+      bar.hidden = true;
+      bar.innerHTML = `
+        <span class="dp-pubSelectionCount" id="dpReelSelectionCount">0 selecionados</span>
+        <div class="dp-pubSelectionActions">
+          <button type="button" id="dpReelSelectAllBtn">Selecionar todos</button>
+          <button type="button" id="dpReelClearSelBtn">Limpar seleção</button>
+          <button type="button" class="danger" id="dpReelDeleteSelBtn" disabled>Excluir selecionados</button>
+        </div>
+      `;
+      header.insertAdjacentElement("afterend", bar);
+    }
+
+    if(!bar.dataset.bound){
+      bar.dataset.bound = "1";
+      $("#dpReelSelectAllBtn", bar)?.addEventListener("click", ()=>{
+        const total = dpReelVisibleIds.length;
+        if(total < 1) return;
+        if(dpReelSelectedIds.size === total){
+          dpReelSelectedIds.clear();
+        }else{
+          dpReelSelectedIds = new Set(dpReelVisibleIds);
+        }
+        refreshReelsSelectionUI();
+      });
+      $("#dpReelClearSelBtn", bar)?.addEventListener("click", ()=>{
+        dpReelSelectedIds.clear();
+        refreshReelsSelectionUI();
+      });
+      $("#dpReelDeleteSelBtn", bar)?.addEventListener("click", deleteSelectedReels);
+    }
+
+    setReelsSelectMode(dpReelSelectMode, { silent: true });
+  }
+
+  function setServicosSelectMode(on, opts = {}){
+    dpSvcSelectMode = !!on;
+    if(!dpSvcSelectMode){
+      dpSvcSelectedIds.clear();
+    }
+
+    const grid = $("#dpGridServicos");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpSvcSelectMode);
+    }
+
+    const btn = $("#dpSelectServicosBtn");
+    if(btn){
+      btn.classList.toggle("is-active", dpSvcSelectMode);
+      btn.innerHTML = dpSvcSelectMode
+        ? `<i class='bx bx-x'></i> Cancelar`
+        : `<i class='bx bx-check-square'></i> Selecionar`;
+      btn.setAttribute("aria-pressed", dpSvcSelectMode ? "true" : "false");
+    }
+
+    const bar = $("#dpServSelectionBar");
+    if(bar){
+      bar.hidden = !dpSvcSelectMode;
+    }
+
+    refreshServicosSelectionUI();
+    if(!opts.silent && !dpSvcSelectMode){
+      // Sem toast para não poluir a navegação.
+    }
+  }
+
+  function refreshServicosSelectionUI(){
+    const grid = $("#dpGridServicos");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpSvcSelectMode);
+      $$(".dp-serviceSelectable[data-service-id]", grid).forEach((card)=>{
+        const id = String(card.dataset.serviceId || "");
+        const isSelected = !!(id && dpSvcSelectedIds.has(id));
+        card.classList.toggle("dp-selected", isSelected);
+        card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
+    }
+
+    const count = dpSvcSelectedIds.size;
+    const total = dpSvcVisibleIds.length;
+    const countEl = $("#dpServSelectionCount");
+    const editBtn = $("#dpServEditSelBtn");
+    const allBtn = $("#dpServSelectAllBtn");
+    const clearBtn = $("#dpServClearSelBtn");
+
+    if(countEl){
+      countEl.textContent = count === 1 ? "1 selecionado" : `${count} selecionados`;
+    }
+    if(editBtn){
+      editBtn.disabled = count !== 1;
+    }
+    if(allBtn){
+      allBtn.disabled = total < 1;
+      allBtn.textContent = (total > 0 && count === total) ? "Desmarcar todos" : "Selecionar todos";
+    }
+    if(clearBtn){
+      clearBtn.disabled = count < 1;
+    }
+  }
+
+  function toggleServicoSelection(id){
+    const key = String(id || "").trim();
+    if(!key) return;
+    if(dpSvcSelectedIds.has(key)){
+      dpSvcSelectedIds.delete(key);
+    }else{
+      dpSvcSelectedIds.add(key);
+    }
+    refreshServicosSelectionUI();
+  }
+
+  function setServicosVisibleIds(ids){
+    dpSvcVisibleIds = Array.from(new Set((Array.isArray(ids) ? ids : []).map((id)=> String(id || "").trim()).filter(Boolean)));
+    dpSvcSelectedIds = new Set(Array.from(dpSvcSelectedIds).filter((id)=> dpSvcVisibleIds.includes(id)));
+    refreshServicosSelectionUI();
+  }
+
+  function openSelectedServicoForEdit(){
+    const ids = Array.from(dpSvcSelectedIds).filter(Boolean);
+    if(ids.length !== 1){
+      toast("Selecione exatamente 1 anúncio para editar.");
+      return;
+    }
+    window.location.href = `anunciar.html?mode=edit&id=${encodeURIComponent(ids[0])}`;
+  }
+
+  function registerServicoSelectableCard(card, servicoId){
+    if(!card) return;
+    const id = String(servicoId || "").trim();
+    if(!id) return;
+
+    card.classList.add("dp-serviceSelectable");
+    card.setAttribute("role", card.getAttribute("role") || "button");
+    if(!card.hasAttribute("tabindex")) card.tabIndex = 0;
+    card.dataset.serviceId = id;
+
+    let marker = $(".dp-itemSelectMark", card);
+    if(!marker){
+      marker = document.createElement("span");
+      marker.className = "dp-itemSelectMark";
+      marker.innerHTML = `<i class='bx bx-check'></i>`;
+      card.appendChild(marker);
+    }
+
+    if(!card.dataset.selectBound){
+      card.dataset.selectBound = "1";
+      card.addEventListener("click", (event)=>{
+        if(!dpSvcSelectMode) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        toggleServicoSelection(id);
+      }, true);
+      card.addEventListener("keydown", (event)=>{
+        if(!dpSvcSelectMode) return;
+        if(event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleServicoSelection(id);
+      });
+    }
+  }
+
+  function ensureServicosSelectionControls(ctx){
+    dpSvcCtx = ctx || dpSvcCtx || null;
+    const section = $('.dp-section[data-tab="servicos"]');
+    const header = section ? $(".dp-sectionHeader", section) : null;
+    const canEdit = !!ctx?.canEdit;
+
+    const oldBtn = $("#dpSelectServicosBtn");
+    const oldBar = $("#dpServSelectionBar");
+
+    if(!canEdit || !section || !header){
+      if(oldBtn) oldBtn.style.display = "none";
+      if(oldBar) oldBar.hidden = true;
+      setServicosSelectMode(false, { silent: true });
+      return;
+    }
+
+    const newBtn = $("#dpNewServico", header);
+    if(!newBtn) return;
+
+    let selectBtn = $("#dpSelectServicosBtn");
+    if(!selectBtn){
+      selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.id = "dpSelectServicosBtn";
+      selectBtn.className = "dp-newBtn dp-selectToggleBtn";
+      newBtn.insertAdjacentElement("afterend", selectBtn);
+    }
+    selectBtn.style.display = "inline-flex";
+
+    if(!selectBtn.dataset.bound){
+      selectBtn.dataset.bound = "1";
+      selectBtn.addEventListener("click", ()=>{
+        setServicosSelectMode(!dpSvcSelectMode);
+      });
+    }
+
+    let bar = $("#dpServSelectionBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "dpServSelectionBar";
+      bar.className = "dp-pubSelectionBar dp-servSelectionBar";
+      bar.hidden = true;
+      bar.innerHTML = `
+        <span class="dp-pubSelectionCount" id="dpServSelectionCount">0 selecionados</span>
+        <div class="dp-pubSelectionActions">
+          <button type="button" id="dpServSelectAllBtn">Selecionar todos</button>
+          <button type="button" id="dpServClearSelBtn">Limpar seleção</button>
+          <button type="button" class="primary" id="dpServEditSelBtn" disabled>Editar anúncio selecionado</button>
+        </div>
+      `;
+      header.insertAdjacentElement("afterend", bar);
+    }
+
+    if(!bar.dataset.bound){
+      bar.dataset.bound = "1";
+      $("#dpServSelectAllBtn", bar)?.addEventListener("click", ()=>{
+        const total = dpSvcVisibleIds.length;
+        if(total < 1) return;
+        if(dpSvcSelectedIds.size === total){
+          dpSvcSelectedIds.clear();
+        }else{
+          dpSvcSelectedIds = new Set(dpSvcVisibleIds);
+        }
+        refreshServicosSelectionUI();
+      });
+      $("#dpServClearSelBtn", bar)?.addEventListener("click", ()=>{
+        dpSvcSelectedIds.clear();
+        refreshServicosSelectionUI();
+      });
+      $("#dpServEditSelBtn", bar)?.addEventListener("click", openSelectedServicoForEdit);
+    }
+
+    setServicosSelectMode(dpSvcSelectMode, { silent: true });
+  }
+
+  try{
+    window.dpEnsureServicosSelectionControls = ensureServicosSelectionControls;
+    window.dpSetServicosVisibleIds = setServicosVisibleIds;
+    window.dpRegisterServicoSelectableCard = registerServicoSelectableCard;
+    window.dpRefreshServicosSelectionUI = refreshServicosSelectionUI;
+    window.dpSetServicosSelectMode = setServicosSelectMode;
+  }catch(_){}
+
   // -----------------------------
   // Sections loaders
   // -----------------------------
@@ -1232,7 +1636,9 @@ function ensureTheme(ctx, theme){
     refreshPublicacoesSelectionUI();
   }
 
-    async function loadReels(client, userId){
+    async function loadReels(client, userId, ctx){
+    dpReelCtx = ctx || dpReelCtx || null;
+    ensureReelsSelectionControls(ctx || dpReelCtx || null);
     const grid = $("#dpGridReels");
     if(!grid) return;
     renderPerfilGridSkeleton(grid, "reels");
@@ -1243,6 +1649,9 @@ function ensureTheme(ctx, theme){
       .order("created_at", { ascending:false })
       .limit(40);
     if(error){
+      dpReelVisibleIds = [];
+      dpReelSelectedIds.clear();
+      refreshReelsSelectionUI();
       if(isMissingTableError(error)){
         grid.innerHTML = `<div class="dp-empty">Nenhum Video curto ainda.</div>`;
         return;
@@ -1252,9 +1661,15 @@ function ensureTheme(ctx, theme){
       return;
     }
     if(!data?.length){
+      dpReelVisibleIds = [];
+      dpReelSelectedIds.clear();
+      refreshReelsSelectionUI();
       grid.innerHTML = `<div class="dp-empty">Sem videos curtos ainda.</div>`;
       return;
     }
+    const canEdit = !!(ctx?.canEdit);
+    dpReelVisibleIds = data.map((item)=> String(item?.id || "")).filter(Boolean);
+    dpReelSelectedIds = new Set(Array.from(dpReelSelectedIds).filter((id)=> dpReelVisibleIds.includes(id)));
     grid.classList.remove("dp-grid--loading");
     grid.innerHTML = "";
     for(const item of data){
@@ -1262,6 +1677,7 @@ function ensureTheme(ctx, theme){
       card.className = "dp-reelCard dp-item dp-item--clickable";
       card.setAttribute("role", "button");
       card.tabIndex = 0;
+      card.dataset.reelId = String(item.id || "");
       card.innerHTML = `
         <div class="dp-reelMedia">
           <video src="${item.video_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} muted loop playsinline preload="metadata"></video>
@@ -1272,16 +1688,30 @@ function ensureTheme(ctx, theme){
           <div class="dp-reelPlay"><i class='bx bx-play'></i></div>
         </div>
       `;
+      if(canEdit){
+        const marker = document.createElement("span");
+        marker.className = "dp-itemSelectMark";
+        marker.innerHTML = `<i class='bx bx-check'></i>`;
+        card.appendChild(marker);
+      }
       const openReel = () => {
         window.location.href = `feed.html?start=sb-${item.id}`;
       };
       card.addEventListener("click", (event) => {
         event.preventDefault();
+        if(canEdit && dpReelSelectMode){
+          toggleReelSelection(item.id);
+          return;
+        }
         openReel();
       });
       card.addEventListener("keydown", (event) => {
         if(event.key === "Enter" || event.key === " "){
           event.preventDefault();
+          if(canEdit && dpReelSelectMode){
+            toggleReelSelection(item.id);
+            return;
+          }
           openReel();
         }
       });
@@ -1291,6 +1721,7 @@ function ensureTheme(ctx, theme){
       }
       grid.appendChild(card);
     }
+    refreshReelsSelectionUI();
   }
 
   async function loadPortfolio(client, profId){
@@ -2045,13 +2476,7 @@ function ensureTheme(ctx, theme){
   async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
     const storageId = ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
-    // Antes x Depois: usa thumb_url como 'depois'
-    if(tipo === 'antes_depois' && afterFile){
-      const upAfter = await uploadToStorage(client, { bucket:'perfil', path:`publicacoes/${storageId}/depois/${crypto.randomUUID()}`, file: afterFile });
-      if(upAfter.error) throw upAfter.error;
-      thumbUrl = upAfter.url;
-    }
-    if(capaFile && tipo !== 'antes_depois'){
+    if(capaFile){
       const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
       if(upCover.error) throw upCover.error;
       thumbUrl = upCover.url;
@@ -2374,12 +2799,49 @@ function ensureTheme(ctx, theme){
     const tabsWrap = $(".dp-tabs");
     const prevNav = $(".dp-tabsPrev");
     const nextNav = $(".dp-tabsNext");
+    const tabsHost = tabsWrap ? (tabsWrap.closest(".dp-tabsWrap") || tabsWrap) : null;
     let sectionsWrap = $(".dp-sections");
 
     const isProOwnerTabs = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     // Esconde aba/section de estatísticas para quem não é o dono profissional
     buttons.forEach(b=>{ if(b.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) b.style.display = "none"; });
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
+
+    let updateTabsHint = ()=>{};
+    if(tabsWrap){
+      const shouldUseHint = ()=>{
+        if(!(prevNav && nextNav)) return true;
+        const prevVisible = prevNav.offsetParent !== null;
+        const nextVisible = nextNav.offsetParent !== null;
+        return !(prevVisible && nextVisible);
+      };
+      if(tabsHost){
+        tabsHost.classList.add("dp-tabsHost");
+      }
+      let hintBtn = tabsHost ? $(".dp-tabsOverflowHint", tabsHost) : null;
+      if(!hintBtn && tabsHost){
+        hintBtn = document.createElement("button");
+        hintBtn.type = "button";
+        hintBtn.className = "dp-tabsOverflowHint";
+        hintBtn.setAttribute("aria-label", "Ver mais abas");
+        hintBtn.innerHTML = `<i class='bx bx-chevron-right'></i>`;
+        hintBtn.hidden = true;
+        hintBtn.addEventListener("click", ()=>{
+          tabsWrap.scrollBy({ left: Math.max(140, Math.round(tabsWrap.clientWidth * 0.6)), behavior: "smooth" });
+        });
+        tabsHost.appendChild(hintBtn);
+      }
+      updateTabsHint = ()=>{
+        if(!hintBtn) return;
+        if(!shouldUseHint()){
+          hintBtn.hidden = true;
+          return;
+        }
+        const maxScroll = Math.max(0, tabsWrap.scrollWidth - tabsWrap.clientWidth);
+        const showRight = maxScroll > 8 && tabsWrap.scrollLeft < (maxScroll - 2);
+        hintBtn.hidden = !showRight;
+      };
+    }
 
     if(tabsWrap && prevNav && nextNav){
       const scrollAmount = () => Math.max(140, Math.round(tabsWrap.clientWidth * 0.6));
@@ -2389,6 +2851,7 @@ function ensureTheme(ctx, theme){
         nextNav.disabled = tabsWrap.scrollLeft >= maxScroll - 1;
         prevNav.style.visibility = "visible";
         nextNav.style.visibility = "visible";
+        updateTabsHint();
       };
 
       prevNav.addEventListener("click", ()=> {
@@ -2400,6 +2863,10 @@ function ensureTheme(ctx, theme){
       tabsWrap.addEventListener("scroll", updateNav, { passive: true });
       window.addEventListener("resize", updateNav);
       updateNav();
+    }else if(tabsWrap){
+      tabsWrap.addEventListener("scroll", updateTabsHint, { passive: true });
+      window.addEventListener("resize", updateTabsHint);
+      updateTabsHint();
     }
 
     if(!sectionsWrap && sections.length){
@@ -2449,6 +2916,12 @@ function ensureTheme(ctx, theme){
       if(tab !== "publicacoes" && dpPubSelectMode){
         setPublicacoesSelectMode(false, { silent: true });
       }
+      if(tab !== "reels" && dpReelSelectMode){
+        setReelsSelectMode(false, { silent: true });
+      }
+      if(tab !== "servicos" && dpSvcSelectMode){
+        setServicosSelectMode(false, { silent: true });
+      }
 
       buttons.forEach(b=> b.classList.toggle("active", b.dataset.tab === tab));
       sections.forEach(s=> {
@@ -2466,8 +2939,14 @@ function ensureTheme(ctx, theme){
         ensurePublicacoesSelectionControls(ctx);
         loadPublicacoes(ctx.client, ctx.target.id, ctx);
       }
-      if(tab === "reels") loadReels(ctx.client, ctx.target.id);
-      if(tab === "servicos") loadServicosPerfil(ctx);
+      if(tab === "reels"){
+        ensureReelsSelectionControls(ctx);
+        loadReels(ctx.client, ctx.target.id, ctx);
+      }
+      if(tab === "servicos"){
+        ensureServicosSelectionControls(ctx);
+        loadServicosPerfil(ctx);
+      }
       if(tab === "portfolio") loadPortfolio(ctx.client, ctx.target.id);
       if(tab === "avaliacoes") loadAvaliacoes(ctx.client, ctx.target);
       if(tab === "estatisticas") initProDashboard(ctx);
@@ -3102,6 +3581,8 @@ if(!rangeSel || !refreshBtn) return;
   // -----------------------------
   function initSectionActions(ctx){
     ensurePublicacoesSelectionControls(ctx);
+    ensureReelsSelectionControls(ctx);
+    ensureServicosSelectionControls(ctx);
     // Novo Publicação
     $("#dpNewPublicacao")?.addEventListener("click", ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
@@ -3159,7 +3640,7 @@ if(!rangeSel || !refreshBtn) return;
             });
             modal.close();
             toast("Video curto publicado!");
-            loadReels(ctx.client, ctx.target.id);
+            loadReels(ctx.client, ctx.target.id, ctx);
             return;
           }
           await createPublicacao(client, ctx, {
@@ -3240,7 +3721,7 @@ if(!rangeSel || !refreshBtn) return;
           });
           modal.close();
           toast("Video curto publicado!");
-          loadReels(ctx.client, ctx.target.id);
+          loadReels(ctx.client, ctx.target.id, ctx);
         }catch(e){
           console.error(e);
           toast("Erro ao publicar.");
@@ -3248,8 +3729,15 @@ if(!rangeSel || !refreshBtn) return;
       }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
     });
 
-   
-    
+    // Novo Serviço (anúncio)
+    $("#dpNewServico")?.addEventListener("click", ()=>{
+      if(!ctx.canEdit) return toast("Apenas no seu perfil.");
+      if(!isProfissionalUsuario(ctx.me)){
+        window.location.href = "tornar-profissional.html";
+        return;
+      }
+      window.location.href = "anunciar.html";
+    });
 
     // Avaliar (cliente no perfil profissional)
     $("#dpWriteAvaliacao")?.addEventListener("click", ()=>{
@@ -3390,9 +3878,16 @@ if(!rangeSel || !refreshBtn) return;
     showIf("#dpAvailabilityRow", allowEdit);
     showIf("#dpNewPublicacao", allowEdit);
     showIf("#dpSelectPublicacoesBtn", allowEdit);
+    showIf("#dpSelectReelsBtn", allowEdit);
+    showIf("#dpSelectServicosBtn", allowEdit);
     showIf("#dpNewServico", allowEdit);
     showIf("#dpNewPortfolio", allowEdit);
     showIf("#dpNewReel", allowEdit);
+    if(!allowEdit){
+      setPublicacoesSelectMode(false, { silent: true });
+      setReelsSelectMode(false, { silent: true });
+      setServicosSelectMode(false, { silent: true });
+    }
     if(rootEl){
       rootEl.setAttribute("data-has-orc", (!isOwner && isPro) ? "1" : "0");
     }
@@ -3498,6 +3993,18 @@ if(!rangeSel || !refreshBtn) return;
     const rootEl = $("#dpRoot");
     // Mostra feedback de carregamento e garante que não fica "branco"
     rootEl?.classList.add("dp-loading");
+    try{
+      $$(".dp-section[data-tab]").forEach((section)=>{
+        const isPublicacoes = String(section.dataset.tab || "").toLowerCase() === "publicacoes";
+        section.style.display = isPublicacoes ? "" : "none";
+        section.classList.toggle("dp-section--hidden", !isPublicacoes);
+        section.setAttribute("aria-hidden", isPublicacoes ? "false" : "true");
+      });
+      const pubGrid = $("#dpGridPublicacoes");
+      if(pubGrid && typeof renderPerfilGridSkeleton === "function"){
+        renderPerfilGridSkeleton(pubGrid, "publicacoes");
+      }
+    }catch(_){}
 
     try{
       const client = mustSupa();
@@ -3673,7 +4180,7 @@ async function loadServicosPerfil(ctx) {
   const grid = document.getElementById("dpGridServicos");
   if (!grid) return;
 
-  try { window.dokeSetupGerenciarBtn && window.dokeSetupGerenciarBtn(ctx); } catch (_) {}
+  try { window.dpEnsureServicosSelectionControls && window.dpEnsureServicosSelectionControls(ctx); } catch (_) {}
 
   // tenta manter o mesmo visual do feed do index
   try { grid.classList.add("lista-cards-premium"); } catch (_) {}
@@ -3722,6 +4229,7 @@ async function loadServicosPerfil(ctx) {
   const donoUid = (ctx && ctx.target && ctx.target.uid) ? ctx.target.uid : (ctx && ctx.targetUid) ? ctx.targetUid : (ctx && ctx.targetId) ? ctx.targetId : null;
 
   if (!client || !client.from || !donoUid) {
+    try { window.dpSetServicosVisibleIds && window.dpSetServicosVisibleIds([]); } catch (_) {}
     grid.innerHTML = `<div class="dp-empty">Não foi possível carregar os serviços.</div>`;
     return;
   }
@@ -3735,6 +4243,7 @@ async function loadServicosPerfil(ctx) {
 
     if (error) {
       console.error("Erro ao carregar serviços:", error);
+      try { window.dpSetServicosVisibleIds && window.dpSetServicosVisibleIds([]); } catch (_) {}
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
       return;
     }
@@ -3746,6 +4255,7 @@ async function loadServicosPerfil(ctx) {
     if (countEl) countEl.textContent = String(anuncios.length || 0);
 
     if (!anuncios.length) {
+      try { window.dpSetServicosVisibleIds && window.dpSetServicosVisibleIds([]); } catch (_) {}
       grid.innerHTML = `<div class="dp-empty">Nenhum serviço publicado.</div>`;
       return;
     }
@@ -3764,6 +4274,15 @@ async function loadServicosPerfil(ctx) {
           if (a.isActive === false) return false;
           return true;
         });
+    if (!listaParaRender.length) {
+      try { window.dpSetServicosVisibleIds && window.dpSetServicosVisibleIds([]); } catch (_) {}
+      grid.innerHTML = `<div class="dp-empty">Nenhum serviço disponível no momento.</div>`;
+      return;
+    }
+    try {
+      const visibleIds = listaParaRender.map((a) => String(a?.id || "")).filter(Boolean);
+      window.dpSetServicosVisibleIds && window.dpSetServicosVisibleIds(visibleIds);
+    } catch (_) {}
 
     // Ordena (mais recentes primeiro) — tenta vários campos
     listaParaRender.sort((a, b) => {
@@ -3788,10 +4307,18 @@ async function loadServicosPerfil(ctx) {
         }
       } catch (_) {}
 
+      try {
+        if (ctx && ctx.canEdit) {
+          window.dpRegisterServicoSelectableCard && window.dpRegisterServicoSelectableCard(card, anuncio && anuncio.id);
+        }
+      } catch (_) {}
+
       grid.appendChild(card);
     });
+    try { window.dpRefreshServicosSelectionUI && window.dpRefreshServicosSelectionUI(); } catch (_) {}
   } catch (e) {
     console.error(e);
+    try { window.dpSetServicosVisibleIds && window.dpSetServicosVisibleIds([]); } catch (_) {}
     grid.innerHTML = `<div class="dp-empty">Erro ao carregar serviços.</div>`;
   }
 }
@@ -3822,12 +4349,12 @@ async function loadServicosPerfil(ctx) {
     }
 
     btn.style.display = "inline-flex";
-    btn.classList.add("dp-manageBtn");
-    btn.innerHTML = `<i class='bx bx-cog'></i> Gerenciar anúncios`;
+    btn.classList.remove("dp-manageBtn");
+    btn.innerHTML = `<i class='bx bx-plus'></i> Novo`;
     btn.onclick = (e)=>{
       e.preventDefault();
       e.stopPropagation();
-      window.dokeOpenGerenciarAnuncios && window.dokeOpenGerenciarAnuncios(ctx);
+      window.location.href = "anunciar.html";
     };
   };
 

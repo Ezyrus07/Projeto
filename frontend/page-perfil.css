@@ -1649,6 +1649,10 @@ body[data-page="perfil"] #dpRoot:not(.dp-ready) .dp-coverActions .dp-btn{
   display: none !important;
 }
 
+body[data-page="perfil"] #dpRoot:not(.dp-ready) .dp-section[data-tab]:not([data-tab="publicacoes"]){
+  display: none !important;
+}
+
 body[data-page="perfil"] #dpRoot .dp-actionsRow{
   width: 100% !important;
   min-width: 0 !important;
@@ -2273,7 +2277,9 @@ body[data-page="perfil"] .dp-selectToggleBtn.is-active{
   color: #be185d !important;
 }
 
-body[data-page="perfil"] .dp-pubSelectionBar{
+body[data-page="perfil"] .dp-pubSelectionBar,
+body[data-page="perfil"] .dp-reelSelectionBar,
+body[data-page="perfil"] .dp-servSelectionBar{
   margin: 8px 0 12px !important;
   padding: 10px 12px !important;
   border: 1px solid #e3ebf5 !important;
@@ -2283,20 +2289,31 @@ body[data-page="perfil"] .dp-pubSelectionBar{
   align-items: center !important;
   justify-content: space-between !important;
   gap: 10px !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  scrollbar-width: none !important;
+}
+
+body[data-page="perfil"] .dp-pubSelectionBar::-webkit-scrollbar,
+body[data-page="perfil"] .dp-reelSelectionBar::-webkit-scrollbar,
+body[data-page="perfil"] .dp-servSelectionBar::-webkit-scrollbar{
+  display: none !important;
 }
 
 body[data-page="perfil"] .dp-pubSelectionCount{
   color: #1f3855 !important;
   font-size: 0.88rem !important;
   font-weight: 700 !important;
+  flex: 0 0 auto !important;
 }
 
 body[data-page="perfil"] .dp-pubSelectionActions{
   display: inline-flex !important;
   align-items: center !important;
   gap: 8px !important;
-  flex-wrap: wrap !important;
+  flex-wrap: nowrap !important;
+  flex: 0 0 auto !important;
 }
 
 body[data-page="perfil"] .dp-pubSelectionActions > button{
@@ -2308,6 +2325,7 @@ body[data-page="perfil"] .dp-pubSelectionActions > button{
   font-size: 0.8rem !important;
   font-weight: 700 !important;
   cursor: pointer !important;
+  white-space: nowrap !important;
 }
 
 body[data-page="perfil"] .dp-pubSelectionActions > button:disabled{
@@ -2320,15 +2338,43 @@ body[data-page="perfil"] .dp-pubSelectionActions > button.danger{
   color: #be185d !important;
 }
 
+body[data-page="perfil"] .dp-pubSelectionActions > button.primary{
+  border-color: rgba(11, 119, 104, 0.35) !important;
+  background: #0b7768 !important;
+  color: #fff !important;
+}
+
+body[data-page="perfil"] .dp-sectionHeader{
+  flex-wrap: nowrap !important;
+}
+
+body[data-page="perfil"] .dp-sectionHeader h2{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+}
+
+body[data-page="perfil"] .dp-sectionHeader .dp-newBtn{
+  flex: 0 0 auto !important;
+}
+
 body[data-page="perfil"] #dpGridPublicacoes.dp-select-mode .dp-item{
   cursor: pointer !important;
 }
 
-body[data-page="perfil"] #dpGridPublicacoes .dp-item{
+body[data-page="perfil"] #dpGridReels.dp-select-mode .dp-reelCard,
+body[data-page="perfil"] #dpGridServicos.dp-select-mode .dp-serviceSelectable{
+  cursor: pointer !important;
+}
+
+body[data-page="perfil"] #dpGridPublicacoes .dp-item,
+body[data-page="perfil"] #dpGridReels .dp-reelCard,
+body[data-page="perfil"] #dpGridServicos .dp-serviceSelectable{
   position: relative !important;
 }
 
-body[data-page="perfil"] #dpGridPublicacoes .dp-itemSelectMark{
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemSelectMark,
+body[data-page="perfil"] #dpGridReels .dp-itemSelectMark,
+body[data-page="perfil"] #dpGridServicos .dp-itemSelectMark{
   position: absolute !important;
   top: 8px !important;
   right: 8px !important;
@@ -2349,22 +2395,56 @@ body[data-page="perfil"] #dpGridPublicacoes .dp-itemSelectMark{
   z-index: 5 !important;
 }
 
-body[data-page="perfil"] #dpGridPublicacoes.dp-select-mode .dp-item .dp-itemSelectMark{
+body[data-page="perfil"] #dpGridPublicacoes.dp-select-mode .dp-item .dp-itemSelectMark,
+body[data-page="perfil"] #dpGridReels.dp-select-mode .dp-reelCard .dp-itemSelectMark,
+body[data-page="perfil"] #dpGridServicos.dp-select-mode .dp-serviceSelectable .dp-itemSelectMark{
   opacity: 1 !important;
   transform: scale(1) !important;
 }
 
-body[data-page="perfil"] #dpGridPublicacoes .dp-item.dp-selected .dp-itemSelectMark{
+body[data-page="perfil"] #dpGridPublicacoes .dp-item.dp-selected .dp-itemSelectMark,
+body[data-page="perfil"] #dpGridReels .dp-reelCard.dp-selected .dp-itemSelectMark,
+body[data-page="perfil"] #dpGridServicos .dp-serviceSelectable.dp-selected .dp-itemSelectMark{
   background: #0b7768 !important;
 }
 
-body[data-page="perfil"] #dpGridPublicacoes .dp-item.dp-selected{
+body[data-page="perfil"] #dpGridPublicacoes .dp-item.dp-selected,
+body[data-page="perfil"] #dpGridReels .dp-reelCard.dp-selected,
+body[data-page="perfil"] #dpGridServicos .dp-serviceSelectable.dp-selected{
   outline: 2px solid rgba(11, 119, 104, 0.85) !important;
   outline-offset: -2px !important;
 }
 
+body[data-page="perfil"] .dp-tabsHost{
+  position: relative !important;
+}
+
+body[data-page="perfil"] .dp-tabsOverflowHint{
+  position: absolute !important;
+  right: 8px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 30px !important;
+  height: 30px !important;
+  border: 1px solid rgba(11, 119, 104, 0.22) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  color: #0b7768 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 6 !important;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12) !important;
+}
+
+body[data-page="perfil"] .dp-tabsOverflowHint[hidden]{
+  display: none !important;
+}
+
 @media (max-width: 760px){
-  body[data-page="perfil"] .dp-pubSelectionBar{
+  body[data-page="perfil"] .dp-pubSelectionBar,
+  body[data-page="perfil"] .dp-reelSelectionBar,
+  body[data-page="perfil"] .dp-servSelectionBar{
     padding: 9px 10px !important;
     gap: 8px !important;
   }
