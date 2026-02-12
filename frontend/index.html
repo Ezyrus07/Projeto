@@ -60,6 +60,12 @@
             -webkit-overflow-scrolling: touch;
         }
         .cat-card { pointer-events: auto; }
+        body[data-page="home"].home-booting .navbar-mobile,
+        body[data-page="home"].home-booting .navbar-desktop,
+        body[data-page="home"].home-booting .doke-mobile-header{
+            opacity: 0 !important;
+            visibility: hidden !important;
+        }
     </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -75,7 +81,7 @@
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
-<body data-page="home">
+<body data-page="home" class="home-booting">
 <a class="skip-link" href="#feedAnuncios">Pular para o conteúdo</a>
 <div class="popup" id="popup">
 <div class="popup-content">
@@ -798,6 +804,19 @@
       document.addEventListener('DOMContentLoaded', recoverPageScroll);
     } else {
       recoverPageScroll();
+    }
+  })();
+</script>
+<script>
+  (function(){
+    const release = () => {
+      try { document.body && document.body.classList.remove('home-booting'); } catch (_) {}
+    };
+    if (document.readyState === 'complete') {
+      setTimeout(release, 120);
+    } else {
+      window.addEventListener('load', () => setTimeout(release, 120), { once: true });
+      setTimeout(release, 1800);
     }
   })();
 </script>

@@ -222,6 +222,38 @@
             white-space:nowrap;
         }
         .filter-btn:hover{ background:#f8fafc; }
+        .bulk-select-bar{
+            display:flex;
+            align-items:center;
+            gap:8px;
+            padding:2px 0;
+        }
+        .bulk-count{
+            font-size:.78rem;
+            font-weight:800;
+            color:#0f172a;
+            white-space:nowrap;
+        }
+        .bulk-btn{
+            border:1px solid #e2e8f0;
+            background:#fff;
+            color:#0f172a;
+            padding:7px 10px;
+            border-radius:10px;
+            font-size:.74rem;
+            font-weight:800;
+            cursor:pointer;
+            white-space:nowrap;
+        }
+        .bulk-btn.bulk-primary{
+            border-color: rgba(11,119,104,0.45);
+            background:#0b7768;
+            color:#fff;
+        }
+        .bulk-btn:disabled{
+            opacity:.55;
+            cursor:not-allowed;
+        }
         .lista-filters-panel{
             margin-top:12px;
             padding:10px;
@@ -270,6 +302,12 @@
         }
         .item-pedido:hover { background-color: #f8fafc; transform: translateY(-1px); }
         .item-pedido.active { background-color: #f0fdf4; border-color: rgba(11,119,104,0.35); box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); }
+        .item-pedido.is-select-mode{ cursor: pointer; }
+        .item-pedido.is-selected{
+            border-color: rgba(11,119,104,.42) !important;
+            box-shadow: 0 14px 30px rgba(11,119,104,.17), 0 0 0 2px rgba(11,119,104,.10) !important;
+            background: linear-gradient(180deg, #ffffff, #eefaf6);
+        }
 
         .status-border-pendente { border-left-color: #ff9800; }
         .status-border-aceito { border-left-color: #2e7d32; }
@@ -305,6 +343,25 @@
         .ip-header .unread-dot{
             white-space: nowrap;
             flex-shrink: 0;
+        }
+        .ip-select-indicator{
+            width:24px;
+            height:24px;
+            min-width:24px;
+            border-radius:999px;
+            border:1px solid #cbd5e1;
+            background:#fff;
+            color:#64748b;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            cursor:pointer;
+            padding:0;
+        }
+        .ip-select-indicator.selected{
+            border-color:#0b7768;
+            background:#0b7768;
+            color:#fff;
         }
         .ip-header .tag-orcamento{
             display:inline-flex;
@@ -389,6 +446,25 @@
         }
         .item-conversa:hover { background-color: #f8fafc; transform: translateY(-1px); }
         .item-conversa.active { background-color: #f0fdf4; border-color: rgba(11,119,104,0.35); box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08); }
+        @media (hover: hover) and (pointer: fine){
+            .item-pedido,
+            .item-conversa{
+                transition: transform .18s ease, box-shadow .22s ease, border-color .2s ease, background-color .2s ease;
+            }
+            .item-pedido:hover,
+            .item-conversa:hover{
+                transform: translateY(-2px);
+                border-color: rgba(11, 119, 104, 0.30);
+                box-shadow: 0 14px 30px rgba(15, 23, 42, 0.14);
+                background: linear-gradient(180deg, #ffffff, #f8fbff);
+            }
+        }
+        .item-context-active{
+            transform: translateY(-2px);
+            border-color: rgba(11, 119, 104, 0.36) !important;
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.16), 0 0 0 2px rgba(11,119,104,.10) !important;
+            background: linear-gradient(180deg, #ffffff, #f4fbfa) !important;
+        }
         .item-conversa img { width: 34px; height: 34px; border-radius: 50%; object-fit: cover; }
         .ic-info { flex: 1; overflow: hidden; display: flex; flex-direction: column; justify-content: center; }
         .ic-nome { font-weight: 600; color: #111; font-size: 0.9rem; }
@@ -1673,6 +1749,7 @@
     }
     #modalFinalizarPedido .modal-box-custom{
         max-height: calc(100vh - 24px);
+        max-height: calc(100svh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
         max-height: calc(100dvh - 24px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
         overflow-y: auto;
         -webkit-overflow-scrolling: touch;
@@ -1681,6 +1758,33 @@
     @media (max-width: 560px) {
         .finalizar-dupla {
             grid-template-columns: 1fr;
+        }
+        #modalFinalizarPedido{
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: calc(env(safe-area-inset-top) + 8px);
+            padding-bottom: max(84px, calc(env(safe-area-inset-bottom) + 16px));
+        }
+        #modalFinalizarPedido .modal-box-custom{
+            width: min(94vw, 460px) !important;
+            max-width: min(94vw, 460px) !important;
+            border-radius: 20px !important;
+            padding: 18px 16px 14px !important;
+            max-height: calc(100svh - 20px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+            overflow-y: auto;
+        }
+        #modalFinalizarPedido .modal-box-custom h3{
+            font-size: clamp(2rem, 6vw, 2.3rem);
+            margin-bottom: 8px;
+        }
+        #modalFinalizarPedido .modal-actions-col{
+            position: sticky;
+            bottom: 0;
+            background: linear-gradient(180deg, rgba(255,255,255,0), #fff 22%);
+            padding-top: 8px;
+        }
+        #modalFinalizarPedido .btn-primary-modal{
+            min-height: 52px;
         }
     }
 
@@ -2276,8 +2380,16 @@
 <input id="inputBuscaLista" placeholder="Buscar por nome ou servi&ccedil;o" type="text"/>
 </div>
 <button class="filter-btn" id="toggleFilters" onclick="toggleListaFilters(event)">
-                        Filtros <i class="bx bx-slider-alt"></i>
+                         Filtros <i class="bx bx-slider-alt"></i>
 </button>
+<button class="filter-btn" id="btnSelecionarPedidos" onclick="iniciarSelecaoPedidos()" style="display:none;">
+                        Selecionar <i class="bx bx-check-square"></i>
+</button>
+<div class="bulk-select-bar" id="pedidosBulkBar" style="display:none;">
+<span class="bulk-count" id="pedidosBulkCount">0 selecionados</span>
+<button class="bulk-btn bulk-primary" id="btnArquivarSelecionados" onclick="arquivarPedidosSelecionados()" type="button">Arquivar</button>
+<button class="bulk-btn" id="btnCancelarSelecaoPedidos" onclick="cancelarSelecaoPedidos()" type="button">Cancelar</button>
+</div>
 </div>
 <div class="lista-filters-panel" id="listaFiltersPanel">
 <div class="pedidos-filtros" id="pedidosFilters">
@@ -2614,6 +2726,8 @@
     let listaBusca = '';
     let chatContatoFotoAtual = '';
     let listaModo = 'ativos';
+    let pedidosSelecaoModo = false;
+    let pedidosSelecionados = new Set();
     let pedidoAtualData = null;
     let conversaArquivadaAtual = false;
     let replyContext = null;
@@ -2782,12 +2896,110 @@
                 const btn = e.target.closest('.pf-btn');
                 if (!btn) return;
                 listaModo = btn.dataset.archive || 'ativos';
+                if (listaModo !== 'ativos' && pedidosSelecaoModo) {
+                    pedidosSelecaoModo = false;
+                    pedidosSelecionados.clear();
+                }
                 toggle.querySelectorAll('.pf-btn').forEach(b => b.classList.toggle('active', b === btn));
                 if (abaAtual === 'pedidos') carregarListaPedidos();
                 else if (window.carregarListaConversas) window.carregarListaConversas();
+                updatePedidosBulkUI();
             });
         }
+        updatePedidosBulkUI();
     }
+
+    function updatePedidosBulkUI(){
+        const btnSelecionar = document.getElementById('btnSelecionarPedidos');
+        const bulkBar = document.getElementById('pedidosBulkBar');
+        const countEl = document.getElementById('pedidosBulkCount');
+        const btnArquivar = document.getElementById('btnArquivarSelecionados');
+        const btnFiltros = document.getElementById('toggleFilters');
+        const emPedidosLista = (abaAtual === 'pedidos' && listaView === 'lista');
+        const acaoModoArquivados = (listaModo === 'arquivados');
+        const podeMostrar = emPedidosLista;
+        if (btnSelecionar) btnSelecionar.style.display = (podeMostrar && !pedidosSelecaoModo) ? 'inline-flex' : 'none';
+        if (bulkBar) bulkBar.style.display = (podeMostrar && pedidosSelecaoModo) ? 'flex' : 'none';
+        if (btnFiltros) btnFiltros.style.display = (podeMostrar && pedidosSelecaoModo) ? 'none' : 'inline-flex';
+        if (countEl) countEl.textContent = `${pedidosSelecionados.size} selecionado${pedidosSelecionados.size === 1 ? '' : 's'}`;
+        if (btnArquivar) btnArquivar.disabled = pedidosSelecionados.size === 0;
+        if (btnArquivar) btnArquivar.textContent = acaoModoArquivados ? 'Desarquivar' : 'Arquivar';
+    }
+
+    function marcarCardsSelecionadosPedidos(){
+        const ids = new Set(Array.from(pedidosSelecionados));
+        document.querySelectorAll('.item-pedido[data-id]').forEach((card) => {
+            const id = String(card.dataset.id || '');
+            const selected = pedidosSelecaoModo && ids.has(id);
+            card.classList.toggle('is-select-mode', pedidosSelecaoModo);
+            card.classList.toggle('is-selected', selected);
+            const mark = card.querySelector('.ip-select-indicator');
+            if (mark) mark.classList.toggle('selected', selected);
+        });
+    }
+
+    window.toggleSelecaoPedido = function(id){
+        const key = String(id || '').trim();
+        if (!pedidosSelecaoModo || !key) return;
+        if (pedidosSelecionados.has(key)) pedidosSelecionados.delete(key);
+        else pedidosSelecionados.add(key);
+        updatePedidosBulkUI();
+        marcarCardsSelecionadosPedidos();
+    };
+
+    window.iniciarSelecaoPedidos = function(){
+        if (abaAtual !== 'pedidos' || listaView !== 'lista') return;
+        pedidosSelecaoModo = true;
+        pedidosSelecionados.clear();
+        const panel = document.getElementById('listaFiltersPanel');
+        if (panel) panel.classList.remove('open');
+        updatePedidosBulkUI();
+        carregarListaPedidos({ silent: true });
+    };
+
+    window.cancelarSelecaoPedidos = function(){
+        pedidosSelecaoModo = false;
+        pedidosSelecionados.clear();
+        updatePedidosBulkUI();
+        carregarListaPedidos({ silent: true });
+    };
+
+    window.arquivarPedidosSelecionados = async function(){
+        const ids = Array.from(pedidosSelecionados);
+        if (!ids.length) return;
+        const desarquivar = (listaModo === 'arquivados');
+        const verbo = desarquivar ? 'Desarquivar' : 'Arquivar';
+        const ok = await window.dokeConfirm(`${verbo} ${ids.length} pedido${ids.length === 1 ? '' : 's'} selecionado${ids.length === 1 ? '' : 's'}?`, verbo);
+        if (!ok) return;
+        try {
+            await Promise.all(ids.map((id) => atualizarArrayUsuario(doc(db, 'pedidos', id), 'arquivadoPor', !desarquivar)));
+            pedidosSelecionados.clear();
+            pedidosSelecaoModo = false;
+            updatePedidosBulkUI();
+            carregarListaPedidos({ silent: true });
+            if (window.dokeToast) window.dokeToast(desarquivar ? 'Pedidos desarquivados.' : 'Pedidos arquivados.');
+        } catch (e) {
+            console.error('Falha ao arquivar pedidos em lote:', e);
+            const msg = desarquivar
+                ? 'Não foi possível desarquivar os pedidos selecionados.'
+                : 'Não foi possível arquivar os pedidos selecionados.';
+            window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
+        }
+    };
+
+    window.handlePedidoCardClick = function(event, idDoc, uidOutro, statusDoc){
+        const id = String(idDoc || '').trim();
+        if (!id) return;
+        const target = event?.target || null;
+        if (target && target.closest && target.closest('button, a, input, textarea, select, label, .bx-trash, .ip-andamento-close')) return;
+        if (pedidosSelecaoModo) {
+            event?.preventDefault?.();
+            event?.stopPropagation?.();
+            window.toggleSelecaoPedido(id);
+            return;
+        }
+        window.abrirChat(id, uidOutro || '', '', '', 'pedidos', statusDoc || 'pendente');
+    };
 
     window.toggleListaFilters = function(ev){
         if (ev) ev.stopPropagation();
@@ -2798,6 +3010,10 @@
 
     window.trocarViewLista = function(view){
         listaView = view || 'lista';
+        if (listaView !== 'lista' && pedidosSelecaoModo) {
+            pedidosSelecaoModo = false;
+            pedidosSelecionados.clear();
+        }
         const toggle = document.getElementById('listaViewToggle');
         if (toggle) {
             toggle.querySelectorAll('.pf-btn').forEach((b) => {
@@ -2817,6 +3033,7 @@
             if (listaPedidos) listaPedidos.style.display = (abaAtual === 'pedidos') ? 'block' : 'none';
             if (listaConversas) listaConversas.style.display = (abaAtual === 'conversas') ? 'block' : 'none';
         }
+        updatePedidosBulkUI();
     };
 
     function formatDateKey(d){
@@ -3613,6 +3830,11 @@
             menu.classList.remove('open');
             menu.innerHTML = '';
         }
+        try {
+            const prev = window.__listaItemMenuActiveCard;
+            if (prev && prev.classList) prev.classList.remove('item-context-active');
+            window.__listaItemMenuActiveCard = null;
+        } catch (_) {}
     }
 
     function garantirMenuItemLista(){
@@ -3625,17 +3847,30 @@
         return menu;
     }
 
-    window.abrirMenuItemLista = function(event, colecao, id, outroUid, isArquivado){
+    window.abrirMenuItemLista = function(event, colecao, id, outroUid, isArquivado, originEl){
         if (event) {
             event.preventDefault?.();
             event.stopPropagation?.();
         }
         if (!colecao || !id) return;
+        try {
+            const prev = window.__listaItemMenuActiveCard;
+            if (prev && prev.classList) prev.classList.remove('item-context-active');
+            const fromArg = originEl && originEl.classList ? originEl : null;
+            const fromEvent = event && event.target && event.target.closest ? event.target.closest('.item-pedido, .item-conversa') : null;
+            const activeCard = fromArg || fromEvent || null;
+            if (activeCard && activeCard.classList) {
+                activeCard.classList.add('item-context-active');
+                window.__listaItemMenuActiveCard = activeCard;
+            } else {
+                window.__listaItemMenuActiveCard = null;
+            }
+        } catch (_) {}
         const menu = garantirMenuItemLista();
         const arquivado = !!isArquivado;
         const silenciado = colecao === 'conversas' ? isContatoSilenciado(outroUid) : false;
         const silenciarLabel = silenciado ? 'Ativar notificações' : 'Silenciar';
-        const archiveLabel = arquivado ? 'Desarquivar' : 'Arquivar';
+        const archiveLabel = arquivado ? 'Mostrar novamente' : 'Ocultar';
         const excluirLabel = colecao === 'conversas' ? 'Excluir contato' : 'Excluir';
 
         let html = `
@@ -3656,8 +3891,19 @@
         menu.classList.add('open');
 
         const rect = menu.getBoundingClientRect();
-        const safeX = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
-        const safeY = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
+        let safeX = Math.max(8, Math.min(x, window.innerWidth - rect.width - 8));
+        let safeY = Math.max(8, Math.min(y, window.innerHeight - rect.height - 8));
+        try {
+            const colunaLista = document.querySelector('.coluna-lista');
+            if (colunaLista) {
+                const b = colunaLista.getBoundingClientRect();
+                const fixedX = Math.max(8, Math.min(b.right - rect.width - 12, window.innerWidth - rect.width - 8));
+                const fixedYBase = b.top + 92;
+                const fixedY = Math.max(8, Math.min(fixedYBase, window.innerHeight - rect.height - 8));
+                safeX = fixedX;
+                safeY = fixedY;
+            }
+        } catch (_) {}
         menu.style.left = `${safeX}px`;
         menu.style.top = `${safeY}px`;
     };
@@ -3884,7 +4130,7 @@
             clearHold();
             holdTimer = setTimeout(() => {
                 holdConsumed = true;
-                const colecao = card.dataset.colecao || 'conversas';
+                const colecao = 'conversas';
                 const id = card.dataset.id || '';
                 const outroUid = card.dataset.outroUid || '';
                 const arquivado = card.dataset.arquivado === '1';
@@ -3893,7 +4139,8 @@
                     colecao,
                     id,
                     outroUid,
-                    arquivado
+                    arquivado,
+                    card
                 );
             }, 520);
         }, { passive: true });
@@ -5211,6 +5458,10 @@
     };
 
     window.trocarAba = function(aba) {
+        if (aba !== 'pedidos' && pedidosSelecaoModo) {
+            pedidosSelecaoModo = false;
+            pedidosSelecionados.clear();
+        }
         abaAtual = aba;
         const btns = document.querySelectorAll('.aba-btn');
         const filtros = document.getElementById('pedidosFilters');
@@ -5238,6 +5489,7 @@
             if (filtrosConversas) filtrosConversas.style.display = 'flex';
             window.carregarListaConversas();
         }
+        updatePedidosBulkUI();
     };
 
     // Detalhes do Pedido
@@ -6300,9 +6552,6 @@ window.confirmarFinalizacaoPedido = async () => {
                     ? `<i class='bx bx-trash' style="color:#e74c3c; cursor:pointer; font-size:1.1rem;" onclick="event.stopPropagation(); apagarDocumentoPedido('${id}')"></i>` : "";
                 const updatedPedido = p.dataAtualizacao || p.dataPedido || p.createdat || null;
                 const unreadHtml = isNaoLido(updatedPedido, 'pedidos', id) ? '<span class="unread-dot"></span>' : "";
-                const archiveBtn = isArquivado
-                    ? `<button class="archive-btn" title="Desarquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('pedidos', '${id}', false)"><i class='bx bx-undo'></i></button>`
-                    : `<button class="archive-btn" title="Arquivar" onclick="event.stopPropagation(); toggleArquivamentoItem('pedidos', '${id}', true)"><i class='bx bx-archive'></i></button>`;
 
                 // Info Saldo (Visual Clean Solicitado)
                 let infoSaldo = (papelReal === 'profissional' && p.status === 'pago') ? `
@@ -6385,6 +6634,10 @@ window.confirmarFinalizacaoPedido = async () => {
                         </div>`;
                     }
                 }
+                const isSelectedPedido = pedidosSelecaoModo && pedidosSelecionados.has(String(id));
+                const selectMarker = pedidosSelecaoModo
+                    ? `<button class="ip-select-indicator ${isSelectedPedido ? 'selected' : ''}" title="${isSelectedPedido ? 'Desmarcar' : 'Selecionar'}" onclick="event.stopPropagation(); toggleSelecaoPedido('${id}')"><i class='bx ${isSelectedPedido ? 'bx-check' : 'bx-circle'}'></i></button>`
+                    : '';
 
                 const agendaDate = parseAgendaDate(p);
                 const agendaKey = agendaDate ? formatDateKey(agendaDate) : '';
@@ -6403,13 +6656,13 @@ window.confirmarFinalizacaoPedido = async () => {
                 }
 
                 const rowHtml = `
-                    <div class="item-pedido tipo-pedido status-border-${p.status}">
-                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div class="ip-header-actions">${unreadHtml}${archiveBtn}${bApagar}${badgeHtml}</div></div>
+                    <div class="item-pedido tipo-pedido status-border-${p.status} ${pedidosSelecaoModo ? 'is-select-mode' : ''} ${isSelectedPedido ? 'is-selected' : ''}" data-colecao="pedidos" data-id="${id}" data-outro-uid="${outroUid || ''}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handlePedidoCardClick(event, '${id}', '${outroUid || ''}', '${p.status}')">
+                        <div class="ip-header"><span class="tag-orcamento">ORÇAMENTO</span><div class="ip-header-actions">${selectMarker}${unreadHtml}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user">
                             <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                             <span>${dU.user || 'Usuário'}</span>
                         </div>
-                        <div class="ip-body" onclick="abrirChat('${id}', '${outroUid || ''}', '', '', 'pedidos', '${p.status}')">
+                        <div class="ip-body">
                             <h4>${p.servicoReferencia}</h4>
                             ${subMsg}
                             ${cardAndamento}
@@ -6429,6 +6682,8 @@ window.confirmarFinalizacaoPedido = async () => {
                 container.innerHTML = htmlOut;
                 container.dataset.sig = sig;
             }
+            marcarCardsSelecionadosPedidos();
+            updatePedidosBulkUI();
             if (pedidosFieldsDirty) restartPedidosRealtime();
             else if (!pedidosRealtimeUnsubs.length) startPedidosRealtime();
         } catch (e) {
@@ -6547,7 +6802,6 @@ window.confirmarFinalizacaoPedido = async () => {
                       const silenciado = isContatoSilenciado(outroUid);
                       const unreadHtml = (!silenciado && isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id)) ? '<span class="unread-dot"></span>' : "";
                       const mutedHtml = silenciado ? `<span class="muted-badge" title="Contato silenciado"><i class='bx bx-bell-off'></i></span>` : "";
-                      const archiveBtn = `<button class="archive-btn" title="Opções" onclick="event.stopPropagation(); abrirMenuItemLista(event, 'conversas', '${it.id}', '${outroUid}', ${isArquivado ? 'true' : 'false'})"><i class='bx bx-archive'></i></button>`;
                       container.insertAdjacentHTML('beforeend', `
                         <div class="item-conversa" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="abrirChat('${it.id}', '${outroUid}', '', '', 'conversas', '')" oncontextmenu="abrirMenuItemLista(event, 'conversas', '${it.id}', '${outroUid}', ${isArquivado ? 'true' : 'false'}); return false;">
                           <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
@@ -6555,7 +6809,7 @@ window.confirmarFinalizacaoPedido = async () => {
                             <div class="ic-nome">${u.user || 'Usuário'}</div>
                             <div class="ic-msg">${previewText}</div>
                           </div>
-                          <div class="ic-meta">${unreadHtml}${mutedHtml}${archiveBtn}</div>
+                          <div class="ic-meta">${unreadHtml}${mutedHtml}</div>
                         </div>`);
                   }
               }
@@ -7066,9 +7320,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const isPinned = isMsgPinned(msgId);
             const pinLabel = isPinned ? 'Desafixar' : 'Fixar';
             const pinPreview = normalizePinPreview(msgPreview || cleanText || getTipoPreview(m.tipo, cleanText || '', m.url || ''));
-            const menuBtn = msgId
-                ? `<button class="msg-menu-btn" title="Opções" onclick="toggleMsgMenu('${msgId}', event)"><i class='bx bx-dots-vertical-rounded'></i></button>`
-                : "";
+            const menuBtn = "";
             const menuHtml = msgId
                 ? `<div class="msg-menu ${menuSide}" id="${menuId}">
                         <div class="menu-title">${horaMsg || 'Agora'}</div>
