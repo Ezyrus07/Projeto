@@ -4,16 +4,16 @@
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Finalizar Pagamento | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260207v26"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <style>
         /* ======================================================
@@ -349,7 +349,7 @@
     const { initializeApp } = window;
     const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc } = window;
 
-    // Suas configuraÃ§Ãµes
+    // Suas configurações
     const firebaseConfig = {
         apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
         authDomain: "doke-site.firebaseapp.com",
@@ -362,7 +362,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // VariÃ¡vel global para armazenar o valor numÃ©rico correto
+    // Variável global para armazenar o valor numérico correto
     let valorGlobalParaSalvar = 0;
 
     const resumoDefaults = {
@@ -494,7 +494,7 @@
         }
     };
 
-    // FunÃ§Ã£o de abas (CartÃ£o/Pix)
+    // Função de abas (Cartão/Pix)
     window.mudarMetodo = (metodo) => {
         document.querySelectorAll('.tab-method').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.credit-card-form, .pix-area').forEach(f => f.classList.remove('active'));
@@ -526,15 +526,15 @@
         let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas') || pagamentoTemp.parcelas) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
-        // Remove tudo que nÃ£o for nÃºmero ou vÃ­rgula
+        // Remove tudo que não for número ou vírgula
         let valorLimpo = valorBruto.replace(/[^\d,]/g, ''); 
-        // Se tiver vÃ­rgula, troca por ponto para o JS entender
+        // Se tiver vírgula, troca por ponto para o JS entender
         valorLimpo = valorLimpo.replace(',', '.');
         
-        // Corrige caso o nÃºmero venha sem centavos (ex: "23" vira 23)
+        // Corrige caso o número venha sem centavos (ex: "23" vira 23)
         // Mas se vier "23.00" (milhar) precisa tratar. 
-        // Assumindo padrÃ£o brasileiro: ultimos 2 digitos sÃ£o centavos se tiver pontuaÃ§Ã£o?
-        // SimplificaÃ§Ã£o: Se o valor veio do prompt do script.js, ele estÃ¡ formatado como "23,00".
+        // Assumindo padrão brasileiro: ultimos 2 digitos são centavos se tiver pontuação?
+        // Simplificação: Se o valor veio do prompt do script.js, ele está formatado como "23,00".
         
         valorGlobalParaSalvar = parseFloat(valorLimpo);
         if (isNaN(valorGlobalParaSalvar)) valorGlobalParaSalvar = 0;
@@ -557,7 +557,7 @@
             }
         }
 
-        // Atualiza botÃ£o
+        // Atualiza botão
         const btnConfirmar = document.getElementById('btn-finalizar');
         if (btnConfirmar) {
             btnConfirmar.innerHTML = `Pagar ${valorFormatado}`;
@@ -579,11 +579,11 @@
             catch (e) { perfilLocal = {}; }
             const logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilLocal.user || !!perfilLocal.nome || !!perfilLocal.foto;
             if (logado) return true;
-            if (!window.sb?.auth?.getSession) return false;
+            if (!window.sb?.auth?.getUser) return false;
             try {
-                const { data, error } = await window.sb.auth.getSession();
+                const { data, error } = await window.sb.auth.getUser();
                 if (error) return false;
-                const user = data?.session?.user || null;
+                const user = data?.user || null;
                 if (!user) return false;
                 const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario");
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify({
@@ -773,7 +773,7 @@
             }
         }
 
-        // MÃ¡scaras visuais do cartÃ£o
+        // Máscaras visuais do cartão
         document.getElementById('cardNumber')?.addEventListener('input', (e) => {
             let v = e.target.value.replace(/\D/g, '');
             v = v.replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -788,13 +788,13 @@
             e.target.value = e.target.value.replace(/\D/g, '');
         });
 
-        // --- LÃ“GICA DE CONFIRMAÃ‡ÃƒO DE PAGAMENTO ---
+        // --- LÓGICA DE CONFIRMAÇÃƒO DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
         if (!btnFinalizar) return;
         btnFinalizar.addEventListener('click', async () => {
             const pedidoId = params.get('pedidoId');
             
-            // 1. ValidaÃ§Ã£o ANTES de mostrar loading
+            // 1. Validação ANTES de mostrar loading
             if (!pedidoId) {
                 alert("Erro cr\u00EDtico: ID do pedido n\u00E3o encontrado. Volte ao chat e tente novamente.");
                 return;
@@ -805,7 +805,7 @@
                 return;
             }
 
-            // ValidaÃ§Ã£o simples de campos do cartÃ£o (se a aba cartÃ£o estiver ativa)
+            // Validação simples de campos do cartão (se a aba cartão estiver ativa)
             const abaCartaoAtiva = document.getElementById('tab-cartao').classList.contains('active');
             if (abaCartaoAtiva) {
                 const num = document.getElementById('cardNumber').value;
@@ -824,14 +824,14 @@
             const subTexto = document.getElementById('subTextoStatus');
 
             overlay.style.display = 'flex';
-            circulo.style.display = 'block'; // Garante que o spinner apareÃ§a
+            circulo.style.display = 'block'; // Garante que o spinner apareça
             icone.style.display = 'none';
             texto.innerText = "Processando Pagamento...";
             texto.style.color = "var(--cor2)";
             subTexto.innerText = "Por favor, n\u00E3o feche esta janela.";
 
             try {
-                // Simula processamento bancÃ¡rio
+                // Simula processamento bancário
                 await new Promise(r => setTimeout(r, 2000));
 
                 // 3. Atualiza no Firebase
@@ -857,9 +857,9 @@
                 subTexto.innerText = "O profissional j\u00E1 foi notificado. Redirecionando para o chat...";
 
                 try {
-                    if (window.sb?.auth?.getSession) {
-                        const { data } = await window.sb.auth.getSession();
-                        const user = data?.session?.user || null;
+                    if (window.sb?.auth?.getUser) {
+                        const { data } = await window.sb.auth.getUser();
+                        const user = data?.user || null;
                         if (user) {
                             localStorage.setItem('usuarioLogado', 'true');
                             if (!localStorage.getItem('doke_uid')) localStorage.setItem('doke_uid', user.id || '');
@@ -883,6 +883,18 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+

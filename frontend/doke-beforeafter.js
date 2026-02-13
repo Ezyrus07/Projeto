@@ -1,4 +1,4 @@
-/* DOKE Antes x Depois (shared enhancer) */
+﻿/* DOKE Antes x Depois (shared enhancer) */
 (function () {
   // Flag global para desativar alternâncias antigas (setInterval) e expor enhancer
   try { window.__DOKE_BA = true; } catch (_) {}
@@ -235,3 +235,6 @@
 
   try { mo.observe(document.documentElement, { subtree: true, childList: true }); } catch (_) {}
 })();
+
+
+

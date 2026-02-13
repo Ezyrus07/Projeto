@@ -1,4 +1,4 @@
-/* Doke - Comunidades Enhancements
+﻿/* Doke - Comunidades Enhancements
    - Paginação/infinite scroll
    - Busca com debounce
    - Ordenação + filtro de privacidade
@@ -185,7 +185,7 @@
           <div class="com-avatar">${avatarHtml}</div>
           <div class="com-info">
             <div class="com-title">${escapeHtml(nome)}</div>
-            <div class="com-desc">${escapeHtml(desc).slice(0, 140)}${toText(desc).length>140?'…':''}</div>
+            <div class="com-desc">${escapeHtml(desc).slice(0, 140)}${toText(desc).length>140?'â€¦':''}</div>
             <div class="com-meta">
               <span class="pill">${escapeHtml(tipo)}</span>
               <span class="pill">${priv}</span>
@@ -498,3 +498,5 @@
     init();
   }
 })();
+
+

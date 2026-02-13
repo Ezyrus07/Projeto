@@ -1,5 +1,53 @@
-// DOKE - Firestore compat on top of Supabase (bridge for legacy code)
+﻿// DOKE - Firestore compat on top of Supabase (bridge for legacy code)
 (function(){
+  const DOWN_KEY = "doke_supa_down_until";
+  const READ_TIMEOUT_MS = 9000;
+
+  function isSupaTemporarilyDown(){
+    try{
+      const until = Number(sessionStorage.getItem(DOWN_KEY) || 0);
+      return Number.isFinite(until) && until > Date.now();
+    }catch(_e){
+      return false;
+    }
+  }
+
+  function markSupaTemporarilyDown(ms){
+    try{
+      const ttl = Math.max(10000, Number(ms) || 120000);
+      sessionStorage.setItem(DOWN_KEY, String(Date.now() + ttl));
+    }catch(_e){}
+  }
+
+  function looksLikeNetworkOrCorsError(err){
+    if (!err) return false;
+    const code = String(err.code || "").toLowerCase();
+    const msg = String(err.message || err.details || err.hint || "").toLowerCase();
+    return (
+      code === "" ||
+      msg.includes("aborterror") ||
+      msg.includes("failed to fetch") ||
+      msg.includes("cors") ||
+      msg.includes("network") ||
+      msg.includes("request was aborted") ||
+      msg.includes("timeout")
+    );
+  }
+
+  async function withTimeout(promise, ms, tag){
+    let timer = null;
+    try{
+      return await Promise.race([
+        promise,
+        new Promise((_, reject) => {
+          timer = setTimeout(() => reject(new Error(tag || "timeout_supabase_compat")), ms || READ_TIMEOUT_MS);
+        })
+      ]);
+    }finally{
+      if (timer) clearTimeout(timer);
+    }
+  }
+
   function isClient(obj){
     return obj && typeof obj.from === "function";
   }
@@ -285,6 +333,7 @@
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!q || !q.table) return makeQuerySnap([]);
+    if (isSupaTemporarilyDown()) return makeQuerySnap([]);
     const clauses = (q.clauses || []);
     const whereClauses = clauses.filter(c => c && c.kind === "where");
     const orderClauses = clauses.filter(c => c && c.kind === "orderBy");
@@ -348,12 +397,17 @@
         r = r.order(o.field, { ascending: asc });
       }
       if (Number.isFinite(limitN)) r = r.limit(limitN);
-      return await r;
+      return await withTimeout(r, READ_TIMEOUT_MS, `timeout_supabase_getdocs_${String(q.table || "unknown")}`);
     };
 
     let lastErr = null;
     for (const fk of fkCandidates) {
-      let result = await execQuery(orderClauses, fk);
+      let result = null;
+      try {
+        result = await execQuery(orderClauses, fk);
+      } catch (e) {
+        result = { data: null, error: e };
+      }
       if (result.error && orderClauses.length) {
         const original = orderClauses[0];
         if (isMissingColumnOrderError(result.error, original.field)) {
@@ -362,7 +416,12 @@
           for (const candidate of fallbacks) {
             if (!candidate) continue;
             const retryOrders = [{ ...original, field: candidate }, ...orderClauses.slice(1)];
-            const retry = await execQuery(retryOrders, fk);
+            let retry = null;
+            try {
+              retry = await execQuery(retryOrders, fk);
+            } catch (e) {
+              retry = { data: null, error: e };
+            }
             if (!retry.error) {
               result = retry;
               orderErr = null;
@@ -375,6 +434,10 @@
       }
 
       if (result.error) {
+        if (looksLikeNetworkOrCorsError(result.error)) {
+          markSupaTemporarilyDown();
+          return makeQuerySnap([]);
+        }
         if (fk && shouldTryNextFk(result.error)) {
           lastErr = result.error;
           continue;
@@ -385,6 +448,10 @@
       return makeQuerySnap(result.data);
     }
     if (lastErr) {
+      if (looksLikeNetworkOrCorsError(lastErr)) {
+        markSupaTemporarilyDown();
+        return makeQuerySnap([]);
+      }
       if (shouldReturnEmpty(lastErr)) return makeQuerySnap([]);
       throw lastErr;
     }
@@ -395,6 +462,7 @@
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return makeDocSnap(null);
+    if (isSupaTemporarilyDown()) return makeDocSnap(null);
 
     const parent = (ref && ref.parent && ref.parent.id) ? ref.parent : null;
     const fks = parent ? ((parent.fks && parent.fks.length) ? parent.fks : (parent.fk ? [parent.fk] : [])) : [];
@@ -406,8 +474,24 @@
       let q = client.from(ref.table).select("*").eq("id", ref.id);
       if (parent && parent.id && fk) q = q.eq(fk, parent.id);
 
-      const { data, error } = await q.maybeSingle();
+      let data = null;
+      let error = null;
+      try {
+        const res = await withTimeout(
+          q.maybeSingle(),
+          READ_TIMEOUT_MS,
+          `timeout_supabase_getdoc_${String(ref.table || "unknown")}`
+        );
+        data = res?.data || null;
+        error = res?.error || null;
+      } catch (e) {
+        error = e;
+      }
       if (error) {
+        if (looksLikeNetworkOrCorsError(error)) {
+          markSupaTemporarilyDown();
+          return makeDocSnap(null);
+        }
         if (isMissingColumnError(error) && fk) {
           lastErr = error;
           continue;
@@ -418,6 +502,10 @@
       return makeDocSnap(data);
     }
     if (lastErr) {
+      if (looksLikeNetworkOrCorsError(lastErr)) {
+        markSupaTemporarilyDown();
+        return makeDocSnap(null);
+      }
       if (shouldReturnEmpty(lastErr)) return makeDocSnap(null);
       throw lastErr;
     }
@@ -582,7 +670,11 @@
           if (active) cb(snap);
         }
       } catch (e) {
-        if (active) console.error(e);
+        if (looksLikeNetworkOrCorsError(e)) {
+          markSupaTemporarilyDown();
+        } else if (active) {
+          console.error(e);
+        }
       } finally {
         inFlight = false;
         schedule(pollMs);
@@ -653,3 +745,5 @@
 
   console.log("[DOKE] Firestore compat carregado.");
 })();
+
+

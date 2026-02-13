@@ -1,4 +1,4 @@
-/* Doke Delight (safe add-on)
+﻿/* Doke Delight (safe add-on)
    - Toast
    - Confetti (CSS-only)
    - Autosave rascunho do anúncio (sem fotos)
@@ -54,7 +54,7 @@
       ensureRoot();
       const t = document.createElement('div');
       t.className = 'doke-toast';
-      t.innerHTML = `<span>✨ ${escapeHtml(msg||'Feito!')}</span>${sub?`<span class="mini">${escapeHtml(sub)}</span>`:''}<button type="button" aria-label="Fechar">×</button>`;
+      t.innerHTML = `<span>âœ¨ ${escapeHtml(msg||'Feito!')}</span>${sub?`<span class="mini">${escapeHtml(sub)}</span>`:''}<button type="button" aria-label="Fechar">×</button>`;
       t.querySelector('button').onclick = ()=>t.remove();
       document.body.appendChild(t);
       setTimeout(()=>{ if(t && t.parentNode) t.remove(); }, 5200);
@@ -216,10 +216,10 @@
         }
       }
 
-      window.dokeDelight.toast('Rascunho restaurado', 'Você não perdeu seu trabalho ✅');
+      window.dokeDelight.toast('Rascunho restaurado', 'Você não perdeu seu trabalho âœ…');
     }
 
-    // restaura (apenas se NÃO for edit, pra não sobrescrever dados do banco)
+    // restaura (apenas se NÃƒO for edit, pra não sobrescrever dados do banco)
     if(!isEdit){
       const raw = localStorage.getItem(key);
       if(raw) restore(raw);
@@ -244,3 +244,5 @@
 
   document.addEventListener('DOMContentLoaded', autosaveInit);
 })();
+
+

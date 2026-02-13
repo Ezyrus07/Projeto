@@ -1,4 +1,4 @@
-
+﻿
 /* Doke - Negócios (home) - mantém o layout do index e só troca dados/fluxo */
 (function(){
   if (window.__dokeNegociosHomeLoaded) return;
@@ -179,7 +179,7 @@
 
     const thumb = hasImg
       ? el("img", { src: imgSrc, alt: n.nome, loading:"lazy", class:"anuncio-thumb-img" })
-      : el("div", { class:"anuncio-thumb-placeholder" }, [ el("span", { class:"anuncio-thumb-emoji" }, ["🏪"]) ]);
+      : el("div", { class:"anuncio-thumb-placeholder" }, [ el("span", { class:"anuncio-thumb-emoji" }, ["ðŸª"]) ]);
 
     const locParts = [n.bairro, n.cidade].filter(Boolean).join(", ");
     const ratingTxt = (n.rating !== null && n.rating !== undefined) ? String(n.rating).replace(".", ",") : "";
@@ -486,3 +486,6 @@
 
   document.addEventListener("DOMContentLoaded", init);
 })();
+
+
+

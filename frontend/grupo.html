@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Grupo | Doke</title>
@@ -15,11 +15,11 @@
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="grupo-refeito.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260207v26"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
 <script defer="" src="grupo-refeito.js"></script>
 <style>
         /* ======================================================
-           ESTILOS ESPECÍFICOS DA PÁGINA COMUNIDADES
+           ESTILOS ESPECÃFICOS DA PÃGINA COMUNIDADES
            ====================================================== */
         
         body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
@@ -668,12 +668,12 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
 <div class="grupo-cover" id="grupoCover"></div>
 <div class="grupo-hero-info">
 <div class="grupo-hero-left">
-<div class="grupo-avatar" id="grupoAvatar"><div class="initial">…</div></div>
+<div class="grupo-avatar" id="grupoAvatar"><div class="initial">â€¦</div></div>
 <div class="grupo-hero-text">
-<h2 id="grupoNome">Carregando…</h2>
+<h2 id="grupoNome">Carregandoâ€¦</h2>
 <p id="grupoDesc"></p>
 <div class="grupo-meta">
-<span id="grupoTipo"></span> <span id="grupoMetaSep">·</span> <span id="grupoMembrosCount"></span>
+<span id="grupoTipo"></span> <span id="grupoMetaSep">Â·</span> <span id="grupoMembrosCount"></span>
 </div>
 </div>
 </div>
@@ -703,7 +703,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
 <input accept="image/*,video/*,audio/*,application/pdf" hidden="" id="postArquivo" type="file"/>
 </label>
 <input autocomplete="off" class="composer-input" id="postTexto" placeholder="Digite uma mensagem para o grupo..." type="text"/>
-<button class="btn-icon" id="btnMic" title="Áudio"><i class="bx bx-microphone"></i></button>
+<button class="btn-icon" id="btnMic" title="Ãudio"><i class="bx bx-microphone"></i></button>
 <button class="btn-send" id="btnEnviarPost" title="Enviar"><i class="bx bx-send"></i></button>
 </div>
 <div class="composer-sub">
@@ -724,14 +724,14 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
 <p>Seja o primeiro a postar no grupo.</p>
 </div>
 </div>
-<!-- Área Arquivos (placeholder real: lista vazia até você plugar Storage) -->
+<!-- Ãrea Arquivos (placeholder real: lista vazia até você plugar Storage) -->
 <div class="grupo-feed" id="tabArquivos" style="display:none; padding-top:16px;">
 <div class="empty-state">
 <h3>Nenhum arquivo enviado</h3>
 <p>Quando você ligar o Storage do Supabase, os arquivos do grupo aparecem aqui.</p>
 </div>
 </div>
-<!-- Área Sobre -->
+<!-- Ãrea Sobre -->
 <div class="grupo-feed" id="tabSobre" style="display:none; padding-top:16px;">
 <div class="post-card" style="padding:14px;">
 <div style="font-weight:900; color:#1d2b3a; margin-bottom:8px;">Sobre o grupo</div>
@@ -920,14 +920,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
   function getSB(){
     const w = window;
 
-    // candidatos comuns (dependendo de como o supabase-init.js foi escrito)
-    const cands = [
-      w.sb, w.sbClient, w.supabaseClient, w.supabase_client, w.supabaseClientInstance,
-      w.__supabaseClient, w.client
-    ];
-
-    for(const c of cands){
-      if(c && typeof c.from === 'function') return c;
+    // candidatos comuns (dependendo de como o supabase-init.js?v=20260212v7'function') return c;
     }
 
     // alguns projetos setam window.supabase = createClient(...)
@@ -1018,7 +1011,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
     box.className = 'post-media';
 
     if(t.includes('pdf') || url.toLowerCase().endsWith('.pdf')){
-      box.innerHTML = '<a href="'+url+'" target="_blank" style="font-weight:900; color:var(--cor2);">📄 Abrir PDF</a>';
+      box.innerHTML = '<a href="'+url+'" target="_blank" style="font-weight:900; color:var(--cor2);"><i class="bx bx-file"></i> Abrir PDF</a>';
     }else if(t.includes('audio') || url.match(/\.(mp3|wav|m4a|ogg|webm)$/i)){
       box.innerHTML = '<audio src="'+url+'" controls style="width:100%;"></audio>';
     }else if(t.includes('video') || url.match(/\.(mp4|webm|mov|mkv|ogg)$/i)){
@@ -1332,7 +1325,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
     if(error) throw error;
   }
 
-  // Áudio (MediaRecorder)
+  // Ãudio (MediaRecorder)
   let recorder = null;
   let audioBlob = null;
   let audioStream = null;
@@ -1340,7 +1333,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
   async function startRecording(){
     audioBlob = null;
     const status = $('audioStatus');
-    if(status){ status.style.display='inline'; status.textContent='Gravando…'; }
+    if(status){ status.style.display='inline'; status.textContent='Gravandoâ€¦'; }
 
     audioStream = await navigator.mediaDevices.getUserMedia({ audio:true });
     recorder = new MediaRecorder(audioStream);
@@ -1349,7 +1342,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
     recorder.onstop = ()=>{
       audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
       if(audioStream){ audioStream.getTracks().forEach(t=>t.stop()); audioStream=null; }
-      if(status){ status.textContent='Áudio pronto'; }
+      if(status){ status.textContent='Ãudio pronto'; }
       showAudioPreview(audioBlob);
     };
     recorder.start();
@@ -1388,8 +1381,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
   async function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
 
   function getFirebaseAuthObj(){
-    // Compat scripts (firebase-auth-compat-supabase.js) sometimes expose window.auth
-    if(window.auth && typeof window.auth.onAuthStateChanged === 'function') return window.auth;
+    // Compat scripts (firebase-auth-compat-supabase.js?v=20260212v3'function') return window.auth;
     // Firebase SDK compat
     try{
       if(window.firebase && typeof window.firebase.auth === 'function') return window.firebase.auth();
@@ -1413,12 +1405,12 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
     const fbUser = await waitForFirebaseUser(1500);
     if(fbUser?.uid) return { uid: String(fbUser.uid), provider: 'firebase', user: fbUser };
 
-    // 2) Supabase (se existir sessão)
+    // 2) Supabase (se existir usuário autenticado)
     try{
-      if(client?.auth?.getSession){
-        const { data } = await client.auth.getSession();
-        const sid = data?.session?.user?.id;
-        if(sid) return { uid: String(sid), provider: 'supabase', user: data.session.user };
+      if(client?.auth?.getUser){
+        const { data } = await client.auth.getUser();
+        const sid = data?.user?.id;
+        if(sid) return { uid: String(sid), provider: 'supabase', user: data.user };
       }
     }catch(_){ }
 
@@ -1455,7 +1447,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
     const okSB = await waitFor(()=>!!getSB());
     if(!okSB){
       toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
-      setFatal('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página. Confira se o supabase-init.js está carregando e expondo um cliente global.');
+      setFatal('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página. Confira se o supabase-init.js?v=20260212v7');
       return;
     }
     const client = getSB();
@@ -1715,7 +1707,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
       });
     }
 
-    // Áudio
+    // Ãudio
     const btnMic = $('btnMic');
     if(btnMic && navigator.mediaDevices && window.MediaRecorder){
       btnMic.addEventListener('click', async ()=>{
@@ -1729,7 +1721,7 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
           }
         }catch(e){
           console.error(e);
-          toast('Áudio indisponível', 'Permissão de microfone negada ou navegador não suporta.');
+          toast('Ãudio indisponível', 'Permissão de microfone negada ou navegador não suporta.');
           btnMic.classList.remove('recording');
         }
       });
@@ -1755,6 +1747,19 @@ body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: n
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+

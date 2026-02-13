@@ -1,4 +1,4 @@
-/* Doke - Comunidade V2 (upgrade)
+﻿/* Doke - Comunidade V2 (upgrade)
    - Criação de grupos Público/Privado
    - Botão Entrar/Solicitar (privado -> pendente)
    - Render próprio da lista (sem depender do script.js)
@@ -144,7 +144,7 @@
           <div class="com-desc">${desc}</div>
           <div class="com-meta">
             <span class="pill">${tipo}</span>
-            <span class="pill">${priv ? '🔒 Privado' : '🌍 Público'}</span>
+            <span class="pill">${priv ? 'ðŸ”’ Privado' : 'ðŸŒ Público'}</span>
             <span class="meta-small">${membersCount} membro(s)</span>
           </div>
         </div>
@@ -263,7 +263,7 @@
     }
 
     if (isPrivate){
-      toast('Solicitação enviada ✅');
+      toast('Solicitação enviada âœ…');
       tryNotify(client, ownerUid, {
         tipo: 'grupo_solicitacao',
         titulo: 'Solicitação para entrar no grupo',
@@ -272,7 +272,7 @@
         deUid: uid
       });
     } else {
-      toast('Entrou no grupo ✅');
+      toast('Entrou no grupo âœ…');
     }
   }
 
@@ -442,7 +442,7 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
     }catch(_){ }
 
     try{ window.fecharModalCriarComm?.(); }catch(_){ }
-    toast('Grupo criado ✅');
+    toast('Grupo criado âœ…');
     await load();
   }
 
@@ -454,3 +454,5 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
   else load();
 })();
+
+

@@ -1,4 +1,4 @@
-/* DOKE UI Components (runtime enhancer)
+﻿/* DOKE UI Components (runtime enhancer)
    - Toast padronizado com “Ver detalhes”
    - Logger leve + captura de erros silenciosos
    - Lazy-load real + skeleton em imagens do feed
@@ -293,3 +293,6 @@
   else boot();
 
 })();
+
+
+

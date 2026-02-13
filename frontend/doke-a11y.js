@@ -1,4 +1,4 @@
-(()=> {
+﻿(()=> {
   const MODAL_SELECTORS = [
     '#modalGaleria',
     '#modalPlayerVideo',
@@ -89,7 +89,7 @@
         let alt = '';
         if (src.includes('logo') || cls.includes('logo') || id.includes('logo')) alt = 'Logo Doke';
         else if (cls.includes('avatar') || id.includes('avatar')) alt = 'Foto do usuário';
-        else if (src.includes('icone') || cls.includes('icon')) alt = 'Ícone';
+        else if (src.includes('icone') || cls.includes('icon')) alt = 'Ãcone';
         img.setAttribute('alt', alt);
       }
 

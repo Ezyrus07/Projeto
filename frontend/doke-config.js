@@ -1,4 +1,4 @@
-// Doke - Configurações rápidas (edite aqui)
+﻿// Doke - Configurações rápidas (edite aqui)
 window.DOKE_CONFIG = window.DOKE_CONFIG || {
   
   // Debug (mostra toasts de erros globais)
@@ -14,3 +14,5 @@ window.DOKE_CONFIG = window.DOKE_CONFIG || {
   // Chat interno (página)
   supportChatUrl: "chat.html"
 };
+
+

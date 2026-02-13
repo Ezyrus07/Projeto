@@ -1,4 +1,4 @@
-/* DOKE — Perfil (upgrade) | Supabase
+﻿/* DOKE — Perfil (upgrade) | Supabase
    Requer:
    - <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
    - <script src="supabase-init.js"></script>  (cria window.sb)
@@ -665,9 +665,9 @@
   // Data helpers (usuarios)
   // -----------------------------
   async function getSessionUser(client){
-    const { data, error } = await client.auth.getSession();
+    const { data, error } = await client.auth.getUser();
     if(error) return { error };
-    return { session: data?.session || null, user: data?.session?.user || null };
+    return { session: null, user: data?.user || null };
   }
 
   async function getUsuarioByAuthUid(client, authUid){
@@ -2313,8 +2313,8 @@ function ensureTheme(ctx, theme){
         <div class="fr-criteria-head">
           <div class="fr-criteria-title">Detalhes por critério</div>
           <div class="fr-criteria-nav">
-            <button class="fr-nav-btn" data-dir="-1" aria-label="Anterior">‹</button>
-            <button class="fr-nav-btn" data-dir="1" aria-label="Próximo">›</button>
+            <button class="fr-nav-btn" data-dir="-1" aria-label="Anterior">â€¹</button>
+            <button class="fr-nav-btn" data-dir="1" aria-label="Próximo">â€º</button>
           </div>
         </div>
         <div class="fr-criteria-viewport">
@@ -3350,12 +3350,12 @@ function ensureTheme(ctx, theme){
           <b>${formatCompact(v)}</b>
           <div class="dp-subtle">Impressões</div>
         </div>
-        <div class="dp-funnelArrow">→</div>
+        <div class="dp-funnelArrow">â†’</div>
         <div class="dp-funnelStep dp-funnelStep--clicks">
           <b>${formatCompact(c)}</b>
           <div class="dp-subtle">Cliques • ${cRate === null ? "—" : pct(cRate)}</div>
         </div>
-        <div class="dp-funnelArrow">→</div>
+        <div class="dp-funnelArrow">â†’</div>
         <div class="dp-funnelStep dp-funnelStep--leads">
           <b>${formatCompact(l)}</b>
           <div class="dp-subtle">Orçamentos • ${lRate === null ? "—" : pct(lRate)}</div>
@@ -3508,7 +3508,7 @@ function ensureTheme(ctx, theme){
     // somente profissional DONO
     const isProOwner = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     if(!isProOwner){
-      toast("Área restrita ao profissional.");
+      toast("Ãrea restrita ao profissional.");
       return;
     }
 
@@ -3551,7 +3551,7 @@ if(!rangeSel || !refreshBtn) return;
         const catsData = (stats.cats || []).map(c=>({ k: c.label, v: c.value }));
         renderBars(cats, catsData);
 
-        // Funil simples: impressões → cliques → orçamentos
+        // Funil simples: impressões â†’ cliques â†’ orçamentos
         renderFunnel(funnel, safeNum(stats?.funnel?.impressions), safeNum(stats?.funnel?.clicks), safeNum(stats?.funnel?.leads));
 }catch(e){
         console.warn("[DOKE] Falha ao carregar estatísticas:", e);
@@ -3749,11 +3749,11 @@ if(!rangeSel || !refreshBtn) return;
           <div>
             <label>Nota</label>
             <select class="dp-select" id="dpAvalNota">
-              <option value="5">★★★★★ (5)</option>
-              <option value="4">★★★★☆ (4)</option>
-              <option value="3">★★★☆☆ (3)</option>
-              <option value="2">★★☆☆☆ (2)</option>
-              <option value="1">★☆☆☆☆ (1)</option>
+              <option value="5">â˜…â˜…â˜…â˜…â˜… (5)</option>
+              <option value="4">â˜…â˜…â˜…â˜…â˜† (4)</option>
+              <option value="3">â˜…â˜…â˜…â˜†â˜† (3)</option>
+              <option value="2">â˜…â˜…â˜†â˜†â˜† (2)</option>
+              <option value="1">â˜…â˜†â˜†â˜†â˜† (1)</option>
             </select>
           </div>
           <div>
@@ -5026,6 +5026,10 @@ function setupAntesDepois(container){
     }
   }catch(_){}
 }
+
+
+
+
 
 
 

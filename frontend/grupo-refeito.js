@@ -1,4 +1,4 @@
-/* Doke - Grupo Refeito (isolado)
+﻿/* Doke - Grupo Refeito (isolado)
    Corrige: gating de membro (entrar/solicitar), enviar, reagir, responder, excluir
    Sem depender do script principal. */
 
@@ -238,7 +238,7 @@ async function detectAdmin(){
 function shortUid(u){
   const s = String(u||'');
   if (s.length <= 10) return s;
-  return s.slice(0,6) + '…' + s.slice(-4);
+  return s.slice(0,6) + 'â€¦' + s.slice(-4);
 }
 
 async function loadJoinRequests(){
@@ -264,8 +264,8 @@ async function loadJoinRequests(){
   }
 
   requestsPane.style.display='block';
-  requestsSub.textContent = 'Carregando…';
-  requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Buscando solicitações pendentes…</div>';
+  requestsSub.textContent = 'Carregandoâ€¦';
+  requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Buscando solicitações pendentesâ€¦</div>';
 
   const { communityCol, userCol, statusCol } = memberSchema;
 
@@ -377,7 +377,7 @@ function wireRequestActions(rows){
           toast('Não consegui aprovar: ' + (error.message||''));
           return;
         }
-        toast('Aprovado ✅');
+        toast('Aprovado âœ…');
         el.remove();
         // refresh counter
         btnRefreshReq?.click();
@@ -498,7 +498,7 @@ function wireRequestActions(rows){
         return;
       }
 
-      toast(privateGroup ? 'Solicitação enviada ✅' : 'Entrou no grupo ✅');
+      toast(privateGroup ? 'Solicitação enviada âœ…' : 'Entrou no grupo âœ…');
       await refreshGate();
     } finally {
       joinBtn.disabled = false;
@@ -588,9 +588,9 @@ function wireRequestActions(rows){
           ${text ? `<div class="text">${escapeHtml(text)}</div>` : ``}
           ${mediaHtml}
           <div class="actions">
-            <button class="btn-act btn-reply" ${canAct ? '' : 'disabled'} title="Responder">↩️ <span>Responder</span></button>
-            <button class="btn-act btn-react" ${canAct ? '' : 'disabled'} title="Reagir">👍 <span>Reagir</span></button>
-            <button class="btn-act btn-del" ${canDelete && canAct ? '' : 'disabled'} title="Excluir">🗑️ <span>Excluir</span></button>
+            <button class="btn-act btn-reply" ${canAct ? '' : 'disabled'} title="Responder">â†©ï¸ <span>Responder</span></button>
+            <button class="btn-act btn-react" ${canAct ? '' : 'disabled'} title="Reagir">ðŸ‘ <span>Reagir</span></button>
+            <button class="btn-act btn-del" ${canDelete && canAct ? '' : 'disabled'} title="Excluir">ðŸ—‘ï¸ <span>Excluir</span></button>
           </div>
           <div class="reacts" style="display:none;"></div>
         </div>
@@ -648,7 +648,7 @@ function wireRequestActions(rows){
       });
 
       btnReact?.addEventListener('click', async ()=>{
-        await toggleReaction(postId, '👍');
+        await toggleReaction(postId, 'ðŸ‘');
         await hydrateReactionsForPost(postId);
       });
 
@@ -879,7 +879,7 @@ function wireRequestActions(rows){
     }catch(e){}
     if (isMuted){
       badge.classList.add('mute');
-      roleText = roleText + ' · Silenciado';
+      roleText = roleText + ' Â· Silenciado';
     }
     badge.textContent = roleText;
 
@@ -1694,3 +1694,5 @@ btnRefreshReq?.addEventListener('click', loadJoinRequests);
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+
+

@@ -2,13 +2,36 @@
    Objetivo: travar grids no tablet horizontal, centralizar conteúdo, evitar logo duplicada.
 */
 
-/* ===== Perfil: centralização consistente em telas >= 900px ===== */
-@media (min-width: 900px){
+/* ===== Perfil: centralização consistente no tablet (900-1024px) ===== */
+@media (min-width: 900px) and (max-width: 1024px){
   body[data-page="perfil"] .dp-wrap{
     max-width: var(--dp-content-width, 1200px) !important;
     margin-left: auto !important;
     margin-right: auto !important;
     padding: 22px 18px 40px !important;
+  }
+}
+
+/* ===== Perfil: desktop sempre centralizado considerando sidebar ===== */
+@media (min-width: 1025px){
+  body[data-page="perfil"] main.dp-wrap{
+    width: auto !important;
+    max-width: none !important;
+    margin-left: var(--sidebar-width, 0px) !important;
+    margin-right: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    box-sizing: border-box !important;
+    padding-left: clamp(16px, 2vw, 28px) !important;
+    padding-right: clamp(16px, 2vw, 28px) !important;
+  }
+
+  body[data-page="perfil"] #dpRoot{
+    width: min(100%, var(--dp-content-width, 1200px)) !important;
+    max-width: var(--dp-content-width, 1200px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
   }
 }
 

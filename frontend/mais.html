@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Menu e Configurações | Doke</title>
     <meta name="description" content="Acesse configurações, atalhos e recursos do aplicativo.">
-    <meta property="og:title" content="Doke — Mais">
+    <meta property="og:title" content="Doke - Mais">
     <meta property="og:description" content="Acesse configurações, atalhos e recursos do aplicativo.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="assets/Imagens/doke-logo.png">
@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260209v34"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
 <style>
         /* ======================================================
            ESTILOS ESPECÍFICOS - MAIS/MENU
@@ -101,7 +101,15 @@
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 40px;
         }
-        .settings-section { display: flex; flex-direction: column; gap: 15px; }
+        .settings-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: linear-gradient(180deg, #fbfdff 0%, #f6f9fc 100%);
+            border: 1px solid #edf2f7;
+            border-radius: 16px;
+            padding: 14px;
+        }
         .section-title {
             font-size: 0.9rem; font-weight: 700; color: #999;
             text-transform: uppercase; letter-spacing: 1px;
@@ -168,7 +176,7 @@
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+<link rel="stylesheet" href="doke-shell.css?v=20260212v42">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
   <link rel="stylesheet" href="page-mais.css?v=20260209v22">
@@ -278,6 +286,11 @@
 <div class="item-text">Dados Pessoais</div>
 <i class="bx bx-chevron-right item-arrow"></i>
 </a>
+<a class="settings-item" href="enderecos.html">
+<div class="item-icon"><i class="bx bx-map"></i></div>
+<div class="item-text">Endereços</div>
+<i class="bx bx-chevron-right item-arrow"></i>
+</a>
 <a class="settings-item" href="senha.html">
 <div class="item-icon"><i class="bx bx-lock-alt"></i></div>
 <div class="item-text">Segurança e Senha</div>
@@ -353,6 +366,17 @@
 </nav>
 <script>
         document.addEventListener("DOMContentLoaded", function() {
+            const normalizarUserHandle = (raw, nomeFallback) => {
+                let base = String(raw || "").trim();
+                if (!base || /\s/.test(base)) {
+                    const nome = String(nomeFallback || "").trim();
+                    base = nome ? nome.split(/\s+/)[0] : "usuario";
+                }
+                base = base.replace(/^@+/, "").trim();
+                if (!base) base = "usuario";
+                return "@" + base;
+            };
+
             // Verifica o Dark Mode
             const toggle = document.getElementById('darkModeSwitch');
             if(localStorage.getItem('darkMode') === 'true') {
@@ -387,7 +411,7 @@
 
                 // Atualiza User Handle
                 const userTxt = document.getElementById('mais-user');
-                if(userTxt) userTxt.innerText = perfilLocal.user || "@usuario";
+                if(userTxt) userTxt.innerText = normalizarUserHandle(perfilLocal.user, perfilLocal.nome);
 
                 const itemPrivacidade = document.getElementById('itemPrivacidadeProfissional');
                 if (itemPrivacidade) itemPrivacidade.style.display = isProfissional ? 'flex' : 'none';
@@ -410,6 +434,19 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260209v22"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+

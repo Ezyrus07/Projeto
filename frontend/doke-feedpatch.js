@@ -1,4 +1,4 @@
-// DOKE Feed Patch
+﻿// DOKE Feed Patch
 // 1) Botão "Ver mais" só aparece quando houver ~5 fileiras de anúncios (adaptativo ao grid).
 // 2) Quando não encontra anúncios, substitui o texto simples por um empty state mais bonito.
 (() => {
@@ -83,7 +83,7 @@
 
     feed.innerHTML = `
       <div class="doke-empty">
-        <div class="doke-empty__icon">🔎</div>
+        <div class="doke-empty__icon">ðŸ”Ž</div>
         <div class="doke-empty__title">Nenhum anúncio encontrado</div>
         <div class="doke-empty__subtitle">${term ? `Não achamos resultados para <b>${escapeHtml(term)}</b>.` : 'Tente ajustar seus filtros ou buscar por outro termo.'}</div>
         <div class="doke-empty__actions">
@@ -270,3 +270,4 @@
   document.addEventListener('DOMContentLoaded', tick);
   window.addEventListener('load', tick);
 })();
+

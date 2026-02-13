@@ -1,4 +1,4 @@
-
+﻿
   <link rel="stylesheet" href="doke-toast.css">
   <link rel="stylesheet" href="doke-alerts.css">
   <link rel="stylesheet" href="doke-ux.css">
@@ -12,7 +12,7 @@
   // ============================================================
 
   const SB = window.supabase;
-  const sb = (SB && (SB.createClient ? SB.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : (window.sb||window.supabaseClient))) || window.sb;
+  const sb = window.sb || window.supabaseClient || window.sbClient || (typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null);
 
   function toast(msg, type='info'){
     if (typeof window.dokeToast === 'function') return window.dokeToast(msg, type);
@@ -144,7 +144,7 @@
     e.preventDefault();
     const user = await getUser();
     if(!user){ toast('Faça login para continuar.', 'error'); return; }
-    if(!sb || !sb.from){ toast('Supabase não configurado (supabase-init.js).', 'error'); return; }
+    if(!sb || !sb.from){ toast('Supabase não configurado (supabase-init.js?v=20260212v6', 'error'); return; }
 
     const tel = document.getElementById('tpTelefone')?.value || '';
     const cpf = document.getElementById('tpCpf')?.value || '';
@@ -222,3 +222,7 @@
 
   <script src="doke-config.js" defer></script>
   <script src="doke-ux.js" defer></script>
+
+
+
+

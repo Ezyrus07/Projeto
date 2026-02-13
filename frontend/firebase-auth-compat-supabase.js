@@ -1,4 +1,4 @@
-// DOKE - Firebase Auth compat on top of Supabase Auth (bridge)
+﻿// DOKE - Firebase Auth compat on top of Supabase Auth (bridge)
 (function(){
   function isClient(obj){
     return obj && obj.auth && typeof obj.auth.getSession === "function";
@@ -102,18 +102,20 @@
 
   window.onAuthStateChanged = function(_authIgnored, cb){
     const sb = ensure();
-    sb.auth.getSession().then(({ data, error }) => {
-      if (!error) {
-        const user = normalizeUser(data.session?.user) || null;
-        setCurrentUser(user);
-        cb(user);
-      }
-    });
+    let emitted = false;
+    const emit = (user) => {
+      emitted = true;
+      setCurrentUser(user);
+      try { cb(user); } catch (_e) {}
+    };
     const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {
       const user = normalizeUser(session?.user) || null;
-      setCurrentUser(user);
-      cb(user);
+      emit(user);
     });
+    // Evita tela travada caso o evento inicial não dispare por algum motivo.
+    setTimeout(() => {
+      if (!emitted) emit(authObj.currentUser || null);
+    }, 0);
     return function unsubscribe(){
       try { sub.subscription?.unsubscribe(); } catch(e) {}
     };
@@ -157,3 +159,4 @@
 
   console.log("[DOKE] Firebase Auth compat carregado.");
 })();
+

@@ -1,4 +1,4 @@
-
+﻿
 /* ============================================================
    DOKE - NEGÓCIOS (page script)
    - Não usa seções do index (categorias/vídeos/anúncios) para evitar conteúdo repetido
@@ -147,7 +147,7 @@
 
     const ratingText =
       (b.rating !== null && b.rating !== undefined && b.rating !== "")
-        ? `${Number(b.rating).toFixed(1)}★${b.ratingCount ? ` (${b.ratingCount})` : ""}`
+        ? `${Number(b.rating).toFixed(1)}â˜…${b.ratingCount ? ` (${b.ratingCount})` : ""}`
         : "";
 
     const metaBits = [];
@@ -580,3 +580,6 @@
     }, 150);
   }
 })();
+
+
+

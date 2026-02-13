@@ -4,10 +4,10 @@
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
-<script defer="" src="script.js?v=20260211v43"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Detalhes do Serviço | Doke</title>
@@ -572,6 +572,50 @@
                 img: ""
             };
 
+        function getSupabaseRef() {
+            return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
+        }
+
+        async function buscarAnuncioSupabase(anuncioId) {
+            const sb = getSupabaseRef();
+            if (!sb?.from || !anuncioId) return null;
+            const tabelas = ["anuncios", "servicos"];
+            for (const tabela of tabelas) {
+                try {
+                    const { data, error } = await sb
+                        .from(tabela)
+                        .select("*")
+                        .eq("id", anuncioId)
+                        .maybeSingle();
+                    if (error) continue;
+                    if (data) return { ...data, id: data.id || anuncioId };
+                } catch (_) {}
+            }
+            return null;
+        }
+
+        async function buscarPerfilSupabasePorUid(uid) {
+            const sb = getSupabaseRef();
+            if (!sb?.from || !uid) return null;
+            try {
+                const byUid = await sb
+                    .from("usuarios")
+                    .select("*")
+                    .eq("uid", uid)
+                    .maybeSingle();
+                if (!byUid.error && byUid.data) return byUid.data;
+            } catch (_) {}
+            try {
+                const byId = await sb
+                    .from("usuarios")
+                    .select("*")
+                    .eq("id", uid)
+                    .maybeSingle();
+                if (!byId.error && byId.data) return byId.data;
+            } catch (_) {}
+            return null;
+        }
+
         function tryScrollToRequestedSection() {
             const wantsReviews = scrollToParam.includes('avali');
             const hash = String(window.location.hash || '').toLowerCase();
@@ -604,16 +648,27 @@
             }
 
             try {
-                // 1. Busca Dados do Anúncio (Firebase)
-                const docRef = doc(getDbRef(), "anuncios", idAnuncio);
-                const snap = await getDoc(docRef);
+                // 1. Busca Dados do Anúncio (Firebase -> fallback Supabase)
+                let data = null;
+                try {
+                    const dbRef = getDbRef();
+                    if (dbRef && typeof doc === "function" && typeof getDoc === "function") {
+                        const docRef = doc(dbRef, "anuncios", idAnuncio);
+                        const snap = await getDoc(docRef);
+                        if (snap.exists()) {
+                            data = { ...snap.data(), id: snap.id };
+                        }
+                    }
+                } catch (_) {}
 
-                if (!snap.exists()) {
+                if (!data) {
+                    data = await buscarAnuncioSupabase(idAnuncio);
+                }
+
+                if (!data) {
                     document.getElementById('loader').innerHTML = "<h3>Anúncio removido ou indisponível.</h3>";
                     return;
                 }
-
-                const data = snap.data();
 
                 // 2. Busca dados do perfil (para fotos e infos do profissional)
                 let perfil = null;
@@ -634,6 +689,11 @@
                         }
                     } catch (e) {
                         console.warn("Falha ao carregar perfil por uid:", e);
+                    }
+                    if (!perfil) {
+                        try {
+                            perfil = await buscarPerfilSupabasePorUid(data.uid);
+                        } catch (_) {}
                     }
                 }
 
@@ -1430,7 +1490,7 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 <script>
   (function(){
     function recoverPageScroll(){
@@ -1451,4 +1511,14 @@
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 

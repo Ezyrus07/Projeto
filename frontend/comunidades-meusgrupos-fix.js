@@ -1,4 +1,4 @@
-/* Doke - Patch Meus Grupos (comunidade.html)
+﻿/* Doke - Patch Meus Grupos (comunidade.html)
    Corrige: "Faça login..." mesmo logado. Usa uid do Firebase, Supabase Auth ou localStorage.
    Renderiza #listaMeusGrupos a partir de comunidade_membros + comunidades.
 */
@@ -180,3 +180,4 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', run);
   else run();
 })();
+

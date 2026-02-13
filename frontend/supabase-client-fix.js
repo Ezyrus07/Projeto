@@ -1,10 +1,14 @@
-/* DOKE - Supabase client shim
+﻿/* DOKE - Supabase client shim
    Fix para: TypeError: window.supabase.from is not a function
    (quando window.supabase é o *namespace* do SDK e não o client).
 */
 (function(){
   const w = window;
   const isClient = (o) => !!(o && typeof o.from === 'function');
+  const normalizeUrl = (raw) => String(raw || "")
+    .trim()
+    .replace(/\/(auth|rest)\/v1.*$/i, "")
+    .replace(/\/+$/g, "");
 
   if (isClient(w.supabase)) return;
 
@@ -24,11 +28,21 @@
   // se window.supabase for o namespace do SDK, tenta criar um client com config já exposta
   const ns = w.supabase;
   if (ns && typeof ns.createClient === 'function'){
-    const url = w.SUPABASE_URL || w.supabaseUrl || w.supabase_url || localStorage.getItem('SUPABASE_URL') || localStorage.getItem('supabase_url');
-    const key = w.SUPABASE_ANON_KEY || w.supabaseAnonKey || w.supabase_anon_key || localStorage.getItem('SUPABASE_ANON_KEY') || localStorage.getItem('supabase_anon_key');
+    const url = normalizeUrl(
+      w.DOKE_SUPABASE_URL ||
+      w.SUPABASE_URL ||
+      w.supabaseUrl ||
+      w.supabase_url ||
+      localStorage.getItem('DOKE_SUPABASE_URL') ||
+      localStorage.getItem('SUPABASE_URL') ||
+      localStorage.getItem('supabase_url')
+    );
+    const key = w.DOKE_SUPABASE_ANON_KEY || w.SUPABASE_ANON_KEY || w.supabaseAnonKey || w.supabase_anon_key || localStorage.getItem('DOKE_SUPABASE_ANON_KEY') || localStorage.getItem('SUPABASE_ANON_KEY') || localStorage.getItem('supabase_anon_key');
     if (url && key){
       try{
-        const created = ns.createClient(url, key);
+        const created = ns.createClient(url, key, {
+          auth: { persistSession: true, autoRefreshToken: false, detectSessionInUrl: true }
+        });
         w.supabase = created;
         w.supabaseClient = created;
         w.sb = created;
@@ -50,3 +64,4 @@
 
   try{ console.warn('[DOKE] Supabase shim: nenhum client encontrado. Confira o supabase-init.js.'); }catch(_){ }
 })();
+

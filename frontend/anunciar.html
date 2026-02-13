@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Anunciar Serviço Completo | Doke</title>
@@ -658,7 +658,7 @@ h3#dokeAlertTitle{
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+<link rel="stylesheet" href="doke-shell.css?v=20260212v42">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
   <link rel="stylesheet" href="page-anunciar.css?v=20260207v21">
@@ -993,7 +993,7 @@ h3#dokeAlertTitle{
 </div>
 </div>
 </main>
-<script defer="" src="script.js?v=20260207v26"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
 <script>
         const { doc, getDoc, updateDoc, addDoc, collection } = window;
         const { getStorage, ref, uploadBytes, getDownloadURL } = window;
@@ -1034,7 +1034,7 @@ h3#dokeAlertTitle{
         }
     }
 
-    // --- LÓGICA DE PROTEÇÃO DE ACESSO (LOGIN E PROFISSIONAL) ---
+    // --- LÓGICA DE PROTEÇÃƒO DE ACESSO (LOGIN E PROFISSIONAL) ---
     document.addEventListener("DOMContentLoaded", function() {
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
         const estaLogado = localStorage.getItem('usuarioLogado') === 'true';
@@ -1045,7 +1045,7 @@ h3#dokeAlertTitle{
             return;
         }
 
-        // --- PREENCHIMENTO AUTOMÁTICO DE DADOS DE PERFIL ---
+        // --- PREENCHIMENTO AUTOMÃTICO DE DADOS DE PERFIL ---
         const params = new URLSearchParams(window.location.search);
         if (!params.get('mode') && perfilLocal) {
             const inputNome = document.getElementById('nome_doc');
@@ -1087,7 +1087,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // tenta atualizar pelo Supabase caso não esteja marcado no cache
       if(!isProf) {
-        const sb = window.sb || window.supabaseClient || (window.supabase && window.supabase.createClient ? window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON_KEY) : null);
+        const sb = window.sb || window.supabaseClient || window.sbClient || (typeof window.getSupabaseClient === 'function' ? window.getSupabaseClient() : null);
         if(sb && sb.auth && sb.auth.getUser) {
           const { data } = await sb.auth.getUser();
           const uid = data?.user?.id;
@@ -1317,7 +1317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         perguntasArray.forEach((q, index) => {
             const item = document.createElement('div');
             item.style.cssText = "background: white; border: 1px solid #e2e8f0; padding: 15px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom:10px;";
-            const info = q.tipo === 'aberta' ? '📝 Aberta' : `🔘 Fechada (${q.opcoes.length} opc)`;
+            const info = q.tipo === 'aberta' ? 'Aberta' : `Fechada (${q.opcoes.length} opc)`;
             item.innerHTML = `<div><span style="font-size:0.75rem; font-weight:bold; color:#0b7768;">${info}</span><p style="margin:5px 0 0;">${index+1}. ${q.pergunta}</p></div><button onclick="removerQuestao(${index})" style="background:#fee2e2; color:#ef4444; border:none; width:30px; height:30px; border-radius:50%; cursor:pointer;">×</button>`;
             container.appendChild(item);
         });
@@ -1330,7 +1330,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
     // ==========================================
-    // LÓGICA DE EDIÇÃO E PREENCHIMENTO AUTOMÁTICO
+    // LÓGICA DE EDIÇÃƒO E PREENCHIMENTO AUTOMÃTICO
     // ==========================================
     
     let anuncioIdEdicao = null; 
@@ -1509,7 +1509,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(document.getElementById('experiencia')) document.getElementById('experiencia').value = dados.experiencia || "";
         if(document.getElementById('prazo')) document.getElementById('prazo').value = "";
         if(document.getElementById('garantia')) document.getElementById('garantia').value = dados.garantia || "";
-        if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || dados.politica_cancelamento || "FlexÃ­vel";
+        if(document.getElementById('politica')) document.getElementById('politica').value = dados.politicaCancelamento || dados.politica_cancelamento || "Flexível";
         if(document.getElementById('emergencia')) {
             const v = dados.atendeEmergencia ?? dados.atende_emergencia;
             document.getElementById('emergencia').checked = (v === true || v === 1 || v === '1' || v === 'true');
@@ -1589,7 +1589,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const modoAtend = document.querySelector('input[name="modo_atend"]:checked')?.value || "";
         const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "";
-        const precoFinal = (tipoPreco === 'PreÃ§o Fixo') ? getVal('valor') : tipoPreco;
+        const precoFinal = (tipoPreco === 'Preço Fixo') ? getVal('valor') : tipoPreco;
 
         const pagamentosAceitos = Array.from(document.querySelectorAll('input[id^="pg-"]:checked')).map(cb => cb.value);
 
@@ -1706,6 +1706,34 @@ document.addEventListener('DOMContentLoaded', () => {
         return out;
     }
 
+    async function sincronizarDadosPessoaisDoAnuncio(uid, payload = {}) {
+        try {
+            const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {};
+            const cpfCnpj = String(payload.cpf_cnpj || '').trim();
+            const telefone = String(payload.telefone || '').trim();
+
+            const atualizado = { ...perfilLocal };
+            if (cpfCnpj) atualizado.cpf_cnpj = cpfCnpj;
+            if (telefone) {
+                atualizado.telefone = telefone;
+                atualizado.telefone_comercial = telefone;
+            }
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(atualizado));
+
+            const sb = window.sb || window.supabase || window.supabaseClient || window.sbClient || null;
+            if (sb?.from && uid) {
+                const patch = {};
+                if (cpfCnpj) patch.cpf_cnpj = cpfCnpj;
+                if (telefone) patch.telefone = telefone;
+                if (Object.keys(patch).length) {
+                    await sb.from('usuarios').update(patch).or(`uid.eq.${uid},id.eq.${uid}`);
+                }
+            }
+        } catch (e) {
+            console.warn('[anunciar] nao foi possivel sincronizar dados pessoais:', e);
+        }
+    }
+
     async function publicarAnuncio(event) {
         if(event && event.preventDefault) event.preventDefault();
         const btn = document.getElementById('btn-submit');
@@ -1720,7 +1748,7 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const auth = window.getAuth();
             const user = auth.currentUser;
-            if(!user) throw new Error("UsuÃ¡rio nÃ£o autenticado");
+            if(!user) throw new Error("Usuário não autenticado");
 
             const dadosComuns = coletarDadosDoForm();
             dadosComuns.uid = user.uid;
@@ -1748,20 +1776,25 @@ document.addEventListener('DOMContentLoaded', () => {
             dadosComuns.img = fotosUrls[0] || "";
 
             const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-            dadosComuns.nomeAutor = perfilLocal.nome || "AnÃ´nimo";
+            dadosComuns.nomeAutor = perfilLocal.nome || "Anônimo";
             dadosComuns.fotoAutor = perfilLocal.foto || "";
             dadosComuns.userHandle = perfilLocal.userHandle || perfilLocal.user || "";
+
+            await sincronizarDadosPessoaisDoAnuncio(user.uid, {
+                cpf_cnpj: dadosComuns.cpf_cnpj || '',
+                telefone: dadosComuns.whatsapp || ''
+            });
 
             await window.addDoc(window.collection(window.db, "anuncios"), dadosComuns);
 
             if (window.dokeHideLoading) window.dokeHideLoading();
-            alert("AnÃºncio publicado com sucesso!");
+            alert("Anúncio publicado com sucesso!");
             window.location.href = "meuperfil.html";
         } catch (erro) {
             console.error(erro);
             alert("Erro ao publicar: " + erro.message);
             if (window.dokeHideLoading) window.dokeHideLoading();
-            if(btn){ btn.innerText = "Publicar AnÃºncio"; btn.disabled = false; }
+            if(btn){ btn.innerText = "Publicar Anúncio"; btn.disabled = false; }
         }
     }
     window.publicarAnuncio = publicarAnuncio;
@@ -1805,17 +1838,22 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateData.img = fotosUrls[0] || "";
             }
 
+            await sincronizarDadosPessoaisDoAnuncio(user?.uid || '', {
+                cpf_cnpj: updateData.cpf_cnpj || '',
+                telefone: updateData.whatsapp || ''
+            });
+
             const docRef = window.doc(window.db, "anuncios", anuncioIdEdicao);
             await window.updateDoc(docRef, updateData);
 
             if (window.dokeHideLoading) window.dokeHideLoading();
-            alert("AnÃºncio atualizado com sucesso!");
+            alert("Anúncio atualizado com sucesso!");
             window.location.href = "meuperfil.html";
         } catch (erro) {
             console.error(erro);
             alert("Erro ao salvar: " + erro.message);
             if (window.dokeHideLoading) window.dokeHideLoading();
-            if(btn){ btn.innerText = "Salvar AlteraÃ§Ãµes"; btn.disabled = false; }
+            if(btn){ btn.innerText = "Salvar Alterações"; btn.disabled = false; }
         }
     }
     window.atualizarAnuncioExistente = atualizarAnuncioExistente;
@@ -2239,10 +2277,10 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('pvConfirmBtn');
     if(!title || !btn) return;
     if(isEditMode()){
-      title.innerText = 'PrÃ©-visualizaÃ§Ã£o das alteraÃ§Ãµes';
+      title.innerText = 'Pré-visualização das alterações';
       btn.innerText = 'Confirmar e salvar';
     } else {
-      title.innerText = 'PrÃ©-visualizaÃ§Ã£o do anÃºncio';
+      title.innerText = 'Pré-visualização do anúncio';
       btn.innerText = 'Confirmar e publicar';
     }
   }
@@ -2465,6 +2503,21 @@ function abrirPreview(){
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Doke</title>
@@ -19,7 +19,7 @@
 <meta content="#0b7768" name="theme-color"/>
 <script>
   (function () {
-    const RESET_KEY = "doke_sw_cache_reset_v1";
+    const RESET_KEY = "doke_sw_cache_reset_v6";
     if (sessionStorage.getItem(RESET_KEY) === "1") return;
     if (!("serviceWorker" in navigator)) return;
     window.addEventListener("load", function () {
@@ -50,7 +50,7 @@
 <!-- Estilos globais do projeto -->
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
-<script defer="" src="script.js?v=20260211v47"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
     <style>
         .cat-track,
         #categoriesCarousel,
@@ -67,7 +67,7 @@
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-feedpatch.css?v=20260207v26" rel="stylesheet"/>
 
-<link rel="stylesheet" href="doke-shell.css?v=20260211v24">
+<link rel="stylesheet" href="doke-shell.css?v=20260212v42">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260209v24">
   <link rel="stylesheet" href="page-home.css?v=20260211v51">
@@ -114,7 +114,7 @@
 </a>
 <div class="cep-popup" id="boxCep">
 <p>Digite seu CEP:</p>
-<div class="cep-input-group"><input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
 </div>
 </div>
 <a href="escolheranuncio.html">Anunciar</a>
@@ -197,7 +197,8 @@
 </div>
 <div class="busca-wrapper" id="buscaWrapper">
 <div class="busca-input-container">
-<input autocomplete="off" id="inputBusca" placeholder="Descreva o que voc&ecirc; est&aacute; procurando" type="text"/>
+<label class="sr-only" for="inputBusca">Buscar serviços ou profissionais</label>
+<input autocomplete="off" id="inputBusca" name="inputBusca" placeholder="Descreva o que voc&ecirc; est&aacute; procurando" type="text"/>
 <button class="btn-search-circle" onclick="document.querySelector('.btn-procurar').click()">
 <svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
 <line x1="5" x2="19" y1="12" y2="12"></line>
@@ -386,26 +387,26 @@
 <div class="filtros-expandidos" id="filtrosExtras">
 <div class="grid-extras">
 <div>
-<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Preço Máximo</label>
-<input class="input-premium" id="maxPreco" placeholder="R$ 0,00" type="number"/>
+<label for="maxPreco" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Preço Máximo</label>
+<input class="input-premium" id="maxPreco" name="maxPreco" placeholder="R$ 0,00" type="number"/>
 </div>
 <div>
-<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Ordenar Por</label>
-<select class="input-premium" id="ordenacao">
+<label for="ordenacao" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Ordenar Por</label>
+<select class="input-premium" id="ordenacao" name="ordenacao">
 <option value="mais_recente">Mais Recentes</option>
 <option value="preco_menor">Menor Preço</option>
 <option value="melhor_avaliacao">Melhor Avaliação</option>
 </select>
 </div>
 <div>
-<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Categoria</label>
-<select class="input-premium" id="filtroCategoria">
+<label for="filtroCategoria" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Categoria</label>
+<select class="input-premium" id="filtroCategoria" name="filtroCategoria">
 <option value="todas">Todas</option>
 </select>
 </div>
 <div>
-<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Serviço</label>
-<select class="input-premium" id="filtroTipoAtend">
+<label for="filtroTipoAtend" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Serviço</label>
+<select class="input-premium" id="filtroTipoAtend" name="filtroTipoAtend">
 <option value="todos">Todos</option>
 <option value="online">Online</option>
 <option value="presencial">Presencial</option>
@@ -413,15 +414,15 @@
 </select>
 </div>
 <div>
-<label style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Preço</label>
-<select class="input-premium" id="filtroTipoPreco">
+<label for="filtroTipoPreco" style="font-size:0.85rem; font-weight:600; margin-bottom:5px; display:block;">Tipo de Preço</label>
+<select class="input-premium" id="filtroTipoPreco" name="filtroTipoPreco">
 <option value="todos">Todos</option>
 <option value="preco_fixo">Preço Fixo</option>
 <option value="sob_orcamento">Sob Orçamento</option>
 </select>
 </div>
 <div class="filtro-checks">
-<label class="filtro-label">Pagamentos aceitos</label>
+<span class="filtro-label">Pagamentos aceitos</span>
 <div class="filtro-checks-row">
 <label><input id="filtroPgPix" type="checkbox"/> Pix</label>
 <label><input id="filtroPgCredito" type="checkbox"/> Crédito</label>
@@ -429,7 +430,7 @@
 </div>
 </div>
 <div class="filtro-checks">
-<label class="filtro-label">Extras</label>
+<span class="filtro-label">Extras</span>
 <div class="filtro-checks-row">
 <label><input id="filtroGarantia" type="checkbox"/> Com garantia</label>
 <label><input id="filtroEmergencia" type="checkbox"/> Emergência</label>
@@ -442,15 +443,18 @@
 <div class="filtros-localizacao">
 <span class="label-loc">Localização</span>
 <div class="grid-loc">
-<select class="select-premium" id="selectEstado">
+<label class="sr-only" for="selectEstado">Estado</label>
+<select class="select-premium" id="selectEstado" name="selectEstado">
 <option disabled="" selected="" value="">Selecionar UF</option>
 <option value="BA">Bahia</option>
 <option value="SP">São Paulo</option>
 </select>
-<select class="select-premium" disabled="" id="selectCidade">
+<label class="sr-only" for="selectCidade">Cidade</label>
+<select class="select-premium" disabled="" id="selectCidade" name="selectCidade">
 <option disabled="" selected="" value="">Cidade</option>
 </select>
-<select class="select-premium" disabled="" id="selectBairro">
+<label class="sr-only" for="selectBairro">Bairro</label>
+<select class="select-premium" disabled="" id="selectBairro" name="selectBairro">
 <option disabled="" selected="" value="">Bairro</option>
 </select>
 </div>
@@ -773,7 +777,7 @@
     }catch(e){}
   })();
 </script>
-<script src="doke-shell.js?v=20260211v27"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 <script>
   (function(){
     function recoverPageScroll(){
@@ -803,3 +807,15 @@
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+

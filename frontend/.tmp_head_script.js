@@ -539,7 +539,7 @@ window.carregarTrabalhosHome = async function() {
                     <span class="yt-chip">Vídeo-curto</span>
                     <span class="yt-duration">${escapeHtmlLocal(duracao)}</span>
                 </div>
-                <input type="hidden" class="video-src-hidden" name="videoSrc" value="${data.videoUrl}">
+                <input type="hidden" class="video-src-hidden" value="${data.videoUrl}">
                 <img src="${escapeHtmlLocal(capa)}" class="video-bg" loading="lazy" decoding="async" alt="${escapeHtmlLocal(tituloCurto)}">
                 <div class="play-icon yt-play-fab"><i class='bx bx-play'></i></div>
                 <div class="video-ui-layer">
@@ -1027,27 +1027,29 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
 
 // Builder global do card do anúncio (reutilizado no perfil para ficar 100% igual ao feed)
 window.dokeBuildCardPremium = function(anuncio) {
-    const titulo = String(anuncio.titulo || "Serviço sem título");
-    let preco = String(anuncio.preco || "Sob Orçamento").trim();
-    if (/^sob\\s+or[çc]amento$/i.test(preco)) preco = "Sob Orçamento";
-    const descricao = String(anuncio.descricao || "").trim();
-    const descricaoLimpa = __dokeNormalizeText(descricao).replace(/\s+/g, " ").trim();
-    const tituloLimpo = __dokeNormalizeText(titulo).replace(/\s+/g, " ").trim();
-    const descricaoDuplicada = !descricaoLimpa || descricaoLimpa === tituloLimpo || descricaoLimpa.startsWith(`${tituloLimpo} `);
-    const descricaoExibir = (!descricaoDuplicada && descricao.length >= 24) ? descricao : "";
-    const fotoAutor = anuncio.fotoAutor || anuncio.foto || "https://i.pravatar.cc/150";
+    const titulo = anuncio.titulo || "Sem título";
+    const preco = anuncio.preco || "A combinar";
+    const __precoLabel = (() => {
+        const raw = String(preco || "").toLowerCase();
+        // Normaliza acentos ("orçamento" -> "orcamento") para evitar falsos negativos
+        const p = raw.normalize ? raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : raw;
+        // Se for "Sob orçamento" ou "A combinar", não faz sentido exibir "A partir de"
+        if (p.includes("sob") && p.includes("orcamento")) return "";
+        if (p.includes("a combinar")) return "";
+        return "A partir de";
+    })();
+    const fotoAutor = anuncio.fotoAutor || "https://i.pravatar.cc/150";
+    const descricao = anuncio.descricao || "";
 
-    let nomeParaExibir = String(anuncio.userHandle || anuncio.user || anuncio.nomeAutor || "usuario");
-    if (!nomeParaExibir.startsWith('@')) nomeParaExibir = '@' + nomeParaExibir;
+    let nomeParaExibir = anuncio.userHandle || "@usuario";
+    if(!nomeParaExibir.startsWith('@')) nomeParaExibir = '@' + nomeParaExibir;
 
-    const notaNum = Number(anuncio.mediaAvaliacao || 0) || 0;
-    const qtdAvaliacoes = Number(anuncio.numAvaliacoes || 0) || 0;
+    const nota = anuncio.mediaAvaliacao || 0;
+    const qtdAvaliacoes = anuncio.numAvaliacoes || 0;
+    const notaNum = Number(nota) || 0;
 
     const categoriaRaw = anuncio.categoria || anuncio.categorias || anuncio.servico || "";
-    const categoria = (Array.isArray(categoriaRaw) ? String(categoriaRaw[0] || "") : String(categoriaRaw || ""))
-      .split(",")[0]
-      .trim();
-
+    const categoria = Array.isArray(categoriaRaw) ? String(categoriaRaw[0] || "") : String(categoriaRaw || "");
     const localLabel = [anuncio.bairro, anuncio.cidade, anuncio.uf]
       .map(v => String(v || "").trim())
       .filter(Boolean)
@@ -1056,194 +1058,222 @@ window.dokeBuildCardPremium = function(anuncio) {
 
     const tagsSource = anuncio.tags ?? anuncio.tag ?? anuncio.palavrasChave ?? anuncio.palavras_chave ?? anuncio.keywords ?? "";
     const tagsList = (() => {
-      if (Array.isArray(tagsSource)) return tagsSource.map(t => String(t || "").trim()).filter(Boolean);
+      if (Array.isArray(tagsSource)) {
+        return tagsSource.map(t => String(t || "").trim()).filter(Boolean);
+      }
       return String(tagsSource || "")
-        .split(/[\,\n;|]+/)
+        .split(/[,\n;|]+/)
         .map(t => t.replace(/^#/, "").trim())
         .filter(Boolean);
-    })();
+    })().slice(0, 3);
+
     const tagsFooter = tagsList.slice(0, 2);
     const tagsOverflow = Math.max(0, tagsList.length - tagsFooter.length);
+
+    const htmlAvaliacaoDisplay = qtdAvaliacoes === 0 
+        ? `<span style="background:#e0f2f1; color:#00695c; padding:2px 8px; border-radius:10px; font-size:0.75rem; font-weight:700;">Novo</span>`
+        : ``;
 
     const starsInline = Array.from({ length: 5 }, (_, i) => {
       const isOn = i < Math.round(Math.max(0, Math.min(5, notaNum)));
       return `<i class='bx ${isOn ? "bxs-star" : "bx-star"}'></i>`;
     }).join("");
 
-    const fotos = Array.isArray(anuncio.fotos) && anuncio.fotos.length
-      ? anuncio.fotos
-      : [anuncio.img || "https://placehold.co/900x600?text=Sem+Imagem"];
+    let fotos = anuncio.fotos && anuncio.fotos.length > 0 ? anuncio.fotos : [anuncio.img || "https://placehold.co/600x400"];
     const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
-    const fotoPrincipal = String(fotos[0] || "");
-    const fotosExtras = Math.max(0, fotos.length - 1);
 
+    let htmlFotos = '';
+
+    if (fotos.length === 1) {
+        htmlFotos = `
+        <div class="grid-fotos-doke" style="grid-template-columns: 1fr;">
+            <div class="foto-main" style="grid-column: 1; grid-row: 1/3;">
+                <img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)">
+            </div>
+        </div>`;
+    } else if (fotos.length === 2) {
+        htmlFotos = `
+        <div class="grid-fotos-doke">
+            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+            <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)"></div>
+        </div>`;
+    } else {
+        const contadorExtra = Math.max(0, fotos.length - 2);
+        const overlayHtml = contadorExtra > 0
+            ? `<div class="overlay-count" onclick="abrirGaleria(${jsonFotos}, 1)">+${contadorExtra}</div>`
+            : '';
+        htmlFotos = `
+        <div class="grid-fotos-doke">
+            <div class="foto-main"><img src="${fotos[0]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 0)"></div>
+            <div class="foto-sub full-height"><img src="${fotos[1]}" class="img-cover" loading="lazy" decoding="async" style="cursor:pointer;" onclick="abrirGaleria(${jsonFotos}, 1)">${overlayHtml}</div>
+        </div>`;
+    }
+
+    const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid}')"`;
+    const estiloLink = `style="cursor: pointer;"`;
     const userDataAttr = anuncio.uid ? `data-uid="${anuncio.uid}"` : "";
-    const linkPerfil = `onclick="event.stopPropagation(); window.irParaPerfilComContagem('${anuncio.uid || ""}')"`;
-    const estiloLink = `style="cursor:pointer;"`;
     const detalhesBaseUrl = anuncio.id ? `detalhes.html?id=${encodeURIComponent(anuncio.id)}` : "";
     const detalhesReviewsUrl = detalhesBaseUrl ? `${detalhesBaseUrl}&scroll=avaliacoes#reviews-list` : "";
 
-    const orcParams = new URLSearchParams();
-    if (anuncio.uid) orcParams.set("uid", anuncio.uid);
-    if (anuncio.id) orcParams.set("aid", anuncio.id);
-    const orcamentoHref = `orcamento.html${orcParams.toString() ? `?${orcParams.toString()}` : ""}`;
-
-    const card = document.createElement('article');
-    card.className = 'card-premium card-premium-v2';
+    const card = document.createElement('div');
+    card.className = 'card-premium';
     card.onmousedown = function() {
-      if (typeof window.registrarVisualizacao === "function") {
-        window.registrarVisualizacao(anuncio.id, anuncio.uid);
-      }
+        if (typeof window.registrarVisualizacao === "function") {
+            window.registrarVisualizacao(anuncio.id, anuncio.uid);
+        }
     };
 
     card.innerHTML = `
-      <div class="cp-v2-top">
-        <div class="cp-v2-user">
-          <div class="cp-v2-avatarBox">
-            <img src="${escapeHtml(fotoAutor)}" class="cp-avatar js-user-link" loading="lazy" decoding="async" ${userDataAttr} ${linkPerfil} ${estiloLink} alt="${escapeHtml(nomeParaExibir)}">
-            <span class="status-dot online" aria-hidden="true"></span>
-          </div>
-          <div class="cp-v2-userInfo">
-            <h4 class="cp-v2-handle js-user-link" ${userDataAttr} ${linkPerfil} ${estiloLink}>${escapeHtml(nomeParaExibir)}</h4>
-            <div class="cp-v2-badges">
-              ${categoria ? `<button type="button" class="cp-v2-badge cp-v2-badge-role js-card-categoria" title="${escapeHtml(categoria)}" data-q="${encodeURIComponent(categoria)}">${escapeHtml(categoria)}</button>` : ``}
-              ${qtdAvaliacoes === 0 ? `<span class="cp-v2-badge cp-v2-badge-new">Novo</span>` : ``}
+        <div class="cp-header-clean">
+            <div style="display:flex; gap:12px; align-items:center;">
+                <img src="${fotoAutor}" class="cp-avatar js-user-link" loading="lazy" decoding="async" ${userDataAttr} ${linkPerfil} ${estiloLink}> 
+                <div class="cp-info-user">
+                    <div class="cp-nome-row">
+                        <h4 class="cp-nome-clean js-user-link" ${userDataAttr} ${linkPerfil} ${estiloLink}>${nomeParaExibir}</h4>
+                        ${categoria ? `<button type="button" class="cp-categoria-chip js-card-categoria" title="${escapeHtml(categoria)}" data-q="${encodeURIComponent(categoria)}">${escapeHtml(categoria)}</button>` : ``}
+                        ${htmlAvaliacaoDisplay}
+                    </div>
+                    <div class="cp-tempo-online">
+                        <div class="status-dot online"></div> Online
+                        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avaliações do anúncio">
+                          <span class="cp-mini-stars" aria-hidden="true">${starsInline}</span>
+                          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes})` : "Sem avaliações"}</span>
+                        </button>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-        <div class="cp-more">
-          <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar anúncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
-            <i class='bx bx-heart'></i>
-          </button>
+        <div class="cp-body">
+            <h3 class="cp-titulo">${titulo}</h3>
+            <p class="cp-desc-clean">${descricao}</p>
+            ${localLabel ? `<div class="cp-localizacao-line"><i class='bx bx-map-pin'></i><span>${escapeHtml(localLabel)}</span></div>` : ``}
         </div>
-      </div>
-
-      <div class="cp-v2-rating">
-        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avaliações do anúncio">
-          <span class="cp-mini-stars" aria-hidden="true">${starsInline}</span>
-          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes} avaliações)` : "Sem avaliações"}</span>
-        </button>
-      </div>
-
-      <div class="cp-v2-body">
-        <h3 class="cp-v2-title">${escapeHtml(titulo)}</h3>
-        ${localLabel ? `<div class="cp-v2-location"><i class='bx bxs-map'></i><span>${escapeHtml(localLabel)}</span></div>` : ``}
-        ${descricaoExibir ? `<p class="cp-v2-desc">${escapeHtml(descricaoExibir)}</p>` : ``}
-        <span class="status-text sr-only">Online</span>
-      </div>
-
-      <div class="cp-v2-mediaWrap">
-        <img src="${escapeHtml(fotoPrincipal)}" class="cp-v2-mainImage img-cover" loading="lazy" decoding="async" alt="${escapeHtml(titulo)}" onclick="abrirGaleria(${jsonFotos}, 0)">
-        ${fotosExtras > 0 ? `<button type="button" class="cp-v2-moreCount" onclick="event.stopPropagation(); abrirGaleria(${jsonFotos}, 1)">+${fotosExtras}</button>` : ``}
-      </div>
-
-      <div class="cp-v2-footer">
-        ${(tagsFooter.length || tagsOverflow) ? `
-          <div class="cp-v2-tags">
-            ${tagsFooter.map(t => `<button type="button" class="cp-v2-tag js-card-tag" data-q="${encodeURIComponent(t)}">#${escapeHtml(t)}</button>`).join("")}
-            ${tagsOverflow ? `<span class="cp-v2-tag cp-v2-tag-more">+${tagsOverflow}</span>` : ``}
-          </div>
-        ` : ``}
-        <div class="cp-v2-actionRow">
-          <div class="cp-v2-priceWrap">
-            <small class="cp-v2-priceLabel">Valor estimado</small>
-            <strong class="cp-v2-priceValue">${escapeHtml(preco)}</strong>
-            <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none;">
-              Preço médio (5+ serviços): <b></b>
+        ${htmlFotos}
+        <div class="cp-footer-right">
+            <div style="margin-right:auto; min-width:0;">
+                ${__precoLabel ? `<small style="display:block; color:#999; font-size:0.7rem;">${__precoLabel}</small>` : ``}
+                <div class="cp-price-tags-row">
+                    <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+                    ${(tagsFooter.length || tagsOverflow) ? `<div class="cp-footer-tags">${tagsFooter.map(t => `<button type="button" class="cp-footer-tag js-card-tag" data-q="${encodeURIComponent(t)}">#${escapeHtml(t)}</button>`).join("")}${tagsOverflow ? `<span class="cp-footer-tag cp-footer-tag-more">+${tagsOverflow}</span>` : ``}</div>` : ``}
+                </div>
+                <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none; margin-top:6px; font-size:0.72rem; color:#64748b;">
+                    Preço médio (5+ serviços): <b style="color:#0f172a;"></b>
+                </div>
             </div>
-          </div>
-          <button class="btn-solicitar" type="button" onclick="window.location.href='${orcamentoHref}'">
-            Solicitar <i class='bx bx-right-arrow-alt'></i>
-          </button>
+            
+            <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
+                Solicitar Orçamento
+            </button>
         </div>
-      </div>
     `;
 
-    try {
-      if (anuncio.id) window.__dokeUpdatePrecoMedioCard?.(card, anuncio.id);
-    } catch (_) {}
+    
 
-    try {
-      const favBtn = card.querySelector('.cp-fav-btn');
-      const favId = anuncio.id ? String(anuncio.id) : '';
-      if (favBtn && favId) {
-        const saved = JSON.parse(localStorage.getItem('doke:favoritos:anuncios') || '[]');
-        const isFav = Array.isArray(saved) && saved.includes(favId);
-        favBtn.classList.toggle('is-fav', !!isFav);
-        favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
-        const icon = favBtn.querySelector('i');
-        if (icon) {
-          icon.classList.toggle('bx-heart', !isFav);
-          icon.classList.toggle('bxs-heart', !!isFav);
-        }
-      }
-    } catch (_) {}
+        // Preço médio (5+ serviços) - calculado a partir de cobranças pagas
+        try {
+            if (anuncio.id) {
+                window.__dokeUpdatePrecoMedioCard?.(card, anuncio.id);
+            }
+        } catch (_) {}
 
-    try {
-      const ratingBtn = card.querySelector('.js-rating-open');
-      if (ratingBtn && detalhesReviewsUrl) {
-        ratingBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          window.location.href = detalhesReviewsUrl;
-        });
-      }
+        try {
+            const menuWrap = document.createElement('div');
+            menuWrap.className = 'cp-more';
+            menuWrap.innerHTML = `
+                <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar anúncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
+                    <i class='bx bx-heart'></i>
+                </button>
+            `;
+            card.appendChild(menuWrap);
 
-      const catBtn = card.querySelector('.js-card-categoria');
-      if (catBtn) {
-        catBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const q = catBtn.dataset.q || '';
-          if (q) window.location.href = `busca.html?q=${q}&src=categoria_card`;
-        });
-      }
+            const favBtn = menuWrap.querySelector('.cp-fav-btn');
+            const favId = anuncio.id ? String(anuncio.id) : '';
+            if (favBtn && favId) {
+                try {
+                    const saved = JSON.parse(localStorage.getItem('doke:favoritos:anuncios') || '[]');
+                    const isFav = Array.isArray(saved) && saved.includes(favId);
+                    favBtn.classList.toggle('is-fav', !!isFav);
+                    favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+                    const icon = favBtn.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('bx-heart', !isFav);
+                        icon.classList.toggle('bxs-heart', !!isFav);
+                    }
+                } catch (_) {}
+            }
+        } catch(e) {}
 
-      card.querySelectorAll('.js-card-tag').forEach((tagBtn) => {
-        tagBtn.addEventListener('click', (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          const q = tagBtn.dataset.q || '';
-          if (q) window.location.href = `busca.html?q=${q}&src=tag_card`;
-        });
-      });
-    } catch (_) {}
+        // Navegação contextual do card:
+        // - estrelas -> detalhes + seção de avaliações
+        // - categoria -> busca por categoria
+        // - tags -> busca por tag
+        try {
+            const ratingBtn = card.querySelector('.js-rating-open');
+            if (ratingBtn && detalhesReviewsUrl) {
+                ratingBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.location.href = detalhesReviewsUrl;
+                });
+            }
 
-    try {
-      const dot = card.querySelector('.status-dot');
-      const label = card.querySelector('.status-text');
-      if (dot) {
-        const isOnlineFlag = !!(anuncio.statusOnline || anuncio.online || anuncio.isOnline);
-        const last = anuncio.lastActive || anuncio.ultimoOnline || anuncio.last_seen || null;
-        let lastMs = null;
-        if (typeof last === 'number') lastMs = (last > 1e12 ? last : last * 1000);
-        if (typeof last === 'string') {
-          const d = Date.parse(last);
-          if (!Number.isNaN(d)) lastMs = d;
-        }
-        const recently = lastMs ? (Date.now() - lastMs) <= 15 * 60 * 1000 : false;
-        const isOnline = isOnlineFlag || recently;
-        dot.classList.toggle('online', isOnline);
-        dot.classList.toggle('offline', !isOnline);
-        dot.title = isOnline ? 'Online agora' : (lastMs ? 'Visto recentemente' : 'Offline');
-        if (label) label.textContent = isOnline ? 'Online' : 'Offline';
-      }
-    } catch (_) {}
+            const catBtn = card.querySelector('.js-card-categoria');
+            if (catBtn) {
+                catBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const q = catBtn.dataset.q || '';
+                    if (q) window.location.href = `busca.html?q=${q}&src=categoria_card`;
+                });
+            }
 
-    try {
-      if (detalhesBaseUrl) {
-        card.addEventListener('click', (e) => {
-          const interactive = e.target && e.target.closest && e.target.closest(
-            'button,a,input,textarea,select,label,.cp-more,.cp-fav-btn,.cp-rating-link,.js-card-categoria,.js-card-tag,.img-cover,.cp-v2-moreCount,.js-user-link'
-          );
-          if (interactive) return;
-          window.location.href = detalhesBaseUrl;
-        });
-      }
-    } catch (_) {}
+            card.querySelectorAll('.js-card-tag').forEach((tagBtn) => {
+                tagBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    const q = tagBtn.dataset.q || '';
+                    if (q) window.location.href = `busca.html?q=${q}&src=tag_card`;
+                });
+            });
+        } catch(_) {}
 
-    return card;
+        // Online real-time (melhor esforço: usa flags/timestamps se existirem)
+        try {
+            const dot = card.querySelector('.status-dot');
+            const label = card.querySelector('.status-text');
+            if (dot && label) {
+                const isOnlineFlag = !!(anuncio.statusOnline || anuncio.online || anuncio.isOnline);
+                const last = anuncio.lastActive || anuncio.ultimoOnline || anuncio.last_seen || null;
+                let lastMs = null;
+                if (typeof last === 'number') lastMs = (last > 1e12 ? last : last * 1000);
+                if (typeof last === 'string') {
+                    const d = Date.parse(last);
+                    if (!Number.isNaN(d)) lastMs = d;
+                }
+                const recently = lastMs ? (Date.now() - lastMs) <= 15 * 60 * 1000 : false;
+                const isOnline = isOnlineFlag || recently;
+                dot.classList.toggle('online', isOnline);
+                dot.classList.toggle('offline', !isOnline);
+                label.textContent = isOnline ? 'Online' : 'Offline';
+                dot.title = isOnline ? 'Online agora' : (lastMs ? ('Visto recentemente') : 'Offline');
+            }
+        } catch(e) {}
+
+        // Clique em área "neutra" do card -> detalhes do anúncio
+        try {
+            if (detalhesBaseUrl) {
+                card.addEventListener('click', (e) => {
+                    const interactive = e.target && e.target.closest && e.target.closest(
+                        'button,a,input,textarea,select,label,.cp-more,.img-cover,.overlay-count,.js-user-link'
+                    );
+                    if (interactive) return;
+                    window.location.href = detalhesBaseUrl;
+                });
+            }
+        } catch(_) {}
+return card;
 };
+
 function __dokeNormalizeText(value) {
     return String(value || '')
         .toLowerCase()
@@ -1544,195 +1574,36 @@ window.dokePopulateCategoryFilters = function() {
     });
 };
 
-const DOKE_CACHE_KEYS = {
-    anuncios: "doke_cache_home_anuncios_v4",
-    reels: "doke_cache_home_reels_v4",
-    publicacoes: "doke_cache_home_publicacoes_v4"
-};
-
-const DOKE_SAAS_DOWN_KEY = "doke_supa_down_until";
-const DOKE_CACHE_MAX_AGE_MS = 1000 * 60 * 60 * 24 * 30;
-
-try {
-    localStorage.removeItem("doke_cache_home_anuncios_v1");
-    localStorage.removeItem("doke_cache_home_reels_v1");
-    localStorage.removeItem("doke_cache_home_publicacoes_v1");
-    localStorage.removeItem("doke_cache_home_anuncios_v2");
-    localStorage.removeItem("doke_cache_home_reels_v2");
-    localStorage.removeItem("doke_cache_home_publicacoes_v2");
-    localStorage.removeItem("doke_cache_home_anuncios_v3");
-    localStorage.removeItem("doke_cache_home_reels_v3");
-    localStorage.removeItem("doke_cache_home_publicacoes_v3");
-} catch (_) {}
-
-function dokeFingerprintAnuncio(row) {
-    const uid = String(row?.uid || row?.user_id || "").trim().toLowerCase();
-    const titulo = String(row?.titulo || row?.title || "").trim().toLowerCase();
-    const img = String(row?.img || row?.imagem || row?.thumb || "").trim().toLowerCase();
-    const preco = String(row?.preco || row?.price || "").trim().toLowerCase();
-    const cidade = String(row?.cidade || "").trim().toLowerCase();
-    const bairro = String(row?.bairro || "").trim().toLowerCase();
-    return `${uid}|${titulo}|${img}|${preco}|${cidade}|${bairro}`;
-}
-
-function dokeDedupAnuncios(list) {
-    if (!Array.isArray(list) || !list.length) return [];
-    const byId = new Set();
-    const bySig = new Set();
-    const out = [];
-    for (const row of list) {
-        if (!row || typeof row !== "object") continue;
-        const rawId = row.id || row.anuncioId || row.anuncio_id || row.anuncioid || row.servico_id || row.servicoId || row.servico;
-        const id = rawId ? String(rawId).trim() : "";
-        const sig = dokeFingerprintAnuncio(row);
-        if (id && byId.has(id)) continue;
-        if (sig && bySig.has(sig)) continue;
-        if (id) byId.add(id);
-        if (sig) bySig.add(sig);
-        out.push(row);
-    }
-    return out;
-}
-
-function dokeIsSupaTemporarilyDown() {
-    try {
-        const until = Number(sessionStorage.getItem(DOKE_SAAS_DOWN_KEY) || 0);
-        return Number.isFinite(until) && until > Date.now();
-    } catch (_) {
-        return false;
-    }
-}
-
-function dokeMarkSupaDown(ms = 120000) {
-    try {
-        sessionStorage.setItem(DOKE_SAAS_DOWN_KEY, String(Date.now() + Math.max(10000, ms)));
-    } catch (_) {}
-}
-
-function dokeLooksLikeNetworkAbort(err) {
-    if (!err) return false;
-    const code = String(err.code || "").toLowerCase();
-    const msg = String(err.message || err.details || err.hint || "").toLowerCase();
-    return (
-        code === "" ||
-        msg.includes("aborterror") ||
-        msg.includes("failed to fetch") ||
-        msg.includes("network") ||
-        msg.includes("cors") ||
-        msg.includes("err_failed") ||
-        msg.includes("request was aborted")
-    );
-}
-
-function dokeLogNonNetworkError(prefix, err) {
-    if (!dokeLooksLikeNetworkAbort(err)) {
-        console.error(prefix, err);
-    } else {
-        dokeMarkSupaDown();
-    }
-}
-
-function dokeReadCache(key, maxAgeMs = 0) {
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return null;
-        const parsed = JSON.parse(raw);
-        if (!parsed || typeof parsed !== "object") return null;
-        const ts = Number(parsed.ts || 0);
-        if (maxAgeMs > 0 && ts && (Date.now() - ts > maxAgeMs)) return null;
-        const data = Array.isArray(parsed.data) ? parsed.data : null;
-        return data;
-    } catch (_) {
-        return null;
-    }
-}
-
-function dokeWriteCache(key, data) {
-    try {
-        if (!Array.isArray(data)) return;
-        localStorage.setItem(key, JSON.stringify({ ts: Date.now(), data }));
-    } catch (_) {}
-}
-
-async function dokeWithTimeout(promise, ms = 10000, tag = "timeout_doke_supabase") {
-    let timer = null;
-    try {
-        return await Promise.race([
-            promise,
-            new Promise((_, reject) => {
-                timer = setTimeout(() => reject(new Error(tag)), Math.max(2000, Number(ms) || 10000));
-            })
-        ]);
-    } finally {
-        if (timer) clearTimeout(timer);
-    }
-}
-
 async function __dokeFetchAnunciosFallback() {
-    if (window.__dokeAnunciosFallbackInflight) {
-        try { return await window.__dokeAnunciosFallbackInflight; } catch (_) {}
-    }
-    const task = (async () => {
     const client = (typeof getSupabaseClient === "function")
         ? getSupabaseClient()
         : (window.sb || window.supabaseClient || window.sbClient || window.supabase || null);
-    const cached = dokeReadCache(DOKE_CACHE_KEYS.anuncios, DOKE_CACHE_MAX_AGE_MS);
-    if (cached && cached.length) return { ok: true, data: cached };
     if (!client?.from) return { ok: false, data: [] };
-    if (dokeIsSupaTemporarilyDown()) return { ok: false, data: [] };
 
     const tableCandidates = ["anuncios", "servicos"];
-    const selectCandidates = [
-        "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo,dataCriacao,dataAtualizacao,bairro,cidade,uf,pagamentosAceitos,pagamentos_aceitos,mediaAvaliacao,numAvaliacoes",
-        "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo",
-        "*"
-    ];
     for (const table of tableCandidates) {
-        for (const select of selectCandidates) {
-            try {
-                const res = await dokeWithTimeout(
-                    client
-                        .from(table)
-                        .select(select)
-                        .limit(120),
-                    10000,
-                    `timeout_supabase_${table}`
-                );
-                if (res.error) {
-                    if (dokeLooksLikeNetworkAbort(res.error)) dokeMarkSupaDown();
-                    continue;
-                }
-                if (!Array.isArray(res.data)) continue;
-                const normalized = (res.data || [])
-                    .map((row) => {
-                        const realId = row?.id || row?.anuncioId || row?.anuncio_id || row?.anuncioid || row?.servico_id || row?.servicoId || row?.servico;
-                        if (!realId) return null;
-                        return { ...row, id: realId };
-                    })
-                    .filter(Boolean);
-                dokeWriteCache(DOKE_CACHE_KEYS.anuncios, normalized);
-                return { ok: true, data: normalized };
-            } catch (err) {
-                if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
-            }
-        }
+        try {
+            const res = await client
+                .from(table)
+                .select("*")
+                .limit(300);
+            if (res.error) continue;
+            if (!Array.isArray(res.data)) continue;
+            const normalized = res.data.map((row, idx) => ({
+                ...row,
+                id: row?.id || row?.anuncioId || row?.anuncio_id || row?.anuncioid || row?.servico_id || row?.servicoId || row?.servico || `${table}-${idx}`
+            }));
+            return { ok: true, data: normalized };
+        } catch (_) {}
     }
+
     return { ok: false, data: [] };
-    })();
-    window.__dokeAnunciosFallbackInflight = task;
-    try {
-        return await task;
-    } finally {
-        window.__dokeAnunciosFallbackInflight = null;
-    }
 }
 
 window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
     const feed = document.getElementById('feedAnuncios');
     const tituloSecao = document.getElementById('categorias-title'); 
     if (!feed) return; 
-    if (window.__dokeAnunciosLoading) return;
-    window.__dokeAnunciosLoading = true;
 
     try {
         if (typeof window.dokeSyncAnunciosFeedLayout === 'function') {
@@ -1747,19 +1618,14 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         let fetched = false;
         let lastLoadError = null;
 
-        const cacheFirst = dokeReadCache(DOKE_CACHE_KEYS.anuncios, DOKE_CACHE_MAX_AGE_MS);
-        const cachedList = Array.isArray(cacheFirst) ? cacheFirst.slice() : [];
-
         const hasCompatDb = !!window.db
             && typeof query === "function"
             && typeof collection === "function"
             && typeof getDocs === "function";
 
-        const firebaseLoaded = [];
         if (hasCompatDb) {
             try {
-                const coll = collection(window.db, "anuncios");
-                const q = (typeof limit === "function") ? query(coll, limit(120)) : query(coll);
+                const q = query(collection(window.db, "anuncios"));
                 const querySnapshot = await Promise.race([
                     getDocs(q),
                     new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_firestore_anuncios")), 12000))
@@ -1768,44 +1634,30 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                 querySnapshot.forEach((docSnap) => {
                     let dados = docSnap.data();
                     dados.id = docSnap.id;
-                    firebaseLoaded.push(dados);
+                    listaAnuncios.push(dados);
                 });
-                if (firebaseLoaded.length) {
-                    listaAnuncios = firebaseLoaded;
-                    fetched = true;
-                }
+                fetched = true;
             } catch (fireErr) {
                 lastLoadError = fireErr;
-                if (!dokeLooksLikeNetworkAbort(fireErr)) {
-                    console.warn("Falha ao carregar anúncios via compat:", fireErr);
-                }
+                console.warn("Falha ao carregar anúncios via compat:", fireErr);
             }
         }
 
         if (!fetched) {
             const fallback = await __dokeFetchAnunciosFallback();
-            if (Array.isArray(fallback.data)) {
+            if (fallback.ok) {
                 listaAnuncios = Array.isArray(fallback.data) ? fallback.data : [];
-                if (listaAnuncios.length) fetched = true;
+                fetched = true;
             }
         }
 
-        if (!fetched && cachedList.length) {
-            listaAnuncios = cachedList;
-            fetched = true;
-        }
-
         if (!fetched) {
-            console.warn("Nao foi possivel carregar anuncios no momento. Exibindo estado vazio.", lastLoadError || null);
-            listaAnuncios = [];
-            fetched = true;
+            throw (lastLoadError || new Error("Nao foi possivel carregar anuncios no momento."));
         }
 
-        listaAnuncios = dokeDedupAnuncios(listaAnuncios);
         // Não mostrar anúncios desativados no feed público
         // (anúncios antigos sem o campo 'ativo' continuam aparecendo)
         listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
-        dokeWriteCache(DOKE_CACHE_KEYS.anuncios, listaAnuncios);
 
         window.__dokeAnunciosCacheFull = listaAnuncios.slice();
         if (typeof window.dokePopulateCategoryFilters === 'function') {
@@ -1917,8 +1769,6 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         console.error("Erro no carregamento:", erro);
         feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
         feed.setAttribute('aria-busy', 'false');
-    } finally {
-        window.__dokeAnunciosLoading = false;
     }
 }
 
@@ -2203,8 +2053,6 @@ function __dokeSetupCatCarousel(){
 window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
     if (!container) return;
-    if (window.__dokeCategoriasLoading) return;
-    window.__dokeCategoriasLoading = true;
 
     const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
     const skelCount = vw <= 520 ? 5 : (vw <= 1024 ? 6 : 8);
@@ -2221,12 +2069,14 @@ window.carregarCategorias = async function() {
     try {
         const categoriasBase = __dokeGetAnunciarCategorias();
         const baseLower = new Set(categoriasBase.map((c) => String(c || "").toLowerCase().trim()));
-        const freq = new Map();
-        const baseRes = await __dokeFetchAnunciosFallback();
-        const anuncios = Array.isArray(baseRes?.data) ? baseRes.data : [];
 
-        anuncios.forEach((d) => {
-            let cats = d?.categorias ?? d?.categoria ?? '';
+        const q = query(collection(window.db, "anuncios"));
+        const snap = await getDocs(q);
+
+        const freq = new Map();
+        snap.forEach((docSnap) => {
+            const d = docSnap.data() || {};
+            let cats = d.categorias ?? d.categoria ?? '';
             if (Array.isArray(cats)) cats = cats.join(',');
             if (typeof cats !== 'string') cats = String(cats || '');
             cats.split(',').map(s => s.trim()).filter(Boolean).forEach((nome) => {
@@ -2312,17 +2162,28 @@ window.carregarCategorias = async function() {
         container.setAttribute('aria-busy', 'false');
         __dokeEnsureCategoryIconGlyph(container);
         __dokeSetupCatCarousel();
-    } finally {
-        window.__dokeCategoriasLoading = false;
     }
 };
 window.sincronizarSessaoSupabase = async function() {
-    if (!window.sb?.auth?.getUser) return null;
+    const clearAuthCache = () => {
+        try {
+            [
+                'usuarioLogado',
+                'usuario_logado',
+                'userLogado',
+                'doke_usuario_logado',
+                'doke_usuario_perfil',
+                'perfil_usuario'
+            ].forEach((k) => localStorage.removeItem(k));
+        } catch (_) {}
+    };
+    if (!window.sb?.auth?.getSession) return null;
     try {
-        const { data, error } = await window.sb.auth.getUser();
+        const { data, error } = await window.sb.auth.getSession();
         if (error) return null;
-        const user = data?.user || null;
+        const user = data?.session?.user || null;
         if (!user) {
+            clearAuthCache();
             return null;
         }
         if (!localStorage.getItem('doke_usuario_perfil')) {
@@ -2429,11 +2290,11 @@ window.verificarEstadoLogin = async function() {
         logado = true;
     }
 
-    if (!logado && window.sb?.auth?.getUser) {
+    if (!logado && window.sb?.auth?.getSession) {
         try {
-            const { data, error } = await window.sb.auth.getUser();
+            const { data, error } = await window.sb.auth.getSession();
             if (!error) {
-                sessionUser = data?.user || null;
+                sessionUser = data?.session?.user || null;
                 if (sessionUser) {
                     const nomeFallback = sessionUser.user_metadata?.nome || (sessionUser.email ? sessionUser.email.split('@')[0] : "Usuario");
                     perfil = {
@@ -2728,9 +2589,9 @@ window.irParaMeuPerfil = function(event) {
     const go = async () => {
         let sessionUser = null;
         try {
-            if (window.sb?.auth?.getUser) {
-                const { data, error } = await window.sb.auth.getUser();
-                if (!error) sessionUser = data?.user || null;
+            if (window.sb?.auth?.getSession) {
+                const { data, error } = await window.sb.auth.getSession();
+                if (!error) sessionUser = data?.session?.user || null;
             }
         } catch (_) {}
 
@@ -3302,16 +3163,14 @@ window.carregarFiltrosLocalizacao = async function() {
     const selBairro = document.getElementById('selectBairro');
 
     if (!selEstado || !selCidade || !selBairro) return;
-    if (window.__dokeFiltrosLocLoading) return;
-    window.__dokeFiltrosLocLoading = true;
 
     try {
+        const q = query(collection(window.db, "anuncios"));
+        const snapshot = await getDocs(q);
         const locaisMap = {}; 
-        const baseRes = await __dokeFetchAnunciosFallback();
-        const anuncios = Array.isArray(baseRes?.data) ? baseRes.data : [];
 
-        anuncios.forEach((data) => {
-            if (!data || typeof data !== "object") return;
+        snapshot.forEach(doc => {
+            const data = doc.data();
             const uf = data.uf || "Outros";
             const cidade = data.cidade || "Indefinido";
             const bairro = data.bairro || "Geral";
@@ -3367,7 +3226,6 @@ window.carregarFiltrosLocalizacao = async function() {
         };
 
     } catch (e) { console.error("Erro ao carregar filtros de local:", e); }
-    finally { window.__dokeFiltrosLocLoading = false; }
 }
 
 window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
@@ -3383,11 +3241,7 @@ window.filtrarAnunciosPorLocal = function(uf, cidade, bairro) {
 // 12. FEED GLOBAL (Para Index.html)
 // ============================================================
 function getSupabaseClient() {
-    const candidates = [window.sb, window.supabaseClient, window.sbClient, window.__supabaseClient, window.supabase];
-    for (const c of candidates) {
-        if (c && typeof c.from === "function") return c;
-    }
-    return null;
+    return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
 }
 
 if (window._dokePublicacoesJoinStatus === undefined) {
@@ -3497,29 +3351,16 @@ async function getSupabaseUserRow() {
     const client = getSupabaseClient();
     const authUser = auth?.currentUser;
     if (!client || !authUser?.uid) return null;
-    if (dokeIsSupaTemporarilyDown()) return null;
     if (window._dokeSupabaseUserRow && window._dokeSupabaseUserRow.uid === authUser.uid) {
         return window._dokeSupabaseUserRow;
     }
-    let data = null;
-    let error = null;
-    try {
-        const res = await dokeWithTimeout(
-            client
-                .from("usuarios")
-                .select("id, uid, nome, user, foto")
-                .eq("uid", authUser.uid)
-                .maybeSingle(),
-            9000,
-            "timeout_supabase_user_row"
-        );
-        data = res?.data || null;
-        error = res?.error || null;
-    } catch (err) {
-        error = err;
-    }
+    const { data, error } = await client
+        .from("usuarios")
+        .select("id, uid, nome, user, foto")
+        .eq("uid", authUser.uid)
+        .maybeSingle();
     if (error) {
-        dokeLogNonNetworkError("Erro ao carregar usuario supabase:", error);
+        console.error("Erro ao carregar usuario supabase:", error);
         return null;
     }
     window._dokeSupabaseUserRow = data || null;
@@ -3529,30 +3370,17 @@ async function getSupabaseUserRow() {
 async function attachSupabaseUsersById(items) {
     const client = getSupabaseClient();
     if (!client || !Array.isArray(items) || items.length === 0) return items;
-    if (dokeIsSupaTemporarilyDown()) return items;
 
     const missing = Array.from(new Set(items.map((item) => item?.user_id).filter(Boolean)));
     if (!missing.length) return items;
 
-    let data = null;
-    let error = null;
-    try {
-        const res = await dokeWithTimeout(
-            client
-                .from("usuarios")
-                .select("id, uid, nome, user, foto")
-                .in("id", missing),
-            9000,
-            "timeout_supabase_attach_users"
-        );
-        data = res?.data || null;
-        error = res?.error || null;
-    } catch (err) {
-        error = err;
-    }
+    const { data, error } = await client
+        .from("usuarios")
+        .select("id, uid, nome, user, foto")
+        .in("id", missing);
 
     if (error || !Array.isArray(data)) {
-        if (error && !isMissingTableError(error)) dokeLogNonNetworkError("Erro ao carregar usuarios:", error);
+        if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuarios:", error);
         return items;
     }
 
@@ -3566,63 +3394,46 @@ async function attachSupabaseUsersById(items) {
 
 async function fetchSupabasePublicacoesFeed() {
     const client = getSupabaseClient();
-    const cached = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
-    if (Array.isArray(cached) && cached.length) return cached;
-    if (!client) return cached || [];
-    if (dokeIsSupaTemporarilyDown()) return cached || [];
-    try {
-        let lastError = null;
-        let attempts = 0;
-        let lastStatusKey = null;
-        while (attempts < 6) {
-            const joinAllowed = window._dokePublicacoesJoinStatus !== false;
-            const socialAllowed = window._dokePublicacoesSocialStatus !== false;
-            const combos = [];
-            if (joinAllowed && socialAllowed) combos.push({ withJoin: true, withSocial: true });
-            if (joinAllowed) combos.push({ withJoin: true, withSocial: false });
-            if (socialAllowed) combos.push({ withJoin: false, withSocial: true });
-            combos.push({ withJoin: false, withSocial: false });
+    if (!client) return [];
+    let lastError = null;
+    let attempts = 0;
+    let lastStatusKey = null;
+    while (attempts < 6) {
+        const joinAllowed = window._dokePublicacoesJoinStatus !== false;
+        const socialAllowed = window._dokePublicacoesSocialStatus !== false;
+        const combos = [];
+        if (joinAllowed && socialAllowed) combos.push({ withJoin: true, withSocial: true });
+        if (joinAllowed) combos.push({ withJoin: true, withSocial: false });
+        if (socialAllowed) combos.push({ withJoin: false, withSocial: true });
+        combos.push({ withJoin: false, withSocial: false });
 
-            let statusChanged = false;
-            for (const combo of combos) {
-                const select = buildPublicacoesSelect(combo);
-                const safeRes = await dokeWithTimeout(
-                    client
-                        .from("publicacoes")
-                        .select(select)
-                        .order("created_at", { ascending: false })
-                        .limit(24),
-                    10000,
-                    "timeout_supabase_publicacoes"
-                );
-                const safeData = safeRes.data;
-                const safeError = safeRes.error;
-                if (!safeError) {
-                    if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
-                    if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
-                    const out = safeData || [];
-                    dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, out);
-                    return out;
-                }
-                if (dokeLooksLikeNetworkAbort(safeError)) dokeMarkSupaDown();
-                lastError = safeError;
-                const beforeKey = publicacoesStatusKey();
-                markPublicacoesSelectError(safeError);
-                statusChanged = publicacoesStatusKey() !== beforeKey;
-                if (statusChanged) break;
+        let statusChanged = false;
+        for (const combo of combos) {
+            const select = buildPublicacoesSelect(combo);
+            const { data, error } = await client
+                .from("publicacoes")
+                .select(select)
+                .order("created_at", { ascending: false })
+                .limit(40);
+            if (!error) {
+                if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
+                if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
+                return data || [];
             }
-
-            const currentKey = publicacoesStatusKey();
-            if (!statusChanged && currentKey === lastStatusKey) break;
-            lastStatusKey = currentKey;
-            attempts += 1;
+            lastError = error;
+            const beforeKey = publicacoesStatusKey();
+            markPublicacoesSelectError(error);
+            statusChanged = publicacoesStatusKey() !== beforeKey;
+            if (statusChanged) break;
         }
-        if (lastError && !dokeLooksLikeNetworkAbort(lastError)) console.error("Erro ao carregar publicacoes supabase:", lastError);
-    } catch (err) {
-        if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
-        else console.error("Falha critica ao buscar publicacoes:", err);
+
+        const currentKey = publicacoesStatusKey();
+        if (!statusChanged && currentKey === lastStatusKey) break;
+        lastStatusKey = currentKey;
+        attempts += 1;
     }
-    return cached || [];
+    if (lastError) console.error("Erro ao carregar publicacoes supabase:", lastError);
+    return [];
 }
 
 window.carregarFeedGlobal = async function() {
@@ -3650,14 +3461,14 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Firebase indisponivel:", e);
+        console.error(e);
     }
 
     let supaUserRow = null;
     try {
         supaUserRow = await getSupabaseUserRow();
     } catch (e) {
-        dokeLogNonNetworkError("Usuario Supabase indisponivel:", e);
+        console.error(e);
     }
 
     try {
@@ -3671,7 +3482,7 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Supabase indisponivel:", e);
+        console.error(e);
     }
 
     feedItems.sort((a, b) => {
@@ -3785,18 +3596,15 @@ window.carregarFeedGlobal = async function() {
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
-    if (window.__dokeFeedGlobalLoading) return;
-    window.__dokeFeedGlobalLoading = true;
 
-    try {
-        container.classList.add("feed-publicacoes-grid");
-        if (typeof window.dokeRenderPublicacoesSkeleton === 'function') {
-            window.dokeRenderPublicacoesSkeleton(container);
-        } else {
-            container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
-        }
+    container.classList.add("feed-publicacoes-grid");
+    if (typeof window.dokeRenderPublicacoesSkeleton === 'function') {
+        window.dokeRenderPublicacoesSkeleton(container);
+    } else {
+        container.innerHTML = `<div style="text-align:center; padding:40px; color:#777;"><i class='bx bx-loader-alt bx-spin' style="font-size:2rem;"></i></div>`;
+    }
 
-        const feedItems = [];
+    const feedItems = [];
 
     try {
         const q = window.query(window.collection(window.db, "posts"), window.orderBy("data", "desc"));
@@ -3811,14 +3619,14 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Firebase indisponivel:", e);
+        console.error(e);
     }
 
     let supaUserRow = null;
     try {
         supaUserRow = await getSupabaseUserRow();
     } catch (e) {
-        dokeLogNonNetworkError("Usuario Supabase indisponivel:", e);
+        console.error(e);
     }
 
     try {
@@ -3832,7 +3640,7 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Supabase indisponivel:", e);
+        console.error(e);
     }
 
     feedItems.sort((a, b) => {
@@ -3843,11 +3651,11 @@ window.carregarFeedGlobal = async function() {
 
     container.innerHTML = "";
 
-        if (feedItems.length === 0) {
-            container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
-            container.setAttribute('aria-busy', 'false');
-            return;
-        }
+    if (feedItems.length === 0) {
+        container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
+        container.setAttribute('aria-busy', 'false');
+        return;
+    }
 
     feedItems.forEach((entry) => {
         if (entry.source === "firebase") {
@@ -3928,12 +3736,9 @@ window.carregarFeedGlobal = async function() {
         container.insertAdjacentHTML('beforeend', html);
     });
 
-        container.setAttribute('aria-busy', 'false');
-        setupFeedVideoPreview(container);
-        setupAntesDepois(container);
-    } finally {
-        window.__dokeFeedGlobalLoading = false;
-    }
+    container.setAttribute('aria-busy', 'false');
+    setupFeedVideoPreview(container);
+    setupAntesDepois(container);
 }
 
 function setupAntesDepois(container){
@@ -4047,13 +3852,9 @@ window.carregarPosts = function(uid) {
 // 13. INICIALIZAÇÃO E EVENT LISTENERS
 // ============================================================
 document.addEventListener("DOMContentLoaded", async function() {
-    if (window.__dokeMainInitDone) return;
-    window.__dokeMainInitDone = true;
     
     // 1. Proteção e Header
-    if (window.sincronizarSessaoSupabase) {
-        await window.sincronizarSessaoSupabase();
-    }
+    await window.sincronizarSessaoSupabase();
     protegerPaginasRestritas();
     verificarEstadoLogin();
     
@@ -4318,29 +4119,9 @@ document.addEventListener("DOMContentLoaded", async function() {
                 }
             
         } else {
-            let supaUser = null;
-            try {
-                if (window.sb?.auth?.getUser) {
-                    const { data, error } = await window.sb.auth.getUser();
-                    if (!error && data?.user) supaUser = data.user;
-                }
-            } catch (_) {}
-
-            if (supaUser) {
-                if (!localStorage.getItem('doke_usuario_perfil')) {
-                    const nomeFallback = supaUser.user_metadata?.nome || (supaUser.email ? supaUser.email.split('@')[0] : "Usuario");
-                    localStorage.setItem('doke_usuario_perfil', JSON.stringify({
-                        nome: nomeFallback,
-                        user: supaUser.user_metadata?.user || nomeFallback,
-                        foto: supaUser.user_metadata?.foto || ""
-                    }));
-                }
-                localStorage.setItem('usuarioLogado', 'true');
-            } else {
-                localStorage.removeItem('usuarioLogado');
-                if(window.location.pathname.includes('perfil') || window.location.pathname.includes('chat')) {
-                    window.location.href = 'login.html';
-                }
+            localStorage.removeItem('usuarioLogado');
+            if(window.location.pathname.includes('perfil') || window.location.pathname.includes('chat')) {
+                window.location.href = 'login.html';
             }
         }
         verificarEstadoLogin();
@@ -7684,71 +7465,41 @@ async function carregarReelsNoIndex() {
 
 async function fetchSupabaseReelsHome() {
     const client = getSupabaseClient();
-    const cached = dokeReadCache(DOKE_CACHE_KEYS.reels, DOKE_CACHE_MAX_AGE_MS);
-    if (Array.isArray(cached) && cached.length) return cached;
-    if (!client) return cached || [];
-    if (dokeIsSupaTemporarilyDown()) return cached || [];
-    try {
-        const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
-        let { data, error } = await dokeWithTimeout(
-            client
+    if (!client) return [];
+    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
+    let { data, error } = await client
+        .from("videos_curtos")
+        .select(withJoin)
+        .order("created_at", { ascending: false })
+        .limit(20);
+    if (error) {
+        const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+        const retryJoin = await client
+            .from("videos_curtos")
+            .select(joinOnly)
+            .order("created_at", { ascending: false })
+            .limit(20);
+        if (retryJoin.error) {
+            const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+            const retry = await client
                 .from("videos_curtos")
-                .select(withJoin)
+                .select(fallback)
                 .order("created_at", { ascending: false })
-                .limit(14),
-            10000,
-            "timeout_supabase_reels_main"
-        );
-        if (error) {
-            const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
-            const retryJoin = await dokeWithTimeout(
-                client
-                    .from("videos_curtos")
-                    .select(joinOnly)
-                    .order("created_at", { ascending: false })
-                    .limit(14),
-                10000,
-                "timeout_supabase_reels_join"
-            );
-            if (retryJoin.error) {
-                const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
-                const retry = await dokeWithTimeout(
-                    client
-                        .from("videos_curtos")
-                        .select(fallback)
-                        .order("created_at", { ascending: false })
-                        .limit(14),
-                    10000,
-                    "timeout_supabase_reels_fallback"
-                );
-                if (retry.error) {
-                    if (dokeLooksLikeNetworkAbort(retry.error)) dokeMarkSupaDown();
-                    else console.error("Erro ao carregar videos curtos supabase:", retry.error);
-                    return cached || [];
-                }
-                const outFallback = await attachSupabaseUsersById(retry.data || []);
-                dokeWriteCache(DOKE_CACHE_KEYS.reels, outFallback);
-                return outFallback;
+                .limit(20);
+            if (retry.error) {
+                console.error("Erro ao carregar videos curtos supabase:", retry.error);
+                return [];
             }
-            const outJoin = await attachSupabaseUsersById(retryJoin.data || []);
-            dokeWriteCache(DOKE_CACHE_KEYS.reels, outJoin);
-            return outJoin;
+            return await attachSupabaseUsersById(retry.data || []);
         }
-        const out = await attachSupabaseUsersById(data || []);
-        dokeWriteCache(DOKE_CACHE_KEYS.reels, out);
-        return out;
-    } catch (err) {
-        if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
-        else console.error("Falha critica ao buscar videos curtos:", err);
-        return cached || [];
+        return await attachSupabaseUsersById(retryJoin.data || []);
     }
+    return await attachSupabaseUsersById(data || []);
 }
 
 window.carregarReelsHome = async function() {
     const container = document.getElementById('galeria-dinamica');
     if (!container) return;
-    if (window.__dokeReelsHomeLoading) return;
-    window.__dokeReelsHomeLoading = true;
 
     try {
         const feedItems = [];
@@ -7766,7 +7517,7 @@ window.carregarReelsHome = async function() {
                 });
             });
         } catch (e) {
-            dokeLogNonNetworkError("Reels Firebase indisponivel:", e);
+            console.error(e);
         }
 
         try {
@@ -7780,7 +7531,7 @@ window.carregarReelsHome = async function() {
                 });
             });
         } catch (e) {
-            dokeLogNonNetworkError("Reels Supabase indisponivel:", e);
+            console.error(e);
         }
 
         feedItems.sort((a, b) => {
@@ -7834,10 +7585,8 @@ window.carregarReelsHome = async function() {
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
-    } catch (e) {
-        dokeLogNonNetworkError("Falha ao renderizar reels home:", e);
-    }
-    finally { window.__dokeReelsHomeLoading = false; }
+
+    } catch (e) { console.error(e); }
 }
 
 function enableVideosCurtosPageScroll() {
@@ -10589,8 +10338,6 @@ async function carregarComentariosSupabase(publicacaoId) {
     const feedW = Math.max(feed.clientWidth || 0, feedRectW || 0, vw);
     const isBuscaFeed = document.body?.dataset?.page === 'busca';
     const isHomeFeed = document.body?.dataset?.page === 'home';
-    const isPerfilFeed = document.body?.dataset?.page === 'perfil';
-    const isNegocioFeed = document.body?.dataset?.page === 'negocio';
     if (isBuscaFeed) {
       const cols = feedW <= 560 ? 1 : 2;
       feed.style.display = 'grid';
@@ -10605,15 +10352,6 @@ async function carregarComentariosSupabase(publicacaoId) {
       feed.style.display = 'grid';
       feed.style.gridTemplateColumns = `repeat(${cols}, minmax(0, 1fr))`;
       feed.style.gap = cols === 1 ? '12px' : (cols === 2 ? '14px' : '16px');
-      feed.style.alignItems = 'stretch';
-      feed.style.justifyItems = 'stretch';
-      return;
-    }
-    if (isPerfilFeed || isNegocioFeed) {
-      const cols = feedW >= 1080 ? 2 : 1;
-      feed.style.display = 'grid';
-      feed.style.gridTemplateColumns = cols === 1 ? '1fr' : 'repeat(2, minmax(0, 1fr))';
-      feed.style.gap = cols === 1 ? '12px' : '14px';
       feed.style.alignItems = 'stretch';
       feed.style.justifyItems = 'stretch';
     }
@@ -10637,51 +10375,26 @@ async function carregarComentariosSupabase(publicacaoId) {
       : 0;
     const feedW = Math.max(feed.clientWidth || 0, feedRectW || 0, vw);
     const isBuscaFeed = document.body?.dataset?.page === 'busca' && feed.id === 'feedAnuncios';
-    const isPerfilFeed = document.body?.dataset?.page === 'perfil' && feed.id === 'feedAnuncios';
-    const isNegocioFeed = document.body?.dataset?.page === 'negocio' && feed.id === 'feedAnuncios';
     try { window.dokeSyncAnunciosFeedLayout(feed); } catch (_) {}
-    const cols = isBuscaFeed
-      ? (feedW <= 560 ? 1 : 2)
-      : (isPerfilFeed || isNegocioFeed)
-        ? (feedW >= 1080 ? 2 : 1)
-        : (feedW >= 1200 ? 3 : (feedW >= 760 ? 2 : 1));
-    const rows = isBuscaFeed ? 2 : 1;
-    const count = Math.max(1, cols * rows);
+    const count = isBuscaFeed
+      ? 2
+      : (vw <= 600 ? 2 : (vw <= 1024 ? 3 : 3));
     const cards = Array.from({length: count}).map(()=>
-      '<article class="skeleton-premium-card skel-anuncio-card skel-anuncio-card-v2" aria-hidden="true">'
-      + '  <div class="skel-v2-top">'
-      + '    <div class="skel-v2-user">'
-      + '      <span class="skeleton skel-v2-avatar"></span>'
-      + '      <span class="skel-v2-userWrap">'
-      + '        <span class="skeleton skel-v2-handle"></span>'
-      + '        <span class="skel-v2-badgeRow">'
-      + '          <span class="skeleton skel-v2-badge"></span>'
-      + '          <span class="skeleton skel-v2-badge skel-v2-badge-sm"></span>'
-      + '        </span>'
-      + '      </span>'
-      + '    </div>'
-      + '    <span class="skeleton skel-v2-heart"></span>'
+      '<article class="skeleton-premium-card skel-anuncio-card" aria-hidden="true">'
+      + '  <div class="skel-anuncio-head">'
+      + '    <span class="skeleton skel-anuncio-avatar"></span>'
+      + '    <span class="skel-anuncio-userWrap">'
+      + '      <span class="skeleton skel-anuncio-user"></span>'
+      + '      <span class="skeleton skel-anuncio-userSub"></span>'
+      + '    </span>'
       + '  </div>'
-      + '  <div class="skel-v2-rating">'
-      + '    <span class="skeleton skel-v2-stars"></span>'
-      + '    <span class="skeleton skel-v2-ratingText"></span>'
-      + '  </div>'
-      + '  <div class="skel-v2-body">'
-      + '    <span class="skeleton skel-v2-title"></span>'
-      + '    <span class="skeleton skel-v2-location"></span>'
-      + '  </div>'
-      + '  <div class="skeleton skel-v2-media"></div>'
-      + '  <div class="skel-v2-footer">'
-      + '    <div class="skel-v2-tags">'
-      + '      <span class="skeleton skel-v2-tag"></span>'
-      + '      <span class="skeleton skel-v2-tag"></span>'
-      + '    </div>'
-      + '    <div class="skel-v2-action">'
-      + '      <div class="skel-v2-price">'
-      + '        <span class="skeleton skel-v2-priceLabel"></span>'
-      + '        <span class="skeleton skel-v2-priceValue"></span>'
-      + '      </div>'
-      + '      <span class="skeleton skel-v2-cta"></span>'
+      + '  <div class="skeleton skeleton-premium-cover skel-anuncio-media"></div>'
+      + '  <div class="skeleton-premium-body skel-anuncio-body">'
+      + '    <div class="skeleton skeleton-line lg"></div>'
+      + '    <div class="skeleton skeleton-line md"></div>'
+      + '    <div class="skel-anuncio-foot">'
+      + '      <div class="skeleton skeleton-line sm"></div>'
+      + '      <div class="skeleton skel-anuncio-cta"></div>'
       + '    </div>'
       + '  </div>'
       + '</article>'
@@ -11394,9 +11107,8 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>
 
         <div class="ig-search-inputwrap" role="search">
-          <label class="sr-only" for="igSearchInput">Pesquisar usuários</label>
           <i class='bx bx-search'></i>
-          <input class="ig-search-input" id="igSearchInput" name="igSearchInput" type="text" placeholder="Pesquisar usuários" autocomplete="off" />
+          <input class="ig-search-input" type="text" placeholder="Pesquisar usuários" autocomplete="off" />
           <button class="ig-search-clear" type="button" aria-label="Limpar">
             <i class='bx bx-x'></i>
           </button>
@@ -12377,9 +12089,6 @@ async function carregarProfissionaisIndex() {
   const destaqueEl = document.getElementById("prosDestaque");
   const novosEl = document.getElementById("prosNovos");
   if (!destaqueEl || !novosEl) return;
-  if (window.__dokeProsIndexLoading) return;
-  window.__dokeProsIndexLoading = true;
-  try {
 
   destaqueEl.innerHTML = "";
   novosEl.innerHTML = "";
@@ -12398,13 +12107,20 @@ async function carregarProfissionaisIndex() {
   destaqueEl.innerHTML = Array.from({length:6}).map(proSkel).join("");
   novosEl.innerHTML = Array.from({length:6}).map(proSkel).join("");
 
-  let anuncios = [];
-  try {
-    const fallback = await __dokeFetchAnunciosFallback();
-    anuncios = Array.isArray(fallback?.data) ? fallback.data : [];
-  } catch (e) {
-    console.error("Erro ao buscar profissionais (fallback):", e);
-    anuncios = [];
+  const sb = await waitForSB();
+  if (!sb) {
+    console.warn("Supabase não disponível.");
+    return;
+  }
+
+  const { data: anuncios, error } = await sb
+    .from("anuncios")
+    .select("uid,nomeAutor,fotoAutor,userHandle,categoria,mediaAvaliacao,numAvaliacoes,dataCriacao")
+    .limit(1000);
+
+  if (error) {
+    console.error("Erro ao buscar anúncios:", error);
+    return;
   }
 
   const profs = agruparProfissionais(anuncios || []);
@@ -12446,9 +12162,6 @@ async function carregarProfissionaisIndex() {
         <a class="pros-empty-btn" href="tornar-profissional.html">Começar</a>
       </div>
     `;
-  } finally {
-    window.__dokeProsIndexLoading = false;
-  }
 }
 
 /*************************************************

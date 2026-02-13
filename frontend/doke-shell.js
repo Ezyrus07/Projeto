@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   const MQ = window.matchMedia("(max-width:1024px)");
   const PAGES = {
     home: "index.html",
@@ -87,16 +87,20 @@
     return null;
   }
 
+  function hasLocalLoginFlag(){
+    try{
+      if(localStorage.getItem("usuarioLogado") === "true") return true;
+      if(localStorage.getItem("doke_logged_in") === "1") return true;
+    }catch(e){}
+    return false;
+  }
+
   async function getSessionUser(){
     try{
       const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase;
       if(sb?.auth?.getUser){
         const { data, error } = await sb.auth.getUser();
         if(!error && data?.user) return data.user;
-      }
-      if(sb?.auth?.getSession){
-        const { data, error } = await sb.auth.getSession();
-        if(!error && data?.session?.user) return data.session.user;
       }
     }catch(e){}
     try{
@@ -274,16 +278,16 @@
     }catch(e){}
 
     let profile = getProfile();
-    let sessionUser = profile ? { id: profile.uid || profile.id || "cached_user" } : null;
+    const hasLocalAuth = !!profile || hasLocalLoginFlag();
+    let sessionUser = null;
+    if(profile && (profile.uid || profile.id || profile.email)){
+      sessionUser = { id: profile.uid || profile.id || profile.email || "cached_user" };
+    }
     if(!sessionUser){
       sessionUser = await getSessionUser();
-      profile = sessionUser ? getProfile() : null;
+      if(sessionUser && !profile) profile = getProfile();
     }
-    if(!sessionUser){
-      clearAuthCache();
-      profile = null;
-    }
-    const isLogged = !!sessionUser;
+    const isLogged = !!sessionUser || hasLocalAuth;
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);
@@ -383,7 +387,7 @@
         <a href="#" data-nav="search"><i class='bx bx-search'></i><span>Pesquisar</span></a>
         <a href="${PAGES.comunidades}" data-nav="comunidades"><i class='bx bx-group'></i><span>Comunidades</span></a>
         <a href="${PAGES.negocios}" data-nav="negocios"><i class='bx bx-store-alt'></i><span>Negócios</span></a>
-        <a href="${profileHref}" data-nav="perfil"><span><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
+        <a href="${profileHref}" data-nav="perfil"><span class="doke-nav-avatar-wrap"><img class="doke-nav-avatar" alt="Perfil"></span><span>Perfil</span></a>
       `;
       document.body.appendChild(bottom);
 
@@ -434,8 +438,9 @@
           <div class="doke-search-top">
             <button class="doke-search-back" type="button" aria-label="Voltar"><i class='bx bx-arrow-back'></i></button>
             <div class="doke-search-input-wrap">
+              <label class="sr-only" for="dokeShellSearchInput">Buscar no Doke</label>
               <i class='bx bx-search'></i>
-              <input class="doke-search-input" type="search" placeholder="Buscar por nome ou serviço" />
+              <input class="doke-search-input" id="dokeShellSearchInput" name="dokeShellSearchInput" type="search" placeholder="Buscar por nome ou serviço" />
             </div>
             <button class="doke-search-go" type="button" aria-label="Buscar">
               <i class='bx bx-search-alt-2'></i>
@@ -756,6 +761,14 @@
         const perfilEl = bottom.querySelector('[data-nav="perfil"] span');
         if(perfilEl) perfilEl.innerHTML = "<i class='bx bx-user'></i>";
       }
+      try{
+        const headerImg = header ? header.querySelector(".doke-avatar") : null;
+        const headerSrc = String(headerImg?.getAttribute("src") || "").trim();
+        const navSrc = String(navImg?.getAttribute("src") || "").trim();
+        if(navImg && headerSrc && (!navSrc || !avatarUrl)){
+          navImg.src = headerSrc;
+        }
+      }catch(_){}
     }
 
     initShellModalLayerObserver();
@@ -781,3 +794,5 @@
     ensureShell();
   }
 })();
+
+

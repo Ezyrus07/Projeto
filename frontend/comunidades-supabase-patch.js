@@ -1,4 +1,4 @@
-/* Doke - Comunidades Supabase Patch
+﻿/* Doke - Comunidades Supabase Patch
    Reforça o fix do client antes das funções de listagem.
    Mantém compat com script.js antigo que usa window.supabase.from(...)
 */
@@ -38,3 +38,5 @@ window.addEventListener('error', (ev) => {
     }
   }catch(_){ }
 });
+
+

@@ -1,4 +1,4 @@
-/* DOKE — Perfil Profissional | Perguntas (estilo marketplace)
+﻿/* DOKE — Perfil Profissional | Perguntas (estilo marketplace)
    Requer: supabase-init.js (window.sb)
 */
 (() => {
@@ -134,8 +134,8 @@
     }
 
     // auth + me
-    const sess = await client.auth.getSession();
-    const authUser = sess?.data?.session?.user || null;
+    const sess = await client.auth.getUser();
+    const authUser = sess?.data?.user || null;
     let me = null;
     if(authUser){
       const r = await getUsuarioByAuthUid(client, authUser.id);
@@ -354,3 +354,5 @@
 
   document.addEventListener("DOMContentLoaded", main);
 })();
+
+

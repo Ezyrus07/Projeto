@@ -1,4 +1,4 @@
-(()=>{
+﻿(()=>{
   const LS_KEY = 'doke_search_history_v1';
   const MAX = 10;
 
@@ -134,3 +134,5 @@
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
+
+

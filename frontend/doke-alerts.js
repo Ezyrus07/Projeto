@@ -1,8 +1,8 @@
-// doke-alerts.js
+﻿// doke-alerts.js
 // Padroniza alertas e adiciona mais notificações (toast) sem mexer na lógica do seu app.
 (()=>{
   const safeStr = (v)=> (v==null ? "" : String(v));
-  const clamp = (s, n=240)=> s.length>n ? (s.slice(0,n-1)+"…") : s;
+  const clamp = (s, n=240)=> s.length>n ? (s.slice(0,n-1)+"â€¦") : s;
 
   // Fallback toast (caso doke-toast.js não esteja carregado)
   function fallbackToast(message, opts={}){
@@ -158,3 +158,5 @@
     boot();
   }
 })();
+
+

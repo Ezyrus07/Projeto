@@ -1,4 +1,4 @@
-(()=>{
+﻿(()=>{
   const make = (tag, cls, html) => { const el=document.createElement(tag); if(cls) el.className=cls; if(html!=null) el.innerHTML=html; return el; };
   let stack;
   let overlay;
@@ -55,7 +55,7 @@
 
   function iconFor(type){
     switch(type){
-      case 'success': return '✓';
+      case 'success': return 'âœ“';
       case 'info': return 'i';
       case 'warn': return '!';
       default: return '×';
@@ -129,3 +129,5 @@
   window.dokeLog = log;
   window.dokeGetLogs = ()=> logs.slice();
 })();
+
+

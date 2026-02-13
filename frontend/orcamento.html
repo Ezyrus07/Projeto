@@ -4,9 +4,9 @@
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js"></script>
-<script src="firebase-compat-supabase.js?v=20260207v24"></script>
-<script src="firebase-auth-compat-supabase.js"></script>
+<script src="supabase-init.js?v=20260212v7"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Solicitar Or&ccedil;amento | Doke</title>
@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260211v44"></script>
+<script defer="" src="script.js?v=20260212v59"></script>
 <style>/* ==========================================================================
    P?f?GINA DE OR??AMENTO
    ========================================================================== */
@@ -257,6 +257,121 @@
     gap: 10px;
     align-items: center;
 }
+.orc-endereco-select{
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+    width: 1px !important;
+    height: 1px !important;
+}
+.address-book-head{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.address-book-head strong{
+    color: #1f2937;
+    font-size: 0.92rem;
+}
+.address-book-actions{
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+.address-book-actions .btn-outline{
+    height: 40px;
+    padding: 0 12px;
+    box-shadow: none;
+    font-size: 0.84rem;
+}
+.btn-endereco-gerenciar{
+    text-decoration: none;
+}
+.address-book-cards{
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+}
+.address-book-card{
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+    align-items: flex-start;
+    border: 1px solid #dbe4ee;
+    border-radius: 12px;
+    padding: 10px;
+    background: #fff;
+    cursor: pointer;
+    transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+}
+.address-book-card:hover{
+    border-color: rgba(11, 119, 104, 0.45);
+    box-shadow: 0 8px 20px rgba(11, 119, 104, 0.12);
+    transform: translateY(-1px);
+}
+.address-book-card.is-active{
+    border-color: rgba(11, 119, 104, 0.55);
+    box-shadow: 0 0 0 3px rgba(11, 119, 104, 0.10);
+}
+.address-book-pin{
+    width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    border: 1px solid #dbe4ee;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+.address-book-card.is-principal .address-book-pin{
+    color: #f43f5e;
+    border-color: #fecdd3;
+    background: #fff1f4;
+}
+.address-book-title{
+    margin: 0;
+    font-size: 0.88rem;
+    color: #0f172a;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.address-book-tag{
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 999px;
+    border: 1px solid #fecdd3;
+    color: #f43f5e;
+    background: #fff1f4;
+    font-size: 0.66rem;
+    padding: 2px 7px;
+    font-weight: 700;
+}
+.address-book-line{
+    margin: 4px 0 0;
+    font-size: 0.81rem;
+    color: #475569;
+    line-height: 1.35;
+}
+.address-book-empty{
+    border: 1px dashed #dbe4ee;
+    border-radius: 12px;
+    padding: 11px 12px;
+    color: #64748b;
+    background: #f8fafc;
+    font-size: 0.84rem;
+}
+.address-book-hint{
+    margin: 2px 0 0;
+    font-size: 0.8rem;
+    color: #64748b;
+}
 
 /* --- CARD RESUMO (STICKY) --- */
 .resumo-section {
@@ -438,6 +553,20 @@ textarea.campo-dinamico{
     .cep-search-row{
         flex-direction: column;
         align-items: stretch;
+    }
+    .address-book-head{
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .address-book-actions{
+        width: 100%;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+    .address-book-actions .btn-outline,
+    .address-book-actions .btn-endereco-gerenciar{
+        width: 100%;
+        justify-content: center;
     }
     .cep-search-row .input-premium{
         flex: 1;
@@ -660,7 +789,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+<link rel="stylesheet" href="doke-shell.css?v=20260212v42">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
 
@@ -848,6 +977,23 @@ body[data-page="orcamento"] main.main-orcamento::after{
 </div>
 <div class="card-branco" id="card-localizacao">
 <h3 class="titulo-sessao">2. Localiza&ccedil;&atilde;o</h3>
+<div class="input-group" id="orc-address-book-wrap">
+<label>Endere&ccedil;os salvos</label>
+<select class="input-premium orc-endereco-select" id="orc-endereco-salvo">
+<option value="">Selecione um endere&ccedil;o salvo</option>
+</select>
+<div class="address-book-head">
+<strong>Toque para aplicar um endere&ccedil;o salvo</strong>
+<div class="address-book-actions">
+<button class="btn-outline" id="btnSalvarEndereco" type="button"><i class="bx bx-bookmark-plus"></i> Salvar atual</button>
+<a class="btn-outline btn-endereco-gerenciar" href="enderecos.html"><i class="bx bx-map-alt"></i> Gerenciar</a>
+</div>
+</div>
+<div class="address-book-cards" id="orc-endereco-cards">
+<div class="address-book-empty">Nenhum endere&ccedil;o salvo ainda.</div>
+</div>
+<p class="address-book-hint">Salve mais de um endere&ccedil;o para n&atilde;o preencher tudo de novo.</p>
+</div>
 <div class="input-group">
 <label>CEP do servi&ccedil;o</label>
 <div class="cep-search-row">
@@ -994,11 +1140,11 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
     function escapeHtmlAnexo(value){
         return String(value ?? "")
-            .replaceAll("&", "&amp;")
-            .replaceAll("<", "&lt;")
-            .replaceAll(">", "&gt;")
-            .replaceAll('"', "&quot;")
-            .replaceAll("'", "&#039;");
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
     }
 
     function isImageFile(file){
@@ -1184,7 +1330,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 }
             }
         } catch (e) {
-            console.warn('Falha ao prÃƒÂ©-preencher pedido:', e);
+            console.warn('Falha ao pré-preencher pedido:', e);
         }
     }
 
@@ -1224,8 +1370,91 @@ body[data-page="orcamento"] main.main-orcamento::after{
         return null;
     }
 
+    function normalizeUserHandle(raw, nomeFallback){
+        let value = String(raw || '').trim();
+        if (!value || /\s/.test(value)) {
+            const nome = String(nomeFallback || '').trim();
+            value = nome ? nome.split(/\s+/)[0] : 'profissional';
+        }
+        value = value.replace(/^@+/, '').trim();
+        if (!value) value = 'profissional';
+        return '@' + value;
+    }
+
+    function getPrestadorFromAnuncio(anuncio){
+        if (!anuncio || typeof anuncio !== 'object') return null;
+        const nome = String(anuncio.nomeAutor || anuncio.paraNome || '').trim();
+        const user = String(anuncio.userHandle || anuncio.paraUser || '').trim();
+        const foto = String(anuncio.fotoAutor || anuncio.paraFoto || '').trim();
+        const stats = {
+            media: anuncio.mediaAvaliacao || anuncio.media || null,
+            avaliacoes: anuncio.numAvaliacoes || anuncio.avaliacoes || 0,
+            jobs: anuncio.totalTrabalhos || anuncio.jobs || anuncio.servicos || 0
+        };
+        if (!nome && !user && !foto) return null;
+        return { nome, user, foto, stats };
+    }
+
+    function applyPrestadorFallbackFromAnuncio(anuncio){
+        const fromAd = getPrestadorFromAnuncio(anuncio);
+        if (!fromAd) return;
+        const base = window.__orc_prestador || {};
+        const merged = {
+            ...base,
+            nome: base.nome || fromAd.nome,
+            user: base.user || fromAd.user,
+            foto: base.foto || fromAd.foto,
+            stats: {
+                ...(fromAd.stats || {}),
+                ...(base.stats || {})
+            }
+        };
+        window.__orc_prestador = merged;
+        atualizarCardResumo(merged);
+    }
+
+    async function carregarPrestadorResumo(db, prestadorUid){
+        if (!prestadorUid) return null;
+        let dadosPrestador = null;
+
+        try {
+            if (db) {
+                const docUserRef = doc(db, 'usuarios', prestadorUid);
+                const docUserSnap = await getDoc(docUserRef);
+                if (docUserSnap.exists()) dadosPrestador = docUserSnap.data() || null;
+            }
+        } catch (e) {
+            console.warn('Falha ao carregar prestador no Firestore:', e);
+        }
+
+        if (!dadosPrestador) {
+            try {
+                const sb = getSupabaseClientSafe();
+                if (sb?.from) {
+                    const { data, error } = await sb
+                        .from('usuarios')
+                        .select('id,uid,nome,user,foto,stats,mediaAvaliacao,numAvaliacoes,totalTrabalhos')
+                        .or(`uid.eq.${prestadorUid},id.eq.${prestadorUid}`)
+                        .maybeSingle();
+                    if (!error && data) dadosPrestador = data;
+                }
+            } catch (e) {
+                console.warn('Falha ao carregar prestador no Supabase:', e);
+            }
+        }
+
+        if (dadosPrestador) {
+            window.__orc_prestador = dadosPrestador || null;
+            atualizarCardResumo(dadosPrestador);
+            return dadosPrestador;
+        }
+
+        return null;
+    }
+
     function aplicarDadosAnuncio(dadosAnuncio) {
         if (!dadosAnuncio) return;
+        applyPrestadorFallbackFromAnuncio(dadosAnuncio);
         aplicarConfiguracoesDoAnuncio(dadosAnuncio);
         const rawPerguntas = pickPerguntas(
             dadosAnuncio.perguntasFormularioJson,
@@ -1246,6 +1475,434 @@ body[data-page="orcamento"] main.main-orcamento::after{
         }
     }
 
+    window.__orc_address_book_db_ok = false;
+
+    function looksLikeUuid(value) {
+        return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || '').trim());
+    }
+
+    function getAddressBookOwnerUid() {
+        try {
+            const auth = window.auth;
+            const uidAuth = auth?.currentUser?.uid;
+            if (uidAuth) return String(uidAuth);
+        } catch (_) {}
+        try {
+            const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null');
+            const uidPerfil = perfil?.uid || perfil?.id || '';
+            if (uidPerfil) return String(uidPerfil);
+        } catch (_) {}
+        return 'guest';
+    }
+
+    function getAddressBookStorageKey() {
+        return `doke_address_book_${getAddressBookOwnerUid()}`;
+    }
+
+    function getSupabaseClientSafe() {
+        return window.sb || window.supabase || window.supabaseClient || window.sbClient || null;
+    }
+
+    async function getAddressBookOwnerUidAsync() {
+        const localUid = getAddressBookOwnerUid();
+        if (localUid && localUid !== 'guest') return localUid;
+        try {
+            const sb = getSupabaseClientSafe();
+            if (!sb?.auth?.getUser) return localUid;
+            const { data } = await sb.auth.getUser();
+            const uid = data?.user?.id || '';
+            return uid ? String(uid) : localUid;
+        } catch (_) {
+            return localUid;
+        }
+    }
+
+    function normalizeCep(cep) {
+        const raw = String(cep || '').replace(/\D/g, '').slice(0, 8);
+        if (raw.length !== 8) return raw;
+        return `${raw.slice(0, 5)}-${raw.slice(5)}`;
+    }
+
+    function sanitizeAddressPayload(addr) {
+        return {
+            id: String(addr?.id || `addr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`),
+            label: String(addr?.label || addr?.apelido || '').trim(),
+            cep: normalizeCep(addr?.cep || ''),
+            endereco: String(addr?.endereco || '').trim(),
+            numero: String(addr?.numero || '').trim(),
+            complemento: String(addr?.complemento || '').trim(),
+            referencia: String(addr?.referencia || '').trim(),
+            info: String(addr?.info || '').trim(),
+            principal: !!addr?.principal,
+            updatedAt: String(addr?.updatedAt || addr?.updated_at || new Date().toISOString())
+        };
+    }
+
+    function getAddressSignature(addr) {
+        return [
+            String(addr?.cep || '').replace(/\D/g, ''),
+            String(addr?.endereco || '').trim().toLowerCase(),
+            String(addr?.numero || '').trim().toLowerCase(),
+            String(addr?.complemento || '').trim().toLowerCase()
+        ].join('|');
+    }
+
+    function readAddressBook() {
+        try {
+            const raw = localStorage.getItem(getAddressBookStorageKey());
+            if (!raw) return [];
+            const list = JSON.parse(raw);
+            if (!Array.isArray(list)) return [];
+            return list.map(sanitizeAddressPayload);
+        } catch (_) {
+            return [];
+        }
+    }
+
+    function writeAddressBook(list) {
+        try {
+            const safeList = (Array.isArray(list) ? list : []).map(sanitizeAddressPayload).slice(0, 20);
+            localStorage.setItem(getAddressBookStorageKey(), JSON.stringify(safeList));
+            try {
+                const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null');
+                if (perfil && typeof perfil === 'object') {
+                    perfil.enderecosSalvos = safeList;
+                    localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+                }
+            } catch (_) {}
+            return safeList;
+        } catch (_) {
+            return Array.isArray(list) ? list : [];
+        }
+    }
+
+    function getEnderecoFormData() {
+        return sanitizeAddressPayload({
+            cep: document.getElementById('cepOrcamento')?.value || '',
+            endereco: document.getElementById('endereco-completo')?.value || '',
+            numero: document.getElementById('numero-residencia')?.value || '',
+            complemento: document.getElementById('complemento-residencia')?.value || '',
+            referencia: document.getElementById('referencia-residencia')?.value || '',
+            info: document.getElementById('info-local')?.value || ''
+        });
+    }
+
+    function isEnderecoMinimoValido(addr) {
+        return !!(String(addr?.cep || '').replace(/\D/g, '').length === 8 && String(addr?.endereco || '').trim() && String(addr?.numero || '').trim());
+    }
+
+    function montarLabelEndereco(addr, idx) {
+        const custom = String(addr?.label || '').trim();
+        if (custom) return custom;
+        if (addr?.principal || idx === 0) return 'Endereço principal';
+        return `Endereço ${idx + 1}`;
+    }
+
+    function getEnderecoResumo(addr) {
+        const base = [addr?.endereco, addr?.numero ? `Nº ${addr.numero}` : ''].filter(Boolean).join(', ');
+        const cep = addr?.cep ? `CEP ${addr.cep}` : '';
+        return [base, cep].filter(Boolean).join(' • ');
+    }
+
+    function preencherEnderecoNoFormulario(addr) {
+        if (!addr) return;
+        const cepEl = document.getElementById('cepOrcamento');
+        const endEl = document.getElementById('endereco-completo');
+        const numEl = document.getElementById('numero-residencia');
+        const compEl = document.getElementById('complemento-residencia');
+        const refEl = document.getElementById('referencia-residencia');
+        const infoEl = document.getElementById('info-local');
+        if (cepEl) cepEl.value = normalizeCep(addr.cep || '');
+        if (endEl) endEl.value = addr.endereco || '';
+        if (numEl) numEl.value = addr.numero || '';
+        if (compEl) compEl.value = addr.complemento || '';
+        if (refEl) refEl.value = addr.referencia || '';
+        if (infoEl) infoEl.value = addr.info || '';
+    }
+
+    function formularioEnderecoTemDados() {
+        const cep = String(document.getElementById('cepOrcamento')?.value || '').trim();
+        const end = String(document.getElementById('endereco-completo')?.value || '').trim();
+        const num = String(document.getElementById('numero-residencia')?.value || '').trim();
+        return !!(cep || end || num);
+    }
+
+    function escapeHtmlEndereco(value){
+        return String(value ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#039;');
+    }
+
+    function renderAddressBookCards(activeId = '') {
+        const wrap = document.getElementById('orc-endereco-cards');
+        if (!wrap) return;
+        const list = readAddressBook();
+        if (!list.length) {
+            wrap.innerHTML = '<div class="address-book-empty">Nenhum endereço salvo ainda.</div>';
+            return;
+        }
+        wrap.innerHTML = list.map((addr, idx) => {
+            const label = montarLabelEndereco(addr, idx);
+            const resumo = getEnderecoResumo(addr);
+            const extra = [addr.complemento, addr.referencia].filter(Boolean).join(' • ');
+            const active = String(activeId || '') === String(addr.id || '');
+            return `
+                <article class="address-book-card ${addr.principal ? 'is-principal' : ''} ${active ? 'is-active' : ''}" data-id="${escapeHtmlEndereco(addr.id)}" role="button" tabindex="0" aria-label="Aplicar ${escapeHtmlEndereco(label)}">
+                    <span class="address-book-pin"><i class='bx ${addr.principal ? 'bxs-check-circle' : 'bx-map'}'></i></span>
+                    <div class="address-book-content">
+                        <p class="address-book-title">
+                            ${escapeHtmlEndereco(label)}
+                            ${addr.principal ? "<span class='address-book-tag'><i class='bx bxs-star'></i> Principal</span>" : ''}
+                        </p>
+                        <p class="address-book-line">${escapeHtmlEndereco(resumo)}</p>
+                        ${extra ? `<p class="address-book-line">${escapeHtmlEndereco(extra)}</p>` : ''}
+                    </div>
+                </article>
+            `;
+        }).join('');
+    }
+
+    function renderAddressBookSelect(activeId = '') {
+        const select = document.getElementById('orc-endereco-salvo');
+        if (!select) return;
+        const list = readAddressBook();
+        select.innerHTML = '<option value="">Selecione um endereço salvo</option>';
+        list.forEach((addr, idx) => {
+            const opt = document.createElement('option');
+            opt.value = addr.id;
+            const prefix = addr.principal ? '? ' : '';
+            opt.textContent = `${prefix}${montarLabelEndereco(addr, idx)} - ${getEnderecoResumo(addr)}`;
+            select.appendChild(opt);
+        });
+        if (activeId) select.value = activeId;
+        renderAddressBookCards(select.value || activeId || '');
+    }
+
+    async function carregarAddressBookDoBanco() {
+        try {
+            const sb = getSupabaseClientSafe();
+            if (!sb?.from) return null;
+            const ownerUid = await getAddressBookOwnerUidAsync();
+            if (!ownerUid || ownerUid === 'guest') return null;
+            const { data, error } = await sb
+                .from('enderecos_usuario')
+                .select('id, apelido, cep, endereco, numero, complemento, referencia, info, principal, updated_at, ativo')
+                .eq('usuario_uid', ownerUid)
+                .eq('ativo', true)
+                .order('principal', { ascending: false })
+                .order('updated_at', { ascending: false })
+                .limit(20);
+            if (error) throw error;
+            const list = (Array.isArray(data) ? data : []).map((row) => sanitizeAddressPayload({
+                id: row.id,
+                label: row.apelido || '',
+                cep: row.cep || '',
+                endereco: row.endereco || '',
+                numero: row.numero || '',
+                complemento: row.complemento || '',
+                referencia: row.referencia || '',
+                info: row.info || '',
+                principal: !!row.principal,
+                updated_at: row.updated_at
+            }));
+            window.__orc_address_book_db_ok = true;
+            return list;
+        } catch (e) {
+            window.__orc_address_book_db_ok = false;
+            console.warn('AddressBook remoto indisponível, usando cache local:', e);
+            return null;
+        }
+    }
+
+    async function salvarEnderecoNoBanco(addr) {
+        try {
+            const sb = getSupabaseClientSafe();
+            if (!sb?.from) return null;
+            const ownerUid = await getAddressBookOwnerUidAsync();
+            if (!ownerUid || ownerUid === 'guest') return null;
+
+            const addrNorm = sanitizeAddressPayload(addr);
+            const all = readAddressBook();
+            const hasPrincipal = all.some((a) => !!a.principal);
+            const payload = {
+                usuario_uid: ownerUid,
+                uid: looksLikeUuid(ownerUid) ? ownerUid : null,
+                apelido: addrNorm.label || '',
+                cep: addrNorm.cep || '',
+                endereco: addrNorm.endereco || '',
+                numero: addrNorm.numero || '',
+                complemento: addrNorm.complemento || '',
+                referencia: addrNorm.referencia || '',
+                info: addrNorm.info || '',
+                principal: addrNorm.principal || !hasPrincipal,
+                ativo: true
+            };
+
+            let savedRow = null;
+            const canUpdateById = looksLikeUuid(addrNorm.id);
+            if (canUpdateById) {
+                const { data, error } = await sb
+                    .from('enderecos_usuario')
+                    .update(payload)
+                    .eq('id', addrNorm.id)
+                    .eq('usuario_uid', ownerUid)
+                    .select('id, apelido, cep, endereco, numero, complemento, referencia, info, principal, updated_at')
+                    .maybeSingle();
+                if (!error && data) savedRow = data;
+            }
+
+            if (!savedRow) {
+                const insertPayload = { ...payload };
+                const { data, error } = await sb
+                    .from('enderecos_usuario')
+                    .insert([insertPayload])
+                    .select('id, apelido, cep, endereco, numero, complemento, referencia, info, principal, updated_at')
+                    .maybeSingle();
+                if (error) throw error;
+                savedRow = data || null;
+            }
+
+            if (!savedRow) return null;
+            window.__orc_address_book_db_ok = true;
+            return sanitizeAddressPayload({
+                id: savedRow.id,
+                label: savedRow.apelido || '',
+                cep: savedRow.cep || '',
+                endereco: savedRow.endereco || '',
+                numero: savedRow.numero || '',
+                complemento: savedRow.complemento || '',
+                referencia: savedRow.referencia || '',
+                info: savedRow.info || '',
+                principal: !!savedRow.principal,
+                updated_at: savedRow.updated_at
+            });
+        } catch (e) {
+            window.__orc_address_book_db_ok = false;
+            console.warn('Falha ao salvar endereço no banco:', e);
+            return null;
+        }
+    }
+
+    async function upsertEnderecoAtual(opts = {}) {
+        const silent = !!opts.silent;
+        const current = getEnderecoFormData();
+        if (!isEnderecoMinimoValido(current)) {
+            if (!silent) avisarValidacao('Preencha CEP, endereço e número para salvar.');
+            return null;
+        }
+
+        const list = readAddressBook();
+        const sig = getAddressSignature(current);
+        const foundIdx = list.findIndex((item) => getAddressSignature(item) === sig);
+        const localBase = foundIdx >= 0 ? list[foundIdx] : null;
+        if (localBase?.id) current.id = localBase.id;
+        current.principal = foundIdx >= 0 ? !!localBase?.principal : !list.some((a) => !!a.principal);
+        current.label = (localBase?.label || current.label || montarLabelEndereco(current, foundIdx >= 0 ? foundIdx : list.length));
+        const finalAddr = current;
+        if (foundIdx >= 0) {
+            list[foundIdx] = finalAddr;
+        } else {
+            list.unshift(finalAddr);
+        }
+
+        let saved = writeAddressBook(list);
+        renderAddressBookSelect(finalAddr.id);
+        const select = document.getElementById('orc-endereco-salvo');
+        if (select) select.value = finalAddr.id;
+        if (!silent) {
+            const msg = foundIdx >= 0 ? 'Endereço atualizado.' : 'Endereço salvo.';
+            if (window.dokeToast) window.dokeToast(msg); else avisarValidacao(msg);
+        }
+
+        const remoteSaved = await salvarEnderecoNoBanco(finalAddr);
+        if (remoteSaved) {
+            const refreshed = readAddressBook();
+            const remoteSig = getAddressSignature(remoteSaved);
+            const idxById = refreshed.findIndex((a) => String(a.id) === String(finalAddr.id));
+            const idxBySig = refreshed.findIndex((a) => getAddressSignature(a) === remoteSig);
+            const idx = idxById >= 0 ? idxById : idxBySig;
+            if (idx >= 0) refreshed[idx] = remoteSaved;
+            else refreshed.unshift(remoteSaved);
+            saved = writeAddressBook(refreshed);
+            renderAddressBookSelect(remoteSaved.id);
+            if (select) select.value = remoteSaved.id;
+            return saved.find((a) => String(a.id) === String(remoteSaved.id)) || remoteSaved;
+        }
+
+        return saved.find((a) => String(a.id) === String(finalAddr.id)) || finalAddr;
+    }
+
+    function applyEnderecoSelecionado(addressId) {
+        const select = document.getElementById('orc-endereco-salvo');
+        if (!select) return;
+        const id = String(addressId || select.value || '');
+        if (!id) return;
+        select.value = id;
+        const list = readAddressBook();
+        const found = list.find((addr) => String(addr.id) === id);
+        if (!found) return;
+        preencherEnderecoNoFormulario(found);
+        renderAddressBookCards(id);
+    }
+
+    async function initAddressBookUI() {
+        renderAddressBookSelect();
+        const btnSalvar = document.getElementById('btnSalvarEndereco');
+        const select = document.getElementById('orc-endereco-salvo');
+        const cardsWrap = document.getElementById('orc-endereco-cards');
+
+        if (btnSalvar && btnSalvar.dataset.bound !== '1') {
+            btnSalvar.dataset.bound = '1';
+            btnSalvar.addEventListener('click', async () => { await upsertEnderecoAtual({ silent: false }); });
+        }
+        if (select && select.dataset.bound !== '1') {
+            select.dataset.bound = '1';
+            select.addEventListener('change', () => applyEnderecoSelecionado(select.value));
+        }
+        if (cardsWrap && cardsWrap.dataset.bound !== '1') {
+            cardsWrap.dataset.bound = '1';
+            cardsWrap.addEventListener('click', (ev) => {
+                const card = ev.target.closest('.address-book-card');
+                if (!card) return;
+                applyEnderecoSelecionado(card.dataset.id || '');
+            });
+            cardsWrap.addEventListener('keydown', (ev) => {
+                if (ev.key !== 'Enter' && ev.key !== ' ') return;
+                const card = ev.target.closest('.address-book-card');
+                if (!card) return;
+                ev.preventDefault();
+                applyEnderecoSelecionado(card.dataset.id || '');
+            });
+        }
+
+        let localList = readAddressBook();
+        if (!localList.length) {
+            try {
+                const legacyRaw = localStorage.getItem('doke_address_book_guest');
+                const legacy = JSON.parse(legacyRaw || '[]');
+                if (Array.isArray(legacy) && legacy.length) {
+                    localList = writeAddressBook(legacy.map(sanitizeAddressPayload));
+                }
+            } catch (_) {}
+        }
+        if (localList.length) {
+            if (!formularioEnderecoTemDados()) preencherEnderecoNoFormulario(localList[0]);
+            if (select) select.value = localList[0].id;
+            renderAddressBookSelect(localList[0].id);
+        }
+
+        const remoto = await carregarAddressBookDoBanco();
+        if (Array.isArray(remoto) && remoto.length) {
+            writeAddressBook(remoto);
+            renderAddressBookSelect(remoto[0].id);
+            if (!formularioEnderecoTemDados()) preencherEnderecoNoFormulario(remoto[0]);
+            if (select) select.value = remoto[0].id;
+        }
+    }
+
     // --- 2. CARREGAMENTO DA P?f?GINA ---
     window.addEventListener('load', async function() {
         console.log("?f??.??.??,? P?f?gina Carregada. Buscando dados...");
@@ -1255,7 +1912,9 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const db = window.db; 
         const auth = window.auth;
 
-        if (!db) { console.error("Firebase DB n?f?o carregou."); return; }
+        if (!db) {
+            console.warn("Firebase DB não carregou. Continuando com fallbacks locais/Supabase.");
+        }
 
         const urlParams = new URLSearchParams(window.location.search);
         const anuncioId = urlParams.get('aid') || urlParams.get('id') || urlParams.get('anuncioId') || urlParams.get('anuncio_id'); 
@@ -1269,16 +1928,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
         renderListaAnexos();
 
         // A. Carrega Prestador (Card Lateral)
-        if(prestadorUid) {
-            try {
-                const docUserRef = doc(db, "usuarios", prestadorUid);
-                const docUserSnap = await getDoc(docUserRef);
-                if (docUserSnap.exists()) {
-                    const dadosPrestador = docUserSnap.data();
-                    window.__orc_prestador = dadosPrestador || null;
-                    atualizarCardResumo(dadosPrestador);
-                }
-            } catch (e) { console.error("Erro user:", e); }
+        if (prestadorUid) {
+            await carregarPrestadorResumo(db, prestadorUid);
         }
 
         // B. Carrega An?f?ncio (T?f?tulo, Regras e PERGUNTAS DE TRIAGEM)
@@ -1290,11 +1941,13 @@ body[data-page="orcamento"] main.main-orcamento::after{
         }
 
         // C. Bloqueia APENAS se for o pr?f?prio dono tentando pedir or?f?amento pra si mesmo
-        onAuthStateChanged(auth, (user) => {
-            if (user && prestadorUid && user.uid === prestadorUid) {
-                bloquearBotaoProprioAnuncio();
-            }
-        });
+        if (auth && typeof onAuthStateChanged === 'function') {
+            onAuthStateChanged(auth, (user) => {
+                if (user && prestadorUid && user.uid === prestadorUid) {
+                    bloquearBotaoProprioAnuncio();
+                }
+            });
+        }
 
         if (refPedidoId) {
             await carregarPedidoReferencia(db, refPedidoId);
@@ -1303,6 +1956,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         // Configura o bot?f?o de enviar
         configurarBotaoEnviar();
         configurarCampoDataEspecifica();
+        await initAddressBookUI();
     });
 
     // --- FUN???fO PARA DESENHAR AS PERGUNTAS NA TELA ---
@@ -1512,6 +2166,9 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 if (!cep) return irParaCampoFaltante(cepEl, 'Preencha o CEP do local do servi\u00e7o.');
                 if (!end) return irParaCampoFaltante(endEl, 'Preencha o endere\u00e7o do local do servi\u00e7o.');
                 if (!num) return irParaCampoFaltante(numEl, 'Preencha o n\u00famero do local do servi\u00e7o.');
+
+                // Salva/atualiza automaticamente o  validado para  futura.
+                upsertEnderecoAtual({ silent: true }).catch(() => {});
             }
 
             // Feedback Visual
@@ -1532,6 +2189,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 const anuncio = window.__orc_anuncio || {};
                 const anuncioIdFinal = window.__orc_anuncioId || "";
                 const anuncioFoto = extrairFotoAnuncio(anuncio);
+                const paraNomeSeguro = String(prestador.nome || prestador.nomeAutor || prestador.user || prestador.userHandle || 'Profissional').trim();
+                const paraUserSeguro = normalizeUserHandle(prestador.user || prestador.userHandle || '', paraNomeSeguro).replace(/^@/, '');
                 
                 const precisaLoc = !!window.__orc_precisa_localizacao;
                 const cep = getInputValue('cepOrcamento').trim();
@@ -1552,8 +2211,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 const pedidoPayload = {
                     deUid: user.uid,
                     paraUid: paraUid,
-                    paraNome: prestador.user || prestador.nome || "",
-                    paraUser: prestador.user || "",
+                    paraNome: paraNomeSeguro,
+                    paraUser: paraUserSeguro,
                     paraFoto: prestador.foto || "",
                     anuncioId: anuncioIdFinal,
                     anuncioFoto: anuncioFoto,
@@ -1740,15 +2399,23 @@ Local do servi\u00e7o: ${loc}${extra}`;
     // --- FUN???.ES VISUAIS E HELPERS ---
 
     function atualizarCardResumo(dados) {
+        const source = dados || {};
+        const nomeBase = String(source.nome || source.nomeAutor || source.paraNome || '').trim();
+        const userHandle = normalizeUserHandle(source.user || source.userHandle || source.paraUser || '', nomeBase);
+        const nomeExibicao = nomeBase || userHandle.replace(/^@/, '');
+        const fotoExibicao = source.foto || source.fotoAutor || source.paraFoto || "https://placehold.co/150";
+
         if(document.getElementById('nomePrestadorResumo'))
-            document.getElementById('nomePrestadorResumo').innerHTML = `${dados.nome} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
+            document.getElementById('nomePrestadorResumo').innerHTML = `${nomeExibicao} <i class='bx bxs-badge-check' style="color:#0095f6;"></i>`;
         if(document.getElementById('userPrestadorResumo'))
-            document.getElementById('userPrestadorResumo').innerText = dados.user || "@profissional";
+            document.getElementById('userPrestadorResumo').innerText = userHandle;
         if(document.getElementById('imgPrestadorResumo'))
-            document.getElementById('imgPrestadorResumo').src = dados.foto || "https://placehold.co/150";
-        
+            document.getElementById('imgPrestadorResumo').src = fotoExibicao;
+
         // Avalia?f??f?o: evita "[object Object]" quando o campo vem como objeto (migra?f??f?o/serializa?f??f?o)
-        const stats = dados.stats || {};
+        const stats = (typeof source.stats === 'string')
+            ? (function(){ try { return JSON.parse(source.stats); } catch(_) { return {}; } })()
+            : (source.stats || {});
 
         const numFromAny = (v) => {
             if (typeof v === 'number' && Number.isFinite(v)) return v;
@@ -1765,8 +2432,21 @@ Local do servi\u00e7o: ${loc}${extra}`;
             return null;
         };
 
-        const totalAval = coalesce(numFromAny(stats.avaliacoes), numFromAny(stats.total), numFromAny(stats.count), 0);
-        const media = coalesce(numFromAny(stats.media), numFromAny(stats.nota), null);
+        const totalAval = coalesce(
+            numFromAny(stats.avaliacoes),
+            numFromAny(stats.total),
+            numFromAny(stats.count),
+            numFromAny(source.numAvaliacoes),
+            numFromAny(source.avaliacoes),
+            0
+        );
+        const media = coalesce(
+            numFromAny(stats.media),
+            numFromAny(stats.nota),
+            numFromAny(source.mediaAvaliacao),
+            numFromAny(source.media),
+            null
+        );
 
         if (document.getElementById('notaPrestadorResumo')) {
             if (!totalAval || !media) {
@@ -1777,7 +2457,14 @@ Local do servi\u00e7o: ${loc}${extra}`;
         }
 
         if (document.getElementById('jobsPrestadorResumo')) {
-            const jobs = coalesce(numFromAny(stats.jobs), numFromAny(stats.servicos), 0);
+            const jobs = coalesce(
+                numFromAny(stats.jobs),
+                numFromAny(stats.servicos),
+                numFromAny(source.totalTrabalhos),
+                numFromAny(source.jobs),
+                numFromAny(source.servicos),
+                0
+            );
             document.getElementById('jobsPrestadorResumo').innerText = String(jobs);
         }
     }
@@ -1790,6 +2477,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
         const inputComp = document.getElementById('complemento-residencia');
         const inputRef = document.getElementById('referencia-residencia');
         const inputInfo = document.getElementById('info-local');
+        const addressBookWrap = document.getElementById('orc-address-book-wrap');
 
         const modo = String(anuncio.modo_atend || "").toLowerCase().trim();
 
@@ -1804,6 +2492,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
 
         if (!precisaLocalizacao) {
             if(cardLoc) cardLoc.style.display = 'none';
+            if(addressBookWrap) addressBookWrap.style.display = 'none';
             for (const el of [inputCep, inputEnd, inputNum]) {
                 if (el) { el.removeAttribute('required'); el.value = ""; }
             }
@@ -1812,6 +2501,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
             }
         } else {
             if(cardLoc) cardLoc.style.display = 'block';
+            if(addressBookWrap) addressBookWrap.style.display = 'block';
             if (inputCep) inputCep.setAttribute('required', 'required');
             if (inputEnd) inputEnd.setAttribute('required', 'required');
             if (inputNum) inputNum.setAttribute('required', 'required');
@@ -1854,6 +2544,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
             avisarValidacao("Digite um CEP v\u00e1lido com 8 n\u00fameros.");
             return;
         }
+        cepEl.value = normalizeCep(cep);
         fetch(`https://viacep.com.br/ws/${cep}/json/`)
             .then(r=>r.json())
             .then(d=>{
@@ -1903,7 +2594,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260207v21"></script>
+<script src="doke-shell.js?v=20260212v44"></script>
 <script>
 document.addEventListener('keydown', function(evt){
     if (evt.key === 'Escape') fecharAnexoPreview();
@@ -1911,6 +2602,20 @@ document.addEventListener('keydown', function(evt){
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

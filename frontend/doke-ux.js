@@ -1,4 +1,4 @@
-
+﻿
 (function(){
   "use strict";
 
@@ -534,3 +534,6 @@
   // caso carregue conteúdo depois
   window.addEventListener("pageshow", ()=>attachMasks());
 })();
+
+
+

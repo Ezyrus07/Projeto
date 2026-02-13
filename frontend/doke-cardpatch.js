@@ -1,4 +1,4 @@
-// DOKE Card Patch
+﻿// DOKE Card Patch
 // Conserta o bug: dokeBuildCardPremium retorna HTMLElement, mas o feed usa insertAdjacentHTML (string).
 // Isso gerava: [object HTMLDivElement]
 (() => {
