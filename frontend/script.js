@@ -854,14 +854,20 @@ function getActorPerfil() {
 
 async function getSupabaseUidByUserId(userId) {
     if (!userId) return null;
+
+    // Se já for UUID, tratamos como o próprio `uid` do Auth (evita .eq("id", uuid) e erro 400/520).
+    if (isUuid(userId)) return String(userId);
+
     if (_dokeSupabaseUidCache.has(userId)) return _dokeSupabaseUidCache.get(userId);
     const client = getSupabaseClient();
     if (!client) return null;
+
     const { data, error } = await client
         .from("usuarios")
         .select("uid")
         .eq("id", userId)
         .maybeSingle();
+
     if (error && !isMissingTableError(error)) console.error(error);
     const uid = data?.uid || null;
     if (uid) _dokeSupabaseUidCache.set(userId, uid);
@@ -2383,13 +2389,32 @@ window.carregarProfissionais = async function() {
 // 9. HEADER, AUTH, UTILITÁRIOS E BUSCA (MANTIDOS)
 // ============================================================
 
-function protegerPaginasRestritas() {
+async function protegerPaginasRestritas() {
     const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
-    const caminhoAtual = window.location.pathname;
+
+    const caminhoAtual = window.location.pathname || "";
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
+
+    if (!paginasRestritas.includes(paginaAtual)) return;
+
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
-    const estaLogado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo;
-    if (paginasRestritas.includes(paginaAtual) && !estaLogado) { window.location.href = "login.html"; }
+    const lsLogado = (localStorage.getItem('usuarioLogado') === 'true') || !!perfilSalvo;
+
+    const fbUser = window.auth?.currentUser || null;
+
+    let sbUser = null;
+    try {
+        if (window.sb?.auth?.getSession) {
+            const { data } = await window.sb.auth.getSession();
+            sbUser = data?.session?.user || null;
+        }
+    } catch (_) {}
+
+    const estaLogado = !!fbUser || !!sbUser || lsLogado;
+
+    if (!estaLogado) {
+        window.location.href = "login.html";
+    }
 }
 
 window.verificarEstadoLogin = async function() {
@@ -4053,8 +4078,15 @@ document.addEventListener("DOMContentLoaded", async function() {
     if (window.sincronizarSessaoSupabase) {
         await window.sincronizarSessaoSupabase();
     }
-    protegerPaginasRestritas();
-    verificarEstadoLogin();
+
+    // Primeiro: garante que sessão (Supabase/Firebase) reflita no cache local,
+    // senão páginas restritas podem redirecionar mesmo com usuário autenticado.
+    if (window.verificarEstadoLogin) {
+        await window.verificarEstadoLogin();
+    }
+
+    // Depois: protege páginas com base em sessão real (não só localStorage)
+    await protegerPaginasRestritas();
     
     // 2. CARREGAMENTOS DINÂMICOS
     carregarReelsNoIndex();
@@ -4336,13 +4368,29 @@ document.addEventListener("DOMContentLoaded", async function() {
                 }
                 localStorage.setItem('usuarioLogado', 'true');
             } else {
+            // Usuário "null" pode ser atraso na restauração da sessão (Supabase/Firebase compat).
+            // Só redireciona se NÃO houver sessão Supabase e NÃO houver cache local.
+            let sbUser = null;
+            try {
+                if (window.sb?.auth?.getSession) {
+                    const { data } = await window.sb.auth.getSession();
+                    sbUser = data?.session?.user || null;
+                }
+            } catch (_) {}
+
+            const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+            const lsLogado = (localStorage.getItem('usuarioLogado') === 'true') || !!perfilSalvo;
+
+            if (!sbUser && !lsLogado) {
                 localStorage.removeItem('usuarioLogado');
-                if(window.location.pathname.includes('perfil') || window.location.pathname.includes('chat')) {
+                localStorage.removeItem('doke_usuario_perfil');
+                if (window.location.pathname.includes('perfil') || window.location.pathname.includes('meuperfil') || window.location.pathname.includes('chat')) {
                     window.location.href = 'login.html';
                 }
             }
         }
-        verificarEstadoLogin();
+        }
+        await verificarEstadoLogin();
     });
 });
 
@@ -6255,6 +6303,8 @@ document.addEventListener("DOMContentLoaded", function() {
 
     onAuthStateChanged(auth, (user) => {
         if (user) {
+            if (window.__dokePresenceBoundFor === user.uid) return;
+            window.__dokePresenceBoundFor = user.uid;
             // 1. Assim que detecta login, marca como Online
             window.marcarComoOnline(user.uid);
 

@@ -154,6 +154,78 @@ if (!key || key.startsWith("sb_publishable")) {
     }
   } catch(_e) {}
 })();
+
+// ============================================================
+// Supabase health check (Auth + REST)
+// - Diagnostica rapidamente casos de 520 (Cloudflare/origem indisponível)
+// - Evita que páginas interpretem 520 como "CORS" ou "não logado"
+// ============================================================
+(function(){
+  if (window.dokeSupabaseHealth) return;
+
+  function withTimeout(promise, ms){
+    if(!ms) return promise;
+    return Promise.race([
+      promise,
+      new Promise((_, rej)=> setTimeout(()=> rej(new Error('timeout')), ms))
+    ]);
+  }
+
+  window.dokeSupabaseHealth = async function(timeoutMs){
+    const url = window.SUPABASE_URL || window.DOKE_SUPABASE_URL;
+    const key = window.SUPABASE_ANON_KEY || window.DOKE_SUPABASE_ANON_KEY;
+    const out = {
+      ts: Date.now(),
+      url,
+      authOk: false,
+      restOk: false,
+      authStatus: null,
+      restStatus: null,
+      authError: null,
+      restError: null,
+    };
+    if(!url || !key) {
+      out.authError = 'missing_config';
+      out.restError = 'missing_config';
+      window.DOKE_SUPABASE_HEALTH = out;
+      return out;
+    }
+
+    // Auth health
+    try{
+      const r = await withTimeout(fetch(`${url}/auth/v1/health`, {
+        headers: { apikey: key }
+      }), timeoutMs || 3500);
+      out.authStatus = r.status;
+      out.authOk = r.status >= 200 && r.status < 500; // 5xx = indisponível
+    }catch(e){
+      out.authError = String(e?.message || e);
+    }
+
+    // REST ping (qualquer status != 520 indica que a origem respondeu)
+    try{
+      const r = await withTimeout(fetch(`${url}/rest/v1/usuarios?select=id&limit=1`, {
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${key}`,
+        }
+      }), timeoutMs || 3500);
+      out.restStatus = r.status;
+      out.restOk = r.status !== 520;
+    }catch(e){
+      out.restError = String(e?.message || e);
+    }
+
+    window.DOKE_SUPABASE_HEALTH = out;
+    if(out.restStatus === 520 || (!out.restOk && out.restError)){
+      console.warn('[DOKE] Supabase REST parece indisponível (520/erro de rede). Isso NÃO é bug de JS/CORS. Verifique se o projeto Supabase está pausado ou com o banco offline.', out);
+    }
+    return out;
+  };
+
+  // Executa 1x sem bloquear o carregamento
+  try{ window.dokeSupabaseHealth(); }catch(_e){}
+})();
   }catch(e){
     warn("Falha ao criar cliente Supabase: " + (e && e.message ? e.message : e));
   }

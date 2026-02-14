@@ -663,6 +663,10 @@
 
   // -----------------------------
   // Data helpers (usuarios)
+
+  function looksUUID(v){
+    return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
+  }
   // -----------------------------
   async function getSessionUser(client){
     const { data, error } = await client.auth.getSession();
@@ -673,28 +677,29 @@
   async function getUsuarioByAuthUid(client, authUid){
     const authKey = normalizeIdentity(authUid);
     if(!authKey) return { usuario: null };
-    let r = await client
+
+    // authUid é UUID => vínculo com o Auth é pela coluna `uid`
+    // Não usamos `.eq("id", authKey)` porque `id` pode ser serial/int e quebra (400/520) com UUID.
+    const r = await client
       .from("usuarios")
       .select("*")
       .eq("uid", authKey)
       .maybeSingle();
-    if(!r.error && !r.data){
-      r = await client
-        .from("usuarios")
-        .select("*")
-        .eq("id", authKey)
-        .maybeSingle();
-    }
+
     if(r.error) return { error: r.error };
     return { usuario: r.data || null };
   }
 
   async function getUsuarioById(client, id){
-    // Tenta por "id" e, se não achar, tenta por "uid" (muitos projetos guardam o auth.uid aqui)
-    let r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
-    if(!r.error && !r.data){
-      r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+    // UUID normalmente significa auth.uid() => procuramos por `uid`
+    if(looksUUID(id)){
+      const r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+      if(r.error) return { error: r.error };
+      return { usuario: r.data || null };
     }
+
+    // Caso legado: id serial/int
+    const r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
     if(r.error) return { error: r.error };
     return { usuario: r.data || null };
   }
@@ -710,12 +715,14 @@
   }
 
   async function updateUsuario(client, rowId, patch){
-    // Atualiza por id; se não afetar ninguém, tenta por uid.
-    let r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
-    if(r.error) return { error: r.error };
-    if(Array.isArray(r.data) && r.data.length) return { error: null };
+    // UUID => atualiza por `uid` (auth.uid()).
+    if(looksUUID(rowId)){
+      const r = await client.from("usuarios").update(patch).eq("uid", rowId).select("id,uid");
+      return { error: r.error || null };
+    }
 
-    r = await client.from("usuarios").update(patch).eq("uid", rowId).select("id,uid");
+    // Legado: id serial/int
+    const r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
     return { error: r.error || null };
   }
 
@@ -1539,6 +1546,10 @@ function ensureTheme(ctx, theme){
     ensurePublicacoesSelectionControls(ctx);
     const grid = $("#dpGridPublicacoes");
     if(!grid) return;
+    if(ctx?.sbRestDown){
+      grid.innerHTML = `<div class="dp-empty">Supabase indisponível (erro 520/servidor offline). Abra <b>diagnostico.html</b> e verifique se o projeto Supabase está pausado.</div>`;
+      return;
+    }
     renderPerfilGridSkeleton(grid, "publicacoes");
     const { data, error } = await client
       .from("publicacoes")
@@ -3913,6 +3924,10 @@ if(!rangeSel || !refreshBtn) return;
     if(!countEl) return;
     const client = ctx?.client;
     if(!client?.from) return;
+    if(ctx?.sbRestDown){
+      countEl.textContent = "0";
+      return;
+    }
     const prof = ctx?.target || null;
     const profId = (typeof prof === "object" && prof) ? (prof.id || prof.profissional_id || prof.profissionalId) : prof;
     const profUid = (typeof prof === "object" && prof) ? (prof.uid || prof.user_uid || prof.auth_uid || prof.authUid) : null;
@@ -4044,9 +4059,10 @@ if(!rangeSel || !refreshBtn) return;
       const authUser = sess.user;
 
       let me = null;
+      let meLoadError = null;
       if(authUser){
         const r = await getUsuarioByAuthUid(client, authUser.id);
-        if(r.error) console.error(r.error);
+        if(r.error){ console.error(r.error); meLoadError = r.error; }
         me = r.usuario || null;
       }
 
@@ -4094,11 +4110,26 @@ if(!rangeSel || !refreshBtn) return;
       } else {
         targetId = me?.id || me?.uid || authUser?.id || null;
       }
-
       if(pageMode === "self" && !me){
-        toast("Faça login para ver seu perfil.");
-        setTimeout(()=> window.location.href="login.html", 600);
-        return;
+        if (authUser) {
+          // Sessão existe, mas a linha em public.usuarios pode não estar legível (RLS/Policy SELECT).
+          // Para não cair em loop pedindo login, usa cache local como fallback.
+          let cached = null;
+          try { cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null"); } catch(_){ cached = null; }
+          const emailNick = authUser.email ? String(authUser.email).split("@")[0] : "usuario";
+          me = {
+            id: authUser.id,
+            uid: authUser.id,
+            nome: cached?.nome || authUser.user_metadata?.nome || authUser.user_metadata?.name || emailNick || "Usuário",
+            user: cached?.user || authUser.user_metadata?.user || authUser.user_metadata?.username || emailNick,
+            foto: cached?.foto || authUser.user_metadata?.avatar_url || authUser.user_metadata?.foto || null,
+            tipo: cached?.tipo || authUser.user_metadata?.tipo || "usuario"
+          };
+          if(!targetId) targetId = authUser.id;
+        } else {
+          window.location.replace("login.html");
+          return;
+        }
       }
 
       if(!targetId){
@@ -4106,14 +4137,35 @@ if(!rangeSel || !refreshBtn) return;
         return;
       }
 
+      // Health check rápido: 520 geralmente é Cloudflare/origem indisponível.
+      // Ajuda a diferenciar "sem policy" de "Supabase offline".
+      let health = null;
+      try{ health = await (window.dokeSupabaseHealth ? window.dokeSupabaseHealth(2500) : null); }catch(_e){ health = null; }
+
       const tRes = await getUsuarioById(client, targetId);
+      let target = tRes.usuario || null;
       if(tRes.error){
         console.error(tRes.error);
-        toast("Erro ao carregar perfil.");
-        return;
+        const meKey = normalizeIdentity(me?.id || me?.uid);
+        const tKey = normalizeIdentity(targetId);
+        const isSelfTarget = (pageMode === "self") && !!meKey && (meKey === tKey);
+        if (isSelfTarget && me) {
+          // Mesmo se o banco estiver fora, não derruba a sessão nem força login.
+          target = me;
+          const msg = String(tRes.error?.message || tRes.error || '');
+          const isFetchFail = msg.includes('Failed to fetch') || msg.includes('NetworkError') || msg.includes('timeout');
+          const is520 = (health && health.restStatus === 520);
+          if(is520 || isFetchFail){
+            toast("Supabase indisponível (520/erro de rede). Exibindo perfil do cache local.");
+          }else{
+            toast("Sem permissão de leitura no banco (policy SELECT). Exibindo perfil do cache local.");
+          }
+        } else {
+          toast("Erro ao carregar perfil.");
+          return;
+        }
       }
 
-      const target = tRes.usuario;
       if(!target){
         toast("Usuário não encontrado.");
         return;
@@ -4125,15 +4177,16 @@ if(!rangeSel || !refreshBtn) return;
         client,
         me,
         target,
-        targetId: target.id,
+        targetId: target.id || target.uid || targetId,
         canEdit,
         pageTheme,
-        pageMode
+        pageMode,
+        sbHealth: health,
+        sbRestDown: !!(health && (health.restStatus === 520 || health.restOk === false))
       };
       if(root && root.dataset){
         root.dataset.owner = isOwnProfile(ctx) ? "self" : "visitor";
       }
-
       // Top button (Entrar/Perfil)
       const topBtn = document.getElementById("dpTopAuthBtn");
       if(topBtn){
@@ -5026,7 +5079,6 @@ function setupAntesDepois(container){
     }
   }catch(_){}
 }
-
 
 
 

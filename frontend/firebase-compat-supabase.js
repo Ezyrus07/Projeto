@@ -63,6 +63,14 @@
   // ------------------------
   // Helpers
   // ------------------------
+
+  function pkField(table){
+    const t = String(table||"").trim().toLowerCase();
+    // In DOKE, "usuarios" docs are addressed by auth uid, stored in column "uid".
+    if (t === "usuarios") return "uid";
+    return "id";
+  }
+
   function singularize(name){
     const n = String(name||"").trim();
     if (!n) return "";
@@ -193,8 +201,12 @@
 
   function shouldReturnEmpty(error){
     const status = error?.status;
-    const msg = String(error?.message || "");
+    const msg = String(error?.message || error?.details || "");
+    const lmsg = msg.toLowerCase();
     if (status === 404) return true;
+    // RLS / auth issues: keep app running and render empty state
+    if (status === 401 || status === 403) return true;
+    if (lmsg.includes("permission denied") || lmsg.includes("not authorized")) return true;
     if (status === 400 && msg.includes("invalid input syntax for type uuid")) return true;
     if (msg.includes("does not exist")) return true;
     return false;
@@ -245,7 +257,7 @@
     if (!hasKeys(safe)) return { safe, skipped: true };
     for (let attempt = 1; attempt <= maxTries; attempt++){
       if (!hasKeys(safe)) return { safe, skipped: true };
-      const { error } = await client.from(table).update(safe).eq("id", id);
+      const { error } = await client.from(table).update(safe).eq(pkField(table), id);
       if (!error) return { safe };
       const missing = parseMissingColumn(error);
       if (missing && Object.prototype.hasOwnProperty.call(safe, missing)){
@@ -263,7 +275,7 @@
     const maxTries = Math.max(6, initialKeys + 2);
     let safe = { ...(payload||{}) };
     for (let attempt = 1; attempt <= maxTries; attempt++){
-      const { error } = await client.from(table).upsert(safe);
+      const { error } = await client.from(table).upsert(safe, { onConflict: pkField(table) });
       if (!error) return { safe };
       const missing = parseMissingColumn(error);
       if (missing && Object.prototype.hasOwnProperty.call(safe, missing)){
@@ -471,7 +483,7 @@
 
     let lastErr = null;
     for (const fk of fkCandidates) {
-      let q = client.from(ref.table).select("*").eq("id", ref.id);
+      let q = client.from(ref.table).select("*").eq(pkField(ref.table), ref.id);
       if (parent && parent.id && fk) q = q.eq(fk, parent.id);
 
       let data = null;
@@ -559,23 +571,34 @@
   window.setDoc = async function(ref, payload){
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
-    const up = normalizePayload({ ...payload, id: ref.id });
+    const keyField = pkField(ref.table);
+    const base = { ...(payload||{}) };
+    base[keyField] = ref.id;
+    const up = normalizePayload(base);
     if (ref.parent && ref.parent.id) {
       const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
       for (const fk of fks) up[fk] = ref.parent.id;
     }
-    await upsertWithMissingColumnRetry(client, ref.table, up);
-    return true;
+    try {
+      await upsertWithMissingColumnRetry(client, ref.table, up);
+      return true;
+    } catch (error) {
+      if (looksLikeNetworkOrCorsError(error)) { markSupaTemporarilyDown(); return true; }
+      if (shouldReturnEmpty(error)) return true;
+      throw error;
+    }
   };
 
   window.updateDoc = async function(ref, payload){
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
+    if (isSupaTemporarilyDown()) return true;
     try {
       await updateWithMissingColumnRetry(client, ref.table, ref.id, normalizePayload(payload));
       return true;
     } catch (error) {
+      if (looksLikeNetworkOrCorsError(error)) { markSupaTemporarilyDown(); return true; }
       if (shouldReturnEmpty(error)) return true;
       throw error;
     }
@@ -585,7 +608,7 @@
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
-    let q = client.from(ref.table).delete().eq("id", ref.id);
+    let q = client.from(ref.table).delete().eq(pkField(ref.table), ref.id);
     if (ref.parent && ref.parent.id) {
       const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
       if (fks.length === 1) q = q.eq(fks[0], ref.parent.id);
@@ -593,6 +616,7 @@
     }
     const { error } = await q;
     if (error) {
+      if (looksLikeNetworkOrCorsError(error)) { markSupaTemporarilyDown(); return true; }
       if (shouldReturnEmpty(error)) return true;
       throw error;
     }

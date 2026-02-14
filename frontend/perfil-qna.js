@@ -1,3 +1,4 @@
+function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v); }
 ﻿/* DOKE — Perfil Profissional | Perguntas (estilo marketplace)
    Requer: supabase-init.js (window.sb)
 */
@@ -25,10 +26,12 @@
     return { usuario: data || null };
   }
   async function getUsuarioById(client, id){
-    let r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
-    if(!r.error && !r.data){
-      r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+    if(looksUUID(id)){
+      const r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+      if(r.error) return { error: r.error };
+      return { usuario: r.data || null };
     }
+    const r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
     if(r.error) return { error: r.error };
     return { usuario: r.data || null };
   }

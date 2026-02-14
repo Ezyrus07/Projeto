@@ -119,6 +119,9 @@
 
   // Captura erros globais para notificação (sem travar UX)
     window.addEventListener("error", (e)=>{
+    // Erro benigno do Chrome/Safari que aparece em muitos layouts responsivos.
+    // Não é bug do DOKE e não impacta o app — só polui o console.
+    if((e?.message || "").includes("ResizeObserver loop")) return;
     const msg = e && (e.message || e.error && e.error.message) ? (e.message || e.error.message) : "Ocorreu um erro inesperado.";
     try{ console.error(e); }catch(_){}
     if(isDebug()){
@@ -127,6 +130,7 @@
   });
 
     window.addEventListener("unhandledrejection", (e)=>{
+    if((e?.reason?.message || "").includes("ResizeObserver loop")) return;
     const reason = e && e.reason ? (e.reason.message || safeStr(e.reason)) : "Falha inesperada.";
     try{ console.error(e); }catch(_){}
     if(isDebug()){
