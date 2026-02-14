@@ -111,8 +111,8 @@ let groupSchema = null;
     // Supabase auth
     try{
       if (client?.auth?.getUser) {
-        const { data } = await client.auth.getUser();
-        if (data?.user?.id) return data.user.id;
+        const { data } = await client.auth.getSession();
+        if (data?.session?.user?.id) return data.session && data.session.user.id;
       }
     }catch(e){}
     // Local fallback

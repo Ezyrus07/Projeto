@@ -665,9 +665,9 @@
   // Data helpers (usuarios)
   // -----------------------------
   async function getSessionUser(client){
-    const { data, error } = await client.auth.getUser();
+    const { data, error } = await client.auth.getSession();
     if(error) return { error };
-    return { session: null, user: data?.user || null };
+    return { session: null, user: data?.session?.user || null };
   }
 
   async function getUsuarioByAuthUid(client, authUid){

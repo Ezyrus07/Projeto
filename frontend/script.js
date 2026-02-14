@@ -43,9 +43,8 @@ if (typeof window.onAuthStateChanged !== "function") {
     const sb = window.sb || window.supabaseClient;
     if (sb && sb.auth && sb.auth.onAuthStateChange){
       // dispara estado atual
-      if (sb.auth.getUser){
-        sb.auth.getUser().then(({data})=>{
-          const u = data && data.user ? data.user : null;
+      if (sb.auth.getSession){
+        sb.auth.getSession().then(({data})=>{ const u = (data && data.session && data.session.user) ? data.session.user : null;
           try{ callback(u ? { uid: u.id, email: u.email } : null); }catch(_e){}
         }).catch(()=>{});
       }
@@ -2317,11 +2316,11 @@ window.carregarCategorias = async function() {
     }
 };
 window.sincronizarSessaoSupabase = async function() {
-    if (!window.sb?.auth?.getUser) return null;
+    if (!window.sb?.auth?.getSession) return null;
     try {
-        const { data, error } = await window.sb.auth.getUser();
+        const { data: sessionData, error } = await window.sb.auth.getSession();
         if (error) return null;
-        const user = data?.user || null;
+        const user = sessionData?.session?.user || null;
         if (!user) {
             return null;
         }
@@ -2429,11 +2428,11 @@ window.verificarEstadoLogin = async function() {
         logado = true;
     }
 
-    if (!logado && window.sb?.auth?.getUser) {
+    if (!logado && window.sb?.auth?.getSession) {
         try {
-            const { data, error } = await window.sb.auth.getUser();
+            const { data, error } = await window.sb.auth.getSession();
             if (!error) {
-                sessionUser = data?.user || null;
+                sessionUser = data?.session?.user || null;
                 if (sessionUser) {
                     const nomeFallback = sessionUser.user_metadata?.nome || (sessionUser.email ? sessionUser.email.split('@')[0] : "Usuario");
                     perfil = {
@@ -2728,9 +2727,9 @@ window.irParaMeuPerfil = function(event) {
     const go = async () => {
         let sessionUser = null;
         try {
-            if (window.sb?.auth?.getUser) {
-                const { data, error } = await window.sb.auth.getUser();
-                if (!error) sessionUser = data?.user || null;
+            if (window.sb?.auth?.getSession) {
+                const { data, error } = await window.sb.auth.getSession();
+                if (!error) sessionUser = data?.session?.user || null;
             }
         } catch (_) {}
 
@@ -4320,9 +4319,9 @@ document.addEventListener("DOMContentLoaded", async function() {
         } else {
             let supaUser = null;
             try {
-                if (window.sb?.auth?.getUser) {
-                    const { data, error } = await window.sb.auth.getUser();
-                    if (!error && data?.user) supaUser = data.user;
+                if (window.sb?.auth?.getSession) {
+                    const { data, error } = await window.sb.auth.getSession();
+                    if (!error && data?.session?.user) supaUser = data.session && data.session.user;
                 }
             } catch (_) {}
 
@@ -4892,9 +4891,9 @@ async function dokeCommGetUid() {
 
     try {
         const sb = window.supabase || window.supabaseClient || window.sb || null;
-        if (sb?.auth?.getUser) {
-            const { data } = await sb.auth.getUser();
-            if (data?.user?.id) return String(data.user.id);
+        if (sb?.auth?.getSession) {
+            const { data } = await sb.auth.getSession();
+            if (data?.session?.user?.id) return String(data.session && data.session.user.id);
         }
     } catch (_e) {}
 
@@ -5679,8 +5678,7 @@ window.stopReelPreview = function(card) {
     if (!video) return;
     const timer = reelPreviewTimers.get(video);
     if (timer) {
-        window.syncClear();
-      clearTimeout(timer);
+        clearTimeout(timer);
         reelPreviewTimers.delete(video);
     }
     video.pause();
@@ -12665,7 +12663,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const empty = root.querySelector('[data-empty]');
 
     try{
-      const { data: { user } } = await client.auth.getUser();
+      const { data: sessionData } = await client.auth.getSession();
+      const user = sessionData?.session?.user || null;
       if (!user) {
         window.location.href = 'login.html';
         return;

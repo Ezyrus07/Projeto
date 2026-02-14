@@ -123,15 +123,37 @@ if (!key || key.startsWith("sb_publishable")) {
 
   try{
     window.sb = window.supabase.createClient(url, key, {
+      db: { schema: 'public' },
       auth: {
         persistSession: true,
         // Evita enxurrada de refresh_token em ambientes com CORS/rede instável.
-        autoRefreshToken: false,
+        autoRefreshToken: true,
         detectSessionInUrl: true,
       }
     });
     window.__DOKE_SUPABASE_INFO__ = { url, isLocalDev };
     console.log("[DOKE] Supabase conectado (global).");
+// Garantir que sessão persistida não fique "meio logada":
+// - se o access_token expirou e não consegue refresh, limpa e força novo login
+;(async () => {
+  try {
+    const { data } = await window.sb.auth.getSession();
+    const session = data && data.session;
+    if (!session) return;
+    const expiresAtMs = session.expires_at ? session.expires_at * 1000 : 0;
+    const needsRefresh = expiresAtMs && (expiresAtMs - Date.now() < 10 * 60 * 1000);
+    if (needsRefresh && typeof window.sb.auth.refreshSession === "function") {
+      const { error } = await window.sb.auth.refreshSession();
+      if (error) {
+        try { await window.sb.auth.signOut(); } catch(_e) {}
+        try {
+          const ref = (new URL(url)).hostname.split(".")[0];
+          localStorage.removeItem(`sb-${ref}-auth-token`);
+        } catch(_e) {}
+      }
+    }
+  } catch(_e) {}
+})();
   }catch(e){
     warn("Falha ao criar cliente Supabase: " + (e && e.message ? e.message : e));
   }
@@ -169,9 +191,9 @@ if (!key || key.startsWith("sb_publishable")) {
           const sb = window.sb || window.supabaseClient || window.supabase;
           if(sb && sb.auth){
             // callback imediato com usuário atual
-            sb.auth.getUser()
+            sb.auth.getSession()
               .then(({ data })=>{
-                const u = data?.user || null;
+                const u = data?.session?.user || null;
                 callback(u ? { uid: u.id, email: u.email } : null);
               })
               .catch(()=> callback(null));

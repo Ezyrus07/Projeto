@@ -34,8 +34,8 @@
     }catch(_){ }
     try{
       if (client?.auth?.getUser){
-        const { data } = await client.auth.getUser();
-        if (data?.user?.id) return data.user.id;
+        const { data } = await client.auth.getSession();
+        if (data?.session?.user?.id) return data.session && data.session.user.id;
       }
     }catch(_){ }
     return (perfilLocal.uid || perfilLocal.id || perfilLocal.user_uid || perfilLocal.userId || perfilLocal.username || perfilLocal.user || '').toString().replace(/^@/,'');

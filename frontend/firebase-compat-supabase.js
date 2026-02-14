@@ -53,9 +53,9 @@
   }
   const getClient = () => {
     const candidate =
+      window.sb ||
       window.supabaseClient ||
       window.sbClient ||
-      window.sb ||
       window.supabase;
     return isClient(candidate) ? candidate : null;
   };

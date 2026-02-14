@@ -134,8 +134,8 @@
     }
 
     // auth + me
-    const sess = await client.auth.getUser();
-    const authUser = sess?.data?.user || null;
+    const sess = await client.auth.getSession();
+    const authUser = sess?.data?.session?.user || null;
     let me = null;
     if(authUser){
       const r = await getUsuarioByAuthUid(client, authUser.id);

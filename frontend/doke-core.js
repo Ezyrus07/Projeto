@@ -63,13 +63,15 @@
     return null;
   }
 
-  async function getSupabaseUser() {
+  
+async function getSupabaseUser() {
     try {
       const sb = window.sb;
-      if (!sb || !sb.auth || typeof sb.auth.getUser !== "function") return null;
-      const { data, error } = await sb.auth.getUser();
-      if (error) return null;
-      const u = data && data.user;
+      if (!sb || !sb.auth || typeof sb.auth.getSession !== "function") return null;
+
+      // getSession() é local (não depende de rede), evita "meio logado" quando a rede falha.
+      const { data } = await sb.auth.getSession();
+      const u = data && data.session && data.session.user ? data.session.user : null;
       if (!u) return null;
       return { id: u.id, email: u.email || "" };
     } catch (_) {
@@ -84,7 +86,7 @@
     return getCachedUser();
   };
   Doke.auth.isLoggedIn = async function () {
-    const u = await Doke.auth.getUser();
+    const u = await Doke.auth.getSession();
     return !!(u && u.id);
   };
   Doke.auth.logout = async function () {
@@ -200,7 +202,7 @@
     window.__DOKE_CORE_INITED__ = true;
 
     // 1) Auth no header
-    const user = await Doke.auth.getUser();
+    const user = await Doke.auth.getSession();
     installHeaderAuth(user);
 
     // 2) Localização

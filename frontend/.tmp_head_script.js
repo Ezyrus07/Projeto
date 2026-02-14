@@ -44,8 +44,8 @@ if (typeof window.onAuthStateChanged !== "function") {
     if (sb && sb.auth && sb.auth.onAuthStateChange){
       // dispara estado atual
       if (sb.auth.getUser){
-        sb.auth.getUser().then(({data})=>{
-          const u = data && data.user ? data.user : null;
+        sb.auth.getSession().then(({data})=>{
+          const u = data && data.session && data.session.user ? data.session && data.session.user : null;
           try{ callback(u ? { uid: u.id, email: u.email } : null); }catch(_e){}
         }).catch(()=>{});
       }
@@ -4673,9 +4673,9 @@ async function dokeCommGetUid() {
 
     try {
         const sb = window.supabase || window.supabaseClient || window.sb || null;
-        if (sb?.auth?.getUser) {
-            const { data } = await sb.auth.getUser();
-            if (data?.user?.id) return String(data.user.id);
+        if (sb?.auth?.getSession) {
+            const { data } = await sb.auth.getSession();
+            if (data?.session?.user?.id) return String(data.session && data.session.user.id);
         }
     } catch (_e) {}
 
@@ -5460,8 +5460,7 @@ window.stopReelPreview = function(card) {
     if (!video) return;
     const timer = reelPreviewTimers.get(video);
     if (timer) {
-        window.syncClear();
-      clearTimeout(timer);
+        clearTimeout(timer);
         reelPreviewTimers.delete(video);
     }
     video.pause();
@@ -12378,7 +12377,8 @@ document.addEventListener('DOMContentLoaded', function(){
     const empty = root.querySelector('[data-empty]');
 
     try{
-      const { data: { user } } = await client.auth.getUser();
+      const { data } = await client.auth.getSession();
+      const user = data?.session?.user || null;
       if (!user) {
         window.location.href = 'login.html';
         return;

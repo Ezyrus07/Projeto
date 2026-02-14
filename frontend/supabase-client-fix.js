@@ -41,7 +41,8 @@
     if (url && key){
       try{
         const created = ns.createClient(url, key, {
-          auth: { persistSession: true, autoRefreshToken: false, detectSessionInUrl: true }
+          db: { schema: 'public' },
+      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
         });
         w.supabase = created;
         w.supabaseClient = created;

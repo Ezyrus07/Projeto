@@ -99,8 +99,8 @@
     try{
       const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase;
       if(sb?.auth?.getUser){
-        const { data, error } = await sb.auth.getUser();
-        if(!error && data?.user) return data.user;
+        const { data, error } = await sb.auth.getSession();
+        if(!error && data?.session?.user) return data.session && data.session.user;
       }
     }catch(e){}
     try{
