@@ -28,6 +28,29 @@
     if (window.auth && typeof window.auth === "object") {
       window.auth.currentUser = user || null;
     }
+
+  async function __dokeEnsureUsuariosRow(user){
+    try {
+      const sb = getClient();
+      if (!sb || !sb.from) return;
+      const id = user?.id || user?.uid;
+      if (!id) return;
+      // tenta criar/atualizar o registro do usuario para destravar perfil/feed
+      const meta = user?.user_metadata || user?.user_metadata || {};
+      const nome = meta?.nome || meta?.name || (user?.email ? String(user.email).split('@')[0] : null) || null;
+      const handle = meta?.user || meta?.username || null;
+      const foto = meta?.foto || meta?.avatar_url || null;
+      const payload = { id, uid: String(id), nome, user: handle, foto };
+      const { error } = await sb.from('usuarios').upsert(payload, { onConflict: 'id' });
+      if (error) {
+        const msg = String(error.message || '').toLowerCase();
+        if (msg.includes('relation') && msg.includes('usuarios') && msg.includes('does not exist')) {
+          console.warn('[DOKE] Tabela public.usuarios não existe no Supabase. Rode o arquivo supabase_schema.sql.');
+        }
+      }
+    } catch (_e) {}
+  }
+
   }
 
   // keep global getAuth using authObj
@@ -106,6 +129,7 @@
     const emit = (user) => {
       emitted = true;
       setCurrentUser(user);
+      if (user) { try { __dokeEnsureUsuariosRow(user); } catch(_e) {} }
       try { cb(user); } catch (_e) {}
     };
     const { data: sub } = sb.auth.onAuthStateChange((_event, session) => {

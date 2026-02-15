@@ -2,6 +2,11 @@
 // 1. IMPORTAÇÕES E CONFIGURAÇÃO
 // ============================================================
 
+
+// [DOKE] Build tag (cache-buster)
+window.__DOKE_BUILD__ = "20260215v4";
+try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
+
 // [DOKE PATCH] Guards globais para evitar quebra em páginas diferentes + navegação de grupos
 window.carregarProfissionaisDestaque ||= function(){};
 window.carregarProfissionaisNovos ||= function(){};
@@ -30,12 +35,15 @@ const firebaseConfig = {
     appId: "1:997098339190:web:a865b696278be21f069857"
 };
 
-// Inicializa o Firebase (safe). Se o SDK não estiver presente, mantém compat/Supabase sem quebrar a página.
+// Inicializa o Firebase (safe).
+// IMPORTANTE: este projeto usa *bridges* (Firestore/Auth compat em cima do Supabase).
+// Nesses casos, não podemos sobrescrever window.db/window.auth com null, senão o site
+// “acha” que não tem DB/Auth e para de carregar feeds/perfil.
 let app = null;
 let analytics = null;
-let db = (window.db || null);
-let auth = (window.auth || null);
-let storage = (window.storage || null);
+let db = (window.db !== undefined && window.db !== null) ? window.db : null;
+let auth = (window.auth !== undefined && window.auth !== null) ? window.auth : null;
+let storage = (window.storage !== undefined && window.storage !== null) ? window.storage : null;
 
 // [DOKE] Shim: onAuthStateChanged (evita crash quando Firebase não existe)
 if (typeof window.onAuthStateChanged !== "function") {
@@ -75,18 +83,35 @@ try {
   console.warn("[DOKE] Falha ao inicializar Firebase. Usando compat/Supabase.", e);
 }
 
+// Se não existe DB (nem Firebase modular, nem bridge), cria um placeholder.
+// Isso é necessário porque os bridges (firebase-compat-supabase.js) implementam
+// collection/query/getDocs e ignoram o 1º argumento (db).
+if (db === null || db === undefined) db = (window.db !== undefined && window.db !== null) ? window.db : {};
+
+// Auth: se o bridge de Auth expôs getAuth(), usa ele como fonte.
+if (auth === null || auth === undefined) {
+  try {
+    if (typeof window.getAuth === 'function') auth = window.getAuth();
+  } catch (_e) {}
+  if (auth === null || auth === undefined) auth = (window.auth !== undefined && window.auth !== null) ? window.auth : { currentUser: null };
+}
+
 window.db = db;
 window.auth = auth;
-window.storage = storage;
+window.storage = (storage === undefined ? null : storage);
 
-// Protege export helpers caso o SDK não exista
-if (typeof collection === "function") window.collection = collection;
-if (typeof addDoc === "function") window.addDoc = addDoc;
-if (typeof getDocs === "function") window.getDocs = getDocs;
-if (typeof query === "function") window.query = query;
-if (typeof where === "function") window.where = where;
-if (typeof orderBy === "function") window.orderBy = orderBy;
-if (typeof doc === "function") window.doc = doc;
+// Protege export helpers: NÃO sobrescreva o bridge (firebase-compat-supabase.js)
+// quando ele estiver ativo.
+const __hasFirestoreBridge = !!window.__dokeFirestoreCompat;
+if (!__hasFirestoreBridge) {
+  if (typeof collection === "function") window.collection = collection;
+  if (typeof addDoc === "function") window.addDoc = addDoc;
+  if (typeof getDocs === "function") window.getDocs = getDocs;
+  if (typeof query === "function") window.query = query;
+  if (typeof where === "function") window.where = where;
+  if (typeof orderBy === "function") window.orderBy = orderBy;
+  if (typeof doc === "function") window.doc = doc;
+}
 
 // Reforça globals compat caso tenham sido sobrescritos por IDs no DOM
 if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
@@ -1679,7 +1704,7 @@ async function __dokeFetchAnunciosFallback() {
     }
     const task = (async () => {
     const client = (typeof getSupabaseClient === "function")
-        ? getSupabaseClient()
+        ? (getSupabasePublicClient() || getSupabaseClient())
         : (window.sb || window.supabaseClient || window.sbClient || window.supabase || null);
     const cached = dokeReadCache(DOKE_CACHE_KEYS.anuncios, DOKE_CACHE_MAX_AGE_MS);
     if (cached && cached.length) return { ok: true, data: cached };
@@ -1687,6 +1712,7 @@ async function __dokeFetchAnunciosFallback() {
     if (dokeIsSupaTemporarilyDown()) return { ok: false, data: [] };
 
     const tableCandidates = ["anuncios", "servicos"];
+    let lastErr = null;
     const selectCandidates = [
         "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo,dataCriacao,dataAtualizacao,bairro,cidade,uf,pagamentosAceitos,pagamentos_aceitos,mediaAvaliacao,numAvaliacoes",
         "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo",
@@ -1704,6 +1730,7 @@ async function __dokeFetchAnunciosFallback() {
                     `timeout_supabase_${table}`
                 );
                 if (res.error) {
+                    lastErr = res.error;
                     if (dokeLooksLikeNetworkAbort(res.error)) dokeMarkSupaDown();
                     continue;
                 }
@@ -1718,11 +1745,12 @@ async function __dokeFetchAnunciosFallback() {
                 dokeWriteCache(DOKE_CACHE_KEYS.anuncios, normalized);
                 return { ok: true, data: normalized };
             } catch (err) {
+                lastErr = err;
                 if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
             }
         }
     }
-    return { ok: false, data: [] };
+    return { ok: false, data: [], error: lastErr };
     })();
     window.__dokeAnunciosFallbackInflight = task;
     try {
@@ -1788,7 +1816,8 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (!fetched) {
-            const fallback = await __dokeFetchAnunciosFallback();
+			const fallback = await __dokeFetchAnunciosFallback();
+			if (fallback && fallback.error) { lastLoadError = fallback.error; }
             if (Array.isArray(fallback.data)) {
                 listaAnuncios = Array.isArray(fallback.data) ? fallback.data : [];
                 if (listaAnuncios.length) fetched = true;
@@ -3414,6 +3443,41 @@ function getSupabaseClient() {
     return null;
 }
 
+function getSupabasePublicClient() {
+    // Cliente Supabase "anon" (sem sessão) para leituras públicas.
+    // Isso evita casos onde políticas RLS permitem anon mas bloqueiam authenticated.
+    try {
+        if (window.__dokePublicSb && typeof window.__dokePublicSb.from === "function") return window.__dokePublicSb;
+        if (typeof window.getSupabasePublicClient === "function" && window.getSupabasePublicClient !== getSupabasePublicClient) {
+            // caso outra lib tenha definido, respeita
+            const other = window.getSupabasePublicClient();
+            if (other && typeof other.from === "function") return other;
+        }
+        if (!window.supabase?.createClient) return null;
+        const url = window.SUPABASE_URL;
+        const key = window.SUPABASE_ANON_KEY;
+        if (!url || !key) return null;
+        // IMPORTANT: use um storageKey diferente para não conflitar com o client principal
+        // e evitar o warning de múltiplos GoTrueClient com a mesma chave.
+        window.__dokePublicSb = window.supabase.createClient(url, key, {
+            auth: {
+                storageKey: "doke-public-auth-token",
+                persistSession: false,
+                autoRefreshToken: false,
+                detectSessionInUrl: false
+            },
+            db: { schema: 'public' },
+            global: {
+                headers: { "X-Client-Info": "doke-public" }
+            }
+        });
+        return window.__dokePublicSb;
+    } catch (_e) {
+        return null;
+    }
+}
+window.getSupabasePublicClient = getSupabasePublicClient;
+
 if (window._dokePublicacoesJoinStatus === undefined) {
     window._dokePublicacoesJoinStatus = null;
 }
@@ -3551,7 +3615,7 @@ async function getSupabaseUserRow() {
 }
 
 async function attachSupabaseUsersById(items) {
-    const client = getSupabaseClient();
+    const client = getSupabasePublicClient() || getSupabaseClient();
     if (!client || !Array.isArray(items) || items.length === 0) return items;
     if (dokeIsSupaTemporarilyDown()) return items;
 
@@ -3589,7 +3653,7 @@ async function attachSupabaseUsersById(items) {
 }
 
 async function fetchSupabasePublicacoesFeed() {
-    const client = getSupabaseClient();
+    const client = getSupabasePublicClient() || getSupabaseClient();
     const cached = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
     if (Array.isArray(cached) && cached.length) return cached;
     if (!client) return cached || [];
@@ -6910,7 +6974,7 @@ function getRelatedCount(value) {
 }
 
 async function fetchSupabasePublicacaoById(publicacaoId) {
-    const client = getSupabaseClient();
+    const client = getSupabasePublicClient() || getSupabaseClient();
     if (!client) return null;
     let lastError = null;
     let attempts = 0;
@@ -7731,7 +7795,7 @@ async function carregarReelsNoIndex() {
 }
 
 async function fetchSupabaseReelsHome() {
-    const client = getSupabaseClient();
+    const client = getSupabasePublicClient() || getSupabaseClient();
     const cached = dokeReadCache(DOKE_CACHE_KEYS.reels, DOKE_CACHE_MAX_AGE_MS);
     if (Array.isArray(cached) && cached.length) return cached;
     if (!client) return cached || [];

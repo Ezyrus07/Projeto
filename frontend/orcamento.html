@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260212v59"></script>
+<script defer="" src="script.js?v=20260215v4"></script>
 <style>/* ==========================================================================
    P?f?GINA DE OR??AMENTO
    ========================================================================== */
@@ -797,19 +797,54 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
 <body data-page="orcamento">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
 <header class="navbar-mobile">
 <div id="logo-mobile">
 <a href="index.html">
-<img alt="Doke" decoding="async" loading="lazy" onerror="this.src='https://placehold.co/100x40?text=Doke'" src="assets/Imagens/doke-logo.png"/>
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
 </a>
 </div>
-<div class="mobile-controls" style="display: flex; align-items: center; gap: 15px;">
-<button id="btn-menu-mobile" onclick="abrirMenuMobile()">
-<i class="bx bx-menu" style="font-size: 30px; color: var(--cor2);"></i>
-</button>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
 </div>
+
 </header>
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+
 <aside class="sidebar-icones">
   <div id="logo">
     <a href="index.html">
@@ -874,38 +909,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
   </div>
 </aside>
 
-<header class="navbar-desktop">
-<div id="logo-desktop">
-<a href="projeto.html">
-<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</a>
-</div>
-<nav class="menu">
-<div class="cep-wrapper">
-<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
-<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
-<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
-</svg>
-<span id="textoCepSpan">Informe seu CEP</span>
-</a>
-<div class="cep-popup" id="boxCep">
-<p>Digite seu CEP:</p>
-<div class="cep-input-group">
-<input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/>
-<button onclick="salvarCep()">OK</button>
-</div>
-</div>
-</div>
-<a href="anunciar.html">Anuncie seu servi&ccedil;o</a>
-<a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
-<a href="novidades.html">Novidades</a>
-</nav>
-<div class="botoes-direita">
-<a class="entrar" href="login.html">Entrar</a>
-<a href="login.html">
-</a>
-</div>
-</header>
+
 <main class="main-orcamento">
 <div class="orc-top">
 <div class="orc-top-card">
@@ -1076,7 +1080,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 </a>
 </nav>
 <script>
-    // 1. IMPORTA???.ES NECESS?f?RIAS (inicializadas ap?f?s carregar script.js)
+    // 1. IMPORTA???.ES NECESS?f?RIAS (inicializadas ap?f?s carregar script.js?v=20260215v4)
     let doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc;
     let getStorage, ref, uploadBytes, getDownloadURL;
     let onAuthStateChanged;
@@ -2355,7 +2359,6 @@ Local do servi\u00e7o: ${loc}${extra}`;
     }
 
 
-
     function formatarDataBR(yyyy_mm_dd){
         if (!yyyy_mm_dd) return "";
         const parts = String(yyyy_mm_dd).split("-");
@@ -2602,22 +2605,5 @@ document.addEventListener('keydown', function(evt){
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 

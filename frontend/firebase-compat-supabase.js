@@ -766,6 +766,8 @@
     if (typeof window.uploadBytes !== "function" && typeof c.uploadBytes === "function") window.uploadBytes = c.uploadBytes;
     if (typeof window.getDownloadURL !== "function" && typeof c.getDownloadURL === "function") window.getDownloadURL = c.getDownloadURL;
   };
+  // garante window.db para fluxos que checam truthy
+  try { if (window.db === null || window.db === undefined) window.db = {}; } catch(_e) {}
 
   console.log("[DOKE] Firestore compat carregado.");
 })();

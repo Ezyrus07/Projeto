@@ -17,7 +17,7 @@
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
-<script defer="" src="script.js?v=20260212v59"></script>
+<script defer="" src="script.js?v=20260215v4"></script>
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
@@ -29,6 +29,53 @@
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260213v2">
 </head>
 <body class="dp-page" data-page="perfil">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
 <!-- Sidebar (mantém padrão do site) -->
 <aside class="sidebar-icones">
   <div id="logo">
@@ -95,36 +142,7 @@
 </aside>
 
 <!-- Conteúdo principal -->
-<header class="navbar-desktop">
-<div id="logo-desktop">
-<a href="index.html">
-<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</a>
-</div>
-<nav class="menu">
-<div class="cep-wrapper">
-<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
-<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
-<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
-</svg>
-<span id="textoCepSpan">Informe seu CEP</span>
-</a>
-<div class="cep-popup" id="boxCep">
-<p>Digite seu CEP:</p>
-<div class="cep-input-group">
-<input id="inputCep" maxlength="9" placeholder="00000-000" type="text"/>
-<button onclick="salvarCep()">OK</button>
-</div>
-</div>
-</div>
-<a href="anunciar.html">Anuncie seu serviço</a>
-<a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
-<a href="novidades.html">Novidades</a>
-</nav>
-<div class="botoes-direita">
-<a class="entrar" href="login.html" id="dpTopAuthBtn">Entrar</a>
-</div>
-</header>
+
 <main class="dp-wrap">
 <div class="dp-skeleton dp-theme-profissional" data-mode="public" data-theme="profissional" id="dpRoot">
 <section class="dp-card">

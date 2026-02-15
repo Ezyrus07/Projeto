@@ -5,6 +5,139 @@
 -- Buckets: perfil (Storage)
 
 
+-- ============================================================
+-- CORE: Tabela public.usuarios (obrigatória)
+-- - id (uuid) = auth.uid()
+-- - uid (text) para compat com código legado
+-- ============================================================
+create extension if not exists pgcrypto;
+
+create table if not exists public.usuarios (
+  id uuid primary key references auth.users(id) on delete cascade,
+  uid text unique not null,
+  nome text,
+  "user" text,
+  foto text,
+  isProfissional boolean not null default false,
+  categoria text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create or replace function public.__doke_set_updated_at()
+returns trigger language plpgsql as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists __doke_set_usuarios_updated_at on public.usuarios;
+create trigger __doke_set_usuarios_updated_at
+before update on public.usuarios
+for each row execute function public.__doke_set_updated_at();
+
+alter table public.usuarios enable row level security;
+
+-- Leitura pública (cards, perfis públicos)
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='usuarios' and policyname='Usuarios public read') then
+    create policy "Usuarios public read" on public.usuarios for select using (true);
+  end if;
+end $$;
+
+-- O próprio usuário pode criar/atualizar seu registro (para contas antigas sem row)
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='usuarios' and policyname='Usuarios self insert') then
+    create policy "Usuarios self insert" on public.usuarios
+      for insert with check (auth.uid() = id);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='public' and tablename='usuarios' and policyname='Usuarios self update') then
+    create policy "Usuarios self update" on public.usuarios
+      for update using (auth.uid() = id)
+      with check (auth.uid() = id);
+  end if;
+end $$;
+
+-- Trigger: cria public.usuarios automaticamente quando um auth.users nasce
+create or replace function public.__doke_handle_new_user()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.usuarios (id, uid, nome, "user", foto, isProfissional)
+  values (
+    new.id,
+    new.id::text,
+    coalesce(new.raw_user_meta_data->>'nome', new.raw_user_meta_data->>'name', split_part(new.email,'@',1), 'Usuário'),
+    coalesce(new.raw_user_meta_data->>'user', new.raw_user_meta_data->>'username', null),
+    coalesce(new.raw_user_meta_data->>'foto', new.raw_user_meta_data->>'avatar_url', null),
+    coalesce((new.raw_user_meta_data->>'isProfissional')::boolean, false)
+  )
+  on conflict (id) do update set
+    uid = excluded.uid;
+  return new;
+end;
+$$;
+
+drop trigger if exists __doke_on_auth_user_created on auth.users;
+create trigger __doke_on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.__doke_handle_new_user();
+
+-- Backfill: cria rows faltantes para usuários já existentes
+insert into public.usuarios (id, uid)
+select u.id, u.id::text
+from auth.users u
+where not exists (select 1 from public.usuarios p where p.id = u.id)
+on conflict do nothing;
+
+
+-- ============================================================
+-- Storage: bucket 'perfil' + políticas básicas
+-- ============================================================
+-- Cria bucket público para leitura de mídias
+insert into storage.buckets (id, name, public)
+values ('perfil','perfil', true)
+on conflict (id) do nothing;
+
+-- Políticas em storage.objects (RLS)
+-- Leitura pública
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Perfil public read') then
+    create policy "Perfil public read" on storage.objects
+      for select using (bucket_id = 'perfil');
+  end if;
+end $$;
+
+-- Escrita por autenticados
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Perfil auth insert') then
+    create policy "Perfil auth insert" on storage.objects
+      for insert with check (bucket_id = 'perfil' and auth.role() = 'authenticated');
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Perfil owner update') then
+    create policy "Perfil owner update" on storage.objects
+      for update using (bucket_id = 'perfil' and auth.uid() = owner)
+      with check (bucket_id = 'perfil' and auth.uid() = owner);
+  end if;
+end $$;
+
+do $$ begin
+  if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Perfil owner delete') then
+    create policy "Perfil owner delete" on storage.objects
+      for delete using (bucket_id = 'perfil' and auth.uid() = owner);
+  end if;
+end $$;
+
+
 -- POSTS (foto/vídeo)
 create table if not exists public.publicacoes (
   id uuid primary key default gen_random_uuid(),
@@ -369,7 +502,7 @@ end $$;
 -- Inserts / updates pelo dono (relaciona auth.uid() com usuarios.uid)
 create or replace function public.is_owner(user_row_id uuid)
 returns boolean language sql stable as $$
-  select exists(select 1 from public.usuarios u where u.id=user_row_id and u.uid = auth.uid());
+  select (auth.uid() = user_row_id);
 $$;
 
 -- Usuarios (perfil)
