@@ -859,7 +859,7 @@ async function getSupabaseUidByUserId(userId) {
     const client = getSupabaseClient();
     if (!client) return null;
     const { data, error } = await client
-        .from("usuarios")
+        .from("usuarios_legacy")
         .select("uid")
         .eq("id", userId)
         .maybeSingle();
@@ -887,22 +887,22 @@ async function resolverDestinoPerfil(uid, user) {
             let row = null;
             if (uidSafe) {
                 const byUid = await client
-                    .from("usuarios")
+                    .from("usuarios_legacy")
                     .select("uid, isProfissional")
-                    .eq("uid", uidSafe)
+                    .eq("uid_text", uidSafe)
                     .maybeSingle();
                 if (!byUid.error) row = byUid.data || null;
             }
 
             if (!row && userSafe) {
                 let byUser = await client
-                    .from("usuarios")
+                    .from("usuarios_legacy")
                     .select("uid, isProfissional")
                     .in("user", [userSafe, `@${userSafe}`])
                     .limit(1);
                 if (byUser.error || !Array.isArray(byUser.data) || byUser.data.length === 0) {
                     byUser = await client
-                        .from("usuarios")
+                        .from("usuarios_legacy")
                         .select("uid, isProfissional")
                         .ilike("user", userSafe)
                         .limit(1);
@@ -3355,9 +3355,9 @@ async function getSupabaseUserRow() {
         return window._dokeSupabaseUserRow;
     }
     const { data, error } = await client
-        .from("usuarios")
+        .from("usuarios_legacy")
         .select("id, uid, nome, user, foto")
-        .eq("uid", authUser.uid)
+        .eq("uid_text", authUser.uid)
         .maybeSingle();
     if (error) {
         console.error("Erro ao carregar usuario supabase:", error);
@@ -3375,7 +3375,7 @@ async function attachSupabaseUsersById(items) {
     if (!missing.length) return items;
 
     const { data, error } = await client
-        .from("usuarios")
+        .from("usuarios_legacy")
         .select("id, uid, nome, user, foto")
         .in("id", missing);
 
@@ -10996,7 +10996,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     if(t.length < 2) return [];
     const safe = t.replace(/[%_]/g, '\\$&');
     const { data, error } = await sb
-      .from('usuarios')
+      .from('usuarios_legacy')
       .select('id, uid, user, nome, foto, isProfissional, categoria_profissional, stats')
       .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
       .limit(12);

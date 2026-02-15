@@ -16,22 +16,22 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
   };
 
   async function getUsuarioByAuthUid(client, authUid){
-    const { data, error } = await client.from("usuarios").select("*").eq("uid", authUid).maybeSingle();
+    const { data, error } = await client.from("usuarios_legacy").select("*").eq("uid_text", authUid).maybeSingle();
     if(error) return { error };
     return { usuario: data || null };
   }
   async function getUsuarioByUsername(client, username){
-    const { data, error } = await client.from("usuarios").select("*").eq("user", username).maybeSingle();
+    const { data, error } = await client.from("usuarios_legacy").select("*").eq("user", username).maybeSingle();
     if(error) return { error };
     return { usuario: data || null };
   }
   async function getUsuarioById(client, id){
     if(looksUUID(id)){
-      const r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+      const r = await client.from("usuarios_legacy").select("*").eq("uid_text", id).maybeSingle();
       if(r.error) return { error: r.error };
       return { usuario: r.data || null };
     }
-    const r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
+    const r = await client.from("usuarios_legacy").select("*").eq("id", id).maybeSingle();
     if(r.error) return { error: r.error };
     return { usuario: r.data || null };
   }

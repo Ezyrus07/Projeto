@@ -521,7 +521,7 @@
       const safe = t.replace(/[%_]/g, "\\$&");
       try{
         const { data, error } = await sb
-          .from("usuarios")
+          .from("usuarios_legacy")
           .select("id, uid, user, nome, foto, isProfissional, categoria_profissional")
           .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
           .limit(8);

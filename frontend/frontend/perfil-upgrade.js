@@ -681,9 +681,9 @@
     // authUid é UUID => vínculo com o Auth é pela coluna `uid`
     // Não usamos `.eq("id", authKey)` porque `id` pode ser serial/int e quebra (400/520) com UUID.
     const r = await client
-      .from("usuarios")
+      .from("usuarios_legacy")
       .select("*")
-      .eq("uid", authKey)
+      .eq("uid_text", authKey)
       .maybeSingle();
 
     if(r.error) return { error: r.error };
@@ -693,20 +693,20 @@
   async function getUsuarioById(client, id){
     // UUID normalmente significa auth.uid() => procuramos por `uid`
     if(looksUUID(id)){
-      const r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+      const r = await client.from("usuarios_legacy").select("*").eq("uid_text", id).maybeSingle();
       if(r.error) return { error: r.error };
       return { usuario: r.data || null };
     }
 
     // Caso legado: id serial/int
-    const r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
+    const r = await client.from("usuarios_legacy").select("*").eq("id", id).maybeSingle();
     if(r.error) return { error: r.error };
     return { usuario: r.data || null };
   }
 
   async function getUsuarioByUsername(client, username){
     const { data, error } = await client
-      .from("usuarios")
+      .from("usuarios_legacy")
       .select("*")
       .eq("user", username)
       .maybeSingle();
