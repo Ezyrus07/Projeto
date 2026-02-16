@@ -1,23 +1,5 @@
 # DOKE — Setup rápido (para parar de dar “Failed to fetch” / nada carregar)
 
-## 0) CORS (obrigatório para rodar no navegador)
-Se o console mostrar:
-`blocked by CORS policy: No 'Access-Control-Allow-Origin' header...`
-
-No Supabase Dashboard → **Project Settings** → **API** → **CORS** (Allowed origins), adicione **EXATAMENTE**:
-
-- `http://localhost:5500`
-- `http://127.0.0.1:5500`
-
-Salve e dê **Ctrl+Shift+R**.
-
-> Se você usar outra porta, adicione também (ex.: `http://localhost:5501`).
-
-### Auth (recomendado)
-Para evitar páginas pedindo login “do nada”, inclua também em **Authentication → URL Configuration**:
-- **Site URL**: `http://localhost:5500`
-- **Redirect URLs**: `http://localhost:5500/*` e `http://127.0.0.1:5500/*`
-
 ## 1) Rode os SQLs no Supabase
 No Supabase Dashboard → **SQL Editor** → cole e execute, nesta ordem:
 

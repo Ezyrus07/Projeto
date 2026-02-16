@@ -1,176 +1,189 @@
-#!/usr/bin/env node
 /**
- * DOKE local dev server + Supabase proxy (no-CORS)
- * -------------------------------------------------
- * Objetivo: rodar o projeto em http://localhost:5500
- * e encaminhar /rest/v1/* e /auth/v1/* (e /storage/v1/*, /functions/v1/*)
- * para o Supabase real, eliminando CORS no navegador.
+ * Doke DevServer (NO dependencies)
+ * - Serves static files (your project folder)
+ * - Proxies Supabase endpoints to avoid CORS
+ * - Fixes 431 by increasing maxHeaderSize and whitelisting forwarded headers
  *
- * Uso:
- *   1) Feche o Live Server/porta 5500
- *   2) node doke-devserver.js
- *   3) Abra: http://localhost:5500/index.html
+ * Run (PowerShell):  $env:PORT=5504; node .\doke-devserver.js
+ * Run (CMD):        set PORT=5504 && node doke-devserver.js
  *
- * Observação:
- * - NÃO precisa npm install (sem dependências).
+ * Open:
+ *   http://localhost:PORT/__doke_proxy_ping
+ *   http://localhost:PORT/frontend/login.html
  */
 
-const http = require("http");
-const https = require("https");
-const fs = require("fs");
-const path = require("path");
-const { URL } = require("url");
+const http = require('http');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
+const { URL } = require('url');
 
-const PORT = Number(process.env.PORT || 5500);
-const ROOT = __dirname;
+const PORT = Number(process.env.PORT || 5504);
+const ROOT = process.cwd();
 
-// Mantém o upstream em um único lugar
-const SUPABASE_UPSTREAM = "https://wgbnoqjnvhasapqarltu.supabase.co";
+// Your Supabase project URL
+const SUPABASE_UPSTREAM = process.env.SUPABASE_UPSTREAM || 'https://wgbnoqjnvhasapqarltu.supabase.co';
+const upstreamUrl = new URL(SUPABASE_UPSTREAM);
 
-// Rotas que devem ser proxy
 const PROXY_PREFIXES = [
-  "/rest/v1/",
-  "/auth/v1/",
-  "/storage/v1/",
-  "/functions/v1/",
+  '/rest/v1/',
+  '/auth/v1/',
+  '/storage/v1/',
+  '/functions/v1/',
+  '/realtime/v1/',
 ];
 
-// MIME básico (suficiente pro seu projeto)
-const MIME = {
-  ".html": "text/html; charset=utf-8",
-  ".css": "text/css; charset=utf-8",
-  ".js": "application/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".webp": "image/webp",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".webmanifest": "application/manifest+json; charset=utf-8",
-  ".ttf": "font/ttf",
-  ".otf": "font/otf",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".mp4": "video/mp4",
-};
+const FORWARD_HEADER_ALLOWLIST = new Set([
+  'accept',
+  'content-type',
+  'content-length',
+  'apikey',
+  'authorization',
+  'prefer',
+  'range',
+  'x-client-info',
+  'x-application-name',
+]);
 
-function safePath(urlPath) {
-  const decoded = decodeURIComponent(urlPath.split("?")[0] || "/");
-  const norm = path.normalize(decoded).replace(/^(\.\.[/\\])+/, "");
-  return norm.startsWith(path.sep) ? norm.slice(1) : norm;
+function isProxyPath(p) {
+  return PROXY_PREFIXES.some((pre) => p.startsWith(pre));
 }
 
-function send(res, status, body, headers = {}) {
-  res.writeHead(status, {
-    "Cache-Control": "no-store",
-    ...headers,
+function safeHeaders(inHeaders) {
+  const out = {};
+  for (const [k, v] of Object.entries(inHeaders || {})) {
+    const key = String(k).toLowerCase();
+    if (!FORWARD_HEADER_ALLOWLIST.has(key)) continue;
+    if (v == null) continue;
+    out[key] = v;
+  }
+  // Ensure upstream host
+  out['host'] = upstreamUrl.host;
+  // Avoid hop-by-hop headers
+  delete out['connection'];
+  delete out['transfer-encoding'];
+  return out;
+}
+
+function sendJson(res, code, obj) {
+  const body = Buffer.from(JSON.stringify(obj));
+  res.writeHead(code, {
+    'content-type': 'application/json; charset=utf-8',
+    'content-length': String(body.length),
+    'cache-control': 'no-store',
   });
   res.end(body);
 }
 
-function serveStatic(req, res) {
-  const rel = safePath(req.url || "/");
-  let filePath = path.join(ROOT, rel);
+function mimeFor(filePath) {
+  const ext = path.extname(filePath).toLowerCase();
+  switch (ext) {
+    case '.html': return 'text/html; charset=utf-8';
+    case '.css': return 'text/css; charset=utf-8';
+    case '.js': return 'application/javascript; charset=utf-8';
+    case '.json': return 'application/json; charset=utf-8';
+    case '.png': return 'image/png';
+    case '.jpg':
+    case '.jpeg': return 'image/jpeg';
+    case '.webp': return 'image/webp';
+    case '.svg': return 'image/svg+xml';
+    case '.ico': return 'image/x-icon';
+    case '.woff': return 'font/woff';
+    case '.woff2': return 'font/woff2';
+    case '.ttf': return 'font/ttf';
+    default: return 'application/octet-stream';
+  }
+}
 
-  // Diretório -> tenta index.html
-  try {
-    if (fs.existsSync(filePath) && fs.statSync(filePath).isDirectory()) {
-      filePath = path.join(filePath, "index.html");
-    }
-  } catch (_) {}
+function serveFile(req, res, pathname) {
+  // Default route
+  let rel = pathname;
+  if (rel === '/' || rel === '') rel = '/frontend/index.html';
 
-  // Se pedir "/" -> index.html
-  if ((req.url || "/") === "/" || rel === "") {
-    filePath = path.join(ROOT, "index.html");
+  // Prevent path traversal
+  const filePath = path.join(ROOT, rel);
+  if (!filePath.startsWith(ROOT)) {
+    res.writeHead(400);
+    return res.end('Bad path');
   }
 
-  fs.readFile(filePath, (err, data) => {
-    if (err) {
-      // fallback: tenta servir o próprio caminho com ".html" se não tiver extensão
-      if (!path.extname(filePath)) {
-        const tryHtml = filePath + ".html";
-        return fs.readFile(tryHtml, (err2, data2) => {
-          if (err2) return send(res, 404, "Not found");
-          const ext = ".html";
-          send(res, 200, data2, { "Content-Type": MIME[ext] || "text/plain" });
-        });
-      }
-      return send(res, 404, "Not found");
+  fs.stat(filePath, (err, st) => {
+    if (err || !st.isFile()) {
+      res.writeHead(404);
+      return res.end('Not found');
     }
-    const ext = path.extname(filePath).toLowerCase();
-    send(res, 200, data, { "Content-Type": MIME[ext] || "application/octet-stream" });
+
+    res.writeHead(200, {
+      'content-type': mimeFor(filePath),
+      'cache-control': 'no-store',
+    });
+
+    fs.createReadStream(filePath).pipe(res);
   });
 }
 
 function proxyToSupabase(req, res) {
-  const upstream = new URL(SUPABASE_UPSTREAM);
-  const upstreamUrl = new URL(req.url, SUPABASE_UPSTREAM);
+  const target = new URL(req.url, upstreamUrl);
 
-  const headers = { ...req.headers };
+  const headers = safeHeaders(req.headers);
 
-  // Ajusta headers pra upstream (evita problemas de host/origin)
-  headers.host = upstream.host;
-  headers.origin = SUPABASE_UPSTREAM;
-
-  // Alguns navegadores mandam "accept-encoding" e o Node repassa.
-  // Deixa, mas se você tiver problema com gzip, comente a linha abaixo:
-  // delete headers["accept-encoding"];
-
-  const options = {
-    protocol: upstream.protocol,
-    hostname: upstream.hostname,
-    port: 443,
+  const opts = {
+    protocol: upstreamUrl.protocol,
+    hostname: upstreamUrl.hostname,
+    port: upstreamUrl.port || (upstreamUrl.protocol === 'https:' ? 443 : 80),
     method: req.method,
-    path: upstreamUrl.pathname + upstreamUrl.search,
+    path: target.pathname + target.search,
     headers,
   };
 
-  const pReq = https.request(options, (pRes) => {
-    // Repassa status e headers
-    const outHeaders = { ...pRes.headers };
+  const client = upstreamUrl.protocol === 'https:' ? https : http;
+  const upstreamReq = client.request(opts, (upstreamRes) => {
+    const outHeaders = { ...upstreamRes.headers };
+    // Browsers dislike certain hop-by-hop headers
+    delete outHeaders['transfer-encoding'];
+    delete outHeaders['connection'];
 
-    // Como é same-origin (proxy), CORS não é necessário, mas manter não atrapalha.
-    outHeaders["cache-control"] = "no-store";
-
-    res.writeHead(pRes.statusCode || 502, outHeaders);
-    pRes.pipe(res);
+    res.writeHead(upstreamRes.statusCode || 502, outHeaders);
+    upstreamRes.pipe(res);
   });
 
-  pReq.on("error", (e) => {
-    send(res, 502, `Proxy error: ${e && e.message ? e.message : String(e)}`);
+  upstreamReq.on('error', (e) => {
+    res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('Proxy error: ' + (e && e.message ? e.message : String(e)));
   });
 
-  req.pipe(pReq);
+  // Pipe body
+  req.pipe(upstreamReq);
 }
 
-function isProxyRoute(urlPath) {
-  const p = String(urlPath || "");
-  return PROXY_PREFIXES.some((prefix) => p.startsWith(prefix));
-}
+const server = http.createServer({ maxHeaderSize: 256 * 1024 }, (req, res) => {
+  try {
+    const u = new URL(req.url, `http://localhost:${PORT}`);
 
-const server = http.createServer((req, res) => {
-  const url = req.url || "/";
+    if (u.pathname === '/__doke_proxy_ping') {
+      return sendJson(res, 200, { ok: true, upstream: SUPABASE_UPSTREAM });
+    }
 
-  // Ping pro supabase-init.js detectar proxy
-  if (url.startsWith("/__doke_proxy_ping")) {
-    return send(
-      res,
-      200,
-      JSON.stringify({ ok: true, upstream: SUPABASE_UPSTREAM }),
-      { "Content-Type": "application/json; charset=utf-8" }
-    );
+    if (u.pathname === '/__doke_proxy_pixel.gif') {
+      const gif = Buffer.from('R0lGODlhAQABAPAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64');
+      res.writeHead(200, { 'content-type': 'image/gif', 'content-length': String(gif.length), 'cache-control': 'no-store' });
+      return res.end(gif);
+    }
+
+    if (isProxyPath(u.pathname)) {
+      return proxyToSupabase(req, res);
+    }
+
+    // Static
+    return serveFile(req, res, decodeURIComponent(u.pathname));
+  } catch (e) {
+    res.writeHead(500, { 'content-type': 'text/plain; charset=utf-8' });
+    res.end('Server error: ' + (e && e.message ? e.message : String(e)));
   }
-
-  if (isProxyRoute(url)) {
-    return proxyToSupabase(req, res);
-  }
-
-  return serveStatic(req, res);
 });
 
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`\n[DOKE] Dev server ON: http://localhost:${PORT}/`);
-  console.log(`[DOKE] Supabase proxy -> ${SUPABASE_UPSTREAM}`);
-  console.log(`[DOKE] (Feche o Live Server se a porta estiver ocupada)\n`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`[DOKE] DevServer ON: http://localhost:${PORT}`);
+  console.log(`[DOKE] Proxy ping:    http://localhost:${PORT}/__doke_proxy_ping`);
+  console.log(`[DOKE] Open login:    http://localhost:${PORT}/frontend/login.html`);
 });

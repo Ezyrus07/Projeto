@@ -28,23 +28,6 @@
   const isLocalDev =
     typeof location !== "undefined" &&
     /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ""));
-
-  // ------------------------------------------------------------
-  // Dev Proxy detector (bypass CORS sem mexer no Supabase)
-  // Se este projeto estiver rodando via doke-devserver.js,
-  // existe a rota /__doke_proxy_ping e a URL base vira location.origin.
-  // ------------------------------------------------------------
-  let __dokeUseLocalProxy = false;
-  try{
-    if (isLocalDev && typeof location !== "undefined") {
-      const xhr = new XMLHttpRequest();
-      xhr.open("GET", "/__doke_proxy_ping", false); // sync (só em dev)
-      xhr.send(null);
-      if (xhr.status >= 200 && xhr.status < 300) {
-        __dokeUseLocalProxy = true;
-      }
-    }
-  }catch(_e){ __dokeUseLocalProxy = false; }
   try {
     localUrl = localStorage.getItem("DOKE_SUPABASE_URL") || "";
     localKey = localStorage.getItem("DOKE_SUPABASE_ANON_KEY") || "";
@@ -80,8 +63,6 @@
     try { return (new URL(DEFAULT_URL)).hostname.split(".")[0]; } catch(_e){ return ""; }
   })();
 
-  const __DOKE_STORAGE_KEY = EXPECTED_REF ? (`sb-${EXPECTED_REF}-auth-token`) : undefined;
-
   function isSameProject(raw){
     try {
       const u = new URL(normalizeSupabaseUrl(raw));
@@ -115,61 +96,6 @@ try {
 }
 
   
-
-  // Se o devserver local estiver ativo, use o proxy na mesma origem
-  // (as rotas /rest/v1 e /auth/v1 serão encaminhadas para o Supabase real).
-  if (__dokeUseLocalProxy && typeof location !== "undefined") {
-    try {
-      url = location.origin;
-      window.DOKE_SUPABASE_PROXY_ENABLED = true;
-      window.DOKE_SUPABASE_PROXY_UPSTREAM = DEFAULT_URL;
-    } catch(_e) {}
-  }
-
-  // ============================================================
-  // PROXY FETCH REWRITE (DEV)
-  // Se algum script ainda chamar https://<ref>.supabase.co/... diretamente,
-  // reescrevemos para a MESMA origem (localhost) para passar pelo proxy.
-  // ============================================================
-  try {
-    if (__dokeUseLocalProxy && typeof window !== "undefined" && typeof window.fetch === "function" && !window.fetch.__DOKE_PROXY_REWRITE__) {
-      const upstreamHost = (new URL(DEFAULT_URL)).host;
-      const originalFetch = window.fetch.bind(window);
-      window.fetch = function(input, init) {
-        try {
-          // string URL
-          if (typeof input === "string") {
-            const u = new URL(input, location.origin);
-            if (u.host === upstreamHost) {
-              input = u.pathname + u.search + u.hash;
-            }
-          }
-          // URL object
-          else if (typeof URL !== "undefined" && input instanceof URL) {
-            if (input.host === upstreamHost) {
-              input = input.pathname + input.search + input.hash;
-            }
-          }
-          // Request object
-          else if (typeof Request !== "undefined" && input instanceof Request) {
-            const u = new URL(input.url, location.origin);
-            if (u.host === upstreamHost) {
-              const newUrl = u.pathname + u.search + u.hash;
-              try {
-                const r = input.clone();
-                input = new Request(newUrl, r);
-              } catch(_e2) {
-                input = new Request(newUrl, input);
-              }
-            }
-          }
-        } catch(_e) {}
-        return originalFetch(input, init);
-      };
-      window.fetch.__DOKE_PROXY_REWRITE__ = true;
-    }
-  } catch(_e) {}
-
 const rawKey =
   window.DOKE_SUPABASE_ANON_KEY ||
   window.SUPABASE_ANON_KEY ||
@@ -187,13 +113,13 @@ const key = /^eyJ[a-zA-Z0-9._-]+$/.test(keyCandidate) ? keyCandidate : DEFAULT_K
 
   // Higieniza chaves legadas para evitar criação de cliente com URL antiga/corrompida.
   try {
-    localStorage.setItem("DOKE_SUPABASE_URL", (__dokeUseLocalProxy ? DEFAULT_URL : url));
-    localStorage.setItem("SUPABASE_URL", (__dokeUseLocalProxy ? DEFAULT_URL : url));
-    localStorage.setItem("supabase_url", (__dokeUseLocalProxy ? DEFAULT_URL : url));
+    localStorage.setItem("DOKE_SUPABASE_URL", url);
+    localStorage.setItem("SUPABASE_URL", url);
+    localStorage.setItem("supabase_url", url);
     localStorage.setItem("DOKE_SUPABASE_ANON_KEY", key);
     localStorage.setItem("SUPABASE_ANON_KEY", key);
     localStorage.setItem("supabase_anon_key", key);
-    const ref = (EXPECTED_REF || (new URL(DEFAULT_URL)).hostname.split(".")[0]);
+    const ref = (new URL(url)).hostname.split(".")[0];
     Object.keys(localStorage).forEach((k) => {
       if (!/^sb-[a-z0-9]+-auth-token$/i.test(k)) return;
       if (!k.startsWith(`sb-${ref}-`)) {
@@ -227,7 +153,6 @@ if (!key || key.startsWith("sb_publishable")) {
   try{
     window.sb = window.supabase.createClient(url, key, {
       db: { schema: 'public' },
-      global: { fetch: (typeof window !== 'undefined' && window.fetch) ? window.fetch : undefined },
       // IMPORTANT:
       // NUNCA force "Content-Profile" globalmente.
       // Alguns setups de CORS/proxy bloqueiam esse header em requests GET,
@@ -236,7 +161,6 @@ if (!key || key.startsWith("sb_publishable")) {
       // baseado em db.schema.
       auth: {
         persistSession: true,
-        ...( __DOKE_STORAGE_KEY ? { storageKey: __DOKE_STORAGE_KEY } : {} ),
         // Evita enxurrada de refresh_token em ambientes com CORS/rede instável.
         autoRefreshToken: true,
         detectSessionInUrl: true,
@@ -258,7 +182,7 @@ if (!key || key.startsWith("sb_publishable")) {
         if(typeof originalSignIn !== "function") return;
 
         function projectRef(){
-          try { return (EXPECTED_REF || (new URL(DEFAULT_URL)).hostname.split(".")[0]); } catch(_e){ return null; }
+          try { return (new URL(url)).hostname.split(".")[0]; } catch(_e){ return null; }
         }
 
         async function signInViaFetch(email, password){
@@ -332,7 +256,7 @@ if (!key || key.startsWith("sb_publishable")) {
       if (error) {
         try { await window.sb.auth.signOut(); } catch(_e) {}
         try {
-          const ref = (EXPECTED_REF || (new URL(DEFAULT_URL)).hostname.split(".")[0]);
+          const ref = (new URL(url)).hostname.split(".")[0];
           localStorage.removeItem(`sb-${ref}-auth-token`);
         } catch(_e) {}
       }
@@ -347,43 +271,6 @@ if (!key || key.startsWith("sb_publishable")) {
 // ============================================================
 (function(){
   if (window.dokeSupabaseHealth) return;
-
-  function showCorsBanner(details){
-    try{
-      if (typeof document === 'undefined') return;
-      if (document.getElementById('doke-cors-banner')) return;
-      const el = document.createElement('div');
-      el.id = 'doke-cors-banner';
-      el.setAttribute('role','alert');
-      el.style.cssText = [
-        'position:fixed','left:12px','right:12px','bottom:12px','z-index:2147483647',
-        'padding:12px 14px','border-radius:12px','background:rgba(18,18,18,.96)','color:#fff',
-        'box-shadow:0 10px 30px rgba(0,0,0,.35)','font:13px/1.35 system-ui,Segoe UI,Roboto,Arial',
-        'max-width:920px','margin:0 auto'
-      ].join(';');
-      const origin = (typeof location !== 'undefined' && location.origin) ? location.origin : 'http://localhost:5500';
-      el.innerHTML = `
-        <div style="display:flex;gap:10px;align-items:flex-start;">
-          <div style="flex:1;min-width:0;">
-            <div style="font-weight:700;margin-bottom:6px;">Falha de rede ao falar com o Supabase</div>
-            <div style="opacity:.92;">
-              Você está em ambiente local. Para eliminar CORS, abra o site pelo <b>proxy local</b> (terminal rodando
-              <code style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:6px;">node doke-devserver.js</code>)
-              e confirme que
-              <code style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:6px;">${origin}/__doke_proxy_ping</code>
-              responde. Depois recarregue com <b>Ctrl+Shift+R</b>.
-              <div style="margin-top:6px;opacity:.82;">Se ainda falhar, limpe o Local Storage (chaves <code style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:6px;">sb-*</code>) e tente novamente.</div>
-            </div>
-            ${details ? `<div style="margin-top:6px;opacity:.75;word-break:break-word;">Detalhe: ${String(details).slice(0,180)}</div>` : ''}
-          </div>
-          <button id="doke-cors-banner-close" style="background:rgba(255,255,255,.10);color:#fff;border:0;border-radius:10px;padding:8px 10px;cursor:pointer;">Fechar</button>
-        </div>
-      `;
-      document.body.appendChild(el);
-      const btn = document.getElementById('doke-cors-banner-close');
-      if (btn) btn.onclick = () => { try{ el.remove(); }catch(_e){} };
-    }catch(_e){}
-  }
 
   function withTimeout(promise, ms){
     if(!ms) return promise;
@@ -442,16 +329,6 @@ if (!key || key.startsWith("sb_publishable")) {
     if(out.restStatus === 520 || (!out.restOk && out.restError)){
       console.warn('[DOKE] Supabase REST parece indisponível (520/erro de rede). Isso NÃO é bug de JS/CORS. Verifique se o projeto Supabase está pausado ou com o banco offline.', out);
     }
-
-    // Se falhar em localhost com "Failed to fetch", quase sempre é CORS allowlist no Supabase.
-    try{
-      const local = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ''));
-      const e1 = String(out.restError || '').toLowerCase();
-      const e2 = String(out.authError || '').toLowerCase();
-      const looksLikeCors = (e1.includes('failed to fetch') || e2.includes('failed to fetch'));
-      if (local && looksLikeCors) showCorsBanner(out.restError || out.authError);
-    }catch(_e){}
-
     return out;
   };
 
@@ -562,13 +439,17 @@ if (!key || key.startsWith("sb_publishable")) {
     const { url, anon } = getCfg();
     if(!url || !anon) throw new Error("Supabase URL/ANON KEY ausentes.");
     const token = await getAuthToken();
+    // IMPORTANTE (CORS): evite headers não-padrão (ex.: Accept-Profile/Content-Profile)
+    // porque eles forçam preflight com Access-Control-Request-Headers adicionais e,
+    // em alguns ambientes, o gateway do Supabase não responde com allow-headers completo.
+    // Para o schema padrão "public" não precisamos desses headers.
     const headers = {
       apikey: anon,
       Authorization: `Bearer ${token || anon}`,
-      "Accept-Profile": "public",
     };
-    // Content-Profile só quando há body (POST/PATCH/DELETE) para evitar preflight "extra"
-    if(body && method !== "GET") headers["Content-Profile"] = "public";
+
+    // Só adiciona Content-Type quando existe body (isso já é suficiente para PostgREST)
+    if(body && method !== "GET") headers["Content-Type"] = "application/json";
     if(preferReturn) headers["Prefer"] = "return=representation";
     const res = await fetch(`${url}/rest/v1/${encodeURIComponent(table)}${query ? `?${query}` : ""}`, {
       method,

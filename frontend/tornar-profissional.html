@@ -596,8 +596,7 @@
     que podem quebrar esta página. Aqui mantemos a lógica de validação 100% local
     (Supabase) para não depender dessas rotas antigas.
   -->
-<script>
-  (function(){
+  <script src="doke-profile-store.js"></script>
     // ============================================================
     // Tornar-se profissional (SUPABASE ONLY)
     // ============================================================
@@ -1079,6 +1078,22 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           status: "pendente",
           updated_at: new Date().toISOString()
         };
+
+        // Cache local: reaproveita esses dados em Dados Pessoais/Anunciar mesmo se Supabase estiver offline
+        try {
+          if (window.DokeProfileStore) window.DokeProfileStore.merge({
+            telefone: tel,
+            cpf_cnpj: cpf,
+            data_nascimento: nasc,
+            cep: cep,
+            estado: uf,
+            cidade: cidade,
+            bairro: bairro,
+            endereco: rua,
+            numero: numero,
+            complemento: complemento
+          });
+        } catch (_) {}
 
         const keyTries = [
           { col: "usuario_id", val: u.id },

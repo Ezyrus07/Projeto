@@ -5,7 +5,6 @@
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260215v9"></script>
-<script src="doke-auto-fix.js?v=20260215v10"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -142,8 +141,18 @@
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+  <script>
+    (function(){
+      try{
+        const p = new URLSearchParams(location.search);
+        if(p.get("embed") === "1" || window.top !== window.self){
+          document.documentElement.classList.add("embed");
+        }
+      }catch(e){}
+    })();
+  </script>
 </head>
-<body data-support-fab="1">
+<body data-page="ajuda" data-support-fab="1">
 <div class="popup" id="popup">
 <div class="popup-content">
 <span class="close-btn" onclick="fecharPopup()">&times;</span>

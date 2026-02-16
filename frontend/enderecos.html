@@ -1,9 +1,9 @@
 ﻿<!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <script>if(window.top===window.self){location.replace("mais.html#enderecos");}</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260215v9"></script>
-<script src="doke-auto-fix.js?v=20260215v10"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -240,6 +240,45 @@ main.enderecos-main{
   }
 }
 </style>
+<link rel="stylesheet" href="page-ajustes.css?v=20260215v10">
+
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const isEmbed = qs.get('embed') === '1';
+  const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+  // Se abrir a página "solta" no desktop, força usar o shell do Mais (lista fixa + painel)
+  if (!isEmbed && window.top === window.self && isDesktop) {
+    const section = "enderecos";
+    location.replace(`mais.html?section=${encodeURIComponent(section)}`);
+    return;
+  }
+
+  // No iframe (embed), escondemos cabeçalhos/menus e ajustamos margens pra parecer painel
+  if (isEmbed) {
+    document.documentElement.classList.add('embed');
+    window.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('embed');
+    });
+  }
+})();
+</script>
+<style>
+html.embed body{background:#f5f7fb !important;}
+/* esconder barras/menus/rodapés mais comuns */
+html.embed header, html.embed nav, html.embed footer,
+html.embed .sidebar, html.embed .sideBar, html.embed .menu, html.embed .menu-lateral,
+html.embed .bottom-nav, html.embed .bottomNav, html.embed .nav-bottom,
+html.embed .header, html.embed .topbar, html.embed .top-bar,
+html.embed .doke-sidebar, html.embed .doke-header, html.embed .doke-footer,
+html.embed .voltar, html.embed .back, html.embed .btn-back {display:none !important;}
+/* remover paddings/margens laterais grandes */
+html.embed main, html.embed .main, html.embed .content, html.embed .container, html.embed .page-content{
+  max-width: 100% !important;
+}
+</style>
+
 </head>
 <body data-page="enderecos">
 <div class="popup" id="popup">
@@ -303,7 +342,18 @@ main.enderecos-main{
 
 
 <main class="enderecos-main">
-  <section class="addr-hero">
+<div class="ajustes-layout">
+<aside class="ajustes-nav" aria-label="Seções">
+  <h3>Mais</h3>
+  <a href="dadospessoais.html"><span>Dados pessoais</span><span class="nav-right">›</span></a>
+  <a href="enderecos.html" aria-current="page"><span>Endereços</span><span class="nav-right">›</span></a>
+  <a href="pagamentos.html"><span>Pagamentos</span><span class="nav-right">›</span></a>
+  <a href="notificacoes.html"><span>Notificações</span><span class="nav-right">›</span></a>
+  <a href="idioma.html"><span>Idioma</span><span class="nav-right">›</span></a>
+  <a href="senha.html"><span>Senha e segurança</span><span class="nav-right">›</span></a>
+</aside>
+<div class="ajustes-content">
+<section class="addr-hero">
     <h1>Endereços</h1>
     <p>Salve mais de um local e use no orçamento com 1 toque.</p>
   </section>
@@ -311,9 +361,7 @@ main.enderecos-main{
   <section class="addr-wrap">
     <div class="addr-toolbar">
       <input type="text" id="addrSearch" class="addr-search" placeholder="Buscar por apelido, rua, bairro ou cidade"/>
-      <button type="button" id="btnNovoEndereco" class="addr-action"><i class='bx bx-plus'></i> Novo endereço</button>
-      <a href="orcamento.html" class="addr-action secondary"><i class='bx bx-right-arrow-alt'></i> Ir para orçamento</a>
-    </div>
+      <button type="button" id="btnNovoEndereco" class="addr-action"><i class='bx bx-plus'></i> Novo endereço</button></div>
 
     <form id="addrForm" class="addr-form">
       <div class="addr-grid">
@@ -356,6 +404,8 @@ main.enderecos-main{
       <div class="addr-empty">Nenhum endereço salvo ainda.</div>
     </div>
   </section>
+</div>
+</div>
 </main>
 
 <nav class="bottom-nav">

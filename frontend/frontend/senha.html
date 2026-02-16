@@ -2,6 +2,7 @@
 
 <html lang="pt-br">
 <head>
+  <script>if(window.top===window.self){location.replace("mais.html#senha");}</script>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260215v9"></script>
@@ -52,11 +53,16 @@
         }
 
         /* Topo */
-        .page-header {
+        .page-header{
             width: 100%; max-width: 600px;
             display: flex; align-items: center; gap: 15px;
             margin-bottom: 30px;
-        }
+        
+  padding: 32px;
+  border-radius: 22px;
+  margin-bottom: 18px;
+}
+
         .btn-back {
             background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
             width: 45px; height: 45px; border-radius: 50%;
@@ -277,6 +283,48 @@
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const isEmbed = qs.get('embed') === '1';
+  const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+  // Se abrir a página "solta" no desktop, força usar o shell do Mais (lista fixa + painel)
+  if (!isEmbed && window.top === window.self && isDesktop) {
+    const section = "senha";
+    location.replace(`mais.html?section=${encodeURIComponent(section)}`);
+    return;
+  }
+
+  // No iframe (embed), escondemos cabeçalhos/menus e ajustamos margens pra parecer painel
+  if (isEmbed) {
+    document.documentElement.classList.add('embed');
+    window.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('embed');
+    });
+  }
+})();
+</script>
+<style>
+html.embed body{background:#f5f7fb !important;}
+/* esconder barras/menus/rodapés mais comuns */
+html.embed header, html.embed nav, html.embed footer,
+html.embed .sidebar, html.embed .sideBar, html.embed .menu, html.embed .menu-lateral,
+html.embed .bottom-nav, html.embed .bottomNav, html.embed .nav-bottom,
+html.embed .header, html.embed .topbar, html.embed .top-bar,
+html.embed .doke-sidebar, html.embed .doke-header, html.embed .doke-footer,
+html.embed .voltar, html.embed .back, html.embed .btn-back {display:none !important;}
+/* remover paddings/margens laterais grandes */
+html.embed main, html.embed .main, html.embed .content, html.embed .container, html.embed .page-content{
+  max-width: 100% !important;
+}
+</style>
+
+
+<style>/* doke: hide back arrow */
+.voltar,.btn-back,.back,.back-btn,.btnVoltar{display:none!important;}
+</style>
 </head>
 <body data-page="senha">
 <div class="popup" id="popup">
@@ -392,9 +440,18 @@
 
 
 <main class="main-content">
-<div class="page-header">
-<a class="btn-back" href="mais.html"><i class="bx bx-chevron-left"></i></a>
-<h1>Segurança e Senha</h1>
+<div class="ajustes-layout">
+<aside class="ajustes-nav" aria-label="Seções">
+  <h3>Mais</h3>
+  <a href="dadospessoais.html"><span>Dados pessoais</span><span class="nav-right">›</span></a>
+  <a href="enderecos.html"><span>Endereços</span><span class="nav-right">›</span></a>
+  <a href="pagamentos.html"><span>Pagamentos</span><span class="nav-right">›</span></a>
+  <a href="notificacoes.html"><span>Notificações</span><span class="nav-right">›</span></a>
+  <a href="idioma.html"><span>Idioma</span><span class="nav-right">›</span></a>
+  <a href="senha.html" aria-current="page"><span>Senha e segurança</span><span class="nav-right">›</span></a>
+</aside>
+<div class="ajustes-content">
+<div class="page-header"><h1>Segurança e Senha</h1>
 </div>
 <div class="security-container">
 <div class="card-box">
@@ -462,6 +519,8 @@
 <div class="danger-actions">
 <button class="btn-danger" id="btnDesativarConta" type="button" style="margin-top:0;">Desativar minha conta</button>
 <button class="btn-danger" id="btnExcluirConta" type="button">Excluir minha conta</button>
+</div>
+</div>
 </div>
 </div>
 </div>

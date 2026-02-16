@@ -1,4 +1,4 @@
-﻿﻿// DOKE - Firebase Auth compat on top of Supabase Auth (bridge)
+﻿// DOKE - Firebase Auth compat on top of Supabase Auth (bridge)
 (function(){
   function isClient(obj){
     return obj && obj.auth && typeof obj.auth.getSession === "function";
@@ -28,7 +28,6 @@
     if (window.auth && typeof window.auth === "object") {
       window.auth.currentUser = user || null;
     }
-  }
 
   async function __dokeEnsureUsuariosRow(user){
     try {
@@ -52,6 +51,8 @@
     } catch (_e) {}
   }
 
+  }
+
   // keep global getAuth using authObj
 
   window.createUserWithEmailAndPassword = async function(_authIgnored, email, password){
@@ -66,13 +67,7 @@
   window.signInWithEmailAndPassword = async function(_authIgnored, email, password){
     const sb = ensure();
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error) {
-      if (error.message && (error.message.includes("Failed to fetch") || error.message.includes("NetworkError"))) {
-        console.error("[DOKE] Erro de conexão:", error);
-        throw new Error("Falha na conexão. Verifique sua internet ou se o projeto Supabase está ativo.");
-      }
-      throw error;
-    }
+    if (error) throw error;
     const user = normalizeUser(data.user);
     setCurrentUser(user);
     return { user, session: data.session, _raw: data };
@@ -188,3 +183,4 @@
 
   console.log("[DOKE] Firebase Auth compat carregado.");
 })();
+

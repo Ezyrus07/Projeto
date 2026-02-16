@@ -5,7 +5,6 @@
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260215v9"></script>
-<script src="doke-auto-fix.js?v=20260215v10"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -375,6 +374,49 @@
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260213v2">
+<link rel="stylesheet" href="page-ajustes.css?v=20260215v10">
+
+<script>
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const isEmbed = qs.get('embed') === '1';
+  const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+  // Se abrir a página "solta" no desktop, força usar o shell do Mais (lista fixa + painel)
+  if (!isEmbed && window.top === window.self && isDesktop) {
+    const section = "preferencia-notif";
+    location.replace(`mais.html?section=${encodeURIComponent(section)}`);
+    return;
+  }
+
+  // No iframe (embed), escondemos cabeçalhos/menus e ajustamos margens pra parecer painel
+  if (isEmbed) {
+    document.documentElement.classList.add('embed');
+    window.addEventListener('DOMContentLoaded', () => {
+      document.body.classList.add('embed');
+    });
+  }
+})();
+</script>
+<style>
+html.embed body{background:#f5f7fb !important;}
+/* esconder barras/menus/rodapés mais comuns */
+html.embed header, html.embed nav, html.embed footer,
+html.embed .sidebar, html.embed .sideBar, html.embed .menu, html.embed .menu-lateral,
+html.embed .bottom-nav, html.embed .bottomNav, html.embed .nav-bottom,
+html.embed .header, html.embed .topbar, html.embed .top-bar,
+html.embed .doke-sidebar, html.embed .doke-header, html.embed .doke-footer,
+html.embed .voltar, html.embed .back, html.embed .btn-back {display:none !important;}
+/* remover paddings/margens laterais grandes */
+html.embed main, html.embed .main, html.embed .content, html.embed .container, html.embed .page-content{
+  max-width: 100% !important;
+}
+</style>
+
+
+<style>/* doke: hide back arrow */
+.voltar,.btn-back,.back,.back-btn,.btnVoltar{display:none!important;}
+</style>
 </head>
 <body data-page="notificacoes">
 <div class="popup" id="popup">
@@ -454,7 +496,7 @@
   </div>
 
   <div class="item">
-    <a href="notificacoes.html">
+    <a href="notificacoes.html" aria-current="page">
       <i class='bx bx-bell icon azul'></i>
       <span>Notificações</span>
     </a>
@@ -491,6 +533,17 @@
 
 
 <main>
+<div class="ajustes-layout">
+<aside class="ajustes-nav" aria-label="Seções">
+  <h3>Mais</h3>
+  <a href="dadospessoais.html"><span>Dados pessoais</span><span class="nav-right">›</span></a>
+  <a href="enderecos.html"><span>Endereços</span><span class="nav-right">›</span></a>
+  <a href="pagamentos.html"><span>Pagamentos</span><span class="nav-right">›</span></a>
+  <a href="notificacoes.html"><span>Notificações</span><span class="nav-right">›</span></a>
+  <a href="idioma.html"><span>Idioma</span><span class="nav-right">›</span></a>
+  <a href="senha.html"><span>Senha e segurança</span><span class="nav-right">›</span></a>
+</aside>
+<div class="ajustes-content">
 <div class="notif-container">
 <div class="notif-hero-container">
 <div class="hero-content">
@@ -523,6 +576,8 @@
 <i class="bx bx-bell-off"></i>
 <h3>Tudo limpo por aqui!</h3>
 <p>Você não tem novas notificações no momento.</p>
+</div>
+</div>
 </div>
 </div>
 </main>

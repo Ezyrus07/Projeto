@@ -12,7 +12,6 @@
 <!-- Supabase (UMD) + init -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260215v9"></script>
-<script src="doke-auto-fix.js?v=20260215v10"></script>
 <style>
     :root{
       --card-radius: 22px;
@@ -476,7 +475,17 @@
 function showMsg(type, text){
       const el = document.getElementById("msg");
       el.className = "msg show " + (type === "ok" ? "ok" : "err");
-      el.textContent = text;
+
+      const raw = String(text || "");
+      if (type !== "ok" && raw.toLowerCase().includes("failed to fetch")) {
+        el.textContent =
+          "Falha ao conectar no Supabase (CORS/Projeto pausado/offline). " +
+          "✅ No painel do Supabase: Settings → API → CORS Allowed Origins, adicione " +
+          "http://localhost:5503 e http://127.0.0.1:5503 (e também 5500 se usar Live Server). " +
+          "Se o projeto estiver pausado, clique em Resume. Depois recarregue a página.";
+      } else {
+        el.textContent = raw || "Erro";
+      }
     }
 
     const eye = document.getElementById("btn-senha");
