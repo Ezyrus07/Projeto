@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
+<script src="supabase-init.js?v=20260217v13"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -803,7 +803,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                N�o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -1334,7 +1334,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 }
             }
         } catch (e) {
-            console.warn('Falha ao pré-preencher pedido:', e);
+            console.warn('Falha ao pr�-preencher pedido:', e);
         }
     }
 
@@ -1598,14 +1598,14 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function montarLabelEndereco(addr, idx) {
         const custom = String(addr?.label || '').trim();
         if (custom) return custom;
-        if (addr?.principal || idx === 0) return 'Endereço principal';
-        return `Endereço ${idx + 1}`;
+        if (addr?.principal || idx === 0) return 'Endere�o principal';
+        return `Endere�o ${idx + 1}`;
     }
 
     function getEnderecoResumo(addr) {
-        const base = [addr?.endereco, addr?.numero ? `Nº ${addr.numero}` : ''].filter(Boolean).join(', ');
+        const base = [addr?.endereco, addr?.numero ? `N� ${addr.numero}` : ''].filter(Boolean).join(', ');
         const cep = addr?.cep ? `CEP ${addr.cep}` : '';
-        return [base, cep].filter(Boolean).join(' • ');
+        return [base, cep].filter(Boolean).join(' � ');
     }
 
     function preencherEnderecoNoFormulario(addr) {
@@ -1645,13 +1645,13 @@ body[data-page="orcamento"] main.main-orcamento::after{
         if (!wrap) return;
         const list = readAddressBook();
         if (!list.length) {
-            wrap.innerHTML = '<div class="address-book-empty">Nenhum endereço salvo ainda.</div>';
+            wrap.innerHTML = '<div class="address-book-empty">Nenhum endere�o salvo ainda.</div>';
             return;
         }
         wrap.innerHTML = list.map((addr, idx) => {
             const label = montarLabelEndereco(addr, idx);
             const resumo = getEnderecoResumo(addr);
-            const extra = [addr.complemento, addr.referencia].filter(Boolean).join(' • ');
+            const extra = [addr.complemento, addr.referencia].filter(Boolean).join(' � ');
             const active = String(activeId || '') === String(addr.id || '');
             return `
                 <article class="address-book-card ${addr.principal ? 'is-principal' : ''} ${active ? 'is-active' : ''}" data-id="${escapeHtmlEndereco(addr.id)}" role="button" tabindex="0" aria-label="Aplicar ${escapeHtmlEndereco(label)}">
@@ -1673,7 +1673,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const select = document.getElementById('orc-endereco-salvo');
         if (!select) return;
         const list = readAddressBook();
-        select.innerHTML = '<option value="">Selecione um endereço salvo</option>';
+        select.innerHTML = '<option value="">Selecione um endere�o salvo</option>';
         list.forEach((addr, idx) => {
             const opt = document.createElement('option');
             opt.value = addr.id;
@@ -1716,7 +1716,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             return list;
         } catch (e) {
             window.__orc_address_book_db_ok = false;
-            console.warn('AddressBook remoto indisponível, usando cache local:', e);
+            console.warn('AddressBook remoto indispon�vel, usando cache local:', e);
             return null;
         }
     }
@@ -1785,7 +1785,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             });
         } catch (e) {
             window.__orc_address_book_db_ok = false;
-            console.warn('Falha ao salvar endereço no banco:', e);
+            console.warn('Falha ao salvar endere�o no banco:', e);
             return null;
         }
     }
@@ -1794,7 +1794,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const silent = !!opts.silent;
         const current = getEnderecoFormData();
         if (!isEnderecoMinimoValido(current)) {
-            if (!silent) avisarValidacao('Preencha CEP, endereço e número para salvar.');
+            if (!silent) avisarValidacao('Preencha CEP, endere�o e n�mero para salvar.');
             return null;
         }
 
@@ -1817,7 +1817,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const select = document.getElementById('orc-endereco-salvo');
         if (select) select.value = finalAddr.id;
         if (!silent) {
-            const msg = foundIdx >= 0 ? 'Endereço atualizado.' : 'Endereço salvo.';
+            const msg = foundIdx >= 0 ? 'Endere�o atualizado.' : 'Endere�o salvo.';
             if (window.dokeToast) window.dokeToast(msg); else avisarValidacao(msg);
         }
 
@@ -1917,7 +1917,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const auth = window.auth;
 
         if (!db) {
-            console.warn("Firebase DB não carregou. Continuando com fallbacks locais/Supabase.");
+            console.warn("Firebase DB n�o carregou. Continuando com fallbacks locais/Supabase.");
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -2595,7 +2595,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
 </div>
 </div>
 <script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260212v44"></script>
 <script>

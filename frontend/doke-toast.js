@@ -55,7 +55,7 @@
 
   function iconFor(type){
     switch(type){
-      case 'success': return 'âœ“';
+      case 'success': return '✓';
       case 'info': return 'i';
       case 'warn': return '!';
       default: return '×';
@@ -110,6 +110,8 @@
   // Global handlers
   window.addEventListener('error', (e)=>{
     try{
+      if(window.__DOKE_DISABLE_TOAST_GLOBAL_HANDLERS__) return;
+      if((e?.message || '').includes('ResizeObserver loop')) return;
       const details = { message: e.message, file: e.filename, line: e.lineno, col: e.colno, stack: e.error?.stack };
       log('error', e.message || 'Erro inesperado', details);
       toast({type:'error', title:'Erro', message:e.message || 'Erro inesperado.', details});
@@ -118,7 +120,9 @@
 
   window.addEventListener('unhandledrejection', (e)=>{
     try{
+      if(window.__DOKE_DISABLE_TOAST_GLOBAL_HANDLERS__) return;
       const reason = e.reason;
+      if(String(reason?.message || reason || '').includes('ResizeObserver loop')) return;
       const details = typeof reason==='object' ? (reason?.stack ? { message: reason.message, stack: reason.stack } : reason) : String(reason);
       log('error', 'Promise rejeitada', details);
       toast({type:'error', title:'Erro', message:'Algo falhou em segundo plano.', details});

@@ -85,6 +85,9 @@ async function getSupabaseUser() {
     if (sbUser) return sbUser;
     return getCachedUser();
   };
+  Doke.auth.getSession = async function () {
+    return Doke.auth.getUser();
+  };
   Doke.auth.isLoggedIn = async function () {
     const u = await Doke.auth.getSession();
     return !!(u && u.id);
@@ -219,5 +222,4 @@ async function getSupabaseUser() {
     init();
   }
 })();
-
 

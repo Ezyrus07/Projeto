@@ -1,4 +1,4 @@
-/* DOKE — Supabase init (global)
+﻿/* DOKE â€” Supabase init (global)
    ------------------------------------------------------------
    1) Cole aqui o Project URL e a ANON PUBLIC KEY (JWT grande)
       Settings > API > Project URL
@@ -7,17 +7,160 @@
 */
 (function(){
   // Dev CORS helper: algumas allowlists de CORS incluem apenas localhost.
-  // Se você estiver usando Live Server em 127.0.0.1, redireciona para localhost.
-  // Desative definindo window.DOKE_NO_LOCALHOST_REDIRECT = true antes deste script.
+  // Se vocÃª estiver usando Live Server em 127.0.0.1, redireciona para localhost.
+  // Ativo por padrÃ£o; para desativar, defina window.DOKE_FORCE_LOCALHOST_REDIRECT = false.
   try {
-    if (!window.DOKE_NO_LOCALHOST_REDIRECT && typeof location !== 'undefined' && location.hostname === '127.0.0.1') {
+    if (window.DOKE_FORCE_LOCALHOST_REDIRECT !== false && typeof location !== 'undefined' && location.hostname === '127.0.0.1') {
       const to = String(location.href || '').replace('127.0.0.1', 'localhost');
       if (to && to !== location.href) { location.replace(to); return; }
     }
   } catch (_e) {}
-  // Evita recriar o cliente em hot-reload / múltiplos scripts
+
+  async function dokeFetchWithTimeout(resource, timeoutMs){
+    const ms = Math.max(150, Number(timeoutMs) || 300);
+    const ctrl = typeof AbortController !== "undefined" ? new AbortController() : null;
+    const timer = setTimeout(() => {
+      try { ctrl && ctrl.abort(); } catch(_e){}
+    }, ms);
+    try {
+      const options = {
+        method: "GET",
+        cache: "no-store",
+      };
+      if (ctrl) options.signal = ctrl.signal;
+      return await fetch(resource, options);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  function getLoopbackOriginVariants(origin){
+    const out = [];
+    const push = (value) => {
+      const v = String(value || "").trim().replace(/\/+$/g, "");
+      if (!v) return;
+      if (!out.includes(v)) out.push(v);
+    };
+    push(origin);
+    // Em ambiente local, forca prioridade estrita de mesma origem para evitar CORS cruzado
+    // entre localhost/127.0.0.1 ou portas diferentes.
+    return out;
+  }
+
+  async function hasProxyPing(origin, timeoutMs){
+    const variants = getLoopbackOriginVariants(origin);
+    for (const candidate of variants) {
+      try{
+        const res = await dokeFetchWithTimeout(`${candidate}/__doke_proxy_ping`, timeoutMs || 320);
+        if (!res || !res.ok) continue;
+        const data = await res.json().catch(() => null);
+        if (data && data.ok) return true;
+      }catch(_e){}
+    }
+    return false;
+  }
+
+  async function resolveReachableProxyOrigin(origin, timeoutMs){
+    const variants = getLoopbackOriginVariants(origin);
+    for (const candidate of variants) {
+      if (await hasProxyPing(candidate, timeoutMs || 320)) return candidate;
+    }
+    return "";
+  }
+
+  async function hasProxyPixel(origin, timeoutMs){
+    const ms = Math.max(180, Number(timeoutMs) || 320);
+    return await new Promise((resolve) => {
+      let done = false;
+      const img = new Image();
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        try {
+          img.onload = null;
+          img.onerror = null;
+          img.src = "";
+        } catch(_e){}
+        clearTimeout(timer);
+        resolve(!!ok);
+      };
+      const timer = setTimeout(() => finish(false), ms);
+      img.onload = () => finish(true);
+      img.onerror = () => finish(false);
+      img.src = `${origin}/__doke_proxy_pixel.gif?ts=${Date.now()}`;
+    });
+  }
+
+  function mapPathToProxy(pathname){
+    let path = String(pathname || "/");
+    if (!path.startsWith("/")) path = `/${path}`;
+    if (path === "/") return "/frontend/index.html";
+    if (/^\/frontend\//i.test(path)) return path;
+    if (/^\/(?:__doke_proxy_ping|__doke_proxy_pixel\.gif)/i.test(path)) return path;
+    return `/frontend${path}`;
+  }
+
+  async function maybeRedirectToProxyDevServer(){
+    if (window.DOKE_NO_PROXY_REDIRECT) return false;
+    if (typeof location === "undefined") return false;
+    if (!/^(http:|https:)$/i.test(String(location.protocol || ""))) return false;
+    if (!/^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ""))) return false;
+
+    const here = String(location.origin || "");
+    if (!here) return false;
+
+    const currentProxyOrigin = await resolveReachableProxyOrigin(here, 220);
+    if (currentProxyOrigin) {
+      try { sessionStorage.setItem("DOKE_PROXY_ORIGIN", here); } catch(_e){}
+      return false;
+    }
+
+    const candidates = [];
+    const pushCandidate = (o) => {
+      const v = String(o || "").trim().replace(/\/+$/g, "");
+      if (!v || v === here) return;
+      if (!/^https?:\/\/(localhost|127\.0\.0\.1):\d+$/i.test(v)) return;
+      if (!candidates.includes(v)) candidates.push(v);
+    };
+
+    const hostA = String(location.hostname || "").toLowerCase() === "127.0.0.1" ? "127.0.0.1" : "localhost";
+    const hostB = hostA === "localhost" ? "127.0.0.1" : "localhost";
+    const ports = [5500, 5501, 5502, 5503, 5504, 5505, 5506, 5507, 5508, 5509, 5510];
+    for (const p of ports) {
+      pushCandidate(`http://${hostA}:${p}`);
+    }
+    for (const p of ports) {
+      pushCandidate(`http://${hostB}:${p}`);
+    }
+
+    let proxyOrigin = "";
+    for (const candidate of candidates) {
+      if (await hasProxyPing(candidate, 220) || await hasProxyPixel(candidate, 300)) {
+        proxyOrigin = candidate;
+        break;
+      }
+    }
+    if (!proxyOrigin) return false;
+
+    try { sessionStorage.setItem("DOKE_PROXY_ORIGIN", proxyOrigin); } catch(_e){}
+
+    const targetPath = mapPathToProxy(location.pathname);
+    const to = `${proxyOrigin}${targetPath}${location.search || ""}${location.hash || ""}`;
+    if (to && to !== location.href) {
+      location.replace(to);
+      return true;
+    }
+    return false;
+  }
+
+  try {
+    // Redirecionamento para proxy em modo "best effort" sem bloquear init.
+    // Isso evita race-condition com scripts que dependem de window.sb logo apÃ³s este arquivo.
+    maybeRedirectToProxyDevServer().catch(() => {});
+  } catch (_e) {}
+  // Evita recriar o cliente em hot-reload / mÃºltiplos scripts
   if (window.sb && typeof window.sb.from === "function") {
-    console.log("[DOKE] Supabase já inicializado (global).");
+    console.log("[DOKE] Supabase jÃ¡ inicializado (global).");
     return;
   }
   const DEFAULT_URL = "https://wgbnoqjnvhasapqarltu.supabase.co";
@@ -32,6 +175,42 @@
     localUrl = localStorage.getItem("DOKE_SUPABASE_URL") || "";
     localKey = localStorage.getItem("DOKE_SUPABASE_ANON_KEY") || "";
   } catch (_e) {}
+
+  function hasProxyPingSync(origin){
+    if (typeof XMLHttpRequest === "undefined") return false;
+    const variants = getLoopbackOriginVariants(origin);
+    for (const candidate of variants) {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `${candidate}/__doke_proxy_ping`, false);
+        xhr.send(null);
+        if (xhr.status < 200 || xhr.status >= 300) continue;
+        const raw = String(xhr.responseText || "").trim();
+        if (!raw) continue;
+        const payload = JSON.parse(raw);
+        if (payload && payload.ok === true) return true;
+      } catch (_e) {}
+    }
+    return false;
+  }
+
+  function resolveReachableProxyOriginSync(origin){
+    if (typeof XMLHttpRequest === "undefined") return "";
+    const variants = getLoopbackOriginVariants(origin);
+    for (const candidate of variants) {
+      try {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", `${candidate}/__doke_proxy_ping`, false);
+        xhr.send(null);
+        if (xhr.status < 200 || xhr.status >= 300) continue;
+        const raw = String(xhr.responseText || "").trim();
+        if (!raw) continue;
+        const payload = JSON.parse(raw);
+        if (payload && payload.ok === true) return candidate;
+      } catch (_e) {}
+    }
+    return "";
+  }
 
   function normalizeSupabaseUrl(raw){
     let value = String(raw || "").trim();
@@ -57,11 +236,55 @@
     return value;
   }
 
-  // Se existir URL/KEY antigos no localStorage (de outro projeto), isso pode gerar CORS e páginas que “quebram” só quando loga.
-  // Aqui a gente mantém override apenas se for explícito (window.DOKE_SUPABASE_URL / window.SUPABASE_URL).
+  // Se existir URL/KEY antigos no localStorage (de outro projeto), isso pode gerar CORS e pÃ¡ginas que â€œquebramâ€ sÃ³ quando loga.
+  // Aqui a gente mantÃ©m override apenas se for explÃ­cito (window.DOKE_SUPABASE_URL / window.SUPABASE_URL).
   const EXPECTED_REF = (function(){
     try { return (new URL(DEFAULT_URL)).hostname.split(".")[0]; } catch(_e){ return ""; }
   })();
+  const DOKE_AUTH_STORAGE_KEY = EXPECTED_REF ? `sb-${EXPECTED_REF}-auth-token` : "sb-doke-auth-token";
+
+  function decodeJwtPayload(token){
+    try {
+      const parts = String(token || "").split(".");
+      if (parts.length < 2) return null;
+      const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+      const json = atob(b64 + pad);
+      return JSON.parse(json);
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function tokenBelongsToExpectedProject(token){
+    if (!EXPECTED_REF) return false;
+    const payload = decodeJwtPayload(token);
+    if (!payload || !payload.iss) return false;
+    return String(payload.iss).toLowerCase().includes(`https://${EXPECTED_REF}.supabase.co/auth/v1`);
+  }
+
+  function migrateLegacyAuthTokenStorageKey(){
+    try {
+      if (!DOKE_AUTH_STORAGE_KEY || !EXPECTED_REF) return;
+      const already = localStorage.getItem(DOKE_AUTH_STORAGE_KEY);
+      if (already) return;
+      const keys = Object.keys(localStorage).filter((k) =>
+        /^sb-[a-z0-9-]+-auth-token$/i.test(k) && k !== DOKE_AUTH_STORAGE_KEY
+      );
+      for (const k of keys) {
+        const raw = localStorage.getItem(k);
+        if (!raw) continue;
+        let session = null;
+        try { session = JSON.parse(raw); } catch (_e) { session = null; }
+        const accessToken = session && typeof session === "object" ? session.access_token : null;
+        if (!accessToken || !tokenBelongsToExpectedProject(accessToken)) continue;
+        localStorage.setItem(DOKE_AUTH_STORAGE_KEY, raw);
+        break;
+      }
+    } catch (_e) {}
+  }
+
+  try { migrateLegacyAuthTokenStorageKey(); } catch (_e) {}
 
   function isSameProject(raw){
     try {
@@ -95,6 +318,124 @@ try {
   url = DEFAULT_URL;
 }
 
+  const proxyOriginOnThisOrigin = (
+    isLocalDev &&
+    typeof location !== "undefined"
+  ) ? resolveReachableProxyOriginSync(location.origin) : "";
+  const proxyActiveOnThisOrigin = !!proxyOriginOnThisOrigin;
+  let usingLocalProxy = proxyActiveOnThisOrigin;
+
+  // Se o devserver local estiver ativo na origem atual, usa proxy same-origin
+  // para eliminar CORS de forma determinÃ­stica.
+  if (proxyActiveOnThisOrigin && typeof location !== "undefined") {
+    try {
+      window.DOKE_SUPABASE_PROXY_ENABLED = true;
+      window.DOKE_SUPABASE_PROXY_UPSTREAM = url;
+      window.DOKE_SUPABASE_PROXY_ORIGIN = location.origin;
+      url = window.DOKE_SUPABASE_PROXY_ORIGIN;
+    } catch (_e) {}
+  }
+
+  // Reescreve fetch absoluto para a origem local quando proxy estÃ¡ ativo.
+  try {
+    if (
+      usingLocalProxy &&
+      typeof window !== "undefined" &&
+      typeof window.fetch === "function" &&
+      !window.fetch.__DOKE_PROXY_REWRITE__
+    ) {
+      const upstreamHost = (new URL(window.DOKE_SUPABASE_PROXY_UPSTREAM || DEFAULT_URL)).host;
+      const originalFetch = window.fetch.bind(window);
+      const REST_BACKOFF_KEY = "__DOKE_FETCH_REST_BACKOFF_UNTIL__";
+      const REST_BACKOFF_MS = 20000;
+      window.fetch = function(input, init){
+        const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+        const getUrlString = (target) => {
+          try{
+            if(typeof target === "string") return target;
+            if(typeof URL !== "undefined" && target instanceof URL) return target.toString();
+            if(typeof Request !== "undefined" && target instanceof Request) return target.url || "";
+          }catch(_){}
+          return "";
+        };
+        const shouldRetry = (target) => {
+          try{
+            const parsed = new URL(getUrlString(target), location.origin);
+            return parsed.origin === location.origin && /^\/(rest|auth|storage|functions)\/v1\//i.test(parsed.pathname || "");
+          }catch(_){
+            return false;
+          }
+        };
+        const isRestRequest = (target) => {
+          try{
+            const parsed = new URL(getUrlString(target), location.origin);
+            return parsed.origin === location.origin && /^\/rest\/v1\//i.test(parsed.pathname || "");
+          }catch(_){
+            return false;
+          }
+        };
+        const getBackoffUntil = () => {
+          try { return Number(window[REST_BACKOFF_KEY] || 0) || 0; } catch(_) { return 0; }
+        };
+        const markBackoff = () => {
+          try { window[REST_BACKOFF_KEY] = Date.now() + REST_BACKOFF_MS; } catch(_){}
+        };
+        try {
+          if (typeof input === "string") {
+            const u = new URL(input, location.origin);
+            if (u.host === upstreamHost) input = u.pathname + u.search + u.hash;
+          } else if (typeof URL !== "undefined" && input instanceof URL) {
+            if (input.host === upstreamHost) input = input.pathname + input.search + input.hash;
+          } else if (typeof Request !== "undefined" && input instanceof Request) {
+            const u = new URL(input.url, location.origin);
+            if (u.host === upstreamHost) {
+              const nextUrl = u.pathname + u.search + u.hash;
+              try {
+                const cloned = input.clone();
+                input = new Request(nextUrl, cloned);
+              } catch (_e2) {
+                input = new Request(nextUrl, input);
+              }
+            }
+          }
+        } catch (_e) {}
+        const retryable = shouldRetry(input) && (window.DOKE_ENABLE_FETCH_RETRY === true);
+        const restRequest = isRestRequest(input);
+        return (async () => {
+          try{
+            if(restRequest && getBackoffUntil() > Date.now()){
+              return new Response(JSON.stringify({ message: "rest_backoff_active", status: 520 }), {
+                status: 520,
+                headers: { "content-type": "application/json; charset=utf-8" }
+              });
+            }
+            const res = await originalFetch(input, init);
+            if(restRequest && res.status === 520){
+              markBackoff();
+            }
+            if(retryable && (res.status === 520 || res.status === 502 || res.status === 503 || res.status === 504)){
+              await sleep(140);
+              return await originalFetch(input, init);
+            }
+            return res;
+          }catch(err){
+            const msg = String(err?.message || err || "").toLowerCase();
+            const isNet = msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("load failed") || msg.includes("connection reset");
+            if(restRequest && isNet){
+              markBackoff();
+            }
+            if(retryable && isNet){
+              await sleep(140);
+              return await originalFetch(input, init);
+            }
+            throw err;
+          }
+        })();
+      };
+      window.fetch.__DOKE_PROXY_REWRITE__ = true;
+    }
+  } catch (_e) {}
+
   
 const rawKey =
   window.DOKE_SUPABASE_ANON_KEY ||
@@ -105,21 +446,23 @@ const rawKey =
 const keyCandidate = normalizeSupabaseKey(rawKey);
 const key = /^eyJ[a-zA-Z0-9._-]+$/.test(keyCandidate) ? keyCandidate : DEFAULT_KEY;
 
-  // Expõe configuração normalizada para scripts legados.
+  // ExpÃµe configuraÃ§Ã£o normalizada para scripts legados.
   window.SUPABASE_URL = url;
   window.SUPABASE_ANON_KEY = key;
   window.DOKE_SUPABASE_URL = url;
   window.DOKE_SUPABASE_ANON_KEY = key;
 
-  // Higieniza chaves legadas para evitar criação de cliente com URL antiga/corrompida.
+  // Higieniza chaves legadas para evitar criaÃ§Ã£o de cliente com URL antiga/corrompida.
   try {
-    localStorage.setItem("DOKE_SUPABASE_URL", url);
-    localStorage.setItem("SUPABASE_URL", url);
-    localStorage.setItem("supabase_url", url);
+    const persistedUrl = usingLocalProxy ? DEFAULT_URL : url;
+    localStorage.setItem("DOKE_SUPABASE_URL", persistedUrl);
+    localStorage.setItem("SUPABASE_URL", persistedUrl);
+    localStorage.setItem("supabase_url", persistedUrl);
     localStorage.setItem("DOKE_SUPABASE_ANON_KEY", key);
     localStorage.setItem("SUPABASE_ANON_KEY", key);
     localStorage.setItem("supabase_anon_key", key);
-    const ref = (new URL(url)).hostname.split(".")[0];
+    const refBase = usingLocalProxy ? DEFAULT_URL : url;
+    const ref = (new URL(refBase)).hostname.split(".")[0];
     Object.keys(localStorage).forEach((k) => {
       if (!/^sb-[a-z0-9]+-auth-token$/i.test(k)) return;
       if (!k.startsWith(`sb-${ref}-`)) {
@@ -131,12 +474,12 @@ const key = /^eyJ[a-zA-Z0-9._-]+$/.test(keyCandidate) ? keyCandidate : DEFAULT_K
   function warn(msg){ console.warn("[DOKE]", msg); }
 
   if (!window.supabase || !window.supabase.createClient) {
-    warn("Biblioteca Supabase não carregada. Confira o <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'>");
+    warn("Biblioteca Supabase nÃ£o carregada. Confira o <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'>");
     return;
   }
 
   if (!/^https?:\/\//i.test(url) || url.includes("YOURPROJECT")) {
-    warn("SUPABASE_URL inválida ou não configurada. Edite supabase-init.js.");
+    warn("SUPABASE_URL invÃ¡lida ou nÃ£o configurada. Edite supabase-init.js.");
   }
 if (!key || key.startsWith("sb_publishable")) {
   warn("Chave incorreta. Use a ANON PUBLIC KEY (JWT grande) do Supabase.");
@@ -157,15 +500,42 @@ if (!key || key.startsWith("sb_publishable")) {
       // NUNCA force "Content-Profile" globalmente.
       // Alguns setups de CORS/proxy bloqueiam esse header em requests GET,
       // causando "TypeError: Failed to fetch" (status 0) no supabase-js.
-      // O supabase-js já envia Accept-Profile/Content-Profile apenas quando necessário
+      // O supabase-js jÃ¡ envia Accept-Profile/Content-Profile apenas quando necessÃ¡rio
       // baseado em db.schema.
       auth: {
         persistSession: true,
-        // Evita enxurrada de refresh_token em ambientes com CORS/rede instável.
+        storageKey: DOKE_AUTH_STORAGE_KEY,
+        // Evita enxurrada de refresh_token em ambientes com CORS/rede instÃ¡vel.
         autoRefreshToken: true,
         detectSessionInUrl: true,
       }
     });
+    const supabaseNamespace = (window.supabase && typeof window.supabase.createClient === "function") ? window.supabase : null;
+    window.supabaseClient = window.sb;
+    window.__supabaseClient = window.sb;
+    window.client = window.sb;
+    window.getSupabaseClient = function(){
+      return window.sb || window.supabaseClient || window.__supabaseClient || null;
+    };
+    if (!window.supabase || typeof window.supabase.from !== "function") {
+      if (typeof Proxy === "function" && supabaseNamespace) {
+        window.supabase = new Proxy(window.sb, {
+          get(target, prop, receiver) {
+            if (prop in target) {
+              const v = Reflect.get(target, prop, receiver);
+              return typeof v === "function" ? v.bind(target) : v;
+            }
+            if (prop in supabaseNamespace) {
+              const nsVal = supabaseNamespace[prop];
+              return typeof nsVal === "function" ? nsVal.bind(supabaseNamespace) : nsVal;
+            }
+            return undefined;
+          },
+        });
+      } else {
+        window.supabase = window.sb;
+      }
+    }
     window.__DOKE_SUPABASE_INFO__ = { url, isLocalDev };
     console.log("[DOKE] Supabase conectado (global).");
 
@@ -182,7 +552,10 @@ if (!key || key.startsWith("sb_publishable")) {
         if(typeof originalSignIn !== "function") return;
 
         function projectRef(){
-          try { return (new URL(url)).hostname.split(".")[0]; } catch(_e){ return null; }
+          try {
+            const upstream = window.DOKE_SUPABASE_PROXY_UPSTREAM || DEFAULT_URL || url;
+            return (new URL(upstream)).hostname.split(".")[0];
+          } catch(_e){ return null; }
         }
 
         async function signInViaFetch(email, password){
@@ -242,8 +615,8 @@ if (!key || key.startsWith("sb_publishable")) {
         try{ console.info("[DOKE] Auth fallback ativo (signInWithPassword)."); }catch(_e){}
       }catch(_e){}
     })();
-// Garantir que sessão persistida não fique "meio logada":
-// - se o access_token expirou e não consegue refresh, limpa e força novo login
+// Garantir que sessÃ£o persistida nÃ£o fique "meio logada":
+// - se o access_token expirou e nÃ£o consegue refresh, limpa e forÃ§a novo login
 ;(async () => {
   try {
     const { data } = await window.sb.auth.getSession();
@@ -256,7 +629,8 @@ if (!key || key.startsWith("sb_publishable")) {
       if (error) {
         try { await window.sb.auth.signOut(); } catch(_e) {}
         try {
-          const ref = (new URL(url)).hostname.split(".")[0];
+          const upstream = window.DOKE_SUPABASE_PROXY_UPSTREAM || DEFAULT_URL || url;
+          const ref = (new URL(upstream)).hostname.split(".")[0];
           localStorage.removeItem(`sb-${ref}-auth-token`);
         } catch(_e) {}
       }
@@ -266,8 +640,8 @@ if (!key || key.startsWith("sb_publishable")) {
 
 // ============================================================
 // Supabase health check (Auth + REST)
-// - Diagnostica rapidamente casos de 520 (Cloudflare/origem indisponível)
-// - Evita que páginas interpretem 520 como "CORS" ou "não logado"
+// - Diagnostica rapidamente casos de 520 (Cloudflare/origem indisponÃ­vel)
+// - Evita que pÃ¡ginas interpretem 520 como "CORS" ou "nÃ£o logado"
 // ============================================================
 (function(){
   if (window.dokeSupabaseHealth) return;
@@ -306,7 +680,7 @@ if (!key || key.startsWith("sb_publishable")) {
         headers: { apikey: key }
       }), timeoutMs || 3500);
       out.authStatus = r.status;
-      out.authOk = r.status >= 200 && r.status < 500; // 5xx = indisponível
+      out.authOk = r.status >= 200 && r.status < 500; // 5xx = indisponÃ­vel
     }catch(e){
       out.authError = String(e?.message || e);
     }
@@ -327,7 +701,7 @@ if (!key || key.startsWith("sb_publishable")) {
 
     window.DOKE_SUPABASE_HEALTH = out;
     if(out.restStatus === 520 || (!out.restOk && out.restError)){
-      console.warn('[DOKE] Supabase REST parece indisponível (520/erro de rede). Isso NÃO é bug de JS/CORS. Verifique se o projeto Supabase está pausado ou com o banco offline.', out);
+      console.warn('[DOKE] Supabase REST parece indisponÃ­vel (520/erro de rede). Isso NÃƒO Ã© bug de JS/CORS. Verifique se o projeto Supabase estÃ¡ pausado ou com o banco offline.', out);
     }
     return out;
   };
@@ -340,7 +714,7 @@ if (!key || key.startsWith("sb_publishable")) {
   }
 })();
 
-// Evita poluição do console por aborts transitórios do supabase-js (sem ocultar erros reais de app).
+// Evita poluiÃ§Ã£o do console por aborts transitÃ³rios do supabase-js (sem ocultar erros reais de app).
 (function(){
   if (window.__dokeAbortRejectionGuard) return;
   window.__dokeAbortRejectionGuard = true;
@@ -361,7 +735,7 @@ if (!key || key.startsWith("sb_publishable")) {
 })();
 
 // ============================================================
-// Legacy Firebase API shims (para não quebrar o script.js antigo)
+// Legacy Firebase API shims (para nÃ£o quebrar o script.js antigo)
 // ============================================================
 (function(){
   try{
@@ -371,7 +745,7 @@ if (!key || key.startsWith("sb_publishable")) {
         try{
           const sb = window.sb || window.supabaseClient || window.supabase;
           if(sb && sb.auth){
-            // callback imediato com usuário atual
+            // callback imediato com usuÃ¡rio atual
             sb.auth.getSession()
               .then(({ data })=>{
                 const u = data?.session?.user || null;
@@ -411,11 +785,12 @@ if (!key || key.startsWith("sb_publishable")) {
 /* ============================================================
    DOKE - DB Fallback Layer (Supabase-JS -> REST fetch)
    Objetivo: quando supabase-js falhar com "TypeError: Failed to fetch" (status 0),
-   usar PostgREST via fetch (que já está funcionando no seu ambiente).
-   Mantém window.sb.auth intacto.
+   usar PostgREST via fetch (que jÃ¡ estÃ¡ funcionando no seu ambiente).
+   MantÃ©m window.sb.auth intacto.
 ============================================================ */
 (function(){
   const w = window;
+  if (!w.DOKE_ENABLE_DB_FALLBACK) return;
 
   function getCfg(){
     const url = (w.DOKE_SUPABASE_URL || w.SUPABASE_URL || localStorage.getItem("DOKE_SUPABASE_URL") || localStorage.getItem("SUPABASE_URL") || "").trim().replace(/\/+$/,'');
@@ -439,23 +814,34 @@ if (!key || key.startsWith("sb_publishable")) {
     const { url, anon } = getCfg();
     if(!url || !anon) throw new Error("Supabase URL/ANON KEY ausentes.");
     const token = await getAuthToken();
-    // IMPORTANTE (CORS): evite headers não-padrão (ex.: Accept-Profile/Content-Profile)
-    // porque eles forçam preflight com Access-Control-Request-Headers adicionais e,
-    // em alguns ambientes, o gateway do Supabase não responde com allow-headers completo.
-    // Para o schema padrão "public" não precisamos desses headers.
+    // IMPORTANTE (CORS): evite headers nÃ£o-padrÃ£o (ex.: Accept-Profile/Content-Profile)
+    // porque eles forÃ§am preflight com Access-Control-Request-Headers adicionais e,
+    // em alguns ambientes, o gateway do Supabase nÃ£o responde com allow-headers completo.
+    // Para o schema padrÃ£o "public" nÃ£o precisamos desses headers.
     const headers = {
       apikey: anon,
       Authorization: `Bearer ${token || anon}`,
     };
 
-    // Só adiciona Content-Type quando existe body (isso já é suficiente para PostgREST)
+    // SÃ³ adiciona Content-Type quando existe body (isso jÃ¡ Ã© suficiente para PostgREST)
     if(body && method !== "GET") headers["Content-Type"] = "application/json";
     if(preferReturn) headers["Prefer"] = "return=representation";
-    const res = await fetch(`${url}/rest/v1/${encodeURIComponent(table)}${query ? `?${query}` : ""}`, {
-      method,
-      headers,
-      body: body ? JSON.stringify(body) : undefined,
-    });
+    let res;
+    try {
+      res = await fetch(`${url}/rest/v1/${encodeURIComponent(table)}${query ? `?${query}` : ""}`, {
+        method,
+        headers,
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    } catch (e) {
+      return {
+        data: null,
+        error: { message: String(e?.message || e || "Failed to fetch") },
+        count: null,
+        status: 0,
+        statusText: "NETWORK_ERROR",
+      };
+    }
     const text = await res.text();
     let data;
     try{ data = text ? JSON.parse(text) : null; }catch(_e){ data = text; }
@@ -468,7 +854,7 @@ if (!key || key.startsWith("sb_publishable")) {
     return out;
   }
 
-  // Expor helper simples (pra debug e migração gradual)
+  // Expor helper simples (pra debug e migraÃ§Ã£o gradual)
   w.dokeRest = async function(table, query){
     return restFetch({ table, method:"GET", query }).then(r => {
       if(r.error) throw r.error;
@@ -517,7 +903,7 @@ if (!key || key.startsWith("sb_publishable")) {
     return this;
   };
   DokeQuery.prototype.single = function(){ this._single = true; return this; };
-  // maybeSingle(): igual ao single(), mas não trata 0 rows como erro.
+  // maybeSingle(): igual ao single(), mas nÃ£o trata 0 rows como erro.
   DokeQuery.prototype.maybeSingle = function(){ this._single = true; this._maybeSingle = true; return this; };
 
   DokeQuery.prototype.insert = function(payload){
@@ -559,8 +945,8 @@ if (!key || key.startsWith("sb_publishable")) {
 
         if(this._select != null) b = b.select(this._select);
         for(const f of this._filters){
-          // já está em string postgrest, não temos como reaplicar aqui com segurança
-          // então pulamos e deixamos o fallback cuidar se precisar
+          // jÃ¡ estÃ¡ em string postgrest, nÃ£o temos como reaplicar aqui com seguranÃ§a
+          // entÃ£o pulamos e deixamos o fallback cuidar se precisar
         }
         if(this._order){
           const m = this._order.split(".");
@@ -578,7 +964,7 @@ if (!key || key.startsWith("sb_publishable")) {
         if(this._maybeSingle && r && r.error){
           const code = String(r.error.code || '');
           const msg  = String(r.error.message || '');
-          // códigos comuns: PGRST116 (0 rows), ou mensagens equivalentes
+          // cÃ³digos comuns: PGRST116 (0 rows), ou mensagens equivalentes
           if(code === 'PGRST116' || /0\s*rows/i.test(msg) || /JSON object requested, multiple \(or no\) rows returned/i.test(msg)){
             return { data: null, error: null };
           }
@@ -629,9 +1015,8 @@ if (!key || key.startsWith("sb_publishable")) {
     try{ console.info("[DOKE] DB fallback ativo (supabase-js -> REST)."); }catch(_e){}
   }
 
-  // patch imediato + reforço após load
+  // patch imediato + reforÃ§o apÃ³s load
   patchClient();
   setTimeout(patchClient, 0);
   setTimeout(patchClient, 1000);
 })();
-

@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -11,7 +11,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 <!-- Supabase (UMD) + init -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
+<script src="supabase-init.js?v=20260217v13"></script>
 <style>
     :root{
       --card-radius: 22px;
@@ -333,7 +333,7 @@
   </style>
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
-</link><link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-shell.css?v=20260207v21">
 
 <link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
@@ -456,7 +456,7 @@
         sb = pick();
       }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260215v9");
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260217v13");
       }
       return sb;
     }
@@ -519,13 +519,21 @@ function showMsg(type, text){
         const uid = data.user?.id;
         if (!uid) throw new Error("Não foi possível obter seu usuário.");
 
-        const { data: perfil, error: perfilErr } = await supabase
-          .from("usuarios")
-          .select("*")
-          .eq("uid", uid)
-          .maybeSingle();
+        let perfil = null;
+        let perfilErr = null;
+        try {
+          const perfilResp = await supabase
+            .from("usuarios")
+            .select("*")
+            .eq("uid", uid)
+            .maybeSingle();
+          perfil = perfilResp?.data || null;
+          perfilErr = perfilResp?.error || null;
+        } catch (err) {
+          perfilErr = err || null;
+        }
 
-        if (perfilErr && perfilErr.code && perfilErr.code !== "PGRST116") {
+        if (perfilErr) {
           console.warn("[DOKE] Perfil não carregado:", perfilErr);
         }
 
@@ -540,6 +548,17 @@ function showMsg(type, text){
           localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfil));
           localStorage.setItem("doke_uid", perfil.uid || uid);
         } else {
+          const meta = data.user?.user_metadata || {};
+          const nomeFallback = meta.nome || meta.full_name || (data.user?.email ? data.user.email.split("@")[0] : "Usuário");
+          const perfilFallback = {
+            uid,
+            id: uid,
+            email: data.user?.email || "",
+            nome: nomeFallback,
+            user: meta.user || meta.username || nomeFallback,
+            foto: meta.foto || meta.avatar_url || "",
+          };
+          localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfilFallback));
           localStorage.setItem("doke_uid", uid);
         }
 
@@ -582,10 +601,8 @@ function showMsg(type, text){
     });
   </script>
 <script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260212v44"></script>
 </body>
 </html>
-
-

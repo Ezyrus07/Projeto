@@ -68,6 +68,42 @@
     if(!left.length || !right.length) return false;
     return left.some(v => right.includes(v));
   }
+  function uniqueStrings(values){
+    const out = [];
+    for(const v of (values || [])){
+      const n = normalizeIdentity(v);
+      if(!n) continue;
+      if(!out.includes(n)) out.push(n);
+    }
+    return out;
+  }
+  function getCachedPerfilIdentityKeys(){
+    try{
+      const cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+      if(!cached || typeof cached !== "object") return [];
+      return collectIdentityKeys(cached);
+    }catch(_){
+      return [];
+    }
+  }
+  function getOwnerQueryValues(ctx, primaryId){
+    const includeSelfFallback = !!(ctx && (ctx.canEdit || String(ctx.pageMode || "").toLowerCase() === "self"));
+    return uniqueStrings([
+      primaryId,
+      ctx?.target?.id,
+      ctx?.target?.uid,
+      ctx?.target?.auth_uid,
+      ctx?.target?.authUid,
+      ctx?.target?.user_uid,
+      ...(includeSelfFallback ? [
+        ctx?.me?.id,
+        ctx?.me?.uid,
+        ctx?.me?.auth_uid,
+        ctx?.me?.authUid
+      ] : []),
+      ...(includeSelfFallback ? getCachedPerfilIdentityKeys() : [])
+    ]);
+  }
   function isOwnProfile(ctx){
     if(!ctx) return false;
     if(ctx.canEdit) return true;
@@ -83,6 +119,7 @@
   let dpReelSelectedIds = new Set();
   let dpReelVisibleIds = [];
   let dpReelCtx = null;
+  let dpPubLoadInFlight = false;
   let dpSvcSelectMode = false;
   let dpSvcSelectedIds = new Set();
   let dpSvcVisibleIds = [];
@@ -239,6 +276,11 @@
       };
     };
     if(!btn) return;
+    if(ctx?.sbRestDown || isRestBackoffActive()){
+      btn.style.display = "none";
+      if(msgBtn) msgBtn.style.display = "none";
+      return;
+    }
     if(isOwnProfile(ctx)){
       btn.style.display = "none";
       if (msgBtn) msgBtn.style.display = "none";
@@ -396,6 +438,10 @@
   async function updateFollowButton(ctx){
     const btn = $("#dpFollowBtn");
     if(!btn) return;
+    if(ctx?.sbRestDown || isRestBackoffActive()){
+      btn.style.display = "none";
+      return;
+    }
     if(isOwnProfile(ctx)){
       btn.style.display = "none";
       return;
@@ -502,22 +548,51 @@
   async function updateFollowCounts(ctx){
     const client = ctx?.client;
     if(!client) return;
+    if(isRestBackoffActive()){
+      setText("#dpFollowers", "0");
+      setText("#dpFollowing", "0");
+      return;
+    }
     const targetUid = ctx?.target?.uid || ctx?.target?.id;
     const meUid = ctx?.me?.uid || ctx?.me?.id;
     if(!targetUid) return;
     try{
       const [followersRes, followingRes] = await Promise.all([
-        client.from("seguidores").select("id", { count: "exact", head: true }).eq("seguidoUid", targetUid),
-        client.from("seguidores").select("id", { count: "exact", head: true }).eq("seguidorUid", targetUid)
+        selectRowsByOwnerCompat(client, {
+          table: "seguidores",
+          select: "id",
+          ownerColumns: ["seguidoUid", "seguido_uid", "seguido_id", "seguidoid"],
+          ownerValues: [targetUid],
+          orderColumns: [null],
+          limit: 500,
+          maxAttempts: 8
+        }),
+        selectRowsByOwnerCompat(client, {
+          table: "seguidores",
+          select: "id",
+          ownerColumns: ["seguidorUid", "seguidor_uid", "seguidor_id", "seguidorid"],
+          ownerValues: [targetUid],
+          orderColumns: [null],
+          limit: 500,
+          maxAttempts: 8
+        })
       ]);
-      const followers = typeof followersRes.count === "number" ? followersRes.count : 0;
-      const following = typeof followingRes.count === "number" ? followingRes.count : 0;
+      if(isTransientRestError(followersRes?.error) || isTransientRestError(followingRes?.error)){
+        markRestBackoff(followersRes?.error || followingRes?.error);
+        setText("#dpFollowers", "0");
+        setText("#dpFollowing", "0");
+        return;
+      }
+      const followers = Array.isArray(followersRes?.data) ? followersRes.data.length : 0;
+      const following = Array.isArray(followingRes?.data) ? followingRes.data.length : 0;
       setText("#dpFollowers", String(followers));
       setText("#dpFollowing", String(following));
       if (meUid && meUid === targetUid) {
         // para o próprio perfil, mantém visível o número atualizado
       }
-    }catch(e){}
+    }catch(e){
+      if(isTransientRestError(e)) markRestBackoff(e);
+    }
   }
 
   // -----------------------------
@@ -667,6 +742,162 @@
   function looksUUID(v){
     return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
   }
+
+  function getUsuariosTableOrderCompat(){
+    const preferred = String(window.__dokeUsuariosTable || window.__dokePerfilUsuariosTable || "").trim();
+    if(preferred === "usuarios_legacy") return ["usuarios_legacy", "usuarios"];
+    return ["usuarios", "usuarios_legacy"];
+  }
+
+  function isQueryValueCompatError(err){
+    if(!err) return false;
+    const msg = String((err.message||"") + " " + (err.hint||"") + " " + (err.details||"")).toLowerCase();
+    return (
+      err.code === "22P02" ||
+      err.code === "42804" ||
+      /invalid input syntax/i.test(msg) ||
+      /operator does not exist/i.test(msg) ||
+      /cannot cast/i.test(msg) ||
+      /failed to parse/i.test(msg)
+    );
+  }
+
+  function isPermissionDeniedError(err){
+    if(!err) return false;
+    const msg = String((err.message||"") + " " + (err.hint||"") + " " + (err.details||"")).toLowerCase();
+    return (
+      err.code === "42501" ||
+      err.status === 401 ||
+      err.status === 403 ||
+      /permission denied/i.test(msg) ||
+      /row-level security/i.test(msg) ||
+      /rls/i.test(msg)
+    );
+  }
+
+  function isUsuariosCompatError(err){
+    if(!err) return false;
+    const msg = String((err.message||"") + " " + (err.hint||"") + " " + (err.details||"")).toLowerCase();
+    return (
+      err.code === "PGRST205" ||
+      err.code === "PGRST204" ||
+      err.status === 404 ||
+      /could not find the table/i.test(msg) ||
+      /could not find the .* column/i.test(msg) ||
+      /column .* does not exist/i.test(msg) ||
+      isQueryValueCompatError(err)
+    );
+  }
+
+  async function runUsuariosCompatQuery(client, requestBuilder, opts){
+    if(!client || typeof requestBuilder !== "function"){
+      return { data: null, error: null, table: null, uidField: "uid" };
+    }
+
+    const continueOnEmpty = !!opts?.continueOnEmpty;
+    let lastCompatErr = null;
+    let hadNoErrorEmpty = false;
+
+    for(const table of getUsuariosTableOrderCompat()){
+      const uidField = table === "usuarios_legacy" ? "uid_text" : "uid";
+      let res = null;
+      try{
+        res = await requestBuilder({ table, uidField });
+      }catch(err){
+        if(isNetworkFetchError(err)) return { data: null, error: err, table, uidField };
+        if(isUsuariosCompatError(err)){ lastCompatErr = err; continue; }
+        return { data: null, error: err, table, uidField };
+      }
+
+      const err = res?.error || null;
+      if(err && isNetworkFetchError(err)){
+        return { data: null, error: err, table, uidField };
+      }
+      if(err && isUsuariosCompatError(err)){
+        lastCompatErr = err;
+        continue;
+      }
+      if(err){
+        return { data: null, error: err, table, uidField };
+      }
+
+      const data = res?.data ?? null;
+      if(continueOnEmpty && (data === null || (Array.isArray(data) && data.length < 1))){
+        hadNoErrorEmpty = true;
+        continue;
+      }
+
+      window.__dokeUsuariosTable = table;
+      window.__dokePerfilUsuariosTable = table;
+      return { data, error: null, table, uidField };
+    }
+
+    if(hadNoErrorEmpty) return { data: null, error: null, table: null, uidField: "uid" };
+    return { data: null, error: lastCompatErr, table: null, uidField: "uid" };
+  }
+  async function queryUsuarioRestCompat(client, columns, values){
+    const cols = uniqueStrings(columns || []);
+    const vals = uniqueStrings(values || []);
+    if(!cols.length || !vals.length){
+      return { usuario: null, error: null };
+    }
+
+    let lastError = null;
+    for(const table of getUsuariosTableOrderCompat()){
+      for(const col of cols){
+        for(const rawValue of vals){
+          const value = normalizeIdentity(rawValue);
+          if(!value) continue;
+
+          const rest = await restSelectRowsByOwnerCompat(client, {
+            table,
+            select: "*",
+            ownerCol: col,
+            ownerValue: value,
+            limit: 1,
+            orderCol: ""
+          });
+
+          if(rest?.error){
+            const err = rest.error;
+            if(isTransientRestError(err)){
+              markRestBackoff(err);
+              return { usuario: null, error: err };
+            }
+            if(
+              isMissingTableError(err) ||
+              isMissingColumnError(err, col) ||
+              isPermissionDeniedError(err) ||
+              isUsuariosCompatError(err) ||
+              isQueryValueCompatError(err)
+            ){
+              lastError = err;
+              continue;
+            }
+            lastError = err;
+            continue;
+          }
+
+          const rows = Array.isArray(rest?.data) ? rest.data : [];
+          if(rows.length > 0){
+            window.__dokeUsuariosTable = table;
+            window.__dokePerfilUsuariosTable = table;
+            return { usuario: rows[0], error: null };
+          }
+        }
+      }
+    }
+
+    if(
+      lastError &&
+      !isPermissionDeniedError(lastError) &&
+      !isUsuariosCompatError(lastError) &&
+      !isQueryValueCompatError(lastError)
+    ){
+      return { usuario: null, error: lastError };
+    }
+    return { usuario: null, error: null };
+  }
   // -----------------------------
   async function getSessionUser(client){
     const { data, error } = await client.auth.getSession();
@@ -678,40 +909,34 @@
     const authKey = normalizeIdentity(authUid);
     if(!authKey) return { usuario: null };
 
-    // authUid é UUID => vínculo com o Auth é pela coluna `uid`
-    // Não usamos `.eq("id", authKey)` porque `id` pode ser serial/int e quebra (400/520) com UUID.
-    const r = await client
-      .from("usuarios_legacy")
-      .select("*")
-      .eq("uid_text", authKey)
-      .maybeSingle();
-
-    if(r.error) return { error: r.error };
-    return { usuario: r.data || null };
+    const filters = looksUUID(authKey)
+      ? ["uid", "uid_text"]
+      : ["uid", "uid_text", "id"];
+    const r = await queryUsuarioRestCompat(client, filters, [authKey]);
+    if(r.error && !isPermissionDeniedError(r.error)) return { error: r.error };
+    return { usuario: r.usuario || null };
   }
 
   async function getUsuarioById(client, id){
-    // UUID normalmente significa auth.uid() => procuramos por `uid`
-    if(looksUUID(id)){
-      const r = await client.from("usuarios_legacy").select("*").eq("uid_text", id).maybeSingle();
-      if(r.error) return { error: r.error };
-      return { usuario: r.data || null };
-    }
+    const key = normalizeIdentity(id);
+    if(!key) return { usuario: null };
 
-    // Caso legado: id serial/int
-    const r = await client.from("usuarios_legacy").select("*").eq("id", id).maybeSingle();
-    if(r.error) return { error: r.error };
-    return { usuario: r.data || null };
+    const filters = looksUUID(key)
+      ? ["uid", "uid_text"]
+      : ["id", "uid", "uid_text"];
+    const r = await queryUsuarioRestCompat(client, filters, [key]);
+    if(r.error && !isPermissionDeniedError(r.error)) return { error: r.error };
+    return { usuario: r.usuario || null };
   }
 
   async function getUsuarioByUsername(client, username){
-    const { data, error } = await client
-      .from("usuarios_legacy")
-      .select("*")
-      .eq("user", username)
-      .maybeSingle();
-    if(error) return { error };
-    return { usuario: data || null };
+    const raw = normalizeIdentity(username);
+    if(!raw) return { usuario: null };
+    const values = uniqueStrings([raw, raw.startsWith("@") ? raw.slice(1) : raw, raw.startsWith("@") ? raw : `@${raw}`]);
+    const columns = ["user", "username", "handle"];
+    const r = await queryUsuarioRestCompat(client, columns, values);
+    if(r.error && !isPermissionDeniedError(r.error)) return { error: r.error };
+    return { usuario: r.usuario || null };
   }
 
   async function updateUsuario(client, rowId, patch){
@@ -950,8 +1175,12 @@ function ensureTheme(ctx, theme){
 
   function isMissingColumnError(err, column){
     if(!err) return false;
-    const msg = String(err.message || "").toLowerCase();
-    return err.code === "PGRST204" && msg.includes(`'${String(column).toLowerCase()}'`);
+    const col = String(column || "").toLowerCase();
+    const msg = String((err.message || "") + " " + (err.hint || "") + " " + (err.details || "")).toLowerCase();
+    if (err.code === "PGRST204") return !col || msg.includes(col);
+    if (err.code === "42703") return !col || msg.includes(col);
+    if (/column .* does not exist/i.test(msg)) return !col || msg.includes(col);
+    return false;
   }
 
   async function safeSelect(queryFn){
@@ -965,6 +1194,344 @@ function ensureTheme(ctx, theme){
     }catch(e){
       return { data: null, error: e, missing: false };
     }
+  }
+
+  function isNetworkFetchError(err){
+    if(!err) return false;
+    const msg = String(err.message || err.details || err.error_description || err || "").toLowerCase();
+    const status = Number(err.status || 0);
+    return (
+      status === 0 ||
+      msg.includes("failed to fetch") ||
+      msg.includes("networkerror") ||
+      msg.includes("load failed") ||
+      msg.includes("fetch failed") ||
+      msg.includes("timeout")
+    );
+  }
+
+  function isSupabaseUnavailableError(err){
+    if(!err) return false;
+    const status = Number(err.status || err.statusCode || 0);
+    if([500, 502, 503, 504, 520, 522, 524].includes(status)) return true;
+    const msg = String(err.message || err.details || err.error_description || err || "").toLowerCase();
+    return (
+      msg.includes("connection reset") ||
+      msg.includes("err_connection_reset") ||
+      msg.includes("origin unreachable") ||
+      msg.includes("bad gateway") ||
+      msg.includes("proxy error")
+    );
+  }
+
+  function isTransientRestError(err){
+    return isNetworkFetchError(err) || isSupabaseUnavailableError(err);
+  }
+
+  const DOKE_REST_BACKOFF_KEY = "__DOKE_REST_BACKOFF_UNTIL__";
+  const DOKE_REST_BACKOFF_ERR_KEY = "__DOKE_REST_BACKOFF_ERR__";
+  const DOKE_REST_BACKOFF_MS = 25000;
+
+  function getRestBackoffUntil(){
+    try{
+      return Number(window[DOKE_REST_BACKOFF_KEY] || 0) || 0;
+    }catch(_){
+      return 0;
+    }
+  }
+
+  function getRestBackoffError(){
+    try{
+      return window[DOKE_REST_BACKOFF_ERR_KEY] || null;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function isRestBackoffActive(){
+    return getRestBackoffUntil() > Date.now();
+  }
+
+  function markRestBackoff(err, ms){
+    const ttl = Math.max(4000, Number(ms || DOKE_REST_BACKOFF_MS));
+    try{
+      window[DOKE_REST_BACKOFF_KEY] = Date.now() + ttl;
+      window[DOKE_REST_BACKOFF_ERR_KEY] = err || { message: "rest_backoff", status: 520 };
+    }catch(_){}
+  }
+
+  function getSupabaseRestCfg(){
+    const bases = [];
+    const pageOrigin = (()=>{
+      try{
+        if(typeof location === "undefined") return "";
+        return String(location.origin || "").trim().replace(/\/+$/g, "");
+      }catch(_){
+        return "";
+      }
+    })();
+    const pageIsLoopback = (()=>{
+      try{
+        if(typeof location === "undefined") return false;
+        const host = String(location.hostname || "").toLowerCase();
+        return host === "localhost" || host === "127.0.0.1";
+      }catch(_){
+        return false;
+      }
+    })();
+    const pushBase = (raw)=>{
+      const value = String(raw || "").trim().replace(/\/+$/g, "");
+      if(!value) return;
+      if(!/^https?:\/\//i.test(value)) return;
+      if(pageIsLoopback && pageOrigin){
+        try{
+          const candidate = new URL(value);
+          const candidateIsLoopback = /^(localhost|127\.0\.0\.1)$/i.test(String(candidate.hostname || ""));
+          // Nunca usa loopback cross-origin (ex.: localhost:5500 -> 127.0.0.1:5500 / localhost:5501).
+          if(candidateIsLoopback && candidate.origin !== pageOrigin) return;
+        }catch(_){
+          return;
+        }
+      }
+      if(!bases.includes(value)) bases.push(value);
+    };
+    try{
+      const proxyEnabled = !!window.DOKE_SUPABASE_PROXY_ENABLED;
+      if(typeof location !== "undefined"){
+        const host = String(location.hostname || "").toLowerCase();
+        if(proxyEnabled && (host === "localhost" || host === "127.0.0.1")){
+          pushBase(location.origin);
+        }
+      }
+    }catch(_){}
+    try{
+      const remembered = String(sessionStorage.getItem("DOKE_PROXY_ORIGIN") || "").trim();
+      if(remembered){
+        if(pageOrigin){
+          const origin = new URL(remembered, pageOrigin).origin;
+          if(origin === pageOrigin){
+            pushBase(origin);
+          }
+        }else{
+          pushBase(remembered);
+        }
+      }
+    }catch(_){}
+    pushBase(window.DOKE_SUPABASE_PROXY_ORIGIN);
+    pushBase(window.DOKE_SUPABASE_URL);
+    pushBase(window.SUPABASE_URL);
+    try{
+      pushBase(localStorage.getItem("DOKE_SUPABASE_URL"));
+      pushBase(localStorage.getItem("SUPABASE_URL"));
+    }catch(_){}
+    pushBase(window.DOKE_SUPABASE_PROXY_UPSTREAM);
+    const base = bases[0] || "";
+    const anon = String(
+      window.DOKE_SUPABASE_ANON_KEY ||
+      window.SUPABASE_ANON_KEY ||
+      localStorage.getItem("DOKE_SUPABASE_ANON_KEY") ||
+      localStorage.getItem("SUPABASE_ANON_KEY") ||
+      ""
+    ).trim();
+    return { base, bases, anon };
+  }
+
+  function isSupabaseLikeResponse(resp){
+    try{
+      if(!resp || !resp.headers) return false;
+      const sbRef = String(resp.headers.get("sb-project-ref") || "").trim();
+      const sbGateway = String(resp.headers.get("sb-gateway-version") || "").trim();
+      const contentProfile = String(resp.headers.get("content-profile") || "").trim();
+      return !!(sbRef || sbGateway || contentProfile);
+    }catch(_){
+      return false;
+    }
+  }
+
+  async function getAccessToken(client){
+    try{
+      if(!client?.auth?.getSession) return null;
+      const { data, error } = await client.auth.getSession();
+      if(error) return null;
+      return data?.session?.access_token || null;
+    }catch(_){
+      return null;
+    }
+  }
+
+  async function restSelectRowsByOwnerCompat(client, cfg){
+    try{
+      const table = String(cfg?.table || "").trim();
+      const select = String(cfg?.select || "*").trim() || "*";
+      const ownerCol = String(cfg?.ownerCol || "").trim();
+      const ownerValue = String(cfg?.ownerValue ?? "").trim();
+      const orderCol = cfg?.orderCol ? String(cfg.orderCol).trim() : "";
+      const limit = Math.max(1, Number(cfg?.limit || 40));
+      const ascending = !!cfg?.ascending;
+      if(!table || !ownerCol || !ownerValue){
+        return { data: null, error: { message: "invalid_rest_fallback_args" } };
+      }
+
+      const { base, bases, anon } = getSupabaseRestCfg();
+      if(!base || !anon){
+        return { data: null, error: { message: "missing_supabase_config" } };
+      }
+
+      const token = await getAccessToken(client);
+      const useAuthToken = !!(window.DOKE_USE_AUTH_FOR_PROFILE_REST === true);
+      const bearer = useAuthToken ? (token || anon) : anon;
+      const params = new URLSearchParams();
+      params.set("select", select);
+      params.set(ownerCol, `eq.${ownerValue}`);
+      params.set("limit", String(limit));
+      if(orderCol){
+        params.set("order", `${orderCol}.${ascending ? "asc" : "desc"}`);
+      }
+
+      const targets = (Array.isArray(bases) && bases.length ? bases : [base]).filter(Boolean);
+      let resp;
+      let lastNetworkError = null;
+      let usedBase = "";
+      for(const targetBase of targets){
+        usedBase = targetBase;
+        try{
+          const candidateResp = await fetch(`${targetBase}/rest/v1/${encodeURIComponent(table)}?${params.toString()}`, {
+            method: "GET",
+            headers: {
+              apikey: anon,
+              Authorization: `Bearer ${bearer}`,
+            },
+          });
+          // Se não parece resposta do Supabase/proxy, segue para próxima base.
+          if(!isSupabaseLikeResponse(candidateResp) && targets.length > 1){
+            lastNetworkError = { message: "non_supabase_response", status: candidateResp.status, base: targetBase };
+            resp = null;
+            continue;
+          }
+          resp = candidateResp;
+          lastNetworkError = null;
+          break;
+        }catch(e){
+          lastNetworkError = e;
+          resp = null;
+        }
+      }
+      if(!resp){
+        return { data: null, error: { message: String(lastNetworkError?.message || lastNetworkError || "Failed to fetch"), status: 0, base: usedBase } };
+      }
+
+      let text = "";
+      try{
+        text = await resp.text();
+      }catch(e){
+        return { data: null, error: { message: String(e?.message || e || "Failed to fetch"), status: 0 } };
+      }
+
+      let payload = null;
+      try{ payload = text ? JSON.parse(text) : null; }catch(_){ payload = text; }
+      if(!resp.ok){
+        const err = (payload && typeof payload === "object")
+          ? payload
+          : { message: String(payload || resp.statusText || `HTTP ${resp.status}`) };
+        if(!err.status) err.status = resp.status;
+        if(!err.base) err.base = usedBase;
+        return { data: null, error: err };
+      }
+
+      if(Array.isArray(payload)) return { data: payload, error: null };
+      if(payload == null) return { data: [], error: null };
+      return { data: [payload], error: null };
+    }catch(e){
+      return { data: null, error: { message: String(e?.message || e || "Failed to fetch"), status: 0 } };
+    }
+  }
+
+  async function selectRowsByOwnerCompat(client, cfg){
+    const table = String(cfg?.table || "").trim();
+    if(!client?.from || !table) return { data: [], error: null, missingTable: false, denied: false };
+    if(isRestBackoffActive()){
+      const cachedErr = getRestBackoffError() || { message: "rest_backoff_active", status: 520 };
+      return { data: [], error: cachedErr, missingTable: false, denied: false };
+    }
+
+    const select = cfg?.select || "*";
+    const limit = Math.max(1, Number(cfg?.limit || 40));
+    const ownerColumns = uniqueStrings(cfg?.ownerColumns || []);
+    const ownerValues = uniqueStrings(cfg?.ownerValues || []);
+    const orderColumns = Array.isArray(cfg?.orderColumns) ? cfg.orderColumns : ["created_at", null];
+    const ascending = !!cfg?.ascending;
+
+    if(ownerColumns.length < 1 || ownerValues.length < 1){
+      return { data: [], error: null, missingTable: false, denied: false };
+    }
+
+    let sawEmptySuccess = false;
+    let lastError = null;
+    const maxAttempts = Math.max(1, Number(cfg?.maxAttempts || 8));
+    let attempts = 0;
+
+    outerValues:
+    for(const ownerValue of ownerValues){
+      for(const ownerCol of ownerColumns){
+        for(const orderColRaw of orderColumns){
+          if(attempts >= maxAttempts){
+            break outerValues;
+          }
+          attempts += 1;
+          const orderCol = orderColRaw ? String(orderColRaw).trim() : "";
+          let restRes;
+          try{
+            restRes = await restSelectRowsByOwnerCompat(client, {
+              table,
+              select,
+              ownerCol,
+              ownerValue,
+              orderCol,
+              limit,
+              ascending
+            });
+          }catch(fe){
+            restRes = { data: null, error: fe || { message: "Failed to fetch", status: 0 } };
+          }
+          if(restRes?.error){
+            const err = restRes.error;
+            if(isMissingTableError(err)){
+              return { data: [], error: null, missingTable: true, denied: false };
+            }
+            if(isPermissionDeniedError(err)){
+              return { data: [], error: null, missingTable: false, denied: true };
+            }
+            if(isTransientRestError(err)){
+              markRestBackoff(err);
+              return { data: [], error: err, missingTable: false, denied: false };
+            }
+            if(orderCol && isMissingColumnError(err, orderCol)){
+              lastError = err;
+              continue;
+            }
+            if(
+              isMissingColumnError(err, ownerCol) ||
+              isQueryValueCompatError(err)
+            ){
+              lastError = err;
+              break;
+            }
+            lastError = err;
+            continue;
+          }
+
+          const rows = Array.isArray(restRes?.data) ? restRes.data : [];
+          if(rows.length > 0){
+            return { data: rows, error: null, missingTable: false, denied: false };
+          }
+          sawEmptySuccess = true;
+          break;
+        }
+      }
+    }
+
+    if(sawEmptySuccess) return { data: [], error: null, missingTable: false, denied: false };
+    return { data: [], error: lastError, missingTable: false, denied: false };
   }
 
   function setPublicacoesSelectMode(on, opts = {}){
@@ -1542,31 +2109,58 @@ function ensureTheme(ctx, theme){
   // Sections loaders
   // -----------------------------
   async function loadPublicacoes(client, userId, ctx){
+    if(dpPubLoadInFlight) return;
+    dpPubLoadInFlight = true;
+    try{
     dpPubCtx = ctx || null;
     ensurePublicacoesSelectionControls(ctx);
     const grid = $("#dpGridPublicacoes");
     if(!grid) return;
+    if(isRestBackoffActive()){
+      grid.innerHTML = `<div class="dp-empty">Servidor em recuperacao. Aguarde alguns segundos e recarregue.</div>`;
+      return;
+    }
     if(ctx?.sbRestDown){
       grid.innerHTML = `<div class="dp-empty">Supabase indisponível (erro 520/servidor offline). Abra <b>diagnostico.html</b> e verifique se o projeto Supabase está pausado.</div>`;
       return;
     }
     renderPerfilGridSkeleton(grid, "publicacoes");
-    const { data, error } = await client
-      .from("publicacoes")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending:false })
-      .limit(40);
-    if(error){
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "publicacoes",
+      select: "*",
+      ownerColumns: ["user_id", "uid"],
+      ownerValues: uniqueStrings([
+        userId,
+        ctx?.target?.id,
+        ctx?.target?.uid
+      ]),
+      orderColumns: ["created_at", null],
+      limit: 40,
+      maxAttempts: 4
+    });
+    const data = queryResult.data || [];
+    if(queryResult.error || queryResult.denied){
       dpPubVisibleIds = [];
       dpPubSelectedIds.clear();
       refreshPublicacoesSelectionUI();
-      if(isMissingTableError(error)){
+      if(queryResult.error && isTransientRestError(queryResult.error)){
+        markRestBackoff(queryResult.error);
+        grid.innerHTML = `<div class="dp-empty">Supabase indisponivel no momento. Tente novamente em instantes.</div>`;
+        try{ window.__DOKE_LAST_PUBLICACOES_ERROR__ = queryResult.error; }catch(_){}
+        console.error("[DOKE] loadPublicacoes transient error:", queryResult.error);
+        return;
+      }
+      if(queryResult.missingTable){
         grid.innerHTML = `<div class="dp-empty">Nenhuma publicacao ainda.</div>`;
         return;
       }
+      if(queryResult.denied){
+        grid.innerHTML = `<div class="dp-empty">Publicacoes indisponiveis no momento.</div>`;
+        return;
+      }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
-      console.error(error);
+      try{ window.__DOKE_LAST_PUBLICACOES_ERROR__ = queryResult.error; }catch(_){}
+      console.error("[DOKE] loadPublicacoes error:", queryResult.error);
       return;
     }
     if(!data?.length){
@@ -1645,6 +2239,9 @@ function ensureTheme(ctx, theme){
       grid.appendChild(card);
     }
     refreshPublicacoesSelectionUI();
+    } finally {
+      dpPubLoadInFlight = false;
+    }
   }
 
     async function loadReels(client, userId, ctx){
@@ -1653,22 +2250,35 @@ function ensureTheme(ctx, theme){
     const grid = $("#dpGridReels");
     if(!grid) return;
     renderPerfilGridSkeleton(grid, "reels");
-    const { data, error } = await client
-      .from("videos_curtos")
-      .select("*")
-      .eq("user_id", userId)
-      .order("created_at", { ascending:false })
-      .limit(40);
-    if(error){
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "videos_curtos",
+      select: "*",
+      ownerColumns: ["user_id", "userId", "uid", "user_uid", "userUid", "usuario_id", "autorUid", "owner_id"],
+      ownerValues: getOwnerQueryValues(ctx, userId),
+      orderColumns: ["created_at", "data", "createdAt", "createdat", null],
+      limit: 40,
+      maxAttempts: 10
+    });
+    const data = queryResult.data || [];
+    if(queryResult.error || queryResult.denied){
       dpReelVisibleIds = [];
       dpReelSelectedIds.clear();
       refreshReelsSelectionUI();
-      if(isMissingTableError(error)){
+      if(queryResult.error && isTransientRestError(queryResult.error)){
+        grid.innerHTML = `<div class="dp-empty">Videos curtos indisponiveis agora (erro de rede/servidor).</div>`;
+        console.error("[DOKE] loadReels transient error:", queryResult.error);
+        return;
+      }
+      if(queryResult.missingTable){
         grid.innerHTML = `<div class="dp-empty">Nenhum Video curto ainda.</div>`;
         return;
       }
+      if(queryResult.denied){
+        grid.innerHTML = `<div class="dp-empty">Videos curtos indisponiveis no momento.</div>`;
+        return;
+      }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
-      console.error(error);
+      console.error(queryResult.error);
       return;
     }
     if(!data?.length){
@@ -1735,23 +2345,36 @@ function ensureTheme(ctx, theme){
     refreshReelsSelectionUI();
   }
 
-  async function loadPortfolio(client, profId){
+  async function loadPortfolio(client, profId, ctx){
     const grid = $("#dpGridPortfolio");
     if(!grid) return;
     renderPerfilGridSkeleton(grid, "portfolio");
-    const { data, error } = await client
-      .from("portfolio")
-      .select("*")
-      .eq("profissional_id", profId)
-      .order("created_at", { ascending:false })
-      .limit(40);
-    if(error){
-      if(isMissingTableError(error)){
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "portfolio",
+      select: "*",
+      ownerColumns: ["profissional_id", "profissionalId", "profId", "prof_uid", "profUid", "uid", "user_id"],
+      ownerValues: getOwnerQueryValues(ctx, profId),
+      orderColumns: ["created_at", "data", "createdAt", "createdat", null],
+      limit: 40,
+      maxAttempts: 10
+    });
+    const data = queryResult.data || [];
+    if(queryResult.error || queryResult.denied){
+      if(queryResult.error && isTransientRestError(queryResult.error)){
+        grid.innerHTML = `<div class="dp-empty">Portfolio indisponivel agora (erro de rede/servidor).</div>`;
+        console.error("[DOKE] loadPortfolio transient error:", queryResult.error);
+        return;
+      }
+      if(queryResult.missingTable){
         grid.innerHTML = `<div class="dp-empty">Portfolio vazio.</div>`;
         return;
       }
+      if(queryResult.denied){
+        grid.innerHTML = `<div class="dp-empty">Portfolio indisponivel no momento.</div>`;
+        return;
+      }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
-      console.error(error);
+      console.error(queryResult.error);
       return;
     }
     if(!data?.length){
@@ -1838,7 +2461,7 @@ function ensureTheme(ctx, theme){
     }
   }
 
-  async function loadServicos(client, profId){
+  async function loadServicos(client, profId, ctx){
     const grid = $("#dpGridServicos");
     if(!grid) return;
     if (typeof renderPerfilGridSkeleton === "function") {
@@ -1846,21 +2469,34 @@ function ensureTheme(ctx, theme){
     } else {
       grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
     }
-    const { data, error } = await client
-      .from("servicos")
-      .select("*")
-      .eq("profissional_id", profId)
-      .order("created_at", { ascending:false })
-      .limit(50);
-    if(error){
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "servicos",
+      select: "*",
+      ownerColumns: ["profissional_id", "profissionalId", "profId", "prof_uid", "profUid", "uid", "user_id"],
+      ownerValues: getOwnerQueryValues(ctx, profId),
+      orderColumns: ["created_at", "data", "createdAt", "createdat", null],
+      limit: 50,
+      maxAttempts: 10
+    });
+    const data = queryResult.data || [];
+    if(queryResult.error || queryResult.denied){
       const countEl = document.getElementById("dpServicesCount");
       if (countEl) countEl.textContent = "0";
-      if(isMissingTableError(error)){
+      if(queryResult.error && isTransientRestError(queryResult.error)){
+        grid.innerHTML = `<div class="dp-empty">Servicos indisponiveis agora (erro de rede/servidor).</div>`;
+        console.error("[DOKE] loadServicos transient error:", queryResult.error);
+        return;
+      }
+      if(queryResult.missingTable){
         grid.innerHTML = `<div class="dp-empty">Nenhum serviço cadastrado.</div>`;
         return;
       }
+      if(queryResult.denied){
+        grid.innerHTML = `<div class="dp-empty">Servicos indisponiveis no momento.</div>`;
+        return;
+      }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
-      console.error(error);
+      console.error(queryResult.error);
       return;
     }
     if(!data?.length){
@@ -1895,59 +2531,54 @@ function ensureTheme(ctx, theme){
     const profUid = (typeof prof === "object" && prof) ? (prof.uid || prof.user_uid || prof.auth_uid || prof.authUid) : null;
 
     const filters = [];
-    if(profId) filters.push({ col: "profissional_id", val: profId });
-    if(profUid) filters.push({ col: "profUid", val: profUid });
-    if(profUid) filters.push({ col: "profuid", val: profUid });
-    if(profUid) filters.push({ col: "prof_uid", val: profUid });
-    if(profId) filters.push({ col: "profId", val: profId });
-    if(profId) filters.push({ col: "profissionalId", val: profId });
-    if(profId) filters.push({ col: "profissionalid", val: profId });
-    if(profUid) filters.push({ col: "profissionalUid", val: profUid });
+    const pushFilter = (col, val)=>{
+      const c = String(col || "").trim();
+      const v = String(val || "").trim();
+      if(!c || !v) return;
+      if(filters.some((f)=> f.col === c && f.val === v)) return;
+      filters.push({ col: c, val: v });
+    };
+    if(profId) pushFilter("profissional_id", profId);
+    if(profUid) pushFilter("profissional_id", profUid);
+    const ownerValues = uniqueStrings(filters.map((f)=> f.val));
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "avaliacoes",
+      select: "*",
+      ownerColumns: ["profissional_id", "profissionalId", "profissional_uid", "profissionalUid", "uid", "user_id"],
+      ownerValues,
+      orderColumns: ["created_at", null],
+      limit: 80,
+      maxAttempts: 10
+    });
+    let data = queryResult.data || [];
 
-    const orders = ["data", "created_at", "createdAt", "createdat", null];
-    let data = null;
-    let lastError = null;
-
-    for(const f of filters){
-      let success = false;
-      for(const ord of orders){
-        let q = client
-          .from("avaliacoes")
-          .select("*")
-          .eq(f.col, f.val)
-          .limit(80);
-        if(ord) q = q.order(ord, { ascending:false });
-        const res = await q;
-        if(res.error){
-          if(isMissingTableError(res.error)){
-            box.innerHTML = `<div class="dp-empty">Nenhuma avaliação. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
-            console.error(res.error);
-            return;
-          }
-          if(isMissingColumnError(res.error, f.col) || (ord && isMissingColumnError(res.error, ord))){
-            lastError = res.error;
-            continue;
-          }
-          lastError = res.error;
-          success = true;
-          break;
-        }
-        data = res.data || [];
-        success = true;
-        break;
+    if(queryResult.error || queryResult.denied){
+      if(queryResult.missingTable){
+        box.innerHTML = `<div class="dp-empty">Nenhuma avaliação. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+        return;
       }
-      if(success && data && data.length) break;
-    }
-
-    if(!data){
-      if(lastError){
-        console.error(lastError);
+      if(queryResult.denied){
+        data = [];
+      }else if(queryResult.error && isTransientRestError(queryResult.error)){
+        const countEl = document.getElementById("dpReviews");
+        if (countEl) countEl.textContent = "0";
+        box.innerHTML = `<div class="dp-empty">Avaliacoes indisponiveis no momento (erro de rede/servidor).</div>`;
+        console.error(queryResult.error);
+        return;
+      }else if(queryResult.error){
+        console.error(queryResult.error);
         box.innerHTML = `<div class="dp-empty">Erro ao carregar avaliações.</div>`;
         const countEl = document.getElementById("dpReviews");
         if (countEl) countEl.textContent = "0";
         return;
       }
-      data = [];
+    }
+
+    if(!Array.isArray(data)){
+      const countEl = document.getElementById("dpReviews");
+      if (countEl) countEl.textContent = "0";
+      box.innerHTML = `<div class="dp-empty">Erro ao carregar avaliações.</div>`;
+      return;
     }
     const countEl = document.getElementById("dpReviews");
     if (countEl) countEl.textContent = String((data && data.length) || 0);
@@ -2959,7 +3590,7 @@ function ensureTheme(ctx, theme){
         ensureServicosSelectionControls(ctx);
         loadServicosPerfil(ctx);
       }
-      if(tab === "portfolio") loadPortfolio(ctx.client, ctx.target.id);
+      if(tab === "portfolio") loadPortfolio(ctx.client, ctx.target.id, ctx);
       if(tab === "avaliacoes") loadAvaliacoes(ctx.client, ctx.target);
       if(tab === "estatisticas") initProDashboard(ctx);
     }
@@ -3519,7 +4150,7 @@ function ensureTheme(ctx, theme){
     // somente profissional DONO
     const isProOwner = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     if(!isProOwner){
-      toast("Ãrea restrita ao profissional.");
+      toast("Área restrita ao profissional.");
       return;
     }
 
@@ -3933,39 +4564,45 @@ if(!rangeSel || !refreshBtn) return;
     const profUid = (typeof prof === "object" && prof) ? (prof.uid || prof.user_uid || prof.auth_uid || prof.authUid) : null;
 
     const filters = [];
-    if(profId) filters.push({ col: "profissional_id", val: profId });
-    if(profUid) filters.push({ col: "profUid", val: profUid });
-    if(profUid) filters.push({ col: "profuid", val: profUid });
-    if(profUid) filters.push({ col: "prof_uid", val: profUid });
-    if(profId) filters.push({ col: "profId", val: profId });
-    if(profId) filters.push({ col: "profissionalId", val: profId });
-    if(profId) filters.push({ col: "profissionalid", val: profId });
-    if(profUid) filters.push({ col: "profissionalUid", val: profUid });
-
-    for(const f of filters){
-      const res = await client
-        .from("avaliacoes")
-        .select("id", { count: "exact", head: true })
-        .eq(f.col, f.val);
-      if(res.error){
-        if(isMissingTableError(res.error)){
-          countEl.textContent = "0";
-          return;
-        }
-        if(isMissingColumnError(res.error, f.col)) continue;
-        console.error(res.error);
-        return;
+    const pushFilter = (col, val)=>{
+      const c = String(col || "").trim();
+      const v = String(val || "").trim();
+      if(!c || !v) return;
+      if(filters.some((f)=> f.col === c && f.val === v)) return;
+      filters.push({ col: c, val: v });
+    };
+    if(profId) pushFilter("profissional_id", profId);
+    if(profUid) pushFilter("profissional_id", profUid);
+    const ownerValues = uniqueStrings(filters.map((f)=> f.val));
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "avaliacoes",
+      select: "id",
+      ownerColumns: ["profissional_id", "profissionalId", "profissional_uid", "profissionalUid", "uid", "user_id"],
+      ownerValues,
+      orderColumns: [null],
+      limit: 200,
+      maxAttempts: 10
+    });
+    if(queryResult.error){
+      if(isTransientRestError(queryResult.error)){
+        markRestBackoff(queryResult.error);
+      }else{
+        console.error(queryResult.error);
       }
-      if(typeof res.count === "number"){
-        countEl.textContent = String(res.count);
-        return;
-      }
+      countEl.textContent = "0";
+      return;
     }
+    const rows = Array.isArray(queryResult.data) ? queryResult.data : [];
+    countEl.textContent = String(rows.length || 0);
   }
 
   async function updateServicosCountQuick(ctx){
     const countEl = $("#dpServicesCount");
     if(!countEl) return;
+    if(ctx?.sbRestDown){
+      countEl.textContent = "0";
+      return;
+    }
     const target = ctx?.target || {};
     const donoUid = target.uid || target.id || ctx?.targetId;
     if(!donoUid) return;
@@ -3982,16 +4619,53 @@ if(!rangeSel || !refreshBtn) return;
     }
 
     const client = ctx?.client;
-    if(!client?.from || !target.id) return;
-    const res = await client
-      .from("servicos")
-      .select("id", { count: "exact", head: true })
-      .eq("profissional_id", target.id);
-    if(res.error){
-      if(isMissingTableError(res.error)) countEl.textContent = "0";
-      return;
+    if(!client?.from) return;
+
+    const ownerValues = getOwnerQueryValues(ctx, donoUid);
+    const columns = ["profissional_id", "profissionalId", "profId", "prof_uid", "profUid", "uid", "user_id"];
+    const maxAttempts = 12;
+    let attempts = 0;
+
+    for(const val of ownerValues){
+      for(const col of columns){
+        if(attempts >= maxAttempts){
+          countEl.textContent = "0";
+          return;
+        }
+        attempts += 1;
+        const res = await client
+          .from("servicos")
+          .select("id", { count: "exact", head: true })
+          .eq(col, val);
+
+        if(res.error){
+          if(isMissingTableError(res.error)){
+            countEl.textContent = "0";
+            return;
+          }
+          if(
+            isMissingColumnError(res.error, col) ||
+            isQueryValueCompatError(res.error) ||
+            isPermissionDeniedError(res.error)
+          ){
+            continue;
+          }
+          if(isTransientRestError(res.error)){
+            markRestBackoff(res.error);
+            countEl.textContent = "0";
+            return;
+          }
+          continue;
+        }
+        if(typeof res.count === "number"){
+          countEl.textContent = String(res.count);
+          return;
+        }
+        countEl.textContent = "0";
+        return;
+      }
     }
-    if(typeof res.count === "number") countEl.textContent = String(res.count);
+    countEl.textContent = "0";
   }
 
   async function updateProfileCounts(ctx){
@@ -4062,7 +4736,10 @@ if(!rangeSel || !refreshBtn) return;
       let meLoadError = null;
       if(authUser){
         const r = await getUsuarioByAuthUid(client, authUser.id);
-        if(r.error){ console.error(r.error); meLoadError = r.error; }
+        if(r.error){
+          if(!isNetworkFetchError(r.error)) console.error(r.error);
+          meLoadError = r.error;
+        }
         me = r.usuario || null;
       }
 
@@ -4117,15 +4794,16 @@ if(!rangeSel || !refreshBtn) return;
           let cached = null;
           try { cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null"); } catch(_){ cached = null; }
           const emailNick = authUser.email ? String(authUser.email).split("@")[0] : "usuario";
+          const cachedId = normalizeIdentity(cached?.id || cached?.profile_id || cached?.usuario_id);
           me = {
-            id: authUser.id,
+            id: cachedId || authUser.id,
             uid: authUser.id,
             nome: cached?.nome || authUser.user_metadata?.nome || authUser.user_metadata?.name || emailNick || "Usuário",
             user: cached?.user || authUser.user_metadata?.user || authUser.user_metadata?.username || emailNick,
             foto: cached?.foto || authUser.user_metadata?.avatar_url || authUser.user_metadata?.foto || null,
             tipo: cached?.tipo || authUser.user_metadata?.tipo || "usuario"
           };
-          if(!targetId) targetId = authUser.id;
+          if(!targetId) targetId = me.id || authUser.id;
         } else {
           window.location.replace("login.html");
           return;
@@ -4141,14 +4819,23 @@ if(!rangeSel || !refreshBtn) return;
       // Ajuda a diferenciar "sem policy" de "Supabase offline".
       let health = null;
       try{ health = await (window.dokeSupabaseHealth ? window.dokeSupabaseHealth(2500) : null); }catch(_e){ health = null; }
-
-      const tRes = await getUsuarioById(client, targetId);
+      const restDown = !!(health && (health.restStatus === 520 || health.restOk === false));
+      let tRes = { usuario: null, error: null };
+      if(!restDown){
+        tRes = await getUsuarioById(client, targetId);
+      }
       let target = tRes.usuario || null;
+      if(restDown && pageMode === "self"){
+        target = me || target;
+        if(target){
+          toast("Supabase indisponível (520/erro de rede). Exibindo perfil do cache local.");
+        }
+      }
+      const meKey = normalizeIdentity(me?.id || me?.uid);
+      const tKey = normalizeIdentity(targetId);
+      const isSelfTarget = (pageMode === "self") && !!meKey && (meKey === tKey);
       if(tRes.error){
-        console.error(tRes.error);
-        const meKey = normalizeIdentity(me?.id || me?.uid);
-        const tKey = normalizeIdentity(targetId);
-        const isSelfTarget = (pageMode === "self") && !!meKey && (meKey === tKey);
+        if(!isNetworkFetchError(tRes.error)) console.error(tRes.error);
         if (isSelfTarget && me) {
           // Mesmo se o banco estiver fora, não derruba a sessão nem força login.
           target = me;
@@ -4167,8 +4854,12 @@ if(!rangeSel || !refreshBtn) return;
       }
 
       if(!target){
+        if(isSelfTarget && me){
+          target = me;
+        }else{
         toast("Usuário não encontrado.");
         return;
+        }
       }
 
       const canEdit = !!(me && sameIdentity(me, target));
@@ -4205,7 +4896,14 @@ if(!rangeSel || !refreshBtn) return;
         placeProfileActionsForMobile();
         bindMobileActionsPlacement();
       }catch(e){ console.error(e); }
-      updateProfileCounts(ctx).catch(e=>console.error(e));
+      const enableLiveCounts = !!(window.DOKE_PROFILE_LIVE_COUNTS === true);
+      if(enableLiveCounts){
+        updateProfileCounts(ctx).catch(e=>console.error(e));
+      }else{
+        setText("#dpFollowers", "0");
+        setText("#dpFollowing", "0");
+        setText("#dpReviews", "0");
+      }
       try{ initMedia(ctx); }catch(e){ console.error(e); }
       try{ initTabs(ctx); }catch(e){ console.error(e); }
       try{ initStatsNav(); }catch(e){ console.error(e); }
@@ -5079,11 +5777,3 @@ function setupAntesDepois(container){
     }
   }catch(_){}
 }
-
-
-
-
-
-
-
-

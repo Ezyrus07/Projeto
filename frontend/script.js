@@ -843,6 +843,48 @@ window.verificarNotificacoes = function(uid) {
 const _dokeSupabaseUidCache = new Map();
 const _dokePerfilDestinoCache = new Map();
 
+function getUsuariosTableOrder() {
+    const preferred = String(window.__dokeUsuariosTable || "").trim();
+    if (preferred === "usuarios_legacy") return ["usuarios_legacy", "usuarios"];
+    return ["usuarios", "usuarios_legacy"];
+}
+
+async function runUsuariosQuery(client, requestBuilder) {
+    if (!client || typeof requestBuilder !== "function") {
+        return { data: null, error: null, table: null, uidField: "uid" };
+    }
+
+    let lastCompatError = null;
+    for (const table of getUsuariosTableOrder()) {
+        const uidField = table === "usuarios_legacy" ? "uid_text" : "uid";
+        let result = null;
+
+        try {
+            result = await requestBuilder({ table, uidField });
+        } catch (err) {
+            if (isMissingTableError(err) || isMissingColumnError(err) || isInvalidUuidError(err)) {
+                lastCompatError = err;
+                continue;
+            }
+            throw err;
+        }
+
+        const error = result?.error || null;
+        if (error && (isMissingTableError(error) || isMissingColumnError(error) || isInvalidUuidError(error))) {
+            lastCompatError = error;
+            continue;
+        }
+
+        if (!error) {
+            window.__dokeUsuariosTable = table;
+        }
+
+        return { data: result?.data ?? null, error, table, uidField };
+    }
+
+    return { data: null, error: lastCompatError, table: null, uidField: "uid" };
+}
+
 function buildSocialNotifLink(postTipo, postFonte, postId, comentarioId, acao) {
     let extra = "";
     if (comentarioId) extra += `&comment=${encodeURIComponent(comentarioId)}`;
@@ -887,11 +929,13 @@ async function getSupabaseUidByUserId(userId) {
     const client = getSupabaseClient();
     if (!client) return null;
 
-    const { data, error } = await client
-        .from("usuarios_legacy")
-        .select("uid")
-        .eq("id", userId)
-        .maybeSingle();
+    const { data, error } = await runUsuariosQuery(client, ({ table }) =>
+        client
+            .from(table)
+            .select("uid")
+            .eq("id", userId)
+            .maybeSingle()
+    );
 
     if (error && !isMissingTableError(error)) console.error(error);
     const uid = data?.uid || null;
@@ -916,26 +960,32 @@ async function resolverDestinoPerfil(uid, user) {
         try {
             let row = null;
             if (uidSafe) {
-                const byUid = await client
-                    .from("usuarios_legacy")
-                    .select("uid, isProfissional")
-                    .eq("uid_text", uidSafe)
-                    .maybeSingle();
+                const byUid = await runUsuariosQuery(client, ({ table, uidField }) =>
+                    client
+                        .from(table)
+                        .select("uid, isProfissional")
+                        .eq(uidField, uidSafe)
+                        .maybeSingle()
+                );
                 if (!byUid.error) row = byUid.data || null;
             }
 
             if (!row && userSafe) {
-                let byUser = await client
-                    .from("usuarios_legacy")
-                    .select("uid, isProfissional")
-                    .in("user", [userSafe, `@${userSafe}`])
-                    .limit(1);
-                if (byUser.error || !Array.isArray(byUser.data) || byUser.data.length === 0) {
-                    byUser = await client
-                        .from("usuarios_legacy")
+                let byUser = await runUsuariosQuery(client, ({ table }) =>
+                    client
+                        .from(table)
                         .select("uid, isProfissional")
-                        .ilike("user", userSafe)
-                        .limit(1);
+                        .in("user", [userSafe, `@${userSafe}`])
+                        .limit(1)
+                );
+                if (byUser.error || !Array.isArray(byUser.data) || byUser.data.length === 0) {
+                    byUser = await runUsuariosQuery(client, ({ table }) =>
+                        client
+                            .from(table)
+                            .select("uid, isProfissional")
+                            .ilike("user", userSafe)
+                            .limit(1)
+                    );
                 }
                 if (!byUser.error && Array.isArray(byUser.data) && byUser.data.length > 0) {
                     row = byUser.data[0];
@@ -2865,7 +2915,7 @@ window.salvarCep = async function() {
             // Mantém consistência mesmo sem retorno da API de CEP.
             try { localStorage.setItem('doke_localizacao', JSON.stringify({ cep: cepFormatado, cidade: '', bairro: '', uf: '' })); } catch (_e) {}
         }
-    } else { alert("CEP inválido! Digite 8 números."); i.focus(); }
+    } else { try { if (window.dokeAlert) window.dokeAlert("CEP inválido! Digite 8 números."); else alert("CEP inválido! Digite 8 números."); } catch(_e) { alert("CEP inválido! Digite 8 números."); } i.focus(); }
 }
 window.preencherTodosCeps = function(cep) {
     if (!cep) return;
@@ -2923,12 +2973,116 @@ window.atualizarTelaCep = function(payload) {
     }
     if (i) i.value = cep || '';
 }
+
+// =========================
+// CEP popup portal (evita cortes por overflow em containers como .menu)
+// =========================
+function __dokePortalizeCepPopup(popup) {
+    if (!popup || popup.dataset.portalized === "1") return;
+    popup.dataset.portalized = "1";
+    popup.classList.add("cep-popup-portal");
+    // garante que fique fora de qualquer container com overflow (ex.: .menu com overflow-y hidden)
+    document.body.appendChild(popup);
+}
+
+function __dokePositionCepPopup(popup, anchor) {
+    if (!popup) return;
+    const a = anchor || document.getElementById("linkCep");
+    const rect = a ? a.getBoundingClientRect() : { left: 16, right: 16, top: 0, bottom: 56 };
+
+    const wasClosed = (popup.style.display === 'none') || (getComputedStyle(popup).display === 'none');
+    if (wasClosed) {
+        // mede tamanho (precisa estar no DOM)
+        popup.style.visibility = "hidden";
+        popup.style.display = "block";
+    }
+
+    const pw = popup.offsetWidth || 320;
+    const ph = popup.offsetHeight || 80;
+
+    const gutter = 12;
+    let left = (rect.left + rect.right) / 2 - (pw / 2);
+    left = Math.max(gutter, Math.min(left, window.innerWidth - pw - gutter));
+
+    let top = rect.bottom + 10;
+    if (top + ph + gutter > window.innerHeight) {
+        const above = rect.top - ph - 10;
+        if (above > gutter) top = above;
+        else top = Math.max(gutter, window.innerHeight - ph - gutter);
+    }
+
+    popup.style.left = left + "px";
+    popup.style.top = top + "px";
+    popup.style.transform = "none";
+    popup.style.position = "fixed";
+    popup.style.zIndex = "99999";
+    popup.style.visibility = "visible";
+}
+
+
 window.toggleCep = function(e) {
-    if(e) e.preventDefault(); 
+    if (e) e.preventDefault();
     const p = document.getElementById('boxCep');
     const i = document.getElementById('inputCep');
-    if (p.style.display === 'block') { p.style.display = 'none'; } else { p.style.display = 'block'; if(i) i.focus(); }
+    const a = document.getElementById('linkCep');
+    if (!p) return;
+
+    // âncora atual (para reposicionar em scroll/resize)
+    window.__dokeCepAnchor = a || null;
+
+    try { __dokePortalizeCepPopup(p); } catch(_e) {}
+
+    const isOpen = (p.style.display === 'block');
+    if (isOpen) { p.style.display = 'none'; return; }
+
+    // posiciona fora do header para não ser cortado por overflow (ex.: .menu com overflow-y hidden)
+    try { __dokePositionCepPopup(p, a); } catch(_e) {}
+
+    p.style.display = 'block';
+    // reposiciona no próximo frame (caso fontes/layout ainda estejam calculando)
+    requestAnimationFrame(() => {
+        try { __dokePositionCepPopup(p, a); } catch(_e) {}
+    });
+
+    if (i) i.focus();
 }
+
+// Variante: abre o CEP ancorado em qualquer elemento (ex.: botão "CEP" nos filtros no mobile)
+window.toggleCepAt = function(e, anchorEl) {
+    if (e) e.preventDefault();
+    const p = document.getElementById('boxCep');
+    const i = document.getElementById('inputCep');
+    if (!p) return;
+
+    try { __dokePortalizeCepPopup(p); } catch(_e) {}
+
+    const isOpen = (p.style.display === 'block');
+    if (isOpen) { p.style.display = 'none'; return; }
+
+    const anchor = anchorEl || document.getElementById('linkCep');
+    window.__dokeCepAnchor = anchor || null;
+
+    try { __dokePositionCepPopup(p, anchor); } catch(_e) {}
+    p.style.display = 'block';
+    requestAnimationFrame(() => {
+        try { __dokePositionCepPopup(p, anchor); } catch(_e) {}
+    });
+    if (i) i.focus();
+}
+
+// Keep CEP popup positioned while open
+window.__dokeCepPopupWatchers = window.__dokeCepPopupWatchers || (function(){
+    const onMove = () => {
+        const p = document.getElementById('boxCep');
+        if (!p || p.style.display !== 'block') return;
+        const anchor = window.__dokeCepAnchor || document.getElementById('linkCep');
+        try { __dokePositionCepPopup(p, anchor); } catch(_e) {}
+    };
+    window.addEventListener('resize', onMove, { passive: true });
+    window.addEventListener('scroll', onMove, { passive: true });
+    return true;
+})();
+
 window.abrirMenuMobile = function() {
     const menu = document.querySelector('.sidebar-icones');
     if (menu) menu.classList.add('menu-aberto');
@@ -3198,7 +3352,11 @@ window.onclick = function(e) {
     }
     const p = document.getElementById('boxCep');
     const w = document.querySelector('.cep-wrapper');
-    if (p && w && !w.contains(e.target)) p.style.display = 'none';
+    if (p && p.style.display === 'block') {
+        const clickedInsideWrapper = !!(w && w.contains(e.target));
+        const clickedInsidePopup = !!(p && p.contains(e.target));
+        if (!clickedInsideWrapper && !clickedInsidePopup) p.style.display = 'none';
+    }
 }
 
 window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
@@ -3502,6 +3660,12 @@ function isMissingColumnError(err) {
     return err.code === "PGRST204" || /could not find the .* column/i.test(msg) || /column .* does not exist/i.test(msg);
 }
 
+function isInvalidUuidError(err) {
+    if (!err) return false;
+    const msg = (err.message || "") + " " + (err.hint || "") + " " + (err.details || "");
+    return err.code === "22P02" || /invalid input syntax for type uuid/i.test(msg);
+}
+
 function isSchemaCacheError(err) {
     return isMissingTableError(err) || isMissingColumnError(err);
 }
@@ -3590,11 +3754,13 @@ async function getSupabaseUserRow() {
     let error = null;
     try {
         const res = await dokeWithTimeout(
-            client
-                .from("usuarios_legacy")
-                .select("id, uid, nome, user, foto")
-                .eq("uid_text", authUser.uid)
-                .maybeSingle(),
+            runUsuariosQuery(client, ({ table, uidField }) =>
+                client
+                    .from(table)
+                    .select("id, uid, nome, user, foto")
+                    .eq(uidField, authUser.uid)
+                    .maybeSingle()
+            ),
             9000,
             "timeout_supabase_user_row"
         );
@@ -3604,7 +3770,9 @@ async function getSupabaseUserRow() {
         error = err;
     }
     if (error) {
-        dokeLogNonNetworkError("Erro ao carregar usuario supabase:", error);
+        if (!isMissingTableError(error) && !isMissingColumnError(error) && !isInvalidUuidError(error)) {
+            dokeLogNonNetworkError("Erro ao carregar usuario supabase:", error);
+        }
         return null;
     }
     window._dokeSupabaseUserRow = data || null;
@@ -3623,10 +3791,12 @@ async function attachSupabaseUsersById(items) {
     let error = null;
     try {
         const res = await dokeWithTimeout(
-            client
-                .from("usuarios_legacy")
-                .select("id, uid, nome, user, foto")
-                .in("id", missing),
+            runUsuariosQuery(client, ({ table }) =>
+                client
+                    .from(table)
+                    .select("id, uid, nome, user, foto")
+                    .in("id", missing)
+            ),
             9000,
             "timeout_supabase_attach_users"
         );
@@ -11392,12 +11562,17 @@ async function carregarComentariosSupabase(publicacaoId) {
     const t = String(term).trim();
     if(t.length < 2) return [];
     const safe = t.replace(/[%_]/g, '\\$&');
-    const { data, error } = await sb
-      .from('usuarios_legacy')
-      .select('id, uid, user, nome, foto, isProfissional, categoria_profissional, stats')
-      .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
-      .limit(12);
-    if(error){ console.warn('[DOKE] busca usuarios:', error); return []; }
+    const { data, error } = await runUsuariosQuery(sb, ({ table }) =>
+      sb
+        .from(table)
+        .select('id, uid, user, nome, foto, isProfissional, categoria_profissional, stats')
+        .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
+        .limit(12)
+    );
+    if(error && !isMissingTableError(error) && !isMissingColumnError(error) && !isInvalidUuidError(error)){
+      console.warn('[DOKE] busca usuarios:', error);
+      return [];
+    }
     return data || [];
   }
 

@@ -1,0 +1,172 @@
+/* ============================================================
+   Settings Pages - frameless shell (no iframe)
+   Generated: 2026-02-16
+   ============================================================ */
+
+body[data-page="mais"]{
+  background:
+    radial-gradient(520px 240px at 80% 0%, rgba(42,95,144,0.08), transparent 65%),
+    linear-gradient(180deg, #f6f7fb 0%, #ecedf2 100%);
+  min-height: 100vh;
+}
+
+/* neutralize page-specific inline layouts that forced "tablet inside desktop" */
+body[data-page="mais"]{
+  display: block !important;
+  overflow-x: hidden;
+}
+
+body[data-page="mais"] main,
+body[data-page="mais"] main.main-content,
+body[data-page="mais"] main.enderecos-main,
+body[data-page="mais"] main.privacy-main{
+  padding: 10px 14px 110px !important;
+  margin: 0 !important;
+}
+
+/* Legacy layout: some pages define <main class="main-content"> as a centered flex-column.
+   That makes the settings UI look "thin" on mobile/tablet. Force full-width stretch. */
+body[data-page="mais"] .main-content{
+  align-items: stretch !important;
+}
+body[data-page="mais"] .content-wrapper{
+  width: 100% !important;
+}
+
+@media (min-width: 1024px){
+  body[data-page="mais"] main,
+  body[data-page="mais"] main.main-content,
+  body[data-page="mais"] main.enderecos-main,
+  body[data-page="mais"] main.privacy-main{
+    margin-left: 270px !important;
+    padding: 22px 22px 60px !important;
+  }
+}
+
+@media (max-width: 1023px){
+  body[data-page="mais"] main,
+  body[data-page="mais"] main.main-content,
+  body[data-page="mais"] main.enderecos-main,
+  body[data-page="mais"] main.privacy-main{
+    /* The mobile shell already adds body padding-top (header height). */
+    margin-top: 0 !important;
+    padding-top: 10px !important;
+  }
+}
+
+/* card padding */
+body[data-page="mais"] .settings-frame-card{
+  padding: 0;
+}
+
+/* remove nested card styling from old pages */
+body[data-page="mais"] .settings-frame-card .form-card,
+body[data-page="mais"] .settings-frame-card .security-container,
+body[data-page="mais"] .settings-frame-card .content-container,
+body[data-page="mais"] .settings-frame-card .settings-card,
+body[data-page="mais"] .settings-frame-card .addr-wrap,
+body[data-page="mais"] .settings-frame-card .lang-container,
+body[data-page="mais"] .settings-frame-card .privacy-wrap,
+body[data-page="mais"] .settings-frame-card .help-wrap,
+body[data-page="mais"] .settings-frame-card .sobre-wrap{
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+  width: 100% !important;
+  max-width: none !important;
+}
+
+/* remove old "hero/back" when still present */
+body[data-page="mais"] .page-header,
+body[data-page="mais"] .addr-hero,
+body[data-page="mais"] .privacy-hero,
+body[data-page="mais"] .comm-hero-container{
+  display: none !important;
+}
+
+/* better spacing for complex pages inside the card */
+body[data-page="mais"] .settings-frame-card .addr-toolbar{
+  flex-wrap: wrap;
+  gap: 12px;
+}
+body[data-page="mais"] .settings-frame-card .addr-toolbar .addr-search{
+  min-width: 240px;
+  flex: 1 1 320px;
+}
+body[data-page="mais"] .settings-frame-card .addr-toolbar .addr-action{
+  white-space: nowrap;
+}
+
+@media (max-width: 520px){
+  body[data-page="mais"] .settings-frame-card{
+    padding: 0;
+  }
+}
+
+/* keep help page readable */
+body[data-page="mais"] .help-wrap .section-label{
+  margin-top: 16px;
+}
+
+/* new wrappers created by the frameless shell */
+body[data-page="mais"] .settings-frame-card .help-wrap,
+body[data-page="mais"] .settings-frame-card .settings-generic{
+  padding: 18px;
+}
+@media (max-width: 520px){
+  body[data-page="mais"] .settings-frame-card .help-wrap,
+  body[data-page="mais"] .settings-frame-card .settings-generic{
+    padding: 14px;
+  }
+}
+
+
+/* ============================================================
+   Fixes (Feb 2026): avatar clipping, spacing, mobile header/menu
+   ============================================================ */
+
+/* prevent avatar from being clipped by rounded cards (we use overflow hidden on the outer card) */
+body[data-page="mais"] .profile-photo-area{
+  margin-top: 0 !important;
+  padding-top: 6px;
+}
+body[data-page="mais"] .profile-photo-area .avatar-container{
+  width: 120px;
+  height: 120px;
+}
+body[data-page="mais"] .profile-photo-area .avatar-img{
+  display: block;
+  object-position: center;
+}
+
+/* more breathing room between hover states in the settings menu */
+body[data-page="mais"] .settings-side__group a.settings-nav-item{
+  margin-top: 2px;
+}
+
+/* MOBILE: no internal settings menu/hamburger; use back to "Mais" list */
+@media (max-width: 768px){
+  body[data-page="mais"] .settings-side{ display: none !important; }
+  body[data-page="mais"] .settings-burger{ display: none !important; }
+  body[data-page="mais"] .settings-shell{ grid-template-columns: 1fr !important; }
+
+  /* main content should align full width when sidebar is hidden */
+  body[data-page="mais"] .main-content{ margin-left: 0 !important; }
+}
+
+/* simple mobile back link (injected by JS) */
+body[data-page="mais"] .settings-mobile-back{
+  display: none;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+  color: rgba(15,23,42,0.75);
+  text-decoration: none;
+  margin: 6px 0 10px;
+}
+body[data-page="mais"] .settings-mobile-back i{ font-size: 18px; }
+@media (max-width: 768px){
+  body[data-page="mais"] .settings-mobile-back{ display: inline-flex; }
+}
+
+

@@ -1,142 +1,171 @@
-﻿<!DOCTYPE html>
-
-<html lang="pt-br">
+<!DOCTYPE html>
+<html lang="pt-BR">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Negócio | Doke</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
-<script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
-<link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
-<link href="doke-beforeafter.css?v=20260202" rel="stylesheet"/>
-<script defer="" src="doke-beforeafter.js?v=20260202"></script>
-<script defer="" src="script.js?v=20260215v9"></script>
-<style>
-    .neg-wrap{max-width:1200px;margin:0 auto;padding:18px 18px 80px;}
-    .neg-hero{background:#fff;border-radius:16px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.08);}
-    .neg-hero-top{display:flex;gap:16px;align-items:center;flex-wrap:wrap;}
-    .neg-hero h1{margin:0;font-size:28px;}
-    .neg-hero p{margin:6px 0 0;color:#6b7280;}
-    .neg-cover{width:100%;height:280px;border-radius:14px;object-fit:cover;background:#f3f4f6;margin-top:14px;}
-    .neg-meta{margin-top:10px;color:#6b7280;}
-    .neg-actions{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap;}
-    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 14px;border-radius:999px;border:1px solid rgba(11,119,104,.28);background:#fff;color:#0b7768;font-weight:700;text-decoration:none;}
-    .btn-primary{background:linear-gradient(135deg,#0b7768,#1f8a7a);border-color:transparent;color:#fff;}
-    .neg-desc{margin-top:14px;line-height:1.5;color:#111827;}
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Negócio | Doke</title>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js?v=20260217v28"></script>
+  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
+  <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
+
+  <link rel="stylesheet" href="style.css?v=20260207v26" />
+  <link rel="stylesheet" href="doke-a11y.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-shell.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-responsive.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-toast.css" />
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" />
+
+  <style>
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #f5f8fb 0%, #eef3f8 100%);
+      color: #0f172a;
+      font-family: "Poppins", sans-serif;
+    }
+
+    main {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .neg-page {
+      background: #fff;
+      border: 1px solid rgba(148, 163, 184, 0.28);
+      border-radius: 18px;
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      overflow: hidden;
+    }
+
+    .neg-cover-wrap {
+      width: 100%;
+      height: 280px;
+      background: linear-gradient(135deg, #2a5f90 0%, #0b7768 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .neg-cover-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .neg-content {
+      padding: 18px;
+    }
+
+    .neg-title {
+      margin: 0 0 8px;
+      font-size: 1.8rem;
+      line-height: 1.15;
+      letter-spacing: -0.3px;
+      color: #0f172a;
+    }
+
+    .neg-meta {
+      color: #64748b;
+      font-size: 0.95rem;
+      margin-bottom: 14px;
+    }
+
+    .neg-desc {
+      color: #1f2937;
+      line-height: 1.55;
+      white-space: pre-wrap;
+    }
+
+    .neg-actions {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      text-decoration: none;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #0b7768 0%, #2a5f90 100%);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(11, 119, 104, 0.2);
+    }
+
+    .btn-ghost {
+      background: #fff;
+      color: #0b7768;
+      border-color: rgba(11, 119, 104, 0.32);
+    }
+
+    .neg-fallback {
+      margin-top: 14px;
+      color: #64748b;
+      font-size: 0.92rem;
+    }
+
+    @media (max-width: 700px) {
+      .neg-cover-wrap {
+        height: 220px;
+      }
+      .neg-title {
+        font-size: 1.45rem;
+      }
+    }
   </style>
-<link href="doke-toast.css" rel="stylesheet"/>
-<link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
-
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+  <script defer src="script.js?v=20260215v9"></script>
 </head>
 <body data-page="negocio">
-<div class="popup" id="popup">
-<div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">&times;</span>
-<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
-<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
-<p class="criar">
-                Não tem uma conta?
-                <a href="cadastro.html">Criar conta</a>
-</p>
-</div>
-</div>
-<header class="navbar-mobile">
-<div id="logo-mobile">
-<a href="index.html">
-<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</a>
-</div>
-<div class="botoes-direita">
-<a class="entrar" href="login.html">Entrar</a>
-<a href="login.html">
-</a>
-</div>
+  <main>
+    <section class="neg-page" data-negocio-page>
+      <div class="neg-cover-wrap">
+        <img
+          data-cover
+          src="assets/Imagens/doke-logo.png"
+          alt="Capa do negócio"
+          loading="lazy"
+          decoding="async"
+          onerror="this.onerror=null;this.src='assets/Imagens/doke-logo.png';"
+        />
+      </div>
+      <div class="neg-content">
+        <h1 class="neg-title" data-title>Carregando negócio...</h1>
+        <div class="neg-meta" data-meta>Carregando localização...</div>
+        <p class="neg-desc" data-desc>Carregando descrição...</p>
 
-</header>
-<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-<header class="navbar-desktop">
-<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
-<nav class="menu">
-<div class="cep-wrapper">
-<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
-<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
-<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
-</svg>
-<span id="textoCepSpan">Informe seu CEP</span>
-</a>
-<div class="cep-popup" id="boxCep">
-<p>Digite seu CEP:</p>
-<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
-</div>
-</div>
-<a href="escolheranuncio.html">Anunciar</a>
-<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
-<a href="novidades.html">Novidades</a>
-</nav>
-<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
-</header>
+        <div class="neg-actions">
+          <a class="btn btn-primary" data-chat href="chat.html">
+            <i class='bx bx-chat'></i>
+            Conversar no chat
+          </a>
+          <a class="btn btn-ghost" href="negocios.html">
+            <i class='bx bx-arrow-back'></i>
+            Voltar para negócios
+          </a>
+        </div>
 
-<aside class="sidebar" id="sidebar">
-<div class="logo">
-<img alt="doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</div>
-<nav class="menu">
-<a class="menu-item" href="index.html"><span class="icon">ðŸ </span> Início</a>
-<a class="menu-item" href="empresas.html"><span class="icon">ðŸª</span> Empresas</a>
-<a class="menu-item" href="notificacoes.html"><span class="icon">ðŸ””</span> Notificações</a>
-<a class="menu-item" href="chat.html"><span class="icon">ðŸ’¬</span> Mensagens</a>
-<a class="menu-item" href="comunidade.html"><span class="icon">ðŸ‘¥</span> Comunidades</a>
-<a class="menu-item" href="meuperfil.html"><span class="icon">ðŸ‘¤</span> Perfil</a>
-</nav>
-</aside>
-<main class="main" id="main">
-<header class="topbar">
-<button class="hamburger" id="hamburger">â˜°</button>
-<div class="top-links">
-<a class="top-link" href="index.html">Início</a>
-<a class="top-link" href="anunciar.html">Anunciar</a>
-<a class="top-link" href="comunidade.html">Comunidades</a>
-<a class="top-link" href="#">Novidades</a>
-</div>
-<div class="top-actions">
-<button class="btn-icon" id="btnNotifs">ðŸ””</button>
-<img alt="perfil" class="avatar" decoding="async" id="avatarMenu" loading="lazy" src="assets/Imagens/avatar.png"/>
-</div>
-</header>
-<div class="neg-wrap" data-negocio-page="">
-<section class="neg-hero">
-<div class="neg-hero-top">
-<div style="flex:1;min-width:240px;">
-<h1 data-title="">Negócio</h1>
-<div class="neg-meta" data-meta=""></div>
-</div>
-<div class="neg-actions">
-<a class="btn btn-primary" data-chat="" href="chat.html">Abrir chat</a>
-<a class="btn" href="negocios.html">Voltar</a>
-</div>
-</div>
-<img alt="capa" class="neg-cover" data-cover="" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-<div class="neg-desc" data-desc="">Carregando...</div>
-</section>
-</div>
-</main>
-<script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+        <div class="neg-fallback">
+          Se o negócio não carregar, verifique as políticas/tabela <code>negocios</code> no Supabase.
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js?v=20260217v33"></script>
+  <script src="doke-shell.js?v=20260212v44"></script>
 </body>
 </html>
-
-

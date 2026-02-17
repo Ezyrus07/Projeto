@@ -1,709 +1,246 @@
 ﻿<!DOCTYPE html>
-
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
-<script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Neg&oacute;cios | Doke</title>
-<meta content="Descubra neg&oacute;cios e estabelecimentos locais e fale direto pelo chat da Doke." name="description"/>
-<meta content="Doke" property="og:title"/>
-<meta content="Descubra neg&oacute;cios perto de voc&ecirc; e fale direto pelo chat da Doke." property="og:description"/>
-<meta content="website" property="og:type"/>
-<meta content="assets/Imagens/doke-logo.png" property="og:image"/>
-<link href="manifest.webmanifest" rel="manifest"/>
-<meta content="#0b7768" name="theme-color"/>
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
-<link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
-<link href="doke-beforeafter.css?v=20260202" rel="stylesheet"/>
-<!-- Estilos globais do projeto -->
-<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="doke-beforeafter.js?v=20260202"></script>
-<script defer="" src="script.js?v=20260215v9"></script>
-<style>
-        .cat-track { pointer-events: none; }
-        .cat-card { pointer-events: auto; }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Busca de Negócios Locais | Doke</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --primary-color: #0b7768; /* Ajustado para o verde Doke do seu JS */
+            --primary-hover: #085a4f;
+            --bg-color: #f3f4f6;
+            --card-bg: #ffffff;
+            --text-main: #111827;
+            --text-muted: #6b7280;
+            --border-color: #e5e7eb;
+            --success: #10b981;
+            --danger: #ef4444;
+            --radius-md: 12px;
+            --radius-lg: 20px;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); line-height: 1.5; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+        /* --- Hero / Busca --- */
+        .hero {
+            background: linear-gradient(135deg, #0b7768 0%, #2a5f90 100%);
+            border-radius: var(--radius-lg); padding: 40px 20px; margin: 20px auto;
+            text-align: center; color: white; box-shadow: 0 10px 25px rgba(11, 119, 104, 0.2);
+        }
+        .hero h1 { font-size: 1.8rem; margin-bottom: 20px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .search-bar {
+            display: flex; max-width: 700px; margin: 0 auto 20px; background: white;
+            border-radius: 50px; padding: 5px 5px 5px 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .search-bar input { flex: 1; border: none; outline: none; font-size: 1rem; color: var(--text-main); background: transparent; }
+        .search-btn {
+            background: var(--primary-color); color: white; border: none; border-radius: 50px;
+            padding: 12px 25px; cursor: pointer; transition: 0.3s;
+        }
+        .search-btn:hover { background: var(--primary-hover); }
+        .hero-actions button {
+            background: rgba(255, 255, 255, 0.2); color: white; border: 1px solid rgba(255, 255, 255, 0.4);
+            padding: 10px 20px; border-radius: 50px; cursor: pointer; margin: 0 5px; backdrop-filter: blur(5px); transition: 0.3s;
+        }
+        .hero-actions button:hover { background: rgba(255, 255, 255, 0.3); }
+
+        /* --- Vídeos Curtos (NOVO) --- */
+        .short-videos { background: white; border-radius: var(--radius-lg); padding: 20px; margin-bottom: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); }
+        .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .section-header h2 { font-size: 1.3rem; margin-bottom: 4px;}
+        .section-header p.subtitle { font-size: 0.85rem; color: var(--text-muted); }
+        .nav-arrows { display: flex; gap: 8px; }
+        .nav-arrow { 
+            width: 35px; height: 35px; border-radius: 50%; border: 1px solid var(--border-color); 
+            background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; 
+            color: var(--text-muted); transition: 0.2s;
+        }
+        .nav-arrow:hover { border-color: var(--primary-color); color: var(--primary-color); }
+        
+        .videos-track { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; scroll-behavior: smooth; }
+        .videos-track::-webkit-scrollbar { display: none; }
+        
+        /* Estilos mapeados para o seu JS (tiktok-card) */
+        .tiktok-card {
+            position: relative; width: 160px; height: 280px; flex-shrink: 0;
+            border-radius: 14px; overflow: hidden; cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15); transition: transform 0.2s;
+        }
+        .tiktok-card:hover { transform: scale(1.03); }
+        .video-bg { width: 100%; height: 100%; object-fit: cover; filter: brightness(0.7); }
+        .tiktok-play-btn { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 2.5rem; opacity: 0.8; }
+        .card-badge-online {
+            position: absolute; top: 10px; left: 10px; background: var(--danger); color: white;
+            font-size: 0.65rem; font-weight: bold; padding: 4px 8px; border-radius: 6px; z-index: 2;
+        }
+        .video-ui-layer { position: absolute; bottom: 12px; left: 12px; right: 12px; color: white; z-index: 2; }
+        .provider-info { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; }
+        .provider-avatar img { width: 20px; height: 20px; border-radius: 50%; object-fit: cover; }
+        .provider-name { font-size: 0.8rem; font-weight: 600; }
+        .video-description { font-size: 0.8rem; margin-bottom: 8px; line-height: 1.2; opacity: 0.95; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .yt-chip-row { display: flex; gap: 5px; }
+        .yt-chip { background: rgba(255,255,255,0.25); backdrop-filter: blur(4px); padding: 3px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 500;}
+        .btn-orcamento-card { display: none; } /* Oculto por padrão, ativado pelo seu JS se necessário */
+
+        /* --- Categorias (Adaptado para o JS) --- */
+        .categories-track { display: flex; gap: 15px; overflow-x: auto; padding: 10px 0 20px; scrollbar-width: none; }
+        .categories-track::-webkit-scrollbar { display: none; }
+        .cat-card {
+            display: flex; flex-direction: column; align-items: center; min-width: 90px;
+            cursor: pointer; color: var(--text-muted); transition: 0.3s; border: none; background: none;
+        }
+        .cat-card:hover, .cat-card.is-active { color: var(--primary-color); transform: translateY(-3px); }
+        .cat-icon {
+            background: white; width: 60px; height: 60px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center; font-size: 1.8rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 8px; transition: 0.3s;
+        }
+        .cat-card.is-active .cat-icon { background: var(--primary-color); color: white; box-shadow: 0 4px 12px rgba(11, 119, 104, 0.3); }
+        .cat-label { font-size: 0.9rem; font-weight: 500; }
+
+        /* --- Filtros --- */
+        .neg-chipbar { display: flex; gap: 10px; margin-bottom: 30px; flex-wrap: wrap; }
+        .chip {
+            background: white; border: 1px solid var(--border-color); padding: 8px 16px; border-radius: 50px;
+            font-size: 0.9rem; color: var(--text-muted); cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        .chip:hover, .chip.is-active { border-color: var(--primary-color); color: var(--primary-color); background: #eaf7f5; }
+
+        /* --- Grid de Cartões (Adaptado para as classes do JS) --- */
+        .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 24px; margin-bottom: 50px; }
+        .biz-card {
+            background: var(--card-bg); border-radius: var(--radius-md); padding: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.03); border: 1px solid var(--border-color);
+            transition: transform 0.3s, box-shadow 0.3s; display: flex; flex-direction: column;
+        }
+        .biz-card:hover { transform: translateY(-5px); box-shadow: 0 12px 20px rgba(0,0,0,0.08); }
+        .biz-topline { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; }
+        .biz-media {
+            background: #eaf7f5; color: var(--primary-color); width: 50px; height: 50px;
+            border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.6rem;
+            margin-bottom: 12px;
+        }
+        .biz-name { font-size: 1.15rem; font-weight: 600; margin-bottom: 5px; color: var(--text-main);}
+        .biz-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+        .biz-badge.on { background: #dcfce7; color: var(--success); }
+        .biz-badge.off { background: #fee2e2; color: var(--danger); }
+        .biz-meta { font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px; margin-bottom: 15px; }
+        .biz-meta-item i { color: #f59e0b; margin-right: 2px;} /* Estrela */
+        .biz-tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+        .biz-pills { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+        .biz-tag { background: var(--bg-color); color: var(--text-muted); font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; }
+        .biz-pill { background: #dcfce7; color: #166534; font-size: 0.75rem; padding: 4px 10px; border-radius: 6px; font-weight: 500;}
+        .biz-actions { margin-top: auto; display: flex; gap: 10px; }
+        .btn-mini, .btn-mini-outline { flex: 1; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: 0.2s; text-align: center; }
+        .btn-mini { background: var(--primary-color); color: white; border: none; }
+        .btn-mini:hover { background: var(--primary-hover); }
+        .btn-mini-outline { background: transparent; color: var(--text-main); border: 1px solid var(--border-color); }
+        .btn-mini-outline:hover { background: var(--bg-color); }
+
     </style>
-<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-<link href="doke-toast.css" rel="stylesheet"/>
-<link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-feedpatch.css?v=20260207v26" rel="stylesheet"/>
 
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
-
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-  <link rel="stylesheet" href="page-home.css?v=20260208v38">
-  <link rel="stylesheet" href="page-negocios.css?v=20260207v28">
-
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+    
 </head>
-<body data-page="negocios" data-kind="negocios">
-<div class="popup" id="popup">
-<div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">&times;</span>
-<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
-<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
-<p class="criar">
-                Não tem uma conta?
-                <a href="cadastro.html">Criar conta</a>
-</p>
-</div>
-</div>
-<header class="navbar-mobile">
-<div id="logo-mobile">
-<a href="index.html">
-<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</a>
-</div>
-<div class="botoes-direita">
-<a class="entrar" href="login.html">Entrar</a>
-<a href="login.html">
-</a>
-</div>
+<body data-page="negocios">
 
-</header>
-<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-<header class="navbar-desktop">
-<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
-<nav class="menu">
-<div class="cep-wrapper">
-<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
-<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
-<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
-</svg>
-<span id="textoCepSpan">Informe seu CEP</span>
-</a>
-<div class="cep-popup" id="boxCep">
-<p>Digite seu CEP:</p>
-<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
-</div>
-</div>
-<a href="escolheranuncio.html">Anunciar</a>
-<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
-<a href="novidades.html">Novidades</a>
-</nav>
-<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
-</header>
+    <div class="container">
+        
+        <header class="hero">
+            <h1><i class="bx bx-store"></i> Busque por Farmácias 24h</h1>
+            <div class="search-bar">
+                <input type="text" id="inputBuscaNegocios" placeholder="Descreva o negócio, estabelecimento ou produto...">
+                <button class="search-btn" id="btnBuscarNegocios"><i class="fa-solid fa-magnifying-glass"></i></button>
+            </div>
+            <div class="hero-actions">
+                <button id="btnProcurarNegocios">Procurar negócios</button>
+                <button>Cadastrar meu negócio</button>
+            </div>
+        </header>
 
-<a class="skip-link" href="#negociosHub">Pular para o conte&uacute;do</a>
+        <section class="short-videos">
+            <div class="section-header">
+                <div>
+                    <h2>Vídeos curtos</h2>
+                    <p class="subtitle">Veja o ambiente, fila e vibe do lugar em segundos — antes de sair de casa.</p>
+                </div>
+                <div class="nav-arrows">
+                    <button class="nav-arrow bizvid-prev"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="nav-arrow bizvid-next"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="videos-track" id="galeria-videos-negocios">
+                <div class="tiktok-card">
+                    <img class="video-bg" src="https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&w=300&q=80" alt="Capa">
+                    <div class="tiktok-play-btn"><i class='bx bx-play'></i></div>
+                    <span class="card-badge-online">EM ALTA</span>
+                    <div class="video-ui-layer">
+                        <div class="provider-info">
+                            <div class="provider-avatar"><img src="https://ui-avatars.com/api/?name=Cafe&background=0b7768&color=fff" alt="Avatar"></div>
+                            <span class="provider-name">Café Central</span>
+                        </div>
+                        <p class="video-description">Tour do nosso espaço aconchegante!</p>
+                        <div class="yt-chip-row">
+                            <span class="yt-chip">Cafés</span>
+                            <span class="yt-chip">18s</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
 
+        <section class="categories-track" id="listaCategoriasNegocios">
+            <button class="cat-card is-active" data-cat="Todos">
+                <div class="cat-icon"><i class='bx bx-grid-alt'></i></div>
+                <span class="cat-label">Todas</span>
+            </button>
+        </section>
 
-<aside class="sidebar-icones">
-  <div id="logo">
-    <a href="index.html">
-      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-    </a>
-  </div>
+        <section class="filters neg-chipbar">
+            <div class="chip" data-filter="aberto"><i class="bx bx-time-five"></i> Aberto agora</div>
+            <div class="chip" data-filter="entrega"><i class="bx bx-cycling"></i> Entrega</div>
+            <div class="chip" data-filter="4plus"><i class="bx bxs-star"></i> 4.5+</div>
+            <div class="chip" data-filter="cupom"><i class="bx bxs-coupon"></i> Cupom</div>
+        </section>
 
-  <div class="item">
-    <a href="index.html">
-      <i class='bx bx-home-alt icon azul'></i>
-      <span>In&iacute;cio</span>
-    </a>
-  </div>
+        <main>
+            <div class="section-header">
+                <h2 id="tituloNegocios">Negócios em destaque</h2>
+                <a href="#" id="btnLimparFiltros" style="color: var(--text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 500;">Limpar filtros</a>
+            </div>
 
-  <div class="item" id="pvSearchSidebarItem">
-    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
-      <i class='bx bx-search-alt-2 icon azul'></i>
-      <span>Pesquisar</span>
-    </a>
-  </div>
+            <div class="cards-grid" id="negociosGrid">
+                
+                <article class="biz-card">
+                    <div class="biz-media"><i class='bx bx-store'></i></div>
+                    <div class="biz-info">
+                        <div class="biz-topline">
+                            <div class="biz-name">Carregando Negócios...</div>
+                            <span class="biz-badge on">Aguarde</span>
+                        </div>
+                        <div class="biz-meta">
+                            <span class="biz-meta-item"><i class='bx bxs-star'></i> -.-</span>
+                            <span class="biz-meta-sep">•</span>
+                            <span class="biz-meta-item">Conectando ao JS</span>
+                        </div>
+                    </div>
+                </article>
 
-  <div class="item active">
-    <a href="negocios.html">
-      <i class='bx bx-store icon verde'></i>
-      <span>Neg&oacute;cios</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="notificacoes.html">
-      <i class='bx bx-bell icon azul'></i>
-      <span>Notifica&ccedil;&otilde;es</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="chat.html">
-      <i class='bx bx-message-rounded-dots icon azul'></i>
-      <span>Mensagens</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="comunidade.html">
-      <i class='bx bx-group icon verde'></i>
-      <span>Comunidades</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="#" onclick="irParaMeuPerfil(event)">
-      <i class='bx bx-user icon verde'></i>
-      <span>Perfil</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="mais.html">
-      <i class='bx bx-menu icon azul'></i>
-      <span>Mais</span>
-    </a>
-  </div>
-</aside>
-
-<main class="dp-wrap">
-<section class="secao-busca">
-<div class="typing-container">
-<span class="static-text">Busque por</span>
-<span class="icon">&#10024;</span>
-<span class="dynamic-text" id="typewriter"></span>
-<span class="cursor"></span>
-</div>
-<div class="busca-wrapper" id="buscaWrapper">
-<div class="busca-input-container">
-<input autocomplete="off" id="inputBusca" placeholder="Descreva o que voc&ecirc; est&aacute; procurando" type="text"/>
-<button class="btn-search-circle" onclick="document.querySelector('.btn-procurar').click()">
-<svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
-<line x1="5" x2="19" y1="12" y2="12"></line>
-<polyline points="12 5 19 12 12 19"></polyline>
-</svg>
-</button>
-</div>
-<div class="busca-dropdown" id="buscaDropdown">
-<div class="busca-hint">
-                        Busque por <i>nome, categoria, bairro ou uma descri&ccedil;&atilde;o detalhada</i>
-</div>
-<div class="recentes-container" id="containerHistorico" style="display: none;">
-<h4>Buscas recentes</h4>
-<div id="listaRecentes"></div>
-<div class="limpar-historico" id="limparHistoricoBtn">Limpar hist&oacute;rico</div>
-</div>
-</div>
-</div>
-<div class="botoes-busca">
-<button class="btn-procurar">Procurar neg&oacute;cios</button>
-<a href="anunciar-negocio.html" target="_blank"><button class="btn-anunciar">Anunciar meu neg&oacute;cio</button></a>
-</div>
-<div class="neg-search-tags" aria-label="Filtros r&aacute;pidos de neg&oacute;cios">
-<button type="button">Aberto agora</button>
-<button type="button">At&eacute; 2 km</button>
-<button type="button">Melhor avalia&ccedil;&atilde;o</button>
-<button type="button">Com v&iacute;deo</button>
-</div>
-<!-- Linha de confian&ccedil;a (mobile-first) -->
-<!-- chips r&aacute;pidos removidos (polu&iacute;a a &aacute;rea de busca) -->
-</section>
-<section class="neg-hub" id="negociosHub" aria-label="Descobrir neg&oacute;cios locais">
-<div class="neg-hub-head">
-<div>
-<h2 class="sec-title">Neg&oacute;cios perto de voc&ecirc;</h2>
-<p class="neg-hub-sub">Descubra cafeterias, farm&aacute;cias, restaurantes e lojas por mapa em tempo real, dist&acirc;ncia e contato direto.</p>
-</div>
-<button class="neg-hub-cta" type="button" onclick="document.getElementById('selectEstado')?.scrollIntoView({ behavior: 'smooth', block: 'center' });">Usar localiza&ccedil;&atilde;o</button>
-</div>
-<div class="neg-hub-cats" role="list" aria-label="Categorias de neg&oacute;cios">
-<button class="neg-cat-chip is-active" type="button">Cafeterias</button>
-<button class="neg-cat-chip" type="button">Restaurantes</button>
-<button class="neg-cat-chip" type="button">Farm&aacute;cias</button>
-<button class="neg-cat-chip" type="button">Materiais de constru&ccedil;&atilde;o</button>
-<button class="neg-cat-chip" type="button">Mercados</button>
-<button class="neg-cat-chip" type="button">Padarias</button>
-</div>
-<div class="neg-view-panels">
-<article class="neg-view-panel is-active" data-neg-panel="mapa">
-<div class="neg-map-card">
-<div class="neg-map-top">
-<b>Mapa local em tempo real</b>
-<span>Raio sugerido: 2 km</span>
-</div>
-<div class="neg-map-stage" aria-hidden="true">
-<span class="neg-map-pin pin-a">Cafe Sol</span>
-<span class="neg-map-pin pin-b">Drogaria Centro</span>
-<span class="neg-map-pin pin-c">Bistro Norte</span>
-<span class="neg-map-pin pin-d">Loja Construmax</span>
-</div>
-</div>
-<div class="neg-nearby-list">
-<article class="neg-nearby-item">
-<b>Caf&eacute; Sol - 450 m</b>
-<p>Aberto agora - Rua das Flores, 120</p>
-<div class="neg-nearby-actions">
-<button type="button">Ver no mapa</button>
-<button type="button" onclick="window.location.href='chat.html';">Falar no chat</button>
-</div>
-</article>
-<article class="neg-nearby-item">
-<b>Bistro Norte - 900 m</b>
-<p>Fecha as 23h - Av. Central, 808</p>
-<div class="neg-nearby-actions">
-<button type="button">Ver rota</button>
-<button type="button" onclick="window.location.href='chat.html';">Enviar mensagem</button>
-</div>
-</article>
-</div>
-</article>
-</div>
-</section>
-<section class="neg-value-props" aria-label="Como usar a area de negocios">
-<article class="neg-value-card">
-<i class='bx bx-map-alt'></i>
-<h3>1. Veja no mapa real</h3>
-<p>Encontre estabelecimentos pr&oacute;ximos com localiza&ccedil;&atilde;o e dist&acirc;ncia.</p>
-</article>
-<article class="neg-value-card">
-<i class='bx bx-video'></i>
-<h3>2. Filtre do seu jeito</h3>
-<p>Refine por categoria, dist&acirc;ncia e hor&aacute;rio para achar mais r&aacute;pido.</p>
-</article>
-<article class="neg-value-card">
-<i class='bx bx-chat'></i>
-<h3>3. Fale direto no chat</h3>
-<p>Tire d&uacute;vidas r&aacute;pidas, confirme hor&aacute;rio e combine atendimento.</p>
-</article>
-</section>
-<section class="neg-results" aria-label="Locais recomendados hoje">
-  <div class="neg-results-head">
-    <h2 class="sec-title">Locais recomendados hoje</h2>
-    <p>Resultados pensados para quem quer decidir r&aacute;pido por localiza&ccedil;&atilde;o, avalia&ccedil;&otilde;es e atendimento.</p>
-  </div>
-  <div class="neg-results-grid">
-    <article class="neg-result-card">
-      <div class="neg-result-thumb" aria-hidden="true"></div>
-      <div class="neg-result-body">
-        <b>Caf&eacute; Sol</b>
-        <small>Aberto agora &bull; 450 m</small>
-        <p>Caf&eacute; especial, tomadas e ambiente para trabalho.</p>
-        <div class="neg-result-actions">
-          <button type="button">Ver rota</button>
-          <a href="chat.html">Falar no chat</a>
-        </div>
-      </div>
-    </article>
-    <article class="neg-result-card">
-      <div class="neg-result-thumb" aria-hidden="true"></div>
-      <div class="neg-result-body">
-        <b>Bistro Norte</b>
-        <small>Fecha &agrave;s 23h &bull; 900 m</small>
-        <p>Card&aacute;pio executivo e atendimento r&aacute;pido no jantar.</p>
-        <div class="neg-result-actions">
-          <button type="button">Ver rota</button>
-          <a href="chat.html">Enviar mensagem</a>
-        </div>
-      </div>
-    </article>
-    <article class="neg-result-card">
-      <div class="neg-result-thumb" aria-hidden="true"></div>
-      <div class="neg-result-body">
-        <b>Drogaria Centro</b>
-        <small>24h &bull; 1,2 km</small>
-        <p>Medicamentos, conveni&ecirc;ncia e retirada local.</p>
-        <div class="neg-result-actions">
-          <button type="button">Ver rota</button>
-          <a href="chat.html">Falar no chat</a>
-        </div>
-      </div>
-    </article>
-  </div>
-</section>
-<section class="neg-categorias-section" aria-label="Categorias de estabelecimentos">
-  <div class="neg-strip-head">
-    <h2 class="sec-title">Categorias de estabelecimentos</h2>
-    <div class="neg-strip-actions">
-      <button class="neg-strip-nav" id="negCatPrev" type="button" aria-label="Categorias anteriores">&#10094;</button>
-      <button class="neg-strip-nav" id="negCatNext" type="button" aria-label="Pr&oacute;ximas categorias">&#10095;</button>
-    </div>
-  </div>
-  <div class="neg-strip-track" id="negCategoriasTrack">
-    <article class="neg-cat-card"><i class='bx bx-coffee'></i><span>Cafeterias</span></article>
-    <article class="neg-cat-card"><i class='bx bx-restaurant'></i><span>Restaurantes</span></article>
-    <article class="neg-cat-card"><i class='bx bx-plus-medical'></i><span>Farm&aacute;cias</span></article>
-    <article class="neg-cat-card"><i class='bx bx-wrench'></i><span>Constru&ccedil;&atilde;o</span></article>
-    <article class="neg-cat-card"><i class='bx bx-store-alt'></i><span>Mercados</span></article>
-    <article class="neg-cat-card"><i class='bx bx-bowl-hot'></i><span>Padarias</span></article>
-    <article class="neg-cat-card"><i class='bx bx-shirt'></i><span>Moda</span></article>
-    <article class="neg-cat-card"><i class='bx bx-heart'></i><span>Sa&uacute;de</span></article>
-  </div>
-</section>
-<section class="neg-videos-section" aria-label="V&iacute;deos-curtos dos locais">
-  <div class="neg-strip-head">
-    <h2 class="sec-title">V&iacute;deos-curtos dos locais</h2>
-    <div class="neg-strip-actions">
-      <button class="neg-strip-nav" id="negVidPrev" type="button" aria-label="V&iacute;deos anteriores">&#10094;</button>
-      <button class="neg-strip-nav" id="negVidNext" type="button" aria-label="Pr&oacute;ximos v&iacute;deos">&#10095;</button>
-    </div>
-  </div>
-  <div class="neg-strip-track" id="negVideosTrack">
-    <article class="neg-media-mini">
-      <div class="neg-media-mini-cover"></div>
-      <b>Tour da cafeteria</b>
-      <p>Mostrando ambiente e card&aacute;pio em 20s.</p>
-    </article>
-    <article class="neg-media-mini">
-      <div class="neg-media-mini-cover"></div>
-      <b>Farm&aacute;cia 24h</b>
-      <p>Atendimento noturno e retirada r&aacute;pida.</p>
-    </article>
-    <article class="neg-media-mini">
-      <div class="neg-media-mini-cover"></div>
-      <b>Restaurante local</b>
-      <p>Pratos do dia e movimento do hor&aacute;rio.</p>
-    </article>
-    <article class="neg-media-mini">
-      <div class="neg-media-mini-cover"></div>
-      <b>Loja de materiais</b>
-      <p>Setores, estoque e pontos de atendimento.</p>
-    </article>
-  </div>
-</section>
-<section class="neg-publicacoes-section" aria-label="Publica&ccedil;&otilde;es dos neg&oacute;cios">
-  <div class="neg-strip-head">
-    <h2 class="sec-title">Publica&ccedil;&otilde;es dos neg&oacute;cios</h2>
-    <div class="neg-strip-actions">
-      <button class="neg-strip-nav" id="negPubPrev" type="button" aria-label="Publica&ccedil;&otilde;es anteriores">&#10094;</button>
-      <button class="neg-strip-nav" id="negPubNext" type="button" aria-label="Pr&oacute;ximas publica&ccedil;&otilde;es">&#10095;</button>
-    </div>
-  </div>
-  <div class="neg-strip-track" id="negPublicacoesTrack">
-    <article class="neg-post-mini">
-      <div class="neg-post-mini-cover"></div>
-      <div class="neg-post-mini-body">
-        <b>@cafesol</b>
-        <small>Promo da semana</small>
-        <p>Caf&eacute; + salgado com desconto at&eacute; as 18h.</p>
-      </div>
-    </article>
-    <article class="neg-post-mini">
-      <div class="neg-post-mini-cover"></div>
-      <div class="neg-post-mini-body">
-        <b>@bistronorte</b>
-        <small>Menu executivo</small>
-        <p>Op&ccedil;&otilde;es do almo&ccedil;o com tempo de preparo.</p>
-      </div>
-    </article>
-    <article class="neg-post-mini">
-      <div class="neg-post-mini-cover"></div>
-      <div class="neg-post-mini-body">
-        <b>@drogariacentro</b>
-        <small>Plant&atilde;o 24h</small>
-        <p>Medicamentos essenciais com atendimento r&aacute;pido.</p>
-      </div>
-    </article>
-    <article class="neg-post-mini">
-      <div class="neg-post-mini-cover"></div>
-      <div class="neg-post-mini-body">
-        <b>@construmax</b>
-        <small>Chegou estoque</small>
-        <p>Novos materiais para reforma e manuten&ccedil;&atilde;o.</p>
-      </div>
-    </article>
-  </div>
-</section>
-<script>
-    function abrirGaleria() {
-        alert("Aqui abriria um modal em tela cheia com todas as fotos!");
-    }
-
-    (function(){
-      const hub = document.querySelector('.neg-hub');
-      if(!hub) return;
-      const chips = hub.querySelectorAll('.neg-cat-chip');
-
-      chips.forEach((chip) => {
-        chip.addEventListener('click', () => {
-          chips.forEach((c) => c.classList.remove('is-active'));
-          chip.classList.add('is-active');
-        });
-      });
-
-      function bindStrip(trackId, prevId, nextId){
-        const track = document.getElementById(trackId);
-        const prev = document.getElementById(prevId);
-        const next = document.getElementById(nextId);
-        if(!track || !prev || !next) return;
-        const step = () => Math.max(220, Math.round(track.clientWidth * 0.72));
-        prev.addEventListener('click', () => track.scrollBy({ left: -step(), behavior: 'smooth' }));
-        next.addEventListener('click', () => track.scrollBy({ left: step(), behavior: 'smooth' }));
-      }
-
-      bindStrip('negCategoriasTrack', 'negCatPrev', 'negCatNext');
-      bindStrip('negVideosTrack', 'negVidPrev', 'negVidNext');
-      bindStrip('negPublicacoesTrack', 'negPubPrev', 'negPubNext');
-    })();
-</script>
-</main>
-<footer class="main-footer">
-<div class="footer-content">
-<div class="footer-col brand-col">
-<img alt="Doke Logo" class="footer-logo" decoding="async" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='block'" src="assets/Imagens/doke-logo.png"/>
-<h2 class="footer-logo-text" style="display:none; color:white;">doke</h2>
-<p class="footer-desc">
-                A DOKE revoluciona a presta&ccedil;&atilde;o de servi&ccedil;os com o <strong>Pagamento Garantido</strong>. 
-                Seu dinheiro protegido at&eacute; a conclus&atilde;o do servi&ccedil;o. Seguran&ccedil;a, inova&ccedil;&atilde;o e pontos exclusivos para voc&ecirc;.
+            </div>
+            
+            <p id="negociosEmpty" style="display:none; text-align:center; color: var(--text-muted); padding: 40px;">
+                Nenhum negócio encontrado com os filtros atuais.
             </p>
-<div class="social-links">
-<a aria-label="Instagram" href="#">
-<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><rect height="20" rx="5" ry="5" width="20" x="2" y="2"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" x2="17.51" y1="6.5" y2="6.5"></line></svg>
-</a>
-<a aria-label="LinkedIn" href="#">
-<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path><rect height="12" width="4" x="2" y="9"></rect><circle cx="4" cy="4" r="2"></circle></svg>
-</a>
-<a aria-label="WhatsApp" href="#">
-<svg fill="none" height="20" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewbox="0 0 24 24" width="20"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>
-</a>
-</div>
-</div>
-<div class="footer-col">
-<h4>Empresa</h4>
-<ul>
-<li><a href="#">Quem somos</a></li>
-<li><a href="#">Carreiras</a></li>
-<li><a href="#">Imprensa</a></li>
-<li><a href="#">Doke Pontos</a></li>
-</ul>
-</div>
-<div class="footer-col">
-<h4>Suporte</h4>
-<ul>
-<li><a href="#">Central de Ajuda</a></li>
-<li><a href="#">Seguran&ccedil;a</a></li>
-<li><a href="#">Regras da Comunidade</a></li>
-<li><a href="#">Disputas e Reembolsos</a></li>
-</ul>
-</div>
-<div class="footer-col">
-<h4>Legal</h4>
-<ul>
-<li><a href="#">Termos de Uso</a></li>
-<li><a href="#">Pol&iacute;tica de Privacidade</a></li>
-<li><a href="#">LGPD</a></li>
-</ul>
-<div class="app-buttons">
-<button class="btn-app">
-<span class="small-text">Baixe no</span>
-<span class="big-text">Google Play</span>
-</button>
-</div>
-</div>
-</div>
-<div class="footer-bottom">
-<p>&copy; 2026 Doke Servi&ccedil;os e Tecnologia. Todos os direitos reservados.</p>
-</div>
-</footer>
+        </main>
+    </div>
 
-<div class="modal-overlay" id="modalPlayerVideo" onclick="fecharPlayerVideo(event)">
-<button class="nav-arrow nav-up" onclick="navegarReel(-1)"><i class="bx bx-chevron-up"></i></button>
-<button class="nav-arrow nav-down" onclick="navegarReel(1)"><i class="bx bx-chevron-down"></i></button>
-<div class="modal-content" onclick="event.stopPropagation()">
-<div class="modal-media-area" id="reelVideoArea" onwheel="handleReelScroll(event)">
-<video id="playerPrincipal" loop="" onclick="togglePlayVideo(event)" playsinline=""></video>
-<div id="iconPlayOverlay" style="position: absolute; font-size: 80px; color: rgba(255,255,255,0.5); opacity: 0;"><i class="bx bx-play"></i></div>
-</div>
-<div class="modal-info-area">
-<div class="modal-header">
-<div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
-<img decoding="async" id="reelAvatar" loading="lazy" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"/>
-<div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">@usuario</div>
-</div>
-</div>
-<div class="modal-comments-section" id="reelCommentsBody">
-<div id="reelDesc" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
-<div id="listaComentariosReel"></div>
-</div>
-<div class="modal-footer-actions">
-<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-<div style="display: flex; gap: 15px; font-size: 1.6rem;">
-<i class="bx bx-heart" id="btnLikeReel" onclick="darLikeReel()" style="cursor:pointer;"></i>
-<i class="bx bx-paper-plane" onclick="compartilharReelAtual()" style="cursor:pointer;"></i>
-</div>
-<button class="btn-orcar-v" onclick="irOrcamentoReel()">
-<i class="bx bx-dollar"></i> Solicitar Or&ccedil;amento
-        </button>
-</div>
-<span id="reelLikesCount" style="font-weight: bold; font-size: 0.9rem;">0 curtidas</span>
-<div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-<input id="inputComentarioReel" placeholder="Adicione um coment&aacute;rio..." style="flex:1; border:none; outline:none;" type="text"/>
-<button onclick="enviarComentarioReel()" style="background:none; border:none; color:#0095f6; font-weight:bold; cursor:pointer;">Publicar</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-
-<nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>In&iacute;cio</span></a>
-<a class="item active" href="negocios.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/263/263115.png"/><span>Neg&oacute;cios</span></a>
-<a class="item" href="anunciar-negocio.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notifica&ccedil;&otilde;es</span></a>
-<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
-</nav>
-<div class="galeria-overlay" id="modalGaleria" onclick="fecharGaleria(event)" style="display: none;">
-<span class="btn-fechar-galeria">&times;</span>
-<div class="nav-seta esq" onclick="mudarImagem(-1)"><i class="bx bx-chevron-left"></i></div>
-<div class="galeria-conteudo"><img decoding="async" id="imgExpandida" loading="lazy" src=""/></div>
-<div class="nav-seta dir" onclick="mudarImagem(1)"><i class="bx bx-chevron-right"></i></div>
-<div class="galeria-thumbnails" id="areaThumbnails"></div>
-</div>
-<div class="modal-overlay" id="modalSolicitacao" style="display: none; z-index: 15000;">
-</div>
-<div class="story-overlay" id="modalStoryViewer" style="display:none;">
-<div class="story-content">
-<div class="story-progress-bar">
-<div class="story-progress-fill" id="storyProgress"></div>
-</div>
-<div class="story-header">
-<img class="story-avatar" decoding="async" id="storyUserImg" loading="lazy" src=""/>
-<span id="storyUserName" style="font-weight:bold;">Usuario</span>
-<span id="storyTime" style="opacity:0.7; font-size:0.8rem; margin-left:10px;"></span>
-<button onclick="fecharStory()" style="margin-left:auto; background:none; border:none; color:white; font-size:2rem; cursor:pointer; z-index:100;">&times;</button>
-</div>
-<div class="story-media-box" id="storyMediaContainer"></div>
-</div>
-</div>
-<div class="modal-overlay" id="modalPostDetalhe" onclick="fecharModalPost(event)">
-<div class="modal-content" onclick="event.stopPropagation()">
-<div class="modal-media-area" id="modalMediaContainer"></div>
-<div class="modal-info-area">
-<div class="modal-header">
-<div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
-<img decoding="async" id="modalAvatar" loading="lazy" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"/>
-<div id="modalUsername" style="font-weight: bold; font-size: 0.95rem;">User</div>
-</div>
-</div>
-<div class="modal-comments-section" id="modalCommentsList">
-<div id="modalCaption" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
-</div>
-<div class="modal-footer-actions">
-<div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
-<i class="bx bx-heart" id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-<i class="bx bx-message-rounded" onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
-<i class="bx bx-paper-plane" onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
-</div>
-<span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
-<div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-<input id="inputComentarioModal" placeholder="Adicione um coment&aacute;rio..." style="flex:1; border:none; outline:none; font-size:0.9rem;" type="text"/>
-<button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
-</div>
-</div>
-</div>
-</div>
-</div>
-
-
-<style>
-/* =====================================================
-     CATEGORIAS - CARROSSEL (CIRCULO + ICON + HOVER GLOW)
-     ===================================================== */
-  .cat-carousel{
-    position: relative;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin-top: 18px;
-  }
-  .cat-nav{
-    width: 44px;
-    height: 44px;
-    border-radius: 14px;
-    border: 1px solid rgba(11,119,104,0.15);
-    background: rgba(255,255,255,0.9);
-    box-shadow: 0 10px 24px rgba(0,0,0,0.08);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    transition: transform .15s ease, box-shadow .2s ease, filter .2s ease;
-    flex: 0 0 auto;
-  }
-  .cat-nav i{ font-size: 26px; color: var(--cor2,#2a5f90); }
-  .cat-nav:hover{ transform: translateY(-1px); box-shadow: 0 14px 30px rgba(0,0,0,0.10); }
-  .cat-nav:active{ transform: translateY(0); filter: brightness(.98); }
-  .cat-nav:disabled{ opacity: .35; cursor: not-allowed; box-shadow: none; }
-
-  .cat-track{
-    display: flex;
-    gap: 14px;
-    overflow-x: auto;
-    padding: 6px 2px;
-    scroll-snap-type: x mandatory;
-    -webkit-overflow-scrolling: touch;
-  }
-  .cat-track::-webkit-scrollbar{ height: 8px; }
-  .cat-track::-webkit-scrollbar-thumb{ background: rgba(11,119,104,0.20); border-radius: 999px; }
-  .cat-track::-webkit-scrollbar-track{ background: transparent; }
-
-    .cat-card{
-        min-width: 108px;
-        max-width: 132px;
-        border: 1px solid rgba(11,119,104,0.12);
-        background: rgba(255,255,255,0.85);
-        border-radius: 18px;
-        padding: 14px 12px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 10px;
-        cursor: pointer;
-        scroll-snap-align: start;
-        transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease, background .2s ease;
-        position: relative;
-        user-select: none;
-    }
-  .cat-card:hover{
-    transform: translateY(-2px);
-    border-color: rgba(11,119,104,0.35);
-    box-shadow: 0 18px 36px rgba(11,119,104,0.12);
-    background: rgba(255,255,255,0.98);
-  }
-  .cat-card:active{ transform: translateY(0); }
-
-
-  .cat-label{
-    font-weight: 800;
-    font-size: 0.95rem;
-    color: #1f2d3d;
-    text-align: center;
-    line-height: 1.15;
-    width: 100%;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .cat-dots{
-    display: flex;
-    justify-content: center;
-    gap: 6px;
-    margin-top: 12px;
-  }
-
-  .cat-dots .dot.ativo{ width: 18px; opacity: 1; }
-
-  @media (max-width: 600px){
-    .cat-nav{ display: none; }
-    .cat-track{ padding: 4px 2px; }
-    .cat-card{ min-width: 96px; }
-  }
-
-</style>
-<div aria-atomic="true" aria-live="polite" class="doke-toast" id="dokeToast"></div>
-<div class="doke-fabs">
-<button aria-label="Voltar ao topo" class="fab" id="btnScrollTop" title="Voltar ao topo" type="button"><i class="bx bx-up-arrow-alt"></i></button>
-<button aria-label="Instalar app" class="fab" id="btnInstallPWA" style="display:none" title="Instalar app" type="button"><i class="bx bx-download"></i></button>
-</div>
-<script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
-</body>
+    <script src="doke-toast.js"></script>
+    <script src="doke-alerts.js?v=20260217v33"></script>
+    <script src="negocios-ui.js?v=20260217v1"></script>
+    </body>
 </html>
-
-

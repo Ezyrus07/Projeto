@@ -24,6 +24,23 @@ const ROOT = process.cwd();
 // Your Supabase project URL
 const SUPABASE_UPSTREAM = process.env.SUPABASE_UPSTREAM || 'https://wgbnoqjnvhasapqarltu.supabase.co';
 const upstreamUrl = new URL(SUPABASE_UPSTREAM);
+const UPSTREAM_TIMEOUT_MS = 15000;
+const RETRYABLE_STATUS = new Set([502, 503, 504, 520, 522, 524]);
+const RETRYABLE_ERROR_CODES = new Set([
+  'ECONNRESET',
+  'ETIMEDOUT',
+  'ECONNREFUSED',
+  'EHOSTUNREACH',
+  'ENETUNREACH',
+  'EPIPE',
+  'UND_ERR_CONNECT_TIMEOUT',
+  'UND_ERR_SOCKET',
+]);
+const upstreamAgent = new https.Agent({
+  keepAlive: true,
+  maxSockets: 64,
+  timeout: UPSTREAM_TIMEOUT_MS,
+});
 
 const PROXY_PREFIXES = [
   '/rest/v1/',
@@ -32,6 +49,12 @@ const PROXY_PREFIXES = [
   '/functions/v1/',
   '/realtime/v1/',
 ];
+
+const CORS_HEADERS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-headers': 'apikey,authorization,content-type,prefer,range,x-client-info',
+  'access-control-allow-methods': 'GET,POST,PUT,PATCH,DELETE,OPTIONS',
+};
 
 const FORWARD_HEADER_ALLOWLIST = new Set([
   'accept',
@@ -65,12 +88,30 @@ function safeHeaders(inHeaders) {
   return out;
 }
 
+function shouldRetryStatus(statusCode) {
+  return RETRYABLE_STATUS.has(Number(statusCode || 0));
+}
+
+function shouldRetryError(err) {
+  if (!err) return false;
+  const code = String(err.code || '').toUpperCase();
+  if (RETRYABLE_ERROR_CODES.has(code)) return true;
+  const msg = String(err.message || err || '').toLowerCase();
+  return msg.includes('timeout') || msg.includes('socket hang up') || msg.includes('connection reset');
+}
+
+function isIdempotent(method) {
+  const m = String(method || '').toUpperCase();
+  return m === 'GET' || m === 'HEAD' || m === 'OPTIONS';
+}
+
 function sendJson(res, code, obj) {
   const body = Buffer.from(JSON.stringify(obj));
   res.writeHead(code, {
     'content-type': 'application/json; charset=utf-8',
     'content-length': String(body.length),
     'cache-control': 'no-store',
+    ...CORS_HEADERS,
   });
   res.end(body);
 }
@@ -116,6 +157,7 @@ function serveFile(req, res, pathname) {
     res.writeHead(200, {
       'content-type': mimeFor(filePath),
       'cache-control': 'no-store',
+      ...CORS_HEADERS,
     });
 
     fs.createReadStream(filePath).pipe(res);
@@ -127,38 +169,76 @@ function proxyToSupabase(req, res) {
 
   const headers = safeHeaders(req.headers);
 
-  const opts = {
+  const method = String(req.method || 'GET').toUpperCase();
+  const canRetry = isIdempotent(method);
+  const maxAttempts = canRetry ? 3 : 1;
+  let attempt = 0;
+
+  const baseOpts = {
     protocol: upstreamUrl.protocol,
     hostname: upstreamUrl.hostname,
     port: upstreamUrl.port || (upstreamUrl.protocol === 'https:' ? 443 : 80),
-    method: req.method,
+    method,
     path: target.pathname + target.search,
     headers,
+    agent: upstreamAgent,
   };
 
   const client = upstreamUrl.protocol === 'https:' ? https : http;
-  const upstreamReq = client.request(opts, (upstreamRes) => {
-    const outHeaders = { ...upstreamRes.headers };
-    // Browsers dislike certain hop-by-hop headers
-    delete outHeaders['transfer-encoding'];
-    delete outHeaders['connection'];
+  const forward = () => {
+    attempt += 1;
+    const opts = { ...baseOpts };
+    const upstreamReq = client.request(opts, (upstreamRes) => {
+      const statusCode = Number(upstreamRes.statusCode || 0);
+      if (canRetry && attempt < maxAttempts && shouldRetryStatus(statusCode)) {
+        upstreamRes.resume();
+        setTimeout(forward, 120 * attempt);
+        return;
+      }
 
-    res.writeHead(upstreamRes.statusCode || 502, outHeaders);
-    upstreamRes.pipe(res);
-  });
+      const outHeaders = { ...upstreamRes.headers };
+      // Browsers dislike certain hop-by-hop headers
+      delete outHeaders['transfer-encoding'];
+      delete outHeaders['connection'];
+      outHeaders['access-control-allow-origin'] = '*';
+      outHeaders['access-control-allow-headers'] = CORS_HEADERS['access-control-allow-headers'];
+      outHeaders['access-control-allow-methods'] = CORS_HEADERS['access-control-allow-methods'];
 
-  upstreamReq.on('error', (e) => {
-    res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
-    res.end('Proxy error: ' + (e && e.message ? e.message : String(e)));
-  });
+      res.writeHead(upstreamRes.statusCode || 502, outHeaders);
+      upstreamRes.pipe(res);
+    });
 
-  // Pipe body
-  req.pipe(upstreamReq);
+    upstreamReq.setTimeout(UPSTREAM_TIMEOUT_MS, () => {
+      upstreamReq.destroy(new Error('upstream_timeout'));
+    });
+
+    upstreamReq.on('error', (e) => {
+      if (canRetry && attempt < maxAttempts && shouldRetryError(e)) {
+        setTimeout(forward, 120 * attempt);
+        return;
+      }
+      res.writeHead(502, { 'content-type': 'text/plain; charset=utf-8' });
+      res.end('Proxy error: ' + (e && e.message ? e.message : String(e)));
+    });
+
+    if (canRetry) {
+      upstreamReq.end();
+      return;
+    }
+    req.pipe(upstreamReq);
+  };
+
+  forward();
 }
 
-const server = http.createServer({ maxHeaderSize: 256 * 1024 }, (req, res) => {
+const server = http.createServer({ maxHeaderSize: 1024 * 1024 }, (req, res) => {
   try {
     const u = new URL(req.url, `http://localhost:${PORT}`);
+
+    if (req.method === 'OPTIONS') {
+      res.writeHead(204, { 'cache-control': 'no-store', ...CORS_HEADERS, 'access-control-max-age': '86400' });
+      return res.end();
+    }
 
     if (u.pathname === '/__doke_proxy_ping') {
       return sendJson(res, 200, { ok: true, upstream: SUPABASE_UPSTREAM });
@@ -166,7 +246,7 @@ const server = http.createServer({ maxHeaderSize: 256 * 1024 }, (req, res) => {
 
     if (u.pathname === '/__doke_proxy_pixel.gif') {
       const gif = Buffer.from('R0lGODlhAQABAPAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==', 'base64');
-      res.writeHead(200, { 'content-type': 'image/gif', 'content-length': String(gif.length), 'cache-control': 'no-store' });
+      res.writeHead(200, { 'content-type': 'image/gif', 'content-length': String(gif.length), 'cache-control': 'no-store', ...CORS_HEADERS });
       return res.end(gif);
     }
 

@@ -1,18 +1,18 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
+<script src="supabase-init.js?v=20260217v13"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Busca | Doke</title>
-    <meta name="description" content="Busque serviços e anúncios com filtros inteligentes e resultados próximos.">
-    <meta property="og:title" content="Doke — Busca">
-    <meta property="og:description" content="Busque serviços e anúncios com filtros inteligentes e resultados próximos.">
+    <meta name="description" content="Busque servi�os e an�ncios com filtros inteligentes e resultados pr�ximos.">
+    <meta property="og:title" content="Doke � Busca">
+    <meta property="og:description" content="Busque servi�os e an�ncios com filtros inteligentes e resultados pr�ximos.">
     <meta property="og:type" content="website">
     <meta property="og:image" content="assets/Imagens/doke-logo.png">
     <meta name="theme-color" content="#0b7768">
@@ -24,13 +24,13 @@
 <script defer="" src="script.js?v=20260215v9"></script>
 <style>
         /* =========================================
-           ESTILOS ESPECÃFICOS DA PÃGINA DE BUSCA
+           ESTILOS ESPECÍFICOS DA PÁGINA DE BUSCA
            ========================================= */
         
         /* Ajuste do Main para suportar Sidebar */
         @media (min-width: 1024px) {
             main {
-                margin-left: 270px; /* Espaço da Sidebar do Menu Principal */
+                margin-left: 270px; /* Espa�o da Sidebar do Menu Principal */
                 padding: 30px 40px;
                 max-width: 1600px;
             }
@@ -39,7 +39,7 @@
         /* LAYOUT 2 COLUNAS (SIDEBAR + FEED) */
         .search-layout {
             display: grid;
-            grid-template-columns: 280px 1fr; /* Sidebar fixa 280px, Resto flexível */
+            grid-template-columns: 280px 1fr; /* Sidebar fixa 280px, Resto flex�vel */
             gap: 30px;
             align-items: start;
             margin-top: 20px;
@@ -98,7 +98,7 @@
         .results-count { color: #888; font-size: 0.9rem; }
         .results-query { color: var(--cor2); font-weight: 700; font-size: 1.4rem; margin: 0; }
 
-        /* Ajuste da Seção de Busca (Herdado do Index, mas ajustado margens) */
+        /* Ajuste da Se��o de Busca (Herdado do Index, mas ajustado margens) */
         .secao-busca {
             padding: 20px 0 40px 0 !important; /* Remove padding lateral excessivo se houver */
             margin-top: 0 !important;
@@ -135,7 +135,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                N�o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -187,7 +187,7 @@
   <div class="item">
     <a href="index.html">
       <i class='bx bx-home-alt icon azul'></i>
-      <span>Início</span>
+      <span>In�cio</span>
     </a>
   </div>
 
@@ -208,7 +208,7 @@
   <div class="item">
     <a href="notificacoes.html">
       <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
+      <span>Notifica��es</span>
     </a>
   </div>
 
@@ -247,7 +247,7 @@
 <section class="secao-busca">
 <div class="busca-wrapper active" id="buscaWrapper">
 <div class="busca-input-container">
-<input autocomplete="off" id="inputBusca" onkeypress="verificarEnterBusca(event)" placeholder="Descreva o que você está procurando" type="text"/>
+<input autocomplete="off" id="inputBusca" onkeypress="verificarEnterBusca(event)" placeholder="Descreva o que voc� est� procurando" type="text"/>
 <button class="btn-search-circle" onclick="novaBusca()">
 <svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
 <line x1="5" x2="19" y1="12" y2="12"></line>
@@ -257,7 +257,7 @@
 </div>
 </div>
 <div class="busca-mobile-action">
-<button class="btn-procurar btn-procurar-mobile" onclick="novaBusca()" type="button">Procurar serviços</button>
+<button class="btn-procurar btn-procurar-mobile" onclick="novaBusca()" type="button">Procurar servi�os</button>
 </div>
 </section>
 <div class="search-layout">
@@ -271,16 +271,19 @@
 <select class="select-sidebar" id="filtroOrdenacao" onchange="aplicarFiltrosBusca()">
 <option value="recente">Mais Recentes</option>
 <option value="qualidade">Maior Qualidade</option>
-<option value="menor_preco">Menor Preço</option>
-<option value="melhor_avaliacao">Melhor Avaliação</option>
+<option value="menor_preco">Menor Pre�o</option>
+<option value="melhor_avaliacao">Melhor Avalia��o</option>
 </select>
 </div>
 <div class="filter-group">
-<span class="filter-label">Faixa de Preço</span>
-<input class="input-sidebar" id="filtroPreco" onchange="aplicarFiltrosBusca()" placeholder="Preço Máximo (R$)" type="number"/>
+<span class="filter-label">Faixa de Pre�o</span>
+<input class="input-sidebar" id="filtroPreco" onchange="aplicarFiltrosBusca()" placeholder="Pre�o M�ximo (R$)" type="number"/>
 </div>
 <div class="filter-group">
-<span class="filter-label">Localização</span>
+<div class="filter-label-row">
+  <span class="filter-label">Localiza��o</span>
+  <button class="btn-cep-inline" id="btnCepInlineBusca" type="button" onclick="toggleCepAt(event, this)">CEP</button>
+</div>
 <select class="select-sidebar" id="selectEstado" onchange="aplicarFiltrosBusca()">
 <option value="">Todos Estados</option>
 </select>
@@ -293,18 +296,18 @@
 <div class="radius-row">
 <select class="select-sidebar" id="filtroRaio" onchange="aplicarFiltrosBusca()">
 <option value="">Sem raio</option>
-<option value="1">Até 1 km</option>
-<option value="3">Até 3 km</option>
-<option value="5">Até 5 km</option>
-<option value="10">Até 10 km</option>
-<option value="25">Até 25 km</option>
+<option value="1">At� 1 km</option>
+<option value="3">At� 3 km</option>
+<option value="5">At� 5 km</option>
+<option value="10">At� 10 km</option>
+<option value="25">At� 25 km</option>
 </select>
-<button class="btn-loc" onclick="usarMinhaLocalizacao()" type="button">Usar minha localização</button>
+<button class="btn-loc" onclick="usarMinhaLocalizacao()" type="button">Usar minha localiza��o</button>
 </div>
 <div class="radius-status" id="radiusStatus"></div>
 </div>
 <div class="filter-group">
-<span class="filter-label">Tipo de Serviço</span>
+<span class="filter-label">Tipo de Servi�o</span>
 <div class="radio-list">
 <label class="radio-item">
 <input checked="" name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="todos"/> Todos
@@ -323,15 +326,15 @@
 <div class="filter-group">
 <div class="filtros-rapidos">
 <div class="filtros-rapidos-header">
-<span>Filtros rápidos</span>
+<span>Filtros r�pidos</span>
 <button class="chips-arrow" onclick="scrollChips(this)" type="button"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="filtros-chips-scroll" data-chips="">
 <button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
-<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> Tendências</button>
-<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de você</button>
+<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> Tend�ncias</button>
+<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de voc�</button>
 <button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class="bx bx-star"></i> Super Profissionais</button>
-<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> Recém-chegados</button>
+<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> Rec�m-chegados</button>
 <button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class="bx bx-badge-check"></i> Verificados</button>
 </div>
 </div>
@@ -343,27 +346,27 @@
 </select>
 </div>
 <div class="filter-group">
-<span class="filter-label">Tipo de Preço</span>
+<span class="filter-label">Tipo de Pre�o</span>
 <select class="select-sidebar" id="filtroTipoPreco" onchange="aplicarFiltrosBusca()">
 <option value="todos">Todos</option>
-<option value="preco_fixo">Preço Fixo</option>
-<option value="sob_orcamento">Sob Orçamento</option>
+<option value="preco_fixo">Pre�o Fixo</option>
+<option value="sob_orcamento">Sob Or�amento</option>
 </select>
 </div>
 <div class="filter-group">
 <span class="filter-label">Pagamentos aceitos</span>
 <div class="filtro-checks-row">
 <label><input id="filtroPgPix" onchange="aplicarFiltrosBusca()" type="checkbox"/> Pix</label>
-<label><input id="filtroPgCredito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Crédito</label>
-<label><input id="filtroPgDebito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Débito</label>
+<label><input id="filtroPgCredito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Cr�dito</label>
+<label><input id="filtroPgDebito" onchange="aplicarFiltrosBusca()" type="checkbox"/> D�bito</label>
 </div>
 </div>
 <div class="filter-group">
 <span class="filter-label">Extras</span>
 <div class="filtro-checks-row">
 <label><input id="filtroGarantia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Com garantia</label>
-<label><input id="filtroEmergencia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Emergência</label>
-<label><input id="filtroFormulario" onchange="aplicarFiltrosBusca()" type="checkbox"/> Tem formulário</label>
+<label><input id="filtroEmergencia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Emerg�ncia</label>
+<label><input id="filtroFormulario" onchange="aplicarFiltrosBusca()" type="checkbox"/> Tem formul�rio</label>
 </div>
 </div>
 </aside>
@@ -374,17 +377,17 @@
 <button class="btn-filtros-mobile" id="btnOpenFilters" type="button" aria-label="Abrir filtros"><i class="bx bx-slider-alt"></i>Filtros</button>
 </div>
 <div class="doke-toolbar" id="dokeBuscaToolbar" style="max-width: 1100px; margin: 0 auto;">
-  <div class="doke-toolbar__chips" aria-label="Filtros rápidos">
+  <div class="doke-toolbar__chips" aria-label="Filtros r�pidos">
     <button class="doke-chip-btn" type="button" data-chip-toggle="filtroGarantia"><i class='bx bx-badge-check'></i>Garantia</button>
-    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroEmergencia"><i class='bx bx-bolt-circle'></i>Emergência</button>
-    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroFormulario"><i class='bx bx-list-check'></i>Com formulário</button>
+    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroEmergencia"><i class='bx bx-bolt-circle'></i>Emerg�ncia</button>
+    <button class="doke-chip-btn" type="button" data-chip-toggle="filtroFormulario"><i class='bx bx-list-check'></i>Com formul�rio</button>
   </div>
   <div class="doke-toolbar__sort">
     <select id="dokeSortMirror" aria-label="Ordenar">
       <option value="recente">Mais recente</option>
       <option value="avaliado">Melhor avaliado</option>
       <option value="perto">Mais perto</option>
-      <option value="preco">Menor preço</option>
+      <option value="preco">Menor pre�o</option>
     </select>
   </div>
 </div>
@@ -398,7 +401,7 @@
 </div>
 </main>
 <script>
-        // Função auxiliar para limpar filtros visualmente
+        // Fun��o auxiliar para limpar filtros visualmente
         function limparFiltros() {
             document.getElementById('filtroPreco').value = "";
             document.getElementById('filtroOrdenacao').value = "recente";
@@ -433,7 +436,7 @@
         }
     </script>
 <script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer src="doke-feedpatch.js?v=20260209v2"></script>
 <script src="doke-shell.js?v=20260212v44"></script>
   <script src="page-busca.js?v=20260207v21" defer></script>

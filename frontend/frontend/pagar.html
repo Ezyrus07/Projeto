@@ -1,10 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
+<script src="supabase-init.js?v=20260217v13"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -17,7 +17,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <style>
         /* ======================================================
-           ESTILOS ESPECÃFICOS DE PAGAMENTO
+           ESTILOS ESPECÍFICOS DE PAGAMENTO
            ====================================================== */
         body { background-color: #f4f6f8; }
 
@@ -144,7 +144,78 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    </style>
+    /* --- Cart�es salvos (pagar.html) --- */
+.saved-cards-panel{
+  background:#fff;
+  border:1px solid #eef2f7;
+  border-radius:14px;
+  padding:14px;
+  margin-bottom:14px;
+  box-shadow:0 8px 18px rgba(15,23,42,.06);
+}
+.saved-cards-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.saved-cards-title{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-weight:800;
+  color:#0f172a;
+}
+.saved-cards-title i{ color: var(--cor0); font-size:1.15rem; }
+.saved-cards-manage{
+  font-size:.85rem;
+  color: var(--cor0);
+  font-weight:700;
+  text-decoration:none;
+}
+.saved-cards-manage:hover{ text-decoration:underline; }
+
+.saved-cards-list .doke-card-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:10px 12px;
+  border:1px solid #eef2f7;
+  border-radius:12px;
+  cursor:pointer;
+  transition: transform .12s ease, border-color .12s ease, box-shadow .12s ease;
+  margin-bottom:8px;
+}
+.saved-cards-list .doke-card-row:last-child{ margin-bottom:0; }
+.saved-cards-list .doke-card-row:hover{
+  border-color: rgba(41,143,127,.35);
+  box-shadow:0 10px 20px rgba(15,23,42,.08);
+  transform: translateY(-1px);
+}
+.saved-cards-list .doke-card-row .doke-card-radio{
+  width:16px;
+  height:16px;
+  accent-color: var(--cor0);
+}
+.saved-cards-list .doke-card-icon{ font-size: 1.25rem; color:#334155; }
+.saved-cards-list .doke-card-meta{ display:flex; flex-direction:column; gap:2px; }
+.saved-cards-list .doke-card-title{ font-weight:800; color:#0f172a; font-size:.95rem; }
+.saved-cards-list .doke-card-sub{ color:#64748b; font-size:.82rem; }
+
+.saved-cards-hint{
+  margin-top:10px;
+  color:#64748b;
+  font-size:.82rem;
+}
+.credit-card-form.use-saved .form-grid .input-group{
+  opacity:.55;
+}
+.credit-card-form.use-saved .form-grid .input-group select{
+  opacity:1;
+}
+
+</style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
@@ -163,7 +234,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                N�o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -286,6 +357,17 @@
 </div>
 </div>
 <div class="credit-card-form active" id="form-cartao">
+<div class="saved-cards-panel" id="savedCardsPanel" style="display:none;">
+  <div class="saved-cards-head">
+    <div class="saved-cards-title">
+      <i class="bx bx-wallet"></i>
+      <span>Cart�es salvos</span>
+    </div>
+    <a class="saved-cards-manage" href="pagamentos.html">Gerenciar</a>
+  </div>
+  <div class="saved-cards-list" id="savedCardsList"></div>
+  <div class="saved-cards-hint" id="savedCardsHint">Selecione um cart�o salvo ou preencha um novo abaixo.</div>
+</div>
 <div class="form-grid">
 <div class="input-group full-width">
 <label>Nome impresso no cart&atilde;o</label>
@@ -361,11 +443,12 @@
 <p id="subTextoStatus" style="color:#666;">Por favor, n&atilde;o feche esta janela.</p>
 </div>
 </main>
+<script src="doke-payments-store.js?v=20260216v1"></script>
 <script>
     const { initializeApp } = window;
     const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc } = window;
 
-    // Suas configurações
+    // Suas configura��es
     const firebaseConfig = {
         apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
         authDomain: "doke-site.firebaseapp.com",
@@ -378,7 +461,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Variável global para armazenar o valor numérico correto
+    // Vari�vel global para armazenar o valor num�rico correto
     let valorGlobalParaSalvar = 0;
 
     const resumoDefaults = {
@@ -510,7 +593,7 @@
         }
     };
 
-    // Função de abas (Cartão/Pix)
+    // Fun��o de abas (Cart�o/Pix)
     window.mudarMetodo = (metodo) => {
         document.querySelectorAll('.tab-method').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.credit-card-form, .pix-area').forEach(f => f.classList.remove('active'));
@@ -523,7 +606,7 @@
         }
     };
 
-    // --- CARREGAMENTO E CÃLCULOS ---
+    // --- CARREGAMENTO E CÁLCULOS ---
     window.onload = function() {
         const params = new URLSearchParams(window.location.search);
         const pedidoId = params.get('pedidoId');
@@ -542,15 +625,15 @@
         let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas') || pagamentoTemp.parcelas) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
-        // Remove tudo que não for número ou vírgula
+        // Remove tudo que n�o for n�mero ou v�rgula
         let valorLimpo = valorBruto.replace(/[^\d,]/g, ''); 
-        // Se tiver vírgula, troca por ponto para o JS entender
+        // Se tiver v�rgula, troca por ponto para o JS entender
         valorLimpo = valorLimpo.replace(',', '.');
         
-        // Corrige caso o número venha sem centavos (ex: "23" vira 23)
+        // Corrige caso o n�mero venha sem centavos (ex: "23" vira 23)
         // Mas se vier "23.00" (milhar) precisa tratar. 
-        // Assumindo padrão brasileiro: ultimos 2 digitos são centavos se tiver pontuação?
-        // Simplificação: Se o valor veio do prompt do script.js?v=20260215v9, ele está formatado como "23,00".
+        // Assumindo padr�o brasileiro: ultimos 2 digitos s�o centavos se tiver pontua��o?
+        // Simplifica��o: Se o valor veio do prompt do script.js?v=20260215v9, ele est� formatado como "23,00".
         
         valorGlobalParaSalvar = parseFloat(valorLimpo);
         if (isNaN(valorGlobalParaSalvar)) valorGlobalParaSalvar = 0;
@@ -573,7 +656,7 @@
             }
         }
 
-        // Atualiza botão
+        // Atualiza bot�o
         const btnConfirmar = document.getElementById('btn-finalizar');
         if (btnConfirmar) {
             btnConfirmar.innerHTML = `Pagar ${valorFormatado}`;
@@ -789,7 +872,7 @@
             }
         }
 
-        // Máscaras visuais do cartão
+        // M�scaras visuais do cart�o
         document.getElementById('cardNumber')?.addEventListener('input', (e) => {
             let v = e.target.value.replace(/\D/g, '');
             v = v.replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -804,13 +887,66 @@
             e.target.value = e.target.value.replace(/\D/g, '');
         });
 
-        // --- LÓGICA DE CONFIRMAÇÃƒO DE PAGAMENTO ---
+                // --- CART�ES SALVOS (localStorage) ---
+        const initSavedCardsUI = () => {
+            const panel = document.getElementById('savedCardsPanel');
+            const listEl = document.getElementById('savedCardsList');
+            const hintEl = document.getElementById('savedCardsHint');
+            const formEl = document.getElementById('form-cartao');
+
+            if (!panel || !listEl || !formEl) return;
+
+            const cards = window.DokePayments?.getCards ? window.DokePayments.getCards() : [];
+            if (!cards.length) {
+                panel.style.display = 'none';
+                return;
+            }
+
+            panel.style.display = 'block';
+
+            const onSelect = (card) => {
+                if (!card) return;
+                window.__dokeSelectedCardId = card.id;
+                window.__dokeSelectedCardMeta = card;
+
+                // Visual + disable manual inputs (still allows installments)
+                formEl.classList.add('use-saved');
+
+                ['cardName', 'cardNumber', 'cardExpiry', 'cardCvv'].forEach((id) => {
+                    const el = document.getElementById(id);
+                    if (!el) return;
+                    el.value = '';
+                    el.disabled = true;
+                    el.placeholder = 'Usando cart�o salvo';
+                });
+
+                if (hintEl) {
+                    const label = `${card.brand || 'Cart�o'} final ${card.last4 || '----'}`;
+                    hintEl.textContent = `Selecionado: ${label}. Para usar outro, volte em �Gerenciar�.`;
+                }
+            };
+
+            // default: no saved selected, keep manual enabled
+            window.__dokeSelectedCardId = null;
+            window.__dokeSelectedCardMeta = null;
+
+            if (window.DokePayments?.renderCardsList) {
+                window.DokePayments.renderCardsList(listEl, {
+                    selectable: true,
+                    selectedId: null,
+                    onSelect
+                });
+            }
+        };
+        initSavedCardsUI();
+
+        // --- L�GICA DE CONFIRMA�ÃO DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
         if (!btnFinalizar) return;
         btnFinalizar.addEventListener('click', async () => {
             const pedidoId = params.get('pedidoId');
             
-            // 1. Validação ANTES de mostrar loading
+            // 1. Valida��o ANTES de mostrar loading
             if (!pedidoId) {
                 alert("Erro cr\u00EDtico: ID do pedido n\u00E3o encontrado. Volte ao chat e tente novamente.");
                 return;
@@ -821,9 +957,12 @@
                 return;
             }
 
-            // Validação simples de campos do cartão (se a aba cartão estiver ativa)
+            // Valida��o simples de campos do cart�o (se a aba cart�o estiver ativa)
             const abaCartaoAtiva = document.getElementById('tab-cartao').classList.contains('active');
-            if (abaCartaoAtiva) {
+            const selectedCardId = window.__dokeSelectedCardId || null;
+            const selectedCardMeta = window.__dokeSelectedCardMeta || null;
+            const usandoCartaoSalvo = abaCartaoAtiva && !!selectedCardId;
+            if (abaCartaoAtiva && !usandoCartaoSalvo) {
                 const num = document.getElementById('cardNumber').value;
                 const nome = document.getElementById('cardName').value;
                 if (num.length < 15 || nome.length < 3) {
@@ -840,14 +979,14 @@
             const subTexto = document.getElementById('subTextoStatus');
 
             overlay.style.display = 'flex';
-            circulo.style.display = 'block'; // Garante que o spinner apareça
+            circulo.style.display = 'block'; // Garante que o spinner apare�a
             icone.style.display = 'none';
             texto.innerText = "Processando Pagamento...";
             texto.style.color = "var(--cor2)";
             subTexto.innerText = "Por favor, n\u00E3o feche esta janela.";
 
             try {
-                // Simula processamento bancário
+                // Simula processamento banc�rio
                 await new Promise(r => setTimeout(r, 2000));
 
                 // 3. Atualiza no Firebase
@@ -864,6 +1003,44 @@
                     ultimaMensagem: "Pagamento realizado",
                     dataAtualizacao: new Date().toISOString()
                 });
+
+                // 4.1 Registra transa��o local (Hist�rico em Pagamentos)
+                try {
+                    const metodoAtivo = document.getElementById('tab-pix')?.classList.contains('active') ? 'pix' : 'card';
+                    const cardMeta = window.__dokeSelectedCardMeta || null;
+
+                    let methodLabel = metodoAtivo === 'pix' ? 'PIX' : 'Cart�o';
+                    let last4 = '';
+                    let brand = '';
+
+                    if (metodoAtivo !== 'pix') {
+                        if (cardMeta) {
+                            brand = cardMeta.brand || '';
+                            last4 = cardMeta.last4 || '';
+                        } else {
+                            const rawNum = (document.getElementById('cardNumber')?.value || '').replace(/\D/g,'');
+                            last4 = rawNum.slice(-4);
+                        }
+                        if (brand && last4) methodLabel = `${brand} ���� ${last4}`;
+                        else if (last4) methodLabel = `Cart�o ���� ${last4}`;
+                    }
+
+                    const titulo = resumo.servico ? `Pagamento - ${resumo.servico}` : 'Pagamento';
+                    const subtitulo = resumo.profissional ? `Para ${resumo.profissional}` : 'Transa��o conclu�da';
+
+                    if (window.DokePayments?.addTransaction) {
+                        window.DokePayments.addTransaction({
+                            title: titulo,
+                            subtitle: subtitulo,
+                            amount: -Math.abs(valorGlobalParaSalvar),
+                            pedidoId: pedidoId,
+                            method: methodLabel,
+                            meta: { servico: resumo.servico || '', profissional: resumo.profissional || '' }
+                        });
+                    }
+                } catch (e) {
+                    console.warn('Falha ao registrar transa��o local:', e);
+                }
 
                 // 4. Sucesso Visual
                 circulo.style.display = 'none';
@@ -897,7 +1074,7 @@
     });
 </script>
 <script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260212v44"></script>
 </body>

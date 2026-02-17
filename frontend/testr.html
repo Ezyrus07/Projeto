@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configurações - Minha Conta</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* Reset básico e tipografia */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f0f4f8; /* Fundo cinza claro como no print */
+            color: #333;
+            padding: 2rem;
+        }
+
+        /* Container Principal dividindo a tela */
+        .settings-container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            min-height: 700px;
+            overflow: hidden;
+        }
+
+        /* --- SIDEBAR ESQUERDA (Menu de Opções) --- */
+        .settings-sidebar {
+            width: 320px;
+            background-color: #fdfdfd;
+            border-right: 1px solid #eef0f2;
+            padding: 2rem 1.5rem;
+        }
+
+        .user-profile-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 2.5rem;
+        }
+
+        .user-profile-header img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+        .user-profile-header h2 {
+            font-size: 1.1rem;
+            color: #1a4f72; /* Cor azul escuro da marca */
+            margin-bottom: 0.2rem;
+        }
+
+        .user-profile-header p {
+            font-size: 0.85rem;
+            color: #777;
+        }
+
+        .menu-title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #8fa0af;
+            letter-spacing: 1px;
+            margin-bottom: 1rem;
+            padding-left: 0.5rem;
+        }
+
+        .menu-list {
+            list-style: none;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 8px;
+            cursor: pointer;
+            color: #444;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        .menu-item .menu-icon-text {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .menu-item i {
+            color: #1a4f72;
+            width: 20px;
+            text-align: center;
+        }
+
+        .menu-item:hover {
+            background-color: #f4f7f9;
+        }
+
+        /* Estado Ativo do Menu */
+        .menu-item.active {
+            background-color: #ffffff;
+            border: 1px solid #eef0f2;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+            color: #1a4f72;
+        }
+        
+        .menu-item.active i {
+            color: #00796b; /* Destaque verde escuro */
+        }
+
+        /* --- CONTEÚDO DIREITA --- */
+        .settings-content {
+            flex: 1;
+            padding: 2rem 3rem;
+            background-color: #ffffff;
+            position: relative;
+        }
+
+        /* Oculta as abas que não estão ativas */
+        .tab-panel {
+            display: none;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        /* Mostra a aba ativa */
+        .tab-panel.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- ESTILOS ESPECÍFICOS DA TELA DE ENDEREÇOS (Do seu 2º print) --- */
+        .address-banner {
+            background: linear-gradient(135deg, #1c4966, #2a7c79);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+
+        .address-banner h1 {
+            font-size: 1.8rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .address-banner p {
+            font-size: 1rem;
+            opacity: 0.9;
+        }
+
+        .address-controls {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .search-input {
+            flex: 1;
+            padding: 0.8rem 1rem;
+            border: 1px solid #e1e5eb;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+        }
+
+        .search-input:focus {
+            border-color: #2a7c79;
+        }
+
+        .btn {
+            padding: 0.8rem 1.2rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.95rem;
+            transition: background 0.2s;
+        }
+
+        .btn-outline-green {
+            background-color: transparent;
+            border: 1px solid #2a7c79;
+            color: #2a7c79;
+        }
+
+        .btn-outline-green:hover {
+            background-color: #f0f9f8;
+        }
+
+        .btn-solid-gray {
+            background-color: #ffffff;
+            border: 1px solid #e1e5eb;
+            color: #333;
+        }
+
+        .btn-solid-gray:hover {
+            background-color: #f8f9fa;
+        }
+
+        .empty-state {
+            padding: 1.5rem;
+            border: 1px dashed #cfd8dc;
+            border-radius: 8px;
+            color: #607d8b;
+            background-color: #fcfcfc;
+        }
+
+        /* Placeholder para as outras telas */
+        .placeholder-content {
+            padding: 3rem;
+            text-align: center;
+            color: #8fa0af;
+            border: 2px dashed #eef0f2;
+            border-radius: 12px;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="settings-container">
+        <aside class="settings-sidebar">
+            <div class="user-profile-header">
+                <img src="https://i.pravatar.cc/150?u=gabriel" alt="Gabriel Antônio">
+                <div>
+                    <h2>Gabriel Antônio</h2>
+                    <p>@gabriel</p>
+                </div>
+            </div>
+
+            <div class="menu-title">MINHA CONTA</div>
+            
+            <ul class="menu-list">
+                <li class="menu-item" onclick="switchTab('tab-dados')">
+                    <div class="menu-icon-text">
+                        <i class="fa-regular fa-user"></i>
+                        <span>Dados Pessoais</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
+                </li>
+                
+                <li class="menu-item active" onclick="switchTab('tab-enderecos')">
+                    <div class="menu-icon-text">
+                        <i class="fa-solid fa-location-dot"></i>
+                        <span>Endereços</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
+                </li>
+                
+                <li class="menu-item" onclick="switchTab('tab-seguranca')">
+                    <div class="menu-icon-text">
+                        <i class="fa-solid fa-lock"></i>
+                        <span>Segurança e Senha</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
+                </li>
+                
+                <li class="menu-item" onclick="switchTab('tab-pagamentos')">
+                    <div class="menu-icon-text">
+                        <i class="fa-regular fa-credit-card"></i>
+                        <span>Pagamentos</span>
+                    </div>
+                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
+                </li>
+            </ul>
+        </aside>
+
+        <main class="settings-content">
+            
+            <div id="tab-dados" class="tab-panel">
+                <h2>Dados Pessoais</h2>
+                <div class="placeholder-content">
+                    <i class="fa-regular fa-user" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <p>Formulário de dados pessoais será carregado aqui.</p>
+                </div>
+            </div>
+
+            <div id="tab-enderecos" class="tab-panel active">
+                <div class="address-banner">
+                    <h1>Endereços</h1>
+                    <p>Salve mais de um local e use no orçamento com 1 toque.</p>
+                </div>
+
+                <div class="address-controls">
+                    <input type="text" class="search-input" placeholder="Buscar por apelido, rua, bairro ou cidade">
+                    <button class="btn btn-outline-green">
+                        <i class="fa-solid fa-plus"></i> Novo endereço
+                    </button>
+                    <button class="btn btn-solid-gray">
+                        <i class="fa-solid fa-arrow-right"></i> Ir para orçamento
+                    </button>
+                </div>
+
+                <div class="empty-state">
+                    Nenhum endereço encontrado.
+                </div>
+            </div>
+
+            <div id="tab-seguranca" class="tab-panel">
+                <h2>Segurança e Senha</h2>
+                <div class="placeholder-content">
+                    <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <p>Configurações de senha e autenticação entrarão aqui.</p>
+                </div>
+            </div>
+
+            <div id="tab-pagamentos" class="tab-panel">
+                <h2>Pagamentos</h2>
+                <div class="placeholder-content">
+                    <i class="fa-regular fa-credit-card" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                    <p>Histórico e cartões salvos aparecerão aqui.</p>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <script>
+        function switchTab(tabId) {
+            // 1. Remove a classe 'active' de todos os itens do menu
+            const menuItems = document.querySelectorAll('.menu-item');
+            menuItems.forEach(item => {
+                item.classList.remove('active');
+            });
+
+            // 2. Remove a classe 'active' de todos os painéis de conteúdo
+            const tabPanels = document.querySelectorAll('.tab-panel');
+            tabPanels.forEach(panel => {
+                panel.classList.remove('active');
+            });
+
+            // 3. Adiciona a classe 'active' no painel correspondente ao clique
+            document.getElementById(tabId).classList.add('active');
+
+            // 4. Encontra o item de menu que foi clicado (baseado no onclick) e adiciona 'active' nele
+            // Utilizamos o evento atual do clique para destacar a aba certa
+            const clickedMenuItem = event.currentTarget;
+            clickedMenuItem.classList.add('active');
+        }
+    </script>
+
+</body>
+</html>

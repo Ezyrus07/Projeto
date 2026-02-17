@@ -1,11 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
-  <script>if(window.top===window.self){location.replace("mais.html#idioma");}</script>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
+<script src="supabase-init.js?v=20260217v13"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -13,7 +12,7 @@
 <title>Idioma | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260215v9"></script>
 <style>
@@ -50,16 +49,11 @@
         }
 
         /* Topo */
-        .page-header{
+        .page-header {
             width: 100%; max-width: 600px;
             display: flex; align-items: center; gap: 15px;
             margin-bottom: 30px;
-        
-  padding: 32px;
-  border-radius: 22px;
-  margin-bottom: 18px;
-}
-
+        }
         .btn-back {
             background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
             width: 40px; height: 40px; border-radius: 50%;
@@ -147,63 +141,18 @@
         }
     </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-toast.css" rel="stylesheet">
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
-
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
-<link rel="stylesheet" href="page-ajustes.css?v=20260215v10">
-
-<script>
-(function(){
-  const qs = new URLSearchParams(location.search);
-  const isEmbed = qs.get('embed') === '1';
-  const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
-
-  // Se abrir a página "solta" no desktop, força usar o shell do Mais (lista fixa + painel)
-  if (!isEmbed && window.top === window.self && isDesktop) {
-    const section = "idioma";
-    location.replace(`mais.html?section=${encodeURIComponent(section)}`);
-    return;
-  }
-
-  // No iframe (embed), escondemos cabeçalhos/menus e ajustamos margens pra parecer painel
-  if (isEmbed) {
-    document.documentElement.classList.add('embed');
-    window.addEventListener('DOMContentLoaded', () => {
-      document.body.classList.add('embed');
-    });
-  }
-})();
-</script>
-<style>
-html.embed body{background:#f5f7fb !important;}
-/* esconder barras/menus/rodapés mais comuns */
-html.embed header, html.embed nav, html.embed footer,
-html.embed .sidebar, html.embed .sideBar, html.embed .menu, html.embed .menu-lateral,
-html.embed .bottom-nav, html.embed .bottomNav, html.embed .nav-bottom,
-html.embed .header, html.embed .topbar, html.embed .top-bar,
-html.embed .doke-sidebar, html.embed .doke-header, html.embed .doke-footer,
-html.embed .voltar, html.embed .back, html.embed .btn-back {display:none !important;}
-/* remover paddings/margens laterais grandes */
-html.embed main, html.embed .main, html.embed .content, html.embed .container, html.embed .page-content{
-  max-width: 100% !important;
-}
-</style>
-
-
-<style>/* doke: hide back arrow */
-.voltar,.btn-back,.back,.back-btn,.btnVoltar{display:none!important;}
-</style>
-</head>
-<body data-page="idioma">
+<link href="doke-shell.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<span class="close-btn" onclick="fecharPopup()">×</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
@@ -223,7 +172,6 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 <a href="login.html">
 </a>
 </div>
-
 </header>
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 <header class="navbar-desktop">
@@ -247,87 +195,139 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 </nav>
 <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
 </header>
-
 <aside class="sidebar-icones">
-  <div id="logo">
-    <a href="index.html">
-      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="index.html">
-      <i class='bx bx-home-alt icon azul'></i>
-      <span>Início</span>
-    </a>
-  </div>
-
-  <div class="item" id="pvSearchSidebarItem">
-    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
-      <i class='bx bx-search-alt-2 icon azul'></i>
-      <span>Pesquisar</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="empresas.html">
-      <i class='bx bx-store icon verde'></i>
-      <span>Empresas</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="notificacoes.html">
-      <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="chat.html">
-      <i class='bx bx-message-rounded-dots icon azul'></i>
-      <span>Mensagens</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="comunidade.html">
-      <i class='bx bx-group icon verde'></i>
-      <span>Comunidades</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="#" onclick="irParaMeuPerfil(event)">
-      <i class='bx bx-user icon verde'></i>
-      <span>Perfil</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="mais.html">
-      <i class='bx bx-menu icon azul'></i>
-      <span>Mais</span>
-    </a>
-  </div>
-</aside>
-
-
-<main class="main-content">
-<div class="ajustes-layout">
-<aside class="ajustes-nav" aria-label="Seções">
-  <h3>Mais</h3>
-  <a href="dadospessoais.html"><span>Dados pessoais</span><span class="nav-right">›</span></a>
-  <a href="enderecos.html"><span>Endereços</span><span class="nav-right">›</span></a>
-  <a href="pagamentos.html"><span>Pagamentos</span><span class="nav-right">›</span></a>
-  <a href="notificacoes.html"><span>Notificações</span><span class="nav-right">›</span></a>
-  <a href="idioma.html" aria-current="page"><span>Idioma</span><span class="nav-right">›</span></a>
-  <a href="senha.html"><span>Senha e segurança</span><span class="nav-right">›</span></a>
-</aside>
-<div class="ajustes-content">
-<div class="page-header"><h1>Idioma / Language</h1>
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
 </div>
-<div class="lang-container">
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<main class="main-content"><div class="content-wrapper"><div class="settings-shell" id="settingsShell"><aside aria-label="Ajustes" class="settings-side">
+<div class="settings-profile" onclick="irParaPerfilCorreto()" onkeypress="if(event.key==='Enter'||event.key===' '){irParaPerfilCorreto();}" role="button" tabindex="0">
+<img alt="Foto" class="profile-avatar" decoding="async" id="mais-foto" loading="lazy" src="https://placehold.co/150"/>
+<div class="settings-profile__meta">
+<p class="settings-profile__name" id="mais-nome">Carregando...</p>
+<div class="settings-profile__user" id="mais-user">@carregando</div>
+</div>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</div>
+<hr class="settings-side__divider"/>
+<div class="settings-side__group">
+<div class="settings-side__title">MINHA CONTA</div>
+<a class="settings-nav-item" data-section="dadospessoais" href="dadospessoais.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-user"></i></span>
+<span class="settings-nav-text">Dados pessoais</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
+<span class="settings-nav-text">Endereços</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="senha" href="senha.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
+<span class="settings-nav-text">Segurança e senha</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-credit-card"></i></span>
+<span class="settings-nav-text">Pagamentos</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">PREFERÊNCIAS</div>
+<div class="settings-toggle-row">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
+<span class="settings-toggle-label">Modo escuro</span>
+<label class="switch" style="margin-left:auto;">
+<input id="darkModeSwitch" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
+<span class="settings-nav-text">Notificações</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="idioma" href="idioma.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-globe"></i></span>
+<span class="settings-nav-text">Idioma</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="privacidade" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-quarter"></i></span>
+<span class="settings-nav-text">Privacidade de mensagens</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">SUPORTE</div>
+<a class="settings-nav-item" data-section="ajuda" href="ajuda.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-help-circle"></i></span>
+<span class="settings-nav-text">Central de ajuda</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="#" onclick="return false;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-file"></i></span>
+<span class="settings-nav-text">Termos de uso</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="sobre-doke" href="sobre-doke.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-info-circle"></i></span>
+<span class="settings-nav-text">Sobre a Doke</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Idioma</h1><p>Defina o idioma do app para melhorar sua experiência.</p></div></div><div class="settings-frame-card"><div class="lang-container">
 <div class="card-box">
 <p class="description">Selecione o idioma que você prefere usar na Doke. Isso afetará textos, menus e notificações.</p>
 <div class="lang-option active" onclick="selectLang(this)">
@@ -353,10 +353,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 </div>
 <button class="btn-save" onclick="salvarIdioma()">Salvar Preferência</button>
 </div>
-</div>
-</div>
-</div>
-</main>
+</div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
 <nav class="bottom-nav">
 <a class="item active" href="index.html">
 <img alt="Início" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
@@ -404,10 +401,8 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
         }
     </script>
 <script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260212v44"></script>
-</body>
+<script defer="True" src="settings-pages.js"></script></body>
 </html>
-
-

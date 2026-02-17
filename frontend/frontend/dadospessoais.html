@@ -1,11 +1,10 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
-  <script>if(window.top===window.self){location.replace("mais.html#dadospessoais");}</script>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260215v9"></script>
+<script src="supabase-init.js?v=20260217v13"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
 <meta charset="utf-8"/>
@@ -13,15 +12,15 @@
 <title>Dados Pessoais | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260215v9"></script>
 <style>
-        /* ================= VARIÁVEIS E RESET ================= */
+        /* ================= VARIÃƒÂVEIS E RESET ================= */
         :root {
             --cor0: #0b7768; /* Verde Principal */
             --cor1: #737373; /* Cinza Texto */
-            --cor2: #2a5f90; /* Azul Títulos */
+            --cor2: #2a5f90; /* Azul TÃƒÂ­tulos */
             --cor3: #f35b5b; /* Vermelho/Alerta */
             --cor4: #ecedf2; /* Cinza Fundo Claro */
             --cor-borda: #e0e0e0;
@@ -40,7 +39,7 @@
 
         a { text-decoration: none; }
 
-        /* ================= ÁREA PRINCIPAL (Direita) ================= */
+        /* ================= ÃƒÂREA PRINCIPAL (Direita) ================= */
         .main-content {
             flex: 1; 
             padding: 40px;
@@ -55,7 +54,7 @@
             }
         }
 
-        /* Topo com Botão Voltar */
+        /* Topo com BotÃƒÂ£o Voltar */
         .page-header {
             width: 100%;
             max-width: 600px;
@@ -73,13 +72,13 @@
         }
         .btn-back:hover { background: white; color: var(--cor2); }
         .page-header h1 {
-            color: white; /* Ajustado para branco pois o fundo do topo é escuro */
+            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÂ© escuro */
             font-size: 1.8rem;
             font-weight: 700;
             text-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
 
-        /* Card do Formulário */
+        /* Card do FormulÃƒÂ¡rio */
         .form-card {
             background: white;
             width: 100%;
@@ -212,73 +211,23 @@
         }
     </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-toast.css" rel="stylesheet">
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260212v42">
-
-<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
-<link rel="stylesheet" href="page-ajustes.css?v=20260208v01">
-
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
-
-<script>
-(function(){
-  const qs = new URLSearchParams(location.search);
-  const isEmbed = qs.get('embed') === '1';
-  const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
-
-  // Se abrir a página "solta" no desktop, força usar o shell do Mais (lista fixa + painel)
-  if (!isEmbed && window.top === window.self && isDesktop) {
-    const section = "dadospessoais";
-    location.replace(`mais.html?section=${encodeURIComponent(section)}`);
-    return;
-  }
-
-  // No iframe (embed), escondemos cabeçalhos/menus e ajustamos margens pra parecer painel
-  if (isEmbed) {
-    document.documentElement.classList.add('embed');
-    window.addEventListener('DOMContentLoaded', () => {
-      document.body.classList.add('embed');
-    });
-  }
-})();
-</script>
-<style>
-html.embed body{background:#f5f7fb !important;}
-/* esconder barras/menus/rodapés mais comuns */
-html.embed header, html.embed nav, html.embed footer,
-html.embed .sidebar, html.embed .sideBar, html.embed .menu, html.embed .menu-lateral,
-html.embed .bottom-nav, html.embed .bottomNav, html.embed .nav-bottom,
-html.embed .header, html.embed .topbar, html.embed .top-bar,
-html.embed .doke-sidebar, html.embed .doke-header, html.embed .doke-footer,
-html.embed .voltar, html.embed .back, html.embed .btn-back {display:none !important;}
-/* remover paddings/margens laterais grandes */
-html.embed main, html.embed .main, html.embed .content, html.embed .container, html.embed .page-content{
-  max-width: 100% !important;
-}
-</style>
-
-  <script>
-    (function(){
-      try{
-        const p = new URLSearchParams(location.search);
-        if(p.get('embed') === '1' || window.top !== window.self){
-          document.documentElement.classList.add('embed');
-        }
-      }catch(e){}
-    })();
-  </script>
-</head>
-<body data-page="dadospessoais">
+<link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<body data-page="mais">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<span class="close-btn" onclick="fecharPopup()">Ãƒâ€”</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                NÃƒÂ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -294,7 +243,6 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 <a href="login.html">
 </a>
 </div>
-
 </header>
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 <header class="navbar-desktop">
@@ -318,80 +266,139 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 </nav>
 <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
 </header>
-
 <aside class="sidebar-icones">
-  <div id="logo">
-    <a href="index.html">
-      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="index.html">
-      <i class='bx bx-home-alt icon azul'></i>
-      <span>Início</span>
-    </a>
-  </div>
-
-  <div class="item" id="pvSearchSidebarItem">
-    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
-      <i class='bx bx-search-alt-2 icon azul'></i>
-      <span>Pesquisar</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="empresas.html">
-      <i class='bx bx-store icon verde'></i>
-      <span>Empresas</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="notificacoes.html">
-      <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="chat.html">
-      <i class='bx bx-message-rounded-dots icon azul'></i>
-      <span>Mensagens</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="comunidade.html">
-      <i class='bx bx-group icon verde'></i>
-      <span>Comunidades</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="#" onclick="irParaMeuPerfil(event)">
-      <i class='bx bx-user icon verde'></i>
-      <span>Perfil</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="mais.html">
-      <i class='bx bx-menu icon azul'></i>
-      <span>Mais</span>
-    </a>
-  </div>
-</aside>
-
-
-<main class="main-content">
-<div class="page-header">
-<a class="btn-back" href="mais.html">
-<i class="bx bx-chevron-left"></i>
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
 </a>
-<h1>Dados Pessoais</h1>
 </div>
-<div class="form-card">
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>InÃƒÂ­cio</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>NotificaÃƒÂ§ÃƒÂµes</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<main class="main-content"><div class="content-wrapper"><div class="settings-shell" id="settingsShell"><aside aria-label="Ajustes" class="settings-side">
+<div class="settings-profile" onclick="irParaPerfilCorreto()" onkeypress="if(event.key==='Enter'||event.key===' '){irParaPerfilCorreto();}" role="button" tabindex="0">
+<img alt="Foto" class="profile-avatar" decoding="async" id="mais-foto" loading="lazy" src="https://placehold.co/150"/>
+<div class="settings-profile__meta">
+<p class="settings-profile__name" id="mais-nome">Carregando...</p>
+<div class="settings-profile__user" id="mais-user">@carregando</div>
+</div>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</div>
+<hr class="settings-side__divider"/>
+<div class="settings-side__group">
+<div class="settings-side__title">MINHA CONTA</div>
+<a class="settings-nav-item" data-section="dadospessoais" href="dadospessoais.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-user"></i></span>
+<span class="settings-nav-text">Dados pessoais</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
+<span class="settings-nav-text">EndereÃƒÂ§os</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="senha" href="senha.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
+<span class="settings-nav-text">SeguranÃƒÂ§a e senha</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-credit-card"></i></span>
+<span class="settings-nav-text">Pagamentos</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">PREFERÃƒÅ NCIAS</div>
+<div class="settings-toggle-row">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
+<span class="settings-toggle-label">Modo escuro</span>
+<label class="switch" style="margin-left:auto;">
+<input id="darkModeSwitch" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
+<span class="settings-nav-text">NotificaÃƒÂ§ÃƒÂµes</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="idioma" href="idioma.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-globe"></i></span>
+<span class="settings-nav-text">Idioma</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="privacidade" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-quarter"></i></span>
+<span class="settings-nav-text">Privacidade de mensagens</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">SUPORTE</div>
+<a class="settings-nav-item" data-section="ajuda" href="ajuda.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-help-circle"></i></span>
+<span class="settings-nav-text">Central de ajuda</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="#" onclick="return false;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-file"></i></span>
+<span class="settings-nav-text">Termos de uso</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="sobre-doke" href="sobre-doke.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-info-circle"></i></span>
+<span class="settings-nav-text">Sobre a Doke</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Dados pessoais</h1><p>Atualize suas informaÃƒÂ§ÃƒÂµes bÃƒÂ¡sicas e de contato.</p></div></div><div class="settings-frame-card"><div class="form-card">
 <div class="profile-photo-area">
 <div class="avatar-container">
 <img class="avatar-img" decoding="async" id="profilePreview" loading="lazy" src="https://placehold.co/150"/>
@@ -401,7 +408,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 <input accept="image/*" hidden="" id="uploadFoto" onchange="previewImage(event)" type="file"/>
 <input id="hiddenFotoBase64" type="hidden"/>
 </div>
-<span>Toque no ícone para alterar</span>
+<span>Toque no ÃƒÂ­cone para alterar</span>
 </div>
 <form onsubmit="salvarDados(event)">
 <div class="input-group">
@@ -411,11 +418,11 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 <div class="input-group">
 <label>E-mail</label>
 <input class="input-readonly" id="inputEmail" placeholder="Carregando..." readonly="" type="email"/>
-<small style="color:#999; font-size:0.8rem; margin-top:5px; display:block;">O e-mail não pode ser alterado por aqui.</small>
+<small style="color:#999; font-size:0.8rem; margin-top:5px; display:block;">O e-mail nÃƒÂ£o pode ser alterado por aqui.</small>
 </div>
 <div class="input-group">
 <label>CPF / CNPJ</label>
-<input class="input-readonly" id="inputDoc" placeholder="Não informado" readonly="" type="text"/>
+<input class="input-readonly" id="inputDoc" placeholder="Nao informado" readonly="" type="text"/>
 </div>
 <div class="input-group">
 <label>Telefone / WhatsApp</label>
@@ -425,26 +432,25 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 <label>Data de Nascimento</label>
 <input id="inputNasc" type="date"/>
 </div>
-<button class="btn-salvar" id="btnSalvar" type="submit">Salvar Alterações</button>
+<button class="btn-salvar" id="btnSalvar" type="submit">Salvar AlteraÃƒÂ§ÃƒÂµes</button>
 </form>
-</div>
-</main>
+</div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
 <nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>InÃƒÂ­cio</span></a>
 <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
 <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>NotificaÃƒÂ§ÃƒÂµes</span></a>
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 <script>
         // Dados Pessoais (Supabase) - carrega do Auth + tabela usuarios + validacao (tornar-profissional)
-        // Objetivo: o que você preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
+        // Objetivo: o que vocÃƒÂª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
 
         const safeJSON = (k, fallback = null) => {
             try { return JSON.parse(localStorage.getItem(k) || '') || fallback; } catch { return fallback; }
         };
 
-        const normalizeHandle = (h, nome) => {
+        const normalizeLocalHandle = (h, nome) => {
             let v = (h || '').trim();
             if (!v || /\s/.test(v)) v = nome ? nome.split(' ')[0] : '';
             if (!v) v = 'usuario';
@@ -470,20 +476,25 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
         };
 
         function preencherCampos(dados) {
-            document.getElementById('inputNome').value = String(dados.nome || "").slice(0, 40);
-            document.getElementById('inputEmail').value = dados.email || "";
-            document.getElementById('inputDoc').value = dados.cpf_cnpj || "Não informado";
-            document.getElementById('inputTel').value = dados.telefone || dados.telefone_comercial || "";
-            document.getElementById('inputNasc').value = dados.data_nascimento || "";
+            const setValue = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            };
+            setValue('inputNome', String(dados.nome || "").slice(0, 40));
+            setValue('inputEmail', dados.email || "");
+            setValue('inputDoc', dados.cpf_cnpj || "Nao informado");
+            setValue('inputTel', dados.telefone || dados.telefone_comercial || "");
+            setValue('inputNasc', dados.data_nascimento || "");
 
             if (dados.foto) {
-                document.getElementById('profilePreview').src = dados.foto;
-                document.getElementById('hiddenFotoBase64').value = dados.foto;
+                const preview = document.getElementById('profilePreview');
+                if (preview) preview.src = dados.foto;
+                setValue('hiddenFotoBase64', dados.foto);
             }
         }
 
         async function carregarPerfilReal() {
-            // proteção simples
+            // proteÃƒÂ§ÃƒÂ£o simples
             const logado = localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
             if (!logado) {
                 window.location.href = 'login.html';
@@ -491,7 +502,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
             }
 
             if (!window.sb?.auth) {
-                alert('Supabase não inicializado.');
+                alert('Supabase nÃƒÂ£o inicializado.');
                 return;
             }
 
@@ -549,7 +560,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
                 (email ? email.split('@')[0] : '')
             );
 
-            const userHandle = normalizeHandle(
+            const userHandle = normalizeLocalHandle(
                 usr?.user || meta.user || meta.username || perfilLocal.user,
                 nome
             );
@@ -567,7 +578,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
                 nome,
                 user: userHandle,
                 foto,
-                cpf_cnpj: cpfCnpj || 'Não informado',
+                cpf_cnpj: cpfCnpj || 'Nao informado',
                 telefone,
                 data_nascimento: nasc,
             };
@@ -580,7 +591,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
 
         document.addEventListener('DOMContentLoaded', carregarPerfilReal);
 
-        // Função global para salvar (chamada pelo form)
+        // FunÃƒÂ§ÃƒÂ£o global para salvar (chamada pelo form)
         window.salvarDados = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSalvar');
@@ -593,14 +604,14 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
                 const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
                 const { data: authData } = await window.sb.auth.getUser();
                 const authUser = authData?.user || null;
-                if (!authUser) throw new Error('Sessão expirada. Faça login novamente.');
+                if (!authUser) throw new Error('SessÃƒÂ£o expirada. FaÃƒÂ§a login novamente.');
 
                 const uid = authUser.id;
-                const nome = document.getElementById('inputNome').value.trim().slice(0, 40);
-                if (!nome || nome.length < 2) throw new Error('Informe um nome válido (mínimo 2 caracteres).');
-                const telefone = document.getElementById('inputTel').value.trim();
-                const nasc = document.getElementById('inputNasc').value;
-                const foto = document.getElementById('hiddenFotoBase64').value || perfilLocal.foto || '';
+                const nome = String(document.getElementById('inputNome')?.value || '').trim().slice(0, 40);
+                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÂ¡lido (mÃƒÂ­nimo 2 caracteres).');
+                const telefone = String(document.getElementById('inputTel')?.value || '').trim();
+                const nasc = document.getElementById('inputNasc')?.value || '';
+                const foto = document.getElementById('hiddenFotoBase64')?.value || perfilLocal.foto || '';
 
                 // Atualiza cache local imediatamente
                 const merged = {
@@ -612,7 +623,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
                 };
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
 
-                // Melhor esforço: atualiza tabela usuarios (se existir colunas)
+                // Melhor esforÃƒÂ§o: atualiza tabela usuarios (se existir colunas)
                 const patch = { nome, telefone, data_nascimento: nasc, foto };
                 try {
                     await window.sb
@@ -621,7 +632,7 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
                         .or(`uid.eq.${uid},id.eq.${uid}`);
                 } catch (_) {}
 
-                // Melhor esforço: espelha no Auth metadata
+                // Melhor esforÃƒÂ§o: espelha no Auth metadata
                 try {
                     await window.sb.auth.updateUser({
                         data: {
@@ -648,18 +659,20 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
         function previewImage(event) {
             const file = event.target.files[0];
             if(file) {
-                // Tamanho maximo 2MB para não travar localStorage/Firestore
+                // Tamanho maximo 2MB para nÃƒÂ£o travar localStorage/Firestore
                 if(file.size > 2 * 1024 * 1024) {
-                    alert("A imagem é muito grande. Escolha uma menor que 2MB.");
+                    alert("A imagem ÃƒÂ© muito grande. Escolha uma menor que 2MB.");
                     return;
                 }
 
                 const reader = new FileReader();
                 reader.onload = function(e){
                     // Mostra preview
-                    document.getElementById('profilePreview').src = e.target.result;
+                    const preview = document.getElementById('profilePreview');
+                    if (preview) preview.src = e.target.result;
                     // Salva Base64 no input oculto para enviar depois
-                    document.getElementById('hiddenFotoBase64').value = e.target.result;
+                    const hiddenFoto = document.getElementById('hiddenFotoBase64');
+                    if (hiddenFoto) hiddenFoto.value = e.target.result;
                 }
                 reader.readAsDataURL(file);
             }
@@ -673,10 +686,8 @@ html.embed main, html.embed .main, html.embed .content, html.embed .container, h
         }
     </script>
 <script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260215v9"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260212v44"></script>
-</body>
+<script defer="True" src="settings-pages.js"></script></body>
 </html>
-
-

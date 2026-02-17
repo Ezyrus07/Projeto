@@ -611,6 +611,21 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   z-index: 9999;
 }
 
+/* CEP popup fora do header (portal) - evita cortes por overflow de .menu */
+.cep-popup.cep-popup-portal{
+  position: fixed;
+  top: calc(var(--navbar-height-desktop, 70px) + 10px);
+  left: 12px;
+  transform: none;
+  z-index: 99999;
+}
+@media (max-width:1024px){
+  .cep-popup.cep-popup-portal{
+    top: calc(var(--doke-h, 56px) + 10px);
+  }
+}
+
+
 
 .cep-popup p { margin: 0 0 10px 0; font-size: 14px; color: #475569; text-align: center; }
 .cep-input-group { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -1131,6 +1146,45 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 .label-loc {
     font-size: 0.75rem; font-weight: 700; color: #999;
     text-transform: uppercase; letter-spacing: 1px;
+}
+
+/* Mobile: botão CEP ao lado de "Localização" (em páginas com filtros) */
+.loc-title-row,
+.filter-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.btn-cep-inline {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    height: 26px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 0;
+    background: var(--cor0);
+    color: #fff;
+    font-weight: 800;
+    font-size: 0.75rem;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    box-shadow: 0 6px 16px rgba(0,0,0,0.10);
+}
+.btn-cep-inline:active { transform: translateY(1px); }
+
+@media (max-width: 768px) {
+    body[data-page="home"] .btn-cep-inline,
+    body[data-page="busca"] .btn-cep-inline {
+        display: inline-flex;
+    }
+    /* Em páginas com botão CEP nos filtros, escondemos o CEP do header no mobile */
+    body[data-page="home"] #linkCep,
+    body[data-page="busca"] #linkCep {
+        display: none !important;
+    }
 }
 .grid-loc {
     display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;

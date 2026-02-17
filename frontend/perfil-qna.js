@@ -15,23 +15,82 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
     }catch(_){ return ""; }
   };
 
+  function getUsuariosTableOrderCompat(){
+    const preferred = String(window.__dokeUsuariosTable || window.__dokePerfilUsuariosTable || "").trim();
+    if(preferred === "usuarios_legacy") return ["usuarios_legacy", "usuarios"];
+    return ["usuarios", "usuarios_legacy"];
+  }
+
+  function isUsuariosCompatError(err){
+    if(!err) return false;
+    const msg = String((err.message||"") + " " + (err.hint||"") + " " + (err.details||"")).toLowerCase();
+    return (
+      err.code === "PGRST205" ||
+      err.code === "PGRST204" ||
+      err.code === "22P02" ||
+      err.status === 404 ||
+      /could not find the table/i.test(msg) ||
+      /could not find the .* column/i.test(msg) ||
+      /column .* does not exist/i.test(msg) ||
+      /invalid input syntax for type uuid/i.test(msg)
+    );
+  }
+
+  async function runUsuariosCompatQuery(client, requestBuilder){
+    if(!client || typeof requestBuilder !== "function"){
+      return { data: null, error: null, table: null, uidField: "uid" };
+    }
+
+    let lastCompatErr = null;
+    for(const table of getUsuariosTableOrderCompat()){
+      const uidField = table === "usuarios_legacy" ? "uid_text" : "uid";
+      let res = null;
+      try{
+        res = await requestBuilder({ table, uidField });
+      }catch(err){
+        if(isUsuariosCompatError(err)){ lastCompatErr = err; continue; }
+        throw err;
+      }
+      const err = res?.error || null;
+      if(err && isUsuariosCompatError(err)){
+        lastCompatErr = err;
+        continue;
+      }
+      if(!err){
+        window.__dokeUsuariosTable = table;
+        window.__dokePerfilUsuariosTable = table;
+      }
+      return { data: res?.data ?? null, error: err, table, uidField };
+    }
+
+    return { data: null, error: lastCompatErr, table: null, uidField: "uid" };
+  }
+
   async function getUsuarioByAuthUid(client, authUid){
-    const { data, error } = await client.from("usuarios_legacy").select("*").eq("uid_text", authUid).maybeSingle();
+    const { data, error } = await runUsuariosCompatQuery(client, ({ table, uidField }) =>
+      client.from(table).select("*").eq(uidField, authUid).maybeSingle()
+    );
     if(error) return { error };
     return { usuario: data || null };
   }
   async function getUsuarioByUsername(client, username){
-    const { data, error } = await client.from("usuarios_legacy").select("*").eq("user", username).maybeSingle();
+    const { data, error } = await runUsuariosCompatQuery(client, ({ table }) =>
+      client.from(table).select("*").eq("user", username).maybeSingle()
+    );
     if(error) return { error };
     return { usuario: data || null };
   }
   async function getUsuarioById(client, id){
     if(looksUUID(id)){
-      const r = await client.from("usuarios_legacy").select("*").eq("uid_text", id).maybeSingle();
+      const r = await runUsuariosCompatQuery(client, ({ table, uidField }) =>
+        client.from(table).select("*").eq(uidField, id).maybeSingle()
+      );
       if(r.error) return { error: r.error };
       return { usuario: r.data || null };
     }
-    const r = await client.from("usuarios_legacy").select("*").eq("id", id).maybeSingle();
+    const r = await runUsuariosCompatQuery(client, ({ table }) =>
+      client.from(table).select("*").eq("id", id).maybeSingle()
+    );
     if(r.error) return { error: r.error };
     return { usuario: r.data || null };
   }
@@ -357,5 +416,4 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
 
   document.addEventListener("DOMContentLoaded", main);
 })();
-
 
