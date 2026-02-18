@@ -1,17 +1,17 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Tornar-se Profissional | Doke</title>
-<meta content="Valide sua conta para se tornar profissional na Doke. Processo seguro, com etapas claras e envio de documento para verifica��o." name="description"/>
+<meta content="Valide sua conta para se tornar profissional na Doke. Processo seguro, com etapas claras e envio de documento para verificaï¿½ï¿½o." name="description"/>
 <meta content="Tornar-se Profissional | Doke" property="og:title"/>
 <meta content="Valide sua conta para se tornar profissional na Doke com etapas claras e seguras." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260217v13"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
@@ -357,7 +357,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N�o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -490,14 +490,14 @@
 <div class="form-group" id="fgCpf">
 <label for="tpCpf">CPF <span class="req">*</span></label>
 <input class="input-modern" id="tpCpf" inputmode="numeric" maxlength="14" placeholder="000.000.000-00" required="" type="text"/>
-<div class="helper">O CPF n�o poder� ser alterado posteriormente.</div>
+<div class="helper">O CPF não poder� ser alterado posteriormente.</div>
 </div>
 </div>
 <div class="form-row">
 <div class="form-group" id="fgNascimento">
 <label for="tpNascimento">Data de Nascimento <span class="req">*</span></label>
 <input class="input-modern" id="tpNascimento" required="" type="date"/>
-<div class="helper" id="tpNascHelper">Voc� precisa ter 18 anos ou mais.</div>
+<div class="helper" id="tpNascHelper">Você precisa ter 18 anos ou mais.</div>
 </div>
 </div>
 <hr style="border:none; border-top:1px solid #e2e8f0; margin: 28px 0;"/>
@@ -560,7 +560,7 @@
 <div aria-label="Etapas da valida��o" class="tp-steps">
 <div class="tp-step"><b>1.</b> Envio dos dados e documento.</div>
 <div class="tp-step"><b>2.</b> An�lise de seguran�a da conta.</div>
-<div class="tp-step"><b>3.</b> Voc� recebe a confirma��o quando finalizar.</div>
+<div class="tp-step"><b>3.</b> Você recebe a confirma��o quando finalizar.</div>
 </div>
 <label class="tp-consent">
 <input id="tpConsent" required="" type="checkbox"/>
@@ -580,7 +580,7 @@
 </div>
 <h2 style="margin:0; font-size:1.4rem; color:#0f172a;">Dados enviados!</h2>
 <p style="margin:0; color:#475569; max-width:520px;">
-              Obrigado! Agora sua valida��o est� em an�lise. Voc� pode criar um an�ncio quando quiser.
+              Obrigado! Agora sua valida��o est� em an�lise. Você pode criar um an�ncio quando quiser.
             </p>
 <div style="display:flex; gap:12px; margin-top:16px; flex-wrap:wrap; justify-content:center;">
 <a class="btn-primary" href="anunciar.html" style="text-decoration:none;">Criar an�ncio</a>
@@ -592,9 +592,9 @@
 </main>
 <!--
     Nota: este projeto veio de uma migra��o Firebase -> Supabase.
-    O script.js?v=20260215v9 ainda cont�m refer�ncias antigas (initializeApp/onAuthStateChanged)
+    O script.js?v=20260218v60 ainda cont�m refer�ncias antigas (initializeApp/onAuthStateChanged)
     que podem quebrar esta p�gina. Aqui mantemos a l�gica de valida��o 100% local
-    (Supabase) para n�o depender dessas rotas antigas.
+    (Supabase) para não depender dessas rotas antigas.
   -->
 <script>
   (function(){
@@ -671,7 +671,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         (error.code ? String(error.code) : null)
       ].filter(Boolean).map(x=>String(x).toLowerCase());
       const msg = parts.join(' | ');
-      // c�digos comuns do PostgREST quando coluna/tabela n�o existe: PGRST204
+      // c�digos comuns do PostgREST quando coluna/tabela não existe: PGRST204
       if(msg.includes('pgrst204')) return true;
       if(needle && (msg.includes(`could not find the '${needle}' column`) || msg.includes(`could not find the "${needle}" column`) || msg.includes(`column "${needle}" does not exist`) || msg.includes(`column '${needle}' does not exist`))) return true;
       return false;
@@ -816,7 +816,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
 
     async function uploadDocumento(uid, file){
       if(!file) return null;
-      if(!sb?.storage) throw new Error("Supabase Storage n�o dispon�vel.");
+      if(!sb?.storage) throw new Error("Supabase Storage não dispon�vel.");
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `validacao/${uid}/${Date.now()}.${ext}`;
       const { error: upErr } = await sb.storage.from("perfil").upload(path, file, {
@@ -866,7 +866,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           cpfEl.classList.add("locked-field");
         }
 
-        // Preview do documento j� enviado
+        // Preview do documento já enviado
         if(row.identidade_url){
           const img = document.getElementById("tpDocumentoPreview");
           const hint = document.getElementById("tpDocumentoHint");
@@ -876,7 +876,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
             img.style.display = "block";
           }
           if(hint){
-            hint.textContent = "Documento j� enviado";
+            hint.textContent = "Documento já enviado";
             hint.style.display = "block";
           }
           if(zone){
@@ -889,7 +889,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
     }
 
     // Impede letras/s�mbolos e aplica m�scara a cada digita��o/paste.
-    // (Antes este helper n�o existia e quebrava todo o script, por isso nada funcionava.)
+    // (Antes este helper não existia e quebrava todo o script, por isso nada funcionava.)
     function bindNumericGuards(el, maskFn){
       if(!el) return;
 
@@ -898,7 +898,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         el.value = maskFn ? maskFn(v) : v;
       };
 
-      // Evita caracteres n�o num�ricos entrando antes do input.
+      // Evita caracteres não num�ricos entrando antes do input.
       el.addEventListener('beforeinput', (e)=>{
         if(!e.data) return; // deletes etc.
         if(/\D/.test(e.data)) e.preventDefault();
@@ -919,7 +919,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       el.addEventListener('input', apply);
       el.addEventListener('blur', apply);
 
-      // aplica j� ao carregar
+      // aplica já ao carregar
       apply();
     }
 
@@ -947,7 +947,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
         const data = await res.json();
         if(data?.erro) {
-          toast("CEP n�o encontrado. Verifique e tente novamente.", "error");
+          toast("CEP não encontrado. Verifique e tente novamente.", "error");
           return;
         }
         document.getElementById("tpRua").value = data.logradouro || "";
@@ -967,7 +967,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         }catch(_e){}
       } catch(e) {
         console.warn("Erro CEP", e);
-        toast("N�o foi poss�vel buscar o CEP agora.", "error");
+        toast("Não foi poss�vel buscar o CEP agora.", "error");
       }
     }
 
@@ -1048,7 +1048,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         // Valida��es r�pidas
         if(tel.length < 10){ toast("Telefone inv�lido. Use DDD + n�mero.", "error"); return; }
         if(cpf.length !== 11){ toast("CPF inv�lido. Informe 11 d�gitos.", "error"); return; }
-        if(calcIdade(nasc) < 18){ toast("Voc� precisa ter 18 anos ou mais.", "error"); return; }
+        if(calcIdade(nasc) < 18){ toast("Você precisa ter 18 anos ou mais.", "error"); return; }
         if(cep.length !== 8){ toast("CEP inv�lido. Informe 8 d�gitos.", "error"); return; }
         if(uf.length !== 2){ toast("UF inv�lida.", "error"); return; }
         if(!cidade || !bairro || !rua || !numero){ toast("Preencha o endere�o completo.", "error"); return; }
@@ -1095,7 +1095,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           if(msg.toLowerCase().includes("row-level security")){
             toast("Permiss�o negada (RLS). Rode o SQL do zip para criar pol�ticas.", "error");
           }else if(msg.toLowerCase().includes("does not exist") || msg.toLowerCase().includes("relation")){
-            toast("Tabela profissional_validacao n�o encontrada. Rode o SQL do zip.", "error");
+            toast("Tabela profissional_validacao não encontrada. Rode o SQL do zip.", "error");
           }else if(msg.toLowerCase().includes("could not find the")){
             toast("Sua tabela profissional_validacao tem colunas diferentes. Rode o SQL do zip (ou ajuste os nomes).", "error");
           }else{
@@ -1147,8 +1147,16 @@ document.addEventListener("DOMContentLoaded", ()=>{
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 

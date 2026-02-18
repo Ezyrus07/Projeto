@@ -76,7 +76,25 @@
       const { error } = await client.from(table).select(col).limit(1);
       if (!error) return true;
       const msg = String(error.message || '').toLowerCase();
-      if (msg.includes('does not exist') || msg.includes('could not find')) return false;
+      const code = String(error.code || '').toUpperCase();
+      const status = Number(error.status || error.statusCode || 0);
+      if (
+        status >= 500 ||
+        msg.includes('failed to fetch') ||
+        msg.includes('network') ||
+        msg.includes('cors') ||
+        msg.includes('rest_backoff_active')
+      ) return false;
+      if (status === 401 || status === 403) return true;
+      if (
+        status === 400 || status === 404 ||
+        code === '42703' || // undefined_column
+        code === '42P01' || // undefined_table
+        code === 'PGRST100' || // parse
+        code === 'PGRST204' || // schema cache miss
+        msg.includes('does not exist') ||
+        msg.includes('could not find')
+      ) return false;
       return true;
     }catch(_){ return false; }
   }
@@ -454,5 +472,4 @@ if (gErr && (String(gErr.code||'') === '42703' || String(gErr.message||'').toLow
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', load);
   else load();
 })();
-
 

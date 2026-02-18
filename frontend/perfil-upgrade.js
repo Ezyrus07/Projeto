@@ -717,8 +717,44 @@
   async function uploadToStorage(client, { bucket, path, file }){
     try{
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
-      const safePath = `${path}.${ext}`.replaceAll("//","/");
-      const { error: upErr } = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
+      let safePath = `${path}.${ext}`.replaceAll("//","/");
+
+      let upRes = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
+      let upErr = upRes?.error || null;
+
+      if (upErr && isPermissionDeniedError(upErr) && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+        try {
+          const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+          if (restored) {
+            upRes = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
+            upErr = upRes?.error || null;
+          }
+        } catch (_) {}
+      }
+
+      if (upErr && isPermissionDeniedError(upErr)) {
+        try {
+          let authUid = "";
+          const sess = await client.auth.getSession().catch(() => null);
+          authUid = String(sess?.data?.session?.user?.id || "").trim();
+          if (!authUid && typeof window.dokeResolveAuthUser === "function") {
+            const resolved = await window.dokeResolveAuthUser().catch(() => null);
+            authUid = String(resolved?.id || resolved?.uid || "").trim();
+          }
+          const prefixed = authUid && !safePath.startsWith(`${authUid}/`) ? `${authUid}/${safePath}` : "";
+          if (prefixed) {
+            const prefRes = await client.storage.from(bucket).upload(prefixed, file, { upsert: true, cacheControl: "3600" });
+            const prefErr = prefRes?.error || null;
+            if (!prefErr) {
+              safePath = prefixed;
+              upErr = null;
+            } else {
+              upErr = prefErr;
+            }
+          }
+        } catch (_) {}
+      }
+
       if(upErr) return { error: upErr };
       const { data } = client.storage.from(bucket).getPublicUrl(safePath);
       return { url: data?.publicUrl || null, path: safePath };
@@ -900,9 +936,138 @@
   }
   // -----------------------------
   async function getSessionUser(client){
-    const { data, error } = await client.auth.getSession();
-    if(error) return { error };
-    return { session: null, user: data?.session?.user || null };
+    const strictSessionMode = window.DOKE_STRICT_AUTH_SESSION !== false;
+    function normalizeAuthUserCandidate(raw){
+      if(!raw || typeof raw !== "object") return null;
+      const uid = normalizeIdentity(
+        raw.id ||
+        raw.uid ||
+        raw.user_id ||
+        raw.userId ||
+        raw.auth_uid ||
+        raw.authUid
+      );
+      if(!uid) return null;
+      const meta = raw.user_metadata || {};
+      return {
+        id: uid,
+        uid,
+        email: raw.email || null,
+        user_metadata: {
+          nome: meta.nome || raw.nome || null,
+          user: meta.user || raw.user || null,
+          foto: meta.foto || meta.avatar_url || raw.foto || raw.avatar_url || null
+        }
+      };
+    }
+
+    function decodeJwtPayload(token){
+      try {
+        const parts = String(token || "").split(".");
+        if (parts.length < 2) return null;
+        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+        const json = atob(b64 + pad);
+        return JSON.parse(json);
+      } catch(_){
+        return null;
+      }
+    }
+
+    function pickCachedUser(){
+      try {
+        const compat = normalizeAuthUserCandidate(window.auth?.currentUser || null);
+        if (compat) return compat;
+      } catch(_){}
+      if (window.DOKE_ALLOW_PROFILE_ONLY_AUTH === true) {
+        try {
+          const cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+          const uid = normalizeIdentity(
+            cached?.uid ||
+            cached?.id ||
+            cached?.user_uid ||
+            cached?.userId ||
+            localStorage.getItem("doke_uid")
+          );
+          if (uid) {
+            return {
+              id: uid,
+              uid,
+              email: cached?.email || null,
+              user_metadata: {
+                nome: cached?.nome || null,
+                user: cached?.user || null,
+                foto: cached?.foto || null
+              }
+            };
+          }
+        } catch(_) {}
+      }
+
+      try {
+        const keys = Object.keys(localStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+        for (const k of keys) {
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          let parsed = null;
+          try { parsed = JSON.parse(raw); } catch(_) { parsed = null; }
+          if (!parsed || typeof parsed !== "object") continue;
+          const sessions = [parsed, parsed.currentSession, parsed.session, parsed.data?.session].filter(Boolean);
+          for (const sess of sessions) {
+            const direct = normalizeAuthUserCandidate(sess?.user || null);
+            if (direct) return direct;
+            const payload = decodeJwtPayload(sess?.access_token || "");
+            const expMs = Number(payload?.exp || 0) * 1000;
+            if (expMs && expMs < (Date.now() - 60000)) continue;
+            const uid = normalizeIdentity(payload?.sub);
+            if (!uid) continue;
+            return { id: uid, uid, email: payload?.email || null, user_metadata: {} };
+          }
+        }
+      } catch(_){}
+
+      return null;
+    }
+
+    try{
+      const { data, error } = await client.auth.getSession();
+      if(!error && data?.session?.user){
+        return { session: data.session, user: data.session.user };
+      }
+
+      if (!data?.session?.user && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+        try {
+          const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+          if (restored) {
+            const retry = await client.auth.getSession();
+            if (!retry?.error && retry?.data?.session?.user) {
+              return { session: retry.data.session, user: retry.data.session.user };
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (strictSessionMode) {
+        const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
+        if (compatCurrent) return { session: null, user: compatCurrent };
+        if (error) return { error };
+        return { session: null, user: null };
+      }
+
+      const cachedUser = pickCachedUser();
+      if (cachedUser) return { session: null, user: cachedUser };
+      if(error) return { error };
+      return { session: null, user: null };
+    }catch(err){
+      if (strictSessionMode) {
+        const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
+        if (compatCurrent) return { session: null, user: compatCurrent };
+        return { error: err };
+      }
+      const cachedUser = pickCachedUser();
+      if (cachedUser) return { session: null, user: cachedUser };
+      return { error: err };
+    }
   }
 
   async function getUsuarioByAuthUid(client, authUid){
@@ -3069,7 +3234,7 @@ function ensureTheme(ctx, theme){
   // -----------------------------
   async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, afterFile, capaFile }){
     // upload to storage
-    const storageId = ctx.me?.uid || ctx.me?.id;
+    const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
     // Antes x Depois: usa thumb_url como 'depois'
     if(tipo === 'antes_depois' && afterFile){
@@ -3116,7 +3281,7 @@ function ensureTheme(ctx, theme){
   }
 
   async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
-    const storageId = ctx.me?.uid || ctx.me?.id;
+    const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
     if(capaFile){
       const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
@@ -3149,7 +3314,7 @@ function ensureTheme(ctx, theme){
   }
 
   async function createPortfolioItem(client, ctx, { titulo, descricao, file }){
-    const storageId = ctx.me?.uid || ctx.me?.id;
+    const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     const up = await uploadToStorage(client, { bucket:"perfil", path:`portfolio/${storageId}/${crypto.randomUUID()}`, file });
     if(up.error) throw up.error;
     const { error } = await client.from("portfolio").insert({
@@ -3237,7 +3402,7 @@ function ensureTheme(ctx, theme){
     const coverInput = $("#dpCoverInput");
     const avatarBtn = $("#dpAvatarBtn");
     const avatarInput = $("#dpAvatarInput");
-    const storageId = ctx.me?.uid || ctx.me?.id;
+    const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
 
     if(!ctx.canEdit){
       coverBtn && (coverBtn.style.display = "none");
@@ -3650,6 +3815,19 @@ function ensureTheme(ctx, theme){
     return labels;
   }
 
+  function isNetworkOrCorsError(err){
+    const msg = String(err?.message || err || "").toLowerCase();
+    const code = String(err?.code || "").toLowerCase();
+    return (
+      msg.includes("failed to fetch") ||
+      msg.includes("networkerror") ||
+      msg.includes("network request failed") ||
+      msg.includes("load failed") ||
+      msg.includes("cors") ||
+      code.includes("err_failed")
+    );
+  }
+
   async function detectColumn(client, table, candidates){
     if(!client || !client.from) return null;
     for(const col of (candidates||[])){
@@ -3657,14 +3835,28 @@ function ensureTheme(ctx, theme){
       try{
         const res = await client.from(table).select(col).limit(1);
         if(res?.error){
+          const status = Number(res.error?.status || res.error?.statusCode || 0);
+          const code = String(res.error?.code || "").toUpperCase();
+          if(isNetworkOrCorsError(res.error)) return null;
           if(isMissingTableError(res.error)) return null;
           if(isMissingColumnError(res.error, col)) continue;
+          if (status === 401 || status === 403) return col;
+          if (
+            status === 400 || status === 404 ||
+            code === "42703" || // undefined_column
+            code === "42P01" || // undefined_table
+            code === "PGRST100" || // parse
+            code === "PGRST204" // schema cache miss
+          ) continue;
           // RLS / outra falha: assume que a coluna existe
           return col;
         }
         return col;
       }catch(e){
-        // tenta próxima
+        if(isNetworkOrCorsError(e)) return null;
+        const status = Number(e?.status || e?.statusCode || 0);
+        if (status === 400 || status === 404) continue;
+        // tenta próxima somente para erro de coluna ausente/schema heterogêneo
       }
     }
     return null;
@@ -4866,6 +5058,7 @@ if(!rangeSel || !refreshBtn) return;
 
       const ctx = {
         client,
+        authUser,
         me,
         target,
         targetId: target.id || target.uid || targetId,

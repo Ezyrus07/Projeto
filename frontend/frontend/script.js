@@ -1,13 +1,13 @@
 ﻿// ============================================================
-// 1. IMPORTAÇÕES E CONFIGURAÇÃO
+// 1. IMPORTA??ES E CONFIGURA??O
 // ============================================================
 
 
 // [DOKE] Build tag (cache-buster)
-window.__DOKE_BUILD__ = "20260215v9";
+window.__DOKE_BUILD__ = "20260218v60";
 try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
-// [DOKE PATCH] Guards globais para evitar quebra em páginas diferentes + navegação de grupos
+// [DOKE PATCH] Guards globais para evitar quebra em p?ginas diferentes + navega??o de grupos
 window.carregarProfissionaisDestaque ||= function(){};
 window.carregarProfissionaisNovos ||= function(){};
 window.carregarDestaques ||= function(){};
@@ -37,15 +37,15 @@ const firebaseConfig = {
 
 // Inicializa o Firebase (safe).
 // IMPORTANTE: este projeto usa *bridges* (Firestore/Auth compat em cima do Supabase).
-// Nesses casos, não podemos sobrescrever window.db/window.auth com null, senão o site
-// “acha” que não tem DB/Auth e para de carregar feeds/perfil.
+// Nesses casos, n?o podemos sobrescrever window.db/window.auth com null, sen?o o site
+// ?acha? que n?o tem DB/Auth e para de carregar feeds/perfil.
 let app = null;
 let analytics = null;
 let db = (window.db !== undefined && window.db !== null) ? window.db : null;
 let auth = (window.auth !== undefined && window.auth !== null) ? window.auth : null;
 let storage = (window.storage !== undefined && window.storage !== null) ? window.storage : null;
 
-// [DOKE] Shim: onAuthStateChanged (evita crash quando Firebase não existe)
+// [DOKE] Shim: onAuthStateChanged (evita crash quando Firebase n?o existe)
 if (typeof window.onAuthStateChanged !== "function") {
   window.onAuthStateChanged = function(_ignoredAuth, callback){
     const sb = window.sb || window.supabaseClient;
@@ -77,18 +77,18 @@ try {
     if (typeof getAuth === "function") auth = getAuth(app);
     if (typeof getStorage === "function") storage = getStorage(app);
   } else {
-    console.warn("[DOKE] Firebase SDK não encontrado; usando compat/Supabase (window.auth/db).");
+    console.warn("[DOKE] Firebase SDK n?o encontrado; usando compat/Supabase (window.auth/db).");
   }
 } catch (e) {
   console.warn("[DOKE] Falha ao inicializar Firebase. Usando compat/Supabase.", e);
 }
 
-// Se não existe DB (nem Firebase modular, nem bridge), cria um placeholder.
-// Isso é necessário porque os bridges (firebase-compat-supabase.js) implementam
-// collection/query/getDocs e ignoram o 1º argumento (db).
+// Se n?o existe DB (nem Firebase modular, nem bridge), cria um placeholder.
+// Isso ? necess?rio porque os bridges (firebase-compat-supabase.js) implementam
+// collection/query/getDocs e ignoram o 1? argumento (db).
 if (db === null || db === undefined) db = (window.db !== undefined && window.db !== null) ? window.db : {};
 
-// Auth: se o bridge de Auth expôs getAuth(), usa ele como fonte.
+// Auth: se o bridge de Auth exp?s getAuth(), usa ele como fonte.
 if (auth === null || auth === undefined) {
   try {
     if (typeof window.getAuth === 'function') auth = window.getAuth();
@@ -100,7 +100,371 @@ window.db = db;
 window.auth = auth;
 window.storage = (storage === undefined ? null : storage);
 
-// Protege export helpers: NÃO sobrescreva o bridge (firebase-compat-supabase.js)
+function dokeNormalizeAuthUserCandidate(user) {
+    if (!user || typeof user !== "object") return null;
+    const uid = String(user.uid || user.id || user.user_id || "").trim();
+    if (!uid) return null;
+    const normalized = { ...user, uid };
+    if (!normalized.id) normalized.id = uid;
+    return normalized;
+}
+
+function dokeApplyCompatAuthUser(user) {
+    const normalized = dokeNormalizeAuthUserCandidate(user);
+    try {
+        if (!window.auth || typeof window.auth !== "object") {
+            window.auth = { currentUser: normalized || null };
+        } else {
+            window.auth.currentUser = normalized || null;
+        }
+        dokeInstallCurrentUserAccessor(window.auth);
+    } catch (_e) {}
+    try {
+        if (auth && typeof auth === "object") {
+            auth.currentUser = normalized || null;
+            dokeInstallCurrentUserAccessor(auth);
+        }
+    } catch (_e) {}
+    if (normalized?.uid) {
+        try {
+            localStorage.setItem("usuarioLogado", "true");
+            localStorage.setItem("doke_uid", String(normalized.uid));
+        } catch (_e) {}
+    }
+    return normalized;
+}
+
+function dokeInstallCurrentUserAccessor(target) {
+    try {
+        if (!target || typeof target !== "object") return;
+        if (target.__DOKE_CURRENTUSER_ACCESSOR__) return;
+        let shadow = dokeNormalizeAuthUserCandidate(target.currentUser || null);
+        Object.defineProperty(target, "currentUser", {
+            configurable: true,
+            enumerable: true,
+            get() {
+                if (shadow?.uid) return shadow;
+                const cached = dokeBuildCachedAuthUserSync({ allowProfileFallback: false });
+                if (cached?.uid) {
+                    shadow = dokeNormalizeAuthUserCandidate(cached);
+                    return shadow;
+                }
+                return null;
+            },
+            set(value) {
+                shadow = dokeNormalizeAuthUserCandidate(value || null);
+            }
+        });
+        target.__DOKE_CURRENTUSER_ACCESSOR__ = true;
+    } catch (_e) {}
+}
+
+try { dokeInstallCurrentUserAccessor(window.auth); } catch (_e) {}
+try { dokeInstallCurrentUserAccessor(auth); } catch (_e) {}
+
+function dokePickSupabaseAuthClient() {
+    const candidates = [window.sb, window.supabaseClient, window.sbClient, window.__supabaseClient, window.supabase];
+    for (const client of candidates) {
+        if (client?.auth && typeof client.auth.getSession === "function") return client;
+    }
+    return null;
+}
+
+function dokeDecodeJwtPayloadSync(token) {
+    try {
+        const parts = String(token || "").split(".");
+        if (parts.length < 2) return null;
+        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+        const json = atob(b64 + pad);
+        return JSON.parse(json);
+    } catch (_e) {
+        return null;
+    }
+}
+
+function dokeBuildCachedAuthUserSync(opts) {
+    const allowProfileFallback = !!(opts?.allowProfileFallback !== false);
+    const tryExtractUserFromSessionLike = (sessionLike) => {
+        const user = dokeNormalizeAuthUserCandidate(sessionLike?.user || null);
+        if (user) return user;
+        const token = String(sessionLike?.access_token || "").trim();
+        if (!token) return null;
+        const payload = dokeDecodeJwtPayloadSync(token);
+        const expMs = Number(payload?.exp || 0) * 1000;
+        if (expMs && expMs < (Date.now() - 60000)) return null;
+        const uid = String(payload?.sub || "").trim();
+        if (!uid) return null;
+        return {
+            uid,
+            id: uid,
+            email: payload?.email || null
+        };
+    };
+    const tryExtractFromRaw = (raw) => {
+        if (!raw) return null;
+        let parsed = null;
+        try { parsed = JSON.parse(raw); } catch (_e) { parsed = null; }
+        if (typeof parsed === "string") {
+            try { parsed = JSON.parse(parsed); } catch (_e2) { parsed = null; }
+        }
+        if (!parsed || typeof parsed !== "object") return null;
+        const candidates = [];
+        candidates.push(parsed);
+        if (parsed.currentSession) candidates.push(parsed.currentSession);
+        if (parsed.session) candidates.push(parsed.session);
+        if (parsed.data?.session) candidates.push(parsed.data.session);
+        if (parsed.currentSession?.session) candidates.push(parsed.currentSession.session);
+        for (const sessionLike of candidates) {
+            const user = tryExtractUserFromSessionLike(sessionLike);
+            if (user) return user;
+        }
+        return null;
+    };
+    try {
+        const keys = Object.keys(localStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+        for (const key of keys) {
+            const raw = localStorage.getItem(key);
+            if (!raw) continue;
+            const user = tryExtractFromRaw(raw);
+            if (user) return user;
+        }
+    } catch (_e) {}
+
+    try {
+        const backupRaw = localStorage.getItem("doke_auth_session_backup");
+        const backupUser = tryExtractFromRaw(backupRaw);
+        if (backupUser) return backupUser;
+    } catch (_e) {}
+
+    try {
+        const cookieName = "doke_dev_session=";
+        const parts = String(document.cookie || "").split(";");
+        for (const p of parts) {
+            const item = String(p || "").trim();
+            if (!item.startsWith(cookieName)) continue;
+            const raw = decodeURIComponent(item.slice(cookieName.length));
+            const cookieUser = tryExtractFromRaw(raw);
+            if (cookieUser) return cookieUser;
+        }
+    } catch (_e) {}
+
+    if (allowProfileFallback && window.DOKE_ALLOW_PROFILE_ONLY_AUTH === true) {
+        try {
+            const perfil = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "{}") || {};
+            const uidFromPerfil = String(
+                perfil.uid ||
+                perfil.id ||
+                perfil.user_uid ||
+                perfil.userId ||
+                localStorage.getItem("doke_uid") ||
+                ""
+            ).trim();
+            if (uidFromPerfil) {
+                return {
+                    uid: uidFromPerfil,
+                    id: uidFromPerfil,
+                    email: perfil.email || null,
+                    user_metadata: {
+                        nome: perfil.nome || null,
+                        user: perfil.user || null,
+                        foto: perfil.foto || null
+                    }
+                };
+            }
+        } catch (_e) {}
+    }
+
+    return null;
+}
+
+function dokeEnsureAuthUserFromCacheSync(opts) {
+    const allowInStrict = !!(opts && opts.allowInStrict === true);
+    const allowProfileFallback = !(opts && opts.allowProfileFallback === false);
+    if (!allowInStrict && window.DOKE_STRICT_AUTH_SESSION !== false) return null;
+    const cached = dokeBuildCachedAuthUserSync({ allowProfileFallback });
+    if (!cached) return null;
+    return dokeApplyCompatAuthUser(cached);
+}
+
+async function dokeResolveAuthUser() {
+    const strictSessionMode = window.DOKE_STRICT_AUTH_SESSION !== false;
+    let hasRealtimeAuthClient = false;
+
+    try {
+        const sbClient = dokePickSupabaseAuthClient();
+        hasRealtimeAuthClient = !!(sbClient && sbClient.auth);
+        if (sbClient?.auth?.getSession) {
+            const { data, error } = await sbClient.auth.getSession();
+            if (!error) {
+                const sessionUser = dokeNormalizeAuthUserCandidate(data?.session?.user || null);
+                if (sessionUser) return dokeApplyCompatAuthUser(sessionUser);
+                const token = String(data?.session?.access_token || "").trim();
+                if (token) {
+                    const payload = dokeDecodeJwtPayloadSync(token);
+                    const uid = String(payload?.sub || "").trim();
+                    if (uid) {
+                        return dokeApplyCompatAuthUser({
+                            uid,
+                            id: uid,
+                            email: payload?.email || null,
+                            user_metadata: data?.session?.user?.user_metadata || {}
+                        });
+                    }
+                }
+            }
+
+            if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+                try {
+                    const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+                    if (restored) {
+                        const retry = await sbClient.auth.getSession();
+                        const retryUser = dokeNormalizeAuthUserCandidate(retry?.data?.session?.user || null);
+                        if (retryUser) return dokeApplyCompatAuthUser(retryUser);
+                        const retryToken = String(retry?.data?.session?.access_token || "").trim();
+                        if (retryToken) {
+                            const payload = dokeDecodeJwtPayloadSync(retryToken);
+                            const uid = String(payload?.sub || "").trim();
+                            if (uid) {
+                                return dokeApplyCompatAuthUser({
+                                    uid,
+                                    id: uid,
+                                    email: payload?.email || null,
+                                    user_metadata: retry?.data?.session?.user?.user_metadata || {}
+                                });
+                            }
+                        }
+                    }
+                } catch (_e) {}
+            }
+
+            if (sbClient?.auth?.getUser) {
+                try {
+                    const res = await sbClient.auth.getUser();
+                    const userFromGetUser = dokeNormalizeAuthUserCandidate(res?.data?.user || null);
+                    if (userFromGetUser) return dokeApplyCompatAuthUser(userFromGetUser);
+                } catch (_e) {}
+            }
+
+            if (sbClient?.auth?.getUser && typeof window.dokeGetStoredSupabaseSessionCandidate === "function") {
+                try {
+                    const stored = window.dokeGetStoredSupabaseSessionCandidate(true);
+                    const token = String(stored?.access_token || "").trim();
+                    if (token) {
+                        const resByToken = await sbClient.auth.getUser(token);
+                        const tokenUser = dokeNormalizeAuthUserCandidate(resByToken?.data?.user || null);
+                        if (tokenUser) return dokeApplyCompatAuthUser(tokenUser);
+                    }
+                } catch (_e) {}
+            }
+        }
+    } catch (_e) {}
+
+    const direct = dokeNormalizeAuthUserCandidate(auth?.currentUser || window.auth?.currentUser);
+    if (direct) return direct;
+
+    // Em modo estrito, se existe cliente auth ativo, n?o aceita cache "solto"
+    // para evitar falso logado com token inv?lido/expirado.
+    const allowStrictCacheFallback = !hasRealtimeAuthClient;
+    const cachedFromToken = dokeEnsureAuthUserFromCacheSync({
+        allowInStrict: allowStrictCacheFallback,
+        allowProfileFallback: false
+    });
+    if (cachedFromToken) return cachedFromToken;
+
+    const cached = dokeEnsureAuthUserFromCacheSync({
+        allowInStrict: allowStrictCacheFallback,
+        allowProfileFallback: true
+    });
+    if (cached) return cached;
+
+    if (!strictSessionMode && window.DOKE_ALLOW_PROFILE_ONLY_AUTH === true) {
+        try {
+            const perfil = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "{}") || {};
+            const uid = String(
+                perfil.uid ||
+                perfil.id ||
+                perfil.user_uid ||
+                perfil.userId ||
+                localStorage.getItem("doke_uid") ||
+                ""
+            ).trim();
+            if (uid) return dokeApplyCompatAuthUser({ uid, id: uid, email: perfil.email || null });
+        } catch (_e) {}
+    }
+
+    return null;
+}
+
+function dokeGetOnAuthStateChangedHandler() {
+    if (typeof window.onAuthStateChanged === "function") return window.onAuthStateChanged;
+    if (typeof window.__dokeAuthCompat?.onAuthStateChanged === "function") return window.__dokeAuthCompat.onAuthStateChanged;
+    return null;
+}
+
+function dokeSubscribeAuthState(callback) {
+    const handler = dokeGetOnAuthStateChangedHandler();
+    if (typeof handler === "function") {
+        try {
+            return handler(window.auth || auth || {}, callback);
+        } catch (_e) {}
+    }
+    Promise.resolve()
+        .then(() => dokeResolveAuthUser())
+        .then((user) => {
+            try { callback(user || null); } catch (_e) {}
+        })
+        .catch(() => {
+            try { callback(null); } catch (_e) {}
+        });
+    return null;
+}
+
+try {
+    window.dokeResolveAuthUser = dokeResolveAuthUser;
+    window.dokeEnsureAuthUserFromCacheSync = dokeEnsureAuthUserFromCacheSync;
+} catch (_e) {}
+
+async function dokeHydrateCompatAuthFromSession() {
+    try {
+        const sbClient = dokePickSupabaseAuthClient();
+        if (!sbClient?.auth?.getSession) return null;
+        const { data, error } = await sbClient.auth.getSession();
+        if (error) return null;
+        const user = dokeNormalizeAuthUserCandidate(data?.session?.user || null);
+        if (!user) return null;
+        return dokeApplyCompatAuthUser(user);
+    } catch (_e) {
+        return null;
+    }
+}
+
+(function dokeInitAuthBridge() {
+    if (window.__dokeAuthBridgeInit) return;
+    window.__dokeAuthBridgeInit = true;
+
+    dokeEnsureAuthUserFromCacheSync({ allowInStrict: true, allowProfileFallback: false });
+    dokeHydrateCompatAuthFromSession().catch(() => {});
+    try {
+        dokeSubscribeAuthState((user) => {
+            if (user) dokeApplyCompatAuthUser(user);
+            else dokeEnsureAuthUserFromCacheSync({ allowInStrict: true, allowProfileFallback: false });
+        });
+    } catch (_e) {}
+
+    const refreshAuthCache = () => {
+        dokeEnsureAuthUserFromCacheSync({ allowInStrict: true, allowProfileFallback: false });
+        dokeHydrateCompatAuthFromSession().catch(() => {});
+    };
+    try { window.addEventListener("focus", refreshAuthCache); } catch (_e) {}
+    try {
+        document.addEventListener("visibilitychange", () => {
+            if (!document.hidden) refreshAuthCache();
+        });
+    } catch (_e) {}
+})();
+
+// Protege export helpers: N?O sobrescreva o bridge (firebase-compat-supabase.js)
 // quando ele estiver ativo.
 const __hasFirestoreBridge = !!window.__dokeFirestoreCompat;
 if (!__hasFirestoreBridge) {
@@ -113,11 +477,11 @@ if (!__hasFirestoreBridge) {
   if (typeof doc === "function") window.doc = doc;
 }
 
-// Reforça globals compat caso tenham sido sobrescritos por IDs no DOM
+// Refor?a globals compat caso tenham sido sobrescritos por IDs no DOM
 if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
 if (typeof window.__dokeEnsureAuthCompat === "function") window.__dokeEnsureAuthCompat();
 
-// Variáveis Globais
+// Vari?veis Globais
 window.arquivoFotoSelecionado = null;
 window.arquivoVideoSelecionado = null;
 window.fotosAtuais = [];
@@ -132,7 +496,7 @@ window.listaReelsAtual = [];
 window.indiceReelAtual = 0;
 window.isScrollingReel = false;
 
-// 🔥 DESATIVA QUALQUER LÓGICA OFFLINE / PWA (DEV E PROD)
+// ?? DESATIVA QUALQUER L?GICA OFFLINE / PWA (DEV E PROD)
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
     regs.forEach(r => r.unregister());
@@ -141,11 +505,11 @@ if ("serviceWorker" in navigator) {
 
 
 // ============================================================
-// 2. FUNÇÃO DE PUBLICAR ANÚNCIO (SEM WHATSAPP OBRIGATÓRIO)
+// 2. FUN??O DE PUBLICAR AN?NCIO (SEM WHATSAPP OBRIGAT?RIO)
 // ============================================================
 // Dentro de script.js
 
-// ATUALIZAÇÃO NO SCRIPT.JS - FUNÇÃO PUBLICAR ANÚNCIO
+// ATUALIZA??O NO SCRIPT.JS - FUN??O PUBLICAR AN?NCIO
 if (typeof window.publicarAnuncio !== "function") {
 window.publicarAnuncio = async function(event) {
     if(event) event.preventDefault();
@@ -156,12 +520,12 @@ window.publicarAnuncio = async function(event) {
 
     try {
         const user = auth.currentUser;
-        if (!user) throw new Error("Você precisa estar logado.");
+        if (!user) throw new Error("Voc? precisa estar logado.");
 
         const titulo = document.getElementById('titulo').value;
         const descricao = document.getElementById('descricao').value;
         
-        // 1. PEGA O QUESTIONÁRIO CORRETAMENTE
+        // 1. PEGA O QUESTION?RIO CORRETAMENTE
         const perguntasFormulario = document.getElementById('perguntas-formulario-json')?.value || "";
         const temFormulario = perguntasFormulario.trim().length > 0;
         
@@ -171,7 +535,7 @@ window.publicarAnuncio = async function(event) {
         const categoriasString = document.getElementById('categorias-validacao').value; 
         const categoriaFinal = categoriasString ? categoriasString.split(',')[0] : "Geral";
         const tipoPreco = document.querySelector('input[name="tipo_preco"]:checked')?.value || "A combinar";
-        let precoFinal = tipoPreco === 'Preço Fixo' ? document.getElementById('valor').value : tipoPreco;
+        let precoFinal = tipoPreco === 'Pre?o Fixo' ? document.getElementById('valor').value : tipoPreco;
         
         const cep = document.getElementById('cep').value.replace(/\D/g, ''); 
         const telefone = document.getElementById('telefone')?.value || "";
@@ -180,12 +544,12 @@ window.publicarAnuncio = async function(event) {
         let ufFinal = document.getElementById('uf')?.value || "BR";
         let bairroFinal = document.getElementById('bairro')?.value || "Geral";
 
-        if(!titulo || !descricao) throw new Error("Preencha título e descrição.");
+        if(!titulo || !descricao) throw new Error("Preencha t?tulo e descri??o.");
 
         let fotos = window.fotosParaEnviar && window.fotosParaEnviar.length > 0 ? window.fotosParaEnviar : ["https://placehold.co/600x400?text=Sem+Foto"];
 
         const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        const nomeAutor = perfilLocal.nome || "Você";
+        const nomeAutor = perfilLocal.nome || "Voc?";
         const fotoAutor = perfilLocal.foto || "https://i.pravatar.cc/150";
         let userHandle = perfilLocal.user || ("@" + nomeAutor.split(' ')[0].toLowerCase());
 
@@ -195,7 +559,7 @@ window.publicarAnuncio = async function(event) {
             descricao: descricao,
             temFormulario: temFormulario,
             perguntasFormularioJson: perguntasFormulario, // <--- SALVA AS PERGUNTAS
-            modo_atend: modoAtend, // <--- SALVA SE É ONLINE OU PRESENCIAL
+            modo_atend: modoAtend, // <--- SALVA SE ? ONLINE OU PRESENCIAL
             categoria: categoriaFinal,
             categorias: categoriasString,
             preco: precoFinal,
@@ -214,14 +578,14 @@ window.publicarAnuncio = async function(event) {
             cliques: 0,
             mediaAvaliacao: 0,
             numAvaliacoes: 0,
-            // Controle de visibilidade do anúncio
-            // (se false, não aparece no feed público, mas aparece no perfil do dono)
+            // Controle de visibilidade do an?ncio
+            // (se false, n?o aparece no feed p?blico, mas aparece no perfil do dono)
             ativo: true
         };
 
         await addDoc(collection(window.db, "anuncios"), novoAnuncio);
         
-        alert("Anúncio publicado com sucesso!");
+        alert("An?ncio publicado com sucesso!");
         window.location.href = "index.html";
 
     } catch (erro) {
@@ -249,9 +613,9 @@ window.previewImagemPost = function(input) {
 window.processarVideoUpload = function(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        if (file.size > 100 * 1024 * 1024) { alert("Vídeo muito grande (max 100MB)."); input.value = ""; return; }
+        if (file.size > 100 * 1024 * 1024) { alert("V?deo muito grande (max 100MB)."); input.value = ""; return; }
         window.arquivoVideoSelecionado = file; 
-        document.getElementById('nomeVideoSelecionado').innerText = "Vídeo: " + file.name;
+        document.getElementById('nomeVideoSelecionado').innerText = "V?deo: " + file.name;
         document.getElementById('base64VideoFile').value = "video_ok";
     }
 }
@@ -270,17 +634,17 @@ window.removerImagemPost = function() {
 window.publicarConteudoUnificado = async function(event) {
     const btn = event.target || document.querySelector('.btn-publicar');
     const user = auth.currentUser;
-    if (!user) return alert("Faça login.");
+    if (!user) return alert("Fa?a login.");
 
     const tipo = document.getElementById('tipoPostagemAtual').value;
     const texto = document.getElementById('textoPost').value;
     const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
 
-    // Validação de Vínculo Obrigatório para Reels
+    // Valida??o de V?nculo Obrigat?rio para Reels
     if (tipo === 'video-curto') {
         const selectAnuncio = document.getElementById('selectAnuncioVinculado');
         if (!selectAnuncio || !selectAnuncio.value) {
-            alert("⚠️ É OBRIGATÓRIO vincular este vídeo a um dos seus serviços.");
+            alert("?? ? OBRIGAT?RIO vincular este v?deo a um dos seus servi?os.");
             return;
         }
     }
@@ -292,7 +656,7 @@ window.publicarConteudoUnificado = async function(event) {
         let urlImagem = "";
         let urlVideo = "";
 
-        // Lógica de Upload (Storage)
+        // L?gica de Upload (Storage)
         if (window.arquivoFotoSelecionado) {
             const refImg = ref(storage, `posts/${user.uid}/img_${Date.now()}`);
             const snapImg = await uploadBytes(refImg, window.arquivoFotoSelecionado);
@@ -310,7 +674,7 @@ window.publicarConteudoUnificado = async function(event) {
         
         let dados = {
             uid: user.uid,
-            autorNome: perfilLocal.nome || "Usuário",
+            autorNome: perfilLocal.nome || "Usu?rio",
             autorUser: perfilLocal.user || "@usuario",
             autorFoto: perfilLocal.foto || "https://placehold.co/150",
             data: new Date().toISOString(),
@@ -323,7 +687,7 @@ window.publicarConteudoUnificado = async function(event) {
             dados.videoUrl = urlVideo;
             dados.capa = urlImagem;
             dados.descricao = texto;
-            dados.anuncioId = selectAnuncio.value; // ID DO SERVIÇO PARA O BOTÃO
+            dados.anuncioId = selectAnuncio.value; // ID DO SERVI?O PARA O BOT?O
             dados.categoria = opt.getAttribute('data-cat') || "Geral"; // TAG VERDE
             dados.tag = (document.getElementById('inputTagVideo').value || "NOVO").toUpperCase(); // TAG TOPO
         } else {
@@ -509,10 +873,21 @@ window.carregarTrabalhosHome = async function() {
 
     // Skeleton enquanto carrega os trabalhos
     window.dokeRenderTrabalhosSkeleton?.(container);
+    const loadWatchdog = setTimeout(() => {
+        try {
+            if (container.querySelector('.is-skeleton') || container.querySelector('.skeleton')) {
+                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
+                container.setAttribute('aria-busy', 'false');
+            }
+        } catch (_) {}
+    }, 12000);
 
     try {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(10));
-        const snapshot = await getDocs(q);
+        const snapshot = await Promise.race([
+            getDocs(q),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_trabalhos_home")), 8000))
+        ]);
         container.innerHTML = ""; 
 
         if (snapshot.empty) return;
@@ -540,15 +915,15 @@ window.carregarTrabalhosHome = async function() {
         snapshot.forEach(doc => {
             const data = doc.data();
             const linkPerfil = "";
-            const titulo = (data.titulo || data.descricao || data.categoria || "Vídeo curto").toString();
+            const titulo = (data.titulo || data.descricao || data.categoria || "V?deo curto").toString();
             const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
-            const categoria = (data.categoria || "Vídeo curto").toString();
+            const categoria = (data.categoria || "V?deo curto").toString();
             const duracao = formatShortDuration(data.duracao || data.duracaoSegundos || data.tempo);
             const capa = data.capa || "https://placehold.co/540x960?text=Video";
             const fotoAutor = data.autorFoto || "https://placehold.co/120x120?text=User";
             const autorNome = (data.autorNome || "@profissional").toString();
             
-            // ... (código do dadosModal igual) ...
+            // ... (c?digo do dadosModal igual) ...
             const dadosModal = JSON.stringify({
                 id: doc.id, video: data.videoUrl, img: data.capa, user: data.autorNome,
                 desc: data.descricao, uid: data.uid, autorFoto: data.autorFoto, likes: data.likes
@@ -560,7 +935,7 @@ window.carregarTrabalhosHome = async function() {
                  onmouseleave="pararPreview(this)"
                  onclick="abrirPlayerTikTok(${dadosModal})">
                 <div class="yt-chip-row">
-                    <span class="yt-chip">Vídeo-curto</span>
+                    <span class="yt-chip">V?deo-curto</span>
                     <span class="yt-duration">${escapeHtmlLocal(duracao)}</span>
                 </div>
                 <input type="hidden" class="video-src-hidden" name="videoSrc" value="${data.videoUrl}">
@@ -583,8 +958,16 @@ window.carregarTrabalhosHome = async function() {
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
-    } catch (e) { console.error(e); }
-    finally { container.setAttribute('aria-busy', 'false'); }
+    } catch (e) {
+        console.error(e);
+        try {
+            container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
+        } catch (_) {}
+    }
+    finally {
+        clearTimeout(loadWatchdog);
+        container.setAttribute('aria-busy', 'false');
+    }
 }
 // ============================================================
 // ABRIR PLAYER TIKTOK (CORRIGIDO: RECEBE FOTO E LINK)
@@ -604,7 +987,7 @@ window.abrirPlayerTikTok = function(dadosRecebidos) {
     modal.style.display = 'flex';
     updateScrollLock();
 
-    // 2. Preencher Vídeo
+    // 2. Preencher V?deo
     const player = document.getElementById('playerPrincipal');
     const blur = document.getElementById('videoBlur');
     player.src = dados.video;
@@ -651,13 +1034,13 @@ window.abrirPlayerTikTok = function(dadosRecebidos) {
         reelUserCapEl.classList.add('js-user-link');
     }
     document.getElementById('reelDesc').innerText = desc;
-    document.getElementById('reelData').innerText = "Ver tradução"; // Simulado
+    document.getElementById('reelData').innerText = "Ver tradu??o"; // Simulado
 
-    // 4. Rodapé
+    // 4. Rodap?
     document.getElementById('reelLikesCount').innerText = `${dados.likes || 0} curtidas`;
-    document.getElementById('reelDateSmall').innerText = "HÁ 2 DIAS"; // Simulado
+    document.getElementById('reelDateSmall').innerText = "H? 2 DIAS"; // Simulado
 
-    // 5. Resetar Ícone Like
+    // 5. Resetar ?cone Like
     const icon = document.getElementById('btnLikeReel');
     icon.className = 'bx bx-heart';
     icon.style.color = '';
@@ -665,34 +1048,34 @@ window.abrirPlayerTikTok = function(dadosRecebidos) {
     // Verifica like no banco
     if(auth.currentUser) verificarLikeReel(dados.id, auth.currentUser.uid);
 
-    // Carrega Comentários
+    // Carrega Coment?rios
     carregarComentariosReel(dados.id);
 }
 
-// Função de curtir visual (apenas efeito)
+// Fun??o de curtir visual (apenas efeito)
 window.toggleLikeTikTok = function(btn) {
-    // Procura o elemento dentro do botão (adaptado para o novo HTML)
+    // Procura o elemento dentro do bot?o (adaptado para o novo HTML)
     const icon = btn.querySelector('i');
     const countSpan = btn.querySelector('.action-count');
     
-    // Alterna a classe visual no botão pai
+    // Alterna a classe visual no bot?o pai
     btn.classList.toggle('liked');
 
     if (btn.classList.contains('liked')) {
         // Virou Like
-        icon.className = 'bx bxs-heart'; // Ícone preenchido
-        // Simulação de contagem (+1)
+        icon.className = 'bx bxs-heart'; // ?cone preenchido
+        // Simula??o de contagem (+1)
         if(countSpan) {
             let val = parseInt(countSpan.innerText.replace(/\D/g,'')) || 0;
             countSpan.innerText = val + 1;
         }
-        // Animaçãozinha
+        // Anima??ozinha
         icon.style.transform = "scale(1.2)";
         setTimeout(() => icon.style.transform = "scale(1)", 200);
         
     } else {
         // Removeu Like
-        icon.className = 'bx bx-heart'; // Ícone contorno
+        icon.className = 'bx bx-heart'; // ?cone contorno
         if(countSpan) {
             let val = parseInt(countSpan.innerText.replace(/\D/g,'')) || 0;
             countSpan.innerText = Math.max(0, val - 1);
@@ -701,19 +1084,22 @@ window.toggleLikeTikTok = function(btn) {
 }
 
 window.abrirComentarios = function() {
-    // Como você ainda não tem backend de comentários, vamos simular
-    // Futuramente aqui abriria uma gaveta de comentários
+    // Como voc? ainda n?o tem backend de coment?rios, vamos simular
+    // Futuramente aqui abriria uma gaveta de coment?rios
     
-    const user = auth.currentUser;
+    let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+    if (!user) {
+        try { user = dokeEnsureAuthUserFromCacheSync(); } catch (_) { user = null; }
+    }
     if(!user) {
-        alert("Faça login para comentar!");
+        alert("Fa?a login para comentar!");
         return;
     }
     
-    const msg = prompt("Escreva seu comentário:");
+    const msg = prompt("Escreva seu coment?rio:");
     if(msg && msg.trim() !== "") {
-        alert("Comentário enviado! (Simulação)");
-        // Aqui você salvaria no Firebase futuramente
+        alert("Coment?rio enviado! (Simula??o)");
+        // Aqui voc? salvaria no Firebase futuramente
     }
 }
 
@@ -744,35 +1130,38 @@ window.fecharPlayerVideo = function() {
 // 6. SISTEMA DE PEDIDOS E CHAT INTERNO (SEM WHATSAPP)
 // ============================================================
 
-// Botão "Solicitar Orçamento"
-// Botão "Solicitar Orçamento" - VERSÃO COM FORMULÁRIO E DESCRIÇÃO OBRIGATÓRIA
+// Bot?o "Solicitar Or?amento"
+// Bot?o "Solicitar Or?amento" - VERS?O COM FORMUL?RIO E DESCRI??O OBRIGAT?RIA
 window.solicitarOrcamento = async function(idPrestador, nomePrestador, descricaoServico, temForm, perguntas) {
-    const user = auth.currentUser;
+    let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
     if (!user) {
-        alert("Você precisa fazer login para continuar.");
+        try { user = await dokeResolveAuthUser(); } catch (_) { user = null; }
+    }
+    if (!user) {
+        alert("Voc? precisa fazer login para continuar.");
         window.location.href = "login.html";
         return;
     }
 
     if (user.uid === idPrestador) {
-        alert("Você não pode solicitar para si mesmo.");
+        alert("Voc? n?o pode solicitar para si mesmo.");
         return;
     }
 
     let respostasFormulario = "";
 
-    // 1. Se o prestador criou um formulário, ele aparece primeiro (Opcional para o prestador ter, mas se tiver, o cliente responde)
+    // 1. Se o prestador criou um formul?rio, ele aparece primeiro (Opcional para o prestador ter, mas se tiver, o cliente responde)
     if (temForm && perguntas) {
-        respostasFormulario = prompt(`O prestador solicita que você responda:\n\n${perguntas}`);
+        respostasFormulario = prompt(`O prestador solicita que voc? responda:\n\n${perguntas}`);
         if (respostasFormulario === null) return; // Cancelou
     }
 
-    // 2. DESCRIÇÃO OBRIGATÓRIA (Toda vez que apertar em solicitar/comprar)
-    const msg = prompt(`DESCREVA SEU PEDIDO (Obrigatório):\nDetalhe o que você precisa para ${nomePrestador}:`);
+    // 2. DESCRI??O OBRIGAT?RIA (Toda vez que apertar em solicitar/comprar)
+    const msg = prompt(`DESCREVA SEU PEDIDO (Obrigat?rio):\nDetalhe o que voc? precisa para ${nomePrestador}:`);
     
-    // Validação de obrigatoriedade
+    // Valida??o de obrigatoriedade
     if (!msg || msg.trim() === "") {
-        alert("A descrição do pedido é obrigatória para enviar a solicitação!");
+        alert("A descri??o do pedido ? obrigat?ria para enviar a solicita??o!");
         return; 
     }
 
@@ -795,9 +1184,9 @@ try {
             ultimaMensagem: msg || "Novo pedido enviado",
             visualizado: false,
             
-            // ADICIONE ESTES CAMPOS: Garante que nasce não lido
+            // ADICIONE ESTES CAMPOS: Garante que nasce n?o lido
             notificacaoLidaProfissional: false, 
-            notificacaoLidaCliente: true // Eu (cliente) já li o que acabei de enviar
+            notificacaoLidaCliente: true // Eu (cliente) j? li o que acabei de enviar
         };
 
         if (pedidoExistente && pedidoExistente.id) {
@@ -811,16 +1200,16 @@ try {
             await addDoc(collection(db, "pedidos"), pedidoPayload);
         }
 
-        alert(`✅ Solicitação enviada! Aguarde o retorno no chat.`);
+        alert(`? Solicita??o enviada! Aguarde o retorno no chat.`);
         
     } catch (e) {
         console.error("Erro ao enviar pedido:", e);
-        alert("Erro técnico ao enviar. Tente novamente.");
+        alert("Erro t?cnico ao enviar. Tente novamente.");
     }
 }
 
 
-// Notificações Globais
+// Notifica??es Globais
 window.verificarNotificacoes = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
@@ -922,7 +1311,7 @@ function getActorPerfil() {
 async function getSupabaseUidByUserId(userId) {
     if (!userId) return null;
 
-    // Se já for UUID, tratamos como o próprio `uid` do Auth (evita .eq("id", uuid) e erro 400/520).
+    // Se j? for UUID, tratamos como o pr?prio `uid` do Auth (evita .eq("id", uuid) e erro 400/520).
     if (isUuid(userId)) return String(userId);
 
     if (_dokeSupabaseUidCache.has(userId)) return _dokeSupabaseUidCache.get(userId);
@@ -1102,14 +1491,14 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
 
 
 // ============================================================
-// 7. CARREGAMENTO DE ANÚNCIOS (FEED) - (MANTIDO E INTEGRADO)
+// 7. CARREGAMENTO DE AN?NCIOS (FEED) - (MANTIDO E INTEGRADO)
 // ============================================================
 
-// Builder global do card do anúncio (reutilizado no perfil para ficar 100% igual ao feed)
+// Builder global do card do an?ncio (reutilizado no perfil para ficar 100% igual ao feed)
 window.dokeBuildCardPremium = function(anuncio) {
-    const titulo = String(anuncio.titulo || "Serviço sem título");
-    let preco = String(anuncio.preco || "Sob Orçamento").trim();
-    if (/^sob\\s+or[çc]amento$/i.test(preco)) preco = "Sob Orçamento";
+    const titulo = String(anuncio.titulo || "Servi?o sem t?tulo");
+    let preco = String(anuncio.preco || "Sob Or?amento").trim();
+    if (/^sob\\s+or[?c]amento$/i.test(preco)) preco = "Sob Or?amento";
     const descricao = String(anuncio.descricao || "").trim();
     const descricaoLimpa = __dokeNormalizeText(descricao).replace(/\s+/g, " ").trim();
     const tituloLimpo = __dokeNormalizeText(titulo).replace(/\s+/g, " ").trim();
@@ -1192,16 +1581,16 @@ window.dokeBuildCardPremium = function(anuncio) {
           </div>
         </div>
         <div class="cp-more">
-          <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar anúncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
+          <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar an?ncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
             <i class='bx bx-heart'></i>
           </button>
         </div>
       </div>
 
       <div class="cp-v2-rating">
-        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avaliações do anúncio">
+        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avalia??es do an?ncio">
           <span class="cp-mini-stars" aria-hidden="true">${starsInline}</span>
-          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes} avaliações)` : "Sem avaliações"}</span>
+          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes} avalia??es)` : "Sem avalia??es"}</span>
         </button>
       </div>
 
@@ -1229,7 +1618,7 @@ window.dokeBuildCardPremium = function(anuncio) {
             <small class="cp-v2-priceLabel">Valor estimado</small>
             <strong class="cp-v2-priceValue">${escapeHtml(preco)}</strong>
             <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none;">
-              Preço médio (5+ serviços): <b></b>
+              Pre?o m?dio (5+ servi?os): <b></b>
             </div>
           </div>
           <button class="btn-solicitar" type="button" onclick="window.location.href='${orcamentoHref}'">
@@ -1677,13 +2066,21 @@ function dokeDedupAnuncios(list) {
 function dokeIsSupaTemporarilyDown() {
     try {
         const until = Number(sessionStorage.getItem(DOKE_SAAS_DOWN_KEY) || 0);
+        if (Number.isFinite(until) && until > 0 && until <= Date.now()) {
+            sessionStorage.removeItem(DOKE_SAAS_DOWN_KEY);
+            return false;
+        }
         return Number.isFinite(until) && until > Date.now();
     } catch (_) {
         return false;
     }
 }
 
-function dokeMarkSupaDown(ms = 120000) {
+function dokeClearSupaDown() {
+    try { sessionStorage.removeItem(DOKE_SAAS_DOWN_KEY); } catch (_) {}
+}
+
+function dokeMarkSupaDown(ms = 30000) {
     try {
         sessionStorage.setItem(DOKE_SAAS_DOWN_KEY, String(Date.now() + Math.max(10000, ms)));
     } catch (_) {}
@@ -1693,12 +2090,27 @@ function dokeLooksLikeNetworkAbort(err) {
     if (!err) return false;
     const code = String(err.code || "").toLowerCase();
     const msg = String(err.message || err.details || err.hint || "").toLowerCase();
+    const status = Number(err.status || err.statusCode || err.httpStatus || 0);
     return (
-        code === "" ||
+        status === 0 ||
+        status === 408 ||
+        status === 429 ||
+        status === 502 ||
+        status === 503 ||
+        status === 504 ||
+        status === 520 ||
+        status === 522 ||
+        status === 524 ||
+        code.includes("abort") ||
+        code.includes("network") ||
+        code.includes("econn") ||
+        code.includes("timeout") ||
         msg.includes("aborterror") ||
         msg.includes("failed to fetch") ||
         msg.includes("network") ||
         msg.includes("cors") ||
+        msg.includes("timeout") ||
+        msg.includes("gateway") ||
         msg.includes("err_failed") ||
         msg.includes("request was aborted")
     );
@@ -1708,6 +2120,7 @@ function dokeLogNonNetworkError(prefix, err) {
     if (!dokeLooksLikeNetworkAbort(err)) {
         console.error(prefix, err);
     } else {
+        console.warn(prefix, err);
         dokeMarkSupaDown();
     }
 }
@@ -1759,14 +2172,14 @@ async function __dokeFetchAnunciosFallback() {
     const cached = dokeReadCache(DOKE_CACHE_KEYS.anuncios, DOKE_CACHE_MAX_AGE_MS);
     if (cached && cached.length) return { ok: true, data: cached };
     if (!client?.from) return { ok: false, data: [] };
-    if (dokeIsSupaTemporarilyDown()) return { ok: false, data: [] };
+    if (dokeIsSupaTemporarilyDown() && cached?.length) return { ok: true, data: cached };
 
     const tableCandidates = ["anuncios", "servicos"];
     let lastErr = null;
     const selectCandidates = [
+        "*",
         "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo,dataCriacao,dataAtualizacao,bairro,cidade,uf,pagamentosAceitos,pagamentos_aceitos,mediaAvaliacao,numAvaliacoes",
-        "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo",
-        "*"
+        "id,uid,titulo,descricao,preco,img,categoria,categorias,nomeAutor,userHandle,ativo"
     ];
     for (const table of tableCandidates) {
         for (const select of selectCandidates) {
@@ -1792,6 +2205,7 @@ async function __dokeFetchAnunciosFallback() {
                         return { ...row, id: realId };
                     })
                     .filter(Boolean);
+                dokeClearSupaDown();
                 dokeWriteCache(DOKE_CACHE_KEYS.anuncios, normalized);
                 return { ok: true, data: normalized };
             } catch (err) {
@@ -1860,7 +2274,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             } catch (fireErr) {
                 lastLoadError = fireErr;
                 if (!dokeLooksLikeNetworkAbort(fireErr)) {
-                    console.warn("Falha ao carregar anúncios via compat:", fireErr);
+                    console.warn("Falha ao carregar an?ncios via compat:", fireErr);
                 }
             }
         }
@@ -1879,6 +2293,10 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             fetched = true;
         }
 
+        if (!fetched && !lastLoadError && dokeIsSupaTemporarilyDown()) {
+            lastLoadError = new Error("supabase_temporarily_down");
+        }
+
         if (!fetched) {
             console.warn("Nao foi possivel carregar anuncios no momento. Exibindo estado vazio.", lastLoadError || null);
             listaAnuncios = [];
@@ -1886,8 +2304,8 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         listaAnuncios = dokeDedupAnuncios(listaAnuncios);
-        // Não mostrar anúncios desativados no feed público
-        // (anúncios antigos sem o campo 'ativo' continuam aparecendo)
+        // N?o mostrar an?ncios desativados no feed p?blico
+        // (an?ncios antigos sem o campo 'ativo' continuam aparecendo)
         listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
         dokeWriteCache(DOKE_CACHE_KEYS.anuncios, listaAnuncios);
 
@@ -1922,33 +2340,33 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (listaFinal.length === 0) {
-            // Nada encontrado: sugere alguns anúncios embaixo (quando houver termo de busca)
+            // Nada encontrado: sugere alguns an?ncios embaixo (quando houver termo de busca)
             if (termoBusca && termoBusca.trim() !== "" && listaAnuncios.length) {
                 const sugest = listaAnuncios.slice(0, 8);
                 feed.innerHTML = `
                   <div class="doke-empty">
-                    <div class="doke-empty__icon">🔎</div>
-                    <div class="doke-empty__title">Nenhum anúncio encontrado</div>
-                    <div class="doke-empty__subtitle">Não achamos resultados para <b>${escapeHtml(termoBusca)}</b>. Tente ajustar seus filtros ou buscar por outro termo.</div>
+                    <div class="doke-empty__icon">??</div>
+                    <div class="doke-empty__title">Nenhum an?ncio encontrado</div>
+                    <div class="doke-empty__subtitle">N?o achamos resultados para <b>${escapeHtml(termoBusca)}</b>. Tente ajustar seus filtros ou buscar por outro termo.</div>
                     <div class="doke-empty__actions">
                       <button class="doke-empty__btn" type="button" onclick="try{document.querySelector(\'#buscaInput\')?.focus()}catch(e){}">Nova busca</button>
                       <button class="doke-empty__btn doke-empty__btn--primary" type="button" onclick="try{window.location.href=\'busca.html\'}catch(e){}">Explorar</button>
                     </div>
                   </div>
-                  <div style="padding:6px 0 10px; font-weight:800; color:#0b7768;">Sugestões para você</div>
+                  <div style="padding:6px 0 10px; font-weight:800; color:#0b7768;">Sugest?es para voc?</div>
                 `;
                 sugest.forEach((a) => {
                     const card = window.dokeBuildCardPremium(a);
                     appendAnuncioCard(feed, card);
                 });
             } else {
-                feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
+                feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum an?ncio encontrado.</p>`;
             }
             feed.setAttribute('aria-busy', 'false');
             return;
         }
 
-        // Paginação simples (home/header) — carrega por lotes
+        // Pagina??o simples (home/header) ? carrega por lotes
         window.__dokeAnunciosListaAtual = listaFinal;
         window.__dokeAnunciosCursor = 0;
 
@@ -1975,7 +2393,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         } catch (_) {}
         renderMais(8);
 
-        // botão Ver mais
+        // bot?o Ver mais
         if (!document.getElementById('btnVerMaisAnuncios')) {
             const wrap = document.createElement('div');
             wrap.style.textAlign = 'center';
@@ -1999,7 +2417,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         return;
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
-        feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
+        feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar an?ncios.</p>`;
         feed.setAttribute('aria-busy', 'false');
     } finally {
         window.__dokeAnunciosLoading = false;
@@ -2007,7 +2425,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
 }
 
 
-// Reset rápido dos filtros da busca (usado no estado vazio)
+// Reset r?pido dos filtros da busca (usado no estado vazio)
 window.__dokeResetBuscaFiltros = function(){
     try{
         const idsText = ['inputBusca','filtroPreco','filtroTipoPreco','filtroCategoria','filtroRaio','selectEstado','selectCidade','selectBairro'];
@@ -2102,7 +2520,7 @@ window.aplicarFiltrosBusca = function() {
         feed.innerHTML = `
           <div class="doke-empty doke-soft-card doke-empty-state">
             <div class="ico"><i class='bx bx-search-alt'></i></div>
-            <h3>Nenhum anúncio encontrado</h3>
+            <h3>Nenhum an?ncio encontrado</h3>
             <p>Tente ajustar os filtros, ampliar o raio ou buscar por outro termo.</p>
             <div class="actions">
               <button class="doke-btn primary" type="button" onclick="window.__dokeResetBuscaFiltros(); if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();">Limpar filtros</button>
@@ -2166,10 +2584,10 @@ window.novaBusca = function() {
 };
 
 // ============================================================
-// 8. FUNÇÕES GERAIS (CARREGAMENTO, AUTH, ETC) - MANTIDAS
+// 8. FUN??ES GERAIS (CARREGAMENTO, AUTH, ETC) - MANTIDAS
 // ============================================================
 // ============================================================
-// CATEGORIAS (carrossel em círculo, ícone + nome, hover glow)
+// CATEGORIAS (carrossel em c?rculo, ?cone + nome, hover glow)
 // ============================================================
 const __DOKE_ANUNCIAR_CATEGORIAS = [
     "Eletricista",
@@ -2208,7 +2626,7 @@ function __dokeIconForCategory(nome){
     if (n.includes('pint')) return 'bx-paint';
     if (n.includes('eletric')) return 'bx-bulb';
     if (n.includes('encan') || n.includes('hidra')) return 'bx-wrench';
-    if (n.includes('assist') || n.includes('técn') || n.includes('tecnic')) return 'bx-wrench';
+    if (n.includes('assist') || n.includes('t?cn') || n.includes('tecnic')) return 'bx-wrench';
     if (n.includes('aula') || n.includes('curso') || n.includes('particular')) return 'bx-book';
     if (n.includes('beleza') || n.includes('estetic') || n.includes('cabelo')) return 'bx-cut';
     if (n.includes('limpeza')) return 'bx-water';
@@ -2409,6 +2827,7 @@ window.sincronizarSessaoSupabase = async function() {
         if (!user) {
             return null;
         }
+        dokeApplyCompatAuthUser(user);
         if (!localStorage.getItem('doke_usuario_perfil')) {
             const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario");
             localStorage.setItem('doke_usuario_perfil', JSON.stringify({
@@ -2445,7 +2864,7 @@ window.carregarProfissionais = async function() {
             avaliacaoHTML = `<span class="pro-rating" style="background:#e0f7fa; color:#006064;">Novo</span>`;
         } else {
             let media = (p.stats && p.stats.media) ? p.stats.media : 0; 
-            avaliacaoHTML = `<span class="pro-rating">★ ${media} (${numReviews})</span>`;
+            avaliacaoHTML = `<span class="pro-rating">? ${media} (${numReviews})</span>`;
         }
 
         const html = `
@@ -2460,15 +2879,18 @@ window.carregarProfissionais = async function() {
         `;
         container.innerHTML = html;
     } else {
-        container.innerHTML = `<div style="padding: 20px; color: #888; white-space: nowrap;"><a href="login.html" style="color:var(--cor0); font-weight:bold;">Faça login</a> para ver seu destaque.</div>`;
+        container.innerHTML = `<div style="padding: 20px; color: #888; white-space: nowrap;"><a href="login.html" style="color:var(--cor0); font-weight:bold;">Fa?a login</a> para ver seu destaque.</div>`;
     }
 }
 
 // ============================================================
-// 9. HEADER, AUTH, UTILITÁRIOS E BUSCA (MANTIDOS)
+// 9. HEADER, AUTH, UTILIT?RIOS E BUSCA (MANTIDOS)
 // ============================================================
 
 async function protegerPaginasRestritas() {
+    const isLocalDevHost = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ""));
+    if (isLocalDevHost) return;
+
     const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
 
     const caminhoAtual = window.location.pathname || "";
@@ -2477,19 +2899,30 @@ async function protegerPaginasRestritas() {
     if (!paginasRestritas.includes(paginaAtual)) return;
 
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+    const uidCache = String(localStorage.getItem('doke_uid') || "").trim();
     const lsLogado = (localStorage.getItem('usuarioLogado') === 'true') || !!perfilSalvo;
 
     const fbUser = window.auth?.currentUser || null;
 
     let sbUser = null;
+    let sessionCheckFailed = false;
     try {
         if (window.sb?.auth?.getSession) {
             const { data } = await window.sb.auth.getSession();
             sbUser = data?.session?.user || null;
         }
-    } catch (_) {}
+    } catch (_) { sessionCheckFailed = true; }
 
-    const estaLogado = !!fbUser || !!sbUser || lsLogado;
+    let resolved = null;
+    try { resolved = await dokeResolveAuthUser(); } catch (_) {}
+
+    const estaLogado = !!resolved || !!fbUser || !!sbUser || lsLogado || !!uidCache;
+
+    const isLocalDev = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ""));
+    if (!estaLogado && sessionCheckFailed && isLocalDev) {
+        // Em desenvolvimento, n?o bloquear navega??o por falha transit?ria de sess?o/rede.
+        return;
+    }
 
     if (!estaLogado) {
         window.location.href = "login.html";
@@ -2497,65 +2930,110 @@ async function protegerPaginasRestritas() {
 }
 
 window.verificarEstadoLogin = async function() {
-    // 1. Pega os dados com segurança
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
-    const authUser = window.auth?.currentUser;
-    let logado = localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo || !!authUser;
     let perfil = {};
+    let resolvedUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
     let sessionUser = null;
-    
+
     try {
-        perfil = JSON.parse(perfilSalvo) || {};
-    } catch (e) {
-        console.log("Erro ao ler perfil", e);
+        perfil = JSON.parse(perfilSalvo || "{}") || {};
+    } catch (_e) {
         perfil = {};
     }
 
-    // Corrige cache antigo com HTML indevido no nome de usuário.
-    const nomeSeguroPerfil = sanitizePlainText(perfil.user || perfil.nome || "");
-    if (nomeSeguroPerfil) {
-        perfil.user = nomeSeguroPerfil;
-        if (!perfil.nome) perfil.nome = nomeSeguroPerfil;
-        try { localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil)); } catch(_) {}
+    if (!resolvedUser) {
+        try { resolvedUser = await dokeResolveAuthUser(); } catch (_e) { resolvedUser = null; }
     }
-
-    // Define foto padrão se não tiver
-    if (!perfilSalvo && authUser) {
-        const nomeFallback = authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : "Usuario");
-        perfil = {
-            nome: nomeFallback,
-            user: authUser.displayName || nomeFallback,
-            foto: authUser.photoURL || ""
-        };
-        localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
-        localStorage.setItem('usuarioLogado', 'true');
-        logado = true;
-    }
-
-    if (!logado && window.sb?.auth?.getSession) {
+    if (!resolvedUser && window.sb?.auth?.getSession) {
         try {
             const { data, error } = await window.sb.auth.getSession();
-            if (!error) {
-                sessionUser = data?.session?.user || null;
+            if (!error && data?.session?.user) {
+                sessionUser = dokeNormalizeAuthUserCandidate(data.session.user);
                 if (sessionUser) {
-                    const nomeFallback = sessionUser.user_metadata?.nome || (sessionUser.email ? sessionUser.email.split('@')[0] : "Usuario");
-                    perfil = {
-                        nome: nomeFallback,
-                        user: sessionUser.user_metadata?.user || nomeFallback,
-                        foto: sessionUser.user_metadata?.foto || ""
-                    };
-                    localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
-                    localStorage.setItem('usuarioLogado', 'true');
-                    logado = true;
+                    resolvedUser = dokeApplyCompatAuthUser(sessionUser) || sessionUser;
                 }
             }
-        } catch (e) {
-            console.log("Erro ao buscar sessao:", e);
-        }
+        } catch (_e) {}
     }
 
-    const fotoUsuario = perfil.foto || authUser?.photoURL || sessionUser?.user_metadata?.foto || 'https://i.pravatar.cc/150?img=12'; 
+    const uidPerfil = String(
+        perfil.uid ||
+        perfil.id ||
+        perfil.user_uid ||
+        perfil.userId ||
+        ""
+    ).trim();
+    const uidAuth = String(resolvedUser?.uid || resolvedUser?.id || "").trim();
+    const uidCache = String(localStorage.getItem('doke_uid') || "").trim();
+    let resolvedUid = uidAuth || uidPerfil || uidCache;
+    let logado = !!resolvedUid || localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo || !!resolvedUser;
+
+    if (logado && resolvedUid) {
+        try {
+            localStorage.setItem('usuarioLogado', 'true');
+            localStorage.setItem('doke_uid', resolvedUid);
+        } catch (_e) {}
+    }
+
+    const meta = resolvedUser?.user_metadata || sessionUser?.user_metadata || {};
+    const email = String(resolvedUser?.email || sessionUser?.email || "").trim();
+    const nomeFromEmail = email && email.includes("@") ? email.split("@")[0] : "";
+
+    if (logado) {
+        if (!perfil || typeof perfil !== "object") perfil = {};
+
+        if (!resolvedUid) {
+            resolvedUid = String(perfil.uid || perfil.id || localStorage.getItem('doke_uid') || "").trim();
+        }
+        if (resolvedUid) {
+            if (!perfil.uid) perfil.uid = resolvedUid;
+            if (!perfil.id) perfil.id = resolvedUid;
+        }
+
+        const nomeMeta = sanitizePlainText(meta.nome || resolvedUser?.displayName || "");
+        const userMeta = sanitizePlainText(meta.user || "");
+        const fotoMeta = String(meta.foto || meta.avatar_url || resolvedUser?.photoURL || "").trim();
+
+        if (!perfil.nome && nomeMeta) perfil.nome = nomeMeta;
+        if (!perfil.nome && nomeFromEmail) perfil.nome = nomeFromEmail;
+        if (!perfil.user && userMeta) perfil.user = userMeta;
+        if (!perfil.user && perfil.nome) perfil.user = perfil.nome;
+        if (!perfil.foto && fotoMeta) perfil.foto = fotoMeta;
+
+        const perfilIncompleto = !perfil.foto || !perfil.user || !perfil.nome;
+        if (perfilIncompleto && typeof getSupabaseUserRow === "function") {
+            try {
+                const userRow = await getSupabaseUserRow();
+                if (userRow) {
+                    const rowUid = String(userRow.uid || userRow.id || "").trim();
+                    if (rowUid) {
+                        resolvedUid = resolvedUid || rowUid;
+                        if (!perfil.uid) perfil.uid = rowUid;
+                        if (!perfil.id) perfil.id = rowUid;
+                    }
+                    if (!perfil.nome && userRow.nome) perfil.nome = sanitizePlainText(userRow.nome);
+                    if (!perfil.user && userRow.user) perfil.user = sanitizePlainText(userRow.user);
+                    if (!perfil.foto && userRow.foto) perfil.foto = String(userRow.foto).trim();
+                }
+            } catch (_e) {}
+        }
+
+        const nomeSeguroPerfil = sanitizePlainText(perfil.user || perfil.nome || "");
+        if (nomeSeguroPerfil) {
+            perfil.user = nomeSeguroPerfil;
+            if (!perfil.nome) perfil.nome = nomeSeguroPerfil;
+        }
+
+        try {
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(perfil));
+            localStorage.setItem('usuarioLogado', 'true');
+            if (resolvedUid) localStorage.setItem('doke_uid', resolvedUid);
+        } catch (_e) {}
+    }
+
+    const fotoUsuario = perfil.foto || resolvedUser?.photoURL || meta.foto || meta.avatar_url || 'https://i.pravatar.cc/150?img=12';
     const eProfissional = perfil.isProfissional === true;
+    const perfilHref = eProfissional ? "meuperfil.html" : "perfil-usuario.html";
 
     // --- A. CONTROLE DOS MENUS ---
     const containers = document.querySelectorAll('.botoes-direita');
@@ -2565,8 +3043,8 @@ window.verificarEstadoLogin = async function() {
             const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
             const textoAnunciar = "Anunciar";
 
-            // --- NOVO: LÓGICA DO BOTÃO CARTEIRA ---
-            // Só aparece se for profissional
+            // --- NOVO: L?GICA DO BOT?O CARTEIRA ---
+            // S? aparece se for profissional
             const itemCarteira = eProfissional 
                 ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` 
                 : "";
@@ -2576,9 +3054,9 @@ window.verificarEstadoLogin = async function() {
                     <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
                     <div id="dropdownPerfil" class="dropdown-profile">
                         <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
-                            ${escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usuário'))}
+                            ${escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usu?rio'))}
                         </div>
-                        <a href="meuperfil.html" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                        <a href="${perfilHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
                         
                         ${itemCarteira} <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
                         <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
@@ -2590,7 +3068,17 @@ window.verificarEstadoLogin = async function() {
         }
     });
 
-    const imgBottom = document.getElementById('imgPerfilMobile');
+    const topAuthLink = document.getElementById('btnAuthTopo');
+    if (topAuthLink) {
+        if (logado) {
+            topAuthLink.setAttribute('href', perfilHref);
+            topAuthLink.innerHTML = `<img src="${fotoUsuario}" class="profile-img-btn" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">`;
+        } else {
+            topAuthLink.setAttribute('href', 'login.html');
+            topAuthLink.innerHTML = `<button class="btn-login" onclick="realizarLogin()">Fazer login</button>`;
+        }
+    }
+const imgBottom = document.getElementById('imgPerfilMobile');
     if (imgBottom) {
         if (logado) {
             imgBottom.src = fotoUsuario;
@@ -2607,29 +3095,199 @@ window.verificarEstadoLogin = async function() {
             imgBottom.classList.add('icon', 'verde');
         }
     }
+
+    if (logado) {
+        try {
+            dokeRememberLoggedAccount({
+                uid: resolvedUid || perfil.uid || perfil.id || resolvedUser?.uid || resolvedUser?.id || "",
+                email: email || perfil.email || "",
+                nome: perfil.nome || nomeFromEmail || "",
+                user: perfil.user || perfil.nome || nomeFromEmail || "",
+                foto: fotoUsuario || perfil.foto || "",
+                isProfissional: eProfissional
+            });
+        } catch (_e) {}
+    }
+}
+
+const DOKE_SAVED_ACCOUNTS_KEY = "doke_saved_accounts";
+const DOKE_SAVED_ACCOUNTS_LIMIT = 6;
+const DOKE_DEV_SESSION_COOKIE = "doke_dev_session";
+
+function dokeSafeJsonParse(value, fallback) {
+    try {
+        const parsed = JSON.parse(value);
+        return parsed ?? fallback;
+    } catch (_e) {
+        return fallback;
+    }
+}
+
+function dokeClearCookieEverywhere(name) {
+    const cookieName = String(name || "").trim();
+    if (!cookieName) return;
+    const past = "Thu, 01 Jan 1970 00:00:00 GMT";
+    const paths = ["/", "/frontend"];
+    const domains = ["", `domain=${location.hostname}`, "domain=localhost", "domain=127.0.0.1"];
+    paths.forEach((path) => {
+        domains.forEach((domain) => {
+            try {
+                const domainPart = domain ? `; ${domain}` : "";
+                document.cookie = `${cookieName}=; expires=${past}; path=${path}; samesite=lax${domainPart}`;
+            } catch (_e) {}
+        });
+    });
+}
+
+function dokeReadSavedAccounts() {
+    const raw = localStorage.getItem(DOKE_SAVED_ACCOUNTS_KEY) || "[]";
+    const parsed = dokeSafeJsonParse(raw, []);
+    return Array.isArray(parsed) ? parsed : [];
+}
+
+function dokeWriteSavedAccounts(list) {
+    const safeList = Array.isArray(list) ? list : [];
+    localStorage.setItem(DOKE_SAVED_ACCOUNTS_KEY, JSON.stringify(safeList.slice(0, DOKE_SAVED_ACCOUNTS_LIMIT)));
+}
+
+function dokeNormalizeAccountCandidate(accountCandidate) {
+    const source = (accountCandidate && typeof accountCandidate === "object") ? accountCandidate : {};
+    const uid = String(source.uid || source.id || source.user_uid || source.userId || "").trim();
+    const email = String(source.email || "").trim().toLowerCase();
+    if (!uid && !email) return null;
+
+    const nomeRaw = source.nome || source.user || source.name || (email ? email.split("@")[0] : "Conta");
+    const userRaw = source.user || source.nome || source.name || nomeRaw;
+    const foto = String(
+        source.foto ||
+        source.avatar ||
+        source.avatar_url ||
+        source.photoURL ||
+        source.foto_url ||
+        source.fotoPerfil ||
+        ""
+    ).trim();
+
+    return {
+        uid: uid || null,
+        email: email || null,
+        nome: sanitizePlainText(nomeRaw || "Conta"),
+        user: sanitizePlainText(userRaw || "Conta"),
+        foto: foto || null,
+        isProfissional: source.isProfissional === true || source.tipo === "profissional" || source.role === "profissional",
+        lastUsedAt: new Date().toISOString()
+    };
+}
+
+function dokeRememberLoggedAccount(accountCandidate) {
+    const normalized = dokeNormalizeAccountCandidate(accountCandidate);
+    if (!normalized) return null;
+
+    const saved = dokeReadSavedAccounts();
+    const idx = saved.findIndex((acc) => {
+        const uidMatch = normalized.uid && String(acc?.uid || "") === normalized.uid;
+        const emailMatch = normalized.email && String(acc?.email || "").toLowerCase() === normalized.email;
+        return uidMatch || emailMatch;
+    });
+
+    if (idx >= 0) {
+        saved[idx] = { ...saved[idx], ...normalized, lastUsedAt: normalized.lastUsedAt };
+    } else {
+        saved.push(normalized);
+    }
+
+    saved.sort((a, b) => String(b?.lastUsedAt || "").localeCompare(String(a?.lastUsedAt || "")));
+    dokeWriteSavedAccounts(saved);
+    return normalized;
+}
+
+function dokeGetCurrentAccountCandidate() {
+    const perfil = dokeSafeJsonParse(localStorage.getItem("doke_usuario_perfil") || "{}", {}) || {};
+    return dokeNormalizeAccountCandidate({
+        uid: perfil.uid || perfil.id || localStorage.getItem("doke_uid") || "",
+        email: perfil.email || "",
+        nome: perfil.nome || "",
+        user: perfil.user || "",
+        foto: perfil.foto || ""
+    });
+}
+
+window.dokeRememberLoggedAccount = dokeRememberLoggedAccount;
+
+function dokeClearLocalAuthCache() {
+    try {
+        localStorage.removeItem('usuarioLogado');
+        localStorage.removeItem('doke_usuario_perfil');
+        localStorage.removeItem('doke_uid');
+        localStorage.removeItem('doke_auth_session_backup');
+        localStorage.removeItem('doke_next_account');
+        const authKeys = Object.keys(localStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+        authKeys.forEach((k) => localStorage.removeItem(k));
+    } catch (_e) {}
+    try {
+        sessionStorage.removeItem('usuarioLogado');
+        sessionStorage.removeItem('doke_uid');
+        sessionStorage.removeItem('doke_usuario_perfil');
+        sessionStorage.removeItem('doke_next_account');
+    } catch (_e) {}
+    try { dokeClearCookieEverywhere(DOKE_DEV_SESSION_COOKIE); } catch (_e) {}
+}
+
+async function dokeSignOutEverywhere() {
+    const callSignOut = async (fn, args = []) => {
+        if (typeof fn !== "function") return false;
+        try {
+            const out = await fn(...args);
+            if (out && typeof out === "object" && out.error) return false;
+            return true;
+        } catch (_e) {
+            return false;
+        }
+    };
+
+    const previousForce = window.DOKE_FORCE_SIGNOUT === true;
+    window.DOKE_FORCE_SIGNOUT = true;
+    try { if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000); } catch (_e) {}
+
+    let signedOut = false;
+    try {
+        const sbAuth = window.sb?.auth || window.supabaseClient?.auth || null;
+        if (sbAuth?.signOut) {
+            const ok = await callSignOut(sbAuth.signOut.bind(sbAuth));
+            signedOut = signedOut || ok;
+        }
+        const authObj = window.auth || auth || null;
+        if (authObj?.signOut) {
+            const ok = await callSignOut(authObj.signOut.bind(authObj));
+            signedOut = signedOut || ok;
+        }
+        if (typeof window.signOut === "function") {
+            const ok = await callSignOut(window.signOut, [window.auth || auth || {}]);
+            signedOut = signedOut || ok;
+        }
+    } finally {
+        window.DOKE_FORCE_SIGNOUT = previousForce;
+    }
+    return signedOut;
 }
 
 
+async function dokeSignOutAndGo(targetHref) {
+    try { if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000); } catch (_e) {}
+    try { await dokeSignOutEverywhere(); } catch (_e) {}
+    dokeClearLocalAuthCache();
+    window.location.href = String(targetHref || "login.html");
+}
+
 window.alternarConta = async function() {
-    // Mostra contas salvas (desktop). Não salva senha; só e-mail/uid/foto.
-    const saved = (() => {
-        try { return JSON.parse(localStorage.getItem('doke_saved_accounts') || '[]') || []; } catch { return []; }
-    })();
+    const saved = dokeReadSavedAccounts();
+    const current = dokeGetCurrentAccountCandidate();
 
-    // fallback: se não houver contas salvas, apenas sair e ir para login
-    async function doSignOut(){
-        try { window.sb?.auth?.signOut && await window.sb.auth.signOut(); } catch(e){}
-        try { window.auth?.signOut && await window.auth.signOut(); } catch(e){}
-        localStorage.removeItem('usuarioLogado');
-    }
-
-    if (!saved.length || window.innerWidth < 768) {
-        await doSignOut();
-        window.location.href = 'login.html';
+    if (!saved.length) {
+        await dokeSignOutAndGo("login.html?switch=1");
         return;
     }
 
-    // Modal simples
     let modal = document.getElementById('dokeSwitchModal');
     if (modal) modal.remove();
 
@@ -2638,16 +3296,17 @@ window.alternarConta = async function() {
     modal.style.position = 'fixed';
     modal.style.inset = '0';
     modal.style.background = 'rgba(0,0,0,.45)';
-    modal.style.zIndex = '9999';
+    modal.style.zIndex = '999999';
+    modal.style.padding = '18px';
     modal.innerHTML = `
-      <div style="max-width:520px; margin:7vh auto; background:#fff; border-radius:18px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,.25);">
+      <div style="max-width:560px; margin:5vh auto; background:#fff; border-radius:18px; padding:18px; box-shadow:0 20px 50px rgba(0,0,0,.25);">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:10px;">
-          <div style="font-size:1.2rem; font-weight:900;">Alternar conta</div>
-          <button id="dokeSwitchClose" type="button" style="width:40px;height:40px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;cursor:pointer;">✕</button>
+          <div style="font-size:1.2rem; font-weight:900; color:#0d2a29;">Alternar conta</div>
+          <button id="dokeSwitchClose" type="button" style="width:40px;height:40px;border-radius:12px;border:1px solid rgba(0,0,0,.12);background:#fff;cursor:pointer;font-size:20px;line-height:1;">&times;</button>
         </div>
-        <div style="margin-top:10px; color:rgba(0,0,0,.65);">Escolha uma conta salva</div>
-        <div id="dokeSwitchList" style="margin-top:14px; display:flex; flex-direction:column; gap:10px;"></div>
-        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px;">
+        <div style="margin-top:8px; color:rgba(0,0,0,.65);">Escolha uma conta salva</div>
+        <div id="dokeSwitchList" style="margin-top:14px; display:flex; flex-direction:column; gap:10px; max-height:min(56vh,430px); overflow:auto;"></div>
+        <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap;">
           <button id="dokeSwitchOther" type="button" class="btn-pro-action" style="background:#fff;color:#0b7768;border:1px solid rgba(0,0,0,.12);">Outra conta</button>
           <button id="dokeSwitchLogout" type="button" class="btn-pro-action">Sair</button>
         </div>
@@ -2656,46 +3315,54 @@ window.alternarConta = async function() {
     document.body.appendChild(modal);
 
     const list = modal.querySelector('#dokeSwitchList');
-    saved.slice(0,6).forEach(acc => {
-        const foto = acc.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(acc.uid||acc.email||'u'))}`;
-        const nome = acc.user || acc.nome || acc.email || 'Conta';
-        const email = acc.email || '';
+    saved.slice(0, DOKE_SAVED_ACCOUNTS_LIMIT).forEach((acc) => {
+        const normalized = dokeNormalizeAccountCandidate(acc);
+        if (!normalized) return;
+        const foto = normalized.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(normalized.uid || normalized.email || 'u'))}`;
+        const nome = normalized.user || normalized.nome || normalized.email || 'Conta';
+        const email = normalized.email || '';
+        const isCurrent = !!current && (
+            (current.uid && normalized.uid && current.uid === normalized.uid) ||
+            (current.email && normalized.email && current.email === normalized.email)
+        );
         const row = document.createElement('button');
         row.type = 'button';
         row.style.display = 'flex';
         row.style.alignItems = 'center';
         row.style.gap = '12px';
         row.style.padding = '12px';
-        row.style.border = '1px solid rgba(0,0,0,.12)';
+        row.style.border = isCurrent ? '2px solid rgba(11,119,104,.45)' : '1px solid rgba(0,0,0,.12)';
         row.style.borderRadius = '14px';
         row.style.background = '#fff';
         row.style.cursor = 'pointer';
         row.innerHTML = `
           <img src="${foto}" alt="" style="width:46px;height:46px;border-radius:50%;object-fit:cover;border:2px solid rgba(0,0,0,.10);" />
-          <div style="text-align:left; min-width:0;">
+          <div style="text-align:left; min-width:0; flex:1;">
             <div style="font-weight:900; color:#102a28; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(nome)}</div>
-            <div style="color:rgba(0,0,0,.6); font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(email)}</div>
+            <div style="color:rgba(0,0,0,.6); font-size:.92rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${escapeHtml(email || "Sem e-mail salvo")}</div>
           </div>
+          ${isCurrent ? '<span style="font-size:.76rem;font-weight:900;color:#0b7768;background:rgba(11,119,104,.12);padding:4px 8px;border-radius:999px;">Atual</span>' : ''}
         `;
-        row.addEventListener('click', async ()=>{
-            await doSignOut();
-            window.location.href = `login.html?email=${encodeURIComponent(email)}`;
+        row.addEventListener('click', async () => {
+            const qs = new URLSearchParams();
+            if (email) qs.set("email", email);
+            if (normalized.uid) qs.set("uid", normalized.uid);
+            qs.set("switch", "1");
+            await dokeSignOutAndGo(`login.html?${qs.toString()}`);
         });
         list.appendChild(row);
     });
 
-    function close(){ modal.remove(); }
+    const close = () => { try { modal.remove(); } catch (_e) {} };
     modal.querySelector('#dokeSwitchClose')?.addEventListener('click', close);
-    modal.addEventListener('click', (e)=>{ if(e.target === modal) close(); });
-    modal.querySelector('#dokeSwitchOther')?.addEventListener('click', async ()=>{
-        await doSignOut();
-        window.location.href = 'login.html';
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    modal.querySelector('#dokeSwitchOther')?.addEventListener('click', async () => {
+        await dokeSignOutAndGo('login.html?switch=1');
     });
-    modal.querySelector('#dokeSwitchLogout')?.addEventListener('click', async ()=>{
-        await doSignOut();
-        window.location.href = 'login.html';
+    modal.querySelector('#dokeSwitchLogout')?.addEventListener('click', async () => {
+        await dokeSignOutAndGo('login.html?logout=1');
     });
-}
+};
 
 function clearProfileDropdownInline(drop) {
     if (!drop) return;
@@ -2829,28 +3496,42 @@ if (!window.__dokeDropdownBound) {
 
 window.irParaMeuPerfil = function(event) {
     const go = async () => {
-        let sessionUser = null;
-        try {
-            if (window.sb?.auth?.getSession) {
-                const { data, error } = await window.sb.auth.getSession();
-                if (!error) sessionUser = data?.session?.user || null;
-            }
-        } catch (_) {}
-
-        if (!sessionUser) {
+        let resolvedUser = null;
+        try { resolvedUser = await dokeResolveAuthUser(); } catch (_) {}
+        if (!resolvedUser) {
+            try { resolvedUser = dokeEnsureAuthUserFromCacheSync(); } catch (_) {}
+        }
+        if (!resolvedUser) {
             try {
-                [
-                    'usuarioLogado',
-                    'usuario_logado',
-                    'userLogado',
-                    'doke_usuario_logado',
-                    'doke_usuario_perfil',
-                    'perfil_usuario'
-                ].forEach((k) => localStorage.removeItem(k));
+                const sbAuth = window.sb?.auth || window.supabaseClient?.auth || null;
+                if (sbAuth && typeof sbAuth.getSession === "function") {
+                    const { data, error } = await sbAuth.getSession();
+                    if (!error && data?.session?.user) resolvedUser = data.session.user;
+                }
+                if (!resolvedUser && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+                    const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+                    if (restored && sbAuth && typeof sbAuth.getSession === "function") {
+                        const retry = await sbAuth.getSession();
+                        if (!retry?.error && retry?.data?.session?.user) resolvedUser = retry.data.session.user;
+                    }
+                }
             } catch (_) {}
+        }
+        if (!resolvedUser) {
+            await new Promise((r) => setTimeout(r, 350));
+            try { resolvedUser = await dokeResolveAuthUser(); } catch (_) {}
+        }
+
+        if (!resolvedUser) {
             window.location.href = "login.html";
             return;
         }
+
+        try {
+            const uid = String(resolvedUser.uid || resolvedUser.id || "").trim();
+            if (uid) localStorage.setItem("doke_uid", uid);
+            localStorage.setItem("usuarioLogado", "true");
+        } catch (_) {}
 
         let perfilLocal = null;
         try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) { perfilLocal = null; }
@@ -2912,19 +3593,19 @@ window.salvarCep = async function() {
             localStorage.setItem('doke_localizacao', JSON.stringify(payload));
             window.atualizarTelaCep(payload);
         } else {
-            // Mantém consistência mesmo sem retorno da API de CEP.
+            // Mant?m consist?ncia mesmo sem retorno da API de CEP.
             try { localStorage.setItem('doke_localizacao', JSON.stringify({ cep: cepFormatado, cidade: '', bairro: '', uf: '' })); } catch (_e) {}
         }
-    } else { try { if (window.dokeAlert) window.dokeAlert("CEP inválido! Digite 8 números."); else alert("CEP inválido! Digite 8 números."); } catch(_e) { alert("CEP inválido! Digite 8 números."); } i.focus(); }
+    } else { try { if (window.dokeAlert) window.dokeAlert("CEP inv?lido! Digite 8 n?meros."); else alert("CEP inv?lido! Digite 8 n?meros."); } catch(_e) { alert("CEP inv?lido! Digite 8 n?meros."); } i.focus(); }
 }
 window.preencherTodosCeps = function(cep) {
     if (!cep) return;
-    // Preencher todos os inputs com ID 'inputCep' na página
+    // Preencher todos os inputs com ID 'inputCep' na p?gina
     const todosInputsCep = document.querySelectorAll('input[id="inputCep"]');
     todosInputsCep.forEach(input => {
         input.value = cep;
     });
-    // Preencher também inputs com outros IDs de CEP comuns
+    // Preencher tamb?m inputs com outros IDs de CEP comuns
     const outrosIds = ['cepOrcamento', 'cepEndereco', 'cepBusca'];
     outrosIds.forEach(id => {
         const input = document.getElementById(id);
@@ -3027,7 +3708,7 @@ window.toggleCep = function(e) {
     const a = document.getElementById('linkCep');
     if (!p) return;
 
-    // âncora atual (para reposicionar em scroll/resize)
+    // ?ncora atual (para reposicionar em scroll/resize)
     window.__dokeCepAnchor = a || null;
 
     try { __dokePortalizeCepPopup(p); } catch(_e) {}
@@ -3035,11 +3716,11 @@ window.toggleCep = function(e) {
     const isOpen = (p.style.display === 'block');
     if (isOpen) { p.style.display = 'none'; return; }
 
-    // posiciona fora do header para não ser cortado por overflow (ex.: .menu com overflow-y hidden)
+    // posiciona fora do header para n?o ser cortado por overflow (ex.: .menu com overflow-y hidden)
     try { __dokePositionCepPopup(p, a); } catch(_e) {}
 
     p.style.display = 'block';
-    // reposiciona no próximo frame (caso fontes/layout ainda estejam calculando)
+    // reposiciona no pr?ximo frame (caso fontes/layout ainda estejam calculando)
     requestAnimationFrame(() => {
         try { __dokePositionCepPopup(p, a); } catch(_e) {}
     });
@@ -3047,7 +3728,7 @@ window.toggleCep = function(e) {
     if (i) i.focus();
 }
 
-// Variante: abre o CEP ancorado em qualquer elemento (ex.: botão "CEP" nos filtros no mobile)
+// Variante: abre o CEP ancorado em qualquer elemento (ex.: bot?o "CEP" nos filtros no mobile)
 window.toggleCepAt = function(e, anchorEl) {
     if (e) e.preventDefault();
     const p = document.getElementById('boxCep');
@@ -3116,7 +3797,7 @@ window.toggleFiltrosExtras = function() {
     }
 }
 
-// Garante estado inicial (filtros avançados fechados) em F5 / carregamento
+// Garante estado inicial (filtros avan?ados fechados) em F5 / carregamento
 document.addEventListener('DOMContentLoaded', () => {
   const area = document.getElementById('filtrosExtras');
   const btn = document.querySelector('.btn-toggle-filtros');
@@ -3193,7 +3874,7 @@ function initHomeEnhancements() {
     ));
     const isMobileHome = window.matchMedia("(max-width: 1024px)").matches;
     if (isMobileHome) {
-        // No mobile, priorizamos estabilidade: evita telas "vazias" por animação/reflow.
+        // No mobile, priorizamos estabilidade: evita telas "vazias" por anima??o/reflow.
         const stableEls = Array.from(document.querySelectorAll(
             '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .pros-section, .para-voce-section'
         ));
@@ -3214,7 +3895,7 @@ function initHomeEnhancements() {
             footer.style.width = '100%';
         }
     } else {
-        // Ativa animação "reveal" só quando o JS estiver rodando (desktop/tablet grande)
+        // Ativa anima??o "reveal" s? quando o JS estiver rodando (desktop/tablet grande)
         document.body.classList.add("reveal-enabled");
         revealEls.forEach(el => el.classList.add('reveal'));
 
@@ -3364,16 +4045,16 @@ window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
 
     const user = auth.currentUser;
     
-    // TRAVA 1: O dono não gera visualização no próprio anúncio
+    // TRAVA 1: O dono n?o gera visualiza??o no pr?prio an?ncio
     if (user && idDonoAnuncio && user.uid === idDonoAnuncio) {
-        console.log("Dono visualizando o próprio anúncio (View ignorada).");
+        console.log("Dono visualizando o pr?prio an?ncio (View ignorada).");
         return; 
     }
 
-    // TRAVA 2: Verifica se já visualizou nesta sessão (Anti-F5)
+    // TRAVA 2: Verifica se j? visualizou nesta sess?o (Anti-F5)
     const chaveStorage = `view_anuncio_${idAnuncio}`;
     if (sessionStorage.getItem(chaveStorage)) {
-        console.log("Visualização já contabilizada nesta sessão.");
+        console.log("Visualiza??o j? contabilizada nesta sess?o.");
         return;
     }
 
@@ -3383,7 +4064,7 @@ window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
             views: increment(1) 
         });
         
-        // Marca que já viu para não contar de novo até fechar o navegador
+        // Marca que j? viu para n?o contar de novo at? fechar o navegador
         sessionStorage.setItem(chaveStorage, "true");
         console.log("View contabilizada +1");
 
@@ -3398,20 +4079,20 @@ window.registrarCliquePerfil = async function(uidDestino) {
 
     const user = auth.currentUser;
 
-    // TRAVA 1: Não conta clique no próprio perfil
+    // TRAVA 1: N?o conta clique no pr?prio perfil
     if (user && user.uid === uidDestino) return;
 
-    // TRAVA 2: Anti-spam de sessão para cliques no perfil
+    // TRAVA 2: Anti-spam de sess?o para cliques no perfil
     const chaveStorage = `click_profile_${uidDestino}`;
     if (sessionStorage.getItem(chaveStorage)) return;
 
     try {
-        // Redireciona o usuário imediatamente para não travar a navegação
+        // Redireciona o usu?rio imediatamente para n?o travar a navega??o
         // A contagem acontece em segundo plano
         const userRef = doc(window.db, "usuarios", uidDestino);
         
-        // Atualiza estatística no documento do usuário (campo: stats.cliques_perfil)
-        // Usamos notação de ponto "stats.cliques_perfil" para atualizar campo aninhado
+        // Atualiza estat?stica no documento do usu?rio (campo: stats.cliques_perfil)
+        // Usamos nota??o de ponto "stats.cliques_perfil" para atualizar campo aninhado
         await updateDoc(userRef, { 
             "stats.cliques_perfil": increment(1) 
         });
@@ -3419,7 +4100,7 @@ window.registrarCliquePerfil = async function(uidDestino) {
         sessionStorage.setItem(chaveStorage, "true");
 
     } catch (error) {
-        // Se o campo stats não existir, o update pode falhar. 
+        // Se o campo stats n?o existir, o update pode falhar. 
         // Nesse caso, usamos setDoc com merge para criar.
         try {
             const userRef = doc(window.db, "usuarios", uidDestino);
@@ -3428,14 +4109,14 @@ window.registrarCliquePerfil = async function(uidDestino) {
     }
 }
 
-// 3. FUNÇÃO AUXILIAR PARA REDIRECIONAR E CONTAR (Use isso nos botões)
+// 3. FUN??O AUXILIAR PARA REDIRECIONAR E CONTAR (Use isso nos bot?es)
 window.irParaPerfilComContagem = async function(uid, user) {
     if (uid) registrarCliquePerfil(uid);
     const destino = await resolverDestinoPerfil(uid, user);
     window.location.href = destino;
 }
 
-// Delegação: clicar em @user abre perfil correto
+// Delega??o: clicar em @user abre perfil correto
 if (!window.__dokeUserLinkBound) {
     window.__dokeUserLinkBound = true;
     document.addEventListener('click', async (e) => {
@@ -3475,7 +4156,7 @@ window.mostrarToast = function(mensagem, tipo = 'sucesso') {
 }
 
 // ============================================================
-// 10. FUNÇÕES DE LOGIN (AUXILIARES)
+// 10. FUN??ES DE LOGIN (AUXILIARES)
 // ============================================================
 window.realizarLogin = async function(e) {
     if(e) e.preventDefault();
@@ -3489,11 +4170,21 @@ window.realizarLogin = async function(e) {
         const user = userCredential.user;
         const docRef = doc(window.db, "usuarios", user.uid);
         const docSnap = await getDoc(docRef);
-        let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usuário", email: email };
+        let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usu?rio", email: email };
 
         localStorage.setItem('usuarioLogado', 'true');
         localStorage.setItem('doke_usuario_perfil', JSON.stringify(dadosUsuario));
         localStorage.setItem('doke_uid', user.uid);
+        try {
+            dokeRememberLoggedAccount({
+                uid: user.uid || dadosUsuario.uid || dadosUsuario.id || "",
+                email: user.email || dadosUsuario.email || "",
+                nome: dadosUsuario.nome || "",
+                user: dadosUsuario.user || dadosUsuario.nome || "",
+                foto: dadosUsuario.foto || user.photoURL || "",
+                isProfissional: dadosUsuario.isProfissional === true || dadosUsuario.tipo === "profissional" || dadosUsuario.role === "profissional"
+            });
+        } catch (_e) {}
 
         if(window.mostrarToast) window.mostrarToast("Login realizado!", "sucesso");
         setTimeout(() => { window.location.href = "index.html"; }, 1000);
@@ -3505,7 +4196,7 @@ window.realizarLogin = async function(e) {
 }
 
 // ============================================================
-// 11. FUNÇÃO PARA CARREGAR FILTROS DE LOCALIZAÇÃO
+// 11. FUN??O PARA CARREGAR FILTROS DE LOCALIZA??O
 // ============================================================
 window.carregarFiltrosLocalizacao = async function() {
     const selEstado = document.getElementById('selectEstado');
@@ -3602,8 +4293,8 @@ function getSupabaseClient() {
 }
 
 function getSupabasePublicClient() {
-    // Cliente Supabase "anon" (sem sessão) para leituras públicas.
-    // Isso evita casos onde políticas RLS permitem anon mas bloqueiam authenticated.
+    // Cliente Supabase "anon" (sem sess?o) para leituras p?blicas.
+    // Isso evita casos onde pol?ticas RLS permitem anon mas bloqueiam authenticated.
     try {
         if (window.__dokePublicSb && typeof window.__dokePublicSb.from === "function") return window.__dokePublicSb;
         if (typeof window.getSupabasePublicClient === "function" && window.getSupabasePublicClient !== getSupabasePublicClient) {
@@ -3615,8 +4306,8 @@ function getSupabasePublicClient() {
         const url = window.SUPABASE_URL;
         const key = window.SUPABASE_ANON_KEY;
         if (!url || !key) return null;
-        // IMPORTANT: use um storageKey diferente para não conflitar com o client principal
-        // e evitar o warning de múltiplos GoTrueClient com a mesma chave.
+        // IMPORTANT: use um storageKey diferente para n?o conflitar com o client principal
+        // e evitar o warning de m?ltiplos GoTrueClient com a mesma chave.
         window.__dokePublicSb = window.supabase.createClient(url, key, {
             auth: {
                 storageKey: "doke-public-auth-token",
@@ -3744,12 +4435,73 @@ function formatFeedDateShort(data) {
 
 async function getSupabaseUserRow() {
     const client = getSupabaseClient();
-    const authUser = auth?.currentUser;
-    if (!client || !authUser?.uid) return null;
+    const authUser = await dokeResolveAuthUser();
+    const authUid = String(authUser?.uid || "").trim();
+    if (!client || !authUid) return null;
+
+    if (window.DOKE_STRICT_AUTH_SESSION !== false) {
+        let confirmedUid = "";
+        try {
+            const sbClient = dokePickSupabaseAuthClient();
+            if (sbClient?.auth?.getSession) {
+                const { data, error } = await sbClient.auth.getSession();
+                if (!error) {
+                    confirmedUid = String(data?.session?.user?.id || "").trim();
+                    if (!confirmedUid) {
+                        const token = String(data?.session?.access_token || "").trim();
+                        const payload = dokeDecodeJwtPayloadSync(token);
+                        confirmedUid = String(payload?.sub || "").trim();
+                    }
+                }
+            }
+            if (!confirmedUid && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+                try {
+                    const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+                    if (restored && sbClient?.auth?.getSession) {
+                        const retry = await sbClient.auth.getSession();
+                        confirmedUid = String(retry?.data?.session?.user?.id || "").trim();
+                        if (!confirmedUid) {
+                            const retryToken = String(retry?.data?.session?.access_token || "").trim();
+                            const retryPayload = dokeDecodeJwtPayloadSync(retryToken);
+                            confirmedUid = String(retryPayload?.sub || "").trim();
+                        }
+                    }
+                } catch (_) {}
+            }
+            if (!confirmedUid && sbClient?.auth?.getUser) {
+                try {
+                    const { data, error } = await sbClient.auth.getUser();
+                    if (!error) confirmedUid = String(data?.user?.id || "").trim();
+                } catch (_) {}
+            }
+            if (!confirmedUid) {
+                const cachedTokenUser = dokeBuildCachedAuthUserSync({ allowProfileFallback: false });
+                confirmedUid = String(cachedTokenUser?.uid || cachedTokenUser?.id || "").trim();
+            }
+        } catch (_) {}
+        if (!confirmedUid || confirmedUid !== authUid) return null;
+    }
+
     if (dokeIsSupaTemporarilyDown()) return null;
-    if (window._dokeSupabaseUserRow && window._dokeSupabaseUserRow.uid === authUser.uid) {
+    if (window._dokeSupabaseUserRow && window._dokeSupabaseUserRow.uid === authUid) {
         return window._dokeSupabaseUserRow;
     }
+
+    const buildFallbackUserRow = () => {
+        const perfil = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "{}") || {};
+        const nome = String(perfil.nome || authUser?.user_metadata?.nome || authUser?.email || "").trim();
+        const user = String(perfil.user || authUser?.user_metadata?.user || (nome ? nome.split(" ")[0].toLowerCase() : "")).trim();
+        const foto = String(perfil.foto || authUser?.user_metadata?.foto || authUser?.user_metadata?.avatar_url || "").trim();
+        const row = {
+            id: authUid,
+            uid: authUid,
+            nome: nome || "Usuario",
+            user: user ? String(user).replace(/^@/, "") : "usuario",
+            foto: foto || "https://placehold.co/50"
+        };
+        return row;
+    };
+
     let data = null;
     let error = null;
     try {
@@ -3758,7 +4510,7 @@ async function getSupabaseUserRow() {
                 client
                     .from(table)
                     .select("id, uid, nome, user, foto")
-                    .eq(uidField, authUser.uid)
+                    .eq(uidField, authUid)
                     .maybeSingle()
             ),
             9000,
@@ -3773,9 +4525,20 @@ async function getSupabaseUserRow() {
         if (!isMissingTableError(error) && !isMissingColumnError(error) && !isInvalidUuidError(error)) {
             dokeLogNonNetworkError("Erro ao carregar usuario supabase:", error);
         }
-        return null;
+        const fallback = buildFallbackUserRow();
+        window._dokeSupabaseUserRow = fallback;
+        return fallback;
     }
-    window._dokeSupabaseUserRow = data || null;
+    if (!data) {
+        const fallback = buildFallbackUserRow();
+        window._dokeSupabaseUserRow = fallback;
+        return fallback;
+    }
+    if (!data.uid) data.uid = authUid;
+    const rowId = String(data.id || "").trim();
+    if (rowId && rowId !== authUid) data._legacy_id = rowId;
+    data.id = authUid;
+    window._dokeSupabaseUserRow = data;
     return window._dokeSupabaseUserRow;
 }
 
@@ -3824,7 +4587,7 @@ async function fetchSupabasePublicacoesFeed() {
     const cached = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
     if (Array.isArray(cached) && cached.length) return cached;
     if (!client) return cached || [];
-    if (dokeIsSupaTemporarilyDown()) return cached || [];
+    if (dokeIsSupaTemporarilyDown() && Array.isArray(cached) && cached.length) return cached;
     try {
         let lastError = null;
         let attempts = 0;
@@ -3856,6 +4619,7 @@ async function fetchSupabasePublicacoesFeed() {
                     if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
                     if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
                     const out = safeData || [];
+                    dokeClearSupaDown();
                     dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, out);
                     return out;
                 }
@@ -3871,6 +4635,33 @@ async function fetchSupabasePublicacoesFeed() {
             if (!statusChanged && currentKey === lastStatusKey) break;
             lastStatusKey = currentKey;
             attempts += 1;
+        }
+        if (lastError) {
+            try {
+                const loose = await dokeWithTimeout(
+                    client
+                        .from("publicacoes")
+                        .select("*")
+                        .limit(24),
+                    7000,
+                    "timeout_supabase_publicacoes_loose"
+                );
+                if (!loose?.error && Array.isArray(loose?.data)) {
+                    const normalized = (loose.data || []).map((item) => {
+                        const out = { ...(item || {}) };
+                        out.id = out.id || out.post_id || out.publicacao_id || out.uid_post || "";
+                        out.user_id = out.user_id || out.uid || out.user_uid || out.usuario_id || "";
+                        out.created_at = out.created_at || out.dataCriacao || out.data_criacao || out.createdAt || out.data || null;
+                        out.media_url = out.media_url || out.imagem || out.image_url || out.img || out.video_url || out.videoUrl || "";
+                        out.thumb_url = out.thumb_url || out.capa || out.thumbnail || "";
+                        out.tipo = out.tipo || (String(out.video_url || out.videoUrl || "").trim() ? "video" : "foto");
+                        return out;
+                    }).filter((item) => !!item.id);
+                    dokeClearSupaDown();
+                    dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, normalized);
+                    return normalized;
+                }
+            } catch (_) {}
         }
         if (lastError && !dokeLooksLikeNetworkAbort(lastError)) console.error("Erro ao carregar publicacoes supabase:", lastError);
     } catch (err) {
@@ -3938,7 +4729,7 @@ window.carregarFeedGlobal = async function() {
     container.innerHTML = "";
 
     if (feedItems.length === 0) {
-        container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publicação ainda.</p>";
+        container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publica??o ainda.</p>";
         container.setAttribute('aria-busy', 'false');
         return;
     }
@@ -4036,12 +4827,20 @@ window.carregarFeedGlobal = async function() {
     container.setAttribute('aria-busy', 'false');
 }
 
-// Funções extras para perfil
+// Fun??es extras para perfil
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
     if (window.__dokeFeedGlobalLoading) return;
     window.__dokeFeedGlobalLoading = true;
+    const feedWatchdog = setTimeout(() => {
+        try {
+            if (container.querySelector('.pub-skel') || container.querySelector('.skeleton')) {
+                container.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
+                container.setAttribute('aria-busy', 'false');
+            }
+        } catch (_) {}
+    }, 12000);
 
     try {
         container.classList.add("feed-publicacoes-grid");
@@ -4053,22 +4852,6 @@ window.carregarFeedGlobal = async function() {
 
         const feedItems = [];
 
-    try {
-        const q = window.query(window.collection(window.db, "posts"), window.orderBy("data", "desc"));
-        const snapshot = await window.getDocs(q);
-        snapshot.forEach((docSnap) => {
-            const post = docSnap.data();
-            feedItems.push({
-                source: "firebase",
-                id: docSnap.id,
-                createdAt: post.data,
-                data: post
-            });
-        });
-    } catch (e) {
-        dokeLogNonNetworkError("Feed Firebase indisponivel:", e);
-    }
-
     let supaUserRow = null;
     try {
         supaUserRow = await getSupabaseUserRow();
@@ -4077,7 +4860,11 @@ window.carregarFeedGlobal = async function() {
     }
 
     try {
-        const publicacoes = await fetchSupabasePublicacoesFeed();
+        const publicacoes = await dokeWithTimeout(
+            fetchSupabasePublicacoesFeed(),
+            10000,
+            "timeout_feed_publicacoes_supabase"
+        );
         publicacoes.forEach((item) => {
             feedItems.push({
                 source: "supabase",
@@ -4090,28 +4877,150 @@ window.carregarFeedGlobal = async function() {
         dokeLogNonNetworkError("Feed Supabase indisponivel:", e);
     }
 
+    const firebaseFallbackTimeoutMs = 2500;
+    if (!feedItems.length) {
+        try {
+            const q = window.query(window.collection(window.db, "posts"), window.orderBy("data", "desc"));
+            const snapshot = await Promise.race([
+                window.getDocs(q),
+                new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_feed_posts_firebase")), firebaseFallbackTimeoutMs))
+            ]);
+            snapshot.forEach((docSnap) => {
+                const post = docSnap.data();
+                feedItems.push({
+                    source: "firebase",
+                    id: docSnap.id,
+                    createdAt: post.data,
+                    data: post
+                });
+            });
+        } catch (e) {
+            dokeLogNonNetworkError("Feed Firebase indisponivel:", e);
+        }
+    }
+
+    // Fallback legado: alguns ambientes usam colecao "publicacoes" no Firebase.
+    if (!feedItems.length) {
+        try {
+            let altSnapshot = null;
+            try {
+                const altQ = window.query(window.collection(window.db, "publicacoes"), window.orderBy("data", "desc"));
+                altSnapshot = await Promise.race([
+                    window.getDocs(altQ),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_feed_publicacoes_firebase")), firebaseFallbackTimeoutMs))
+                ]);
+            } catch (_) {
+                const altQNoOrder = window.query(window.collection(window.db, "publicacoes"));
+                altSnapshot = await Promise.race([
+                    window.getDocs(altQNoOrder),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_feed_publicacoes_firebase_no_order")), firebaseFallbackTimeoutMs))
+                ]);
+            }
+            (altSnapshot?.forEach ? altSnapshot : { forEach: () => {} }).forEach((docSnap) => {
+                const post = docSnap.data() || {};
+                feedItems.push({
+                    source: "firebase_publicacoes",
+                    id: docSnap.id,
+                    createdAt: post.created_at || post.dataCriacao || post.data || null,
+                    data: post
+                });
+            });
+        } catch (e) {
+            dokeLogNonNetworkError("Feed Firebase(publicacoes) indisponivel:", e);
+        }
+    }
+
     feedItems.sort((a, b) => {
         const aTime = new Date(a.createdAt).getTime();
         const bTime = new Date(b.createdAt).getTime();
         return (bTime || 0) - (aTime || 0);
     });
 
+    const dedupedFeedItems = [];
+    const seenFeedKeys = new Set();
+    for (const entry of feedItems) {
+        const src = String(entry?.source || "");
+        const item = entry?.data || {};
+        const mediaCandidate = src.startsWith("firebase")
+            ? (item.videoUrl || item.video_url || item.video || item.url_video || item.imagem || item.image_url || item.img || item.thumb || item.capa || "")
+            : (item.media_url || item.imagem || item.image_url || item.img || item.video_url || item.videoUrl || item.arquivo_url || item.url || "");
+        const titleCandidate = src.startsWith("firebase")
+            ? (item.titulo || item.texto || item.descricao || item.legenda || "")
+            : (item.titulo || item.legenda || item.descricao || "");
+        const authorCandidate = src.startsWith("firebase")
+            ? (item.autorUser || item.autorNome || item.uid || "")
+            : (item.usuarios?.user || item.usuarios?.nome || item.user_id || "");
+        const dateCandidate = String(item.created_at || item.dataCriacao || item.data || entry?.createdAt || "")
+            .replace(/\.\d+Z$/, "Z")
+            .slice(0, 16);
+        const stable = [
+            String(mediaCandidate || "").trim().toLowerCase().slice(0, 180),
+            String(titleCandidate || "").trim().toLowerCase().slice(0, 140),
+            String(authorCandidate || "").trim().toLowerCase().slice(0, 80),
+            dateCandidate
+        ].join("|");
+        if (stable && seenFeedKeys.has(stable)) continue;
+        if (stable) seenFeedKeys.add(stable);
+        dedupedFeedItems.push(entry);
+    }
+
     container.innerHTML = "";
 
-        if (feedItems.length === 0) {
+        if (dedupedFeedItems.length === 0) {
+            try {
+                const anunciosFallback = await __dokeFetchAnunciosFallback();
+                const anuncios = Array.isArray(anunciosFallback?.data) ? anunciosFallback.data : [];
+                const synthesized = anuncios
+                    .filter((a) => a && a.ativo !== false)
+                    .map((a) => {
+                        const media =
+                            a.media_url ||
+                            a.imagem ||
+                            a.image_url ||
+                            a.img ||
+                            (Array.isArray(a.fotos) ? a.fotos[0] : "") ||
+                            "";
+                        return {
+                            source: "supabase_anuncio",
+                            id: `anuncio-${a.id || ""}`,
+                            createdAt: a.created_at || a.dataCriacao || a.data_criacao || a.dataAtualizacao || a.updatedat || null,
+                            data: {
+                                id: a.id || "",
+                                media_url: media,
+                                thumb_url: media,
+                                titulo: a.titulo || a.nome || "Publicacao",
+                                descricao: a.descricao || "",
+                                usuarios: {
+                                    user: a.userHandle || a.userhandle || "usuario",
+                                    nome: a.nomeAutor || a.nomeautor || "",
+                                    foto: a.fotoAutor || a.fotoautor || ""
+                                }
+                            }
+                        };
+                    })
+                    .filter((e) => !!e?.data?.id)
+                    .slice(0, 12);
+                if (synthesized.length) dedupedFeedItems.push(...synthesized);
+            } catch (_) {}
+        }
+
+        if (dedupedFeedItems.length === 0) {
             container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
             container.setAttribute('aria-busy', 'false');
             return;
         }
 
-    feedItems.forEach((entry) => {
-        if (entry.source === "firebase") {
+    dedupedFeedItems.forEach((entry) => {
+        if (String(entry.source || "").startsWith("firebase")) {
             const post = entry.data || {};
             const idPost = entry.id;
-            const mediaHtml = post.videoUrl
-                ? `<video src="${post.videoUrl}" preload="metadata" muted playsinline></video>`
-                : (post.imagem ? `<img src="${post.imagem}" loading="lazy" alt="">` : "");
-            if (!mediaHtml) return;
+            const postVideo = post.videoUrl || post.video_url || post.video || post.url_video || "";
+            const postImage = post.imagem || post.image_url || post.img || post.thumb || post.capa || "";
+            const mediaHtml = postVideo
+                ? `<video src="${postVideo}" preload="metadata" muted playsinline></video>`
+                : (postImage
+                    ? `<img src="${postImage}" loading="lazy" alt="">`
+                    : `<div class="dp-itemMedia" style="display:flex;align-items:center;justify-content:center;min-height:220px;background:linear-gradient(160deg,#0f2f57,#0b7768);color:#eef7ff;font-weight:700;">Sem midia</div>`);
 
             
             const uidDestino = post.uid || "";
@@ -4127,16 +5036,16 @@ window.carregarFeedGlobal = async function() {
                 </div>
               </div>
             `;
-            // título/descrição: evita duplicar @user
+            // t?tulo/descri??o: evita duplicar @user
             const rawTitle = (post.titulo && post.titulo !== post.autorUser && post.titulo !== post.autorNome) ? post.titulo : "";
             const rawText = post.texto || post.descricao || "";
-            const title = rawTitle || (rawText ? String(rawText).split("\n")[0].slice(0, 80) : "Publicação");
+            const title = rawTitle || (rawText ? String(rawText).split("\n")[0].slice(0, 80) : "Publicacao");
             const desc = rawTitle ? rawText : (rawText && rawText.length > 90 ? rawText : "");
 
 
             const html = `
                 <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPost('${idPost}', 'posts')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
-                    <div class="dp-itemMedia">${mediaHtml}</div>
+                    ${mediaHtml.includes("dp-itemMedia") ? mediaHtml : `<div class="dp-itemMedia">${mediaHtml}</div>`}
                     <div class="dp-itemBody">
                         ${authorHtml}
                         <b class="dp-itemTitle">${escapeHtml(title)}</b>
@@ -4147,9 +5056,9 @@ window.carregarFeedGlobal = async function() {
             return;
         }
         const item = entry.data || {};
-        if (!item.media_url) return;
+        const mediaUrl = item.media_url || item.imagem || item.image_url || item.img || item.video_url || item.videoUrl || item.arquivo_url || item.url || "";
         const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
-        const autorHandle = normalizeHandle(autor.user || autor.nome || "usuario");
+        const autorHandle = normalizeHandle(autor.user || autor.nome || item.autorUser || item.autor_nome || "usuario");
         const autorFoto = autor.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(autor.uid||autor.id||item.user_id||entry.id||"u"))}`;
         const when = formatFeedDateShort(item.created_at || item.data || entry.createdAt || "");
         const authorHtml = `
@@ -4162,18 +5071,23 @@ window.carregarFeedGlobal = async function() {
           </div>
         `;
 
-        const title = (item.titulo || item.legenda || "Publicação");
+        const title = (item.titulo || item.legenda || "Publicacao");
         const desc = item.descricao || (item.titulo ? (item.legenda || "") : "") || "";
 
-        const mediaHtml = item.tipo === "video"
-            ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
-            : (item.tipo === "antes_depois" && item.thumb_url
-                ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""></div>`
-                : `<img src="${item.media_url}" loading="lazy" alt="">`);
+        const mediaHtml = mediaUrl
+            ? (item.tipo === "video" || String(mediaUrl).toLowerCase().includes(".mp4")
+                ? `<video src="${mediaUrl}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} preload="metadata" muted playsinline></video>`
+                : (item.tipo === "antes_depois" && item.thumb_url
+                    ? `<div class="dp-ba js-antes-depois" data-before="${mediaUrl}" data-after="${item.thumb_url}"><img src="${mediaUrl}" loading="lazy" alt=""></div>`
+                    : `<img src="${mediaUrl}" loading="lazy" alt="">`))
+            : `<div class="dp-itemMedia" style="display:flex;align-items:center;justify-content:center;min-height:220px;background:linear-gradient(160deg,#0f2f57,#0b7768);color:#eef7ff;font-weight:700;">Sem midia</div>`;
 
+        const clickAction = (entry.source === "supabase_anuncio")
+            ? `window.location.href='detalhes.html?id=${encodeURIComponent(String(item.id || ""))}'`
+            : `abrirModalPublicacao('${entry.id}')`;
         const html = `
-            <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPublicacao('${entry.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
-                <div class="dp-itemMedia">${mediaHtml}</div>
+            <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="${clickAction}" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+                ${mediaHtml ? `<div class="dp-itemMedia">${mediaHtml}</div>` : ""}
                 <div class="dp-itemBody">
                     ${authorHtml}
                     <b class="dp-itemTitle">${escapeHtml(title)}</b>
@@ -4186,22 +5100,29 @@ window.carregarFeedGlobal = async function() {
         container.setAttribute('aria-busy', 'false');
         setupFeedVideoPreview(container);
         setupAntesDepois(container);
+    } catch (e) {
+        dokeLogNonNetworkError("Falha ao renderizar feed global:", e);
+        try {
+            container.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
+            container.setAttribute('aria-busy', 'false');
+        } catch (_) {}
     } finally {
+        clearTimeout(feedWatchdog);
         window.__dokeFeedGlobalLoading = false;
     }
 }
 
 function setupAntesDepois(container){
     if(!container) return;
-    // Se o módulo dedicado (doke-beforeafter.js) estiver carregado,
+    // Se o m?dulo dedicado (doke-beforeafter.js) estiver carregado,
     // delega para ele (mais suave, com controles e sem "piscando" imagens).
     if (window.DokeAntesDepois && typeof window.DokeAntesDepois.refresh === 'function') {
         window.DokeAntesDepois.refresh(container);
         return;
     }
 
-    // Fallback MUITO simples (caso a página não tenha carregado doke-beforeafter.js)
-    // - aumenta o tempo para ficar mais confortável
+    // Fallback MUITO simples (caso a p?gina n?o tenha carregado doke-beforeafter.js)
+    // - aumenta o tempo para ficar mais confort?vel
     const els = container.querySelectorAll(".js-antes-depois");
     els.forEach((el)=>{
         if(el.dataset.bound === "1") return;
@@ -4269,7 +5190,7 @@ function setupFeedVideoPreview(container) {
 }
 
 window.carregarPerfil = function() {
-    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
+    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usu?rio", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
     if(document.getElementById('nomePerfilDisplay')) document.getElementById('nomePerfilDisplay').innerText = usuario.nome;
     if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
     if(document.getElementById('fotoPerfilDisplay')) document.getElementById('fotoPerfilDisplay').src = usuario.foto;
@@ -4299,36 +5220,59 @@ window.carregarPosts = function(uid) {
 
 
 // ============================================================
-// 13. INICIALIZAÇÃO E EVENT LISTENERS
+// 13. INICIALIZA??O E EVENT LISTENERS
 // ============================================================
 document.addEventListener("DOMContentLoaded", async function() {
     if (window.__dokeMainInitDone) return;
     window.__dokeMainInitDone = true;
-    
-    // 1. Proteção e Header
-    if (window.sincronizarSessaoSupabase) {
-        await window.sincronizarSessaoSupabase();
-    }
 
-    // Primeiro: garante que sessão (Supabase/Firebase) reflita no cache local,
-    // senão páginas restritas podem redirecionar mesmo com usuário autenticado.
-    if (window.verificarEstadoLogin) {
-        await window.verificarEstadoLogin();
-    }
+    const safeAwait = async (label, fn, timeoutMs = 6500) => {
+        if (typeof fn !== "function") return null;
+        try {
+            const out = fn();
+            if (!out || typeof out.then !== "function") return out;
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error(`timeout_${label}`)), Math.max(1200, Number(timeoutMs) || 6500));
+            });
+            return await Promise.race([out, timeoutPromise]);
+        } catch (e) {
+            console.error(`[DOKE] init falhou em ${label}:`, e);
+            return null;
+        }
+    };
 
-    // Depois: protege páginas com base em sessão real (não só localStorage)
-    await protegerPaginasRestritas();
-    
-    // 2. CARREGAMENTOS DINÂMICOS
-    carregarReelsNoIndex();
-    carregarStoriesGlobal();
-    carregarCategorias(); 
-    carregarProfissionais(); 
-    carregarFiltrosLocalizacao(); 
+    const safeInvoke = (label, fn) => {
+        if (typeof fn !== "function") return;
+        try {
+            const out = fn();
+            if (out && typeof out.then === "function") {
+                out.catch((e) => console.error(`[DOKE] chamada falhou em ${label}:`, e));
+            }
+        } catch (e) {
+            console.error(`[DOKE] chamada falhou em ${label}:`, e);
+        }
+    };
+
+    // 1. Prote??o e Header
+    await safeAwait("sincronizarSessaoSupabase", () => window.sincronizarSessaoSupabase?.(), 4500);
+
+    // Primeiro: garante que sess?o (Supabase/Firebase) reflita no cache local,
+    // sen?o p?ginas restritas podem redirecionar mesmo com usu?rio autenticado.
+    await safeAwait("verificarEstadoLogin", () => window.verificarEstadoLogin?.(), 4500);
+
+    // Depois: protege p?ginas com base em sess?o real (n?o s? localStorage)
+    await safeAwait("protegerPaginasRestritas", () => protegerPaginasRestritas(), 4500);
+
+    // 2. CARREGAMENTOS DIN?MICOS
+    safeInvoke("carregarReelsNoIndex", () => carregarReelsNoIndex());
+    safeInvoke("carregarStoriesGlobal", () => carregarStoriesGlobal());
+    safeInvoke("carregarCategorias", () => carregarCategorias());
+    safeInvoke("carregarProfissionais", () => carregarProfissionais());
+    safeInvoke("carregarFiltrosLocalizacao", () => carregarFiltrosLocalizacao());
 
     // NOVO: CARREGA VIDEOS SE ESTIVER NA HOME
     if(document.querySelector('.tiktok-scroll-wrapper') && !document.getElementById('galeria-dinamica')) {
-        carregarTrabalhosHome();
+        safeInvoke("carregarTrabalhosHome", () => carregarTrabalhosHome());
     }
 
     // 3. CEP Input Logic
@@ -4348,7 +5292,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
     
     if(document.getElementById('galeria-dinamica')) {
-        carregarReelsHome();
+        safeInvoke("carregarReelsHome", () => carregarReelsHome());
         enableVideosCurtosPageScroll();
     }
 
@@ -4387,7 +5331,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         });
     });
 
-    // 4. Lógica de Busca e Anúncios
+    // 4. L?gica de Busca e An?ncios
     const params = new URLSearchParams(window.location.search);
     const termoUrl = params.get('q');
     const inputBusca = document.getElementById('inputBusca');
@@ -4402,14 +5346,40 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     if(document.getElementById('feed-global-container')) {
-        carregarFeedGlobal();
+        safeInvoke("carregarFeedGlobal", () => carregarFeedGlobal());
     }
 
     if(document.getElementById('boxStories')) {
-        carregarStoriesGlobal();
+        safeInvoke("carregarStoriesGlobal_boxStories", () => carregarStoriesGlobal());
     }
 
-    // 5. Efeitos de Busca (Histórico)
+    // Fallback global: nunca deixar se??es presas em skeleton por timeout de rede.
+    setTimeout(() => {
+        try {
+            const reelsContainer = document.getElementById('galeria-dinamica') || document.querySelector('.tiktok-scroll-wrapper');
+            if (reelsContainer) {
+                const hasRealCard = !!reelsContainer.querySelector('.dp-reelCard, .tiktok-card:not(.is-skeleton), video');
+                const hasSkeleton = !!reelsContainer.querySelector('.is-skeleton, .skeleton');
+                if (!hasRealCard && hasSkeleton) {
+                    reelsContainer.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
+                    reelsContainer.setAttribute('aria-busy', 'false');
+                }
+            }
+        } catch (_) {}
+        try {
+            const feedContainer = document.getElementById('feed-global-container');
+            if (feedContainer) {
+                const hasRealPost = !!feedContainer.querySelector('.feed-publicacao-card:not(.pub-skel), .card-feed-global, .dp-item:not(.pub-skel)');
+                const hasSkeleton = !!feedContainer.querySelector('.pub-skel, .skeleton');
+                if (!hasRealPost && hasSkeleton) {
+                    feedContainer.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
+                    feedContainer.setAttribute('aria-busy', 'false');
+                }
+            }
+        } catch (_) {}
+    }, 14000);
+
+    // 5. Efeitos de Busca (Hist?rico)
     const wrapper = document.getElementById('buscaWrapper');
     if(inputBusca) {
         atualizarListaHistorico();
@@ -4459,15 +5429,15 @@ document.addEventListener("DOMContentLoaded", async function() {
     }
 
     // 6. Cookies
-    // Banner de cookies removido por decisão de produto.
+    // Banner de cookies removido por decis?o de produto.
 
-// CÓDIGO NOVO (COM VERIFICAÇÃO DE LOGIN)
+// C?DIGO NOVO (COM VERIFICA??O DE LOGIN)
     var dataHoje = new Date().toDateString();
     
-    // Verifica se o usuário JÁ está logado
+    // Verifica se o usu?rio J? est? logado
     const estaLogado = localStorage.getItem('usuarioLogado') === 'true'; 
 
-    // Só abre o popup se a data for nova E se NÃO estiver logado
+    // S? abre o popup se a data for nova E se N?O estiver logado
     if (localStorage.getItem("popupVistoData") !== dataHoje && !estaLogado) {
         window.abrirPopup();
         localStorage.setItem("popupVistoData", dataHoje);
@@ -4508,8 +5478,8 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     
 
-    // 8. AUTENTICAÇÃO PERSISTENTE E NOTIFICAÇÕES
-    onAuthStateChanged(auth, async (user) => {
+    // 8. AUTENTICA??O PERSISTENTE E NOTIFICA??ES
+    dokeSubscribeAuthState(async (user) => {
         if (user) {
             try {
                 const docRef = doc(db, "usuarios", user.uid);
@@ -4539,7 +5509,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 }
             }
             
-            // Ativa notificações de pedidos novos
+            // Ativa notifica??es de pedidos novos
             window.monitorarNotificacoesGlobal(user.uid);
 
             if(window.location.pathname.includes('perfil')) {
@@ -4554,7 +5524,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             }
 
             if (user) {
-                // Quando o usuário está autenticado, marca como online
+                // Quando o usu?rio est? autenticado, marca como online
                 const userRef = doc(db, "usuarios", user.uid);
                 updateDoc(userRef, { status: "Online" });
             }
@@ -4565,7 +5535,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                     const fotoAuto = localStorage.getItem('doke_abrir_chat_foto');
                     const uidAuto = localStorage.getItem('doke_abrir_chat_uid');
                     
-                    // Limpa para não abrir sempre que recarregar a página
+                    // Limpa para n?o abrir sempre que recarregar a p?gina
                     localStorage.removeItem('doke_abrir_chat_id');
                     localStorage.removeItem('doke_abrir_chat_nome');
                     localStorage.removeItem('doke_abrir_chat_foto');
@@ -4599,28 +5569,26 @@ document.addEventListener("DOMContentLoaded", async function() {
                 }
                 localStorage.setItem('usuarioLogado', 'true');
             } else {
-            // Usuário "null" pode ser atraso na restauração da sessão (Supabase/Firebase compat).
-            // Só redireciona se NÃO houver sessão Supabase e NÃO houver cache local.
-            let sbUser = null;
-            try {
-                if (window.sb?.auth?.getSession) {
-                    const { data } = await window.sb.auth.getSession();
-                    sbUser = data?.session?.user || null;
-                }
-            } catch (_) {}
-
-            const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
-            const lsLogado = (localStorage.getItem('usuarioLogado') === 'true') || !!perfilSalvo;
-
-            if (!sbUser && !lsLogado) {
-                localStorage.removeItem('usuarioLogado');
-                localStorage.removeItem('doke_usuario_perfil');
-                if (window.location.pathname.includes('perfil') || window.location.pathname.includes('meuperfil') || window.location.pathname.includes('chat')) {
-                    window.location.href = 'login.html';
+                // N?o apagar cache nem redirecionar aqui:
+                // eventos de auth "null" podem ser transit?rios em dev/proxy.
+                const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+                const lsLogado = (localStorage.getItem('usuarioLogado') === 'true') || !!perfilSalvo;
+                if (!lsLogado) {
+                    try { await dokeHydrateCompatAuthFromSession(); } catch (_) {}
                 }
             }
         }
-        }
+        try {
+            const fallbackUid = String(
+                user?.uid ||
+                user?.id ||
+                localStorage.getItem('doke_uid') ||
+                ''
+            ).trim();
+            if (fallbackUid) {
+                window.monitorarNotificacoesGlobal(fallbackUid);
+            }
+        } catch (_) {}
         await verificarEstadoLogin();
     });
 });
@@ -4654,7 +5622,7 @@ async function finalizarPedidoComQuiz(idPrestador, nomePrestador, servico, formu
         } else {
             await addDoc(collection(db, "pedidos"), pedidoPayload);
         }
-        alert("✅ Solicitação enviada com sucesso!");
+        alert("? Solicita??o enviada com sucesso!");
     } catch (e) {
         console.error(e);
         alert("Erro ao salvar no Firestore.");
@@ -4687,18 +5655,18 @@ async function encontrarPedidoExistenteBase(deUid, paraUid, anuncioId) {
 }
 
 // ============================================================
-// LÓGICA DO CHAT (ADICIONAR AO SCRIPT.JS)
+// L?GICA DO CHAT (ADICIONAR AO SCRIPT.JS)
 // ============================================================
 
 let chatAtualId = null;
 let chatUnsubscribe = null;
 
-// Função chamada pelo botão "Abrir Chat" na lista de pedidos
+// Fun??o chamada pelo bot?o "Abrir Chat" na lista de pedidos
 window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, fotoCliente) {
     const viewLista = document.getElementById('view-lista');
     const viewChat = document.getElementById('view-chat');
     
-    // 1. Troca a visualização
+    // 1. Troca a visualiza??o
     if(viewLista) viewLista.style.display = 'none';
     if(viewChat) {
         viewChat.style.display = 'flex';
@@ -4729,7 +5697,7 @@ window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, foto
             if (dados.formularioRespostas && Array.isArray(dados.formularioRespostas) && dados.formularioRespostas.length > 0) {
                 let htmlQuiz = `
                     <div class="quiz-summary-card">
-                        <div class="quiz-header"><i class='bx bx-list-check'></i> Respostas do Formulário</div>
+                        <div class="quiz-header"><i class='bx bx-list-check'></i> Respostas do Formul?rio</div>
                 `;
                 
                 dados.formularioRespostas.forEach(item => {
@@ -4744,7 +5712,7 @@ window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, foto
                 htmlQuiz += `</div>`;
                 containerMsgs.insertAdjacentHTML('beforeend', htmlQuiz);
             } else if (dados.mensagemInicial) {
-                // Se não tiver quiz, mostra a mensagem inicial do pedido
+                // Se n?o tiver quiz, mostra a mensagem inicial do pedido
                 containerMsgs.insertAdjacentHTML('beforeend', `
                     <div class="quiz-summary-card">
                         <div class="quiz-header"><i class='bx bx-info-circle'></i> Pedido Inicial</div>
@@ -4754,10 +5722,10 @@ window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, foto
             }
         }
 
-        // 4. Carrega as mensagens em tempo real (Subcoleção)
+        // 4. Carrega as mensagens em tempo real (Subcole??o)
         const qMsgs = query(collection(db, "pedidos", idPedido, "mensagens"), orderBy("timestamp", "asc"));
         
-        // Se já existir um listener anterior, cancela ele para não duplicar
+        // Se j? existir um listener anterior, cancela ele para n?o duplicar
         if(chatUnsubscribe) chatUnsubscribe();
 
         chatUnsubscribe = onSnapshot(qMsgs, (snapshot) => {
@@ -4819,7 +5787,7 @@ window.enviarMensagem = async function(e) {
         });
 } catch (erro) {
         console.error("Erro ao enviar:", erro);
-        alert("Falha no envio. Verifique sua conexão.");
+        alert("Falha no envio. Verifique sua conex?o.");
     }
 }
 
@@ -4827,7 +5795,7 @@ window.enviarMensagem = async function(e) {
 
 
 // ============================================================
-// FUNÇÃO VOLTAR (Faltava definir essa função)
+// FUN??O VOLTAR (Faltava definir essa fun??o)
 // ============================================================
 window.voltarParaPedidos = function() {
     document.getElementById('view-chat').style.display = 'none';
@@ -4844,7 +5812,7 @@ window.voltarParaPedidos = function() {
     window.history.pushState({path: novaUrl}, '', novaUrl);
 }
 
-// ATUALIZAR A FUNÇÃO CARREGAR MEUS PEDIDOS PARA PASSAR OS DADOS CERTOS
+// ATUALIZAR A FUN??O CARREGAR MEUS PEDIDOS PARA PASSAR OS DADOS CERTOS
 window.carregarMeusPedidos = async function() {
     const container = document.getElementById('container-pedidos');
     const contador = document.getElementById('contadorPedidos');
@@ -4852,11 +5820,11 @@ window.carregarMeusPedidos = async function() {
 
     const user = auth.currentUser;
     if (!user) {
-        container.innerHTML = `<div class="empty-chat"><p>Faça login para ver pedidos.</p></div>`;
+        container.innerHTML = `<div class="empty-chat"><p>Fa?a login para ver pedidos.</p></div>`;
         return;
     }
 
-    // OBS: Se der erro de índice no console, o Firebase fornecerá um link para criar.
+    // OBS: Se der erro de ?ndice no console, o Firebase fornecer? um link para criar.
     const q = query(
         collection(db, "pedidos"), 
         where("paraUid", "==", user.uid), 
@@ -4871,7 +5839,7 @@ window.carregarMeusPedidos = async function() {
             container.innerHTML = `
                 <div class="empty-chat">
                     <i class='bx bx-message-rounded-dots'></i>
-                    <p>Você ainda não recebeu pedidos.</p>
+                    <p>Voc? ainda n?o recebeu pedidos.</p>
                 </div>`;
             if(contador) contador.innerText = "0 novos";
             return;
@@ -4884,7 +5852,7 @@ window.carregarMeusPedidos = async function() {
             
             if(p.status === 'pendente') novos++;
 
-            // Define quais botões aparecem baseado no status
+            // Define quais bot?es aparecem baseado no status
             let botoesHtml = '';
             
             if (p.status === 'pendente') {
@@ -4929,7 +5897,7 @@ window.carregarMeusPedidos = async function() {
 }
 
 // ============================================================
-// ATUALIZAÇÃO: CORREÇÃO DO CARREGAMENTO EXPLORAR
+// ATUALIZA??O: CORRE??O DO CARREGAMENTO EXPLORAR
 // ============================================================
 
 window.carregarDadosExplorar = function() {
@@ -4938,7 +5906,7 @@ window.carregarDadosExplorar = function() {
     // 1. Carrega Categorias
     if(window.carregarCategorias) window.carregarCategorias();
 
-    // 2. Carrega Inspirações (Com Fallback para Anúncios)
+    // 2. Carrega Inspira??es (Com Fallback para An?ncios)
     carregarInspiracoes();
 
     // 3. Carrega Profissionais
@@ -4950,17 +5918,17 @@ async function carregarInspiracoes() {
     if (!container) return;
 
     try {
-        // Tenta buscar na coleção 'trabalhos' (Portfolio)
-        // OBS: Removi o 'orderBy' temporariamente para evitar erro de índice se a coleção for nova
+        // Tenta buscar na cole??o 'trabalhos' (Portfolio)
+        // OBS: Removi o 'orderBy' temporariamente para evitar erro de ?ndice se a cole??o for nova
         let q = query(collection(db, "trabalhos"), limit(8));
         let snapshot = await getDocs(q);
         
         let listaParaMostrar = [];
         let tipoCard = 'trabalho';
 
-        // Se não tiver trabalhos (portfólio), busca anúncios normais para preencher
+        // Se n?o tiver trabalhos (portf?lio), busca an?ncios normais para preencher
         if (snapshot.empty) {
-            console.log("Sem trabalhos, buscando anúncios...");
+            console.log("Sem trabalhos, buscando an?ncios...");
             q = query(collection(db, "anuncios"), limit(8));
             snapshot = await getDocs(q);
             tipoCard = 'anuncio';
@@ -4972,7 +5940,7 @@ async function carregarInspiracoes() {
             container.innerHTML = `
                 <div class="loading-msg">
                     <i class='bx bx-image-alt' style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>Ainda não há publicações de inspiração.</p>
+                    <p>Ainda n?o h? publica??es de inspira??o.</p>
                 </div>`;
             return;
         }
@@ -4980,20 +5948,20 @@ async function carregarInspiracoes() {
         snapshot.forEach(doc => {
             const data = doc.data();
             
-            // Lógica para pegar a imagem correta dependendo se é Trabalho ou Anúncio
+            // L?gica para pegar a imagem correta dependendo se ? Trabalho ou An?ncio
             let imagem = "https://placehold.co/400x300?text=Sem+Imagem";
             if (data.capa) imagem = data.capa;
             else if (data.img) imagem = data.img;
             else if (data.fotos && data.fotos.length > 0) imagem = data.fotos[0];
 
             const categoria = data.categoria || data.tag || "Geral";
-            const titulo = data.titulo || (data.descricao ? data.descricao.substring(0, 30) : "Serviço");
+            const titulo = data.titulo || (data.descricao ? data.descricao.substring(0, 30) : "Servi?o");
             const autor = data.autorNome || data.nomeAutor || "Profissional";
 
             const html = `
             <div class="inspiration-card" onclick="window.location.href='index.html'">
                 <div class="like-btn"><i class='bx bx-heart'></i></div>
-                <img src="${imagem}" class="card-img" alt="Inspiração">
+                <img src="${imagem}" class="card-img" alt="Inspira??o">
                 <div class="card-overlay">
                     <span class="card-cat-badge">${categoria}</span>
                     <div class="card-title">${titulo}</div>
@@ -5007,10 +5975,10 @@ async function carregarInspiracoes() {
         });
 
     } catch (e) {
-        console.error("Erro ao carregar inspirações:", e);
+        console.error("Erro ao carregar inspira??es:", e);
         container.innerHTML = `
             <div class="error-msg">
-                <p>Não foi possível carregar as inspirações.</p>
+                <p>N?o foi poss?vel carregar as inspira??es.</p>
                 <small>${e.message}</small>
             </div>`;
     }
@@ -5021,7 +5989,7 @@ async function carregarListaProfissionaisReal() {
     if (!container) return;
 
     try {
-        // Busca usuários onde isProfissional é true
+        // Busca usu?rios onde isProfissional ? true
         const q = query(collection(db, "usuarios"), where("isProfissional", "==", true), limit(10));
         const snapshot = await getDocs(q);
 
@@ -5043,19 +6011,19 @@ async function carregarListaProfissionaisReal() {
             const user = doc.data();
             const foto = user.foto || "https://i.pravatar.cc/150";
             
-            // Lógica do Nome: Prioriza o @usuario, senão pega o primeiro nome
-            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usuário");
+            // L?gica do Nome: Prioriza o @usuario, sen?o pega o primeiro nome
+            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usu?rio");
             if (!nomeExibicao.startsWith('@') && user.user) {
                 nomeExibicao = user.user; // Garante que usa o handle se existir
             }
 
             const profissao = user.categoria_profissional || "Profissional";
             
-            // LÓGICA DE AVALIAÇÃO CORRIGIDA
-            // Se tiver avaliações > 0, mostra estrelas. Senão, mostra "Novo".
+            // L?GICA DE AVALIA??O CORRIGIDA
+            // Se tiver avalia??es > 0, mostra estrelas. Sen?o, mostra "Novo".
             let htmlAvaliacao;
             if (user.stats && user.stats.avaliacoes > 0) {
-                htmlAvaliacao = `<span class="pro-rating">★ ${user.stats.media}</span>`;
+                htmlAvaliacao = `<span class="pro-rating">&#11088; ${user.stats.media}</span>`;
             } else {
                 htmlAvaliacao = `<span class="badge-novo-pro">Novo</span>`;
             }
@@ -5083,10 +6051,10 @@ async function carregarListaProfissionaisReal() {
 }
 
 // ============================================================
-// 9. LÓGICA DE COMUNIDADES (ATUALIZADO)
+// 9. L?GICA DE COMUNIDADES (ATUALIZADO)
 // ============================================================
 
-// Função principal chamada ao abrir a página
+// Fun??o principal chamada ao abrir a p?gina
 window.carregarDadosComunidade = function() {
     carregarComunidadesGerais();
     carregarMeusGrupos();
@@ -5098,7 +6066,7 @@ window.criarNovaComunidade = async function(e) {
     const btn = e.target.querySelector('button');
     const user = auth.currentUser;
 
-    if(!user) { alert("Faça login para criar um grupo."); return; }
+    if(!user) { alert("Fa?a login para criar um grupo."); return; }
 
     const nome = document.getElementById('commNome').value;
     const desc = document.getElementById('commDesc').value;
@@ -5109,9 +6077,9 @@ window.criarNovaComunidade = async function(e) {
     btn.disabled = true;
 
     try {
-        let capaUrl = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22400%22%20viewBox%3D%220%200%201200%20400%22%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232a5f90%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237b2cbf%22/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%221200%22%20height%3D%22400%22%20fill%3D%22url%28%23g%29%22/%3E%0A%3C/svg%3E"; // Capa padrão (gradiente Doke, sem depender de links externos)
+        let capaUrl = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22400%22%20viewBox%3D%220%200%201200%20400%22%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232a5f90%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237b2cbf%22/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%221200%22%20height%3D%22400%22%20fill%3D%22url%28%23g%29%22/%3E%0A%3C/svg%3E"; // Capa padr?o (gradiente Doke, sem depender de links externos)
 
-        // Se o usuário selecionou foto, converte para Base64
+        // Se o usu?rio selecionou foto, converte para Base64
         if (fileInput.files && fileInput.files[0]) {
             const file = fileInput.files[0];
             const reader = new FileReader();
@@ -5129,7 +6097,7 @@ window.criarNovaComunidade = async function(e) {
             tipo: tipo,
             capa: capaUrl,
             membrosCount: 1,
-            membros: [user.uid], // Você entra automaticamente no grupo
+            membros: [user.uid], // Voc? entra automaticamente no grupo
             dataCriacao: new Date().toISOString()
         });
 
@@ -5197,14 +6165,14 @@ function dokeCommEscapeHtml(value) {
 function dokeCommNormalizePrivacidade(comm) {
     const boolPrivate = [comm?.privado, comm?.is_private, comm?.private].find(v => typeof v === "boolean");
     if (typeof boolPrivate === "boolean") {
-        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "Público" };
+        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "P?blico" };
     }
 
     if (typeof comm?.publico === "boolean") {
-        return { isPrivate: !comm.publico, label: comm.publico ? "Público" : "Privado" };
+        return { isPrivate: !comm.publico, label: comm.publico ? "P?blico" : "Privado" };
     }
     if (typeof comm?.publica === "boolean") {
-        return { isPrivate: !comm.publica, label: comm.publica ? "Público" : "Privado" };
+        return { isPrivate: !comm.publica, label: comm.publica ? "P?blico" : "Privado" };
     }
 
     const raw = String(comm?.privacidade || comm?.privacy || "").trim();
@@ -5214,7 +6182,7 @@ function dokeCommNormalizePrivacidade(comm) {
         if (s.includes("pub")) return { isPrivate: false, label: raw };
         return { isPrivate: false, label: raw };
     }
-    return { isPrivate: false, label: "Público" };
+    return { isPrivate: false, label: "P?blico" };
 }
 
 async function dokeCommHasColumn(client, table, col) {
@@ -5222,7 +6190,32 @@ async function dokeCommHasColumn(client, table, col) {
         const { error } = await client.from(table).select(col).limit(1);
         if (!error) return true;
         const msg = String(error.message || "").toLowerCase();
+        const code = String(error.code || "").toUpperCase();
+        const status = Number(error.status || error.statusCode || 0);
+
+        // Falha de rede/proxy: n?o assumir que a coluna existe.
         if (
+            status >= 500 ||
+            msg.includes("failed to fetch") ||
+            msg.includes("network") ||
+            msg.includes("cors") ||
+            msg.includes("rest_backoff_active")
+        ) {
+            return false;
+        }
+
+        // Sem permiss?o: coluna/tabela podem existir; mant?m true para n?o quebrar schema detect.
+        if (status === 401 || status === 403) {
+            return true;
+        }
+
+        // Erros de parse/schema ausente devem ser tratados como "coluna n?o existe".
+        if (
+            status === 400 || status === 404 ||
+            code === "42703" || // undefined_column
+            code === "42P01" || // undefined_table
+            code === "PGRST100" || // query parse
+            code === "PGRST204" || // column not found in schema cache
             msg.includes("does not exist") ||
             msg.includes("could not find") ||
             msg.includes("relation") && msg.includes("does not exist")
@@ -5326,20 +6319,20 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
 
     const uid = await dokeCommGetUid();
     if (!uid) {
-        dokeCommToast("Faça login para continuar.");
+        dokeCommToast("Fa?a login para continuar.");
         return;
     }
 
     const client = window.supabase || window.supabaseClient || window.sb || null;
     if (!client || typeof client.from !== "function") {
-        if (isPrivate) dokeCommToast("Não foi possível solicitar entrada agora.");
+        if (isPrivate) dokeCommToast("N?o foi poss?vel solicitar entrada agora.");
         else abrirGrupo(grupoId);
         return;
     }
 
     try {
         const schema = await dokeCommDetectMembersSchema(client);
-        if (!schema.communityCol || !schema.userCol) throw new Error("Schema de membros não detectado.");
+        if (!schema.communityCol || !schema.userCol) throw new Error("Schema de membros n?o detectado.");
 
         const payload = {};
         payload[schema.communityCol] = grupoId;
@@ -5382,18 +6375,18 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
         }
 
         if (isPrivate) {
-            dokeCommToast("Solicitação de entrada enviada.");
+            dokeCommToast("Solicita??o de entrada enviada.");
             await carregarComunidadesGerais();
             return;
         }
 
-        dokeCommToast("Você entrou no grupo.");
+        dokeCommToast("Voc? entrou no grupo.");
         await carregarComunidadesGerais();
         if (window.carregarMeusGrupos) await window.carregarMeusGrupos();
         abrirGrupo(grupoId);
     } catch (e) {
         console.error("[DOKE] Erro ao entrar/solicitar grupo:", e);
-        if (isPrivate) dokeCommToast("Não foi possível solicitar entrada agora.");
+        if (isPrivate) dokeCommToast("N?o foi poss?vel solicitar entrada agora.");
         else abrirGrupo(grupoId);
     }
 };
@@ -5457,7 +6450,7 @@ async function carregarComunidadesGerais() {
 
         // Preferir Supabase (dados reais)
         if (window.supabase) {
-            // tentar ordenar, mas fazer fallback se a coluna não existir
+            // tentar ordenar, mas fazer fallback se a coluna n?o existir
             let res = await window.supabase
                 .from('comunidades')
                 .select('*')
@@ -5516,7 +6509,7 @@ async function carregarMeusGrupos() {
     try {
         const uid = (window.auth && window.auth.currentUser && window.auth.currentUser.uid) ? window.auth.currentUser.uid : null;
         if (!uid) {
-            container.innerHTML = `<div style="padding:18px; color:#777;">Faça login para ver seus grupos.</div>`;
+            container.innerHTML = `<div style="padding:18px; color:#777;">Fa?a login para ver seus grupos.</div>`;
             return;
         }
 
@@ -5538,7 +6531,7 @@ async function carregarMeusGrupos() {
                 <div class="my-group-cover" style="${capaStyle}"></div>
                 <div class="my-group-info">
                   <div class="my-group-title">${nome}</div>
-                  <div class="my-group-sub">${tipo} • ${membrosCount ? `${membrosCount} membros` : `0 membros`}</div>
+                  <div class="my-group-sub">${tipo} ? ${membrosCount ? `${membrosCount} membros` : `0 membros`}</div>
                 </div>
                 <button class="btn-abrir-grupo" onclick="event.stopPropagation(); abrirGrupo('${id || ""}')">Abrir</button>
               </div>
@@ -5566,7 +6559,7 @@ async function carregarMeusGrupos() {
 
             const list = (res.data || []).map(c => ({ ...c, id: c.id || c.comunidade_id || c.uuid }));
             if (!list.length) {
-                container.innerHTML = `<div style="padding:18px; color:#777;">Você ainda não participa de nenhum grupo.</div>`;
+                container.innerHTML = `<div style="padding:18px; color:#777;">Voc? ainda n?o participa de nenhum grupo.</div>`;
                 return;
             }
             container.innerHTML = list.map(renderItem).join('');
@@ -5578,7 +6571,7 @@ async function carregarMeusGrupos() {
         const snap = await getDocs(q);
 
         if (!snap || snap.empty) {
-            container.innerHTML = `<div style="padding:18px; color:#777;">Você ainda não participa de nenhum grupo.</div>`;
+            container.innerHTML = `<div style="padding:18px; color:#777;">Voc? ainda n?o participa de nenhum grupo.</div>`;
             return;
         }
 
@@ -5609,7 +6602,7 @@ window.verificarEnter = function(e) {
     if (e.key === 'Enter') window.enviarMensagemTexto();
 }
 
-// 5. Lógica de Gravação de Áudio
+// 5. L?gica de Grava??o de ?udio
 window.iniciarGravacao = async function() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -5677,19 +6670,19 @@ window.enviarAudio = function() {
             await enviarParaFirestore({
                 tipo: 'audio',
                 url: downloadUrl,
-                texto: "Mensagem de áudio"
+                texto: "Mensagem de ?udio"
             });
 
             btnEnviar.innerHTML = originalIcon;
 
         } catch (e) {
             console.error("Erro upload audio:", e);
-            alert("Erro ao enviar áudio.");
+            alert("Erro ao enviar ?udio.");
         }
     };
 }
 
-// 6. Função Genérica de Envio ao Firestore
+// 6. Fun??o Gen?rica de Envio ao Firestore
 async function enviarParaFirestore(dadosMsg) {
     const user = auth.currentUser;
     if (!user || !window.chatIdAtual) return;
@@ -5702,11 +6695,11 @@ async function enviarParaFirestore(dadosMsg) {
     };
 
     try {
-        // Tenta salvar na coleção 'conversas'
+        // Tenta salvar na cole??o 'conversas'
         // Se o chat for do tipo 'pedido' (legado), precisamos tratar diferente ou migrar.
         // Por simplicidade, tentamos salvar onde a gente leu (seja conversa ou pedido)
         
-        // Mas a forma correta é saber qual coleção estamos usando.
+        // Mas a forma correta ? saber qual cole??o estamos usando.
         // Vamos tentar 'conversas' primeiro.
         const chatRef = doc(db, "conversas", window.chatIdAtual);
         
@@ -5715,7 +6708,7 @@ async function enviarParaFirestore(dadosMsg) {
         
         let collectionName = "conversas";
         if (!docSnap.exists()) {
-            // Se não existe em conversas, deve ser um pedido legado
+            // Se n?o existe em conversas, deve ser um pedido legado
             collectionName = "pedidos";
         }
 
@@ -5724,7 +6717,7 @@ async function enviarParaFirestore(dadosMsg) {
         // Atualiza 'ultimaMensagem' para a lista ficar atualizada
         if (collectionName === "conversas") {
             await updateDoc(chatRef, {
-                ultimaMensagem: dadosMsg.texto || "Áudio",
+                ultimaMensagem: dadosMsg.texto || "?udio",
                 tipoUltimaMsg: dadosMsg.tipo,
                 dataAtualizacao: new Date().toISOString()
             });
@@ -5735,13 +6728,13 @@ async function enviarParaFirestore(dadosMsg) {
     }
 }
 
-// 7. Player de Áudio Simples
+// 7. Player de ?udio Simples
 window.tocarAudio = function(btn, url) {
     const audio = new Audio(url);
     const icon = btn.querySelector('i');
     
     if (btn.classList.contains('playing')) {
-        // Se já está tocando, não faz nada ou pausa (impl. simples toca do zero)
+        // Se j? est? tocando, n?o faz nada ou pausa (impl. simples toca do zero)
         return; 
     }
 
@@ -5765,11 +6758,11 @@ window.toggleChatMenu = function() {
 }
 
 window.apagarConversaAtual = async function() {
-    if(!confirm("Tem certeza que deseja apagar esta conversa? Isso não apaga para a outra pessoa.")) return;
+    if(!confirm("Tem certeza que deseja apagar esta conversa? Isso n?o apaga para a outra pessoa.")) return;
     
-    // Firestore não deleta subcoleções automaticamente. 
-    // Para simplificar: Vamos remover o usuário da lista de 'participantes' ou marcar como deletado.
-    // Ou simplesmente deletar o documento pai (as mensagens ficam órfãs no banco, mas somem da UI).
+    // Firestore n?o deleta subcole??es automaticamente. 
+    // Para simplificar: Vamos remover o usu?rio da lista de 'participantes' ou marcar como deletado.
+    // Ou simplesmente deletar o documento pai (as mensagens ficam ?rf?s no banco, mas somem da UI).
     
     try {
         await deleteDoc(doc(db, "conversas", window.chatIdAtual));
@@ -5792,7 +6785,7 @@ window.verPerfilAtual = function() {
 }
 
 window.validarCPF = function(cpf) {
-    // Remove tudo que não é dígito
+    // Remove tudo que n?o ? d?gito
     cpf = cpf.replace(/[^\d]+/g,'');
 
     if(cpf == '') return false;
@@ -5835,18 +6828,18 @@ window.validarCPF = function(cpf) {
 }
 
 window.validarTelefoneBR = function(telefone) {
-    // Remove tudo que não for número
+    // Remove tudo que n?o for n?mero
     let cleanPhone = telefone.replace(/\D/g, '');
 
-    // Verifica se tem 10 ou 11 dígitos (Fixo ou Celular)
-    // DD + Número
+    // Verifica se tem 10 ou 11 d?gitos (Fixo ou Celular)
+    // DD + N?mero
     if (cleanPhone.length < 10 || cleanPhone.length > 11) return false;
 
-    // Verifica se o DDD é válido (existem de 11 a 99)
+    // Verifica se o DDD ? v?lido (existem de 11 a 99)
     const ddd = parseInt(cleanPhone.substring(0, 2));
     if (ddd < 11 || ddd > 99) return false;
 
-    // Se for celular (11 dígitos), deve começar com 9
+    // Se for celular (11 d?gitos), deve come?ar com 9
     if (cleanPhone.length === 11 && cleanPhone[2] !== '9') {
         return false;
     }
@@ -5855,7 +6848,7 @@ window.validarTelefoneBR = function(telefone) {
 }
 
 // ============================================================
-// FUNÇÕES DE PREVIEW DE VÍDEO (HOVER)
+// FUN??ES DE PREVIEW DE V?DEO (HOVER)
 // ============================================================
 const hoverPreviewTimers = new WeakMap();
 const HOVER_PREVIEW_DELAY_MS = 900;
@@ -5866,7 +6859,7 @@ window.iniciarPreview = function(card) {
     if (!srcInput) return;
     const videoSrc = srcInput.value;
 
-    // Se não tiver link de vídeo, não faz nada
+    // Se n?o tiver link de v?deo, n?o faz nada
     if (!videoSrc || videoSrc === "undefined") return;
     if (hoverPreviewTimers.has(card)) return;
 
@@ -5880,19 +6873,19 @@ window.iniciarPreview = function(card) {
     const timer = window.setTimeout(() => {
         hoverPreviewTimers.delete(card);
 
-        // Verifica se o vídeo já existe para não criar duplicado
+        // Verifica se o v?deo j? existe para n?o criar duplicado
         let video = card.querySelector('.video-preview-hover');
 
         if (!video) {
-            // Cria o elemento de vídeo dinamicamente
+            // Cria o elemento de v?deo dinamicamente
             video = document.createElement('video');
             video.src = videoSrc;
             video.className = 'video-preview-hover';
-            video.muted = true; // OBRIGATÓRIO: Navegadores só dão autoplay se estiver mudo
+            video.muted = true; // OBRIGAT?RIO: Navegadores s? d?o autoplay se estiver mudo
             video.loop = true;
             video.playsInline = true;
             
-            // Insere o vídeo antes do ícone de play (para ficar embaixo da UI layer)
+            // Insere o v?deo antes do ?cone de play (para ficar embaixo da UI layer)
             const playIcon = card.querySelector('.play-icon');
             if (playIcon) {
                 card.insertBefore(video, playIcon);
@@ -5927,12 +6920,12 @@ window.pararPreview = function(card) {
     const video = card.querySelector('.video-preview-hover');
     if (video) {
         video.pause();
-        video.currentTime = 0; // Volta para o início
-        video.remove(); // Remove o elemento para economizar memória do navegador
+        video.currentTime = 0; // Volta para o in?cio
+        video.remove(); // Remove o elemento para economizar mem?ria do navegador
     }
 };
 
-// Função para alternar a visibilidade dos campos de endereço
+// Fun??o para alternar a visibilidade dos campos de endere?o
 const reelPreviewTimers = new WeakMap();
 
 window.playReelPreview = function(card) {
@@ -5974,7 +6967,7 @@ window.stopReelPreview = function(card) {
         // Se for "Online", esconde. Se for "Presencial" ou "Ambos", mostra.
         if (modoAtend === 'Online') {
             addressContainer.style.display = 'none';
-            // Opcional: Limpar os campos ao esconder para não enviar lixo
+            // Opcional: Limpar os campos ao esconder para n?o enviar lixo
             // document.getElementById('cep').value = '';
             // document.getElementById('cidade').value = ''; 
             // etc...
@@ -5993,12 +6986,12 @@ const paramsChat = new URLSearchParams(window.location.search);
     if (idChatUrl) {
         setTimeout(async () => {
             if(window.abrirChatInterno) {
-                // Passamos null no nome/foto pois a função vai buscar no banco
+                // Passamos null no nome/foto pois a fun??o vai buscar no banco
                 window.abrirChatInterno(null, idChatUrl, "Carregando...", ""); 
             }
         }, 800);
     }  
-        // Adicione isso no final do DOMContentLoaded ou na função de carregarDadosParaEdicao
+        // Adicione isso no final do DOMContentLoaded ou na fun??o de carregarDadosParaEdicao
         if(document.querySelector('input[name="modo_atend"]:checked')) {
              toggleAddressFields();
         }
@@ -6056,7 +7049,7 @@ window.fecharModalDetalhes = function() {
 }
 
 async function processarAceite(idPedido, dados) {
-    if(!await window.dokeConfirm("Aceitar este serviço e liberar o chat?")) return;
+    if(!await window.dokeConfirm("Aceitar este servi?o e liberar o chat?")) return;
     try {
         await updateDoc(doc(db, "pedidos", idPedido), {
             status: "aceito",
@@ -6069,7 +7062,7 @@ async function processarAceite(idPedido, dados) {
 }
 
 async function processarRecusa(idPedido) {
-    if(!await window.dokeConfirm("Recusar este pedido?", "Atenção")) return;
+    if(!await window.dokeConfirm("Recusar este pedido?", "Aten??o")) return;
     try {
         await updateDoc(doc(db, "pedidos", idPedido), { status: "recusado", dataAtualizacao: new Date().toISOString() });
         fecharModalDetalhes();
@@ -6088,25 +7081,42 @@ window.addEventListener('beforeunload', () => {
     if (user) {
         const userRef = doc(window.db, "usuarios", user.uid);
         // Usamos updateDoc aqui, mas em fechamento de aba nem sempre funciona 100% 
-        // devido à velocidade do navegador, por isso o botão Sair é o método mais seguro.
+        // devido ? velocidade do navegador, por isso o bot?o Sair ? o m?todo mais seguro.
         updateDoc(userRef, { status: "Offline" });
     }
 });
 
 // ============================================================
-// MONITORAMENTO GLOBAL DE NOTIFICAÇÕES (SIDEBAR E MOBILE)
+// MONITORAMENTO GLOBAL DE NOTIFICA??ES (SIDEBAR E MOBILE)
 // ============================================================
 window.monitorarNotificacoesGlobal = function(uid) {
     if (!uid) return;
-    const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
-    const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
-    const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", uid), where("lida", "==", false));
+    const resolvedUid = String(uid || "").trim();
+    if (!resolvedUid) return;
+    if (!window.__dokeBadgeMonitor) {
+        window.__dokeBadgeMonitor = { uid: "", unsubs: [], pollTimer: null };
+    }
+    const state = window.__dokeBadgeMonitor;
+    if (state.uid === resolvedUid && Array.isArray(state.unsubs) && state.unsubs.length) {
+        return;
+    }
+    try { (state.unsubs || []).forEach((fn) => { try { fn && fn(); } catch (_) {} }); } catch (_) {}
+    state.unsubs = [];
+    if (state.pollTimer) {
+        clearInterval(state.pollTimer);
+        state.pollTimer = null;
+    }
+    state.uid = resolvedUid;
+
+    const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
+    const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
+    const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
 
     const atualizarBadges = (docsRecebidos, docsEnviados, docsSociais) => {
         let totalNotif = 0;
         let totalChat = 0;
 
-        // ... (lógica de contagem permanece igual) ...
+        // ... (l?gica de contagem permanece igual) ...
         docsRecebidos.forEach(doc => {
             const data = doc.data();
             const st = data.status;
@@ -6121,7 +7131,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
         totalNotif += docsSociais.length;
 
-        // ESTILO UNIFICADO (Vermelho padrão #ff2e63)
+        // ESTILO UNIFICADO (Vermelho padr?o #ff2e63)
         const estiloBadge = `
             position: absolute; top: 5px; right: 5px;
             background: #ff2e63; color: white;
@@ -6135,7 +7145,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
 
         // --- ATUALIZA O MENU LATERAL E MOBILE ---
         
-        // 1. Badge de NOTIFICAÇÕES (Sininho)
+        // 1. Badge de NOTIFICA??ES (Sininho)
 document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
             let badge = link.parentNode.querySelector('.badge-sidebar');
             if (!badge) {
@@ -6152,13 +7162,13 @@ document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
         });
 
         
-        // 2. Badge de CHAT (Envelope) - Mantém lógica original
+        // 2. Badge de CHAT (Envelope) - Mant?m l?gica original
         document.querySelectorAll('a[href="chat.html"]').forEach(link => {
             let badge = link.parentNode.querySelector('.badge-chat-sidebar');
             if (!badge) {
                 badge = document.createElement('span');
                 badge.className = 'badge-chat-sidebar';
-                badge.style.cssText = estiloBadge; // Usa a mesma variável de estilo
+                badge.style.cssText = estiloBadge; // Usa a mesma vari?vel de estilo
                 const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
                 parent.style.position = 'relative';
                 parent.appendChild(badge);
@@ -6197,9 +7207,41 @@ document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
     let cacheRecebidos = [];
     let cacheEnviados = [];
     let cacheSociais = [];
-    onSnapshot(qRecebidos, (snap) => { cacheRecebidos = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
-    onSnapshot(qEnviados, (snap) => { cacheEnviados = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
-    onSnapshot(qSociais, (snap) => { cacheSociais = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
+
+    const pollBadges = async () => {
+        try {
+            const [r, e, s] = await Promise.all([
+                getDocs(qRecebidos).catch(() => ({ docs: [] })),
+                getDocs(qEnviados).catch(() => ({ docs: [] })),
+                getDocs(qSociais).catch(() => ({ docs: [] }))
+            ]);
+            cacheRecebidos = Array.isArray(r?.docs) ? r.docs : [];
+            cacheEnviados = Array.isArray(e?.docs) ? e.docs : [];
+            cacheSociais = Array.isArray(s?.docs) ? s.docs : [];
+            atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+        } catch (_) {}
+    };
+
+    const onSnapError = () => {
+        if (!state.pollTimer) {
+            state.pollTimer = setInterval(pollBadges, 15000);
+        }
+    };
+
+    const unsub1 = onSnapshot(qRecebidos, (snap) => {
+        cacheRecebidos = snap.docs;
+        atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+    }, onSnapError);
+    const unsub2 = onSnapshot(qEnviados, (snap) => {
+        cacheEnviados = snap.docs;
+        atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+    }, onSnapError);
+    const unsub3 = onSnapshot(qSociais, (snap) => {
+        cacheSociais = snap.docs;
+        atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+    }, onSnapError);
+    state.unsubs = [unsub1, unsub2, unsub3];
+    pollBadges();
 }
 
 const styleModal = document.createElement('style');
@@ -6255,7 +7297,7 @@ styleModal.innerHTML = `
     transform: scale(1);
 }
 
-/* Título */
+/* T?tulo */
 #dmTitle {
     background: white !important;
     color: var(--cor2) !important; /* Azul Doke */
@@ -6298,7 +7340,7 @@ styleModal.innerHTML = `
     font-size: 1.1rem;
 }
 
-/* Botões */
+/* Bot?es */
 #btnDmCancel {
     border: none !important;
     background: #f1f3f5 !important;
@@ -6320,7 +7362,7 @@ styleModal.innerHTML = `
 `;
 document.head.appendChild(styleModal);
 
-// Cria o HTML do modal na página
+// Cria o HTML do modal na p?gina
 const modalHTML = `
 <div id="dokeModalOverlay" class="doke-overlay">
     <div class="doke-modal" id="dokeModalBox">
@@ -6338,44 +7380,60 @@ const modalHTML = `
 document.body.insertAdjacentHTML('beforeend', modalHTML);
 
 // ============================================================
-// SISTEMA CORRIGIDO: MODAIS, MÁSCARAS E LOGOUT (COPIE TUDO)
+// SISTEMA CORRIGIDO: MODAIS, M?SCARAS E LOGOUT (COPIE TUDO)
 // ============================================================
 
-// 1. LOGOUT SEGURO (NÃO APAGA COOKIES)
+// 1. LOGOUT SEGURO (N?O APAGA COOKIES)
 // ============================================================
-// SISTEMA CORRIGIDO: MODAIS, MÁSCARAS E LOGOUT
+// SISTEMA CORRIGIDO: MODAIS, M?SCARAS E LOGOUT
 // ============================================================
 
 // 1. LOGOUT SEGURO
 window.fazerLogout = async function() {
-    if(await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")) {
-        try {
-            const user = window.auth.currentUser;
-            if (user) {
-                // Tenta marcar como offline
-                try {
-                    const userRef = doc(window.db, "usuarios", user.uid);
-                    await updateDoc(userRef, { status: "Offline" });
-                } catch(e) { console.log("Offline update skipped"); }
-            }
-            await window.auth.signOut(); 
-            localStorage.removeItem('usuarioLogado');
-            localStorage.removeItem('doke_usuario_perfil');
-            localStorage.removeItem('doke_uid');
-            window.location.href = 'index.html';
-        } catch (error) {
-            localStorage.removeItem('usuarioLogado');
-            window.location.href = 'index.html';
-        }
+    let confirmed = false;
+    try {
+        confirmed = (typeof window.dokeConfirm === "function")
+            ? await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")
+            : window.confirm("Tem certeza que deseja sair?");
+    } catch (_e) {
+        confirmed = window.confirm("Tem certeza que deseja sair?");
     }
+    if (!confirmed) return;
+
+    try {
+        let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+        if (!user) {
+            try { user = await dokeResolveAuthUser(); } catch (_e) { user = null; }
+        }
+        if (user?.uid) {
+            try {
+                const userRef = doc(window.db, "usuarios", user.uid);
+                await updateDoc(userRef, { status: "Offline" });
+            } catch (_e) {}
+        }
+    } catch (_e) {}
+
+    try {
+        const perfil = dokeSafeJsonParse(localStorage.getItem("doke_usuario_perfil") || "{}", {}) || {};
+        dokeRememberLoggedAccount({
+            uid: perfil.uid || perfil.id || localStorage.getItem("doke_uid") || "",
+            email: perfil.email || "",
+            nome: perfil.nome || "",
+            user: perfil.user || perfil.nome || "",
+            foto: perfil.foto || ""
+        });
+    } catch (_e) {}
+
+    await dokeSignOutAndGo('login.html?logout=1');
+    return true;
 }
 
-// 2. FUNÇÕES GLOBAIS DE PROMISE
+// 2. FUN??ES GLOBAIS DE PROMISE
 window.dokeAlert = (msg, title="Aviso") => new Promise(r => setupDokeModal(title, msg, 'alert', r));
-window.dokeConfirm = (msg, title="Confirmação", type="normal") => new Promise(r => setupDokeModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', r));
-window.dokePrompt = (msg, placeholder="", title="Informação") => new Promise(r => setupDokeModal(title, msg, 'prompt', r, placeholder));
+window.dokeConfirm = (msg, title="Confirma??o", type="normal") => new Promise(r => setupDokeModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', r));
+window.dokePrompt = (msg, placeholder="", title="Informa??o") => new Promise(r => setupDokeModal(title, msg, 'prompt', r, placeholder));
 
-// 3. LÓGICA UNIFICADA DO MODAL
+// 3. L?GICA UNIFICADA DO MODAL
 function setupDokeModal(title, msg, type, resolve, placeholder="") {
     // Garante que o HTML existe
     injetarHtmlModal();
@@ -6393,7 +7451,7 @@ function setupDokeModal(title, msg, type, resolve, placeholder="") {
     elMsg.innerText = msg;
     btnCancel.style.display = (type === 'alert') ? 'none' : 'block';
     
-    // Estilo do botão de confirmação
+    // Estilo do bot?o de confirma??o
     if (type === 'confirm-danger') {
         btnConfirm.style.background = '#e74c3c';
         btnConfirm.innerText = "Sim, remover";
@@ -6402,12 +7460,12 @@ function setupDokeModal(title, msg, type, resolve, placeholder="") {
         btnConfirm.innerText = (type === 'prompt' || type === 'alert') ? "OK" : "Sim";
     }
 
-    // --- RECRIA O INPUT (Para limpar máscaras antigas) ---
+    // --- RECRIA O INPUT (Para limpar m?scaras antigas) ---
     const oldInput = inputContainer.querySelector('input');
     if(oldInput) oldInput.remove();
 
     const input = document.createElement('input');
-    input.type = 'text'; // Mantém text para permitir "R$"
+    input.type = 'text'; // Mant?m text para permitir "R$"
     input.className = 'dm-input'; // Usa a classe CSS injetada
     input.style.display = (type === 'prompt') ? 'block' : 'none';
     input.style.width = "100%";
@@ -6421,20 +7479,20 @@ function setupDokeModal(title, msg, type, resolve, placeholder="") {
     input.autocomplete = "off";
     inputContainer.appendChild(input);
 
-    // --- MÁSCARA DE DINHEIRO INTELIGENTE ---
+    // --- M?SCARA DE DINHEIRO INTELIGENTE ---
     if(type === 'prompt') {
         input.placeholder = placeholder;
         
-        // Se for valor monetário (detectado pelo título ou placeholder)
-        const isMoney = placeholder.includes("R$") || title.toLowerCase().includes("valor") || title.toLowerCase().includes("cobranca") || title.toLowerCase().includes("cobrança");
+        // Se for valor monet?rio (detectado pelo t?tulo ou placeholder)
+        const isMoney = placeholder.includes("R$") || title.toLowerCase().includes("valor") || title.toLowerCase().includes("cobranca") || title.toLowerCase().includes("cobran?a");
         const isParcela = title.toLowerCase().includes("parcela");
 
         if (isMoney) {
             input.setAttribute('inputmode', 'numeric');
             
-            // Função de formatação (Estilo ATM: digita 23 vira 0,23)
+            // Fun??o de formata??o (Estilo ATM: digita 23 vira 0,23)
             const formatarMoeda = (val) => {
-                let v = val.replace(/\D/g, ""); // Remove tudo que não é número
+                let v = val.replace(/\D/g, ""); // Remove tudo que n?o ? n?mero
                 if (v === "") return "";
                 v = (parseInt(v) / 100).toFixed(2) + "";
                 v = v.replace(".", ",");
@@ -6457,7 +7515,7 @@ function setupDokeModal(title, msg, type, resolve, placeholder="") {
     overlay.style.display = 'flex';
     if(type === 'prompt') setTimeout(() => input.focus(), 100);
 
-    // --- HANDLERS DOS BOTÕES (Clonagem para remover listeners antigos) ---
+    // --- HANDLERS DOS BOT?ES (Clonagem para remover listeners antigos) ---
     const newConfirm = btnConfirm.cloneNode(true);
     const newCancel = btnCancel.cloneNode(true);
     btnConfirm.parentNode.replaceChild(newConfirm, btnConfirm);
@@ -6474,11 +7532,11 @@ function setupDokeModal(title, msg, type, resolve, placeholder="") {
     };
 }
 
-// Garante que o HTML base do modal exista na página
+// Garante que o HTML base do modal exista na p?gina
 function injetarHtmlModal() {
     if (document.getElementById('dokeGlobalModal')) return;
     
-    // Injeta CSS se necessário
+    // Injeta CSS se necess?rio
     if (!document.getElementById('modal-styles-injected')) {
         const style = document.createElement('style');
         style.id = 'modal-styles-injected';
@@ -6507,7 +7565,7 @@ function injetarHtmlModal() {
 // 14. SISTEMA DE STATUS ONLINE/OFFLINE (Adicione/Substitua no final do script.js)
 // ============================================================
 
-// Função para marcar como Online
+// Fun??o para marcar como Online
 window.marcarComoOnline = async function(uid) {
     try {
         const userRef = doc(db, "usuarios", uid);
@@ -6518,7 +7576,7 @@ window.marcarComoOnline = async function(uid) {
     } catch (e) { console.error("Erro status online:", e); }
 };
 
-// Função para marcar como Offline
+// Fun??o para marcar como Offline
 window.marcarComoOffline = async function(uid) {
     try {
         const userRef = doc(db, "usuarios", uid);
@@ -6530,16 +7588,16 @@ window.marcarComoOffline = async function(uid) {
 };
 
 document.addEventListener("DOMContentLoaded", function() {
-    // ... seus outros códigos de inicialização ...
+    // ... seus outros c?digos de inicializa??o ...
 
-    onAuthStateChanged(auth, (user) => {
+    dokeSubscribeAuthState((user) => {
         if (user) {
             if (window.__dokePresenceBoundFor === user.uid) return;
             window.__dokePresenceBoundFor = user.uid;
             // 1. Assim que detecta login, marca como Online
             window.marcarComoOnline(user.uid);
 
-            // 2. Se a aba ficar visível novamente, reforça o Online
+            // 2. Se a aba ficar vis?vel novamente, refor?a o Online
             document.addEventListener("visibilitychange", () => {
                 if (document.visibilityState === 'visible') {
                     window.marcarComoOnline(user.uid);
@@ -6548,12 +7606,12 @@ document.addEventListener("DOMContentLoaded", function() {
 
             // 3. Ao fechar a aba ou atualizar, marca como Offline
             window.addEventListener('beforeunload', () => {
-                // O navigator.sendBeacon é mais confiável para fechamento de aba
-                // Mas como estamos usando Firestore SDK, tentamos o update padrão:
+                // O navigator.sendBeacon ? mais confi?vel para fechamento de aba
+                // Mas como estamos usando Firestore SDK, tentamos o update padr?o:
                 window.marcarComoOffline(user.uid);
             });
 
-            // Restante da sua lógica de login...
+            // Restante da sua l?gica de login...
             localStorage.setItem('usuarioLogado', 'true');
             // ...
         }
@@ -6565,13 +7623,13 @@ window.gerarPagamento = async function() {
     const idParaSalvar = chatIdAtual; 
     if (!idParaSalvar) { alert("Erro: Nenhuma conversa aberta."); return; }
 
-    let valorStr = await window.dokePrompt("Qual o valor do serviço?", "R$ 0,00", "Gerar Cobrança");
+    let valorStr = await window.dokePrompt("Qual o valor do servi?o?", "R$ 0,00", "Gerar Cobran?a");
     if(!valorStr) return;
 
-    let descricao = await window.dokePrompt("Descrição do serviço:", "Ex: Mão de obra", "Descrição");
+    let descricao = await window.dokePrompt("Descri??o do servi?o:", "Ex: M?o de obra", "Descri??o");
     if(!descricao) return;
 
-    let maxParcelas = await window.dokePrompt("Máx. parcelas sem juros (1-12):", "1", "Parcelamento");
+    let maxParcelas = await window.dokePrompt("M?x. parcelas sem juros (1-12):", "1", "Parcelamento");
     if(!maxParcelas) maxParcelas = "1";
 
     const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
@@ -6597,12 +7655,12 @@ window.gerarPagamento = async function() {
 
     } catch(e) {
         console.error(e);
-        alert("Erro ao criar cobrança.");
+        alert("Erro ao criar cobran?a.");
     }
 };
 
 // ============================================================
-// FUNÇÕES ATUALIZADAS (Seguir + Foto Perfil)
+// FUN??ES ATUALIZADAS (Seguir + Foto Perfil)
 // ============================================================
 
 window.togglePlayVideo = function(event) {
@@ -6615,7 +7673,7 @@ window.togglePlayVideo = function(event) {
     const icon = document.getElementById('iconPlayPause');
     const frame = document.querySelector('.video-frame');
     
-    // ATUALIZA A FOTO DO BOTÃO PERFIL IGUAL A DO VÍDEO
+    // ATUALIZA A FOTO DO BOT?O PERFIL IGUAL A DO V?DEO
     const avatarVideo = document.getElementById('tiktokAvatarImg');
     const btnProfile = document.getElementById('btnProfileImg');
     if(avatarVideo && btnProfile) {
@@ -6636,25 +7694,25 @@ window.togglePlayVideo = function(event) {
     }
 }
 
-// NOVA FUNÇÃO: SEGUIR
+// NOVA FUN??O: SEGUIR
 window.toggleFollow = function(event, btn) {
     if(event) {
-        event.stopPropagation(); // Não clica no perfil, só no seguir
+        event.stopPropagation(); // N?o clica no perfil, s? no seguir
     }
     
-    // Lógica simples de alternar
+    // L?gica simples de alternar
     if (btn.innerText.includes("Seguir")) {
-        btn.innerText = "• Seguindo";
+        btn.innerText = "? Seguindo";
         btn.classList.add("seguindo");
         btn.style.opacity = "0.7";
     } else {
-        btn.innerText = "• Seguir";
+        btn.innerText = "? Seguir";
         btn.classList.remove("seguindo");
         btn.style.opacity = "1";
     }
 }
 
-// (Mantenha as outras funções fecharPlayerVideo, etc.)
+// (Mantenha as outras fun??es fecharPlayerVideo, etc.)
 window.fecharPlayerVideo = function() {
     const modal = document.getElementById('modalPlayerVideo');
     const video = document.getElementById('playerPrincipal');
@@ -6671,7 +7729,7 @@ window.fecharPlayerVideo = function() {
 
 window.handleDoubleClick = function(event) {
     if(event) event.stopPropagation();
-    // (Lógica do coração igual a anterior...)
+    // (L?gica do cora??o igual a anterior...)
     const wrapper = event.currentTarget;
     const heart = document.createElement('i');
     heart.className = 'bx bxs-heart';
@@ -6695,13 +7753,13 @@ window.handleDoubleClick = function(event) {
 }
 
 // ============================================================
-// LÓGICA DE COMENTÁRIOS (NOVO)
+// L?GICA DE COMENT?RIOS (NOVO)
 // ============================================================
 
 // 1. Abrir/Fechar a Caixa
 window.toggleComentarios = function() {
     const box = document.getElementById('boxComentarios');
-    // Se estiver visível, esconde. Se invisível, mostra (flex)
+    // Se estiver vis?vel, esconde. Se invis?vel, mostra (flex)
     if (box.style.display === 'none' || box.style.display === '') {
         box.style.display = 'flex';
         // Tenta focar no input
@@ -6711,12 +7769,12 @@ window.toggleComentarios = function() {
     }
 }
 
-// 2. Atualize a função antiga do botão para chamar essa nova
+// 2. Atualize a fun??o antiga do bot?o para chamar essa nova
 window.abrirComentarios = function() {
     toggleComentarios(); 
 }
 
-// 3. Postar Comentário (Adiciona na lista visualmente)
+// 3. Postar Coment?rio (Adiciona na lista visualmente)
 window.postarComentario = function() {
     const input = document.getElementById('inputNovoComentario');
     const texto = input.value;
@@ -6724,7 +7782,7 @@ window.postarComentario = function() {
 
     if (texto.trim() === "") return;
 
-    // Cria o HTML do novo comentário
+    // Cria o HTML do novo coment?rio
     const novoHTML = `
         <div class="comment-item" style="animation: slideUpFade 0.3s ease;">
             <img src="https://placehold.co/40" class="comment-avatar">
@@ -6758,14 +7816,14 @@ window.checarEnter = function(event) {
 }
 
 // ============================================================
-// FUNÇÃO PARA COPIAR A FOTO DO CRIADOR PARA O BOTÃO
+// FUN??O PARA COPIAR A FOTO DO CRIADOR PARA O BOT?O
 // ============================================================
 
 function sincronizarFotoPerfil() {
-    // 1. Pega a foto do criador (lá embaixo, no rodapé do vídeo)
+    // 1. Pega a foto do criador (l? embaixo, no rodap? do v?deo)
     const imgCriador = document.getElementById('tiktokAvatarImg');
     
-    // 2. Pega a imagem do botão lateral
+    // 2. Pega a imagem do bot?o lateral
     const imgBotao = document.getElementById('btnProfileImg');
 
     // 3. Se as duas existirem, copia o link de uma para a outra
@@ -6774,14 +7832,14 @@ function sincronizarFotoPerfil() {
     }
 }
 
-// Atualize a função togglePlayVideo para chamar essa sincronização
+// Atualize a fun??o togglePlayVideo para chamar essa sincroniza??o
 window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
 
-    // --- CHAMA A SINCRONIZAÇÃO AQUI ---
+    // --- CHAMA A SINCRONIZA??O AQUI ---
     sincronizarFotoPerfil(); 
     // ----------------------------------
 
@@ -6804,7 +7862,7 @@ window.togglePlayVideo = function(event) {
 }
 
 // ============================================================
-// CARREGAR DADOS DO USUÁRIO LOGADO (APENAS PARA COMENTÁRIOS)
+// CARREGAR DADOS DO USU?RIO LOGADO (APENAS PARA COMENT?RIOS)
 // ============================================================
 
 function carregarDadosUsuarioNoPlayer() {
@@ -6815,21 +7873,21 @@ function carregarDadosUsuarioNoPlayer() {
         const usuario = JSON.parse(dadosLocal);
         const fotoReal = usuario.foto || "https://placehold.co/150";
 
-        // 2. Atualiza APENAS a foto do input de comentários (Essa sim é você)
+        // 2. Atualiza APENAS a foto do input de coment?rios (Essa sim ? voc?)
         const imgInputComent = document.querySelector('.my-avatar-mini');
         if (imgInputComent) {
             imgInputComent.src = fotoReal;
         }
 
-        // OBS: Não alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
-        // Quem define a foto do vídeo é a função que cria o Feed (criarHTMLVideo).
+        // OBS: N?o alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
+        // Quem define a foto do v?deo ? a fun??o que cria o Feed (criarHTMLVideo).
     }
 }
 
-// Executa assim que a página carregar
+// Executa assim que a p?gina carregar
 document.addEventListener('DOMContentLoaded', () => {
     carregarDadosUsuarioNoPlayer();
-    // Se existir a função antiga sincronizarFotoPerfil, evitamos erros se ela não estiver definida
+    // Se existir a fun??o antiga sincronizarFotoPerfil, evitamos erros se ela n?o estiver definida
     if (typeof sincronizarFotoPerfil === "function") {
         sincronizarFotoPerfil();
     }
@@ -6845,7 +7903,7 @@ window.togglePlayVideo = function(event) {
         event.preventDefault();
     }
     
-    // Garante que sua foto esteja certa no input de comentários
+    // Garante que sua foto esteja certa no input de coment?rios
     carregarDadosUsuarioNoPlayer();
 
     const video = document.getElementById('playerPrincipal');
@@ -6866,14 +7924,14 @@ window.togglePlayVideo = function(event) {
     }
 }
 // ============================================================
-// LÓGICA DE FEED (SCROLL INFINITO)
+// L?GICA DE FEED (SCROLL INFINITO)
 // ============================================================
 
-let videosNoFeed = []; // Guarda os dados dos vídeos carregados
+let videosNoFeed = []; // Guarda os dados dos v?deos carregados
 let observerFeed = null; // Observador de scroll
 
 // ============================================================
-// 1. CARREGA O FEED (COM PROTEÇÃO CONTRA VÍDEOS ANTIGOS)
+// 1. CARREGA O FEED (COM PROTE??O CONTRA V?DEOS ANTIGOS)
 // ============================================================
 
 window.abrirFeedVideos = async function(idInicial) {
@@ -6894,12 +7952,12 @@ window.abrirFeedVideos = async function(idInicial) {
             const videoId = docSnap.id;
             let criadorUid = dataVideo.uid; 
 
-            // Dados Padrão (Fallback)
+            // Dados Padr?o (Fallback)
             let fotoFinal = "https://placehold.co/150"; 
-            let nomeFinal = "Usuário Doke";
+            let nomeFinal = "Usu?rio Doke";
             let userFinal = "@usuario";
 
-            // Se tiver UID, busca dados frescos do usuário
+            // Se tiver UID, busca dados frescos do usu?rio
             if (criadorUid) {
                 try {
                     const docRefUser = doc(db, "usuarios", criadorUid);
@@ -6912,8 +7970,8 @@ window.abrirFeedVideos = async function(idInicial) {
                     }
                 } catch (err) { console.error("Erro user:", err); }
             } else {
-                // Tenta salvar vídeos antigos que não têm UID (opcional)
-                // console.log("Vídeo antigo sem UID:", videoId);
+                // Tenta salvar v?deos antigos que n?o t?m UID (opcional)
+                // console.log("V?deo antigo sem UID:", videoId);
             }
 
             return {
@@ -6922,14 +7980,14 @@ window.abrirFeedVideos = async function(idInicial) {
                 autorFoto: fotoFinal,
                 autorNome: nomeFinal,
                 autorUser: userFinal,
-                uid: criadorUid // Pode ser undefined em vídeos antigos
+                uid: criadorUid // Pode ser undefined em v?deos antigos
             };
         });
 
         videosNoFeed = await Promise.all(promessasVideos);
 
         if (videosNoFeed.length === 0) {
-            container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum vídeo encontrado.</div>';
+            container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum v?deo encontrado.</div>';
             return;
         }
 
@@ -6954,20 +8012,20 @@ window.abrirFeedVideos = async function(idInicial) {
     }
 }
 // ============================================================
-// 2. GERA HTML (COM FUNÇÃO SEGURA DE NAVEGAÇÃO)
+// 2. GERA HTML (COM FUN??O SEGURA DE NAVEGA??O)
 // ============================================================
 
 function criarHTMLVideo(dados) {
-    // Esconde botão seguir se for o próprio dono
+    // Esconde bot?o seguir se for o pr?prio dono
     const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     const meuUser = (userLogado.user || "").trim().toLowerCase();
     const donoVideo = (dados.autorUser || "").trim().toLowerCase(); 
     const displaySeguir = (meuUser === donoVideo) ? 'none' : 'inline-block';
 
-    // Garante uma imagem válida
+    // Garante uma imagem v?lida
     const imagemSegura = dados.autorFoto && dados.autorFoto.trim() !== "" ? dados.autorFoto : "https://placehold.co/150";
 
-    // UID seguro (se não tiver, passa string vazia)
+    // UID seguro (se n?o tiver, passa string vazia)
     const uidSeguro = dados.uid || "";
 
     return `
@@ -6981,7 +8039,7 @@ function criarHTMLVideo(dados) {
                     <div class="author-row" onclick="irParaPerfil('${uidSeguro}')" style="cursor: pointer;">
                         <img src="${imagemSegura}" class="author-avatar" onerror="this.src='https://placehold.co/150'">
                         <span class="author-name">${dados.autorNome}</span>
-                        <span class="btn-follow-text" style="display:${displaySeguir}" onclick="toggleFollow(event, this)">• Seguir</span>
+                        <span class="btn-follow-text" style="display:${displaySeguir}" onclick="toggleFollow(event, this)">? Seguir</span>
                     </div>
                     <div class="video-caption">${dados.descricao || ''}</div>
                 </div>
@@ -7014,7 +8072,7 @@ function criarHTMLVideo(dados) {
 
                 <button class="action-btn" onclick="irParaOrcamento('${uidSeguro}')">
                     <div class="icon-circle circle-green"><i class='bx bx-dollar'></i></div>
-                    <span class="action-label">Orçar</span>
+                    <span class="action-label">Or?ar</span>
                 </button>
             </div>
         </div>
@@ -7024,7 +8082,7 @@ function criarHTMLVideo(dados) {
 
 window.irParaPerfil = function(uid, user) {
     if (!uid || uid === "undefined" || uid === "null") {
-        alert("Perfil indisponível ou vídeo antigo.");
+        alert("Perfil indispon?vel ou v?deo antigo.");
         return;
     }
     resolverDestinoPerfil(uid, user || "")
@@ -7034,7 +8092,7 @@ window.irParaPerfil = function(uid, user) {
 
 window.irParaOrcamento = function(uid) {
     if (!uid || uid === "undefined") {
-        alert("Não é possível solicitar orçamento para este vídeo.");
+        alert("N?o ? poss?vel solicitar or?amento para este v?deo.");
         return;
     }
     window.location.href = `orcamento.html?uid=${uid}`;
@@ -7046,7 +8104,7 @@ function iniciarObservadorScroll() {
 
     const opcoes = {
         root: document.getElementById('containerFeedScroll'),
-        threshold: 0.6 // Dispara quando 60% do vídeo estiver visível
+        threshold: 0.6 // Dispara quando 60% do v?deo estiver vis?vel
     };
 
     observerFeed = new IntersectionObserver((entries) => {
@@ -7055,10 +8113,10 @@ function iniciarObservadorScroll() {
             if (!video) return;
 
             if (entry.isIntersecting) {
-                // Vídeo apareceu na tela: PLAY
+                // V?deo apareceu na tela: PLAY
                 video.play().catch(e => console.log("Autoplay bloqueado pelo browser"));
             } else {
-                // Vídeo saiu da tela: PAUSE e RESET
+                // V?deo saiu da tela: PAUSE e RESET
                 video.pause();
                 video.currentTime = 0;
             }
@@ -7071,7 +8129,7 @@ function iniciarObservadorScroll() {
     });
 }
 
-// 4. Atualizar a função de fechar
+// 4. Atualizar a fun??o de fechar
 window.fecharPlayerVideo = function() {
     const modal = document.getElementById('modalPlayerVideo');
     if(modal) modal.style.display = 'none';
@@ -7079,11 +8137,11 @@ window.fecharPlayerVideo = function() {
     // Pausa tudo
     document.querySelectorAll('video').forEach(v => v.pause());
     
-    // Desliga o observador para economizar memória
+    // Desliga o observador para economizar mem?ria
     if (observerFeed) observerFeed.disconnect();
 }
 
-// Variáveis Globais de Controle
+// Vari?veis Globais de Controle
 window.currentPostId = null;
 window.currentCollection = null;
 window.currentPostAuthorUid = null; // <--- NOVO: Para identificar o criador
@@ -7091,7 +8149,7 @@ window.currentPostSource = "firebase";
 window.currentSupaPublicacaoId = null;
 window.currentSupaPublicacaoAuthorId = null;
 window.currentSupaPublicacaoAuthorUid = null;
-let processandoLike = false; // Trava para evitar cliques rápidos
+let processandoLike = false; // Trava para evitar cliques r?pidos
 
 function ensureModalPostDetalhe() {
     const modalExistente = document.getElementById('modalPostDetalhe');
@@ -7099,14 +8157,14 @@ function ensureModalPostDetalhe() {
         const jaTemBotao = modalExistente.querySelector('.btn-close-modal-fixed');
         const modalContent = modalExistente.querySelector('.modal-content');
         if (!jaTemBotao && modalContent) {
-            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">×</button>');
+            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">?</button>');
         }
         return;
     }
     const modalHtml = `
     <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">×</button>
+            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">?</button>
             <div class="modal-media-area" id="modalMediaContainer"></div>
             <div class="modal-info-area">
                 <div class="modal-header">
@@ -7126,7 +8184,7 @@ function ensureModalPostDetalhe() {
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
                     <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-                        <input type="text" id="inputComentarioModal" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
+                        <input type="text" id="inputComentarioModal" placeholder="Adicione um coment?rio..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
                         <button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
                     </div>
                 </div>
@@ -7195,18 +8253,18 @@ window.abrirModalPost = async function(id, colecao) {
     
     if(!modal) return;
     
-    // 1. Reset Visual e Exibição
+    // 1. Reset Visual e Exibi??o
     modal.style.display = 'flex'; 
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostId = id;
     window.currentCollection = colecao;
     window.currentPostAuthorUid = null; // Reseta
 
-    // Limpa conteúdos anteriores
+    // Limpa conte?dos anteriores
     document.getElementById('modalMediaContainer').innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="color:white; font-size:3rem;"></i></div>';
     document.getElementById('modalCommentsList').innerHTML = "";
     
-    // Trava o botão de like enquanto carrega
+    // Trava o bot?o de like enquanto carrega
     const iconLike = document.getElementById('btnLikeModalIcon');
     const labelLike = document.getElementById('modalLikesCount');
     iconLike.className = 'bx bx-heart'; // Reseta para vazio
@@ -7220,7 +8278,7 @@ window.abrirModalPost = async function(id, colecao) {
         const docSnap = await getDoc(docRef);
         
         if(!docSnap.exists()) {
-            console.error("Post não encontrado!");
+            console.error("Post n?o encontrado!");
             fecharModalPostForce();
             return;
         }
@@ -7230,7 +8288,7 @@ window.abrirModalPost = async function(id, colecao) {
 
         // --- PREENCHE DADOS NA TELA ---
         
-        // Mídia (Foto ou Vídeo)
+        // M?dia (Foto ou V?deo)
         const mediaBox = document.getElementById('modalMediaContainer');
         if(data.videoUrl) {
             mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
@@ -7267,21 +8325,21 @@ window.abrirModalPost = async function(id, colecao) {
             captionDiv.style.display = 'none';
         }
 
-        // Botão Excluir (Só aparece se eu for o dono)
+        // Bot?o Excluir (S? aparece se eu for o dono)
         const btnDel = document.getElementById('btnExcluirModal');
         if (user && data.uid === user.uid) btnDel.style.display = 'block';
         else btnDel.style.display = 'none';
 
-        // --- VERIFICAÇÃO DE LIKE ---
+        // --- VERIFICA??O DE LIKE ---
         if (user) {
             await verificarStatusLike(id, colecao, user.uid);
         } else {
-            // Se não estiver logado, libera o botão (para pedir login ao clicar)
+            // Se n?o estiver logado, libera o bot?o (para pedir login ao clicar)
             iconLike.style.pointerEvents = 'auto';
             iconLike.style.opacity = '1';
         }
 
-        // --- CARREGA COMENTÁRIOS ---
+        // --- CARREGA COMENT?RIOS ---
         carregarComentariosNoModal(id, colecao);
 
     } catch(e) { console.error("Erro modal:", e); }
@@ -7553,7 +8611,7 @@ async function darLikeModalSupabase() {
     if (!client) return alert("Supabase nao configurado.");
 
     const userRow = await getSupabaseUserRow();
-    if (!userRow) return alert("Faça login para curtir.");
+    if (!userRow) return alert("Fa?a login para curtir.");
 
     if (!window.currentSupaPublicacaoId) return;
     if (processandoLike) return;
@@ -7621,7 +8679,7 @@ async function postarComentarioSupabase() {
     if (!client) return alert("Supabase nao configurado.");
 
     const userRow = await getSupabaseUserRow();
-    if (!userRow) return alert("Faça login para comentar.");
+    if (!userRow) return alert("Fa?a login para comentar.");
     if (!window.currentSupaPublicacaoId) return;
 
     const btnEnviar = event?.target;
@@ -7675,21 +8733,21 @@ window.deletarComentario = async function(commentId) {
         : confirm("Deseja apagar esta mensagem?");
     if (!pode) return;
 
-    // Pega as variáveis globais do post aberto
+    // Pega as vari?veis globais do post aberto
     const postId = window.currentPostId;
     const colecao = window.currentCollection;
 
     if(!postId || !colecao || !commentId) return;
 
     try {
-        // Deleta o documento da subcoleção 'comentarios'
+        // Deleta o documento da subcole??o 'comentarios'
         await deleteDoc(doc(db, colecao, postId, "comentarios", commentId));
         
-        // Recarrega a lista para sumir com o comentário deletado
+        // Recarrega a lista para sumir com o coment?rio deletado
         await carregarComentariosNoModal(postId, colecao);
         
     } catch (e) {
-        console.error("Erro ao deletar comentário:", e);
+        console.error("Erro ao deletar coment?rio:", e);
         alert("Erro ao apagar. Tente novamente.");
     }
 }
@@ -7800,16 +8858,16 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     await verificarStatusLikeSupabase(publicacaoId);
     carregarComentariosSupabase(publicacaoId);
 }
-// Função para fechar clicando fora
+// Fun??o para fechar clicando fora
 window.fecharModalPost = function(e) {
-    // Se o clique foi no overlay (fundo escuro) ou no botão X, fecha.
+    // Se o clique foi no overlay (fundo escuro) ou no bot?o X, fecha.
     // Se foi dentro do card (modal-content), o event.stopPropagation no HTML impede de chegar aqui.
     if (!e || e.target.classList.contains('modal-overlay') || e.target.classList.contains('btn-close-modal')) {
         document.getElementById('modalPostDetalhe').style.display = 'none';
         document.getElementById('modalMediaContainer').innerHTML = "";
     }
 }
-// 3. POSTAR COMENTÁRIO
+// 3. POSTAR COMENT?RIO
 window.postarComentarioModal = async function() {
     if (window.currentPostSource === "supabase") {
         await postarComentarioSupabase();
@@ -7819,19 +8877,22 @@ window.postarComentarioModal = async function() {
     const texto = input.value.trim();
     if(!texto) return;
 
-    const user = auth.currentUser;
-    if(!user) return alert("Faça login para comentar.");
+    let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+    if (!user) {
+        try { user = await dokeResolveAuthUser(); } catch (_) { user = null; }
+    }
+    if(!user) return alert("Fa?a login para comentar.");
     
     const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     
     // Efeito visual de "Enviando..."
-    const btnEnviar = event.target; // O botão que foi clicado
+    const btnEnviar = event.target; // O bot?o que foi clicado
     const textoOriginal = btnEnviar.innerText;
     btnEnviar.innerText = "...";
     btnEnviar.disabled = true;
 
     try {
-        // Salva na subcoleção 'comentarios'
+        // Salva na subcole??o 'comentarios'
         const novoComentario = await addDoc(collection(db, window.currentCollection, window.currentPostId, "comentarios"), {
             uid: user.uid,
             user: perfilLocal.user || "Usuario",
@@ -7855,12 +8916,12 @@ window.postarComentarioModal = async function() {
             comentarioTexto: texto
         });
         
-        // Recarrega a lista para mostrar o novo comentário (e aplicar a tag Criador se necessário)
+        // Recarrega a lista para mostrar o novo coment?rio (e aplicar a tag Criador se necess?rio)
         await carregarComentariosNoModal(window.currentPostId, window.currentCollection);
 
     } catch(e) { 
         console.error("Erro ao comentar:", e); 
-        alert("Erro ao enviar comentário.");
+        alert("Erro ao enviar coment?rio.");
     } finally {
         btnEnviar.innerText = textoOriginal;
         btnEnviar.disabled = false;
@@ -7871,9 +8932,12 @@ async function carregarReelsIndex() {
     if(!container) return;
 
     try {
-        // Busca os últimos 10 reels de todos os usuários
+        // Busca os ?ltimos 10 reels de todos os usu?rios
         const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(10));
-        const snapshot = await getDocs(q);
+        const snapshot = await Promise.race([
+            getDocs(q),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_reels_index")), 8000))
+        ]);
 
         container.innerHTML = ""; // Limpa os placeholdes
 
@@ -7907,9 +8971,9 @@ async function carregarReelsIndex() {
     }
 }
 
-// Chame a função ao carregar a página
+// Chame a fun??o ao carregar a p?gina
 document.addEventListener("DOMContentLoaded", () => {
-    // ... suas outras inicializações ...
+    // ... suas outras inicializa??es ...
     carregarReelsIndex();
     carregarProfissionaisDestaque();
     carregarProfissionaisNovos();
@@ -7921,14 +8985,17 @@ async function carregarReelsNoIndex() {
     if(!container) return;
 
     try {
-        // Busca os últimos 10 Reels REAIS do banco de dados
+        // Busca os ?ltimos 10 Reels REAIS do banco de dados
         const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(15));
-        const snapshot = await getDocs(q);
+        const snapshot = await Promise.race([
+            getDocs(q),
+            new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_reels_no_index")), 8000))
+        ]);
 
-        container.innerHTML = ""; // Limpa os vídeos de exemplo
+        container.innerHTML = ""; // Limpa os v?deos de exemplo
 
         if(snapshot.empty) {
-            // Se não tiver nenhum, mantém o visual limpo
+            // Se n?o tiver nenhum, mant?m o visual limpo
             return; 
         }
 
@@ -7958,6 +9025,9 @@ async function carregarReelsNoIndex() {
 
     } catch(e) {
         console.error("Erro ao carregar Reels no Index:", e);
+        try {
+            container.innerHTML = "<p style='color:white; padding:10px;'>Nao foi possivel carregar videos agora.</p>";
+        } catch (_) {}
     }
 }
 
@@ -7966,7 +9036,36 @@ async function fetchSupabaseReelsHome() {
     const cached = dokeReadCache(DOKE_CACHE_KEYS.reels, DOKE_CACHE_MAX_AGE_MS);
     if (Array.isArray(cached) && cached.length) return cached;
     if (!client) return cached || [];
-    if (dokeIsSupaTemporarilyDown()) return cached || [];
+    if (dokeIsSupaTemporarilyDown() && Array.isArray(cached) && cached.length) return cached;
+    const tryLoose = async () => {
+        try {
+            const loose = await dokeWithTimeout(
+                client
+                    .from("videos_curtos")
+                    .select("*")
+                    .limit(14),
+                7000,
+                "timeout_supabase_reels_loose"
+            );
+            if (loose?.error || !Array.isArray(loose?.data)) return null;
+            const normalized = (loose.data || []).map((item) => ({
+                ...(item || {}),
+                id: item?.id || item?.video_id || item?.reel_id || "",
+                user_id: item?.user_id || item?.uid || item?.usuario_id || "",
+                created_at: item?.created_at || item?.dataCriacao || item?.createdAt || item?.data || null,
+                video_url: item?.video_url || item?.videoUrl || item?.url || item?.video || "",
+                thumb_url: item?.thumb_url || item?.capa || item?.thumbnail || item?.img || "",
+                titulo: item?.titulo || item?.title || item?.nome || "",
+                descricao: item?.descricao || item?.legenda || item?.texto || ""
+            })).filter((item) => !!item.id && !!item.video_url);
+            const withUsers = await attachSupabaseUsersById(normalized);
+            dokeClearSupaDown();
+            dokeWriteCache(DOKE_CACHE_KEYS.reels, withUsers);
+            return withUsers;
+        } catch (_) {
+            return null;
+        }
+    };
     try {
         const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
         let { data, error } = await dokeWithTimeout(
@@ -8001,22 +9100,29 @@ async function fetchSupabaseReelsHome() {
                     "timeout_supabase_reels_fallback"
                 );
                 if (retry.error) {
+                    const loose = await tryLoose();
+                    if (Array.isArray(loose)) return loose;
                     if (dokeLooksLikeNetworkAbort(retry.error)) dokeMarkSupaDown();
                     else console.error("Erro ao carregar videos curtos supabase:", retry.error);
                     return cached || [];
                 }
                 const outFallback = await attachSupabaseUsersById(retry.data || []);
+                dokeClearSupaDown();
                 dokeWriteCache(DOKE_CACHE_KEYS.reels, outFallback);
                 return outFallback;
             }
             const outJoin = await attachSupabaseUsersById(retryJoin.data || []);
+            dokeClearSupaDown();
             dokeWriteCache(DOKE_CACHE_KEYS.reels, outJoin);
             return outJoin;
         }
         const out = await attachSupabaseUsersById(data || []);
+        dokeClearSupaDown();
         dokeWriteCache(DOKE_CACHE_KEYS.reels, out);
         return out;
     } catch (err) {
+        const loose = await tryLoose();
+        if (Array.isArray(loose)) return loose;
         if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
         else console.error("Falha critica ao buscar videos curtos:", err);
         return cached || [];
@@ -8028,28 +9134,24 @@ window.carregarReelsHome = async function() {
     if (!container) return;
     if (window.__dokeReelsHomeLoading) return;
     window.__dokeReelsHomeLoading = true;
+    const reelsWatchdog = setTimeout(() => {
+        try {
+            if (container.querySelector('.is-skeleton') || container.querySelector('.skeleton')) {
+                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
+                container.setAttribute('aria-busy', 'false');
+            }
+        } catch (_) {}
+    }, 12000);
 
     try {
         const feedItems = [];
 
         try {
-            const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(20));
-            const snapshot = await getDocs(q);
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                feedItems.push({
-                    source: "firebase",
-                    id: doc.id,
-                    createdAt: data.data,
-                    data
-                });
-            });
-        } catch (e) {
-            dokeLogNonNetworkError("Reels Firebase indisponivel:", e);
-        }
-
-        try {
-            const supaReels = await fetchSupabaseReelsHome();
+            const supaReels = await dokeWithTimeout(
+                fetchSupabaseReelsHome(),
+                10000,
+                "timeout_reels_supabase_home"
+            );
             supaReels.forEach(item => {
                 feedItems.push({
                     source: "supabase",
@@ -8060,6 +9162,59 @@ window.carregarReelsHome = async function() {
             });
         } catch (e) {
             dokeLogNonNetworkError("Reels Supabase indisponivel:", e);
+        }
+
+        const reelsFirebaseFallbackTimeoutMs = 2500;
+        if (!feedItems.length) {
+            try {
+                const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(20));
+                const snapshot = await Promise.race([
+                    getDocs(q),
+                    new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_reels_firebase_home")), reelsFirebaseFallbackTimeoutMs))
+                ]);
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    feedItems.push({
+                        source: "firebase",
+                        id: doc.id,
+                        createdAt: data.data,
+                        data
+                    });
+                });
+            } catch (e) {
+                dokeLogNonNetworkError("Reels Firebase indisponivel:", e);
+            }
+        }
+
+        // Fallback legado: alguns ambientes ainda usam colecao "trabalhos".
+        if (!feedItems.length) {
+            try {
+                let altSnapshot = null;
+                try {
+                    const altQ = query(collection(db, "trabalhos"), orderBy("data", "desc"), limit(20));
+                    altSnapshot = await Promise.race([
+                        getDocs(altQ),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_trabalhos_firebase_home")), reelsFirebaseFallbackTimeoutMs))
+                    ]);
+                } catch (_) {
+                    const altQNoOrder = query(collection(db, "trabalhos"), limit(20));
+                    altSnapshot = await Promise.race([
+                        getDocs(altQNoOrder),
+                        new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_trabalhos_firebase_home_no_order")), reelsFirebaseFallbackTimeoutMs))
+                    ]);
+                }
+                (altSnapshot?.forEach ? altSnapshot : { forEach: () => {} }).forEach((docSnap) => {
+                    const data = docSnap.data() || {};
+                    feedItems.push({
+                        source: "firebase_trabalhos",
+                        id: docSnap.id,
+                        createdAt: data.created_at || data.dataCriacao || data.createdAt || data.data || null,
+                        data
+                    });
+                });
+            } catch (e) {
+                dokeLogNonNetworkError("Reels Firebase(trabalhos) indisponivel:", e);
+            }
         }
 
         feedItems.sort((a, b) => {
@@ -8084,15 +9239,15 @@ window.carregarReelsHome = async function() {
             let autorUser = "@usuario";
             let tag = "NOVO";
 
-            if (source === "firebase") {
-                videoUrl = item.videoUrl || "";
-                capaUrl = item.capa || item.img || "https://placehold.co/240x400";
+            if (String(source || "").startsWith("firebase")) {
+                videoUrl = item.videoUrl || item.video_url || item.video || item.url_video || item.url || item.media_url || "";
+                capaUrl = item.capa || item.img || item.thumb || item.thumb_url || item.imagem || "https://placehold.co/240x400";
                 autorUser = item.autorUser || "@user";
                 tag = item.tag || "NOVO";
             } else {
                 const autor = item.usuarios || {};
-                videoUrl = item.video_url || "";
-                capaUrl = item.thumb_url || "https://placehold.co/240x400";
+                videoUrl = item.video_url || item.videoUrl || item.video || item.url || item.media_url || "";
+                capaUrl = item.thumb_url || item.capa || item.thumbnail || item.img || "https://placehold.co/240x400";
                 autorUser = autor.user || autor.nome || "@usuario";
             }
 
@@ -8115,8 +9270,17 @@ window.carregarReelsHome = async function() {
         });
     } catch (e) {
         dokeLogNonNetworkError("Falha ao renderizar reels home:", e);
+        try {
+            if (!container.innerHTML || container.querySelector('.is-skeleton')) {
+                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
+            }
+            container.setAttribute('aria-busy', 'false');
+        } catch (_) {}
     }
-    finally { window.__dokeReelsHomeLoading = false; }
+    finally {
+        clearTimeout(reelsWatchdog);
+        window.__dokeReelsHomeLoading = false;
+    }
 }
 
 function enableVideosCurtosPageScroll() {
@@ -8125,8 +9289,8 @@ function enableVideosCurtosPageScroll() {
     wrapper.dataset.scrollFix = "true";
 }
 
-// LÓGICA DO DELAY DE 3 SEGUNDOS
-// LÓGICA DO DELAY DE 3 SEGUNDOS COM RESET DE CAPA
+// L?GICA DO DELAY DE 3 SEGUNDOS
+// L?GICA DO DELAY DE 3 SEGUNDOS COM RESET DE CAPA
 let timerVideo;
 
 window.agendarPlay = function(card) {
@@ -8142,15 +9306,15 @@ window.agendarPlay = function(card) {
 window.cancelarPlay = function(card) {
     const video = card.querySelector('video');
     
-    // 1. Cancela o agendamento se o mouse sair antes de começar
+    // 1. Cancela o agendamento se o mouse sair antes de come?ar
     clearTimeout(timerVideo);
     
     if (video) {
-        // 2. Pausa o vídeo
+        // 2. Pausa o v?deo
         video.pause();
         
         // 3. O TRUQUE: Ao definir o tempo para 0 e chamar load(), 
-        // o navegador é forçado a exibir o atributo 'poster' (a capa) novamente.
+        // o navegador ? for?ado a exibir o atributo 'poster' (a capa) novamente.
         video.currentTime = 0;
         video.load(); 
     }
@@ -8169,12 +9333,12 @@ window.ativarModo = function(modo) {
         inputTipo.value = modo; 
         
         if(modo === 'video-curto') {
-            document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Vídeos Curtos)";
+            document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (V?deos Curtos)";
             document.getElementById('inputTagVideo').placeholder = "Legenda do Reel...";
-            window.carregarMeusAnunciosSelect(); // CARREGA SERVIÇOS
+            window.carregarMeusAnunciosSelect(); // CARREGA SERVI?OS
         } else {
             document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Feed)";
-            document.getElementById('inputTagVideo').placeholder = "Título do Serviço...";
+            document.getElementById('inputTagVideo').placeholder = "T?tulo do Servi?o...";
         }
     } else {
         inputTipo.value = 'foto';
@@ -8182,20 +9346,20 @@ window.ativarModo = function(modo) {
     }
 }
 
-// --- NOVO: Função para buscar seus serviços e preencher o select ---
+// --- NOVO: Fun??o para buscar seus servi?os e preencher o select ---
 window.carregarMeusAnunciosSelect = async function() {
     const select = document.getElementById('selectAnuncioVinculado');
     if (!select || !auth.currentUser) return;
 
-    select.innerHTML = '<option selected disabled>↻ Buscando seus serviços...</option>';
+    select.innerHTML = '<option selected disabled>? Buscando seus servi?os...</option>';
 
     try {
         const q = query(collection(db, "anuncios"), where("uid", "==", auth.currentUser.uid));
         const snapshot = await getDocs(q);
-        select.innerHTML = '<option value="" selected disabled>Selecione um Serviço (Obrigatório)</option>';
+        select.innerHTML = '<option value="" selected disabled>Selecione um Servi?o (Obrigat?rio)</option>';
 
         if (snapshot.empty) {
-            select.innerHTML = '<option disabled>❌ Nenhum anúncio encontrado.</option>';
+            select.innerHTML = '<option disabled>? Nenhum an?ncio encontrado.</option>';
             return;
         }
 
@@ -8211,7 +9375,7 @@ window.carregarMeusAnunciosSelect = async function() {
 }
 
 // ============================================================
-// SISTEMA DE STORIES (COM DURAÇÃO DE 24H)
+// SISTEMA DE STORIES (COM DURA??O DE 24H)
 // ============================================================
 
 let storyTimer = null;
@@ -8223,15 +9387,15 @@ window.uploadStory = async function(input) {
 
     const file = input.files[0];
     const user = auth.currentUser;
-    if (!user) return alert("Faça login.");
+    if (!user) return alert("Fa?a login.");
 
-    // Animação de carregando no botão Novo
+    // Anima??o de carregando no bot?o Novo
     const btnUI = document.getElementById('btnNovoStoryUI');
     const iconeOriginal = btnUI.innerHTML;
     btnUI.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
 
     try {
-        // Salva a imagem/vídeo no Storage
+        // Salva a imagem/v?deo no Storage
         const refStory = ref(storage, `stories/${user.uid}/${Date.now()}`);
         const snap = await uploadBytes(refStory, file);
         const url = await getDownloadURL(snap.ref);
@@ -8273,7 +9437,7 @@ window.carregarStoriesGlobal = async function() {
     
     if (!container || !secao) return;
 
-    // 1. Data limite (24 horas atrás)
+    // 1. Data limite (24 horas atr?s)
     const ontem = new Date();
     ontem.setHours(ontem.getHours() - 24);
     const dataLimite = ontem.toISOString();
@@ -8283,12 +9447,12 @@ window.carregarStoriesGlobal = async function() {
         const q = query(
             collection(db, "stories"), 
             where("dataCriacao", ">", dataLimite),
-            orderBy("dataCriacao", "asc") // Mais antigos primeiro (cronológico)
+            orderBy("dataCriacao", "asc") // Mais antigos primeiro (cronol?gico)
         );
 
         const snapshot = await getDocs(q);
         
-        // Se não tiver stories E o usuário não estiver logado, esconde a seção
+        // Se n?o tiver stories E o usu?rio n?o estiver logado, esconde a se??o
         const user = auth.currentUser;
         if (snapshot.empty && !user) {
             secao.style.display = 'none';
@@ -8298,7 +9462,7 @@ window.carregarStoriesGlobal = async function() {
         secao.style.display = 'block';
         container.innerHTML = "";
 
-        // 3. Adiciona botão "Meu Story" (Se logado)
+        // 3. Adiciona bot?o "Meu Story" (Se logado)
         if (user) {
             const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
             const htmlMeuStory = `
@@ -8314,7 +9478,7 @@ window.carregarStoriesGlobal = async function() {
 
         if (snapshot.empty) return;
 
-        // 4. Agrupa stories por Usuário (UID)
+        // 4. Agrupa stories por Usu?rio (UID)
         const storiesPorUsuario = {};
 
         snapshot.forEach(doc => {
@@ -8331,16 +9495,16 @@ window.carregarStoriesGlobal = async function() {
             storiesPorUsuario[uid].listaStories.push({ ...data, id: doc.id });
         });
 
-        // 5. Renderiza as bolinhas (Um por usuário)
+        // 5. Renderiza as bolinhas (Um por usu?rio)
         Object.values(storiesPorUsuario).forEach(grupo => {
-            // Ignora o próprio usuário no feed global (já tem o botão "Seu Story")
+            // Ignora o pr?prio usu?rio no feed global (j? tem o bot?o "Seu Story")
             if (user && grupo.infoUser.uid === user.uid) return;
 
-            // Pega o story mais recente para a borda ou lógica de "visto"
+            // Pega o story mais recente para a borda ou l?gica de "visto"
             // (Aqui simplificado: sempre colorido)
             
             // Serializa para passar no onclick
-            // Passamos a LISTA inteira de stories desse usuário para o player
+            // Passamos a LISTA inteira de stories desse usu?rio para o player
             const dadosPlayer = JSON.stringify(grupo.listaStories).replace(/"/g, '&quot;');
             const primeiroNome = grupo.infoUser.nome.split(' ')[0];
 
@@ -8361,10 +9525,10 @@ window.carregarStoriesGlobal = async function() {
 }
 
 // ============================================================
-// PLAYER DE STORIES SEQUENCIAL (NOVA VERSÃO)
+// PLAYER DE STORIES SEQUENCIAL (NOVA VERS?O)
 // ============================================================
 
-let storyQueue = []; // Lista de stories do usuário atual
+let storyQueue = []; // Lista de stories do usu?rio atual
 let currentStoryIndex = 0;
 let storyTimerGlobal = null;
 
@@ -8372,7 +9536,7 @@ window.abrirPlayerStoriesGrupo = function(listaStories) {
     if (!listaStories || listaStories.length === 0) return;
 
     storyQueue = listaStories;
-    currentStoryIndex = 0; // Começa do primeiro
+    currentStoryIndex = 0; // Come?a do primeiro
 
     const modal = document.getElementById('modalStoryViewer');
     if(modal) modal.style.display = 'flex';
@@ -8408,8 +9572,8 @@ function tocarStoryAtual() {
         progress.style.width = '0%';
     }
 
-    // Renderiza Mídia
-    let duracao = 5000; // Padrão foto: 5s
+    // Renderiza M?dia
+    let duracao = 5000; // Padr?o foto: 5s
 
     if (story.tipo === 'video') {
         const video = document.createElement('video');
@@ -8438,7 +9602,7 @@ function tocarStoryAtual() {
         storyTimerGlobal = setTimeout(proximoStory, duracao);
     }
 
-    // Áreas de toque para navegar
+    // ?reas de toque para navegar
     criarAreasToque(containerMedia);
 }
 
@@ -8466,7 +9630,7 @@ function animarBarra(ms) {
     }
 
     function criarAreasToque(container) {
-        // Remove áreas antigas se houver
+        // Remove ?reas antigas se houver
         const oldLeft = document.getElementById('touchLeft');
         const oldRight = document.getElementById('touchRight');
         if(oldLeft) oldLeft.remove();
@@ -8486,7 +9650,7 @@ function animarBarra(ms) {
         container.appendChild(right);
     }
 
-    // Atualize a função fecharStory existente
+    // Atualize a fun??o fecharStory existente
     window.fecharStory = function() {
         const modal = document.getElementById('modalStoryViewer'); // ID do index
         const modalPerfil = document.getElementById('modalStoryViewerPerfil'); // Caso use IDs diferentes
@@ -8510,10 +9674,10 @@ window.darLikeModal = async function() {
         return;
     }
     const user = auth.currentUser;
-    if (!user) return alert("Faça login para curtir.");
+    if (!user) return alert("Fa?a login para curtir.");
     
     if (!window.currentPostId || !window.currentCollection) return;
-    if (processandoLike) return; // Evita clique duplo rápido
+    if (processandoLike) return; // Evita clique duplo r?pido
 
     processandoLike = true; // Trava
 
@@ -8523,7 +9687,7 @@ window.darLikeModal = async function() {
     const postId = window.currentPostId;
     const colecao = window.currentCollection;
     
-    // Lê o estado atual (Definido pela verificação)
+    // L? o estado atual (Definido pela verifica??o)
     const jaCurtiu = icon.dataset.liked === "true";
     let likesAtuais = parseInt(label.innerText.replace(/\D/g, '')) || 0;
 
@@ -8532,10 +9696,10 @@ window.darLikeModal = async function() {
 
     try {
         if (jaCurtiu) {
-            // --- AÇÃO: DESCURTIR (Remover Like) ---
+            // --- A??O: DESCURTIR (Remover Like) ---
             
             // 1. Atualiza Visual Imediatamente
-            icon.className = 'bx bx-heart'; // Coração vazio
+            icon.className = 'bx bx-heart'; // Cora??o vazio
             icon.dataset.liked = "false";
             label.innerText = `${Math.max(0, likesAtuais - 1)} curtidas`;
 
@@ -8544,10 +9708,10 @@ window.darLikeModal = async function() {
             await updateDoc(postRef, { likes: increment(-1) }); // Diminui contador
 
         } else {
-            // --- AÇÃO: CURTIR (Adicionar Like) ---
+            // --- A??O: CURTIR (Adicionar Like) ---
             
             // 1. Atualiza Visual Imediatamente
-            icon.className = 'bx bxs-heart'; // Coração cheio
+            icon.className = 'bx bxs-heart'; // Cora??o cheio
             icon.dataset.liked = "true";
             label.innerText = `${likesAtuais + 1} curtidas`;
 
@@ -8578,60 +9742,60 @@ window.darLikeModal = async function() {
     }
 }
 window.compartilharPostAtual = function() {
-    const url = window.location.href; // Ou gere um link específico se tiver
+    const url = window.location.href; // Ou gere um link espec?fico se tiver
     
     if (navigator.share) {
         navigator.share({
             title: 'Veja este post na Doke!',
-            text: 'Olha que incrível este trabalho que encontrei na Doke.',
+            text: 'Olha que incr?vel este trabalho que encontrei na Doke.',
             url: url
         }).catch(console.error);
     } else {
         // Fallback para copiar link
         navigator.clipboard.writeText(url).then(() => {
-            alert("Link copiado para a área de transferência!");
+            alert("Link copiado para a ?rea de transfer?ncia!");
         });
     }
 }
 
-// Atalho para o botão do feed
+// Atalho para o bot?o do feed
 window.compartilharUrlPost = function(id) {
-    // Se quiser, pode implementar lógica para abrir o modal direto
-    alert("Link copiado! (Simulação)");
+    // Se quiser, pode implementar l?gica para abrir o modal direto
+    alert("Link copiado! (Simula??o)");
 }
 
 async function verificarStatusLike(postId, colecao, uid) {
     const icon = document.getElementById('btnLikeModalIcon');
     
     try {
-        // Verifica se existe o documento com meu ID na subcoleção 'likes'
+        // Verifica se existe o documento com meu ID na subcole??o 'likes'
         const docLikeRef = doc(db, colecao, postId, "likes", uid);
         const docLikeSnap = await getDoc(docLikeRef);
         
         if (docLikeSnap.exists()) {
-            // JÁ CURTIU: Coração cheio e vermelho
+            // J? CURTIU: Cora??o cheio e vermelho
             icon.className = 'bx bxs-heart';
             icon.dataset.liked = "true"; // Marca como curtido
         } else {
-            // NÃO CURTIU: Coração vazio
+            // N?O CURTIU: Cora??o vazio
             icon.className = 'bx bx-heart';
-            icon.dataset.liked = "false"; // Marca como não curtido
+            icon.dataset.liked = "false"; // Marca como n?o curtido
         }
     } catch (e) {
         console.error("Erro like check:", e);
     } finally {
-        // Libera o botão para clique
+        // Libera o bot?o para clique
         icon.style.pointerEvents = 'auto';
         icon.style.opacity = '1';
     }
 }
-// Função de fechamento forçado para o botão X
+// Fun??o de fechamento for?ado para o bot?o X
 window.fecharModalPostForce = function() {
     const modal = document.getElementById('modalPostDetalhe');
     if (modal) {
         modal.style.display = 'none';
         
-        // Limpa vídeo/imagem para parar som
+        // Limpa v?deo/imagem para parar som
         const mediaBox = document.getElementById('modalMediaContainer');
         if(mediaBox) mediaBox.innerHTML = "";
     }
@@ -8642,7 +9806,7 @@ window.fecharModalPostForce = function() {
     window.currentSupaPublicacaoAuthorUid = null;
 }
 
-// Atualiza a função antiga para usar a mesma lógica
+// Atualiza a fun??o antiga para usar a mesma l?gica
 window.fecharModalPost = function(e) {
     if (!e || e.target.id === 'modalPostDetalhe') {
         fecharModalPostForce();
@@ -8701,7 +9865,7 @@ window.enviarResposta = async function(parentId) {
             likeCount: 0
         });
 
-        // Atualiza o contador de respostas no comentário pai (para mostrar "Ver 1 resposta")
+        // Atualiza o contador de respostas no coment?rio pai (para mostrar "Ver 1 resposta")
         await updateDoc(parentRef, {
             replyCount: increment(1)
         });
@@ -8721,7 +9885,7 @@ window.enviarResposta = async function(parentId) {
         input.value = "";
         toggleInputResposta(parentId);
 
-        // Força a abertura das respostas para mostrar a nova
+        // For?a a abertura das respostas para mostrar a nova
         const container = document.getElementById(`replies-${parentId}`);
         container.style.display = 'block';
         carregarRespostas(parentId); // Recarrega a lista de respostas
@@ -8740,11 +9904,11 @@ window.toggleVerRespostas = function(parentId, btnElement) {
     const container = document.getElementById(`replies-${parentId}`);
     
     if (container.style.display === 'block') {
-        // Se já está aberto, esconde
+        // Se j? est? aberto, esconde
         container.style.display = 'none';
         btnElement.innerHTML = btnElement.innerHTML.replace("Esconder", "Ver");
     } else {
-        // Se está fechado, carrega e mostra
+        // Se est? fechado, carrega e mostra
         container.style.display = 'block';
         btnElement.innerHTML = `Esconder respostas`; // Muda texto para Esconder
         carregarRespostas(parentId);
@@ -8910,7 +10074,7 @@ window.abrirPlayerTikTok = function(indexOuDados) {
 
   let dados = {};
 
-  // se vier índice (reels)
+  // se vier ?ndice (reels)
   if (typeof indexOuDados === 'number' && window.listaReelsAtual) {
     dados = window.listaReelsAtual[indexOuDados] || {};
   } 
@@ -8921,7 +10085,7 @@ window.abrirPlayerTikTok = function(indexOuDados) {
       : indexOuDados;
   }
 
-  // 🔥 AQUI ESTÁ A CHAVE
+  // ?? AQUI EST? A CHAVE
   abrirModalUnificado(dados, 'video', 'reels');
 };
 
@@ -9015,7 +10179,7 @@ window.navegarReel = function(direcao) {
 }
 
 // ============================================================
-// Preço médio (5+ serviços) por anúncio
+// Pre?o m?dio (5+ servi?os) por an?ncio
 // ============================================================
 window.__dokeAvgPrecoCache = window.__dokeAvgPrecoCache || new Map();
 
@@ -9127,14 +10291,14 @@ window.togglePlayVideo = function(e) {
     }
 }
 
-// REDIRECIONAR ORÇAMENTO
+// REDIRECIONAR OR?AMENTO
 window.irOrcamentoReel = function() {
     if(window.currentReelUid) {
         let url = `orcamento.html?uid=${window.currentReelUid}`;
         if(window.currentReelAnuncioId) url += `&aid=${window.currentReelAnuncioId}`;
         window.location.href = url;
     } else {
-        alert("Erro: Profissional não identificado.");
+        alert("Erro: Profissional n?o identificado.");
     }
 }
 
@@ -9147,7 +10311,7 @@ async function carregarComentariosReel(reelId) {
         const snap = await getDocs(q);
         
         if(snap.empty) {
-            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem comentários.</div>";
+            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem coment?rios.</div>";
             return;
         }
 
@@ -10816,7 +11980,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         feed.innerHTML = `
           <div class="doke-empty doke-soft-card doke-empty-state">
             <div class="ico"><i class='bx bx-search-alt'></i></div>
-            <h3>Nenhum anúncio encontrado</h3>
+            <h3>Nenhum an?ncio encontrado</h3>
             <p>Tente ajustar os filtros, ampliar o raio ou buscar por outro termo.</p>
             <div class="actions">
               <button class="doke-btn primary" type="button" onclick="window.__dokeResetBuscaFiltros(); if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();">Limpar filtros</button>
@@ -11052,7 +12216,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   // aplica ao carregar
   document.addEventListener('DOMContentLoaded', ()=>applyFavUI());
 
-  // chips na área de busca removidos (poluía o layout)
+  // chips na ?rea de busca removidos (polu?a o layout)
 
 
 
@@ -11224,7 +12388,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       carousel.appendChild(item);
     });
 
-    // Garante início visual no primeiro item, sem "meio card" na esquerda.
+    // Garante in?cio visual no primeiro item, sem "meio card" na esquerda.
     carousel.scrollLeft = 0;
   }
 
@@ -11282,7 +12446,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       console.warn('Categorias (firestore) falhou:', e);
     }
 
-    // 3) último fallback: sem categorias fixas (somente por demanda)
+    // 3) ?ltimo fallback: sem categorias fixas (somente por demanda)
     return [];
   }
 
@@ -11429,13 +12593,13 @@ async function carregarComentariosSupabase(publicacaoId) {
       left.className = 'pro-arrow left';
       left.type = 'button';
       left.setAttribute('aria-label', 'Anterior');
-      left.innerHTML = '❮';
+      left.innerHTML = '&#8249;';
 
       const right = document.createElement('button');
       right.className = 'pro-arrow right';
       right.type = 'button';
       right.setAttribute('aria-label', 'Próximo');
-      right.innerHTML = '❯';
+      right.innerHTML = '&#8250;';
 
       left.addEventListener('click', () => track.scrollBy({ left: -320, behavior: 'smooth' }));
       right.addEventListener('click', () => track.scrollBy({ left: 320, behavior: 'smooth' }));
@@ -11548,7 +12712,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ----------------------------
   
   // ----------------------------
-  // BUSCA PEQUENA (USUÁRIOS/PROFISSIONAIS) — após "Para você"
+  // BUSCA PEQUENA (USU?RIOS/PROFISSIONAIS) ? ap?s "Para voc?"
   // ----------------------------
   function isEditableEl(el){
     if(!el) return false;
@@ -11559,7 +12723,19 @@ async function carregarComentariosSupabase(publicacaoId) {
   async function sbSearchUsuarios(term){
     const sb = (window.sb && window.sb.from) ? window.sb : (window.getSupabaseClient ? window.getSupabaseClient() : null);
     if(!sb || !term) return [];
-    const t = String(term).trim();
+    let t = String(term).trim();
+    if (/%[0-9a-f]{2}/i.test(t) && !/\s/.test(t)) {
+      try {
+        const decoded = decodeURIComponent(t);
+        if (decoded) t = decoded;
+      } catch (_e) {}
+    }
+    t = t
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    if (/\/rest\/v1\/|select=|on_conflict=|authorization|bearer\s+/i.test(t)) return [];
+    if (t.length > 48) t = t.slice(0, 48);
     if(t.length < 2) return [];
     const safe = t.replace(/[%_]/g, '\\$&');
     const { data, error } = await runUsuariosQuery(sb, ({ table }) =>
@@ -11586,7 +12762,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const st = (u.stats && typeof u.stats === 'object') ? u.stats : {};
       const n = Number(st.avaliacoes || st.qtd || 0) || 0;
       const m = Number(st.media || st.nota || 0) || 0;
-      const meta = isProf ? `★ ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
+      const meta = isProf ? `? ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
       const sub = isProf ? categoria : (nomeFull || '');
       const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
       return `
@@ -11613,15 +12789,15 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ----------------------------
   // PESQUISA ESTILO INSTAGRAM (NO MENU LATERAL)
   // - Abre dentro do menu lateral (sem navegar)
-  // - Recentes separados: Usuários e Anúncios
+  // - Recentes separados: Usu?rios e An?ncios
   // ----------------------------
   function initIgSidebarSearch(){
     const sidebar = document.querySelector('aside.sidebar-icones');
     if(!sidebar || sidebar.dataset.igSearchBound) return;
     sidebar.dataset.igSearchBound = '1';
 
-    const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // já usado na busca inline
-    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de anúncios
+    const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // j? usado na busca inline
+    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de an?ncios
     const MODE_KEY      = 'doke_ig_search_mode_v1';
 
     const readKey = (key, fb=[]) => {
@@ -11646,13 +12822,13 @@ async function carregarComentariosSupabase(publicacaoId) {
         </a>
       `;
       const logo = sidebar.querySelector('#logo');
-      // coloca "Pesquisar" logo abaixo do item "Início" (padrão do menu)
+      // coloca "Pesquisar" logo abaixo do item "In?cio" (padr?o do menu)
       const links = Array.from(sidebar.querySelectorAll('.item a'));
       const inicioLink = links.find(a => {
         const sp = a.querySelector('span');
         const label = (sp ? sp.textContent : '').trim().toLowerCase();
         const href = (a.getAttribute('href') || '').trim().toLowerCase();
-        return label === 'início' || label === 'inicio' || href === 'index.html';
+        return label === 'in?cio' || label === 'inicio' || href === 'index.html';
       });
       const inicioItem = inicioLink ? inicioLink.closest('.item') : null;
       if (inicioItem && inicioItem.parentNode === sidebar) {
@@ -11678,17 +12854,17 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>
 
         <div class="ig-search-inputwrap" role="search">
-          <label class="sr-only" for="igSearchInput">Pesquisar usuários</label>
+          <label class="sr-only" for="igSearchInput">Pesquisar usu?rios</label>
           <i class='bx bx-search'></i>
-          <input class="ig-search-input" id="igSearchInput" name="igSearchInput" type="text" placeholder="Pesquisar usuários" autocomplete="off" />
+          <input class="ig-search-input" id="igSearchInput" name="igSearchInput" type="text" placeholder="Pesquisar usu?rios" autocomplete="off" />
           <button class="ig-search-clear" type="button" aria-label="Limpar">
             <i class='bx bx-x'></i>
           </button>
         </div>
 
         <div class="ig-search-tabs" role="tablist" aria-label="Tipo de pesquisa">
-          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usuários</button>
-          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">Anúncios</button>
+          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usu?rios</button>
+          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">An?ncios</button>
         </div>
 
         <div class="ig-search-body">
@@ -11703,7 +12879,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       `;
       sidebar.appendChild(screen);
 
-      // garante que a tela de pesquisa não cubra o logo da Doke
+      // garante que a tela de pesquisa n?o cubra o logo da Doke
       try{
         const logoEl = sidebar.querySelector('#logo');
         if(logoEl){
@@ -11742,7 +12918,7 @@ function syncClear(){
         t.classList.toggle('is-active', on);
         t.setAttribute('aria-selected', on ? 'true' : 'false');
       });
-      input.placeholder = mode === 'ads' ? 'Pesquisar anúncios' : 'Pesquisar usuários';
+      input.placeholder = mode === 'ads' ? 'Pesquisar an?ncios' : 'Pesquisar usu?rios';
       syncClear();
       render();
       input.focus();
@@ -11754,7 +12930,7 @@ function syncClear(){
       return arr.filter(x => x && typeof x === 'object' && x.t === 'user');
     }
     function writeUserRecents(list){
-      // mantém o formato usado pela busca inline
+      // mant?m o formato usado pela busca inline
       const others = readKey(USER_HIST_KEY, []).filter(x => !(x && typeof x === 'object' && x.t === 'user'));
       writeKey(USER_HIST_KEY, [...list, ...others].slice(0, 18));
     }
@@ -11770,7 +12946,7 @@ function syncClear(){
       }).filter(Boolean);
     }
     function writeAdsRecents(list){
-      // salva como array de strings (compatível com a busca inline)
+      // salva como array de strings (compat?vel com a busca inline)
       const arr = (list||[]).map(x=>{
         if(!x) return null;
         if(typeof x === 'string') return x;
@@ -11784,7 +12960,7 @@ function syncClear(){
       const t = String(term||'').trim();
       if(t.length < 2) return;
 
-      // Mantém em sincronia com o histórico global da busca
+      // Mant?m em sincronia com o hist?rico global da busca
       try{ if(typeof window.salvarBusca === 'function') window.salvarBusca(t); }catch(_){}
 
       let arr = readAdsRecents();
@@ -11809,7 +12985,7 @@ function syncClear(){
 
     function clearAllRecents(){
       if(mode === 'users'){
-        // remove só os "user"
+        // remove s? os "user"
         const others = readKey(USER_HIST_KEY, []).filter(x => !(x && typeof x === 'object' && x.t === 'user'));
         writeKey(USER_HIST_KEY, others);
       } else {
@@ -11825,7 +13001,7 @@ function syncClear(){
         <div class="ig-empty">
           <i class='bx bx-time-five'></i>
           <div>
-            <div class="ig-empty-title">Sem histórico</div>
+            <div class="ig-empty-title">Sem hist?rico</div>
             <div class="ig-empty-sub">Suas pesquisas recentes aparecem aqui.</div>
           </div>
         </div>
@@ -11847,13 +13023,13 @@ function syncClear(){
           const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
           const handle = escapeHtml(u.handle || '@usuario');
           const nome = escapeHtml(u.nome || '');
-          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
+          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usu?rio'));
           const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
           return `
             <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
               <img class="ig-avatar" src="${foto}" alt="">
               <div class="ig-main">
-                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usuário'}</span></div>
+                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usu?rio'}</span></div>
                 <div class="ig-line2">${nome || (u.isProf ? 'Conta profissional' : 'Conta')}</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
@@ -11885,7 +13061,7 @@ function syncClear(){
               <div class="ig-ico"><i class='bx bx-search'></i></div>
               <div class="ig-main">
                 <div class="ig-line1">${q}</div>
-                <div class="ig-line2">Pesquisar anúncios</div>
+                <div class="ig-line2">Pesquisar an?ncios</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
             </div>
@@ -11914,7 +13090,7 @@ function syncClear(){
         <div class="ig-row ig-row-action" role="listitem" data-q="${escapeHtml(term)}">
           <div class="ig-ico"><i class='bx bx-right-arrow-alt'></i></div>
           <div class="ig-main">
-            <div class="ig-line1">Pesquisar anúncios por “${escapeHtml(term)}”</div>
+            <div class="ig-line1">Pesquisar an?ncios por ?${escapeHtml(term)}?</div>
             <div class="ig-line2">Abrir resultados</div>
           </div>
         </div>
@@ -11930,7 +13106,7 @@ function syncClear(){
       resultsEl.innerHTML = '';
       if(term.length < 2) return;
 
-      resultsEl.innerHTML = `<div class="ig-loading"><span></span><small>Buscando…</small></div>`;
+      resultsEl.innerHTML = `<div class="ig-loading"><span></span><small>Buscando?</small></div>`;
       let list = [];
       try{
         list = await sbSearchUsuarios(term);
@@ -11943,7 +13119,7 @@ function syncClear(){
             <i class='bx bx-search'></i>
             <div>
               <div class="ig-empty-title">Nada encontrado</div>
-              <div class="ig-empty-sub">Tente outro nome ou @usuário.</div>
+              <div class="ig-empty-sub">Tente outro nome ou @usu?rio.</div>
             </div>
           </div>
         `;
@@ -11957,7 +13133,7 @@ function syncClear(){
         const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
         const isProf = u.isProfissional === true;
         const categoria = u.categoria_profissional || 'Profissional';
-        const sub = isProf ? categoria : (nomeFull || 'Usuário');
+        const sub = isProf ? categoria : (nomeFull || 'Usu?rio');
         const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
         return `
           <div class="ig-row ig-row-user" role="listitem"
@@ -11969,8 +13145,8 @@ function syncClear(){
                data-goto="${escapeHtml(goto)}">
             <img class="ig-avatar" src="${escapeHtml(foto)}" alt="">
             <div class="ig-main">
-              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usuário'}</span></div>
-              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usuário'))}</div>
+              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usu?rio'}</span></div>
+              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usu?rio'))}</div>
             </div>
           </div>
         `;
@@ -11984,7 +13160,7 @@ function syncClear(){
           const foto = row.getAttribute('data-foto') || '';
           const isProf = row.getAttribute('data-isprof') === '1';
           const goto = row.getAttribute('data-goto') || '';
-          // salva no histórico
+          // salva no hist?rico
           let arr = readUserRecents();
           arr = arr.filter(x => String(x.uid||'') !== String(uid));
           arr = [{
@@ -11999,7 +13175,7 @@ function syncClear(){
 
     function render(){
       renderRecents();
-      // se tiver texto, mostra ação/busca
+      // se tiver texto, mostra a??o/busca
       const term = input.value.trim();
       if(term.length >= 2){
         if(mode === 'ads') showAdSearchAction(term);
@@ -12009,13 +13185,13 @@ function syncClear(){
 
     // open/close
     function open(){
-      // garante menu aberto (caso o usuário dispare por atalho)
+      // garante menu aberto (caso o usu?rio dispare por atalho)
       try{
         sidebar.classList.add('menu-aberto');
         document.body.classList.add('menu-ativo');
       }catch(e){}
       sidebar.classList.add('ig-search-open');
-      setMode(mode); // também renderiza
+      setMode(mode); // tamb?m renderiza
       setTimeout(()=>{ try{ input.focus(); input.select(); }catch(e){} }, 50);
     }
     function close(){
@@ -12027,7 +13203,7 @@ function syncClear(){
       renderRecents();
     }
 
-    // expõe global pra atalho Ctrl/Cmd+K
+    // exp?e global pra atalho Ctrl/Cmd+K
     window.openDokeSidebarSearch = open;
 
     // eventos
@@ -12072,13 +13248,13 @@ function syncClear(){
   }
 
 
-  // [DOKE] garante inicialização do painel de Pesquisa no menu lateral em todas as páginas
-  // (o menu lateral existe em múltiplos HTMLs, então não pode depender do 'Para você')
+  // [DOKE] garante inicializa??o do painel de Pesquisa no menu lateral em todas as p?ginas
+  // (o menu lateral existe em m?ltiplos HTMLs, ent?o n?o pode depender do 'Para voc?')
   document.addEventListener('DOMContentLoaded', ()=>{ try{ initIgSidebarSearch(); }catch(e){} });
 
 function buildPvQuickSearchSection(anchorSection, mountEl){
       if (!isHome()) return;
-      // Busca rápida (dentro do "Para você" por padrão)
+      // Busca r?pida (dentro do "Para voc?" por padr?o)
       if (document.getElementById('pvQuickSearchSection')) return;
 
       // ---- Pesquisa estilo Instagram no menu lateral (abre dentro do menu) ----
@@ -12089,7 +13265,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       wrap.id = 'pvQuickSearchSection';
       wrap.className = mountEl ? 'pv-inline-search' : 'pv-inline-search-section pv-inline-search-section--stealth';
 
-      // UI mais "escondida": menor, alinhada à esquerda, abre ao focar
+      // UI mais "escondida": menor, alinhada ? esquerda, abre ao focar
       wrap.innerHTML = `
         <div class="pv-inline-top">
           <div class="pv-inline-title">
@@ -12099,7 +13275,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
           <div class="pv-inline-toggles" role="tablist" aria-label="Filtrar busca">
             <button type="button" class="pv-toggle is-active" data-mode="pro" role="tab" aria-selected="true">Profissionais</button>
-            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usuários</button>
+            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usu?rios</button>
           </div>
         </div>
 
@@ -12114,7 +13290,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
           <div class="pv-collapsible">
             <div class="pv-history" id="pvHistoryWrap" style="display:none;">
-              <div class="pv-history-title">Histórico</div>
+              <div class="pv-history-title">Hist?rico</div>
               <div class="quick-chips pv-quick-chips" id="pvQuickChips"></div>
             </div>
             <div class="pv-quick-results" id="pvQuickResults"></div>
@@ -12148,7 +13324,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
           b.classList.toggle('is-active', on);
           b.setAttribute('aria-selected', on ? 'true' : 'false');
         });
-        input.placeholder = mode === 'pro' ? 'Buscar profissionais...' : 'Buscar usuários...';
+        input.placeholder = mode === 'pro' ? 'Buscar profissionais...' : 'Buscar usu?rios...';
         results.innerHTML = '';
         renderHistory();
         if (input.value.trim().length >= 2) run();
@@ -12163,12 +13339,12 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
       const open = () => wrap.classList.add('is-open');
       const close = () => {
-        // fecha só se vazio (pra não atrapalhar quem está digitando)
+        // fecha s? se vazio (pra n?o atrapalhar quem est? digitando)
         const t = input.value.trim();
         if (t.length < 1) wrap.classList.remove('is-open');
       };
 
-      // ---- Histórico (prioriza perfis clicados; sem sugestões fixas) ----
+      // ---- Hist?rico (prioriza perfis clicados; sem sugest?es fixas) ----
       const HIST_KEY = 'doke_user_quicksearch_hist_v2';
       const readHist = () => {
         try{
@@ -12218,7 +13394,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
         const users = arr.filter(x => x.t === 'user');
         const terms = arr.filter(x => x.t === 'term');
 
-        // regra: mostrar histórico "de usuários" primeiro; termos só se não houver usuários
+        // regra: mostrar hist?rico "de usu?rios" primeiro; termos s? se n?o houver usu?rios
         const showUsers = users.length > 0;
         const list = showUsers ? users : terms;
 
@@ -12290,13 +13466,13 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
         else list = (list||[]).filter(u => u && u.isProfissional !== true);
 
         if (!list.length) {
-          results.innerHTML = `<div class="pv-empty-mini">${mode === 'pro' ? 'Nenhum profissional encontrado.' : 'Nenhum usuário encontrado.'}</div>`;
+          results.innerHTML = `<div class="pv-empty-mini">${mode === 'pro' ? 'Nenhum profissional encontrado.' : 'Nenhum usu?rio encontrado.'}</div>`;
           return;
         }
 
         results.innerHTML = list.map(buildUserCardMini).join('');
 
-        // captura clique pra salvar histórico de perfil antes do redirect
+        // captura clique pra salvar hist?rico de perfil antes do redirect
         results.querySelectorAll('.pv-user-card').forEach(card=>{
           card.addEventListener('click', ()=>{
             try{
@@ -12404,7 +13580,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       `;
 
       anchor.parentNode.insertBefore(sec, anchor);
-      // Insere busca pequena logo após o 'Para você'
+      // Insere busca pequena logo ap?s o 'Para voc?'
     }
 
     // ----------------------------
@@ -12475,7 +13651,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       }
 
       box.innerHTML = `
-        <div class="sug-title">Sugestões</div>
+        <div class="sug-title">Sugest?es</div>
         <div class="sug-list">
           ${list.map(t => {
             const pinned = pins.some(p => String(p).toLowerCase() === String(t).toLowerCase());
@@ -12485,7 +13661,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
                   <span class="sug-dot"></span>
                   <span class="sug-text">${esc(t)}</span>
                 </div>
-                <button class="sug-pin" type="button" aria-label="${pinned ? 'Remover de favoritados' : 'Adicionar aos favoritados'}" data-pin="${pinned ? '1' : '0'}">${pinned ? '★' : '☆'}</button>
+                <button class="sug-pin" type="button" aria-label="${pinned ? 'Remover de favoritados' : 'Adicionar aos favoritados'}" data-pin="${pinned ? '1' : '0'}">${pinned ? '?' : '?'}</button>
               </div>
             `;
           }).join('')}
@@ -12570,7 +13746,7 @@ async function waitForSB(timeout = 4000) {
 }
 
 /*************************************************
- * PERFIL PÚBLICO
+ * PERFIL P?BLICO
  *************************************************/
 function abrirPerfil(uid) {
   if (!uid) return;
@@ -12593,7 +13769,7 @@ function cardPro(p) {
 
   const ratingHtml =
     p.numAvaliacoes > 0
-      ? `<div class="pro-rating">★ ${p.mediaAvaliacao.toFixed(1)} (${p.numAvaliacoes})</div>`
+      ? `<div class="pro-rating">&#11088; ${p.mediaAvaliacao.toFixed(1)} (${p.numAvaliacoes})</div>`
       : `<div class="badge-novo">Novo</div>`;
 
   return `
@@ -12608,7 +13784,7 @@ function cardPro(p) {
 }
 
 /*************************************************
- * AGRUPA ANÚNCIOS → PROFISSIONAIS
+ * AGRUPA AN?NCIOS ? PROFISSIONAIS
  *************************************************/
 function agruparProfissionais(anuncios) {
   const map = new Map();
@@ -12693,13 +13869,13 @@ async function carregarProfissionaisIndex() {
 
   const profs = agruparProfissionais(anuncios || []);
 
-  // ⭐ Destaque = só quem tem avaliação
+  // ? Destaque = s? quem tem avalia??o
   const destaque = profs
     .filter(p => p.numAvaliacoes > 0)
     .sort((a, b) => b.mediaAvaliacao - a.mediaAvaliacao)
     .slice(0, 10);
 
-  // 🆕 Novos = sem avaliação
+  // ?? Novos = sem avalia??o
   const novos = profs
     .filter(p => p.numAvaliacoes === 0)
     .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
@@ -12741,16 +13917,16 @@ async function carregarProfissionaisIndex() {
 document.addEventListener("DOMContentLoaded", carregarProfissionaisIndex);
 
 
-// Atualiza o header com bairro/cidade quando disponível
+// Atualiza o header com bairro/cidade quando dispon?vel
 document.addEventListener('DOMContentLoaded', function(){
   try{ window.atualizarTelaCep(''); }catch(_e){}
 });
 
 
 /*************************************************
- * NEGÓCIOS (negocios.html / perfil-empresa.html / negocio.html)
+ * NEG?CIOS (negocios.html / perfil-empresa.html / negocio.html)
  * - Sem WhatsApp: CTA sempre leva para chat.html
- * - Localização: usa CEP salvo e botão "Usar localização atual" (geo)
+ * - Localiza??o: usa CEP salvo e bot?o "Usar localiza??o atual" (geo)
  *************************************************/
 (function(){
   const PAGE = document.body?.dataset?.page;
@@ -12773,7 +13949,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
   async function usarLocalizacaoAtual(btn){
     if (!('geolocation' in navigator)) {
-      toast('Seu navegador não suporta geolocalização.');
+      toast('Seu navegador n?o suporta geolocaliza??o.');
       return;
     }
     if (btn) {
@@ -12784,12 +13960,12 @@ document.addEventListener('DOMContentLoaded', function(){
       (pos)=>{
         setGeo(pos.coords);
         try{ window.atualizarTelaCep(''); }catch(_e){}
-        toast('Localização atual salva (modo beta).');
+        toast('Localiza??o atual salva (modo beta).');
         if(btn){ btn.disabled=false; btn.classList.remove('is-loading'); }
       },
       (err)=>{
         console.warn('geo error', err);
-        toast('Não consegui acessar sua localização. Verifique as permissões do navegador.');
+        toast('N?o consegui acessar sua localiza??o. Verifique as permiss?es do navegador.');
         if(btn){ btn.disabled=false; btn.classList.remove('is-loading'); }
       },
       { enableHighAccuracy:true, timeout: 10000, maximumAge: 30000 }
@@ -12797,7 +13973,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function toast(msg){
-    // usa o toast já existente no projeto, se tiver
+    // usa o toast j? existente no projeto, se tiver
     if (typeof window.mostrarToast === 'function') { window.mostrarToast(msg); return; }
     const el = document.createElement('div');
     el.textContent = msg;
@@ -12813,13 +13989,13 @@ document.addEventListener('DOMContentLoaded', function(){
     const bairroCidade = (loc && (loc.bairro || loc.cidade))
       ? [loc.bairro, loc.cidade].filter(Boolean).join(', ')
       : 'Informe seu CEP';
-    const mode = geo ? ' • local atual' : '';
+    const mode = geo ? ' ? local atual' : '';
     el.textContent = bairroCidade + mode;
   }
 
   function buildNegocioCard(n){
     const foto = n?.foto_capa || n?.logo_url || 'assets/Imagens/doke-logo.png';
-    const nome = n?.nome || 'Negócio';
+    const nome = n?.nome || 'Neg?cio';
     const cat = n?.categoria || 'Estabelecimento';
     const bairro = n?.bairro || '';
     const cidade = n?.cidade || '';
@@ -12845,9 +14021,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
   async function fetchNegocios(params){
     const client = sb();
-    if (!client) throw new Error('supabase não inicializado');
+    if (!client) throw new Error('supabase n?o inicializado');
 
-    // tenta localizar pelo CEP salvo (bairro/cidade). Se não existir, lista geral.
+    // tenta localizar pelo CEP salvo (bairro/cidade). Se n?o existir, lista geral.
     const loc = getLocal();
     const q = (params?.q || '').trim();
     const cat = params?.cat || 'Tudo';
@@ -12918,7 +14094,7 @@ document.addEventListener('DOMContentLoaded', function(){
         if (!data.length) {
           if (emptyEl) {
             emptyEl.style.display = 'block';
-            emptyEl.querySelector('strong').textContent = 'Nenhum negócio encontrado.';
+            emptyEl.querySelector('strong').textContent = 'Nenhum neg?cio encontrado.';
           }
         } else {
           listEl.innerHTML = data.map(buildNegocioCard).join('');
@@ -12927,9 +14103,9 @@ document.addEventListener('DOMContentLoaded', function(){
         console.warn('negocios fetch error', err);
         if (emptyEl) {
           emptyEl.style.display = 'block';
-          emptyEl.querySelector('strong').textContent = 'Ainda não conseguimos listar negócios.';
+          emptyEl.querySelector('strong').textContent = 'Ainda n?o conseguimos listar neg?cios.';
           const small = emptyEl.querySelector('small');
-          if (small) small.textContent = 'Provável motivo: tabela negocios não existe ou RLS bloqueando.';
+          if (small) small.textContent = 'Prov?vel motivo: tabela negocios n?o existe ou RLS bloqueando.';
         }
       }finally{
         root.classList.remove('is-loading');
@@ -12971,7 +14147,7 @@ document.addEventListener('DOMContentLoaded', function(){
         if (empty) empty.style.display='none';
         if (list) list.innerHTML = arr.map((n)=>{
           const cover = n.foto_capa || n.logo_url || 'assets/Imagens/doke-logo.png';
-          const nome = escapeHtml(n.nome || 'Meu negócio');
+          const nome = escapeHtml(n.nome || 'Meu neg?cio');
           const cat = escapeHtml(n.categoria || '');
           const id = n.id;
           return `
@@ -13008,16 +14184,16 @@ document.addEventListener('DOMContentLoaded', function(){
     const meta = root.querySelector('[data-meta]');
 
     if (!id) {
-      if (title) title.textContent = 'Negócio';
+      if (title) title.textContent = 'Neg?cio';
       return;
     }
     try{
       const { data, error } = await client.from('negocios').select('*').eq('id', id).maybeSingle();
       if (error) throw error;
       if (!data) throw new Error('not found');
-      if (title) title.textContent = data.nome || 'Negócio';
+      if (title) title.textContent = data.nome || 'Neg?cio';
       if (cover) cover.src = data.foto_capa || data.logo_url || cover.src;
-      if (desc) desc.textContent = data.descricao || 'Sem descrição.';
+      if (desc) desc.textContent = data.descricao || 'Sem descri??o.';
       if (meta) meta.textContent = [data.bairro, data.cidade, data.estado].filter(Boolean).join(', ');
       const chatBtn = root.querySelector('[data-chat]');
       if (chatBtn) chatBtn.href = `chat.html?negocio_id=${encodeURIComponent(id)}`;
@@ -13026,14 +14202,14 @@ document.addEventListener('DOMContentLoaded', function(){
     }
   }
 
-  // init por página
+  // init por p?gina
   document.addEventListener('DOMContentLoaded', ()=>{
     if (PAGE === 'negocios') initNegociosPage();
     if (PAGE === 'perfil-empresa') initPerfilEmpresaPage();
     if (PAGE === 'negocio') initNegocioPage();
   });
 
-  // expõe
+  // exp?e
   try{ window.DokeNegocios = { usarLocalizacaoAtual }; }catch(_e){}
 })();
 
@@ -13080,9 +14256,12 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!el) return;
     const href = String(el.getAttribute && el.getAttribute('href') || '').toLowerCase();
     const txt = String(el.textContent || '').toLowerCase();
-    const tryPublish = href.includes('anunciar.html') || txt.includes('publicar anúncio') || txt.includes('publicar anuncio') || txt.includes('anunciar meu serviço') || txt.includes('anunciar meu servico');
+    const tryPublish = href.includes('anunciar.html') || txt.includes('publicar an?ncio') || txt.includes('publicar anuncio') || txt.includes('anunciar meu servi?o') || txt.includes('anunciar meu servico');
     if (!tryPublish) return;
     ev.preventDefault();
     toUpgrade();
   }, true);
 });
+
+
+

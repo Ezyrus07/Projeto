@@ -1,11 +1,11 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260217v13"></script>
-<!-- Storage bucket padr?o (?udios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
+<script src="supabase-init.js?v=20260218v43"></script>
+<!-- Storage bucket padrão (áudios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
 <script>
     window.__DOKE_SUPABASE_STORAGE_BUCKET__ =
       window.__DOKE_SUPABASE_STORAGE_BUCKET__ ||
@@ -13,27 +13,26 @@
       'posts';
   </script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Mensagens | Doke</title>
-    <meta name="description" content="Converse com profissionais e clientes em um chat r&aacute;pido e responsivo.">
-    <meta property="og:title" content="Doke - Chat">
-    <meta property="og:description" content="Converse com profissionais e clientes em um chat r&aacute;pido e responsivo.">
-    <meta property="og:type" content="website">
-    <meta property="og:image" content="assets/Imagens/doke-logo.png">
-    <meta name="theme-color" content="#0b7768">
-
+<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." name="description"/>
+<meta content="Doke - Chat" property="og:title"/>
+<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." property="og:description"/>
+<meta content="website" property="og:type"/>
+<meta content="assets/Imagens/doke-logo.png" property="og:image"/>
+<meta content="#0b7768" name="theme-color"/>
 <link href="chat-redesign.css" rel="stylesheet"/>
 <link href="style.css?v=20260211v44" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
-<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
 <link href="doke-fixes.css" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<!-- script.js?v=20260215v9 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
+<!-- script.js?v=20260218v60 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
 <style>
         /* =========================================================================
-           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADR�O)
+           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRï¿½O)
            ========================================================================= */
         
         :root{
@@ -1102,7 +1101,9 @@
             display: flex; align-items: center; padding: 12px 20px; gap: 10px; flex-shrink: 0;
         }
         .input-msg { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; }
-        .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; }
+        .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; transition: opacity .18s ease, transform .18s ease; }
+        .btn-enviar.is-loading,
+        #btnConfirmarGerarCobranca.is-loading { opacity: .78; pointer-events: none; transform: scale(.98); }
         .btn-attach { background: #e0e0e0; color: #555; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; }
         .btn-enviar i, .btn-attach i, .chat-menu-btn i{ margin: 0; line-height: 1; display: block; }
         .btn-attach:hover { filter: brightness(0.98); }
@@ -1265,7 +1266,7 @@
     border-bottom-left-radius: 4px;
 }
 
-/* �rea de Mensagens com Fundo Personalizado */
+/* ï¿½rea de Mensagens com Fundo Personalizado */
 .mensagens-body {
     background-color: #f0f2f5;
     /* Adicionando um padr?o leve de fundo que lembra o WhatsApp */
@@ -1488,7 +1489,7 @@
 .detail-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .detail-value { color: #333; font-weight: 500; line-height: 1.4; }
 
-/* BOT�ES E LINKS DISCRETOS */
+/* BOTï¿½ES E LINKS DISCRETOS */
 .btn-detalhes {
     background: #f0fdfa; color: var(--cor0); border: 1px solid #ccfbf1;
     padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
@@ -1532,7 +1533,7 @@
 }
 .btn-cancelar-discreto:hover { background: #e74c3c; color: #fff; }
 
-/* BOT�O MAIS DETALHES */
+/* BOTï¿½O MAIS DETALHES */
 .btn-detalhes-card {
     background: #f0f7f6; color: var(--cor0); border: 1px solid #d1e9e5;
     padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
@@ -2346,18 +2347,16 @@
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link rel="stylesheet" href="doke-shell.css?v=20260211v33">
-
-<link rel="stylesheet" href="doke-responsive.css?v=20260209v23">
-  <link rel="stylesheet" href="page-chat.css?v=20260212v38">
-
-<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
-<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+<link href="doke-shell.css?v=20260211v33" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260209v23" rel="stylesheet"/>
+<link href="page-chat.css?v=20260212v38" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 </head>
 <body data-page="chat">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<span class="close-btn" onclick="fecharPopup()">×</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
@@ -2377,7 +2376,6 @@
 <a href="login.html">
 </a>
 </div>
-
 </header>
 <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
 <header class="navbar-desktop">
@@ -2401,72 +2399,61 @@
 </nav>
 <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
 </header>
-
 <aside class="sidebar-icones">
-  <div id="logo">
-    <a href="index.html">
-      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="index.html">
-      <i class='bx bx-home-alt icon azul'></i>
-      <span>In?cio</span>
-    </a>
-  </div>
-
-  <div class="item" id="pvSearchSidebarItem">
-    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
-      <i class='bx bx-search-alt-2 icon azul'></i>
-      <span>Pesquisar</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="empresas.html">
-      <i class='bx bx-store icon verde'></i>
-      <span>Empresas</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="notificacoes.html">
-      <i class='bx bx-bell icon azul'></i>
-      <span>Notifica&ccedil;&otilde;es</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="chat.html">
-      <i class='bx bx-message-rounded-dots icon azul'></i>
-      <span>Mensagens</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="comunidade.html">
-      <i class='bx bx-group icon verde'></i>
-      <span>Comunidades</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="#" onclick="irParaMeuPerfil(event)">
-      <i class='bx bx-user icon verde'></i>
-      <span>Perfil</span>
-    </a>
-  </div>
-
-  <div class="item">
-    <a href="mais.html">
-      <i class='bx bx-menu icon azul'></i>
-      <span>Mais</span>
-    </a>
-  </div>
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
 </aside>
-
-
 <script>
     (function(){
         try {
@@ -2482,7 +2469,6 @@
         } catch (_) {}
     })();
 </script>
-
 <div class="messenger-layout" id="messengerMaster">
 <div class="coluna-lista">
 <div class="lista-header">
@@ -2496,7 +2482,7 @@
 <div class="lista-quick">
 <div class="lista-search">
 <i class="bx bx-search"></i>
-<input id="inputBuscaLista" placeholder="Buscar por nome ou servi&ccedil;o" type="text"/>
+<input id="inputBuscaLista" placeholder="Buscar por nome ou serviço" type="text"/>
 </div>
 <button class="filter-btn" id="toggleFilters" onclick="toggleListaFilters(event)">
                          Filtros <i class="bx bx-slider-alt"></i>
@@ -2550,9 +2536,9 @@
 </div>
 <div class="agenda-panel" id="agendaPanel" style="display:none;">
 <div class="agenda-top">
-<button aria-label="M&ecirc;s anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
+<button aria-label="Mês anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
 <div class="agenda-title" id="agendaTitle">Agenda</div>
-<button aria-label="Pr&oacute;ximo m&ecirc;s" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Próximo mês" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="agenda-weekdays">
 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
@@ -2567,14 +2553,14 @@
 <div class="coluna-chat">
 <div id="chat-placeholder">
 <img decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="opacity:0.5; margin-bottom:20px;" width="120"/>
-<p>Selecione uma conversa para come&ccedil;ar.</p>
+<p>Selecione uma conversa para começar.</p>
 </div>
 <div id="box-conversa-real">
 <div class="chat-header">
 <button class="btn-voltar-mobile" onclick="fecharChatMobile()"><i class="bx bx-arrow-back"></i></button>
-<img decoding="async" id="chatAvatar" loading="lazy" src="" alt="Foto do contato" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';"/>
+<img alt="Foto do contato" decoding="async" id="chatAvatar" loading="lazy" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';" src=""/>
 <div class="chat-info">
-<h4 id="chatNome">Usu&aacute;rio</h4>
+<h4 id="chatNome">Usuário</h4>
 <span id="chatStatus">Offline</span>
 <div class="chip-pedido-status chip-pendente" id="chipPedidoStatus" style="display:none;">Pedido em espera</div>
 </div>
@@ -2584,11 +2570,11 @@
 <button class="btn-header btn-aceitar-mini" onclick="acaoPedido('aceito')">Aceitar Pedido</button>
 </div>
 <div class="chat-header-tools">
-<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar Cobran&ccedil;a">
-<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar Cobran&ccedil;a</span>
+<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar Cobrança">
+<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar Cobrança</span>
 </button>
 <div class="chat-menu" id="chatMenu">
-<button aria-label="Mais op&ccedil;&otilde;es" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
+<button aria-label="Mais opções" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
 <i class="bx bx-dots-vertical-rounded"></i>
 </button>
 <div class="chat-menu-dropdown">
@@ -2612,7 +2598,7 @@
 <div class="mensagens-body" id="areaMensagens"></div>
 <div class="reply-bar" id="replyBar">
 <div class="rb-left">
-<div class="rb-user" id="replyUser">@usuario</div>
+<div class="rb-user" id="replyUser">@usuário</div>
 <div class="rb-text" id="replyPreview"></div>
 </div>
 <button aria-label="Cancelar resposta" class="rb-close" onclick="cancelarResposta()" type="button">
@@ -2620,28 +2606,28 @@
 </button>
 </div>
 <div class="chat-footer" id="chatFooter">
-<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobran&ccedil;a">
+<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobrança">
 <i class="bx bx-dollar"></i>
 </button>
 <div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
 <button class="btn-attach" id="btn-attach" onclick="abrirSeletorAnexo()" title="Anexar imagem/arquivo">
 <i class="bx bx-paperclip"></i>
 </button>
-<input accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.zip,.rar" id="inputAnexo" style="display:none" type="file">
-<input class="input-msg" id="inputMsg" onkeypress="verificarEnter(event)" placeholder="Digite uma mensagem..." type="text"/>
+<input accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.zip,.rar" id="inputAnexo" style="display:none" type="file"/>
+<input class="input-msg" id="inputMsg" onkeypress="verificarEnter(event)" placeholder="Digite uma mensagem..." type="text">
 <button class="btn-enviar" id="btn-mic" onclick="iniciarGravacao()" style="background:#e0e0e0; color:#555;">
 <i class="bx bxs-microphone"></i>
 </button>
 <button class="btn-enviar" id="btn-send-txt" onclick="enviarMensagemTexto()">
 <i class="bx bxs-send"></i>
 </button>
-</div>
+</input></div>
 <div id="uiGravando" style="display:none; flex:1; align-items:center; gap:15px; background:#fff; padding:0 10px;">
 <div class="recording-indicator">
 <div class="red-dot"></div>
 <span id="timerGravacao">00:00</span>
 </div>
-<span style="flex:1; color:#666; font-size:0.9rem;">Gravando &aacute;udio...</span>
+<span style="flex:1; color:#666; font-size:0.9rem;">Gravando áudio...</span>
 <button onclick="cancelarGravacao()" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:1.5rem;">
 <i class="bx bx-trash"></i>
 </button>
@@ -2669,7 +2655,7 @@
 <div class="recusa-content">
 <h3 style="margin:0; color:#333;">Recusar Pedido</h3>
 <p style="color:#666; font-size:0.9rem; margin:10px 0 0;">Por favor, informe ao cliente o motivo da recusa:</p>
-<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: N&atilde;o tenho disponibilidade nesta data..."></textarea>
+<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: Não tenho disponibilidade nesta data..."></textarea>
 <div style="display:flex; gap:10px;">
 <button onclick="fecharModalRecusa()" style="flex:1; background:#f0f0f0; border:none; border-radius:12px; cursor:pointer; font-weight:600;">Voltar</button>
 <button class="btn-confirm-recusa" onclick="confirmarRecusaFinal()">Confirmar Recusa</button>
@@ -2681,11 +2667,11 @@
 <div class="modal-icon-top">
 <i class="bx bx-check"></i>
 </div>
-<h3>Servi&ccedil;o Finalizado!</h3>
-<p>O pagamento foi liberado para o profissional com seguran&ccedil;a.</p>
+<h3>Serviço Finalizado!</h3>
+<p>O pagamento foi liberado para o profissional com segurança.</p>
 <div style="background:#fff9db; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #ffe082;">
-<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experi&ecirc;ncia?</strong>
-<span style="font-size:0.9rem; color:#555;">Sua avalia&ccedil;&atilde;o ajuda a comunidade a contratar com confian&ccedil;a.</span>
+<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experiência?</strong>
+<span style="font-size:0.9rem; color:#555;">Sua avaliação ajuda a comunidade a contratar com confiança.</span>
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="irParaAvaliacaoDireta()">
@@ -2699,25 +2685,26 @@
 </div>
 <div class="modal-overlay-custom" id="modalFinalizarPedido" style="display:none;">
 <div class="modal-box-custom bounceIn" style="max-width: 460px; text-align: left;">
+<button class="modal-close-x" type="button" aria-label="Fechar" onclick="fecharModalFinalizarPedido()">×</button>
 <div class="modal-icon-top" style="background:#e8f5f1; color:#0b7768;">
 <i class="bx bx-check-double"></i>
 </div>
 <h3 style="text-align:center;">Finalizar pedido</h3>
 <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
-            Confirme a conclus&atilde;o do servi&ccedil;o. Anexe uma m&iacute;dia &uacute;nica ou um par antes/depois.
+            Confirme a conclusão do serviço. Anexe uma mídia única ou um par antes/depois.
         </p>
 <div class="finalizar-modo">
-<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> M&iacute;dia &uacute;nica</label>
+<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Mídia única</label>
 <label><input name="finalizarModo" onclick="alterarModoFinalizacao('antes_depois')" type="radio" value="antes_depois"/> Antes e depois</label>
 </div>
 <div class="finalizar-upload" id="finalizarUploadUnico">
 <label class="btn-upload" for="finalizarAnexoUnico">
-<i class="bx bx-image-add"></i> Anexar m&iacute;dia (opcional)
+<i class="bx bx-image-add"></i> Anexar mídia (opcional)
             </label>
 <small id="finalizarNomeArquivoUnico"></small>
-<input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file">
+<input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file"/>
 <div class="finalizar-preview" id="finalizarPreviewUnico">
-<img alt="Preview" decoding="async" id="finalizarPreviewImgUnico" loading="lazy" style="display:none;">
+<img alt="Preview" decoding="async" id="finalizarPreviewImgUnico" loading="lazy" style="display:none;"/>
 <video controls="" id="finalizarPreviewVideoUnico" muted="" playsinline="" preload="metadata" style="display:none;"></video>
 <button onclick="limparArquivoFinalizacao('unico')" type="button">Remover</button>
 </div>
@@ -2729,9 +2716,9 @@
 <i class="bx bx-image-add"></i> Anexar antes
 </label>
 <small id="finalizarNomeArquivoAntes"></small>
-<input accept="image/*,video/*" id="finalizarAnexoAntes" style="display:none;" type="file">
+<input accept="image/*,video/*" id="finalizarAnexoAntes" style="display:none;" type="file"/>
 <div class="finalizar-preview" id="finalizarPreviewAntes">
-<img alt="Preview antes" decoding="async" id="finalizarPreviewImgAntes" loading="lazy" style="display:none;">
+<img alt="Preview antes" decoding="async" id="finalizarPreviewImgAntes" loading="lazy" style="display:none;"/>
 <video controls="" id="finalizarPreviewVideoAntes" muted="" playsinline="" preload="metadata" style="display:none;"></video>
 <button onclick="limparArquivoFinalizacao('antes')" type="button">Remover</button>
 </div>
@@ -2741,9 +2728,9 @@
 <i class="bx bx-image-add"></i> Anexar depois
 </label>
 <small id="finalizarNomeArquivoDepois"></small>
-<input accept="image/*,video/*" id="finalizarAnexoDepois" style="display:none;" type="file">
+<input accept="image/*,video/*" id="finalizarAnexoDepois" style="display:none;" type="file"/>
 <div class="finalizar-preview" id="finalizarPreviewDepois">
-<img alt="Preview depois" decoding="async" id="finalizarPreviewImgDepois" loading="lazy" style="display:none;">
+<img alt="Preview depois" decoding="async" id="finalizarPreviewImgDepois" loading="lazy" style="display:none;"/>
 <video controls="" id="finalizarPreviewVideoDepois" muted="" playsinline="" preload="metadata" style="display:none;"></video>
 <button onclick="limparArquivoFinalizacao('depois')" type="button">Remover</button>
 </div>
@@ -2752,7 +2739,7 @@
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
-<i class="bx bx-check"></i> Finalizar servi&ccedil;o</button>
+<i class="bx bx-check"></i> Finalizar serviço</button>
 <button class="btn-secondary-modal" onclick="fecharModalFinalizarPedido()">Cancelar</button>
 </div>
 </div>
@@ -2760,8 +2747,6 @@
 </div>
 </div>
 </div>
-
-
 <div class="modal-detalhes" id="modalOrcamento" style="display:none;">
 <div class="md-content" style="max-width: 520px; text-align: left;">
 <div class="md-header">
@@ -2781,7 +2766,7 @@
 <div class="md-header">
 <div style="display:flex; align-items:center; gap:10px;">
 <i class="bx bx-dollar-circle" style="font-size:1.3rem; color:#d4a600;"></i>
-<strong>Gerar cobran&ccedil;a</strong>
+<strong>Gerar cobrança</strong>
 </div>
 <button onclick="fecharModalGerarCobranca()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
 <i class="bx bx-x"></i>
@@ -2790,12 +2775,12 @@
 <div class="md-body">
 <div class="input-group" style="margin-bottom:12px;">
 <label for="cobrancaValorInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Valor</label>
-<input class="input-premium" id="cobrancaValorInput" inputmode="decimal" placeholder="R$ 0,00" type="text"/>
-</div>
+<input class="input-premium" id="cobrancaValorInput" inputmode="decimal" placeholder="R$ 0,00" type="text">
+</input></div>
 <div class="input-group" style="margin-bottom:12px;">
-<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">T&iacute;tulo da cobran&ccedil;a</label>
-<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: M&atilde;o de obra el&eacute;trica" type="text"/>
-</div>
+<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Título da cobrança</label>
+<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: Mão de obra elétrica" type="text">
+</input></div>
 <div class="input-group" style="margin-bottom:2px;">
 <label for="cobrancaParcelasInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Parcelas sem juros</label>
 <select class="input-premium" id="cobrancaParcelasInput">
@@ -2815,7 +2800,7 @@
 </div>
 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
 <button class="btn-dm btn-dm-cancel" onclick="fecharModalGerarCobranca()" type="button">Cancelar</button>
-<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobran&ccedil;a</button>
+<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobrança</button>
 </div>
 </div>
 </div>
@@ -2823,16 +2808,116 @@
 <script>
     (function(){
     const { getFirestore, collection, query, where, orderBy, getDocs, doc, getDoc, updateDoc, onSnapshot, addDoc, deleteDoc } = window;
-    const { getAuth, onAuthStateChanged, signOut } = window;
+    const { getAuth, signOut } = window;
 
     const db = window.db || getFirestore();
     const auth = window.auth || getAuth();
-    // Storage (Supabase Storage via compat). Bucket padr?o definido no <head>.
+    // Storage (Supabase Storage via compat). Bucket padrão definido no <head>.
     const storage = window.storage || (window.getStorage ? getStorage() : { bucket: 'posts' });
     window.storage = storage;
 
     let currentUserUid = null;
-    const getUserUid = () => currentUserUid || auth.currentUser?.uid || localStorage.getItem('doke_uid') || null;
+    const getUserUid = () => currentUserUid || auth.currentUser?.uid || window.auth?.currentUser?.uid || null;
+    function getAuthStateSubscriber() {
+        if (typeof window.onAuthStateChanged === 'function') return window.onAuthStateChanged;
+        if (typeof window.__dokeAuthCompat?.onAuthStateChanged === 'function') return window.__dokeAuthCompat.onAuthStateChanged;
+        return null;
+    }
+    async function resolveAuthUserCompat() {
+        try {
+            if (typeof window.dokeResolveAuthUser === 'function') {
+                const user = await window.dokeResolveAuthUser();
+                if (user?.uid || user?.id) return user;
+            }
+        } catch (_) {}
+        try {
+            const direct = auth?.currentUser || window.auth?.currentUser;
+            if (direct?.uid || direct?.id) return direct;
+        } catch (_) {}
+        try {
+            if (typeof window.dokeEnsureAuthUserFromCacheSync === 'function') {
+                const cached = window.dokeEnsureAuthUserFromCacheSync();
+                if (cached?.uid || cached?.id) return cached;
+            }
+        } catch (_) {}
+        try {
+            const sbAuth = window.sb?.auth || window.supabaseClient?.auth || null;
+            if (sbAuth && typeof sbAuth.getSession === 'function') {
+                const { data, error } = await sbAuth.getSession();
+                if (!error && data?.session?.user) return data.session.user;
+            }
+            if (sbAuth && typeof sbAuth.getUser === 'function') {
+                const { data, error } = await sbAuth.getUser();
+                if (!error && data?.user) return data.user;
+            }
+        } catch (_) {}
+        return null;
+    }
+    async function ensureCurrentUserUid(opts) {
+        const directUid = String(getUserUid() || '').trim();
+        if (directUid) {
+            currentUserUid = directUid;
+            return directUid;
+        }
+        try {
+            const compatUser = await resolveAuthUserCompat();
+            const compatUid = String(compatUser?.uid || compatUser?.id || '').trim();
+            if (compatUid) {
+                if (opts?.bootstrap === false) currentUserUid = compatUid;
+                else if (!bootstrapSessionUser(compatUser)) currentUserUid = compatUid;
+                return compatUid;
+            }
+        } catch (_) {}
+        try {
+            const sbUser = await getSupabaseSessionUser();
+            const sbUid = String(sbUser?.uid || sbUser?.id || '').trim();
+            if (sbUid) {
+                if (opts?.bootstrap === false) currentUserUid = sbUid;
+                else if (!bootstrapSessionUser(sbUser)) currentUserUid = sbUid;
+                return sbUid;
+            }
+        } catch (_) {}
+        try {
+            let perfil = null;
+            try { perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) { perfil = null; }
+            const cacheUid = String(
+                localStorage.getItem('doke_uid') ||
+                perfil?.uid ||
+                perfil?.id ||
+                perfil?.user_uid ||
+                ''
+            ).trim();
+            if (cacheUid) {
+                currentUserUid = cacheUid;
+                if (opts?.bootstrap !== false) {
+                    bootstrapSessionUser({
+                        uid: cacheUid,
+                        id: cacheUid,
+                        email: perfil?.email || ''
+                    });
+                }
+                return cacheUid;
+            }
+        } catch (_) {}
+        return null;
+    }
+    function subscribeAuthStateCompat(callback) {
+        const subscriber = getAuthStateSubscriber();
+        if (typeof subscriber === 'function') {
+            try {
+                return subscriber(auth || window.auth || {}, callback);
+            } catch (_) {}
+        }
+        Promise.resolve()
+            .then(() => resolveAuthUserCompat())
+            .then((user) => {
+                try { callback(user || null); } catch (_) {}
+            })
+            .catch(() => {
+                try { callback(null); } catch (_) {}
+            });
+        return null;
+    }
     let chatIdAtual = null;
     let colecaoAtual = 'pedidos'; 
     let chatUnsubscribe = null;
@@ -3498,7 +3583,7 @@
         const t = String(tipo || '').toLowerCase();
         if (t === 'imagem') return 'Imagem';
         if (t === 'arquivo') return 'Arquivo';
-        if (t === 'audio' || t === '?udio' || t === 'voz') return '?udio';
+        if (t === 'audio' || t === 'áudio' || t === 'voz') return 'áudio';
         if (t === 'pagamento') return 'Cobran?a';
         if (t === 'card_finalizado') return 'Pedido finalizado';
         if (t === 'card_avaliacao') return 'Avalia??o';
@@ -3848,7 +3933,7 @@
               ev?.preventDefault?.();
               ev?.stopPropagation?.();
           } catch (_) {}
-          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta m?dia do pedido.';
+          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta mídia do pedido.';
           if (typeof window.dokeAlert === 'function') window.dokeAlert(txt, 'Portf?lio');
           else alert(txt);
       };
@@ -4807,10 +4892,11 @@
       }
 
       async function getAmizadeStatus(uidOutro){
-          if (!uidOutro || !currentUserUid) return { status: 'none' };
+          const meUid = currentUserUid || await ensureCurrentUserUid();
+          if (!uidOutro || !meUid) return { status: 'none' };
           try{
-              const qOut = query(collection(db, "amizades"), where("deUid", "==", currentUserUid), where("paraUid", "==", uidOutro));
-              const qIn = query(collection(db, "amizades"), where("deUid", "==", uidOutro), where("paraUid", "==", currentUserUid));
+              const qOut = query(collection(db, "amizades"), where("deUid", "==", meUid), where("paraUid", "==", uidOutro));
+              const qIn = query(collection(db, "amizades"), where("deUid", "==", uidOutro), where("paraUid", "==", meUid));
               const [sOut, sIn] = await Promise.all([getDocs(qOut), getDocs(qIn)]);
               const outDoc = sOut.docs[0];
               const inDoc = sIn.docs[0];
@@ -4844,10 +4930,11 @@
 
       async function carregarMapaAmizades(){
           const map = new Map();
-          if (!currentUserUid) return map;
+          const meUid = currentUserUid || await ensureCurrentUserUid();
+          if (!meUid) return map;
           try{
-              const qOut = query(collection(db, "amizades"), where("deUid", "==", currentUserUid));
-              const qIn = query(collection(db, "amizades"), where("paraUid", "==", currentUserUid));
+              const qOut = query(collection(db, "amizades"), where("deUid", "==", meUid));
+              const qIn = query(collection(db, "amizades"), where("paraUid", "==", meUid));
               const [sOut, sIn] = await Promise.all([getDocs(qOut), getDocs(qIn)]);
 
               sOut.forEach((docSnap) => {
@@ -4914,14 +5001,15 @@
       }
 
       window.enviarSolicitacaoMensagem = async function(){
-          if (colecaoAtual !== 'conversas' || !chatIdAtual || !currentUserUid) return;
+          const uid = currentUserUid || await ensureCurrentUserUid();
+          if (colecaoAtual !== 'conversas' || !chatIdAtual || !uid) return;
           const targetUid = dmSolicitacaoTargetAtual || chatOutroUidAtual || amizadeOutroUidAtual || '';
           if (!targetUid) return;
           try {
               const agora = new Date().toISOString();
               const payload = {
                   dmRequestStatus: 'pendente',
-                  dmRequestBy: currentUserUid,
+                  dmRequestBy: uid,
                   dmRequestTarget: targetUid,
                   dmRequestUpdatedAt: agora,
                   ultimaMensagem: 'Solicita??o de mensagem enviada',
@@ -4944,7 +5032,8 @@
       };
 
       window.aprovarSolicitacaoMensagem = async function(){
-          if (colecaoAtual !== 'conversas' || !chatIdAtual || !currentUserUid) return;
+          const uid = currentUserUid || await ensureCurrentUserUid();
+          if (colecaoAtual !== 'conversas' || !chatIdAtual || !uid) return;
           try {
               const agora = new Date().toISOString();
               await updateDoc(doc(db, "conversas", chatIdAtual), {
@@ -4962,7 +5051,8 @@
       };
 
       window.recusarSolicitacaoMensagem = async function(){
-          if (colecaoAtual !== 'conversas' || !chatIdAtual || !currentUserUid) return;
+          const uid = currentUserUid || await ensureCurrentUserUid();
+          if (colecaoAtual !== 'conversas' || !chatIdAtual || !uid) return;
           try {
               const agora = new Date().toISOString();
               await updateDoc(doc(db, "conversas", chatIdAtual), {
@@ -4980,7 +5070,8 @@
       }
 
       window.enviarPedidoAmizade = async function(){
-          if (!amizadeOutroUidAtual || !currentUserUid) return;
+          const uid = currentUserUid || await ensureCurrentUserUid();
+          if (!amizadeOutroUidAtual || !uid) return;
           try{
               if (amizadeIdAtual && amizadeDirecaoAtual === 'out') {
                   await updateDoc(doc(db, "amizades", amizadeIdAtual), {
@@ -4989,7 +5080,7 @@
                   });
               } else {
                   await addDoc(collection(db, "amizades"), {
-                      deUid: currentUserUid,
+                      deUid: uid,
                       paraUid: amizadeOutroUidAtual,
                       status: 'pendente',
                       created_at: new Date().toISOString(),
@@ -5008,14 +5099,14 @@
                       const foto = perfil.foto || "https://placehold.co/50";
                       await addDoc(collection(db, "notificacoes"), {
                           parauid: amizadeOutroUidAtual,
-                          deuid: currentUserUid,
+                          deuid: uid,
                           denome: nome,
                           deuser: user,
                           defoto: foto,
                           acao: "pedido_amizade",
                           lida: false,
                           createdat: new Date().toISOString(),
-                          link: `perfil-cliente.html?id=${encodeURIComponent(currentUserUid)}`
+                          link: `perfil-cliente.html?id=${encodeURIComponent(uid)}`
                       });
                   }
               } catch (_) {}
@@ -5214,7 +5305,7 @@
     });
 
     // Fun??es Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
-    // IMPORTANT: script.js?v=20260215v9 (defer) tamb?m define window.dokeAlert/Confirm/Prompt.
+    // IMPORTANT: script.js?v=20260218v60 (defer) tamb?m define window.dokeAlert/Confirm/Prompt.
     // Para evitar conflito (modal some e fica travando a tela), n?s reatribu?mos
     // as fun??es AP?S o DOMContentLoaded, garantindo que esta vers?o seja a final.
     function bindDokeModalAPI(){
@@ -5352,13 +5443,75 @@
         }
     });
 
-    function ensurePedidosLoaded() {
+    function ensurePedidosLoaded(opts = {}) {
         const container = document.getElementById('lista-pedidos');
         if (!container) return;
+        const force = !!opts.force;
+        const nowTs = Date.now();
         const hasSpinner = !!container.querySelector('.bx-spin');
-        const hasContent = !!container.dataset.sig;
-        if (hasSpinner || !hasContent) carregarListaPedidos();
+        const sig = String(container.dataset.sig || '').trim();
+        const hasContent = !!sig && sig !== 'empty';
+        const isEmptyState = sig === 'empty';
+        const lastEmptyRetry = Number(window.__dokeChatLastEmptyPedidosRetryAt || 0);
+        const canRetryEmpty = force || !lastEmptyRetry || (nowTs - lastEmptyRetry) > 15000;
+        if (isEmptyState && canRetryEmpty) window.__dokeChatLastEmptyPedidosRetryAt = nowTs;
+        if (force || hasSpinner || !hasContent || (isEmptyState && canRetryEmpty)) carregarListaPedidos();
     }
+
+    function ensureConversasLoaded(opts = {}) {
+        if (typeof window.carregarListaConversas !== 'function') return;
+        const force = !!opts.force;
+        const container = document.getElementById('lista-conversas');
+        if (!container) {
+            window.carregarListaConversas();
+            return;
+        }
+        const hasSpinner = !!container.querySelector('.bx-spin');
+        const hasRows = !!container.querySelector('.item-conversa');
+        const isKnownEmpty = container.textContent && container.textContent.toLowerCase().includes('sem mensagens');
+        const nowTs = Date.now();
+        const lastEmptyRetry = Number(window.__dokeChatLastEmptyConversasRetryAt || 0);
+        const canRetryEmpty = force || !lastEmptyRetry || (nowTs - lastEmptyRetry) > 15000;
+        if (isKnownEmpty && canRetryEmpty) window.__dokeChatLastEmptyConversasRetryAt = nowTs;
+        if (force || hasSpinner || !hasRows || (isKnownEmpty && canRetryEmpty)) window.carregarListaConversas();
+    }
+
+    let chatResyncPromise = null;
+    let chatResyncLastAt = 0;
+    async function resyncChatState(reason, opts = {}) {
+        const force = !!opts.force;
+        const nowTs = Date.now();
+        if (!force && (nowTs - chatResyncLastAt) < 900) return false;
+        chatResyncLastAt = nowTs;
+        if (chatResyncPromise) return chatResyncPromise;
+        chatResyncPromise = (async () => {
+            try {
+                if (typeof window.dokeRestoreSupabaseSessionFromStorage === 'function') {
+                    await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+                }
+            } catch (_) {}
+            const uid = await ensureCurrentUserUid({ bootstrap: true });
+            if (!uid) {
+                renderHeaderUser(null);
+                return false;
+            }
+            currentUserUid = uid;
+            startSidebarBadges();
+            if (!pedidosRealtimeUnsubs.length) startPedidosRealtime();
+            if (abaAtual === 'pedidos') ensurePedidosLoaded({ force: force || reason === 'pageshow' });
+            else ensureConversasLoaded({ force: force || reason === 'pageshow' });
+            if (chatIdAtual && colecaoAtual) {
+                try { await carregarMensagens(colecaoAtual, chatIdAtual); } catch (_) {}
+            }
+            return true;
+        })().finally(() => {
+            chatResyncPromise = null;
+        });
+        return chatResyncPromise;
+    }
+    try {
+        window.__dokeChatResync = (opts = {}) => resyncChatState(String(opts.reason || 'manual'), opts);
+    } catch (_) {}
 
     window.abrirModalGarantia = () => { const m = document.getElementById('modalGarantiaInfo'); if(m) m.style.display = 'flex'; };
     window.fecharModalGarantia = () => { const m = document.getElementById('modalGarantiaInfo'); if(m) m.style.display = 'none'; };
@@ -5370,10 +5523,50 @@
     // =========================================================================
 
     window.irParaMeuPerfil = function(event) {
+        const go = async () => {
+            let resolvedUser = null;
+            try {
+                if (typeof window.dokeResolveAuthUser === "function") {
+                    resolvedUser = await window.dokeResolveAuthUser();
+                }
+            } catch (_) {}
+
+            if (!resolvedUser) {
+                try {
+                    const sbAuth = window.sb?.auth || window.supabaseClient?.auth || null;
+                    if (sbAuth && typeof sbAuth.getSession === "function") {
+                        const { data, error } = await sbAuth.getSession();
+                        if (!error && data?.session?.user) resolvedUser = data.session.user;
+                    }
+                    if (!resolvedUser && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+                        const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+                        if (restored && sbAuth && typeof sbAuth.getSession === "function") {
+                            const retry = await sbAuth.getSession();
+                            if (!retry?.error && retry?.data?.session?.user) resolvedUser = retry.data.session.user;
+                        }
+                    }
+                } catch (_) {}
+            }
+
+            if (!resolvedUser) {
+                try {
+                    const cachedUid = await ensureCurrentUserUid({ bootstrap: false });
+                    if (cachedUid) resolvedUser = { uid: cachedUid, id: cachedUid };
+                } catch (_) {}
+            }
+
+            if (!resolvedUser) {
+                window.location.href = "login.html";
+                return;
+            }
+
+            let perfilLocal = null;
+            try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) { perfilLocal = null; }
+            if (perfilLocal?.isProfissional === true) window.location.href = "meuperfil.html";
+            else window.location.href = "perfil-usuario.html";
+        };
         if(event) event.preventDefault();
-        const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil'));
-        if (!perfilLocal) { window.location.href = "login.html"; return; }
-        window.location.href = perfilLocal.isProfissional ? "meuperfil.html" : "perfil-usuario.html";
+        go();
     };
 
     function renderHeaderUser(perfil) {
@@ -5574,78 +5767,183 @@
         });
     }
     let sidebarBadgeUnsubs = [];
+    let sidebarBadgeRetryTimer = null;
+    let sidebarBadgesStartedForUid = "";
+    function stopSidebarBadges() {
+        sidebarBadgeUnsubs.forEach((fn) => { try { fn && fn(); } catch (_) {} });
+        sidebarBadgeUnsubs = [];
+        if (sidebarBadgeRetryTimer) {
+            clearTimeout(sidebarBadgeRetryTimer);
+            sidebarBadgeRetryTimer = null;
+        }
+        sidebarBadgesStartedForUid = "";
+    }
+    function scheduleSidebarBadgesRetry(delayMs) {
+        if (sidebarBadgeRetryTimer) return;
+        sidebarBadgeRetryTimer = setTimeout(() => {
+            sidebarBadgeRetryTimer = null;
+            startSidebarBadges();
+        }, Math.max(1200, Number(delayMs || 2500)));
+    }
     function startSidebarBadges() {
-        if (!currentUserUid || sidebarBadgeUnsubs.length) return;
+        if (!currentUserUid) return;
+        if (sidebarBadgesStartedForUid && sidebarBadgesStartedForUid !== currentUserUid) {
+            stopSidebarBadges();
+        }
+        if (sidebarBadgeUnsubs.length && sidebarBadgesStartedForUid === currentUserUid) return;
+        sidebarBadgesStartedForUid = currentUserUid;
         const qNotif = query(collection(db, "notificacoes"), where("parauid", "==", currentUserUid), where("lida", "==", false));
         const unsubNotif = onSnapshot(qNotif, (snap) => {
             ensureSidebarBadge('a[href="notificacoes.html"]', 'badge-sidebar', snap.docs.length);
+        }, (_err) => {
+            scheduleSidebarBadgesRetry(2200);
         });
-        const qPedCliente = query(collection(db, "pedidos"), where("deUid", "==", currentUserUid));
-        const qPedProf = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid));
-        const qConv = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
         let unreadPedidosCliente = 0;
         let unreadPedidosProf = 0;
         let unreadConvs = 0;
         const updateChatBadge = () => ensureSidebarBadge('a[href="chat.html"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
-        const unsubPed1 = onSnapshot(qPedCliente, (snap) => {
-            unreadPedidosCliente = 0;
-            snap.docs.forEach((docSnap) => {
-                const p = docSnap.data() || {};
-                if (isOcultoPorUser(p, 'ocultoPedidosPor', docSnap.id)) return;
-                const updated = p.dataAtualizacao || p.dataPedido || p.createdat || null;
-                if (isNaoLido(updated, 'pedidos', docSnap.id)) unreadPedidosCliente += 1;
-            });
-            updateChatBadge();
-        });
-        const unsubPed2 = onSnapshot(qPedProf, (snap) => {
-            unreadPedidosProf = 0;
-            snap.docs.forEach((docSnap) => {
-                const p = docSnap.data() || {};
-                if (isOcultoPorUser(p, 'ocultoPedidosPor', docSnap.id)) return;
-                const updated = p.dataAtualizacao || p.dataPedido || p.createdat || null;
-                if (isNaoLido(updated, 'pedidos', docSnap.id)) unreadPedidosProf += 1;
-            });
-            updateChatBadge();
-        });
-        const unsubConv = onSnapshot(qConv, (snap) => {
-            unreadConvs = 0;
-            snap.docs.forEach((docSnap) => {
-                const c = docSnap.data() || {};
-                if (isOcultoPorUser(c, 'ocultoChatPor', docSnap.id)) return;
-                const updated = c.dataAtualizacao || c.updatedat || c.createdat || null;
-                if (isNaoLido(updated, 'conversas', docSnap.id)) unreadConvs += 1;
-            });
-            updateChatBadge();
-        });
+        let pedidosBadgeTimer = null;
+        const refreshUnreadPedidos = async () => {
+            try {
+                const deField = await resolvePedidosField('de');
+                const paraField = await resolvePedidosField('para');
+                const base = collection(db, "pedidos");
+                const [snapCliente, snapProf] = await Promise.all([
+                    deField ? safeGetDocsWithField(query(base, where(deField, "==", currentUserUid)), deField) : emptySnap(),
+                    paraField ? safeGetDocsWithField(query(base, where(paraField, "==", currentUserUid)), paraField) : emptySnap()
+                ]);
+                unreadPedidosCliente = 0;
+                unreadPedidosProf = 0;
+                (snapCliente?.docs || []).forEach((docSnap) => {
+                    const p = docSnap.data() || {};
+                    if (isOcultoPorUser(p, 'ocultoPedidosPor', docSnap.id)) return;
+                    const updated = p.dataAtualizacao || p.dataPedido || p.createdat || null;
+                    if (isNaoLido(updated, 'pedidos', docSnap.id)) unreadPedidosCliente += 1;
+                });
+                (snapProf?.docs || []).forEach((docSnap) => {
+                    const p = docSnap.data() || {};
+                    if (isOcultoPorUser(p, 'ocultoPedidosPor', docSnap.id)) return;
+                    const updated = p.dataAtualizacao || p.dataPedido || p.createdat || null;
+                    if (isNaoLido(updated, 'pedidos', docSnap.id)) unreadPedidosProf += 1;
+                });
+                updateChatBadge();
+            } catch (_) {
+                scheduleSidebarBadgesRetry(2500);
+            }
+        };
+        refreshUnreadPedidos();
+        pedidosBadgeTimer = setInterval(refreshUnreadPedidos, 12000);
+        const unsubPed1 = () => {
+            if (pedidosBadgeTimer) clearInterval(pedidosBadgeTimer);
+            pedidosBadgeTimer = null;
+        };
+        const unsubPed2 = () => {};
+
+        let conversaBadgeTimer = null;
+        const refreshUnreadConvs = async () => {
+            try {
+                const docsConv = await listarConversasDoUsuario(currentUserUid);
+                unreadConvs = 0;
+                docsConv.forEach((docSnap) => {
+                    const c = docSnap.data() || {};
+                    if (isOcultoPorUser(c, 'ocultoChatPor', docSnap.id)) return;
+                    const updated = c.dataAtualizacao || c.updatedat || c.createdat || null;
+                    if (isNaoLido(updated, 'conversas', docSnap.id)) unreadConvs += 1;
+                });
+                updateChatBadge();
+            } catch (_) {
+                scheduleSidebarBadgesRetry(2500);
+            }
+        };
+        refreshUnreadConvs();
+        conversaBadgeTimer = setInterval(refreshUnreadConvs, 12000);
+        const unsubConv = () => {
+            if (conversaBadgeTimer) clearInterval(conversaBadgeTimer);
+            conversaBadgeTimer = null;
+        };
         sidebarBadgeUnsubs = [unsubNotif, unsubPed1, unsubPed2, unsubConv];
     }
 
-    // Logout Atualizado com DokeConfirm
+        // Logout/alternar conta: sempre tenta usar o fluxo global mais novo.
     window.fazerLogout = async () => {
-        if(await window.dokeConfirm("Tem certeza que deseja sair da sua conta?", "Sair")) {
-            try {
-                const user = auth.currentUser;
-                if (user) {
-                    const userRef = doc(db, "usuarios", user.uid);
-                    await updateDoc(userRef, { status: "Offline", ultimaVezOnline: new Date().toISOString() });
-                }
-                await signOut(auth);
-                localStorage.clear();
-                window.location.href = 'index.html';
-            } catch (error) {
-                signOut(auth).then(() => { localStorage.clear(); window.location.href = 'index.html'; });
-            }
+        const globalLogout = window.__dokeAuthActions?.fazerLogout;
+        if (typeof globalLogout === "function" && globalLogout !== window.fazerLogout) {
+            return globalLogout();
         }
+        const fallbackLogout = window.__dokeShellFallbackLogout;
+        if (typeof fallbackLogout === "function" && fallbackLogout !== window.fazerLogout) {
+            return fallbackLogout();
+        }
+
+        const confirmed = (typeof window.dokeConfirm === "function")
+            ? await window.dokeConfirm("Tem certeza que deseja sair da sua conta?", "Sair")
+            : window.confirm("Tem certeza que deseja sair da sua conta?");
+        if (!confirmed) return;
+
+        try {
+            if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000);
+        } catch (_) {}
+        const prevForce = window.DOKE_FORCE_SIGNOUT === true;
+        window.DOKE_FORCE_SIGNOUT = true;
+        try {
+            try { await (window.sb?.auth?.signOut?.() || Promise.resolve()); } catch (_) {}
+            try { await signOut(auth); } catch (_) {}
+        } finally {
+            window.DOKE_FORCE_SIGNOUT = prevForce;
+        }
+
+        try {
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('doke_usuario_perfil');
+            localStorage.removeItem('doke_uid');
+            localStorage.removeItem('doke_auth_session_backup');
+            localStorage.removeItem('doke_next_account');
+            Object.keys(localStorage)
+                .filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k))
+                .forEach((k) => localStorage.removeItem(k));
+        } catch (_) {}
+        try {
+            sessionStorage.removeItem('usuarioLogado');
+            sessionStorage.removeItem('doke_uid');
+            sessionStorage.removeItem('doke_usuario_perfil');
+            sessionStorage.removeItem('doke_next_account');
+        } catch (_) {}
+
+        window.location.href = 'login.html?logout=1';
     };
 
-    window.alternarConta = () => {
-        localStorage.removeItem('usuarioLogado');
-        localStorage.removeItem('doke_usuario_perfil');
-        localStorage.removeItem('doke_uid');
-        window.location.href = 'login.html';
-    };
+    window.alternarConta = async () => {
+        const globalSwitch = window.__dokeAuthActions?.alternarConta;
+        if (typeof globalSwitch === "function" && globalSwitch !== window.alternarConta) {
+            return globalSwitch();
+        }
+        const fallbackSwitch = window.__dokeShellFallbackSwitch;
+        if (typeof fallbackSwitch === "function" && fallbackSwitch !== window.alternarConta) {
+            return fallbackSwitch();
+        }
 
-    window.trocarAba = function(aba) {
+        try {
+            if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000);
+        } catch (_) {}
+        const prevForce = window.DOKE_FORCE_SIGNOUT === true;
+        window.DOKE_FORCE_SIGNOUT = true;
+        try {
+            try { await (window.sb?.auth?.signOut?.() || Promise.resolve()); } catch (_) {}
+            try { await signOut(auth); } catch (_) {}
+        } finally {
+            window.DOKE_FORCE_SIGNOUT = prevForce;
+        }
+        try {
+            localStorage.removeItem('usuarioLogado');
+            localStorage.removeItem('doke_usuario_perfil');
+            localStorage.removeItem('doke_uid');
+            localStorage.removeItem('doke_auth_session_backup');
+            localStorage.removeItem('doke_next_account');
+        } catch (_) {}
+
+        window.location.href = 'login.html?switch=1';
+    };
+window.trocarAba = function(aba) {
         if (aba !== 'pedidos' && pedidosSelecaoModo) {
             pedidosSelecaoModo = false;
             pedidosSelecionados.clear();
@@ -6013,6 +6311,11 @@
     window.solicitarAdicionarNoPortfolio = async function(pedidoId) {
         const id = pedidoId || chatIdAtual;
         if (!id) return;
+        const meUid = currentUserUid || await ensureCurrentUserUid();
+        if (!meUid) {
+            window.dokeAlert("Faça login para continuar.");
+            return;
+        }
         try {
             const pedidoRef = doc(db, "pedidos", id);
             const pedidoSnap = await getDoc(pedidoRef);
@@ -6023,7 +6326,7 @@
             const p = pedidoSnap.data() || {};
             const paraUid = getParaUid(p);
             const deUid = getDeUid(p);
-            if (!paraUid || String(paraUid) !== String(currentUserUid || '')) {
+            if (!paraUid || String(paraUid) !== String(meUid)) {
                 window.dokeAlert("Somente o profissional pode solicitar.");
                 return;
             }
@@ -6064,7 +6367,7 @@
                 return;
             }
 
-            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            const senderUid = meUid;
             const nowIso = new Date().toISOString();
             const msgRef = await addDoc(collection(db, "pedidos", id, "mensagens"), {
                 tipo: 'solicitacao_portfolio',
@@ -6118,6 +6421,11 @@
         const id = pedidoId || chatIdAtual;
         const msgId = mensagemId || "";
         if (!id || !msgId) return;
+        const meUid = currentUserUid || await ensureCurrentUserUid();
+        if (!meUid) {
+            window.dokeAlert("Faça login para continuar.");
+            return;
+        }
         const statusFinal = (String(decisao || '').toLowerCase() === 'aprovar') ? 'aprovado' : 'recusado';
         const confirmTxt = statusFinal === 'aprovado'
             ? "Permitir que esta midia apareca no portfolio do profissional?"
@@ -6135,7 +6443,7 @@
             const p = pedidoSnap.data() || {};
             const deUid = getDeUid(p);
             const paraUid = getParaUid(p);
-            if (!deUid || String(deUid) !== String(currentUserUid || '')) {
+            if (!deUid || String(deUid) !== String(meUid)) {
                 window.dokeAlert("Somente o cliente pode responder.");
                 return;
             }
@@ -6155,7 +6463,7 @@
                 await updateDoc(msgRef, {
                     status: statusFinal,
                     decidedAt: nowIso,
-                    decidedBy: currentUserUid || ''
+                    decidedBy: meUid
                 });
             } catch (eMsg) {
                 console.warn("Falha ao atualizar status da mensagem de portfolio; seguindo com status no pedido.", eMsg);
@@ -6164,7 +6472,7 @@
             const payloadPedidoPrincipal = {
                 portfolioConsentStatus: statusFinal,
                 portfolioConsentDecisionAt: nowIso,
-                portfolioConsentDecisionBy: currentUserUid || '',
+                portfolioConsentDecisionBy: meUid,
                 dataAtualizacao: nowIso,
                 ultimaMensagem: statusFinal === 'aprovado'
                     ? "Cliente autorizou uso no portfolio"
@@ -6179,7 +6487,7 @@
             };
             await updatePedidoPortfolioComFallback(pedidoRef, payloadPedidoPrincipal, payloadPedidoFallback);
 
-            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            const senderUid = meUid;
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
                 tipo: 'portfolio_consent_result',
                 texto: statusFinal === 'aprovado'
@@ -6219,6 +6527,11 @@
     window.publicarMidiaNoPortfolio = async function(pedidoId) {
         const id = pedidoId || chatIdAtual;
         if (!id) return;
+        const meUid = currentUserUid || await ensureCurrentUserUid();
+        if (!meUid) {
+            window.dokeAlert("Faça login para continuar.");
+            return;
+        }
         try {
             const sb = window.sb || window.supabase;
             if (!sb || typeof sb.from !== "function") {
@@ -6234,7 +6547,7 @@
             const p = pedidoSnap.data() || {};
             const paraUid = getParaUid(p);
             const deUid = getDeUid(p);
-            if (!paraUid || String(paraUid) !== String(currentUserUid || '')) {
+            if (!paraUid || String(paraUid) !== String(meUid)) {
                 window.dokeAlert("Somente o profissional pode publicar no portfolio.");
                 return;
             }
@@ -6275,13 +6588,13 @@
                 finalizacaoMediaTipo: media.tipo || 'imagem',
                 finalizacaoMediaNome: media.nome || '',
                 portfolioAddedAt: nowIso,
-                portfolioAddedBy: currentUserUid || '',
+                portfolioAddedBy: meUid,
                 portfolioItemId: ins.data?.id || '',
                 dataAtualizacao: nowIso,
                 ultimaMensagem: "Midia publicada no portfolio"
             });
 
-            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            const senderUid = meUid;
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
                 tipo: 'portfolio_publicado',
                 texto: 'Midia publicada no portfolio do profissional.',
@@ -6590,6 +6903,11 @@ window.confirmarFinalizacaoPedido = async () => {
     if (btn) { btn.disabled = true; btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Finalizando..."; }
 
     try {
+        const actionUid = currentUserUid || await ensureCurrentUserUid();
+        if (!actionUid) {
+            window.dokeAlert("Faça login para continuar.");
+            return;
+        }
         const modoAtual = finalizacaoModo === 'antes_depois' ? 'antes_depois' : 'unico';
         let mediaUnica = { url: "", tipo: "", nome: "" };
         let mediaAntes = { url: "", tipo: "", nome: "" };
@@ -6656,7 +6974,7 @@ window.confirmarFinalizacaoPedido = async () => {
             });
         }
         try {
-            const senderUid = currentUserUid || auth.currentUser?.uid || 'sistema';
+            const senderUid = actionUid;
             await addDoc(collection(db, "pedidos", id, "mensagens"), {
                 tipo: 'card_finalizado',
                 texto: "Pedido finalizado pelo cliente.",
@@ -6719,10 +7037,12 @@ window.confirmarFinalizacaoPedido = async () => {
         }
 
         try {
-            if (!currentUserUid) {
+            const resolvedUid = currentUserUid || await ensureCurrentUserUid();
+            if (!resolvedUid) {
                 container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Fa?a login para ver seus pedidos.</div>`;
                 return;
             }
+            if (resolvedUid !== currentUserUid) currentUserUid = resolvedUid;
             const deField = await resolvePedidosField('de');
             const paraField = await resolvePedidosField('para');
             if (!deField && !paraField) {
@@ -6731,8 +7051,8 @@ window.confirmarFinalizacaoPedido = async () => {
             }
             pedidosFieldsDirty = false;
             const base = collection(db, "pedidos");
-            const qDe = deField ? query(base, where(deField, "==", currentUserUid)) : null;
-            const qPara = paraField ? query(base, where(paraField, "==", currentUserUid)) : null;
+            const qDe = deField ? query(base, where(deField, "==", resolvedUid)) : null;
+            const qPara = paraField ? query(base, where(paraField, "==", resolvedUid)) : null;
             const [s1, s2] = await Promise.all([
                 qDe ? safeGetDocsWithField(qDe, deField) : emptySnap(),
                 qPara ? safeGetDocsWithField(qPara, paraField) : emptySnap()
@@ -6853,11 +7173,11 @@ window.confirmarFinalizacaoPedido = async () => {
                 } else if (papelReal === 'cliente' && p.status === 'pendente') {
                     acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicita??o</button>`;
                 } else if (papelReal === 'cliente' && p.status === 'pago') {
-                     // Bot?o de Conclus?o (Design Compacto)
+                     // Bot?o de Conclusão (Design Compacto)
                      acoesHtml = `
                         <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
                                 style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <i class='bx bx-check'></i> Confirmar Conclus?o
+                            <i class='bx bx-check'></i> Confirmar Conclusão
                         </button>`;
                 } else if (papelReal === 'profissional' && p.status === 'finalizado') {
                     const hasMedia = !!(p.finalizacaoMediaUrl || p.finalizacaoMediaURL);
@@ -6977,10 +7297,22 @@ window.confirmarFinalizacaoPedido = async () => {
     }
 
     let pedidosRealtimeUnsubs = [];
+    let pedidosRealtimeRetryTimer = null;
     function restartPedidosRealtime(){
         pedidosRealtimeUnsubs.forEach((fn) => { try { fn(); } catch (_) {} });
         pedidosRealtimeUnsubs = [];
+        if (pedidosRealtimeRetryTimer) {
+            clearTimeout(pedidosRealtimeRetryTimer);
+            pedidosRealtimeRetryTimer = null;
+        }
         startPedidosRealtime();
+    }
+    function schedulePedidosRealtimeRetry(delayMs){
+        if (pedidosRealtimeRetryTimer) return;
+        pedidosRealtimeRetryTimer = setTimeout(() => {
+            pedidosRealtimeRetryTimer = null;
+            restartPedidosRealtime();
+        }, Math.max(1400, Number(delayMs || 2600)));
     }
     function startPedidosRealtime(){
         if (!currentUserUid || pedidosRealtimeUnsubs.length) return;
@@ -6998,8 +7330,8 @@ window.confirmarFinalizacaoPedido = async () => {
             }, 250);
         };
         const subs = [];
-        if (q1) subs.push(onSnapshot(q1, onUpdate));
-        if (q2) subs.push(onSnapshot(q2, onUpdate));
+        if (q1) subs.push(onSnapshot(q1, onUpdate, () => schedulePedidosRealtimeRetry(2200)));
+        if (q2) subs.push(onSnapshot(q2, onUpdate, () => schedulePedidosRealtimeRetry(2200)));
         pedidosRealtimeUnsubs = subs;
     }
 
@@ -7010,21 +7342,180 @@ window.confirmarFinalizacaoPedido = async () => {
           return Number.isFinite(t) ? t : 0;
       }
 
+      function getConversaParticipantes(data) {
+          const bag = new Set();
+          const pushUid = (value) => {
+              const uid = String(value || '').trim();
+              if (uid) bag.add(uid);
+          };
+          if (Array.isArray(data?.participantes)) data.participantes.forEach(pushUid);
+          pushUid(data?.participante1);
+          pushUid(data?.participante2);
+          pushUid(data?.uid1);
+          pushUid(data?.uid2);
+          pushUid(data?.deUid);
+          pushUid(data?.deuid);
+          pushUid(data?.de_uid);
+          pushUid(data?.paraUid);
+          pushUid(data?.parauid);
+          pushUid(data?.para_uid);
+          pushUid(data?.remetenteUid);
+          pushUid(data?.destinatarioUid);
+          pushUid(data?.remetente_uid);
+          pushUid(data?.destinatario_uid);
+          return Array.from(bag);
+      }
+
+      function getOutroUidConversa(data, meuUid) {
+          const me = String(meuUid || '').trim();
+          return getConversaParticipantes(data).find((uid) => String(uid || '').trim() !== me) || '';
+      }
+
+      const conversaFieldCandidates = [
+          { field: "participantes", op: "array-contains" },
+          { field: "participante1", op: "==" },
+          { field: "participante2", op: "==" },
+          { field: "uid1", op: "==" },
+          { field: "uid2", op: "==" },
+          { field: "deUid", op: "==" },
+          { field: "deuid", op: "==" },
+          { field: "de_uid", op: "==" },
+          { field: "paraUid", op: "==" },
+          { field: "parauid", op: "==" },
+          { field: "para_uid", op: "==" },
+          { field: "remetenteUid", op: "==" },
+          { field: "destinatarioUid", op: "==" },
+          { field: "remetente_uid", op: "==" },
+          { field: "destinatario_uid", op: "==" }
+      ];
+      const conversaFieldCaps = Object.fromEntries(conversaFieldCandidates.map((c) => [c.field, true]));
+      const conversaFieldCapsStorageKey = "doke_chat_conversas_field_caps";
+      const conversaFieldCapsCookie = "doke_chat_conversas_field_caps";
+      try {
+          let rawSaved = localStorage.getItem(conversaFieldCapsStorageKey) || "";
+          if (!rawSaved) {
+              const cookies = String(document.cookie || "").split(";");
+              const found = cookies.find((c) => String(c || "").trim().startsWith(conversaFieldCapsCookie + "="));
+              if (found) {
+                  rawSaved = decodeURIComponent(String(found).trim().slice((conversaFieldCapsCookie + "=").length));
+              }
+          }
+          const saved = JSON.parse(rawSaved || "{}");
+          if (saved && typeof saved === "object") {
+              Object.keys(conversaFieldCaps).forEach((field) => {
+                  if (saved[field] === false) conversaFieldCaps[field] = false;
+              });
+          }
+      } catch (_) {}
+      let conversaFieldsDirty = false;
+      function persistConversaFieldCaps() {
+          try {
+              const raw = JSON.stringify(conversaFieldCaps);
+              localStorage.setItem(conversaFieldCapsStorageKey, raw);
+              document.cookie = `${conversaFieldCapsCookie}=${encodeURIComponent(raw)}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+          } catch (_) {}
+      }
+
+      function isConversaFieldErr(err) {
+          const status = Number(err?.status || 0);
+          const msg = String(err?.message || err?.details || err?.hint || "").toLowerCase();
+          if (status === 400) return true;
+          if (msg.includes("bad request")) return true;
+          if (msg.includes("could not find") && msg.includes("column")) return true;
+          if (msg.includes("does not exist") && msg.includes("column")) return true;
+          if (msg.includes("invalid input syntax")) return true;
+          return false;
+      }
+
+      function conversaPertenceAoUsuario(data, uid) {
+          const target = String(uid || "").trim();
+          if (!target || !data || typeof data !== "object") return false;
+          const participantes = getConversaParticipantes(data);
+          if (participantes.some((p) => String(p || "").trim() === target)) return true;
+          for (const [key, value] of Object.entries(data)) {
+              if (!/(uid|participante|usuario|remetente|destinatario|de_?uid|para_?uid)/i.test(String(key || ""))) continue;
+              if (Array.isArray(value)) {
+                  if (value.some((item) => String(item || "").trim() === target)) return true;
+                  continue;
+              }
+              if (String(value || "").trim() === target) return true;
+          }
+          return false;
+      }
+
+      async function safeGetDocsConversa(q, label, fieldKey) {
+          if (fieldKey && conversaFieldCaps[fieldKey] === false) return emptySnap();
+          try {
+              return await withTimeout(getDocs(q), 10000, label || "conversas");
+          } catch (e) {
+              if (fieldKey && (isMissingColumnErr(e) || isConversaFieldErr(e))) {
+                  conversaFieldCaps[fieldKey] = false;
+                  persistConversaFieldCaps();
+                  conversaFieldsDirty = true;
+                  return emptySnap();
+              }
+              if (!fieldKey && (isMissingColumnErr(e) || isConversaFieldErr(e))) return emptySnap();
+              throw e;
+          }
+      }
+
+      async function listarConversasDoUsuario(uid) {
+          if (!uid) return [];
+          const base = collection(db, "conversas");
+          const consultas = conversaFieldCandidates
+              .filter(({ field }) => conversaFieldCaps[field] !== false)
+              .map(({ field, op }) => {
+                  const q = query(base, where(field, op, uid), limit(200));
+                  return { q, label: field, field };
+              });
+
+          const map = new Map();
+          if (consultas.length) {
+              const snaps = await Promise.all(
+                  consultas.map(({ q, label, field }) => safeGetDocsConversa(q, "conversas:" + label, field))
+              );
+              snaps.forEach((snap) => {
+                  (snap?.docs || []).forEach((docSnap) => {
+                      if (!docSnap?.id) return;
+                      map.set(docSnap.id, docSnap);
+                  });
+              });
+          }
+
+          if (!map.size || conversaFieldsDirty) {
+              conversaFieldsDirty = false;
+              const fallbackSnap = await safeGetDocsConversa(query(base, limit(200)), "conversas:fallback");
+              (fallbackSnap?.docs || []).forEach((docSnap) => {
+                  const data = docSnap?.data ? (docSnap.data() || {}) : {};
+                  if (!conversaPertenceAoUsuario(data, uid)) return;
+                  if (!docSnap?.id) return;
+                  map.set(docSnap.id, docSnap);
+              });
+          }
+
+          return Array.from(map.values());
+      }
+
       window.carregarListaConversas = async function() {
           const container = document.getElementById('lista-conversas');
           if(!container) return;
           container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
   
           try {
+              const meUid = currentUserUid || await ensureCurrentUserUid();
+              if (!meUid) {
+                  container.innerHTML = "<p style='text-align:center; padding:20px;'>Fa?a login para ver mensagens.</p>";
+                  return;
+              }
+              if (meUid !== currentUserUid) currentUserUid = meUid;
               // 1) Conversas diretas
-              const qConv = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
-              const snapConv = await getDocs(qConv);
- 
+              const docsConv = await listarConversasDoUsuario(meUid);
+
               // Junta e remove duplicados por outroUid (client-side)
               const map = new Map();
-              for (const d of snapConv.docs) {
+              for (const d of docsConv) {
                   const data = d.data() || {};
-                  const outroUid = (data.participantes || []).find(u => u !== currentUserUid);
+                  const outroUid = getOutroUidConversa(data, meUid);
                   if(!outroUid) continue;
                   const updatedTs = getConversaUpdated(data);
                   const existing = map.get(outroUid);
@@ -7036,6 +7527,16 @@ window.confirmarFinalizacaoPedido = async () => {
   
               container.innerHTML = itens.length ? "" : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
   
+              const userByUid = new Map();
+              await Promise.all(itens.map(async (it) => {
+                  if (it.kind !== 'conversa') return;
+                  const outroUid = String(it.outroUid || '').trim();
+                  if (!outroUid) return;
+                  if (userByUid.has(outroUid)) return;
+                  const dataUser = await getUserCached(outroUid);
+                  userByUid.set(outroUid, dataUser || {});
+              }));
+
               for (const it of itens) {
                   if (it.kind === 'conversa') {
                       const data = it.data;
@@ -7067,15 +7568,14 @@ window.confirmarFinalizacaoPedido = async () => {
                           data.solicitacao_mensagem_target ||
                           outroUid
                       );
-                      const souAlvoReq = String(currentUserUid || '') === String(reqTarget || '');
-                      const souSolicitanteReq = String(currentUserUid || '') === String(reqBy || '');
+                      const souAlvoReq = String(meUid || '') === String(reqTarget || '');
+                      const souSolicitanteReq = String(meUid || '') === String(reqBy || '');
                       const previewText = reqStatus === 'pendente'
                           ? (souAlvoReq ? 'Solicita??o de mensagem recebida' : (souSolicitanteReq ? 'Solicita??o de mensagem pendente' : 'Solicita??o de mensagem'))
                           : (reqStatus === 'recusado'
                               ? (souSolicitanteReq ? 'Solicita??o recusada' : 'Solicita??o recusada')
                               : (lastMsg || 'Toque para conversar'));
-                      const uD = await getDoc(doc(db, "usuarios", outroUid));
-                      const u = uD.exists() ? uD.data() : {};
+                      const u = userByUid.get(outroUid) || {};
                       if (!matchBusca(u.user, lastMsg)) continue;
                       const silenciado = isContatoSilenciado(outroUid);
                       const isSelectedConversa = conversasSelecaoModo && conversasSelecionadas.has(String(it.id));
@@ -7135,12 +7635,47 @@ window.confirmarFinalizacaoPedido = async () => {
         }
     }
 
+    function pickUidFromData(values) {
+        for (const value of values) {
+            const uid = String(value || '').trim();
+            if (uid) return uid;
+        }
+        return '';
+    }
+
     function getDeUid(p) {
-        return p?.deUid || p?.deuid || '';
+        return pickUidFromData([
+            p?.deUid,
+            p?.deuid,
+            p?.de_uid,
+            p?.clienteUid,
+            p?.clienteuid,
+            p?.cliente_uid,
+            p?.uidCliente,
+            p?.uid_cliente,
+            p?.solicitanteUid,
+            p?.solicitante_uid,
+            p?.remetenteUid,
+            p?.remetente_uid
+        ]);
     }
 
     function getParaUid(p) {
-        return p?.paraUid || p?.parauid || '';
+        return pickUidFromData([
+            p?.paraUid,
+            p?.parauid,
+            p?.para_uid,
+            p?.prestadorUid,
+            p?.prestadoruid,
+            p?.prestador_uid,
+            p?.profissionalUid,
+            p?.profissionaluid,
+            p?.profissional_uid,
+            p?.uidPrestador,
+            p?.uid_prestador,
+            p?.destinatarioUid,
+            p?.destinatario_uid
+        ]);
     }
 
     const userCache = new Map();
@@ -7157,12 +7692,13 @@ window.confirmarFinalizacaoPedido = async () => {
         }
     }
 
-    const pedidosFieldCaps = {
-        deUid: true,
-        paraUid: true,
-        deuid: true,
-        parauid: true
+    const pedidosFieldCandidates = {
+        de: ['deUid', 'deuid', 'de_uid', 'clienteUid', 'clienteuid', 'cliente_uid', 'uidCliente', 'uid_cliente', 'solicitanteUid', 'solicitante_uid', 'remetenteUid', 'remetente_uid'],
+        para: ['paraUid', 'parauid', 'para_uid', 'prestadorUid', 'prestadoruid', 'prestador_uid', 'profissionalUid', 'profissionaluid', 'profissional_uid', 'uidPrestador', 'uid_prestador', 'destinatarioUid', 'destinatario_uid']
     };
+    const pedidosFieldCaps = Object.fromEntries(
+        Array.from(new Set([...(pedidosFieldCandidates.de || []), ...(pedidosFieldCandidates.para || [])])).map((field) => [field, true])
+    );
     let pedidosFieldsDirty = false;
     const pedidosFieldResolved = { de: null, para: null };
 
@@ -7192,20 +7728,14 @@ window.confirmarFinalizacaoPedido = async () => {
     async function resolvePedidosField(kind) {
         if (pedidosFieldResolved[kind]) return pedidosFieldResolved[kind];
         const base = collection(db, "pedidos");
-        if (kind === 'de') {
-            const q1 = query(base, where("deUid", "==", currentUserUid), limit(1));
-            await safeGetDocsWithField(q1, 'deUid');
-            if (pedidosFieldCaps.deUid) return (pedidosFieldResolved.de = 'deUid');
-            const q2 = query(base, where("deuid", "==", currentUserUid), limit(1));
-            await safeGetDocsWithField(q2, 'deuid');
-            if (pedidosFieldCaps.deuid) return (pedidosFieldResolved.de = 'deuid');
-        } else {
-            const q1 = query(base, where("paraUid", "==", currentUserUid), limit(1));
-            await safeGetDocsWithField(q1, 'paraUid');
-            if (pedidosFieldCaps.paraUid) return (pedidosFieldResolved.para = 'paraUid');
-            const q2 = query(base, where("parauid", "==", currentUserUid), limit(1));
-            await safeGetDocsWithField(q2, 'parauid');
-            if (pedidosFieldCaps.parauid) return (pedidosFieldResolved.para = 'parauid');
+        const candidates = pedidosFieldCandidates[kind] || [];
+        for (const fieldName of candidates) {
+            const q = query(base, where(fieldName, "==", currentUserUid), limit(1));
+            await safeGetDocsWithField(q, fieldName);
+            if (pedidosFieldCaps[fieldName]) {
+                pedidosFieldResolved[kind] = fieldName;
+                return fieldName;
+            }
         }
         return null;
     }
@@ -7425,7 +7955,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         elStatus.style.color = ""; 
                         elStatus.style.fontWeight = "";
                     } else {
-                        // Status Offline (Texto Cinza Padr?o)
+                        // Status Offline (Texto Cinza Padrão)
                         elStatus.innerText = `Visto por ?ltimo: ${formatarUltimaVez(d.ultimaVezOnline)}`;
                         elStatus.style.color = "#888";
                         elStatus.style.fontWeight = "400";
@@ -7695,7 +8225,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 let btnHtml = "";
 
                 if (jaPago) {
-                    // CASO 1: J� PAGO (Verde para ambos)
+                    // CASO 1: Já PAGO (Verde para ambos)
                     btnHtml = `<button style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold; cursor:default;"><i class='bx bx-check'></i> Pago</button>`;
                 } else if (souEu) {
                     // CASO 2: EU SOU O PROFISSIONAL QUE ENVIOU (Aviso Cinza)
@@ -8073,7 +8603,9 @@ window.confirmarGerarCobranca = async function(){
     }
 
     btnConfirmar.disabled = true;
+    btnConfirmar.classList.add('is-loading');
     btnConfirmar.innerHTML = "Enviando...";
+    await new Promise((resolve) => requestAnimationFrame(resolve));
 
     const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     const nomeProfissional = perfil.user || perfil.nome || "Profissional";
@@ -8112,23 +8644,36 @@ window.confirmarGerarCobranca = async function(){
         alert("Erro ao criar cobran?a.");
     } finally {
         btnConfirmar.disabled = false;
+        btnConfirmar.classList.remove('is-loading');
         btnConfirmar.innerHTML = "Enviar cobran?a";
     }
 };
 
       window.enviarMensagemTexto = async () => {
-          const inp = document.getElementById('inputMsg'); if(!inp.value.trim()) return;
-          const txt = inp.value; inp.value = "";
+          const inp = document.getElementById('inputMsg');
+          const btnSend = document.getElementById('btn-send-txt');
+          if (!inp || !inp.value.trim()) return;
+          if (btnSend?.dataset?.sending === '1') return;
+          const txt = inp.value;
+          inp.value = "";
+          if (btnSend) {
+              btnSend.dataset.sending = '1';
+              btnSend.disabled = true;
+              btnSend.classList.add('is-loading');
+              btnSend.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
+          }
+          await new Promise((resolve) => requestAnimationFrame(resolve));
           try {
               if (!chatIdAtual || !colecaoAtual) {
                 window.dokeAlert ? window.dokeAlert('Abra um chat antes de enviar.') : alert('Abra um chat antes de enviar.');
                 return;
             }
-            const uid = currentUserUid || auth.currentUser?.uid || null;
+            const uid = currentUserUid || auth.currentUser?.uid || await ensureCurrentUserUid();
               if (!uid) {
                   window.dokeAlert ? window.dokeAlert('Fa?a login para enviar mensagens.') : alert('Fa?a login para enviar mensagens.');
                   return;
               }
+              if (!currentUserUid) currentUserUid = String(uid);
               if (isConversaBloqueadaParaEnviar()) {
                   const msg = getMensagemBloqueioConversa();
                   window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
@@ -8158,6 +8703,13 @@ window.confirmarGerarCobranca = async function(){
         } catch (e) {
             console.error(e);
             window.dokeAlert ? window.dokeAlert("Falha ao enviar. Verifique permiss?es (RLS) / colunas do Supabase.") : alert("Falha ao enviar. Verifique permiss?es (RLS).");
+        } finally {
+            if (btnSend) {
+                btnSend.dataset.sending = '0';
+                btnSend.disabled = false;
+                btnSend.classList.remove('is-loading');
+                btnSend.innerHTML = "<i class='bx bxs-send'></i>";
+            }
         }
     };
 
@@ -8337,15 +8889,16 @@ window.confirmarGerarCobranca = async function(){
 
 
     async function abrirConversaComUid(uidOutro) {
-        if (!uidOutro || !currentUserUid) return;
+        const meUid = currentUserUid || await ensureCurrentUserUid();
+        if (!uidOutro || !meUid) return;
+        if (meUid !== currentUserUid) currentUserUid = meUid;
         try {
-            const q = query(collection(db, "conversas"), where("participantes", "array-contains", currentUserUid));
-            const snap = await getDocs(q);
+            const docsConv = await listarConversasDoUsuario(meUid);
             let convo = null;
-            snap.forEach((d) => {
+            docsConv.forEach((d) => {
                 const data = d.data() || {};
-                const parts = Array.isArray(data.participantes) ? data.participantes : [];
-                if (parts.includes(uidOutro)) {
+                const outro = getOutroUidConversa(data, meUid);
+                if (String(outro || '') === String(uidOutro || '')) {
                     const updatedTs = getConversaUpdated(data);
                     if (!convo || updatedTs > (convo.updatedTs || 0)) {
                         convo = { id: d.id, data, updatedTs };
@@ -8353,10 +8906,23 @@ window.confirmarGerarCobranca = async function(){
                 }
             });
             if (!convo) {
+                const nowIso = new Date().toISOString();
                 const payload = {
-                    participantes: [currentUserUid, uidOutro],
-                    dataCriacao: new Date().toISOString(),
-                    dataAtualizacao: new Date().toISOString(),
+                    participantes: [meUid, uidOutro],
+                    participante1: meUid,
+                    participante2: uidOutro,
+                    uid1: meUid,
+                    uid2: uidOutro,
+                    deUid: meUid,
+                    paraUid: uidOutro,
+                    de_uid: meUid,
+                    para_uid: uidOutro,
+                    deuid: meUid,
+                    parauid: uidOutro,
+                    remetenteUid: meUid,
+                    destinatarioUid: uidOutro,
+                    dataCriacao: nowIso,
+                    dataAtualizacao: nowIso,
                     ultimaMensagem: ''
                 };
                 const ref = await addDoc(collection(db, "conversas"), payload);
@@ -8374,11 +8940,12 @@ window.confirmarGerarCobranca = async function(){
         const chatId = params.get('chatId') || params.get('pedidoId');
         const uidOutro = params.get('uid') || params.get('userUid');
 
-        if (uidOutro && currentUserUid) {
+        if (uidOutro) {
             await abrirConversaComUid(uidOutro);
             return;
         }
-        if (!chatId || !currentUserUid) return;
+        const meUid = currentUserUid || await ensureCurrentUserUid();
+        if (!chatId || !meUid) return;
 
         try {
             const pSnap = await getDoc(doc(db, 'pedidos', chatId));
@@ -8388,7 +8955,7 @@ window.confirmarGerarCobranca = async function(){
             // Descobre o outro usu?rio
             const deUid = getDeUid(p);
             const paraUid = getParaUid(p);
-            const outroUid = (deUid === currentUserUid) ? paraUid : deUid;
+            const outroUid = (deUid === meUid) ? paraUid : deUid;
 
             // Abre como pedido (isso vai mostrar o status e travar/destravar o chat)
             await window.abrirChat(chatId, outroUid, '', '', 'pedidos', p.status || '');
@@ -8401,6 +8968,14 @@ window.confirmarGerarCobranca = async function(){
     function bootstrapSessionUser(userLike){
         const uid = String(userLike?.uid || userLike?.id || '').trim();
         if (!uid) return false;
+        if (window.__dokeChatBootUid === uid) {
+            currentUserUid = uid;
+            startSidebarBadges();
+            if (abaAtual === 'pedidos') ensurePedidosLoaded({ force: true });
+            else ensureConversasLoaded({ force: true });
+            return true;
+        }
+        window.__dokeChatBootUid = uid;
         currentUserUid = uid;
         try {
             localStorage.setItem('usuarioLogado', 'true');
@@ -8417,7 +8992,8 @@ window.confirmarGerarCobranca = async function(){
         });
         startSidebarBadges();
         startPedidosRealtime();
-        carregarListaPedidos();
+        if (abaAtual === 'pedidos') carregarListaPedidos();
+        else if (window.carregarListaConversas) window.carregarListaConversas();
         abrirChatDeepLink();
         return true;
     }
@@ -8428,6 +9004,15 @@ window.confirmarGerarCobranca = async function(){
                 const { data, error } = await window.sb.auth.getSession();
                 if (!error && data?.session?.user) return data.session.user;
             }
+            if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+                try {
+                    const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+                    if (restored && typeof window.sb.auth.getSession === "function") {
+                        const retry = await window.sb.auth.getSession();
+                        if (!retry?.error && retry?.data?.session?.user) return retry.data.session.user;
+                    }
+                } catch (_) {}
+            }
             if (typeof window.sb.auth.getUser !== "function") return null;
             const { data, error } = await window.sb.auth.getUser();
             if (error) return null;
@@ -8436,40 +9021,36 @@ window.confirmarGerarCobranca = async function(){
             return null;
         }
     }
-    onAuthStateChanged(auth, async (u) => {
+    subscribeAuthStateCompat(async (u) => {
         if (bootstrapSessionUser(u)) return;
+        const compatUser = await resolveAuthUserCompat();
+        if (bootstrapSessionUser(compatUser)) return;
         const sbUser = await getSupabaseSessionUser();
         if (bootstrapSessionUser(sbUser)) return;
-        const uidLocal = localStorage.getItem('doke_uid');
-        const logadoLocal = localStorage.getItem('usuarioLogado') === 'true';
-        const tinhaSessaoRecente = !!uidLocal && logadoLocal;
-        if (!tinhaSessaoRecente) {
-            renderHeaderUser(null);
-            window.location.href = "login.html";
-            return;
-        }
+        const cachedUid = await ensureCurrentUserUid({ bootstrap: true });
+        if (cachedUid) return;
         renderHeaderUser(null);
         if (authFallbackTimer) clearTimeout(authFallbackTimer);
         authFallbackTimer = setTimeout(async () => {
             if (bootstrapSessionUser(auth.currentUser)) return;
+            const lateCompatUser = await resolveAuthUserCompat();
+            if (bootstrapSessionUser(lateCompatUser)) return;
             const lateSbUser = await getSupabaseSessionUser();
             if (bootstrapSessionUser(lateSbUser)) return;
+            const lateCachedUid = await ensureCurrentUserUid({ bootstrap: true });
+            if (lateCachedUid) return;
             window.location.href = "login.html";
-        }, 900);
+        }, 2200);
     });
 
     document.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-            if (!currentUserUid) {
-                const uid = getUserUid();
-                if (uid) currentUserUid = uid;
-            }
-            ensurePedidosLoaded();
+        setTimeout(async () => {
+            await resyncChatState('domcontentloaded', { force: true });
         }, 800);
     });
 
     window.addEventListener('focus', () => {
-        if (abaAtual === 'pedidos') ensurePedidosLoaded();
+        resyncChatState('focus', { force: false });
     });
 
     // --- VARI�VEIS GLOBAIS PARA �UDIO ---
@@ -8487,7 +9068,7 @@ window.iniciarGravacao = async function() {
     }
     // Verifica suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Seu navegador n?o suporta grava??o de ?udio.");
+        alert("Seu navegador n?o suporta grava??o de áudio.");
         return;
     }
 
@@ -8520,7 +9101,7 @@ window.iniciarGravacao = async function() {
 
     } catch (err) {
         console.error("Erro ao acessar microfone:", err);
-        alert("Permita o uso do microfone para gravar ?udio.");
+        alert("Permita o uso do microfone para gravar áudio.");
     }
 }
 
@@ -8539,7 +9120,7 @@ window.cancelarGravacao = function() {
     document.getElementById('area-input-texto').style.display = 'flex';
 }
 
-// 3. Enviar ?udio (Salvar no Firebase)
+// 3. Enviar áudio (Salvar no Firebase)
 window.enviarAudio = function() {
     if (!window.mediaRecorder) return;
     if (isConversaBloqueadaParaEnviar()) {
@@ -8548,10 +9129,10 @@ window.enviarAudio = function() {
         return;
     }
 
-    // Quando o ?udio estiver pronto (evento onstop do recorder)
+    // Quando o áudio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
-        // Cria o arquivo de ?udio (Blob)
-        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padr?o web
+        // Cria o arquivo de áudio (Blob)
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padrão web
         const gravacaoInicio = Number(window.audioRecordStartedAt || 0);
         const duracaoAudioSec = gravacaoInicio > 0
             ? Math.max(1, Math.round((Date.now() - gravacaoInicio) / 1000))
@@ -8579,7 +9160,7 @@ window.enviarAudio = function() {
             const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
             const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
             if (!storage || !mkRef || !uploadFn || !getUrlFn) {
-                throw new Error("Storage indispon?vel para ?udio.");
+                throw new Error("Storage indispon?vel para áudio.");
             }
             const nomeArquivo = `audios/${chatIdAtual}/${Date.now()}.webm`;
             const storageRef = mkRef(storage, nomeArquivo);
@@ -8591,7 +9172,7 @@ window.enviarAudio = function() {
             const textoAudio = applyReplyMetaToText("Mensagem de voz");
             await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
                 tipo: 'audio',
-                url: downloadUrl, // Link do ?udio
+                url: downloadUrl, // Link do áudio
                 texto: textoAudio, // Texto de fallback + reply meta
                 duracaoSegundos: duracaoAudioSec,
                 senderUid: user.uid,
@@ -8620,8 +9201,8 @@ window.enviarAudio = function() {
             cancelarResposta();
 
         } catch (e) {
-            console.error("Erro no upload do ?udio:", e);
-            alert("Erro ao enviar ?udio.");
+            console.error("Erro no upload do áudio:", e);
+            alert("Erro ao enviar áudio.");
         } finally {
             btnSend.innerHTML = "<i class='bx bxs-send'></i>"; // Volta icone normal
         }
@@ -8688,7 +9269,7 @@ window.fecharGaleria = function(event) {
     }
 }
 
-// 4. Fun??o para Tocar ?udio (Player customizado)
+// 4. Fun??o para Tocar áudio (Player customizado)
 window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
     const audio = new Audio(url);
     const icon = btn.querySelector('i');
@@ -8797,9 +9378,17 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 <script>
   (function(){
+    function triggerChatResync(reason, force){
+      try {
+        if (typeof window.__dokeChatResync === 'function') {
+          window.__dokeChatResync({ reason: reason || 'unknown', force: !!force });
+        }
+      } catch (_) {}
+    }
+
     function recoverPageScroll(){
       try{
         document.documentElement.classList.remove('no-scroll');
@@ -8815,20 +9404,37 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
       }catch(_){}
     }
 
-    window.addEventListener('pageshow', recoverPageScroll);
-    window.addEventListener('focus', recoverPageScroll);
+    window.addEventListener('pageshow', (ev) => {
+      recoverPageScroll();
+      triggerChatResync('pageshow', !!ev?.persisted);
+    });
+    window.addEventListener('focus', () => {
+      recoverPageScroll();
+      triggerChatResync('focus', false);
+    });
     document.addEventListener('visibilitychange', () => {
-      if (!document.hidden) recoverPageScroll();
+      if (!document.hidden) {
+        recoverPageScroll();
+        triggerChatResync('visibilitychange', false);
+      }
     });
     if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', recoverPageScroll);
+      document.addEventListener('DOMContentLoaded', () => {
+        recoverPageScroll();
+        triggerChatResync('domcontentloaded', true);
+      });
     } else {
       recoverPageScroll();
+      triggerChatResync('init', true);
     }
   })();
 </script>
 </body>
 </html>
+
+
+
+
 
 
 

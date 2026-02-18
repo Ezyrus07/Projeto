@@ -1,12 +1,12 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260217v13"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Solicitar Or&ccedil;amento | Doke</title>
@@ -14,7 +14,7 @@
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260215v9"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
 <style>/* ==========================================================================
    P?f?GINA DE OR??AMENTO
    ========================================================================== */
@@ -803,7 +803,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N�o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -1080,10 +1080,12 @@ body[data-page="orcamento"] main.main-orcamento::after{
 </a>
 </nav>
 <script>
-    // 1. IMPORTA???.ES NECESS?f?RIAS (inicializadas ap?f?s carregar script.js?v=20260215v9)
+    // 1. IMPORTA???.ES NECESS?f?RIAS (inicializadas ap?f?s carregar script.js?v=20260218v60)
     let doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc;
     let getStorage, ref, uploadBytes, getDownloadURL;
     let onAuthStateChanged;
+    let dokeResolveAuthUser;
+    let dokeEnsureAuthUserFromCacheSync;
 
     function initFirebaseHelpers() {
         if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
@@ -1091,6 +1093,53 @@ body[data-page="orcamento"] main.main-orcamento::after{
         ({ doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc } = window);
         ({ getStorage, ref, uploadBytes, getDownloadURL } = window);
         ({ onAuthStateChanged } = window);
+        dokeResolveAuthUser = window.dokeResolveAuthUser;
+        dokeEnsureAuthUserFromCacheSync = window.dokeEnsureAuthUserFromCacheSync;
+    }
+
+    function getAuthSubscriberSafe() {
+        if (typeof onAuthStateChanged === 'function') return onAuthStateChanged;
+        if (typeof window.onAuthStateChanged === 'function') return window.onAuthStateChanged;
+        if (typeof window.__dokeAuthCompat?.onAuthStateChanged === 'function') return window.__dokeAuthCompat.onAuthStateChanged;
+        return null;
+    }
+
+    async function obterUsuarioAuthSeguro() {
+        try {
+            const direto = window.auth?.currentUser;
+            if (direto?.uid || direto?.id) return direto;
+        } catch (_) {}
+        try {
+            if (typeof dokeResolveAuthUser === 'function') {
+                const resolved = await dokeResolveAuthUser();
+                if (resolved?.uid || resolved?.id) return resolved;
+            }
+        } catch (_) {}
+        try {
+            if (typeof dokeEnsureAuthUserFromCacheSync === 'function') {
+                const cached = dokeEnsureAuthUserFromCacheSync();
+                if (cached?.uid || cached?.id) return cached;
+            }
+        } catch (_) {}
+        return null;
+    }
+
+    function inscreverAuthSeguro(authInstance, callback) {
+        const subscriber = getAuthSubscriberSafe();
+        if (typeof subscriber === 'function') {
+            try {
+                return subscriber(authInstance || window.auth || {}, callback);
+            } catch (_) {}
+        }
+        Promise.resolve()
+            .then(() => obterUsuarioAuthSeguro())
+            .then((user) => {
+                try { callback(user || null); } catch (_) {}
+            })
+            .catch(() => {
+                try { callback(null); } catch (_) {}
+            });
+        return null;
     }
 
     // Vari?f?vel para guardar as perguntas carregadas (se houver)
@@ -1917,7 +1966,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const auth = window.auth;
 
         if (!db) {
-            console.warn("Firebase DB n�o carregou. Continuando com fallbacks locais/Supabase.");
+            console.warn("Firebase DB não carregou. Continuando com fallbacks locais/Supabase.");
         }
 
         const urlParams = new URLSearchParams(window.location.search);
@@ -1945,13 +1994,11 @@ body[data-page="orcamento"] main.main-orcamento::after{
         }
 
         // C. Bloqueia APENAS se for o pr?f?prio dono tentando pedir or?f?amento pra si mesmo
-        if (auth && typeof onAuthStateChanged === 'function') {
-            onAuthStateChanged(auth, (user) => {
-                if (user && prestadorUid && user.uid === prestadorUid) {
-                    bloquearBotaoProprioAnuncio();
-                }
-            });
-        }
+        inscreverAuthSeguro(auth, (user) => {
+            if (user && prestadorUid && String(user.uid || user.id || '') === String(prestadorUid || '')) {
+                bloquearBotaoProprioAnuncio();
+            }
+        });
 
         if (refPedidoId) {
             await carregarPedidoReferencia(db, refPedidoId);
@@ -2114,9 +2161,15 @@ body[data-page="orcamento"] main.main-orcamento::after{
             const db = window.db;
             const auth = window.auth;
             
-            const user = auth.currentUser;
+            let user = auth?.currentUser || null;
 
-            if (!user) { alert("Fa\u00e7a login para continuar."); return; }
+            if (!user && typeof dokeResolveAuthUser === 'function') {
+                try { user = await dokeResolveAuthUser(); } catch (_) { user = null; }
+            }
+            if (!user && typeof dokeEnsureAuthUserFromCacheSync === 'function') {
+                try { user = dokeEnsureAuthUserFromCacheSync(); } catch (_) { user = null; }
+            }
+            if (!user) { alert("Fa?a login para continuar."); return; }
 
             const params = new URLSearchParams(window.location.search);
             const paraUid = params.get('uid');
@@ -2597,7 +2650,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 <script>
 document.addEventListener('keydown', function(evt){
     if (evt.key === 'Escape') fecharAnexoPreview();
@@ -2605,5 +2658,13 @@ document.addEventListener('keydown', function(evt){
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 

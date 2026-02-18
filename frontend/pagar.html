@@ -1,23 +1,23 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260217v13"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Finalizar Pagamento | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260215v9"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <style>
         /* ======================================================
-           ESTILOS ESPECÍFICOS DE PAGAMENTO
+           ESTILOS ESPECÃFICOS DE PAGAMENTO
            ====================================================== */
         body { background-color: #f4f6f8; }
 
@@ -119,11 +119,78 @@
         }
 
         /* --- OVERLAY DE PROCESSAMENTO --- */
-.payment-loader-overlay {
-    display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255,255,255,0.95); z-index: 10000;
-    flex-direction: column; align-items: center; justify-content: center;
-    text-align: center; backdrop-filter: blur(8px);
+.payment-loader-overlay{
+    display:none;
+    position:fixed;
+    inset:0;
+    width:100%;
+    height:100%;
+    background:#ffffff;
+    z-index:10000;
+    align-items:center;
+    justify-content:center;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(16px, env(safe-area-inset-bottom));
+    text-align:center;
+}
+.payment-loader-card{
+    width: min(560px, 92vw);
+    background: #fff;
+    border: 1px solid rgba(2,6,23,0.08);
+    border-radius: 22px;
+    padding: 26px 22px 20px;
+    box-shadow: 0 24px 60px rgba(2,6,23,0.14);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+.payment-loader-card{
+    width: min(560px, 92vw);
+    background: #fff;
+    border: 1px solid rgba(2,6,23,0.08);
+    border-radius: 22px;
+    padding: 26px 22px 20px;
+    box-shadow: 0 24px 60px rgba(2,6,23,0.14);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+.payment-loader-card{
+    width: min(560px, 92vw);
+    background: #fff;
+    border: 1px solid rgba(2,6,23,0.08);
+    border-radius: 22px;
+    padding: 26px 22px 20px;
+    box-shadow: 0 24px 60px rgba(2,6,23,0.14);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+.payment-loader-card{
+    width: min(560px, 92vw);
+    background: #fff;
+    border: 1px solid rgba(2,6,23,0.08);
+    border-radius: 22px;
+    padding: 26px 22px 20px;
+    box-shadow: 0 24px 60px rgba(2,6,23,0.14);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+.payment-loader-card{
+    width: min(560px, 92vw);
+    background: #fff;
+    border: 1px solid rgba(2,6,23,0.08);
+    border-radius: 22px;
+    padding: 26px 22px 20px;
+    box-shadow: 0 24px 60px rgba(2,6,23,0.14);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
 }
 
 .loader-circle {
@@ -144,7 +211,7 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* --- Cart�es salvos (pagar.html) --- */
+    /* --- Cartï¿½es salvos (pagar.html) --- */
 .saved-cards-panel{
   background:#fff;
   border:1px solid #eef2f7;
@@ -215,6 +282,14 @@
   opacity:1;
 }
 
+
+/* Payment Overlay Polish */
+@media (max-width: 480px){
+  .payment-loader-card{ padding: 22px 16px 16px; border-radius: 18px; }
+  .payment-status-text{ font-size: 1.25rem; }
+  .success-icon{ font-size: 86px; }
+  .loader-circle{ width: 70px; height: 70px; border-width: 7px; }
+}
 </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -227,14 +302,14 @@
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
 </head>
-<body>
+<body data-page="pagar">
 <div class="popup" id="popup">
 <div class="popup-content">
 <span class="close-btn" onclick="fecharPopup()">&times;</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N�o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -437,10 +512,12 @@
 </div>
 </div>
 <div class="payment-loader-overlay" id="loaderPagamento">
-<div class="loader-circle" id="circuloLoader"></div>
-<i class="bx bxs-check-circle success-icon" id="iconeSucesso"></i>
-<div class="payment-status-text" id="textoStatus">Processando Pagamento...</div>
-<p id="subTextoStatus" style="color:#666;">Por favor, n&atilde;o feche esta janela.</p>
+  <div class="payment-loader-card">
+    <div class="loader-circle" id="circuloLoader"></div>
+    <i class="bx bxs-check-circle success-icon" id="iconeSucesso"></i>
+    <div class="payment-status-text" id="textoStatus">Processando Pagamento...</div>
+    <p id="subTextoStatus" style="color:#666;">Por favor, não feche esta janela.</p>
+  </div>
 </div>
 </main>
 <script src="doke-payments-store.js?v=20260216v1"></script>
@@ -625,7 +702,7 @@
         let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas') || pagamentoTemp.parcelas) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
-        // Remove tudo que n�o for n�mero ou v�rgula
+        // Remove tudo que não for n�mero ou v�rgula
         let valorLimpo = valorBruto.replace(/[^\d,]/g, ''); 
         // Se tiver v�rgula, troca por ponto para o JS entender
         valorLimpo = valorLimpo.replace(',', '.');
@@ -633,7 +710,7 @@
         // Corrige caso o n�mero venha sem centavos (ex: "23" vira 23)
         // Mas se vier "23.00" (milhar) precisa tratar. 
         // Assumindo padr�o brasileiro: ultimos 2 digitos s�o centavos se tiver pontua��o?
-        // Simplifica��o: Se o valor veio do prompt do script.js?v=20260215v9, ele est� formatado como "23,00".
+        // Simplifica��o: Se o valor veio do prompt do script.js?v=20260218v60, ele est� formatado como "23,00".
         
         valorGlobalParaSalvar = parseFloat(valorLimpo);
         if (isNaN(valorGlobalParaSalvar)) valorGlobalParaSalvar = 0;
@@ -940,7 +1017,7 @@
         };
         initSavedCardsUI();
 
-        // --- L�GICA DE CONFIRMA�ÃO DE PAGAMENTO ---
+        // --- L�GICA DE CONFIRMAï¿½ÃƒO DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
         if (!btnFinalizar) return;
         btnFinalizar.addEventListener('click', async () => {
@@ -1076,8 +1153,16 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 

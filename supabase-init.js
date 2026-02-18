@@ -330,7 +330,9 @@ if (!key || key.startsWith("sb_publishable")) {
     if (needsRefresh && typeof window.sb.auth.refreshSession === "function") {
       const { error } = await window.sb.auth.refreshSession();
       if (error) {
-        try { await window.sb.auth.signOut(); } catch(_e) {}
+        // Nao derrubar sessao automaticamente em falha transitória de refresh.
+        // Isso evita loop de logout/401 ao navegar entre páginas.
+        try { console.warn("[DOKE] refreshSession falhou; mantendo sessao local.", error); } catch(_e) {}
         try {
           const ref = (EXPECTED_REF || (new URL(DEFAULT_URL)).hostname.split(".")[0]);
           localStorage.removeItem(`sb-${ref}-auth-token`);
@@ -753,4 +755,3 @@ if (!key || key.startsWith("sb_publishable")) {
   setTimeout(patchClient, 0);
   setTimeout(patchClient, 1000);
 })();
-

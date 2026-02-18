@@ -58,9 +58,8 @@ const FORWARD_HEADER_ALLOWLIST = new Set([
   "authorization",
   "prefer",
   "range",
-  "x-client-info",
-  "x-application-name",
 ]);
+const MAX_FORWARDED_HEADER_CHARS = 8192;
 
 const MIME = {
   ".html": "text/html; charset=utf-8",
@@ -88,8 +87,17 @@ function safePath(urlPath) {
 }
 
 function send(res, status, body, headers = {}) {
-  res.writeHead(status, { "Cache-Control": "no-store", ...CORS_HEADERS, ...headers });
-  res.end(body);
+  if (!res || res.writableEnded) return;
+  const payload = body == null ? "" : body;
+  const outHeaders = { "Cache-Control": "no-store", ...CORS_HEADERS, ...headers };
+  try {
+    if (!res.headersSent) {
+      res.writeHead(status, outHeaders);
+    }
+    if (!res.writableEnded) {
+      res.end(payload);
+    }
+  } catch (_) {}
 }
 
 function serveStatic(req, res) {
@@ -103,7 +111,8 @@ function serveStatic(req, res) {
   } catch (_) {}
 
   if ((req.url || "/") === "/" || rel === "") {
-    filePath = path.join(ROOT, "index.html");
+    const rootIndex = path.join(ROOT, "index.html");
+    filePath = fs.existsSync(rootIndex) ? rootIndex : path.join(ROOT, "frontend", "index.html");
   }
 
   fs.readFile(filePath, (err, data) => {
@@ -133,7 +142,18 @@ function safeHeaders(inHeaders, upstreamHost) {
     const key = String(k).toLowerCase();
     if (!FORWARD_HEADER_ALLOWLIST.has(key)) continue;
     if (v == null) continue;
-    out[key] = v;
+    let value = Array.isArray(v) ? v.join(",") : String(v);
+    if (!value) continue;
+    if (value.length > MAX_FORWARDED_HEADER_CHARS) {
+      value = value.slice(0, MAX_FORWARDED_HEADER_CHARS);
+    }
+    if (key === "authorization") {
+      const token = value.replace(/^Bearer\s+/i, "").trim();
+      if (!/^[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+\.[A-Za-z0-9\-_]+$/.test(token)) {
+        continue;
+      }
+    }
+    out[key] = value;
   }
   out.host = upstreamHost;
   delete out.connection;
@@ -174,6 +194,9 @@ function proxyToSupabase(req, res) {
   const canRetry = isIdempotentMethod(method);
   const maxAttempts = canRetry ? 3 : 1;
   let attempt = 0;
+  let settled = false;
+  let retryTimer = null;
+  let activeReq = null;
 
   const baseOptions = {
     protocol: upstream.protocol,
@@ -185,14 +208,51 @@ function proxyToSupabase(req, res) {
     agent: UPSTREAM_AGENT,
   };
 
+  const clearRetryTimer = () => {
+    if (retryTimer) {
+      clearTimeout(retryTimer);
+      retryTimer = null;
+    }
+  };
+
+  const settle = () => {
+    settled = true;
+    clearRetryTimer();
+  };
+
+  const scheduleRetry = () => {
+    if (!canRetry || settled || retryTimer) return;
+    retryTimer = setTimeout(() => {
+      retryTimer = null;
+      if (settled) return;
+      forward();
+    }, 120 * attempt);
+  };
+
+  req.on("aborted", () => {
+    settle();
+    try { activeReq && activeReq.destroy(); } catch (_) {}
+  });
+
+  res.on("close", () => {
+    settle();
+    try { activeReq && activeReq.destroy(); } catch (_) {}
+  });
+
   const forward = () => {
+    if (settled) return;
     attempt += 1;
     const options = { ...baseOptions };
     const pReq = https.request(options, (pRes) => {
+      if (settled) {
+        pRes.resume();
+        return;
+      }
+
       const statusCode = Number(pRes.statusCode || 0);
       if (canRetry && attempt < maxAttempts && shouldRetryProxyStatus(statusCode)) {
         pRes.resume();
-        setTimeout(forward, 120 * attempt);
+        scheduleRetry();
         return;
       }
 
@@ -203,19 +263,41 @@ function proxyToSupabase(req, res) {
       outHeaders["access-control-allow-origin"] = "*";
       outHeaders["access-control-allow-headers"] = CORS_HEADERS["Access-Control-Allow-Headers"];
       outHeaders["access-control-allow-methods"] = CORS_HEADERS["Access-Control-Allow-Methods"];
-      res.writeHead(pRes.statusCode || 502, outHeaders);
+
+      if (res.writableEnded || res.headersSent) {
+        pRes.resume();
+        settle();
+        return;
+      }
+
+      try {
+        res.writeHead(pRes.statusCode || 502, outHeaders);
+      } catch (_) {
+        pRes.resume();
+        settle();
+        return;
+      }
       pRes.pipe(res);
+      pRes.on("end", () => settle());
+      pRes.on("error", (e) => {
+        if (settled) return;
+        settle();
+        send(res, 502, `Proxy stream error: ${e && e.message ? e.message : String(e)}`);
+      });
     });
+    activeReq = pReq;
 
     pReq.setTimeout(UPSTREAM_TIMEOUT_MS, () => {
       pReq.destroy(new Error("upstream_timeout"));
     });
 
     pReq.on("error", (e) => {
+      if (settled) return;
       if (canRetry && attempt < maxAttempts && shouldRetryProxyError(e)) {
-        setTimeout(forward, 120 * attempt);
+        scheduleRetry();
         return;
       }
+      settle();
       send(res, 502, `Proxy error: ${e && e.message ? e.message : String(e)}`);
     });
 

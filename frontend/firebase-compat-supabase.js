@@ -60,6 +60,187 @@
     return isClient(candidate) ? candidate : null;
   };
 
+  function safeJsonParse(raw){
+    try { return JSON.parse(raw); } catch (_e) { return null; }
+  }
+
+  function readCookie(name){
+    try {
+      const needle = `${name}=`;
+      const parts = String(document.cookie || "").split(";");
+      for (const p of parts) {
+        const item = String(p || "").trim();
+        if (item.startsWith(needle)) return decodeURIComponent(item.slice(needle.length));
+      }
+    } catch (_e) {}
+    return "";
+  }
+
+  function decodeJwtPayload(token){
+    try {
+      const parts = String(token || "").split(".");
+      if (parts.length < 2) return null;
+      const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+      const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+      return JSON.parse(atob(b64 + pad));
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  function isJwtFreshEnough(token, skewMs){
+    const raw = String(token || "").trim();
+    if (!raw) return false;
+    const payload = decodeJwtPayload(raw);
+    const expMs = Number(payload?.exp || 0) * 1000;
+    if (!expMs) return true;
+    const skew = Math.max(5000, Number(skewMs) || 15000);
+    return expMs > (Date.now() + skew);
+  }
+
+  function extractSessionCandidate(raw){
+    let source = raw;
+    if (typeof source === "string") {
+      source = safeJsonParse(source);
+      if (typeof source === "string") source = safeJsonParse(source);
+    }
+    if (!source || typeof source !== "object") return null;
+    const bag = [
+      source,
+      source.currentSession,
+      source.session,
+      source.data?.session,
+      source.currentSession?.session,
+      source.data
+    ].filter(Boolean);
+    for (const candidate of bag) {
+      if (!candidate || typeof candidate !== "object") continue;
+      const accessToken = String(
+        candidate.access_token ||
+        candidate.accessToken ||
+        source.access_token ||
+        source.accessToken ||
+        ""
+      ).trim();
+      if (!accessToken) continue;
+      const refreshToken = String(
+        candidate.refresh_token ||
+        candidate.refreshToken ||
+        source.refresh_token ||
+        source.refreshToken ||
+        ""
+      ).trim();
+      return {
+        access_token: accessToken,
+        refresh_token: refreshToken || null,
+        expires_at: candidate.expires_at || source.expires_at || null,
+        user: candidate.user || source.user || null
+      };
+    }
+    return null;
+  }
+
+  function collectStoredSessionCandidates(){
+    const out = [];
+    const push = (sessionLike) => {
+      const s = extractSessionCandidate(sessionLike);
+      if (!s?.access_token) return;
+      const key = `${s.access_token}::${s.refresh_token || ""}`;
+      if (out.some((item) => item.__k === key)) return;
+      out.push({ ...s, __k: key });
+    };
+
+    try {
+      const keys = Object.keys(localStorage || {}).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+      for (const k of keys) push(localStorage.getItem(k));
+    } catch (_e) {}
+    try { push(localStorage.getItem("doke_auth_session_backup")); } catch (_e) {}
+    try { push(readCookie("doke_dev_session")); } catch (_e) {}
+
+    return out.map(({ __k, ...rest }) => rest);
+  }
+
+  function isAuthDeniedError(error){
+    if (!error) return false;
+    const status = Number(error?.status || 0);
+    const code = String(error?.code || "").toLowerCase();
+    const msg = String(error?.message || error?.details || error?.hint || "").toLowerCase();
+    if (status === 401 || status === 403) return true;
+    if (code === "42501" || code === "pgrst301") return true;
+    if (msg.includes("unauthorized") || msg.includes("not authenticated")) return true;
+    if (msg.includes("permission denied") || msg.includes("row-level security") || msg.includes("rls")) return true;
+    if (msg.includes("jwt") && (msg.includes("expired") || msg.includes("invalid") || msg.includes("missing"))) return true;
+    return false;
+  }
+
+  let __dokeEnsureAuthPromise = null;
+  let __dokeEnsureAuthAt = 0;
+
+  async function ensureAuthSession(opts){
+    const force = !!(opts && opts.force === true);
+    const maxAgeMs = Math.max(700, Number(opts?.maxAgeMs) || 2500);
+    const now = Date.now();
+    if (!force && __dokeEnsureAuthPromise && (now - __dokeEnsureAuthAt) < maxAgeMs) {
+      return __dokeEnsureAuthPromise;
+    }
+    __dokeEnsureAuthAt = now;
+    __dokeEnsureAuthPromise = (async () => {
+      const client = getClient();
+      if (!client?.auth?.getSession) return null;
+
+      const readCurrentSession = async () => {
+        try {
+          const res = await client.auth.getSession();
+          const session = res?.data?.session || null;
+          const token = String(session?.access_token || "").trim();
+          if (!token) return null;
+          if (!isJwtFreshEnough(token, 10000) && force !== true) return null;
+          return session;
+        } catch (_e) {
+          return null;
+        }
+      };
+
+      const current = await readCurrentSession();
+      if (current?.access_token) return current;
+
+      if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+        try {
+          const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+          if (restored) {
+            const retry = await readCurrentSession();
+            if (retry?.access_token) return retry;
+          }
+        } catch (_e) {}
+      }
+
+      if (typeof client?.auth?.setSession === "function") {
+        const candidates = collectStoredSessionCandidates();
+        for (const c of candidates) {
+          const at = String(c?.access_token || "").trim();
+          const rt = String(c?.refresh_token || "").trim();
+          if (!at || !rt) continue;
+          try {
+            const setRes = await client.auth.setSession({ access_token: at, refresh_token: rt });
+            const setSession = setRes?.data?.session || null;
+            if (setSession?.access_token) return setSession;
+            const retry = await readCurrentSession();
+            if (retry?.access_token) return retry;
+          } catch (_e) {}
+        }
+      }
+      return null;
+    })();
+
+    try {
+      return await __dokeEnsureAuthPromise;
+    } finally {
+      setTimeout(() => {
+        __dokeEnsureAuthPromise = null;
+      }, 0);
+    }
+  }
+
   // ------------------------
   // Helpers
   // ------------------------
@@ -346,6 +527,7 @@
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!q || !q.table) return makeQuerySnap([]);
     if (isSupaTemporarilyDown()) return makeQuerySnap([]);
+    try { await ensureAuthSession({ force: false }); } catch (_e) {}
     const clauses = (q.clauses || []);
     const whereClauses = clauses.filter(c => c && c.kind === "where");
     const orderClauses = clauses.filter(c => c && c.kind === "orderBy");
@@ -475,6 +657,7 @@
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return makeDocSnap(null);
     if (isSupaTemporarilyDown()) return makeDocSnap(null);
+    try { await ensureAuthSession({ force: false }); } catch (_e) {}
 
     const parent = (ref && ref.parent && ref.parent.id) ? ref.parent : null;
     const fks = parent ? ((parent.fks && parent.fks.length) ? parent.fks : (parent.fk ? [parent.fk] : [])) : [];
@@ -530,59 +713,88 @@
     const table = coll?.table;
     if (!table) throw new Error("Tabela nao informada em collection().");
 
-    const finalPayload = normalizePayload(payload);
-    if ((table === 'pedidos_mensagens' || table === 'conversas_mensagens') && finalPayload.senderuid != null) {
-      delete finalPayload.senderUid;
-      delete finalPayload.sender_uid;
-    }
-
-    if (coll.parent && coll.parent.id) {
-      const fks = (coll.parent.fks && coll.parent.fks.length) ? coll.parent.fks : (coll.parent.fk ? [coll.parent.fk] : []);
-      if (fks.length > 1) {
-        let lastErr = null;
-        for (const fk of fks) {
-          const attempt = { ...finalPayload };
-          for (const other of fks) {
-            if (other !== fk) delete attempt[other];
-          }
-          attempt[fk] = coll.parent.id;
-          try {
-            const { data } = await insertWithMissingColumnRetry(client, table, attempt);
-            return { id: data?.id, _raw: data };
-          } catch (error) {
-            const missing = parseMissingColumn(error);
-            if (missing && String(missing).toLowerCase() === String(fk).toLowerCase()) {
-              lastErr = error;
-              continue;
-            }
-            throw error;
-          }
-        }
-        if (lastErr) throw lastErr;
-      } else {
-        for (const fk of fks) finalPayload[fk] = coll.parent.id;
+    const runInsert = async () => {
+      const finalPayload = normalizePayload(payload);
+      if ((table === 'pedidos_mensagens' || table === 'conversas_mensagens') && finalPayload.senderuid != null) {
+        delete finalPayload.senderUid;
+        delete finalPayload.sender_uid;
       }
-    }
 
-    const { data } = await insertWithMissingColumnRetry(client, table, finalPayload);
-    return { id: data?.id, _raw: data };
+      if (coll.parent && coll.parent.id) {
+        const fks = (coll.parent.fks && coll.parent.fks.length) ? coll.parent.fks : (coll.parent.fk ? [coll.parent.fk] : []);
+        if (fks.length > 1) {
+          let lastErr = null;
+          for (const fk of fks) {
+            const attempt = { ...finalPayload };
+            for (const other of fks) {
+              if (other !== fk) delete attempt[other];
+            }
+            attempt[fk] = coll.parent.id;
+            try {
+              const { data } = await insertWithMissingColumnRetry(client, table, attempt);
+              return { id: data?.id, _raw: data };
+            } catch (error) {
+              const missing = parseMissingColumn(error);
+              if (missing && String(missing).toLowerCase() === String(fk).toLowerCase()) {
+                lastErr = error;
+                continue;
+              }
+              throw error;
+            }
+          }
+          if (lastErr) throw lastErr;
+        } else {
+          for (const fk of fks) finalPayload[fk] = coll.parent.id;
+        }
+      }
+
+      const { data } = await insertWithMissingColumnRetry(client, table, finalPayload);
+      return { id: data?.id, _raw: data };
+    };
+
+    try {
+      try { await ensureAuthSession({ force: false }); } catch (_e) {}
+      return await runInsert();
+    } catch (error) {
+      if (isAuthDeniedError(error)) {
+        try {
+          const restored = await ensureAuthSession({ force: true, maxAgeMs: 0 });
+          if (restored?.access_token) return await runInsert();
+        } catch (_e) {}
+      }
+      throw error;
+    }
   };
 
   window.setDoc = async function(ref, payload){
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
-    const keyField = pkField(ref.table);
-    const base = { ...(payload||{}) };
-    base[keyField] = ref.id;
-    const up = normalizePayload(base);
-    if (ref.parent && ref.parent.id) {
-      const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
-      for (const fk of fks) up[fk] = ref.parent.id;
-    }
-    try {
+    const runSet = async () => {
+      const keyField = pkField(ref.table);
+      const base = { ...(payload||{}) };
+      base[keyField] = ref.id;
+      const up = normalizePayload(base);
+      if (ref.parent && ref.parent.id) {
+        const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
+        for (const fk of fks) up[fk] = ref.parent.id;
+      }
       await upsertWithMissingColumnRetry(client, ref.table, up);
       return true;
+    };
+    try {
+      try { await ensureAuthSession({ force: false }); } catch (_e) {}
+      await runSet();
+      return true;
     } catch (error) {
+      if (isAuthDeniedError(error)) {
+        try {
+          const restored = await ensureAuthSession({ force: true, maxAgeMs: 0 });
+          if (restored?.access_token) {
+            await runSet();
+            return true;
+          }
+        } catch (_e) {}
+      }
       if (looksLikeNetworkOrCorsError(error)) { markSupaTemporarilyDown(); return true; }
       if (shouldReturnEmpty(error)) return true;
       throw error;
@@ -594,10 +806,24 @@
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
     if (isSupaTemporarilyDown()) return true;
-    try {
+    const runUpdate = async () => {
       await updateWithMissingColumnRetry(client, ref.table, ref.id, normalizePayload(payload));
       return true;
+    };
+    try {
+      try { await ensureAuthSession({ force: false }); } catch (_e) {}
+      await runUpdate();
+      return true;
     } catch (error) {
+      if (isAuthDeniedError(error)) {
+        try {
+          const restored = await ensureAuthSession({ force: true, maxAgeMs: 0 });
+          if (restored?.access_token) {
+            await runUpdate();
+            return true;
+          }
+        } catch (_e) {}
+      }
       if (looksLikeNetworkOrCorsError(error)) { markSupaTemporarilyDown(); return true; }
       if (shouldReturnEmpty(error)) return true;
       throw error;
@@ -608,19 +834,35 @@
     const client = getClient();
     if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
-    let q = client.from(ref.table).delete().eq(pkField(ref.table), ref.id);
-    if (ref.parent && ref.parent.id) {
-      const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
-      if (fks.length === 1) q = q.eq(fks[0], ref.parent.id);
-      else if (fks.length > 1) q = q.or(fks.map(k => `${k}.eq.${ref.parent.id}`).join(','));
-    }
-    const { error } = await q;
-    if (error) {
+    const runDelete = async () => {
+      let q = client.from(ref.table).delete().eq(pkField(ref.table), ref.id);
+      if (ref.parent && ref.parent.id) {
+        const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
+        if (fks.length === 1) q = q.eq(fks[0], ref.parent.id);
+        else if (fks.length > 1) q = q.or(fks.map(k => `${k}.eq.${ref.parent.id}`).join(','));
+      }
+      const { error } = await q;
+      if (error) throw error;
+      return true;
+    };
+    try {
+      try { await ensureAuthSession({ force: false }); } catch (_e) {}
+      await runDelete();
+      return true;
+    } catch (error) {
+      if (isAuthDeniedError(error)) {
+        try {
+          const restored = await ensureAuthSession({ force: true, maxAgeMs: 0 });
+          if (restored?.access_token) {
+            await runDelete();
+            return true;
+          }
+        } catch (_e) {}
+      }
       if (looksLikeNetworkOrCorsError(error)) { markSupaTemporarilyDown(); return true; }
       if (shouldReturnEmpty(error)) return true;
       throw error;
     }
-    return true;
   };
 
   // Minimal Storage compat (Supabase Storage)
@@ -771,5 +1013,4 @@
 
   console.log("[DOKE] Firestore compat carregado.");
 })();
-
 

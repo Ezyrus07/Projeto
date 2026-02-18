@@ -107,11 +107,7 @@
             
             if (error) {
                 console.error('[DOKE FIX] Erro ao obter sessão:', error);
-                
-                // Se der erro de sessão, limpa tudo
-                localStorage.removeItem('doke_usuario_perfil');
-                localStorage.removeItem('usuarioLogado');
-                localStorage.removeItem('doke_uid');
+                // Não limpar login automaticamente em erro transitório de sessão/rede.
                 return;
             }
 
@@ -138,11 +134,7 @@
 
             // Se não tem usuário mas está marcado como logado
             if (!user && localStorage.getItem('usuarioLogado') === 'true') {
-                console.log('[DOKE FIX] Marcado como logado mas sem sessão, limpando...');
-                
-                localStorage.removeItem('doke_usuario_perfil');
-                localStorage.removeItem('usuarioLogado');
-                localStorage.removeItem('doke_uid');
+                console.log('[DOKE FIX] Sessão ausente no momento; mantendo cache local para evitar logout falso.');
             }
 
         } catch (e) {

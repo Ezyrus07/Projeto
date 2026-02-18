@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -11,7 +11,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
 <!-- Supabase (UMD) + init -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260217v13"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
 <style>
     :root{
       --card-radius: 22px;
@@ -456,7 +456,7 @@
         sb = pick();
       }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260217v13");
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260218v43");
       }
       return sb;
     }
@@ -480,7 +480,7 @@ function showMsg(type, text){
       if (type !== "ok" && raw.toLowerCase().includes("failed to fetch")) {
         el.textContent =
           "Falha ao conectar no Supabase (CORS/Projeto pausado/offline). " +
-          "✅ No painel do Supabase: Settings → API → CORS Allowed Origins, adicione " +
+          "✅ No painel do Supabase: Settings â†’ API â†’ CORS Allowed Origins, adicione " +
           "http://localhost:5503 e http://127.0.0.1:5503 (e também 5500 se usar Live Server). " +
           "Se o projeto estiver pausado, clique em Resume. Depois recarregue a página.";
       } else {
@@ -518,6 +518,60 @@ function showMsg(type, text){
 
         const uid = data.user?.id;
         if (!uid) throw new Error("Não foi possível obter seu usuário.");
+        const accessTokenRaw = data?.session?.access_token || "";
+        const refreshTokenRaw = data?.session?.refresh_token || "";
+        if (!accessTokenRaw || !refreshTokenRaw) {
+          throw new Error("Sessão não iniciada. Tente entrar novamente.");
+        }
+
+        try {
+          const accessToken = accessTokenRaw;
+          const refreshToken = refreshTokenRaw;
+          const canonicalSession = data.session || { access_token: accessToken, refresh_token: refreshToken };
+          if (accessToken && refreshToken && typeof supabase.auth.setSession === "function") {
+            await supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken });
+          }
+          if (accessToken && refreshToken) {
+            try { localStorage.setItem("doke_auth_session_backup", JSON.stringify(canonicalSession)); } catch (_) {}
+            try {
+              const upstream = window.DOKE_SUPABASE_PROXY_UPSTREAM || window.DOKE_SUPABASE_URL || window.SUPABASE_URL || "";
+              let ref = upstream ? (new URL(upstream)).hostname.split(".")[0] : "";
+              if (!ref) {
+                try {
+                  const parts = String(accessToken || "").split(".");
+                  const b64 = (parts[1] || "").replace(/-/g, "+").replace(/_/g, "/");
+                  const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+                  const payload = JSON.parse(atob(b64 + pad));
+                  const iss = String(payload?.iss || "").trim();
+                  if (iss) ref = (new URL(iss)).hostname.split(".")[0] || "";
+                  if (!ref && payload?.ref) ref = String(payload.ref).trim();
+                } catch (_) {}
+              }
+              if (ref) localStorage.setItem(`sb-${ref}-auth-token`, JSON.stringify(canonicalSession));
+            } catch (_) {}
+            try {
+              const payload = encodeURIComponent(JSON.stringify({ access_token: accessToken, refresh_token: refreshToken, expires_at: data?.session?.expires_at || null }));
+              document.cookie = `doke_dev_session=${payload}; path=/; max-age=${60 * 60 * 24 * 14}; samesite=lax`;
+            } catch (_) {}
+          }
+        } catch (_) {}
+
+        try {
+          let { data: sessData, error: sessErr } = await supabase.auth.getSession();
+          if ((sessErr || !sessData?.session?.access_token) && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+            try {
+              await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+              const retry = await supabase.auth.getSession();
+              sessData = retry?.data || null;
+              sessErr = retry?.error || null;
+            } catch (_) {}
+          }
+          if (sessErr || !sessData?.session?.access_token) {
+            throw new Error("Sessão não persistiu no navegador.");
+          }
+        } catch (persistErr) {
+          throw persistErr;
+        }
 
         let perfil = null;
         let perfilErr = null;
@@ -564,6 +618,37 @@ function showMsg(type, text){
 
         localStorage.setItem("usuarioLogado", "true");
 
+        try {
+          const savedRaw = localStorage.getItem("doke_saved_accounts") || "[]";
+          let saved = [];
+          try { saved = JSON.parse(savedRaw) || []; } catch (_) { saved = []; }
+          if (!Array.isArray(saved)) saved = [];
+
+          const accountCandidate = {
+            uid: String(perfil?.uid || perfil?.id || uid || "").trim() || null,
+            email: String(data.user?.email || perfil?.email || email || "").trim().toLowerCase() || null,
+            nome: String(perfil?.nome || data.user?.user_metadata?.nome || "").trim() || null,
+            user: String(perfil?.user || perfil?.nome || data.user?.user_metadata?.user || "").trim() || null,
+            foto: String(perfil?.foto || data.user?.user_metadata?.foto || data.user?.user_metadata?.avatar_url || "").trim() || null,
+            isProfissional: perfil?.isProfissional === true || perfil?.tipo === "profissional" || perfil?.role === "profissional",
+            lastUsedAt: new Date().toISOString()
+          };
+
+          const keyUid = String(accountCandidate.uid || "");
+          const keyEmail = String(accountCandidate.email || "").toLowerCase();
+          if (keyUid || keyEmail) {
+            const idx = saved.findIndex((acc) => {
+              const uidMatch = keyUid && String(acc?.uid || "") === keyUid;
+              const emailMatch = keyEmail && String(acc?.email || "").toLowerCase() === keyEmail;
+              return uidMatch || emailMatch;
+            });
+            if (idx >= 0) saved[idx] = { ...saved[idx], ...accountCandidate, lastUsedAt: accountCandidate.lastUsedAt };
+            else saved.push(accountCandidate);
+            saved.sort((a, b) => String(b?.lastUsedAt || "").localeCompare(String(a?.lastUsedAt || "")));
+            localStorage.setItem("doke_saved_accounts", JSON.stringify(saved.slice(0, 6)));
+          }
+        } catch (_) {}
+
         showMsg("ok", "Login realizado! Redirecionando...");
         setTimeout(() => { window.location.href = "index.html"; }, 700);
 
@@ -603,6 +688,11 @@ function showMsg(type, text){
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 </body>
 </html>
+
+
+
+
+

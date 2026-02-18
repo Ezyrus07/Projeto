@@ -1,4 +1,4 @@
-
+﻿
   <link rel="stylesheet" href="doke-toast.css">
   <link rel="stylesheet" href="doke-alerts.css">
   <link rel="stylesheet" href="doke-ux.css">
@@ -74,7 +74,7 @@
 
   async function uploadDocumento(userId, file){
     if(!file) return null;
-    if(!sb || !sb.storage) throw new Error('Supabase Storage n�o dispon�vel.');
+    if(!sb || !sb.storage) throw new Error('Supabase Storage não dispon�vel.');
     const ext = (file.name.split('.').pop()||'jpg').toLowerCase();
     const path = `validacao/${userId}/${Date.now()}.${ext}`;
     const { error: upErr } = await sb.storage.from('perfil').upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
@@ -88,7 +88,7 @@
     if(!user) return;
     if(!sb || !sb.from) return;
 
-    // pega dados j� salvos pra preencher
+    // pega dados já salvos pra preencher
     const { data, error } = await sb.from('profissional_validacao').select('*').eq('user_id', user.id).maybeSingle();
     if(error) return;
     if(!data) return;
@@ -106,7 +106,7 @@
     set('tpNumero', data.numero || '');
     set('tpComplemento', data.complemento || '');
 
-    // CPF n�o pode alterar depois
+    // CPF não pode alterar depois
     const cpfEl = document.getElementById('tpCpf');
     if(cpfEl && data.cpf){ cpfEl.setAttribute('readonly','readonly'); cpfEl.classList.add('locked-field'); }
   }
@@ -144,7 +144,7 @@
     e.preventDefault();
     const user = await getUser();
     if(!user){ toast('Fa�a login para continuar.', 'error'); return; }
-    if(!sb || !sb.from){ toast('Supabase n�o configurado (supabase-init.js?v=20260217v13', 'error'); return; }
+    if(!sb || !sb.from){ toast('Supabase não configurado (supabase-init.js?v=20260218v43', 'error'); return; }
 
     const tel = document.getElementById('tpTelefone')?.value || '';
     const cpf = document.getElementById('tpCpf')?.value || '';
@@ -158,7 +158,7 @@
     const complemento = document.getElementById('tpComplemento')?.value || '';
     const docFile = document.getElementById('tpDocumento')?.files?.[0] || null;
 
-    if(calcIdade(nasc) < 18){ toast('Voc� precisa ter 18 anos ou mais.', 'error'); return; }
+    if(calcIdade(nasc) < 18){ toast('Você precisa ter 18 anos ou mais.', 'error'); return; }
 
     const cpfDigits = onlyDigits(cpf);
     if(cpfDigits.length !== 11){ toast('CPF inv�lido. Preencha corretamente.', 'error'); return; }
@@ -194,7 +194,7 @@
       return;
     }
 
-    // marca no perfil (opcional) para j� travar no anunciar.html
+    // marca no perfil (opcional) para já travar no anunciar.html
     try{
       await sb.from('usuarios').update({ profissional_validado: false, is_profissional: true }).eq('id', user.id);
     }catch(_e){}
@@ -222,6 +222,11 @@
 
   <script src="doke-config.js" defer></script>
   <script src="doke-ux.js" defer></script>
+
+
+
+
+
 
 
 

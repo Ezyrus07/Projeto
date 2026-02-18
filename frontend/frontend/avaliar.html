@@ -1,20 +1,20 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="supabase-init.js?v=20260217v13"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-<script src="firebase-auth-compat-supabase.js?v=20260212v3"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Avaliar Servi�o | Doke</title>
+<title>Avaliar Serviço | Doke</title>
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260215v9"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
 <style>
         body[data-page="avaliar"] {
             background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
@@ -32,14 +32,24 @@
         }
 
         @media (min-width: 1024px) {
-            main { margin-left: 270px; padding: 40px; max-width: 900px; margin: 0 auto; }
+            body[data-page="avaliar"] main{
+                margin-left: var(--sidebar-width, 0px);
+                padding: 40px 24px;
+                max-width: 1200px;
+                margin-right: auto;
+            }
         }
 
         /* --- HEADER AZUL --- */
-        .eval-hero {
+        .eval-hero{
             background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
-            padding: 40px; border-radius: 20px; margin-bottom: -50px;
-            color: white; text-align: center; padding-bottom: 90px;
+            padding: clamp(22px, 4vw, 40px);
+            border-radius: 20px;
+            margin-bottom: -48px;
+            color: #fff;
+            text-align: center;
+            padding-bottom: clamp(64px, 6vw, 90px);
+            box-shadow: 0 16px 40px rgba(2, 6, 23, 0.18);
         }
         .eval-hero h1 { margin: 0; font-size: 1.8rem; font-weight: 800; }
         .eval-hero p { opacity: 0.85; margin-top: 8px; font-size: 0.95rem; }
@@ -63,7 +73,7 @@
         .prof-name { font-size: 1.3rem; font-weight: 700; color: #333; margin: 10px 0 5px 0; }
         .service-info { font-size: 0.9rem; color: #666; background: #f8f9fa; display: inline-block; padding: 6px 15px; border-radius: 20px; margin-top: 5px; }
 
-        /* --- CARD DE CRIT�RIO (INTERATIVO) --- */
+        /* --- CARD DE CRITï¿½RIO (INTERATIVO) --- */
         .criteria-card {
             background: white; border-radius: 16px; padding: 25px;
             margin-bottom: 20px; border: 1px solid #edf2f7;
@@ -117,7 +127,7 @@
         }
         .star-btn:hover { background: #e0e0e0; }
 
-        /* --- CORES ESPECÍFICAS (QUANDO ATIVO) --- */
+        /* --- CORES ESPECÃFICAS (QUANDO ATIVO) --- */
         .star-btn.active[data-val="1"] { 
             background: #ffebee; color: #c62828; border-color: #ffcdd2; font-weight: 800; box-shadow: 0 2px 5px rgba(198, 40, 40, 0.2); 
         }
@@ -245,7 +255,7 @@
         .btn-alert-ok:hover { background: #096356; transform: translateY(-2px); }
 
     
-        /* Microanima��o ao selecionar nota */
+        /* Microanimaï¿½ï¿½o ao selecionar nota */
         @keyframes dokePop {
             0% { transform: scale(0.98); }
             55% { transform: scale(1.08); }
@@ -253,6 +263,14 @@
         }
         .star-btn.active { animation: dokePop 220ms ease-out; }
 
+
+/* Doke Eval Polish */
+@media (max-width: 768px){
+  .eval-container{ padding: 0 14px; }
+  .prof-card{ padding: 22px 16px; border-radius: 18px; }
+  .criteria-card, .final-comment-box{ padding: 18px 14px; border-radius: 16px; }
+  .prof-img{ width:84px; height:84px; margin-top: -54px; }
+}
 </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -272,7 +290,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N�o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -316,22 +334,22 @@
 
 <main style="padding-top: 80px;">
 <div class="eval-hero">
-<h1>Avalia��o de Servi�o</h1>
-<p>Sua opini�o ajuda a manter a qualidade da comunidade.</p>
+<h1>Avaliação de Serviço</h1>
+<p>Sua opinião ajuda a manter a qualidade da comunidade.</p>
 </div>
 <div class="eval-container">
 <div class="prof-card">
 <img class="prof-img" decoding="async" id="imgProf" loading="lazy" src="https://placehold.co/150"/>
 <h2 class="prof-name" id="nomeProf">Carregando...</h2>
-<span class="service-info" id="infoServico">Servi�o realizado em --/--/----</span>
+<span class="service-info" id="infoServico">Serviço realizado em --/--/----</span>
 </div>
 <div class="avaliacao-ja" id="avaliacaoAviso" style="display:none;">
-                Servi�o j� foi avaliado.
-                <small>Voc� n�o pode avaliar este servi�o novamente.</small>
+                Serviço já foi avaliado.
+                <small>Você não pode avaliar este serviço novamente.</small>
 </div>
 <div class="criteria-card overall-card" id="overallCard">
 <div class="cc-header">
-<div class="cc-label"><i class="bx bx-star"></i> Avalia��o Geral</div>
+<div class="cc-label"><i class="bx bx-star"></i> Avaliação Geral</div>
 <div class="cc-rating-area">
 <span class="star-btn" data-val="1" onclick="setGeralRating(1, this)">★</span>
 <span class="star-btn" data-val="2" onclick="setGeralRating(2, this)">★</span>
@@ -354,12 +372,12 @@
 <i class="bx bx-help-circle" style="color:#999; font-size:1.1rem;"></i>
 </label>
 <div class="doke-tooltip-box">
-                        Se marcar esta op��o, seu nome e foto n�o aparecer�o publicamente na avalia��o.
+                        Se marcar esta opção, seu nome e foto não aparecer�o publicamente na avaliação.
                     </div>
 </div>
 </div>
 <button class="btn-submit-eval" onclick="enviarAvaliacao()">
-<i class="bx bx-send"></i> Enviar Avalia��o Completa
+<i class="bx bx-send"></i> Enviar Avaliação Completa
             </button>
 </div>
 </main>
@@ -367,12 +385,12 @@
 <div class="custom-alert-box">
 <div class="alert-icon-circle"><i class="bx bx-check"></i></div>
 <h3 class="alert-title">Sucesso!</h3>
-<p class="alert-desc">Sua avalia��o foi enviada. Obrigado pela colabora��o!</p>
+<p class="alert-desc">Sua avaliação foi enviada. Obrigado pela colabora��o!</p>
 <button class="btn-alert-ok" onclick="fecharAlertERedirecionar()">OK</button>
 </div>
 </div>
 <script>
-        // Helpers: access latest globals from script.js?v=20260215v9 at use-time (avoid early capture)
+        // Helpers: access latest globals from script.js?v=20260218v60 at use-time (avoid early capture)
         const getGlobals = () => ({
             DB: window.db,
             AUTH: window.auth,
@@ -423,7 +441,7 @@
             { id: 'pontualidade', label: 'Pontualidade', icon: 'bx-time-five' },
             { id: 'profissionalismo', label: 'Profissionalismo', icon: 'bx-briefcase-alt-2' },
             { id: 'qualidade', label: 'Qualidade', icon: 'bx-medal' },
-            { id: 'preco', label: 'Pre�o / Valor', icon: 'bx-dollar-circle' },
+            { id: 'preco', label: 'Preço / Valor', icon: 'bx-dollar-circle' },
             { id: 'atendimento', label: 'Atendimento', icon: 'bx-chat' }
         ];
 
@@ -440,7 +458,7 @@
             pedidoId = params.get('pedidoId');
             
             if(!pedidoId) { 
-                alert("Erro: Pedido n�o identificado."); 
+                alert("Erro: Pedido não identificado."); 
                 return; 
             }
 
@@ -455,11 +473,11 @@
                             <div class="cc-header">
                                 <div class="cc-label"><i class='bx ${c.icon}'></i> ${c.label}</div>
                                 <div class="cc-rating-area cc-rating-area-text">
-                                    <span class="star-btn" data-val="1" onclick="setRating('${c.id}', 1, this)">P�ssimo</span>
+                                    <span class="star-btn" data-val="1" onclick="setRating('${c.id}', 1, this)">Péssimo</span>
                                     <span class="star-btn" data-val="2" onclick="setRating('${c.id}', 2, this)">Ruim</span>
                                     <span class="star-btn" data-val="3" onclick="setRating('${c.id}', 3, this)">Regular</span>
                                     <span class="star-btn" data-val="4" onclick="setRating('${c.id}', 4, this)">Bom</span>
-                                    <span class="star-btn" data-val="5" onclick="setRating('${c.id}', 5, this)">�timo</span>
+                                    <span class="star-btn" data-val="5" onclick="setRating('${c.id}', 5, this)">Ótimo</span>
                                 </div>
                                 <button class="btn-toggle-comment" onclick="toggleComment('${c.id}', this)" title="Adicionar observa��o">
                                     <i class='bx bx-message-detail'></i>
@@ -477,7 +495,7 @@
             try {
                 const g = await waitForFirebaseGlobals(4000);
                 if (!g) {
-                    console.error('Firebase globals n�o inicializados ao carregar pedido');
+                    console.error('Firebase globals não inicializados ao carregar pedido');
                     return;
                 }
                 const docSnap = await g.GETDOC(g.DOC(g.DB, "pedidos", pedidoId));
@@ -490,7 +508,7 @@
                         const btn = document.querySelector('.btn-submit-eval');
                         if (btn) {
                             btn.disabled = true;
-                            btn.innerText = "Servi�o j� avaliado";
+                            btn.innerText = "Serviço já avaliado";
                             btn.style.opacity = "0.7";
                             btn.style.cursor = "not-allowed";
                         }
@@ -519,11 +537,11 @@
                         }
                     }
 
-                    document.getElementById('nomeProf').innerText = "Avalia��o de " + (profData.user || p.paraNome);
+                    document.getElementById('nomeProf').innerText = "Avaliação de " + (profData.user || p.paraNome);
                     document.getElementById('imgProf').src = profData.foto || 'https://placehold.co/150';
                     const dataBase = p.dataConclusao || p.dataFinalizado || p.dataPagamento || p.dataAtualizacao || p.dataPedido || null;
                     const dataFormatada = dataBase ? new Date(dataBase).toLocaleDateString('pt-BR') : "--/--/----";
-                    document.getElementById('infoServico').innerText = "Servi�o realizado em " + dataFormatada;
+                    document.getElementById('infoServico').innerText = "Serviço realizado em " + dataFormatada;
                 }
             } catch (e) { console.error("Erro ao buscar dados:", e); }
         });
@@ -561,11 +579,11 @@
 
         window.enviarAvaliacao = async () => {
             if (avaliacaoBloqueada) {
-                alert("Este servi�o j� foi avaliado.");
+                alert("Este serviço já foi avaliado.");
                 return;
             }
             if (!window.avaliacaoGeral || window.avaliacaoGeral <= 0) {
-                alert("Selecione uma avalia��o geral.");
+                alert("Selecione uma avaliação geral.");
                 return;
             }
             const notas = Object.values(window.avaliacaoState).map(s => s.nota);
@@ -599,8 +617,8 @@
             const g = await waitForFirebaseGlobals(5000);
             if(!g){
                 console.error('Firebase globals missing at submit');
-                alert('Erro: biblioteca de dados n�o inicializada. Recarregue a p�gina.');
-                btnEnviar.innerText = "Enviar Avalia��o Completa";
+                alert('Erro: biblioteca de dados não inicializada. Recarregue a p�gina.');
+                btnEnviar.innerText = "Enviar Avaliação Completa";
                 btnEnviar.disabled = false;
                 return;
             }
@@ -608,16 +626,16 @@
             try {
                 const userCheck = g.AUTH && g.AUTH.currentUser ? g.AUTH.currentUser : null;
                 if(!userCheck){
-                    alert('Voc� precisa estar logado para enviar uma avalia��o.');
-                    btnEnviar.innerText = "Enviar Avalia��o Completa";
+                    alert('Você precisa estar logado para enviar uma avaliação.');
+                    btnEnviar.innerText = "Enviar Avaliação Completa";
                     btnEnviar.disabled = false;
                     return;
                 }
 
                 const pedidoSnap = await g.GETDOC(g.DOC(g.DB, "pedidos", pedidoId));
                 if (pedidoSnap && pedidoSnap.exists && pedidoSnap.exists() && pedidoSnap.data()?.avaliado) {
-                    alert("Este servi�o j� foi avaliado.");
-                    btnEnviar.innerText = "Servi�o j� avaliado";
+                    alert("Este serviço já foi avaliado.");
+                    btnEnviar.innerText = "Serviço já avaliado";
                     btnEnviar.disabled = true;
                     return;
                 }
@@ -709,7 +727,7 @@
                     }
                 }
 
-                if(!insertOk) throw new Error('Falha ao inserir avalia��o. Schema possivelmente desatualizado.');
+                if(!insertOk) throw new Error('Falha ao inserir avaliação. Schema possivelmente desatualizado.');
 
                 await g.UPDATEDOC(g.DOC(g.DB, "pedidos", pedidoId), { avaliado: true });
                 try { localStorage.setItem(`doke_avaliado_${pedidoId}`, '1'); } catch (_) {}
@@ -730,7 +748,7 @@
                 } catch (e) {
                     const msg = String(e?.message || "");
                     if (msg.includes("stats") || msg.toLowerCase().includes("schema cache")) {
-                        console.warn("Coluna stats.* n�o existe em usuarios; ignorando atualiza��o de m�tricas.");
+                        console.warn("Coluna stats.* não existe em usuarios; ignorando atualiza��o de m�tricas.");
                     } else {
                         throw e;
                     }
@@ -743,7 +761,7 @@
             } catch (e) {
                 console.error(e);
                 alert("Erro ao enviar. Tente novamente.");
-                btnEnviar.innerText = "Enviar Avalia��o Completa";
+                btnEnviar.innerText = "Enviar Avaliação Completa";
                 btnEnviar.disabled = false;
             }
         };
@@ -756,8 +774,16 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260212v44"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 </body>
 </html>
+
+
+
+
+
+
+
+
 
 
