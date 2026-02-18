@@ -334,6 +334,43 @@
         }
         .lista-scroll { padding: 10px 10px 24px; }
 
+        #lista-pedidos,
+        #lista-conversas{
+            transition: opacity .18s ease, transform .2s ease;
+            will-change: opacity, transform;
+        }
+        #lista-pedidos.doke-list-fade-out,
+        #lista-conversas.doke-list-fade-out{
+            opacity: .42;
+            transform: translateY(4px);
+        }
+        #lista-pedidos.doke-list-fade-in,
+        #lista-conversas.doke-list-fade-in{
+            animation: dokeListFadeIn .24s ease;
+        }
+        @keyframes dokeListFadeIn{
+            from{ opacity:.38; transform: translateY(6px); }
+            to{ opacity:1; transform: translateY(0); }
+        }
+        .doke-list-loading{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            color:#64748b;
+            font-size:.86rem;
+            font-weight:700;
+            padding:20px 14px;
+            border-radius:12px;
+            margin:6px;
+            background:rgba(255,255,255,.72);
+            border:1px solid #e5e7eb;
+        }
+        .doke-list-loading i{
+            font-size:1rem;
+            color:#0b7768;
+        }
+
         /* CARD DE PEDIDO */
         .item-pedido {
             padding: 10px 12px;
@@ -1095,6 +1132,25 @@
             scrollbar-width: thin;
             scrollbar-color: #94a3b8 #f1f5f9;
         }
+        .doke-chat-loading{
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            gap:8px;
+            color:#64748b;
+            font-size:.84rem;
+            font-weight:700;
+            padding:16px 12px;
+            border:1px dashed #cbd5e1;
+            border-radius:12px;
+            background:rgba(255,255,255,.58);
+            margin:8px auto;
+            width:min(420px, 92%);
+        }
+        .doke-chat-loading i{
+            color:#0b7768;
+            font-size:1rem;
+        }
 
         .chat-footer {
             min-height: 64px; background: #ffffff; border-top: 1px solid var(--ux-line);
@@ -1112,6 +1168,30 @@
         .msg-enviada { align-self: flex-end; background: var(--ux-brand); color: #fff; border-top-right-radius: 6px; }
         .msg-recebida { align-self: flex-start; background: #ffffff; color: #0f172a; border-top-left-radius: 6px; }
         .msg-hora { font-size: 0.7rem; color: #999; float: right; margin-top: 5px; margin-left: 10px; }
+        .msg-bubble.msg-pending{
+            opacity:.86;
+            filter:saturate(.92);
+            box-shadow: 0 4px 12px rgba(11, 119, 104, 0.18);
+        }
+        .msg-bubble.msg-pending-sent{
+            opacity:.96;
+            filter:none;
+        }
+        .msg-pending-status{
+            display:inline-flex;
+            align-items:center;
+            gap:4px;
+            font-size:.68rem;
+            opacity:.9;
+            margin-left:6px;
+        }
+        .msg-pending-removing{
+            animation: pendingOut .18s ease forwards;
+        }
+        @keyframes pendingOut{
+            from{ opacity:1; transform:translateY(0); }
+            to{ opacity:0; transform:translateY(-6px); }
+        }
 
         .btn-voltar-mobile { display: none; }
 
@@ -1339,7 +1419,7 @@
 }
 
 .msg-bubble, .msg-card-pagamento {
-    animation: slideIn 0.3s ease-out forwards;
+    animation: none !important;
 }
 
 /* Estilo para Pedidos de Or?amento (Verde) */
@@ -1660,9 +1740,10 @@
 }
 
 .modal-overlay-custom {
-        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        position: fixed; inset: 0; width: 100vw; height: 100dvh;
         background: rgba(0,0,0,0.6); backdrop-filter: blur(4px);
-        z-index: 10000; display: flex; align-items: center; justify-content: center;
+        z-index: 120000; display: flex; align-items: center; justify-content: center;
+        padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
     }
     .modal-box-custom {
         background: white; width: 90%; max-width: 400px; border-radius: 20px;
@@ -1778,12 +1859,12 @@
         padding: 10px;
     }
     #modalFinalizarPedido{
-        align-items: flex-start;
+        align-items: center;
         justify-content: center;
         overflow-y: auto;
         overflow-x: hidden;
         overscroll-behavior: contain;
-        padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+        padding: max(12px, env(safe-area-inset-top)) 14px max(12px, env(safe-area-inset-bottom));
         -webkit-overflow-scrolling: touch;
     }
     #modalFinalizarPedido .modal-box-custom{
@@ -1815,7 +1896,7 @@
             grid-template-columns: 1fr;
         }
         #modalFinalizarPedido{
-            align-items: flex-start;
+            align-items: center;
             justify-content: center;
             padding-top: calc(env(safe-area-inset-top) + 8px);
             padding-bottom: max(84px, calc(env(safe-area-inset-bottom) + 16px));
@@ -1965,7 +2046,7 @@
             from { transform: translateY(6px); opacity: 0; }
             to { transform: translateY(0); opacity: 1; }
         }
-        .msg-bubble{ animation: msgPop .18s ease-out; font-size:1rem; }
+        .msg-bubble{ animation: none !important; font-size:1rem; }
 
         /* Botao flutuante para descer (aparece via JS) */
         .scroll-down{
@@ -2972,6 +3053,185 @@
       let finalizacaoPreviewUrlUnico = null;
       let finalizacaoPreviewUrlAntes = null;
       let finalizacaoPreviewUrlDepois = null;
+      let pendingOutgoingMessages = [];
+
+    function dokeChatKey(colecao, docId){
+        return `${String(colecao || '')}:${String(docId || '')}`;
+    }
+
+    function buildListSkeletonHtml(type = 'pedido', count = 5){
+        const label = type === 'pedido' ? 'Carregando pedidos...' : 'Carregando mensagens...';
+        return `<div class="doke-list-loading"><i class='bx bx-loader-alt bx-spin'></i><span>${label}</span></div>`;
+    }
+
+    function showListSkeleton(container, type = 'pedido', count = 5){
+        if (!container) return;
+        container.dataset.loading = '1';
+        container.innerHTML = buildListSkeletonHtml(type, count);
+    }
+
+    function replaceListHtmlSmooth(container, html, sig){
+        if (!container) return false;
+        const hasLoading = !!container.querySelector('.doke-list-loading, .bx-spin');
+        if (!hasLoading && sig && container.dataset.sig === sig) return false;
+        if (!hasLoading) {
+            container.innerHTML = html;
+            if (sig) container.dataset.sig = sig;
+            container.dataset.loading = '0';
+            return true;
+        }
+        container.classList.add('doke-list-fade-out');
+        requestAnimationFrame(() => {
+            container.innerHTML = html;
+            if (sig) container.dataset.sig = sig;
+            container.dataset.loading = '0';
+            container.classList.remove('doke-list-fade-out');
+            container.classList.add('doke-list-fade-in');
+            setTimeout(() => container.classList.remove('doke-list-fade-in'), 260);
+        });
+        return true;
+    }
+
+    function queuePendingOutgoingMessage(payload = {}){
+        const id = `p${Date.now().toString(36)}${Math.random().toString(36).slice(2, 7)}`;
+        const item = {
+            id,
+            localTempId: `tmp_${id}`,
+            serverDocId: "",
+            colecao: String(payload.colecao || ''),
+            docId: String(payload.docId || ''),
+            uid: String(payload.uid || ''),
+            textRaw: String(payload.textRaw || ''),
+            textFinal: String(payload.textFinal || ''),
+            createdAt: Date.now()
+        };
+        pendingOutgoingMessages.push(item);
+        return item;
+    }
+
+    function getPendingOutgoingMessagesForChat(colecao, docId){
+        const key = dokeChatKey(colecao, docId);
+        return pendingOutgoingMessages
+            .filter((m) => dokeChatKey(m.colecao, m.docId) === key)
+            .sort((a, b) => (a.createdAt || 0) - (b.createdAt || 0));
+    }
+
+    function buildPendingMessageHtml(item){
+        const parsed = extractReplyFromText(item?.textFinal || item?.textRaw || '');
+        const cleanText = escapeHtml((parsed && parsed.text) || item?.textRaw || '').replace(/\n/g, '<br>');
+        const hora = new Date(item?.createdAt || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        return `
+            <div class="msg-row msg-row-me" id="pending-${item.id}" data-pending-id="${item.id}">
+                <div class="msg-bubble msg-enviada msg-pending">
+                    ${cleanText}
+                    <div class="msg-footer">
+                        <span class="msg-hora">${hora}</span>
+                        <span class="msg-pending-status"><i class='bx bx-loader-alt bx-spin'></i> Enviando</span>
+                    </div>
+                </div>
+            </div>`;
+    }
+
+    function renderPendingMessageNow(item){
+        const container = document.getElementById('areaMensagens');
+        if (!container || !item) return;
+        if (dokeChatKey(colecaoAtual, chatIdAtual) !== dokeChatKey(item.colecao, item.docId)) return;
+        if (container.querySelector(`#pending-${item.id}`)) return;
+        container.insertAdjacentHTML('beforeend', buildPendingMessageHtml(item));
+        container.scrollTop = container.scrollHeight;
+        try { if (typeof updateScrollDownButton === 'function') updateScrollDownButton(); } catch (_) {}
+    }
+
+    function removePendingOutgoingMessage(id){
+        if (!id) return;
+        pendingOutgoingMessages = pendingOutgoingMessages.filter((m) => m.id !== id);
+        const el = document.getElementById(`pending-${id}`);
+        if (!el) return;
+        el.classList.add('msg-pending-removing');
+        setTimeout(() => { try { el.remove(); } catch (_) {} }, 180);
+    }
+
+    function removePendingByTempId(tempId){
+        const key = String(tempId || '').trim();
+        if (!key) return null;
+        const hit = pendingOutgoingMessages.find((m) => String(m.localTempId || '') === key);
+        if (!hit) return null;
+        pendingOutgoingMessages = pendingOutgoingMessages.filter((m) => m.id !== hit.id);
+        const el = document.getElementById(`pending-${hit.id}`);
+        if (el) {
+            try { el.remove(); } catch (_) {}
+        }
+        return hit.id;
+    }
+
+    function normalizePendingTextForCompare(text){
+        return String(text || '')
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    function removePendingByServerDocId(serverDocId){
+        const key = String(serverDocId || '').trim();
+        if (!key) return null;
+        const hit = pendingOutgoingMessages.find((m) => String(m.serverDocId || '') === key);
+        if (!hit) return null;
+        pendingOutgoingMessages = pendingOutgoingMessages.filter((m) => m.id !== hit.id);
+        const el = document.getElementById(`pending-${hit.id}`);
+        if (el) {
+            try { el.remove(); } catch (_) {}
+        }
+        return hit.id;
+    }
+
+    function markPendingAsSent(id){
+        if (!id) return;
+        const row = document.getElementById(`pending-${id}`);
+        if (!row) return;
+        const bubble = row.querySelector('.msg-bubble');
+        if (bubble) {
+            bubble.classList.remove('msg-pending');
+            bubble.classList.add('msg-pending-sent');
+        }
+        const status = row.querySelector('.msg-pending-status');
+        if (status) {
+            status.innerHTML = "<i class='bx bx-check'></i> Enviado";
+        }
+    }
+
+    function acknowledgePendingByMessage(docId, msgData){
+        removePendingByServerDocId(docId);
+        removePendingByTempId(msgData?.clientTempId || msgData?.client_temp_id || "");
+
+        const sender = msgData?.senderUid || msgData?.senderuid || msgData?.senderUID || msgData?.sender || "";
+        const me = String(currentUserUid || "").trim();
+        if (me && sender && String(sender).trim() !== me) return;
+
+        const txt = normalizePendingTextForCompare(msgData?.texto || "");
+        if (!txt) return;
+        const msgDate = parseDataHora(msgData?.timestamp);
+        const msgTs = msgDate && !isNaN(msgDate.getTime()) ? msgDate.getTime() : 0;
+        const idx = pendingOutgoingMessages.findIndex((p) => {
+            const pTxt = normalizePendingTextForCompare(p.textFinal || p.textRaw || "");
+            if (!pTxt || pTxt !== txt) return false;
+            if (!msgTs) return true;
+            return Math.abs((p.createdAt || 0) - msgTs) <= 180000;
+        });
+        if (idx < 0) return;
+        const hit = pendingOutgoingMessages[idx];
+        pendingOutgoingMessages.splice(idx, 1);
+        const el = document.getElementById(`pending-${hit.id}`);
+        if (el) {
+            try { el.remove(); } catch (_) {}
+        }
+    }
+
+    function appendPendingMessagesToHtml(htmlParts, sigParts, colecao, docId){
+        pendingOutgoingMessages = pendingOutgoingMessages.filter((m) => (Date.now() - (m.createdAt || 0)) < 120000);
+        const pendentes = getPendingOutgoingMessagesForChat(colecao, docId);
+        if (!pendentes.length) return;
+        pendentes.forEach((p) => htmlParts.push(buildPendingMessageHtml(p)));
+        sigParts.push(`pending:${pendentes.map((p) => p.id).join(',')}`);
+    }
       let pedidoInfoRenderId = null;
 
     const persistAndamentoHidden = () => {
@@ -3024,6 +3284,7 @@
         const modalSucesso = document.getElementById('modalSucessoAvaliacao');
         if(modalSucesso) {
             modalSucesso.style.display = 'flex';
+            syncChatShellOverlayState();
         } else {
             window.location.href = `avaliar.html?pedidoId=${pedidoId}`;
         }
@@ -6717,7 +6978,17 @@ function isVisibleOverlayElement(el) {
     return true;
 }
 
+function ensureChatOverlaysOnBody() {
+    ['modalFinalizarPedido', 'modalSucessoAvaliacao', 'dokeGlobalModal'].forEach((id) => {
+        const el = document.getElementById(id);
+        if (el && el.parentElement !== document.body) {
+            document.body.appendChild(el);
+        }
+    });
+}
+
 function syncChatShellOverlayState() {
+    ensureChatOverlaysOnBody();
     const modalFinalizar = document.getElementById('modalFinalizarPedido');
     const modalSucesso = document.getElementById('modalSucessoAvaliacao');
     const modalAlert = document.getElementById('dokeGlobalModal');
@@ -6731,6 +7002,7 @@ function syncChatShellOverlayState() {
 window.liberarPagamento = async (id) => {
     if (!id) return;
     pedidoFinalizarId = id;
+    ensureChatOverlaysOnBody();
     const modal = document.getElementById('modalFinalizarPedido');
     if (modal) modal.style.display = 'flex';
     syncChatShellOverlayState();
@@ -7023,6 +7295,7 @@ window.confirmarFinalizacaoPedido = async () => {
         if (modal) modal.style.display = 'none';
         syncChatShellOverlayState();
     };
+    document.addEventListener('DOMContentLoaded', ensureChatOverlaysOnBody);
     // =========================================================================
     // 4. RENDERIZA?�O E CHAT
     // =========================================================================
@@ -7033,20 +7306,21 @@ window.confirmarFinalizacaoPedido = async () => {
         const token = ++pedidosRenderToken;
         const silent = !!opts.silent;
         if (!silent) {
-            container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+            const hasContent = !!container.querySelector('.item-pedido');
+            if (!hasContent) showListSkeleton(container, 'pedido', 5);
         }
 
         try {
             const resolvedUid = currentUserUid || await ensureCurrentUserUid();
             if (!resolvedUid) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Fa?a login para ver seus pedidos.</div>`;
+                replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">Fa?a login para ver seus pedidos.</div>`, 'pedidos:no-auth');
                 return;
             }
             if (resolvedUid !== currentUserUid) currentUserUid = resolvedUid;
             const deField = await resolvePedidosField('de');
             const paraField = await resolvePedidosField('para');
             if (!deField && !paraField) {
-                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">N?o foi poss?vel identificar os campos do pedido.</div>`;
+                replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">N?o foi poss?vel identificar os campos do pedido.</div>`, 'pedidos:no-fields');
                 return;
             }
             pedidosFieldsDirty = false;
@@ -7085,9 +7359,8 @@ window.confirmarFinalizacaoPedido = async () => {
                 htmlOut = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido.</div>`;
                 pedidosAgendaCache = [];
                 renderAgenda();
-                if (container.dataset.sig !== 'empty' || container.querySelector('.bx-spin')) {
-                    container.innerHTML = htmlOut;
-                    container.dataset.sig = 'empty';
+                if (container.dataset.sig !== 'empty' || container.querySelector('.bx-spin') || container.querySelector('.doke-list-loading')) {
+                    replaceListHtmlSmooth(container, htmlOut, 'empty');
                 }
                 return;
             }
@@ -7268,7 +7541,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         </div>
                     </div>`;
                 htmlOut += rowHtml;
-                sigParts.push([id, p.status, p.dataAtualizacao || p.dataPedido || '', isArquivado ? '1' : '0', unreadHtml ? 'u' : ''].join(':'));
+                sigParts.push([id, p.status, p.dataAtualizacao || p.dataPedido || '', isArquivado ? '1' : '0'].join(':'));
             }
             if (!htmlOut.trim()) {
                 htmlOut = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido encontrado.</div>`;
@@ -7276,9 +7549,8 @@ window.confirmarFinalizacaoPedido = async () => {
             pedidosAgendaCache = agendaItems;
             renderAgenda();
             const sig = sigParts.join('|');
-            if (container.dataset.sig !== sig || container.querySelector('.bx-spin')) {
-                container.innerHTML = htmlOut;
-                container.dataset.sig = sig;
+            if (container.dataset.sig !== sig || container.querySelector('.bx-spin') || container.querySelector('.doke-list-loading')) {
+                replaceListHtmlSmooth(container, htmlOut, sig);
             }
             marcarCardsSelecionadosPedidos();
             updatePedidosBulkUI();
@@ -7287,11 +7559,11 @@ window.confirmarFinalizacaoPedido = async () => {
         } catch (e) {
             console.warn("Falha ao carregar pedidos:", e);
             if (container) {
-                container.innerHTML = `
+                replaceListHtmlSmooth(container, `
                     <div style="text-align:center; padding:30px; color:#999;">
                         N?o foi poss?vel carregar os pedidos.
                         <button style="margin-top:10px; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; cursor:pointer;" onclick="carregarListaPedidos()">Tentar novamente</button>
-                    </div>`;
+                    </div>`, 'pedidos:error');
             }
         }
     }
@@ -7499,12 +7771,13 @@ window.confirmarFinalizacaoPedido = async () => {
       window.carregarListaConversas = async function() {
           const container = document.getElementById('lista-conversas');
           if(!container) return;
-          container.innerHTML = `<div style="text-align:center; padding:20px;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+          const hasContent = !!container.querySelector('.item-conversa');
+          if (!hasContent) showListSkeleton(container, 'conversa', 6);
   
           try {
               const meUid = currentUserUid || await ensureCurrentUserUid();
               if (!meUid) {
-                  container.innerHTML = "<p style='text-align:center; padding:20px;'>Fa?a login para ver mensagens.</p>";
+                  replaceListHtmlSmooth(container, "<p style='text-align:center; padding:20px;'>Fa?a login para ver mensagens.</p>", 'conversas:no-auth');
                   return;
               }
               if (meUid !== currentUserUid) currentUserUid = meUid;
@@ -7524,8 +7797,7 @@ window.confirmarFinalizacaoPedido = async () => {
                   }
               }
               const itens = Array.from(map.values()).sort((a,b) => (b.updatedTs || 0) - (a.updatedTs || 0));
-  
-              container.innerHTML = itens.length ? "" : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
+              const rowsHtml = [];
   
               const userByUid = new Map();
               await Promise.all(itens.map(async (it) => {
@@ -7584,7 +7856,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         : '';
                       const unreadHtml = (!silenciado && isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id)) ? '<span class="unread-dot"></span>' : "";
                       const mutedHtml = silenciado ? `<span class="muted-badge" title="Contato silenciado"><i class='bx bx-bell-off'></i></span>` : "";
-                      container.insertAdjacentHTML('beforeend', `
+                      rowsHtml.push(`
                         <div class="item-conversa ${conversasSelecaoModo ? 'is-select-mode' : ''} ${isSelectedConversa ? 'is-selected' : ''}" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handleConversaCardClick(event, '${it.id}', '${outroUid}')">
                           <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                           <div class="ic-info">
@@ -7595,14 +7867,16 @@ window.confirmarFinalizacaoPedido = async () => {
                         </div>`);
                   }
               }
-              if (!container.children.length) {
-                  container.innerHTML = "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
-              }
+              const finalHtml = rowsHtml.length
+                  ? rowsHtml.join('')
+                  : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
+              const sigConv = [listaModo, conversasFiltro, listaBusca, itens.length, rowsHtml.length].join('|');
+              replaceListHtmlSmooth(container, finalHtml, `conversas:${sigConv}`);
               marcarCardsSelecionadosConversas();
               updatePedidosBulkUI();
           } catch (e) {
               console.error(e);
-              container.innerHTML = "<p style='text-align:center; padding:20px; color:#999;'>Erro ao carregar mensagens.</p>";
+              replaceListHtmlSmooth(container, "<p style='text-align:center; padding:20px; color:#999;'>Erro ao carregar mensagens.</p>", 'conversas:error');
           }
       };
 
@@ -8021,6 +8295,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
           if (!container) return;
           bindLongPressMensagens(container);
           if (window.chatUnsubscribe) window.chatUnsubscribe();
+          const chatKey = dokeChatKey(colecao, docId);
+          if (container.dataset.chatRenderKey !== chatKey) {
+              container.dataset.chatRenderKey = chatKey;
+              container.innerHTML = `<div class="doke-chat-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Carregando conversa...</span></div>`;
+          }
           
           const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
     let lastSig = "";
@@ -8087,6 +8366,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
           snapshot.forEach(docSnap => {
               const m = docSnap.data();
+              acknowledgePendingByMessage(docSnap.id, m || {});
               if (isHiddenMsgId(colecao, docId, docSnap.id)) return;
               const msgDate = parseDataHora(m.timestamp);
               if (clearTs && msgDate && msgDate.getTime() <= clearTs) return;
@@ -8098,8 +8378,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 sigValue(m.tipo),
                 sigValue(m.url),
                 sigValue(m.valor),
-                sigValue(m.maxParcelas || m.maxparcelas),
-                sigValue(m.lidoEm || m.lidoem || m.lido)
+                sigValue(m.maxParcelas || m.maxparcelas)
             ].join("|"));
             if (shouldSkipAttachment) return;
             // Verifica se a mensagem foi enviada por MIM (usu?rio logado)
@@ -8490,6 +8769,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
         });
 
+        appendPendingMessagesToHtml(htmlParts, sigParts, colecao, docId);
         const nextSig = sigParts.join("||") + "||" + statusPedido + "|" + (pedidoAvaliado ? "1" : "0");
         if (nextSig === lastSig) {
             updateScrollDownButton();
@@ -8655,7 +8935,7 @@ window.confirmarGerarCobranca = async function(){
           if (!inp || !inp.value.trim()) return;
           if (btnSend?.dataset?.sending === '1') return;
           const txt = inp.value;
-          inp.value = "";
+          let pendingItem = null;
           if (btnSend) {
               btnSend.dataset.sending = '1';
               btnSend.disabled = true;
@@ -8679,14 +8959,28 @@ window.confirmarGerarCobranca = async function(){
                   window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
                   return;
               }
+              const textoBase = txt.trim();
               const textoFinal = applyReplyMetaToText(txt);
-            await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
+              inp.value = "";
+              pendingItem = queuePendingOutgoingMessage({
+                  colecao: colecaoAtual,
+                  docId: chatIdAtual,
+                  uid,
+                  textRaw: textoBase,
+                  textFinal: textoFinal
+              });
+              renderPendingMessageNow(pendingItem);
+            const sentRef = await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
                 tipo: 'texto',
                 texto: textoFinal,
                 senderUid: uid,
                 timestamp: new Date(),
                 lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
             });
+            if (pendingItem && sentRef && sentRef.id) {
+                pendingItem.serverDocId = String(sentRef.id);
+            }
+            if (pendingItem) markPendingAsSent(pendingItem.id);
             const draftKey = getDraftKey();
             if (draftKey) localStorage.removeItem(draftKey);
             if(colecaoAtual === 'conversas') {
@@ -8702,6 +8996,8 @@ window.confirmarGerarCobranca = async function(){
             cancelarResposta();
         } catch (e) {
             console.error(e);
+            if (pendingItem) removePendingOutgoingMessage(pendingItem.id);
+            if (!inp.value.trim()) inp.value = txt;
             window.dokeAlert ? window.dokeAlert("Falha ao enviar. Verifique permiss?es (RLS) / colunas do Supabase.") : alert("Falha ao enviar. Verifique permiss?es (RLS).");
         } finally {
             if (btnSend) {
@@ -9431,11 +9727,3 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
 </script>
 </body>
 </html>
-
-
-
-
-
-
-
-

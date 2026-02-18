@@ -29,14 +29,20 @@
         body[data-page="avaliar"] main{
             padding-top: 0 !important;
             padding-bottom: calc(var(--doke-btm-real, 66px) + 26px + env(safe-area-inset-bottom)) !important;
+            width: 100%;
+        }
+        .eval-shell{
+            width: min(1100px, 100%);
+            margin: 0 auto;
         }
 
         @media (min-width: 1024px) {
             body[data-page="avaliar"] main{
                 margin-left: var(--sidebar-width, 0px);
-                padding: 40px 24px;
-                max-width: 1200px;
-                margin-right: auto;
+                margin-right: 0;
+                width: calc(100% - var(--sidebar-width, 0px));
+                max-width: none;
+                padding: 36px clamp(18px, 2.5vw, 30px);
             }
         }
 
@@ -73,7 +79,7 @@
         .prof-name { font-size: 1.3rem; font-weight: 700; color: #333; margin: 10px 0 5px 0; }
         .service-info { font-size: 0.9rem; color: #666; background: #f8f9fa; display: inline-block; padding: 6px 15px; border-radius: 20px; margin-top: 5px; }
 
-        /* --- CARD DE CRITï¿½RIO (INTERATIVO) --- */
+        /* --- CARD DE CRITERIO (INTERATIVO) --- */
         .criteria-card {
             background: white; border-radius: 16px; padding: 25px;
             margin-bottom: 20px; border: 1px solid #edf2f7;
@@ -127,7 +133,7 @@
         }
         .star-btn:hover { background: #e0e0e0; }
 
-        /* --- CORES ESPECÃFICAS (QUANDO ATIVO) --- */
+        /* --- CORES ESPECIFICAS (QUANDO ATIVO) --- */
         .star-btn.active[data-val="1"] { 
             background: #ffebee; color: #c62828; border-color: #ffcdd2; font-weight: 800; box-shadow: 0 2px 5px rgba(198, 40, 40, 0.2); 
         }
@@ -221,7 +227,7 @@
            ====================================================== */
         .custom-alert-overlay {
             display: none; position: fixed; z-index: 99999;
-            top: 0; left: 0; width: 100%; height: 100%;
+            inset: 0; width: 100vw; height: 100dvh;
             background: rgba(0,0,0,0.5); backdrop-filter: blur(5px);
             justify-content: center; align-items: center;
             opacity: 0; transition: opacity 0.3s ease;
@@ -255,7 +261,7 @@
         .btn-alert-ok:hover { background: #096356; transform: translateY(-2px); }
 
     
-        /* Microanimaï¿½ï¿½o ao selecionar nota */
+        /* Microanimacao ao selecionar nota */
         @keyframes dokePop {
             0% { transform: scale(0.98); }
             55% { transform: scale(1.08); }
@@ -330,9 +336,65 @@
 </nav>
 <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
 </header>
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>In&iacute;cio</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notifica&ccedil;&otilde;es</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
 
 
-<main style="padding-top: 80px;">
+<main>
+<div class="eval-shell">
 <div class="eval-hero">
 <h1>Avaliação de Serviço</h1>
 <p>Sua opinião ajuda a manter a qualidade da comunidade.</p>
@@ -360,11 +422,11 @@
 </div>
 </div>
 <div id="criteria-list">
-<div style="text-align:center; padding:20px; color:#999;">Carregando crit�rios...</div>
+<div style="text-align:center; padding:20px; color:#999;">Carregando critérios...</div>
 </div>
 <div class="final-comment-box">
-<label class="fc-label">Considera��es Finais (Opcional)</label>
-<textarea class="cc-input" id="textoComentario" placeholder="Resumo geral da sua experi�ncia..."></textarea>
+<label class="fc-label">Considerações Finais (Opcional)</label>
+<textarea class="cc-input" id="textoComentario" placeholder="Resumo geral da sua experiência..."></textarea>
 <div class="doke-tooltip-wrapper">
 <label class="label-anonimo">
 <input id="checkAnonimo" type="checkbox"/>
@@ -372,7 +434,7 @@
 <i class="bx bx-help-circle" style="color:#999; font-size:1.1rem;"></i>
 </label>
 <div class="doke-tooltip-box">
-                        Se marcar esta opção, seu nome e foto não aparecer�o publicamente na avaliação.
+                        Se marcar esta opção, seu nome e foto não aparecerão publicamente na avaliação.
                     </div>
 </div>
 </div>
@@ -380,12 +442,13 @@
 <i class="bx bx-send"></i> Enviar Avaliação Completa
             </button>
 </div>
+</div>
 </main>
 <div class="custom-alert-overlay" id="customAlert">
 <div class="custom-alert-box">
 <div class="alert-icon-circle"><i class="bx bx-check"></i></div>
 <h3 class="alert-title">Sucesso!</h3>
-<p class="alert-desc">Sua avaliação foi enviada. Obrigado pela colabora��o!</p>
+<p class="alert-desc">Sua avaliação foi enviada. Obrigado pela colaboração!</p>
 <button class="btn-alert-ok" onclick="fecharAlertERedirecionar()">OK</button>
 </div>
 </div>
@@ -479,12 +542,12 @@
                                     <span class="star-btn" data-val="4" onclick="setRating('${c.id}', 4, this)">Bom</span>
                                     <span class="star-btn" data-val="5" onclick="setRating('${c.id}', 5, this)">Ótimo</span>
                                 </div>
-                                <button class="btn-toggle-comment" onclick="toggleComment('${c.id}', this)" title="Adicionar observa��o">
+                                <button class="btn-toggle-comment" onclick="toggleComment('${c.id}', this)" title="Adicionar observação">
                                     <i class='bx bx-message-detail'></i>
                                 </button>
                             </div>
                             <div class="cc-comment-area" id="comment-area-${c.id}">
-                                <textarea class="cc-input" placeholder="Observa��o sobre ${c.label.toLowerCase()}..." 
+                                <textarea class="cc-input" placeholder="Observação sobre ${c.label.toLowerCase()}..." 
                                           oninput="updateComment('${c.id}', this.value)"></textarea>
                             </div>
                         </div>`;
@@ -588,7 +651,7 @@
             }
             const notas = Object.values(window.avaliacaoState).map(s => s.nota);
             if (notas.includes(0)) {
-                alert("Por favor, selecione uma nota para todos os crit�rios.");
+                alert("Por favor, selecione uma nota para todos os critérios.");
                 return;
             }
 
@@ -598,7 +661,7 @@
             const soma = notas.reduce((a, b) => a + b, 0);
             const media = Number(window.avaliacaoGeral);
             const perfilCliente = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-            const clienteNome = anonimo ? "An�nimo" : (perfilCliente.user || "Cliente");
+            const clienteNome = anonimo ? "Anônimo" : (perfilCliente.user || "Cliente");
             const clienteFoto = anonimo ? "https://cdn-icons-png.flaticon.com/512/847/847969.png" : (perfilCliente.foto || "");
             const detalhesPayload = { ...window.avaliacaoState };
                 try { if (anuncioId) detalhesPayload.__anuncioId = anuncioId; } catch (_) {}
@@ -617,7 +680,7 @@
             const g = await waitForFirebaseGlobals(5000);
             if(!g){
                 console.error('Firebase globals missing at submit');
-                alert('Erro: biblioteca de dados não inicializada. Recarregue a p�gina.');
+                alert('Erro: biblioteca de dados não inicializada. Recarregue a página.');
                 btnEnviar.innerText = "Enviar Avaliação Completa";
                 btnEnviar.disabled = false;
                 return;
@@ -690,7 +753,7 @@
                     await g.ADDDOC(g.COLLECTION(g.DB, "avaliacoes"), fullPayload);
                     insertOk = true;
                 } catch (err) {
-                    console.warn('Inser��o completa falhou, tentando payload reduzido:', err && err.message);
+                    console.warn('Inserção completa falhou, tentando payload reduzido:', err && err.message);
                     const reduced = useIdSchema
                         ? {
                             pedidoid: pedidoId,
@@ -722,7 +785,7 @@
                         await g.ADDDOC(g.COLLECTION(g.DB, "avaliacoes"), reduced);
                         insertOk = true;
                     } catch (err2) {
-                        console.error('Inser��o reduzida tamb�m falhou:', err2);
+                        console.error('Inserção reduzida também falhou:', err2);
                         throw err2; // bubble up to outer catch
                     }
                 }
@@ -748,7 +811,7 @@
                 } catch (e) {
                     const msg = String(e?.message || "");
                     if (msg.includes("stats") || msg.toLowerCase().includes("schema cache")) {
-                        console.warn("Coluna stats.* não existe em usuarios; ignorando atualiza��o de m�tricas.");
+                        console.warn("Coluna stats.* não existe em usuarios; ignorando atualização de métricas.");
                     } else {
                         throw e;
                     }
@@ -756,6 +819,7 @@
 
                 // SUBSTITUÍDO O ALERT NATIVO PELO MODAL
                 const modal = document.getElementById('customAlert');
+                document.body.classList.add('doke-modal-open');
                 modal.classList.add('active');
 
             } catch (e) {
@@ -766,8 +830,9 @@
             }
         };
 
-        // Fun��o do Bot�o OK
+        // Funcao do botao OK
         window.fecharAlertERedirecionar = function() {
+            document.body.classList.remove('doke-modal-open');
             window.location.href = "index.html";
         }
     </script>
@@ -777,8 +842,6 @@
 <script src="doke-shell.js?v=20260218v47"></script>
 </body>
 </html>
-
-
 
 
 

@@ -112,6 +112,8 @@
         }
         .rating-badge { display: flex; align-items: center; gap: 5px; font-weight: 700; }
         .rating-badge i { color: #f1c40f; }
+        .rating-badge.rating-link { cursor: pointer; transition: opacity .15s ease; }
+        .rating-badge.rating-link:hover { opacity: .82; }
         .location-badge i { color: var(--text-light); }
 
         /* Seï¿½ï¿½es de Conteï¿½do */
@@ -451,7 +453,7 @@
 <div id="badges-area" style="margin-top: 10px;"></div>
 <h1 class="service-title" id="service-title">...</h1>
 <div class="meta-info">
-<div class="rating-badge">
+<div class="rating-badge rating-link" id="meta-rating-link" role="button" tabindex="0" aria-label="Ver avaliacoes">
 <div id="top-stars" style="color:#f1c40f; margin-right:5px;"></div>
 <span id="meta-rating">0.0</span>
 <span style="font-weight:400; color:#777; margin-left: 5px;">(<span id="meta-count">0</span> avaliações)</span>
@@ -475,7 +477,7 @@
 </div>
 <div class="highlight-item">
 <i class="bx bx-time"></i>
-<span class="highlight-label">Prazo M�dio</span>
+<span class="highlight-label">Prazo M&eacute;dio</span>
 <span class="highlight-value" id="hl-time">--</span>
 </div>
 <div class="highlight-item">
@@ -653,6 +655,32 @@
             }, 180);
         }
 
+        function scrollToReviewsSection() {
+            const target = document.getElementById('reviews-list');
+            if (!target) return;
+            try {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            } catch (_) {
+                target.scrollIntoView();
+            }
+        }
+
+        function bindTopRatingLink() {
+            const ratingLink = document.getElementById('meta-rating-link');
+            if (!ratingLink || ratingLink.dataset.bound === "1") return;
+            ratingLink.dataset.bound = "1";
+            ratingLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                scrollToReviewsSection();
+            });
+            ratingLink.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    scrollToReviewsSection();
+                }
+            });
+        }
+
         // ===========================================
         // FUN��O PRINCIPAL
         // ===========================================
@@ -813,7 +841,6 @@
 
             // -- DESTAQUES (Grid) --
             document.getElementById('hl-xp').innerText = d.experiencia || "-";
-            document.getElementById('hl-time').innerText = d.prazo || "-";
             document.getElementById('hl-warranty').innerText = d.garantia || "-";
             const modoAt = Array.isArray(d.modo_atend) ? d.modo_atend[0] : d.modo_atend;
             document.getElementById('hl-mode').innerText = modoAt || "Presencial";
@@ -865,6 +892,9 @@
             // -- AGENDA VISUAL --
             renderizarAgenda(d.agenda);
 
+            // rating do topo -> rolar para avaliacoes
+            bindTopRatingLink();
+
             // Scroll opcional vindo do card (estrelas -> avaliações)
             tryScrollToRequestedSection();
         }
@@ -909,6 +939,11 @@
                 { id: "atendimento", label: "Atendimento" }
             ];
             const critLabels = ["Pessimo", "Ruim", "Regular", "Bom", "Otimo"];
+            const normalizeAnuncioId = (value) => {
+                const v = String(value || "").trim();
+                if (!v) return "";
+                return v.startsWith("sb-") ? v.slice(3) : v;
+            };
 
             const matchByFields = (row, fields, value) => {
                 if (!value) return false;
@@ -918,6 +953,9 @@
                     return current != null && String(current) === target;
                 });
             };
+            const getAnuncioId = (row) => normalizeAnuncioId(
+                row?.anuncioId || row?.anuncio_id || row?.anuncioid || row?.anuncio || row?.servico_id || row?.servicoId || row?.servico
+            );
             const parseReviewDate = (row) => {
                 const raw = row?.data || row?.created_at || row?.createdAt || row?.timestamp || row?.updated_at;
                 if (!raw) return 0;
@@ -989,21 +1027,59 @@
             };
 
             try {
-                const userDoc = await getDoc(doc(getDbRef(), "usuarios", uidProfissional));
                 let totalContratacoes = 0;
                 let membroDesde = "2024";
-                if (userDoc.exists()) {
-                    const uData = userDoc.data();
-                    totalContratacoes = (uData.stats && uData.stats.servicosRealizados) ? uData.stats.servicosRealizados : 0;
-                    if (uData.membroDesde) membroDesde = uData.membroDesde;
+                try {
+                    const userDoc = await getDoc(doc(getDbRef(), "usuarios", uidProfissional));
+                    if (userDoc.exists()) {
+                        const uData = userDoc.data();
+                        totalContratacoes = (uData.stats && uData.stats.servicosRealizados) ? uData.stats.servicosRealizados : 0;
+                        if (uData.membroDesde) membroDesde = uData.membroDesde;
+                    }
+                } catch (_) {}
+                if (!totalContratacoes || membroDesde === "2024") {
+                    try {
+                        const sb = getSupabaseRef();
+                        if (sb?.from) {
+                            const { data } = await sb
+                                .from("usuarios")
+                                .select("id,uid,stats,membroDesde,membro_desde")
+                                .or(`uid.eq.${uidProfissional},id.eq.${uidProfissional}`)
+                                .maybeSingle();
+                            if (data) {
+                                totalContratacoes = totalContratacoes || Number(data?.stats?.servicosRealizados || data?.stats?.jobs || 0) || 0;
+                                membroDesde = data.membroDesde || data.membro_desde || membroDesde;
+                            }
+                        }
+                    } catch (_) {}
                 }
                 document.getElementById('meta-hired').innerText = `${totalContratacoes} contratacoes na Doke`;
                 document.getElementById('prov-since').innerText = `Membro desde ${membroDesde}`;
 
-                const allSnap = await getDocs(collection(getDbRef(), "avaliacoes"));
-                const allRows = (allSnap?.docs || []).map((d) => d.data() || {});
+                let allRows = [];
+                try {
+                    const allSnap = await getDocs(collection(getDbRef(), "avaliacoes"));
+                    allRows = (allSnap?.docs || []).map((d) => ({ __id: d.id, ...(d.data() || {}) }));
+                } catch (_) {}
+                if (!allRows.length) {
+                    try {
+                        const sb = getSupabaseRef();
+                        if (sb?.from) {
+                            const { data, error } = await sb.from("avaliacoes").select("*").limit(1000);
+                            if (!error && Array.isArray(data)) {
+                                allRows = data.map((row, idx) => ({ __id: row?.id || `sb_${idx}`, ...(row || {}) }));
+                            }
+                        }
+                    } catch (_) {}
+                }
+                const targetAnuncioId = normalizeAnuncioId(anuncioId || detalhesAvaliacaoCtx?.id);
                 const allData = allRows
-                    .filter((row) => matchByFields(row, anuncioFields, anuncioId))
+                    .map((row) => ({ ...(row || {}), __anuncioId: getAnuncioId(row) || "" }))
+                    .filter((row) => {
+                        const rawMatch = matchByFields(row, anuncioFields, anuncioId);
+                        const normalizedMatch = !!(targetAnuncioId && String(row.__anuncioId) === String(targetAnuncioId));
+                        return rawMatch || normalizedMatch;
+                    })
                     .slice()
                     .sort((a, b) => parseReviewDate(b) - parseReviewDate(a));
 
@@ -1226,58 +1302,101 @@
                 list.innerHTML = `<div class="fr-empty" style="padding:14px 8px; color:#b91c1c;">Erro ao carregar avaliacoes.</div>`;
             }
         }
-        // PRAZO M�DIO (ACEITO -> FINALIZADO)
+        // PRAZO MEDIO (ACEITO -> FINALIZADO)
         // ===========================================
         async function carregarPrazoMedio(uidProfissional) {
             const el = document.getElementById('hl-time');
-            if (!el || !uidProfissional) return;
+            if (!el) return;
+            if (!uidProfissional) {
+                el.innerText = "--";
+                return;
+            }
+
+            const parseDate = (value) => {
+                if (!value) return null;
+                if (value instanceof Date) return value;
+                if (typeof value === "object" && typeof value.seconds === "number") return new Date(value.seconds * 1000);
+                const d = new Date(value);
+                return Number.isFinite(d.getTime()) ? d : null;
+            };
+            const pickDate = (row, fields) => {
+                for (const field of fields) {
+                    const parsed = parseDate(row?.[field]);
+                    if (parsed) return parsed;
+                }
+                return null;
+            };
+            const startFields = ["dataAceite", "data_aceite", "dataAceito", "dataaceite", "aceito_em", "accepted_at", "dataInicio", "data_inicio", "inicio", "dataPedido", "data_pedido", "created_at", "createdAt"];
+            const endFields = ["dataConclusao", "data_conclusao", "dataFinalizado", "data_finalizado", "finalizado_em", "finished_at", "dataAtualizacao", "data_atualizacao", "updated_at", "updatedAt"];
+            const isFinalizado = (row) => String(row?.status || "").toLowerCase() === "finalizado";
+            const ownerFields = ["paraUid", "para_uid", "parauid", "profissional_id", "profissionalId", "uid_profissional", "uidProfissional"];
+            const belongsToProf = (row) => ownerFields.some((field) => row?.[field] != null && String(row[field]) === String(uidProfissional));
+            const formatDuration = (ms) => {
+                const minutes = ms / 60000;
+                if (minutes < 60) return `${Math.max(1, Math.round(minutes))} min`;
+                const hours = minutes / 60;
+                if (hours < 24) return `${Math.max(1, Math.round(hours))} h`;
+                return `${Math.max(1, Math.round(hours / 24))} dias`;
+            };
+
+            el.innerText = "Calculando...";
+
             try {
-                const q = query(
-                    collection(getDbRef(), "pedidos"),
-                    where("paraUid", "==", uidProfissional),
-                    where("status", "==", "finalizado")
-                );
-                const snap = await getDocs(q);
-                if (!snap || snap.empty) { el.innerText = "�"; return; }
+                let pedidoRows = [];
 
-                const parseDate = (v) => {
-                    if (!v) return null;
-                    if (v instanceof Date) return v;
-                    if (typeof v === "object" && typeof v.seconds === "number") {
-                        return new Date(v.seconds * 1000);
+                try {
+                    const q = query(
+                        collection(getDbRef(), "pedidos"),
+                        where("paraUid", "==", uidProfissional),
+                        where("status", "==", "finalizado")
+                    );
+                    const snap = await getDocs(q);
+                    pedidoRows = (snap?.docs || []).map((docSnap) => docSnap.data() || {});
+                } catch (_) {}
+
+                if (!pedidoRows.length) {
+                    const sb = getSupabaseRef();
+                    if (sb?.from) {
+                        const fallbackRows = [];
+                        for (const ownerCol of ownerFields) {
+                            try {
+                                const { data, error } = await sb.from("pedidos").select("*").eq(ownerCol, uidProfissional).limit(1200);
+                                if (!error && Array.isArray(data) && data.length) fallbackRows.push(...data);
+                            } catch (_) {}
+                        }
+                        if (!fallbackRows.length) {
+                            try {
+                                const { data, error } = await sb.from("pedidos").select("*").limit(1200);
+                                if (!error && Array.isArray(data)) fallbackRows.push(...data.filter((row) => belongsToProf(row)));
+                            } catch (_) {}
+                        }
+                        pedidoRows = fallbackRows;
                     }
-                    const d = new Date(v);
-                    return isNaN(d.getTime()) ? null : d;
-                };
+                }
 
-                let total = 0;
+                let totalMs = 0;
                 let count = 0;
-
-                snap.forEach((docSnap) => {
-                    const p = docSnap.data() || {};
-                    const inicio = parseDate(p.dataAceite || p.dataAceito || p.dataPedido || p.dataAtualizacao);
-                    const fim = parseDate(p.dataConclusao || p.dataFinalizado || p.dataAtualizacao);
+                pedidoRows.forEach((row) => {
+                    if (!isFinalizado(row)) return;
+                    const inicio = pickDate(row, startFields);
+                    const fim = pickDate(row, endFields);
                     if (!inicio || !fim) return;
                     const diff = fim.getTime() - inicio.getTime();
-                    if (diff <= 0) return;
-                    total += diff;
+                    if (!Number.isFinite(diff) || diff <= 0) return;
+                    totalMs += diff;
                     count += 1;
                 });
 
-                if (!count) { el.innerText = "�"; return; }
-
-                const avgMs = total / count;
-                const avgHours = avgMs / 36e5;
-                if (avgHours < 24) {
-                    const horas = Math.max(1, Math.round(avgHours));
-                    el.innerText = `${horas} h`;
-                } else {
-                    const dias = Math.max(1, Math.round(avgHours / 24));
-                    el.innerText = `${dias} dias`;
+                if (!count) {
+                    el.innerText = "--";
+                    return;
                 }
+
+                el.innerText = formatDuration(totalMs / count);
+                el.title = `Media calculada em ${count} pedidos finalizados`;
             } catch (e) {
-                console.warn("Erro ao calcular prazo m�dio:", e);
-                el.innerText = "�";
+                console.warn("Erro ao calcular prazo medio:", e);
+                el.innerText = "--";
             }
         }
 

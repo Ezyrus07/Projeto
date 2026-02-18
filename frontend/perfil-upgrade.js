@@ -1787,7 +1787,18 @@ function ensureTheme(ctx, theme){
     }
 
     const plural = ids.length > 1;
-    if(!confirm(`Excluir ${ids.length} publica${plural ? "ções" : "ção"} selecionada${plural ? "s" : ""}?`)){
+    const confirmMsg = `Excluir ${ids.length} publica${plural ? "ções" : "ção"} selecionada${plural ? "s" : ""}?`;
+    let confirmed = false;
+    if (typeof window.dokeConfirm === "function") {
+      try {
+        confirmed = await window.dokeConfirm(confirmMsg, "Excluir publicações", "danger");
+      } catch (_) {
+        confirmed = false;
+      }
+    } else {
+      confirmed = confirm(confirmMsg);
+    }
+    if(!confirmed){
       return;
     }
 
@@ -1801,6 +1812,17 @@ function ensureTheme(ctx, theme){
       toast("Erro ao excluir publicações.");
       return;
     }
+
+    try {
+      const keys = [
+        "doke_cache_home_publicacoes_v4",
+        "doke_cache_home_publicacoes_v3",
+        "doke_cache_home_publicacoes_v2",
+        "doke_cache_home_publicacoes_v1"
+      ];
+      keys.forEach((key) => localStorage.removeItem(key));
+      localStorage.setItem("doke_publicacoes_feed_dirty", String(Date.now()));
+    } catch (_) {}
 
     setPublicacoesSelectMode(false, { silent: true });
     toast(plural ? "Publicações excluídas." : "Publicação excluída.");

@@ -7,6 +7,25 @@
 window.__DOKE_BUILD__ = "20260218v60";
 try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
+function dokeApplyAppPageEnter(){
+    try {
+        const body = document.body;
+        if (!body || body.classList.contains('doke-app-page-enter')) return;
+        body.classList.add('doke-app-page-enter');
+        setTimeout(() => {
+            try { body.classList.remove('doke-app-page-enter'); } catch (_) {}
+        }, 420);
+    } catch (_) {}
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        requestAnimationFrame(() => dokeApplyAppPageEnter());
+    }, { once: true });
+} else {
+    requestAnimationFrame(() => dokeApplyAppPageEnter());
+}
+
 // [DOKE PATCH] Guards globais para evitar quebra em p?ginas diferentes + navega??o de grupos
 window.carregarProfissionaisDestaque ||= function(){};
 window.carregarProfissionaisNovos ||= function(){};
@@ -711,23 +730,39 @@ function setScrollLock(locked) {
     const root = document.documentElement;
     if (root) root.classList.toggle('no-scroll', locked);
     if (document.body) document.body.classList.toggle('no-scroll', locked);
+    if (!locked) {
+        try {
+            if (root) root.style.overflow = '';
+            if (document.body) {
+                document.body.style.overflow = '';
+                document.body.style.overflowY = '';
+            }
+        } catch (_) {}
+    }
 }
 
+const DOKE_SCROLL_LOCK_SELECTORS = [
+    '#modalGaleria',
+    '#modalPlayerVideo',
+    '#modalPostDetalhe',
+    '#modalSolicitacao',
+    '#modalStoryViewer',
+    '#modalStoryViewerPerfil',
+    '#modalOrcamento',
+    '#modalDetalhesPedido',
+    '#dokeModalOverlay',
+    '#dokeGlobalModal',
+    '#dpModalOverlay',
+    '#modalGerarCobranca',
+    '#modalFinalizarPedido',
+    '#modalSucessoAvaliacao',
+    '#modalPedidoEnviado',
+    '#anexoPreviewModal',
+    '#modalRecusa'
+];
+
 function updateScrollLock() {
-    const selectors = [
-        '#modalGaleria',
-        '#modalPlayerVideo',
-        '#modalPostDetalhe',
-        '#modalSolicitacao',
-        '#modalStoryViewer',
-        '#modalStoryViewerPerfil',
-        '#modalOrcamento',
-        '#modalDetalhesPedido',
-        '#dokeModalOverlay',
-        '#dokeGlobalModal',
-        '#dpModalOverlay'
-    ];
-    const aberto = selectors.some((sel) => {
+    const aberto = DOKE_SCROLL_LOCK_SELECTORS.some((sel) => {
         const els = Array.from(document.querySelectorAll(sel));
         return els.some((el) => {
             if (!el) return false;
@@ -748,22 +783,7 @@ function recoverScrollLockState() {
         const hasResidualLock = !!((root && root.classList.contains('no-scroll')) || (body && body.classList.contains('no-scroll')));
         if (!hasResidualLock) return;
 
-        const lockSelectors = [
-            '#modalGaleria',
-            '#modalPlayerVideo',
-            '#modalPostDetalhe',
-            '#modalSolicitacao',
-            '#modalStoryViewer',
-            '#modalStoryViewerPerfil',
-            '#modalOrcamento',
-            '#modalDetalhesPedido',
-            '#dokeModalOverlay',
-            '#dokeGlobalModal',
-            '#dpModalOverlay',
-            '#modalGerarCobranca',
-            '#modalFinalizarPedido'
-        ];
-        const hasVisibleLocker = lockSelectors.some((sel) => {
+        const hasVisibleLocker = DOKE_SCROLL_LOCK_SELECTORS.some((sel) => {
             const els = Array.from(document.querySelectorAll(sel));
             return els.some((el) => {
                 if (!el) return false;
@@ -778,13 +798,13 @@ function recoverScrollLockState() {
 window.setScrollLock = setScrollLock;
 window.updateScrollLock = updateScrollLock;
 
-let scrollLockRaf = null;
+let scrollLockTimer = null;
 function scheduleScrollLockUpdate() {
-    if (scrollLockRaf) return;
-    scrollLockRaf = requestAnimationFrame(() => {
-        scrollLockRaf = null;
+    if (scrollLockTimer) return;
+    scrollLockTimer = setTimeout(() => {
+        scrollLockTimer = null;
         updateScrollLock();
-    });
+    }, 90);
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -2706,19 +2726,23 @@ window.carregarCategorias = async function() {
     const container = document.getElementById('listaCategorias');
     if (!container) return;
     if (window.__dokeCategoriasLoading) return;
+    const hasRenderedCards = !!container.querySelector('.cat-card:not(.cat-skel)');
+    if (container.dataset.loaded === '1' && hasRenderedCards) return;
     window.__dokeCategoriasLoading = true;
 
     const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
     const skelCount = vw <= 520 ? 5 : (vw <= 1024 ? 6 : 8);
     container.classList.add('is-loading');
     container.setAttribute('aria-busy', 'true');
-    container.innerHTML = Array.from({ length: skelCount }).map(() => `
-        <div class="cat-card cat-skel" aria-hidden="true">
-            <span class="cat-ico cat-skel-circle skeleton"></span>
-            <span class="cat-label cat-skel-line skeleton"></span>
-            <span class="cat-count cat-skel-badge skeleton"></span>
-        </div>
-    `).join('');
+    if (!hasRenderedCards) {
+        container.innerHTML = Array.from({ length: skelCount }).map(() => `
+            <div class="cat-card cat-skel" aria-hidden="true">
+                <span class="cat-ico cat-skel-circle skeleton"></span>
+                <span class="cat-label cat-skel-line skeleton"></span>
+                <span class="cat-count cat-skel-badge skeleton"></span>
+            </div>
+        `).join('');
+    }
 
     try {
         const categoriasBase = __dokeGetAnunciarCategorias();
@@ -2789,6 +2813,7 @@ window.carregarCategorias = async function() {
         container.setAttribute('aria-busy', 'false');
         __dokeEnsureCategoryIconGlyph(container);
         __dokeSetupCatCarousel();
+        container.dataset.loaded = '1';
     } catch (e) {
         console.error('Erro categorias:', e);
         const listaFallback = __dokeGetAnunciarCategorias();
@@ -2814,6 +2839,7 @@ window.carregarCategorias = async function() {
         container.setAttribute('aria-busy', 'false');
         __dokeEnsureCategoryIconGlyph(container);
         __dokeSetupCatCarousel();
+        container.dataset.loaded = '1';
     } finally {
         window.__dokeCategoriasLoading = false;
     }
@@ -2929,7 +2955,20 @@ async function protegerPaginasRestritas() {
     }
 }
 
+function dokeIsShellManagingDesktopAuth() {
+    try {
+        if (window.__DOKE_SHELL_BUILD__) return true;
+        if (document.body?.classList?.contains('doke-shell-active')) return true;
+        if (document.querySelector('script[src*="doke-shell.js"]')) return true;
+    } catch (_e) {}
+    return false;
+}
+
 window.verificarEstadoLogin = async function() {
+    try {
+        document.body?.classList?.add('doke-auth-pending');
+    } catch (_e) {}
+
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
     let perfil = {};
     let resolvedUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
@@ -3035,50 +3074,71 @@ window.verificarEstadoLogin = async function() {
     const eProfissional = perfil.isProfissional === true;
     const perfilHref = eProfissional ? "meuperfil.html" : "perfil-usuario.html";
 
+    const shouldSyncDesktopAuth = !dokeIsShellManagingDesktopAuth();
+
     // --- A. CONTROLE DOS MENUS ---
-    const containers = document.querySelectorAll('.botoes-direita');
-    
-    containers.forEach(container => {
-        if (logado) {
-            const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
-            const textoAnunciar = "Anunciar";
+    if (shouldSyncDesktopAuth) {
+        const containers = document.querySelectorAll('.botoes-direita');
+        
+        containers.forEach(container => {
+            if (logado) {
+                const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
+                const textoAnunciar = "Anunciar";
 
-            // --- NOVO: L?GICA DO BOT?O CARTEIRA ---
-            // S? aparece se for profissional
-            const itemCarteira = eProfissional 
-                ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` 
-                : "";
+                // --- NOVO: L?GICA DO BOT?O CARTEIRA ---
+                // S? aparece se for profissional
+                const itemCarteira = eProfissional 
+                    ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` 
+                    : "";
 
-            container.innerHTML = `
-                <div class="profile-container">
-                    <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
-                    <div id="dropdownPerfil" class="dropdown-profile">
-                        <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
-                            ${escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usu?rio'))}
+                container.innerHTML = `
+                    <div class="profile-container">
+                        <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
+                        <div id="dropdownPerfil" class="dropdown-profile">
+                            <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+                                ${escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usu?rio'))}
+                            </div>
+                            <a href="${perfilHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                            
+                            ${itemCarteira} <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+                            <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
+                            <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
                         </div>
-                        <a href="${perfilHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
-                        
-                        ${itemCarteira} <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
-                        <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
-                        <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
-                    </div>
-                </div>`;
-        } else {
-            container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
-        }
-    });
+                    </div>`;
+            } else {
+                container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
+            }
+        });
 
-    const topAuthLink = document.getElementById('btnAuthTopo');
-    if (topAuthLink) {
-        if (logado) {
-            topAuthLink.setAttribute('href', perfilHref);
-            topAuthLink.innerHTML = `<img src="${fotoUsuario}" class="profile-img-btn" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">`;
-        } else {
-            topAuthLink.setAttribute('href', 'login.html');
-            topAuthLink.innerHTML = `<button class="btn-login" onclick="realizarLogin()">Fazer login</button>`;
+        const topAuthLink = document.getElementById('btnAuthTopo');
+        if (topAuthLink) {
+            if (logado) {
+                topAuthLink.setAttribute('href', perfilHref);
+                topAuthLink.innerHTML = `<img src="${fotoUsuario}" class="profile-img-btn" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">`;
+            } else {
+                topAuthLink.setAttribute('href', 'login.html');
+                topAuthLink.innerHTML = `<button class="btn-login" onclick="realizarLogin()">Fazer login</button>`;
+            }
         }
     }
-const imgBottom = document.getElementById('imgPerfilMobile');
+
+    if (shouldSyncDesktopAuth) {
+        try {
+            document.body?.classList?.remove('doke-auth-pending');
+            document.body?.classList?.add('doke-auth-ready');
+        } catch (_e) {}
+    } else {
+        setTimeout(() => {
+            try {
+                const body = document.body;
+                if (!body) return;
+                if (body.classList.contains('doke-auth-ready')) return;
+                if (window.__DOKE_SHELL_BUILD__) return;
+                body.classList.remove('doke-auth-pending');
+            } catch (_e) {}
+        }, 2500);
+    }
+    const imgBottom = document.getElementById('imgPerfilMobile');
     if (imgBottom) {
         if (logado) {
             imgBottom.src = fotoUsuario;
@@ -8157,14 +8217,14 @@ function ensureModalPostDetalhe() {
         const jaTemBotao = modalExistente.querySelector('.btn-close-modal-fixed');
         const modalContent = modalExistente.querySelector('.modal-content');
         if (!jaTemBotao && modalContent) {
-            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">?</button>');
+            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">&times;</button>');
         }
         return;
     }
     const modalHtml = `
     <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">?</button>
+            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">&times;</button>
             <div class="modal-media-area" id="modalMediaContainer"></div>
             <div class="modal-info-area">
                 <div class="modal-header">
@@ -9133,6 +9193,8 @@ window.carregarReelsHome = async function() {
     const container = document.getElementById('galeria-dinamica');
     if (!container) return;
     if (window.__dokeReelsHomeLoading) return;
+    const hasRenderedReels = !!container.querySelector('.dp-reelCard');
+    if (container.dataset.loaded === '1' && hasRenderedReels) return;
     window.__dokeReelsHomeLoading = true;
     const reelsWatchdog = setTimeout(() => {
         try {
@@ -9268,6 +9330,7 @@ window.carregarReelsHome = async function() {
             </div>`;
             container.insertAdjacentHTML('beforeend', html);
         });
+        container.dataset.loaded = '1';
     } catch (e) {
         dokeLogNonNetworkError("Falha ao renderizar reels home:", e);
         try {

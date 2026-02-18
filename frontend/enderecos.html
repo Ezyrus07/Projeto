@@ -22,7 +22,8 @@
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 <style>
-body[data-page="enderecos"]{
+body[data-page="enderecos"],
+body[data-page="mais"]{
   background: linear-gradient(180deg, #1f4d75 0%, #eef2f8 220px);
 }
 main.enderecos-main{
@@ -150,8 +151,8 @@ main.enderecos-main{
   transform: translateY(-1px);
 }
 .addr-card.is-principal{
-  border-color: rgba(243, 73, 103, .45);
-  box-shadow: 0 8px 18px rgba(243, 73, 103, .12);
+  border-color: rgba(11, 119, 104, .45);
+  box-shadow: 0 8px 18px rgba(11, 119, 104, .14);
 }
 .addr-pin{
   width: 38px;
@@ -165,9 +166,9 @@ main.enderecos-main{
   color:#94a3b8;
 }
 .addr-card.is-principal .addr-pin{
-  color:#f43f5e;
-  border-color: rgba(244,63,94,.35);
-  background:#fff0f5;
+  color: var(--cor0);
+  border-color: rgba(11,119,104,.35);
+  background: #edf9f6;
 }
 .addr-main h3{
   margin:0 0 2px;
@@ -189,9 +190,9 @@ main.enderecos-main{
   align-items:center;
   gap:5px;
   font-size: .72rem;
-  color:#f43f5e;
-  background:#fff1f4;
-  border:1px solid #fecdd3;
+  color: var(--cor0);
+  background: #edf9f6;
+  border:1px solid rgba(11,119,104,.28);
   border-radius: 999px;
   padding: 3px 8px;
   margin-bottom: 6px;
@@ -213,6 +214,11 @@ main.enderecos-main{
 .addr-menu button:hover{
   border-color:#0b7768;
   color:#0b7768;
+}
+.addr-menu button[data-action="principal"].is-active{
+  border-color: rgba(11,119,104,.48);
+  color: var(--cor0);
+  background: #edf9f6;
 }
 
 @media (max-width: 900px){
@@ -379,7 +385,6 @@ main.enderecos-main{
 <div class="addr-toolbar">
 <input class="addr-search" id="addrSearch" placeholder="Buscar por apelido, rua, bairro ou cidade" type="text"/>
 <button class="addr-action" id="btnNovoEndereco" type="button"><i class="bx bx-plus"></i> Novo endereço</button>
-<a class="addr-action secondary" href="orcamento.html"><i class="bx bx-right-arrow-alt"></i> Ir para orçamento</a>
 </div>
 <form class="addr-form" id="addrForm">
 <div class="addr-grid">
@@ -559,7 +564,7 @@ main.enderecos-main{
             ${resumo.info ? `<p class="muted">${esc(resumo.info)}</p>` : ``}
           </div>
           <div class="addr-menu">
-            <button type="button" data-action="principal" title="Definir principal"><i class='bx bx-star'></i></button>
+            <button type="button" data-action="principal" class="${principal ? "is-active" : ""}" title="Definir como principal"><i class='bx ${principal ? "bxs-star" : "bx-star"}'></i></button>
             <button type="button" data-action="editar" title="Editar"><i class='bx bx-pencil'></i></button>
             <button type="button" data-action="excluir" title="Excluir"><i class='bx bx-trash'></i></button>
           </div>

@@ -76,7 +76,7 @@
 }
 
 .form-section .card-branco:last-child{
-    margin-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 20px + env(safe-area-inset-bottom));
+    margin-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 12px + env(safe-area-inset-bottom));
 }
 
 .titulo-sessao {
@@ -328,9 +328,9 @@
     flex-shrink: 0;
 }
 .address-book-card.is-principal .address-book-pin{
-    color: #f43f5e;
-    border-color: #fecdd3;
-    background: #fff1f4;
+    color: var(--cor0);
+    border-color: rgba(11,119,104,0.28);
+    background: #edf9f6;
 }
 .address-book-title{
     margin: 0;
@@ -346,9 +346,9 @@
     align-items: center;
     gap: 4px;
     border-radius: 999px;
-    border: 1px solid #fecdd3;
-    color: #f43f5e;
-    background: #fff1f4;
+    border: 1px solid rgba(11,119,104,0.28);
+    color: var(--cor0);
+    background: #edf9f6;
     font-size: 0.66rem;
     padding: 2px 7px;
     font-weight: 700;
@@ -532,7 +532,7 @@ textarea.campo-dinamico{
 }
 
 /* --- RESPONSIVIDADE OR??AMENTO --- */
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
     .layout-orcamento {
         grid-template-columns: 1fr; /* Empilha tudo */
         padding-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 36px + env(safe-area-inset-bottom));
@@ -540,7 +540,7 @@ textarea.campo-dinamico{
     .card-prestador-resumo {
         position: static; /* Remove o sticky no mobile */
         order: -1; /* Coloca o resumo acima do formul?f?rio no mobile */
-        margin-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 20px + env(safe-area-inset-bottom));
+        margin-bottom: 14px;
     }
     .grid-duplo { grid-template-columns: 1fr; }
     .anexo-picker{
@@ -586,10 +586,18 @@ textarea.campo-dinamico{
     .orc-top-sub{ font-size: 0.92rem; }
     .input-group label{ font-size: 0.95rem; }
     .titulo-sessao{ font-size: 1.05rem; margin-bottom: 16px; }
+    #descricao-pedido.area-texto{
+        min-height: 170px;
+    }
     .triagem-help-box{
         right: -6px;
         width: min(270px, calc(100vw - 38px));
     }
+}
+
+.form-section,
+.resumo-section{
+    min-width: 0;
 }
 
 /* Scroll hardening da p?f?gina de or?f?amento (evita travar ao voltar de outras telas) */
@@ -607,12 +615,12 @@ body[data-page="orcamento"] main.main-orcamento{
     display: block !important;
     overflow: visible !important;
     min-height: calc(100dvh - 120px);
-    padding-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 128px + env(safe-area-inset-bottom));
+    padding-bottom: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 40px + env(safe-area-inset-bottom));
 }
 body[data-page="orcamento"] main.main-orcamento::after{
     content: "";
     display: block;
-    height: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 40px + env(safe-area-inset-bottom));
+    height: calc(var(--doke-btm-real, var(--doke-btm, 84px)) + 8px + env(safe-area-inset-bottom));
 }
 
 /* --- TOP HEADER (PASSOS) --- */
@@ -664,6 +672,13 @@ body[data-page="orcamento"] main.main-orcamento::after{
     padding-inline: 16px;
 }
 .btn-buscar-cep i{ font-size: 1.15rem; }
+
+#para-quando,
+#data-especifica{
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
 
 .anexo-preview-modal{
     position: fixed;
@@ -1047,7 +1062,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <hr class="divisor"/>
 <ul class="lista-vantagens">
 <li><i class="bx bx-check-shield"></i> <strong>Garantia Doke:</strong> S&oacute; liberamos o pagamento quando voc&ecirc; aprovar o servi&ccedil;o.</li>
-<li><i class="bx bx-time-five"></i> Resposta m&eacute;dia em 20 min.</li>
+<li><i class="bx bx-time-five"></i> <span id="respostaMediaResumo">Prazo m&eacute;dio do profissional: --</span></li>
 </ul>
 <button class="btn-enviar-orcamento" id="btnEnviarOrcamento">
             Enviar Solicita&ccedil;&atilde;o
@@ -1084,8 +1099,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
     let doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc;
     let getStorage, ref, uploadBytes, getDownloadURL;
     let onAuthStateChanged;
-    let dokeResolveAuthUser;
-    let dokeEnsureAuthUserFromCacheSync;
+    let dokeResolveAuthUserFn;
+    let dokeEnsureAuthUserFromCacheSyncFn;
 
     function initFirebaseHelpers() {
         if (typeof window.__dokeEnsureFirestoreCompat === "function") window.__dokeEnsureFirestoreCompat();
@@ -1093,8 +1108,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
         ({ doc, getDoc, addDoc, collection, getDocs, query, where, limit, updateDoc } = window);
         ({ getStorage, ref, uploadBytes, getDownloadURL } = window);
         ({ onAuthStateChanged } = window);
-        dokeResolveAuthUser = window.dokeResolveAuthUser;
-        dokeEnsureAuthUserFromCacheSync = window.dokeEnsureAuthUserFromCacheSync;
+        dokeResolveAuthUserFn = window.dokeResolveAuthUser;
+        dokeEnsureAuthUserFromCacheSyncFn = window.dokeEnsureAuthUserFromCacheSync;
     }
 
     function getAuthSubscriberSafe() {
@@ -1110,14 +1125,14 @@ body[data-page="orcamento"] main.main-orcamento::after{
             if (direto?.uid || direto?.id) return direto;
         } catch (_) {}
         try {
-            if (typeof dokeResolveAuthUser === 'function') {
-                const resolved = await dokeResolveAuthUser();
+            if (typeof dokeResolveAuthUserFn === 'function') {
+                const resolved = await dokeResolveAuthUserFn();
                 if (resolved?.uid || resolved?.id) return resolved;
             }
         } catch (_) {}
         try {
-            if (typeof dokeEnsureAuthUserFromCacheSync === 'function') {
-                const cached = dokeEnsureAuthUserFromCacheSync();
+            if (typeof dokeEnsureAuthUserFromCacheSyncFn === 'function') {
+                const cached = dokeEnsureAuthUserFromCacheSyncFn();
                 if (cached?.uid || cached?.id) return cached;
             }
         } catch (_) {}
@@ -1383,7 +1398,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 }
             }
         } catch (e) {
-            console.warn('Falha ao pr�-preencher pedido:', e);
+            console.warn('Falha ao pré-preencher pedido:', e);
         }
     }
 
@@ -1499,6 +1514,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         if (dadosPrestador) {
             window.__orc_prestador = dadosPrestador || null;
             atualizarCardResumo(dadosPrestador);
+            atualizarPrazoMedioResumo(prestadorUid);
             return dadosPrestador;
         }
 
@@ -1508,6 +1524,16 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function aplicarDadosAnuncio(dadosAnuncio) {
         if (!dadosAnuncio) return;
         applyPrestadorFallbackFromAnuncio(dadosAnuncio);
+        const uidProf = String(
+            dadosAnuncio.uid
+            || dadosAnuncio.paraUid
+            || dadosAnuncio.profissional_id
+            || dadosAnuncio.profissionalId
+            || ''
+        ).trim();
+        if (uidProf) {
+            atualizarPrazoMedioResumo(uidProf);
+        }
         aplicarConfiguracoesDoAnuncio(dadosAnuncio);
         const rawPerguntas = pickPerguntas(
             dadosAnuncio.perguntasFormularioJson,
@@ -1647,14 +1673,14 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function montarLabelEndereco(addr, idx) {
         const custom = String(addr?.label || '').trim();
         if (custom) return custom;
-        if (addr?.principal || idx === 0) return 'Endere�o principal';
-        return `Endere�o ${idx + 1}`;
+        if (addr?.principal || idx === 0) return 'Endereço principal';
+        return `Endereço ${idx + 1}`;
     }
 
     function getEnderecoResumo(addr) {
-        const base = [addr?.endereco, addr?.numero ? `N� ${addr.numero}` : ''].filter(Boolean).join(', ');
+        const base = [addr?.endereco, addr?.numero ? `Nº ${addr.numero}` : ''].filter(Boolean).join(', ');
         const cep = addr?.cep ? `CEP ${addr.cep}` : '';
-        return [base, cep].filter(Boolean).join(' � ');
+        return [base, cep].filter(Boolean).join(' • ');
     }
 
     function preencherEnderecoNoFormulario(addr) {
@@ -1694,13 +1720,13 @@ body[data-page="orcamento"] main.main-orcamento::after{
         if (!wrap) return;
         const list = readAddressBook();
         if (!list.length) {
-            wrap.innerHTML = '<div class="address-book-empty">Nenhum endere�o salvo ainda.</div>';
+            wrap.innerHTML = '<div class="address-book-empty">Nenhum endereço salvo ainda.</div>';
             return;
         }
         wrap.innerHTML = list.map((addr, idx) => {
             const label = montarLabelEndereco(addr, idx);
             const resumo = getEnderecoResumo(addr);
-            const extra = [addr.complemento, addr.referencia].filter(Boolean).join(' � ');
+            const extra = [addr.complemento, addr.referencia].filter(Boolean).join(' • ');
             const active = String(activeId || '') === String(addr.id || '');
             return `
                 <article class="address-book-card ${addr.principal ? 'is-principal' : ''} ${active ? 'is-active' : ''}" data-id="${escapeHtmlEndereco(addr.id)}" role="button" tabindex="0" aria-label="Aplicar ${escapeHtmlEndereco(label)}">
@@ -1722,7 +1748,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const select = document.getElementById('orc-endereco-salvo');
         if (!select) return;
         const list = readAddressBook();
-        select.innerHTML = '<option value="">Selecione um endere�o salvo</option>';
+        select.innerHTML = '<option value="">Selecione um endereço salvo</option>';
         list.forEach((addr, idx) => {
             const opt = document.createElement('option');
             opt.value = addr.id;
@@ -1765,7 +1791,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             return list;
         } catch (e) {
             window.__orc_address_book_db_ok = false;
-            console.warn('AddressBook remoto indispon�vel, usando cache local:', e);
+            console.warn('AddressBook remoto indisponível, usando cache local:', e);
             return null;
         }
     }
@@ -1834,7 +1860,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             });
         } catch (e) {
             window.__orc_address_book_db_ok = false;
-            console.warn('Falha ao salvar endere�o no banco:', e);
+            console.warn('Falha ao salvar endereço no banco:', e);
             return null;
         }
     }
@@ -1843,7 +1869,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const silent = !!opts.silent;
         const current = getEnderecoFormData();
         if (!isEnderecoMinimoValido(current)) {
-            if (!silent) avisarValidacao('Preencha CEP, endere�o e n�mero para salvar.');
+            if (!silent) avisarValidacao('Preencha CEP, endereço e número para salvar.');
             return null;
         }
 
@@ -1866,7 +1892,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const select = document.getElementById('orc-endereco-salvo');
         if (select) select.value = finalAddr.id;
         if (!silent) {
-            const msg = foundIdx >= 0 ? 'Endere�o atualizado.' : 'Endere�o salvo.';
+            const msg = foundIdx >= 0 ? 'Endereço atualizado.' : 'Endereço salvo.';
             if (window.dokeToast) window.dokeToast(msg); else avisarValidacao(msg);
         }
 
@@ -2163,11 +2189,11 @@ body[data-page="orcamento"] main.main-orcamento::after{
             
             let user = auth?.currentUser || null;
 
-            if (!user && typeof dokeResolveAuthUser === 'function') {
-                try { user = await dokeResolveAuthUser(); } catch (_) { user = null; }
+            if (!user && typeof dokeResolveAuthUserFn === 'function') {
+                try { user = await dokeResolveAuthUserFn(); } catch (_) { user = null; }
             }
-            if (!user && typeof dokeEnsureAuthUserFromCacheSync === 'function') {
-                try { user = dokeEnsureAuthUserFromCacheSync(); } catch (_) { user = null; }
+            if (!user && typeof dokeEnsureAuthUserFromCacheSyncFn === 'function') {
+                try { user = dokeEnsureAuthUserFromCacheSyncFn(); } catch (_) { user = null; }
             }
             if (!user) { alert("Fa?a login para continuar."); return; }
 
@@ -2425,14 +2451,21 @@ Local do servi\u00e7o: ${loc}${extra}`;
         const inp = document.getElementById('data-especifica');
         if (!sel || !wrap || !inp) return;
 
+        const normalize = (value) => String(value || "")
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .toLowerCase();
+
         const atualizar = () => {
-            const v = String(sel.value || "").toLowerCase();
-            const isEspecifica = v.includes('data espec\u00edfica') || v.includes('data espec\u00edfica');
+            const v = normalize(sel.value);
+            const isEspecifica = v.includes('data especifica');
             wrap.style.display = isEspecifica ? 'block' : 'none';
             if (!isEspecifica) inp.value = "";
         };
 
         sel.addEventListener('change', atualizar);
+        sel.addEventListener('input', atualizar);
+        sel.addEventListener('click', atualizar);
         atualizar();
     }
 
@@ -2440,14 +2473,26 @@ Local do servi\u00e7o: ${loc}${extra}`;
     function mostrarModalPedidoEnviado(pedidoId) {
         const modal = document.getElementById('modalPedidoEnviado');
         const btnAbrir = document.getElementById('btnIrChatDireto');
+        const btnMensagens = document.getElementById('btnAcompanharPedidos');
         if (btnAbrir) btnAbrir.href = `chat.html?chatId=${pedidoId}`;
 
         if (modal) {
+            const fecharModalPedidoEnviado = () => {
+                modal.style.display = 'none';
+                document.body.classList.remove('doke-modal-open');
+            };
+            document.body.classList.add('doke-modal-open');
             modal.style.display = 'flex';
             // Fechar clicando fora do card
             modal.addEventListener('click', (e) => {
-                if (e.target === modal) modal.style.display = 'none';
+                if (e.target === modal) fecharModalPedidoEnviado();
             }, { once: true });
+            if (btnAbrir) {
+                btnAbrir.addEventListener('click', () => document.body.classList.remove('doke-modal-open'), { once: true });
+            }
+            if (btnMensagens) {
+                btnMensagens.addEventListener('click', () => document.body.classList.remove('doke-modal-open'), { once: true });
+            }
         }
     }
 
@@ -2522,6 +2567,99 @@ Local do servi\u00e7o: ${loc}${extra}`;
                 0
             );
             document.getElementById('jobsPrestadorResumo').innerText = String(jobs);
+        }
+    }
+
+    async function atualizarPrazoMedioResumo(uidProfissional) {
+        const target = document.getElementById('respostaMediaResumo');
+        if (!target) return;
+        if (!uidProfissional) {
+            target.innerText = 'Prazo medio do profissional: --';
+            return;
+        }
+
+        const parseDate = (value) => {
+            if (!value) return null;
+            if (value instanceof Date) return value;
+            if (typeof value === 'object' && typeof value.seconds === 'number') return new Date(value.seconds * 1000);
+            const d = new Date(value);
+            return Number.isFinite(d.getTime()) ? d : null;
+        };
+        const pickDate = (row, fields) => {
+            for (const field of fields) {
+                const parsed = parseDate(row?.[field]);
+                if (parsed) return parsed;
+            }
+            return null;
+        };
+        const formatDuration = (ms) => {
+            const minutes = ms / 60000;
+            if (minutes < 60) return `${Math.max(1, Math.round(minutes))} min`;
+            const hours = minutes / 60;
+            if (hours < 24) return `${Math.max(1, Math.round(hours))} h`;
+            return `${Math.max(1, Math.round(hours / 24))} dias`;
+        };
+        const startFields = ['dataAceite', 'data_aceite', 'dataAceito', 'aceito_em', 'accepted_at', 'dataPedido', 'data_pedido', 'created_at', 'createdAt'];
+        const endFields = ['dataConclusao', 'data_conclusao', 'dataFinalizado', 'data_finalizado', 'finalizado_em', 'finished_at', 'dataAtualizacao', 'updated_at', 'updatedAt'];
+        const ownerFields = ['paraUid', 'para_uid', 'parauid', 'profissional_id', 'profissionalId', 'uid_profissional', 'uidProfissional'];
+        const isFinalizado = (row) => String(row?.status || '').toLowerCase() === 'finalizado';
+        const belongsToProf = (row) => ownerFields.some((field) => row?.[field] != null && String(row[field]) === String(uidProfissional));
+
+        target.innerText = 'Prazo medio do profissional: calculando...';
+
+        try {
+            let rows = [];
+            try {
+                const q = query(
+                    collection(window.db, 'pedidos'),
+                    where('paraUid', '==', uidProfissional),
+                    where('status', '==', 'finalizado')
+                );
+                const snap = await getDocs(q);
+                rows = (snap?.docs || []).map((docSnap) => docSnap.data() || {});
+            } catch (_) {}
+
+            if (!rows.length) {
+                try {
+                    const sb = getSupabaseClientSafe();
+                    if (sb?.from) {
+                        const fetched = [];
+                        for (const ownerCol of ownerFields) {
+                            try {
+                                const { data, error } = await sb.from('pedidos').select('*').eq(ownerCol, uidProfissional).limit(1200);
+                                if (!error && Array.isArray(data) && data.length) fetched.push(...data);
+                            } catch (_) {}
+                        }
+                        if (!fetched.length) {
+                            const { data, error } = await sb.from('pedidos').select('*').limit(1200);
+                            if (!error && Array.isArray(data)) fetched.push(...data.filter((row) => belongsToProf(row)));
+                        }
+                        rows = fetched;
+                    }
+                } catch (_) {}
+            }
+
+            let totalMs = 0;
+            let count = 0;
+            rows.forEach((row) => {
+                if (!isFinalizado(row)) return;
+                const inicio = pickDate(row, startFields);
+                const fim = pickDate(row, endFields);
+                if (!inicio || !fim) return;
+                const diff = fim.getTime() - inicio.getTime();
+                if (!Number.isFinite(diff) || diff <= 0) return;
+                totalMs += diff;
+                count += 1;
+            });
+
+            if (!count) {
+                target.innerText = 'Prazo medio do profissional: --';
+                return;
+            }
+
+            target.innerText = `Prazo medio do profissional: ${formatDuration(totalMs / count)}`;
+        } catch (_) {
+            target.innerText = 'Prazo medio do profissional: --';
         }
     }
 

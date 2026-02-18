@@ -131,6 +131,15 @@
     return false;
   }
 
+  function setShellAuthStateReady(isReady){
+    try{
+      const body = document.body;
+      if(!body) return;
+      body.classList.toggle("doke-auth-pending", !isReady);
+      body.classList.toggle("doke-auth-ready", !!isReady);
+    }catch(_e){}
+  }
+
   async function getSessionUser(){
     try{
       const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase;
@@ -598,6 +607,7 @@
   }
 
     async function ensureShell(){
+    setShellAuthStateReady(false);
     const body = document.body;
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
@@ -648,6 +658,7 @@
 
     ensureGlobalAuthActions();
     syncClassicDesktopHeader({ isLogged, profile, avatarUrl, isPro });
+    setShellAuthStateReady(true);
 
     if(!MQ.matches) return;
 

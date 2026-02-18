@@ -75,8 +75,45 @@ html.no-scroll, body.no-scroll {
   touch-action: auto;
 }
 
+/* Quando um modal global estiver aberto, reduz destaque do layout de fundo */
+body.doke-modal-open .sidebar-icones,
+body.doke-modal-open .navbar-desktop{
+  filter: blur(1.6px) saturate(0.92);
+  opacity: 0.46;
+  pointer-events: none;
+  transition: filter .18s ease, opacity .18s ease;
+}
+
+@media (max-width: 1024px){
+  html, body{
+    overscroll-behavior-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  body:not(.no-scroll):not(.doke-modal-open):not(.doke-search-open):not(.doke-drawer-open):not(.doke-menu-open){
+    overflow-y: auto;
+  }
+}
+
 body > main {
   flex: 1;
+}
+
+/* Entrada suave de tela (sensação de app) */
+body.doke-app-page-enter main,
+body.doke-app-page-enter .main-content,
+body.doke-app-page-enter .messenger-layout{
+  animation: dokeAppPageIn .22s cubic-bezier(.22,.61,.36,1);
+}
+@keyframes dokeAppPageIn{
+  from{ opacity: .01; transform: translateY(4px); }
+  to{ opacity: 1; transform: translateY(0); }
+}
+@media (prefers-reduced-motion: reduce){
+  body.doke-app-page-enter main,
+  body.doke-app-page-enter .main-content,
+  body.doke-app-page-enter .messenger-layout{
+    animation: none !important;
+  }
 }
 
 body > *:first-child {
@@ -668,6 +705,24 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
   gap: 8px;
   flex-shrink: 0;
   align-items: center;
+}
+
+/* Header auth: reserva espaço e evita conflito "Entrar" x Avatar */
+.navbar-desktop .botoes-direita{
+  min-width: 56px;
+  justify-content: flex-end;
+}
+.navbar-desktop .botoes-direita .entrar,
+.navbar-desktop .botoes-direita .profile-container{
+  flex: 0 0 auto;
+}
+body.doke-auth-pending .navbar-desktop .botoes-direita > *{
+  opacity: 0;
+  pointer-events: none;
+}
+body.doke-auth-ready .navbar-desktop .botoes-direita > *{
+  opacity: 1;
+  transition: opacity .14s ease;
 }
 
 @media (max-width: 1024px){
@@ -10987,7 +11042,7 @@ table{max-width:100%;}
 /* ============================================================
    PATCH 2026-02-08 — Header tablet (centrado) + avatar estável
    ============================================================ */
-@media (min-width: 768px) and (max-width: 1194px){
+@media (min-width: 1025px) and (max-width: 1194px){
   .navbar-desktop{
     display: grid !important;
     grid-template-columns: minmax(120px, 180px) minmax(0, 1fr) minmax(120px, 180px);
@@ -11138,17 +11193,17 @@ table{max-width:100%;}
   font-size: 0.95rem !important;
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1180px) {
   #modalPostDetalhe {
     padding: 0 !important;
-    align-items: flex-end !important;
+    align-items: center !important;
   }
 
   #modalPostDetalhe .modal-content {
-    width: 100vw !important;
-    height: 100dvh !important;
+    width: min(100vw, 980px) !important;
+    height: min(100dvh, 900px) !important;
     max-height: 100dvh !important;
-    border-radius: 16px 16px 0 0 !important;
+    border-radius: 18px !important;
     flex-direction: column !important;
   }
 
@@ -11170,7 +11225,7 @@ table{max-width:100%;}
   }
 
   #modalPostDetalhe .modal-comments-section {
-    padding: 12px 14px !important;
+    padding: 12px 14px calc(20px + env(safe-area-inset-bottom)) !important;
   }
 
   #modalPostDetalhe .modal-footer-actions {
@@ -11186,6 +11241,18 @@ table{max-width:100%;}
     width: 100% !important;
     height: 100% !important;
     object-fit: contain !important;
+  }
+}
+
+@media (max-width: 640px){
+  #modalPostDetalhe{
+    align-items: flex-end !important;
+  }
+  #modalPostDetalhe .modal-content{
+    width: 100vw !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    border-radius: 16px 16px 0 0 !important;
   }
 }
 
@@ -11652,7 +11719,50 @@ table{max-width:100%;}
   }
 }
 
-
-
-
-
+/* ============================================================
+   FLUIDEZ GLOBAL - estabilidade de layout/skeleton (v2026-02-18)
+   ============================================================ */
+body[data-page="home"] .categorias-em-alta{
+  min-height: 168px;
+}
+body[data-page="home"] #listaCategorias{
+  min-height: 132px;
+  align-items: flex-start;
+}
+body[data-page="home"] .videos-container{
+  position: relative;
+  z-index: 1;
+}
+body[data-page="home"] #galeria-dinamica{
+  min-height: clamp(300px, 42vh, 430px);
+  align-items: stretch;
+}
+body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton{
+  width: clamp(160px, calc((var(--home-section-width, 1100px) - 60px) / 5), 210px);
+  min-width: clamp(160px, calc((var(--home-section-width, 1100px) - 60px) / 5), 210px);
+  height: auto;
+  aspect-ratio: 9 / 15;
+  border-radius: 12px;
+}
+body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton .tiktok-skel-media{
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+}
+body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton .tiktok-skel-overlay{
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+@media (max-width: 900px){
+  body[data-page="home"] .categorias-em-alta{ min-height: 156px; }
+  body[data-page="home"] #listaCategorias{ min-height: 122px; }
+}
+@media (max-width: 600px){
+  body[data-page="home"] #galeria-dinamica{ min-height: 260px; }
+  body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton{
+    width: 150px;
+    min-width: 150px;
+  }
+}
