@@ -646,6 +646,40 @@
       : guestItemHTML;
 
     const avatarUrl = isLogged ? getAvatarUrl(profile) : null;
+    const authUid = String(
+      profile?.uid ||
+      profile?.id ||
+      sessionUser?.id ||
+      localStorage.getItem("doke_uid") ||
+      ""
+    ).trim();
+    const currentFile = String(location.pathname.split("/").pop() || "").toLowerCase();
+    const shouldBindBadges = !["login.html", "cadastro.html", "senha.html"].includes(currentFile);
+    if (authUid) {
+      try {
+        const raw = localStorage.getItem(`doke_badges_cache_${authUid}`);
+        const cached = raw ? safeParse(raw) : null;
+        const notif = Math.max(0, Number(cached?.notif || 0) || 0);
+        const chat = Math.max(0, Number(cached?.chat || 0) || 0);
+        if (notif > 0 || chat > 0) {
+          const prev = window.__dokeBadgeTotals || {};
+          window.__dokeBadgeTotals = {
+            notif: Math.max(0, Number(prev.notif || 0) || 0, notif),
+            chat: Math.max(0, Number(prev.chat || 0) || 0, chat)
+          };
+          try {
+            window.dispatchEvent(new CustomEvent("doke:badges", { detail: window.__dokeBadgeTotals }));
+          } catch (_e) {}
+        }
+      } catch (_e) {}
+      if (shouldBindBadges) {
+        try {
+          if (typeof window.monitorarNotificacoesGlobal === "function") {
+            window.monitorarNotificacoesGlobal(authUid);
+          }
+        } catch (_e) {}
+      }
+    }
     if (isLogged) {
       try {
         rememberSavedAccount({
@@ -862,7 +896,10 @@
     }
 
     function openDrawer(){ document.body.classList.add("doke-drawer-open"); }
-    function closeDrawer(){ document.body.classList.remove("doke-drawer-open"); }
+    function closeDrawer(){
+      document.body.classList.remove("doke-drawer-open");
+      try { normalizeShellScrollLocks(); } catch(_e) {}
+    }
     function closeSearch(){
       document.body.classList.remove("doke-search-open");
       if(!overlay) return;
@@ -878,6 +915,17 @@
         results.innerHTML = "";
       }
       if(recent) recent.style.display = "";
+      try { normalizeShellScrollLocks(); } catch(_e) {}
+    }
+    function normalizeShellScrollLocks(){
+      try{
+        const drawerOpen = document.body.classList.contains("doke-drawer-open");
+        const searchOpen = document.body.classList.contains("doke-search-open");
+        if (!drawerOpen && !searchOpen) {
+          document.body.classList.remove("doke-menu-open");
+          document.body.classList.remove("no-scroll");
+        }
+      }catch(_e){}
     }
 
     function saveRecent(q){
@@ -1156,10 +1204,21 @@
         try{ applyShellBadges(ev?.detail || null); }catch(e){}
       });
     }
+    window.addEventListener("pageshow", normalizeShellScrollLocks);
+    window.addEventListener("focus", normalizeShellScrollLocks);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) normalizeShellScrollLocks();
+    });
     if(!window.__dokeShellBadgeHydrateBound){
       window.__dokeShellBadgeHydrateBound = true;
       const hydrateBadges = () => {
         try{ applyShellBadges(window.__dokeBadgeTotals || null); }catch(_e){}
+        try{
+          const uid = String(localStorage.getItem("doke_uid") || "").trim();
+          if(uid && shouldBindBadges && typeof window.monitorarNotificacoesGlobal === "function"){
+            window.monitorarNotificacoesGlobal(uid);
+          }
+        }catch(_e){}
       };
       window.addEventListener("focus", hydrateBadges);
       window.addEventListener("pageshow", hydrateBadges);

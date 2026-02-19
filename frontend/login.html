@@ -451,8 +451,10 @@
     async function ensureSupabase(){
       const pick = () => window.sb || window.supabaseClient || window.sbClient || window.supabase;
       let sb = pick();
-      if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        await new Promise((r) => setTimeout(r, 80));
+      let tentativas = 0;
+      while ((!sb || typeof sb.from !== "function" || !sb.auth) && tentativas < 25) {
+        tentativas += 1;
+        await new Promise((r) => setTimeout(r, 100));
         sb = pick();
       }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
@@ -512,8 +514,40 @@ function showMsg(type, text){
 
       try {
         const supabase = await ensureSupabase();
+        const limparSessaoCorrompida = () => {
+          try {
+            localStorage.removeItem("doke_auth_session_backup");
+            localStorage.removeItem("usuarioLogado");
+            localStorage.removeItem("doke_uid");
+            localStorage.removeItem("doke_usuario_perfil");
+            Object.keys(localStorage).forEach((k) => {
+              if (/^sb-[a-z0-9-]+-auth-token$/i.test(String(k || ""))) {
+                try { localStorage.removeItem(k); } catch (_) {}
+              }
+            });
+          } catch (_) {}
+        };
 
-        const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha });
+        const tentarLogin = async () => supabase.auth.signInWithPassword({ email, password: senha });
+        let { data, error } = await tentarLogin();
+        if (error) {
+          const errMsgRaw = String(error?.message || error || "").toLowerCase();
+          const invalidCred =
+            String(error?.code || "").toLowerCase() === "invalid_login_credentials" ||
+            errMsgRaw.includes("invalid login") ||
+            errMsgRaw.includes("invalid credentials");
+          if (!invalidCred) {
+            limparSessaoCorrompida();
+            try {
+              if (typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+                await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+              }
+            } catch (_) {}
+            const retry = await tentarLogin();
+            data = retry?.data || null;
+            error = retry?.error || null;
+          }
+        }
         if (error) throw error;
 
         const uid = data.user?.id;

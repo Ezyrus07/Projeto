@@ -3865,6 +3865,28 @@ window.fecharMenuMobile = function() {
     const overlay = document.getElementById('overlay-menu');
     if(overlay) overlay.style.display = 'none';
 }
+
+// Hardening: evita camada invisivel bloquear o botao "Entrar" no header.
+window.__dokeFixHeaderClickBlock = function() {
+    try {
+        const overlay = document.getElementById('overlay-menu');
+        const body = document.body;
+        if (overlay && body && !body.classList.contains('menu-ativo')) {
+            overlay.style.display = 'none';
+            overlay.style.pointerEvents = 'none';
+        }
+        document.querySelectorAll('.navbar-desktop .botoes-direita .entrar').forEach((btn) => {
+            btn.style.pointerEvents = 'auto';
+        });
+    } catch (_e) {}
+}
+window.addEventListener('pageshow', () => {
+    if (typeof window.__dokeFixHeaderClickBlock === 'function') window.__dokeFixHeaderClickBlock();
+});
+setTimeout(() => {
+    if (typeof window.__dokeFixHeaderClickBlock === 'function') window.__dokeFixHeaderClickBlock();
+}, 80);
+
 window.abrirPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "block"; }
 window.fecharPopup = function() { const p = document.getElementById("popup"); if(p) p.style.display = "none"; }
 
@@ -5117,10 +5139,8 @@ window.carregarFeedGlobal = async function() {
             const authorHtml = `
                 <div class="dp-itemAuthor">
                 <img class="dp-itemAvatar" src="${autorFoto}" alt="" width="34" height="34" loading="lazy" decoding="async">
-                <div>
-                  <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
-                  ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
-                </div>
+                <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
+                ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
               </div>
             `;
             // t?tulo/descri??o: evita duplicar @user
@@ -5151,10 +5171,8 @@ window.carregarFeedGlobal = async function() {
         const authorHtml = `
           <div class="dp-itemAuthor">
             <img class="dp-itemAvatar" src="${autorFoto}" alt="" width="34" height="34" loading="lazy" decoding="async">
-            <div>
-              <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
-              ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
-            </div>
+            <div class="dp-itemUser">${escapeHtml(autorHandle)}</div>
+            ${when ? `<span class="dp-itemMeta">${escapeHtml(when)}</span>` : ``}
           </div>
         `;
 
@@ -5597,7 +5615,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             }
             
             // Ativa notifica??es de pedidos novos
-            window.monitorarNotificacoesGlobal(user.uid);
+            try { window.monitorarNotificacoesGlobal(user.uid); } catch (_) {}
 
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
@@ -5673,7 +5691,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 ''
             ).trim();
             if (fallbackUid) {
-                window.monitorarNotificacoesGlobal(fallbackUid);
+                try { window.monitorarNotificacoesGlobal(fallbackUid); } catch (_) {}
             }
         } catch (_) {}
         await verificarEstadoLogin();
@@ -7178,6 +7196,18 @@ window.addEventListener('beforeunload', () => {
 // ============================================================
 window.monitorarNotificacoesGlobal = function(uid) {
     if (!uid) return;
+    if (typeof collection !== "function" || typeof query !== "function" || typeof onSnapshot !== "function") {
+        setTimeout(() => {
+            try { window.monitorarNotificacoesGlobal(uid); } catch (_) {}
+        }, 1200);
+        return;
+    }
+    if (!window.db && typeof db === "undefined") {
+        setTimeout(() => {
+            try { window.monitorarNotificacoesGlobal(uid); } catch (_) {}
+        }, 1200);
+        return;
+    }
     const resolvedUid = String(uid || "").trim();
     if (!resolvedUid) return;
     if (!window.__dokeBadgeMonitor) {
@@ -7207,10 +7237,51 @@ window.monitorarNotificacoesGlobal = function(uid) {
     if (!state.lastTotals || typeof state.lastTotals !== "object") {
         state.lastTotals = { notif: 0, chat: 0 };
     }
+    if (!Number.isFinite(state.lastNonZeroAt)) {
+        state.lastNonZeroAt = 0;
+    }
+    const BADGE_CACHE_PREFIX = "doke_badges_cache_";
+    const badgeCacheKey = `${BADGE_CACHE_PREFIX}${resolvedUid}`;
+    const readPersistedBadges = () => {
+        try {
+            const raw = localStorage.getItem(badgeCacheKey);
+            if (!raw) return null;
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object") return null;
+            return {
+                notif: Math.max(0, Number(parsed.notif || 0) || 0),
+                chat: Math.max(0, Number(parsed.chat || 0) || 0),
+                updatedAt: Number(parsed.updatedAt || 0) || 0
+            };
+        } catch (_) {
+            return null;
+        }
+    };
+    const writePersistedBadges = (notif, chat) => {
+        try {
+            localStorage.setItem(badgeCacheKey, JSON.stringify({
+                notif: Math.max(0, Number(notif || 0) || 0),
+                chat: Math.max(0, Number(chat || 0) || 0),
+                updatedAt: Date.now()
+            }));
+        } catch (_) {}
+    };
+    const persisted = readPersistedBadges();
+    if (persisted && (persisted.notif > 0 || persisted.chat > 0)) {
+        const prevNotif = Math.max(0, Number(state.lastTotals?.notif || 0) || 0);
+        const prevChat = Math.max(0, Number(state.lastTotals?.chat || 0) || 0);
+        state.lastTotals = {
+            notif: Math.max(prevNotif, persisted.notif),
+            chat: Math.max(prevChat, persisted.chat)
+        };
+    }
 
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
+    const qRecebidosAlt = query(collection(db, "pedidos"), where("parauid", "==", resolvedUid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
+    const qEnviadosAlt = query(collection(db, "pedidos"), where("deuid", "==", resolvedUid));
     const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
+    const qSociaisAlt = query(collection(db, "notificacoes"), where("paraUid", "==", resolvedUid), where("lida", "==", false));
     const initState = { recebidos: false, enviados: false, sociais: false };
     const allStreamsReady = () => initState.recebidos && initState.enviados && initState.sociais;
 
@@ -7271,6 +7342,8 @@ window.monitorarNotificacoesGlobal = function(uid) {
         syncShellBadge('notificacoes.html', safeNotif);
         syncShellBadge('chat.html', safeChat);
         state.lastTotals = { notif: safeNotif, chat: safeChat };
+        if (safeNotif > 0 || safeChat > 0) state.lastNonZeroAt = Date.now();
+        writePersistedBadges(safeNotif, safeChat);
         try {
             window.__dokeBadgeTotals = { notif: safeNotif, chat: safeChat };
             window.dispatchEvent(new CustomEvent('doke:badges', { detail: window.__dokeBadgeTotals }));
@@ -7300,8 +7373,9 @@ window.monitorarNotificacoesGlobal = function(uid) {
         const hasPrevBadges = (prevNotif > 0 || prevChat > 0);
         const incomingZero = totalNotif === 0 && totalChat === 0;
         const freshRead = opts.forceFresh === true || (allStreamsReady() && opts.partial !== true);
+        const cooldownZero = (Date.now() - Number(state.lastNonZeroAt || 0)) < 120000;
 
-        if (incomingZero && hasPrevBadges && !freshRead) {
+        if (incomingZero && hasPrevBadges && (!freshRead || cooldownZero)) {
             totalNotif = prevNotif;
             totalChat = prevChat;
         }
@@ -7313,6 +7387,17 @@ window.monitorarNotificacoesGlobal = function(uid) {
     let cacheEnviados = [];
     let cacheSociais = [];
 
+    const mergeDocsById = (...lists) => {
+        const map = new Map();
+        lists.forEach((arr) => {
+            (Array.isArray(arr) ? arr : []).forEach((snap) => {
+                if (!snap || !snap.id) return;
+                if (!map.has(snap.id)) map.set(snap.id, snap);
+            });
+        });
+        return Array.from(map.values());
+    };
+
     const pollBadges = async () => {
         try {
             const readSnapshot = async (q) => {
@@ -7323,25 +7408,33 @@ window.monitorarNotificacoesGlobal = function(uid) {
                     return { ok: false, docs: [] };
                 }
             };
-            const [r, e, s] = await Promise.all([
+            const [r1, r2, e1, e2, s1, s2] = await Promise.all([
                 readSnapshot(qRecebidos),
+                readSnapshot(qRecebidosAlt),
                 readSnapshot(qEnviados),
-                readSnapshot(qSociais)
+                readSnapshot(qEnviadosAlt),
+                readSnapshot(qSociais),
+                readSnapshot(qSociaisAlt)
             ]);
-            if (r.ok) {
-                cacheRecebidos = r.docs;
+
+            const recebidosOk = !!(r1.ok || r2.ok);
+            const enviadosOk = !!(e1.ok || e2.ok);
+            const sociaisOk = !!(s1.ok || s2.ok);
+
+            if (recebidosOk) {
+                cacheRecebidos = mergeDocsById(r1.docs, r2.docs);
                 initState.recebidos = true;
             }
-            if (e.ok) {
-                cacheEnviados = e.docs;
+            if (enviadosOk) {
+                cacheEnviados = mergeDocsById(e1.docs, e2.docs);
                 initState.enviados = true;
             }
-            if (s.ok) {
-                cacheSociais = s.docs;
+            if (sociaisOk) {
+                cacheSociais = mergeDocsById(s1.docs, s2.docs);
                 initState.sociais = true;
             }
-            const hasAnySuccess = !!(r.ok || e.ok || s.ok);
-            const allOk = !!(r.ok && e.ok && s.ok);
+            const hasAnySuccess = !!(recebidosOk || enviadosOk || sociaisOk);
+            const allOk = !!(recebidosOk && enviadosOk && sociaisOk);
             if (hasAnySuccess) {
                 atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais, { forceFresh: allOk, partial: !allOk });
             }
@@ -7370,6 +7463,9 @@ window.monitorarNotificacoesGlobal = function(uid) {
         atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
     }, onSnapError);
     state.unsubs = [unsub1, unsub2, unsub3];
+    if (!state.pollTimer) {
+        state.pollTimer = setInterval(pollBadges, 12000);
+    }
 
     if (!window.__dokeBadgeHydratorBound) {
         window.__dokeBadgeHydratorBound = true;

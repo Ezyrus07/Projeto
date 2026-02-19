@@ -11145,6 +11145,36 @@ table{max-width:100%;}
    Modal de Publicacoes (mobile): ocupa area util, scroll correto
    e video inline (sem fullscreen forcado no toque)
    ============================================================ */
+#overlay-menu{
+  pointer-events: none;
+}
+body.menu-ativo #overlay-menu{
+  pointer-events: auto;
+}
+
+/* Hotfix: garante clique no auth do header desktop */
+.navbar-desktop .botoes-direita{
+  position: relative;
+  z-index: 1200;
+}
+.navbar-desktop .botoes-direita .entrar,
+.navbar-desktop .botoes-direita .profile-container,
+.navbar-desktop .botoes-direita .profile-img-btn{
+  position: relative;
+  z-index: 1201;
+  pointer-events: auto !important;
+}
+
+/* Hotfix: evita overlay de vídeo visível fora de contexto e bloqueando clique */
+.modal-video-overlay{
+  display: none !important;
+}
+.modal-video-overlay.active,
+.modal-video-overlay[style*="display:flex"],
+.modal-video-overlay[style*="display: flex"]{
+  display: flex !important;
+}
+
 #modalPostDetalhe {
   padding: clamp(8px, 2vw, 16px) !important;
   align-items: center !important;
@@ -11791,4 +11821,148 @@ body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton .tiktok-skel-o
   line-height: 1 !important;
   margin: 0 !important;
   transform: none !important;
+}
+
+/* Mobile: setas e ícones de navegação em preto (consistência desktop) */
+@media (max-width: 1024px){
+  .cat-arrow,
+  .pro-arrow,
+  .chips-arrow,
+  .nav-arrow,
+  .nav-seta,
+  .nav-arrow-float{
+    color: #111827 !important;
+  }
+
+  .cat-arrow i,
+  .pro-arrow i,
+  .chips-arrow i,
+  .nav-arrow i,
+  .nav-seta i,
+  .nav-arrow-float i{
+    color: #111827 !important;
+  }
+}
+
+/* ============================================================
+   Feed Publicacoes (Home) - visual tipo app (card maior)
+   ============================================================ */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+  gap: 14px;
+  padding: 10px 0 8px;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .feed-publicacao-card.dp-item{
+  background: #fff;
+  border: 1px solid #d9e1ea;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.08);
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  aspect-ratio: 3 / 4;
+  border-radius: 0;
+  background: #eef2f6;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia img,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia video{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  padding: 10px 12px 12px;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAuthor{
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAvatar{
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  border: 1px solid rgba(15, 23, 42, 0.10);
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemUser{
+  font-weight: 800;
+  font-size: 0.9rem;
+  color: #102a43;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMeta{
+  margin-left: 6px;
+  font-size: 0.7rem;
+  color: #8a97a7;
+  white-space: nowrap;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+  margin: 0;
+  font-weight: 500;
+  font-size: 0.95rem;
+  line-height: 1.35;
+  color: #667085;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+  margin: 4px 0 0;
+  font-size: 0.9rem;
+  line-height: 1.3;
+  color: #6b7280;
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+@media (max-width: 1024px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 14px;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex: 0 0 228px;
+    scroll-snap-align: start;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+    padding: 12px 12px 13px;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+    -webkit-line-clamp: 3;
+    min-height: calc(1.35em * 2);
+  }
+}
+
+@media (max-width: 600px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex-basis: 240px;
+  }
+}
+
+@media (max-width: 430px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex-basis: 232px;
+  }
+}
+
+@media (max-width: 390px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
+    flex-basis: 226px;
+  }
 }

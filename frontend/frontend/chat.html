@@ -7313,9 +7313,20 @@ window.confirmarFinalizacaoPedido = async () => {
         try {
             const resolvedUid = currentUserUid || await ensureCurrentUserUid();
             if (!resolvedUid) {
-                replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">Fa?a login para ver seus pedidos.</div>`, 'pedidos:no-auth');
+                const aguardandoAuth = container.dataset.dokeAuthRetry === "1";
+                if (!aguardandoAuth) {
+                    container.dataset.dokeAuthRetry = "1";
+                    replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">Carregando seus pedidos...</div>`, 'pedidos:loading-auth');
+                    setTimeout(() => {
+                        try {
+                            container.dataset.dokeAuthRetry = "0";
+                            carregarListaPedidos({ silent: true });
+                        } catch (_e) {}
+                    }, 900);
+                }
                 return;
             }
+            container.dataset.dokeAuthRetry = "0";
             if (resolvedUid !== currentUserUid) currentUserUid = resolvedUid;
             const deField = await resolvePedidosField('de');
             const paraField = await resolvePedidosField('para');

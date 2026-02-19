@@ -1,361 +1,874 @@
-<!DOCTYPE html>
+<!-- index-mobile-exemplo.html
+     Exemplo de HOME mobile-first (carrosséis com swipe + scroll-snap, safe-area iOS,
+     header sticky, bottom nav fixa e espaçamentos consistentes). -->
+
+<!doctype html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configurações - Minha Conta</title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        /* Reset básico e tipografia */
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        }
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Doke — Home (exemplo responsivo)</title>
 
-        body {
-            background-color: #f0f4f8; /* Fundo cinza claro como no print */
-            color: #333;
-            padding: 2rem;
-        }
+  <style>
+    /* =============== BASE / TOKENS =============== */
+    :root{
+      --bg: #f3f6f6;
+      --card: #ffffff;
+      --text: #0b2230;
+      --muted: #6b7a86;
 
-        /* Container Principal dividindo a tela */
-        .settings-container {
-            display: flex;
-            max-width: 1200px;
-            margin: 0 auto;
-            background-color: #ffffff;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
-            min-height: 700px;
-            overflow: hidden;
-        }
+      --primary: #0f6f62;     /* verde */
+      --primary-2: #1f5e8c;   /* azul */
+      --border: rgba(10, 35, 48, .12);
 
-        /* --- SIDEBAR ESQUERDA (Menu de Opções) --- */
-        .settings-sidebar {
-            width: 320px;
-            background-color: #fdfdfd;
-            border-right: 1px solid #eef0f2;
-            padding: 2rem 1.5rem;
-        }
+      --gutter: 16px;
+      --gap: 16px;
+      --radius: 18px;
 
-        .user-profile-header {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-            margin-bottom: 2.5rem;
-        }
+      --shadow: 0 10px 28px rgba(12, 28, 36, .10);
+      --shadow-soft: 0 6px 18px rgba(12, 28, 36, .08);
 
-        .user-profile-header img {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            object-fit: cover;
-        }
+      --bottom-nav-h: 64px;
+      --header-h: 64px;
 
-        .user-profile-header h2 {
-            font-size: 1.1rem;
-            color: #1a4f72; /* Cor azul escuro da marca */
-            margin-bottom: 0.2rem;
-        }
+      --tap: 44px;
+    }
 
-        .user-profile-header p {
-            font-size: 0.85rem;
-            color: #777;
-        }
+    *{ box-sizing: border-box; }
+    html,body{ height:100%; }
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
 
-        .menu-title {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #8fa0af;
-            letter-spacing: 1px;
-            margin-bottom: 1rem;
-            padding-left: 0.5rem;
-        }
+    a{ color: inherit; text-decoration: none; }
+    button{ font: inherit; }
+    img{ max-width: 100%; display:block; }
 
-        .menu-list {
-            list-style: none;
-        }
+    .app{
+      /* espaço para header sticky + bottom nav + safe-area iOS */
+      padding-top: calc(var(--header-h) + 8px);
+      padding-bottom: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom) + 16px);
+    }
 
-        .menu-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 1rem;
-            margin-bottom: 0.5rem;
-            border-radius: 8px;
-            cursor: pointer;
-            color: #444;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            border: 1px solid transparent;
-        }
+    .container{
+      width: 100%;
+      max-width: 560px; /* só pra exemplo; no seu site pode ser maior no desktop */
+      margin: 0 auto;
+      padding: 0 var(--gutter);
+    }
 
-        .menu-item .menu-icon-text {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
+    .section{
+      margin: var(--gap) 0;
+    }
 
-        .menu-item i {
-            color: #1a4f72;
-            width: 20px;
-            text-align: center;
-        }
+    .card{
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-soft);
+      overflow: hidden;
+    }
 
-        .menu-item:hover {
-            background-color: #f4f7f9;
-        }
+    .title-row{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px 14px 12px;
+    }
+    .title{
+      font-size: 20px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin: 0;
+    }
+    .subtle{
+      color: var(--muted);
+      font-size: 14px;
+      margin: 0;
+    }
 
-        /* Estado Ativo do Menu */
-        .menu-item.active {
-            background-color: #ffffff;
-            border: 1px solid #eef0f2;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.02);
-            color: #1a4f72;
-        }
-        
-        .menu-item.active i {
-            color: #00796b; /* Destaque verde escuro */
-        }
+    .pill{
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: rgba(15,111,98,.07);
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--primary);
+      user-select:none;
+    }
 
-        /* --- CONTEÚDO DIREITA --- */
-        .settings-content {
-            flex: 1;
-            padding: 2rem 3rem;
-            background-color: #ffffff;
-            position: relative;
-        }
+    /* =============== HEADER STICKY =============== */
+    .header{
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: var(--header-h);
+      background: rgba(255,255,255,.92);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid var(--border);
+      z-index: 50;
+    }
 
-        /* Oculta as abas que não estão ativas */
-        .tab-panel {
-            display: none;
-            animation: fadeIn 0.3s ease-in-out;
-        }
+    .header-inner{
+      height: 100%;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+    }
 
-        /* Mostra a aba ativa */
-        .tab-panel.active {
-            display: block;
-        }
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+      font-weight: 900;
+      letter-spacing: -0.02em;
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
+    .icon-btn{
+      width: var(--tap);
+      height: var(--tap);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: #fff;
+      display:grid;
+      place-items:center;
+      cursor:pointer;
+    }
+    .icon{
+      width: 20px; height: 20px;
+      display:block;
+      opacity: .85;
+    }
 
-        /* --- ESTILOS ESPECÍFICOS DA TELA DE ENDEREÇOS (Do seu 2º print) --- */
-        .address-banner {
-            background: linear-gradient(135deg, #1c4966, #2a7c79);
-            color: white;
-            padding: 2rem;
-            border-radius: 12px;
-            margin-bottom: 2rem;
-        }
+    .avatar{
+      width: 36px; height: 36px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      overflow:hidden;
+      background: #dfe7ea;
+    }
 
-        .address-banner h1 {
-            font-size: 1.8rem;
-            margin-bottom: 0.5rem;
-        }
+    /* =============== HERO SEARCH + CTAS =============== */
+    .hero{
+      padding: 14px;
+    }
 
-        .address-banner p {
-            font-size: 1rem;
-            opacity: 0.9;
-        }
+    .searchbar{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 10px 10px 14px;
+      box-shadow: var(--shadow-soft);
+    }
+    .searchbar input{
+      flex:1;
+      border:0;
+      outline:0;
+      font-size: 15px;
+      background: transparent;
+    }
+    .go{
+      width: 46px;
+      height: 46px;
+      border-radius: 999px;
+      border: 0;
+      background: linear-gradient(135deg, var(--primary), #0d5c52);
+      color:#fff;
+      font-weight: 900;
+      cursor:pointer;
+    }
 
-        .address-controls {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 1.5rem;
-        }
+    .cta-col{
+      display:grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .cta{
+      height: 52px;
+      border-radius: 14px;
+      border: 0;
+      font-weight: 900;
+      font-size: 16px;
+      color: #fff;
+      cursor:pointer;
+      letter-spacing: .2px;
+    }
+    .cta.primary{ background: linear-gradient(135deg, var(--primary-2), #204c72); }
+    .cta.green{ background: linear-gradient(135deg, var(--primary), #0d5c52); }
 
-        .search-input {
-            flex: 1;
-            padding: 0.8rem 1rem;
-            border: 1px solid #e1e5eb;
-            border-radius: 8px;
-            font-size: 0.95rem;
-            outline: none;
-        }
+    /* =============== CATEGORIAS (scroll horizontal) =============== */
+    .cats{
+      padding: 12px 14px 14px;
+    }
+    .cat-row{
+      display:flex;
+      gap: 12px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+    }
+    .cat-row::-webkit-scrollbar{ display:none; }
 
-        .search-input:focus {
-            border-color: #2a7c79;
-        }
+    .cat{
+      flex: 0 0 auto;
+      width: 110px;
+      scroll-snap-align: start;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: #fff;
+      padding: 14px 12px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 10px;
+      box-shadow: var(--shadow-soft);
+    }
+    .cat strong{
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 800;
+    }
 
-        .btn {
-            padding: 0.8rem 1.2rem;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.95rem;
-            transition: background 0.2s;
-        }
+    /* =============== CARROSSEL (swipe + snap) =============== */
+    .carousel{
+      padding: 0 14px 14px;
+    }
 
-        .btn-outline-green {
-            background-color: transparent;
-            border: 1px solid #2a7c79;
-            color: #2a7c79;
-        }
+    .rail{
+      display:flex;
+      gap: 12px;
+      overflow-x:auto;
+      -webkit-overflow-scrolling: touch;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 4px;
+    }
+    .rail::-webkit-scrollbar{ display:none; }
 
-        .btn-outline-green:hover {
-            background-color: #f0f9f8;
-        }
+    .tile{
+      flex: 0 0 auto;
+      width: clamp(240px, 75vw, 320px);
+      scroll-snap-align: start;
+      border-radius: 18px;
+      border: 1px solid var(--border);
+      background: #fff;
+      box-shadow: var(--shadow-soft);
+      overflow:hidden;
+    }
 
-        .btn-solid-gray {
-            background-color: #ffffff;
-            border: 1px solid #e1e5eb;
-            color: #333;
-        }
+    .tile .media{
+      aspect-ratio: 9 / 16;
+      background: #dfe7ea;
+      position: relative;
+      overflow:hidden;
+    }
+    .tile .media img{
+      width:100%;
+      height:100%;
+      object-fit: cover;
+    }
+    .badge-play{
+      position:absolute;
+      right: 10px;
+      top: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.85);
+      border: 1px solid var(--border);
+      display:grid;
+      place-items:center;
+      font-weight: 900;
+    }
+    .tile .meta{
+      padding: 10px 12px 12px;
+    }
+    .tile .meta .name{
+      font-weight: 900;
+      margin:0 0 2px;
+    }
+    .tile .meta .desc{
+      margin:0;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
 
-        .btn-solid-gray:hover {
-            background-color: #f8f9fa;
-        }
+    /* Publicações: quadrado instagram-like */
+    .post .media{ aspect-ratio: 1 / 1; }
+    .post .meta{
+      display:grid;
+      gap: 8px;
+    }
+    .userline{
+      display:flex;
+      align-items:center;
+      gap: 10px;
+    }
+    .mini-avatar{
+      width: 28px; height: 28px;
+      border-radius: 999px;
+      background: #dfe7ea;
+      border: 1px solid var(--border);
+      overflow:hidden;
+      flex: 0 0 auto;
+    }
+    .userline .handle{
+      font-weight: 900;
+      min-width: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .userline .date{
+      margin-left:auto;
+      color: var(--muted);
+      font-size: 12px;
+      flex:0 0 auto;
+    }
 
-        .empty-state {
-            padding: 1.5rem;
-            border: 1px dashed #cfd8dc;
-            border-radius: 8px;
-            color: #607d8b;
-            background-color: #fcfcfc;
-        }
+    /* =============== FILTROS =============== */
+    .filters{
+      padding: 14px;
+    }
 
-        /* Placeholder para as outras telas */
-        .placeholder-content {
-            padding: 3rem;
-            text-align: center;
-            color: #8fa0af;
-            border: 2px dashed #eef0f2;
-            border-radius: 12px;
-            margin-top: 2rem;
-        }
-    </style>
+    .filters .top{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .btn{
+      height: 46px;
+      padding: 0 14px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 900;
+      cursor:pointer;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      gap: 8px;
+      min-width: var(--tap);
+    }
+    .btn.outline{
+      background: transparent;
+      border-color: rgba(15,111,98,.35);
+      color: var(--primary);
+    }
+    .btn.solid{
+      background: var(--primary);
+      color:#fff;
+      border-color: transparent;
+    }
+    .btn.small{
+      height: 36px;
+      border-radius: 999px;
+      padding: 0 12px;
+      font-size: 13px;
+    }
+
+    .grid{
+      display:grid;
+      gap: 10px;
+    }
+    .grid.location{
+      grid-template-columns: 1fr 1fr;
+    }
+    .field{
+      height: 46px;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 0 12px;
+      outline:0;
+      background:#fff;
+      font-size: 14px;
+      width:100%;
+    }
+
+    .loc-head{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      margin: 12px 0 10px;
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing: .08em;
+      font-size: 12px;
+      text-transform: uppercase;
+    }
+
+    .cep-panel{
+      display:none;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+    .cep-panel.show{ display:block; }
+
+    /* Chips / filtros rápidos (horizontal) */
+    .chips{
+      display:flex;
+      gap: 10px;
+      overflow-x:auto;
+      padding: 10px 2px 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+    .chips::-webkit-scrollbar{ display:none; }
+    .chip{
+      flex:0 0 auto;
+      height: 36px;
+      padding: 0 14px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: #fff;
+      font-weight: 900;
+      font-size: 13px;
+      color: var(--muted);
+      display:inline-flex;
+      align-items:center;
+    }
+    .chip.active{
+      background: rgba(15,111,98,.12);
+      color: var(--primary);
+      border-color: rgba(15,111,98,.30);
+    }
+
+    /* =============== LISTA DE RESULTADOS (exemplo) =============== */
+    .result{
+      padding: 12px 14px 14px;
+    }
+    .pro-card{
+      padding: 14px;
+      display:grid;
+      gap: 12px;
+    }
+    .pro-top{
+      display:flex;
+      align-items:flex-start;
+      gap: 12px;
+    }
+    .pro-avatar{
+      width: 46px; height: 46px;
+      border-radius: 999px;
+      background: #dfe7ea;
+      border: 1px solid var(--border);
+      overflow:hidden;
+      flex: 0 0 auto;
+    }
+    .pro-info{
+      min-width: 0;
+      flex: 1;
+    }
+    .pro-info .name{
+      font-weight: 950;
+      margin: 0;
+      line-height: 1.1;
+    }
+    .tags{
+      display:flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 6px;
+    }
+    .tag{
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 900;
+      border: 1px solid var(--border);
+      background: #fff;
+      color: var(--muted);
+    }
+    .tag.green{
+      background: rgba(15,111,98,.12);
+      border-color: rgba(15,111,98,.30);
+      color: var(--primary);
+    }
+
+    .pro-cta{
+      display:flex;
+      gap: 10px;
+    }
+    .pro-cta .btn{
+      flex: 1;
+    }
+
+    /* =============== BOTTOM NAV (fixa) =============== */
+    .bottom-nav{
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: calc(var(--bottom-nav-h) + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
+      background: rgba(255,255,255,.94);
+      backdrop-filter: blur(10px);
+      border-top: 1px solid var(--border);
+      z-index: 60;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .bottom-nav .bar{
+      width: min(560px, 100%);
+      padding: 10px 16px 12px;
+      display:flex;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .nav-item{
+      flex: 1;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap: 4px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      border-radius: 12px;
+      padding: 6px 0;
+    }
+    .nav-item.active{
+      color: var(--primary);
+    }
+
+    /* =============== RESPONSIVO (exemplo) =============== */
+    @media (max-width: 390px){
+      :root{
+        --gutter: 14px;
+      }
+      .title{ font-size: 19px; }
+      .tile{ width: clamp(220px, 78vw, 300px); }
+    }
+
+    @media (min-width: 768px){
+      /* No tablet/desktop você pode voltar a usar setas e grid fixo, se quiser */
+      .container{ max-width: 980px; }
+      .cta-col{
+        grid-template-columns: 1fr 1fr;
+      }
+      .grid.location{
+        grid-template-columns: 1fr 1fr 1fr;
+      }
+    }
+  </style>
 </head>
+
 <body>
+  <!-- HEADER -->
+  <header class="header">
+    <div class="container header-inner">
+      <div class="brand">
+        <button class="icon-btn" aria-label="Menu">
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <path d="M4 7h16M4 12h16M4 17h16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </button>
+        <span style="font-size:20px;">doke</span>
+      </div>
 
-    <div class="settings-container">
-        <aside class="settings-sidebar">
-            <div class="user-profile-header">
-                <img src="https://i.pravatar.cc/150?u=gabriel" alt="Gabriel Antônio">
-                <div>
-                    <h2>Gabriel Antônio</h2>
-                    <p>@gabriel</p>
-                </div>
-            </div>
-
-            <div class="menu-title">MINHA CONTA</div>
-            
-            <ul class="menu-list">
-                <li class="menu-item" onclick="switchTab('tab-dados')">
-                    <div class="menu-icon-text">
-                        <i class="fa-regular fa-user"></i>
-                        <span>Dados Pessoais</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
-                </li>
-                
-                <li class="menu-item active" onclick="switchTab('tab-enderecos')">
-                    <div class="menu-icon-text">
-                        <i class="fa-solid fa-location-dot"></i>
-                        <span>Endereços</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
-                </li>
-                
-                <li class="menu-item" onclick="switchTab('tab-seguranca')">
-                    <div class="menu-icon-text">
-                        <i class="fa-solid fa-lock"></i>
-                        <span>Segurança e Senha</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
-                </li>
-                
-                <li class="menu-item" onclick="switchTab('tab-pagamentos')">
-                    <div class="menu-icon-text">
-                        <i class="fa-regular fa-credit-card"></i>
-                        <span>Pagamentos</span>
-                    </div>
-                    <i class="fa-solid fa-chevron-right" style="font-size: 0.8em; color: #ccc;"></i>
-                </li>
-            </ul>
-        </aside>
-
-        <main class="settings-content">
-            
-            <div id="tab-dados" class="tab-panel">
-                <h2>Dados Pessoais</h2>
-                <div class="placeholder-content">
-                    <i class="fa-regular fa-user" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <p>Formulário de dados pessoais será carregado aqui.</p>
-                </div>
-            </div>
-
-            <div id="tab-enderecos" class="tab-panel active">
-                <div class="address-banner">
-                    <h1>Endereços</h1>
-                    <p>Salve mais de um local e use no orçamento com 1 toque.</p>
-                </div>
-
-                <div class="address-controls">
-                    <input type="text" class="search-input" placeholder="Buscar por apelido, rua, bairro ou cidade">
-                    <button class="btn btn-outline-green">
-                        <i class="fa-solid fa-plus"></i> Novo endereço
-                    </button>
-                    <button class="btn btn-solid-gray">
-                        <i class="fa-solid fa-arrow-right"></i> Ir para orçamento
-                    </button>
-                </div>
-
-                <div class="empty-state">
-                    Nenhum endereço encontrado.
-                </div>
-            </div>
-
-            <div id="tab-seguranca" class="tab-panel">
-                <h2>Segurança e Senha</h2>
-                <div class="placeholder-content">
-                    <i class="fa-solid fa-lock" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <p>Configurações de senha e autenticação entrarão aqui.</p>
-                </div>
-            </div>
-
-            <div id="tab-pagamentos" class="tab-panel">
-                <h2>Pagamentos</h2>
-                <div class="placeholder-content">
-                    <i class="fa-regular fa-credit-card" style="font-size: 3rem; margin-bottom: 1rem;"></i>
-                    <p>Histórico e cartões salvos aparecerão aqui.</p>
-                </div>
-            </div>
-
-        </main>
+      <div style="display:flex; align-items:center; gap:10px;">
+        <button class="icon-btn" aria-label="Notificações">
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <path d="M12 22a2.5 2.5 0 0 0 2.5-2.5h-5A2.5 2.5 0 0 0 12 22Z" fill="currentColor" opacity=".85"/>
+            <path d="M18 16H6c1-1.5 1.2-2.7 1.2-6a4.8 4.8 0 0 1 9.6 0c0 3.3.2 4.5 1.2 6Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <button class="icon-btn" aria-label="Chat">
+          <svg class="icon" viewBox="0 0 24 24" fill="none">
+            <path d="M21 12c0 4.4-4 8-9 8-1.2 0-2.3-.2-3.3-.6L3 20l1.3-4.3C3.5 14.6 3 13.3 3 12c0-4.4 4-8 9-8s9 3.6 9 8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+          </svg>
+        </button>
+        <div class="avatar" aria-label="Perfil">
+          <img src="https://picsum.photos/80/80?random=20" alt="Avatar" />
+        </div>
+      </div>
     </div>
+  </header>
 
-    <script>
-        function switchTab(tabId) {
-            // 1. Remove a classe 'active' de todos os itens do menu
-            const menuItems = document.querySelectorAll('.menu-item');
-            menuItems.forEach(item => {
-                item.classList.remove('active');
-            });
+  <main class="app">
+    <div class="container">
 
-            // 2. Remove a classe 'active' de todos os painéis de conteúdo
-            const tabPanels = document.querySelectorAll('.tab-panel');
-            tabPanels.forEach(panel => {
-                panel.classList.remove('active');
-            });
+      <!-- HERO -->
+      <section class="section card">
+        <div class="hero">
+          <div class="searchbar">
+            <input placeholder="Descreva o que você está procurando" />
+            <button class="go" aria-label="Buscar">→</button>
+          </div>
 
-            // 3. Adiciona a classe 'active' no painel correspondente ao clique
-            document.getElementById(tabId).classList.add('active');
+          <div class="cta-col">
+            <button class="cta primary">Procurar serviços</button>
+            <button class="cta green">Anunciar meu Serviço</button>
+          </div>
+        </div>
+      </section>
 
-            // 4. Encontra o item de menu que foi clicado (baseado no onclick) e adiciona 'active' nele
-            // Utilizamos o evento atual do clique para destacar a aba certa
-            const clickedMenuItem = event.currentTarget;
-            clickedMenuItem.classList.add('active');
-        }
-    </script>
+      <!-- CATEGORIAS -->
+      <section class="section">
+        <h2 class="title" style="margin: 6px 0 10px;">Categorias em alta</h2>
+        <div class="card cats">
+          <div class="cat-row">
+            <a class="cat" href="#">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M9 18h6M10 22h4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M12 2a7 7 0 0 0-4 12c.7.5 1 1 1 2h6c0-1 .3-1.5 1-2A7 7 0 0 0 12 2Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/>
+              </svg>
+              <strong>Eletricista</strong>
+            </a>
+            <a class="cat" href="#">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M14 7 7 14l3 3 7-7-3-3Z" stroke="currentColor" stroke-width="2"/>
+                <path d="M16 5 19 2l3 3-3 3" stroke="currentColor" stroke-width="2"/>
+                <path d="M6 15 2 19l3 3 4-4" stroke="currentColor" stroke-width="2"/>
+              </svg>
+              <strong>Encanador</strong>
+            </a>
+            <a class="cat" href="#">
+              <svg class="icon" viewBox="0 0 24 24" fill="none">
+                <path d="M4 20c3-7 7-12 16-16" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M6 18c0-2 2-4 4-4s4 2 4 4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+              </svg>
+              <strong>Pintura</strong>
+            </a>
 
+            <!-- + exemplos -->
+            <a class="cat" href="#"><strong>Jardinagem</strong></a>
+            <a class="cat" href="#"><strong>Montagem</strong></a>
+          </div>
+        </div>
+      </section>
+
+      <!-- VÍDEOS CURTOS -->
+      <section class="section card">
+        <div class="title-row">
+          <h2 class="title">Vídeos curtos</h2>
+          <span class="pill">Swipe →</span>
+        </div>
+        <div class="carousel">
+          <div class="rail">
+            <article class="tile">
+              <div class="media">
+                <img src="https://picsum.photos/600/900?random=1" alt="">
+                <div class="badge-play">▶</div>
+              </div>
+              <div class="meta">
+                <p class="name">Teste</p>
+                <p class="desc">Descrição curta do vídeo para não quebrar</p>
+              </div>
+            </article>
+
+            <article class="tile">
+              <div class="media">
+                <img src="https://picsum.photos/600/900?random=2" alt="">
+                <div class="badge-play">▶</div>
+              </div>
+              <div class="meta">
+                <p class="name">Teste</p>
+                <p class="desc">Outro vídeo</p>
+              </div>
+            </article>
+
+            <article class="tile">
+              <div class="media">
+                <img src="https://picsum.photos/600/900?random=3" alt="">
+                <div class="badge-play">▶</div>
+              </div>
+              <div class="meta">
+                <p class="name">Teste</p>
+                <p class="desc">Mais um vídeo</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- PUBLICAÇÕES -->
+      <section class="section card">
+        <div class="title-row">
+          <h2 class="title">Publicações</h2>
+          <span class="pill">Swipe →</span>
+        </div>
+        <div class="carousel">
+          <div class="rail">
+            <article class="tile post">
+              <div class="media">
+                <img src="https://picsum.photos/800/800?random=10" alt="">
+              </div>
+              <div class="meta">
+                <div class="userline">
+                  <div class="mini-avatar"><img src="https://picsum.photos/60/60?random=21" alt=""></div>
+                  <div class="handle">@gabriel</div>
+                  <div class="date">02/02/2026</div>
+                </div>
+                <p class="desc">Texto da publicação bem curtinho pra caber.</p>
+              </div>
+            </article>
+
+            <article class="tile post">
+              <div class="media">
+                <img src="https://picsum.photos/800/800?random=11" alt="">
+              </div>
+              <div class="meta">
+                <div class="userline">
+                  <div class="mini-avatar"><img src="https://picsum.photos/60/60?random=22" alt=""></div>
+                  <div class="handle">@user_muito_longo_que_precisa_de_ellipsis</div>
+                  <div class="date">31/01/2026</div>
+                </div>
+                <p class="desc">Outra publicação.</p>
+              </div>
+            </article>
+
+            <article class="tile post">
+              <div class="media">
+                <img src="https://picsum.photos/800/800?random=12" alt="">
+              </div>
+              <div class="meta">
+                <div class="userline">
+                  <div class="mini-avatar"><img src="https://picsum.photos/60/60?random=23" alt=""></div>
+                  <div class="handle">@gabriel</div>
+                  <div class="date">30/01/2026</div>
+                </div>
+                <p class="desc">Mais uma publicação.</p>
+              </div>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <!-- FILTRAR RESULTADOS -->
+      <section class="section card">
+        <div class="filters">
+          <div class="top">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <strong style="font-size:16px;">Filtrar Resultados</strong>
+            </div>
+            <button class="btn outline" type="button">Filtros Avançados</button>
+          </div>
+
+          <div class="loc-head">
+            <span>Localização</span>
+            <button class="btn small solid" id="btnCep" type="button">CEP</button>
+          </div>
+
+          <div class="grid location">
+            <input class="field" placeholder="Selecionar UF" />
+            <input class="field" placeholder="Cidade" />
+            <input class="field" placeholder="Bairro" style="grid-column: 1 / -1;" />
+          </div>
+
+          <div class="cep-panel" id="cepPanel">
+            <div class="grid" style="grid-template-columns: 1fr auto; align-items:center;">
+              <input class="field" placeholder="Digite seu CEP" inputmode="numeric" />
+              <button class="btn solid" type="button" style="height:46px;">Aplicar</button>
+            </div>
+            <p class="subtle" style="margin:10px 0 0;">
+              Dica: no mobile o CEP vira um painel “expandir/retrair” pra não apertar o header.
+            </p>
+          </div>
+
+          <div style="margin-top: 12px;">
+            <strong style="display:block; margin: 6px 0 8px;">Filtros rápidos</strong>
+            <div class="chips">
+              <span class="chip active">Todos</span>
+              <span class="chip">Tendências</span>
+              <span class="chip">Perto de você</span>
+              <span class="chip">Super Profissionais</span>
+              <span class="chip">Novos</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- RESULTADO (exemplo de card de profissional / post) -->
+      <section class="section card">
+        <div class="result">
+          <article class="pro-card">
+            <div class="pro-top">
+              <div class="pro-avatar"><img src="https://picsum.photos/120/120?random=30" alt=""></div>
+              <div class="pro-info">
+                <p class="name">@gabriel</p>
+                <p class="subtle" style="margin:4px 0 0;">⭐ 4.8 • Pituba — Salvador</p>
+                <div class="tags">
+                  <span class="tag green">ENCANADOR</span>
+                  <span class="tag green">NOVO</span>
+                  <span class="tag">Sem avaliações</span>
+                </div>
+              </div>
+              <button class="icon-btn" aria-label="Favoritar" style="border-radius:999px;">
+                <span style="font-weight:900;">♡</span>
+              </button>
+            </div>
+
+            <div class="pro-cta">
+              <button class="btn outline" type="button">Ver Perfil</button>
+              <button class="btn solid" type="button">Solicitar</button>
+            </div>
+          </article>
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- BOTTOM NAV -->
+  <nav class="bottom-nav" aria-label="Navegação inferior">
+    <div class="bar">
+      <a class="nav-item active" href="#">
+        <span>⌂</span><span>Início</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span>🔎</span><span>Pesquisar</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span>👥</span><span>Comunidades</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span>🏪</span><span>Negócios</span>
+      </a>
+      <a class="nav-item" href="#">
+        <span>🙂</span><span>Perfil</span>
+      </a>
+    </div>
+  </nav>
+
+  <script>
+    // Toggle simples do painel de CEP (mobile)
+    const btnCep = document.getElementById('btnCep');
+    const cepPanel = document.getElementById('cepPanel');
+
+    btnCep?.addEventListener('click', () => {
+      cepPanel.classList.toggle('show');
+    });
+
+    // Garantia extra contra overflow horizontal acidental:
+    // (se quiser, pode manter isso no seu projeto)
+    document.documentElement.style.overflowX = 'hidden';
+    document.body.style.overflowX = 'hidden';
+  </script>
 </body>
 </html>

@@ -656,7 +656,11 @@
             }
 
             (async () => {
-                const user = await resolverUsuarioAutenticado(auth);
+                let user = await resolverUsuarioAutenticado(auth);
+                if (!user?.uid) {
+                    await new Promise((resolve) => setTimeout(resolve, 900));
+                    user = await resolverUsuarioAutenticado(auth);
+                }
                 if (!user?.uid) {
                     window.location.href = "login.html";
                     return;
@@ -824,15 +828,42 @@ async function carregarNotificacoes(uid) {
     dismissedIds = carregarDismissed(uid);
 
     try {
-        const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
-        const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
-        const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", uid));
+        const readSafely = async (qRef) => {
+            try {
+                const snap = await getDocs(qRef);
+                return Array.isArray(snap?.docs) ? snap.docs : [];
+            } catch (_) {
+                return [];
+            }
+        };
+        const mergeById = (...lists) => {
+            const map = new Map();
+            lists.forEach((arr) => (Array.isArray(arr) ? arr : []).forEach((d) => {
+                if (!d?.id || map.has(d.id)) return;
+                map.set(d.id, d);
+            }));
+            return Array.from(map.values());
+        };
 
-        const [snapRecebidos, snapEnviados, snapSociais] = await Promise.all([
-            getDocs(qRecebidos),
-            getDocs(qEnviados),
-            getDocs(qSociais)
+        const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
+        const qRecebidosAlt = query(collection(db, "pedidos"), where("parauid", "==", uid));
+        const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
+        const qEnviadosAlt = query(collection(db, "pedidos"), where("deuid", "==", uid));
+        const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", uid));
+        const qSociaisAlt = query(collection(db, "notificacoes"), where("paraUid", "==", uid));
+
+        const [docsRecebidos, docsRecebidosAlt, docsEnviados, docsEnviadosAlt, docsSociais, docsSociaisAlt] = await Promise.all([
+            readSafely(qRecebidos),
+            readSafely(qRecebidosAlt),
+            readSafely(qEnviados),
+            readSafely(qEnviadosAlt),
+            readSafely(qSociais),
+            readSafely(qSociaisAlt)
         ]);
+
+        const snapRecebidos = mergeById(docsRecebidos, docsRecebidosAlt);
+        const snapEnviados = mergeById(docsEnviados, docsEnviadosAlt);
+        const snapSociais = mergeById(docsSociais, docsSociaisAlt);
 
         // --- PROFISSIONAL (Recebidos) ---
         snapRecebidos.forEach(doc => {
@@ -946,7 +977,9 @@ async function carregarNotificacoes(uid) {
 
     } catch (error) {
         console.error("Erro notifications:", error);
-        container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar notificacoes.</p>`;
+        if (!container || !container.children.length) {
+            container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar notificacoes.</p>`;
+        }
     }
 }
 
