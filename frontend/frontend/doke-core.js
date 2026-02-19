@@ -179,21 +179,19 @@ async function getSupabaseUser() {
 
     const payload = saved || (cepFallback ? { cep: cepFallback } : null);
 
-    if (payload) {
-      if (typeof window.atualizarTelaCep === "function") {
-        window.atualizarTelaCep(payload);
-      } else {
-        // fallback simples
-        const cidade = payload.cidade || "";
-        const bairro = payload.bairro || "";
-        const cep = payload.cep || "";
-        if (span) {
-          if (bairro && cidade) span.textContent = `${bairro}, ${cidade}`;
-          else if (cep) span.textContent = `CEP: ${cep}`;
-          else span.textContent = "Inserir CEP";
-        }
-        if (input && cep) input.value = cep;
+    if (typeof window.atualizarTelaCep === "function") {
+      window.atualizarTelaCep(payload || "");
+    } else if (payload) {
+      // fallback simples
+      const cidade = payload.cidade || "";
+      const bairro = payload.bairro || "";
+      const cep = payload.cep || "";
+      if (span) {
+        if (bairro && cidade) span.textContent = `${bairro}, ${cidade}`;
+        else if (cep) span.textContent = `CEP: ${cep}`;
+        else span.textContent = "Inserir CEP";
       }
+      if (input && cep) input.value = cep;
     }
   }
 
@@ -222,4 +220,3 @@ async function getSupabaseUser() {
     init();
   }
 })();
-

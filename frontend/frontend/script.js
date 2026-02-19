@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // 1. IMPORTA??ES E CONFIGURA??O
 // ============================================================
 
@@ -2579,6 +2579,7 @@ window.usarMinhaLocalizacao = function() {
             const lng = pos.coords.longitude;
             window.__dokeUserLoc = { lat, lng };
             __dokeSetStoredLoc(lat, lng);
+            try { window.atualizarTelaCep(''); } catch (_e) {}
             if (statusEl) statusEl.textContent = 'Localizacao atualizada.';
             if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
         },
@@ -2890,7 +2891,7 @@ window.carregarProfissionais = async function() {
             avaliacaoHTML = `<span class="pro-rating" style="background:#e0f7fa; color:#006064;">Novo</span>`;
         } else {
             let media = (p.stats && p.stats.media) ? p.stats.media : 0; 
-            avaliacaoHTML = `<span class="pro-rating">? ${media} (${numReviews})</span>`;
+            avaliacaoHTML = `<span class="pro-rating">⭐ ${media} (${numReviews})</span>`;
         }
 
         const html = `
@@ -3079,6 +3080,7 @@ window.verificarEstadoLogin = async function() {
     // --- A. CONTROLE DOS MENUS ---
     if (shouldSyncDesktopAuth) {
         const containers = document.querySelectorAll('.botoes-direita');
+        const nomePerfilSeguro = escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usuario'));
         
         containers.forEach(container => {
             if (logado) {
@@ -3090,36 +3092,57 @@ window.verificarEstadoLogin = async function() {
                 const itemCarteira = eProfissional 
                     ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` 
                     : "";
-
-                container.innerHTML = `
+                const dropdownPerfilHtml = `
                     <div class="profile-container">
                         <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
                         <div id="dropdownPerfil" class="dropdown-profile">
                             <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
-                                ${escapeHtml(sanitizePlainText(perfil.user || perfil.nome || 'Usu?rio'))}
+                                ${nomePerfilSeguro}
                             </div>
                             <a href="${perfilHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
-                            
-                            ${itemCarteira} <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+                            ${itemCarteira}
+                            <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
                             <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
                             <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
                         </div>
                     </div>`;
+
+                container.innerHTML = dropdownPerfilHtml;
             } else {
                 container.innerHTML = `<a href="login.html" class="entrar">Entrar</a>`;
             }
         });
 
-        const topAuthLink = document.getElementById('btnAuthTopo');
-        if (topAuthLink) {
+        const topAuthLinks = document.querySelectorAll('#btnAuthTopo');
+        topAuthLinks.forEach((topAuthLink) => {
             if (logado) {
-                topAuthLink.setAttribute('href', perfilHref);
-                topAuthLink.innerHTML = `<img src="${fotoUsuario}" class="profile-img-btn" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">`;
+                const linkAnunciar = eProfissional ? "anunciar.html" : "tornar-profissional.html";
+                const textoAnunciar = "Anunciar";
+                const itemCarteira = eProfissional
+                    ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>`
+                    : "";
+                topAuthLink.removeAttribute('href');
+                topAuthLink.setAttribute('role', 'button');
+                topAuthLink.setAttribute('aria-label', 'Abrir menu de perfil');
+                topAuthLink.innerHTML = `
+                    <div class="profile-container">
+                        <img src="${fotoUsuario}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; cursor: pointer; border: 2px solid #ddd;">
+                        <div id="dropdownPerfil" class="dropdown-profile">
+                            <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">
+                                ${nomePerfilSeguro}
+                            </div>
+                            <a href="${perfilHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+                            ${itemCarteira}
+                            <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+                            <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> ${textoAnunciar}</a>
+                            <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+                        </div>
+                    </div>`;
             } else {
                 topAuthLink.setAttribute('href', 'login.html');
                 topAuthLink.innerHTML = `<button class="btn-login" onclick="realizarLogin()">Fazer login</button>`;
             }
-        }
+        });
     }
 
     if (shouldSyncDesktopAuth) {
@@ -3703,11 +3726,15 @@ window.atualizarTelaCep = function(payload) {
     } catch (_) {}
 
     if (s) {
+        const geoLat = parseFloat(localStorage.getItem('doke_loc_lat') || '');
+        const geoLng = parseFloat(localStorage.getItem('doke_loc_lng') || '');
+        const hasGeo = Number.isFinite(geoLat) && Number.isFinite(geoLng);
         let txt = 'Inserir CEP';
         if (bairro && cidade) txt = `${bairro}, ${cidade}`;
         else if (cidade && uf) txt = `${cidade} - ${uf}`;
         else if (cidade) txt = cidade;
         else if (cep) txt = `CEP: ${cep}`;
+        else if (hasGeo) txt = 'Localização ativa';
         s.innerText = txt;
         s.style.fontWeight = '700';
         s.style.color = 'var(--cor0)';
@@ -6225,14 +6252,14 @@ function dokeCommEscapeHtml(value) {
 function dokeCommNormalizePrivacidade(comm) {
     const boolPrivate = [comm?.privado, comm?.is_private, comm?.private].find(v => typeof v === "boolean");
     if (typeof boolPrivate === "boolean") {
-        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "P?blico" };
+        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "Público" };
     }
 
     if (typeof comm?.publico === "boolean") {
-        return { isPrivate: !comm.publico, label: comm.publico ? "P?blico" : "Privado" };
+        return { isPrivate: !comm.publico, label: comm.publico ? "Público" : "Privado" };
     }
     if (typeof comm?.publica === "boolean") {
-        return { isPrivate: !comm.publica, label: comm.publica ? "P?blico" : "Privado" };
+        return { isPrivate: !comm.publica, label: comm.publica ? "Público" : "Privado" };
     }
 
     const raw = String(comm?.privacidade || comm?.privacy || "").trim();
@@ -6242,7 +6269,7 @@ function dokeCommNormalizePrivacidade(comm) {
         if (s.includes("pub")) return { isPrivate: false, label: raw };
         return { isPrivate: false, label: raw };
     }
-    return { isPrivate: false, label: "P?blico" };
+    return { isPrivate: false, label: "Público" };
 }
 
 async function dokeCommHasColumn(client, table, col) {
@@ -7154,10 +7181,20 @@ window.monitorarNotificacoesGlobal = function(uid) {
     const resolvedUid = String(uid || "").trim();
     if (!resolvedUid) return;
     if (!window.__dokeBadgeMonitor) {
-        window.__dokeBadgeMonitor = { uid: "", unsubs: [], pollTimer: null };
+        window.__dokeBadgeMonitor = { uid: "", unsubs: [], pollTimer: null, lastTotals: { notif: 0, chat: 0 } };
     }
     const state = window.__dokeBadgeMonitor;
     if (state.uid === resolvedUid && Array.isArray(state.unsubs) && state.unsubs.length) {
+        try {
+            const cached = state.lastTotals || window.__dokeBadgeTotals;
+            if (cached && typeof cached === "object") {
+                window.__dokeBadgeTotals = {
+                    notif: Number(cached.notif || 0) || 0,
+                    chat: Number(cached.chat || 0) || 0
+                };
+                window.dispatchEvent(new CustomEvent('doke:badges', { detail: window.__dokeBadgeTotals }));
+            }
+        } catch (_) {}
         return;
     }
     try { (state.unsubs || []).forEach((fn) => { try { fn && fn(); } catch (_) {} }); } catch (_) {}
@@ -7167,21 +7204,88 @@ window.monitorarNotificacoesGlobal = function(uid) {
         state.pollTimer = null;
     }
     state.uid = resolvedUid;
+    if (!state.lastTotals || typeof state.lastTotals !== "object") {
+        state.lastTotals = { notif: 0, chat: 0 };
+    }
 
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
     const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
+    const initState = { recebidos: false, enviados: false, sociais: false };
+    const allStreamsReady = () => initState.recebidos && initState.enviados && initState.sociais;
 
-    const atualizarBadges = (docsRecebidos, docsEnviados, docsSociais) => {
+    const estiloBadge = `
+        position: absolute; top: 5px; right: 5px;
+        background: #ff2e63; color: white;
+        font-size: 10px; font-weight: bold;
+        min-width: 18px; height: 18px;
+        border-radius: 50%; display: none;
+        align-items: center; justify-content: center;
+        border: 2px solid white; z-index: 100;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    `;
+
+    const syncSidebarBadge = (href, className, total) => {
+        document.querySelectorAll(`a[href="${href}"]`).forEach((link) => {
+            const parent = link.parentNode?.classList?.contains('item') ? link.parentNode : link;
+            if (!parent) return;
+            let badge = parent.querySelector(`.${className}`);
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = className;
+                badge.style.cssText = estiloBadge;
+                parent.style.position = 'relative';
+                parent.appendChild(badge);
+            }
+            if (total > 0) {
+                badge.innerText = total > 99 ? '99+' : String(total);
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+    };
+
+    const syncShellBadge = (href, total) => {
+        document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
+            let badge = link.querySelector('.doke-badge');
+            if (!badge) {
+                badge = document.createElement('span');
+                badge.className = 'doke-badge';
+                link.appendChild(badge);
+            }
+            if (total > 0) {
+                badge.innerText = total > 99 ? '99+' : String(total);
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        });
+    };
+
+    const commitBadges = (notif, chat) => {
+        const safeNotif = Math.max(0, Number(notif || 0) || 0);
+        const safeChat = Math.max(0, Number(chat || 0) || 0);
+        syncSidebarBadge('notificacoes.html', 'badge-sidebar', safeNotif);
+        syncSidebarBadge('chat.html', 'badge-chat-sidebar', safeChat);
+        syncShellBadge('notificacoes.html', safeNotif);
+        syncShellBadge('chat.html', safeChat);
+        state.lastTotals = { notif: safeNotif, chat: safeChat };
+        try {
+            window.__dokeBadgeTotals = { notif: safeNotif, chat: safeChat };
+            window.dispatchEvent(new CustomEvent('doke:badges', { detail: window.__dokeBadgeTotals }));
+        } catch (_) {}
+    };
+
+    const atualizarBadges = (docsRecebidos, docsEnviados, docsSociais, opts = {}) => {
         let totalNotif = 0;
         let totalChat = 0;
 
-        // ... (l?gica de contagem permanece igual) ...
         docsRecebidos.forEach(doc => {
             const data = doc.data();
             const st = data.status;
             if ((st === 'pendente' || st === 'pago' || st === 'finalizado') && !data.notificacaoLidaProfissional) totalNotif++;
-            if (st === 'aceito') totalChat++; 
+            if (st === 'aceito') totalChat++;
         });
         docsEnviados.forEach(doc => {
             const data = doc.data();
@@ -7191,94 +7295,56 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
         totalNotif += docsSociais.length;
 
-        // ESTILO UNIFICADO (Vermelho padr?o #ff2e63)
-        const estiloBadge = `
-            position: absolute; top: 5px; right: 5px;
-            background: #ff2e63; color: white;
-            font-size: 10px; font-weight: bold;
-            min-width: 18px; height: 18px;
-            border-radius: 50%; display: none;
-            align-items: center; justify-content: center;
-            border: 2px solid white; z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        `;
+        const prevNotif = Math.max(0, Number(state.lastTotals?.notif || 0) || 0);
+        const prevChat = Math.max(0, Number(state.lastTotals?.chat || 0) || 0);
+        const hasPrevBadges = (prevNotif > 0 || prevChat > 0);
+        const incomingZero = totalNotif === 0 && totalChat === 0;
+        const freshRead = opts.forceFresh === true || (allStreamsReady() && opts.partial !== true);
 
-        // --- ATUALIZA O MENU LATERAL E MOBILE ---
-        
-        // 1. Badge de NOTIFICA??ES (Sininho)
-document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
-            let badge = link.parentNode.querySelector('.badge-sidebar');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'badge-sidebar';
-                badge.style.cssText = estiloBadge;
-                // Ajuste para mobile vs desktop
-                const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
-                parent.style.position = 'relative';
-                parent.appendChild(badge);
-            }
-            if (totalNotif > 0) { badge.innerText = totalNotif; badge.style.display = 'flex'; } 
-            else { badge.style.display = 'none'; }
-        });
+        if (incomingZero && hasPrevBadges && !freshRead) {
+            totalNotif = prevNotif;
+            totalChat = prevChat;
+        }
 
-        
-        // 2. Badge de CHAT (Envelope) - Mant?m l?gica original
-        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
-            let badge = link.parentNode.querySelector('.badge-chat-sidebar');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'badge-chat-sidebar';
-                badge.style.cssText = estiloBadge; // Usa a mesma vari?vel de estilo
-                const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
-                parent.style.position = 'relative';
-                parent.appendChild(badge);
-            }
-            if (totalChat > 0) { badge.innerText = totalChat; badge.style.display = 'flex'; } 
-            else { badge.style.display = 'none'; }
-        });
-
-        // 3. Badge no shell mobile (header)
-        const syncShellBadge = (href, total) => {
-            document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
-                let badge = link.querySelector('.doke-badge');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'doke-badge';
-                    link.appendChild(badge);
-                }
-                if (total > 0) {
-                    badge.innerText = total > 99 ? '99+' : String(total);
-                    badge.style.display = 'flex';
-                } else {
-                    badge.style.display = 'none';
-                }
-            });
-        };
-
-        syncShellBadge('notificacoes.html', totalNotif);
-        syncShellBadge('chat.html', totalChat);
-
-        try {
-            window.__dokeBadgeTotals = { notif: totalNotif, chat: totalChat };
-            window.dispatchEvent(new CustomEvent('doke:badges', { detail: window.__dokeBadgeTotals }));
-        } catch (_) {}
+        commitBadges(totalNotif, totalChat);
     };
-// ... (restante dos snapshots igual) ...
+
     let cacheRecebidos = [];
     let cacheEnviados = [];
     let cacheSociais = [];
 
     const pollBadges = async () => {
         try {
+            const readSnapshot = async (q) => {
+                try {
+                    const snap = await getDocs(q);
+                    return { ok: true, docs: Array.isArray(snap?.docs) ? snap.docs : [] };
+                } catch (_) {
+                    return { ok: false, docs: [] };
+                }
+            };
             const [r, e, s] = await Promise.all([
-                getDocs(qRecebidos).catch(() => ({ docs: [] })),
-                getDocs(qEnviados).catch(() => ({ docs: [] })),
-                getDocs(qSociais).catch(() => ({ docs: [] }))
+                readSnapshot(qRecebidos),
+                readSnapshot(qEnviados),
+                readSnapshot(qSociais)
             ]);
-            cacheRecebidos = Array.isArray(r?.docs) ? r.docs : [];
-            cacheEnviados = Array.isArray(e?.docs) ? e.docs : [];
-            cacheSociais = Array.isArray(s?.docs) ? s.docs : [];
-            atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+            if (r.ok) {
+                cacheRecebidos = r.docs;
+                initState.recebidos = true;
+            }
+            if (e.ok) {
+                cacheEnviados = e.docs;
+                initState.enviados = true;
+            }
+            if (s.ok) {
+                cacheSociais = s.docs;
+                initState.sociais = true;
+            }
+            const hasAnySuccess = !!(r.ok || e.ok || s.ok);
+            const allOk = !!(r.ok && e.ok && s.ok);
+            if (hasAnySuccess) {
+                atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais, { forceFresh: allOk, partial: !allOk });
+            }
         } catch (_) {}
     };
 
@@ -7289,18 +7355,46 @@ document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
     };
 
     const unsub1 = onSnapshot(qRecebidos, (snap) => {
-        cacheRecebidos = snap.docs;
+        cacheRecebidos = Array.isArray(snap?.docs) ? snap.docs : [];
+        initState.recebidos = true;
         atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
     }, onSnapError);
     const unsub2 = onSnapshot(qEnviados, (snap) => {
-        cacheEnviados = snap.docs;
+        cacheEnviados = Array.isArray(snap?.docs) ? snap.docs : [];
+        initState.enviados = true;
         atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
     }, onSnapError);
     const unsub3 = onSnapshot(qSociais, (snap) => {
-        cacheSociais = snap.docs;
+        cacheSociais = Array.isArray(snap?.docs) ? snap.docs : [];
+        initState.sociais = true;
         atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
     }, onSnapError);
     state.unsubs = [unsub1, unsub2, unsub3];
+
+    if (!window.__dokeBadgeHydratorBound) {
+        window.__dokeBadgeHydratorBound = true;
+        const reemitirBadgeCache = () => {
+            try {
+                const cached = window.__dokeBadgeTotals || state.lastTotals;
+                if (!cached || typeof cached !== "object") return;
+                const notif = Math.max(0, Number(cached.notif || 0) || 0);
+                const chat = Math.max(0, Number(cached.chat || 0) || 0);
+                commitBadges(notif, chat);
+            } catch (_) {}
+        };
+        window.addEventListener('focus', reemitirBadgeCache);
+        window.addEventListener('pageshow', reemitirBadgeCache);
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) reemitirBadgeCache();
+        });
+    }
+
+    try {
+        const cached = window.__dokeBadgeTotals || state.lastTotals;
+        if (cached && typeof cached === "object") {
+            commitBadges(cached.notif, cached.chat);
+        }
+    } catch (_) {}
     pollBadges();
 }
 

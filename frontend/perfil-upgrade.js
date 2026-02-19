@@ -5111,7 +5111,8 @@ if(!rangeSel || !refreshBtn) return;
         placeProfileActionsForMobile();
         bindMobileActionsPlacement();
       }catch(e){ console.error(e); }
-      const enableLiveCounts = !!(window.DOKE_PROFILE_LIVE_COUNTS === true);
+      // Liga contadores reais por padrão; só desliga se definido explicitamente como false.
+      const enableLiveCounts = window.DOKE_PROFILE_LIVE_COUNTS !== false;
       if(enableLiveCounts){
         updateProfileCounts(ctx).catch(e=>console.error(e));
       }else{

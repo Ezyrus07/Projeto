@@ -445,6 +445,18 @@
     const profileHref = isPro ? "meuperfil.html" : "perfil-usuario.html";
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
+    const buildProfileDropdown = (photo) => `
+      <div class="profile-container">
+        <img src="${photo}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">
+        <div id="dropdownPerfil" class="dropdown-profile">
+          <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
+          <a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+          ${itemCarteira}
+          <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+          <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
+          <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+        </div>
+      </div>`;
 
     const containers = Array.from(document.querySelectorAll(".botoes-direita"))
       .filter((el) => !el.closest(".doke-mobile-header"));
@@ -456,18 +468,7 @@
       }
 
       const photo = avatarUrl || "https://i.pravatar.cc/150?img=12";
-      container.innerHTML = `
-        <div class="profile-container">
-          <img src="${photo}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">
-          <div id="dropdownPerfil" class="dropdown-profile">
-            <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
-            <a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
-            ${itemCarteira}
-            <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
-            <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
-            <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
-          </div>
-        </div>`;
+      container.innerHTML = buildProfileDropdown(photo);
     });
 
     const topAuthNodes = Array.from(document.querySelectorAll("#btnAuthTopo"));
@@ -479,8 +480,10 @@
         return;
       }
       const photo = avatarUrl || "https://i.pravatar.cc/150?img=12";
-      node.setAttribute("href", profileHref);
-      node.innerHTML = `<img src="${photo}" class="profile-img-btn" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">`;
+      node.removeAttribute("href");
+      node.setAttribute("role", "button");
+      node.setAttribute("aria-label", "Abrir menu de perfil");
+      node.innerHTML = buildProfileDropdown(photo);
     });
   }function getAvatarUrl(profile){
     if(!profile) return null;
@@ -1117,11 +1120,14 @@
     }
 
     function applyShellBadges(totals){
-      const notif = Number(totals?.notif || 0) || 0;
-      const chat = Number(totals?.chat || 0) || 0;
+      if (!totals || typeof totals !== "object") return;
+      const notifRaw = Number(totals.notif);
+      const chatRaw = Number(totals.chat);
+      const notif = Number.isFinite(notifRaw) ? Math.max(0, Math.trunc(notifRaw)) : null;
+      const chat = Number.isFinite(chatRaw) ? Math.max(0, Math.trunc(chatRaw)) : null;
       const applyTo = (href, total) => {
-        if(!header) return;
-        header.querySelectorAll(`a.doke-icon-btn[href="${href}"]`).forEach((link) => {
+        if (total === null) return;
+        document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
           let badge = link.querySelector(".doke-badge");
           if(!badge){
             badge = document.createElement("span");
@@ -1148,6 +1154,17 @@
       window.__dokeShellBadgeListenerBound = true;
       window.addEventListener("doke:badges", (ev) => {
         try{ applyShellBadges(ev?.detail || null); }catch(e){}
+      });
+    }
+    if(!window.__dokeShellBadgeHydrateBound){
+      window.__dokeShellBadgeHydrateBound = true;
+      const hydrateBadges = () => {
+        try{ applyShellBadges(window.__dokeBadgeTotals || null); }catch(_e){}
+      };
+      window.addEventListener("focus", hydrateBadges);
+      window.addEventListener("pageshow", hydrateBadges);
+      document.addEventListener("visibilitychange", () => {
+        if (!document.hidden) hydrateBadges();
       });
     }
 
