@@ -1,5 +1,5 @@
 -- DOKE / Supabase
--- FIX: políticas RLS da tabela public.usuarios
+-- FIX: políticas RLS da tabela public.usuários
 -- Objetivo:
 -- 1) Evitar "policy already exists" (script idempotente)
 -- 2) Garantir SELECT (senão o perfil não carrega)
@@ -28,7 +28,7 @@ create policy "usuarios_select_authenticated"
 -- ATENÇÃO: isso libera TODAS as colunas via REST. Se tiver coluna sensível,
 -- crie uma VIEW com colunas públicas e exponha só a VIEW.
 -- create policy "usuarios_select_public"
---   on public.usuarios
+--   on public.usuários
 --   for select
 --   to anon
 --   using (true);

@@ -247,7 +247,7 @@
 
   function pkField(table){
     const t = String(table||"").trim().toLowerCase();
-    // In DOKE, "usuarios" docs are addressed by auth uid, stored in column "uid".
+    // In DOKE, "usuários" docs are addressed by auth uid, stored in column "uid".
     if (t === "usuarios") return "uid";
     return "id";
   }
@@ -524,7 +524,7 @@
 
   window.getDocs = async function(q){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!q || !q.table) return makeQuerySnap([]);
     if (isSupaTemporarilyDown()) return makeQuerySnap([]);
     try { await ensureAuthSession({ force: false }); } catch (_e) {}
@@ -654,7 +654,7 @@
 
   window.getDoc = async function(ref){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return makeDocSnap(null);
     if (isSupaTemporarilyDown()) return makeDocSnap(null);
     try { await ensureAuthSession({ force: false }); } catch (_e) {}
@@ -709,9 +709,9 @@
 
   window.addDoc = async function(coll, payload){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     const table = coll?.table;
-    if (!table) throw new Error("Tabela nao informada em collection().");
+    if (!table) throw new Error("Tabela não informada em collection().");
 
     const runInsert = async () => {
       const finalPayload = normalizePayload(payload);
@@ -768,7 +768,7 @@
 
   window.setDoc = async function(ref, payload){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     const runSet = async () => {
       const keyField = pkField(ref.table);
       const base = { ...(payload||{}) };
@@ -803,7 +803,7 @@
 
   window.updateDoc = async function(ref, payload){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
     if (isSupaTemporarilyDown()) return true;
     const runUpdate = async () => {
@@ -832,7 +832,7 @@
 
   window.deleteDoc = async function(ref){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
     const runDelete = async () => {
       let q = client.from(ref.table).delete().eq(pkField(ref.table), ref.id);
@@ -881,7 +881,7 @@
 
   window.uploadBytes = async function(storageRef, file){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!storageRef || !storageRef.path) return { ref: storageRef };
     if (!file) return { ref: storageRef };
     const { data, error } = await client.storage
@@ -893,7 +893,7 @@
 
   window.getDownloadURL = async function(storageRef){
     const client = getClient();
-    if (!client) throw new Error("Supabase client nao inicializado (supabase-init.js).");
+    if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!storageRef || !storageRef.path) return "";
     const { data } = client.storage.from(storageRef.bucket).getPublicUrl(storageRef.path);
     return data?.publicUrl || "";

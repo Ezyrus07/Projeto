@@ -23,7 +23,7 @@
 <script defer="" src="script.js?v=20260218v60"></script>
 <style>
         /* ======================================================
-           ESTILOS ESPECIFICOS DA PAGINA NOTIFICACOES
+           ESTILOS ESPECIFICOS DA PÁGINA NOTIFICAÇÕES
            ====================================================== */
         
         @media (min-width: 1024px) {
@@ -274,7 +274,7 @@
         .notif-card:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.06); }
         .notif-card.read { opacity: 0.88; }
         
-        /* Marcador de Nao Lido */
+        /* Marcador de Não Lido */
         .notif-card.unread { border-left: 5px solid var(--cor0); background: #faffff; }
         .notif-card.unread::after {
             content: ''; position: absolute; top: 20px; right: 20px;
@@ -491,7 +491,7 @@
 <strong id="summary-total">0</strong>
 </div>
 <div class="summary-card">
-<span>Nao lidas</span>
+<span>Não lidas</span>
 <strong id="summary-unread">0</strong>
 </div>
 <div class="summary-card">
@@ -572,7 +572,7 @@
             const nomeFallback = user.user_metadata?.nome
                 || user.displayName
                 || perfilLocal?.nome
-                || (user.email ? user.email.split('@')[0] : "Usuario");
+                || (user.email ? user.email.split('@')[0] : "Usuário");
             return {
                 uid: user.uid || user.id || perfilLocal?.uid || localStorage.getItem('doke_uid') || null,
                 email: user.email || perfilLocal?.email || null,
@@ -669,8 +669,8 @@
                 const perfilLocal = parsePerfilLocal();
                 if (!localStorage.getItem('doke_usuario_perfil')) {
                     localStorage.setItem('doke_usuario_perfil', JSON.stringify({
-                        nome: user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario"),
-                        user: user.user_metadata?.user || user.user_metadata?.nome || "Usuario",
+                        nome: user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuário"),
+                        user: user.user_metadata?.user || user.user_metadata?.nome || "Usuário",
                         foto: user.user_metadata?.foto || "",
                         uid: user.uid
                     }));
@@ -719,7 +719,7 @@
             const comentarioId = data.comentarioId || data.comentarioid || null;
             const deUid = data.deUid || data.deuid || null;
             let titulo = "Atualizacao";
-            let desc = "Voce recebeu uma interacao.";
+            let desc = "Você recebeu uma interacao.";
             let iconClass = "bx-bell";
             let colorClass = "ni-info";
             let tipoCategoria = "social";
@@ -803,7 +803,7 @@
                 time: timeValue,
                 iconClass,
                 colorClass,
-                link: data.link || (deUid ? `perfil-usuario.html?id=${encodeURIComponent(deUid)}` : "index.html"),
+                link: data.link || (deUid ? `perfil-usuário.html?id=${encodeURIComponent(deUid)}` : "index.html"),
                 actor,
                 avatar,
                 postId,
@@ -812,7 +812,7 @@
             };
         }
 
-// EM NOTIFICACOES.HTML
+// EM NOTIFICAÇÕES.HTML
 
 function parseNotifDate(v) {
     if (!v) return new Date();
@@ -917,7 +917,7 @@ async function carregarNotificacoes(uid) {
 
         // --- CLIENTE (Enviados) ---
         snapEnviados.forEach(doc => {
-            const data = doc.data(); // <--- GARANTINDO AQUI TAMBEM
+            const data = doc.data(); // <--- GARANTINDO AQUI TAMBÉM
             const statusLido = data.notificacaoLidaCliente === true ? 'read' : 'unread';
 
             if (data.status === 'aceito') {
@@ -978,7 +978,7 @@ async function carregarNotificacoes(uid) {
     } catch (error) {
         console.error("Erro notifications:", error);
         if (!container || !container.children.length) {
-            container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar notificacoes.</p>`;
+            container.innerHTML = `<p style="text-align:center; color:red;">Erro ao carregar notificações.</p>`;
         }
     }
 }
@@ -1133,7 +1133,7 @@ async function carregarNotificacoes(uid) {
             btn.innerHTML = `<i class='bx bx-loader-alt bx-spin'></i> Salvando...`;
 
             try {
-                // Filtra apenas as nao lidas para nao gastar recursos
+                // Filtra apenas as não lidas para não gastar recursos
                 const naoLidas = todasNotificacoes.filter(n => n.status === 'unread');
                 
                 // Cria um array de promessas para atualizar tudo junto
@@ -1191,7 +1191,7 @@ async function carregarNotificacoes(uid) {
                 atualizarBadge();
                 renderizarLista(aplicarFiltros());
             } catch (error) {
-                console.error("Erro ao marcar notificacao:", error);
+                console.error("Erro ao marcar notificação:", error);
             }
         }
 
@@ -1202,7 +1202,7 @@ async function carregarNotificacoes(uid) {
                     const docRef = doc(db, "notificacoes", notif.id);
                     await deleteDoc(docRef);
                 } catch (error) {
-                    console.error("Erro ao dispensar notificacao:", error);
+                    console.error("Erro ao dispensar notificação:", error);
                 }
             } else {
                 await marcarNotificacaoLida(notif);

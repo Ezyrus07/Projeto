@@ -5,7 +5,7 @@
 -- Tempo estimado: 5 segundos
 -- ============================================================
 
--- 1. HABILITAR ROW LEVEL SECURITY NA TABELA USUARIOS
+-- 1. HABILITAR ROW LEVEL SECURITY NA TABELA USUÁRIOS
 -- ============================================================
 ALTER TABLE IF EXISTS public.usuarios ENABLE ROW LEVEL SECURITY;
 
@@ -56,7 +56,7 @@ CREATE POLICY "usuarios_update_own"
 -- VERIFICAÇÃO (OPCIONAL - RODE DEPOIS PARA CONFIRMAR)
 -- ============================================================
 -- Descomente as linhas abaixo e execute para ver as políticas:
--- SELECT * FROM pg_policies WHERE tablename = 'usuarios';
+-- SELECT * FROM pg_policies WHERE tablename = 'usuários';
 
 
 -- ============================================================
@@ -66,7 +66,7 @@ CREATE POLICY "usuarios_update_own"
 -- POSSAM VER PERFIS PÚBLICOS (ex: página de busca de profissionais)
 -- 
 -- CREATE POLICY "usuarios_select_public"
---   ON public.usuarios
+--   ON public.usuários
 --   FOR SELECT
 --   TO anon
 --   USING (true);

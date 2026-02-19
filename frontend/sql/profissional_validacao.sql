@@ -1,5 +1,5 @@
 -- DOKE: tabela de validação profissional (robusta p/ esquemas diferentes)
--- ✅ Funciona tanto se você usa "usuarios.id" = auth.uid() quanto se usa "usuarios.uid" = auth.uid()
+-- ✅ Funciona tanto se você usa "usuários.id" = auth.uid() quanto se usa "usuários.uid" = auth.uid()
 
 create table if not exists public.profissional_validacao (
   -- Identificador principal usado pelo app (recomendado)

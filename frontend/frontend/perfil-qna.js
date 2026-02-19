@@ -71,14 +71,14 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
       client.from(table).select("*").eq(uidField, authUid).maybeSingle()
     );
     if(error) return { error };
-    return { usuario: data || null };
+    return { usuário: data || null };
   }
   async function getUsuarioByUsername(client, username){
     const { data, error } = await runUsuariosCompatQuery(client, ({ table }) =>
       client.from(table).select("*").eq("user", username).maybeSingle()
     );
     if(error) return { error };
-    return { usuario: data || null };
+    return { usuário: data || null };
   }
   async function getUsuarioById(client, id){
     if(looksUUID(id)){
@@ -86,13 +86,13 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
         client.from(table).select("*").eq(uidField, id).maybeSingle()
       );
       if(r.error) return { error: r.error };
-      return { usuario: r.data || null };
+      return { usuário: r.data || null };
     }
     const r = await runUsuariosCompatQuery(client, ({ table }) =>
       client.from(table).select("*").eq("id", id).maybeSingle()
     );
     if(r.error) return { error: r.error };
-    return { usuario: r.data || null };
+    return { usuário: r.data || null };
   }
 
   function renderItem(item, opts){
@@ -173,20 +173,20 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
     if(targetIdParam){
       const r = await getUsuarioById(client, targetIdParam);
       if(r.error) console.error(r.error);
-      target = r.usuario;
+      target = r.usuário;
     } else if(targetUidParam){
       const r = await getUsuarioById(client, targetUidParam);
       if(r.error) console.error(r.error);
-      target = r.usuario;
+      target = r.usuário;
     } else if(targetUserParam){
       const raw = String(targetUserParam || "");
       const clean = raw.startsWith("@") ? raw.slice(1) : raw;
       let r = await getUsuarioByUsername(client, clean);
-      if(!r.usuario && raw.startsWith("@")){
+      if(!r.usuário && raw.startsWith("@")){
         r = await getUsuarioByUsername(client, raw.slice(1));
       }
       if(r.error) console.error(r.error);
-      target = r.usuario;
+      target = r.usuário;
     }
 
     if(!target || !target.id){
@@ -202,7 +202,7 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
     if(authUser){
       const r = await getUsuarioByAuthUid(client, authUser.id);
       if(r.error) console.error(r.error);
-      me = r.usuario || null;
+      me = r.usuário || null;
     }
 
     const canAnswer = !!(me && (me.id === target.id || String(me.uid) === String(target.uid)));

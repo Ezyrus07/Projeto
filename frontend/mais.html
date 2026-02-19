@@ -396,7 +396,7 @@
 <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
 </nav>
 <script>
-        // Dados Pessoais (Supabase) - carrega do Auth + tabela usuarios + validacao (tornar-profissional)
+        // Dados Pessoais (Supabase) - carrega do Auth + tabela usuários + validação (tornar-profissional)
         // Objetivo: o que vocÃƒÆ’Ã‚ª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
 
         const safeJSON = (k, fallback = null) => {
@@ -435,7 +435,7 @@
             };
             setValue('inputNome', String(dados.nome || "").slice(0, 40));
             setValue('inputEmail', dados.email || "");
-            setValue('inputDoc', dados.cpf_cnpj || "Nao informado");
+            setValue('inputDoc', dados.cpf_cnpj || "Não informado");
             setValue('inputTel', dados.telefone || dados.telefone_comercial || "");
             setValue('inputNasc', dados.data_nascimento || "");
 
@@ -477,7 +477,7 @@
             const uid = authUser.id;
             const email = authUser.email || perfilLocal.email || '';
 
-            // 2) usuarios
+            // 2) usuários
             let usr = null;
             try {
                 const { data, error } = await window.sb
@@ -500,7 +500,7 @@
                 if (!error && Array.isArray(data) && data.length) val = data[0];
             } catch (_) {}
 
-            // 4) Merge (prioridade: usuarios -> validacao -> auth meta -> cache)
+            // 4) Merge (prioridade: usuários -> validação -> auth meta -> cache)
             const meta = authUser.user_metadata || {};
             const nome = pickBestName(
                 usr?.nome,
@@ -531,7 +531,7 @@
                 nome,
                 user: userHandle,
                 foto,
-                cpf_cnpj: cpfCnpj || 'Nao informado',
+                cpf_cnpj: cpfCnpj || 'Não informado',
                 telefone,
                 data_nascimento: nasc,
             };
@@ -576,7 +576,7 @@
                 };
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
 
-                // Melhor esforÃƒÆ’Ã‚§o: atualiza tabela usuarios (se existir colunas)
+                // Melhor esforÃƒÆ’Ã‚§o: atualiza tabela usuários (se existir colunas)
                 const patch = { nome, telefone, data_nascimento: nasc, foto };
                 try {
                     await window.sb

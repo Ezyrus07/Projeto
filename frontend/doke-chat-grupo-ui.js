@@ -2,7 +2,7 @@
 (function(){
   const safe = (s)=> String(s??"").replace(/[&<>"]/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
   const stripAt = (u)=> String(u??"").replace(/^@+/, "").trim();
-  const handle = (u)=> "@"+stripAt(u||"usuario");
+  const handle = (u)=> "@"+stripAt(u||"usuário");
   const timeHHMM = (d)=>{
     try{
       const dt = (d instanceof Date) ? d : new Date(d);

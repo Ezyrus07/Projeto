@@ -40,7 +40,7 @@ begin
     return jsonb_build_object('ok', false, 'error', 'not_authenticated');
   end if;
 
-  -- Remove perfil (cascata para tabelas que referenciam public.usuarios).
+  -- Remove perfil (cascata para tabelas que referenciam public.usuários).
   delete from public.usuarios
   where uid = v_uid or id = v_uid;
   v_deleted_profile := found;

@@ -74,7 +74,7 @@
 
   async function uploadDocumento(userId, file){
     if(!file) return null;
-    if(!sb || !sb.storage) throw new Error('Supabase Storage não dispon�vel.');
+    if(!sb || !sb.storage) throw new Error('Supabase Storage não disponível.');
     const ext = (file.name.split('.').pop()||'jpg').toLowerCase();
     const path = `validacao/${userId}/${Date.now()}.${ext}`;
     const { error: upErr } = await sb.storage.from('perfil').upload(path, file, { upsert: true, contentType: file.type || 'image/jpeg' });
@@ -143,7 +143,7 @@
   async function salvar(e){
     e.preventDefault();
     const user = await getUser();
-    if(!user){ toast('Fa�a login para continuar.', 'error'); return; }
+    if(!user){ toast('Faça login para continuar.', 'error'); return; }
     if(!sb || !sb.from){ toast('Supabase não configurado (supabase-init.js?v=20260218v43', 'error'); return; }
 
     const tel = document.getElementById('tpTelefone')?.value || '';
@@ -161,7 +161,7 @@
     if(calcIdade(nasc) < 18){ toast('Você precisa ter 18 anos ou mais.', 'error'); return; }
 
     const cpfDigits = onlyDigits(cpf);
-    if(cpfDigits.length !== 11){ toast('CPF inv�lido. Preencha corretamente.', 'error'); return; }
+    if(cpfDigits.length !== 11){ toast('CPF inválido. Preencha corretamente.', 'error'); return; }
 
     if(!docFile){ toast('Envie a foto do documento (identidade).', 'error'); return; }
 
@@ -199,7 +199,7 @@
       await sb.from('usuarios').update({ profissional_validado: false, is_profissional: true }).eq('id', user.id);
     }catch(_e){}
 
-    toast('Enviado para valida��o!', 'success');
+    toast('Enviado para validação!', 'success');
     setTimeout(()=> window.location.href = 'mais.html', 600);
   }
 

@@ -218,7 +218,7 @@
 
   // ---------- Render: Videos (demo) ----------
   function renderVideos() {
-    const wrap = qs('#galeria-videos-negocios');
+    const wrap = qs('#galeria-videos-negócios');
     if (!wrap) return;
 
     wrap.innerHTML = '';
@@ -258,7 +258,7 @@
       });
 
       card.addEventListener('click', (e) => {
-        const isBtn = e.target?.closest?.('.btn-orcamento-card');
+        const isBtn = e.target?.closest?.('.btn-orçamento-card');
         if (isBtn || e.target?.closest?.('.tiktok-play-btn') || e.target?.closest?.('.video-ui-layer')) {
           open();
         }

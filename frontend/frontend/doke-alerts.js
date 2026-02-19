@@ -4,7 +4,7 @@
   const safeStr = (value) => (value == null ? "" : String(value));
   const clamp = (text, size = 240) => (text.length > size ? `${text.slice(0, size - 3)}...` : text);
   const notifyMem = new Map();
-  const BROKEN_RE = /Ãƒ|Ã‚|Ã¢|Ã£|ï¿½|�/;
+  const BROKEN_RE = /Ãƒ|Ã‚|Ã¢|Ã£|ï¿½|\uFFFD/;
   const ATTRS_TO_FIX = ["placeholder", "title", "aria-label", "alt"];
   const WORD_FIXES = [
     [/\bIn[ií]?cio\b/gi, "Início"],
@@ -22,39 +22,39 @@
     [/\bFa[cç]a\b/gi, "Faça"],
     [/\binv[aá]lido\b/gi, "inválido"],
     [/\bindispon[ií]vel\b/gi, "indisponível"],
-    [/crit�rios/gi, "critérios"],
-    [/Crit�rios/g, "Critérios"],
-    [/considera��es/gi, "considerações"],
-    [/Considera��es/g, "Considerações"],
-    [/configura��es/gi, "configurações"],
-    [/Configura��es/g, "Configurações"],
-    [/informa��es/gi, "informações"],
-    [/Informa��es/g, "Informações"],
-    [/solicita��o/gi, "solicitação"],
-    [/Solicita��o/g, "Solicitação"],
-    [/finaliza��o/gi, "finalização"],
-    [/Finaliza��o/g, "Finalização"],
-    [/cancela��o/gi, "cancelação"],
-    [/Cancela��o/g, "Cancelação"],
-    [/permiss�o/gi, "permissão"],
-    [/Permiss�o/g, "Permissão"],
-    [/conex�o/gi, "conexão"],
-    [/Conex�o/g, "Conexão"],
-    [/op��es/gi, "opções"],
-    [/Op��es/g, "Opções"],
-    [/opera��es/gi, "operações"],
-    [/Opera��es/g, "Operações"],
-    [/experi�ncia/gi, "experiência"],
-    [/aparecer�o/gi, "aparecerão"],
-    [/colabora��o/gi, "colaboração"],
-    [/observa��o/gi, "observação"],
-    [/an�nimo/gi, "anônimo"],
-    [/p�gina/gi, "página"],
-    [/inser��o/gi, "inserção"],
-    [/tamb�m/gi, "também"],
-    [/atualiza��o/gi, "atualização"],
-    [/m�tricas/gi, "métricas"],
-    [/fun��o/gi, "função"]
+    [/crit\uFFFDrios/gi, "critérios"],
+    [/Crit\uFFFDrios/g, "Critérios"],
+    [/considera\uFFFD\uFFFDes/gi, "considerações"],
+    [/Considera\uFFFD\uFFFDes/g, "Considerações"],
+    [/configura\uFFFD\uFFFDes/gi, "configurações"],
+    [/Configura\uFFFD\uFFFDes/g, "Configurações"],
+    [/informa\uFFFD\uFFFDes/gi, "informações"],
+    [/Informa\uFFFD\uFFFDes/g, "Informações"],
+    [/solicita\uFFFD\uFFFDo/gi, "solicitação"],
+    [/Solicita\uFFFD\uFFFDo/g, "Solicitação"],
+    [/finaliza\uFFFD\uFFFDo/gi, "finalização"],
+    [/Finaliza\uFFFD\uFFFDo/g, "Finalização"],
+    [/cancela\uFFFD\uFFFDo/gi, "cancelação"],
+    [/Cancela\uFFFD\uFFFDo/g, "Cancelação"],
+    [/permiss\uFFFDo/gi, "permissão"],
+    [/Permiss\uFFFDo/g, "Permissão"],
+    [/conex\uFFFDo/gi, "conexão"],
+    [/Conex\uFFFDo/g, "Conexão"],
+    [/op\uFFFD\uFFFDes/gi, "opções"],
+    [/Op\uFFFD\uFFFDes/g, "Opções"],
+    [/opera\uFFFD\uFFFDes/gi, "operações"],
+    [/Opera\uFFFD\uFFFDes/g, "Operações"],
+    [/experi\uFFFDncia/gi, "experiência"],
+    [/aparecer\uFFFDo/gi, "aparecerão"],
+    [/colabora\uFFFD\uFFFDo/gi, "colaboração"],
+    [/observa\uFFFD\uFFFDo/gi, "observação"],
+    [/an\uFFFDnimo/gi, "anônimo"],
+    [/p\uFFFDgina/gi, "página"],
+    [/inser\uFFFD\uFFFDo/gi, "inserção"],
+    [/tamb\uFFFDm/gi, "também"],
+    [/atualiza\uFFFD\uFFFDo/gi, "atualização"],
+    [/m\uFFFDtricas/gi, "métricas"],
+    [/fun\uFFFD\uFFFDo/gi, "função"]
   ];
 
   window.__DOKE_DISABLE_TOAST_GLOBAL_HANDLERS__ = true;
@@ -256,7 +256,7 @@
     score += (input.match(/Ã¢/g) || []).length * 2;
     score += (input.match(/Ã£/g) || []).length * 2;
     score += (input.match(/ï¿½/g) || []).length * 3;
-    score += (input.match(/�/g) || []).length * 4;
+    score += (input.match(/\uFFFD/g) || []).length * 4;
     return score;
   }
 

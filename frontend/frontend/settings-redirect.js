@@ -9,7 +9,7 @@
 
   const map = {
     'dadospessoais.html': 'dadospessoais',
-    'enderecos.html': 'enderecos',
+    'endereços.html': 'enderecos',
     'senha.html': 'senha',
     'pagamentos.html': 'pagamentos',
     'preferencia-notif.html': 'preferencia-notif',

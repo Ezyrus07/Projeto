@@ -516,7 +516,7 @@ main.enderecos-main{
   }
 
   function enderecoResumo(addr){
-    const p1 = [addr.endereco, addr.numero ? ("Nº " + addr.numero) : ""].filter(Boolean).join(", ");
+    const p1 = [addr.endereço, addr.número ? ("Nº " + addr.número) : ""].filter(Boolean).join(", ");
     const p2 = [addr.complemento, addr.referencia].filter(Boolean).join(" • ");
     return { p1, p2, info: String(addr.info || "").trim() };
   }
@@ -533,7 +533,7 @@ main.enderecos-main{
     if (!q) return list;
     return list.filter((addr) => {
       const hay = [
-        addr.label, addr.cep, addr.endereco, addr.numero, addr.complemento, addr.referencia, addr.info
+        addr.label, addr.cep, addr.endereço, addr.número, addr.complemento, addr.referencia, addr.info
       ].join(" ").toLowerCase();
       return hay.includes(q);
     });
@@ -576,8 +576,8 @@ main.enderecos-main{
   function fillForm(addr){
     document.getElementById("addrLabel").value = addr?.label || "";
     document.getElementById("addrCep").value = addr?.cep || "";
-    document.getElementById("addrEndereco").value = addr?.endereco || "";
-    document.getElementById("addrNumero").value = addr?.numero || "";
+    document.getElementById("addrEndereco").value = addr?.endereço || "";
+    document.getElementById("addrNumero").value = addr?.número || "";
     document.getElementById("addrComplemento").value = addr?.complemento || "";
     document.getElementById("addrReferencia").value = addr?.referencia || "";
     document.getElementById("addrInfo").value = addr?.info || "";
@@ -588,8 +588,8 @@ main.enderecos-main{
       id: STATE.editingId || "",
       label: document.getElementById("addrLabel").value,
       cep: document.getElementById("addrCep").value,
-      endereco: document.getElementById("addrEndereco").value,
-      numero: document.getElementById("addrNumero").value,
+      endereço: document.getElementById("addrEndereco").value,
+      número: document.getElementById("addrNumero").value,
       complemento: document.getElementById("addrComplemento").value,
       referencia: document.getElementById("addrReferencia").value,
       info: document.getElementById("addrInfo").value
@@ -597,7 +597,7 @@ main.enderecos-main{
   }
 
   function formIsValid(addr){
-    return !!(String(addr.cep || "").replace(/\D/g, "").length === 8 && String(addr.endereco || "").trim() && String(addr.numero || "").trim());
+    return !!(String(addr.cep || "").replace(/\D/g, "").length === 8 && String(addr.endereço || "").trim() && String(addr.número || "").trim());
   }
 
   function closeForm(){
@@ -634,8 +634,8 @@ main.enderecos-main{
         id: row.id,
         label: row.apelido || "",
         cep: row.cep || "",
-        endereco: row.endereco || "",
-        numero: row.numero || "",
+        endereço: row.endereço || "",
+        número: row.número || "",
         complemento: row.complemento || "",
         referencia: row.referencia || "",
         info: row.info || "",
@@ -659,8 +659,8 @@ main.enderecos-main{
         uid: looksLikeUuid(uid) ? uid : null,
         apelido: addr.label || "",
         cep: addr.cep || "",
-        endereco: addr.endereco || "",
-        numero: addr.numero || "",
+        endereço: addr.endereço || "",
+        número: addr.número || "",
         complemento: addr.complemento || "",
         referencia: addr.referencia || "",
         info: addr.info || "",

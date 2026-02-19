@@ -79,7 +79,7 @@
 <div class="item">
 <a href="index.html">
 <i class="bx bx-home-alt icon azul"></i>
-<span>In�cio</span>
+<span>Início</span>
 </a>
 </div>
 <div class="item" id="pvSearchSidebarItem">
@@ -97,7 +97,7 @@
 <div class="item">
 <a href="notificacoes.html">
 <i class="bx bx-bell icon azul"></i>
-<span>Notifica��es</span>
+<span>Notificações</span>
 </a>
 </div>
 <div class="item">
@@ -151,7 +151,7 @@
         const { getFirestore, collection, query, orderBy, where, limit, getDocs, getDoc, doc, setDoc, deleteDoc, updateDoc, increment, addDoc } = window;
         const { getAuth, onAuthStateChanged, signOut } = window;
 
-        // CONFIGURA��O DO FIREBASE (Mesma do seu script.js?v=20260218v60)
+        // CONFIGURAÇÃO DO FIREBASE (Mesma do seu script.js?v=20260218v60)
         const firebaseConfig = {
             apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
             authDomain: "doke-site.firebaseapp.com",
@@ -189,7 +189,7 @@
             sairReels();
         });
 
-        // --- L�GICA DO FEED TIKTOK ---
+        // --- LÓGICA DO FEED TIKTOK ---
 function getSupabaseClient() {
     return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
 }
@@ -197,21 +197,21 @@ function getSupabaseClient() {
 async function fetchSupabaseReelsFeed() {
     const client = getSupabaseClient();
     if (!client) return [];
-    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
+    const withJoin = "id, user_id, video_url, created_at, titulo, descrição, thumb_url, usuários (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
     let { data, error } = await client
         .from("videos_curtos")
         .select(withJoin)
         .order("created_at", { ascending: false })
         .limit(30);
     if (error) {
-        const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+        const joinOnly = "id, user_id, video_url, created_at, titulo, descrição, thumb_url, usuários (id, uid, nome, user, foto)";
         const retryJoin = await client
             .from("videos_curtos")
             .select(joinOnly)
             .order("created_at", { ascending: false })
             .limit(30);
         if (retryJoin.error) {
-            const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+            const fallback = "id, user_id, video_url, created_at, titulo, descrição, thumb_url";
             const retry = await client
                 .from("videos_curtos")
                 .select(fallback)
@@ -401,7 +401,7 @@ async function carregarReels() {
             videos.forEach(video => observer.observe(video));
         }
 
-        // Fun��es Globais para o HTML acessar
+        // Funções Globais para o HTML acessar
         window.togglePlayFeed = function(frame) {
             const video = frame.querySelector('video');
             const icon = frame.querySelector('.play-overlay');
@@ -490,7 +490,7 @@ async function carregarReels() {
                     <div class="reel-comment-item">
                         <img src="${c.foto || 'https://placehold.co/32'}" alt="" loading="lazy" decoding="async">
                         <div>
-                            <b>${c.user || 'Usuario'}</b>
+                            <b>${c.user || 'Usuário'}</b>
                             <span>${c.texto || ''}</span>
                         </div>
                     </div>`;
@@ -525,7 +525,7 @@ async function carregarReels() {
             try {
                 await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
                     uid: user.uid,
-                    user: perfilLocal.user || "Usuario",
+                    user: perfilLocal.user || "Usuário",
                     foto: perfilLocal.foto || "https://placehold.co/50",
                     texto: texto,
                     data: new Date().toISOString()
@@ -582,7 +582,7 @@ async function carregarReels() {
                 .eq("uid", authUser.uid)
                 .maybeSingle();
             if (error) {
-                console.error("Erro ao carregar usuario supabase:", error);
+                console.error("Erro ao carregar usuário supabase:", error);
                 return null;
             }
             window._dokeSupabaseUserRow = data || null;
@@ -613,7 +613,7 @@ async function carregarReels() {
                 ? (rawUser.startsWith("@") ? rawUser : `@${rawUser}`)
                 : (nome ? `@${nome.split(" ")[0].toLowerCase()}` : "@usuario");
             return {
-                nome: nome || handle.replace("@", "") || "Usuario",
+                nome: nome || handle.replace("@", "") || "Usuário",
                 user: handle,
                 foto: perfil.foto || "https://placehold.co/50"
             };
@@ -667,7 +667,7 @@ async function carregarReels() {
 
                 await addDoc(collection(db, "notificacoes"), payload);
             } catch (e) {
-                console.warn("Notificacao social ignorada:", e);
+                console.warn("Notificação social ignorada:", e);
             }
         }
 
@@ -684,7 +684,7 @@ async function carregarReels() {
                 const cfg = getSupabaseReelConfig();
                 let { data, error } = await client
                     .from(cfg.commentsTable)
-                    .select("user_id, usuarios (uid)")
+                    .select("user_id, usuários (uid)")
                     .eq("id", commentId)
                     .maybeSingle();
                 if (error) {
@@ -737,7 +737,7 @@ async function carregarReels() {
                 .in("id", missing);
 
             if (error || !Array.isArray(data)) {
-                if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuarios:", error);
+                if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuários:", error);
                 return items;
             }
 
@@ -1015,7 +1015,7 @@ async function carregarReels() {
 
             const ownerUid = btn.dataset.commentUid || "";
             if (window.currentReelCommentsSource !== "supabase" && ownerUid && ownerUid === user.uid) {
-                alert("Nao pode denunciar o proprio comentario.");
+                alert("Não pode denunciar o proprio comentario.");
                 return;
             }
 
@@ -1024,7 +1024,7 @@ async function carregarReels() {
                 const userRow = await getSupabaseUserRow();
                 if (!client || !userRow) return;
                 if (ownerUid && ownerUid === userRow.id) {
-                    alert("Nao pode denunciar o proprio comentario.");
+                    alert("Não pode denunciar o proprio comentario.");
                     return;
                 }
                 const cfg = getSupabaseReelConfig();
@@ -1158,7 +1158,7 @@ async function carregarReels() {
                 const cfg = getSupabaseReelConfig();
                 let { data, error } = await client
                     .from(cfg.commentsTable)
-                    .select("id, texto, created_at, user_id, like_count, usuarios (id, nome, user, foto)")
+                    .select("id, texto, created_at, user_id, like_count, usuários (id, nome, user, foto)")
                     .eq(cfg.postIdField, window.currentReelCommentsId)
                     .eq("parent_id", parentId)
                     .order("created_at", { ascending: true });
@@ -1258,7 +1258,7 @@ async function carregarReels() {
                         <div style="flex:1;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="font-size:0.8rem;">
-                                    <span style="font-weight:700;">${escapeHtml(r.user || "Usuario")}</span> ${badgeCriador}
+                                    <span style="font-weight:700;">${escapeHtml(r.user || "Usuário")}</span> ${badgeCriador}
                                     <span style="color:#333; margin-left:5px;">${escapeHtml(r.texto || "")}</span>
                                 </div>
                                 ${btnExcluir}
@@ -1360,7 +1360,7 @@ async function carregarReels() {
                 const parentRef = doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId);
                 await addDoc(respostasRef, {
                     uid: user.uid,
-                    user: perfil.user || "Usuario",
+                    user: perfil.user || "Usuário",
                     foto: perfil.foto || "https://placehold.co/50",
                     texto: texto,
                     data: new Date().toISOString(),
@@ -1455,7 +1455,7 @@ async function carregarReels() {
                             <div style="flex:1;">
                                 <div class="comment-header-row">
                                     <div class="comment-header-left">
-                                        <span class="comment-user-name">${escapeHtml(c.user || "Usuario")}</span> ${badgeCriador} ${badgeFixado}
+                                        <span class="comment-user-name">${escapeHtml(c.user || "Usuário")}</span> ${badgeCriador} ${badgeFixado}
                                     </div>
                             <div class="comment-header-actions">
                                 ${btnPin}
@@ -1509,7 +1509,7 @@ async function carregarReels() {
             const cfg = getSupabaseReelConfig();
             let { data, error } = await client
                 .from(cfg.commentsTable)
-                .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuarios (id, nome, user, foto)")
+                .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuários (id, nome, user, foto)")
                 .eq(cfg.postIdField, id)
                 .is("parent_id", null)
                 .order("pinned", { ascending: false })
@@ -1706,7 +1706,7 @@ async function carregarReels() {
             try {
                 const novoComentario = await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
                     uid: user.uid,
-                    user: perfilLocal.user || "Usuario",
+                    user: perfilLocal.user || "Usuário",
                     foto: perfilLocal.foto || "https://placehold.co/50",
                     texto: texto,
                     data: new Date().toISOString(),
@@ -1802,7 +1802,7 @@ async function carregarReels() {
                 const userRow = await getSupabaseUserRow();
                 if (!client || !userRow) return;
                 if (ownerRowId && ownerRowId === userRow.id) {
-                    alert("Nao pode denunciar o proprio video.");
+                    alert("Não pode denunciar o proprio video.");
                     return;
                 }
                 const { data, error } = await client
@@ -1831,7 +1831,7 @@ async function carregarReels() {
             }
 
             if (ownerUid && ownerUid === user.uid) {
-                alert("Nao pode denunciar o proprio video.");
+                alert("Não pode denunciar o proprio video.");
                 return;
             }
             try {
@@ -1859,7 +1859,7 @@ async function carregarReels() {
         // Verifica Auth para Sidebar
         onAuthStateChanged(auth, (user) => {
             if(user) localStorage.setItem('usuarioLogado', 'true');
-            // Aqui você pode chamar a fun��o do script.js?v=20260218v60 principal se quiser carregar avatar
+            // Aqui você pode chamar a função do script.js?v=20260218v60 principal se quiser carregar avatar
         });
 
     </script>

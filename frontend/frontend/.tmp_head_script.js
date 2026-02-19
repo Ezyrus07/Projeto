@@ -516,7 +516,7 @@ window.carregarTrabalhosHome = async function() {
         snapshot.forEach(doc => {
             const data = doc.data();
             const linkPerfil = "";
-            const titulo = (data.titulo || data.descricao || data.categoria || "Vídeo curto").toString();
+            const titulo = (data.titulo || data.descrição || data.categoria || "Vídeo curto").toString();
             const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
             const categoria = (data.categoria || "Vídeo curto").toString();
             const duracao = formatShortDuration(data.duracao || data.duracaoSegundos || data.tempo);
@@ -527,7 +527,7 @@ window.carregarTrabalhosHome = async function() {
             // ... (código do dadosModal igual) ...
             const dadosModal = JSON.stringify({
                 id: doc.id, video: data.videoUrl, img: data.capa, user: data.autorNome,
-                desc: data.descricao, uid: data.uid, autorFoto: data.autorFoto, likes: data.likes
+                desc: data.descrição, uid: data.uid, autorFoto: data.autorFoto, likes: data.likes
             }).replace(/"/g, '&quot;');
 
             const html = `
@@ -802,7 +802,7 @@ window.verificarNotificacoes = function(uid) {
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
         document.querySelectorAll('a[href="chat.html"]').forEach(link => {
-            const existing = link.querySelector('.badge-notificacao');
+            const existing = link.querySelector('.badge-notificação');
             if(existing) existing.remove();
             if (qtd > 0) {
                 link.style.position = "relative";
@@ -847,7 +847,7 @@ function getActorPerfil() {
         ? (rawUser.startsWith("@") ? rawUser : `@${rawUser}`)
         : (nome ? `@${nome.split(" ")[0].toLowerCase()}` : "@usuario");
     return {
-        nome: nome || handle.replace("@", "") || "Usuario",
+        nome: nome || handle.replace("@", "") || "Usuário",
         user: handle,
         foto: perfil.foto || "https://placehold.co/50"
     };
@@ -929,7 +929,7 @@ async function resolverDestinoPerfil(uid, user) {
         }
     }
 
-    const base = isProf === true ? "perfil-profissional.html" : "perfil-usuario.html";
+    const base = isProf === true ? "perfil-profissional.html" : "perfil-usuário.html";
     const query = resolvedUid
         ? `uid=${encodeURIComponent(resolvedUid)}`
         : `user=${encodeURIComponent(userSafe)}`;
@@ -951,7 +951,7 @@ async function resolverDonoComentarioUid(commentId, parentId, isReply) {
         const cfg = getSupabasePostConfig();
         let { data, error } = await client
             .from(cfg.commentsTable)
-            .select("user_id, usuarios (uid)")
+            .select("user_id, usuários (uid)")
             .eq("id", commentId)
             .maybeSingle();
         if (error) {
@@ -1016,7 +1016,7 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
 
         await addDoc(collection(db, "notificacoes"), payload);
     } catch (e) {
-        console.warn("Notificacao social ignorada:", e);
+        console.warn("Notificação social ignorada:", e);
     }
 }
 
@@ -1031,7 +1031,7 @@ window.dokeBuildCardPremium = function(anuncio) {
     const preco = anuncio.preco || "A combinar";
     const __precoLabel = (() => {
         const raw = String(preco || "").toLowerCase();
-        // Normaliza acentos ("orçamento" -> "orcamento") para evitar falsos negativos
+        // Normaliza acentos ("orçamento" -> "orçamento") para evitar falsos negativos
         const p = raw.normalize ? raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '') : raw;
         // Se for "Sob orçamento" ou "A combinar", não faz sentido exibir "A partir de"
         if (p.includes("sob") && p.includes("orcamento")) return "";
@@ -1145,7 +1145,7 @@ window.dokeBuildCardPremium = function(anuncio) {
         </div>
         <div class="cp-body">
             <h3 class="cp-titulo">${titulo}</h3>
-            <p class="cp-desc-clean">${descricao}</p>
+            <p class="cp-desc-clean">${descrição}</p>
             ${localLabel ? `<div class="cp-localizacao-line"><i class='bx bx-map-pin'></i><span>${escapeHtml(localLabel)}</span></div>` : ``}
         </div>
         ${htmlFotos}
@@ -1153,7 +1153,7 @@ window.dokeBuildCardPremium = function(anuncio) {
             <div style="margin-right:auto; min-width:0;">
                 ${__precoLabel ? `<small style="display:block; color:#999; font-size:0.7rem;">${__precoLabel}</small>` : ``}
                 <div class="cp-price-tags-row">
-                    <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
+                    <strong style="color:var(--cor0); font-size:1.1rem;">${preço}</strong>
                     ${(tagsFooter.length || tagsOverflow) ? `<div class="cp-footer-tags">${tagsFooter.map(t => `<button type="button" class="cp-footer-tag js-card-tag" data-q="${encodeURIComponent(t)}">#${escapeHtml(t)}</button>`).join("")}${tagsOverflow ? `<span class="cp-footer-tag cp-footer-tag-more">+${tagsOverflow}</span>` : ``}</div>` : ``}
                 </div>
                 <div class="cp-avg-price" data-anuncio-id="${anuncio.id || ''}" style="display:none; margin-top:6px; font-size:0.72rem; color:#64748b;">
@@ -1161,7 +1161,7 @@ window.dokeBuildCardPremium = function(anuncio) {
                 </div>
             </div>
             
-            <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
+            <button class="btn-solicitar" onclick="window.location.href='orçamento.html?uid=${anuncio.uid}&aid=${anuncio.id}'">
                 Solicitar Orçamento
             </button>
         </div>
@@ -1299,7 +1299,7 @@ function __dokeBuildSearchText(anuncio) {
     if (anuncio.__searchText) return anuncio.__searchText;
     const parts = [
         anuncio.titulo,
-        anuncio.descricao,
+        anuncio.descrição,
         anuncio.categoria,
         anuncio.categorias,
         anuncio.tags,
@@ -1321,7 +1321,7 @@ function __dokeBuildSearchText(anuncio) {
 function __dokeScoreAnuncio(anuncio, tokens) {
     if (!tokens.length) return 0;
     const titulo = __dokeNormalizeText(anuncio.titulo || '');
-    const desc = __dokeNormalizeText(anuncio.descricao || '');
+    const desc = __dokeNormalizeText(anuncio.descrição || '');
     const cat = __dokeNormalizeText(`${anuncio.categoria || ''} ${anuncio.categorias || ''}`);
     const loc = __dokeNormalizeText(`${anuncio.cidade || ''} ${anuncio.bairro || ''} ${anuncio.uf || ''}`);
 
@@ -1393,7 +1393,7 @@ function __dokeDistanceKm(a, b){
 }
 function __dokeGetAnuncioLatLng(a){
     if (!a) return null;
-    let loc = a.localizacao || a.localizacao_json || a.location || null;
+    let loc = a.localização || a.localizacao_json || a.location || null;
     if (typeof loc === 'string') {
         try { loc = JSON.parse(loc); } catch (_) {}
     }
@@ -1447,10 +1447,10 @@ function __dokeApplyFilters(lista, opts = {}) {
     if (tipoPreco && tipoPreco !== 'todos') {
         out = out.filter(a => {
             const tipoRaw = __dokeNormalizeText(a.tipoPreco || a.tipo_preco || '');
-            const precoRaw = String(a.preco || '');
+            const precoRaw = String(a.preço || '');
             const precoNorm = __dokeNormalizeText(precoRaw);
-            const isOrc = tipoRaw.includes('sob orcamento') || precoNorm.includes('orcamento');
-            const isFixo = tipoRaw.includes('preco fixo') || (!isOrc && __dokeParsePreco(precoRaw) !== null);
+            const isOrc = tipoRaw.includes('sob orçamento') || precoNorm.includes('orçamento');
+            const isFixo = tipoRaw.includes('preço fixo') || (!isOrc && __dokeParsePreco(precoRaw) !== null);
             if (tipoPreco === 'sob_orcamento') return isOrc;
             if (tipoPreco === 'preco_fixo') return isFixo;
             return true;
@@ -1484,15 +1484,15 @@ function __dokeApplyFilters(lista, opts = {}) {
     }
 
     const pagamentos = opts.pagamentos || {};
-    if (pagamentos.pix || pagamentos.credito || pagamentos.debito) {
+    if (pagamentos.pix || pagamentos.crédito || pagamentos.débito) {
         out = out.filter(a => {
             const raw = Array.isArray(a.pagamentosAceitos) ? a.pagamentosAceitos : (a.pagamentos_aceitos || []);
             const list = Array.isArray(raw)
                 ? raw.map(p => __dokeNormalizeText(p))
                 : __dokeNormalizeText(raw).split(',').map(p => p.trim()).filter(Boolean);
             if (pagamentos.pix && !list.some(p => p.includes('pix'))) return false;
-            if (pagamentos.credito && !list.some(p => p.includes('credito'))) return false;
-            if (pagamentos.debito && !list.some(p => p.includes('debito'))) return false;
+            if (pagamentos.crédito && !list.some(p => p.includes('crédito'))) return false;
+            if (pagamentos.débito && !list.some(p => p.includes('débito'))) return false;
             return true;
         });
     }
@@ -1510,7 +1510,7 @@ function __dokeApplyFilters(lista, opts = {}) {
 
     if (Number.isFinite(opts.maxPrice)) {
         out = out.filter(a => {
-            const p = __dokeParsePreco(a.preco);
+            const p = __dokeParsePreco(a.preço);
             return p === null ? true : p <= opts.maxPrice;
         });
     }
@@ -1529,9 +1529,9 @@ function __dokeApplyFilters(lista, opts = {}) {
 
     const ord = opts.order || '';
     if (ord === 'preco_menor' || ord === 'menor_preco') {
-        out.sort((a, b) => (__dokeParsePreco(a.preco) ?? 1e12) - (__dokeParsePreco(b.preco) ?? 1e12));
+        out.sort((a, b) => (__dokeParsePreco(a.preço) ?? 1e12) - (__dokeParsePreco(b.preço) ?? 1e12));
     } else if (ord === 'preco_maior') {
-        out.sort((a, b) => (__dokeParsePreco(b.preco) ?? -1) - (__dokeParsePreco(a.preco) ?? -1));
+        out.sort((a, b) => (__dokeParsePreco(b.preço) ?? -1) - (__dokeParsePreco(a.preço) ?? -1));
     } else if (ord === 'qualidade' || ord === 'melhor_qualidade') {
         out.sort((a, b) => __dokeScoreQualidade(b) - __dokeScoreQualidade(a));
     } else if (ord === 'melhor_avaliacao') {
@@ -1824,8 +1824,8 @@ window.aplicarFiltrosBusca = function() {
     const chip = window.__dokeChipFiltro || 'todos';
     const pagamentos = {
         pix: !!document.getElementById('filtroPgPix')?.checked,
-        credito: !!document.getElementById('filtroPgCredito')?.checked,
-        debito: !!document.getElementById('filtroPgDebito')?.checked
+        crédito: !!document.getElementById('filtroPgCredito')?.checked,
+        débito: !!document.getElementById('filtroPgDebito')?.checked
     };
     const extras = {
         garantia: !!document.getElementById('filtroGarantia')?.checked,
@@ -2187,7 +2187,7 @@ window.sincronizarSessaoSupabase = async function() {
             return null;
         }
         if (!localStorage.getItem('doke_usuario_perfil')) {
-            const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuario");
+            const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usuário");
             localStorage.setItem('doke_usuario_perfil', JSON.stringify({
                 nome: nomeFallback,
                 user: user.user_metadata?.user || nomeFallback,
@@ -2212,7 +2212,7 @@ window.carregarProfissionais = async function() {
         const p = JSON.parse(perfilSalvo);
         const foto = p.foto || "https://i.pravatar.cc/150";
         let userHandle = p.user;
-        if(!userHandle) { userHandle = "@" + (p.nome ? p.nome.split(' ')[0].toLowerCase() : "usuario"); }
+        if(!userHandle) { userHandle = "@" + (p.nome ? p.nome.split(' ')[0].toLowerCase() : "usuário"); }
         if(!userHandle.startsWith('@')) userHandle = '@' + userHandle;
         const job = p.bio ? (p.bio.length > 25 ? p.bio.substring(0, 25) + "..." : p.bio) : "Membro Doke";
         
@@ -2279,7 +2279,7 @@ window.verificarEstadoLogin = async function() {
 
     // Define foto padrão se não tiver
     if (!perfilSalvo && authUser) {
-        const nomeFallback = authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : "Usuario");
+        const nomeFallback = authUser.displayName || (authUser.email ? authUser.email.split('@')[0] : "Usuário");
         perfil = {
             nome: nomeFallback,
             user: authUser.displayName || nomeFallback,
@@ -2296,7 +2296,7 @@ window.verificarEstadoLogin = async function() {
             if (!error) {
                 sessionUser = data?.session?.user || null;
                 if (sessionUser) {
-                    const nomeFallback = sessionUser.user_metadata?.nome || (sessionUser.email ? sessionUser.email.split('@')[0] : "Usuario");
+                    const nomeFallback = sessionUser.user_metadata?.nome || (sessionUser.email ? sessionUser.email.split('@')[0] : "Usuário");
                     perfil = {
                         nome: nomeFallback,
                         user: sessionUser.user_metadata?.user || nomeFallback,
@@ -2613,7 +2613,7 @@ window.irParaMeuPerfil = function(event) {
         let perfilLocal = null;
         try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null'); } catch (_) { perfilLocal = null; }
         if (perfilLocal?.isProfissional === true) window.location.href = "meuperfil.html";
-        else window.location.href = "perfil-usuario.html";
+        else window.location.href = "perfil-usuário.html";
     };
     if(event) event.preventDefault();
     go();
@@ -2849,7 +2849,7 @@ function initHomeEnhancements() {
     if (isMobileHome) {
         // No mobile, priorizamos estabilidade: evita telas "vazias" por animação/reflow.
         const stableEls = Array.from(document.querySelectorAll(
-            '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .pros-section, .para-voce-section'
+            '.secao-busca, .categorias-container, .videos-container, .fotos-container, .anuncio-container, .pros-section, .para-você-section'
         ));
         stableEls.forEach(el => {
             try {
@@ -3058,7 +3058,7 @@ window.registrarCliquePerfil = async function(uidDestino) {
     try {
         // Redireciona o usuário imediatamente para não travar a navegação
         // A contagem acontece em segundo plano
-        const userRef = doc(window.db, "usuarios", uidDestino);
+        const userRef = doc(window.db, "usuários", uidDestino);
         
         // Atualiza estatística no documento do usuário (campo: stats.cliques_perfil)
         // Usamos notação de ponto "stats.cliques_perfil" para atualizar campo aninhado
@@ -3072,7 +3072,7 @@ window.registrarCliquePerfil = async function(uidDestino) {
         // Se o campo stats não existir, o update pode falhar. 
         // Nesse caso, usamos setDoc com merge para criar.
         try {
-            const userRef = doc(window.db, "usuarios", uidDestino);
+            const userRef = doc(window.db, "usuários", uidDestino);
             await setDoc(userRef, { stats: { cliques_perfil: 1 } }, { merge: true });
         } catch(e) { console.error(e); }
     }
@@ -3137,7 +3137,7 @@ window.realizarLogin = async function(e) {
     try {
         const userCredential = await signInWithEmailAndPassword(window.auth, email, senha);
         const user = userCredential.user;
-        const docRef = doc(window.db, "usuarios", user.uid);
+        const docRef = doc(window.db, "usuários", user.uid);
         const docSnap = await getDoc(docRef);
         let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usuário", email: email };
 
@@ -3253,7 +3253,7 @@ if (window._dokePublicacoesSocialStatus === undefined) {
 if (window._dokePublicacoesColStatus === undefined) {
     window._dokePublicacoesColStatus = {
         titulo: null,
-        descricao: null,
+        descrição: null,
         legenda: null,
         thumb_url: null
     };
@@ -3281,7 +3281,7 @@ function markPublicacoesSelectError(err) {
     if (msg.includes("publicacoes_curtidas") || msg.includes("publicacoes_comentarios")) {
         window._dokePublicacoesSocialStatus = false;
     }
-    if (msg.includes("usuarios") || msg.includes("relationship") || msg.includes("foreign key")) {
+    if (msg.includes("usuários") || msg.includes("relationship") || msg.includes("foreign key")) {
         window._dokePublicacoesJoinStatus = false;
     }
     const cacheMatch = msg.match(/'([^']+)'/);
@@ -3291,7 +3291,7 @@ function markPublicacoesSelectError(err) {
             window._dokePublicacoesColStatus[col] = false;
         }
     }
-    const colMatch = msg.match(/publicacoes\.([a-z0-9_]+)/);
+    const colMatch = msg.match(/publicações\.([a-z0-9_]+)/);
     if (colMatch && colMatch[1]) {
         const col = colMatch[1].trim();
         if (window._dokePublicacoesColStatus[col] !== undefined) {
@@ -3307,7 +3307,7 @@ function buildPublicacoesSelect({ withJoin, withSocial }) {
         if (optional[col] !== false) cols.push(col);
     });
     const base = cols.join(", ");
-    const join = withJoin ? ", usuarios (id, uid, nome, user, foto)" : "";
+    const join = withJoin ? ", usuários (id, uid, nome, user, foto)" : "";
     const social = withSocial ? ", publicacoes_curtidas(count), publicacoes_comentarios(count)" : "";
     return `${base}${join}${social}`;
 }
@@ -3330,7 +3330,7 @@ function escapeHtml(texto) {
 }
 
 function normalizeHandle(valor) {
-    if (!valor) return "@usuario";
+    if (!valor) return "@usuário";
     const handle = valor.toString().trim();
     return handle.startsWith("@") ? handle : `@${handle}`;
 }
@@ -3360,7 +3360,7 @@ async function getSupabaseUserRow() {
         .eq("uid_text", authUser.uid)
         .maybeSingle();
     if (error) {
-        console.error("Erro ao carregar usuario supabase:", error);
+        console.error("Erro ao carregar usuário supabase:", error);
         return null;
     }
     window._dokeSupabaseUserRow = data || null;
@@ -3380,15 +3380,15 @@ async function attachSupabaseUsersById(items) {
         .in("id", missing);
 
     if (error || !Array.isArray(data)) {
-        if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuarios:", error);
+        if (error && !isMissingTableError(error)) console.error("Erro ao carregar usuários:", error);
         return items;
     }
 
     const map = new Map(data.map((row) => [row.id, row]));
     return items.map((item) => {
-        if (!item || item.usuarios) return item;
-        const usuario = map.get(item.user_id);
-        return usuario ? { ...item, usuarios: usuario } : item;
+        if (!item || item.usuários) return item;
+        const usuário = map.get(item.user_id);
+        return usuário ? { ...item, usuários: usuário } : item;
     });
 }
 
@@ -3411,12 +3411,12 @@ async function fetchSupabasePublicacoesFeed() {
         for (const combo of combos) {
             const select = buildPublicacoesSelect(combo);
             const { data, error } = await client
-                .from("publicacoes")
+                .from("publicações")
                 .select(select)
                 .order("created_at", { ascending: false })
                 .limit(40);
             if (!error) {
-                if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
+                if (select.includes("usuários")) window._dokePublicacoesJoinStatus = true;
                 if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
                 return data || [];
             }
@@ -3432,7 +3432,7 @@ async function fetchSupabasePublicacoesFeed() {
         lastStatusKey = currentKey;
         attempts += 1;
     }
-    if (lastError) console.error("Erro ao carregar publicacoes supabase:", lastError);
+    if (lastError) console.error("Erro ao carregar publicações supabase:", lastError);
     return [];
 }
 
@@ -3472,8 +3472,8 @@ window.carregarFeedGlobal = async function() {
     }
 
     try {
-        const publicacoes = await fetchSupabasePublicacoesFeed();
-        publicacoes.forEach((item) => {
+        const publicações = await fetchSupabasePublicacoesFeed();
+        publicações.forEach((item) => {
             feedItems.push({
                 source: "supabase",
                 id: item.id,
@@ -3544,14 +3544,14 @@ window.carregarFeedGlobal = async function() {
         }
 
         const item = entry.data || {};
-        const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
-        const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
+        const autor = item.usuários || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
+        const autorNome = normalizeHandle(autor.user || autor.nome || "usuário");
         const autorUid = autor.uid || "";
         const autorUser = autor.user || autor.nome || "";
         const uidAttr = autorUid ? `data-uid="${autorUid}"` : "";
         const userAttr = !autorUid && autorUser ? `data-user="${autorUser}"` : "";
         const dataPost = formatFeedDateShort(item.created_at);
-        const textoResumo = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
+        const textoResumo = [item.titulo, item.descrição || item.legenda].filter(Boolean).join(" - ");
         const likesCount = (Array.isArray(item.publicacoes_curtidas) ? item.publicacoes_curtidas[0]?.count : item.publicacoes_curtidas?.count) || 0;
 
         const mediaHtml = item.tipo === "video"
@@ -3597,7 +3597,7 @@ window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
 
-    container.classList.add("feed-publicacoes-grid");
+    container.classList.add("feed-publicações-grid");
     if (typeof window.dokeRenderPublicacoesSkeleton === 'function') {
         window.dokeRenderPublicacoesSkeleton(container);
     } else {
@@ -3630,8 +3630,8 @@ window.carregarFeedGlobal = async function() {
     }
 
     try {
-        const publicacoes = await fetchSupabasePublicacoesFeed();
-        publicacoes.forEach((item) => {
+        const publicações = await fetchSupabasePublicacoesFeed();
+        publicações.forEach((item) => {
             feedItems.push({
                 source: "supabase",
                 id: item.id,
@@ -3652,7 +3652,7 @@ window.carregarFeedGlobal = async function() {
     container.innerHTML = "";
 
     if (feedItems.length === 0) {
-        container.innerHTML = "<div class='dp-empty'>Nenhuma publicacao ainda.</div>";
+        container.innerHTML = "<div class='dp-empty'>Nenhuma publicação ainda.</div>";
         container.setAttribute('aria-busy', 'false');
         return;
     }
@@ -3668,7 +3668,7 @@ window.carregarFeedGlobal = async function() {
 
             
             const uidDestino = post.uid || "";
-            const autorHandle = normalizeHandle(post.autorUser || post.autorNome || "usuario");
+            const autorHandle = normalizeHandle(post.autorUser || post.autorNome || "usuário");
             const autorFoto = post.autorFoto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(uidDestino||idPost||"u"))}`;
             const when = formatFeedDateShort(post.data || entry.createdAt || "");
             const authorHtml = `
@@ -3688,7 +3688,7 @@ window.carregarFeedGlobal = async function() {
 
 
             const html = `
-                <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPost('${idPost}', 'posts')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+                <div class="feed-publicação-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPost('${idPost}', 'posts')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
                     <div class="dp-itemMedia">${mediaHtml}</div>
                     <div class="dp-itemBody">
                         ${authorHtml}
@@ -3725,7 +3725,7 @@ window.carregarFeedGlobal = async function() {
                 : `<img src="${item.media_url}" loading="lazy" alt="">`);
 
         const html = `
-            <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPublicacao('${entry.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+            <div class="feed-publicação-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="abrirModalPublicacao('${entry.id}')" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
                 <div class="dp-itemMedia">${mediaHtml}</div>
                 <div class="dp-itemBody">
                     ${authorHtml}
@@ -3773,7 +3773,7 @@ function setupAntesDepois(container){
 
 function setupFeedVideoPreview(container) {
     if (!container) return;
-    const cards = container.querySelectorAll(".feed-publicacao-card");
+    const cards = container.querySelectorAll(".feed-publicação-card");
     cards.forEach((card) => {
         if (card.dataset.previewBound === "true") return;
         card.dataset.previewBound = "true";
@@ -4017,7 +4017,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         const kind = document.body?.dataset?.kind;
         const frases = kind === "negocios"
           ? [
-              "Restaurantes proximos",
+              "Restaurantes próximos",
               "Mercados abertos agora",
               "Cafes e padarias",
               "Farmacias 24h",
@@ -4025,7 +4025,7 @@ document.addEventListener("DOMContentLoaded", async function() {
               "Delivery na sua rua"
             ]
           : [
-              "Chefs de cozinha proximos",
+              "Chefs de cozinha próximos",
               "Eletricistas na pituba",
               "Aulas de ingles online",
               "Manutencao de ar-condicionado",
@@ -4057,7 +4057,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                     localStorage.setItem('doke_usuario_perfil', JSON.stringify(docSnap.data()));
                     localStorage.setItem('usuarioLogado', 'true');
                 } else if (!localStorage.getItem('doke_usuario_perfil')) {
-                    const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuario");
+                    const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuário");
                     localStorage.setItem('doke_usuario_perfil', JSON.stringify({
                         nome: nomeFallback,
                         user: user.displayName || nomeFallback,
@@ -4068,7 +4068,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             } catch (error) {
                 console.error("Erro ao carregar perfil:", error);
                 if (!localStorage.getItem('doke_usuario_perfil')) {
-                    const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuario");
+                    const nomeFallback = user.displayName || (user.email ? user.email.split('@')[0] : "Usuário");
                     localStorage.setItem('doke_usuario_perfil', JSON.stringify({
                         nome: nomeFallback,
                         user: user.displayName || nomeFallback,
@@ -4546,7 +4546,7 @@ async function carregarListaProfissionaisReal() {
             const user = doc.data();
             const foto = user.foto || "https://i.pravatar.cc/150";
             
-            // Lógica do Nome: Prioriza o @usuario, senão pega o primeiro nome
+            // Lógica do Nome: Prioriza o @usuário, senão pega o primeiro nome
             let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usuário");
             if (!nomeExibicao.startsWith('@') && user.user) {
                 nomeExibicao = user.user; // Garante que usa o handle se existir
@@ -4913,7 +4913,7 @@ async function carregarComunidadesGerais() {
     const renderCard = (comm, uid, statusByGroupId) => {
         const id = comm.id || comm.comunidade_id || comm.uuid || comm._id;
         const nome = dokeCommEscapeHtml(comm.nome || comm.titulo || "Comunidade");
-        const descricao = dokeCommEscapeHtml(comm.descricao || "");
+        const descrição = dokeCommEscapeHtml(comm.descrição || "");
         const tipo = dokeCommEscapeHtml(comm.tipo || comm.tipo_comunidade || "Grupo");
         const { isPrivate, label: privacidadeLabel } = dokeCommNormalizePrivacidade(comm);
         const capa = comm.capa_url || comm.capa || comm.imagem_capa || "";
@@ -5639,7 +5639,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         // --- ATUALIZA O MENU LATERAL E MOBILE ---
         
         // 1. Badge de NOTIFICAÇÕES (Sininho)
-document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
+document.querySelectorAll('a[href="notificações.html"]').forEach(link => {
             let badge = link.parentNode.querySelector('.badge-sidebar');
             if (!badge) {
                 badge = document.createElement('span');
@@ -5688,7 +5688,7 @@ document.querySelectorAll('a[href="notificacoes.html"]').forEach(link => {
             });
         };
 
-        syncShellBadge('notificacoes.html', totalNotif);
+        syncShellBadge('notificações.html', totalNotif);
         syncShellBadge('chat.html', totalChat);
 
         try {
@@ -6230,7 +6230,7 @@ window.postarComentario = function() {
         <div class="comment-item" style="animation: slideUpFade 0.3s ease;">
             <img src="https://placehold.co/40" class="comment-avatar">
             <div class="comment-content">
-                <span class="comment-user">voce</span>
+                <span class="comment-user">você</span>
                 <p class="comment-text">${texto}</p>
                 <div class="comment-meta">
                     <span>agora</span>
@@ -6538,7 +6538,7 @@ window.irParaOrcamento = function(uid) {
         alert("Não é possível solicitar orçamento para este vídeo.");
         return;
     }
-    window.location.href = `orcamento.html?uid=${uid}`;
+    window.location.href = `orçamento.html?uid=${uid}`;
 }
 
 // 3. O Segredo do Scroll: IntersectionObserver
@@ -6600,14 +6600,14 @@ function ensureModalPostDetalhe() {
         const jaTemBotao = modalExistente.querySelector('.btn-close-modal-fixed');
         const modalContent = modalExistente.querySelector('.modal-content');
         if (!jaTemBotao && modalContent) {
-            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">×</button>');
+            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicação" onclick="fecharModalPostForce()">×</button>');
         }
         return;
     }
     const modalHtml = `
     <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">×</button>
+            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicação" onclick="fecharModalPostForce()">×</button>
             <div class="modal-media-area" id="modalMediaContainer"></div>
             <div class="modal-info-area">
                 <div class="modal-header">
@@ -6681,7 +6681,7 @@ async function fetchSupabasePublicacaoById(publicacaoId) {
         lastStatusKey = currentKey;
         attempts += 1;
     }
-    if (lastError) console.error("Erro ao carregar publicacao:", lastError);
+    if (lastError) console.error("Erro ao carregar publicação:", lastError);
     return null;
 }
 
@@ -6947,7 +6947,7 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     let { data, error } = await client
         .from("publicacoes_comentarios")
-        .select("id, texto, created_at, user_id, usuarios (id, nome, user, foto)")
+        .select("id, texto, created_at, user_id, usuários (id, nome, user, foto)")
         .eq("publicacao_id", publicacaoId)
         .order("created_at", { ascending: true });
 
@@ -7051,7 +7051,7 @@ async function verificarStatusLikeSupabase(publicacaoId) {
 
 async function darLikeModalSupabase() {
     const client = getSupabaseClient();
-    if (!client) return alert("Supabase nao configurado.");
+    if (!client) return alert("Supabase não configurado.");
 
     const userRow = await getSupabaseUserRow();
     if (!userRow) return alert("Faça login para curtir.");
@@ -7119,7 +7119,7 @@ async function postarComentarioSupabase() {
     if (!texto) return;
 
     const client = getSupabaseClient();
-    if (!client) return alert("Supabase nao configurado.");
+    if (!client) return alert("Supabase não configurado.");
 
     const userRow = await getSupabaseUserRow();
     if (!userRow) return alert("Faça login para comentar.");
@@ -7226,8 +7226,8 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const item = await fetchSupabasePublicacaoById(publicacaoId);
     if (!item) {
-        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicacao indisponivel.</div>";
-        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Nao foi possivel carregar esta publicacao.</p>";
+        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicação indisponivel.</div>";
+        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Não foi possivel carregar esta publicação.</p>";
         iconLike.style.pointerEvents = 'auto';
         iconLike.style.opacity = '1';
         return;
@@ -7335,7 +7335,7 @@ window.postarComentarioModal = async function() {
         // Salva na subcoleção 'comentarios'
         const novoComentario = await addDoc(collection(db, window.currentCollection, window.currentPostId, "comentarios"), {
             uid: user.uid,
-            user: perfilLocal.user || "Usuario",
+            user: perfilLocal.user || "Usuário",
             foto: perfilLocal.foto || "https://placehold.co/50",
             texto: texto,
             data: new Date().toISOString(),
@@ -7396,7 +7396,7 @@ async function carregarReelsIndex() {
                 
                 <div class="video-info" style="z-index:1; position:absolute; bottom:10px; left:10px; color:white;">
                     <img src="${data.autorFoto || 'https://placehold.co/30'}" class="profile-img js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">
-                    <span class="username js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">${data.autorUser || 'Usuario'}</span>
+                    <span class="username js-user-link" data-uid="${data.uid || ''}" data-user="${data.autorUser || ''}">${data.autorUser || 'Usuário'}</span>
                 </div>
             </div>`;
             
@@ -7465,21 +7465,21 @@ async function carregarReelsNoIndex() {
 async function fetchSupabaseReelsHome() {
     const client = getSupabaseClient();
     if (!client) return [];
-    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
+    const withJoin = "id, user_id, video_url, created_at, titulo, descrição, thumb_url, usuários (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
     let { data, error } = await client
         .from("videos_curtos")
         .select(withJoin)
         .order("created_at", { ascending: false })
         .limit(20);
     if (error) {
-        const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
+        const joinOnly = "id, user_id, video_url, created_at, titulo, descrição, thumb_url, usuários (id, uid, nome, user, foto)";
         const retryJoin = await client
             .from("videos_curtos")
             .select(joinOnly)
             .order("created_at", { ascending: false })
             .limit(20);
         if (retryJoin.error) {
-            const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
+            const fallback = "id, user_id, video_url, created_at, titulo, descrição, thumb_url";
             const retry = await client
                 .from("videos_curtos")
                 .select(fallback)
@@ -7711,7 +7711,7 @@ window.uploadStory = async function(input) {
         // Salva no Banco de Dados
         await addDoc(collection(db, "stories"), {
             uid: user.uid,
-            autorNome: perfil.user || "Usuario",
+            autorNome: perfil.user || "Usuário",
             autorFoto: perfil.foto || "https://placehold.co/50",
             midiaUrl: url,
             tipo: isVideo ? 'video' : 'foto',
@@ -8442,7 +8442,7 @@ async function renderizarReelNoModal(index) {
         reelAvatarCap.dataset.uid = dados.uid || '';
         reelAvatarCap.dataset.user = user || '';
     }
-    document.getElementById('reelDesc').innerText = dados.descricao || "";
+    document.getElementById('reelDesc').innerText = dados.descrição || "";
     document.getElementById('reelLikesCount').innerText = `${dados.likes || 0} curtidas`;
     document.getElementById('reelData').innerText = dados.data ? new Date(dados.data).toLocaleDateString() : "Recente";
 
@@ -8599,7 +8599,7 @@ window.togglePlayVideo = function(e) {
 // REDIRECIONAR ORÇAMENTO
 window.irOrcamentoReel = function() {
     if(window.currentReelUid) {
-        let url = `orcamento.html?uid=${window.currentReelUid}`;
+        let url = `orçamento.html?uid=${window.currentReelUid}`;
         if(window.currentReelAnuncioId) url += `&aid=${window.currentReelAnuncioId}`;
         window.location.href = url;
     } else {
@@ -8658,8 +8658,8 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
   const modalUsername = document.getElementById('modalUsername');
   const modalAvatar = document.getElementById('modalAvatar');
   const modalCaption = document.getElementById('modalCaption');
-  const modalUser = dados.autorUser || dados.autor_user || dados.usuarios?.user || '@usuario';
-  const modalUid = dados.uid || dados.autorUid || dados.usuarios?.uid || '';
+  const modalUser = dados.autorUser || dados.autor_user || dados.usuários?.user || '@usuário';
+  const modalUid = dados.uid || dados.autorUid || dados.usuários?.uid || '';
   if (modalUsername) {
     modalUsername.innerText = modalUser;
     modalUsername.classList.add('js-user-link');
@@ -8667,17 +8667,17 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
     modalUsername.dataset.user = modalUser || '';
   }
   if (modalAvatar) {
-    modalAvatar.src = dados.autorFoto || dados.autor_foto || dados.usuarios?.foto || "https://placehold.co/50";
+    modalAvatar.src = dados.autorFoto || dados.autor_foto || dados.usuários?.foto || "https://placehold.co/50";
     modalAvatar.classList.add('js-user-link');
     modalAvatar.dataset.uid = modalUid || '';
     modalAvatar.dataset.user = modalUser || '';
   }
-  if (modalCaption) modalCaption.innerText = dados.descricao || '';
+  if (modalCaption) modalCaption.innerText = dados.descrição || '';
 
   const btnOrcar = document.getElementById('btnSolicitarOrcamento');
   if (btnOrcar) {
     btnOrcar.onclick = () => {
-      window.location.href = `orcamento.html?uid=${window.currentReelUid || ''}&aid=${window.currentPostId || ''}`;
+      window.location.href = `orçamento.html?uid=${window.currentReelUid || ''}&aid=${window.currentPostId || ''}`;
     };
   }
 
@@ -8820,7 +8820,7 @@ window.enviarComentarioReel = async function() {
     try {
         const novoComentario = await addDoc(collection(db, "reels", window.currentPostId, "comentarios"), {
             uid: user.uid,
-            user: perfilLocal.user || "Usuario",
+            user: perfilLocal.user || "Usuário",
             foto: perfilLocal.foto || "https://placehold.co/50",
             texto: texto,
             data: new Date().toISOString(),
@@ -8974,18 +8974,18 @@ async function renderizarReelNoModal(index) {
     const dados = window.listaReelsAtual[index];
     if (!dados) return;
 
-    const isSupabase = !!dados.video_url || !!dados.user_id || !!dados.usuarios;
+    const isSupabase = !!dados.video_url || !!dados.user_id || !!dados.usuários;
     window.currentPostSource = isSupabase ? "supabase" : "firebase";
     window.currentSupaPostType = isSupabase ? "videos_curtos" : null;
     window.currentSupaReelId = isSupabase ? dados.id : null;
-    window.currentSupaReelAuthorId = isSupabase ? (dados.user_id || dados.usuarios?.id || null) : null;
-    window.currentSupaReelAuthorUid = isSupabase ? (dados.usuarios?.uid || null) : null;
+    window.currentSupaReelAuthorId = isSupabase ? (dados.user_id || dados.usuários?.id || null) : null;
+    window.currentSupaReelAuthorUid = isSupabase ? (dados.usuários?.uid || null) : null;
     window.currentCollection = isSupabase ? null : "reels";
     window.currentPostId = dados.id || null;
     window.currentPostAuthorUid = isSupabase ? null : (dados.uid || dados.autorUid || null);
 
     window.currentReelId = dados.id;
-    window.currentReelUid = isSupabase ? (dados.usuarios?.uid || dados.autorUid || dados.uid || null) : (dados.uid || null);
+    window.currentReelUid = isSupabase ? (dados.usuários?.uid || dados.autorUid || dados.uid || null) : (dados.uid || null);
     window.currentReelAnuncioId = dados.anuncioId || dados.aid || dados.anuncio_id || null;
 
     const player = document.getElementById('playerPrincipal');
@@ -8997,9 +8997,9 @@ async function renderizarReelNoModal(index) {
     }
     if (blur) blur.style.backgroundImage = `url('${dados.capa || dados.img || dados.thumb_url || ''}')`;
 
-    const avatar = dados.autorFoto || dados.autor_foto || dados.usuarios?.foto || "https://placehold.co/50";
-    const userName = dados.autorUser || dados.autor_user || dados.usuarios?.user || "@usuario";
-    const descricao = dados.descricao || dados.titulo || "";
+    const avatar = dados.autorFoto || dados.autor_foto || dados.usuários?.foto || "https://placehold.co/50";
+    const userName = dados.autorUser || dados.autor_user || dados.usuários?.user || "@usuario";
+    const descrição = dados.descrição || dados.titulo || "";
     const likesCount = dados.likes || (Array.isArray(dados.videos_curtos_curtidas) ? dados.videos_curtos_curtidas[0]?.count : dados.videos_curtos_curtidas?.count) || 0;
 
     const reelUsername = document.getElementById('reelUsername');
@@ -9031,7 +9031,7 @@ async function renderizarReelNoModal(index) {
         reelAvatarCap.dataset.uid = reelUid || '';
         reelAvatarCap.dataset.user = userName || '';
     }
-    if (document.getElementById('reelDesc')) document.getElementById('reelDesc').innerText = descricao;
+    if (document.getElementById('reelDesc')) document.getElementById('reelDesc').innerText = descrição;
     if (document.getElementById('reelLikesCount')) document.getElementById('reelLikesCount').innerText = `${likesCount} curtidas`;
     if (document.getElementById('reelData')) document.getElementById('reelData').innerText = dados.data ? new Date(dados.data).toLocaleDateString() : "Recente";
 
@@ -9269,7 +9269,7 @@ window.denunciarComentario = async function(commentId, parentId, isReply) {
 
     const ownerUid = btn.dataset.commentUid || "";
     if (window.currentPostSource !== "supabase" && ownerUid && ownerUid === user.uid) {
-        alert("Nao pode denunciar o proprio comentario.");
+        alert("Não pode denunciar o proprio comentario.");
         return;
     }
 
@@ -9278,7 +9278,7 @@ window.denunciarComentario = async function(commentId, parentId, isReply) {
         const userRow = await getSupabaseUserRow();
         if (!client || !userRow) return;
         if (ownerUid && ownerUid === userRow.id) {
-            alert("Nao pode denunciar o proprio comentario.");
+            alert("Não pode denunciar o proprio comentario.");
             return;
         }
         const cfg = getSupabasePostConfig();
@@ -9456,7 +9456,7 @@ window.denunciarPostAtual = async function() {
             : window.currentSupaPublicacaoAuthorUid;
         if (authorUid && authorUid === user.uid) {
             setReportButtonVisibility(btns, false);
-            alert("Nao pode denunciar o proprio post.");
+            alert("Não pode denunciar o proprio post.");
             return;
         }
         const userRow = await getSupabaseUserRow();
@@ -9465,7 +9465,7 @@ window.denunciarPostAtual = async function() {
         if (!cfg.postId) return;
         if (cfg.postAuthorId && cfg.postAuthorId === userRow.id) {
             setReportButtonVisibility(btns, false);
-            alert("Nao pode denunciar o proprio post.");
+            alert("Não pode denunciar o proprio post.");
             return;
         }
         const { data, error } = await client
@@ -9495,7 +9495,7 @@ window.denunciarPostAtual = async function() {
 
     if (window.currentPostAuthorUid && window.currentPostAuthorUid === user.uid) {
         setReportButtonVisibility(btns, false);
-        alert("Nao pode denunciar o proprio post.");
+        alert("Não pode denunciar o proprio post.");
         return;
     }
     if (!window.currentCollection || !window.currentPostId) return;
@@ -9535,7 +9535,7 @@ async function carregarRespostasSupabase(parentId) {
 
     let { data, error } = await client
         .from(cfg.commentsTable)
-        .select("id, texto, created_at, user_id, like_count, usuarios (id, nome, user, foto)")
+        .select("id, texto, created_at, user_id, like_count, usuários (id, nome, user, foto)")
         .eq(cfg.postIdField, cfg.postId)
         .eq("parent_id", parentId)
         .order("created_at", { ascending: true });
@@ -9566,7 +9566,7 @@ async function carregarRespostasSupabase(parentId) {
         const isCreator = cfg.postAuthorId && r.user_id === cfg.postAuthorId;
         const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
         const likeCount = r.like_count || 0;
-        const userInfo = r.usuarios || {};
+        const userInfo = r.usuários || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
         const btnExcluir = (userRow && r.user_id === userRow.id)
@@ -9627,7 +9627,7 @@ async function carregarComentariosReelSupabase(reelId) {
 
     let { data, error } = await client
         .from(cfg.commentsTable)
-        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuarios (id, nome, user, foto)")
+        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuários (id, nome, user, foto)")
         .eq(cfg.postIdField, reelId)
         .is("parent_id", null)
         .order("pinned", { ascending: false })
@@ -9663,7 +9663,7 @@ async function carregarComentariosReelSupabase(reelId) {
         const isCreator = cfg.postAuthorId && c.user_id === cfg.postAuthorId;
         const isPinned = c.pinned === true;
         const likeCount = c.like_count || 0;
-        const userInfo = c.usuarios || {};
+        const userInfo = c.usuários || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
         const badgeCriador = isCreator ? `<span class="badge-criador">Criador</span>` : "";
@@ -9921,7 +9921,7 @@ async function postarComentarioSupabase() {
     if (!texto) return;
 
     const client = getSupabaseClient();
-    if (!client) return alert("Supabase nao configurado.");
+    if (!client) return alert("Supabase não configurado.");
 
     const userRow = await getSupabaseUserRow();
     if (!userRow) return alert("Faca login para comentar.");
@@ -10013,7 +10013,7 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     let { data, error } = await client
         .from(cfg.commentsTable)
-        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuarios (id, nome, user, foto)")
+        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuários (id, nome, user, foto)")
         .eq(cfg.postIdField, cfg.postId)
         .is("parent_id", null)
         .order("pinned", { ascending: false })
@@ -10051,7 +10051,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     const checks = [];
 
     data.forEach((c) => {
-        const userInfo = c.usuarios || {};
+        const userInfo = c.usuários || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
         const uidAttr = userInfo.uid ? `data-uid="${userInfo.uid}"` : "";
@@ -10233,8 +10233,8 @@ async function carregarComentariosSupabase(publicacaoId) {
     const chip = window.__dokeChipFiltro || 'todos';
     const pagamentos = {
       pix: !!byId('filtroPgPix')?.checked,
-      credito: !!byId('filtroPgCredito')?.checked,
-      debito: !!byId('filtroPgDebito')?.checked
+      crédito: !!byId('filtroPgCredito')?.checked,
+      débito: !!byId('filtroPgDebito')?.checked
     };
     const extras = {
       garantia: !!byId('filtroGarantia')?.checked,
@@ -10428,7 +10428,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
     const count = vw <= 600 ? 3 : (vw <= 1024 ? 4 : 5);
     const items = Array.from({length: count}).map(()=>
-      '<div class="feed-publicacao-card dp-item pub-skel" aria-hidden="true">'
+      '<div class="feed-publicação-card dp-item pub-skel" aria-hidden="true">'
       + '  <div class="dp-itemMedia pub-skel-media">'
       + '    <span class="pub-skel-media-fill skeleton"></span>'
       + '  </div>'
@@ -10829,7 +10829,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       }, { passive: true });
     }
 
-    // Wheel: nao travar scroll vertical da pagina.
+    // Wheel: não travar scroll vertical da página.
     // Horizontal via wheel somente com SHIFT (padrao UX).
     el.addEventListener('wheel', (ev) => {
       if (!ev.shiftKey) return; // deixa o site subir/descer normalmente
@@ -10951,7 +10951,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const cardBasis = vw <= 480
         ? 'clamp(158px, 72vw, 198px)'
         : (vw <= 900 ? 'clamp(164px, 42vw, 212px)' : 'clamp(176px, 31vw, 248px)');
-      track.querySelectorAll('.dp-item, .feed-publicacao-card').forEach((card) => {
+      track.querySelectorAll('.dp-item, .feed-publicação-card').forEach((card) => {
         card.style.flex = `0 0 ${cardBasis}`;
         card.style.minWidth = cardBasis;
         card.style.scrollSnapAlign = 'start';
@@ -10977,7 +10977,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   }
 
   // ----------------------------
-  // PARA VOCE + CTA CONTEXTUAL
+  // PARA VOCÊ + CTA CONTEXTUAL
   // ----------------------------
   
   // ----------------------------
@@ -11000,7 +11000,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       .select('id, uid, user, nome, foto, isProfissional, categoria_profissional, stats')
       .or(`user.ilike.%${safe}%,nome.ilike.%${safe}%`)
       .limit(12);
-    if(error){ console.warn('[DOKE] busca usuarios:', error); return []; }
+    if(error){ console.warn('[DOKE] busca usuários:', error); return []; }
     return data || [];
   }
 
@@ -11008,7 +11008,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const uid = String(u.uid || u.id || '').trim();
       const foto = u.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(uid || 'u')}`;
       const nomeFull = u.nome || '';
-      const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+      const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuário'));
       const isProf = u.isProfissional === true;
       const categoria = u.categoria_profissional || 'Profissional';
       const st = (u.stats && typeof u.stats === 'object') ? u.stats : {};
@@ -11016,7 +11016,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const m = Number(st.media || st.nota || 0) || 0;
       const meta = isProf ? `★ ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
       const sub = isProf ? categoria : (nomeFull || '');
-      const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+      const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuário.html?uid=${encodeURIComponent(uid)}`;
       return `
         <div class="pv-user-card"
              data-uid="${escapeHtml(uid)}"
@@ -11272,10 +11272,10 @@ function syncClear(){
         recentsEl.innerHTML = users.slice(0, 12).map(u=>{
           const uid = escapeHtml(String(u.uid||''));
           const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
-          const handle = escapeHtml(u.handle || '@usuario');
+          const handle = escapeHtml(u.handle || '@usuário');
           const nome = escapeHtml(u.nome || '');
           const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
-          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuário.html?uid=${encodeURIComponent(u.uid||'')}`;
           return `
             <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
               <img class="ig-avatar" src="${foto}" alt="">
@@ -11381,11 +11381,11 @@ function syncClear(){
         const uid = String(u.uid || u.id || '').trim();
         const foto = u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`;
         const nomeFull = u.nome || '';
-        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuário'));
         const isProf = u.isProfissional === true;
         const categoria = u.categoria_profissional || 'Profissional';
         const sub = isProf ? categoria : (nomeFull || 'Usuário');
-        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuário.html?uid=${encodeURIComponent(uid)}`;
         return `
           <div class="ig-row ig-row-user" role="listitem"
                data-uid="${escapeHtml(uid)}"
@@ -11659,9 +11659,9 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
         if (showUsers){
           chips.innerHTML = list.slice(0,7).map(u=>{
-            const goto = (u.isProf || mode === 'pro') ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+            const goto = (u.isProf || mode === 'pro') ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuário.html?uid=${encodeURIComponent(u.uid||'')}`;
             const foto = u.foto || `https://i.pravatar.cc/60?u=${encodeURIComponent(u.uid||'u')}`;
-            const label = u.handle || (u.nome ? '@'+String(u.nome).split(' ')[0] : '@usuario');
+            const label = u.handle || (u.nome ? '@'+String(u.nome).split(' ')[0] : '@usuário');
             return `<button type="button" class="pv-hist-chip" data-goto="${escapeHtml(goto)}" title="${escapeHtml(u.nome||label)}">
                       <img src="${escapeHtml(foto)}" alt="">
                       <span>${escapeHtml(label)}</span>
@@ -11805,16 +11805,16 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       if (document.getElementById('paraVoceSection')) return;
 
       // Melhor posicao: antes de "Profissionais em Destaque".
-      // Se nao existir (por algum motivo), cai para categorias/videos.
+      // Se não existir (por algum motivo), cai para categorias/videos.
       const anchor = document.querySelector('.pros-section') || document.querySelector('.categories-section') || document.querySelector('.videos-container');
       if (!anchor) return;
 
       const sec = document.createElement('section');
-      sec.className = 'para-voce-section';
+      sec.className = 'para-você-section';
       sec.id = 'paraVoceSection';
 
       sec.innerHTML = `
-        <div class="para-voce-inner pv-stack">
+        <div class="para-você-inner pv-stack">
           <div class="pv-stack-grid">
             <div class="pv-stack-main">
               <div class="pv-head">
@@ -11868,15 +11868,15 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       box.id = 'dokeSugestoes';
       dropdown.appendChild(box);
     }
-    // ordem: hint -> historico -> sugestoes
+    // ordem: hint -> histórico -> sugestoes
     try {
       const hint = dropdown.querySelector('.busca-hint');
       if (histEl && histEl.parentNode === dropdown) {
-        // garante historico logo apos o hint
+        // garante histórico logo apos o hint
         if (hint && hint.nextElementSibling !== histEl) {
           dropdown.insertBefore(histEl, hint.nextElementSibling);
         }
-        // garante sugestoes depois do historico
+        // garante sugestoes depois do histórico
         if (box.previousElementSibling !== histEl) {
           dropdown.insertBefore(box, histEl.nextElementSibling);
         }
@@ -11961,7 +11961,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
     // categorias
     initCategoriasHome();
 
-    // para voce + CTA
+    // para você + CTA
     buildParaVoceSection();
 
     // busca viva
@@ -12176,7 +12176,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 
 /*************************************************
- * NEGÓCIOS (negocios.html / perfil-empresa.html / negocio.html)
+ * NEGÓCIOS (negócios.html / perfil-empresa.html / negócio.html)
  * - Sem WhatsApp: CTA sempre leva para chat.html
  * - Localização: usa CEP salvo e botão "Usar localização atual" (geo)
  *************************************************/
@@ -12263,7 +12263,7 @@ document.addEventListener('DOMContentLoaded', function(){
           </div>
           <div class="neg-loc">${escapeHtml(loc||'')}&nbsp;</div>
           <div class="neg-actions">
-            <a class="btn btn-primary" href="negocio.html?id=${encodeURIComponent(id||'')}">Ver</a>
+            <a class="btn btn-primary" href="negócio.html?id=${encodeURIComponent(id||'')}">Ver</a>
             <a class="btn btn-ghost" href="chat.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
           </div>
         </div>
@@ -12283,7 +12283,7 @@ document.addEventListener('DOMContentLoaded', function(){
     let query = client.from('negocios').select('*').order('created_at', { ascending:false }).limit(60);
     if (loc?.cidade) query = query.ilike('cidade', `%${loc.cidade}%`);
     if (cat && cat !== 'Tudo') query = query.ilike('categoria', `%${cat}%`);
-    if (q.length >= 2) query = query.or(`nome.ilike.%${q}%,descricao.ilike.%${q}%,categoria.ilike.%${q}%`);
+    if (q.length >= 2) query = query.or(`nome.ilike.%${q}%,descrição.ilike.%${q}%,categoria.ilike.%${q}%`);
 
     const { data, error } = await query;
     if (error) throw error;
@@ -12352,12 +12352,12 @@ document.addEventListener('DOMContentLoaded', function(){
           listEl.innerHTML = data.map(buildNegocioCard).join('');
         }
       }catch(err){
-        console.warn('negocios fetch error', err);
+        console.warn('negócios fetch error', err);
         if (emptyEl) {
           emptyEl.style.display = 'block';
           emptyEl.querySelector('strong').textContent = 'Ainda não conseguimos listar negócios.';
           const small = emptyEl.querySelector('small');
-          if (small) small.textContent = 'Provável motivo: tabela negocios não existe ou RLS bloqueando.';
+          if (small) small.textContent = 'Provável motivo: tabela negócios não existe ou RLS bloqueando.';
         }
       }finally{
         root.classList.remove('is-loading');
@@ -12410,8 +12410,8 @@ document.addEventListener('DOMContentLoaded', function(){
                 <div class="loja-meta">${cat}</div>
               </div>
               <div class="loja-actions">
-                <a class="btn btn-ghost" href="negocio.html?id=${encodeURIComponent(id)}">Ver</a>
-                <a class="btn btn-primary" href="anunciar-negocio.html?edit=${encodeURIComponent(id)}">Editar</a>
+                <a class="btn btn-ghost" href="negócio.html?id=${encodeURIComponent(id)}">Ver</a>
+                <a class="btn btn-primary" href="anunciar-negócio.html?edit=${encodeURIComponent(id)}">Editar</a>
               </div>
             </div>
           `;
@@ -12445,12 +12445,12 @@ document.addEventListener('DOMContentLoaded', function(){
       if (!data) throw new Error('not found');
       if (title) title.textContent = data.nome || 'Negócio';
       if (cover) cover.src = data.foto_capa || data.logo_url || cover.src;
-      if (desc) desc.textContent = data.descricao || 'Sem descrição.';
+      if (desc) desc.textContent = data.descrição || 'Sem descrição.';
       if (meta) meta.textContent = [data.bairro, data.cidade, data.estado].filter(Boolean).join(', ');
       const chatBtn = root.querySelector('[data-chat]');
       if (chatBtn) chatBtn.href = `chat.html?negocio_id=${encodeURIComponent(id)}`;
     }catch(err){
-      console.warn('negocio load error', err);
+      console.warn('negócio load error', err);
     }
   }
 
@@ -12470,7 +12470,7 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ initIgSidebarSearch(); }catch(e){}
 });
 
-// Bloqueia criacao/publicacao de anuncios para usuario nao profissional.
+// Bloqueia criacao/publicação de anuncios para usuário não profissional.
 document.addEventListener('DOMContentLoaded', function(){
   function getPerfilLocal(){
     try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {}; }

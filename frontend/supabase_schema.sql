@@ -1,12 +1,12 @@
 -- DOKE — Schema perfis (Opção 2: tabelas separadas)
 -- Execute no Supabase SQL editor (uma vez).
--- Requer tabela public.usuarios com:
+-- Requer tabela public.usuários com:
 --   id uuid (PK) e uid uuid (auth uid) e isProfissional bool
 -- Buckets: perfil (Storage)
 
 
 -- ============================================================
--- CORE: Tabela public.usuarios (obrigatória)
+-- CORE: Tabela public.usuários (obrigatória)
 -- - id (uuid) = auth.uid()
 -- - uid (text) para compat com código legado
 -- ============================================================
@@ -62,7 +62,7 @@ do $$ begin
   end if;
 end $$;
 
--- Trigger: cria public.usuarios automaticamente quando um auth.users nasce
+-- Trigger: cria public.usuários automaticamente quando um auth.users nasce
 create or replace function public.__doke_handle_new_user()
 returns trigger
 language plpgsql
@@ -149,7 +149,7 @@ create table if not exists public.publicacoes (
   thumb_url text,
   created_at timestamptz not null default now()
 );
--- Garante coluna descricao mesmo em bases antigas
+-- Garante coluna descrição mesmo em bases antigas
 alter table public.publicacoes
   add column if not exists descricao text;
 -- Garante coluna thumb_url mesmo em bases antigas
@@ -158,7 +158,7 @@ alter table public.publicacoes
 create index if not exists publicacoes_user_id_idx on public.publicacoes(user_id);
 alter table public.publicacoes enable row level security;
 
--- CURTIDAS (publicacoes)
+-- CURTIDAS (publicações)
 create table if not exists public.publicacoes_curtidas (
   id uuid primary key default gen_random_uuid(),
   publicacao_id uuid not null references public.publicacoes(id) on delete cascade,
@@ -170,7 +170,7 @@ create index if not exists publicacoes_curtidas_pub_idx on public.publicacoes_cu
 create index if not exists publicacoes_curtidas_user_idx on public.publicacoes_curtidas(user_id);
 alter table public.publicacoes_curtidas enable row level security;
 
--- COMENTARIOS (publicacoes)
+-- COMENTARIOS (publicações)
 create table if not exists public.publicacoes_comentarios (
   id uuid primary key default gen_random_uuid(),
   publicacao_id uuid not null references public.publicacoes(id) on delete cascade,
@@ -191,7 +191,7 @@ create index if not exists publicacoes_comentarios_user_idx on public.publicacoe
 create index if not exists publicacoes_comentarios_parent_idx on public.publicacoes_comentarios(parent_id);
 alter table public.publicacoes_comentarios enable row level security;
 
--- COMENTARIOS CURTIDAS (publicacoes)
+-- COMENTARIOS CURTIDAS (publicações)
 create table if not exists public.publicacoes_comentarios_curtidas (
   id uuid primary key default gen_random_uuid(),
   comentario_id uuid not null references public.publicacoes_comentarios(id) on delete cascade,
@@ -203,7 +203,7 @@ create index if not exists publicacoes_comentarios_curtidas_comment_idx on publi
 create index if not exists publicacoes_comentarios_curtidas_user_idx on public.publicacoes_comentarios_curtidas(user_id);
 alter table public.publicacoes_comentarios_curtidas enable row level security;
 
--- COMENTARIOS DENUNCIAS (publicacoes)
+-- COMENTARIOS DENUNCIAS (publicações)
 create table if not exists public.publicacoes_comentarios_denuncias (
   id uuid primary key default gen_random_uuid(),
   comentario_id uuid not null references public.publicacoes_comentarios(id) on delete cascade,
@@ -215,7 +215,7 @@ create index if not exists publicacoes_comentarios_denuncias_comment_idx on publ
 create index if not exists publicacoes_comentarios_denuncias_user_idx on public.publicacoes_comentarios_denuncias(user_id);
 alter table public.publicacoes_comentarios_denuncias enable row level security;
 
--- DENUNCIAS (publicacoes)
+-- DENUNCIAS (publicações)
 create table if not exists public.publicacoes_denuncias (
   id uuid primary key default gen_random_uuid(),
   publicacao_id uuid not null references public.publicacoes(id) on delete cascade,
@@ -307,7 +307,7 @@ create index if not exists videos_curtos_denuncias_video_idx on public.videos_cu
 create index if not exists videos_curtos_denuncias_user_idx on public.videos_curtos_denuncias(user_id);
 alter table public.videos_curtos_denuncias enable row level security;
 
--- NOTIFICACOES (interacoes sociais)
+-- NOTIFICAÇÕES (interacoes sociais)
 create table if not exists public.notificacoes (
   id uuid primary key default gen_random_uuid(),
   paraUid text not null,
@@ -499,13 +499,13 @@ do $$ begin
   end if;
 end $$;
 
--- Inserts / updates pelo dono (relaciona auth.uid() com usuarios.uid)
+-- Inserts / updates pelo dono (relaciona auth.uid() com usuários.uid)
 create or replace function public.is_owner(user_row_id uuid)
 returns boolean language sql stable as $$
   select (auth.uid() = user_row_id);
 $$;
 
--- Usuarios (perfil)
+-- Usuários (perfil)
 alter table public.usuarios enable row level security;
 
 do $$ begin
@@ -689,7 +689,7 @@ end $$;
 -- ---------------------------
 -- STORAGE (bucket: perfil)
 -- ---------------------------
--- Permite upload apenas para o dono do perfil (pasta com id do usuario).
+-- Permite upload apenas para o dono do perfil (pasta com id do usuário).
 create or replace function public.current_user_row_id()
 returns uuid language sql stable as $$
   select u.id from public.usuarios u where u.uid = auth.uid() limit 1;
@@ -752,8 +752,8 @@ do $$ begin
   end if;
 end $$;
 
--- Fallback: libera write para qualquer usuario autenticado no bucket perfil.
--- Use apenas se o mapeamento auth.uid() -> usuarios.id ainda nao estiver consistente.
+-- Fallback: libera write para qualquer usuário autenticado no bucket perfil.
+-- Use apenas se o mapeamento auth.uid() -> usuários.id ainda não estiver consistente.
 do $$ begin
   if not exists(select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='Perfil auth insert') then
     create policy "Perfil auth insert" on storage.objects

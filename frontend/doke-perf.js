@@ -48,7 +48,7 @@
       '#feed',
       '.feed',
       '.feed-grid',
-      '.publicacoes-grid',
+      '.publicações-grid',
       '.reels-grid',
       '#publicacoes',
       '#reels',

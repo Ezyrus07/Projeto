@@ -2,7 +2,7 @@
    - Criação de grupos Público/Privado
    - Botão Entrar/Solicitar (privado -> pendente)
    - Render próprio da lista (sem depender do script.js)
-   - Notificação best-effort para o dono (tabela notificacoes, se existir)
+   - Notificação best-effort para o dono (tabela notificações, se existir)
 
    Obs: Mantém compat com schemas diferentes (snake_case / camelCase).
 */

@@ -237,10 +237,10 @@
         recentsEl.innerHTML = users.slice(0, 12).map(u=>{
           const uid = escapeHtml(String(u.uid||''));
           const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
-          const handle = escapeHtml(u.handle || '@usuario');
+          const handle = escapeHtml(u.handle || '@usuário');
           const nome = escapeHtml(u.nome || '');
           const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
-          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuário.html?uid=${encodeURIComponent(u.uid||'')}`;
           return `
             <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
               <img class="ig-avatar" src="${foto}" alt="">
@@ -346,11 +346,11 @@
         const uid = String(u.uid || u.id || '').trim();
         const foto = u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`;
         const nomeFull = u.nome || '';
-        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuário'));
         const isProf = u.isProfissional === true;
         const categoria = u.categoria_profissional || 'Profissional';
         const sub = isProf ? categoria : (nomeFull || 'Usuário');
-        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuário.html?uid=${encodeURIComponent(uid)}`;
         return `
           <div class="ig-row ig-row-user" role="listitem"
                data-uid="${escapeHtml(uid)}"

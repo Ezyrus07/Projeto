@@ -952,9 +952,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <div class="orc-top">
 <div class="orc-top-card">
 <div>
-<h1 class="orc-top-title">Solicitar or&ccedil;amento</h1>
-<p class="orc-top-sub">Envie os detalhes e aguarde o profissional aceitar para liberar o chat.</p>
-</div>
+<h1 class="orc-top-title">Solicitar orçamento</h1>
 </div>
 </div>
 
@@ -1362,7 +1360,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const uploaded = [];
         for (const file of window.__orc_anexos_files) {
             const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g, '_');
-            const path = `orcamentos/${userUid}/${pedidoId}/${Date.now()}_${safeName}`;
+            const path = `orçamentos/${userUid}/${pedidoId}/${Date.now()}_${safeName}`;
             const storageRef = ref(storage, path);
             await uploadBytes(storageRef, file);
             const url = await getDownloadURL(storageRef);
@@ -1378,7 +1376,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             if (!snap.exists()) return;
             const p = snap.data() || {};
             const titulo = document.getElementById('titulo-pedido');
-            const desc = document.getElementById('descricao-pedido');
+            const desc = document.getElementById('descrição-pedido');
             if (titulo && p.servicoReferencia) titulo.value = p.servicoReferencia;
             if (desc && p.mensagemInicial) desc.value = p.mensagemInicial;
 
@@ -1510,7 +1508,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
         try {
             if (db) {
-                const docUserRef = doc(db, 'usuarios', prestadorUid);
+                const docUserRef = doc(db, 'usuários', prestadorUid);
                 const docUserSnap = await getDoc(docUserRef);
                 if (docUserSnap.exists()) dadosPrestador = docUserSnap.data() || null;
             }
@@ -1523,7 +1521,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 const sb = getSupabaseClientSafe();
                 if (sb?.from) {
                     const { data, error } = await sb
-                        .from('usuarios')
+                        .from('usuários')
                         .select('id,uid,nome,user,foto,stats,mediaAvaliacao,numAvaliacoes,totalTrabalhos')
                         .or(`uid.eq.${prestadorUid},id.eq.${prestadorUid}`)
                         .maybeSingle();
@@ -1630,8 +1628,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
             id: String(addr?.id || `addr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`),
             label: String(addr?.label || addr?.apelido || '').trim(),
             cep: normalizeCep(addr?.cep || ''),
-            endereco: String(addr?.endereco || '').trim(),
-            numero: String(addr?.numero || '').trim(),
+            endereço: String(addr?.endereço || '').trim(),
+            número: String(addr?.número || '').trim(),
             complemento: String(addr?.complemento || '').trim(),
             referencia: String(addr?.referencia || '').trim(),
             info: String(addr?.info || '').trim(),
@@ -1643,8 +1641,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function getAddressSignature(addr) {
         return [
             String(addr?.cep || '').replace(/\D/g, ''),
-            String(addr?.endereco || '').trim().toLowerCase(),
-            String(addr?.numero || '').trim().toLowerCase(),
+            String(addr?.endereço || '').trim().toLowerCase(),
+            String(addr?.número || '').trim().toLowerCase(),
             String(addr?.complemento || '').trim().toLowerCase()
         ].join('|');
     }
@@ -1681,8 +1679,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function getEnderecoFormData() {
         return sanitizeAddressPayload({
             cep: document.getElementById('cepOrcamento')?.value || '',
-            endereco: document.getElementById('endereco-completo')?.value || '',
-            numero: document.getElementById('numero-residencia')?.value || '',
+            endereço: document.getElementById('endereço-completo')?.value || '',
+            número: document.getElementById('número-residencia')?.value || '',
             complemento: document.getElementById('complemento-residencia')?.value || '',
             referencia: document.getElementById('referencia-residencia')?.value || '',
             info: document.getElementById('info-local')?.value || ''
@@ -1690,7 +1688,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
     }
 
     function isEnderecoMinimoValido(addr) {
-        return !!(String(addr?.cep || '').replace(/\D/g, '').length === 8 && String(addr?.endereco || '').trim() && String(addr?.numero || '').trim());
+        return !!(String(addr?.cep || '').replace(/\D/g, '').length === 8 && String(addr?.endereço || '').trim() && String(addr?.número || '').trim());
     }
 
     function montarLabelEndereco(addr, idx) {
@@ -1701,7 +1699,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
     }
 
     function getEnderecoResumo(addr) {
-        const base = [addr?.endereco, addr?.numero ? `Nº ${addr.numero}` : ''].filter(Boolean).join(', ');
+        const base = [addr?.endereço, addr?.número ? `Nº ${addr.número}` : ''].filter(Boolean).join(', ');
         const cep = addr?.cep ? `CEP ${addr.cep}` : '';
         return [base, cep].filter(Boolean).join(' • ');
     }
@@ -1709,14 +1707,14 @@ body[data-page="orcamento"] main.main-orcamento::after{
     function preencherEnderecoNoFormulario(addr) {
         if (!addr) return;
         const cepEl = document.getElementById('cepOrcamento');
-        const endEl = document.getElementById('endereco-completo');
-        const numEl = document.getElementById('numero-residencia');
+        const endEl = document.getElementById('endereço-completo');
+        const numEl = document.getElementById('número-residencia');
         const compEl = document.getElementById('complemento-residencia');
         const refEl = document.getElementById('referencia-residencia');
         const infoEl = document.getElementById('info-local');
         if (cepEl) cepEl.value = normalizeCep(addr.cep || '');
-        if (endEl) endEl.value = addr.endereco || '';
-        if (numEl) numEl.value = addr.numero || '';
+        if (endEl) endEl.value = addr.endereço || '';
+        if (numEl) numEl.value = addr.número || '';
         if (compEl) compEl.value = addr.complemento || '';
         if (refEl) refEl.value = addr.referencia || '';
         if (infoEl) infoEl.value = addr.info || '';
@@ -1724,8 +1722,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
     function formularioEnderecoTemDados() {
         const cep = String(document.getElementById('cepOrcamento')?.value || '').trim();
-        const end = String(document.getElementById('endereco-completo')?.value || '').trim();
-        const num = String(document.getElementById('numero-residencia')?.value || '').trim();
+        const end = String(document.getElementById('endereço-completo')?.value || '').trim();
+        const num = String(document.getElementById('número-residencia')?.value || '').trim();
         return !!(cep || end || num);
     }
 
@@ -1802,8 +1800,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 id: row.id,
                 label: row.apelido || '',
                 cep: row.cep || '',
-                endereco: row.endereco || '',
-                numero: row.numero || '',
+                endereço: row.endereço || '',
+                número: row.número || '',
                 complemento: row.complemento || '',
                 referencia: row.referencia || '',
                 info: row.info || '',
@@ -1834,8 +1832,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 uid: looksLikeUuid(ownerUid) ? ownerUid : null,
                 apelido: addrNorm.label || '',
                 cep: addrNorm.cep || '',
-                endereco: addrNorm.endereco || '',
-                numero: addrNorm.numero || '',
+                endereço: addrNorm.endereço || '',
+                número: addrNorm.número || '',
                 complemento: addrNorm.complemento || '',
                 referencia: addrNorm.referencia || '',
                 info: addrNorm.info || '',
@@ -1873,8 +1871,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 id: savedRow.id,
                 label: savedRow.apelido || '',
                 cep: savedRow.cep || '',
-                endereco: savedRow.endereco || '',
-                numero: savedRow.numero || '',
+                endereço: savedRow.endereço || '',
+                número: savedRow.número || '',
                 complemento: savedRow.complemento || '',
                 referencia: savedRow.referencia || '',
                 info: savedRow.info || '',
@@ -2205,7 +2203,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
         novoBtn.addEventListener('click', async (e) => {
             e.preventDefault();
-            console.log("[orcamento] Clique no Enviar");
+            console.log("[orçamento] Clique no Enviar");
             
             const db = window.db;
             const auth = window.auth;
@@ -2230,7 +2228,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
             const descricaoEl = document.getElementById('descricao-pedido');
             if (descricaoEl) descricaoEl.removeAttribute('required');
             const titulo = tituloEl ? tituloEl.value : "";
-            const descricao = descricaoEl ? descricaoEl.value : "";
+            const descrição = descricaoEl ? descricaoEl.value : "";
             if (!titulo || !titulo.trim()) {
                 return irParaCampoFaltante(tituloEl, "Preencha o t\u00edtulo do pedido.");
             }
@@ -2324,7 +2322,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
                     anuncioFoto: anuncioFoto,
                     servicoReferencia: titulo,
                     mensagemInicial: (function(){
-                        if (!precisaLoc) return descricao;
+                        if (!precisaLoc) return descrição;
 
                         let loc = `${end}, N\u00ba ${num}`;
                         if (comp) loc += `, ${comp}`;
@@ -2336,11 +2334,11 @@ Ponto de refer\u00eancia: ${ref}`;
                         if (info) extra += `
 Mais informa\u00e7\u00f5es: ${info}`;
 
-                        return `${descricao}
+                        return `${descrição}
 
 Local do servi\u00e7o: ${loc}${extra}`;
                     })(),
-                    descricaoBase: descricao,
+                    descricaoBase: descrição,
                     // Para quando (se for data espec?f?fica, inclui o dia escolhido)
                     paraQuando: (function(){
                         const sel = document.getElementById('para-quando');
@@ -2352,10 +2350,10 @@ Local do servi\u00e7o: ${loc}${extra}`;
                     })(),
                     dataEspecifica: dataEspecifica || "",
                     turno: document.getElementById('turno').value,
-                    localizacao: precisaLoc ? {
+                    localização: precisaLoc ? {
                         cep,
-                        endereco: end,
-                        numero: num,
+                        endereço: end,
+                        número: num,
                         complemento: comp,
                         referencia: ref,
                         info
@@ -2371,7 +2369,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
                     status: "pendente",
                     dataPedido: new Date().toISOString(),
                     dataAtualizacao: new Date().toISOString(),
-                    ultimaMensagem: descricao || "Novo pedido enviado",
+                    ultimaMensagem: descrição || "Novo pedido enviado",
                     notificacaoLidaProfissional: false,
                     notificacaoLidaCliente: true
                 };
@@ -2687,10 +2685,10 @@ Local do servi\u00e7o: ${loc}${extra}`;
     }
 
     function aplicarConfiguracoesDoAnuncio(anuncio) {
-        const cardLoc = document.getElementById('card-localizacao');
+        const cardLoc = document.getElementById('card-localização');
         const inputCep = document.getElementById('cepOrcamento');
-        const inputEnd = document.getElementById('endereco-completo');
-        const inputNum = document.getElementById('numero-residencia');
+        const inputEnd = document.getElementById('endereço-completo');
+        const inputNum = document.getElementById('número-residencia');
         const inputComp = document.getElementById('complemento-residencia');
         const inputRef = document.getElementById('referencia-residencia');
         const inputInfo = document.getElementById('info-local');
@@ -2771,7 +2769,7 @@ Local do servi\u00e7o: ${loc}${extra}`;
                 }
                 const rua = [d.logradouro, d.bairro].filter(Boolean).join(", ");
                 const cidade = [d.localidade, d.uf].filter(Boolean).join(" - ");
-                document.getElementById('endereco-completo').value = [rua, cidade].filter(Boolean).join(" - ");
+                document.getElementById('endereço-completo').value = [rua, cidade].filter(Boolean).join(" - ");
             })
             .catch(() => avisarValidacao("N\u00e3o foi poss\u00edvel buscar o CEP agora."));
     }

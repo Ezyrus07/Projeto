@@ -5,7 +5,7 @@
 create extension if not exists pgcrypto;
 
 -- ===============
--- TABELA: negocios
+-- TABELA: negócios
 -- ===============
 create table if not exists public.negocios (
   id uuid primary key default gen_random_uuid(),
@@ -76,21 +76,21 @@ create index if not exists idx_promos_owner on public.negocios_promocoes(owner_u
 alter table public.negocios enable row level security;
 alter table public.negocios_promocoes enable row level security;
 
--- NEGOCIOS: leitura pública apenas dos ativos
+-- NEGÓCIOS: leitura pública apenas dos ativos
 drop policy if exists "negocios_select_public" on public.negocios;
 create policy "negocios_select_public"
 on public.negocios
 for select
 using (is_active = true);
 
--- NEGOCIOS: dono pode inserir
+-- NEGÓCIOS: dono pode inserir
 drop policy if exists "negocios_insert_owner" on public.negocios;
 create policy "negocios_insert_owner"
 on public.negocios
 for insert
 with check (auth.uid() = owner_uid);
 
--- NEGOCIOS: dono pode atualizar
+-- NEGÓCIOS: dono pode atualizar
 drop policy if exists "negocios_update_owner" on public.negocios;
 create policy "negocios_update_owner"
 on public.negocios
@@ -98,7 +98,7 @@ for update
 using (auth.uid() = owner_uid)
 with check (auth.uid() = owner_uid);
 
--- NEGOCIOS: dono pode deletar
+-- NEGÓCIOS: dono pode deletar
 drop policy if exists "negocios_delete_owner" on public.negocios;
 create policy "negocios_delete_owner"
 on public.negocios
@@ -134,5 +134,5 @@ on public.negocios_promocoes
 for delete
 using (auth.uid() = owner_uid);
 
--- DICA: se o seu front faz join de negocios_promocoes -> negocios,
--- garanta que a policy de select de negocios permita ver os ativos.
+-- DICA: se o seu front faz join de negocios_promocoes -> negócios,
+-- garanta que a policy de select de negócios permita ver os ativos.

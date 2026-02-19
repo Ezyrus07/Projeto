@@ -6054,8 +6054,20 @@
         if (sidebarBadgeUnsubs.length && sidebarBadgesStartedForUid === currentUserUid) return;
         sidebarBadgesStartedForUid = currentUserUid;
         const qNotif = query(collection(db, "notificacoes"), where("parauid", "==", currentUserUid), where("lida", "==", false));
+        const LEGACY_NOTIF_COLLECTION = "notifica\u00E7\u00F5es";
+        const qNotifLegacy = query(collection(db, LEGACY_NOTIF_COLLECTION), where("parauid", "==", currentUserUid), where("lida", "==", false));
+        let notifPrimaryCount = 0;
+        let notifLegacyCount = 0;
+        const syncNotifBadge = () => ensureSidebarBadge('a[href="notificacoes.html"]', 'badge-sidebar', Math.max(notifPrimaryCount, notifLegacyCount));
         const unsubNotif = onSnapshot(qNotif, (snap) => {
-            ensureSidebarBadge('a[href="notificacoes.html"]', 'badge-sidebar', snap.docs.length);
+            notifPrimaryCount = Array.isArray(snap?.docs) ? snap.docs.length : 0;
+            syncNotifBadge();
+        }, (_err) => {
+            scheduleSidebarBadgesRetry(2200);
+        });
+        const unsubNotifLegacy = onSnapshot(qNotifLegacy, (snap) => {
+            notifLegacyCount = Array.isArray(snap?.docs) ? snap.docs.length : 0;
+            syncNotifBadge();
         }, (_err) => {
             scheduleSidebarBadgesRetry(2200);
         });
@@ -6122,7 +6134,7 @@
             if (conversaBadgeTimer) clearInterval(conversaBadgeTimer);
             conversaBadgeTimer = null;
         };
-        sidebarBadgeUnsubs = [unsubNotif, unsubPed1, unsubPed2, unsubConv];
+        sidebarBadgeUnsubs = [unsubNotif, unsubNotifLegacy, unsubPed1, unsubPed2, unsubConv];
     }
 
         // Logout/alternar conta: sempre tenta usar o fluxo global mais novo.

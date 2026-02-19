@@ -2,7 +2,7 @@
 /* ============================================================
    DOKE - NEGÓCIOS (page script)
    - Não usa seções do index (categorias/vídeos/anúncios) para evitar conteúdo repetido
-   - Busca dados da tabela "negocios" (Supabase) quando existir
+   - Busca dados da tabela "negócios" (Supabase) quando existir
    - Vídeos: tenta "videos_negocios" (se não existir, exibe vazio)
    - Mapa: Leaflet + OpenStreetMap (beta)
    ============================================================ */
@@ -18,7 +18,7 @@
     q: $("#inputBuscaNegocios"),
     btnGo: $("#btnProcurarNegocios"),
     btnCircle: $("#btnSearchCircleNegocios"),
-    chips: $$(".chips-negocios .chip"),
+    chips: $$(".chips-negócios .chip"),
     catTrack: $("#listaCategoriasNegocios"),
     catPrev: $("#negCatPrev"),
     catNext: $("#negCatNext"),
@@ -156,7 +156,7 @@
     if (loc) metaBits.push(`<span><i class='bx bx-map'></i> ${loc}</span>`);
     if (ratingText) metaBits.push(`<span><i class='bx bx-star'></i> ${ratingText}</span>`);
 
-    const hrefPerfil = b.id ? `negocio.html?id=${encodeURIComponent(b.id)}` : "negocio.html";
+    const hrefPerfil = b.id ? `negócio.html?id=${encodeURIComponent(b.id)}` : "negócio.html";
     const hrefChat = b.id ? `chat.html?negocio_id=${encodeURIComponent(b.id)}` : "chat.html";
 
     return `
@@ -372,7 +372,7 @@
       // search across common fields (best-effort)
       const esc = Q.replace(/[%_,]/g, " "); // avoid breaking ilike syntax
       query = query.or(
-        `nome.ilike.%${esc}%,nome_fantasia.ilike.%${esc}%,titulo.ilike.%${esc}%,descricao.ilike.%${esc}%,categoria.ilike.%${esc}%,bairro.ilike.%${esc}%`
+        `nome.ilike.%${esc}%,nome_fantasia.ilike.%${esc}%,titulo.ilike.%${esc}%,descrição.ilike.%${esc}%,categoria.ilike.%${esc}%,bairro.ilike.%${esc}%`
       );
     } else if (Q.length > 0) {
       // too short, don't query aggressively

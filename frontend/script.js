@@ -7240,6 +7240,9 @@ window.monitorarNotificacoesGlobal = function(uid) {
     if (!Number.isFinite(state.lastNonZeroAt)) {
         state.lastNonZeroAt = 0;
     }
+    if (!Number.isFinite(state.zeroFreshStreak)) {
+        state.zeroFreshStreak = 0;
+    }
     const BADGE_CACHE_PREFIX = "doke_badges_cache_";
     const badgeCacheKey = `${BADGE_CACHE_PREFIX}${resolvedUid}`;
     const readPersistedBadges = () => {
@@ -7282,6 +7285,9 @@ window.monitorarNotificacoesGlobal = function(uid) {
     const qEnviadosAlt = query(collection(db, "pedidos"), where("deuid", "==", resolvedUid));
     const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
     const qSociaisAlt = query(collection(db, "notificacoes"), where("paraUid", "==", resolvedUid), where("lida", "==", false));
+    const LEGACY_NOTIF_COLLECTION = "notifica\u00E7\u00F5es";
+    const qSociaisLegacy = query(collection(db, LEGACY_NOTIF_COLLECTION), where("parauid", "==", resolvedUid), where("lida", "==", false));
+    const qSociaisLegacyAlt = query(collection(db, LEGACY_NOTIF_COLLECTION), where("paraUid", "==", resolvedUid), where("lida", "==", false));
     const initState = { recebidos: false, enviados: false, sociais: false };
     const allStreamsReady = () => initState.recebidos && initState.enviados && initState.sociais;
 
@@ -7372,12 +7378,21 @@ window.monitorarNotificacoesGlobal = function(uid) {
         const prevChat = Math.max(0, Number(state.lastTotals?.chat || 0) || 0);
         const hasPrevBadges = (prevNotif > 0 || prevChat > 0);
         const incomingZero = totalNotif === 0 && totalChat === 0;
-        const freshRead = opts.forceFresh === true || (allStreamsReady() && opts.partial !== true);
-        const cooldownZero = (Date.now() - Number(state.lastNonZeroAt || 0)) < 120000;
+        const strongFreshRead = opts.forceFresh === true;
 
-        if (incomingZero && hasPrevBadges && (!freshRead || cooldownZero)) {
-            totalNotif = prevNotif;
-            totalChat = prevChat;
+        if (!incomingZero) {
+            state.zeroFreshStreak = 0;
+        } else if (hasPrevBadges) {
+            if (!strongFreshRead) {
+                totalNotif = prevNotif;
+                totalChat = prevChat;
+            } else {
+                state.zeroFreshStreak = Number(state.zeroFreshStreak || 0) + 1;
+                if (state.zeroFreshStreak < 2) {
+                    totalNotif = prevNotif;
+                    totalChat = prevChat;
+                }
+            }
         }
 
         commitBadges(totalNotif, totalChat);
@@ -7386,6 +7401,9 @@ window.monitorarNotificacoesGlobal = function(uid) {
     let cacheRecebidos = [];
     let cacheEnviados = [];
     let cacheSociais = [];
+    let cacheSociaisAlt = [];
+    let cacheSociaisLegacy = [];
+    let cacheSociaisLegacyAlt = [];
 
     const mergeDocsById = (...lists) => {
         const map = new Map();
@@ -7397,6 +7415,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
         return Array.from(map.values());
     };
+    const getSociaisDocs = () => mergeDocsById(cacheSociais, cacheSociaisAlt, cacheSociaisLegacy, cacheSociaisLegacyAlt);
 
     const pollBadges = async () => {
         try {
@@ -7408,18 +7427,20 @@ window.monitorarNotificacoesGlobal = function(uid) {
                     return { ok: false, docs: [] };
                 }
             };
-            const [r1, r2, e1, e2, s1, s2] = await Promise.all([
+            const [r1, r2, e1, e2, s1, s2, s3, s4] = await Promise.all([
                 readSnapshot(qRecebidos),
                 readSnapshot(qRecebidosAlt),
                 readSnapshot(qEnviados),
                 readSnapshot(qEnviadosAlt),
                 readSnapshot(qSociais),
-                readSnapshot(qSociaisAlt)
+                readSnapshot(qSociaisAlt),
+                readSnapshot(qSociaisLegacy),
+                readSnapshot(qSociaisLegacyAlt)
             ]);
 
             const recebidosOk = !!(r1.ok || r2.ok);
             const enviadosOk = !!(e1.ok || e2.ok);
-            const sociaisOk = !!(s1.ok || s2.ok);
+            const sociaisOk = !!(s1.ok || s2.ok || s3.ok || s4.ok);
 
             if (recebidosOk) {
                 cacheRecebidos = mergeDocsById(r1.docs, r2.docs);
@@ -7430,13 +7451,16 @@ window.monitorarNotificacoesGlobal = function(uid) {
                 initState.enviados = true;
             }
             if (sociaisOk) {
-                cacheSociais = mergeDocsById(s1.docs, s2.docs);
+                if (s1.ok) cacheSociais = s1.docs;
+                if (s2.ok) cacheSociaisAlt = s2.docs;
+                if (s3.ok) cacheSociaisLegacy = s3.docs;
+                if (s4.ok) cacheSociaisLegacyAlt = s4.docs;
                 initState.sociais = true;
             }
             const hasAnySuccess = !!(recebidosOk || enviadosOk || sociaisOk);
             const allOk = !!(recebidosOk && enviadosOk && sociaisOk);
             if (hasAnySuccess) {
-                atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais, { forceFresh: allOk, partial: !allOk });
+                atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs(), { forceFresh: allOk, partial: !allOk });
             }
         } catch (_) {}
     };
@@ -7450,19 +7474,34 @@ window.monitorarNotificacoesGlobal = function(uid) {
     const unsub1 = onSnapshot(qRecebidos, (snap) => {
         cacheRecebidos = Array.isArray(snap?.docs) ? snap.docs : [];
         initState.recebidos = true;
-        atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+        atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs());
     }, onSnapError);
     const unsub2 = onSnapshot(qEnviados, (snap) => {
         cacheEnviados = Array.isArray(snap?.docs) ? snap.docs : [];
         initState.enviados = true;
-        atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+        atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs());
     }, onSnapError);
     const unsub3 = onSnapshot(qSociais, (snap) => {
         cacheSociais = Array.isArray(snap?.docs) ? snap.docs : [];
         initState.sociais = true;
-        atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais);
+        atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs());
     }, onSnapError);
-    state.unsubs = [unsub1, unsub2, unsub3];
+    const unsub4 = onSnapshot(qSociaisAlt, (snap) => {
+        cacheSociaisAlt = Array.isArray(snap?.docs) ? snap.docs : [];
+        initState.sociais = true;
+        atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs());
+    }, onSnapError);
+    const unsub5 = onSnapshot(qSociaisLegacy, (snap) => {
+        cacheSociaisLegacy = Array.isArray(snap?.docs) ? snap.docs : [];
+        initState.sociais = true;
+        atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs());
+    }, onSnapError);
+    const unsub6 = onSnapshot(qSociaisLegacyAlt, (snap) => {
+        cacheSociaisLegacyAlt = Array.isArray(snap?.docs) ? snap.docs : [];
+        initState.sociais = true;
+        atualizarBadges(cacheRecebidos, cacheEnviados, getSociaisDocs());
+    }, onSnapError);
+    state.unsubs = [unsub1, unsub2, unsub3, unsub4, unsub5, unsub6];
     if (!state.pollTimer) {
         state.pollTimer = setInterval(pollBadges, 12000);
     }
@@ -14515,6 +14554,3 @@ document.addEventListener('DOMContentLoaded', function(){
     toUpgrade();
   }, true);
 });
-
-
-

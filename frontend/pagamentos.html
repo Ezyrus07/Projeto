@@ -459,7 +459,7 @@
             if (/^(4011|4312|4389|4514|4576|5041|5066|5067|5090|6277|6362|6363)/.test(numero)) {
                 return { brand: "Elo", icon: "bx-credit-card" };
             }
-            return { brand: "Cartao", icon: "bx-credit-card" };
+            return { brand: "Cartão", icon: "bx-credit-card" };
         };
 
         const isValidCardByLuhn = (numero) => {
@@ -576,7 +576,7 @@ listaCartoesLocal = readCards();
             const btn = document.getElementById("btnSalvarCartao");
 
             if (!/^\d{13,19}$/.test(numero) || !isValidCardByLuhn(numero)) {
-                showInfo("Numero do cartao invalido.");
+                showInfo("Número do cartão invalido.");
                 return;
             }
             if (!validade) {
@@ -588,7 +588,7 @@ listaCartoesLocal = readCards();
                 return;
             }
             if (!nome) {
-                showInfo("Informe o nome impresso no cartao.");
+                showInfo("Informe o nome impresso no cartão.");
                 return;
             }
 
@@ -612,27 +612,27 @@ listaCartoesLocal = readCards();
                 renderizarCartoes();
                 toggleFormCartao();
                 limparForm();
-                showInfo("Cartao salvo com sucesso.");
+                showInfo("Cartão salvo com sucesso.");
             } catch (error) {
                 console.error(error);
-                showInfo("Nao foi possivel salvar o cartao.");
+                showInfo("Não foi possivel salvar o cartão.");
             } finally {
-                btn.innerText = "Salvar Cartao";
+                btn.innerText = "Salvar Cartão";
                 btn.disabled = false;
             }
         };
 
         window.removerCartaoReal = async function(id) {
-            if (!confirm("Remover este cartao?")) return;
+            if (!confirm("Remover este cartão?")) return;
 
             try {
                 listaCartoesLocal = listaCartoesLocal.filter((c) => c.id !== id);
                 await persistCards(listaCartoesLocal);
                 renderizarCartoes();
-                showInfo("Cartao removido.");
+                showInfo("Cartão removido.");
             } catch (error) {
                 console.error(error);
-                showInfo("Nao foi possivel remover o cartao.");
+                showInfo("Não foi possivel remover o cartão.");
             }
         };
 
@@ -642,7 +642,7 @@ listaCartoesLocal = readCards();
             container.innerHTML = "";
 
             if (!listaCartoesLocal.length) {
-                container.innerHTML = '<div style="text-align:center; color:#667; padding:20px;">Nenhum cartao cadastrado.</div>';
+                container.innerHTML = '<div style="text-align:center; color:#667; padding:20px;">Nenhum cartão cadastrado.</div>';
                 return;
             }
 
@@ -652,7 +652,7 @@ listaCartoesLocal = readCards();
                     <div style="display:flex; align-items:center;">
                         <i class='bx ${card.icon || "bx-credit-card"} method-icon'></i>
                         <div class="method-info">
-                            <h4>${card.brand || "Cartao"} final ${card.last4}</h4>
+                            <h4>${card.brand || "Cartão"} final ${card.last4}</h4>
                             <span>Validade: ${card.validade || "--/--"}</span>
                         </div>
                     </div>

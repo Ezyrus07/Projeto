@@ -773,7 +773,7 @@
   }
 
   // -----------------------------
-  // Data helpers (usuarios)
+  // Data helpers (usuários)
 
   function looksUUID(v){
     return typeof v === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v);
@@ -1276,7 +1276,7 @@ function ensureTheme(ctx, theme){
       grid.classList.add("dp-grid--masonry");
       for(let i = 0; i < count; i++){
         tpl.push(
-          `<article class="dp-item dp-skelCard dp-skelCard--publicacao" aria-hidden="true">
+          `<article class="dp-item dp-skelCard dp-skelCard--publicação" aria-hidden="true">
              <div class="dp-itemMedia dp-skelMedia skeleton"></div>
              <div class="dp-itemBody dp-skelBody">
                <div class="dp-skelAuthor">
@@ -1830,7 +1830,7 @@ function ensureTheme(ctx, theme){
   }
 
   function ensurePublicacoesSelectionControls(ctx){
-    const section = $('.dp-section[data-tab="publicacoes"]');
+    const section = $('.dp-section[data-tab="publicações"]');
     const header = section ? $(".dp-sectionHeader", section) : null;
     const canEdit = !!ctx?.canEdit;
 
@@ -2338,14 +2338,14 @@ function ensureTheme(ctx, theme){
         return;
       }
       if(queryResult.missingTable){
-        grid.innerHTML = `<div class="dp-empty">Nenhuma publicacao ainda.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhuma publicação ainda.</div>`;
         return;
       }
       if(queryResult.denied){
-        grid.innerHTML = `<div class="dp-empty">Publicacoes indisponiveis no momento.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Publicações indisponiveis no momento.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       try{ window.__DOKE_LAST_PUBLICACOES_ERROR__ = queryResult.error; }catch(_){}
       console.error("[DOKE] loadPublicacoes error:", queryResult.error);
       return;
@@ -2354,7 +2354,7 @@ function ensureTheme(ctx, theme){
       dpPubVisibleIds = [];
       dpPubSelectedIds.clear();
       refreshPublicacoesSelectionUI();
-      grid.innerHTML = `<div class="dp-empty">Sem publicacoes ainda.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Sem publicações ainda.</div>`;
       return;
     }
     dpPubVisibleIds = data.map((item)=> String(item?.id || "")).filter(Boolean);
@@ -2464,7 +2464,7 @@ function ensureTheme(ctx, theme){
         grid.innerHTML = `<div class="dp-empty">Videos curtos indisponiveis no momento.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(queryResult.error);
       return;
     }
@@ -2560,7 +2560,7 @@ function ensureTheme(ctx, theme){
         grid.innerHTML = `<div class="dp-empty">Portfolio indisponivel no momento.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(queryResult.error);
       return;
     }
@@ -2682,7 +2682,7 @@ function ensureTheme(ctx, theme){
         grid.innerHTML = `<div class="dp-empty">Servicos indisponiveis no momento.</div>`;
         return;
       }
-      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se voce ainda nao criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
       console.error(queryResult.error);
       return;
     }
@@ -2870,7 +2870,7 @@ function ensureTheme(ctx, theme){
         if(client?.from){
           const { data: rows, error } = await client
             .from("anuncios")
-            .select("id,titulo,categoria,preco,descricao,img,fotos")
+            .select("id,titulo,categoria,preço,descrição,img,fotos")
             .in("id", servicoIdsReal);
           if(!error && Array.isArray(rows)) anuncios = rows;
         }
@@ -4648,10 +4648,10 @@ if(!rangeSel || !refreshBtn) return;
       openDropdown(e.currentTarget, ctx);
     });
 
-    // Solicitar Orcamento (para visitante)
+    // Solicitar Orçamento (para visitante)
     $("#dpOrcBtn")?.addEventListener("click", ()=>{
       const id = ctx.target?.id || "";
-      window.location.href = `orcamento.html?prof=${encodeURIComponent(id)}`;
+      window.location.href = `orçamento.html?prof=${encodeURIComponent(id)}`;
     });
 
     // Amizade (para visitante)
@@ -4967,7 +4967,7 @@ if(!rangeSel || !refreshBtn) return;
         pageMode = "self";
       } else if (hasExplicitTarget) {
         pageMode = "public";
-      } else if (file === "perfil-usuario.html") {
+      } else if (file === "perfil-usuário.html") {
         pageMode = "self";
       }
       if(root && root.dataset){
@@ -5003,7 +5003,7 @@ if(!rangeSel || !refreshBtn) return;
       }
       if(pageMode === "self" && !me){
         if (authUser) {
-          // Sessão existe, mas a linha em public.usuarios pode não estar legível (RLS/Policy SELECT).
+          // Sessão existe, mas a linha em public.usuários pode não estar legível (RLS/Policy SELECT).
           // Para não cair em loop pedindo login, usa cache local como fallback.
           let cached = null;
           try { cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null"); } catch(_){ cached = null; }
@@ -5098,7 +5098,7 @@ if(!rangeSel || !refreshBtn) return;
       if(topBtn){
         if(me){
           topBtn.textContent = "Perfil";
-          topBtn.href = isProfissionalUsuario(me) ? "meuperfil.html" : "perfil-usuario.html";
+          topBtn.href = isProfissionalUsuario(me) ? "meuperfil.html" : "perfil-usuário.html";
         }else{
           topBtn.textContent = "Entrar";
           topBtn.href = "login.html";
@@ -5159,7 +5159,7 @@ async function loadServicosPerfil(ctx) {
     grid.innerHTML = `<div class="dp-empty">Carregando serviços...</div>`;
   }
 
-  // fallback simples (caso o builder do index nao exista)
+  // fallback simples (caso o builder do index não exista)
   const fallbackCard = (anuncio) => {
     const card = document.createElement("div");
     card.className = "card-premium";
@@ -5187,7 +5187,7 @@ async function loadServicosPerfil(ctx) {
           <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
           <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
         </div>
-        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar orçamento</button>
+        <button class="btn-solicitar" onclick="window.location.href='orçamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar orçamento</button>
       </div>
     `;
     return card;

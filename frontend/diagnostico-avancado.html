@@ -411,7 +411,7 @@
                     const sb = window.sb || window.supabaseClient;
                     if (!sb) throw new Error('Cliente Supabase não disponível');
 
-                    // Tenta ler da tabela usuarios (teste de RLS)
+                    // Tenta ler da tabela usuários (teste de RLS)
                     const { data, error } = await sb
                         .from('usuarios')
                         .select('uid')
@@ -419,7 +419,7 @@
 
                     if (error) {
                         if (error.code === '42P01') {
-                            throw new Error('Tabela "usuarios" não existe no banco');
+                            throw new Error('Tabela "usuários" não existe no banco');
                         }
                         throw new Error(`Erro RLS: ${error.message}`);
                     }
@@ -686,22 +686,22 @@ const DEFAULT_KEY = "SUA_CHAVE_AQUI";
         function mostrarSqlFix() {
             const sql = `-- Execute este SQL no Supabase (aba SQL Editor):
 
--- 1. Habilitar RLS na tabela usuarios
-ALTER TABLE usuarios ENABLE ROW LEVEL SECURITY;
+-- 1. Habilitar RLS na tabela usuários
+ALTER TABLE usuários ENABLE ROW LEVEL SECURITY;
 
 -- 2. Permitir leitura pública de perfis
 CREATE POLICY "Perfis públicos são visíveis"
-ON usuarios FOR SELECT
+ON usuários FOR SELECT
 USING (true);
 
 -- 3. Usuários podem atualizar próprio perfil
 CREATE POLICY "Usuários podem atualizar próprio perfil"
-ON usuarios FOR UPDATE
+ON usuários FOR UPDATE
 USING (auth.uid() = uid);
 
 -- 4. Permitir criação de novo perfil no signup
 CREATE POLICY "Usuários podem criar próprio perfil"
-ON usuarios FOR INSERT
+ON usuários FOR INSERT
 WITH CHECK (auth.uid() = uid);`;
 
             const modal = `

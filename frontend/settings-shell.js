@@ -16,7 +16,7 @@
       subtitle: 'Atualize suas informações básicas e de contato.'
     },
     enderecos: {
-      page: 'enderecos.html',
+      page: 'endereços.html',
       title: 'Endereços',
       subtitle: 'Salve mais de um local e use no orçamento com 1 toque.'
     },

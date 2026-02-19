@@ -164,7 +164,7 @@
   function renderCard(row){
     const id = pick(row, ['id','uuid','grupo_id'], '');
     const nome = pick(row, ['nome','name','titulo','title'], 'Comunidade');
-    const desc = pick(row, ['descricao','desc','sobre','bio'], 'Entre e participe.');
+    const desc = pick(row, ['descrição','desc','sobre','bio'], 'Entre e participe.');
     const avatar = pick(row, ['foto','avatar','imagem','image_url'], '');
     const cover = pick(row, ['capa','cover','banner','banner_url','foto_capa'], avatar);
     const tipo = pick(row, ['tipo','categoria','category'], 'Geral');
@@ -214,10 +214,10 @@
       if (!error && Array.isArray(data) && data[0]){
         state.keys = Object.keys(data[0]);
       } else {
-        state.keys = ['id','nome','descricao','foto','tipo','created_at','updated_at','privado','is_private','publico'];
+        state.keys = ['id','nome','descrição','foto','tipo','created_at','updated_at','privado','is_private','publico'];
       }
     }catch(_){
-      state.keys = ['id','nome','descricao','foto','tipo','created_at','updated_at','privado','is_private','publico'];
+      state.keys = ['id','nome','descrição','foto','tipo','created_at','updated_at','privado','is_private','publico'];
     }
   }
 
@@ -234,10 +234,10 @@
     // busca
     const term = (state.search || '').trim();
     if (term){
-      const cols = (state.keys || ['nome','descricao']).filter(k => ['nome','descricao','name','desc','sobre','bio','titulo','title'].includes(k));
+      const cols = (state.keys || ['nome','descrição']).filter(k => ['nome','descrição','name','desc','sobre','bio','titulo','title'].includes(k));
       // fallback
       const c1 = cols.includes('nome') ? 'nome' : (cols.includes('name') ? 'name' : 'nome');
-      const c2 = cols.includes('descricao') ? 'descricao' : (cols.includes('desc') ? 'desc' : null);
+      const c2 = cols.includes('descrição') ? 'descrição' : (cols.includes('desc') ? 'desc' : null);
       if (c2){
         q = q.or(`${c1}.ilike.%${term}%,${c2}.ilike.%${term}%`);
       } else {

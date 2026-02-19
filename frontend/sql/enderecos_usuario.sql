@@ -1,4 +1,4 @@
--- Enderecos salvos por usuario (cliente/profissional)
+-- Endereços salvos por usuário (cliente/profissional)
 -- Execute este script no SQL Editor do Supabase.
 
 create extension if not exists pgcrypto;
@@ -24,7 +24,7 @@ create index if not exists idx_enderecos_usuario_uid on public.enderecos_usuario
 create index if not exists idx_enderecos_usuario_ativo on public.enderecos_usuario (ativo);
 create index if not exists idx_enderecos_usuario_updated_at on public.enderecos_usuario (updated_at desc);
 
--- Garante no maximo 1 endereco principal ativo por usuario
+-- Garante no maximo 1 endereço principal ativo por usuário
 create unique index if not exists uq_endereco_principal_ativo
   on public.enderecos_usuario (usuario_uid)
   where (principal = true and ativo = true);

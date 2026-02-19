@@ -189,7 +189,7 @@
     if (n.aberto === true) badges.push(el("span", { class:"badge badge-open" }, ["Aberto agora"]));
     if (n.delivery === true) badges.push(el("span", { class:"badge badge-delivery" }, ["Delivery"]));
 
-    const card = el("article", { class:"card-premium negocio-card" }, [
+    const card = el("article", { class:"card-premium negócio-card" }, [
       el("div", { class:"card-premium-top" }, [
         el("div", { class:"card-premium-thumb" }, [thumb]),
         el("div", { class:"card-premium-info" }, [
@@ -208,10 +208,10 @@
         ])
       ]),
       el("div", { class:"card-premium-actions" }, [
-        el("a", { class:"btn-action ghost", href: `negocio.html?id=${encodeURIComponent(n.id||"")}` }, [
+        el("a", { class:"btn-action ghost", href: `negócio.html?id=${encodeURIComponent(n.id||"")}` }, [
           el("i", { class:"bx bx-store" }), " Ver negócio"
         ]),
-        el("a", { class:"btn-action primary", href: `chat.html?negocio=${encodeURIComponent(n.id||"")}` }, [
+        el("a", { class:"btn-action primary", href: `chat.html?negócio=${encodeURIComponent(n.id||"")}` }, [
           el("i", { class:"bx bx-chat" }), " Chat"
         ])
       ])
@@ -325,7 +325,7 @@
         // tenta buscar em várias colunas comuns
         const like = `%${t}%`;
         q = q.or(
-          `nome.ilike.${like},descricao.ilike.${like},categoria.ilike.${like},bairro.ilike.${like},cidade.ilike.${like}`
+          `nome.ilike.${like},descrição.ilike.${like},categoria.ilike.${like},bairro.ilike.${like},cidade.ilike.${like}`
         );
       }
 
@@ -406,7 +406,7 @@
       body[data-kind="negocios"] .tiktok-empty-ico{ font-size: 28px; opacity:.75; }
       body[data-kind="negocios"] .tiktok-empty-title{ margin-top: 8px; font-weight: 900; }
       body[data-kind="negocios"] .tiktok-empty-sub{ margin-top: 6px; color:#64748b; }
-      body[data-kind="negocios"] .empty-feed-negocios{ padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.65); border: 1px dashed rgba(15,23,42,.18); color:#64748b; font-weight: 700; }
+      body[data-kind="negocios"] .empty-feed-negócios{ padding: 12px 14px; border-radius: 14px; background: rgba(255,255,255,.65); border: 1px dashed rgba(15,23,42,.18); color:#64748b; font-weight: 700; }
       body[data-kind="negocios"] .empty-premium{
         border:1px dashed rgba(15,23,42,.18);
         border-radius: 18px;
@@ -429,17 +429,17 @@
         50%{ filter: brightness(1.05); }
         100%{ filter: brightness(1); }
       }
-      body[data-kind="negocios"] .negocio-card .anuncio-thumb-img{
+      body[data-kind="negocios"] .negócio-card .anuncio-thumb-img{
         width:100%; height:100%; object-fit:cover; display:block;
       }
-      body[data-kind="negocios"] .negocio-card .card-premium-thumb{
+      body[data-kind="negocios"] .negócio-card .card-premium-thumb{
         width: 90px; height: 90px; border-radius: 16px; overflow:hidden;
         background: rgba(15,23,42,.06);
       }
-      body[data-kind="negocios"] .negocio-card .anuncio-thumb-placeholder{
+      body[data-kind="negocios"] .negócio-card .anuncio-thumb-placeholder{
         width:100%; height:100%; display:flex; align-items:center; justify-content:center;
       }
-      body[data-kind="negocios"] .negocio-card .anuncio-thumb-emoji{ font-size: 30px; opacity:.9; }
+      body[data-kind="negocios"] .negócio-card .anuncio-thumb-emoji{ font-size: 30px; opacity:.9; }
       body[data-kind="negocios"] .card-premium-badges{ display:flex; gap:8px; margin-top: 8px; flex-wrap: wrap; }
       body[data-kind="negocios"] .badge{
         font-size: 11px; font-weight: 800;

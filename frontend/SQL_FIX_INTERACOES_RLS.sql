@@ -56,7 +56,7 @@ begin
       execute format('drop policy if exists %I on public.%I', p.policyname, t);
     end loop;
 
-    -- Grants (sem isso, policy permissiva sozinha pode nao bastar).
+    -- Grants (sem isso, policy permissiva sozinha pode não bastar).
     execute format('grant select, insert, update, delete on table public.%I to anon', t);
     execute format('grant select, insert, update, delete on table public.%I to authenticated', t);
 
@@ -80,9 +80,9 @@ end $$;
 -- begin
 --   for t in
 --     select unnest(array[
---       'usuarios',
+--       'usuários',
 --       'anuncios',
---       'publicacoes',
+--       'publicações',
 --       'videos_curtos',
 --       'stories',
 --       'publicacoes_comentarios',
@@ -95,7 +95,7 @@ end $$;
 --       'conversas_mensagens',
 --       'pedidos',
 --       'conversas',
---       'notificacoes'
+--       'notificações'
 --     ])
 --   loop
 --     if to_regclass('public.' || t) is not null then

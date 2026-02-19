@@ -114,7 +114,7 @@ end $$;
 -- DOKE Chat - Replies + Arquivamento (pedidos/conversas)
 -- ============================================================
 
--- Arquivar por usuario (arrays)
+-- Arquivar por usuário (arrays)
 alter table public.pedidos
   add column if not exists arquivadoPor text[] default '{}';
 alter table public.pedidos
@@ -236,7 +236,7 @@ create index if not exists idx_seguidores_seguidor on public.seguidores ("seguid
 create index if not exists idx_seguidores_seguido on public.seguidores ("seguidoUid", created_at desc);
 
 -- ============================================================
--- DOKE Pedidos - Orçamento detalhado (orcamento.html)
+-- DOKE Pedidos - Orçamento detalhado (orçamento.html)
 -- ============================================================
 alter table public.pedidos
   add column if not exists "anuncioId" text,
