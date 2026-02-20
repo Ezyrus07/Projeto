@@ -247,7 +247,7 @@
 
   function pkField(table){
     const t = String(table||"").trim().toLowerCase();
-    // In DOKE, "usuários" docs are addressed by auth uid, stored in column "uid".
+    // In DOKE, "usuarios" docs are addressed by auth uid, stored in column "uid".
     if (t === "usuarios") return "uid";
     return "id";
   }

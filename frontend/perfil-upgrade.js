@@ -30,6 +30,7 @@
     }
   };
   const fmtDateShort = (iso)=>{
+
     if(!iso) return "";
     const d = new Date(iso);
     if(Number.isNaN(d.getTime())) return "";
@@ -1015,7 +1016,7 @@
               if(nextOn) dpPubLikedIds.delete(pid); else dpPubLikedIds.add(pid);
               likeBtn.classList.toggle('is-fav', isOn);
               likeBtn.setAttribute('aria-pressed', isOn ? 'true':'false');
-              if(ic){ ic.classList.toggle('bx-heart', !isOn); ic.classList.toggle('bxs-heart', isOn); }
+              if(ic){ ic.classList.toggle('bx-heart', isOn ? false : true); ic.classList.toggle('bxs-heart', isOn ? true : false); }
             }
           }, { capture: true });
         }
