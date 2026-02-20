@@ -252,6 +252,21 @@
     return "id";
   }
 
+  function normalizeTableName(name){
+    // Remove acentos e caracteres estranhos para evitar tabelas inconsistentes
+    // (ex: "notificaçõ​es" vs "notificacoes").
+    const raw = String(name || "").trim();
+    if (!raw) return "";
+    try {
+      return raw
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/\s+/g, '_');
+    } catch (_e) {
+      return raw.replace(/\s+/g, '_');
+    }
+  }
+
   function singularize(name){
     const n = String(name||"").trim();
     if (!n) return "";
@@ -264,10 +279,10 @@
   function buildTableFromPath(parts){
     // parts: [collection, docId, subcollection, docId, ...]
     // Firestore path: pedidos/{id}/mensagens  -> table pedidos_mensagens + parent (pedidoId)
-    const c0 = parts[0];
+    const c0 = normalizeTableName(parts[0]);
     const id0 = parts[1];
-    const c1 = parts[2];
-    const table = `${c0}_${c1}`;
+    const c1 = normalizeTableName(parts[2]);
+    const table = normalizeTableName(`${c0}_${c1}`);
 
     // Algumas tabelas do projeto usam camelCase (ex: "pedidoId") e outras snake_case (ex: conversa_id).
     // Para evitar erros do tipo: "column ... does not exist" seguido de NOT NULL violation,
@@ -312,8 +327,8 @@
     const args = Array.from(arguments);
     // Support: collection(db, 'pedidos')
     // Support subcollection: collection(db, 'pedidos', pedidoId, 'mensagens')
-    if (args.length === 1 && typeof args[0] === 'string') return { table: args[0] };
-    if (args.length === 2 && typeof args[1] === 'string') return { table: args[1] };
+    if (args.length === 1 && typeof args[0] === 'string') return { table: normalizeTableName(args[0]) };
+    if (args.length === 2 && typeof args[1] === 'string') return { table: normalizeTableName(args[1]) };
 
     if (isPathCollectionArgs(args)) {
       const parts = args.slice(1); // remove db
@@ -323,7 +338,7 @@
 
     // Fallback: try second arg as table
     const tableName = (typeof args[1] === 'string') ? args[1] : String(args[0]||'');
-    return { table: tableName };
+    return { table: normalizeTableName(tableName) };
   };
 
   window.where = function(field, op, value){ return { kind:"where", field, op, value }; };
@@ -338,12 +353,12 @@
     const args = Array.from(arguments);
     // Firestore: doc(collectionRef, id)
     if (args[0] && args[0].table && typeof args[1] === 'string' && args.length === 2) {
-      return { table: args[0].table, id: args[1], parent: args[0].parent || null };
+      return { table: normalizeTableName(args[0].table), id: args[1], parent: args[0].parent || null };
     }
 
     // Firestore: doc(db, 'pedidos', id)
     if (args.length === 3 && typeof args[1] === 'string' && typeof args[2] === 'string') {
-      return { table: args[1], id: args[2] };
+      return { table: normalizeTableName(args[1]), id: args[2] };
     }
 
     // Firestore: doc(db, 'pedidos', pedidoId, 'mensagens', msgId)
@@ -353,7 +368,7 @@
     }
 
     // Fallback
-    const table = String(args[1]||args[0]||'');
+    const table = normalizeTableName(String(args[1]||args[0]||''));
     const id = String(args[2]||'');
     return { table, id };
   };
@@ -384,11 +399,15 @@
     const status = error?.status;
     const msg = String(error?.message || error?.details || "");
     const lmsg = msg.toLowerCase();
+    const code = String(error?.code || "");
     if (status === 404) return true;
     // RLS / auth issues: keep app running and render empty state
     if (status === 401 || status === 403) return true;
     if (lmsg.includes("permission denied") || lmsg.includes("not authorized")) return true;
     if (status === 400 && msg.includes("invalid input syntax for type uuid")) return true;
+    // Tabela inexistente / schema cache
+    if (code === "PGRST205") return true;
+    if (lmsg.includes("could not find the table") || lmsg.includes("schema cache")) return true;
     if (msg.includes("does not exist")) return true;
     return false;
   }

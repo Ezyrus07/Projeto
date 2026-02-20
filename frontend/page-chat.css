@@ -755,21 +755,28 @@ body[data-page="chat"] .pedido-recusa-card{
 
 
 
-/* === CHAT FOOTER FIX - ABOVE BOTTOM NAV (mobile) ===================== */
-:root{ --bottom-nav-height: var(--bottom-nav-height, 72px); }
+/* === CHAT FOOTER FIX - ABOVE BOTTOM NAV (mobile) =====================
+   NOTE:
+   - iOS Safari breaks when a CSS var references itself ("--x: var(--x, 72px)").
+   - That made `bottom` invalid, so the fixed footer stayed at the document-flow
+     position (logo abaixo do header), exatamente como o bug reportado.
+*/
+:root{ --doke-bottom-nav-height: 74px; }
 
-body[data-page="chat"] .chat-footer{
-  position: fixed !important;
-  left: 0; right: 0;
-  bottom: var(--bottom-nav-height) !important;
-  z-index: 1001 !important;
-  background: rgba(255,255,255,0.98);
-  backdrop-filter: blur(10px);
-  border-top: 1px solid rgba(0,0,0,0.06);
-}
+@media (max-width: 1024px){
+  body[data-page="chat"] .chat-footer{
+    position: fixed !important;
+    left: 0; right: 0;
+    bottom: calc(var(--doke-bottom-nav-height) + env(safe-area-inset-bottom)) !important;
+    z-index: 1001 !important;
+    background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
 
-body[data-page="chat"] .mensagens-body{
-  padding-bottom: calc(var(--bottom-nav-height) + 92px) !important;
+  body[data-page="chat"] .mensagens-body{
+    padding-bottom: calc(var(--doke-bottom-nav-height) + 150px) !important;
+  }
 }
 /* ==================================================================== */
 

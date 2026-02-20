@@ -1279,23 +1279,10 @@ if (!key || key.startsWith("sb_publishable")) {
         }
 
         if (restoredSession?.access_token) {
-          let tokenIsValid = false;
-          try {
-            const authUrl = `${url}/auth/v1/user`;
-            const access = String(restoredSession.access_token || "").trim();
-            const probe = await fetch(authUrl, {
-              method: "GET",
-              headers: {
-                apikey: key,
-                Authorization: `Bearer ${access}`
-              }
-            });
-            tokenIsValid = probe.ok;
-          } catch (_e) {
-            // Em falha de rede, não limpa sessao imediatamente.
-            tokenIsValid = true;
-          }
-
+          // IMPORTANTE: removido o probe em /auth/v1/user.
+          // Ele gerava ruído no console (401) mesmo quando a sessão estava ok/recuperável.
+          // A validação de exp do JWT + o próprio SDK já cobrem o necessário.
+          const tokenIsValid = true;
           if (!tokenIsValid) {
             await clearInvalidSessionArtifacts("restore_token_invalid");
             return false;

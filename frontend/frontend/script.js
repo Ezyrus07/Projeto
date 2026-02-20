@@ -4698,6 +4698,16 @@ async function fetchSupabasePublicacoesFeed() {
     if (!client) return cached || [];
     if (dokeIsSupaTemporarilyDown() && Array.isArray(cached) && cached.length) return cached;
     try {
+        // Alguns ambientes antigos/usavam outra tabela. Tentamos em cascata.
+        const tableCandidates = ["publicacoes", "posts", "publications"].filter(Boolean);
+
+        const isMissingTableError = (err) => {
+            const code = String(err?.code || "");
+            const msg = String(err?.message || "").toLowerCase();
+            return code === "PGRST205" || msg.includes("could not find the table") || msg.includes("relation") && msg.includes("does not exist");
+        };
+
+        const attemptFetchFromTable = async (tableName) => {
         let lastError = null;
         let attempts = 0;
         let lastStatusKey = null;
@@ -4715,7 +4725,7 @@ async function fetchSupabasePublicacoesFeed() {
                 const select = buildPublicacoesSelect(combo);
                 const safeRes = await dokeWithTimeout(
                     client
-                        .from("publicacoes")
+                        .from(tableName)
                         .select(select)
                         .order("created_at", { ascending: false })
                         .limit(24),
@@ -4734,6 +4744,10 @@ async function fetchSupabasePublicacoesFeed() {
                 }
                 if (dokeLooksLikeNetworkAbort(safeError)) dokeMarkSupaDown();
                 lastError = safeError;
+
+                // Tabela inexistente -> pare cedo para tentar próximo candidato.
+                if (isMissingTableError(safeError)) break;
+
                 const beforeKey = publicacoesStatusKey();
                 markPublicacoesSelectError(safeError);
                 statusChanged = publicacoesStatusKey() !== beforeKey;
@@ -4749,7 +4763,7 @@ async function fetchSupabasePublicacoesFeed() {
             try {
                 const loose = await dokeWithTimeout(
                     client
-                        .from("publicacoes")
+                        .from(tableName)
                         .select("*")
                         .limit(24),
                     7000,
@@ -4773,6 +4787,13 @@ async function fetchSupabasePublicacoesFeed() {
             } catch (_) {}
         }
         if (lastError && !dokeLooksLikeNetworkAbort(lastError)) console.error("Erro ao carregar publicacoes supabase:", lastError);
+        return [];
+        };
+
+        for (const tableName of tableCandidates) {
+            const out = await attemptFetchFromTable(tableName);
+            if (Array.isArray(out) && out.length) return out;
+        }
     } catch (err) {
         if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
         else console.error("Falha critica ao buscar publicacoes:", err);
