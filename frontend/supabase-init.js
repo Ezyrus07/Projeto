@@ -163,7 +163,7 @@
     const here = String(location.origin || "");
     if (!here) return false;
 
-    // Mantem uma origem local canonica entre abas/paginas para nao quebrar sessao.
+    // Mantem uma origem local canonica entre abas/paginas para não quebrar sessao.
     // Ex.: evita abrir :5508 quando a sessao ativa esta em :5502.
     try {
       if (window.DOKE_PREFER_SAVED_PROXY_ORIGIN !== false) {
@@ -1292,7 +1292,7 @@ if (!key || key.startsWith("sb_publishable")) {
             });
             tokenIsValid = probe.ok;
           } catch (_e) {
-            // Em falha de rede, nao limpa sessao imediatamente.
+            // Em falha de rede, não limpa sessao imediatamente.
             tokenIsValid = true;
           }
 

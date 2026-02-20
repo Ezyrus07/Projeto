@@ -133,7 +133,7 @@
       // se a coluna for "publico", invertendo para manter semântica
       if (typeof v === 'boolean') return !v;
       if (s === 'true' || s === '1' || s === 'sim') return false;
-      if (s === 'false' || s === '0' || s === 'nao' || s === 'não') return true;
+      if (s === 'false' || s === '0' || s === 'não' || s === 'não') return true;
     }
     return (s === 'true' || s === '1' || s === 'sim' || s.includes('priv'));
   }

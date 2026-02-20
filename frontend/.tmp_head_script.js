@@ -95,7 +95,7 @@ if (typeof window.__dokeEnsureAuthCompat === "function") window.__dokeEnsureAuth
 
 // Variáveis Globais
 window.arquivoFotoSelecionado = null;
-window.arquivoVideoSelecionado = null;
+window.arquivoVídeoSelecionado = null;
 window.fotosAtuais = [];
 window.indiceAtual = 0;
 window.chatIdAtual = null;
@@ -222,25 +222,25 @@ window.previewImagemPost = function(input) {
     }
 }
 
-window.processarVideoUpload = function(input) {
+window.processarVídeoUpload = function(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         if (file.size > 100 * 1024 * 1024) { alert("Vídeo muito grande (max 100MB)."); input.value = ""; return; }
-        window.arquivoVideoSelecionado = file; 
-        document.getElementById('nomeVideoSelecionado').innerText = "Vídeo: " + file.name;
-        document.getElementById('base64VideoFile').value = "video_ok";
+        window.arquivoVídeoSelecionado = file; 
+        document.getElementById('nomeVídeoSelecionado').innerText = "Vídeo: " + file.name;
+        document.getElementById('base64VídeoFile').value = "video_ok";
     }
 }
 
 window.removerImagemPost = function() {
     window.arquivoFotoSelecionado = null;
-    window.arquivoVideoSelecionado = null;
+    window.arquivoVídeoSelecionado = null;
     document.getElementById('base64PostImage').value = "";
-    document.getElementById('base64VideoFile').value = "";
+    document.getElementById('base64VídeoFile').value = "";
     document.getElementById('previewPostArea').style.display = 'none';
     document.getElementById('file-post-upload').value = "";
-    if(document.getElementById('inputVideoFile')) document.getElementById('inputVideoFile').value = "";
-    if(document.getElementById('nomeVideoSelecionado')) document.getElementById('nomeVideoSelecionado').innerText = "";
+    if(document.getElementById('inputVídeoFile')) document.getElementById('inputVídeoFile').value = "";
+    if(document.getElementById('nomeVídeoSelecionado')) document.getElementById('nomeVídeoSelecionado').innerText = "";
 }
 
 window.publicarConteudoUnificado = async function(event) {
@@ -266,7 +266,7 @@ window.publicarConteudoUnificado = async function(event) {
 
     try {
         let urlImagem = "";
-        let urlVideo = "";
+        let urlVídeo = "";
 
         // Lógica de Upload (Storage)
         if (window.arquivoFotoSelecionado) {
@@ -275,11 +275,11 @@ window.publicarConteudoUnificado = async function(event) {
             urlImagem = await getDownloadURL(snapImg.ref);
         }
 
-        if (window.arquivoVideoSelecionado) {
+        if (window.arquivoVídeoSelecionado) {
             const folder = tipo === 'video-curto' ? 'reels' : 'trabalhos';
             const refVid = ref(storage, `${folder}/${user.uid}/vid_${Date.now()}`);
-            const snapVid = await uploadBytes(refVid, window.arquivoVideoSelecionado);
-            urlVideo = await getDownloadURL(snapVid.ref);
+            const snapVid = await uploadBytes(refVid, window.arquivoVídeoSelecionado);
+            urlVídeo = await getDownloadURL(snapVid.ref);
         }
 
         let colecao = tipo === 'video-curto' ? 'reels' : (tipo === 'video' ? 'trabalhos' : 'posts');
@@ -296,16 +296,16 @@ window.publicarConteudoUnificado = async function(event) {
         if (tipo === 'video-curto') {
             const selectAnuncio = document.getElementById('selectAnuncioVinculado');
             const opt = selectAnuncio.options[selectAnuncio.selectedIndex];
-            dados.videoUrl = urlVideo;
+            dados.videoUrl = urlVídeo;
             dados.capa = urlImagem;
             dados.descricao = texto;
             dados.anuncioId = selectAnuncio.value; // ID DO SERVIÇO PARA O BOTÃO
             dados.categoria = opt.getAttribute('data-cat') || "Geral"; // TAG VERDE
-            dados.tag = (document.getElementById('inputTagVideo').value || "NOVO").toUpperCase(); // TAG TOPO
+            dados.tag = (document.getElementById('inputTagVídeo').value || "NOVO").toUpperCase(); // TAG TOPO
         } else {
             dados.texto = texto;
             dados.imagem = urlImagem;
-            dados.videoUrl = urlVideo;
+            dados.videoUrl = urlVídeo;
         }
 
         await addDoc(collection(db, colecao), dados);
@@ -520,7 +520,7 @@ window.carregarTrabalhosHome = async function() {
             const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
             const categoria = (data.categoria || "Vídeo curto").toString();
             const duracao = formatShortDuration(data.duracao || data.duracaoSegundos || data.tempo);
-            const capa = data.capa || "https://placehold.co/540x960?text=Video";
+            const capa = data.capa || "https://placehold.co/540x960?text=Vídeo";
             const fotoAutor = data.autorFoto || "https://placehold.co/120x120?text=User";
             const autorNome = (data.autorNome || "@profissional").toString();
             
@@ -695,7 +695,7 @@ window.abrirComentarios = function() {
 
 
 
-window.tocarVideoDoCard = function(card) {
+window.tocarVídeoDoCard = function(card) {
     const src = card.querySelector('.video-src-hidden').value;
     const modal = document.getElementById('modalPlayerVideo');
     const player = document.getElementById('playerPrincipal');
@@ -797,7 +797,7 @@ try {
 
 
 // Notificações Globais
-window.verificarNotificacoes = function(uid) {
+window.verificarNotificações = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
@@ -1652,7 +1652,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (!fetched) {
-            throw (lastLoadError || new Error("Nao foi possivel carregar anuncios no momento."));
+            throw (lastLoadError || new Error("Nao foi possível carregar anuncios no momento."));
         }
 
         // Não mostrar anúncios desativados no feed público
@@ -1897,7 +1897,7 @@ window.aplicarFiltrosBusca = function() {
 window.usarMinhaLocalizacao = function() {
     const statusEl = document.getElementById('radiusStatus');
     if (!navigator.geolocation) {
-        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponivel no navegador.';
+        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponível no navegador.';
         return;
     }
     if (statusEl) statusEl.textContent = 'Obtendo localizacao...';
@@ -1911,7 +1911,7 @@ window.usarMinhaLocalizacao = function() {
             if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
         },
         () => {
-            if (statusEl) statusEl.textContent = 'Nao foi possivel obter a localizacao.';
+            if (statusEl) statusEl.textContent = 'Nao foi possível obter a localizacao.';
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
@@ -3737,7 +3737,7 @@ window.carregarFeedGlobal = async function() {
     });
 
     container.setAttribute('aria-busy', 'false');
-    setupFeedVideoPreview(container);
+    setupFeedVídeoPreview(container);
     setupAntesDepois(container);
 }
 
@@ -3771,7 +3771,7 @@ function setupAntesDepois(container){
 }
 
 
-function setupFeedVideoPreview(container) {
+function setupFeedVídeoPreview(container) {
     if (!container) return;
     const cards = container.querySelectorAll(".feed-publicação-card");
     cards.forEach((card) => {
@@ -3888,7 +3888,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     if(document.getElementById('galeria-dinamica')) {
         carregarReelsHome();
-        enableVideosCurtosPageScroll();
+        enableVídeosCurtosPageScroll();
     }
 
     const cepSalvo = localStorage.getItem('meu_cep_doke');
@@ -4079,7 +4079,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             }
             
             // Ativa notificações de pedidos novos
-            window.monitorarNotificacoesGlobal(user.uid);
+            try { window.monitorarNotificaçõesGlobal(user.uid); } catch (e) { console.warn('Falha ao iniciar notificações globais', e); }
 
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
@@ -5116,7 +5116,19 @@ window.verificarEnter = function(e) {
 window.iniciarGravacao = async function() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        window.mediaRecorder = new MediaRecorder(stream);
+        // iOS Safari pode não suportar audio/webm. Escolhemos o melhor mimeType disponível.
+const pickMimeType = () => {
+    if (typeof MediaRecorder === 'undefined') return '';
+    const cands = ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/aac','audio/ogg;codecs=opus'];
+    for (const m of cands) {
+        try { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m; } catch (_) {}
+    }
+    return '';
+};
+const mimeType = pickMimeType();
+window.audioMimeType = mimeType || '';
+window.mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
+
         window.audioChunks = [];
 
         window.mediaRecorder.ondataavailable = event => {
@@ -5161,35 +5173,58 @@ window.enviarAudio = function() {
     document.getElementById('uiGravando').style.display = 'none';
 
     window.mediaRecorder.onstop = async () => {
-        const audioBlob = new Blob(window.audioChunks, { type: 'audio/mp3' });
-        
-        // Upload para Firebase Storage
+    const mime = window.audioMimeType || (window.audioChunks[0] && window.audioChunks[0].type) || 'audio/webm';
+    const audioBlob = new Blob(window.audioChunks, { type: mime });
+    const ext = (mime.includes('mp4') ? 'm4a' : (mime.includes('ogg') ? 'ogg' : 'webm'));
+
+    try {
+        // Toast de "Enviando..."
+        const btnEnviar = document.querySelector('.btn-enviar-msg');
+        const originalIcon = btnEnviar ? btnEnviar.innerHTML : "";
+        if (btnEnviar) btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
+
+        // Upload do áudio (Firebase -> fallback Supabase)
         const user = auth.currentUser;
-        const filename = `audios/${user.uid}/${Date.now()}.mp3`;
-        const storageRef = ref(storage, filename);
-        
+        let downloadUrl = "";
         try {
-            // Toast de "Enviando..."
-            const btnEnviar = document.querySelector('.btn-enviar-msg');
-            const originalIcon = btnEnviar.innerHTML;
-            btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
-
+            if (!user || typeof ref !== "function" || typeof uploadBytes !== "function" || typeof getDownloadURL !== "function" || !window.storage) {
+                throw new Error("Firebase Storage indisponível.");
+            }
+            const filename = `audios/${user.uid}/${Date.now()}.${ext}`;
+            const storageRef = ref(storage, filename);
             const snapshot = await uploadBytes(storageRef, audioBlob);
-            const downloadUrl = await getDownloadURL(snapshot.ref);
+            downloadUrl = await getDownloadURL(snapshot.ref);
+        } catch (fbErr) {
+            console.warn("Falha ao enviar áudio via Firebase Storage, tentando Supabase Storage...", fbErr);
+            const sb = window.sb;
+            if (!sb || !sb.storage || typeof sb.storage.from !== 'function') throw fbErr;
+            const uidFallback = (user && user.uid) || (typeof ensureCurrentUserUid === "function" ? (await ensureCurrentUserUid({ bootstrap: true })) : null) || "anon";
+            const filename = `audios/${uidFallback}/${Date.now()}.${ext}`;
+            const upRes = await sb.storage.from("audios").upload(filename, audioBlob, { upsert:true, cacheControl:"3600", contentType:mime });
+            if (upRes?.error) throw upRes.error;
+            const pub = sb.storage.from("audios").getPublicUrl(filename);
+            downloadUrl = pub?.data?.publicUrl || "";
+            if (!downloadUrl) throw new Error("Falha ao obter URL pública do áudio.");
+        }
 
-            await enviarParaFirestore({
-                tipo: 'audio',
-                url: downloadUrl,
-                texto: "Mensagem de áudio"
-            });
+        await enviarParaFirestore({
+            tipo: 'audio',
+            url: downloadUrl,
+            texto: "Mensagem de áudio"
+        });
 
-            btnEnviar.innerHTML = originalIcon;
-
-        } catch (e) {
-            console.error("Erro upload audio:", e);
+        if (btnEnviar) btnEnviar.innerHTML = originalIcon;
+    } catch (e) {
+        console.error("Erro upload audio:", e);
+        const msg = (String(e?.message || e || "") || "").toLowerCase();
+        if (msg.includes("bucket") && msg.includes("not") && msg.includes("found")) {
+            alert("Erro ao enviar áudio. Crie o bucket \"audios\" no Supabase Storage (público ou com policy) e tente novamente.");
+        } else {
             alert("Erro ao enviar áudio.");
         }
-    };
+    }
+};
+
 }
 
 // 6. Função Genérica de Envio ao Firestore
@@ -5599,7 +5634,7 @@ window.addEventListener('beforeunload', () => {
 // ============================================================
 // MONITORAMENTO GLOBAL DE NOTIFICAÇÕES (SIDEBAR E MOBILE)
 // ============================================================
-window.monitorarNotificacoesGlobal = function(uid) {
+window.monitorarNotificaçõesGlobal = function(uid) {
     if (!uid) return;
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
@@ -6106,7 +6141,7 @@ window.gerarPagamento = async function() {
 // FUNÇÕES ATUALIZADAS (Seguir + Foto Perfil)
 // ============================================================
 
-window.togglePlayVideo = function(event) {
+window.togglePlayVídeo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -6117,10 +6152,10 @@ window.togglePlayVideo = function(event) {
     const frame = document.querySelector('.video-frame');
     
     // ATUALIZA A FOTO DO BOTÃO PERFIL IGUAL A DO VÍDEO
-    const avatarVideo = document.getElementById('tiktokAvatarImg');
+    const avatarVídeo = document.getElementById('tiktokAvatarImg');
     const btnProfile = document.getElementById('btnProfileImg');
-    if(avatarVideo && btnProfile) {
-        btnProfile.src = avatarVideo.src;
+    if(avatarVídeo && btnProfile) {
+        btnProfile.src = avatarVídeo.src;
     }
 
     if (!video) return;
@@ -6275,8 +6310,8 @@ function sincronizarFotoPerfil() {
     }
 }
 
-// Atualize a função togglePlayVideo para chamar essa sincronização
-window.togglePlayVideo = function(event) {
+// Atualize a função togglePlayVídeo para chamar essa sincronização
+window.togglePlayVídeo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -6323,7 +6358,7 @@ function carregarDadosUsuarioNoPlayer() {
         }
 
         // OBS: Não alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
-        // Quem define a foto do vídeo é a função que cria o Feed (criarHTMLVideo).
+        // Quem define a foto do vídeo é a função que cria o Feed (criarHTMLVídeo).
     }
 }
 
@@ -6340,7 +6375,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // CONTROLE DE PLAY/PAUSE
 // ============================================================
 
-window.togglePlayVideo = function(event) {
+window.togglePlayVídeo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -6377,7 +6412,7 @@ let observerFeed = null; // Observador de scroll
 // 1. CARREGA O FEED (COM PROTEÇÃO CONTRA VÍDEOS ANTIGOS)
 // ============================================================
 
-window.abrirFeedVideos = async function(idInicial) {
+window.abrirFeedVídeos = async function(idInicial) {
     const modal = document.getElementById('modalPlayerVideo');
     const container = document.getElementById('containerFeedScroll');
     
@@ -6390,10 +6425,10 @@ window.abrirFeedVideos = async function(idInicial) {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"));
         const snapshot = await getDocs(q);
         
-        const promessasVideos = snapshot.docs.map(async (docSnap) => {
-            const dataVideo = docSnap.data();
+        const promessasVídeos = snapshot.docs.map(async (docSnap) => {
+            const dataVídeo = docSnap.data();
             const videoId = docSnap.id;
-            let criadorUid = dataVideo.uid; 
+            let criadorUid = dataVídeo.uid; 
 
             // Dados Padrão (Fallback)
             let fotoFinal = "https://placehold.co/150"; 
@@ -6419,7 +6454,7 @@ window.abrirFeedVideos = async function(idInicial) {
 
             return {
                 id: videoId,
-                ...dataVideo,
+                ...dataVídeo,
                 autorFoto: fotoFinal,
                 autorNome: nomeFinal,
                 autorUser: userFinal,
@@ -6427,7 +6462,7 @@ window.abrirFeedVideos = async function(idInicial) {
             };
         });
 
-        videosNoFeed = await Promise.all(promessasVideos);
+        videosNoFeed = await Promise.all(promessasVídeos);
 
         if (videosNoFeed.length === 0) {
             container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum vídeo encontrado.</div>';
@@ -6436,7 +6471,7 @@ window.abrirFeedVideos = async function(idInicial) {
 
         container.innerHTML = '';
         videosNoFeed.forEach(video => {
-            const htmlItem = criarHTMLVideo(video);
+            const htmlItem = criarHTMLVídeo(video);
             container.insertAdjacentHTML('beforeend', htmlItem);
         });
 
@@ -6458,12 +6493,12 @@ window.abrirFeedVideos = async function(idInicial) {
 // 2. GERA HTML (COM FUNÇÃO SEGURA DE NAVEGAÇÃO)
 // ============================================================
 
-function criarHTMLVideo(dados) {
+function criarHTMLVídeo(dados) {
     // Esconde botão seguir se for o próprio dono
     const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     const meuUser = (userLogado.user || "").trim().toLowerCase();
-    const donoVideo = (dados.autorUser || "").trim().toLowerCase(); 
-    const displaySeguir = (meuUser === donoVideo) ? 'none' : 'inline-block';
+    const donoVídeo = (dados.autorUser || "").trim().toLowerCase(); 
+    const displaySeguir = (meuUser === donoVídeo) ? 'none' : 'inline-block';
 
     // Garante uma imagem válida
     const imagemSegura = dados.autorFoto && dados.autorFoto.trim() !== "" ? dados.autorFoto : "https://placehold.co/150";
@@ -6508,7 +6543,7 @@ function criarHTMLVideo(dados) {
                     <span class="action-label">Comentar</span>
                 </button>
 
-                <button class="action-btn" onclick="compartilharVideo()">
+                <button class="action-btn" onclick="compartilharVídeo()">
                     <div class="icon-circle"><i class='bx bx-share-alt'></i></div>
                     <span class="action-label">Enviar</span>
                 </button>
@@ -7226,8 +7261,8 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const item = await fetchSupabasePublicacaoById(publicacaoId);
     if (!item) {
-        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicação indisponivel.</div>";
-        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Não foi possivel carregar esta publicação.</p>";
+        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicação indisponível.</div>";
+        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Não foi possível carregar esta publicação.</p>";
         iconLike.style.pointerEvents = 'auto';
         iconLike.style.opacity = '1';
         return;
@@ -7257,22 +7292,22 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
         mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls playsinline webkit-playsinline x5-playsinline preload="metadata" controlslist="nodownload noplaybackrate noremoteplayback nofullscreen" disablepictureinpicture disableremoteplayback style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
-        const modalVideo = mediaBox.querySelector("video");
-        if (modalVideo) {
+        const modalVídeo = mediaBox.querySelector("video");
+        if (modalVídeo) {
             const forceInlineMode = () => {
                 try {
-                    if (typeof modalVideo.webkitSetPresentationMode === "function" && modalVideo.webkitPresentationMode !== "inline") {
-                        modalVideo.webkitSetPresentationMode("inline");
+                    if (typeof modalVídeo.webkitSetPresentationMode === "function" && modalVídeo.webkitPresentationMode !== "inline") {
+                        modalVídeo.webkitSetPresentationMode("inline");
                     }
                 } catch (_) {}
             };
-            modalVideo.setAttribute("playsinline", "");
-            modalVideo.setAttribute("webkit-playsinline", "");
-            modalVideo.setAttribute("x5-playsinline", "");
-            modalVideo.addEventListener("loadedmetadata", forceInlineMode);
-            modalVideo.addEventListener("play", forceInlineMode);
-            modalVideo.addEventListener("touchstart", forceInlineMode, { passive: true });
-            modalVideo.addEventListener("webkitbeginfullscreen", (ev) => {
+            modalVídeo.setAttribute("playsinline", "");
+            modalVídeo.setAttribute("webkit-playsinline", "");
+            modalVídeo.setAttribute("x5-playsinline", "");
+            modalVídeo.addEventListener("loadedmetadata", forceInlineMode);
+            modalVídeo.addEventListener("play", forceInlineMode);
+            modalVídeo.addEventListener("touchstart", forceInlineMode, { passive: true });
+            modalVídeo.addEventListener("webkitbeginfullscreen", (ev) => {
                 if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
                 forceInlineMode();
             });
@@ -7569,7 +7604,7 @@ window.carregarReelsHome = async function() {
 
             if (!videoUrl) return;
             const startId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
-            const tituloReel = (item.titulo || autorUser || "Video curto");
+            const tituloReel = (item.titulo || autorUser || "Vídeo curto");
             const descReel = (item.descricao || item.legenda || tag || "");
             const html = `
             <div class="dp-reelCard dp-item--clickable" onclick="window.location.href='feed.html?start=${startId}'" onmouseenter="playReelPreview(this)" onmouseleave="stopReelPreview(this)">
@@ -7588,7 +7623,7 @@ window.carregarReelsHome = async function() {
     } catch (e) { console.error(e); }
 }
 
-function enableVideosCurtosPageScroll() {
+function enableVídeosCurtosPageScroll() {
     const wrapper = document.getElementById('galeria-dinamica');
     if (!wrapper || wrapper.dataset.scrollFix === "true") return;
     wrapper.dataset.scrollFix = "true";
@@ -7596,14 +7631,14 @@ function enableVideosCurtosPageScroll() {
 
 // LÓGICA DO DELAY DE 3 SEGUNDOS
 // LÓGICA DO DELAY DE 3 SEGUNDOS COM RESET DE CAPA
-let timerVideo;
+let timerVídeo;
 
 window.agendarPlay = function(card) {
     const video = card.querySelector('video');
     if (!video) return;
 
     // Agenda o play para daqui a 3 segundos
-    timerVideo = setTimeout(() => {
+    timerVídeo = setTimeout(() => {
         video.play().catch(e => console.log("Autoplay bloqueado"));
     }, 3000);
 }
@@ -7612,7 +7647,7 @@ window.cancelarPlay = function(card) {
     const video = card.querySelector('video');
     
     // 1. Cancela o agendamento se o mouse sair antes de começar
-    clearTimeout(timerVideo);
+    clearTimeout(timerVídeo);
     
     if (video) {
         // 2. Pausa o vídeo
@@ -7627,23 +7662,23 @@ window.cancelarPlay = function(card) {
 
 
 window.ativarModo = function(modo) {
-    const areaVideo = document.getElementById('campos-video-extra');
+    const areaVídeo = document.getElementById('campos-video-extra');
     const inputTipo = document.getElementById('tipoPostagemAtual');
     const inputFoto = document.getElementById('file-post-upload');
 
-    areaVideo.style.display = 'none'; // Reseta
+    areaVídeo.style.display = 'none'; // Reseta
     
     if (modo === 'video' || modo === 'video-curto') {
-        areaVideo.style.display = 'block';
+        areaVídeo.style.display = 'block';
         inputTipo.value = modo; 
         
         if(modo === 'video-curto') {
             document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Vídeos Curtos)";
-            document.getElementById('inputTagVideo').placeholder = "Legenda do Reel...";
+            document.getElementById('inputTagVídeo').placeholder = "Legenda do Reel...";
             window.carregarMeusAnunciosSelect(); // CARREGA SERVIÇOS
         } else {
             document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Feed)";
-            document.getElementById('inputTagVideo').placeholder = "Título do Serviço...";
+            document.getElementById('inputTagVídeo').placeholder = "Título do Serviço...";
         }
     } else {
         inputTipo.value = 'foto';
@@ -7706,7 +7741,7 @@ window.uploadStory = async function(input) {
         const url = await getDownloadURL(snap.ref);
 
         const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        const isVideo = file.type.startsWith('video');
+        const isVídeo = file.type.startsWith('video');
 
         // Salva no Banco de Dados
         await addDoc(collection(db, "stories"), {
@@ -7714,7 +7749,7 @@ window.uploadStory = async function(input) {
             autorNome: perfil.user || "Usuário",
             autorFoto: perfil.foto || "https://placehold.co/50",
             midiaUrl: url,
-            tipo: isVideo ? 'video' : 'foto',
+            tipo: isVídeo ? 'video' : 'foto',
             dataCriacao: new Date().toISOString()
         });
 
@@ -8471,7 +8506,7 @@ window.navegarReel = function(direcao) {
         window.indiceReelAtual = novoIndice;
         
         // Efeito visual de troca
-        const mediaArea = document.getElementById('reelVideoArea');
+        const mediaArea = document.getElementById('reelVídeoArea');
         mediaArea.style.opacity = '0.5';
         
         renderizarReelNoModal(novoIndice).then(() => {
@@ -8566,7 +8601,7 @@ window.fecharModalVideoForce = function() {
     document.getElementById('modalPlayerVideo').style.display = 'none';
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
 }
-window.fecharModalVideo = function(e) {
+window.fecharModalVídeo = function(e) {
     if(e.target.id === 'modalPlayerVideo') fecharModalVideoForce();
 }
 
@@ -8577,14 +8612,14 @@ document.addEventListener("keydown", (event) => {
         fecharModalPostForce();
         return;
     }
-    const modalVideo = document.getElementById("modalPlayerVideo");
-    if (modalVideo && modalVideo.style.display === "flex") {
+    const modalVídeo = document.getElementById("modalPlayerVideo");
+    if (modalVídeo && modalVídeo.style.display === "flex") {
         fecharModalVideoForce();
     }
 });
 
 // PLAY/PAUSE
-window.togglePlayVideo = function(e) {
+window.togglePlayVídeo = function(e) {
     const v = e.target;
     const icon = document.getElementById('iconPlayOverlay');
     if(v.paused) {
@@ -10878,7 +10913,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     });
   }
 
-  function addVideosArrows() {
+  function addVídeosArrows() {
     if (!isHome()) return;
     const track = document.getElementById('galeria-dinamica');
     const prev = document.querySelector('.vid-prev');
@@ -11969,7 +12004,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
     // profissionais: setas + drag + sem corte
     addProsArrows();
-    addVideosArrows();
+    addVídeosArrows();
     addPublicacoesArrows();
 
     // drag no carrossel de categorias tb

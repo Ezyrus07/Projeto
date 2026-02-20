@@ -134,7 +134,7 @@
     });
   }
 
-  function setVideosEmpty(){
+  function setVídeosEmpty(){
     const gal = document.getElementById("galeria-dinamica");
     if (!gal) return;
     gal.innerHTML = "";
@@ -469,7 +469,7 @@
     injectStyles();
     bindLocalizacaoBtns();
     renderCategorias();
-    setVideosEmpty();
+    setVídeosEmpty();
     addMetaPlaceholder();
     setupBusca();
 

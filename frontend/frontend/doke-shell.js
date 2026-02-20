@@ -674,8 +674,8 @@
       } catch (_e) {}
       if (shouldBindBadges) {
         try {
-          if (typeof window.monitorarNotificacoesGlobal === "function") {
-            window.monitorarNotificacoesGlobal(authUid);
+          if (typeof window.monitorarNotificaçõesGlobal === "function") {
+            window.monitorarNotificaçõesGlobal(authUid);
           }
         } catch (_e) {}
       }
@@ -1215,8 +1215,8 @@
         try{ applyShellBadges(window.__dokeBadgeTotals || null); }catch(_e){}
         try{
           const uid = String(localStorage.getItem("doke_uid") || "").trim();
-          if(uid && shouldBindBadges && typeof window.monitorarNotificacoesGlobal === "function"){
-            window.monitorarNotificacoesGlobal(uid);
+          if(uid && shouldBindBadges && typeof window.monitorarNotificaçõesGlobal === "function"){
+            window.monitorarNotificaçõesGlobal(uid);
           }
         }catch(_e){}
       };

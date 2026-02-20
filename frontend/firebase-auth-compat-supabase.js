@@ -240,7 +240,7 @@
       if (st.failUntil && now < st.failUntil) return;
       st.running = true;
       ensureRowState[id] = st;
-      // tenta criar/atualizar o registro do usuario para destravar perfil/feed
+      // tenta criar/atualizar o registro do usuário para destravar perfil/feed
       const meta = user?.user_metadata || user?.user_metadata || {};
       const nome = meta?.nome || meta?.name || (user?.email ? String(user.email).split('@')[0] : null) || null;
       const handle = meta?.user || meta?.username || null;
@@ -260,7 +260,7 @@
           return;
         }
         if (msg.includes('relation') && msg.includes('usuarios') && msg.includes('does not exist')) {
-          console.warn('[DOKE] Tabela public.usuarios não existe no Supabase. Rode o arquivo supabase_schema.sql.');
+          console.warn('[DOKE] Tabela public.usuários não existe no Supabase. Rode o arquivo supabase_schema.sql.');
         }
         return;
       }
@@ -351,11 +351,11 @@
 
   window.deleteUser = async function(_userIgnored){
     const sb = ensure();
-    // Supabase nao permite delete de usuario via client sem server-side.
+    // Supabase não permite delete de usuário via client sem server-side.
     const { error } = await sb.auth.signOut();
     if (error) throw error;
     setCurrentUser(null);
-    console.warn("[DOKE] deleteUser: operacao no client nao suportada; usuario apenas deslogado.");
+    console.warn("[DOKE] deleteUser: operacao no client não suportada; usuário apenas deslogado.");
     return true;
   };
 

@@ -106,11 +106,13 @@ body[data-page="chat"] .lista-scroll{
 
 body[data-page="chat"] .chat-footer{
   flex: 0 0 auto;
-  position: sticky;
-  bottom: 0;
+  margin-top: auto;
+  position: relative;
   z-index: 50;
   gap: 8px;
   padding: 10px max(10px, env(safe-area-inset-left)) calc(10px + env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-right)) !important;
+  background: #fff;
+  border-top: 1px solid rgba(0,0,0,0.08);
 }
 
 body[data-page="chat"] #area-input-texto{
@@ -751,3 +753,35 @@ body[data-page="chat"] .pedido-recusa-card{
   }
 }
 
+
+
+/* === CHAT FOOTER FIX - ABOVE BOTTOM NAV (mobile) ===================== */
+:root{ --bottom-nav-height: var(--bottom-nav-height, 72px); }
+
+body[data-page="chat"] .chat-footer{
+  position: fixed !important;
+  left: 0; right: 0;
+  bottom: var(--bottom-nav-height) !important;
+  z-index: 1001 !important;
+  background: rgba(255,255,255,0.98);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(0,0,0,0.06);
+}
+
+body[data-page="chat"] .mensagens-body{
+  padding-bottom: calc(var(--bottom-nav-height) + 92px) !important;
+}
+/* ==================================================================== */
+
+body[data-page="chat"] .badge-new{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:2px 8px;
+  border-radius:999px;
+  font-size:11px;
+  font-weight:800;
+  background: rgba(41,143,127,0.14);
+  color: #298f7f;
+  border: 1px solid rgba(41,143,127,0.25);
+}

@@ -25,7 +25,7 @@
     vidTrack: $("#tiktokScrollNegocios"),
     vidPrev: $("#negVidPrev"),
     vidNext: $("#negVidNext"),
-    vidEmpty: $("#negVideosEmpty"),
+    vidEmpty: $("#negVídeosEmpty"),
     destaques: $("#negDestaques"),
     destaquesEmpty: $("#negDestaquesEmpty"),
     resultados: $("#negResultados"),
@@ -309,7 +309,7 @@
     });
   }
 
-  async function loadVideos() {
+  async function loadVídeos() {
     if (!els.vidTrack) return;
 
     // Start empty; only fill if table exists.
@@ -559,7 +559,7 @@
     bindEvents();
 
     await loadCategories();
-    await loadVideos();
+    await loadVídeos();
     await loadDestaques();
 
     // estado inicial
