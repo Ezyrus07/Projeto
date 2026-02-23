@@ -13,7 +13,7 @@
   if (isClient(w.supabase)) return;
 
   // tenta reapontar para um client já criado
-  const aliases = [w.sb, w.supabaseClient, w.__supabaseClient, w.client];
+  const aliases = [w.__DOKE_SUPABASE_SINGLETON__, w.sb, w.supabaseClient, w.__supabaseClient, w.client];
   for (const a of aliases){
     if (isClient(a)){
       w.supabase = a;
@@ -44,13 +44,14 @@
           db: { schema: 'public' },
           // IMPORTANT: não force Content-Profile globalmente.
           // Deixe o supabase-js enviar os headers de schema quando necessário.
-          auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+          auth: { storageKey: 'doke-shim-auth-token', persistSession: false, autoRefreshToken: false, detectSessionInUrl: false }
         });
         w.supabase = created;
         w.supabaseClient = created;
         w.sb = created;
         w.__supabaseClient = created;
-        try{ console.info('[DOKE] Supabase shim: client criado via createClient().'); }catch(_){ }
+        w.__DOKE_SUPABASE_SINGLETON__ = w.__DOKE_SUPABASE_SINGLETON__ || created;
+        try{ console.info('[DOKE] Supabase shim: client criado via createClient() (stateless).'); }catch(_){ }
         return;
       }catch(e){
         try{ console.warn('[DOKE] Supabase shim: falha ao criar client.', e); }catch(_){ }

@@ -9,11 +9,11 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Endereços | Doke</title>
-<link href="style.css?v=20260220v01" rel="stylesheet"/>
+<link href="style.css?v=20260212v46" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260220v01"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
@@ -299,7 +299,17 @@ main.enderecos-main{
 <div class="item" id="pvSearchSidebarItem"><a aria-label="Pesquisar" class="pv-search-toggle" href="#"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
 <div class="item"><a href="empresas.html"><i class="bx bx-store icon verde"></i><span>Empresas</span></a></div>
 <div class="item"><a href="notificacoes.html"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a></div>
-<div class="item"><a href="chat.html"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a></div>
+<div class="item">
+<a href="mensagens.html">
+<i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+</div>
 <div class="item"><a href="comunidade.html"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a></div>
 <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
 <div class="item"><a href="mais.html"><i class="bx bx-menu icon azul"></i><span>Mais</span></a></div>
@@ -475,17 +485,23 @@ main.enderecos-main{
   }
 
   function sanitizeAddress(addr){
+    const enderecoVal = String((addr && (addr.endereço || addr.endereco)) || "").trim();
+    const numeroVal = String((addr && (addr.número || addr.numero)) || "").trim();
+    const updatedVal = String((addr && (addr.updatedAt || addr.updated_at)) || new Date().toISOString());
     return {
-      id: String(addr?.id || ("addr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8))),
-      label: String(addr?.label || addr?.apelido || "").trim(),
-      cep: normalizeCep(addr?.cep || ""),
-      endereco: String(addr?.endereco || "").trim(),
-      numero: String(addr?.numero || "").trim(),
-      complemento: String(addr?.complemento || "").trim(),
-      referencia: String(addr?.referencia || "").trim(),
-      info: String(addr?.info || "").trim(),
-      principal: !!addr?.principal,
-      updatedAt: String(addr?.updatedAt || addr?.updated_at || new Date().toISOString())
+      id: String((addr && addr.id) || ("addr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8))),
+      label: String((addr && (addr.label || addr.apelido)) || "").trim(),
+      cep: normalizeCep((addr && addr.cep) || ""),
+      endereco: enderecoVal,
+      numero: numeroVal,
+      endereço: enderecoVal,
+      número: numeroVal,
+      complemento: String((addr && addr.complemento) || "").trim(),
+      referencia: String((addr && addr.referencia) || "").trim(),
+      info: String((addr && addr.info) || "").trim(),
+      principal: !!(addr && addr.principal),
+      updatedAt: updatedVal,
+      updated_at: updatedVal
     };
   }
 
@@ -634,8 +650,8 @@ main.enderecos-main{
         id: row.id,
         label: row.apelido || "",
         cep: row.cep || "",
-        endereço: row.endereço || "",
-        número: row.número || "",
+        endereço: row.endereco || row.endereço || "",
+        número: row.numero || row.número || "",
         complemento: row.complemento || "",
         referencia: row.referencia || "",
         info: row.info || "",
@@ -659,8 +675,8 @@ main.enderecos-main{
         uid: looksLikeUuid(uid) ? uid : null,
         apelido: addr.label || "",
         cep: addr.cep || "",
-        endereço: addr.endereço || "",
-        número: addr.número || "",
+        endereco: addr.endereço || addr.endereco || "",
+        numero: addr.número || addr.numero || "",
         complemento: addr.complemento || "",
         referencia: addr.referencia || "",
         info: addr.info || "",

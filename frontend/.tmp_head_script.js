@@ -95,7 +95,7 @@ if (typeof window.__dokeEnsureAuthCompat === "function") window.__dokeEnsureAuth
 
 // Variáveis Globais
 window.arquivoFotoSelecionado = null;
-window.arquivoVídeoSelecionado = null;
+window.arquivoVideoSelecionado = null;
 window.fotosAtuais = [];
 window.indiceAtual = 0;
 window.chatIdAtual = null;
@@ -222,25 +222,25 @@ window.previewImagemPost = function(input) {
     }
 }
 
-window.processarVídeoUpload = function(input) {
+window.processarVideoUpload = function(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
         if (file.size > 100 * 1024 * 1024) { alert("Vídeo muito grande (max 100MB)."); input.value = ""; return; }
-        window.arquivoVídeoSelecionado = file; 
-        document.getElementById('nomeVídeoSelecionado').innerText = "Vídeo: " + file.name;
-        document.getElementById('base64VídeoFile').value = "video_ok";
+        window.arquivoVideoSelecionado = file; 
+        document.getElementById('nomeVideoSelecionado').innerText = "Vídeo: " + file.name;
+        document.getElementById('base64VideoFile').value = "video_ok";
     }
 }
 
 window.removerImagemPost = function() {
     window.arquivoFotoSelecionado = null;
-    window.arquivoVídeoSelecionado = null;
+    window.arquivoVideoSelecionado = null;
     document.getElementById('base64PostImage').value = "";
-    document.getElementById('base64VídeoFile').value = "";
+    document.getElementById('base64VideoFile').value = "";
     document.getElementById('previewPostArea').style.display = 'none';
     document.getElementById('file-post-upload').value = "";
-    if(document.getElementById('inputVídeoFile')) document.getElementById('inputVídeoFile').value = "";
-    if(document.getElementById('nomeVídeoSelecionado')) document.getElementById('nomeVídeoSelecionado').innerText = "";
+    if(document.getElementById('inputVideoFile')) document.getElementById('inputVideoFile').value = "";
+    if(document.getElementById('nomeVideoSelecionado')) document.getElementById('nomeVideoSelecionado').innerText = "";
 }
 
 window.publicarConteudoUnificado = async function(event) {
@@ -266,7 +266,7 @@ window.publicarConteudoUnificado = async function(event) {
 
     try {
         let urlImagem = "";
-        let urlVídeo = "";
+        let urlVideo = "";
 
         // Lógica de Upload (Storage)
         if (window.arquivoFotoSelecionado) {
@@ -275,11 +275,11 @@ window.publicarConteudoUnificado = async function(event) {
             urlImagem = await getDownloadURL(snapImg.ref);
         }
 
-        if (window.arquivoVídeoSelecionado) {
+        if (window.arquivoVideoSelecionado) {
             const folder = tipo === 'video-curto' ? 'reels' : 'trabalhos';
             const refVid = ref(storage, `${folder}/${user.uid}/vid_${Date.now()}`);
-            const snapVid = await uploadBytes(refVid, window.arquivoVídeoSelecionado);
-            urlVídeo = await getDownloadURL(snapVid.ref);
+            const snapVid = await uploadBytes(refVid, window.arquivoVideoSelecionado);
+            urlVideo = await getDownloadURL(snapVid.ref);
         }
 
         let colecao = tipo === 'video-curto' ? 'reels' : (tipo === 'video' ? 'trabalhos' : 'posts');
@@ -296,16 +296,16 @@ window.publicarConteudoUnificado = async function(event) {
         if (tipo === 'video-curto') {
             const selectAnuncio = document.getElementById('selectAnuncioVinculado');
             const opt = selectAnuncio.options[selectAnuncio.selectedIndex];
-            dados.videoUrl = urlVídeo;
+            dados.videoUrl = urlVideo;
             dados.capa = urlImagem;
             dados.descricao = texto;
             dados.anuncioId = selectAnuncio.value; // ID DO SERVIÇO PARA O BOTÃO
             dados.categoria = opt.getAttribute('data-cat') || "Geral"; // TAG VERDE
-            dados.tag = (document.getElementById('inputTagVídeo').value || "NOVO").toUpperCase(); // TAG TOPO
+            dados.tag = (document.getElementById('inputTagVideo').value || "NOVO").toUpperCase(); // TAG TOPO
         } else {
             dados.texto = texto;
             dados.imagem = urlImagem;
-            dados.videoUrl = urlVídeo;
+            dados.videoUrl = urlVideo;
         }
 
         await addDoc(collection(db, colecao), dados);
@@ -520,7 +520,7 @@ window.carregarTrabalhosHome = async function() {
             const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
             const categoria = (data.categoria || "Vídeo curto").toString();
             const duracao = formatShortDuration(data.duracao || data.duracaoSegundos || data.tempo);
-            const capa = data.capa || "https://placehold.co/540x960?text=Vídeo";
+            const capa = data.capa || "https://placehold.co/540x960?text=Video";
             const fotoAutor = data.autorFoto || "https://placehold.co/120x120?text=User";
             const autorNome = (data.autorNome || "@profissional").toString();
             
@@ -695,7 +695,7 @@ window.abrirComentarios = function() {
 
 
 
-window.tocarVídeoDoCard = function(card) {
+window.tocarVideoDoCard = function(card) {
     const src = card.querySelector('.video-src-hidden').value;
     const modal = document.getElementById('modalPlayerVideo');
     const player = document.getElementById('playerPrincipal');
@@ -797,7 +797,7 @@ try {
 
 
 // Notificações Globais
-window.verificarNotificações = function(uid) {
+window.verificarNotificacoes = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
@@ -1652,7 +1652,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (!fetched) {
-            throw (lastLoadError || new Error("Nao foi possível carregar anuncios no momento."));
+            throw (lastLoadError || new Error("Nao foi possivel carregar anuncios no momento."));
         }
 
         // Não mostrar anúncios desativados no feed público
@@ -1897,7 +1897,7 @@ window.aplicarFiltrosBusca = function() {
 window.usarMinhaLocalizacao = function() {
     const statusEl = document.getElementById('radiusStatus');
     if (!navigator.geolocation) {
-        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponível no navegador.';
+        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponivel no navegador.';
         return;
     }
     if (statusEl) statusEl.textContent = 'Obtendo localizacao...';
@@ -1911,7 +1911,7 @@ window.usarMinhaLocalizacao = function() {
             if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
         },
         () => {
-            if (statusEl) statusEl.textContent = 'Nao foi possível obter a localizacao.';
+            if (statusEl) statusEl.textContent = 'Nao foi possivel obter a localizacao.';
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
@@ -3737,7 +3737,7 @@ window.carregarFeedGlobal = async function() {
     });
 
     container.setAttribute('aria-busy', 'false');
-    setupFeedVídeoPreview(container);
+    setupFeedVideoPreview(container);
     setupAntesDepois(container);
 }
 
@@ -3771,7 +3771,7 @@ function setupAntesDepois(container){
 }
 
 
-function setupFeedVídeoPreview(container) {
+function setupFeedVideoPreview(container) {
     if (!container) return;
     const cards = container.querySelectorAll(".feed-publicação-card");
     cards.forEach((card) => {
@@ -3888,7 +3888,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     if(document.getElementById('galeria-dinamica')) {
         carregarReelsHome();
-        enableVídeosCurtosPageScroll();
+        enableVideosCurtosPageScroll();
     }
 
     const cepSalvo = localStorage.getItem('meu_cep_doke');
@@ -4079,7 +4079,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             }
             
             // Ativa notificações de pedidos novos
-            try { window.monitorarNotificaçõesGlobal(user.uid); } catch (e) { console.warn('Falha ao iniciar notificações globais', e); }
+            window.monitorarNotificacoesGlobal(user.uid);
 
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
@@ -5116,19 +5116,7 @@ window.verificarEnter = function(e) {
 window.iniciarGravacao = async function() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        // iOS Safari pode não suportar audio/webm. Escolhemos o melhor mimeType disponível.
-const pickMimeType = () => {
-    if (typeof MediaRecorder === 'undefined') return '';
-    const cands = ['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/aac','audio/ogg;codecs=opus'];
-    for (const m of cands) {
-        try { if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m; } catch (_) {}
-    }
-    return '';
-};
-const mimeType = pickMimeType();
-window.audioMimeType = mimeType || '';
-window.mediaRecorder = mimeType ? new MediaRecorder(stream, { mimeType }) : new MediaRecorder(stream);
-
+        window.mediaRecorder = new MediaRecorder(stream);
         window.audioChunks = [];
 
         window.mediaRecorder.ondataavailable = event => {
@@ -5173,58 +5161,35 @@ window.enviarAudio = function() {
     document.getElementById('uiGravando').style.display = 'none';
 
     window.mediaRecorder.onstop = async () => {
-    const mime = window.audioMimeType || (window.audioChunks[0] && window.audioChunks[0].type) || 'audio/webm';
-    const audioBlob = new Blob(window.audioChunks, { type: mime });
-    const ext = (mime.includes('mp4') ? 'm4a' : (mime.includes('ogg') ? 'ogg' : 'webm'));
-
-    try {
-        // Toast de "Enviando..."
-        const btnEnviar = document.querySelector('.btn-enviar-msg');
-        const originalIcon = btnEnviar ? btnEnviar.innerHTML : "";
-        if (btnEnviar) btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
-
-        // Upload do áudio (Firebase -> fallback Supabase)
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/mp3' });
+        
+        // Upload para Firebase Storage
         const user = auth.currentUser;
-        let downloadUrl = "";
+        const filename = `audios/${user.uid}/${Date.now()}.mp3`;
+        const storageRef = ref(storage, filename);
+        
         try {
-            if (!user || typeof ref !== "function" || typeof uploadBytes !== "function" || typeof getDownloadURL !== "function" || !window.storage) {
-                throw new Error("Firebase Storage indisponível.");
-            }
-            const filename = `audios/${user.uid}/${Date.now()}.${ext}`;
-            const storageRef = ref(storage, filename);
+            // Toast de "Enviando..."
+            const btnEnviar = document.querySelector('.btn-enviar-msg');
+            const originalIcon = btnEnviar.innerHTML;
+            btnEnviar.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
+
             const snapshot = await uploadBytes(storageRef, audioBlob);
-            downloadUrl = await getDownloadURL(snapshot.ref);
-        } catch (fbErr) {
-            console.warn("Falha ao enviar áudio via Firebase Storage, tentando Supabase Storage...", fbErr);
-            const sb = window.sb;
-            if (!sb || !sb.storage || typeof sb.storage.from !== 'function') throw fbErr;
-            const uidFallback = (user && user.uid) || (typeof ensureCurrentUserUid === "function" ? (await ensureCurrentUserUid({ bootstrap: true })) : null) || "anon";
-            const filename = `audios/${uidFallback}/${Date.now()}.${ext}`;
-            const upRes = await sb.storage.from("audios").upload(filename, audioBlob, { upsert:true, cacheControl:"3600", contentType:mime });
-            if (upRes?.error) throw upRes.error;
-            const pub = sb.storage.from("audios").getPublicUrl(filename);
-            downloadUrl = pub?.data?.publicUrl || "";
-            if (!downloadUrl) throw new Error("Falha ao obter URL pública do áudio.");
-        }
+            const downloadUrl = await getDownloadURL(snapshot.ref);
 
-        await enviarParaFirestore({
-            tipo: 'audio',
-            url: downloadUrl,
-            texto: "Mensagem de áudio"
-        });
+            await enviarParaFirestore({
+                tipo: 'audio',
+                url: downloadUrl,
+                texto: "Mensagem de áudio"
+            });
 
-        if (btnEnviar) btnEnviar.innerHTML = originalIcon;
-    } catch (e) {
-        console.error("Erro upload audio:", e);
-        const msg = (String(e?.message || e || "") || "").toLowerCase();
-        if (msg.includes("bucket") && msg.includes("not") && msg.includes("found")) {
-            alert("Erro ao enviar áudio. Crie o bucket \"audios\" no Supabase Storage (público ou com policy) e tente novamente.");
-        } else {
+            btnEnviar.innerHTML = originalIcon;
+
+        } catch (e) {
+            console.error("Erro upload audio:", e);
             alert("Erro ao enviar áudio.");
         }
-    }
-};
-
+    };
 }
 
 // 6. Função Genérica de Envio ao Firestore
@@ -5634,426 +5599,27 @@ window.addEventListener('beforeunload', () => {
 // ============================================================
 // MONITORAMENTO GLOBAL DE NOTIFICAÇÕES (SIDEBAR E MOBILE)
 // ============================================================
-window.monitorarNotificaçõesGlobal = function(uid) {
-    if (!uid) return;
-    const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", uid));
-    const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", uid));
-    const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", uid), where("lida", "==", false));
-
-    const atualizarBadges = (docsRecebidos, docsEnviados, docsSociais) => {
-        let totalNotif = 0;
-        let totalChat = 0;
-
-        // ... (lógica de contagem permanece igual) ...
-        docsRecebidos.forEach(doc => {
-            const data = doc.data();
-            const st = data.status;
-            if ((st === 'pendente' || st === 'pago' || st === 'finalizado') && !data.notificacaoLidaProfissional) totalNotif++;
-            if (st === 'aceito') totalChat++; 
-        });
-        docsEnviados.forEach(doc => {
-            const data = doc.data();
-            const st = data.status;
-            if ((st === 'aceito' || st === 'recusado') && !data.notificacaoLidaCliente) totalNotif++;
-            if (st === 'aceito') totalChat++;
-        });
-        totalNotif += docsSociais.length;
-
-        // ESTILO UNIFICADO (Vermelho padrão #ff2e63)
-        const estiloBadge = `
-            position: absolute; top: 5px; right: 5px;
-            background: #ff2e63; color: white;
-            font-size: 10px; font-weight: bold;
-            min-width: 18px; height: 18px;
-            border-radius: 50%; display: none;
-            align-items: center; justify-content: center;
-            border: 2px solid white; z-index: 100;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        `;
-
-        // --- ATUALIZA O MENU LATERAL E MOBILE ---
-        
-        // 1. Badge de NOTIFICAÇÕES (Sininho)
-document.querySelectorAll('a[href="notificações.html"]').forEach(link => {
-            let badge = link.parentNode.querySelector('.badge-sidebar');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'badge-sidebar';
-                badge.style.cssText = estiloBadge;
-                // Ajuste para mobile vs desktop
-                const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
-                parent.style.position = 'relative';
-                parent.appendChild(badge);
-            }
-            if (totalNotif > 0) { badge.innerText = totalNotif; badge.style.display = 'flex'; } 
-            else { badge.style.display = 'none'; }
-        });
-
-        
-        // 2. Badge de CHAT (Envelope) - Mantém lógica original
-        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
-            let badge = link.parentNode.querySelector('.badge-chat-sidebar');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'badge-chat-sidebar';
-                badge.style.cssText = estiloBadge; // Usa a mesma variável de estilo
-                const parent = link.parentNode.classList.contains('item') ? link.parentNode : link;
-                parent.style.position = 'relative';
-                parent.appendChild(badge);
-            }
-            if (totalChat > 0) { badge.innerText = totalChat; badge.style.display = 'flex'; } 
-            else { badge.style.display = 'none'; }
-        });
-
-        // 3. Badge no shell mobile (header)
-        const syncShellBadge = (href, total) => {
-            document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
-                let badge = link.querySelector('.doke-badge');
-                if (!badge) {
-                    badge = document.createElement('span');
-                    badge.className = 'doke-badge';
-                    link.appendChild(badge);
-                }
-                if (total > 0) {
-                    badge.innerText = total > 99 ? '99+' : String(total);
-                    badge.style.display = 'flex';
-                } else {
-                    badge.style.display = 'none';
-                }
-            });
-        };
-
-        syncShellBadge('notificações.html', totalNotif);
-        syncShellBadge('chat.html', totalChat);
-
-        try {
-            window.__dokeBadgeTotals = { notif: totalNotif, chat: totalChat };
-            window.dispatchEvent(new CustomEvent('doke:badges', { detail: window.__dokeBadgeTotals }));
-        } catch (_) {}
-    };
-// ... (restante dos snapshots igual) ...
-    let cacheRecebidos = [];
-    let cacheEnviados = [];
-    let cacheSociais = [];
-    onSnapshot(qRecebidos, (snap) => { cacheRecebidos = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
-    onSnapshot(qEnviados, (snap) => { cacheEnviados = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
-    onSnapshot(qSociais, (snap) => { cacheSociais = snap.docs; atualizarBadges(cacheRecebidos, cacheEnviados, cacheSociais); });
-}
-
-const styleModal = document.createElement('style');
-styleModal.innerHTML = `
-    .doke-overlay {
-        display: none; position: fixed; z-index: 99999; left: 0; top: 0;
-        width: 100%; height: 100%; background: rgba(0,0,0,0.5);
-        backdrop-filter: blur(4px); justify-content: center; align-items: center;
-        animation: fadeIn 0.2s;
-    }
-    .doke-modal {
-        background: white; width: 90%; max-width: 400px; border-radius: 16px;
-        padding: 25px; text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.3);
-        transform: scale(0.9); transition: transform 0.2s;
-    }
-    .doke-modal.active { transform: scale(1); }
-    .doke-modal h3 { margin: 0 0 10px 0; color: #333; font-size: 1.3rem; }
-    .doke-modal p { color: #666; margin-bottom: 25px; line-height: 1.5; }
-    .doke-btns { display: flex; gap: 10px; justify-content: center; }
-    .btn-doke { flex: 1; padding: 12px; border-radius: 8px; border: none; font-weight: 700; cursor: pointer; font-size: 1rem; }
-    .btn-doke-ok { background: var(--cor0, #0b7768); color: white; }
-    .btn-doke-cancel { background: #f0f0f0; color: #555; }
-    
-    /* Input customizado para o Prompt */
-    .doke-input {
-        width: 100%; padding: 12px; border: 2px solid #eee; border-radius: 8px;
-        font-size: 1.1rem; margin-bottom: 20px; outline: none; text-align: center;
-    }
-    .doke-input:focus { border-color: var(--cor0, #0b7768); }
-
-    /* ======================================================
-   ESTILO DO MODAL DOKE (Prompt, Alert, Confirm)
-   ====================================================== */
-
-/* Fundo escuro com Blur */
-.doke-overlay {
-    background: rgba(0, 0, 0, 0.6) !important;
-    backdrop-filter: blur(8px);
-    transition: opacity 0.3s ease;
-}
-
-/* A Caixa do Modal */
-.doke-modal-box {
-    border-radius: 20px !important;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
-    border: 1px solid rgba(255,255,255,0.1);
-    font-family: 'Poppins', sans-serif;
-    transform: scale(0.95);
-    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.doke-modal-box.active {
-    transform: scale(1);
-}
-
-/* Título */
-#dmTitle {
-    background: white !important;
-    color: var(--cor2) !important; /* Azul Doke */
-    font-size: 1.2rem;
-    padding-top: 25px !important;
-    padding-bottom: 10px !important;
-    border: none !important;
-}
-
-/* Texto do Corpo */
-.dm-body {
-    padding: 0 25px 20px 25px !important;
-    color: #555;
-    font-size: 0.95rem;
-}
-
-/* O Campo de Input (Onde digita o valor) */
-.dm-input {
-    background: #f8f9fa;
-    border: 2px solid #e0e0e0 !important;
-    border-radius: 12px !important;
-    padding: 15px !important;
-    font-size: 1.5rem !important; /* Letra grande para dinheiro */
-    color: var(--cor0) !important; /* Verde Doke */
-    font-weight: 700;
-    text-align: center;
-    transition: all 0.2s;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.03);
-}
-
-.dm-input:focus {
-    border-color: var(--cor0) !important;
-    background: #fff;
-    box-shadow: 0 0 0 4px rgba(11, 119, 104, 0.1) !important;
-}
-
-.dm-input::placeholder {
-    color: #ccc;
-    font-weight: 400;
-    font-size: 1.1rem;
-}
-
-/* Botões */
-#btnDmCancel {
-    border: none !important;
-    background: #f1f3f5 !important;
-    color: #777 !important;
-    font-weight: 600;
-    transition: 0.2s;
-}
-#btnDmCancel:hover { background: #e9ecef !important; color: #333 !important; }
-
-#btnDmConfirm {
-    background: var(--cor0) !important;
-    box-shadow: 0 4px 15px rgba(11, 119, 104, 0.3);
-    transition: 0.2s;
-}
-#btnDmConfirm:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(11, 119, 104, 0.4);
-}
-`;
-document.head.appendChild(styleModal);
-
-// Cria o HTML do modal na página
-const modalHTML = `
-<div id="dokeModalOverlay" class="doke-overlay">
-    <div class="doke-modal" id="dokeModalBox">
-        <h3 id="dokeTitle">Aviso</h3>
-        <p id="dokeMsg">Mensagem</p>
-        <div id="dokeInputArea" style="display:none;">
-            <input type="text" id="dokeInput" class="doke-input" placeholder="">
-        </div>
-        <div class="doke-btns">
-            <button id="dokeBtnCancel" class="btn-doke btn-doke-cancel">Cancelar</button>
-            <button id="dokeBtnOk" class="btn-doke btn-doke-ok">OK</button>
-        </div>
-    </div>
-</div>`;
-document.body.insertAdjacentHTML('beforeend', modalHTML);
-
-// ============================================================
-// SISTEMA CORRIGIDO: MODAIS, MÁSCARAS E LOGOUT (COPIE TUDO)
-// ============================================================
-
-// 1. LOGOUT SEGURO (NÃO APAGA COOKIES)
-// ============================================================
-// SISTEMA CORRIGIDO: MODAIS, MÁSCARAS E LOGOUT
-// ============================================================
-
-// 1. LOGOUT SEGURO
-window.fazerLogout = async function() {
-    if(await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")) {
-        try {
-            const user = window.auth.currentUser;
-            if (user) {
-                // Tenta marcar como offline
-                try {
-                    const userRef = doc(window.db, "usuarios", user.uid);
-                    await updateDoc(userRef, { status: "Offline" });
-                } catch(e) { console.log("Offline update skipped"); }
-            }
-            await window.auth.signOut(); 
-            localStorage.removeItem('usuarioLogado');
-            localStorage.removeItem('doke_usuario_perfil');
-            localStorage.removeItem('doke_uid');
-            window.location.href = 'index.html';
-        } catch (error) {
-            localStorage.removeItem('usuarioLogado');
-            window.location.href = 'index.html';
-        }
-    }
-}
-
-// 2. FUNÇÕES GLOBAIS DE PROMISE
-window.dokeAlert = (msg, title="Aviso") => new Promise(r => setupDokeModal(title, msg, 'alert', r));
-window.dokeConfirm = (msg, title="Confirmação", type="normal") => new Promise(r => setupDokeModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', r));
-window.dokePrompt = (msg, placeholder="", title="Informação") => new Promise(r => setupDokeModal(title, msg, 'prompt', r, placeholder));
-
-// 3. LÓGICA UNIFICADA DO MODAL
-function setupDokeModal(title, msg, type, resolve, placeholder="") {
-    // Garante que o HTML existe
-    injetarHtmlModal();
-
-    const overlay = document.getElementById('dokeGlobalModal');
-    const box = overlay.querySelector('.doke-modal-box');
-    const elTitle = document.getElementById('dmTitle');
-    const elMsg = document.getElementById('dmText');
-    const inputContainer = document.querySelector('.dm-body');
-    const btnCancel = document.getElementById('btnDmCancel');
-    const btnConfirm = document.getElementById('btnDmConfirm');
-
-    // Reset Visual
-    elTitle.innerText = title;
-    elMsg.innerText = msg;
-    btnCancel.style.display = (type === 'alert') ? 'none' : 'block';
-    
-    // Estilo do botão de confirmação
-    if (type === 'confirm-danger') {
-        btnConfirm.style.background = '#e74c3c';
-        btnConfirm.innerText = "Sim, remover";
-    } else {
-        btnConfirm.style.background = '#0b7768';
-        btnConfirm.innerText = (type === 'prompt' || type === 'alert') ? "OK" : "Sim";
-    }
-
-    // --- RECRIA O INPUT (Para limpar máscaras antigas) ---
-    const oldInput = inputContainer.querySelector('input');
-    if(oldInput) oldInput.remove();
-
-    const input = document.createElement('input');
-    input.type = 'text'; // Mantém text para permitir "R$"
-    input.className = 'dm-input'; // Usa a classe CSS injetada
-    input.style.display = (type === 'prompt') ? 'block' : 'none';
-    input.style.width = "100%";
-    input.style.marginTop = "15px";
-    input.style.padding = "10px";
-    input.style.fontSize = "1.2rem";
-    input.style.fontWeight = "bold";
-    input.style.textAlign = "center";
-    input.style.border = "1px solid #ddd";
-    input.style.borderRadius = "8px";
-    input.autocomplete = "off";
-    inputContainer.appendChild(input);
-
-    // --- MÁSCARA DE DINHEIRO INTELIGENTE ---
-    if(type === 'prompt') {
-        input.placeholder = placeholder;
-        
-        // Se for valor monetário (detectado pelo título ou placeholder)
-        const isMoney = placeholder.includes("R$") || title.toLowerCase().includes("valor") || title.toLowerCase().includes("cobranca") || title.toLowerCase().includes("cobrança");
-        const isParcela = title.toLowerCase().includes("parcela");
-
-        if (isMoney) {
-            input.setAttribute('inputmode', 'numeric');
-            
-            // Função de formatação (Estilo ATM: digita 23 vira 0,23)
-            const formatarMoeda = (val) => {
-                let v = val.replace(/\D/g, ""); // Remove tudo que não é número
-                if (v === "") return "";
-                v = (parseInt(v) / 100).toFixed(2) + "";
-                v = v.replace(".", ",");
-                v = v.replace(/(\d)(?=(\d{3})+(?!\d))/g, "$1.");
-                return "R$ " + v;
-            };
-
-            input.addEventListener('input', function(e) {
-                this.value = formatarMoeda(this.value);
-            });
-        } else if (isParcela) {
-            input.setAttribute('inputmode', 'numeric');
-            input.addEventListener('input', function() {
-                this.value = this.value.replace(/\D/g, "");
-            });
-        }
-    }
-
-    // Exibe o modal
-    overlay.style.display = 'flex';
-    if(type === 'prompt') setTimeout(() => input.focus(), 100);
-
-    // --- HANDLERS DOS BOTÕES (Clonagem para remover listeners antigos) ---
-    const newConfirm = btnConfirm.cloneNode(true);
-    const newCancel = btnCancel.cloneNode(true);
-    btnConfirm.parentNode.replaceChild(newConfirm, btnConfirm);
-    btnCancel.parentNode.replaceChild(newCancel, btnCancel);
-
-    newConfirm.onclick = () => {
-        overlay.style.display = 'none';
-        resolve(type === 'prompt' ? input.value : true);
-    };
-
-    newCancel.onclick = () => {
-        overlay.style.display = 'none';
-        resolve(type === 'prompt' ? null : false);
-    };
-}
-
-// Garante que o HTML base do modal exista na página
-function injetarHtmlModal() {
-    if (document.getElementById('dokeGlobalModal')) return;
-    
-    // Injeta CSS se necessário
-    if (!document.getElementById('modal-styles-injected')) {
-        const style = document.createElement('style');
-        style.id = 'modal-styles-injected';
-        style.innerHTML = `
-            .doke-input:focus { border-color: #0b7768; outline: none; background: #f9f9f9; }
-        `;
-        document.head.appendChild(style);
-    }
-
-    const html = `
-    <div id="dokeGlobalModal" class="doke-overlay" style="display:none; position:fixed; z-index:99999; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); backdrop-filter:blur(3px); align-items:center; justify-content:center;">
-        <div class="doke-modal-box" style="background:#fff; width:90%; max-width:400px; border-radius:15px; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,0.3); animation: zoomIn 0.2s;">
-            <div style="padding:15px 20px; background:#f8f9fa; border-bottom:1px solid #eee; font-weight:bold; color:#333; font-size:1.1rem;" id="dmTitle">Aviso</div>
-            <div class="dm-body" style="padding:25px; color:#555;">
-                <p id="dmText" style="margin:0; margin-bottom:10px; font-size:1rem;">Mensagem</p>
-                </div>
-            <div style="padding:15px; background:#fff; display:flex; gap:10px; justify-content:flex-end; border-top:1px solid #f0f0f0;">
-                <button id="btnDmCancel" style="padding:10px 20px; border:1px solid #ddd; background:white; border-radius:8px; cursor:pointer; font-weight:600; color:#666;">Cancelar</button>
-                <button id="btnDmConfirm" style="padding:10px 20px; border:none; background:#0b7768; color:white; border-radius:8px; cursor:pointer; font-weight:bold;">OK</button>
-            </div>
-        </div>
-    </div>`;
-    document.body.insertAdjacentHTML('beforeend', html);
-}
-// ============================================================
-// 14. SISTEMA DE STATUS ONLINE/OFFLINE (Adicione/Substitua no final do script.js)
-// ============================================================
-
-// Função para marcar como Online
-window.marcarComoOnline = async function(uid) {
+window.monitorarNotificacoesGlobal = function(uid) {
     try {
-        const userRef = doc(db, "usuarios", uid);
-        await updateDoc(userRef, { 
-            status: "Online",
-            ultimaVezOnline: new Date().toISOString()
-        });
-    } catch (e) { console.error("Erro status online:", e); }
+        if (!uid) { atualizarBadgesNotificacao(0, 0); return; }
+        const apply = (totals) => {
+            try {
+                const notif = Number(totals?.notif || 0) || 0;
+                const chat = Number(totals?.chat || 0) || 0;
+                atualizarBadgesNotificacao(Math.max(0, notif), Math.max(0, chat));
+            } catch (_) {}
+        };
+        if (!window.__dokeBadgesBridgeBoundTmpHead) {
+            window.__dokeBadgesBridgeBoundTmpHead = true;
+            window.addEventListener('doke:badges', (ev) => apply(ev?.detail || {}));
+        }
+        try { if (window.__dokeBadgeTotals) apply(window.__dokeBadgeTotals); } catch (_) {}
+        try {
+            if (window.DokeAlerts && typeof window.DokeAlerts.startUserPolling === 'function') {
+                window.DokeAlerts.startUserPolling(uid);
+            }
+        } catch (_) {}
+    } catch (_) {}
 };
 
 // Função para marcar como Offline
@@ -6141,7 +5707,7 @@ window.gerarPagamento = async function() {
 // FUNÇÕES ATUALIZADAS (Seguir + Foto Perfil)
 // ============================================================
 
-window.togglePlayVídeo = function(event) {
+window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -6152,10 +5718,10 @@ window.togglePlayVídeo = function(event) {
     const frame = document.querySelector('.video-frame');
     
     // ATUALIZA A FOTO DO BOTÃO PERFIL IGUAL A DO VÍDEO
-    const avatarVídeo = document.getElementById('tiktokAvatarImg');
+    const avatarVideo = document.getElementById('tiktokAvatarImg');
     const btnProfile = document.getElementById('btnProfileImg');
-    if(avatarVídeo && btnProfile) {
-        btnProfile.src = avatarVídeo.src;
+    if(avatarVideo && btnProfile) {
+        btnProfile.src = avatarVideo.src;
     }
 
     if (!video) return;
@@ -6310,8 +5876,8 @@ function sincronizarFotoPerfil() {
     }
 }
 
-// Atualize a função togglePlayVídeo para chamar essa sincronização
-window.togglePlayVídeo = function(event) {
+// Atualize a função togglePlayVideo para chamar essa sincronização
+window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -6358,7 +5924,7 @@ function carregarDadosUsuarioNoPlayer() {
         }
 
         // OBS: Não alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
-        // Quem define a foto do vídeo é a função que cria o Feed (criarHTMLVídeo).
+        // Quem define a foto do vídeo é a função que cria o Feed (criarHTMLVideo).
     }
 }
 
@@ -6375,7 +5941,7 @@ document.addEventListener('DOMContentLoaded', () => {
 // CONTROLE DE PLAY/PAUSE
 // ============================================================
 
-window.togglePlayVídeo = function(event) {
+window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -6412,7 +5978,7 @@ let observerFeed = null; // Observador de scroll
 // 1. CARREGA O FEED (COM PROTEÇÃO CONTRA VÍDEOS ANTIGOS)
 // ============================================================
 
-window.abrirFeedVídeos = async function(idInicial) {
+window.abrirFeedVideos = async function(idInicial) {
     const modal = document.getElementById('modalPlayerVideo');
     const container = document.getElementById('containerFeedScroll');
     
@@ -6425,10 +5991,10 @@ window.abrirFeedVídeos = async function(idInicial) {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"));
         const snapshot = await getDocs(q);
         
-        const promessasVídeos = snapshot.docs.map(async (docSnap) => {
-            const dataVídeo = docSnap.data();
+        const promessasVideos = snapshot.docs.map(async (docSnap) => {
+            const dataVideo = docSnap.data();
             const videoId = docSnap.id;
-            let criadorUid = dataVídeo.uid; 
+            let criadorUid = dataVideo.uid; 
 
             // Dados Padrão (Fallback)
             let fotoFinal = "https://placehold.co/150"; 
@@ -6454,7 +6020,7 @@ window.abrirFeedVídeos = async function(idInicial) {
 
             return {
                 id: videoId,
-                ...dataVídeo,
+                ...dataVideo,
                 autorFoto: fotoFinal,
                 autorNome: nomeFinal,
                 autorUser: userFinal,
@@ -6462,7 +6028,7 @@ window.abrirFeedVídeos = async function(idInicial) {
             };
         });
 
-        videosNoFeed = await Promise.all(promessasVídeos);
+        videosNoFeed = await Promise.all(promessasVideos);
 
         if (videosNoFeed.length === 0) {
             container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum vídeo encontrado.</div>';
@@ -6471,7 +6037,7 @@ window.abrirFeedVídeos = async function(idInicial) {
 
         container.innerHTML = '';
         videosNoFeed.forEach(video => {
-            const htmlItem = criarHTMLVídeo(video);
+            const htmlItem = criarHTMLVideo(video);
             container.insertAdjacentHTML('beforeend', htmlItem);
         });
 
@@ -6493,12 +6059,12 @@ window.abrirFeedVídeos = async function(idInicial) {
 // 2. GERA HTML (COM FUNÇÃO SEGURA DE NAVEGAÇÃO)
 // ============================================================
 
-function criarHTMLVídeo(dados) {
+function criarHTMLVideo(dados) {
     // Esconde botão seguir se for o próprio dono
     const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     const meuUser = (userLogado.user || "").trim().toLowerCase();
-    const donoVídeo = (dados.autorUser || "").trim().toLowerCase(); 
-    const displaySeguir = (meuUser === donoVídeo) ? 'none' : 'inline-block';
+    const donoVideo = (dados.autorUser || "").trim().toLowerCase(); 
+    const displaySeguir = (meuUser === donoVideo) ? 'none' : 'inline-block';
 
     // Garante uma imagem válida
     const imagemSegura = dados.autorFoto && dados.autorFoto.trim() !== "" ? dados.autorFoto : "https://placehold.co/150";
@@ -6543,7 +6109,7 @@ function criarHTMLVídeo(dados) {
                     <span class="action-label">Comentar</span>
                 </button>
 
-                <button class="action-btn" onclick="compartilharVídeo()">
+                <button class="action-btn" onclick="compartilharVideo()">
                     <div class="icon-circle"><i class='bx bx-share-alt'></i></div>
                     <span class="action-label">Enviar</span>
                 </button>
@@ -7261,8 +6827,8 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const item = await fetchSupabasePublicacaoById(publicacaoId);
     if (!item) {
-        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicação indisponível.</div>";
-        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Não foi possível carregar esta publicação.</p>";
+        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicação indisponivel.</div>";
+        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Não foi possivel carregar esta publicação.</p>";
         iconLike.style.pointerEvents = 'auto';
         iconLike.style.opacity = '1';
         return;
@@ -7292,22 +6858,22 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
         mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls playsinline webkit-playsinline x5-playsinline preload="metadata" controlslist="nodownload noplaybackrate noremoteplayback nofullscreen" disablepictureinpicture disableremoteplayback style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
-        const modalVídeo = mediaBox.querySelector("video");
-        if (modalVídeo) {
+        const modalVideo = mediaBox.querySelector("video");
+        if (modalVideo) {
             const forceInlineMode = () => {
                 try {
-                    if (typeof modalVídeo.webkitSetPresentationMode === "function" && modalVídeo.webkitPresentationMode !== "inline") {
-                        modalVídeo.webkitSetPresentationMode("inline");
+                    if (typeof modalVideo.webkitSetPresentationMode === "function" && modalVideo.webkitPresentationMode !== "inline") {
+                        modalVideo.webkitSetPresentationMode("inline");
                     }
                 } catch (_) {}
             };
-            modalVídeo.setAttribute("playsinline", "");
-            modalVídeo.setAttribute("webkit-playsinline", "");
-            modalVídeo.setAttribute("x5-playsinline", "");
-            modalVídeo.addEventListener("loadedmetadata", forceInlineMode);
-            modalVídeo.addEventListener("play", forceInlineMode);
-            modalVídeo.addEventListener("touchstart", forceInlineMode, { passive: true });
-            modalVídeo.addEventListener("webkitbeginfullscreen", (ev) => {
+            modalVideo.setAttribute("playsinline", "");
+            modalVideo.setAttribute("webkit-playsinline", "");
+            modalVideo.setAttribute("x5-playsinline", "");
+            modalVideo.addEventListener("loadedmetadata", forceInlineMode);
+            modalVideo.addEventListener("play", forceInlineMode);
+            modalVideo.addEventListener("touchstart", forceInlineMode, { passive: true });
+            modalVideo.addEventListener("webkitbeginfullscreen", (ev) => {
                 if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
                 forceInlineMode();
             });
@@ -7604,7 +7170,7 @@ window.carregarReelsHome = async function() {
 
             if (!videoUrl) return;
             const startId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
-            const tituloReel = (item.titulo || autorUser || "Vídeo curto");
+            const tituloReel = (item.titulo || autorUser || "Video curto");
             const descReel = (item.descricao || item.legenda || tag || "");
             const html = `
             <div class="dp-reelCard dp-item--clickable" onclick="window.location.href='feed.html?start=${startId}'" onmouseenter="playReelPreview(this)" onmouseleave="stopReelPreview(this)">
@@ -7623,7 +7189,7 @@ window.carregarReelsHome = async function() {
     } catch (e) { console.error(e); }
 }
 
-function enableVídeosCurtosPageScroll() {
+function enableVideosCurtosPageScroll() {
     const wrapper = document.getElementById('galeria-dinamica');
     if (!wrapper || wrapper.dataset.scrollFix === "true") return;
     wrapper.dataset.scrollFix = "true";
@@ -7631,14 +7197,14 @@ function enableVídeosCurtosPageScroll() {
 
 // LÓGICA DO DELAY DE 3 SEGUNDOS
 // LÓGICA DO DELAY DE 3 SEGUNDOS COM RESET DE CAPA
-let timerVídeo;
+let timerVideo;
 
 window.agendarPlay = function(card) {
     const video = card.querySelector('video');
     if (!video) return;
 
     // Agenda o play para daqui a 3 segundos
-    timerVídeo = setTimeout(() => {
+    timerVideo = setTimeout(() => {
         video.play().catch(e => console.log("Autoplay bloqueado"));
     }, 3000);
 }
@@ -7647,7 +7213,7 @@ window.cancelarPlay = function(card) {
     const video = card.querySelector('video');
     
     // 1. Cancela o agendamento se o mouse sair antes de começar
-    clearTimeout(timerVídeo);
+    clearTimeout(timerVideo);
     
     if (video) {
         // 2. Pausa o vídeo
@@ -7662,23 +7228,23 @@ window.cancelarPlay = function(card) {
 
 
 window.ativarModo = function(modo) {
-    const areaVídeo = document.getElementById('campos-video-extra');
+    const areaVideo = document.getElementById('campos-video-extra');
     const inputTipo = document.getElementById('tipoPostagemAtual');
     const inputFoto = document.getElementById('file-post-upload');
 
-    areaVídeo.style.display = 'none'; // Reseta
+    areaVideo.style.display = 'none'; // Reseta
     
     if (modo === 'video' || modo === 'video-curto') {
-        areaVídeo.style.display = 'block';
+        areaVideo.style.display = 'block';
         inputTipo.value = modo; 
         
         if(modo === 'video-curto') {
             document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Vídeos Curtos)";
-            document.getElementById('inputTagVídeo').placeholder = "Legenda do Reel...";
+            document.getElementById('inputTagVideo').placeholder = "Legenda do Reel...";
             window.carregarMeusAnunciosSelect(); // CARREGA SERVIÇOS
         } else {
             document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Feed)";
-            document.getElementById('inputTagVídeo').placeholder = "Título do Serviço...";
+            document.getElementById('inputTagVideo').placeholder = "Título do Serviço...";
         }
     } else {
         inputTipo.value = 'foto';
@@ -7741,7 +7307,7 @@ window.uploadStory = async function(input) {
         const url = await getDownloadURL(snap.ref);
 
         const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        const isVídeo = file.type.startsWith('video');
+        const isVideo = file.type.startsWith('video');
 
         // Salva no Banco de Dados
         await addDoc(collection(db, "stories"), {
@@ -7749,7 +7315,7 @@ window.uploadStory = async function(input) {
             autorNome: perfil.user || "Usuário",
             autorFoto: perfil.foto || "https://placehold.co/50",
             midiaUrl: url,
-            tipo: isVídeo ? 'video' : 'foto',
+            tipo: isVideo ? 'video' : 'foto',
             dataCriacao: new Date().toISOString()
         });
 
@@ -8506,7 +8072,7 @@ window.navegarReel = function(direcao) {
         window.indiceReelAtual = novoIndice;
         
         // Efeito visual de troca
-        const mediaArea = document.getElementById('reelVídeoArea');
+        const mediaArea = document.getElementById('reelVideoArea');
         mediaArea.style.opacity = '0.5';
         
         renderizarReelNoModal(novoIndice).then(() => {
@@ -8601,7 +8167,7 @@ window.fecharModalVideoForce = function() {
     document.getElementById('modalPlayerVideo').style.display = 'none';
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
 }
-window.fecharModalVídeo = function(e) {
+window.fecharModalVideo = function(e) {
     if(e.target.id === 'modalPlayerVideo') fecharModalVideoForce();
 }
 
@@ -8612,14 +8178,14 @@ document.addEventListener("keydown", (event) => {
         fecharModalPostForce();
         return;
     }
-    const modalVídeo = document.getElementById("modalPlayerVideo");
-    if (modalVídeo && modalVídeo.style.display === "flex") {
+    const modalVideo = document.getElementById("modalPlayerVideo");
+    if (modalVideo && modalVideo.style.display === "flex") {
         fecharModalVideoForce();
     }
 });
 
 // PLAY/PAUSE
-window.togglePlayVídeo = function(e) {
+window.togglePlayVideo = function(e) {
     const v = e.target;
     const icon = document.getElementById('iconPlayOverlay');
     if(v.paused) {
@@ -10913,7 +10479,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     });
   }
 
-  function addVídeosArrows() {
+  function addVideosArrows() {
     if (!isHome()) return;
     const track = document.getElementById('galeria-dinamica');
     const prev = document.querySelector('.vid-prev');
@@ -12004,7 +11570,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
     // profissionais: setas + drag + sem corte
     addProsArrows();
-    addVídeosArrows();
+    addVideosArrows();
     addPublicacoesArrows();
 
     // drag no carrossel de categorias tb

@@ -16,11 +16,11 @@
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <meta content="#0b7768" name="theme-color"/>
-<link href="style.css?v=20260220v01" rel="stylesheet"/>
+<link href="style.css?v=20260209v32" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<script defer="" src="script.js?v=20260220v01"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
 <style>
         /* ======================================================
            ESTILOS ESPECIFICOS DA PÁGINA NOTIFICAÇÕES
@@ -449,9 +449,15 @@
 </a>
 </div>
 <div class="item">
-<a href="chat.html">
+<a href="mensagens.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
 </a>
 </div>
 <div class="item">
@@ -555,7 +561,7 @@
         const { getFirestore, collection, query, where, getDocs, orderBy, doc, updateDoc, deleteDoc } = window;
         const { getAuth, onAuthStateChanged } = window;
 
-        let todasNotificações = [];
+        let todasNotificacoes = [];
         let dismissedIds = new Set();
         let currentUserUid = null;
         let currentFilter = "todas";
@@ -685,7 +691,7 @@
 
                 if (window.verificarEstadoLogin) window.verificarEstadoLogin();
                 currentUserUid = user.uid;
-                carregarNotificações(user.uid);
+                carregarNotificacoes(user.uid);
             })();
         });
 
@@ -822,9 +828,9 @@ function parseNotifDate(v) {
     return isNaN(d.getTime()) ? new Date() : d;
 }
 
-async function carregarNotificações(uid) {
+async function carregarNotificacoes(uid) {
     const container = document.getElementById('lista-notificacoes');
-    todasNotificações = [];
+    todasNotificacoes = [];
     dismissedIds = carregarDismissed(uid);
 
     try {
@@ -872,7 +878,7 @@ async function carregarNotificações(uid) {
 
             if(data.status === 'pendente') {
                 const servico = data.servicoReferencia || data.descricaoBase || data.titulo || 'Serviço';
-                todasNotificações.push({
+                todasNotificacoes.push({
                     id: doc.id,
                     role: 'profissional',
                     titulo: "Novo Orçamento",
@@ -880,13 +886,13 @@ async function carregarNotificações(uid) {
                     tipo: 'pedidos',
                     status: statusLido,
                     time: parseNotifDate(data.dataPedido),
-                    iconClass: 'bx-file-blank', colorClass: 'ni-pedido', link: `chat.html?chatId=${doc.id}`,
+                    iconClass: 'bx-file-blank', colorClass: 'ni-pedido', link: `mensagens.html?chatId=${doc.id}`,
                     actor: data.clienteNome || 'Cliente',
                     avatar: data.clienteFoto || ''
                 });
             }
             else if(data.status === 'pago') {
-                todasNotificações.push({
+                todasNotificacoes.push({
                     id: doc.id,
                     role: 'profissional',
                     titulo: "Pagamento em Garantia",
@@ -894,13 +900,13 @@ async function carregarNotificações(uid) {
                     tipo: 'financeiro',
                     status: statusLido,
                     time: parseNotifDate(data.dataPagamento || new Date()),
-                    iconClass: 'bx-shield-quarter', colorClass: 'ni-money', link: `chat.html?chatId=${doc.id}`,
+                    iconClass: 'bx-shield-quarter', colorClass: 'ni-money', link: `mensagens.html?chatId=${doc.id}`,
                     actor: data.clienteNome || 'Cliente',
                     avatar: data.clienteFoto || ''
                 });
             }
             else if(data.status === 'finalizado') {
-                todasNotificações.push({
+                todasNotificacoes.push({
                     id: doc.id,
                     role: 'profissional',
                     titulo: "Pagamento Liberado!",
@@ -921,7 +927,7 @@ async function carregarNotificações(uid) {
             const statusLido = data.notificacaoLidaCliente === true ? 'read' : 'unread';
 
             if (data.status === 'aceito') {
-                todasNotificações.push({
+                todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
                     titulo: "Orçamento Aceito!",
@@ -929,13 +935,13 @@ async function carregarNotificações(uid) {
                     tipo: 'pedidos',
                     status: statusLido,
                     time: parseNotifDate(data.dataAtualizacao || data.dataPedido),
-                    iconClass: 'bx-check-circle', colorClass: 'ni-info', link: `chat.html?chatId=${doc.id}`,
+                    iconClass: 'bx-check-circle', colorClass: 'ni-info', link: `mensagens.html?chatId=${doc.id}`,
                     actor: data.profissionalNome || data.nomeProfissional || data.paraNome || 'Profissional',
                     avatar: data.profissionalFoto || data.paraFoto || data.fotoProfissional || ''
                 });
             } else if (data.status === 'recusado') {
                 const motivo = data.motivoRecusa ? `Motivo: ${data.motivoRecusa}` : "O profissional não pode atender no momento.";
-                todasNotificações.push({
+                todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
                     titulo: "Pedido Recusado",
@@ -943,12 +949,12 @@ async function carregarNotificações(uid) {
                     tipo: 'pedidos',
                     status: statusLido,
                     time: parseNotifDate(data.dataAtualizacao || data.dataPedido),
-                    iconClass: 'bx-x-circle', colorClass: 'ni-alerta', link: `chat.html?chatId=${doc.id}`,
+                    iconClass: 'bx-x-circle', colorClass: 'ni-alerta', link: `mensagens.html?chatId=${doc.id}`,
                     actor: data.profissionalNome || data.nomeProfissional || data.paraNome || 'Profissional',
                     avatar: data.profissionalFoto || data.paraFoto || data.fotoProfissional || ''
                 });
             } else if (data.status === 'finalizado' && !data.avaliado) {
-                todasNotificações.push({
+                todasNotificacoes.push({
                     id: doc.id,
                     role: 'cliente',
                     titulo: "Avalie o Serviço",
@@ -965,12 +971,12 @@ async function carregarNotificações(uid) {
 
         snapSociais.forEach(docSnap => {
             const data = docSnap.data() || {};
-            todasNotificações.push(montarNotificacaoSocial(data, docSnap.id));
+            todasNotificacoes.push(montarNotificacaoSocial(data, docSnap.id));
         });
 
-        todasNotificações = dedupeNotificações(todasNotificações)
+        todasNotificacoes = dedupeNotificacoes(todasNotificacoes)
             .filter(n => !dismissedIds.has(String(n.id)));
-        todasNotificações.sort((a, b) => b.time - a.time);
+        todasNotificacoes.sort((a, b) => b.time - a.time);
         atualizarResumo();
         renderizarLista(aplicarFiltros());
         atualizarBadge();
@@ -991,7 +997,7 @@ async function carregarNotificações(uid) {
         }
 
         function aplicarFiltros() {
-            let filtrados = todasNotificações.slice();
+            let filtrados = todasNotificacoes.slice();
             if (currentFilter !== 'todas') {
                 filtrados = filtrados.filter(n => n.tipo === currentFilter);
             }
@@ -1004,7 +1010,7 @@ async function carregarNotificações(uid) {
             return filtrados;
         }
 
-        function dedupeNotificações(lista) {
+        function dedupeNotificacoes(lista) {
             const seen = new Map();
             lista.forEach((notif) => {
                 let key = `${notif.role || "x"}|${notif.id || ""}`;
@@ -1109,10 +1115,10 @@ async function carregarNotificações(uid) {
         }
 
         function atualizarResumo() {
-            const total = todasNotificações.length;
-            const unread = todasNotificações.filter(n => n.status === 'unread').length;
+            const total = todasNotificacoes.length;
+            const unread = todasNotificacoes.filter(n => n.status === 'unread').length;
             const agora = Date.now();
-            const ultimas24 = todasNotificações.filter(n => (agora - new Date(n.time).getTime()) <= 24 * 60 * 60 * 1000).length;
+            const ultimas24 = todasNotificacoes.filter(n => (agora - new Date(n.time).getTime()) <= 24 * 60 * 60 * 1000).length;
             const elTotal = document.getElementById('summary-total');
             const elUnread = document.getElementById('summary-unread');
             const el24 = document.getElementById('summary-24h');
@@ -1134,10 +1140,10 @@ async function carregarNotificações(uid) {
 
             try {
                 // Filtra apenas as não lidas para não gastar recursos
-                const nãoLidas = todasNotificações.filter(n => n.status === 'unread');
+                const naoLidas = todasNotificacoes.filter(n => n.status === 'unread');
                 
                 // Cria um array de promessas para atualizar tudo junto
-                const promises = nãoLidas.map(notif => {
+                const promises = naoLidas.map(notif => {
                     if (notif.role === 'social') {
                         const docRef = doc(db, "notificacoes", notif.id);
                         return updateDoc(docRef, { lida: true });
@@ -1153,7 +1159,7 @@ async function carregarNotificações(uid) {
                 await Promise.all(promises);
                 
                 // Atualiza o estado local para evitar inconsistencia sem recarregar
-                todasNotificações.forEach(n => n.status = 'read');
+                todasNotificacoes.forEach(n => n.status = 'read');
                 atualizarResumo();
                 renderizarLista(aplicarFiltros());
                 atualizarBadge();
@@ -1208,7 +1214,7 @@ async function carregarNotificações(uid) {
                 await marcarNotificacaoLida(notif);
             }
             if (notif.id) salvarDismissed(notif.id);
-            todasNotificações = todasNotificações.filter(n => n.id !== notif.id);
+            todasNotificacoes = todasNotificacoes.filter(n => n.id !== notif.id);
             atualizarResumo();
             atualizarBadge();
             renderizarLista(aplicarFiltros());
@@ -1255,8 +1261,8 @@ async function carregarNotificações(uid) {
                 const card = event.target.closest('.notif-card');
                 if (!card) return;
                 const notifId = card.dataset.id || "";
-                const notif = todasNotificações.find(n => String(n.id) === String(notifId))
-                    || todasNotificações.find(n => n.link === card.dataset.link);
+                const notif = todasNotificacoes.find(n => String(n.id) === String(notifId))
+                    || todasNotificacoes.find(n => n.link === card.dataset.link);
                 if (!notif) return;
                 if (btn) {
                     event.stopPropagation();
@@ -1280,10 +1286,10 @@ async function carregarNotificações(uid) {
         }
 
         function atualizarBadge() {
-            const nãoLidas = todasNotificações.filter(n => n.status === 'unread').length;
+            const naoLidas = todasNotificacoes.filter(n => n.status === 'unread').length;
             const badge = document.getElementById('badge-count');
-            if (nãoLidas > 0) {
-                badge.innerText = nãoLidas;
+            if (naoLidas > 0) {
+                badge.innerText = naoLidas;
                 badge.style.display = 'inline-block';
             } else {
                 badge.style.display = 'none';

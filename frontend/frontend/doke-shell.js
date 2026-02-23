@@ -8,7 +8,8 @@
     comunidades: "comunidade.html",
     negocios: "negocios.html",
     perfil: "meuperfil.html",
-    chat: "chat.html",
+    chat: "mensagens.html",
+    pedidos: "pedidos.html",
     notif: "notificacoes.html",
     mais: "mais.html"
   };
@@ -674,8 +675,8 @@
       } catch (_e) {}
       if (shouldBindBadges) {
         try {
-          if (typeof window.monitorarNotificaçõesGlobal === "function") {
-            window.monitorarNotificaçõesGlobal(authUid);
+          if (typeof window.monitorarNotificacoesGlobal === "function") {
+            window.monitorarNotificacoesGlobal(authUid);
           }
         } catch (_e) {}
       }
@@ -753,6 +754,7 @@
         <div class="doke-logo"><img src="${LOGO_SRC}" alt="Doke" style="height:28px;width:auto;display:block;"></div>
         <div class="doke-h-actions">
           <a class="doke-icon-btn" href="${PAGES.notif}" aria-label="Notificações"><i class='bx bx-bell'></i><span class="doke-badge" style="display:none">0</span></a>
+          <a class="doke-icon-btn doke-pedidos-btn" href="${PAGES.pedidos}" aria-label="Pedidos"><i class='bx bx-package'></i></a>
           <a class="doke-icon-btn" href="${PAGES.chat}" aria-label="Mensagens"><i class='bx bx-message-rounded-dots'></i><span class="doke-badge" style="display:none">0</span></a>
           <div class="profile-container doke-mobile-profile">
             <button class="doke-avatar-btn" type="button" aria-label="Perfil">
@@ -791,6 +793,7 @@
           <a href="${PAGES.comunidades}"><i class='bx bx-group'></i> Comunidades</a>
           <a href="${PAGES.notif}"><i class='bx bx-bell'></i> Notificações</a>
           <a href="${PAGES.chat}"><i class='bx bx-message-rounded-dots'></i> Mensagens</a>
+          <a href="${PAGES.pedidos}"><i class='bx bx-package'></i> Pedidos</a>
           <a href="${profileHref}"><i class='bx bx-user'></i> Perfil</a>
           <a href="${PAGES.mais}"><i class='bx bx-dots-horizontal-rounded'></i> Mais</a>
         </nav>
@@ -1215,8 +1218,8 @@
         try{ applyShellBadges(window.__dokeBadgeTotals || null); }catch(_e){}
         try{
           const uid = String(localStorage.getItem("doke_uid") || "").trim();
-          if(uid && shouldBindBadges && typeof window.monitorarNotificaçõesGlobal === "function"){
-            window.monitorarNotificaçõesGlobal(uid);
+          if(uid && shouldBindBadges && typeof window.monitorarNotificacoesGlobal === "function"){
+            window.monitorarNotificacoesGlobal(uid);
           }
         }catch(_e){}
       };

@@ -252,21 +252,6 @@
     return "id";
   }
 
-  function normalizeTableName(name){
-    // Remove acentos e caracteres estranhos para evitar tabelas inconsistentes
-    // (ex: "notificaçõ​es" vs "notificacoes").
-    const raw = String(name || "").trim();
-    if (!raw) return "";
-    try {
-      return raw
-        .normalize('NFD')
-        .replace(/[\u0300-\u036f]/g, '')
-        .replace(/\s+/g, '_');
-    } catch (_e) {
-      return raw.replace(/\s+/g, '_');
-    }
-  }
-
   function singularize(name){
     const n = String(name||"").trim();
     if (!n) return "";
@@ -276,13 +261,42 @@
     return n;
   }
 
-  function buildTableFromPath(parts){
+  
+  function normalizeTableNameDoke(name){
+    let t = (name == null ? "" : String(name)).trim();
+    if(!t) return t;
+
+    // corrige mojibake comum (UTF-8 interpretado como latin1)
+    t = t
+      .replace(/notificaÃ§Ãµes/gi,'notificacoes')
+      .replace(/Ã§/g,'ç').replace(/Ãµ/g,'õ').replace(/Ã¡/g,'á').replace(/Ã£/g,'ã')
+      .replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú')
+      .replace(/Ã‡/g,'Ç').replace(/Ã“/g,'Ó').replace(/Ã‰/g,'É').replace(/Ãš/g,'Ú');
+
+    // remove acentos e símbolos
+    try{ t = t.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(_e){}
+    t = t.replace(/[^\w]/g,'').toLowerCase();
+
+    const map = {
+      notificacoes: 'notificacoes',
+      pedidos: 'pedidos',
+      usuarios: 'usuarios',
+      anuncios: 'anuncios',
+      publicacoes: 'publicacoes',
+      posts: 'posts',
+      mensagens: 'mensagens',
+      conversas: 'conversas'
+    };
+    return map[t] || t;
+  }
+
+function buildTableFromPath(parts){
     // parts: [collection, docId, subcollection, docId, ...]
     // Firestore path: pedidos/{id}/mensagens  -> table pedidos_mensagens + parent (pedidoId)
-    const c0 = normalizeTableName(parts[0]);
+    const c0 = normalizeTableNameDoke(parts[0]);
     const id0 = parts[1];
-    const c1 = normalizeTableName(parts[2]);
-    const table = normalizeTableName(`${c0}_${c1}`);
+    const c1 = normalizeTableNameDoke(parts[2]);
+    const table = `${c0}_${c1}`;
 
     // Algumas tabelas do projeto usam camelCase (ex: "pedidoId") e outras snake_case (ex: conversa_id).
     // Para evitar erros do tipo: "column ... does not exist" seguido de NOT NULL violation,
@@ -327,8 +341,8 @@
     const args = Array.from(arguments);
     // Support: collection(db, 'pedidos')
     // Support subcollection: collection(db, 'pedidos', pedidoId, 'mensagens')
-    if (args.length === 1 && typeof args[0] === 'string') return { table: normalizeTableName(args[0]) };
-    if (args.length === 2 && typeof args[1] === 'string') return { table: normalizeTableName(args[1]) };
+    if (args.length === 1 && typeof args[0] === 'string') return { table: normalizeTableNameDoke(args[0]) };
+    if (args.length === 2 && typeof args[1] === 'string') return { table: normalizeTableNameDoke(args[1]) };
 
     if (isPathCollectionArgs(args)) {
       const parts = args.slice(1); // remove db
@@ -338,7 +352,7 @@
 
     // Fallback: try second arg as table
     const tableName = (typeof args[1] === 'string') ? args[1] : String(args[0]||'');
-    return { table: normalizeTableName(tableName) };
+    return { table: normalizeTableNameDoke(tableName) };
   };
 
   window.where = function(field, op, value){ return { kind:"where", field, op, value }; };
@@ -346,19 +360,19 @@
   window.limit = function(n){ return { kind:"limit", n }; };
 
   window.query = function(coll, ...clauses){
-    return { table: coll.table, clauses, parent: coll.parent || null };
+    return { table: normalizeTableNameDoke(coll.table), clauses, parent: coll.parent || null };
   };
 
   window.doc = function(){
     const args = Array.from(arguments);
     // Firestore: doc(collectionRef, id)
     if (args[0] && args[0].table && typeof args[1] === 'string' && args.length === 2) {
-      return { table: normalizeTableName(args[0].table), id: args[1], parent: args[0].parent || null };
+      return { table: args[0].table, id: args[1], parent: args[0].parent || null };
     }
 
     // Firestore: doc(db, 'pedidos', id)
     if (args.length === 3 && typeof args[1] === 'string' && typeof args[2] === 'string') {
-      return { table: normalizeTableName(args[1]), id: args[2] };
+      return { table: normalizeTableNameDoke(args[1]), id: args[2] };
     }
 
     // Firestore: doc(db, 'pedidos', pedidoId, 'mensagens', msgId)
@@ -368,9 +382,9 @@
     }
 
     // Fallback
-    const table = normalizeTableName(String(args[1]||args[0]||''));
+    const table = String(args[1]||args[0]||'');
     const id = String(args[2]||'');
-    return { table, id };
+    return { table: normalizeTableNameDoke(table), id };
   };
 
   window.increment = function(n){
@@ -398,17 +412,19 @@
   function shouldReturnEmpty(error){
     const status = error?.status;
     const msg = String(error?.message || error?.details || "");
-    const lmsg = msg.toLowerCase();
+    const hint = String(error?.hint || "");
     const code = String(error?.code || "");
+    const joined = `${msg} ${hint}`;
+    const lmsg = joined.toLowerCase();
     if (status === 404) return true;
     // RLS / auth issues: keep app running and render empty state
     if (status === 401 || status === 403) return true;
     if (lmsg.includes("permission denied") || lmsg.includes("not authorized")) return true;
     if (status === 400 && msg.includes("invalid input syntax for type uuid")) return true;
-    // Tabela inexistente / schema cache
-    if (code === "PGRST205") return true;
-    if (lmsg.includes("could not find the table") || lmsg.includes("schema cache")) return true;
     if (msg.includes("does not exist")) return true;
+    if (/pgrst205/i.test(code)) return true; // tabela ausente no schema cache
+    if (lmsg.includes("schema cache") && lmsg.includes("could not find the table")) return true;
+    if (lmsg.includes("could not find the") && lmsg.includes("column")) return true;
     return false;
   }
 
@@ -416,6 +432,16 @@
     if (!name) return null;
     const last = String(name).trim().split(".").pop();
     return last.replace(/^["']|["']$/g, "");
+  }
+
+  function normalizeQueryFieldNameDoke(field){
+    return String(field || '').trim().replace(/^["']|["']$/g, "");
+  }
+
+  function quotePgField(field){
+    // No compat REST (DokeQuery), filtros devem usar a chave sem aspas.
+    // Isso evita URLs com %22campo%22=eq... e reduz 400 em schemas legados.
+    return String(normalizeQueryFieldNameDoke(field) || "");
   }
 
   function parseMissingColumn(error){
@@ -557,19 +583,19 @@
     const fkCandidates = (parent && parentFks.length) ? parentFks : [null];
 
     const buildBase = (fk) => {
-      let base = client.from(q.table).select("*");
-      if (parent && parent.id && fk) base = base.eq(fk, parent.id);
+      let base = client.from(normalizeTableNameDoke(q.table)).select("*");
+      if (parent && parent.id && fk) base = base.eq(quotePgField(fk), parent.id);
       for (const c of whereClauses) {
         const op = c.op;
-        if (op === "==" || op === "=") base = base.eq(c.field, c.value);
-        else if (op === "!=") base = base.neq(c.field, c.value);
-        else if (op === ">") base = base.gt(c.field, c.value);
-        else if (op === ">=") base = base.gte(c.field, c.value);
-        else if (op === "<") base = base.lt(c.field, c.value);
-        else if (op === "<=") base = base.lte(c.field, c.value);
-        else if (op === "in") base = base.in(c.field, c.value);
-        else if (op === "array-contains") base = base.contains(c.field, [c.value]);
-        else base = base.eq(c.field, c.value);
+        if (op === "==" || op === "=") base = base.eq(quotePgField(c.field), c.value);
+        else if (op === "!=") base = base.neq(quotePgField(c.field), c.value);
+        else if (op === ">") base = base.gt(quotePgField(c.field), c.value);
+        else if (op === ">=") base = base.gte(quotePgField(c.field), c.value);
+        else if (op === "<") base = base.lt(quotePgField(c.field), c.value);
+        else if (op === "<=") base = base.lte(quotePgField(c.field), c.value);
+        else if (op === "in") base = base.in(quotePgField(c.field), c.value);
+        else if (op === "array-contains") base = base.contains(quotePgField(c.field), [c.value]);
+        else base = base.eq(quotePgField(c.field), c.value);
       }
       return base;
     };
@@ -607,7 +633,7 @@
       let r = buildBase(fk);
       for (const o of orders) {
         const asc = (String(o.dir || "asc").toLowerCase() !== "desc");
-        r = r.order(o.field, { ascending: asc });
+        r = r.order(quotePgField(o.field), { ascending: asc });
       }
       if (Number.isFinite(limitN)) r = r.limit(limitN);
       return await withTimeout(r, READ_TIMEOUT_MS, `timeout_supabase_getdocs_${String(q.table || "unknown")}`);
@@ -685,8 +711,8 @@
 
     let lastErr = null;
     for (const fk of fkCandidates) {
-      let q = client.from(ref.table).select("*").eq(pkField(ref.table), ref.id);
-      if (parent && parent.id && fk) q = q.eq(fk, parent.id);
+      let q = client.from(normalizeTableNameDoke(ref.table)).select("*").eq(pkField(ref.table), ref.id);
+      if (parent && parent.id && fk) q = q.eq(quotePgField(fk), parent.id);
 
       let data = null;
       let error = null;
@@ -854,11 +880,11 @@
     if (!client) throw new Error("Supabase client não inicializado (supabase-init.js).");
     if (!ref || !ref.table || !ref.id) return true;
     const runDelete = async () => {
-      let q = client.from(ref.table).delete().eq(pkField(ref.table), ref.id);
+      let q = client.from(normalizeTableNameDoke(ref.table)).delete().eq(pkField(ref.table), ref.id);
       if (ref.parent && ref.parent.id) {
         const fks = (ref.parent.fks && ref.parent.fks.length) ? ref.parent.fks : (ref.parent.fk ? [ref.parent.fk] : []);
-        if (fks.length === 1) q = q.eq(fks[0], ref.parent.id);
-        else if (fks.length > 1) q = q.or(fks.map(k => `${k}.eq.${ref.parent.id}`).join(','));
+        if (fks.length === 1) q = q.eq(quotePgField(fks[0]), ref.parent.id);
+        else if (fks.length > 1) q = q.or(fks.map(k => `${quotePgField(k)}.eq.${ref.parent.id}`).join(','));
       }
       const { error } = await q;
       if (error) throw error;

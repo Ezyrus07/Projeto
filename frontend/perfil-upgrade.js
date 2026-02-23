@@ -30,19 +30,11 @@
     }
   };
   const fmtDateShort = (iso)=>{
-
     if(!iso) return "";
     const d = new Date(iso);
     if(Number.isNaN(d.getTime())) return "";
     return d.toLocaleDateString('pt-BR');
   };
-  const truncateText = (value, max)=>{
-    const s = String(value ?? '').trim();
-    if(!s) return '';
-    if(s.length <= max) return s;
-    return s.slice(0, Math.max(0, max-3)) + '...';
-  };
-
   const setIconButton = (btn, icon, title)=>{
     if(!btn) return;
     btn.innerHTML = `<i class='bx ${icon}'></i>`;
@@ -280,7 +272,7 @@
           window.location.href = "login.html";
           return;
         }
-        window.location.href = `chat.html?uid=${encodeURIComponent(otherUidMsg)}`;
+        window.location.href = `mensagens.html?uid=${encodeURIComponent(otherUidMsg)}`;
       };
     };
     if(!btn) return;
@@ -956,72 +948,1456 @@
         raw.authUid
       );
       if(!uid) return null;
-            return `<div class="dp-itemAuthor">${avatar}<div><div class="dp-itemUser">@${escapeHtml(u||"usuario")}</div></div></div>`;
-          })()}
-          <b class="dp-itemTitle">${escapeHtml(titleShort)}</b>
-          ${descShort ? `<p class="dp-itemDesc">${escapeHtml(descShort)}</p>` : ``}
+      const meta = raw.user_metadata || {};
+      return {
+        id: uid,
+        uid,
+        email: raw.email || null,
+        user_metadata: {
+          nome: meta.nome || raw.nome || null,
+          user: meta.user || raw.user || null,
+          foto: meta.foto || meta.avatar_url || raw.foto || raw.avatar_url || null
+        }
+      };
+    }
+
+    function decodeJwtPayload(token){
+      try {
+        const parts = String(token || "").split(".");
+        if (parts.length < 2) return null;
+        const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+        const pad = "=".repeat((4 - (b64.length % 4)) % 4);
+        const json = atob(b64 + pad);
+        return JSON.parse(json);
+      } catch(_){
+        return null;
+      }
+    }
+
+    function pickCachedUser(){
+      try {
+        const compat = normalizeAuthUserCandidate(window.auth?.currentUser || null);
+        if (compat) return compat;
+      } catch(_){}
+      if (window.DOKE_ALLOW_PROFILE_ONLY_AUTH === true) {
+        try {
+          const cached = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
+          const uid = normalizeIdentity(
+            cached?.uid ||
+            cached?.id ||
+            cached?.user_uid ||
+            cached?.userId ||
+            localStorage.getItem("doke_uid")
+          );
+          if (uid) {
+            return {
+              id: uid,
+              uid,
+              email: cached?.email || null,
+              user_metadata: {
+                nome: cached?.nome || null,
+                user: cached?.user || null,
+                foto: cached?.foto || null
+              }
+            };
+          }
+        } catch(_) {}
+      }
+
+      try {
+        const keys = Object.keys(localStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+        for (const k of keys) {
+          const raw = localStorage.getItem(k);
+          if (!raw) continue;
+          let parsed = null;
+          try { parsed = JSON.parse(raw); } catch(_) { parsed = null; }
+          if (!parsed || typeof parsed !== "object") continue;
+          const sessions = [parsed, parsed.currentSession, parsed.session, parsed.data?.session].filter(Boolean);
+          for (const sess of sessions) {
+            const direct = normalizeAuthUserCandidate(sess?.user || null);
+            if (direct) return direct;
+            const payload = decodeJwtPayload(sess?.access_token || "");
+            const expMs = Number(payload?.exp || 0) * 1000;
+            if (expMs && expMs < (Date.now() - 60000)) continue;
+            const uid = normalizeIdentity(payload?.sub);
+            if (!uid) continue;
+            return { id: uid, uid, email: payload?.email || null, user_metadata: {} };
+          }
+        }
+      } catch(_){}
+
+      return null;
+    }
+
+    try{
+      const { data, error } = await client.auth.getSession();
+      if(!error && data?.session?.user){
+        return { session: data.session, user: data.session.user };
+      }
+
+      if (!data?.session?.user && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+        try {
+          const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+          if (restored) {
+            const retry = await client.auth.getSession();
+            if (!retry?.error && retry?.data?.session?.user) {
+              return { session: retry.data.session, user: retry.data.session.user };
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (strictSessionMode) {
+        const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
+        if (compatCurrent) return { session: null, user: compatCurrent };
+        if (error) return { error };
+        return { session: null, user: null };
+      }
+
+      const cachedUser = pickCachedUser();
+      if (cachedUser) return { session: null, user: cachedUser };
+      if(error) return { error };
+      return { session: null, user: null };
+    }catch(err){
+      if (strictSessionMode) {
+        const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
+        if (compatCurrent) return { session: null, user: compatCurrent };
+        return { error: err };
+      }
+      const cachedUser = pickCachedUser();
+      if (cachedUser) return { session: null, user: cachedUser };
+      return { error: err };
+    }
+  }
+
+  async function getUsuarioByAuthUid(client, authUid){
+    const authKey = normalizeIdentity(authUid);
+    if(!authKey) return { usuario: null };
+
+    const filters = looksUUID(authKey)
+      ? ["uid", "uid_text"]
+      : ["uid", "uid_text", "id"];
+    const r = await queryUsuarioRestCompat(client, filters, [authKey]);
+    if(r.error && !isPermissionDeniedError(r.error)) return { error: r.error };
+    return { usuario: r.usuario || null };
+  }
+
+  async function getUsuarioById(client, id){
+    const key = normalizeIdentity(id);
+    if(!key) return { usuario: null };
+
+    const filters = looksUUID(key)
+      ? ["uid", "uid_text"]
+      : ["id", "uid", "uid_text"];
+    const r = await queryUsuarioRestCompat(client, filters, [key]);
+    if(r.error && !isPermissionDeniedError(r.error)) return { error: r.error };
+    return { usuario: r.usuario || null };
+  }
+
+  async function getUsuarioByUsername(client, username){
+    const raw = normalizeIdentity(username);
+    if(!raw) return { usuario: null };
+    const values = uniqueStrings([raw, raw.startsWith("@") ? raw.slice(1) : raw, raw.startsWith("@") ? raw : `@${raw}`]);
+    const columns = ["user", "username", "handle"];
+    const r = await queryUsuarioRestCompat(client, columns, values);
+    if(r.error && !isPermissionDeniedError(r.error)) return { error: r.error };
+    return { usuario: r.usuario || null };
+  }
+
+  async function updateUsuario(client, rowId, patch){
+    // UUID => atualiza por `uid` (auth.uid()).
+    if(looksUUID(rowId)){
+      const r = await client.from("usuarios").update(patch).eq("uid", rowId).select("id,uid");
+      return { error: r.error || null };
+    }
+
+    // Legado: id serial/int
+    const r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
+    return { error: r.error || null };
+  }
+
+  function parseStats(usuario){
+    const s = usuario?.stats;
+    if(!s) return {};
+    if(typeof s === "object") return s;
+    try{ return JSON.parse(s); }catch(_){ return {}; }
+  }
+
+  async function patchStats(client, rowId, currentStats, patchObj){
+    const next = deepMerge(structuredClone(currentStats || {}), patchObj || {});
+    const { error } = await updateUsuario(client, rowId, { stats: next });
+    return { error, stats: next };
+  }
+
+  function deepMerge(a, b){
+    if(!b || typeof b !== "object") return a;
+    for(const k of Object.keys(b)){
+      const bv = b[k];
+      if(bv && typeof bv === "object" && !Array.isArray(bv)){
+        a[k] = deepMerge(a[k] && typeof a[k]==="object" ? a[k] : {}, bv);
+      }else{
+        a[k] = bv;
+      }
+    }
+    return a;
+  }
+
+  // -----------------------------
+  // Profile rendering
+  // -----------------------------
+  function setCover(url){
+    const el = $("#dpCover");
+    if(!el) return;
+    if(url) el.style.backgroundImage = `url('${url}')`;
+  }
+  function setAvatar(url, fallbackLetter){
+    const img = $("#dpAvatarImg");
+    const letter = $("#dpAvatarLetter");
+    if(img){
+      if(url){
+        img.src = url;
+        img.style.display = "block";
+        letter && (letter.style.display = "none");
+      }else{
+        img.removeAttribute("src");
+        img.style.display = "none";
+        if(letter){
+          letter.textContent = (fallbackLetter || "U").slice(0,1).toUpperCase();
+          letter.style.display = "flex";
+        }
+      }
+    }
+  }
+
+  function setText(id, value){
+    const el = $(id);
+    if(el) el.textContent = value ?? "";
+  }
+
+  function setHTML(id, value){
+    const el = $(id);
+    if(el) el.innerHTML = value ?? "";
+  }
+
+function ensureTheme(ctx, theme){
+  const root = $("#dpRoot");
+  const t = theme || ctx?.pageTheme || (roleFromUsuario(ctx?.usuario) === "profissional" ? "profissional" : "cliente");
+  if(!root) return t;
+  root.classList.toggle("dp-theme-profissional", t === "profissional");
+  root.setAttribute("data-dp-theme", t);
+  return t;
+}
+
+  function setVisible(el, visible){
+    if(!el) return;
+    if(visible){
+      el.style.removeProperty("display");
+      return;
+    }
+    // Precisa de !important para vencer regras responsivas com display: inline-flex !important
+    el.style.setProperty("display", "none", "important");
+  }
+
+  function hideIf(selector, cond){
+    $$(selector).forEach(el => setVisible(el, !cond));
+  }
+
+  function showIf(selector, cond){
+    $$(selector).forEach(el => setVisible(el, !!cond));
+  }
+
+  function safeStr(v){ return (v ?? "").toString().trim(); }
+
+  function getSkeletonCountByViewport(desktop = 4, tablet = 3, mobile = 2){
+    const w = window.innerWidth || document.documentElement.clientWidth || 1024;
+    if (w <= 600) return mobile;
+    if (w <= 1024) return tablet;
+    return desktop;
+  }
+
+  function renderPerfilGridSkeleton(grid, kind){
+    if(!grid) return;
+    const tpl = [];
+    grid.classList.remove("dp-grid--loading");
+    grid.classList.add("dp-grid--loading");
+
+    if(kind === "reels"){
+      const count = getSkeletonCountByViewport(4, 3, 2);
+      grid.classList.add("dp-grid--reels");
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="dp-reelCard dp-item dp-skelCard dp-skelCard--reel" aria-hidden="true">
+             <div class="dp-reelMedia dp-skelMedia dp-skelMedia--reel skeleton"></div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+
+    if(kind === "servicos"){
+      const count = getSkeletonCountByViewport(2, 2, 1);
+      try { grid.classList.add("lista-cards-premium"); } catch(_){}
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="card-premium skeleton-premium-card dp-serviceSkel" aria-hidden="true">
+             <div class="skeleton skeleton-premium-cover"></div>
+             <div class="skeleton-premium-body">
+               <div class="skeleton skeleton-line lg"></div>
+               <div class="skeleton skeleton-line md"></div>
+               <div class="skeleton skeleton-line sm"></div>
+             </div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+
+    if(kind === "portfolio"){
+      const count = getSkeletonCountByViewport(8, 6, 4);
+      grid.classList.add("dp-grid--masonry");
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="dp-item dp-skelCard dp-skelCard--portfolio" aria-hidden="true">
+             <div class="dp-itemMedia dp-skelMedia dp-skelMedia--portfolio skeleton"></div>
+             <div class="dp-itemBody dp-skelBody dp-skelBody--portfolio">
+               <div class="skeleton dp-skelLine dp-skelLine--md"></div>
+             </div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+
+    if(kind === "publicacoes"){
+      const count = getSkeletonCountByViewport(8, 6, 4);
+      grid.classList.add("dp-grid--masonry");
+      for(let i = 0; i < count; i++){
+        tpl.push(
+          `<article class="dp-item dp-skelCard dp-skelCard--publicação" aria-hidden="true">
+             <div class="dp-itemMedia dp-skelMedia skeleton"></div>
+             <div class="dp-itemBody dp-skelBody">
+               <div class="dp-skelAuthor">
+                 <span class="skeleton dp-skelAvatar"></span>
+                 <span class="skeleton dp-skelLine dp-skelLine--author"></span>
+               </div>
+               <div class="skeleton dp-skelLine dp-skelLine--lg"></div>
+               <div class="skeleton dp-skelLine dp-skelLine--md"></div>
+             </div>
+           </article>`
+        );
+      }
+      grid.innerHTML = tpl.join("");
+      return;
+    }
+  }
+
+  function renderPerfilBoxSkeleton(box){
+    if(!box) return;
+    box.innerHTML = `
+      <div class="dp-empty dp-skelPanel" aria-hidden="true">
+        <div class="skeleton dp-skelLine dp-skelLine--lg"></div>
+        <div class="skeleton dp-skelLine dp-skelLine--md"></div>
+        <div class="skeleton dp-skelLine dp-skelLine--sm"></div>
+      </div>
+    `;
+  }
+
+  try{
+    window.renderPerfilGridSkeleton = renderPerfilGridSkeleton;
+    window.renderPerfilBoxSkeleton = renderPerfilBoxSkeleton;
+  }catch(_){}
+
+  function roleFromUsuario(usuario){
+    return isProfissionalUsuario(usuario) ? "profissional" : "cliente";
+  }
+
+  function flagAtivo(v){
+    if (v === true || v === 1) return true;
+    if (v === false || v === 0 || v == null) return false;
+    const s = String(v).trim().toLowerCase();
+    return s === "true" || s === "1" || s === "sim" || s === "yes";
+  }
+
+  function isProfissionalUsuario(usuario){
+    if(!usuario || typeof usuario !== "object") return false;
+    return flagAtivo(
+      usuario.isProfissional ??
+      usuario.is_profissional ??
+      usuario.profissional ??
+      usuario.isProfessional ??
+      false
+    );
+  }
+
+  function isMissingTableError(err){
+    if(!err) return false;
+    const msg = (err.message||"") + " " + (err.hint||"") + " " + (err.details||"");
+    return err.code === "PGRST205" || err.status === 404 || /could not find the table/i.test(msg) || /not found/i.test(msg);
+  }
+
+  function isMissingColumnError(err, column){
+    if(!err) return false;
+    const col = String(column || "").toLowerCase();
+    const msg = String((err.message || "") + " " + (err.hint || "") + " " + (err.details || "")).toLowerCase();
+    if (err.code === "PGRST204") return !col || msg.includes(col);
+    if (err.code === "42703") return !col || msg.includes(col);
+    if (/column .* does not exist/i.test(msg)) return !col || msg.includes(col);
+    return false;
+  }
+
+  async function safeSelect(queryFn){
+    try{
+      const { data, error } = await queryFn();
+      if(error){
+        if(isMissingTableError(error)) return { data: null, error: null, missing: true };
+        return { data: null, error, missing: false };
+      }
+      return { data, error: null, missing: false };
+    }catch(e){
+      return { data: null, error: e, missing: false };
+    }
+  }
+
+  function isNetworkFetchError(err){
+    if(!err) return false;
+    const msg = String(err.message || err.details || err.error_description || err || "").toLowerCase();
+    const status = Number(err.status || 0);
+    return (
+      status === 0 ||
+      msg.includes("failed to fetch") ||
+      msg.includes("networkerror") ||
+      msg.includes("load failed") ||
+      msg.includes("fetch failed") ||
+      msg.includes("timeout")
+    );
+  }
+
+  function isSupabaseUnavailableError(err){
+    if(!err) return false;
+    const status = Number(err.status || err.statusCode || 0);
+    if([500, 502, 503, 504, 520, 522, 524].includes(status)) return true;
+    const msg = String(err.message || err.details || err.error_description || err || "").toLowerCase();
+    return (
+      msg.includes("connection reset") ||
+      msg.includes("err_connection_reset") ||
+      msg.includes("origin unreachable") ||
+      msg.includes("bad gateway") ||
+      msg.includes("proxy error")
+    );
+  }
+
+  function isTransientRestError(err){
+    return isNetworkFetchError(err) || isSupabaseUnavailableError(err);
+  }
+
+  const DOKE_REST_BACKOFF_KEY = "__DOKE_REST_BACKOFF_UNTIL__";
+  const DOKE_REST_BACKOFF_ERR_KEY = "__DOKE_REST_BACKOFF_ERR__";
+  const DOKE_REST_BACKOFF_MS = 25000;
+
+  function getRestBackoffUntil(){
+    try{
+      return Number(window[DOKE_REST_BACKOFF_KEY] || 0) || 0;
+    }catch(_){
+      return 0;
+    }
+  }
+
+  function getRestBackoffError(){
+    try{
+      return window[DOKE_REST_BACKOFF_ERR_KEY] || null;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function isRestBackoffActive(){
+    return getRestBackoffUntil() > Date.now();
+  }
+
+  function markRestBackoff(err, ms){
+    const ttl = Math.max(4000, Number(ms || DOKE_REST_BACKOFF_MS));
+    try{
+      window[DOKE_REST_BACKOFF_KEY] = Date.now() + ttl;
+      window[DOKE_REST_BACKOFF_ERR_KEY] = err || { message: "rest_backoff", status: 520 };
+    }catch(_){}
+  }
+
+  function getSupabaseRestCfg(){
+    const bases = [];
+    const pageOrigin = (()=>{
+      try{
+        if(typeof location === "undefined") return "";
+        return String(location.origin || "").trim().replace(/\/+$/g, "");
+      }catch(_){
+        return "";
+      }
+    })();
+    const pageIsLoopback = (()=>{
+      try{
+        if(typeof location === "undefined") return false;
+        const host = String(location.hostname || "").toLowerCase();
+        return host === "localhost" || host === "127.0.0.1";
+      }catch(_){
+        return false;
+      }
+    })();
+    const pushBase = (raw)=>{
+      const value = String(raw || "").trim().replace(/\/+$/g, "");
+      if(!value) return;
+      if(!/^https?:\/\//i.test(value)) return;
+      if(pageIsLoopback && pageOrigin){
+        try{
+          const candidate = new URL(value);
+          const candidateIsLoopback = /^(localhost|127\.0\.0\.1)$/i.test(String(candidate.hostname || ""));
+          // Nunca usa loopback cross-origin (ex.: localhost:5500 -> 127.0.0.1:5500 / localhost:5501).
+          if(candidateIsLoopback && candidate.origin !== pageOrigin) return;
+        }catch(_){
+          return;
+        }
+      }
+      if(!bases.includes(value)) bases.push(value);
+    };
+    try{
+      const proxyEnabled = !!window.DOKE_SUPABASE_PROXY_ENABLED;
+      if(typeof location !== "undefined"){
+        const host = String(location.hostname || "").toLowerCase();
+        if(proxyEnabled && (host === "localhost" || host === "127.0.0.1")){
+          pushBase(location.origin);
+        }
+      }
+    }catch(_){}
+    try{
+      const remembered = String(sessionStorage.getItem("DOKE_PROXY_ORIGIN") || "").trim();
+      if(remembered){
+        if(pageOrigin){
+          const origin = new URL(remembered, pageOrigin).origin;
+          if(origin === pageOrigin){
+            pushBase(origin);
+          }
+        }else{
+          pushBase(remembered);
+        }
+      }
+    }catch(_){}
+    pushBase(window.DOKE_SUPABASE_PROXY_ORIGIN);
+    pushBase(window.DOKE_SUPABASE_URL);
+    pushBase(window.SUPABASE_URL);
+    try{
+      pushBase(localStorage.getItem("DOKE_SUPABASE_URL"));
+      pushBase(localStorage.getItem("SUPABASE_URL"));
+    }catch(_){}
+    pushBase(window.DOKE_SUPABASE_PROXY_UPSTREAM);
+    const base = bases[0] || "";
+    const anon = String(
+      window.DOKE_SUPABASE_ANON_KEY ||
+      window.SUPABASE_ANON_KEY ||
+      localStorage.getItem("DOKE_SUPABASE_ANON_KEY") ||
+      localStorage.getItem("SUPABASE_ANON_KEY") ||
+      ""
+    ).trim();
+    return { base, bases, anon };
+  }
+
+  function isSupabaseLikeResponse(resp){
+    try{
+      if(!resp || !resp.headers) return false;
+      const sbRef = String(resp.headers.get("sb-project-ref") || "").trim();
+      const sbGateway = String(resp.headers.get("sb-gateway-version") || "").trim();
+      const contentProfile = String(resp.headers.get("content-profile") || "").trim();
+      return !!(sbRef || sbGateway || contentProfile);
+    }catch(_){
+      return false;
+    }
+  }
+
+  async function getAccessToken(client){
+    try{
+      if(!client?.auth?.getSession) return null;
+      const { data, error } = await client.auth.getSession();
+      if(error) return null;
+      return data?.session?.access_token || null;
+    }catch(_){
+      return null;
+    }
+  }
+
+  async function restSelectRowsByOwnerCompat(client, cfg){
+    try{
+      const table = String(cfg?.table || "").trim();
+      const select = String(cfg?.select || "*").trim() || "*";
+      const ownerCol = String(cfg?.ownerCol || "").trim();
+      const ownerValue = String(cfg?.ownerValue ?? "").trim();
+      const orderCol = cfg?.orderCol ? String(cfg.orderCol).trim() : "";
+      const limit = Math.max(1, Number(cfg?.limit || 40));
+      const ascending = !!cfg?.ascending;
+      if(!table || !ownerCol || !ownerValue){
+        return { data: null, error: { message: "invalid_rest_fallback_args" } };
+      }
+
+      const { base, bases, anon } = getSupabaseRestCfg();
+      if(!base || !anon){
+        return { data: null, error: { message: "missing_supabase_config" } };
+      }
+
+      const token = await getAccessToken(client);
+      const useAuthToken = !!(window.DOKE_USE_AUTH_FOR_PROFILE_REST === true);
+      const bearer = useAuthToken ? (token || anon) : anon;
+      const params = new URLSearchParams();
+      params.set("select", select);
+      params.set(ownerCol, `eq.${ownerValue}`);
+      params.set("limit", String(limit));
+      if(orderCol){
+        params.set("order", `${orderCol}.${ascending ? "asc" : "desc"}`);
+      }
+
+      const targets = (Array.isArray(bases) && bases.length ? bases : [base]).filter(Boolean);
+      let resp;
+      let lastNetworkError = null;
+      let usedBase = "";
+      for(const targetBase of targets){
+        usedBase = targetBase;
+        try{
+          const candidateResp = await fetch(`${targetBase}/rest/v1/${encodeURIComponent(table)}?${params.toString()}`, {
+            method: "GET",
+            headers: {
+              apikey: anon,
+              Authorization: `Bearer ${bearer}`,
+            },
+          });
+          // Se não parece resposta do Supabase/proxy, segue para próxima base.
+          if(!isSupabaseLikeResponse(candidateResp) && targets.length > 1){
+            lastNetworkError = { message: "non_supabase_response", status: candidateResp.status, base: targetBase };
+            resp = null;
+            continue;
+          }
+          resp = candidateResp;
+          lastNetworkError = null;
+          break;
+        }catch(e){
+          lastNetworkError = e;
+          resp = null;
+        }
+      }
+      if(!resp){
+        return { data: null, error: { message: String(lastNetworkError?.message || lastNetworkError || "Failed to fetch"), status: 0, base: usedBase } };
+      }
+
+      let text = "";
+      try{
+        text = await resp.text();
+      }catch(e){
+        return { data: null, error: { message: String(e?.message || e || "Failed to fetch"), status: 0 } };
+      }
+
+      let payload = null;
+      try{ payload = text ? JSON.parse(text) : null; }catch(_){ payload = text; }
+      if(!resp.ok){
+        const err = (payload && typeof payload === "object")
+          ? payload
+          : { message: String(payload || resp.statusText || `HTTP ${resp.status}`) };
+        if(!err.status) err.status = resp.status;
+        if(!err.base) err.base = usedBase;
+        return { data: null, error: err };
+      }
+
+      if(Array.isArray(payload)) return { data: payload, error: null };
+      if(payload == null) return { data: [], error: null };
+      return { data: [payload], error: null };
+    }catch(e){
+      return { data: null, error: { message: String(e?.message || e || "Failed to fetch"), status: 0 } };
+    }
+  }
+
+  async function selectRowsByOwnerCompat(client, cfg){
+    const table = String(cfg?.table || "").trim();
+    if(!client?.from || !table) return { data: [], error: null, missingTable: false, denied: false };
+    if(isRestBackoffActive()){
+      const cachedErr = getRestBackoffError() || { message: "rest_backoff_active", status: 520 };
+      return { data: [], error: cachedErr, missingTable: false, denied: false };
+    }
+
+    const select = cfg?.select || "*";
+    const limit = Math.max(1, Number(cfg?.limit || 40));
+    const ownerColumns = uniqueStrings(cfg?.ownerColumns || []);
+    const ownerValues = uniqueStrings(cfg?.ownerValues || []);
+    const orderColumns = Array.isArray(cfg?.orderColumns) ? cfg.orderColumns : ["created_at", null];
+    const ascending = !!cfg?.ascending;
+
+    if(ownerColumns.length < 1 || ownerValues.length < 1){
+      return { data: [], error: null, missingTable: false, denied: false };
+    }
+
+    let sawEmptySuccess = false;
+    let lastError = null;
+    const maxAttempts = Math.max(1, Number(cfg?.maxAttempts || 8));
+    let attempts = 0;
+
+    outerValues:
+    for(const ownerValue of ownerValues){
+      for(const ownerCol of ownerColumns){
+        for(const orderColRaw of orderColumns){
+          if(attempts >= maxAttempts){
+            break outerValues;
+          }
+          attempts += 1;
+          const orderCol = orderColRaw ? String(orderColRaw).trim() : "";
+          let restRes;
+          try{
+            restRes = await restSelectRowsByOwnerCompat(client, {
+              table,
+              select,
+              ownerCol,
+              ownerValue,
+              orderCol,
+              limit,
+              ascending
+            });
+          }catch(fe){
+            restRes = { data: null, error: fe || { message: "Failed to fetch", status: 0 } };
+          }
+          if(restRes?.error){
+            const err = restRes.error;
+            if(isMissingTableError(err)){
+              return { data: [], error: null, missingTable: true, denied: false };
+            }
+            if(isPermissionDeniedError(err)){
+              return { data: [], error: null, missingTable: false, denied: true };
+            }
+            if(isTransientRestError(err)){
+              markRestBackoff(err);
+              return { data: [], error: err, missingTable: false, denied: false };
+            }
+            if(orderCol && isMissingColumnError(err, orderCol)){
+              lastError = err;
+              continue;
+            }
+            if(
+              isMissingColumnError(err, ownerCol) ||
+              isQueryValueCompatError(err)
+            ){
+              lastError = err;
+              break;
+            }
+            lastError = err;
+            continue;
+          }
+
+          const rows = Array.isArray(restRes?.data) ? restRes.data : [];
+          if(rows.length > 0){
+            return { data: rows, error: null, missingTable: false, denied: false };
+          }
+          sawEmptySuccess = true;
+          break;
+        }
+      }
+    }
+
+    if(sawEmptySuccess) return { data: [], error: null, missingTable: false, denied: false };
+    return { data: [], error: lastError, missingTable: false, denied: false };
+  }
+
+  function setPublicacoesSelectMode(on, opts = {}){
+    dpPubSelectMode = !!on;
+    if(!dpPubSelectMode){
+      dpPubSelectedIds.clear();
+    }
+
+    const grid = $("#dpGridPublicacoes");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpPubSelectMode);
+    }
+
+    const btn = $("#dpSelectPublicacoesBtn");
+    if(btn){
+      btn.classList.toggle("is-active", dpPubSelectMode);
+      btn.innerHTML = dpPubSelectMode
+        ? `<i class='bx bx-x'></i> Cancelar`
+        : `<i class='bx bx-check-square'></i> Selecionar`;
+      btn.setAttribute("aria-pressed", dpPubSelectMode ? "true" : "false");
+    }
+
+    const bar = $("#dpPubSelectionBar");
+    if(bar){
+      bar.hidden = !dpPubSelectMode;
+    }
+
+    refreshPublicacoesSelectionUI();
+    if(!opts.silent && !dpPubSelectMode){
+      // Mantido sem toast para não poluir a navegação.
+    }
+  }
+
+  function refreshPublicacoesSelectionUI(){
+    const grid = $("#dpGridPublicacoes");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpPubSelectMode);
+      $$(".dp-item[data-pub-id]", grid).forEach((card)=>{
+        const id = String(card.dataset.pubId || "");
+        const isSelected = !!(id && dpPubSelectedIds.has(id));
+        card.classList.toggle("dp-selected", isSelected);
+        card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
+    }
+
+    const count = dpPubSelectedIds.size;
+    const total = dpPubVisibleIds.length;
+    const countEl = $("#dpPubSelectionCount");
+    const deleteBtn = $("#dpPubDeleteSelBtn");
+    const allBtn = $("#dpPubSelectAllBtn");
+    const clearBtn = $("#dpPubClearSelBtn");
+
+    if(countEl){
+      countEl.textContent = count === 1 ? "1 selecionada" : `${count} selecionadas`;
+    }
+    if(deleteBtn){
+      deleteBtn.disabled = count < 1;
+    }
+    if(allBtn){
+      allBtn.disabled = total < 1;
+      allBtn.textContent = (total > 0 && count === total) ? "Desmarcar todas" : "Selecionar todas";
+    }
+    if(clearBtn){
+      clearBtn.disabled = count < 1;
+    }
+  }
+
+  function togglePublicacaoSelection(id){
+    const key = String(id || "").trim();
+    if(!key) return;
+    if(dpPubSelectedIds.has(key)){
+      dpPubSelectedIds.delete(key);
+    }else{
+      dpPubSelectedIds.add(key);
+    }
+    refreshPublicacoesSelectionUI();
+  }
+
+  async function deleteSelectedPublicacoes(){
+    const ids = Array.from(dpPubSelectedIds).filter(Boolean);
+    if(!ids.length){
+      toast("Selecione ao menos uma publicação.");
+      return;
+    }
+    if(!dpPubCtx?.client?.from || !dpPubCtx?.target?.id){
+      toast("Recarregue a página e tente novamente.");
+      return;
+    }
+
+    const plural = ids.length > 1;
+    const confirmMsg = `Excluir ${ids.length} publica${plural ? "ções" : "ção"} selecionada${plural ? "s" : ""}?`;
+    let confirmed = false;
+    if (typeof window.dokeConfirm === "function") {
+      try {
+        confirmed = await window.dokeConfirm(confirmMsg, "Excluir publicações", "danger");
+      } catch (_) {
+        confirmed = false;
+      }
+    } else {
+      confirmed = confirm(confirmMsg);
+    }
+    if(!confirmed){
+      return;
+    }
+
+    const { error } = await dpPubCtx.client
+      .from("publicacoes")
+      .delete()
+      .in("id", ids);
+
+    if(error){
+      console.error(error);
+      toast("Erro ao excluir publicações.");
+      return;
+    }
+
+    try {
+      const keys = [
+        "doke_cache_home_publicacoes_v4",
+        "doke_cache_home_publicacoes_v3",
+        "doke_cache_home_publicacoes_v2",
+        "doke_cache_home_publicacoes_v1"
+      ];
+      keys.forEach((key) => localStorage.removeItem(key));
+      localStorage.setItem("doke_publicacoes_feed_dirty", String(Date.now()));
+    } catch (_) {}
+
+    setPublicacoesSelectMode(false, { silent: true });
+    toast(plural ? "Publicações excluídas." : "Publicação excluída.");
+    await loadPublicacoes(dpPubCtx.client, dpPubCtx.target.id, dpPubCtx);
+  }
+
+  function ensurePublicacoesSelectionControls(ctx){
+    const section = $('.dp-section[data-tab="publicações"]');
+    const header = section ? $(".dp-sectionHeader", section) : null;
+    const canEdit = !!ctx?.canEdit;
+
+    const oldBtn = $("#dpSelectPublicacoesBtn");
+    const oldBar = $("#dpPubSelectionBar");
+
+    if(!canEdit || !section || !header){
+      if(oldBtn) oldBtn.style.display = "none";
+      if(oldBar) oldBar.hidden = true;
+      setPublicacoesSelectMode(false, { silent: true });
+      return;
+    }
+
+    const newBtn = $("#dpNewPublicacao", header);
+    if(!newBtn) return;
+
+    let selectBtn = $("#dpSelectPublicacoesBtn");
+    if(!selectBtn){
+      selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.id = "dpSelectPublicacoesBtn";
+      selectBtn.className = "dp-newBtn dp-selectToggleBtn";
+      newBtn.insertAdjacentElement("afterend", selectBtn);
+    }
+    selectBtn.style.display = "inline-flex";
+
+    if(!selectBtn.dataset.bound){
+      selectBtn.dataset.bound = "1";
+      selectBtn.addEventListener("click", ()=>{
+        setPublicacoesSelectMode(!dpPubSelectMode);
+      });
+    }
+
+    let bar = $("#dpPubSelectionBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "dpPubSelectionBar";
+      bar.className = "dp-pubSelectionBar";
+      bar.hidden = true;
+      bar.innerHTML = `
+        <span class="dp-pubSelectionCount" id="dpPubSelectionCount">0 selecionadas</span>
+        <div class="dp-pubSelectionActions">
+          <button type="button" id="dpPubSelectAllBtn">Selecionar todas</button>
+          <button type="button" id="dpPubClearSelBtn">Limpar seleção</button>
+          <button type="button" class="danger" id="dpPubDeleteSelBtn" disabled>Excluir selecionadas</button>
         </div>
       `;
-      try{
-        const likeBtn = card.querySelector('.dp-like-btn');
-        const pid = String(item.id||'');
-        const on = pid && dpPubLikedIds.has(pid);
-        if(likeBtn){
-          likeBtn.classList.toggle('is-fav', on);
-          likeBtn.setAttribute('aria-pressed', on ? 'true':'false');
-          const ic = likeBtn.querySelector('i');
-          if(ic){ ic.classList.toggle('bx-heart', !on); ic.classList.toggle('bxs-heart', on); }
+      header.insertAdjacentElement("afterend", bar);
+    }
+
+    if(!bar.dataset.bound){
+      bar.dataset.bound = "1";
+      $("#dpPubSelectAllBtn", bar)?.addEventListener("click", ()=>{
+        const total = dpPubVisibleIds.length;
+        if(total < 1) return;
+        if(dpPubSelectedIds.size === total){
+          dpPubSelectedIds.clear();
+        }else{
+          dpPubSelectedIds = new Set(dpPubVisibleIds);
         }
-      }catch(_){ }
+        refreshPublicacoesSelectionUI();
+      });
+      $("#dpPubClearSelBtn", bar)?.addEventListener("click", ()=>{
+        dpPubSelectedIds.clear();
+        refreshPublicacoesSelectionUI();
+      });
+      $("#dpPubDeleteSelBtn", bar)?.addEventListener("click", deleteSelectedPublicacoes);
+    }
+
+    setPublicacoesSelectMode(dpPubSelectMode, { silent: true });
+  }
+
+  function setReelsSelectMode(on, opts = {}){
+    dpReelSelectMode = !!on;
+    if(!dpReelSelectMode){
+      dpReelSelectedIds.clear();
+    }
+
+    const grid = $("#dpGridReels");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpReelSelectMode);
+    }
+
+    const btn = $("#dpSelectReelsBtn");
+    if(btn){
+      btn.classList.toggle("is-active", dpReelSelectMode);
+      btn.innerHTML = dpReelSelectMode
+        ? `<i class='bx bx-x'></i> Cancelar`
+        : `<i class='bx bx-check-square'></i> Selecionar`;
+      btn.setAttribute("aria-pressed", dpReelSelectMode ? "true" : "false");
+    }
+
+    const bar = $("#dpReelSelectionBar");
+    if(bar){
+      bar.hidden = !dpReelSelectMode;
+    }
+
+    refreshReelsSelectionUI();
+    if(!opts.silent && !dpReelSelectMode){
+      // Sem toast para não poluir a navegação.
+    }
+  }
+
+  function refreshReelsSelectionUI(){
+    const grid = $("#dpGridReels");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpReelSelectMode);
+      $$(".dp-reelCard[data-reel-id]", grid).forEach((card)=>{
+        const id = String(card.dataset.reelId || "");
+        const isSelected = !!(id && dpReelSelectedIds.has(id));
+        card.classList.toggle("dp-selected", isSelected);
+        card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
+    }
+
+    const count = dpReelSelectedIds.size;
+    const total = dpReelVisibleIds.length;
+    const countEl = $("#dpReelSelectionCount");
+    const deleteBtn = $("#dpReelDeleteSelBtn");
+    const allBtn = $("#dpReelSelectAllBtn");
+    const clearBtn = $("#dpReelClearSelBtn");
+
+    if(countEl){
+      countEl.textContent = count === 1 ? "1 selecionado" : `${count} selecionados`;
+    }
+    if(deleteBtn){
+      deleteBtn.disabled = count < 1;
+    }
+    if(allBtn){
+      allBtn.disabled = total < 1;
+      allBtn.textContent = (total > 0 && count === total) ? "Desmarcar todos" : "Selecionar todos";
+    }
+    if(clearBtn){
+      clearBtn.disabled = count < 1;
+    }
+  }
+
+  function toggleReelSelection(id){
+    const key = String(id || "").trim();
+    if(!key) return;
+    if(dpReelSelectedIds.has(key)){
+      dpReelSelectedIds.delete(key);
+    }else{
+      dpReelSelectedIds.add(key);
+    }
+    refreshReelsSelectionUI();
+  }
+
+  async function deleteSelectedReels(){
+    const ids = Array.from(dpReelSelectedIds).filter(Boolean);
+    if(!ids.length){
+      toast("Selecione ao menos um vídeo curto.");
+      return;
+    }
+    if(!dpReelCtx?.client?.from || !dpReelCtx?.target?.id){
+      toast("Recarregue a página e tente novamente.");
+      return;
+    }
+    const plural = ids.length > 1;
+    if(!confirm(`Excluir ${ids.length} vídeo${plural ? "s" : ""} curto${plural ? "s" : ""} selecionado${plural ? "s" : ""}?`)){
+      return;
+    }
+    const { error } = await dpReelCtx.client
+      .from("videos_curtos")
+      .delete()
+      .in("id", ids);
+    if(error){
+      console.error(error);
+      toast("Erro ao excluir vídeos curtos.");
+      return;
+    }
+
+    setReelsSelectMode(false, { silent: true });
+    toast(plural ? "Vídeos curtos excluídos." : "Vídeo curto excluído.");
+    await loadReels(dpReelCtx.client, dpReelCtx.target.id, dpReelCtx);
+  }
+
+  function ensureReelsSelectionControls(ctx){
+    const section = $('.dp-section[data-tab="reels"]');
+    const header = section ? $(".dp-sectionHeader", section) : null;
+    const canEdit = !!ctx?.canEdit;
+
+    const oldBtn = $("#dpSelectReelsBtn");
+    const oldBar = $("#dpReelSelectionBar");
+
+    if(!canEdit || !section || !header){
+      if(oldBtn) oldBtn.style.display = "none";
+      if(oldBar) oldBar.hidden = true;
+      setReelsSelectMode(false, { silent: true });
+      return;
+    }
+
+    const newBtn = $("#dpNewReel", header);
+    if(!newBtn) return;
+
+    let selectBtn = $("#dpSelectReelsBtn");
+    if(!selectBtn){
+      selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.id = "dpSelectReelsBtn";
+      selectBtn.className = "dp-newBtn dp-selectToggleBtn";
+      newBtn.insertAdjacentElement("afterend", selectBtn);
+    }
+    selectBtn.style.display = "inline-flex";
+
+    if(!selectBtn.dataset.bound){
+      selectBtn.dataset.bound = "1";
+      selectBtn.addEventListener("click", ()=>{
+        setReelsSelectMode(!dpReelSelectMode);
+      });
+    }
+
+    let bar = $("#dpReelSelectionBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "dpReelSelectionBar";
+      bar.className = "dp-pubSelectionBar dp-reelSelectionBar";
+      bar.hidden = true;
+      bar.innerHTML = `
+        <span class="dp-pubSelectionCount" id="dpReelSelectionCount">0 selecionados</span>
+        <div class="dp-pubSelectionActions">
+          <button type="button" id="dpReelSelectAllBtn">Selecionar todos</button>
+          <button type="button" id="dpReelClearSelBtn">Limpar seleção</button>
+          <button type="button" class="danger" id="dpReelDeleteSelBtn" disabled>Excluir selecionados</button>
+        </div>
+      `;
+      header.insertAdjacentElement("afterend", bar);
+    }
+
+    if(!bar.dataset.bound){
+      bar.dataset.bound = "1";
+      $("#dpReelSelectAllBtn", bar)?.addEventListener("click", ()=>{
+        const total = dpReelVisibleIds.length;
+        if(total < 1) return;
+        if(dpReelSelectedIds.size === total){
+          dpReelSelectedIds.clear();
+        }else{
+          dpReelSelectedIds = new Set(dpReelVisibleIds);
+        }
+        refreshReelsSelectionUI();
+      });
+      $("#dpReelClearSelBtn", bar)?.addEventListener("click", ()=>{
+        dpReelSelectedIds.clear();
+        refreshReelsSelectionUI();
+      });
+      $("#dpReelDeleteSelBtn", bar)?.addEventListener("click", deleteSelectedReels);
+    }
+
+    setReelsSelectMode(dpReelSelectMode, { silent: true });
+  }
+
+  function setServicosSelectMode(on, opts = {}){
+    dpSvcSelectMode = !!on;
+    if(!dpSvcSelectMode){
+      dpSvcSelectedIds.clear();
+    }
+
+    const grid = $("#dpGridServicos");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpSvcSelectMode);
+    }
+
+    const btn = $("#dpSelectServicosBtn");
+    if(btn){
+      btn.classList.toggle("is-active", dpSvcSelectMode);
+      btn.innerHTML = dpSvcSelectMode
+        ? `<i class='bx bx-x'></i> Cancelar`
+        : `<i class='bx bx-check-square'></i> Selecionar`;
+      btn.setAttribute("aria-pressed", dpSvcSelectMode ? "true" : "false");
+    }
+
+    const bar = $("#dpServSelectionBar");
+    if(bar){
+      bar.hidden = !dpSvcSelectMode;
+    }
+
+    refreshServicosSelectionUI();
+    if(!opts.silent && !dpSvcSelectMode){
+      // Sem toast para não poluir a navegação.
+    }
+  }
+
+  function refreshServicosSelectionUI(){
+    const grid = $("#dpGridServicos");
+    if(grid){
+      grid.classList.toggle("dp-select-mode", dpSvcSelectMode);
+      $$(".dp-serviceSelectable[data-service-id]", grid).forEach((card)=>{
+        const id = String(card.dataset.serviceId || "");
+        const isSelected = !!(id && dpSvcSelectedIds.has(id));
+        card.classList.toggle("dp-selected", isSelected);
+        card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+      });
+    }
+
+    const count = dpSvcSelectedIds.size;
+    const total = dpSvcVisibleIds.length;
+    const countEl = $("#dpServSelectionCount");
+    const editBtn = $("#dpServEditSelBtn");
+    const allBtn = $("#dpServSelectAllBtn");
+    const clearBtn = $("#dpServClearSelBtn");
+
+    if(countEl){
+      countEl.textContent = count === 1 ? "1 selecionado" : `${count} selecionados`;
+    }
+    if(editBtn){
+      editBtn.disabled = count !== 1;
+    }
+    if(allBtn){
+      allBtn.disabled = total < 1;
+      allBtn.textContent = (total > 0 && count === total) ? "Desmarcar todos" : "Selecionar todos";
+    }
+    if(clearBtn){
+      clearBtn.disabled = count < 1;
+    }
+  }
+
+  function toggleServicoSelection(id){
+    const key = String(id || "").trim();
+    if(!key) return;
+    if(dpSvcSelectedIds.has(key)){
+      dpSvcSelectedIds.delete(key);
+    }else{
+      dpSvcSelectedIds.add(key);
+    }
+    refreshServicosSelectionUI();
+  }
+
+  function setServicosVisibleIds(ids){
+    dpSvcVisibleIds = Array.from(new Set((Array.isArray(ids) ? ids : []).map((id)=> String(id || "").trim()).filter(Boolean)));
+    dpSvcSelectedIds = new Set(Array.from(dpSvcSelectedIds).filter((id)=> dpSvcVisibleIds.includes(id)));
+    refreshServicosSelectionUI();
+  }
+
+  function openSelectedServicoForEdit(){
+    const ids = Array.from(dpSvcSelectedIds).filter(Boolean);
+    if(ids.length !== 1){
+      toast("Selecione exatamente 1 anúncio para editar.");
+      return;
+    }
+    window.location.href = `anunciar.html?mode=edit&id=${encodeURIComponent(ids[0])}`;
+  }
+
+  function registerServicoSelectableCard(card, servicoId){
+    if(!card) return;
+    const id = String(servicoId || "").trim();
+    if(!id) return;
+
+    card.classList.add("dp-serviceSelectable");
+    card.setAttribute("role", card.getAttribute("role") || "button");
+    if(!card.hasAttribute("tabindex")) card.tabIndex = 0;
+    card.dataset.serviceId = id;
+
+    let marker = $(".dp-itemSelectMark", card);
+    if(!marker){
+      marker = document.createElement("span");
+      marker.className = "dp-itemSelectMark";
+      marker.innerHTML = `<i class='bx bx-check'></i>`;
+      card.appendChild(marker);
+    }
+
+    if(!card.dataset.selectBound){
+      card.dataset.selectBound = "1";
+      card.addEventListener("click", (event)=>{
+        if(!dpSvcSelectMode) return;
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation?.();
+        toggleServicoSelection(id);
+      }, true);
+      card.addEventListener("keydown", (event)=>{
+        if(!dpSvcSelectMode) return;
+        if(event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleServicoSelection(id);
+      });
+    }
+  }
+
+  function ensureServicosSelectionControls(ctx){
+    dpSvcCtx = ctx || dpSvcCtx || null;
+    const section = $('.dp-section[data-tab="servicos"]');
+    const header = section ? $(".dp-sectionHeader", section) : null;
+    const canEdit = !!ctx?.canEdit;
+
+    const oldBtn = $("#dpSelectServicosBtn");
+    const oldBar = $("#dpServSelectionBar");
+
+    if(!canEdit || !section || !header){
+      if(oldBtn) oldBtn.style.display = "none";
+      if(oldBar) oldBar.hidden = true;
+      setServicosSelectMode(false, { silent: true });
+      return;
+    }
+
+    const newBtn = $("#dpNewServico", header);
+    if(!newBtn) return;
+
+    let selectBtn = $("#dpSelectServicosBtn");
+    if(!selectBtn){
+      selectBtn = document.createElement("button");
+      selectBtn.type = "button";
+      selectBtn.id = "dpSelectServicosBtn";
+      selectBtn.className = "dp-newBtn dp-selectToggleBtn";
+      newBtn.insertAdjacentElement("afterend", selectBtn);
+    }
+    selectBtn.style.display = "inline-flex";
+
+    if(!selectBtn.dataset.bound){
+      selectBtn.dataset.bound = "1";
+      selectBtn.addEventListener("click", ()=>{
+        setServicosSelectMode(!dpSvcSelectMode);
+      });
+    }
+
+    let bar = $("#dpServSelectionBar");
+    if(!bar){
+      bar = document.createElement("div");
+      bar.id = "dpServSelectionBar";
+      bar.className = "dp-pubSelectionBar dp-servSelectionBar";
+      bar.hidden = true;
+      bar.innerHTML = `
+        <span class="dp-pubSelectionCount" id="dpServSelectionCount">0 selecionados</span>
+        <div class="dp-pubSelectionActions">
+          <button type="button" id="dpServSelectAllBtn">Selecionar todos</button>
+          <button type="button" id="dpServClearSelBtn">Limpar seleção</button>
+          <button type="button" class="primary" id="dpServEditSelBtn" disabled>Editar anúncio selecionado</button>
+        </div>
+      `;
+      header.insertAdjacentElement("afterend", bar);
+    }
+
+    if(!bar.dataset.bound){
+      bar.dataset.bound = "1";
+      $("#dpServSelectAllBtn", bar)?.addEventListener("click", ()=>{
+        const total = dpSvcVisibleIds.length;
+        if(total < 1) return;
+        if(dpSvcSelectedIds.size === total){
+          dpSvcSelectedIds.clear();
+        }else{
+          dpSvcSelectedIds = new Set(dpSvcVisibleIds);
+        }
+        refreshServicosSelectionUI();
+      });
+      $("#dpServClearSelBtn", bar)?.addEventListener("click", ()=>{
+        dpSvcSelectedIds.clear();
+        refreshServicosSelectionUI();
+      });
+      $("#dpServEditSelBtn", bar)?.addEventListener("click", openSelectedServicoForEdit);
+    }
+
+    setServicosSelectMode(dpSvcSelectMode, { silent: true });
+  }
+
+  try{
+    window.dpEnsureServicosSelectionControls = ensureServicosSelectionControls;
+    window.dpSetServicosVisibleIds = setServicosVisibleIds;
+    window.dpRegisterServicoSelectableCard = registerServicoSelectableCard;
+    window.dpRefreshServicosSelectionUI = refreshServicosSelectionUI;
+    window.dpSetServicosSelectMode = setServicosSelectMode;
+  }catch(_){}
+
+  // -----------------------------
+  // Sections loaders
+  // -----------------------------
+  async function loadPublicacoes(client, userId, ctx){
+    if(dpPubLoadInFlight) return;
+    dpPubLoadInFlight = true;
+    try{
+    dpPubCtx = ctx || null;
+    ensurePublicacoesSelectionControls(ctx);
+    const grid = $("#dpGridPublicacoes");
+    if(!grid) return;
+    if(isRestBackoffActive()){
+      grid.innerHTML = `<div class="dp-empty">Servidor em recuperacao. Aguarde alguns segundos e recarregue.</div>`;
+      return;
+    }
+    if(ctx?.sbRestDown){
+      grid.innerHTML = `<div class="dp-empty">Supabase indisponível (erro 520/servidor offline). Abra <b>diagnostico.html</b> e verifique se o projeto Supabase está pausado.</div>`;
+      return;
+    }
+    renderPerfilGridSkeleton(grid, "publicacoes");
+    const queryResult = await selectRowsByOwnerCompat(client, {
+      table: "publicacoes",
+      select: "*",
+      ownerColumns: ["user_id", "uid"],
+      ownerValues: uniqueStrings([
+        userId,
+        ctx?.target?.id,
+        ctx?.target?.uid
+      ]),
+      orderColumns: ["created_at", null],
+      limit: 40,
+      maxAttempts: 4
+    });
+    const data = queryResult.data || [];
+    if(queryResult.error || queryResult.denied){
+      dpPubVisibleIds = [];
+      dpPubSelectedIds.clear();
+      refreshPublicacoesSelectionUI();
+      if(queryResult.error && isTransientRestError(queryResult.error)){
+        markRestBackoff(queryResult.error);
+        grid.innerHTML = `<div class="dp-empty">Supabase indisponivel no momento. Tente novamente em instantes.</div>`;
+        try{ window.__DOKE_LAST_PUBLICACOES_ERROR__ = queryResult.error; }catch(_){}
+        console.error("[DOKE] loadPublicacoes transient error:", queryResult.error);
+        return;
+      }
+      if(queryResult.missingTable){
+        grid.innerHTML = `<div class="dp-empty">Nenhuma publicação ainda.</div>`;
+        return;
+      }
+      if(queryResult.denied){
+        grid.innerHTML = `<div class="dp-empty">Publicações indisponiveis no momento.</div>`;
+        return;
+      }
+      grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
+      try{ window.__DOKE_LAST_PUBLICACOES_ERROR__ = queryResult.error; }catch(_){}
+      console.error("[DOKE] loadPublicacoes error:", queryResult.error);
+      return;
+    }
+    if(!data?.length){
+      dpPubVisibleIds = [];
+      dpPubSelectedIds.clear();
+      refreshPublicacoesSelectionUI();
+      grid.innerHTML = `<div class="dp-empty">Sem publicações ainda.</div>`;
+      return;
+    }
+    dpPubVisibleIds = data.map((item)=> String(item?.id || "")).filter(Boolean);
+    dpPubSelectedIds = new Set(Array.from(dpPubSelectedIds).filter((id)=> dpPubVisibleIds.includes(id)));
+    grid.classList.remove("dp-grid--loading");
+    grid.innerHTML = "";
+    const canEdit = !!ctx?.canEdit;
+    for(const item of data){
+      const media = item.tipo === "video"
+        ? `<video src="${item.media_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ``} preload="metadata" muted playsinline></video>`
+        : (item.tipo === "antes_depois" && item.thumb_url
+            ? `<div class="dp-ba js-antes-depois" data-before="${item.media_url}" data-after="${item.thumb_url}"><img src="${item.media_url}" loading="lazy" alt=""></div>`
+            : `<img src="${item.media_url}" loading="lazy" alt="">`);
+      const card = document.createElement("div");
+      card.className = "dp-item dp-item--clickable";
+      card.setAttribute("role", "button");
+      card.tabIndex = 0;
+      card.dataset.pubId = String(item.id || "");
+      const title = item.titulo || item.legenda || "";
+      const desc = item.descricao || (item.titulo ? item.legenda : "") || "";
+      card.innerHTML = `
+        <div class="dp-itemMedia">${media}</div>
+        <div class="dp-itemBody">
+          ${(() => {
+            const u = (ctx && ctx.target) ? (ctx.target.user || (ctx.target.nome ? String(ctx.target.nome).split(" ")[0] : "")) : "";
+            const f = (ctx && ctx.target) ? (ctx.target.foto || "") : "";
+            if(!u && !f) return "";
+            const avatar = f ? `<img src="${f}" alt="">` : `<img src="https://i.pravatar.cc/80?u=${encodeURIComponent(String(userId||""))}" alt="">`;
+            const meta = item.created_at || item.data || item.createdAt || item.createdat;
+            const dt = meta ? new Date(meta) : null;
+            const when = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString("pt-BR") : "";
+            return `<div class="dp-itemAuthor">${avatar}<div><div class="dp-itemUser">@${escapeHtml(u||"usuario")}</div>${when ? `<span class="dp-itemMeta">${when}</span>` : ``}</div></div>`;
+          })()}
+          <b class="dp-itemTitle">${escapeHtml(title)}</b>
+          ${desc ? `<p class="dp-itemDesc">${escapeHtml(desc)}</p>` : ``}
+        </div>
+      `;
       if(canEdit){
         const marker = document.createElement("span");
         marker.className = "dp-itemSelectMark";
         marker.innerHTML = `<i class='bx bx-check'></i>`;
         card.appendChild(marker);
       }
-      async function dpTogglePublicacaoLike(pubId, nextOn){
-        try{
-          const authRes = await client.auth.getUser();
-          const authUid = authRes?.data?.user?.id;
-          if(!authUid) { toast('Faça login para curtir.'); return false; }
-          if(nextOn){
-            const { error } = await client.from('publicacoes_curtidas').insert({ publicacao_id: pubId, user_id: authUid });
-            if(error && String(error.message||'').toLowerCase().includes('duplicate')) return true;
-            return !error;
-          } else {
-            const { error } = await client.from('publicacoes_curtidas').delete().eq('publicacao_id', pubId).eq('user_id', authUid);
-            return !error;
-          }
-        }catch(_){ return false; }
-      }
-
-      // botão de curtir (overlay) — igual anúncios
-      try{
-        const likeBtn = card.querySelector('.dp-like-btn');
-        if(likeBtn){
-          likeBtn.addEventListener('click', async (ev)=>{
-            ev.preventDefault();
-            ev.stopPropagation();
-            const pid = String(item.id||'');
-            const isOn = dpPubLikedIds.has(pid);
-            const nextOn = !isOn;
-            if(nextOn) dpPubLikedIds.add(pid); else dpPubLikedIds.delete(pid);
-            likeBtn.classList.toggle('is-fav', nextOn);
-            likeBtn.setAttribute('aria-pressed', nextOn ? 'true':'false');
-            const ic = likeBtn.querySelector('i');
-            if(ic){ ic.classList.toggle('bx-heart', !nextOn); ic.classList.toggle('bxs-heart', nextOn); }
-            const ok = await dpTogglePublicacaoLike(pid, nextOn);
-            if(!ok){
-              // reverte
-              if(nextOn) dpPubLikedIds.delete(pid); else dpPubLikedIds.add(pid);
-              likeBtn.classList.toggle('is-fav', isOn);
-              likeBtn.setAttribute('aria-pressed', isOn ? 'true':'false');
-              if(ic){ ic.classList.toggle('bx-heart', isOn ? false : true); ic.classList.toggle('bxs-heart', isOn ? true : false); }
-            }
-          }, { capture: true });
-        }
-      }catch(_){ }
-
       const openModal = () => {
         if(typeof window.abrirModalPublicacao === "function"){
           window.abrirModalPublicacao(item.id);
@@ -1076,16 +2452,16 @@
       dpReelSelectedIds.clear();
       refreshReelsSelectionUI();
       if(queryResult.error && isTransientRestError(queryResult.error)){
-        grid.innerHTML = `<div class="dp-empty">Vídeos curtos indisponiveis agora (erro de rede/servidor).</div>`;
+        grid.innerHTML = `<div class="dp-empty">Videos curtos indisponiveis agora (erro de rede/servidor).</div>`;
         console.error("[DOKE] loadReels transient error:", queryResult.error);
         return;
       }
       if(queryResult.missingTable){
-        grid.innerHTML = `<div class="dp-empty">Nenhum Vídeo curto ainda.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Nenhum Video curto ainda.</div>`;
         return;
       }
       if(queryResult.denied){
-        grid.innerHTML = `<div class="dp-empty">Vídeos curtos indisponiveis no momento.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Videos curtos indisponiveis no momento.</div>`;
         return;
       }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
@@ -1114,23 +2490,12 @@
         <div class="dp-reelMedia">
           <video src="${item.video_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} muted loop playsinline preload="metadata"></video>
           <div class="dp-reelOverlay">
-            <b>${escapeHtml(item.titulo || "Vídeo curto")}</b>
+            <b>${escapeHtml(item.titulo || "Video curto")}</b>
             <p>${escapeHtml(item.descricao || "")}</p>
           </div>
           <div class="dp-reelPlay"><i class='bx bx-play'></i></div>
         </div>
       `;
-      try{
-        const likeBtn = card.querySelector('.dp-like-btn');
-        const pid = String(item.id||'');
-        const on = pid && dpPubLikedIds.has(pid);
-        if(likeBtn){
-          likeBtn.classList.toggle('is-fav', on);
-          likeBtn.setAttribute('aria-pressed', on ? 'true':'false');
-          const ic = likeBtn.querySelector('i');
-          if(ic){ ic.classList.toggle('bx-heart', !on); ic.classList.toggle('bxs-heart', on); }
-        }
-      }catch(_){ }
       if(canEdit){
         const marker = document.createElement("span");
         marker.className = "dp-itemSelectMark";
@@ -1183,7 +2548,7 @@
     const data = queryResult.data || [];
     if(queryResult.error || queryResult.denied){
       if(queryResult.error && isTransientRestError(queryResult.error)){
-        grid.innerHTML = `<div class="dp-empty">Portfolio indisponível agora (erro de rede/servidor).</div>`;
+        grid.innerHTML = `<div class="dp-empty">Portfolio indisponivel agora (erro de rede/servidor).</div>`;
         console.error("[DOKE] loadPortfolio transient error:", queryResult.error);
         return;
       }
@@ -1192,7 +2557,7 @@
         return;
       }
       if(queryResult.denied){
-        grid.innerHTML = `<div class="dp-empty">Portfolio indisponível no momento.</div>`;
+        grid.innerHTML = `<div class="dp-empty">Portfolio indisponivel no momento.</div>`;
         return;
       }
       grid.innerHTML = `<div class="dp-empty">Erro ao carregar. Se você ainda não criou as tabelas do perfil, rode o arquivo <b>supabase_schema.sql</b>.</div>`;
@@ -1220,8 +2585,8 @@
     grid.innerHTML = "";
     for(const item of data){
       const mediaUrl = String(item.media_url || "").trim();
-      const isVídeo = /\.(mp4|webm|ogg|mov|m4v)$/i.test(mediaUrl);
-      const media = isVídeo
+      const isVideo = /\.(mp4|webm|ogg|mov|m4v)$/i.test(mediaUrl);
+      const media = isVideo
         ? `<video src="${escapeHtml(mediaUrl)}" preload="metadata" muted playsinline></video>`
         : `<img src="${escapeHtml(mediaUrl)}" alt="Item do portfolio" loading="lazy" decoding="async">`;
       const card = document.createElement("div");
@@ -1229,9 +2594,7 @@
       card.setAttribute("role", "button");
       card.tabIndex = 0;
       card.innerHTML = `
-        <div class="dp-itemMedia">${media}
-          <button class="cp-more-btn cp-fav-btn dp-like-btn" type="button" data-like-kind="publicacao" data-like-id="${escapeHtml(String(item.id||""))}" data-fav-id="${escapeHtml(String(item.id||""))}" aria-label="Curtir publicação" aria-pressed="false"><i class='bx bx-heart'></i></button>
-        </div>
+        <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
           <b>${escapeHtml(item.titulo || "")}</b>
           <p>${escapeHtml(item.descricao || "")}</p>
@@ -1245,7 +2608,7 @@
       `;
       const openMedia = () => {
         if(!mediaUrl) return;
-        if (!isVídeo) {
+        if (!isVideo) {
           ensureGalleryModal();
           if (
             typeof window.abrirGaleria === "function" &&
@@ -2022,6 +3385,11 @@
   // Availability toggle
   // -----------------------------
   function initAvailability(ctx){
+  // hotfix UX: esconder toggle de disponibilidade para ganhar espaço no mobile
+  const __dpAvailRow = document.getElementById('dpAvailabilityRow');
+  if (__dpAvailRow) __dpAvailRow.remove();
+  return;
+
     const row = $("#dpAvailabilityRow");
     const sw = $("#dpSwitch");
     const text = $("#dpStatusText");
@@ -3088,7 +4456,7 @@ if(!rangeSel || !refreshBtn) return;
               <select class="dp-select" id="dpPubTipo">
                 <option value="foto">Foto</option>
                 <option value="video">Vídeo</option>
-                <option value="curto">Vídeo curto</option>
+                <option value="curto">Video curto</option>
                 <option value="antes_depois">Antes x Depois</option>
               </select>
             </div>
@@ -3133,7 +4501,7 @@ if(!rangeSel || !refreshBtn) return;
               capaFile
             });
             modal.close();
-            toast("Vídeo curto publicado!");
+            toast("Video curto publicado!");
             loadReels(ctx.client, ctx.target.id, ctx);
             return;
           }
@@ -3214,7 +4582,7 @@ if(!rangeSel || !refreshBtn) return;
             capaFile
           });
           modal.close();
-          toast("Vídeo curto publicado!");
+          toast("Video curto publicado!");
           loadReels(ctx.client, ctx.target.id, ctx);
         }catch(e){
           console.error(e);

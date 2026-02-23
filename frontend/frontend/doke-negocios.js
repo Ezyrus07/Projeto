@@ -25,7 +25,7 @@
     vidTrack: $("#tiktokScrollNegocios"),
     vidPrev: $("#negVidPrev"),
     vidNext: $("#negVidNext"),
-    vidEmpty: $("#negVídeosEmpty"),
+    vidEmpty: $("#negVideosEmpty"),
     destaques: $("#negDestaques"),
     destaquesEmpty: $("#negDestaquesEmpty"),
     resultados: $("#negResultados"),
@@ -157,7 +157,7 @@
     if (ratingText) metaBits.push(`<span><i class='bx bx-star'></i> ${ratingText}</span>`);
 
     const hrefPerfil = b.id ? `negócio.html?id=${encodeURIComponent(b.id)}` : "negócio.html";
-    const hrefChat = b.id ? `chat.html?negocio_id=${encodeURIComponent(b.id)}` : "chat.html";
+    const hrefChat = b.id ? `mensagens.html?negocio_id=${encodeURIComponent(b.id)}` : "mensagens.html";
 
     return `
       <article class="neg-card">
@@ -309,7 +309,7 @@
     });
   }
 
-  async function loadVídeos() {
+  async function loadVideos() {
     if (!els.vidTrack) return;
 
     // Start empty; only fill if table exists.
@@ -559,7 +559,7 @@
     bindEvents();
 
     await loadCategories();
-    await loadVídeos();
+    await loadVideos();
     await loadDestaques();
 
     // estado inicial

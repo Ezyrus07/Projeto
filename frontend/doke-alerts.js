@@ -4,7 +4,7 @@
   const safeStr = (value) => (value == null ? "" : String(value));
   const clamp = (text, size = 240) => (text.length > size ? `${text.slice(0, size - 3)}...` : text);
   const notifyMem = new Map();
-  const BROKEN_RE = /Ãƒ|Ã‚|Ã¢|Ã£||\uFFFD/;
+  const BROKEN_RE = /Ãƒ|Ã‚|Ã¢|Ã£|ï¿½|\uFFFD/;
   const ATTRS_TO_FIX = ["placeholder", "title", "aria-label", "alt"];
   const WORD_FIXES = [
     [/\bIn[ií]?cio\b/gi, "Início"],
@@ -255,7 +255,7 @@
     score += (input.match(/Ã‚/g) || []).length * 2;
     score += (input.match(/Ã¢/g) || []).length * 2;
     score += (input.match(/Ã£/g) || []).length * 2;
-    score += (input.match(//g) || []).length * 3;
+    score += (input.match(/ï¿½/g) || []).length * 3;
     score += (input.match(/\uFFFD/g) || []).length * 4;
     return score;
   }

@@ -216,8 +216,8 @@
     setupScrollNav(track, qs('.bizcat-prev'), qs('.bizcat-next'));
   }
 
-  // ---------- Render: Vídeos (demo) ----------
-  function renderVídeos() {
+  // ---------- Render: Videos (demo) ----------
+  function renderVideos() {
     const wrap = qs('#galeria-videos-negócios');
     if (!wrap) return;
 
@@ -250,7 +250,7 @@
         </div>
       `;
 
-      const open = () => abrirDemoVídeo({
+      const open = () => abrirDemoVideo({
         video: DEMO_VIDEO_URL,
         avatar,
         username: `@${slug(v.biz)}`,
@@ -277,7 +277,7 @@
   }
 
   // ---------- Demo modal (no DB) ----------
-  function abrirDemoVídeo({ video, avatar, username, desc }) {
+  function abrirDemoVideo({ video, avatar, username, desc }) {
     const modal = qs('#modalPlayerVideo');
     const player = qs('#playerPrincipal');
     if (!modal || !player) return;
@@ -484,7 +484,7 @@
   // ---------- Init ----------
   function init() {
     renderCategorias();
-    renderVídeos();
+    renderVideos();
     bindFilters();
     applyFilters();
   }

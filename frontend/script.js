@@ -26,7 +26,7 @@ if (document.readyState === 'loading') {
     requestAnimationFrame(() => dokeApplyAppPageEnter());
 }
 
-// [DOKE PATCH] Guards globais para evitar quebra em páginas diferentes + navega??o de grupos
+// [DOKE PATCH] Guards globais para evitar quebra em p?ginas diferentes + navega??o de grupos
 window.carregarProfissionaisDestaque ||= function(){};
 window.carregarProfissionaisNovos ||= function(){};
 window.carregarDestaques ||= function(){};
@@ -502,7 +502,7 @@ if (typeof window.__dokeEnsureAuthCompat === "function") window.__dokeEnsureAuth
 
 // Vari?veis Globais
 window.arquivoFotoSelecionado = null;
-window.arquivoVídeoSelecionado = null;
+window.arquivoVideoSelecionado = null;
 window.fotosAtuais = [];
 window.indiceAtual = 0;
 window.chatIdAtual = null;
@@ -597,14 +597,14 @@ window.publicarAnuncio = async function(event) {
             cliques: 0,
             mediaAvaliacao: 0,
             numAvaliacoes: 0,
-            // Controle de visibilidade do anúncio
+            // Controle de visibilidade do an?ncio
             // (se false, n?o aparece no feed p?blico, mas aparece no perfil do dono)
             ativo: true
         };
 
         await addDoc(collection(window.db, "anuncios"), novoAnuncio);
         
-        alert("Anúncio publicado com sucesso!");
+        alert("An?ncio publicado com sucesso!");
         window.location.href = "index.html";
 
     } catch (erro) {
@@ -629,25 +629,25 @@ window.previewImagemPost = function(input) {
     }
 }
 
-window.processarVídeoUpload = function(input) {
+window.processarVideoUpload = function(input) {
     if (input.files && input.files[0]) {
         const file = input.files[0];
-        if (file.size > 100 * 1024 * 1024) { alert("Vídeo muito grande (max 100MB)."); input.value = ""; return; }
-        window.arquivoVídeoSelecionado = file; 
-        document.getElementById('nomeVídeoSelecionado').innerText = "Vídeo: " + file.name;
-        document.getElementById('base64VídeoFile').value = "video_ok";
+        if (file.size > 100 * 1024 * 1024) { alert("V?deo muito grande (max 100MB)."); input.value = ""; return; }
+        window.arquivoVideoSelecionado = file; 
+        document.getElementById('nomeVideoSelecionado').innerText = "V?deo: " + file.name;
+        document.getElementById('base64VideoFile').value = "video_ok";
     }
 }
 
 window.removerImagemPost = function() {
     window.arquivoFotoSelecionado = null;
-    window.arquivoVídeoSelecionado = null;
+    window.arquivoVideoSelecionado = null;
     document.getElementById('base64PostImage').value = "";
-    document.getElementById('base64VídeoFile').value = "";
+    document.getElementById('base64VideoFile').value = "";
     document.getElementById('previewPostArea').style.display = 'none';
     document.getElementById('file-post-upload').value = "";
-    if(document.getElementById('inputVídeoFile')) document.getElementById('inputVídeoFile').value = "";
-    if(document.getElementById('nomeVídeoSelecionado')) document.getElementById('nomeVídeoSelecionado').innerText = "";
+    if(document.getElementById('inputVideoFile')) document.getElementById('inputVideoFile').value = "";
+    if(document.getElementById('nomeVideoSelecionado')) document.getElementById('nomeVideoSelecionado').innerText = "";
 }
 
 window.publicarConteudoUnificado = async function(event) {
@@ -663,7 +663,7 @@ window.publicarConteudoUnificado = async function(event) {
     if (tipo === 'video-curto') {
         const selectAnuncio = document.getElementById('selectAnuncioVinculado');
         if (!selectAnuncio || !selectAnuncio.value) {
-            alert("?? ? OBRIGAT?RIO vincular este vídeo a um dos seus servi?os.");
+            alert("?? ? OBRIGAT?RIO vincular este v?deo a um dos seus servi?os.");
             return;
         }
     }
@@ -673,7 +673,7 @@ window.publicarConteudoUnificado = async function(event) {
 
     try {
         let urlImagem = "";
-        let urlVídeo = "";
+        let urlVideo = "";
 
         // L?gica de Upload (Storage)
         if (window.arquivoFotoSelecionado) {
@@ -682,18 +682,18 @@ window.publicarConteudoUnificado = async function(event) {
             urlImagem = await getDownloadURL(snapImg.ref);
         }
 
-        if (window.arquivoVídeoSelecionado) {
+        if (window.arquivoVideoSelecionado) {
             const folder = tipo === 'video-curto' ? 'reels' : 'trabalhos';
             const refVid = ref(storage, `${folder}/${user.uid}/vid_${Date.now()}`);
-            const snapVid = await uploadBytes(refVid, window.arquivoVídeoSelecionado);
-            urlVídeo = await getDownloadURL(snapVid.ref);
+            const snapVid = await uploadBytes(refVid, window.arquivoVideoSelecionado);
+            urlVideo = await getDownloadURL(snapVid.ref);
         }
 
         let colecao = tipo === 'video-curto' ? 'reels' : (tipo === 'video' ? 'trabalhos' : 'posts');
         
         let dados = {
             uid: user.uid,
-            autorNome: perfilLocal.nome || "Usuário",
+            autorNome: perfilLocal.nome || "Usu?rio",
             autorUser: perfilLocal.user || "@usuario",
             autorFoto: perfilLocal.foto || "https://placehold.co/150",
             data: new Date().toISOString(),
@@ -703,16 +703,16 @@ window.publicarConteudoUnificado = async function(event) {
         if (tipo === 'video-curto') {
             const selectAnuncio = document.getElementById('selectAnuncioVinculado');
             const opt = selectAnuncio.options[selectAnuncio.selectedIndex];
-            dados.videoUrl = urlVídeo;
+            dados.videoUrl = urlVideo;
             dados.capa = urlImagem;
             dados.descricao = texto;
             dados.anuncioId = selectAnuncio.value; // ID DO SERVI?O PARA O BOT?O
             dados.categoria = opt.getAttribute('data-cat') || "Geral"; // TAG VERDE
-            dados.tag = (document.getElementById('inputTagVídeo').value || "NOVO").toUpperCase(); // TAG TOPO
+            dados.tag = (document.getElementById('inputTagVideo').value || "NOVO").toUpperCase(); // TAG TOPO
         } else {
             dados.texto = texto;
             dados.imagem = urlImagem;
-            dados.videoUrl = urlVídeo;
+            dados.videoUrl = urlVideo;
         }
 
         await addDoc(collection(db, colecao), dados);
@@ -896,7 +896,7 @@ window.carregarTrabalhosHome = async function() {
     const loadWatchdog = setTimeout(() => {
         try {
             if (container.querySelector('.is-skeleton') || container.querySelector('.skeleton')) {
-                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possível carregar videos agora.</p>";
+                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
                 container.setAttribute('aria-busy', 'false');
             }
         } catch (_) {}
@@ -935,11 +935,11 @@ window.carregarTrabalhosHome = async function() {
         snapshot.forEach(doc => {
             const data = doc.data();
             const linkPerfil = "";
-            const titulo = (data.titulo || data.descricao || data.categoria || "Vídeo curto").toString();
+            const titulo = (data.titulo || data.descricao || data.categoria || "V?deo curto").toString();
             const tituloCurto = titulo.length > 56 ? `${titulo.slice(0, 56)}...` : titulo;
-            const categoria = (data.categoria || "Vídeo curto").toString();
+            const categoria = (data.categoria || "V?deo curto").toString();
             const duracao = formatShortDuration(data.duracao || data.duracaoSegundos || data.tempo);
-            const capa = data.capa || "https://placehold.co/540x960?text=Vídeo";
+            const capa = data.capa || "https://placehold.co/540x960?text=Video";
             const fotoAutor = data.autorFoto || "https://placehold.co/120x120?text=User";
             const autorNome = (data.autorNome || "@profissional").toString();
             
@@ -955,7 +955,7 @@ window.carregarTrabalhosHome = async function() {
                  onmouseleave="pararPreview(this)"
                  onclick="abrirPlayerTikTok(${dadosModal})">
                 <div class="yt-chip-row">
-                    <span class="yt-chip">Vídeo-curto</span>
+                    <span class="yt-chip">V?deo-curto</span>
                     <span class="yt-duration">${escapeHtmlLocal(duracao)}</span>
                 </div>
                 <input type="hidden" class="video-src-hidden" name="videoSrc" value="${data.videoUrl}">
@@ -981,7 +981,7 @@ window.carregarTrabalhosHome = async function() {
     } catch (e) {
         console.error(e);
         try {
-            container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possível carregar videos agora.</p>";
+            container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
         } catch (_) {}
     }
     finally {
@@ -1007,7 +1007,7 @@ window.abrirPlayerTikTok = function(dadosRecebidos) {
     modal.style.display = 'flex';
     updateScrollLock();
 
-    // 2. Preencher Vídeo
+    // 2. Preencher V?deo
     const player = document.getElementById('playerPrincipal');
     const blur = document.getElementById('videoBlur');
     player.src = dados.video;
@@ -1104,8 +1104,8 @@ window.toggleLikeTikTok = function(btn) {
 }
 
 window.abrirComentarios = function() {
-    // Como voc? ainda n?o tem backend de comentários, vamos simular
-    // Futuramente aqui abriria uma gaveta de comentários
+    // Como voc? ainda n?o tem backend de coment?rios, vamos simular
+    // Futuramente aqui abriria uma gaveta de coment?rios
     
     let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
     if (!user) {
@@ -1116,7 +1116,7 @@ window.abrirComentarios = function() {
         return;
     }
     
-    const msg = prompt("Escreva seu comentário:");
+    const msg = prompt("Escreva seu coment?rio:");
     if(msg && msg.trim() !== "") {
         alert("Coment?rio enviado! (Simula??o)");
         // Aqui voc? salvaria no Firebase futuramente
@@ -1125,7 +1125,7 @@ window.abrirComentarios = function() {
 
 
 
-window.tocarVídeoDoCard = function(card) {
+window.tocarVideoDoCard = function(card) {
     const src = card.querySelector('.video-src-hidden').value;
     const modal = document.getElementById('modalPlayerVideo');
     const player = document.getElementById('playerPrincipal');
@@ -1230,11 +1230,11 @@ try {
 
 
 // Notifica??es Globais
-window.verificarNotificações = function(uid) {
+window.verificarNotificacoes = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
-        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
+        document.querySelectorAll('a[href="mensagens.html"]').forEach(link => {
             const existing = link.querySelector('.badge-notificacao');
             if(existing) existing.remove();
             if (qtd > 0) {
@@ -1514,7 +1514,7 @@ async function criarNotificacaoSocial({ acao, paraUid, postId, postTipo, postFon
 // 7. CARREGAMENTO DE AN?NCIOS (FEED) - (MANTIDO E INTEGRADO)
 // ============================================================
 
-// Builder global do card do anúncio (reutilizado no perfil para ficar 100% igual ao feed)
+// Builder global do card do an?ncio (reutilizado no perfil para ficar 100% igual ao feed)
 window.dokeBuildCardPremium = function(anuncio) {
     const titulo = String(anuncio.titulo || "Servi?o sem t?tulo");
     let preco = String(anuncio.preco || "Sob Or?amento").trim();
@@ -1601,16 +1601,16 @@ window.dokeBuildCardPremium = function(anuncio) {
           </div>
         </div>
         <div class="cp-more">
-          <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar anúncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
+          <button class="cp-more-btn cp-fav-btn" type="button" aria-label="Favoritar an?ncio" aria-pressed="false" ${anuncio.id ? `data-fav-id="${anuncio.id}"` : ''}>
             <i class='bx bx-heart'></i>
           </button>
         </div>
       </div>
 
       <div class="cp-v2-rating">
-        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avaliações do anúncio">
+        <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avalia??es do an?ncio">
           <span class="cp-mini-stars" aria-hidden="true">${starsInline}</span>
-          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes} avaliações)` : "Sem avaliações"}</span>
+          <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes} avalia??es)` : "Sem avalia??es"}</span>
         </button>
       </div>
 
@@ -2294,7 +2294,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             } catch (fireErr) {
                 lastLoadError = fireErr;
                 if (!dokeLooksLikeNetworkAbort(fireErr)) {
-                    console.warn("Falha ao carregar anúncios via compat:", fireErr);
+                    console.warn("Falha ao carregar an?ncios via compat:", fireErr);
                 }
             }
         }
@@ -2318,14 +2318,14 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (!fetched) {
-            console.warn("Nao foi possível carregar anuncios no momento. Exibindo estado vazio.", lastLoadError || null);
+            console.warn("Nao foi possivel carregar anuncios no momento. Exibindo estado vazio.", lastLoadError || null);
             listaAnuncios = [];
             fetched = true;
         }
 
         listaAnuncios = dokeDedupAnuncios(listaAnuncios);
-        // Não mostrar anúncios desativados no feed p?blico
-        // (anúncios antigos sem o campo 'ativo' continuam aparecendo)
+        // N?o mostrar an?ncios desativados no feed p?blico
+        // (an?ncios antigos sem o campo 'ativo' continuam aparecendo)
         listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
         dokeWriteCache(DOKE_CACHE_KEYS.anuncios, listaAnuncios);
 
@@ -2360,14 +2360,14 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (listaFinal.length === 0) {
-            // Nada encontrado: sugere alguns anúncios embaixo (quando houver termo de busca)
+            // Nada encontrado: sugere alguns an?ncios embaixo (quando houver termo de busca)
             if (termoBusca && termoBusca.trim() !== "" && listaAnuncios.length) {
                 const sugest = listaAnuncios.slice(0, 8);
                 feed.innerHTML = `
                   <div class="doke-empty">
                     <div class="doke-empty__icon">??</div>
-                    <div class="doke-empty__title">Nenhum anúncio encontrado</div>
-                    <div class="doke-empty__subtitle">Não achamos resultados para <b>${escapeHtml(termoBusca)}</b>. Tente ajustar seus filtros ou buscar por outro termo.</div>
+                    <div class="doke-empty__title">Nenhum an?ncio encontrado</div>
+                    <div class="doke-empty__subtitle">N?o achamos resultados para <b>${escapeHtml(termoBusca)}</b>. Tente ajustar seus filtros ou buscar por outro termo.</div>
                     <div class="doke-empty__actions">
                       <button class="doke-empty__btn" type="button" onclick="try{document.querySelector(\'#buscaInput\')?.focus()}catch(e){}">Nova busca</button>
                       <button class="doke-empty__btn doke-empty__btn--primary" type="button" onclick="try{window.location.href=\'busca.html\'}catch(e){}">Explorar</button>
@@ -2380,7 +2380,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
                     appendAnuncioCard(feed, card);
                 });
             } else {
-                feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum anúncio encontrado.</p>`;
+                feed.innerHTML = `<p style="text-align:center; padding:20px; color:#666;">Nenhum an?ncio encontrado.</p>`;
             }
             feed.setAttribute('aria-busy', 'false');
             return;
@@ -2437,7 +2437,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         return;
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
-        feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anúncios.</p>`;
+        feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar an?ncios.</p>`;
         feed.setAttribute('aria-busy', 'false');
     } finally {
         window.__dokeAnunciosLoading = false;
@@ -2540,7 +2540,7 @@ window.aplicarFiltrosBusca = function() {
         feed.innerHTML = `
           <div class="doke-empty doke-soft-card doke-empty-state">
             <div class="ico"><i class='bx bx-search-alt'></i></div>
-            <h3>Nenhum anúncio encontrado</h3>
+            <h3>Nenhum an?ncio encontrado</h3>
             <p>Tente ajustar os filtros, ampliar o raio ou buscar por outro termo.</p>
             <div class="actions">
               <button class="doke-btn primary" type="button" onclick="window.__dokeResetBuscaFiltros(); if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();">Limpar filtros</button>
@@ -2569,7 +2569,7 @@ window.aplicarFiltrosBusca = function() {
 window.usarMinhaLocalizacao = function() {
     const statusEl = document.getElementById('radiusStatus');
     if (!navigator.geolocation) {
-        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponível no navegador.';
+        if (statusEl) statusEl.textContent = 'Geolocalizacao indisponivel no navegador.';
         return;
     }
     if (statusEl) statusEl.textContent = 'Obtendo localizacao...';
@@ -2584,7 +2584,7 @@ window.usarMinhaLocalizacao = function() {
             if (window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
         },
         () => {
-            if (statusEl) statusEl.textContent = 'Nao foi possível obter a localizacao.';
+            if (statusEl) statusEl.textContent = 'Nao foi possivel obter a localizacao.';
         },
         { enableHighAccuracy: true, timeout: 8000, maximumAge: 60000 }
     );
@@ -2918,7 +2918,7 @@ async function protegerPaginasRestritas() {
     const isLocalDevHost = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ""));
     if (isLocalDevHost) return;
 
-    const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
+    const paginasRestritas = ['meuperfil.html', 'mensagens.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
 
     const caminhoAtual = window.location.pathname || "";
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
@@ -3683,7 +3683,7 @@ window.salvarCep = async function() {
 }
 window.preencherTodosCeps = function(cep) {
     if (!cep) return;
-    // Preencher todos os inputs com ID 'inputCep' na página
+    // Preencher todos os inputs com ID 'inputCep' na p?gina
     const todosInputsCep = document.querySelectorAll('input[id="inputCep"]');
     todosInputsCep.forEach(input => {
         input.value = cep;
@@ -4154,9 +4154,9 @@ window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
 
     const user = auth.currentUser;
     
-    // TRAVA 1: O dono n?o gera visualiza??o no pr?prio anúncio
+    // TRAVA 1: O dono n?o gera visualiza??o no pr?prio an?ncio
     if (user && idDonoAnuncio && user.uid === idDonoAnuncio) {
-        console.log("Dono visualizando o pr?prio anúncio (View ignorada).");
+        console.log("Dono visualizando o pr?prio an?ncio (View ignorada).");
         return; 
     }
 
@@ -4188,7 +4188,7 @@ window.registrarCliquePerfil = async function(uidDestino) {
 
     const user = auth.currentUser;
 
-    // TRAVA 1: Não conta clique no pr?prio perfil
+    // TRAVA 1: N?o conta clique no pr?prio perfil
     if (user && user.uid === uidDestino) return;
 
     // TRAVA 2: Anti-spam de sess?o para cliques no perfil
@@ -4279,7 +4279,7 @@ window.realizarLogin = async function(e) {
         const user = userCredential.user;
         const docRef = doc(window.db, "usuarios", user.uid);
         const docSnap = await getDoc(docRef);
-        let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usuário", email: email };
+        let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usu?rio", email: email };
 
         localStorage.setItem('usuarioLogado', 'true');
         localStorage.setItem('doke_usuario_perfil', JSON.stringify(dadosUsuario));
@@ -4698,16 +4698,6 @@ async function fetchSupabasePublicacoesFeed() {
     if (!client) return cached || [];
     if (dokeIsSupaTemporarilyDown() && Array.isArray(cached) && cached.length) return cached;
     try {
-        // Alguns ambientes antigos/usavam outra tabela. Tentamos em cascata.
-        const tableCandidates = ["publicacoes", "posts", "publications"].filter(Boolean);
-
-        const isMissingTableError = (err) => {
-            const code = String(err?.code || "");
-            const msg = String(err?.message || "").toLowerCase();
-            return code === "PGRST205" || msg.includes("could not find the table") || msg.includes("relation") && msg.includes("does not exist");
-        };
-
-        const attemptFetchFromTable = async (tableName) => {
         let lastError = null;
         let attempts = 0;
         let lastStatusKey = null;
@@ -4725,7 +4715,7 @@ async function fetchSupabasePublicacoesFeed() {
                 const select = buildPublicacoesSelect(combo);
                 const safeRes = await dokeWithTimeout(
                     client
-                        .from(tableName)
+                        .from("publicacoes")
                         .select(select)
                         .order("created_at", { ascending: false })
                         .limit(24),
@@ -4744,10 +4734,6 @@ async function fetchSupabasePublicacoesFeed() {
                 }
                 if (dokeLooksLikeNetworkAbort(safeError)) dokeMarkSupaDown();
                 lastError = safeError;
-
-                // Tabela inexistente -> pare cedo para tentar próximo candidato.
-                if (isMissingTableError(safeError)) break;
-
                 const beforeKey = publicacoesStatusKey();
                 markPublicacoesSelectError(safeError);
                 statusChanged = publicacoesStatusKey() !== beforeKey;
@@ -4763,7 +4749,7 @@ async function fetchSupabasePublicacoesFeed() {
             try {
                 const loose = await dokeWithTimeout(
                     client
-                        .from(tableName)
+                        .from("publicacoes")
                         .select("*")
                         .limit(24),
                     7000,
@@ -4787,13 +4773,6 @@ async function fetchSupabasePublicacoesFeed() {
             } catch (_) {}
         }
         if (lastError && !dokeLooksLikeNetworkAbort(lastError)) console.error("Erro ao carregar publicacoes supabase:", lastError);
-        return [];
-        };
-
-        for (const tableName of tableCandidates) {
-            const out = await attemptFetchFromTable(tableName);
-            if (Array.isArray(out) && out.length) return out;
-        }
     } catch (err) {
         if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
         else console.error("Falha critica ao buscar publicacoes:", err);
@@ -4826,14 +4805,14 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Firebase indisponível:", e);
+        dokeLogNonNetworkError("Feed Firebase indisponivel:", e);
     }
 
     let supaUserRow = null;
     try {
         supaUserRow = await getSupabaseUserRow();
     } catch (e) {
-        dokeLogNonNetworkError("Usuario Supabase indisponível:", e);
+        dokeLogNonNetworkError("Usuario Supabase indisponivel:", e);
     }
 
     try {
@@ -4847,7 +4826,7 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Supabase indisponível:", e);
+        dokeLogNonNetworkError("Feed Supabase indisponivel:", e);
     }
 
     feedItems.sort((a, b) => {
@@ -4859,7 +4838,7 @@ window.carregarFeedGlobal = async function() {
     container.innerHTML = "";
 
     if (feedItems.length === 0) {
-        container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publicação ainda.</p>";
+        container.innerHTML = "<p style='text-align:center; padding:20px;'>Nenhuma publica??o ainda.</p>";
         container.setAttribute('aria-busy', 'false');
         return;
     }
@@ -4957,7 +4936,7 @@ window.carregarFeedGlobal = async function() {
     container.setAttribute('aria-busy', 'false');
 }
 
-// Funções extras para perfil
+// Fun??es extras para perfil
 window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
@@ -4966,7 +4945,7 @@ window.carregarFeedGlobal = async function() {
     const feedWatchdog = setTimeout(() => {
         try {
             if (container.querySelector('.pub-skel') || container.querySelector('.skeleton')) {
-                container.innerHTML = "<div class='dp-empty'>Nao foi possível carregar publicacoes agora.</div>";
+                container.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
                 container.setAttribute('aria-busy', 'false');
             }
         } catch (_) {}
@@ -4986,7 +4965,7 @@ window.carregarFeedGlobal = async function() {
     try {
         supaUserRow = await getSupabaseUserRow();
     } catch (e) {
-        dokeLogNonNetworkError("Usuario Supabase indisponível:", e);
+        dokeLogNonNetworkError("Usuario Supabase indisponivel:", e);
     }
 
     try {
@@ -5004,7 +4983,7 @@ window.carregarFeedGlobal = async function() {
             });
         });
     } catch (e) {
-        dokeLogNonNetworkError("Feed Supabase indisponível:", e);
+        dokeLogNonNetworkError("Feed Supabase indisponivel:", e);
     }
 
     const firebaseFallbackTimeoutMs = 2500;
@@ -5025,7 +5004,7 @@ window.carregarFeedGlobal = async function() {
                 });
             });
         } catch (e) {
-            dokeLogNonNetworkError("Feed Firebase indisponível:", e);
+            dokeLogNonNetworkError("Feed Firebase indisponivel:", e);
         }
     }
 
@@ -5056,7 +5035,7 @@ window.carregarFeedGlobal = async function() {
                 });
             });
         } catch (e) {
-            dokeLogNonNetworkError("Feed Firebase(publicacoes) indisponível:", e);
+            dokeLogNonNetworkError("Feed Firebase(publicacoes) indisponivel:", e);
         }
     }
 
@@ -5144,10 +5123,10 @@ window.carregarFeedGlobal = async function() {
         if (String(entry.source || "").startsWith("firebase")) {
             const post = entry.data || {};
             const idPost = entry.id;
-            const postVídeo = post.videoUrl || post.video_url || post.video || post.url_video || "";
+            const postVideo = post.videoUrl || post.video_url || post.video || post.url_video || "";
             const postImage = post.imagem || post.image_url || post.img || post.thumb || post.capa || "";
-            const mediaHtml = postVídeo
-                ? `<video src="${postVídeo}" preload="metadata" muted playsinline></video>`
+            const mediaHtml = postVideo
+                ? `<video src="${postVideo}" preload="metadata" muted playsinline></video>`
                 : (postImage
                     ? `<img src="${postImage}" loading="lazy" alt="">`
                     : `<div class="dp-itemMedia" style="display:flex;align-items:center;justify-content:center;min-height:220px;background:linear-gradient(160deg,#0f2f57,#0b7768);color:#eef7ff;font-weight:700;">Sem midia</div>`);
@@ -5224,12 +5203,12 @@ window.carregarFeedGlobal = async function() {
     });
 
         container.setAttribute('aria-busy', 'false');
-        setupFeedVídeoPreview(container);
+        setupFeedVideoPreview(container);
         setupAntesDepois(container);
     } catch (e) {
         dokeLogNonNetworkError("Falha ao renderizar feed global:", e);
         try {
-            container.innerHTML = "<div class='dp-empty'>Nao foi possível carregar publicacoes agora.</div>";
+            container.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
             container.setAttribute('aria-busy', 'false');
         } catch (_) {}
     } finally {
@@ -5247,7 +5226,7 @@ function setupAntesDepois(container){
         return;
     }
 
-    // Fallback MUITO simples (caso a página n?o tenha carregado doke-beforeafter.js)
+    // Fallback MUITO simples (caso a p?gina n?o tenha carregado doke-beforeafter.js)
     // - aumenta o tempo para ficar mais confort?vel
     const els = container.querySelectorAll(".js-antes-depois");
     els.forEach((el)=>{
@@ -5268,7 +5247,7 @@ function setupAntesDepois(container){
 }
 
 
-function setupFeedVídeoPreview(container) {
+function setupFeedVideoPreview(container) {
     if (!container) return;
     const cards = container.querySelectorAll(".feed-publicacao-card");
     cards.forEach((card) => {
@@ -5316,7 +5295,7 @@ function setupFeedVídeoPreview(container) {
 }
 
 window.carregarPerfil = function() {
-    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuário", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
+    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usu?rio", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
     if(document.getElementById('nomePerfilDisplay')) document.getElementById('nomePerfilDisplay').innerText = usuario.nome;
     if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
     if(document.getElementById('fotoPerfilDisplay')) document.getElementById('fotoPerfilDisplay').src = usuario.foto;
@@ -5383,10 +5362,10 @@ document.addEventListener("DOMContentLoaded", async function() {
     await safeAwait("sincronizarSessaoSupabase", () => window.sincronizarSessaoSupabase?.(), 4500);
 
     // Primeiro: garante que sess?o (Supabase/Firebase) reflita no cache local,
-    // sen?o páginas restritas podem redirecionar mesmo com usu?rio autenticado.
+    // sen?o p?ginas restritas podem redirecionar mesmo com usu?rio autenticado.
     await safeAwait("verificarEstadoLogin", () => window.verificarEstadoLogin?.(), 4500);
 
-    // Depois: protege páginas com base em sess?o real (n?o s? localStorage)
+    // Depois: protege p?ginas com base em sess?o real (n?o s? localStorage)
     await safeAwait("protegerPaginasRestritas", () => protegerPaginasRestritas(), 4500);
 
     // 2. CARREGAMENTOS DIN?MICOS
@@ -5419,7 +5398,7 @@ document.addEventListener("DOMContentLoaded", async function() {
     
     if(document.getElementById('galeria-dinamica')) {
         safeInvoke("carregarReelsHome", () => carregarReelsHome());
-        enableVídeosCurtosPageScroll();
+        enableVideosCurtosPageScroll();
     }
 
     const cepSalvo = localStorage.getItem('meu_cep_doke');
@@ -5457,7 +5436,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         });
     });
 
-    // 4. L?gica de Busca e Anúncios
+    // 4. L?gica de Busca e An?ncios
     const params = new URLSearchParams(window.location.search);
     const termoUrl = params.get('q');
     const inputBusca = document.getElementById('inputBusca');
@@ -5487,7 +5466,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 const hasRealCard = !!reelsContainer.querySelector('.dp-reelCard, .tiktok-card:not(.is-skeleton), video');
                 const hasSkeleton = !!reelsContainer.querySelector('.is-skeleton, .skeleton');
                 if (!hasRealCard && hasSkeleton) {
-                    reelsContainer.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possível carregar videos agora.</p>";
+                    reelsContainer.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
                     reelsContainer.setAttribute('aria-busy', 'false');
                 }
             }
@@ -5498,7 +5477,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 const hasRealPost = !!feedContainer.querySelector('.feed-publicacao-card:not(.pub-skel), .card-feed-global, .dp-item:not(.pub-skel)');
                 const hasSkeleton = !!feedContainer.querySelector('.pub-skel, .skeleton');
                 if (!hasRealPost && hasSkeleton) {
-                    feedContainer.innerHTML = "<div class='dp-empty'>Nao foi possível carregar publicacoes agora.</div>";
+                    feedContainer.innerHTML = "<div class='dp-empty'>Nao foi possivel carregar publicacoes agora.</div>";
                     feedContainer.setAttribute('aria-busy', 'false');
                 }
             }
@@ -5636,7 +5615,7 @@ document.addEventListener("DOMContentLoaded", async function() {
             }
             
             // Ativa notifica??es de pedidos novos
-            try { window.monitorarNotificaçõesGlobal(user.uid); } catch (_) {}
+            try { window.monitorarNotificacoesGlobal(user.uid); } catch (_) {}
 
             if(window.location.pathname.includes('perfil')) {
                 carregarPerfil();
@@ -5661,7 +5640,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                     const fotoAuto = localStorage.getItem('doke_abrir_chat_foto');
                     const uidAuto = localStorage.getItem('doke_abrir_chat_uid');
                     
-                    // Limpa para n?o abrir sempre que recarregar a página
+                    // Limpa para n?o abrir sempre que recarregar a p?gina
                     localStorage.removeItem('doke_abrir_chat_id');
                     localStorage.removeItem('doke_abrir_chat_nome');
                     localStorage.removeItem('doke_abrir_chat_foto');
@@ -5695,7 +5674,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 }
                 localStorage.setItem('usuarioLogado', 'true');
             } else {
-                // Não apagar cache nem redirecionar aqui:
+                // N?o apagar cache nem redirecionar aqui:
                 // eventos de auth "null" podem ser transit?rios em dev/proxy.
                 const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
                 const lsLogado = (localStorage.getItem('usuarioLogado') === 'true') || !!perfilSalvo;
@@ -5712,7 +5691,7 @@ document.addEventListener("DOMContentLoaded", async function() {
                 ''
             ).trim();
             if (fallbackUid) {
-                try { window.monitorarNotificaçõesGlobal(fallbackUid); } catch (_) {}
+                try { window.monitorarNotificacoesGlobal(fallbackUid); } catch (_) {}
             }
         } catch (_) {}
         await verificarEstadoLogin();
@@ -6032,7 +6011,7 @@ window.carregarDadosExplorar = function() {
     // 1. Carrega Categorias
     if(window.carregarCategorias) window.carregarCategorias();
 
-    // 2. Carrega Inspira??es (Com Fallback para Anúncios)
+    // 2. Carrega Inspira??es (Com Fallback para An?ncios)
     carregarInspiracoes();
 
     // 3. Carrega Profissionais
@@ -6052,9 +6031,9 @@ async function carregarInspiracoes() {
         let listaParaMostrar = [];
         let tipoCard = 'trabalho';
 
-        // Se n?o tiver trabalhos (portf?lio), busca anúncios normais para preencher
+        // Se n?o tiver trabalhos (portf?lio), busca an?ncios normais para preencher
         if (snapshot.empty) {
-            console.log("Sem trabalhos, buscando anúncios...");
+            console.log("Sem trabalhos, buscando an?ncios...");
             q = query(collection(db, "anuncios"), limit(8));
             snapshot = await getDocs(q);
             tipoCard = 'anuncio';
@@ -6066,7 +6045,7 @@ async function carregarInspiracoes() {
             container.innerHTML = `
                 <div class="loading-msg">
                     <i class='bx bx-image-alt' style="font-size: 2rem; margin-bottom: 10px;"></i>
-                    <p>Ainda n?o h? publicações de inspira??o.</p>
+                    <p>Ainda n?o h? publica??es de inspira??o.</p>
                 </div>`;
             return;
         }
@@ -6074,7 +6053,7 @@ async function carregarInspiracoes() {
         snapshot.forEach(doc => {
             const data = doc.data();
             
-            // L?gica para pegar a imagem correta dependendo se ? Trabalho ou Anúncio
+            // L?gica para pegar a imagem correta dependendo se ? Trabalho ou An?ncio
             let imagem = "https://placehold.co/400x300?text=Sem+Imagem";
             if (data.capa) imagem = data.capa;
             else if (data.img) imagem = data.img;
@@ -6104,7 +6083,7 @@ async function carregarInspiracoes() {
         console.error("Erro ao carregar inspira??es:", e);
         container.innerHTML = `
             <div class="error-msg">
-                <p>Não foi poss?vel carregar as inspira??es.</p>
+                <p>N?o foi poss?vel carregar as inspira??es.</p>
                 <small>${e.message}</small>
             </div>`;
     }
@@ -6138,7 +6117,7 @@ async function carregarListaProfissionaisReal() {
             const foto = user.foto || "https://i.pravatar.cc/150";
             
             // L?gica do Nome: Prioriza o @usuario, sen?o pega o primeiro nome
-            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usuário");
+            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usu?rio");
             if (!nomeExibicao.startsWith('@') && user.user) {
                 nomeExibicao = user.user; // Garante que usa o handle se existir
             }
@@ -6146,7 +6125,7 @@ async function carregarListaProfissionaisReal() {
             const profissao = user.categoria_profissional || "Profissional";
             
             // L?GICA DE AVALIA??O CORRIGIDA
-            // Se tiver avaliações > 0, mostra estrelas. Sen?o, mostra "Novo".
+            // Se tiver avalia??es > 0, mostra estrelas. Sen?o, mostra "Novo".
             let htmlAvaliacao;
             if (user.stats && user.stats.avaliacoes > 0) {
                 htmlAvaliacao = `<span class="pro-rating">&#11088; ${user.stats.media}</span>`;
@@ -6180,7 +6159,7 @@ async function carregarListaProfissionaisReal() {
 // 9. L?GICA DE COMUNIDADES (ATUALIZADO)
 // ============================================================
 
-// Fun??o principal chamada ao abrir a página
+// Fun??o principal chamada ao abrir a p?gina
 window.carregarDadosComunidade = function() {
     carregarComunidadesGerais();
     carregarMeusGrupos();
@@ -6451,7 +6430,7 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
 
     const client = window.supabase || window.supabaseClient || window.sb || null;
     if (!client || typeof client.from !== "function") {
-        if (isPrivate) dokeCommToast("Não foi poss?vel solicitar entrada agora.");
+        if (isPrivate) dokeCommToast("N?o foi poss?vel solicitar entrada agora.");
         else abrirGrupo(grupoId);
         return;
     }
@@ -6512,7 +6491,7 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
         abrirGrupo(grupoId);
     } catch (e) {
         console.error("[DOKE] Erro ao entrar/solicitar grupo:", e);
-        if (isPrivate) dokeCommToast("Não foi poss?vel solicitar entrada agora.");
+        if (isPrivate) dokeCommToast("N?o foi poss?vel solicitar entrada agora.");
         else abrirGrupo(grupoId);
     }
 };
@@ -6985,7 +6964,7 @@ window.iniciarPreview = function(card) {
     if (!srcInput) return;
     const videoSrc = srcInput.value;
 
-    // Se n?o tiver link de vídeo, n?o faz nada
+    // Se n?o tiver link de v?deo, n?o faz nada
     if (!videoSrc || videoSrc === "undefined") return;
     if (hoverPreviewTimers.has(card)) return;
 
@@ -6999,11 +6978,11 @@ window.iniciarPreview = function(card) {
     const timer = window.setTimeout(() => {
         hoverPreviewTimers.delete(card);
 
-        // Verifica se o vídeo j? existe para n?o criar duplicado
+        // Verifica se o v?deo j? existe para n?o criar duplicado
         let video = card.querySelector('.video-preview-hover');
 
         if (!video) {
-            // Cria o elemento de vídeo dinamicamente
+            // Cria o elemento de v?deo dinamicamente
             video = document.createElement('video');
             video.src = videoSrc;
             video.className = 'video-preview-hover';
@@ -7011,7 +6990,7 @@ window.iniciarPreview = function(card) {
             video.loop = true;
             video.playsInline = true;
             
-            // Insere o vídeo antes do ?cone de play (para ficar embaixo da UI layer)
+            // Insere o v?deo antes do ?cone de play (para ficar embaixo da UI layer)
             const playIcon = card.querySelector('.play-icon');
             if (playIcon) {
                 card.insertBefore(video, playIcon);
@@ -7215,17 +7194,17 @@ window.addEventListener('beforeunload', () => {
 // ============================================================
 // MONITORAMENTO GLOBAL DE NOTIFICA??ES (SIDEBAR E MOBILE)
 // ============================================================
-window.monitorarNotificaçõesGlobal = function(uid) {
+window.monitorarNotificacoesGlobal = function(uid) {
     if (!uid) return;
     if (typeof collection !== "function" || typeof query !== "function" || typeof onSnapshot !== "function") {
         setTimeout(() => {
-            try { window.monitorarNotificaçõesGlobal(uid); } catch (_) {}
+            try { window.monitorarNotificacoesGlobal(uid); } catch (_) {}
         }, 1200);
         return;
     }
     if (!window.db && typeof db === "undefined") {
         setTimeout(() => {
-            try { window.monitorarNotificaçõesGlobal(uid); } catch (_) {}
+            try { window.monitorarNotificacoesGlobal(uid); } catch (_) {}
         }, 1200);
         return;
     }
@@ -7300,12 +7279,13 @@ window.monitorarNotificaçõesGlobal = function(uid) {
         };
     }
 
+    // Evita ruído de 400 em schemas sem colunas snake_case; mantém variantes camelCase/lowercase.
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
     const qRecebidosAlt = query(collection(db, "pedidos"), where("parauid", "==", resolvedUid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
     const qEnviadosAlt = query(collection(db, "pedidos"), where("deuid", "==", resolvedUid));
-    const qSociais = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
-    const qSociaisAlt = query(collection(db, "notificacoes"), where("paraUid", "==", resolvedUid), where("lida", "==", false));
+    const qSociais = query(collection(db, "notificacoes"), where("paraUid", "==", resolvedUid), where("lida", "==", false));
+    const qSociaisAlt = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
     const LEGACY_NOTIF_COLLECTION = "notifica\u00E7\u00F5es";
     const qSociaisLegacy = query(collection(db, LEGACY_NOTIF_COLLECTION), where("parauid", "==", resolvedUid), where("lida", "==", false));
     const qSociaisLegacyAlt = query(collection(db, LEGACY_NOTIF_COLLECTION), where("paraUid", "==", resolvedUid), where("lida", "==", false));
@@ -7365,9 +7345,9 @@ window.monitorarNotificaçõesGlobal = function(uid) {
         const safeNotif = Math.max(0, Number(notif || 0) || 0);
         const safeChat = Math.max(0, Number(chat || 0) || 0);
         syncSidebarBadge('notificacoes.html', 'badge-sidebar', safeNotif);
-        syncSidebarBadge('chat.html', 'badge-chat-sidebar', safeChat);
+        syncSidebarBadge('mensagens.html', 'badge-chat-sidebar', safeChat);
         syncShellBadge('notificacoes.html', safeNotif);
-        syncShellBadge('chat.html', safeChat);
+        syncShellBadge('mensagens.html', safeChat);
         state.lastTotals = { notif: safeNotif, chat: safeChat };
         if (safeNotif > 0 || safeChat > 0) state.lastNonZeroAt = Date.now();
         writePersistedBadges(safeNotif, safeChat);
@@ -7672,7 +7652,7 @@ styleModal.innerHTML = `
 `;
 document.head.appendChild(styleModal);
 
-// Cria o HTML do modal na página
+// Cria o HTML do modal na p?gina
 const modalHTML = `
 <div id="dokeModalOverlay" class="doke-overlay">
     <div class="doke-modal" id="dokeModalBox">
@@ -7842,7 +7822,7 @@ function setupDokeModal(title, msg, type, resolve, placeholder="") {
     };
 }
 
-// Garante que o HTML base do modal exista na página
+// Garante que o HTML base do modal exista na p?gina
 function injetarHtmlModal() {
     if (document.getElementById('dokeGlobalModal')) return;
     
@@ -7973,7 +7953,7 @@ window.gerarPagamento = async function() {
 // FUN??ES ATUALIZADAS (Seguir + Foto Perfil)
 // ============================================================
 
-window.togglePlayVídeo = function(event) {
+window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -7984,10 +7964,10 @@ window.togglePlayVídeo = function(event) {
     const frame = document.querySelector('.video-frame');
     
     // ATUALIZA A FOTO DO BOT?O PERFIL IGUAL A DO V?DEO
-    const avatarVídeo = document.getElementById('tiktokAvatarImg');
+    const avatarVideo = document.getElementById('tiktokAvatarImg');
     const btnProfile = document.getElementById('btnProfileImg');
-    if(avatarVídeo && btnProfile) {
-        btnProfile.src = avatarVídeo.src;
+    if(avatarVideo && btnProfile) {
+        btnProfile.src = avatarVideo.src;
     }
 
     if (!video) return;
@@ -8007,7 +7987,7 @@ window.togglePlayVídeo = function(event) {
 // NOVA FUN??O: SEGUIR
 window.toggleFollow = function(event, btn) {
     if(event) {
-        event.stopPropagation(); // Não clica no perfil, s? no seguir
+        event.stopPropagation(); // N?o clica no perfil, s? no seguir
     }
     
     // L?gica simples de alternar
@@ -8022,7 +8002,7 @@ window.toggleFollow = function(event, btn) {
     }
 }
 
-// (Mantenha as outras funções fecharPlayerVideo, etc.)
+// (Mantenha as outras fun??es fecharPlayerVideo, etc.)
 window.fecharPlayerVideo = function() {
     const modal = document.getElementById('modalPlayerVideo');
     const video = document.getElementById('playerPrincipal');
@@ -8092,7 +8072,7 @@ window.postarComentario = function() {
 
     if (texto.trim() === "") return;
 
-    // Cria o HTML do novo comentário
+    // Cria o HTML do novo coment?rio
     const novoHTML = `
         <div class="comment-item" style="animation: slideUpFade 0.3s ease;">
             <img src="https://placehold.co/40" class="comment-avatar">
@@ -8130,7 +8110,7 @@ window.checarEnter = function(event) {
 // ============================================================
 
 function sincronizarFotoPerfil() {
-    // 1. Pega a foto do criador (l? embaixo, no rodap? do vídeo)
+    // 1. Pega a foto do criador (l? embaixo, no rodap? do v?deo)
     const imgCriador = document.getElementById('tiktokAvatarImg');
     
     // 2. Pega a imagem do bot?o lateral
@@ -8142,8 +8122,8 @@ function sincronizarFotoPerfil() {
     }
 }
 
-// Atualize a fun??o togglePlayVídeo para chamar essa sincroniza??o
-window.togglePlayVídeo = function(event) {
+// Atualize a fun??o togglePlayVideo para chamar essa sincroniza??o
+window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
@@ -8183,18 +8163,18 @@ function carregarDadosUsuarioNoPlayer() {
         const usuario = JSON.parse(dadosLocal);
         const fotoReal = usuario.foto || "https://placehold.co/150";
 
-        // 2. Atualiza APENAS a foto do input de comentários (Essa sim ? voc?)
+        // 2. Atualiza APENAS a foto do input de coment?rios (Essa sim ? voc?)
         const imgInputComent = document.querySelector('.my-avatar-mini');
         if (imgInputComent) {
             imgInputComent.src = fotoReal;
         }
 
-        // OBS: Não alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
-        // Quem define a foto do vídeo ? a fun??o que cria o Feed (criarHTMLVídeo).
+        // OBS: N?o alteramos mais #tiktokAvatarImg ou #btnProfileImg aqui.
+        // Quem define a foto do v?deo ? a fun??o que cria o Feed (criarHTMLVideo).
     }
 }
 
-// Executa assim que a página carregar
+// Executa assim que a p?gina carregar
 document.addEventListener('DOMContentLoaded', () => {
     carregarDadosUsuarioNoPlayer();
     // Se existir a fun??o antiga sincronizarFotoPerfil, evitamos erros se ela n?o estiver definida
@@ -8207,13 +8187,13 @@ document.addEventListener('DOMContentLoaded', () => {
 // CONTROLE DE PLAY/PAUSE
 // ============================================================
 
-window.togglePlayVídeo = function(event) {
+window.togglePlayVideo = function(event) {
     if (event) {
         event.stopPropagation();
         event.preventDefault();
     }
     
-    // Garante que sua foto esteja certa no input de comentários
+    // Garante que sua foto esteja certa no input de coment?rios
     carregarDadosUsuarioNoPlayer();
 
     const video = document.getElementById('playerPrincipal');
@@ -8237,14 +8217,14 @@ window.togglePlayVídeo = function(event) {
 // L?GICA DE FEED (SCROLL INFINITO)
 // ============================================================
 
-let videosNoFeed = []; // Guarda os dados dos vídeos carregados
+let videosNoFeed = []; // Guarda os dados dos v?deos carregados
 let observerFeed = null; // Observador de scroll
 
 // ============================================================
 // 1. CARREGA O FEED (COM PROTE??O CONTRA V?DEOS ANTIGOS)
 // ============================================================
 
-window.abrirFeedVídeos = async function(idInicial) {
+window.abrirFeedVideos = async function(idInicial) {
     const modal = document.getElementById('modalPlayerVideo');
     const container = document.getElementById('containerFeedScroll');
     
@@ -8257,14 +8237,14 @@ window.abrirFeedVídeos = async function(idInicial) {
         const q = query(collection(db, "trabalhos"), orderBy("data", "desc"));
         const snapshot = await getDocs(q);
         
-        const promessasVídeos = snapshot.docs.map(async (docSnap) => {
-            const dataVídeo = docSnap.data();
+        const promessasVideos = snapshot.docs.map(async (docSnap) => {
+            const dataVideo = docSnap.data();
             const videoId = docSnap.id;
-            let criadorUid = dataVídeo.uid; 
+            let criadorUid = dataVideo.uid; 
 
             // Dados Padr?o (Fallback)
             let fotoFinal = "https://placehold.co/150"; 
-            let nomeFinal = "Usuário Doke";
+            let nomeFinal = "Usu?rio Doke";
             let userFinal = "@usuario";
 
             // Se tiver UID, busca dados frescos do usu?rio
@@ -8280,30 +8260,30 @@ window.abrirFeedVídeos = async function(idInicial) {
                     }
                 } catch (err) { console.error("Erro user:", err); }
             } else {
-                // Tenta salvar vídeos antigos que n?o t?m UID (opcional)
-                // console.log("Vídeo antigo sem UID:", videoId);
+                // Tenta salvar v?deos antigos que n?o t?m UID (opcional)
+                // console.log("V?deo antigo sem UID:", videoId);
             }
 
             return {
                 id: videoId,
-                ...dataVídeo,
+                ...dataVideo,
                 autorFoto: fotoFinal,
                 autorNome: nomeFinal,
                 autorUser: userFinal,
-                uid: criadorUid // Pode ser undefined em vídeos antigos
+                uid: criadorUid // Pode ser undefined em v?deos antigos
             };
         });
 
-        videosNoFeed = await Promise.all(promessasVídeos);
+        videosNoFeed = await Promise.all(promessasVideos);
 
         if (videosNoFeed.length === 0) {
-            container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum vídeo encontrado.</div>';
+            container.innerHTML = '<div style="color:white; display:flex; height:100vh; align-items:center; justify-content:center;">Nenhum v?deo encontrado.</div>';
             return;
         }
 
         container.innerHTML = '';
         videosNoFeed.forEach(video => {
-            const htmlItem = criarHTMLVídeo(video);
+            const htmlItem = criarHTMLVideo(video);
             container.insertAdjacentHTML('beforeend', htmlItem);
         });
 
@@ -8325,12 +8305,12 @@ window.abrirFeedVídeos = async function(idInicial) {
 // 2. GERA HTML (COM FUN??O SEGURA DE NAVEGA??O)
 // ============================================================
 
-function criarHTMLVídeo(dados) {
+function criarHTMLVideo(dados) {
     // Esconde bot?o seguir se for o pr?prio dono
     const userLogado = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
     const meuUser = (userLogado.user || "").trim().toLowerCase();
-    const donoVídeo = (dados.autorUser || "").trim().toLowerCase(); 
-    const displaySeguir = (meuUser === donoVídeo) ? 'none' : 'inline-block';
+    const donoVideo = (dados.autorUser || "").trim().toLowerCase(); 
+    const displaySeguir = (meuUser === donoVideo) ? 'none' : 'inline-block';
 
     // Garante uma imagem v?lida
     const imagemSegura = dados.autorFoto && dados.autorFoto.trim() !== "" ? dados.autorFoto : "https://placehold.co/150";
@@ -8375,7 +8355,7 @@ function criarHTMLVídeo(dados) {
                     <span class="action-label">Comentar</span>
                 </button>
 
-                <button class="action-btn" onclick="compartilharVídeo()">
+                <button class="action-btn" onclick="compartilharVideo()">
                     <div class="icon-circle"><i class='bx bx-share-alt'></i></div>
                     <span class="action-label">Enviar</span>
                 </button>
@@ -8392,7 +8372,7 @@ function criarHTMLVídeo(dados) {
 
 window.irParaPerfil = function(uid, user) {
     if (!uid || uid === "undefined" || uid === "null") {
-        alert("Perfil indispon?vel ou vídeo antigo.");
+        alert("Perfil indispon?vel ou v?deo antigo.");
         return;
     }
     resolverDestinoPerfil(uid, user || "")
@@ -8402,7 +8382,7 @@ window.irParaPerfil = function(uid, user) {
 
 window.irParaOrcamento = function(uid) {
     if (!uid || uid === "undefined") {
-        alert("Não ? poss?vel solicitar or?amento para este vídeo.");
+        alert("N?o ? poss?vel solicitar or?amento para este v?deo.");
         return;
     }
     window.location.href = `orcamento.html?uid=${uid}`;
@@ -8414,7 +8394,7 @@ function iniciarObservadorScroll() {
 
     const opcoes = {
         root: document.getElementById('containerFeedScroll'),
-        threshold: 0.6 // Dispara quando 60% do vídeo estiver vis?vel
+        threshold: 0.6 // Dispara quando 60% do v?deo estiver vis?vel
     };
 
     observerFeed = new IntersectionObserver((entries) => {
@@ -8423,10 +8403,10 @@ function iniciarObservadorScroll() {
             if (!video) return;
 
             if (entry.isIntersecting) {
-                // Vídeo apareceu na tela: PLAY
+                // V?deo apareceu na tela: PLAY
                 video.play().catch(e => console.log("Autoplay bloqueado pelo browser"));
             } else {
-                // Vídeo saiu da tela: PAUSE e RESET
+                // V?deo saiu da tela: PAUSE e RESET
                 video.pause();
                 video.currentTime = 0;
             }
@@ -8494,7 +8474,7 @@ function ensureModalPostDetalhe() {
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
                     <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-                        <input type="text" id="inputComentarioModal" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
+                        <input type="text" id="inputComentarioModal" placeholder="Adicione um coment?rio..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
                         <button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
                     </div>
                 </div>
@@ -8598,7 +8578,7 @@ window.abrirModalPost = async function(id, colecao) {
 
         // --- PREENCHE DADOS NA TELA ---
         
-        // M?dia (Foto ou Vídeo)
+        // M?dia (Foto ou V?deo)
         const mediaBox = document.getElementById('modalMediaContainer');
         if(data.videoUrl) {
             mediaBox.innerHTML = `<video src="${data.videoUrl}" controls autoplay style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
@@ -8918,7 +8898,7 @@ async function verificarStatusLikeSupabase(publicacaoId) {
 
 async function darLikeModalSupabase() {
     const client = getSupabaseClient();
-    if (!client) return alert("Supabase não configurado.");
+    if (!client) return alert("Supabase nao configurado.");
 
     const userRow = await getSupabaseUserRow();
     if (!userRow) return alert("Fa?a login para curtir.");
@@ -8986,7 +8966,7 @@ async function postarComentarioSupabase() {
     if (!texto) return;
 
     const client = getSupabaseClient();
-    if (!client) return alert("Supabase não configurado.");
+    if (!client) return alert("Supabase nao configurado.");
 
     const userRow = await getSupabaseUserRow();
     if (!userRow) return alert("Fa?a login para comentar.");
@@ -9053,11 +9033,11 @@ window.deletarComentario = async function(commentId) {
         // Deleta o documento da subcole??o 'comentarios'
         await deleteDoc(doc(db, colecao, postId, "comentarios", commentId));
         
-        // Recarrega a lista para sumir com o comentário deletado
+        // Recarrega a lista para sumir com o coment?rio deletado
         await carregarComentariosNoModal(postId, colecao);
         
     } catch (e) {
-        console.error("Erro ao deletar comentário:", e);
+        console.error("Erro ao deletar coment?rio:", e);
         alert("Erro ao apagar. Tente novamente.");
     }
 }
@@ -9093,8 +9073,8 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const item = await fetchSupabasePublicacaoById(publicacaoId);
     if (!item) {
-        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicacao indisponível.</div>";
-        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Nao foi possível carregar esta publicacao.</p>";
+        document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicacao indisponivel.</div>";
+        document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Nao foi possivel carregar esta publicacao.</p>";
         iconLike.style.pointerEvents = 'auto';
         iconLike.style.opacity = '1';
         return;
@@ -9124,22 +9104,22 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const mediaBox = document.getElementById('modalMediaContainer');
     if (item.tipo === "video") {
         mediaBox.innerHTML = `<video src="${item.media_url}" poster="${item.thumb_url || ""}" controls playsinline webkit-playsinline x5-playsinline preload="metadata" controlslist="nodownload noplaybackrate noremoteplayback nofullscreen" disablepictureinpicture disableremoteplayback style="max-width:100%; max-height:100%; object-fit:contain;"></video>`;
-        const modalVídeo = mediaBox.querySelector("video");
-        if (modalVídeo) {
+        const modalVideo = mediaBox.querySelector("video");
+        if (modalVideo) {
             const forceInlineMode = () => {
                 try {
-                    if (typeof modalVídeo.webkitSetPresentationMode === "function" && modalVídeo.webkitPresentationMode !== "inline") {
-                        modalVídeo.webkitSetPresentationMode("inline");
+                    if (typeof modalVideo.webkitSetPresentationMode === "function" && modalVideo.webkitPresentationMode !== "inline") {
+                        modalVideo.webkitSetPresentationMode("inline");
                     }
                 } catch (_) {}
             };
-            modalVídeo.setAttribute("playsinline", "");
-            modalVídeo.setAttribute("webkit-playsinline", "");
-            modalVídeo.setAttribute("x5-playsinline", "");
-            modalVídeo.addEventListener("loadedmetadata", forceInlineMode);
-            modalVídeo.addEventListener("play", forceInlineMode);
-            modalVídeo.addEventListener("touchstart", forceInlineMode, { passive: true });
-            modalVídeo.addEventListener("webkitbeginfullscreen", (ev) => {
+            modalVideo.setAttribute("playsinline", "");
+            modalVideo.setAttribute("webkit-playsinline", "");
+            modalVideo.setAttribute("x5-playsinline", "");
+            modalVideo.addEventListener("loadedmetadata", forceInlineMode);
+            modalVideo.addEventListener("play", forceInlineMode);
+            modalVideo.addEventListener("touchstart", forceInlineMode, { passive: true });
+            modalVideo.addEventListener("webkitbeginfullscreen", (ev) => {
                 if (ev && typeof ev.preventDefault === "function") ev.preventDefault();
                 forceInlineMode();
             });
@@ -9226,12 +9206,12 @@ window.postarComentarioModal = async function() {
             comentarioTexto: texto
         });
         
-        // Recarrega a lista para mostrar o novo comentário (e aplicar a tag Criador se necess?rio)
+        // Recarrega a lista para mostrar o novo coment?rio (e aplicar a tag Criador se necess?rio)
         await carregarComentariosNoModal(window.currentPostId, window.currentCollection);
 
     } catch(e) { 
         console.error("Erro ao comentar:", e); 
-        alert("Erro ao enviar comentário.");
+        alert("Erro ao enviar coment?rio.");
     } finally {
         btnEnviar.innerText = textoOriginal;
         btnEnviar.disabled = false;
@@ -9281,7 +9261,7 @@ async function carregarReelsIndex() {
     }
 }
 
-// Chame a fun??o ao carregar a página
+// Chame a fun??o ao carregar a p?gina
 document.addEventListener("DOMContentLoaded", () => {
     // ... suas outras inicializa??es ...
     carregarReelsIndex();
@@ -9302,7 +9282,7 @@ async function carregarReelsNoIndex() {
             new Promise((_, reject) => setTimeout(() => reject(new Error("timeout_reels_no_index")), 8000))
         ]);
 
-        container.innerHTML = ""; // Limpa os vídeos de exemplo
+        container.innerHTML = ""; // Limpa os v?deos de exemplo
 
         if(snapshot.empty) {
             // Se n?o tiver nenhum, mant?m o visual limpo
@@ -9336,7 +9316,7 @@ async function carregarReelsNoIndex() {
     } catch(e) {
         console.error("Erro ao carregar Reels no Index:", e);
         try {
-            container.innerHTML = "<p style='color:white; padding:10px;'>Nao foi possível carregar videos agora.</p>";
+            container.innerHTML = "<p style='color:white; padding:10px;'>Nao foi possivel carregar videos agora.</p>";
         } catch (_) {}
     }
 }
@@ -9449,7 +9429,7 @@ window.carregarReelsHome = async function() {
     const reelsWatchdog = setTimeout(() => {
         try {
             if (container.querySelector('.is-skeleton') || container.querySelector('.skeleton')) {
-                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possível carregar videos agora.</p>";
+                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
                 container.setAttribute('aria-busy', 'false');
             }
         } catch (_) {}
@@ -9473,7 +9453,7 @@ window.carregarReelsHome = async function() {
                 });
             });
         } catch (e) {
-            dokeLogNonNetworkError("Reels Supabase indisponível:", e);
+            dokeLogNonNetworkError("Reels Supabase indisponivel:", e);
         }
 
         const reelsFirebaseFallbackTimeoutMs = 2500;
@@ -9494,7 +9474,7 @@ window.carregarReelsHome = async function() {
                     });
                 });
             } catch (e) {
-                dokeLogNonNetworkError("Reels Firebase indisponível:", e);
+                dokeLogNonNetworkError("Reels Firebase indisponivel:", e);
             }
         }
 
@@ -9525,7 +9505,7 @@ window.carregarReelsHome = async function() {
                     });
                 });
             } catch (e) {
-                dokeLogNonNetworkError("Reels Firebase(trabalhos) indisponível:", e);
+                dokeLogNonNetworkError("Reels Firebase(trabalhos) indisponivel:", e);
             }
         }
 
@@ -9565,7 +9545,7 @@ window.carregarReelsHome = async function() {
 
             if (!videoUrl) return;
             const startId = `${source === "supabase" ? "sb" : "fb"}-${entry.id}`;
-            const tituloReel = (item.titulo || autorUser || "Vídeo curto");
+            const tituloReel = (item.titulo || autorUser || "Video curto");
             const descReel = (item.descricao || item.legenda || tag || "");
             const html = `
             <div class="dp-reelCard dp-item--clickable" onclick="window.location.href='feed.html?start=${startId}'" onmouseenter="playReelPreview(this)" onmouseleave="stopReelPreview(this)">
@@ -9585,7 +9565,7 @@ window.carregarReelsHome = async function() {
         dokeLogNonNetworkError("Falha ao renderizar reels home:", e);
         try {
             if (!container.innerHTML || container.querySelector('.is-skeleton')) {
-                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possível carregar videos agora.</p>";
+                container.innerHTML = "<p style='color:white; padding:20px;'>Nao foi possivel carregar videos agora.</p>";
             }
             container.setAttribute('aria-busy', 'false');
         } catch (_) {}
@@ -9596,7 +9576,7 @@ window.carregarReelsHome = async function() {
     }
 }
 
-function enableVídeosCurtosPageScroll() {
+function enableVideosCurtosPageScroll() {
     const wrapper = document.getElementById('galeria-dinamica');
     if (!wrapper || wrapper.dataset.scrollFix === "true") return;
     wrapper.dataset.scrollFix = "true";
@@ -9604,14 +9584,14 @@ function enableVídeosCurtosPageScroll() {
 
 // L?GICA DO DELAY DE 3 SEGUNDOS
 // L?GICA DO DELAY DE 3 SEGUNDOS COM RESET DE CAPA
-let timerVídeo;
+let timerVideo;
 
 window.agendarPlay = function(card) {
     const video = card.querySelector('video');
     if (!video) return;
 
     // Agenda o play para daqui a 3 segundos
-    timerVídeo = setTimeout(() => {
+    timerVideo = setTimeout(() => {
         video.play().catch(e => console.log("Autoplay bloqueado"));
     }, 3000);
 }
@@ -9620,10 +9600,10 @@ window.cancelarPlay = function(card) {
     const video = card.querySelector('video');
     
     // 1. Cancela o agendamento se o mouse sair antes de come?ar
-    clearTimeout(timerVídeo);
+    clearTimeout(timerVideo);
     
     if (video) {
-        // 2. Pausa o vídeo
+        // 2. Pausa o v?deo
         video.pause();
         
         // 3. O TRUQUE: Ao definir o tempo para 0 e chamar load(), 
@@ -9635,23 +9615,23 @@ window.cancelarPlay = function(card) {
 
 
 window.ativarModo = function(modo) {
-    const areaVídeo = document.getElementById('campos-video-extra');
+    const areaVideo = document.getElementById('campos-video-extra');
     const inputTipo = document.getElementById('tipoPostagemAtual');
     const inputFoto = document.getElementById('file-post-upload');
 
-    areaVídeo.style.display = 'none'; // Reseta
+    areaVideo.style.display = 'none'; // Reseta
     
     if (modo === 'video' || modo === 'video-curto') {
-        areaVídeo.style.display = 'block';
+        areaVideo.style.display = 'block';
         inputTipo.value = modo; 
         
         if(modo === 'video-curto') {
-            document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Vídeos Curtos)";
-            document.getElementById('inputTagVídeo').placeholder = "Legenda do Reel...";
+            document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (V?deos Curtos)";
+            document.getElementById('inputTagVideo').placeholder = "Legenda do Reel...";
             window.carregarMeusAnunciosSelect(); // CARREGA SERVI?OS
         } else {
             document.querySelector('#campos-video-extra small b').innerText = "Trabalhos (Feed)";
-            document.getElementById('inputTagVídeo').placeholder = "T?tulo do Servi?o...";
+            document.getElementById('inputTagVideo').placeholder = "T?tulo do Servi?o...";
         }
     } else {
         inputTipo.value = 'foto';
@@ -9672,7 +9652,7 @@ window.carregarMeusAnunciosSelect = async function() {
         select.innerHTML = '<option value="" selected disabled>Selecione um Servi?o (Obrigat?rio)</option>';
 
         if (snapshot.empty) {
-            select.innerHTML = '<option disabled>? Nenhum anúncio encontrado.</option>';
+            select.innerHTML = '<option disabled>? Nenhum an?ncio encontrado.</option>';
             return;
         }
 
@@ -9708,13 +9688,13 @@ window.uploadStory = async function(input) {
     btnUI.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
 
     try {
-        // Salva a imagem/vídeo no Storage
+        // Salva a imagem/v?deo no Storage
         const refStory = ref(storage, `stories/${user.uid}/${Date.now()}`);
         const snap = await uploadBytes(refStory, file);
         const url = await getDownloadURL(snap.ref);
 
         const perfil = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || {};
-        const isVídeo = file.type.startsWith('video');
+        const isVideo = file.type.startsWith('video');
 
         // Salva no Banco de Dados
         await addDoc(collection(db, "stories"), {
@@ -9722,7 +9702,7 @@ window.uploadStory = async function(input) {
             autorNome: perfil.user || "Usuario",
             autorFoto: perfil.foto || "https://placehold.co/50",
             midiaUrl: url,
-            tipo: isVídeo ? 'video' : 'foto',
+            tipo: isVideo ? 'video' : 'foto',
             dataCriacao: new Date().toISOString()
         });
 
@@ -9791,7 +9771,7 @@ window.carregarStoriesGlobal = async function() {
 
         if (snapshot.empty) return;
 
-        // 4. Agrupa stories por Usuário (UID)
+        // 4. Agrupa stories por Usu?rio (UID)
         const storiesPorUsuario = {};
 
         snapshot.forEach(doc => {
@@ -10108,7 +10088,7 @@ window.fecharModalPostForce = function() {
     if (modal) {
         modal.style.display = 'none';
         
-        // Limpa vídeo/imagem para parar som
+        // Limpa v?deo/imagem para parar som
         const mediaBox = document.getElementById('modalMediaContainer');
         if(mediaBox) mediaBox.innerHTML = "";
     }
@@ -10178,7 +10158,7 @@ window.enviarResposta = async function(parentId) {
             likeCount: 0
         });
 
-        // Atualiza o contador de respostas no comentário pai (para mostrar "Ver 1 resposta")
+        // Atualiza o contador de respostas no coment?rio pai (para mostrar "Ver 1 resposta")
         await updateDoc(parentRef, {
             replyCount: increment(1)
         });
@@ -10479,7 +10459,7 @@ window.navegarReel = function(direcao) {
         window.indiceReelAtual = novoIndice;
         
         // Efeito visual de troca
-        const mediaArea = document.getElementById('reelVídeoArea');
+        const mediaArea = document.getElementById('reelVideoArea');
         mediaArea.style.opacity = '0.5';
         
         renderizarReelNoModal(novoIndice).then(() => {
@@ -10492,7 +10472,7 @@ window.navegarReel = function(direcao) {
 }
 
 // ============================================================
-// Pre?o m?dio (5+ servi?os) por anúncio
+// Pre?o m?dio (5+ servi?os) por an?ncio
 // ============================================================
 window.__dokeAvgPrecoCache = window.__dokeAvgPrecoCache || new Map();
 
@@ -10574,7 +10554,7 @@ window.fecharModalVideoForce = function() {
     document.getElementById('modalPlayerVideo').style.display = 'none';
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
 }
-window.fecharModalVídeo = function(e) {
+window.fecharModalVideo = function(e) {
     if(e.target.id === 'modalPlayerVideo') fecharModalVideoForce();
 }
 
@@ -10585,14 +10565,14 @@ document.addEventListener("keydown", (event) => {
         fecharModalPostForce();
         return;
     }
-    const modalVídeo = document.getElementById("modalPlayerVideo");
-    if (modalVídeo && modalVídeo.style.display === "flex") {
+    const modalVideo = document.getElementById("modalPlayerVideo");
+    if (modalVideo && modalVideo.style.display === "flex") {
         fecharModalVideoForce();
     }
 });
 
 // PLAY/PAUSE
-window.togglePlayVídeo = function(e) {
+window.togglePlayVideo = function(e) {
     const v = e.target;
     const icon = document.getElementById('iconPlayOverlay');
     if(v.paused) {
@@ -10624,7 +10604,7 @@ async function carregarComentariosReel(reelId) {
         const snap = await getDocs(q);
         
         if(snap.empty) {
-            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem comentários.</div>";
+            lista.innerHTML = "<div style='text-align:center; padding:20px; color:#999;'>Sem coment?rios.</div>";
             return;
         }
 
@@ -11929,7 +11909,7 @@ async function postarComentarioSupabase() {
     if (!texto) return;
 
     const client = getSupabaseClient();
-    if (!client) return alert("Supabase não configurado.");
+    if (!client) return alert("Supabase nao configurado.");
 
     const userRow = await getSupabaseUserRow();
     if (!userRow) return alert("Faca login para comentar.");
@@ -12293,7 +12273,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         feed.innerHTML = `
           <div class="doke-empty doke-soft-card doke-empty-state">
             <div class="ico"><i class='bx bx-search-alt'></i></div>
-            <h3>Nenhum anúncio encontrado</h3>
+            <h3>Nenhum an?ncio encontrado</h3>
             <p>Tente ajustar os filtros, ampliar o raio ou buscar por outro termo.</p>
             <div class="actions">
               <button class="doke-btn primary" type="button" onclick="window.__dokeResetBuscaFiltros(); if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();">Limpar filtros</button>
@@ -12448,8 +12428,15 @@ async function carregarComentariosSupabase(publicacaoId) {
   window.dokeRenderTrabalhosSkeleton = function(container){
     if (!container) return;
     container.setAttribute('aria-busy', 'true');
-    const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
-    const count = vw <= 600 ? 2 : (vw <= 1024 ? 3 : 4);
+        const viewportW = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const hostW = Math.max(
+        Number(carousel?.clientWidth || 0),
+        Number(track?.clientWidth || 0),
+        viewportW
+    );
+    const approxItemW = viewportW <= 480 ? 110 : viewportW <= 768 ? 126 : 148;
+    const baseMin = viewportW <= 480 ? 6 : viewportW <= 768 ? 8 : 12;
+    const count = Math.max(baseMin, Math.ceil(hostW / approxItemW) + 3);
     const items = Array.from({length: count}).map(()=>
       '<div class="tiktok-card is-skeleton" aria-hidden="true">'
       + '  <div class="tiktok-skel-media skeleton"></div>'
@@ -12492,53 +12479,19 @@ async function carregarComentariosSupabase(publicacaoId) {
     container.innerHTML = items;
   };
 
-  
-  // ---------- Curtidas (Anúncios) - Supabase ----------
-  // Requer tabela: anuncios_curtidas (anuncio_id, user_id, created_at)
-  const ANUNCIO_LIKES_TABLE = "anuncios_curtidas";
-  let __dokeFavIds = new Set();
-  let __dokeFavLoaded = false;
-  let __dokeFavUserId = null;
-
-  async function dokeGetAuthUserId(){
-    if (__dokeFavUserId) return __dokeFavUserId;
-    const sbClient = window.sb || window.supabaseClient || window.sbClient || window.supabase;
-    if (!sbClient?.auth?.getUser) return null;
-    try{
-      const { data, error } = await sbClient.auth.getUser();
-      if (error) return null;
-      const uid = data?.user?.id || null;
-      __dokeFavUserId = uid;
-      return uid;
-    }catch(_){
-      return null;
-    }
+  // ---------- Favoritos ----------
+  const FAV_KEY = 'doke:favoritos:anuncios';
+  function getFavs(){
+    try { return new Set(JSON.parse(localStorage.getItem(FAV_KEY) || '[]')); } catch(e){ return new Set(); }
   }
-
-  async function dokeLoadAnuncioCurtidas(){
-    if (__dokeFavLoaded) return __dokeFavIds;
-    const sbClient = window.sb || window.supabaseClient || window.sbClient || window.supabase;
-    if (!sbClient?.from) return __dokeFavIds;
-    const uid = await dokeGetAuthUserId();
-    if (!uid) return __dokeFavIds;
-    try{
-      const { data, error } = await sbClient
-        .from(ANUNCIO_LIKES_TABLE)
-        .select("anuncio_id")
-        .eq("user_id", uid);
-      if (!error && Array.isArray(data)){
-        __dokeFavIds = new Set(data.map(r => String(r.anuncio_id)).filter(Boolean));
-        __dokeFavLoaded = true;
-      }
-    }catch(_){}
-    return __dokeFavIds;
+  function saveFavs(set){
+    try { localStorage.setItem(FAV_KEY, JSON.stringify([...set])); } catch(e) {}
   }
-
-  function dokeApplyAnuncioCurtidaUI(root=document){
-    const favs = __dokeFavIds || new Set();
+  function applyFavUI(root=document){
+    const favs = getFavs();
     root.querySelectorAll('.cp-fav-btn[data-fav-id], .cp-fav-btn[data-favId]').forEach(btn=>{
       const id = btn.dataset.favId || btn.dataset.fav_id || btn.dataset.favID || btn.dataset.favId;
-      const on = id && favs.has(String(id));
+      const on = id && favs.has(id);
       btn.classList.toggle('is-fav', !!on);
       btn.setAttribute('aria-pressed', on ? 'true' : 'false');
       const icon = btn.querySelector('i');
@@ -12546,64 +12499,24 @@ async function carregarComentariosSupabase(publicacaoId) {
         icon.classList.toggle('bx-heart', !on);
         icon.classList.toggle('bxs-heart', !!on);
       }
-      // corrige label quebrado por encoding antigo
-      if (btn.getAttribute("aria-label") && btn.getAttribute("aria-label").includes("an?")) {
-        btn.setAttribute("aria-label", "Curtir anúncio");
-      }
     });
   }
 
-  async function dokeToggleAnuncioCurtida(anuncioId, on){
-    const sbClient = window.sb || window.supabaseClient || window.sbClient || window.supabase;
-    if (!sbClient?.from) return false;
-    const uid = await dokeGetAuthUserId();
-    if (!uid){
-      try{ toast?.("Faça login para curtir."); }catch(_){}
-      return false;
-    }
-    try{
-      if (on){
-        const { error } = await sbClient.from(ANUNCIO_LIKES_TABLE).insert({ anuncio_id: anuncioId, user_id: uid });
-        if (error && String(error.message || "").toLowerCase().includes("duplicate")) return true;
-        return !error;
-      } else {
-        const { error } = await sbClient.from(ANUNCIO_LIKES_TABLE).delete().eq("anuncio_id", anuncioId).eq("user_id", uid);
-        return !error;
-      }
-    }catch(_){
-      return false;
-    }
-  }
-
-  document.addEventListener('click', async (ev)=>{
+  document.addEventListener('click', (ev)=>{
     const btn = ev.target.closest('.cp-fav-btn');
     if (!btn) return;
-    if (btn.dataset.likeKind) return;
     const id = btn.dataset.favId;
     if (!id) return;
-    ev.preventDefault();
-    ev.stopPropagation();
-    await dokeLoadAnuncioCurtidas();
-    const key = String(id);
-    const isOn = __dokeFavIds.has(key);
-    const next = !isOn;
-    // otimista
-    if (next) __dokeFavIds.add(key); else __dokeFavIds.delete(key);
-    dokeApplyAnuncioCurtidaUI(document);
-    const ok = await dokeToggleAnuncioCurtida(key, next);
-    if (!ok){
-      // reverte
-      if (next) __dokeFavIds.delete(key); else __dokeFavIds.add(key);
-      dokeApplyAnuncioCurtidaUI(document);
-    }
-  }, { capture: true });
-
-  document.addEventListener('DOMContentLoaded', async ()=>{
-    await dokeLoadAnuncioCurtidas();
-    dokeApplyAnuncioCurtidaUI(document);
+    const favs = getFavs();
+    if (favs.has(id)) favs.delete(id); else favs.add(id);
+    saveFavs(favs);
+    applyFavUI();
   });
 
-// chips na ?rea de busca removidos (polu?a o layout)
+  // aplica ao carregar
+  document.addEventListener('DOMContentLoaded', ()=>applyFavUI());
+
+  // chips na ?rea de busca removidos (polu?a o layout)
 
 
 
@@ -12708,10 +12621,15 @@ async function carregarComentariosSupabase(publicacaoId) {
 
   function renderCategorySkeleton(carousel, count) {
     if (!carousel) return;
+    const wrapper = carousel.closest ? (carousel.closest('.cat-scroll-wrap') || carousel.closest('.cat-list-wrapper')) : null;
+    const wrapW = (wrapper && wrapper.clientWidth) || carousel.clientWidth || window.innerWidth || document.documentElement.clientWidth || 360;
     const vw = window.innerWidth || document.documentElement.clientWidth || 1280;
+    const approxCard = vw <= 520 ? 108 : (vw <= 1024 ? 132 : 146);
+    const minBase = vw <= 520 ? 8 : (vw <= 1024 ? 10 : 14);
+    const autoCount = Math.ceil(wrapW / approxCard) + 3;
     const total = Number.isFinite(count) && count > 0
-      ? count
-      : (vw <= 520 ? 5 : (vw <= 1024 ? 6 : 8));
+      ? Math.max(count, autoCount, minBase)
+      : Math.max(minBase, autoCount);
     carousel.innerHTML = '';
     carousel.classList.add('is-loading');
     for (let i = 0; i < total; i++) {
@@ -12830,7 +12748,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         return [...freq.entries()].sort((a,b) => b[1]-a[1]).slice(0, 18).map(([nome,count])=>({nome,count}));
       }
     } catch (e) {
-      console.warn('Categorias (firestore) falhou:', e);
+      if (!window.__dokeCatsWarned) { window.__dokeCatsWarned = true; console.warn('Categorias (firestore) falhou:', e); }
     }
 
     // 3) ?ltimo fallback: sem categorias fixas (somente por demanda)
@@ -12838,8 +12756,8 @@ async function carregarComentariosSupabase(publicacaoId) {
   }
 
   function setupCatArrows(carousel) {
-    const left = $('.cat-arrow.left');
-    const right = $('.cat-arrow.right');
+    const left = $('.cat-prev') || $('.cat-arrow.left') || $('.pro-arrow.left.cat-prev');
+    const right = $('.cat-next') || $('.cat-arrow.right') || $('.pro-arrow.right.cat-next');
     if (left && !left.__dokeBound) {
       left.__dokeBound = true;
       left.addEventListener('click', () => carousel.scrollBy({ left: -260, behavior: 'smooth' }));
@@ -12947,7 +12865,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       }, { passive: true });
     }
 
-    // Wheel: não travar scroll vertical da pagina.
+    // Wheel: nao travar scroll vertical da pagina.
     // Horizontal via wheel somente com SHIFT (padrao UX).
     el.addEventListener('wheel', (ev) => {
       if (!ev.shiftKey) return; // deixa o site subir/descer normalmente
@@ -12996,7 +12914,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     });
   }
 
-  function addVídeosArrows() {
+  function addVideosArrows() {
     if (!isHome()) return;
     const track = document.getElementById('galeria-dinamica');
     const prev = document.querySelector('.vid-prev');
@@ -13176,7 +13094,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ----------------------------
   // PESQUISA ESTILO INSTAGRAM (NO MENU LATERAL)
   // - Abre dentro do menu lateral (sem navegar)
-  // - Recentes separados: Usuários e Anúncios
+  // - Recentes separados: Usu?rios e An?ncios
   // ----------------------------
   function initIgSidebarSearch(){
     const sidebar = document.querySelector('aside.sidebar-icones');
@@ -13184,7 +13102,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     sidebar.dataset.igSearchBound = '1';
 
     const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // j? usado na busca inline
-    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de anúncios
+    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de an?ncios
     const MODE_KEY      = 'doke_ig_search_mode_v1';
 
     const readKey = (key, fb=[]) => {
@@ -13250,8 +13168,8 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>
 
         <div class="ig-search-tabs" role="tablist" aria-label="Tipo de pesquisa">
-          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usuários</button>
-          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">Anúncios</button>
+          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usu?rios</button>
+          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">An?ncios</button>
         </div>
 
         <div class="ig-search-body">
@@ -13305,7 +13223,7 @@ function syncClear(){
         t.classList.toggle('is-active', on);
         t.setAttribute('aria-selected', on ? 'true' : 'false');
       });
-      input.placeholder = mode === 'ads' ? 'Pesquisar anúncios' : 'Pesquisar usu?rios';
+      input.placeholder = mode === 'ads' ? 'Pesquisar an?ncios' : 'Pesquisar usu?rios';
       syncClear();
       render();
       input.focus();
@@ -13410,13 +13328,13 @@ function syncClear(){
           const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
           const handle = escapeHtml(u.handle || '@usuario');
           const nome = escapeHtml(u.nome || '');
-          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
+          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usu?rio'));
           const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
           return `
             <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
               <img class="ig-avatar" src="${foto}" alt="">
               <div class="ig-main">
-                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usuário'}</span></div>
+                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usu?rio'}</span></div>
                 <div class="ig-line2">${nome || (u.isProf ? 'Conta profissional' : 'Conta')}</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
@@ -13448,7 +13366,7 @@ function syncClear(){
               <div class="ig-ico"><i class='bx bx-search'></i></div>
               <div class="ig-main">
                 <div class="ig-line1">${q}</div>
-                <div class="ig-line2">Pesquisar anúncios</div>
+                <div class="ig-line2">Pesquisar an?ncios</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
             </div>
@@ -13477,7 +13395,7 @@ function syncClear(){
         <div class="ig-row ig-row-action" role="listitem" data-q="${escapeHtml(term)}">
           <div class="ig-ico"><i class='bx bx-right-arrow-alt'></i></div>
           <div class="ig-main">
-            <div class="ig-line1">Pesquisar anúncios por ?${escapeHtml(term)}?</div>
+            <div class="ig-line1">Pesquisar an?ncios por ?${escapeHtml(term)}?</div>
             <div class="ig-line2">Abrir resultados</div>
           </div>
         </div>
@@ -13520,7 +13438,7 @@ function syncClear(){
         const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
         const isProf = u.isProfissional === true;
         const categoria = u.categoria_profissional || 'Profissional';
-        const sub = isProf ? categoria : (nomeFull || 'Usuário');
+        const sub = isProf ? categoria : (nomeFull || 'Usu?rio');
         const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
         return `
           <div class="ig-row ig-row-user" role="listitem"
@@ -13532,8 +13450,8 @@ function syncClear(){
                data-goto="${escapeHtml(goto)}">
             <img class="ig-avatar" src="${escapeHtml(foto)}" alt="">
             <div class="ig-main">
-              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usuário'}</span></div>
-              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usuário'))}</div>
+              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usu?rio'}</span></div>
+              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usu?rio'))}</div>
             </div>
           </div>
         `;
@@ -13635,7 +13553,7 @@ function syncClear(){
   }
 
 
-  // [DOKE] garante inicializa??o do painel de Pesquisa no menu lateral em todas as páginas
+  // [DOKE] garante inicializa??o do painel de Pesquisa no menu lateral em todas as p?ginas
   // (o menu lateral existe em m?ltiplos HTMLs, ent?o n?o pode depender do 'Para voc?')
   document.addEventListener('DOMContentLoaded', ()=>{ try{ initIgSidebarSearch(); }catch(e){} });
 
@@ -13662,7 +13580,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
           <div class="pv-inline-toggles" role="tablist" aria-label="Filtrar busca">
             <button type="button" class="pv-toggle is-active" data-mode="pro" role="tab" aria-selected="true">Profissionais</button>
-            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usuários</button>
+            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usu?rios</button>
           </div>
         </div>
 
@@ -13941,7 +13859,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
       if (document.getElementById('paraVoceSection')) return;
 
       // Melhor posicao: antes de "Profissionais em Destaque".
-      // Se não existir (por algum motivo), cai para categorias/videos.
+      // Se nao existir (por algum motivo), cai para categorias/videos.
       const anchor = document.querySelector('.pros-section') || document.querySelector('.categories-section') || document.querySelector('.videos-container');
       if (!anchor) return;
 
@@ -14105,7 +14023,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
     // profissionais: setas + drag + sem corte
     addProsArrows();
-    addVídeosArrows();
+    addVideosArrows();
     addPublicacoesArrows();
 
     // drag no carrossel de categorias tb
@@ -14256,13 +14174,13 @@ async function carregarProfissionaisIndex() {
 
   const profs = agruparProfissionais(anuncios || []);
 
-  // ? Destaque = s? quem tem avaliação
+  // ? Destaque = s? quem tem avalia??o
   const destaque = profs
     .filter(p => p.numAvaliacoes > 0)
     .sort((a, b) => b.mediaAvaliacao - a.mediaAvaliacao)
     .slice(0, 10);
 
-  // ?? Novos = sem avaliação
+  // ?? Novos = sem avalia??o
   const novos = profs
     .filter(p => p.numAvaliacoes === 0)
     .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
@@ -14312,7 +14230,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 /*************************************************
  * NEG?CIOS (negocios.html / perfil-empresa.html / negocio.html)
- * - Sem WhatsApp: CTA sempre leva para chat.html
+ * - Sem WhatsApp: CTA sempre leva para mensagens.html
  * - Localiza??o: usa CEP salvo e bot?o "Usar localiza??o atual" (geo)
  *************************************************/
 (function(){
@@ -14352,7 +14270,7 @@ document.addEventListener('DOMContentLoaded', function(){
       },
       (err)=>{
         console.warn('geo error', err);
-        toast('Não consegui acessar sua localiza??o. Verifique as permiss?es do navegador.');
+        toast('N?o consegui acessar sua localiza??o. Verifique as permiss?es do navegador.');
         if(btn){ btn.disabled=false; btn.classList.remove('is-loading'); }
       },
       { enableHighAccuracy:true, timeout: 10000, maximumAge: 30000 }
@@ -14399,7 +14317,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <div class="neg-loc">${escapeHtml(loc||'')}&nbsp;</div>
           <div class="neg-actions">
             <a class="btn btn-primary" href="negocio.html?id=${encodeURIComponent(id||'')}">Ver</a>
-            <a class="btn btn-ghost" href="chat.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
+            <a class="btn btn-ghost" href="mensagens.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
           </div>
         </div>
       </article>
@@ -14583,13 +14501,13 @@ document.addEventListener('DOMContentLoaded', function(){
       if (desc) desc.textContent = data.descricao || 'Sem descri??o.';
       if (meta) meta.textContent = [data.bairro, data.cidade, data.estado].filter(Boolean).join(', ');
       const chatBtn = root.querySelector('[data-chat]');
-      if (chatBtn) chatBtn.href = `chat.html?negocio_id=${encodeURIComponent(id)}`;
+      if (chatBtn) chatBtn.href = `mensagens.html?negocio_id=${encodeURIComponent(id)}`;
     }catch(err){
       console.warn('negocio load error', err);
     }
   }
 
-  // init por página
+  // init por p?gina
   document.addEventListener('DOMContentLoaded', ()=>{
     if (PAGE === 'negocios') initNegociosPage();
     if (PAGE === 'perfil-empresa') initPerfilEmpresaPage();
@@ -14605,7 +14523,7 @@ document.addEventListener('DOMContentLoaded', function(){
   try{ initIgSidebarSearch(); }catch(e){}
 });
 
-// Bloqueia criacao/publicacao de anuncios para usuario não profissional.
+// Bloqueia criacao/publicacao de anuncios para usuario nao profissional.
 document.addEventListener('DOMContentLoaded', function(){
   function getPerfilLocal(){
     try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {}; }
@@ -14643,7 +14561,7 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!el) return;
     const href = String(el.getAttribute && el.getAttribute('href') || '').toLowerCase();
     const txt = String(el.textContent || '').toLowerCase();
-    const tryPublish = href.includes('anunciar.html') || txt.includes('publicar anúncio') || txt.includes('publicar anuncio') || txt.includes('anunciar meu servi?o') || txt.includes('anunciar meu servico');
+    const tryPublish = href.includes('anunciar.html') || txt.includes('publicar an?ncio') || txt.includes('publicar anuncio') || txt.includes('anunciar meu servi?o') || txt.includes('anunciar meu servico');
     if (!tryPublish) return;
     ev.preventDefault();
     toUpgrade();

@@ -24,15 +24,15 @@
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <meta content="#0b7768" name="theme-color"/>
 <link href="chat-redesign.css" rel="stylesheet"/>
-<link href="style.css?v=20260220v01" rel="stylesheet"/>
+<link href="style.css?v=20260211v44" rel="stylesheet"/>
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
 <link href="doke-fixes.css" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-<!-- script.js?v=20260220v01 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
+<!-- script.js?v=20260218v60 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
 <style>
         /* =========================================================================
-           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRO)
+           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRï¿½O)
            ========================================================================= */
         
         :root{
@@ -606,7 +606,7 @@
             height: 100%; background: #f0f2f5; color: #555; text-align: center; border-bottom: 6px solid #009688;
         }
 
-        #box-conversa-real { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+        #box-conversa-real { display: none; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 
         .chat-header {
             height: 64px; background: rgba(255,255,255,0.92); border-bottom: 1px solid var(--ux-line);
@@ -1155,6 +1155,7 @@
         .chat-footer {
             min-height: 64px; background: #ffffff; border-top: 1px solid var(--ux-line);
             display: flex; align-items: center; padding: 12px 20px; gap: 10px; flex-shrink: 0;
+            margin-top: auto; position: sticky; bottom: 0; z-index: 8;
         }
         .input-msg { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; }
         .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; transition: opacity .18s ease, transform .18s ease; }
@@ -1215,6 +1216,9 @@
             .mobile-chat-open .coluna-chat { transform: translateX(0); }
             #chat-placeholder { display: none; }
             .btn-voltar-mobile { display: block; border: none; background: none; font-size: 1.5rem; color: #555; cursor: pointer; margin-right: 10px; }
+            #box-conversa-real { height: 100% !important; min-height: 0; }
+            .chat-footer { position: sticky; bottom: 0; margin-top: 0; }
+            .reply-bar { flex-shrink: 0; }
         }
         @media (max-width: 560px){
             .chat-header{ height: auto; padding: 10px 12px; gap: 10px; flex-wrap: wrap; align-content: flex-start; }
@@ -1346,7 +1350,7 @@
     border-bottom-left-radius: 4px;
 }
 
-/* rea de Mensagens com Fundo Personalizado */
+/* ï¿½rea de Mensagens com Fundo Personalizado */
 .mensagens-body {
     background-color: #f0f2f5;
     /* Adicionando um padr?o leve de fundo que lembra o WhatsApp */
@@ -1569,7 +1573,7 @@
 .detail-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .detail-value { color: #333; font-weight: 500; line-height: 1.4; }
 
-/* BOTES E LINKS DISCRETOS */
+/* BOTï¿½ES E LINKS DISCRETOS */
 .btn-detalhes {
     background: #f0fdfa; color: var(--cor0); border: 1px solid #ccfbf1;
     padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
@@ -1613,7 +1617,7 @@
 }
 .btn-cancelar-discreto:hover { background: #e74c3c; color: #fff; }
 
-/* BOTO MAIS DETALHES */
+/* BOTï¿½O MAIS DETALHES */
 .btn-detalhes-card {
     background: #f0f7f6; color: var(--cor0); border: 1px solid #d1e9e5;
     padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
@@ -2430,7 +2434,7 @@
 <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-shell.css?v=20260211v33" rel="stylesheet"/>
 <link href="doke-responsive.css?v=20260209v23" rel="stylesheet"/>
-<link href="page-chat.css?v=20260220v01" rel="stylesheet"/>
+<link href="page-chat.css?v=20260212v38" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 </head>
@@ -2441,7 +2445,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                N?o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -2511,9 +2515,15 @@
 </a>
 </div>
 <div class="item">
-<a href="chat.html">
+<a href="mensagens.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
 </a>
 </div>
 <div class="item">
@@ -2786,7 +2796,7 @@
 <input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file"/>
 <div class="finalizar-preview" id="finalizarPreviewUnico">
 <img alt="Preview" decoding="async" id="finalizarPreviewImgUnico" loading="lazy" style="display:none;"/>
-<video controls="" id="finalizarPreviewVídeoUnico" muted="" playsinline="" preload="metadata" style="display:none;"></video>
+<video controls="" id="finalizarPreviewVideoUnico" muted="" playsinline="" preload="metadata" style="display:none;"></video>
 <button onclick="limparArquivoFinalizacao('unico')" type="button">Remover</button>
 </div>
 </div>
@@ -2800,7 +2810,7 @@
 <input accept="image/*,video/*" id="finalizarAnexoAntes" style="display:none;" type="file"/>
 <div class="finalizar-preview" id="finalizarPreviewAntes">
 <img alt="Preview antes" decoding="async" id="finalizarPreviewImgAntes" loading="lazy" style="display:none;"/>
-<video controls="" id="finalizarPreviewVídeoAntes" muted="" playsinline="" preload="metadata" style="display:none;"></video>
+<video controls="" id="finalizarPreviewVideoAntes" muted="" playsinline="" preload="metadata" style="display:none;"></video>
 <button onclick="limparArquivoFinalizacao('antes')" type="button">Remover</button>
 </div>
 </div>
@@ -2812,7 +2822,7 @@
 <input accept="image/*,video/*" id="finalizarAnexoDepois" style="display:none;" type="file"/>
 <div class="finalizar-preview" id="finalizarPreviewDepois">
 <img alt="Preview depois" decoding="async" id="finalizarPreviewImgDepois" loading="lazy" style="display:none;"/>
-<video controls="" id="finalizarPreviewVídeoDepois" muted="" playsinline="" preload="metadata" style="display:none;"></video>
+<video controls="" id="finalizarPreviewVideoDepois" muted="" playsinline="" preload="metadata" style="display:none;"></video>
 <button onclick="limparArquivoFinalizacao('depois')" type="button">Remover</button>
 </div>
 </div>
@@ -2832,7 +2842,7 @@
 <div class="md-content" style="max-width: 520px; text-align: left;">
 <div class="md-header">
 <div style="display:flex; align-items:center; gap:10px;">
-<i class="bx bx-receipt" style="font-size:1.3rem; color:var(--cor0);"></i>
+<i class="bx bx-package" style="font-size:1.3rem; color:var(--cor0);"></i>
 <strong>Detalhes do Pedido</strong>
 </div>
 <button onclick="fecharModalDetalhes()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
@@ -3520,8 +3530,8 @@
         } catch (e) {
             console.error('Falha ao arquivar pedidos em lote:', e);
             const msg = desarquivar
-                ? 'Não foi poss?vel desarquivar os pedidos selecionados.'
-                : 'Não foi poss?vel arquivar os pedidos selecionados.';
+                ? 'N?o foi poss?vel desarquivar os pedidos selecionados.'
+                : 'N?o foi poss?vel arquivar os pedidos selecionados.';
             window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         }
     };
@@ -3583,8 +3593,8 @@
         } catch (e) {
             console.error('Falha ao arquivar/desarquivar contatos:', e);
             const msg = desarquivar
-                ? 'Não foi poss?vel desarquivar os contatos selecionados.'
-                : 'Não foi poss?vel arquivar os contatos selecionados.';
+                ? 'N?o foi poss?vel desarquivar os contatos selecionados.'
+                : 'N?o foi poss?vel arquivar os contatos selecionados.';
             window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         }
     };
@@ -3634,7 +3644,7 @@
             if (window.dokeToast) window.dokeToast('Contatos exclu?dos da sua lista.');
         } catch (e) {
             console.error('Falha ao excluir contatos selecionados:', e);
-            window.dokeAlert ? window.dokeAlert('Não foi poss?vel excluir os contatos selecionados.') : alert('Não foi poss?vel excluir os contatos selecionados.');
+            window.dokeAlert ? window.dokeAlert('N?o foi poss?vel excluir os contatos selecionados.') : alert('N?o foi poss?vel excluir os contatos selecionados.');
         }
     };
 
@@ -3943,7 +3953,7 @@
     }
       function buildReplyHtml(replyTo){
           if (!replyTo) return '';
-          const user = escapeHtml(replyTo.user || 'Usuário');
+          const user = escapeHtml(replyTo.user || 'Usu?rio');
           const preview = escapeHtml(replyTo.preview || '');
           return `<div class="reply-preview"><div class="rp-user">${user}</div><div class="rp-text">${preview}</div></div>`;
       }
@@ -4375,7 +4385,7 @@
         }
         const userEl = document.getElementById('replyUser');
         const prevEl = document.getElementById('replyPreview');
-        if (userEl) userEl.textContent = `@${replyContext.user || 'Usuário'}`;
+        if (userEl) userEl.textContent = `@${replyContext.user || 'Usu?rio'}`;
         if (prevEl) prevEl.textContent = replyContext.preview || '';
         bar.classList.add('show');
         updateScrollDownButton();
@@ -4399,42 +4409,12 @@
     }
 
     function matchBusca(...campos){
-        // BUSCA: suporta @handle e remove símbolos extras
-        const raw = String(listaBusca || '').trim();
-        const cleaned = raw.replace(/^@+/, '').trim();
-        const needle = normalizarTexto(cleaned);
+        const needle = normalizarTexto(listaBusca);
         if (!needle) return true;
-        return campos.some(c => {
-            const v = normalizarTexto(c);
-            if (v.includes(needle)) return true;
-            // permite buscar digitando com @ mesmo que o campo não tenha @
-            if (raw.startsWith('@') && (`@${v}`).includes(`@${needle}`)) return true;
-            return false;
-        });
+        return campos.some(c => normalizarTexto(c).includes(needle));
     }
 
-    
-
-    async function buscarUsuariosNoSupabase(termo, limite=12){
-        try{
-            const t = String(termo || '').trim().replace(/^@+/, '');
-            if (!t) return [];
-            const supa = window.supabase || window._supabase || (typeof supabase!=='undefined'?supabase:null);
-            if (!supa || !supa.from) return [];
-            // busca por handle (user) e por nome
-            const like = `%${t}%`;
-            const { data, error } = await supa
-              .from('usuarios')
-              .select('id,uid,nome,user,foto,isProfissional')
-              .or(`user.ilike.${like},nome.ilike.${like}`)
-              .limit(limite);
-            if (error) return [];
-            return Array.isArray(data)?data:[];
-        }catch(_){
-            return [];
-        }
-    }
-function getLastSeenKey(colecao, id){
+    function getLastSeenKey(colecao, id){
         return `doke_chat_last_seen_${colecao || ''}_${id || ''}`;
     }
     function getClearKey(colecao, id){
@@ -5280,7 +5260,7 @@ function getLastSeenKey(colecao, id){
 
       function getMensagemBloqueioConversa(){
           if (!(dmSolicitacaoAtivaAtual && !dmPodeEnviarAtual)) {
-              return 'Não foi poss?vel enviar mensagem neste momento.';
+              return 'N?o foi poss?vel enviar mensagem neste momento.';
           }
           if (dmSolicitacaoStatusAtual === 'pendente') {
               return 'Aguardando aprova??o da solicita??o de mensagem.';
@@ -5318,7 +5298,7 @@ function getLastSeenKey(colecao, id){
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
               console.error('Falha ao enviar solicita??o de mensagem:', e);
-              window.dokeAlert ? window.dokeAlert('Não foi poss?vel enviar a solicita??o de mensagem.') : alert('Não foi poss?vel enviar a solicita??o de mensagem.');
+              window.dokeAlert ? window.dokeAlert('N?o foi poss?vel enviar a solicita??o de mensagem.') : alert('N?o foi poss?vel enviar a solicita??o de mensagem.');
           }
       };
 
@@ -5405,7 +5385,7 @@ function getLastSeenKey(colecao, id){
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
               console.error('Falha ao enviar pedido de amizade:', e);
-              window.dokeAlert ? window.dokeAlert('Não foi poss?vel enviar o pedido de amizade.') : alert('Não foi poss?vel enviar o pedido de amizade.');
+              window.dokeAlert ? window.dokeAlert('N?o foi poss?vel enviar o pedido de amizade.') : alert('N?o foi poss?vel enviar o pedido de amizade.');
           }
       };
 
@@ -5595,10 +5575,10 @@ function getLastSeenKey(colecao, id){
         }
     });
 
-    // Funções Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
-    // IMPORTANT: script.js?v=20260220v01 (defer) tamb?m define window.dokeAlert/Confirm/Prompt.
+    // Fun??es Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
+    // IMPORTANT: script.js?v=20260218v60 (defer) tamb?m define window.dokeAlert/Confirm/Prompt.
     // Para evitar conflito (modal some e fica travando a tela), n?s reatribu?mos
-    // as funções AP?S o DOMContentLoaded, garantindo que esta vers?o seja a final.
+    // as fun??es AP?S o DOMContentLoaded, garantindo que esta vers?o seja a final.
     function bindDokeModalAPI(){
         window.dokeAlert = (msg, title = "Aviso") => new Promise(resolve => setupModal(title, msg, 'alert', resolve));
         window.dokeConfirm = (msg, title = "Confirma??o", type = 'normal') => new Promise(resolve => setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve));
@@ -6104,7 +6084,7 @@ function getLastSeenKey(colecao, id){
         let unreadPedidosCliente = 0;
         let unreadPedidosProf = 0;
         let unreadConvs = 0;
-        const updateChatBadge = () => ensureSidebarBadge('a[href="chat.html"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
+        const updateChatBadge = () => ensureSidebarBadge('a[href="mensagens.html"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
         let pedidosBadgeTimer = null;
         const refreshUnreadPedidos = async () => {
             try {
@@ -6292,7 +6272,7 @@ window.trocarAba = function(aba) {
     };
 
     window.verDetalhesOrcamento = async function(idPedido) {
-        // Mantido por compatibilidade (abre a página de or?amento)
+        // Mantido por compatibilidade (abre a p?gina de or?amento)
         
 
         const modal = document.getElementById('modalOrcamento');
@@ -6563,7 +6543,7 @@ window.trocarAba = function(aba) {
             if(!paraUid || !pedidoId) return;
             const perfil = (function(){
                 const p = JSON.parse(localStorage.getItem('doke_usuario_perfil')||'{}');
-                const nome = p.nome || 'Usuário';
+                const nome = p.nome || 'Usu?rio';
                 const raw = p.user || '';
                 const user = raw ? (raw.startsWith('@')? raw : '@'+raw) : '@usuario';
                 return { nome, user, foto: p.foto || 'https://placehold.co/50' };
@@ -6580,7 +6560,7 @@ window.trocarAba = function(aba) {
                 postfonte: 'supabase',
                 lida: false,
                 createdat: new Date().toISOString(),
-                link: `chat.html?chatId=${pedidoId}`
+                link: `mensagens.html?chatId=${pedidoId}`
             };
             if (extra && typeof extra === "object") {
                 const allow = [
@@ -6623,7 +6603,7 @@ window.trocarAba = function(aba) {
             const pedidoRef = doc(db, "pedidos", id);
             const pedidoSnap = await getDoc(pedidoRef);
             if (!pedidoSnap.exists()) {
-                window.dokeAlert("Pedido não encontrado.");
+                window.dokeAlert("Pedido nao encontrado.");
                 return;
             }
             const p = pedidoSnap.data() || {};
@@ -6716,7 +6696,7 @@ window.trocarAba = function(aba) {
             if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
         } catch (e) {
             console.error("Erro ao solicitar portfolio:", e);
-            window.dokeAlert("Nao foi possível enviar a solicitacao.");
+            window.dokeAlert("Nao foi possivel enviar a solicitacao.");
         }
     };
 
@@ -6740,7 +6720,7 @@ window.trocarAba = function(aba) {
             const msgRef = doc(db, "pedidos", id, "mensagens", msgId);
             const [pedidoSnap, msgSnap] = await Promise.all([getDoc(pedidoRef), getDoc(msgRef)]);
             if (!pedidoSnap.exists() || !msgSnap.exists()) {
-                window.dokeAlert("Solicitacao não encontrada.");
+                window.dokeAlert("Solicitacao nao encontrada.");
                 return;
             }
             const p = pedidoSnap.data() || {};
@@ -6823,7 +6803,7 @@ window.trocarAba = function(aba) {
             if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
         } catch (e) {
             console.error("Erro ao responder solicitacao de portfolio:", e);
-            window.dokeAlert("Nao foi possível responder agora.");
+            window.dokeAlert("Nao foi possivel responder agora.");
         }
     };
 
@@ -6838,13 +6818,13 @@ window.trocarAba = function(aba) {
         try {
             const sb = window.sb || window.supabase;
             if (!sb || typeof sb.from !== "function") {
-                window.dokeAlert("Integracao com portfolio indisponível.");
+                window.dokeAlert("Integracao com portfolio indisponivel.");
                 return;
             }
             const pedidoRef = doc(db, "pedidos", id);
             const pedidoSnap = await getDoc(pedidoRef);
             if (!pedidoSnap.exists()) {
-                window.dokeAlert("Pedido não encontrado.");
+                window.dokeAlert("Pedido nao encontrado.");
                 return;
             }
             const p = pedidoSnap.data() || {};
@@ -6871,7 +6851,7 @@ window.trocarAba = function(aba) {
 
             const profissionalId = await resolverProfissionalIdPortfolio(p);
             if (!profissionalId) {
-                window.dokeAlert("Nao foi possível identificar o perfil do profissional.");
+                window.dokeAlert("Nao foi possivel identificar o perfil do profissional.");
                 return;
             }
 
@@ -6920,7 +6900,7 @@ window.trocarAba = function(aba) {
             if (abaAtual === 'pedidos') carregarListaPedidos({ silent: true });
         } catch (e) {
             console.error("Erro ao publicar no portfolio:", e);
-            window.dokeAlert("Nao foi possível publicar no portfolio.");
+            window.dokeAlert("Nao foi possivel publicar no portfolio.");
         }
     };
 
@@ -7072,7 +7052,7 @@ function getFinalizacaoRefs(tipo) {
             nameEl: document.getElementById('finalizarNomeArquivoAntes'),
             preview: document.getElementById('finalizarPreviewAntes'),
             img: document.getElementById('finalizarPreviewImgAntes'),
-            video: document.getElementById('finalizarPreviewVídeoAntes')
+            video: document.getElementById('finalizarPreviewVideoAntes')
         };
     }
     if (tipo === 'depois') {
@@ -7081,7 +7061,7 @@ function getFinalizacaoRefs(tipo) {
             nameEl: document.getElementById('finalizarNomeArquivoDepois'),
             preview: document.getElementById('finalizarPreviewDepois'),
             img: document.getElementById('finalizarPreviewImgDepois'),
-            video: document.getElementById('finalizarPreviewVídeoDepois')
+            video: document.getElementById('finalizarPreviewVideoDepois')
         };
     }
     return {
@@ -7089,7 +7069,7 @@ function getFinalizacaoRefs(tipo) {
         nameEl: document.getElementById('finalizarNomeArquivoUnico'),
         preview: document.getElementById('finalizarPreviewUnico'),
         img: document.getElementById('finalizarPreviewImgUnico'),
-        video: document.getElementById('finalizarPreviewVídeoUnico')
+        video: document.getElementById('finalizarPreviewVideoUnico')
     };
 }
 
@@ -7174,14 +7154,14 @@ function preencherPreviewMidiaFinalizacao(tipo, file) {
         finalizacaoPreviewUrlUnico = blobUrl;
     }
 
-    const isVídeo = String(file.type || '').toLowerCase().startsWith('video/');
+    const isVideo = String(file.type || '').toLowerCase().startsWith('video/');
     if (refs.img) {
-        refs.img.style.display = isVídeo ? 'none' : 'block';
-        refs.img.src = isVídeo ? '' : blobUrl;
+        refs.img.style.display = isVideo ? 'none' : 'block';
+        refs.img.src = isVideo ? '' : blobUrl;
     }
     if (refs.video) {
-        refs.video.style.display = isVídeo ? 'block' : 'none';
-        if (isVídeo) {
+        refs.video.style.display = isVideo ? 'block' : 'none';
+        if (isVideo) {
             refs.video.src = blobUrl;
             refs.video.load();
         } else {
@@ -7327,7 +7307,7 @@ window.confirmarFinalizacaoPedido = async () => {
         if (btn) { btn.disabled = false; btn.innerHTML = "<i class='bx bx-check'></i> Finalizar servi?o"; }
     }
 };
-    // Funções do Modal
+    // Fun??es do Modal
     window.irParaAvaliacaoDireta = () => {
         try { window.fecharModalSucesso(); } catch (_) {}
         window.location.href = `avaliar.html?pedidoId=${window.pedidoIdParaAvaliar}`;
@@ -7370,42 +7350,16 @@ window.confirmarFinalizacaoPedido = async () => {
             }
             container.dataset.dokeAuthRetry = "0";
             if (resolvedUid !== currentUserUid) currentUserUid = resolvedUid;
-            const deField = await resolvePedidosField('de');
-            const paraField = await resolvePedidosField('para');
-            if (!deField && !paraField) {
-                replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">Não foi poss?vel identificar os campos do pedido.</div>`, 'pedidos:no-fields');
-                return;
-            }
+            // Resolve campos (mantém compatibilidade com realtime), mas a listagem usa multi-campos + fallback.
+            await resolvePedidosField('de');
+            await resolvePedidosField('para');
             pedidosFieldsDirty = false;
-            const base = collection(db, "pedidos");
-            const qDe = deField ? query(base, where(deField, "==", resolvedUid)) : null;
-            const qPara = paraField ? query(base, where(paraField, "==", resolvedUid)) : null;
-            const [s1, s2] = await Promise.all([
-                qDe ? safeGetDocsWithField(qDe, deField) : emptySnap(),
-                qPara ? safeGetDocsWithField(qPara, paraField) : emptySnap()
-            ]);
 
             if (token !== pedidosRenderToken) return;
             const sigParts = [listaModo, pedidosFiltro, listaBusca];
             let htmlOut = "";
-            const itensRaw = [
-                ...s1.docs.map(d=>({d, papel:'cliente'})),
-                ...s2.docs.map(d=>({d, papel:'profissional'}))
-            ];
-            const map = new Map();
-            for (const it of itensRaw) {
-                const pid = it?.d?.id;
-                if (!pid) continue;
-                // Preferir "cliente" quando duplicar, pois ? a vis?o mais comum para o usu?rio final.
-                if (!map.has(pid) || (map.get(pid).papel !== 'cliente' && it.papel === 'cliente')) {
-                    map.set(pid, it);
-                }
-            }
-            const itens = Array.from(map.values()).sort((a, b) => {
-                const ta = getPedidoSortTs(a?.d?.data?.());
-                const tb = getPedidoSortTs(b?.d?.data?.());
-                return tb - ta;
-            });
+            const itens = await listarPedidosDoUsuarioMultiCampos(resolvedUid);
+            if (token !== pedidosRenderToken) return;
             const agendaItems = [];
 
             if(itens.length === 0) {
@@ -7549,7 +7503,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         <div class="ip-andamento ${cardCloseBtn ? 'has-close' : ''}" data-pedido-id="${id}">
                             ${cardCloseBtn}
                             <div class="ip-andamento-icon">
-                                <i class='bx bx-receipt' style="font-size:20px;"></i>
+                                <i class='bx bx-package' style="font-size:20px;"></i>
                             </div>
                             <div class="ip-andamento-content">
                                 <div class="ip-andamento-title">${label}</div>
@@ -7584,7 +7538,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         <div class="ip-header"><span class="tag-orcamento">OR?AMENTO</span><div class="ip-header-actions">${selectMarker}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user">
                             <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
-                            <span>${dU.user || 'Usuário'}</span>
+                            <span>${dU.user || 'Usu?rio'}</span>
                         </div>
                         <div class="ip-body">
                             <h4>${p.servicoReferencia}</h4>
@@ -7614,7 +7568,7 @@ window.confirmarFinalizacaoPedido = async () => {
             if (container) {
                 replaceListHtmlSmooth(container, `
                     <div style="text-align:center; padding:30px; color:#999;">
-                        Não foi poss?vel carregar os pedidos.
+                        N?o foi poss?vel carregar os pedidos.
                         <button style="margin-top:10px; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; cursor:pointer;" onclick="carregarListaPedidos()">Tentar novamente</button>
                     </div>`, 'pedidos:error');
             }
@@ -7669,9 +7623,23 @@ window.confirmarFinalizacaoPedido = async () => {
 
       function getConversaParticipantes(data) {
           const bag = new Set();
+          const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           const pushUid = (value) => {
               const uid = String(value || '').trim();
               if (uid) bag.add(uid);
+          };
+          const scanAny = (value, depth = 0) => {
+              if (depth > 2 || value == null) return;
+              if (Array.isArray(value)) {
+                  value.forEach((v) => scanAny(v, depth + 1));
+                  return;
+              }
+              if (typeof value === 'object') {
+                  Object.values(value).forEach((v) => scanAny(v, depth + 1));
+                  return;
+              }
+              const s = String(value || '').trim();
+              if (uuidLike.test(s)) bag.add(s);
           };
           if (Array.isArray(data?.participantes)) data.participantes.forEach(pushUid);
           pushUid(data?.participante1);
@@ -7688,6 +7656,14 @@ window.confirmarFinalizacaoPedido = async () => {
           pushUid(data?.destinatarioUid);
           pushUid(data?.remetente_uid);
           pushUid(data?.destinatario_uid);
+          // Heurística para schemas legados: extrai UUIDs de campos/ninhos relacionados.
+          try {
+              for (const [k, v] of Object.entries(data || {})) {
+                  if (/(uid|particip|usuario|user|remet|destin|de_?uid|para_?uid)/i.test(String(k || ''))) {
+                      scanAny(v, 0);
+                  }
+              }
+          } catch (_) {}
           return Array.from(bag);
       }
 
@@ -7714,8 +7690,8 @@ window.confirmarFinalizacaoPedido = async () => {
           { field: "destinatario_uid", op: "==" }
       ];
       const conversaFieldCaps = Object.fromEntries(conversaFieldCandidates.map((c) => [c.field, true]));
-      const conversaFieldCapsStorageKey = "doke_chat_conversas_field_caps";
-      const conversaFieldCapsCookie = "doke_chat_conversas_field_caps";
+      const conversaFieldCapsStorageKey = "doke_chat_conversas_field_caps_v20260221";
+      const conversaFieldCapsCookie = "doke_chat_conversas_field_caps_v20260221";
       try {
           let rawSaved = localStorage.getItem(conversaFieldCapsStorageKey) || "";
           if (!rawSaved) {
@@ -7730,6 +7706,13 @@ window.confirmarFinalizacaoPedido = async () => {
               Object.keys(conversaFieldCaps).forEach((field) => {
                   if (saved[field] === false) conversaFieldCaps[field] = false;
               });
+          }
+      } catch (_) {}
+      try {
+          const vals = Object.values(conversaFieldCaps || {});
+          const falseCount = vals.filter((v) => v === false).length;
+          if (vals.length && falseCount >= Math.max(4, vals.length - 1)) {
+              Object.keys(conversaFieldCaps).forEach((k) => { conversaFieldCaps[k] = true; });
           }
       } catch (_) {}
       let conversaFieldsDirty = false;
@@ -7771,7 +7754,7 @@ window.confirmarFinalizacaoPedido = async () => {
       async function safeGetDocsConversa(q, label, fieldKey) {
           if (fieldKey && conversaFieldCaps[fieldKey] === false) return emptySnap();
           try {
-              return await withTimeout(getDocs(q), 10000, label || "conversas");
+              return await withTimeout(getDocs(q), 25000, label || "conversas");
           } catch (e) {
               if (fieldKey && (isMissingColumnErr(e) || isConversaFieldErr(e))) {
                   conversaFieldCaps[fieldKey] = false;
@@ -7784,44 +7767,56 @@ window.confirmarFinalizacaoPedido = async () => {
           }
       }
 
-      async function listarConversasDoUsuario(uid) {
-          if (!uid) return [];
-          const base = collection(db, "conversas");
-          const consultas = conversaFieldCandidates
-              .filter(({ field }) => conversaFieldCaps[field] !== false)
-              .map(({ field, op }) => {
-                  const q = query(base, where(field, op, uid), limit(200));
-                  return { q, label: field, field };
-              });
+async function listarConversasDoUsuario(uid) {
+    if (!uid) return [];
+    const base = collection(db, "conversas");
+    const map = new Map();
 
-          const map = new Map();
-          if (consultas.length) {
-              const snaps = await Promise.all(
-                  consultas.map(({ q, label, field }) => safeGetDocsConversa(q, "conversas:" + label, field))
-              );
-              snaps.forEach((snap) => {
-                  (snap?.docs || []).forEach((docSnap) => {
-                      if (!docSnap?.id) return;
-                      map.set(docSnap.id, docSnap);
-                  });
-              });
-          }
+    // 1) Fallback amplo paginado primeiro (evita tempestade de 400 em schemas legados)
+    const broadRows = await fetchRowsBroadPaged("conversas", { pageSize: 200, maxPages: 8 });
+    for (const docSnap of (broadRows || [])) {
+        const data = docSnap?.data ? (docSnap.data() || {}) : {};
+        if (!conversaPertenceAoUsuario(data, uid)) continue;
+        if (!docSnap?.id) continue;
+        map.set(docSnap.id, docSnap);
+    }
+    if (map.size) return Array.from(map.values());
 
-          if (!map.size || conversaFieldsDirty) {
-              conversaFieldsDirty = false;
-              const fallbackSnap = await safeGetDocsConversa(query(base, limit(200)), "conversas:fallback");
-              (fallbackSnap?.docs || []).forEach((docSnap) => {
-                  const data = docSnap?.data ? (docSnap.data() || {}) : {};
-                  if (!conversaPertenceAoUsuario(data, uid)) return;
-                  if (!docSnap?.id) return;
-                  map.set(docSnap.id, docSnap);
-              });
-          }
+    // 2) Tenta leitura genérica sem filtro (muitas vezes funciona e evita probes por coluna)
+    const fallbackSnap = await safeGetDocsConversa(query(base, limit(300)), "conversas:fallback");
+    (fallbackSnap?.docs || []).forEach((docSnap) => {
+        const data = docSnap?.data ? (docSnap.data() || {}) : {};
+        if (!conversaPertenceAoUsuario(data, uid)) return;
+        if (!docSnap?.id) return;
+        map.set(docSnap.id, docSnap);
+    });
+    if (map.size) return Array.from(map.values());
+    if ((fallbackSnap?.docs || []).length) return [];
 
-          return Array.from(map.values());
-      }
+    // 3) Último fallback: campos conhecidos (compat com schemas restritos por RLS)
+    const consultas = conversaFieldCandidates
+        .filter(({ field }) => conversaFieldCaps[field] !== false)
+        .map(({ field, op }) => {
+            const q = query(base, where(field, op, uid), limit(200));
+            return { q, label: field, field };
+        });
 
-      window.carregarListaConversas = async function() {
+    if (consultas.length) {
+        const snaps = await Promise.all(
+            consultas.map(({ q, label, field }) => safeGetDocsConversa(q, "conversas:" + label, field))
+        );
+        snaps.forEach((snap) => {
+            (snap?.docs || []).forEach((docSnap) => {
+                if (!docSnap?.id) return;
+                map.set(docSnap.id, docSnap);
+            });
+        });
+    }
+
+    return Array.from(map.values());
+}
+
+window.carregarListaConversas = async function() {
           const container = document.getElementById('lista-conversas');
           if(!container) return;
           const hasContent = !!container.querySelector('.item-conversa');
@@ -7837,16 +7832,17 @@ window.confirmarFinalizacaoPedido = async () => {
               // 1) Conversas diretas
               const docsConv = await listarConversasDoUsuario(meUid);
 
-              // Junta e remove duplicados por outroUid (client-side)
+              // Junta e remove duplicados (prioriza por outroUid; se não houver UID, usa o id do documento)
               const map = new Map();
               for (const d of docsConv) {
                   const data = d.data() || {};
                   const outroUid = getOutroUidConversa(data, meUid);
-                  if(!outroUid) continue;
+                  const dedupeKey = outroUid || `doc:${String(d?.id || '')}`;
+                  if (!dedupeKey) continue;
                   const updatedTs = getConversaUpdated(data);
-                  const existing = map.get(outroUid);
+                  const existing = map.get(dedupeKey);
                   if (!existing || updatedTs > (existing.updatedTs || 0)) {
-                      map.set(outroUid, { kind:'conversa', id:d.id, data, updatedTs, outroUid });
+                      map.set(dedupeKey, { kind:'conversa', id:d.id, data, updatedTs, outroUid });
                   }
               }
               const itens = Array.from(map.values()).sort((a,b) => (b.updatedTs || 0) - (a.updatedTs || 0));
@@ -7870,7 +7866,6 @@ window.confirmarFinalizacaoPedido = async () => {
                       if (listaModo === 'arquivados' && !isArquivado) continue;
                       if (listaModo !== 'arquivados' && isArquivado) continue;
                       const outroUid = it.outroUid;
-                      if(!outroUid) continue;
                       const lastMsg = data.ultimaMensagem || data.ultimamensagem || '';
                       const reqStatus = String(
                           data.dmRequestStatus ||
@@ -7900,9 +7895,31 @@ window.confirmarFinalizacaoPedido = async () => {
                           : (reqStatus === 'recusado'
                               ? (souSolicitanteReq ? 'Solicita??o recusada' : 'Solicita??o recusada')
                               : (lastMsg || 'Toque para conversar'));
-                      const u = userByUid.get(outroUid) || {};
-                      if (!matchBusca(u.user, lastMsg)) continue;
-                      const silenciado = isContatoSilenciado(outroUid);
+                      const u = outroUid ? (userByUid.get(outroUid) || {}) : {};
+                      const fallbackNomeContato = String(
+                          data.nomeContato ||
+                          data.nome_contato ||
+                          data.contatoNome ||
+                          data.contato_nome ||
+                          data.nome ||
+                          data.titulo ||
+                          data.deNome ||
+                          data.de_nome ||
+                          data.paraNome ||
+                          data.para_nome ||
+                          'Usuário'
+                      );
+                      const fallbackFotoContato = String(
+                          data.fotoContato ||
+                          data.foto_contato ||
+                          data.avatar ||
+                          data.foto ||
+                          data.deFoto ||
+                          data.paraFoto ||
+                          ''
+                      );
+                      if (!matchBusca(u.user || fallbackNomeContato, lastMsg)) continue;
+                      const silenciado = outroUid ? isContatoSilenciado(outroUid) : false;
                       const isSelectedConversa = conversasSelecaoModo && conversasSelecionadas.has(String(it.id));
                       const selectMarker = conversasSelecaoModo
                         ? `<button class="ip-select-indicator ${isSelectedConversa ? 'selected' : ''}" title="${isSelectedConversa ? 'Desmarcar' : 'Selecionar'}" onclick="event.stopPropagation(); toggleSelecaoConversa('${it.id}')"><i class='bx ${isSelectedConversa ? 'bx-check' : 'bx-circle'}'></i></button>`
@@ -7910,45 +7927,17 @@ window.confirmarFinalizacaoPedido = async () => {
                       const unreadHtml = (!silenciado && isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id)) ? '<span class="unread-dot"></span>' : "";
                       const mutedHtml = silenciado ? `<span class="muted-badge" title="Contato silenciado"><i class='bx bx-bell-off'></i></span>` : "";
                       rowsHtml.push(`
-                        <div class="item-conversa ${conversasSelecaoModo ? 'is-select-mode' : ''} ${isSelectedConversa ? 'is-selected' : ''}" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handleConversaCardClick(event, '${it.id}', '${outroUid}')">
-                          <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
+                        <div class="item-conversa ${conversasSelecaoModo ? 'is-select-mode' : ''} ${isSelectedConversa ? 'is-selected' : ''}" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid || ''}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handleConversaCardClick(event, '${it.id}', '${outroUid || ''}')">
+                          <img src="${u.foto || fallbackFotoContato || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                           <div class="ic-info">
-                            <div class="ic-nome">${u.user || 'Usuário'}</div>
+                            <div class="ic-nome">${u.user || fallbackNomeContato || 'Usu?rio'}</div>
                             <div class="ic-msg">${previewText}</div>
                           </div>
                           <div class="ic-meta">${selectMarker}${unreadHtml}${mutedHtml}</div>
                         </div>`);
                   }
               }
-              
-              // Se não há conversas e o usuário digitou algo, sugere usuários (iniciar conversa)
-              const rawBusca = String(listaBusca || '').trim();
-              const cleanedBusca = rawBusca.replace(/^@+/, '').trim();
-              if (rowsHtml.length === 0 && cleanedBusca){
-                  const sugestoes = await buscarUsuariosNoSupabase(cleanedBusca, 12);
-                  if (sugestoes.length){
-                      for (const u of sugestoes){
-                          const uidOutro = String(u.id || u.uid || '').trim();
-                          if (!uidOutro) continue;
-                          const nome = escapeHtml(u.nome || u.user || 'Usuário');
-                          const handle = escapeHtml(u.user || '');
-                          const foto = escapeHtml(u.foto || 'https://placehold.co/64x64?text=U');
-                          rowsHtml.push(`
-                            <div class="item-conversa" data-kind="suggest" onclick="try{abrirConversaComUid('${uidOutro}')}catch(e){}">
-                              <img class="avatar" src="${foto}" alt="${nome}">
-                              <div class="info">
-                                <div class="top">
-                                  <div class="nome">${nome}</div>
-                                  <div class="meta"><span class="badge-new">Novo</span></div>
-                                </div>
-                                <div class="preview">@${handle} · Iniciar conversa</div>
-                              </div>
-                            </div>
-                          `);
-                      }
-                  }
-              }
-const finalHtml = rowsHtml.length
+              const finalHtml = rowsHtml.length
                   ? rowsHtml.join('')
                   : "<p style='text-align:center; padding:20px;'>Sem mensagens.</p>";
               const sigConv = [listaModo, conversasFiltro, listaBusca, itens.length, rowsHtml.length].join('|');
@@ -7998,6 +7987,18 @@ const finalHtml = rowsHtml.length
         return '';
     }
 
+    function scanUidFromObjectByHints(obj, hints) {
+        if (!obj || typeof obj !== 'object') return '';
+        const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const entries = Object.entries(obj);
+        for (const [k, v] of entries) {
+            const key = String(k || '');
+            if (!hints.some((h) => key.toLowerCase().includes(h))) continue;
+            if (typeof v === 'string' && uuidLike.test(v.trim())) return v.trim();
+        }
+        return '';
+    }
+
     function getDeUid(p) {
         return pickUidFromData([
             p?.deUid,
@@ -8011,7 +8012,12 @@ const finalHtml = rowsHtml.length
             p?.solicitanteUid,
             p?.solicitante_uid,
             p?.remetenteUid,
-            p?.remetente_uid
+            p?.remetente_uid,
+            p?.clienteId,
+            p?.cliente_id,
+            p?.solicitanteId,
+            p?.solicitante_id,
+            scanUidFromObjectByHints(p, ['deuid','cliente','solicitante','remetente'])
         ]);
     }
 
@@ -8029,7 +8035,12 @@ const finalHtml = rowsHtml.length
             p?.uidPrestador,
             p?.uid_prestador,
             p?.destinatarioUid,
-            p?.destinatario_uid
+            p?.destinatario_uid,
+            p?.profissionalId,
+            p?.profissional_id,
+            p?.prestadorId,
+            p?.prestador_id,
+            scanUidFromObjectByHints(p, ['parauid','prestador','profissional','destinatario'])
         ]);
     }
 
@@ -8056,6 +8067,39 @@ const finalHtml = rowsHtml.length
     );
     let pedidosFieldsDirty = false;
     const pedidosFieldResolved = { de: null, para: null };
+const pedidosFieldCapsStorageKey = "doke_chat_pedidos_field_caps_v20260221";
+const pedidosFieldCapsCookie = "doke_chat_pedidos_field_caps_v20260221";
+try {
+    let rawSaved = localStorage.getItem(pedidosFieldCapsStorageKey) || "";
+    if (!rawSaved) {
+        const cookies = String(document.cookie || "").split(";");
+        const found = cookies.find((c) => String(c || "").trim().startsWith(pedidosFieldCapsCookie + "="));
+        if (found) {
+            rawSaved = decodeURIComponent(String(found).trim().slice((pedidosFieldCapsCookie + "=").length));
+        }
+    }
+    const saved = JSON.parse(rawSaved || "{}");
+    if (saved && typeof saved === "object") {
+        Object.keys(pedidosFieldCaps).forEach((field) => {
+            if (saved[field] === false) pedidosFieldCaps[field] = false;
+        });
+    }
+} catch (_) {}
+try {
+    const vals = Object.values(pedidosFieldCaps || {});
+    const falseCount = vals.filter((v) => v === false).length;
+    if (vals.length && falseCount >= Math.max(6, vals.length - 2)) {
+        Object.keys(pedidosFieldCaps).forEach((k) => { pedidosFieldCaps[k] = true; });
+    }
+} catch (_) {}
+function persistPedidosFieldCaps() {
+    try {
+        const raw = JSON.stringify(pedidosFieldCaps);
+        localStorage.setItem(pedidosFieldCapsStorageKey, raw);
+        document.cookie = `${pedidosFieldCapsCookie}=${encodeURIComponent(raw)}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+    } catch (_) {}
+}
+
 
     function isMissingColumnErr(err) {
         const msg = String(err?.message || err?.details || err?.hint || "").toLowerCase();
@@ -8066,13 +8110,83 @@ const finalHtml = rowsHtml.length
         return { empty: true, size: 0, docs: [], forEach: () => {} };
     }
 
+    function makeClientSideDocSnapFromRow(row) {
+        const dataRow = (row && typeof row === 'object') ? row : {};
+        const idGuess = String(
+            dataRow.id ||
+            dataRow.uid ||
+            dataRow.docId ||
+            dataRow.docid ||
+            dataRow.pedidoId ||
+            dataRow.pedidoid ||
+            dataRow.conversaId ||
+            dataRow.conversaid ||
+            dataRow.chatId ||
+            dataRow.chatid ||
+            ''
+        ).trim();
+        if (!idGuess) return null;
+        return {
+            id: idGuess,
+            exists: () => true,
+            data: () => dataRow
+        };
+    }
+
+    async function fetchRowsBroadPaged(tableName, opts = {}) {
+        try {
+            const sb = window.sb || window.supabaseClient || window.__supabaseClient || null;
+            if (!sb || typeof sb.from !== 'function' || !tableName) return [];
+            const pageSize = Math.max(50, Math.min(500, Number(opts.pageSize || 200)));
+            const maxPages = Math.max(1, Math.min(12, Number(opts.maxPages || 6)));
+            const out = [];
+            const seen = new Set();
+            for (let page = 0; page < maxPages; page++) {
+                const from = page * pageSize;
+                const to = from + pageSize - 1;
+                let res;
+                try {
+                    res = await withTimeout(
+                        sb.from(tableName).select('*').range(from, to),
+                        25000,
+                        `supabase_broad_${tableName}_${page}`
+                    );
+                } catch (e) {
+                    const msg = String(e?.message || e?.details || e?.hint || '').toLowerCase();
+                    if (Number(e?.status || 0) === 400 || msg.includes('bad request')) break;
+                    throw e;
+                }
+                const error = res?.error || null;
+                if (error) {
+                    const msg = String(error?.message || error?.details || error?.hint || '').toLowerCase();
+                    if (Number(error?.status || 0) === 400 || msg.includes('bad request')) break;
+                    throw error;
+                }
+                const rows = Array.isArray(res?.data) ? res.data : [];
+                for (const row of rows) {
+                    const ds = makeClientSideDocSnapFromRow(row);
+                    if (!ds || !ds.id || seen.has(ds.id)) continue;
+                    seen.add(ds.id);
+                    out.push(ds);
+                }
+                if (rows.length < pageSize) break;
+            }
+            return out;
+        } catch (e) {
+            console.warn('Falha no fallback amplo paginado', tableName, e);
+            return [];
+        }
+    }
+
+
     async function safeGetDocsWithField(q, fieldKey) {
         if (fieldKey && !pedidosFieldCaps[fieldKey]) return emptySnap();
         try {
-            return await withTimeout(getDocs(q), 10000, `getDocs:${fieldKey || 'generic'}`);
+            return await withTimeout(getDocs(q), 25000, `getDocs:${fieldKey || 'generic'}`);
         } catch (e) {
             if (fieldKey && isMissingColumnErr(e)) {
                 pedidosFieldCaps[fieldKey] = false;
+                persistPedidosFieldCaps();
                 pedidosFieldsDirty = true;
                 return emptySnap();
             }
@@ -8080,22 +8194,162 @@ const finalHtml = rowsHtml.length
         }
     }
 
-    async function resolvePedidosField(kind) {
-        if (pedidosFieldResolved[kind]) return pedidosFieldResolved[kind];
-        const base = collection(db, "pedidos");
-        const candidates = pedidosFieldCandidates[kind] || [];
+function inferPedidosFieldFromDocs(kind, docsOrRows, uid) {
+    const target = String(uid || currentUserUid || "").trim();
+    if (!target) return null;
+    const candidates = pedidosFieldCandidates[kind] || [];
+    const docs = Array.isArray(docsOrRows) ? docsOrRows : [];
+    for (const docSnap of docs) {
+        const row = docSnap?.data ? (docSnap.data() || {}) : (docSnap || {});
+        if (!row || typeof row !== "object") continue;
         for (const fieldName of candidates) {
-            const q = query(base, where(fieldName, "==", currentUserUid), limit(1));
-            await safeGetDocsWithField(q, fieldName);
-            if (pedidosFieldCaps[fieldName]) {
+            if (String(row?.[fieldName] || "").trim() === target) {
                 pedidosFieldResolved[kind] = fieldName;
+                if (pedidosFieldCaps[fieldName] !== false) pedidosFieldCaps[fieldName] = true;
+                persistPedidosFieldCaps();
                 return fieldName;
             }
         }
-        return null;
+    }
+    return null;
+}
+
+async function resolvePedidosField(kind) {
+    if (pedidosFieldResolved[kind]) return pedidosFieldResolved[kind];
+    const base = collection(db, "pedidos");
+
+    // 1) Tenta inferir por leitura ampla (sem filtro por coluna) para evitar tempestade de 400.
+    try {
+        const broadRows = await fetchRowsBroadPaged("pedidos", { pageSize: 120, maxPages: 2 });
+        const inferredBroad = inferPedidosFieldFromDocs(kind, broadRows, currentUserUid);
+        if (inferredBroad) return inferredBroad;
+
+        const snapAll = await safeGetDocsWithField(query(base, limit(80)), null);
+        const inferredSnap = inferPedidosFieldFromDocs(kind, snapAll?.docs || [], currentUserUid);
+        if (inferredSnap) return inferredSnap;
+    } catch (_) {}
+
+    // 2) Só então faz probes por coluna (compat com RLS restritiva).
+    const candidates = pedidosFieldCandidates[kind] || [];
+    for (const fieldName of candidates) {
+        if (pedidosFieldCaps[fieldName] === false) continue;
+        const q = query(base, where(fieldName, "==", currentUserUid), limit(1));
+        const snap = await safeGetDocsWithField(q, fieldName);
+        if (pedidosFieldCaps[fieldName] === false) continue;
+        pedidosFieldResolved[kind] = fieldName;
+        persistPedidosFieldCaps();
+        // Se retornou algo, já é uma evidência melhor e mantemos.
+        if ((snap?.docs || []).length) return fieldName;
+        // Se a coluna existe mas veio vazia, também retorna para evitar novas sondagens em loop.
+        return fieldName;
+    }
+    return null;
+}
+
+async function listarPedidosDoUsuarioMultiCampos(uid) {
+    if (!uid) return [];
+    const base = collection(db, "pedidos");
+    const map = new Map();
+
+    // 1) Leitura ampla paginada primeiro (evita probes por coluna e suporta schema misto).
+    let broadRows = [];
+    try {
+        broadRows = await fetchRowsBroadPaged("pedidos", { pageSize: 200, maxPages: 8 });
+        inferPedidosFieldFromDocs('de', broadRows, uid);
+        inferPedidosFieldFromDocs('para', broadRows, uid);
+        (broadRows || []).forEach((d) => {
+            if (!d?.id) return;
+            const p = d.data ? (d.data() || {}) : {};
+            const deUid = getDeUid(p);
+            const paraUid = getParaUid(p);
+            const papel = (String(deUid || '') === String(uid)) ? 'cliente'
+                : (String(paraUid || '') === String(uid) ? 'profissional' : '');
+            if (!papel) return;
+            if (!map.has(d.id) || (map.get(d.id).papel !== 'cliente' && papel === 'cliente')) {
+                map.set(d.id, { d, papel });
+            }
+        });
+    } catch (e) {
+        console.warn('Falha na leitura ampla de pedidos', e);
     }
 
-    function getPedidoSortTs(p) {
+    // Se a leitura ampla trouxe linhas do usuário, evita consultas por campo.
+    if (map.size) {
+        return Array.from(map.values()).sort((a, b) => {
+            const ta = getPedidoSortTs(a?.d?.data?.());
+            const tb = getPedidoSortTs(b?.d?.data?.());
+            return tb - ta;
+        });
+    }
+
+    // 2) Tenta leitura genérica pelo wrapper (sem filtro) antes de sondar colunas.
+    try {
+        const snapAll = await safeGetDocsWithField(query(base, limit(300)), null);
+        const docsAll = (snapAll?.docs || []);
+        inferPedidosFieldFromDocs('de', docsAll, uid);
+        inferPedidosFieldFromDocs('para', docsAll, uid);
+        docsAll.forEach((d) => {
+            if (!d?.id) return;
+            const p = d.data ? (d.data() || {}) : {};
+            const deUid = getDeUid(p);
+            const paraUid = getParaUid(p);
+            const papel = (String(deUid || '') === String(uid)) ? 'cliente'
+                : (String(paraUid || '') === String(uid) ? 'profissional' : '');
+            if (!papel) return;
+            if (!map.has(d.id) || (map.get(d.id).papel !== 'cliente' && papel === 'cliente')) {
+                map.set(d.id, { d, papel });
+            }
+        });
+        if (map.size) {
+            return Array.from(map.values()).sort((a, b) => {
+                const ta = getPedidoSortTs(a?.d?.data?.());
+                const tb = getPedidoSortTs(b?.d?.data?.());
+                return tb - ta;
+            });
+        }
+        // Se conseguimos ler linhas mas nenhuma pertence ao usuário, não força probes.
+        if (docsAll.length) {
+            return [];
+        }
+    } catch (e) {
+        console.warn('Fallback genérico de pedidos falhou', e);
+    }
+
+    // 3) Compat com RLS restritiva: usa apenas campos resolvidos (sem varrer todos em paralelo).
+    try {
+        const deField = await resolvePedidosField('de');
+        const paraField = await resolvePedidosField('para');
+        const queries = [];
+        if (deField) queries.push({ field: deField, papel: 'cliente' });
+        if (paraField && paraField !== deField) queries.push({ field: paraField, papel: 'profissional' });
+
+        await Promise.all(queries.map(async ({ field, papel }) => {
+            try {
+                const q = query(base, where(field, "==", uid), limit(200));
+                const snap = await safeGetDocsWithField(q, field);
+                (snap?.docs || []).forEach((d) => {
+                    if (!d?.id) return;
+                    const prev = map.get(d.id);
+                    if (!prev || (prev.papel !== 'cliente' && papel === 'cliente')) {
+                        map.set(d.id, { d, papel });
+                    }
+                });
+            } catch (e) {
+                console.warn('Falha em consulta de pedidos por campo', field, e);
+            }
+        }));
+    } catch (e) {
+        console.warn('Probes de pedidos falharam', e);
+    }
+
+    return Array.from(map.values()).sort((a, b) => {
+        const ta = getPedidoSortTs(a?.d?.data?.());
+        const tb = getPedidoSortTs(b?.d?.data?.());
+        return tb - ta;
+    });
+}
+
+function getPedidoSortTs(p) {
         const raw = p?.dataPedido || p?.data_pedido || p?.dataAtualizacao || p?.dataAtualizacao || p?.createdat || p?.dataCriacao || p?.created_at || null;
         const dt = parseDataHora(raw);
         return dt ? dt.getTime() : 0;
@@ -8224,7 +8478,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                   }
               }, (err) => {
                   console.warn("Falha ao ouvir pedido:", err);
-                  mostrarAvisoBloqueio("Não foi poss?vel carregar o pedido.");
+                  mostrarAvisoBloqueio("N?o foi poss?vel carregar o pedido.");
                   if (chatFooter) chatFooter.style.display = 'none';
                   syncChatHeaderLayout();
               });
@@ -8479,7 +8733,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const parsedText = extractReplyFromText(m.texto || '');
             const cleanText = parsedText.text;
             const senderUserRaw = m.senderUser || m.sender_user || "";
-            const senderUser = (senderUserRaw || (souEu ? 'Voc?' : 'Usuário'));
+            const senderUser = (senderUserRaw || (souEu ? 'Voc?' : 'Usu?rio'));
             const msgPreview = getTipoPreview(m.tipo, cleanText || '', m.url || '');
             const enc = (v) => encodeURIComponent(String(v || ""));
             const replyBtn = docSnap.id
@@ -8618,8 +8872,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 const souProfissionalPedido = pedidoAtualData && String(getParaUid(pedidoAtualData) || '') === String(currentUserUid || '');
                 const titulo = pedidoAvaliado ? "Pedido avaliado com sucesso" : "Pedido finalizado";
                 const subt = pedidoAvaliado
-                    ? "Sua avaliação ajudou a comunidade."
-                    : (souClientePedido ? "Que tal avaliar o profissional agora?" : "Aguardando avaliação do cliente.");
+                    ? "Sua avalia??o ajudou a comunidade."
+                    : (souClientePedido ? "Que tal avaliar o profissional agora?" : "Aguardando avalia??o do cliente.");
                 const mediaType = m.mediaType || inferMediaTipoByUrl(m.url || "");
                 const beforeUrl = m.beforeUrl || (pedidoAtualData && pedidoAtualData.finalizacaoAntesUrl) || "";
                 const afterUrl = m.afterUrl || (pedidoAtualData && pedidoAtualData.finalizacaoDepoisUrl) || "";
@@ -8756,7 +9010,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 const motivo = m.texto ? escapeHtml(m.texto) : "Solicita??o registrada.";
                 htmlParts.push(`
                 <div ${msgIdAttr} style="align-self:center; background:#fee2e2; border:1px solid #fecaca; padding:14px; border-radius:12px; margin:12px 0; text-align:center;">
-                    <i class='bx bx-receipt' style="color:#b91c1c; font-size:1.4rem;"></i>
+                    <i class='bx bx-package' style="color:#b91c1c; font-size:1.4rem;"></i>
                     <p style="margin:6px 0; font-weight:700; color:#7f1d1d;">Reembolso solicitado</p>
                     <div style="font-size:0.85rem; color:#7f1d1d;">${motivo}</div>
                 </div>`);
@@ -9451,32 +9705,9 @@ window.iniciarGravacao = async function() {
 
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-// iOS Safari pode não suportar audio/webm. Escolhemos o melhor mimeType disponível.
-const pickMimeType = () => {
-    if (typeof MediaRecorder === 'undefined') return '';
-    const cands = [
-        'audio/webm;codecs=opus',
-        'audio/webm',
-        'audio/mp4',
-        'audio/aac',
-        'audio/ogg;codecs=opus'
-    ];
-    for (const m of cands) {
-        try {
-            if (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported(m)) return m;
-        } catch (_) {}
-    }
-    return '';
-};
-const mimeType = pickMimeType();
-window.audioMimeType = mimeType || '';
-
-window.mediaRecorder = mimeType
-    ? new MediaRecorder(stream, { mimeType })
-    : new MediaRecorder(stream);
-window.audioChunks = [];
-
+        
+        window.mediaRecorder = new MediaRecorder(stream);
+        window.audioChunks = [];
 
         window.mediaRecorder.ondataavailable = event => {
             window.audioChunks.push(event.data);
@@ -9532,9 +9763,7 @@ window.enviarAudio = function() {
     // Quando o áudio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
         // Cria o arquivo de áudio (Blob)
-        const mime = window.audioMimeType || (window.audioChunks[0] && window.audioChunks[0].type) || 'audio/webm';
-            const audioBlob = new Blob(window.audioChunks, { type: mime });
-            const ext = (mime.includes('mp4') ? 'm4a' : (mime.includes('ogg') ? 'ogg' : 'webm'));
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padrão web
         const gravacaoInicio = Number(window.audioRecordStartedAt || 0);
         const duracaoAudioSec = gravacaoInicio > 0
             ? Math.max(1, Math.round((Date.now() - gravacaoInicio) / 1000))
@@ -9549,48 +9778,26 @@ window.enviarAudio = function() {
 
         try {
             const user = auth.currentUser;
-            if (!user) throw new Error("Usuário n?o logado");
+            if (!user) throw new Error("Usu?rio n?o logado");
 
             // Precisa de um chat aberto
             if (!chatIdAtual || !colecaoAtual) {
                 throw new Error("Nenhuma conversa aberta");
             }
 
-            // Upload do áudio
-// 1) tenta Firebase Storage (se disponível)
-// 2) fallback para Supabase Storage (bucket "audios") — resolve problemas comuns no iOS
-let downloadUrl = "";
-try {
-    const storage = (typeof getStorage === 'function') ? getStorage() : (window.storage || null);
-    const mkRef = (typeof ref === 'function') ? ref : window.ref;
-    const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
-    const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
-
-    if (!storage || !mkRef || !uploadFn || !getUrlFn) {
-        throw new Error("Firebase Storage indisponível.");
-    }
-    const nomeArquivo = `audios/${chatIdAtual}/${Date.now()}.${ext}`;
-    const storageRef = mkRef(storage, nomeArquivo);
-    const snapshot = await uploadFn(storageRef, audioBlob);
-    downloadUrl = await getUrlFn(snapshot.ref || storageRef);
-} catch (fbErr) {
-    console.warn("Falha ao enviar áudio via Firebase Storage, tentando Supabase Storage...", fbErr);
-    const sb = window.sb;
-    if (!sb || !sb.storage || typeof sb.storage.from !== 'function') {
-        throw fbErr;
-    }
-    const uidFallback = (user && user.uid) || (typeof ensureCurrentUserUid === "function" ? (await ensureCurrentUserUid({ bootstrap: true })) : null) || "anon";
-    const nomeArquivo = `audios/${chatIdAtual}/${uidFallback}_${Date.now()}.${ext}`;
-    const upRes = await sb.storage.from("audios").upload(nomeArquivo, audioBlob, {
-        upsert: true,
-        cacheControl: "3600",
-        contentType: mime
-    });
-    if (upRes?.error) throw upRes.error;
-    const pub = sb.storage.from("audios").getPublicUrl(nomeArquivo);
-    downloadUrl = pub?.data?.publicUrl || "";
-    if (!downloadUrl) throw new Error("Falha ao obter URL pública do áudio.");
-}
+            // Upload para o Storage
+            const storage = (typeof getStorage === 'function') ? getStorage() : (window.storage || null);
+            const mkRef = (typeof ref === 'function') ? ref : window.ref;
+            const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
+            const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
+            if (!storage || !mkRef || !uploadFn || !getUrlFn) {
+                throw new Error("Storage indispon?vel para áudio.");
+            }
+            const nomeArquivo = `audios/${chatIdAtual}/${Date.now()}.webm`;
+            const storageRef = mkRef(storage, nomeArquivo);
+            
+            const snapshot = await uploadFn(storageRef, audioBlob);
+            const downloadUrl = await getUrlFn(snapshot.ref || storageRef);
 
             // Salvar mensagem no Firestore
             const textoAudio = applyReplyMetaToText("Mensagem de voz");
@@ -9626,12 +9833,7 @@ try {
 
         } catch (e) {
             console.error("Erro no upload do áudio:", e);
-            const msg = (String(e?.message || e || "") || "").toLowerCase();
-            if (msg.includes("bucket") && msg.includes("not") && msg.includes("found")) {
-                alert("Erro ao enviar áudio. Crie o bucket \"audios\" no Supabase Storage (público ou com policy) e tente novamente.");
-            } else {
-                alert("Erro ao enviar áudio.");
-            }
+            alert("Erro ao enviar áudio.");
         } finally {
             btnSend.innerHTML = "<i class='bx bxs-send'></i>"; // Volta icone normal
         }

@@ -6,6 +6,10 @@
    2) Este arquivo cria: window.sb (cliente Supabase)
 */
 (function(){
+  if (window.__DOKE_SUPABASE_INIT__) return;
+  window.__DOKE_SUPABASE_INIT__ = true;
+
+
   window.__DOKE_SUPABASE_BUILD__ = "20260218v43";
   try { console.log("[DOKE] supabase-init build:", window.__DOKE_SUPABASE_BUILD__); } catch(_e) {}
 
@@ -163,7 +167,7 @@
     const here = String(location.origin || "");
     if (!here) return false;
 
-    // Mantem uma origem local canonica entre abas/paginas para não quebrar sessao.
+    // Mantem uma origem local canonica entre abas/paginas para nao quebrar sessao.
     // Ex.: evita abrir :5508 quando a sessao ativa esta em :5502.
     try {
       if (window.DOKE_PREFER_SAVED_PROXY_ORIGIN !== false) {
@@ -1011,7 +1015,10 @@ if (!key || key.startsWith("sb_publishable")) {
 
 
   try{
-    window.sb = window.supabase.createClient(url, key, {
+    if (window.__DOKE_SUPABASE_SINGLETON__ && typeof window.__DOKE_SUPABASE_SINGLETON__.from === 'function') {
+      window.sb = window.__DOKE_SUPABASE_SINGLETON__;
+    } else {
+      window.sb = window.supabase.createClient(url, key, {
       db: { schema: 'public' },
       // IMPORTANT:
       // NUNCA force "Content-Profile" globalmente.
@@ -1026,18 +1033,14 @@ if (!key || key.startsWith("sb_publishable")) {
         autoRefreshToken: true,
         detectSessionInUrl: true,
       }
-    });
+      });
+      window.__DOKE_SUPABASE_SINGLETON__ = window.sb;
+    }
     const supabaseNamespace = (window.supabase && typeof window.supabase.createClient === "function") ? window.supabase : null;
     let publicClient = null;
     try {
-      publicClient = window.supabase.createClient(url, key, {
-        db: { schema: "public" },
-        auth: {
-          persistSession: false,
-          autoRefreshToken: false,
-          detectSessionInUrl: false
-        }
-      });
+      // Reaproveita o singleton para evitar múltiplos GoTrueClient no mesmo contexto/aba
+      publicClient = window.sb;
     } catch (_e) {
       publicClient = null;
     }
@@ -1279,10 +1282,23 @@ if (!key || key.startsWith("sb_publishable")) {
         }
 
         if (restoredSession?.access_token) {
-          // IMPORTANTE: removido o probe em /auth/v1/user.
-          // Ele gerava ruído no console (401) mesmo quando a sessão estava ok/recuperável.
-          // A validação de exp do JWT + o próprio SDK já cobrem o necessário.
-          const tokenIsValid = true;
+          let tokenIsValid = false;
+          try {
+            const authUrl = `${url}/auth/v1/user`;
+            const access = String(restoredSession.access_token || "").trim();
+            const probe = await fetch(authUrl, {
+              method: "GET",
+              headers: {
+                apikey: key,
+                Authorization: `Bearer ${access}`
+              }
+            });
+            tokenIsValid = probe.ok;
+          } catch (_e) {
+            // Em falha de rede, nao limpa sessao imediatamente.
+            tokenIsValid = true;
+          }
+
           if (!tokenIsValid) {
             await clearInvalidSessionArtifacts("restore_token_invalid");
             return false;
@@ -1830,7 +1846,59 @@ if (!key || key.startsWith("sb_publishable")) {
     });
   };
 
-  function DokeQuery(table){
+  
+  function normalizeTableName(table){
+    let t = (table == null ? "" : String(table)).trim();
+    if(!t) return t;
+
+    // corrige mojibake comum: notificaÃ§Ãµes, usuÃ¡rios, etc.
+    t = t.replace(/Ã§/g,'ç').replace(/Ãµ/g,'õ').replace(/Ã¡/g,'á').replace(/Ã£/g,'ã')
+         .replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú')
+         .replace(/Ã‰/g,'É').replace(/Ã“/g,'Ó').replace(/Ãš/g,'Ú').replace(/Ã‡/g,'Ç');
+
+    // remove acentos e caracteres fora do padrão de tabela
+    const stripped = t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+    const clean = stripped.replace(/[^\w]/g,'').toLowerCase();
+
+    // mapeamentos explícitos
+    if(clean === "notificacoes" || clean === "notificacoes" ) return "notificacoes";
+    if(clean === "notificacoes" || clean === "notificacoes") return "notificacoes";
+    if(clean === "notificacoes" || clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes" || clean === "notificacoes") return "notificacoes";
+    if(clean === "notificacoes") return "notificacoes";
+    if(clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes" || clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes") return "notificacoes";
+    if(clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes") return "notificacoes";
+
+    if(clean === "notificacoes") return "notificacoes";
+
+    // principais tabelas do app (garante nomes sem acento)
+    const known = {
+      "notificacoes":"notificacoes",
+      "pedidos":"pedidos",
+      "usuarios":"usuarios",
+      "anuncios":"anuncios",
+      "posts":"posts",
+      "publicacoes":"publicacoes",
+      "avaliacoes":"avaliacoes",
+      "mensagens":"mensagens"
+    };
+    if(known[clean]) return known[clean];
+
+    // fallback: usa o clean se mudou muito (evita tabela com espaços/acentos)
+    return clean || t;
+  }
+function DokeQuery(table){
     this._table = table;
     this._method = "GET";
     this._select = null;
@@ -1976,7 +2044,9 @@ if (!key || key.startsWith("sb_publishable")) {
     w.sb.__DOKE_DB_ORIGINAL_FROM__ = original;
 
     w.sb.from = function(table){
-      // retorna query builder que tenta supabase-js e, se falhar, usa REST
+      
+      table = normalizeTableName(table);
+// retorna query builder que tenta supabase-js e, se falhar, usa REST
       return new DokeQuery(table);
     };
     w.sb.__DOKE_DB_PATCHED__ = true;
