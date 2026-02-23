@@ -483,6 +483,48 @@ async function dokeHydrateCompatAuthFromSession() {
     } catch (_e) {}
 })();
 
+// =========================================================
+// Modal de Detalhes (abre detalhes.html em um iframe sem sair da página)
+// =========================================================
+window.openDetalhesModal = function(url) {
+  try {
+    if (!url) return;
+    const u = new URL(url, window.location.href);
+    if (!u.searchParams.has('embed')) u.searchParams.set('embed', '1');
+
+    const existing = document.getElementById('doke-detalhes-overlay');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'doke-detalhes-overlay';
+    overlay.innerHTML = `
+      <div class="doke-modal-backdrop" data-close="1"></div>
+      <div class="doke-modal-shell" role="dialog" aria-modal="true">
+        <button class="doke-modal-close" aria-label="Fechar" data-close="1">×</button>
+        <iframe class="doke-modal-iframe" src="${u.toString()}" title="Detalhes"></iframe>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    document.body.classList.add('doke-modal-open');
+
+    const close = () => {
+      document.body.classList.remove('doke-modal-open');
+      overlay.remove();
+      document.removeEventListener('keydown', onKey);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    document.addEventListener('keydown', onKey);
+
+    overlay.addEventListener('click', (e) => {
+      const t = e.target;
+      if (t && t.getAttribute && t.getAttribute('data-close') === '1') close();
+    });
+  } catch (err) {
+    window.location.href = url;
+  }
+};
+
+
 // Protege export helpers: N?O sobrescreva o bridge (firebase-compat-supabase.js)
 // quando ele estiver ativo.
 const __hasFirestoreBridge = !!window.__dokeFirestoreCompat;
@@ -728,17 +770,59 @@ window.publicarConteudoUnificado = async function(event) {
 
 function setScrollLock(locked) {
     const root = document.documentElement;
-    if (root) root.classList.toggle('no-scroll', locked);
-    if (document.body) document.body.classList.toggle('no-scroll', locked);
-    if (!locked) {
-        try {
-            if (root) root.style.overflow = '';
-            if (document.body) {
-                document.body.style.overflow = '';
-                document.body.style.overflowY = '';
-            }
-        } catch (_) {}
+    const body = document.body;
+    if (!root || !body) return;
+
+    const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent || '');
+    const alreadyLocked = root.classList.contains('no-scroll') || body.classList.contains('no-scroll');
+
+    if (locked) {
+        // Salva posição atual só na transição "destravado -> travado"
+        if (!alreadyLocked) {
+            try { window.__dokeScrollY = window.scrollY || document.documentElement.scrollTop || 0; } catch (_) { window.__dokeScrollY = 0; }
+        }
+
+        root.classList.add('no-scroll');
+        body.classList.add('no-scroll');
+
+        // iOS Safari: overflow hidden sozinho costuma "quebrar" o scroll depois; fixamos o body.
+        if (isIOS) {
+            const y = Number(window.__dokeScrollY || 0) || 0;
+            body.style.position = 'fixed';
+            body.style.top = `-${y}px`;
+            body.style.left = '0';
+            body.style.right = '0';
+            body.style.width = '100%';
+        } else {
+            // Browsers comuns
+            body.style.overflow = 'hidden';
+        }
+        return;
     }
+
+    // unlock
+    root.classList.remove('no-scroll');
+    body.classList.remove('no-scroll');
+
+    // limpa estilos
+    const top = body.style.top;
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.overflow = '';
+    body.style.overflowY = '';
+
+    // restaura posição no iOS
+    if (isIOS) {
+        const y = top ? Math.abs(parseInt(top, 10)) : (Number(window.__dokeScrollY || 0) || 0);
+        try { window.scrollTo(0, y || 0); } catch (_) {}
+    }
+
+    try {
+        if (root) root.style.overflow = '';
+    } catch (_) {}
 }
 
 const DOKE_SCROLL_LOCK_SELECTORS = [
@@ -4332,7 +4416,7 @@ window.carregarFiltrosLocalizacao = async function() {
             locaisMap[uf][cidade].add(bairro);
         });
 
-        selEstado.innerHTML = '<option value="" disabled selected>Selecionar UF</option>';
+        selEstado.innerHTML = '<option value="" disabled selected>Estado</option>';
         Object.keys(locaisMap).sort().forEach(uf => {
             selEstado.innerHTML += `<option value="${uf}">${uf}</option>`;
         });
@@ -5188,7 +5272,7 @@ window.carregarFeedGlobal = async function() {
             : `<div class="dp-itemMedia" style="display:flex;align-items:center;justify-content:center;min-height:220px;background:linear-gradient(160deg,#0f2f57,#0b7768);color:#eef7ff;font-weight:700;">Sem midia</div>`;
 
         const clickAction = (entry.source === "supabase_anuncio")
-            ? `window.location.href='detalhes.html?id=${encodeURIComponent(String(item.id || ""))}'`
+            ? `window.openDetalhesModal('detalhes.html?id=${encodeURIComponent(String(item.id || ""))}')`
             : `abrirModalPublicacao('${entry.id}')`;
         const html = `
             <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="${clickAction}" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
@@ -7324,21 +7408,49 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
     };
 
+    // Badge no header mobile pode variar entre páginas:
+    // - Algumas usam o shell novo (.doke-mobile-header .doke-icon-btn)
+    // - Outras usam o header legado (.navbar-mobile .botoes-direita)
+    // Para evitar que a bolinha "suma" ao navegar entre HTMLs, sincronizamos ambos.
     const syncShellBadge = (href, total) => {
-        document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
-            let badge = link.querySelector('.doke-badge');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'doke-badge';
-                link.appendChild(badge);
-            }
-            if (total > 0) {
-                badge.innerText = total > 99 ? '99+' : String(total);
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        });
+        const selectors = [
+            `.doke-mobile-header a.doke-icon-btn[href="${href}"]`,
+            `.navbar-mobile .botoes-direita a[href="${href}"]`,
+            `.navbar-mobile a[href="${href}"]`
+        ];
+
+        const style = `
+            position:absolute; top:-6px; right:-6px;
+            background:#ff2e63; color:#fff;
+            font-size:10px; font-weight:800;
+            min-width:18px; height:18px;
+            border-radius:999px;
+            display:none; align-items:center; justify-content:center;
+            border:2px solid #fff; z-index:999;
+            box-shadow:0 2px 6px rgba(0,0,0,.25);
+            padding:0 5px;
+        `;
+
+        document.querySelectorAll(selectors.join(','))
+            .forEach((link) => {
+                if (!link) return;
+                if (getComputedStyle(link).position === 'static') {
+                    link.style.position = 'relative';
+                }
+                let badge = link.querySelector('.doke-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'doke-badge';
+                    badge.style.cssText = style;
+                    link.appendChild(badge);
+                }
+                if (total > 0) {
+                    badge.innerText = total > 99 ? '99+' : String(total);
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
     };
 
     const commitBadges = (notif, chat) => {

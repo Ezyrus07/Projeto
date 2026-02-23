@@ -3180,7 +3180,7 @@ window.carregarFiltrosLocalizacao = async function() {
             locaisMap[uf][cidade].add(bairro);
         });
 
-        selEstado.innerHTML = '<option value="" disabled selected>Selecionar UF</option>';
+        selEstado.innerHTML = '<option value="" disabled selected>Estado</option>';
         Object.keys(locaisMap).sort().forEach(uf => {
             selEstado.innerHTML += `<option value="${uf}">${uf}</option>`;
         });

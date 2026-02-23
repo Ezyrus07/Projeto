@@ -40,8 +40,7 @@
   }
 
   function renderEmpty(el){
-    el.innerHTML = `<div class="like-empty">Nada curtido ainda.</div>`;
-  }
+    el.innerHTML = `<div class="like-empty">Nada curtido ainda.</div>`); }
 
   function makeItem({ id, kind, title, desc, thumbUrl, isVídeo, openFn, unlikeFn }){
     const card = document.createElement('div');
@@ -203,8 +202,7 @@
           isVídeo: true,
           openFn: () => {
             // abre o viewer original (feed)
-            window.location.href = `feed.html?start=sb-${encodeURIComponent(String(v.id))}`;
-          },
+            window.openDetalhesModal()`feed.html?start=sb-${encodeURIComponent(String(v.id))}`); },
           unlikeFn: async () => {
             const { error: delErr } = await c.from('videos_curtos_curtidas').delete().eq('video_id', v.id).eq('user_id', uid);
             return !delErr;
@@ -265,7 +263,7 @@
           desc,
           thumbUrl: thumb,
           isVídeo: false,
-          openFn: () => { window.location.href = `detalhes.html?id=${encodeURIComponent(String(a.id))}`; },
+          openFn: () => { window.openDetalhesModal(`detalhes.html?id=${encodeURIComponent(String(a.id))}`); },
           unlikeFn: async () => {
             const { error: delErr } = await c.from('anuncios_curtidas').delete().eq('anuncio_id', a.id).eq('user_id', uid);
             return !delErr;

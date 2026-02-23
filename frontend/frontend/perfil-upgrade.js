@@ -5175,7 +5175,7 @@ async function loadServicosPerfil(ctx) {
     const img = fotos[0] || anuncio.img || "https://placehold.co/600x400";
     const uid = anuncio.uid || anuncio.user_uid || anuncio.useruid || anuncio.prof_uid || "";
     card.innerHTML = `
-      <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
+      <button class="btn-topo-avaliacao" onclick="window.openDetalhesModal('detalhes.html?id=${anuncio.id}')">
         <i class='bx bx-info-circle'></i> Mais Informacoes
       </button>
       <div class="cp-body">

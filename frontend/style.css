@@ -485,11 +485,12 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
         left: -100%; /* Comeï¿½a escondido fora da tela */
         top: 0;
         bottom: 0;
-        width: 280px; /* Largura do menu */
+        /* Mais fino no mobile (evita "sobrar" espaço em branco) */
+        width: clamp(220px, 78vw, 260px);
         z-index: 1001; /* Acima de tudo */
         transition: left 0.3s ease-in-out; /* Anim de deslize */
         align-items: flex-start; /* Alinha itens no topo */
-        padding-top: 20px;
+        padding-top: 14px;
         background-color: #fff;
     }
 
@@ -506,10 +507,10 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 
     /* Ajuste visual dos itens dentro do menu mobile */
     .sidebar-icones .item {
-        width: 90%;
-        margin-left: 5%;
+        width: calc(100% - 18px);
+        margin-left: 9px;
         justify-content: flex-start;
-        padding: 15px;
+        padding: 12px 12px;
         border-radius: 10px;
     }
     
@@ -12077,3 +12078,87 @@ body[data-page="home"] .categorias-min .pro-arrow:disabled i{ opacity: 0.55; }
 .categorias-min.is-loading .cat-track,
 .categorias-min .cat-track.is-loading{ min-width: 100%; }
 .categorias-min.is-loading .cat-list-wrapper{ overflow:hidden; }
+
+/* =====================================================
+   DOKE: PADRÃO DE HERO (COMPACTO NO MOBILE)
+   - Evita que o hero fique gigante e distante do header
+   - Normaliza padding/margem e tipografia entre páginas
+   ===================================================== */
+
+@media (max-width: 520px) {
+  .notif-hero-container,
+  .wallet-hero-container,
+  .anuncio-hero-container,
+  .comm-hero-container,
+  .eval-hero,
+  .settings-hero,
+  .ped-hero {
+    padding: 18px 16px !important;
+    border-radius: 18px !important;
+    margin-top: 10px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .notif-hero-container .hero-content h1,
+  .wallet-hero-container .hero-content h1,
+  .anuncio-hero-container h1,
+  .comm-hero-container h1,
+  .eval-hero h1,
+  .settings-hero h1,
+  .ped-hero h1 {
+    font-size: 1.55rem !important;
+    line-height: 1.15 !important;
+  }
+
+  .notif-hero-container .hero-content p,
+  .wallet-hero-container .hero-content p,
+  .anuncio-hero-container p,
+  .comm-hero-container p,
+  .eval-hero p,
+  .settings-hero p,
+  .ped-hero p {
+    font-size: 0.92rem !important;
+    margin-top: 8px !important;
+  }
+
+  .badge-count,
+  .hero-badge {
+    font-size: 0.78rem !important;
+    padding: 3px 10px !important;
+    border-radius: 999px !important;
+    background: #ff2e63 !important;
+  }
+
+  main,
+  main.dp-wrap {
+    padding-top: 14px !important;
+  }
+}
+
+@media (max-width: 380px) {
+  .notif-hero-container .hero-content h1,
+  .wallet-hero-container .hero-content h1,
+  .anuncio-hero-container h1,
+  .comm-hero-container h1,
+  .eval-hero h1,
+  .settings-hero h1,
+  .ped-hero h1 {
+    font-size: 1.42rem !important;
+  }
+}
+
+/* ================================ */
+/*    MODAL (Detalhes em iframe)     */
+/* ================================ */
+#doke-detalhes-overlay{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:18px}
+.doke-modal-backdrop{position:absolute;inset:0;background:rgba(10,18,22,.45);backdrop-filter:blur(10px)}
+.doke-modal-shell{position:relative;width:min(1120px,100%);height:min(82vh,860px);background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.35)}
+.doke-modal-close{position:absolute;top:12px;right:12px;width:42px;height:42px;border-radius:12px;border:1px solid rgba(0,0,0,.08);background:rgba(255,255,255,.85);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;z-index:2}
+.doke-modal-iframe{width:100%;height:100%;border:0}
+body.doke-modal-open{overflow:hidden}
+
+@media (max-width: 720px){
+  #doke-detalhes-overlay{padding:0}
+  .doke-modal-shell{width:100%;height:100vh;border-radius:0}
+  .doke-modal-close{top:10px;right:10px;border-radius:999px}
+}
