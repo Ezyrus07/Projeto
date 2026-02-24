@@ -1,0 +1,201 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Meu negócio | Doke</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
+<link href="doke-beforeafter.css?v=20260211v3" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<style>
+    body{
+      background: radial-gradient(1200px 600px at 10% 0%, rgba(42,95,144,.18), transparent 55%),
+                  radial-gradient(900px 500px at 90% 10%, rgba(11,119,104,.16), transparent 55%),
+                  #f4f6f8;
+      font-family: "Poppins", sans-serif;
+    }
+    main{ padding:30px 20px; margin-top:80px; display:flex; justify-content:center; }
+    @media (min-width:1024px){ main{ margin-left:270px; margin-top:0; padding:40px; } }
+    .content-wrapper{ width:100%; max-width:1200px; }
+
+    .hero{
+      background: radial-gradient(1200px 500px at 50% 0%, rgba(255,255,255,0.22), transparent 55%),
+                  linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+      color:#fff;
+      padding:28px;
+      border-radius:20px;
+      box-shadow: 0 10px 30px rgba(42,95,144,0.25);
+      display:flex;
+      gap:18px;
+      align-items:center;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      margin-bottom:18px;
+    }
+    .hero h1{ margin:0; font-size:1.65rem; letter-spacing:-.4px; }
+    .hero p{ margin:0; opacity:.92; }
+    .hero .btns{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .panel{
+      background:#fff;
+      border-radius:18px;
+      padding:18px;
+      box-shadow: 0 10px 26px rgba(15, 23, 42, 0.08);
+      border:1px solid rgba(148,163,184,.35);
+    }
+
+    .loja-row{
+      display:grid;
+      grid-template-columns: 60px 1fr auto;
+      gap:12px;
+      align-items:center;
+      padding:12px;
+      border:1px solid rgba(148,163,184,.35);
+      border-radius:14px;
+    }
+    .loja-row + .loja-row{ margin-top:10px; }
+    .loja-thumb{ width:60px; height:60px; border-radius:14px; overflow:hidden; background:#eef2f7; }
+    .loja-thumb img{ width:100%; height:100%; object-fit:cover; display:block; }
+    .loja-title{ font-weight:800; color:#0f172a; }
+    .loja-meta{ font-size:.92rem; color:#64748b; }
+    .loja-actions{ display:flex; gap:8px; }
+
+    .btn{ display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:10px 14px; border-radius:999px; font-weight:700; text-decoration:none; cursor:pointer; border:1px solid transparent; }
+    .btn-primary{ background: linear-gradient(135deg, #0b7768, #1f4d75); color:#fff; box-shadow: 0 10px 20px rgba(11,119,104,.22); }
+    .btn-ghost{ background:#fff; color:#0b7768; border-color: rgba(11,119,104,.35); }
+
+    .empty{
+      margin-top:14px;
+      padding:18px;
+      border-radius:16px;
+      border:1px dashed rgba(148,163,184,.6);
+      background: linear-gradient(180deg, rgba(42,95,144,.06), rgba(11,119,104,.05));
+      color:#0f172a;
+      display:none;
+    }
+    .empty strong{ display:block; margin-bottom:6px; }
+    .empty small{ color:#475569; }
+  </style>
+<script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body data-page="perfil-empresa">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+<aside class="sidebar">
+<a class="logo" href="index.html"><span>doke</span></a>
+<nav>
+<a href="index.html"><i class="bx bxs-home"></i> Início</a>
+<a href="empresas.html"><i class="bx bxs-store"></i> Empresas</a>
+<a href="notificacoes.html"><i class="bx bxs-bell"></i> Notificações <span class="badge" id="badge-notif">0</span></a>
+<a href="mensagens.html"><i class="bx bxs-message-square-dots"></i> Mensagens</a>
+<a href="pedidos.html"><i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+<a href="comunidade.html"><i class="bx bxs-group"></i> Comunidades</a>
+<a class="active" href="meuperfil.html"><i class="bx bxs-user"></i> Perfil</a>
+<a href="#"><i class="bx bxs-grid-alt"></i> Mais</a>
+</nav>
+</aside>
+<main>
+<div class="content-wrapper" data-perfil-empresa="">
+<section class="hero">
+<div>
+<h1>Meu negócio</h1>
+<p>Crie e gerencie suas lojas - sem WhatsApp, tudo aqui dentro.</p>
+</div>
+<div class="btns">
+<a class="btn btn-primary" href="anunciar-negocio.html"><i class="bx bx-plus"></i> Criar negócio</a>
+<a class="btn btn-ghost" href="negocios.html"><i class="bx bx-compass"></i> Descobrir</a>
+</div>
+</section>
+<section class="panel">
+<h3 style="margin:0 0 12px;">Minhas lojas</h3>
+<div class="empty" data-empty="">
+<strong>Você ainda não cadastrou nenhum negócio.</strong>
+<small>Comece criando sua loja (capa, categoria, localização, horários) e depois você já aparece no "Negócios".</small>
+<div style="margin-top:12px;">
+<a class="btn btn-primary" href="anunciar-negocio.html"><i class="bx bx-store"></i> Criar meu primeiro negócio</a>
+</div>
+</div>
+<div data-minhas-lojas=""></div>
+</section>
+</div>
+</main>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

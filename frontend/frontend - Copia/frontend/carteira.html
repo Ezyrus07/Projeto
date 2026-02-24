@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Minha Carteira | Doke</title>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
+<style>
+        /* ======================================================
+           ESTILOS DA CARTEIRA
+           ====================================================== */
+        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
+
+        @media (min-width: 1024px) {
+            main { margin-left: 270px; padding: 30px 40px; max-width: 1600px; }
+        }
+
+        /* --- HERO CONTAINER (Azul) --- */
+        .wallet-hero-container {
+            background: linear-gradient(135deg, var(--cor2) 0%, #1a3c5e 100%);
+            padding: 40px; border-radius: 20px; margin-bottom: 30px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative; overflow: hidden; display: flex;
+            justify-content: space-between; align-items: flex-end; flex-wrap: wrap; gap: 20px;
+        }
+        
+        .wallet-hero-container::before {
+            content: ''; position: absolute; top: -50px; right: -20px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .hero-content h1 { 
+            font-size: 2rem; margin-bottom: 5px; font-weight: 700; color: white; 
+            display: flex; align-items: center; gap: 10px; 
+        }
+        .hero-content p { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
+
+        /* Botï¿½es de Navegaï¿½ï¿½o Interna */
+        .hero-actions { display: flex; gap: 10px; background: rgba(0,0,0,0.2); padding: 5px; border-radius: 50px; }
+        
+        .btn-tab {
+            background: transparent; border: none;
+            color: rgba(255,255,255,0.7); padding: 10px 20px; border-radius: 30px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 8px; transition: 0.2s;
+        }
+        .btn-tab:hover { color: white; }
+        .btn-tab.active { background: white; color: var(--cor2); box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+
+        .btn-config {
+            background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.2);
+            color: white; padding: 10px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            cursor: pointer; transition: 0.2s; margin-left: 10px;
+        }
+        .btn-config:hover { background: white; color: var(--cor2); }
+
+        /* --- VISÃƒO GERAL (SALDO) --- */
+        .balance-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 25px; margin-bottom: 40px;
+        }
+
+        .balance-card {
+            background: white; border-radius: 20px; padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04); border: 1px solid #edf2f7;
+            display: flex; flex-direction: column; justify-content: space-between;
+            position: relative; overflow: hidden; transition: transform 0.2s;
+        }
+        .card-available { border-bottom: 4px solid #2e7d32; }
+        .card-pending { border-bottom: 4px solid #f1c40f; }
+        
+        .icon-bg {
+            position: absolute; top: 20px; right: 20px; width: 50px; height: 50px;
+            border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .card-available .icon-bg { background: #e8f5e9; color: #2e7d32; }
+        .card-pending .icon-bg { background: #fff8e1; color: #f1c40f; }
+
+        .bc-label { font-size: 0.85rem; color: #888; font-weight: 700; text-transform: uppercase; }
+        .bc-value { font-size: 2.5rem; font-weight: 800; color: var(--cor2); margin: 15px 0 5px 0; }
+        .bc-sub { font-size: 0.85rem; color: #999; margin-bottom: 25px; }
+
+        .btn-withdraw {
+            background: var(--cor0); color: white; border: none; padding: 14px;
+            border-radius: 12px; font-weight: 700; cursor: pointer; transition: 0.2s;
+            font-size: 0.95rem; width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-withdraw:disabled { background: #e0e0e0; color: #999; cursor: not-allowed; }
+
+        /* --- VISÃƒO ESTATÃSTICAS --- */
+        .filter-bar {
+            display: flex; gap: 10px; margin-bottom: 25px; background: white;
+            padding: 10px; border-radius: 12px; width: fit-content;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+        }
+        .filter-pill {
+            padding: 8px 16px; border-radius: 8px; border: none; background: transparent;
+            color: #666; font-weight: 600; cursor: pointer; transition: 0.2s;
+        }
+        .filter-pill.active { background: var(--cor0); color: white; }
+
+        .kpi-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px; margin-bottom: 30px;
+        }
+        .kpi-card {
+            background: white; padding: 25px; border-radius: 16px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #edf2f7;
+            display: flex; align-items: center; gap: 20px;
+        }
+        .kpi-icon {
+            width: 50px; height: 50px; border-radius: 12px; display: flex;
+            align-items: center; justify-content: center; font-size: 1.5rem;
+        }
+        .bg-green { background: #e8f5e9; color: #2e7d32; }
+        .bg-blue { background: #e3f2fd; color: #1565c0; }
+        .bg-orange { background: #fff3e0; color: #ef6c00; }
+
+        .chart-box {
+            background: white; padding: 30px; border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05); height: 400px; position: relative;
+        }
+
+        /* Histï¿½rico */
+        .history-container { background: white; border-radius: 20px; padding: 30px; border: 1px solid #edf2f7; box-shadow: 0 5px 20px rgba(0,0,0,0.03); }
+        .t-item { display: flex; justify-content: space-between; padding: 18px 0; border-bottom: 1px solid #f9f9f9; }
+        .t-icon { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; margin-right: 15px; }
+        .in { background: #e8f5e9; color: #2e7d32; }
+        .wait { background: #fff8e1; color: #f1c40f; }
+
+        /* Controle de visibilidade das abas */
+        .view-section { display: none; animation: fadeIn 0.3s; }
+        .view-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        @media (max-width: 768px) {
+            main {
+                margin-left: 0 !important;
+                padding: 14px 12px calc(var(--doke-btm-real, var(--doke-btm, 66px)) + 24px + env(safe-area-inset-bottom)) !important;
+                overflow: visible !important;
+                min-height: auto !important;
+            }
+
+            .wallet-hero-container {
+                padding: 22px 16px;
+                border-radius: 18px;
+                margin-bottom: 18px;
+                flex-direction: column;
+                align-items: stretch;
+                text-align: left;
+                gap: 12px;
+            }
+
+            .hero-content h1{
+                font-size: clamp(1.75rem, 8vw, 2.35rem);
+                line-height: 1.05;
+            }
+
+            .hero-content p{
+                margin-top: 8px;
+                font-size: 0.98rem;
+            }
+
+            .wallet-hero-container > div:last-child{
+                width: 100%;
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) auto auto;
+                align-items: center;
+                gap: 8px;
+            }
+
+            .hero-actions {
+                width: 100%;
+                min-width: 0;
+                display: grid;
+                grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+                gap: 4px;
+                padding: 4px;
+                border-radius: 14px;
+            }
+
+            .btn-tab {
+                min-width: 0;
+                justify-content: center;
+                padding: 10px 8px;
+                font-size: 0.84rem;
+                gap: 6px;
+                text-align: center;
+            }
+
+            .btn-tab i{
+                font-size: 1rem;
+            }
+
+            .btn-config{
+                margin-left: 0;
+                width: 40px;
+                height: 40px;
+                padding: 0;
+                flex: 0 0 40px;
+            }
+        }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body data-page="carteira">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
+
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
+
+  <div class="item">
+<a href="mensagens.html">
+<i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+</div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+
+<main>
+<div class="wallet-hero-container">
+<div class="hero-content">
+<h1>Minha Carteira</h1>
+<p>Gerencie seus ganhos e acompanhe seu desempenho.</p>
+</div>
+<div style="display: flex; align-items: center;">
+<div class="hero-actions">
+<button class="btn-tab active" onclick="trocarAba('resumo', this)">
+<i class="bx bx-wallet"></i> Visão Geral
+                    </button>
+<button class="btn-tab" onclick="trocarAba('estatisticas', this)">
+<i class="bx bx-bar-chart-alt-2"></i> Estatísticas
+                    </button>
+</div>
+<button class="btn-config" onclick="window.location.href='saque.html'" title="Configurar Saque">
+<i class="bx bx-cog"></i>
+</button>
+<button class="btn-config" onclick="window.location.href='duvida.html'" title="Ajuda">
+<i class="bx bx-help-circle"></i>
+</button>
+</div>
+</div>
+<div class="view-section active" id="view-resumo">
+<div class="balance-grid">
+<div class="balance-card card-available">
+<div class="icon-bg"><i class="bx bx-wallet"></i></div>
+<div>
+<span class="bc-label">Disponível para Saque</span>
+<div class="bc-value" id="saldoDisponivel">R$ 0,00</div>
+<div class="bc-sub">Valores liberados de serviços concluídos.</div>
+</div>
+<button class="btn-withdraw" disabled="" id="btnSacar" onclick="solicitarSaque()">
+<i class="bx bx-money-withdraw"></i> Solicitar Transferência
+                    </button>
+</div>
+<div class="balance-card card-pending">
+<div class="icon-bg"><i class="bx bx-lock-alt"></i></div>
+<div>
+<span class="bc-label">Saldo em Garantia</span>
+<div class="bc-value" id="saldoBloqueado" style="color:#f1c40f;">R$ 0,00</div>
+<div class="bc-sub">Liberado após confirmação do cliente.</div>
+</div>
+<div style="background:#fff8e1; color:#d4ac0d; padding:10px; border-radius:8px; font-size:0.8rem; display:flex; gap:8px; align-items:center;">
+<i class="bx bxs-shield-quarter"></i>
+<span>Protegido pela Garantia Doke.</span>
+</div>
+</div>
+</div>
+<div class="history-container">
+<h3 style="margin-top:0; margin-bottom:20px; color:var(--cor2);">Extrato Recente</h3>
+<div class="transaction-list" id="lista-transacoes">
+<div style="text-align:center; padding:30px; color:#999;"><i class="bx bx-loader-alt bx-spin"></i> Carregando...</div>
+</div>
+</div>
+</div>
+<div class="view-section" id="view-estatisticas">
+<div class="filter-bar">
+<button class="filter-pill active" onclick="filtrarStats('hoje', this)">Hoje</button>
+<button class="filter-pill" onclick="filtrarStats('semana', this)">Semana</button>
+<button class="filter-pill" onclick="filtrarStats('mes', this)">Mês</button>
+<button class="filter-pill" onclick="filtrarStats('ano', this)">Ano</button>
+</div>
+<div class="kpi-grid">
+<div class="kpi-card">
+<div class="kpi-icon bg-green"><i class="bx bx-money"></i></div>
+<div>
+<span style="display:block; font-size:0.8rem; color:#888; font-weight:700;">FATURAMENTO</span>
+<strong id="kpiFaturamento" style="font-size:1.5rem; color:#333;">R$ 0,00</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon bg-blue"><i class="bx bx-briefcase-alt-2"></i></div>
+<div>
+<span style="display:block; font-size:0.8rem; color:#888; font-weight:700;">SERVIÇOS</span>
+<strong id="kpiServicos" style="font-size:1.5rem; color:#333;">0</strong>
+</div>
+</div>
+<div class="kpi-card">
+<div class="kpi-icon bg-orange"><i class="bx bx-trending-up"></i></div>
+<div>
+<span style="display:block; font-size:0.8rem; color:#888; font-weight:700;">TICKET MÉDIO</span>
+<strong id="kpiTicket" style="font-size:1.5rem; color:#333;">R$ 0,00</strong>
+</div>
+</div>
+</div>
+<div class="chart-box">
+<h3 style="margin:0 0 20px 0; color:#333;">Evolução de Ganhos</h3>
+<canvas id="graficoGanhos"></canvas>
+</div>
+</div>
+</main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item active" href="carteira.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/2488/2488749.png"/><span>Carteira</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<script>
+        const { getFirestore, collection, query, where, getDocs } = window;
+        const { getAuth, onAuthStateChanged } = window;
+
+        const db = getFirestore();
+        const auth = getAuth();
+        let currentUserUid = null;
+        
+        // Dados Globais para Estatísticas
+        let todosPedidosFinalizados = [];
+        let chartInstance = null;
+
+        document.addEventListener("DOMContentLoaded", () => {
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    currentUserUid = user.uid;
+                    carregarDadosCompletos();
+                } else {
+                    window.location.href = "login.html";
+                }
+            });
+        });
+
+        // 1. CARREGA TUDO DE UMA VEZ
+        async function carregarDadosCompletos() {
+            try {
+                // Busca pedidos onde sou o Profissional
+                const q = query(collection(db, "pedidos"), where("paraUid", "==", currentUserUid));
+                const snap = await getDocs(q);
+
+                let totalDisponivel = 0;
+                let totalBloqueado = 0;
+                let listaExtrato = [];
+                todosPedidosFinalizados = []; // Limpa cache de stats
+
+                snap.forEach(doc => {
+                    const data = doc.data();
+                    
+                    // Tratamento de Valor
+                    let valorTexto = data.valorFinal || data.preco || "0";
+                    let valorLimpo = valorTexto.toString().replace(/[^\d,]/g, '').replace(',', '.');
+                    let valorNumerico = parseFloat(valorLimpo) || 0;
+
+                    // Lógica Saldo
+                    if (data.status === 'finalizado') {
+                        totalDisponivel += valorNumerico;
+                        
+                        // Adiciona para stats
+                        todosPedidosFinalizados.push({
+                            valor: valorNumerico,
+                            data: new Date(data.dataConclusao || data.dataPedido),
+                            servico: data.servicoReferencia
+                        });
+
+                        // Adiciona ao extrato
+                        listaExtrato.push({
+                            tipo: 'entrada',
+                            label: 'Serviço Finalizado',
+                            servico: data.servicoReferencia,
+                            data: data.dataConclusao || data.dataPedido,
+                            valor: valorNumerico
+                        });
+
+                    } else if (data.status === 'pago') {
+                        totalBloqueado += valorNumerico;
+                        listaExtrato.push({
+                            tipo: 'bloqueado',
+                            label: 'Aguardando Liberação',
+                            servico: data.servicoReferencia,
+                            data: data.dataPedido,
+                            valor: valorNumerico
+                        });
+                    }
+                });
+
+                // ATUALIZA UI DO SALDO
+                document.getElementById('saldoDisponivel').innerText = totalDisponivel.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+                document.getElementById('saldoBloqueado').innerText = totalBloqueado.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+                const btnSacar = document.getElementById('btnSacar');
+                if(totalDisponivel > 0) {
+                    btnSacar.disabled = false;
+                    btnSacar.innerHTML = `<i class='bx bx-money-withdraw'></i> Solicitar Transferência`;
+                } else {
+                    btnSacar.disabled = true;
+                    btnSacar.innerHTML = "Sem saldo disponível";
+                }
+
+                // ATUALIZA LISTA EXTRATO
+                listaExtrato.sort((a, b) => new Date(b.data) - new Date(a.data));
+                renderizarExtrato(listaExtrato);
+
+                // PREPARA ESTATÍSTICAS (Mas não desenha ainda)
+                // Se o usuário clicar na aba, já teremos os dados prontos.
+
+            } catch (e) {
+                console.error("Erro carteira:", e);
+            }
+        }
+
+        function renderizarExtrato(lista) {
+            const container = document.getElementById('lista-transacoes');
+            if (lista.length === 0) {
+                container.innerHTML = `<div style="text-align:center; padding:30px; color:#999;">Nenhuma movimentação ainda.</div>`;
+                return;
+            }
+            container.innerHTML = lista.map(item => {
+                let iconClass = item.tipo === 'entrada' ? 'in' : 'wait';
+                let iconName = item.tipo === 'entrada' ? 'bx-up-arrow-alt' : 'bx-lock-alt';
+                let amountColor = item.tipo === 'entrada' ? '#2e7d32' : '#f1c40f';
+                let sinal = item.tipo === 'entrada' ? '+' : '';
+
+                return `
+                <div class="t-item" style="display:flex; justify-content:space-between; align-items:center; padding:15px 0; border-bottom:1px solid #f0f0f0;">
+                    <div style="display:flex; align-items:center; gap:15px;">
+                        <div style="width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:1.2rem; background:${item.tipo === 'entrada' ? '#e8f5e9' : '#fff8e1'}; color:${item.tipo === 'entrada' ? '#2e7d32' : '#f1c40f'};">
+                            <i class='bx ${iconName}'></i>
+                        </div>
+                        <div>
+                            <strong style="display:block; color:#333; font-size:0.95rem;">${item.servico || 'Serviço'}</strong>
+                            <small style="color:#999; font-size:0.8rem;">${item.label} • ${new Date(item.data).toLocaleDateString()}</small>
+                        </div>
+                    </div>
+                    <div style="font-weight:700; color:${amountColor}; font-size:1rem;">
+                        ${sinal} ${item.valor.toLocaleString('pt-BR', {style:'currency', currency:'BRL'})}
+                    </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ======================================================
+        // CONTROLE DE ABAS (SALDO vs ESTATÍSTICAS)
+        // ======================================================
+        window.trocarAba = function(aba, btn) {
+            // UI Botões
+            document.querySelectorAll('.btn-tab').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            // UI Views
+            document.querySelectorAll('.view-section').forEach(v => v.classList.remove('active'));
+            document.getElementById(`view-${aba}`).classList.add('active');
+
+            // Se abriu estatàsticas, carrega o gráfico padrão (Hoje)
+            if(aba === 'estatisticas') {
+                filtrarStats('hoje', document.querySelector('.filter-pill.active'));
+            }
+        }
+
+// ======================================================
+        // LÓGICA DO GRÁFICO (Chart.js) - ATUALIZADO
+        // ======================================================
+        window.filtrarStats = function(periodo, btn) {
+            document.querySelectorAll('.filter-pill').forEach(b => b.classList.remove('active'));
+            if(btn) btn.classList.add('active');
+
+            const hoje = new Date();
+            let labels = [];
+            let dataValues = [];
+
+            // 1. FILTRO: HOJE (Mostrar 24h)
+            if(periodo === 'hoje') {
+                // Cria labels das 00h às 23h
+                for(let i=0; i<24; i++) labels.push(i + 'h');
+                dataValues = new Array(24).fill(0); // Zera tudo
+
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data.toDateString() === hoje.toDateString()) {
+                        const hora = p.data.getHours();
+                        dataValues[hora] += p.valor;
+                    }
+                });
+            } 
+            // 2. FILTRO: SEMANA (últimos 7 dias)
+            else if (periodo === 'semana') {
+                for(let i=6; i>=0; i--) {
+                    const d = new Date();
+                    d.setDate(d.getDate() - i);
+                    labels.push(d.toLocaleDateString('pt-BR', {weekday:'short'})); // Seg, Ter...
+                }
+                dataValues = new Array(7).fill(0);
+
+                const weekStart = new Date(); weekStart.setDate(weekStart.getDate() - 7);
+                
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data >= weekStart) {
+                        // Lógica simples: calcular a diferença de dias para achar o índice
+                        const diffTime = Math.abs(hoje - p.data);
+                        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24)); 
+                        const index = 6 - diffDays; 
+                        if(index >= 0) dataValues[index] += p.valor;
+                    }
+                });
+            }
+            // 3. FILTRO: MÊS (Dias do màs)
+            else if (periodo === 'mes') {
+                const diasNoMes = new Date(hoje.getFullYear(), hoje.getMonth()+1, 0).getDate();
+                for(let i=1; i<=diasNoMes; i++) labels.push(i);
+                dataValues = new Array(diasNoMes).fill(0);
+
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data.getMonth() === hoje.getMonth() && p.data.getFullYear() === hoje.getFullYear()) {
+                        const dia = p.data.getDate() - 1; // Array começa em 0
+                        dataValues[dia] += p.valor;
+                    }
+                });
+            }
+            // 4. FILTRO: ANO (Jan - Dez)
+            else if (periodo === 'ano') {
+                labels = ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"];
+                dataValues = new Array(12).fill(0);
+
+                todosPedidosFinalizados.forEach(p => {
+                    if(p.data.getFullYear() === hoje.getFullYear()) {
+                        const mes = p.data.getMonth();
+                        dataValues[mes] += p.valor;
+                    }
+                });
+            }
+
+            // Calcula KPI com base nos dados filtrados do gráfico (soma total)
+            const totalFiltro = dataValues.reduce((a, b) => a + b, 0);
+            
+            // ATUALIZA KPIS
+            document.getElementById('kpiFaturamento').innerText = totalFiltro.toLocaleString('pt-BR', {style:'currency', currency:'BRL'});
+            // Nota: Para KPIs de qtd e ticket precisaria filtrar o array de objetos novamente, mas para visualização rápida isso serve.
+            
+            renderizarGrafico(labels, dataValues);
+        }
+
+        function renderizarGrafico(labels, data) {
+            const ctx = document.getElementById('graficoGanhos').getContext('2d');
+            
+            if(chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Faturamento',
+                        data: data,
+                        backgroundColor: '#0b7768',
+                        borderRadius: 4,
+                        barPercentage: 0.6, // Deixa a barra mais fina em relação ao espaço
+                        categoryPercentage: 0.8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) label += ': ';
+                                    if (context.parsed.y !== null) {
+                                        label += new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(context.parsed.y);
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true,
+                            grid: { borderDash: [5, 5], color: '#f0f0f0' } // Linhas tracejadas bonitas
+                        },
+                        x: {
+                            grid: { display: false } // Remove linhas verticais
+                        }
+                    },
+                    // TRUQUE PARA NÃƒO FICAR GIGANTE
+                    maxBarThickness: 50 
+                }
+            });
+        }
+    </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

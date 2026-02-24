@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Jogo da Memória Educativo</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #1a1a2e; color: white; }
+        .grid { display: grid; grid-template-columns: repeat(4, 120px); gap: 10px; margin-top: 20px; }
+        .card { width: 120px; height: 120px; background: #16213e; border: 2px solid #0f3460; display: flex; align-items: center; 
+                justify-content: center; cursor: pointer; font-size: 14px; text-align: center; padding: 5px; box-sizing: border-box; }
+        .card.flipped { background: #e94560; color: white; }
+        .card.matched { background: #0fdb71; cursor: default; }
+    </style>
+</head>
+<body>
+    <h1>Jogo da Memória: Sistema Solar</h1>
+    <p>Encontre o par: Planeta + Característica</p>
+    <div class="grid" id="grid"></div>
+
+    <script>
+        const cardsArray = [
+            { name: 'Marte', pair: '1' }, { name: 'Planeta Vermelho', pair: '1' },
+            { name: 'Júpiter', pair: '2' }, { name: 'O maior do Sistema', pair: '2' },
+            { name: 'Saturno', pair: '3' }, { name: 'Famoso pelos anéis', pair: '3' },
+            { name: 'Mercúrio', pair: '4' }, { name: 'Mais perto do Sol', pair: '4' },
+            { name: 'Vênus', pair: '5' }, { name: 'O mais quente', pair: '5' },
+            { name: 'Terra', pair: '6' }, { name: 'Onde vivemos', pair: '6' }
+        ];
+
+        let flippedCards = [];
+        let matchedCount = 0;
+
+        function createBoard() {
+            const grid = document.getElementById('grid');
+            cardsArray.sort(() => 0.5 - Math.random());
+            cardsArray.forEach((item, index) => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.pair = item.pair;
+                card.dataset.index = index;
+                card.innerHTML = '?';
+                card.addEventListener('click', flipCard);
+                grid.appendChild(card);
+            });
+        }
+
+        function flipCard() {
+            if (flippedCards.length < 2 && !this.classList.contains('flipped')) {
+                this.classList.add('flipped');
+                this.innerHTML = cardsArray[this.dataset.index].name;
+                flippedCards.push(this);
+
+                if (flippedCards.length === 2) {
+                    setTimeout(checkMatch, 1000);
+                }
+            }
+        }
+
+        function checkMatch() {
+            const [card1, card2] = flippedCards;
+            if (card1.dataset.pair === card2.dataset.pair) {
+                card1.classList.add('matched');
+                card2.classList.add('matched');
+                matchedCount += 2;
+                if (matchedCount === cardsArray.length) alert('Parabéns! Você aprendeu tudo!');
+            } else {
+                card1.classList.remove('flipped');
+                card2.classList.remove('flipped');
+                card1.innerHTML = '?';
+                card2.innerHTML = '?';
+            }
+            flippedCards = [];
+        }
+
+        createBoard();
+    </script>
+</body>
+</html>

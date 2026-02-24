@@ -1,11 +1,11 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260218v43"></script>
-<!-- Storage bucket padrão (áudios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
+<!-- Storage bucket padr�o (�udios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
 <script>
     window.__DOKE_SUPABASE_STORAGE_BUCKET__ =
       window.__DOKE_SUPABASE_STORAGE_BUCKET__ ||
@@ -17,9 +17,9 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Mensagens | Doke</title>
-<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." name="description"/>
+<meta content="Converse com profissionais e clientes em um chat rápido e responsivo." name="description"/>
 <meta content="Doke - Chat" property="og:title"/>
-<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." property="og:description"/>
+<meta content="Converse com profissionais e clientes em um chat rápido e responsivo." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <meta content="#0b7768" name="theme-color"/>
@@ -32,7 +32,7 @@
 <!-- script.js?v=20260218v60 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
 <style>
         /* =========================================================================
-           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRï¿½O)
+           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADR�O)
            ========================================================================= */
         
         :root{
@@ -1350,7 +1350,7 @@
     border-bottom-left-radius: 4px;
 }
 
-/* ï¿½rea de Mensagens com Fundo Personalizado */
+/* �rea de Mensagens com Fundo Personalizado */
 .mensagens-body {
     background-color: #f0f2f5;
     /* Adicionando um padr?o leve de fundo que lembra o WhatsApp */
@@ -1573,7 +1573,7 @@
 .detail-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .detail-value { color: #333; font-weight: 500; line-height: 1.4; }
 
-/* BOTï¿½ES E LINKS DISCRETOS */
+/* BOT�ES E LINKS DISCRETOS */
 .btn-detalhes {
     background: #f0fdfa; color: var(--cor0); border: 1px solid #ccfbf1;
     padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
@@ -1617,7 +1617,7 @@
 }
 .btn-cancelar-discreto:hover { background: #e74c3c; color: #fff; }
 
-/* BOTï¿½O MAIS DETALHES */
+/* BOT�O MAIS DETALHES */
 .btn-detalhes-card {
     background: #f0f7f6; color: var(--cor0); border: 1px solid #d1e9e5;
     padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
@@ -2437,11 +2437,54 @@
 <link href="page-chat.css?v=20260212v38" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<style id="doke-chat-embed-mode">
+  body.embed-chat-mode{background:#fff !important; overflow:hidden !important;}
+  body.embed-chat-mode > .popup,
+  body.embed-chat-mode > .navbar-mobile,
+  body.embed-chat-mode > .navbar-desktop,
+  body.embed-chat-mode > .sidebar-icones,
+  body.embed-chat-mode > .bottom-nav,
+  body.embed-chat-mode > #overlay-menu{display:none !important;}
+  body.embed-chat-mode .messenger-layout{margin:0 !important; inset:0 !important; width:100% !important; max-width:none !important; min-width:0 !important; height:100dvh !important; border-radius:0 !important; box-shadow:none !important; border:none !important; grid-template-columns:1fr !important; display:grid !important;}
+  body.embed-chat-mode .coluna-lista{display:none !important;}
+  body.embed-chat-mode .coluna-chat{width:100% !important; flex:1 1 auto !important; border-left:0 !important;}
+  body.embed-chat-mode #chat-placeholder{display:none !important;}
+  body.embed-chat-mode #box-conversa-real{display:flex !important; height:100% !important;}
+  body.embed-chat-mode .chat-header{border-radius:0 !important;}
+  body.embed-chat-mode .btn-voltar-mobile{display:none !important;}
+  body.embed-chat-mode .mensagens-body{padding-bottom:90px !important;}
+  body.embed-chat-mode .chat-footer{position:sticky !important; bottom:0 !important;}
+  @media (max-width: 768px){
+    body.embed-chat-mode .chat-header{padding:10px 12px !important;}
+    body.embed-chat-mode #chatAvatar{width:38px !important; height:38px !important; min-width:38px !important; min-height:38px !important;}
+    body.embed-chat-mode .chat-info h4{font-size:15px !important;}
+    body.embed-chat-mode .chat-header-tools .btn-cobranca .btn-label{display:none !important;}
+  }
+</style>
+
+<script id="doke-chat-embed-init">
+(function(){
+  try{
+    var params = new URLSearchParams(window.location.search || '');
+    var isEmbed = params.get('embed') === '1' || params.get('embed') === 'true' || params.get('from') === 'pedidos' || params.get('origin') === 'pedido' || (window.self !== window.top);
+    if(!isEmbed) return;
+    document.documentElement.classList.add('embed-chat-mode');
+    var apply = function(){
+      try{
+        document.body.classList.add('embed-chat-mode');
+        document.body.setAttribute('data-embed-chat','1');
+      }catch(e){}
+    };
+    if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once:true });
+    else apply();
+  }catch(e){}
+})();
+</script>
 </head>
 <body data-page="chat">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">×</span>
+<span class="close-btn" onclick="fecharPopup()">�</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
@@ -2493,7 +2536,7 @@
 <div class="item">
 <a href="index.html">
 <i class="bx bx-home-alt icon azul"></i>
-<span>Início</span>
+<span>In�cio</span>
 </a>
 </div>
 <div class="item" id="pvSearchSidebarItem">
@@ -2511,7 +2554,7 @@
 <div class="item">
 <a href="notificacoes.html">
 <i class="bx bx-bell icon azul"></i>
-<span>Notificações</span>
+<span>Notifica��es</span>
 </a>
 </div>
 <div class="item">
@@ -2573,7 +2616,7 @@
 <div class="lista-quick">
 <div class="lista-search">
 <i class="bx bx-search"></i>
-<input id="inputBuscaLista" placeholder="Buscar por nome ou serviço" type="text"/>
+<input id="inputBuscaLista" placeholder="Buscar por nome ou servi�o" type="text"/>
 </div>
 <button class="filter-btn" id="toggleFilters" onclick="toggleListaFilters(event)">
                          Filtros <i class="bx bx-slider-alt"></i>
@@ -2627,9 +2670,9 @@
 </div>
 <div class="agenda-panel" id="agendaPanel" style="display:none;">
 <div class="agenda-top">
-<button aria-label="Mês anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
+<button aria-label="M�s anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
 <div class="agenda-title" id="agendaTitle">Agenda</div>
-<button aria-label="Próximo mês" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Pr�ximo m�s" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="agenda-weekdays">
 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
@@ -2644,14 +2687,14 @@
 <div class="coluna-chat">
 <div id="chat-placeholder">
 <img decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="opacity:0.5; margin-bottom:20px;" width="120"/>
-<p>Selecione uma conversa para começar.</p>
+<p>Selecione uma conversa para come�ar.</p>
 </div>
 <div id="box-conversa-real">
 <div class="chat-header">
 <button class="btn-voltar-mobile" onclick="fecharChatMobile()"><i class="bx bx-arrow-back"></i></button>
 <img alt="Foto do contato" decoding="async" id="chatAvatar" loading="lazy" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';" src=""/>
 <div class="chat-info">
-<h4 id="chatNome">Usuário</h4>
+<h4 id="chatNome">Usu�rio</h4>
 <span id="chatStatus">Offline</span>
 <div class="chip-pedido-status chip-pendente" id="chipPedidoStatus" style="display:none;">Pedido em espera</div>
 </div>
@@ -2661,11 +2704,11 @@
 <button class="btn-header btn-aceitar-mini" onclick="acaoPedido('aceito')">Aceitar Pedido</button>
 </div>
 <div class="chat-header-tools">
-<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar Cobrança">
-<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar Cobrança</span>
+<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar Cobran�a">
+<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar Cobran�a</span>
 </button>
 <div class="chat-menu" id="chatMenu">
-<button aria-label="Mais opções" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
+<button aria-label="Mais op��es" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
 <i class="bx bx-dots-vertical-rounded"></i>
 </button>
 <div class="chat-menu-dropdown">
@@ -2689,7 +2732,7 @@
 <div class="mensagens-body" id="areaMensagens"></div>
 <div class="reply-bar" id="replyBar">
 <div class="rb-left">
-<div class="rb-user" id="replyUser">@usuário</div>
+<div class="rb-user" id="replyUser">@usu�rio</div>
 <div class="rb-text" id="replyPreview"></div>
 </div>
 <button aria-label="Cancelar resposta" class="rb-close" onclick="cancelarResposta()" type="button">
@@ -2697,7 +2740,7 @@
 </button>
 </div>
 <div class="chat-footer" id="chatFooter">
-<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobrança">
+<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobran�a">
 <i class="bx bx-dollar"></i>
 </button>
 <div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
@@ -2718,7 +2761,7 @@
 <div class="red-dot"></div>
 <span id="timerGravacao">00:00</span>
 </div>
-<span style="flex:1; color:#666; font-size:0.9rem;">Gravando áudio...</span>
+<span style="flex:1; color:#666; font-size:0.9rem;">Gravando �udio...</span>
 <button onclick="cancelarGravacao()" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:1.5rem;">
 <i class="bx bx-trash"></i>
 </button>
@@ -2746,7 +2789,7 @@
 <div class="recusa-content">
 <h3 style="margin:0; color:#333;">Recusar Pedido</h3>
 <p style="color:#666; font-size:0.9rem; margin:10px 0 0;">Por favor, informe ao cliente o motivo da recusa:</p>
-<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: Não tenho disponibilidade nesta data..."></textarea>
+<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: N�o tenho disponibilidade nesta data..."></textarea>
 <div style="display:flex; gap:10px;">
 <button onclick="fecharModalRecusa()" style="flex:1; background:#f0f0f0; border:none; border-radius:12px; cursor:pointer; font-weight:600;">Voltar</button>
 <button class="btn-confirm-recusa" onclick="confirmarRecusaFinal()">Confirmar Recusa</button>
@@ -2758,11 +2801,11 @@
 <div class="modal-icon-top">
 <i class="bx bx-check"></i>
 </div>
-<h3>Serviço Finalizado!</h3>
-<p>O pagamento foi liberado para o profissional com segurança.</p>
+<h3>Servi�o Finalizado!</h3>
+<p>O pagamento foi liberado para o profissional com seguran�a.</p>
 <div style="background:#fff9db; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #ffe082;">
-<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experiência?</strong>
-<span style="font-size:0.9rem; color:#555;">Sua avaliação ajuda a comunidade a contratar com confiança.</span>
+<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experi�ncia?</strong>
+<span style="font-size:0.9rem; color:#555;">Sua avalia��o ajuda a comunidade a contratar com confian�a.</span>
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="irParaAvaliacaoDireta()">
@@ -2776,21 +2819,21 @@
 </div>
 <div class="modal-overlay-custom" id="modalFinalizarPedido" style="display:none;">
 <div class="modal-box-custom bounceIn" style="max-width: 460px; text-align: left;">
-<button class="modal-close-x" type="button" aria-label="Fechar" onclick="fecharModalFinalizarPedido()">×</button>
+<button class="modal-close-x" type="button" aria-label="Fechar" onclick="fecharModalFinalizarPedido()">�</button>
 <div class="modal-icon-top" style="background:#e8f5f1; color:#0b7768;">
 <i class="bx bx-check-double"></i>
 </div>
 <h3 style="text-align:center;">Finalizar pedido</h3>
 <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
-            Confirme a conclusão do serviço. Anexe uma mídia única ou um par antes/depois.
+            Confirme a conclus�o do servi�o. Anexe uma m�dia �nica ou um par antes/depois.
         </p>
 <div class="finalizar-modo">
-<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Mídia única</label>
+<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> M�dia �nica</label>
 <label><input name="finalizarModo" onclick="alterarModoFinalizacao('antes_depois')" type="radio" value="antes_depois"/> Antes e depois</label>
 </div>
 <div class="finalizar-upload" id="finalizarUploadUnico">
 <label class="btn-upload" for="finalizarAnexoUnico">
-<i class="bx bx-image-add"></i> Anexar mídia (opcional)
+<i class="bx bx-image-add"></i> Anexar m�dia (opcional)
             </label>
 <small id="finalizarNomeArquivoUnico"></small>
 <input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file"/>
@@ -2830,7 +2873,7 @@
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
-<i class="bx bx-check"></i> Finalizar serviço</button>
+<i class="bx bx-check"></i> Finalizar servi�o</button>
 <button class="btn-secondary-modal" onclick="fecharModalFinalizarPedido()">Cancelar</button>
 </div>
 </div>
@@ -2857,7 +2900,7 @@
 <div class="md-header">
 <div style="display:flex; align-items:center; gap:10px;">
 <i class="bx bx-dollar-circle" style="font-size:1.3rem; color:#d4a600;"></i>
-<strong>Gerar cobrança</strong>
+<strong>Gerar cobran�a</strong>
 </div>
 <button onclick="fecharModalGerarCobranca()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
 <i class="bx bx-x"></i>
@@ -2869,8 +2912,8 @@
 <input class="input-premium" id="cobrancaValorInput" inputmode="decimal" placeholder="R$ 0,00" type="text">
 </input></div>
 <div class="input-group" style="margin-bottom:12px;">
-<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Título da cobrança</label>
-<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: Mão de obra elétrica" type="text">
+<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">T�tulo da cobran�a</label>
+<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: M�o de obra el�trica" type="text">
 </input></div>
 <div class="input-group" style="margin-bottom:2px;">
 <label for="cobrancaParcelasInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Parcelas sem juros</label>
@@ -2891,7 +2934,7 @@
 </div>
 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
 <button class="btn-dm btn-dm-cancel" onclick="fecharModalGerarCobranca()" type="button">Cancelar</button>
-<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobrança</button>
+<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobran�a</button>
 </div>
 </div>
 </div>
@@ -2903,7 +2946,7 @@
 
     const db = window.db || getFirestore();
     const auth = window.auth || getAuth();
-    // Storage (Supabase Storage via compat). Bucket padrão definido no <head>.
+    // Storage (Supabase Storage via compat). Bucket padr�o definido no <head>.
     const storage = window.storage || (window.getStorage ? getStorage() : { bucket: 'posts' });
     window.storage = storage;
 
@@ -3854,7 +3897,7 @@
         const t = String(tipo || '').toLowerCase();
         if (t === 'imagem') return 'Imagem';
         if (t === 'arquivo') return 'Arquivo';
-        if (t === 'audio' || t === 'áudio' || t === 'voz') return 'áudio';
+        if (t === 'audio' || t === '�udio' || t === 'voz') return '�udio';
         if (t === 'pagamento') return 'Cobran?a';
         if (t === 'card_finalizado') return 'Pedido finalizado';
         if (t === 'card_avaliacao') return 'Avalia??o';
@@ -4204,7 +4247,7 @@
               ev?.preventDefault?.();
               ev?.stopPropagation?.();
           } catch (_) {}
-          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta mídia do pedido.';
+          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta m�dia do pedido.';
           if (typeof window.dokeAlert === 'function') window.dokeAlert(txt, 'Portf?lio');
           else alert(txt);
       };
@@ -5607,7 +5650,7 @@
         btnCancel.style.display = 'block';
         btnConfirm.className = 'btn-dm btn-dm-confirm'; // Reset classes
         
-        // �cones e Cores
+        // ?cones e Cores
         if(type === 'alert') {
             icon.className = 'bx bx-info-circle'; icon.style.color = '#0b7768';
             btnCancel.style.display = 'none';
@@ -5654,7 +5697,7 @@
     
 
     // =========================================================================
-    // 2. FUN?�ES DE INJE?�O DO MODAL DE GARANTIA (INFO)
+    // 2. FUN??ES DE INJE??O DO MODAL DE GARANTIA (INFO)
     // =========================================================================
     document.addEventListener("DOMContentLoaded", () => {
         if (!document.getElementById('modalGarantiaInfo')) {
@@ -5790,7 +5833,7 @@
     window.fecharModalDisputa = () => { const m = document.getElementById('modalDisputa'); if(m) m.style.display = 'none'; };
 
     // =========================================================================
-    // 3. FUN?�ES GERAIS DA APLICA?�O
+    // 3. FUN??ES GERAIS DA APLICA??O
     // =========================================================================
 
     window.irParaMeuPerfil = function(event) {
@@ -6596,7 +6639,7 @@ window.trocarAba = function(aba) {
         if (!id) return;
         const meUid = currentUserUid || await ensureCurrentUserUid();
         if (!meUid) {
-            window.dokeAlert("Faça login para continuar.");
+            window.dokeAlert("Fa�a login para continuar.");
             return;
         }
         try {
@@ -6706,7 +6749,7 @@ window.trocarAba = function(aba) {
         if (!id || !msgId) return;
         const meUid = currentUserUid || await ensureCurrentUserUid();
         if (!meUid) {
-            window.dokeAlert("Faça login para continuar.");
+            window.dokeAlert("Fa�a login para continuar.");
             return;
         }
         const statusFinal = (String(decisao || '').toLowerCase() === 'aprovar') ? 'aprovado' : 'recusado';
@@ -6812,7 +6855,7 @@ window.trocarAba = function(aba) {
         if (!id) return;
         const meUid = currentUserUid || await ensureCurrentUserUid();
         if (!meUid) {
-            window.dokeAlert("Faça login para continuar.");
+            window.dokeAlert("Fa�a login para continuar.");
             return;
         }
         try {
@@ -7199,7 +7242,7 @@ window.confirmarFinalizacaoPedido = async () => {
     try {
         const actionUid = currentUserUid || await ensureCurrentUserUid();
         if (!actionUid) {
-            window.dokeAlert("Faça login para continuar.");
+            window.dokeAlert("Fa�a login para continuar.");
             return;
         }
         const modoAtual = finalizacaoModo === 'antes_depois' ? 'antes_depois' : 'unico';
@@ -7319,7 +7362,7 @@ window.confirmarFinalizacaoPedido = async () => {
     };
     document.addEventListener('DOMContentLoaded', ensureChatOverlaysOnBody);
     // =========================================================================
-    // 4. RENDERIZA?�O E CHAT
+    // 4. RENDERIZA??O E CHAT
     // =========================================================================
 
     async function carregarListaPedidos(opts = {}) {
@@ -7350,7 +7393,7 @@ window.confirmarFinalizacaoPedido = async () => {
             }
             container.dataset.dokeAuthRetry = "0";
             if (resolvedUid !== currentUserUid) currentUserUid = resolvedUid;
-            // Resolve campos (mantém compatibilidade com realtime), mas a listagem usa multi-campos + fallback.
+            // Resolve campos (mant�m compatibilidade com realtime), mas a listagem usa multi-campos + fallback.
             await resolvePedidosField('de');
             await resolvePedidosField('para');
             pedidosFieldsDirty = false;
@@ -7453,11 +7496,11 @@ window.confirmarFinalizacaoPedido = async () => {
                 } else if (papelReal === 'cliente' && p.status === 'pendente') {
                     acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicita??o</button>`;
                 } else if (papelReal === 'cliente' && p.status === 'pago') {
-                     // Bot?o de Conclusão (Design Compacto)
+                     // Bot?o de Conclus�o (Design Compacto)
                      acoesHtml = `
                         <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
                                 style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <i class='bx bx-check'></i> Confirmar Conclusão
+                            <i class='bx bx-check'></i> Confirmar Conclus�o
                         </button>`;
                 } else if (papelReal === 'profissional' && p.status === 'finalizado') {
                     const hasMedia = !!(p.finalizacaoMediaUrl || p.finalizacaoMediaURL);
@@ -7656,7 +7699,7 @@ window.confirmarFinalizacaoPedido = async () => {
           pushUid(data?.destinatarioUid);
           pushUid(data?.remetente_uid);
           pushUid(data?.destinatario_uid);
-          // Heurística para schemas legados: extrai UUIDs de campos/ninhos relacionados.
+          // Heur�stica para schemas legados: extrai UUIDs de campos/ninhos relacionados.
           try {
               for (const [k, v] of Object.entries(data || {})) {
                   if (/(uid|particip|usuario|user|remet|destin|de_?uid|para_?uid)/i.test(String(k || ''))) {
@@ -7782,7 +7825,7 @@ async function listarConversasDoUsuario(uid) {
     }
     if (map.size) return Array.from(map.values());
 
-    // 2) Tenta leitura genérica sem filtro (muitas vezes funciona e evita probes por coluna)
+    // 2) Tenta leitura gen�rica sem filtro (muitas vezes funciona e evita probes por coluna)
     const fallbackSnap = await safeGetDocsConversa(query(base, limit(300)), "conversas:fallback");
     (fallbackSnap?.docs || []).forEach((docSnap) => {
         const data = docSnap?.data ? (docSnap.data() || {}) : {};
@@ -7793,7 +7836,7 @@ async function listarConversasDoUsuario(uid) {
     if (map.size) return Array.from(map.values());
     if ((fallbackSnap?.docs || []).length) return [];
 
-    // 3) Último fallback: campos conhecidos (compat com schemas restritos por RLS)
+    // 3) �ltimo fallback: campos conhecidos (compat com schemas restritos por RLS)
     const consultas = conversaFieldCandidates
         .filter(({ field }) => conversaFieldCaps[field] !== false)
         .map(({ field, op }) => {
@@ -7832,7 +7875,7 @@ window.carregarListaConversas = async function() {
               // 1) Conversas diretas
               const docsConv = await listarConversasDoUsuario(meUid);
 
-              // Junta e remove duplicados (prioriza por outroUid; se não houver UID, usa o id do documento)
+              // Junta e remove duplicados (prioriza por outroUid; se n�o houver UID, usa o id do documento)
               const map = new Map();
               for (const d of docsConv) {
                   const data = d.data() || {};
@@ -7907,7 +7950,7 @@ window.carregarListaConversas = async function() {
                           data.de_nome ||
                           data.paraNome ||
                           data.para_nome ||
-                          'Usuário'
+                          'Usu�rio'
                       );
                       const fallbackFotoContato = String(
                           data.fotoContato ||
@@ -8229,7 +8272,7 @@ async function resolvePedidosField(kind) {
         if (inferredSnap) return inferredSnap;
     } catch (_) {}
 
-    // 2) Só então faz probes por coluna (compat com RLS restritiva).
+    // 2) S� ent�o faz probes por coluna (compat com RLS restritiva).
     const candidates = pedidosFieldCandidates[kind] || [];
     for (const fieldName of candidates) {
         if (pedidosFieldCaps[fieldName] === false) continue;
@@ -8238,9 +8281,9 @@ async function resolvePedidosField(kind) {
         if (pedidosFieldCaps[fieldName] === false) continue;
         pedidosFieldResolved[kind] = fieldName;
         persistPedidosFieldCaps();
-        // Se retornou algo, já é uma evidência melhor e mantemos.
+        // Se retornou algo, j� � uma evid�ncia melhor e mantemos.
         if ((snap?.docs || []).length) return fieldName;
-        // Se a coluna existe mas veio vazia, também retorna para evitar novas sondagens em loop.
+        // Se a coluna existe mas veio vazia, tamb�m retorna para evitar novas sondagens em loop.
         return fieldName;
     }
     return null;
@@ -8273,7 +8316,7 @@ async function listarPedidosDoUsuarioMultiCampos(uid) {
         console.warn('Falha na leitura ampla de pedidos', e);
     }
 
-    // Se a leitura ampla trouxe linhas do usuário, evita consultas por campo.
+    // Se a leitura ampla trouxe linhas do usu�rio, evita consultas por campo.
     if (map.size) {
         return Array.from(map.values()).sort((a, b) => {
             const ta = getPedidoSortTs(a?.d?.data?.());
@@ -8282,7 +8325,7 @@ async function listarPedidosDoUsuarioMultiCampos(uid) {
         });
     }
 
-    // 2) Tenta leitura genérica pelo wrapper (sem filtro) antes de sondar colunas.
+    // 2) Tenta leitura gen�rica pelo wrapper (sem filtro) antes de sondar colunas.
     try {
         const snapAll = await safeGetDocsWithField(query(base, limit(300)), null);
         const docsAll = (snapAll?.docs || []);
@@ -8307,12 +8350,12 @@ async function listarPedidosDoUsuarioMultiCampos(uid) {
                 return tb - ta;
             });
         }
-        // Se conseguimos ler linhas mas nenhuma pertence ao usuário, não força probes.
+        // Se conseguimos ler linhas mas nenhuma pertence ao usu�rio, n�o for�a probes.
         if (docsAll.length) {
             return [];
         }
     } catch (e) {
-        console.warn('Fallback genérico de pedidos falhou', e);
+        console.warn('Fallback gen�rico de pedidos falhou', e);
     }
 
     // 3) Compat com RLS restritiva: usa apenas campos resolvidos (sem varrer todos em paralelo).
@@ -8513,7 +8556,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
               syncChatHeaderLayout();
           }
 
-        // 2. CARREGA DADOS DO USU�RIO + STATUS ONLINE (VISUAL MELHORADO)
+        // 2. CARREGA DADOS DO USU?RIO + STATUS ONLINE (VISUAL MELHORADO)
               if (outroUserUnsub) { try { outroUserUnsub(); } catch (_) {} outroUserUnsub = null; }
               outroUserUnsub = onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
@@ -8553,7 +8596,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     let isReallyOnline = (d.status === "Online" && diffMinutos < 3);
 
                     if (isReallyOnline) {
-                        // --- AQUI EST� A MUDAN?A VISUAL ---
+                        // --- AQUI EST? A MUDAN?A VISUAL ---
                         elStatus.innerHTML = `
                             <div class="status-container-online">
                                 <div class="status-pulse"></div>
@@ -8564,7 +8607,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         elStatus.style.color = ""; 
                         elStatus.style.fontWeight = "";
                     } else {
-                        // Status Offline (Texto Cinza Padrão)
+                        // Status Offline (Texto Cinza Padr�o)
                         elStatus.innerText = `Visto por ?ltimo: ${formatarUltimaVez(d.ultimaVezOnline)}`;
                         elStatus.style.color = "#888";
                         elStatus.style.fontWeight = "400";
@@ -8623,7 +8666,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         div.innerHTML = `<i class='bx bx-lock-alt'></i> ${texto}`;
         chatBox.appendChild(div);
     }
-// EM CHAT.HTML - SUBSTITUA A FUN?�O carregarMensagens
+// EM CHAT.HTML - SUBSTITUA A FUN??O carregarMensagens
 
       function carregarMensagens(colecao, docId) {
           const container = document.getElementById('areaMensagens');
@@ -8839,7 +8882,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 let btnHtml = "";
 
                 if (jaPago) {
-                    // CASO 1: Já PAGO (Verde para ambos)
+                    // CASO 1: J� PAGO (Verde para ambos)
                     btnHtml = `<button style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold; cursor:default;"><i class='bx bx-check'></i> Pago</button>`;
                 } else if (souEu) {
                     // CASO 2: EU SOU O PROFISSIONAL QUE ENVIOU (Aviso Cinza)
@@ -8861,7 +8904,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 htmlParts.push(html);
                 return; // evita gerar mensagem vazia embaixo do card
             }
-            // --- CARD AVALIA?�O (AMARELO) ---
+            // --- CARD AVALIA??O (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
                 // Card amarelo removido (o card com foto de finaliza??o j? cobre essa necessidade)
                 return;
@@ -9005,7 +9048,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                       Mensagem apagada
                   </div>`);
               }
-              // --- SOLICITA?�O DE REEMBOLSO ---
+              // --- SOLICITA??O DE REEMBOLSO ---
               else if (m.tipo === 'reembolso') {
                 const motivo = m.texto ? escapeHtml(m.texto) : "Solicita??o registrada.";
                 htmlParts.push(`
@@ -9056,7 +9099,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 </div>`;
                 htmlParts.push(wrapMensagemComAvatar(htmlFile));
             }
-            // --- MENSAGEM DE �UDIO ---
+            // --- MENSAGEM DE ?UDIO ---
               else if (m.tipo === 'audio') {
                   const corWave = souEu ? 'white' : '#555';
                   const corIcone = souEu ? 'var(--cor0)' : '#555';
@@ -9132,7 +9175,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
     // Gerar Pagamento usando Modais Bonitos
 // EM CHAT.HTML
 
-// SUBSTITUA A FUN?�O window.gerarPagamento NO CHAT.HTML POR ESTA:
+// SUBSTITUA A FUN??O window.gerarPagamento NO CHAT.HTML POR ESTA:
 
 function formatCurrencyBRLFromDigits(digits){
     const clean = String(digits || "").replace(/\D/g, "");
@@ -9684,7 +9727,7 @@ window.confirmarGerarCobranca = async function(){
         resyncChatState('focus', { force: false });
     });
 
-    // --- VARI�VEIS GLOBAIS PARA �UDIO ---
+    // --- VARI?VEIS GLOBAIS PARA ?UDIO ---
 window.mediaRecorder = null;
 window.audioChunks = [];
 window.timerInterval = null;
@@ -9699,7 +9742,7 @@ window.iniciarGravacao = async function() {
     }
     // Verifica suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Seu navegador n?o suporta grava??o de áudio.");
+        alert("Seu navegador n?o suporta grava??o de �udio.");
         return;
     }
 
@@ -9732,7 +9775,7 @@ window.iniciarGravacao = async function() {
 
     } catch (err) {
         console.error("Erro ao acessar microfone:", err);
-        alert("Permita o uso do microfone para gravar áudio.");
+        alert("Permita o uso do microfone para gravar �udio.");
     }
 }
 
@@ -9751,7 +9794,7 @@ window.cancelarGravacao = function() {
     document.getElementById('area-input-texto').style.display = 'flex';
 }
 
-// 3. Enviar áudio (Salvar no Firebase)
+// 3. Enviar �udio (Salvar no Firebase)
 window.enviarAudio = function() {
     if (!window.mediaRecorder) return;
     if (isConversaBloqueadaParaEnviar()) {
@@ -9760,10 +9803,10 @@ window.enviarAudio = function() {
         return;
     }
 
-    // Quando o áudio estiver pronto (evento onstop do recorder)
+    // Quando o �udio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
-        // Cria o arquivo de áudio (Blob)
-        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padrão web
+        // Cria o arquivo de �udio (Blob)
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padr�o web
         const gravacaoInicio = Number(window.audioRecordStartedAt || 0);
         const duracaoAudioSec = gravacaoInicio > 0
             ? Math.max(1, Math.round((Date.now() - gravacaoInicio) / 1000))
@@ -9791,7 +9834,7 @@ window.enviarAudio = function() {
             const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
             const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
             if (!storage || !mkRef || !uploadFn || !getUrlFn) {
-                throw new Error("Storage indispon?vel para áudio.");
+                throw new Error("Storage indispon?vel para �udio.");
             }
             const nomeArquivo = `audios/${chatIdAtual}/${Date.now()}.webm`;
             const storageRef = mkRef(storage, nomeArquivo);
@@ -9803,7 +9846,7 @@ window.enviarAudio = function() {
             const textoAudio = applyReplyMetaToText("Mensagem de voz");
             await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
                 tipo: 'audio',
-                url: downloadUrl, // Link do áudio
+                url: downloadUrl, // Link do �udio
                 texto: textoAudio, // Texto de fallback + reply meta
                 duracaoSegundos: duracaoAudioSec,
                 senderUid: user.uid,
@@ -9832,8 +9875,8 @@ window.enviarAudio = function() {
             cancelarResposta();
 
         } catch (e) {
-            console.error("Erro no upload do áudio:", e);
-            alert("Erro ao enviar áudio.");
+            console.error("Erro no upload do �udio:", e);
+            alert("Erro ao enviar �udio.");
         } finally {
             btnSend.innerHTML = "<i class='bx bxs-send'></i>"; // Volta icone normal
         }
@@ -9900,7 +9943,7 @@ window.fecharGaleria = function(event) {
     }
 }
 
-// 4. Fun??o para Tocar áudio (Player customizado)
+// 4. Fun??o para Tocar �udio (Player customizado)
 window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
     const audio = new Audio(url);
     const icon = btn.querySelector('i');
@@ -10062,3 +10105,5 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
 </script>
 </body>
 </html>
+
+

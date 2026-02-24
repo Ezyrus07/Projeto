@@ -1,0 +1,278 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Escolher Tipo de Anúncio | Doke</title>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-fixes.css" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;800&amp;display=swap" rel="stylesheet"/>
+<style>
+        :root {
+            --cor-primaria: #0b7768; /* Verde Doke */
+            --cor-secundaria: #2a5f90; /* Azul Doke */
+            --cor-bg: #f4f6f8;
+        }
+
+        body {
+            background: radial-gradient(1200px 600px at 10% 0%, rgba(42,95,144,.12), transparent 50%),
+                        radial-gradient(900px 500px at 90% 10%, rgba(11,119,104,.1), transparent 50%),
+                        var(--cor-bg);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .selection-container {
+            max-width: 850px;
+            width: 100%;
+            text-align: center;
+        }
+
+        .selection-header {
+            margin-bottom: 50px;
+        }
+
+        .selection-header h1 {
+            color: #1f2d3d;
+            font-size: 2.2rem;
+            font-weight: 800;
+            margin-bottom: 10px;
+        }
+
+        .selection-header p {
+            color: #606f7b;
+            font-size: 1.1rem;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        /* Card Base */
+        .option-card {
+            background: #fff;
+            padding: 50px 30px 40px;
+            border-radius: 24px;
+            border: 2px solid transparent;
+            text-decoration: none;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            position: relative;
+        }
+
+        /* Etiqueta (Badge) */
+        .badge {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            padding: 6px 14px;
+            border-radius: 50px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+        }
+
+        /* Estilo EspecÃ­fico: SERVIÃ‡OS (AZUL) */
+        .card-servico .icon-box {
+            background: rgba(42,95,144,0.1);
+            color: var(--cor-secundaria);
+        }
+        .card-servico .badge {
+            background: #eef4ff;
+            color: var(--cor-secundaria);
+        }
+        .card-servico:hover {
+            transform: translateY(-12px);
+            border-color: var(--cor-secundaria);
+            box-shadow: 0 20px 40px rgba(42,95,144,0.15);
+        }
+        .card-servico:hover .icon-box {
+            background: var(--cor-secundaria);
+            color: #fff;
+        }
+        .card-servico:hover .btn-choose {
+            background: var(--cor-secundaria);
+            color: #fff;
+        }
+
+        /* Estilo EspecÃ­fico: NEGÃ“CIOS (VERDE) */
+        .card-negocio .icon-box {
+            background: rgba(11,119,104,0.1);
+            color: var(--cor-primaria);
+        }
+        .card-negocio .badge {
+            background: #e8f5f3;
+            color: var(--cor-primaria);
+        }
+        .card-negocio:hover {
+            transform: translateY(-12px);
+            border-color: var(--cor-primaria);
+            box-shadow: 0 20px 40px rgba(11,119,104,0.15);
+        }
+        .card-negocio:hover .icon-box {
+            background: var(--cor-primaria);
+            color: #fff;
+        }
+        .card-negocio:hover .btn-choose {
+            background: var(--cor-primaria);
+            color: #fff;
+        }
+
+        /* ÃƒÂcones e Textos */
+        .icon-box {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 25px;
+            transition: 0.3s;
+        }
+
+        .icon-box i {
+            font-size: 3rem;
+        }
+
+        .option-card h2 {
+            color: #1f2d3d;
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .option-card p {
+            color: #718096;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            margin-bottom: 30px;
+            min-height: 70px;
+        }
+
+        .btn-choose {
+            padding: 14px 40px;
+            background: #f1f5f9;
+            color: #4a5568;
+            border-radius: 14px;
+            font-weight: 600;
+            transition: 0.3s;
+        }
+
+        .back-link {
+            margin-top: 50px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #94a3b8;
+            text-decoration: none;
+            font-weight: 500;
+            transition: 0.3s;
+        }
+
+        .back-link:hover {
+            color: var(--cor-primaria);
+        }
+
+        @media (max-width: 680px) {
+            .options-grid { grid-template-columns: 1fr; }
+            .selection-header h1 { font-size: 1.7rem; }
+        }
+    </style>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+  <link rel="stylesheet" href="page-escolheranuncio.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body data-page="escolheranuncio">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+
+
+</header>
+
+<div class="selection-container">
+<div class="selection-header">
+<h1>O que você quer anunciar?</h1>
+<p>Selecione a melhor opção para o seu perfil no Doke.</p>
+</div>
+<div class="options-grid">
+<a class="option-card card-servico" href="anunciar.html">
+<span class="badge">Gratuito</span>
+<div class="icon-box">
+<i class="bx bx-user-voice"></i>
+</div>
+<h2>Anunciar Serviço</h2>
+<p>Para profissionais liberais e autônomos. Divulgue seu trabalho de forma simples e sem custos.</p>
+<span class="btn-choose">Começar agora</span>
+</a>
+<a class="option-card card-negocio" href="anunciar-negocio.html">
+<span class="badge">Profissional</span>
+<div class="icon-box">
+<i class="bx bx-store-alt"></i>
+</div>
+<h2>Anunciar Negócio</h2>
+<p>Para empresas com sede física. Tenha catálogo de produtos, localização e ferramentas avançadas.</p>
+<span class="btn-choose">Ver Planos</span>
+</a>
+</div>
+<a class="back-link" href="index.html">
+<i class="bx bx-left-arrow-alt"></i> Voltar para o início
+        </a>
+</div>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+
+  <!-- DOKE: Supabase bootstrap (não remova) -->
+  <script src="supabase-client-fix.js"></script>
+  <script src="supabase-init.js?v=20260218v43"></script>
+
+</body>
+</html>
+
+
+

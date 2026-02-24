@@ -1,0 +1,731 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pagamentos e Planos | Doke</title>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<script defer="" src="script.js?v=20260218v60"></script>
+<style>
+        /* ================= VARIÃƒÂVEIS E RESET ================= */
+        :root {
+            --cor0: #0b7768; /* Verde Principal */
+            --cor1: #737373; /* Cinza Texto */
+            --cor2: #2a5f90; /* Azul TÃ­tulos */
+            --cor3: #f35b5b; /* Vermelho/Alerta */
+            --cor4: #ecedf2; /* Cinza Fundo Claro */
+            --cor-gold: #f1c40f; /* Destaque Premium */
+            --fonte-padrao: 'Poppins', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
+
+        body {
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 300px);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: row;
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; }
+
+        /* ================= CONTEÃšDO PRINCIPAL ================= */
+        .main-content {
+            flex: 1;
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        @media (min-width: 1024px) {
+            .main-content { margin-left: 270px; }
+        }
+
+        /* Topo */
+        .page-header {
+            width: 100%; max-width: 700px;
+            display: flex; align-items: center; gap: 15px;
+            margin-bottom: 30px;
+        }
+        .btn-back {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem; transition: 0.2s;
+        }
+        .btn-back:hover { background: white; color: var(--cor2); }
+        .page-header h1 { color: white; font-size: 1.8rem; font-weight: 700; text-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+
+        /* Container Geral */
+        .content-container { width: 100%; max-width: 700px; display: flex; flex-direction: column; gap: 25px; }
+
+        /* Card GenÃ©rico */
+        .card-box {
+            background: white; padding: 25px; border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05); border: 1px solid #fff;
+        }
+        .card-title {
+            font-size: 1.1rem; color: var(--cor2); font-weight: 700; margin-bottom: 20px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* --- SEÃ‡ÃƒÆ’O 1: PLANO --- */
+        .plan-info {
+            display: flex; justify-content: space-between; align-items: center;
+            background: #f8fbfb; padding: 20px; border-radius: 12px; border: 1px solid #eef;
+        }
+        .plan-details h3 { color: var(--cor0); margin-bottom: 5px; font-size: 1.2rem; }
+        .plan-details p { color: var(--cor1); font-size: 0.9rem; margin: 0; }
+        
+        .btn-upgrade {
+            background: linear-gradient(135deg, #f1c40f 0%, #f39c12 100%);
+            color: white; border: none; padding: 10px 20px; border-radius: 30px;
+            font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(243, 156, 18, 0.3);
+            transition: 0.3s;
+        }
+        .btn-upgrade:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(243, 156, 18, 0.4); }
+
+        /* --- SEÃ‡ÃƒÆ’O 2: CARTÃƒâ€¢ES --- */
+        .card-list { display: flex; flex-direction: column; gap: 15px; }
+        .payment-method {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 15px; border: 1px solid #eee; border-radius: 12px; transition: 0.2s;
+        }
+        .payment-method:hover { border-color: var(--cor2); background: #f9fbfd; }
+        
+        .method-icon { font-size: 2rem; color: var(--cor2); margin-right: 15px; }
+        .method-info { flex: 1; }
+        .method-info h4 { margin: 0; font-size: 1rem; color: #333; }
+        .method-info span { font-size: 0.85rem; color: #888; }
+        
+        .btn-trash { color: var(--cor3); cursor: pointer; font-size: 1.2rem; padding: 5px; }
+        .btn-trash:hover { background: #fff5f5; border-radius: 5px; }
+
+        /* BotÃ£o Adicionar CartÃ£o */
+        .btn-add-card {
+            width: 100%; padding: 15px; margin-top: 15px;
+            border: 2px dashed #ddd; background: white; color: var(--cor1);
+            border-radius: 12px; cursor: pointer; font-weight: 600;
+            display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s;
+        }
+        .btn-add-card:hover { border-color: var(--cor0); color: var(--cor0); background: #f0fffd; }
+
+        /* FormulÃ¡rio Novo CartÃ£o */
+        .new-card-form { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; display: none; }
+        .form-row { display: flex; gap: 15px; margin-bottom: 15px; }
+        .input-wrap { flex: 1; }
+        .input-wrap label { display: block; font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 5px; }
+        .input-wrap input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; outline: none; }
+        .input-wrap input:focus { border-color: var(--cor0); }
+        
+        .btn-save-card {
+            width: 100%; padding: 12px; background: var(--cor0); color: white; border: none;
+            border-radius: 10px; font-weight: 700; cursor: pointer;
+        }
+
+        /* --- SEÃ‡ÃƒÆ’O 3: HISTÃ“RICO --- */
+        .history-list { max-height: 300px; overflow-y: auto; }
+        .history-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 15px 0; border-bottom: 1px solid #f5f5f5;
+        }
+        .history-item:last-child { border-bottom: none; padding-bottom: 0; }
+        
+        .hist-date { 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: var(--cor4); width: 50px; height: 50px; border-radius: 10px;
+            margin-right: 15px; font-weight: 700; color: var(--cor1); font-size: 0.8rem;
+        }
+        .hist-desc { flex: 1; }
+        .hist-desc h4 { margin: 0; font-size: 0.95rem; color: #333; }
+        .hist-desc span { font-size: 0.8rem; color: #888; }
+        
+        .hist-value { font-weight: 700; font-size: 1rem; }
+        .negative { color: #333; }
+        .positive { color: var(--cor0); }
+
+        /* RESPONSIVIDADE */
+        .navbar-mobile, .bottom-nav { display: none; }
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-bottom: 80px; }
+            .sidebar-icones { display: none; }
+            .main-content { padding: 20px; margin-left: 0; }
+            .page-header h1 { font-size: 1.5rem; }
+            .plan-info { flex-direction: column; text-align: center; gap: 15px; }
+            
+            .navbar-mobile {
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 15px 20px; background: white; position: sticky; top: 0; z-index: 99;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            }
+            .bottom-nav {
+                display: flex; justify-content: space-around;
+                position: fixed; bottom: 0; left: 0; width: 100%;
+                background: white; border-top: 1px solid #eee; padding: 10px 0; z-index: 999;
+            }
+        }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<body data-page="mais">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="mensagens.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<main class="main-content"><div class="content-wrapper"><div class="settings-shell" id="settingsShell"><aside aria-label="Ajustes" class="settings-side">
+<div class="settings-profile" onclick="irParaPerfilCorreto()" onkeypress="if(event.key==='Enter'||event.key===' '){irParaPerfilCorreto();}" role="button" tabindex="0">
+<img alt="Foto" class="profile-avatar" decoding="async" id="mais-foto" loading="lazy" src="https://placehold.co/150"/>
+<div class="settings-profile__meta">
+<p class="settings-profile__name" id="mais-nome">Carregando...</p>
+<div class="settings-profile__user" id="mais-user">@carregando</div>
+</div>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</div>
+<hr class="settings-side__divider"/>
+<div class="settings-side__group">
+<div class="settings-side__title">MINHA CONTA</div>
+<a class="settings-nav-item" data-section="dadospessoais" href="dadospessoais.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-user"></i></span>
+<span class="settings-nav-text">Dados pessoais</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
+<span class="settings-nav-text">Endereços</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="senha" href="senha.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
+<span class="settings-nav-text">Segurança e senha</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-credit-card"></i></span>
+<span class="settings-nav-text">Pagamentos</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">PREFERÊNCIAS</div>
+<div class="settings-toggle-row">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
+<span class="settings-toggle-label">Modo escuro</span>
+<label class="switch" style="margin-left:auto;">
+<input id="darkModeSwitch" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
+<span class="settings-nav-text">Notificações</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="idioma" href="idioma.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-globe"></i></span>
+<span class="settings-nav-text">Idioma</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="privacidade" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-quarter"></i></span>
+<span class="settings-nav-text">Privacidade de mensagens</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">SUPORTE</div>
+<a class="settings-nav-item" data-section="ajuda" href="ajuda.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-help-circle"></i></span>
+<span class="settings-nav-text">Central de ajuda</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="#" onclick="return false;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-file"></i></span>
+<span class="settings-nav-text">Termos de uso</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="sobre-doke" href="sobre-doke.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-info-circle"></i></span>
+<span class="settings-nav-text">Sobre a Doke</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Pagamentos</h1><p>Gerencie métodos de pagamento e suas preferências.</p></div></div><div class="settings-frame-card"><div class="content-container">
+<div class="card-box">
+<div class="card-title">
+<span><i class="bx bx-credit-card"></i> Métodos de Pagamento</span>
+</div>
+<div class="card-list" id="listaCartoes">
+<div style="text-align:center; color:#999; padding:10px;">Carregando cartões...</div>
+</div>
+<button class="btn-add-card" id="btn-add" onclick="toggleFormCartao()">
+<i class="bx bx-plus"></i> Adicionar novo cartão
+                </button>
+<div class="new-card-form" id="form-cartao">
+<div class="input-wrap" style="margin-bottom: 15px;">
+<label>Número do Cartão</label>
+<input id="cardNum" maxlength="19" oninput="formatarCartao(this)" placeholder="0000 0000 0000 0000" type="text"/>
+</div>
+<div class="form-row">
+<div class="input-wrap">
+<label>Validade</label>
+<input id="cardVal" maxlength="5" placeholder="MM/AA" type="text"/>
+</div>
+<div class="input-wrap">
+<label>CVV</label>
+<input id="cardCvv" maxlength="4" placeholder="123" type="text"/>
+</div>
+</div>
+<div class="input-wrap" style="margin-bottom: 15px;">
+<label>Nome no Cartão</label>
+<input id="cardNome" placeholder="Como impresso no cartão" type="text"/>
+</div>
+<div style="display: flex; gap: 10px;">
+<button class="btn-save-card" onclick="toggleFormCartao()" style="background:#ddd; color:#333;">Cancelar</button>
+<button class="btn-save-card" id="btnSalvarCartao" onclick="salvarCartaoReal()">Salvar Cartão</button>
+</div>
+</div>
+</div>
+<div class="card-box">
+<div class="card-title">
+<span><i class="bx bx-history"></i> Histórico Recente</span>
+<a href="#" style="font-size: 0.85rem; color: var(--cor0);">Ver tudo</a>
+</div>
+<div class="history-list" id="listaHistorico">
+<div style="text-align:center; color:#667; padding:14px 0;">Carregando histórico...</div>
+</div>
+</div>
+</div>
+</div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" width="24"/><span>Início</span></a>
+<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png" width="24"/><span>Explorar</span></a>
+<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png" width="24"/><span>Anunciar</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png" width="24"/><span>Notificações</span></a>
+<a class="item active" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" width="24"/><span>Perfil</span></a>
+</nav>
+<script src="doke-payments-store.js?v=20260216v1"></script>
+<script>
+        const LS_PROFILE_KEY = "doke_usuario_perfil";
+        const LS_PAYMENTS_KEY = "doke_pagamentos_metodos_v1";
+        let listaCartoesLocal = [];
+
+        const readJSON = (key, fallback) => {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed ?? fallback;
+            } catch (_) {
+                return fallback;
+            }
+        };
+
+        const writeJSON = (key, value) => {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+        };
+
+        const getPerfil = () => readJSON(LS_PROFILE_KEY, {}) || {};
+        const setPerfil = (perfil) => writeJSON(LS_PROFILE_KEY, perfil || {});
+
+        const isLogged = () => (
+            localStorage.getItem("usuarioLogado") === "true" ||
+            !!localStorage.getItem(LS_PROFILE_KEY)
+        );
+
+        const showInfo = (msg) => {
+            if (window.dokeDelight?.toast) window.dokeDelight.toast(msg);
+            else alert(msg);
+        };
+
+        const guessBrand = (numero) => {
+            if (/^4/.test(numero)) return { brand: "Visa", icon: "bxl-visa" };
+            if (/^(5[1-5]|2[2-7])/.test(numero)) return { brand: "Mastercard", icon: "bxl-mastercard" };
+            if (/^3[47]/.test(numero)) return { brand: "Amex", icon: "bx-credit-card" };
+            if (/^(4011|4312|4389|4514|4576|5041|5066|5067|5090|6277|6362|6363)/.test(numero)) {
+                return { brand: "Elo", icon: "bx-credit-card" };
+            }
+            return { brand: "Cartão", icon: "bx-credit-card" };
+        };
+
+        const isValidCardByLuhn = (numero) => {
+            let sum = 0;
+            let doubleDigit = false;
+            for (let i = numero.length - 1; i >= 0; i -= 1) {
+                let digit = Number(numero.charAt(i));
+                if (Number.isNaN(digit)) return false;
+                if (doubleDigit) {
+                    digit *= 2;
+                    if (digit > 9) digit -= 9;
+                }
+                sum += digit;
+                doubleDigit = !doubleDigit;
+            }
+            return sum % 10 === 0;
+        };
+
+        const normalizeValidity = (value) => {
+            const clean = String(value || "").replace(/\D/g, "").slice(0, 4);
+            if (clean.length < 3) return "";
+            const mm = clean.slice(0, 2);
+            const yy = clean.slice(2);
+            const month = Number(mm);
+            if (month < 1 || month > 12 || yy.length !== 2) return "";
+            return `${mm}/${yy}`;
+        };
+
+        const readCards = () => {
+            const perfil = getPerfil();
+            if (Array.isArray(perfil.metodos_pagamento)) return perfil.metodos_pagamento;
+            const lsCards = readJSON(LS_PAYMENTS_KEY, []);
+            return Array.isArray(lsCards) ? lsCards : [];
+        };
+
+        const persistCardsLocal = (cards) => {
+            writeJSON(LS_PAYMENTS_KEY, cards);
+            const perfil = getPerfil();
+            perfil.metodos_pagamento = cards;
+            setPerfil(perfil);
+        };
+
+        const getSupabaseClientLocal = () =>
+            (typeof window.getSupabaseClient === "function"
+                ? window.getSupabaseClient()
+                : (window.sb || window.supabaseClient || null));
+
+        const persistCardsSupabase = async (cards) => {
+            const sb = getSupabaseClientLocal();
+            if (!sb?.auth?.getUser || !sb.from) return;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return;
+
+                await sb
+                    .from("usuarios")
+                    .update({ metodos_pagamento: cards })
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`);
+            } catch (error) {
+                console.warn("[pagamentos] sync supabase ignorado:", error?.message || error);
+            }
+        };
+
+        const persistCards = async (cards) => {
+            persistCardsLocal(cards);
+            await persistCardsSupabase(cards);
+        };
+
+        const hydrateCardsFromSupabase = async () => {
+            const sb = getSupabaseClientLocal();
+            if (!sb?.auth?.getUser || !sb.from) return;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return;
+
+                const { data: row, error } = await sb
+                    .from("usuarios")
+                    .select("metodos_pagamento")
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`)
+                    .maybeSingle();
+
+                if (error) return;
+                if (Array.isArray(row?.metodos_pagamento)) {
+                    listaCartoesLocal = row.metodos_pagamento;
+                    persistCardsLocal(listaCartoesLocal);
+                    renderizarCartoes();
+
+            if (window.DokePayments?.renderHistory) {
+                window.DokePayments.renderHistory(document.getElementById("listaHistorico"), { limit: 8 });
+            }
+                }
+            } catch (_) {}
+        };
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            if (!isLogged()) {
+                window.location.href = "login.html";
+                return;
+            }
+listaCartoesLocal = readCards();
+            renderizarCartoes();
+            await hydrateCardsFromSupabase();
+        });
+
+        window.salvarCartaoReal = async function() {
+            const numero = document.getElementById("cardNum").value.replace(/\s/g, "");
+            const validade = normalizeValidity(document.getElementById("cardVal").value);
+            const cvv = document.getElementById("cardCvv").value.replace(/\D/g, "");
+            const nome = document.getElementById("cardNome").value.trim();
+            const btn = document.getElementById("btnSalvarCartao");
+
+            if (!/^\d{13,19}$/.test(numero) || !isValidCardByLuhn(numero)) {
+                showInfo("Número do cartão invalido.");
+                return;
+            }
+            if (!validade) {
+                showInfo("Validade invalida. Use MM/AA.");
+                return;
+            }
+            if (!/^\d{3,4}$/.test(cvv)) {
+                showInfo("CVV invalido.");
+                return;
+            }
+            if (!nome) {
+                showInfo("Informe o nome impresso no cartão.");
+                return;
+            }
+
+            btn.innerText = "Salvando...";
+            btn.disabled = true;
+
+            try {
+                const brandInfo = guessBrand(numero);
+                const novoCartao = {
+                    id: Date.now(),
+                    brand: brandInfo.brand,
+                    icon: brandInfo.icon,
+                    last4: numero.slice(-4),
+                    validade,
+                    holder: nome
+                };
+
+                listaCartoesLocal.push(novoCartao);
+                await persistCards(listaCartoesLocal);
+
+                renderizarCartoes();
+                toggleFormCartao();
+                limparForm();
+                showInfo("Cartão salvo com sucesso.");
+            } catch (error) {
+                console.error(error);
+                showInfo("Não foi possivel salvar o cartão.");
+            } finally {
+                btn.innerText = "Salvar Cartão";
+                btn.disabled = false;
+            }
+        };
+
+        window.removerCartaoReal = async function(id) {
+            if (!confirm("Remover este cartão?")) return;
+
+            try {
+                listaCartoesLocal = listaCartoesLocal.filter((c) => c.id !== id);
+                await persistCards(listaCartoesLocal);
+                renderizarCartoes();
+                showInfo("Cartão removido.");
+            } catch (error) {
+                console.error(error);
+                showInfo("Não foi possivel remover o cartão.");
+            }
+        };
+
+        function renderizarCartoes() {
+            const container = document.getElementById("listaCartoes");
+            if (!container) return;
+            container.innerHTML = "";
+
+            if (!listaCartoesLocal.length) {
+                container.innerHTML = '<div style="text-align:center; color:#667; padding:20px;">Nenhum cartão cadastrado.</div>';
+                return;
+            }
+
+            listaCartoesLocal.forEach((card) => {
+                const html = `
+                <div class="payment-method">
+                    <div style="display:flex; align-items:center;">
+                        <i class='bx ${card.icon || "bx-credit-card"} method-icon'></i>
+                        <div class="method-info">
+                            <h4>${card.brand || "Cartão"} final ${card.last4}</h4>
+                            <span>Validade: ${card.validade || "--/--"}</span>
+                        </div>
+                    </div>
+                    <i class='bx bx-trash btn-trash' onclick="removerCartaoReal(${card.id})"></i>
+                </div>`;
+                container.insertAdjacentHTML("beforeend", html);
+            });
+        }
+    </script>
+<script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const cardVal = document.getElementById("cardVal");
+            const cardCvv = document.getElementById("cardCvv");
+
+            if (cardVal) {
+                cardVal.addEventListener("input", () => formatarValidade(cardVal));
+            }
+            if (cardCvv) {
+                cardCvv.addEventListener("input", () => {
+                    cardCvv.value = cardCvv.value.replace(/\D/g, "").slice(0, 4);
+                });
+            }
+        });
+
+        function toggleFormCartao() {
+            const form = document.getElementById('form-cartao');
+            const btn = document.getElementById('btn-add');
+            
+            if (form.style.display === 'block') {
+                form.style.display = 'none';
+                btn.style.display = 'flex';
+            } else {
+                form.style.display = 'block';
+                btn.style.display = 'none';
+            }
+        }
+
+        function limparForm() {
+            document.getElementById('cardNum').value = "";
+            document.getElementById('cardVal').value = "";
+            document.getElementById('cardCvv').value = "";
+            document.getElementById('cardNome').value = "";
+        }
+
+        function formatarCartao(input) {
+            let v = input.value.replace(/\D/g, "").slice(0, 19);
+            v = v.replace(/(\d{4})(?=\d)/g, "$1 ").trim();
+            input.value = v;
+        }
+
+        function formatarValidade(input) {
+            let v = input.value.replace(/\D/g, "").slice(0, 4);
+            if (v.length >= 3) v = `${v.slice(0, 2)}/${v.slice(2)}`;
+            input.value = v;
+        }
+    </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+<script defer="True" src="settings-pages.js"></script></body>
+</html>
+
+
+
+
+
+
+
+

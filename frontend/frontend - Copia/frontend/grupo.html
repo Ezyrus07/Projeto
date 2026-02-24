@@ -1,0 +1,1780 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Grupo | Doke</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="grupo-refeito.css" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<script defer="" src="grupo-refeito.js"></script>
+<style>
+        /* ======================================================
+           ESTILOS ESPECÃFICOS DA PÃGINA COMUNIDADES
+           ====================================================== */
+        
+        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
+
+        main { padding: 20px; max-width: 1600px; }
+        @media (min-width: 1024px) {
+            main { margin-left: 270px; padding: 30px 40px; width: auto; }
+        }
+
+        .comm-hero-container {
+                background: radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.20), transparent 55%), linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+            padding: 40px; border-radius: 20px; margin-bottom: 40px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative; overflow: hidden;
+        }
+        .comm-hero-container::before {
+            content: ''; position: absolute; top: -50px; right: -50px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .comm-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 30px; flex-wrap: wrap; gap: 20px; position: relative; z-index: 2;
+        }
+        .comm-title h1 { color: white; font-size: 2.2rem; margin-bottom: 8px; font-weight: 700; }
+        .comm-title p { color: rgba(255,255,255,0.85); font-size: 1rem; max-width: 500px; }
+
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .search-bar-comm {
+            display: flex; align-items: center; background: white;
+            padding: 12px 20px; border-radius: 50px; width: 320px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .search-bar-comm input { background: transparent; border: none; outline: none; width: 100%; color: #333; }
+        
+        .btn-create-comm {
+            background: #00d2d3; color: #005f5f; border: none; padding: 12px 25px;
+            border-radius: 30px; font-weight: 700; cursor: pointer; display: flex; 
+            align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 210, 211, 0.3);
+            transition: 0.2s; white-space: nowrap;
+        }
+        .btn-create-comm:hover { background: #fff; color: var(--cor2); }
+
+        /* Meus Grupos */
+        .my-groups-section { position: relative; z-index: 2; }
+        .section-label { color: white; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; opacity: 0.8; }
+        .groups-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; min-height: 90px; }
+        .my-group-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; min-width: 80px; transition: 0.2s; }
+        .group-img-ring {
+            width: 70px; height: 70px; border-radius: 20px; padding: 3px;
+            background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+        }
+        .group-img-ring img { width: 100%; height: 100%; border-radius: 17px; object-fit: cover; background: white; }
+        .my-group-item span { color: white; font-size: 0.8rem; font-weight: 600; text-align: center; }
+
+        /* Layout Principal */
+        .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+        .filter-tabs { display: flex; gap: 12px; margin-bottom: 25px; overflow-x: auto; }
+        .tab-btn {
+            padding: 10px 24px; border: 1px solid #e0e0e0; background: white; border-radius: 30px;
+            font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--cor2); color: white; border-color: var(--cor2); }
+
+        .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        
+        .card-comm {
+            background: white; border-radius: 16px; overflow: hidden;
+            border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer;
+        }
+        .card-comm:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+        .card-cover { height: 110px; background-size: cover; background-position: center; position: relative; background-color: #eee; }
+        .card-tag {
+            position: absolute; top: 10px; right: 10px; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: white; text-transform: uppercase;
+        }
+        .tag-pro { background: var(--cor0); }
+        .tag-condo { background: var(--cor2); }
+        .tag-hobby { background: #9b59b6; }
+
+        .card-body { padding: 18px; margin-top: -40px; flex: 1; display: flex; flex-direction: column; }
+        .card-icon {
+            width: 64px; height: 64px; border-radius: 16px; background: white;
+            padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 12px; position: relative; z-index: 2;
+        }
+        .card-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
+        .card-title { font-size: 1.15rem; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .card-desc { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.5; }
+        .members-preview { display: flex; align-items: center; margin-bottom: 15px; margin-top: auto; }
+        .mem-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -10px; background:#ddd; }
+        .mem-count { font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: 500; }
+        .card-footer { padding: 15px 18px; border-top: 1px solid #f5f5f5; background: #fafafa; }
+        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; }
+        .btn-entrar:hover { background: var(--cor2); color: white; border-color: var(--cor2); }
+
+        /* Sidebar Widgets */
+        .widget-box { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
+        .widget-title { font-size: 1.1rem; font-weight: 700; color: var(--cor2); margin-bottom: 20px; border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; }
+        .topic-item { display: flex; gap: 15px; margin-bottom: 15px; }
+        .topic-icon { width: 40px; height: 40px; background: #f0f7ff; color: var(--cor2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+        
+        /* Modal Criar */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .btn-submit-modal { width: 100%; padding: 14px; background: var(--cor2); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            .comm-layout { display: flex; flex-direction: column; }
+            .comm-hero-container { padding: 30px 20px; border-radius: 0 0 20px 20px; margin: -20px -15px 30px -15px; }
+            .comm-header { flex-direction: column; align-items: flex-start; }
+            .search-bar-comm, .btn-create-comm { width: 100%; justify-content: center; }
+            .grid-comunidades { grid-template-columns: 1fr; }
+            main { margin-left: 0 !important; padding: 20px !important; }
+        }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<style>
+/* =========================
+   DOKE - Grupo (layout)
+   Mantï¿½m header/sidebar do site
+   ========================= */
+.grupo-page{
+  padding: 14px 18px 30px;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  box-sizing: border-box;
+}
+.grupo-grid{
+  display:grid;
+  /* laterais menores para sobrar mais espaï¿½o no centro */
+  grid-template-columns: minmax(0, 1fr) 320px;
+  gap: 18px;
+  align-items: start;
+}
+
+.grupo-sidecol{
+  display:flex;
+  flex-direction:column;
+  gap: 18px;
+  min-width:0;
+}
+.grupo-pane{
+  background:#fff;
+  border-radius:18px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+  overflow:hidden;
+  max-height: calc(100vh - 160px);
+  display:flex;
+  flex-direction:column;
+}
+.grupo-pane.scroll{ overflow:auto; }
+
+.grupo-nav .grupo-nav-head{
+  padding: 16px;
+  border-bottom: 1px solid #eef0f4;
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+.btn-voltar{
+  width:42px;height:42px;border-radius:12px;
+  border:1px solid #eef0f4; background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.grupo-nav-title{ font-weight:800; color:#1d2b3a; }
+
+.grupo-channels{ padding: 12px; display:flex; flex-direction:column; gap:10px; }
+.grupo-channel{
+  display:flex; align-items:center; gap:10px;
+  padding:12px 12px;
+  border-radius:14px;
+  border:1px solid #eef0f4;
+  background:#fff;
+  cursor:pointer;
+  font-weight:700;
+  color:#1f2d3d;
+}
+.grupo-channel i{ font-size:18px; color: var(--cor2); }
+.grupo-channel.active{ background: rgba(42,95,144,0.08); border-color: rgba(42,95,144,0.25); }
+
+.grupo-admin-mini{ padding: 0 12px 14px; }
+
+.grupo-center{ overflow:hidden; }
+.grupo-center .inner{ overflow:auto; padding-bottom: 16px; }
+
+.grupo-hero-toggle{
+  display:none;
+  width: calc(100% - 24px);
+  margin: 12px auto 0;
+  border:1px solid #d8e1ef;
+  background:#fff;
+  color:#1d2b3a;
+  border-radius: 14px;
+  min-height: 44px;
+  padding: 0 14px;
+  font-weight: 900;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  cursor:pointer;
+}
+.grupo-hero-toggle i{ color: var(--cor2); font-size: 18px; }
+
+.grupo-hero{ border-bottom: 1px solid #eef0f4; }
+.grupo-cover{
+  height: 190px;
+  background: linear-gradient(120deg, #2a5f90, #7b2cbf);
+  background-size: cover;
+  background-position:center;
+}
+.grupo-hero-info{
+  padding: 14px 16px 16px;
+  display:flex;
+  gap: 14px;
+  align-items:flex-end;
+  justify-content:space-between;
+}
+.grupo-hero-left{ display:flex; gap: 14px; align-items:flex-end; min-width:0; }
+.grupo-avatar{
+  width:74px;height:74px;border-radius:18px;
+  background:#fff;
+  border:1px solid #eef0f4;
+  margin-top:-42px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.08);
+  display:flex; align-items:center; justify-content:center;
+  overflow:hidden;
+}
+.grupo-avatar img{ width:100%; height:100%; object-fit:cover; }
+.grupo-avatar .initial{
+  width:100%; height:100%;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900; font-size: 22px;
+  color:#1f2d3d;
+  background: linear-gradient(120deg, rgba(42,95,144,0.12), rgba(123,44,191,0.10));
+}
+
+.grupo-hero-text{ min-width:0; }
+.grupo-hero-text h2{
+  margin:0; font-size: 1.25rem;
+  color:#1d2b3a; font-weight: 900;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.grupo-hero-text p{
+  margin:6px 0 0; color:#5b6674;
+  font-weight:600;
+  overflow:hidden; text-overflow:ellipsis;
+  display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+}
+.grupo-meta{ margin-top: 8px; color:#7a8696; font-weight:700; font-size: 0.92rem; }
+
+.grupo-hero-actions{ display:flex; gap: 10px; flex-wrap:wrap; justify-content:flex-end; }
+.btn-icon-mini{
+  width:42px; height:42px;
+  border-radius: 14px;
+  border: 1px solid #eef0f4;
+  background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.btn-icon-mini i{ font-size: 20px; color:#1f2d3d; }
+.btn-icon-mini.primary{ background: var(--cor2); border-color: rgba(0,0,0,0.05); }
+.btn-icon-mini.primary i{ color:#fff; }
+
+.grupo-composer{
+  margin: 16px;
+  border:1px solid #eef0f4;
+  border-radius: 18px;
+  background:#fff;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+}
+.grupo-composer textarea{
+  width:100%;
+  min-height: 84px;
+  border:none;
+  outline:none;
+  padding: 14px 14px 6px;
+  resize: vertical;
+  font-weight:700;
+  color:#1d2b3a;
+}
+.composer-actions{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  padding: 10px 12px 12px;
+}
+.btn-icon{
+  width:44px;height:44px;border-radius:14px;
+  border:1px solid #eef0f4; background:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.btn-icon i{ font-size:20px; color:#1f2d3d; }
+.composer-hint{
+  flex:1;
+  display:flex; align-items:center; gap:8px;
+  color:#7a8696; font-weight:700;
+  padding-left: 4px;
+  min-width:0;
+}
+.composer-hint i{ font-size:18px; color: var(--cor2); }
+.btn-send{
+  width:46px;height:46px;border-radius:16px;
+  border:none;
+  background: var(--cor2);
+  color:#fff;
+  display:flex; align-items:center; justify-content:center;
+  cursor:pointer;
+}
+.btn-send i{ font-size:20px; }
+
+/* === Composer estilo chat (grupo.html) === */
+.composer-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding: 10px 12px;
+}
+.composer-input{
+  flex:1;
+  height: 44px;
+  border:1px solid #eef0f4;
+  border-radius: 16px;
+  padding: 0 14px;
+  outline:none;
+  font-weight:800;
+  color:#1d2b3a;
+  background:#fff;
+  min-width:0;
+}
+.composer-input::placeholder{ color:#8a96a6; font-weight:800; }
+.composer-sub{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding: 0 14px 12px;
+  color:#7a8696;
+  font-weight:800;
+}
+.composer-sub i{ font-size:18px; color: var(--cor2); }
+#btnMic.recording{ background: #111827; }
+#btnMic.recording i{ color:#fff; }
+
+/* ============================================================
+   MOBILE: Composer sempre "preso" embaixo (sem sobrar espaï¿½o)
+   - Evita o "distanciamento" apï¿½s enviar/focar no input
+   - Mantï¿½m acima do bottom-nav + safe-area
+   ============================================================ */
+@media (max-width: 1024px){
+  /* Garante que o feed nï¿½o fique escondido atrï¿½s do composer fixo */
+  .grupo-page,
+  .grupo-pane.grupo-center .inner{
+    padding-bottom: calc(var(--doke-btm-real, 66px) + env(safe-area-inset-bottom) + 140px) !important;
+  }
+
+  /* Composer vira uma barra fixa acima do bottom-nav */
+  .grupo-composer{
+    position: fixed !important;
+    left: 10px !important;
+    right: 10px !important;
+    bottom: calc(var(--doke-btm-real, 66px) + env(safe-area-inset-bottom) + 8px) !important;
+    margin: 0 !important;
+    z-index: 999 !important;
+    border-radius: 18px !important;
+    box-shadow: 0 14px 34px rgba(0,0,0,0.12) !important;
+  }
+
+  /* Ajuste de toque/altura no input para evitar "zoom" do iOS e melhorar UX */
+  .composer-input{ font-size: 16px !important; }
+
+  /* Feed precisa de espaï¿½o suficiente no final */
+  .grupo-feed{ padding-bottom: 140px !important; }
+}
+
+.grupo-feed{ padding: 0 16px 16px; display:flex; flex-direction:column; gap: 14px; }
+.post-card{
+  border:1px solid #eef0f4;
+  border-radius: 18px;
+  background:#fff;
+  overflow:hidden;
+  box-shadow: 0 10px 22px rgba(0,0,0,0.04);
+}
+.post-head{
+  padding: 12px 14px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.post-user{
+  display:flex; align-items:center; gap:10px; min-width:0;
+}
+.post-user .avatar{
+  width:38px;height:38px;border-radius:12px;
+  background: #f1f4f9;
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+  color:#1f2d3d;
+}
+.post-user .avatar img{ width:100%; height:100%; object-fit:cover; }
+.post-user .name{
+  font-weight:900;
+  color:#1d2b3a;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.post-time{ color:#7a8696; font-weight:700; font-size: 0.9rem; }
+.post-body{ padding: 0 14px 14px; color:#2a3340; font-weight:700; line-height: 1.35; }
+.post-media{
+  margin-top: 10px;
+  border-radius: 16px;
+  overflow:hidden;
+  border: 1px solid #eef0f4;
+}
+.post-media img, .post-media video{
+  width:100%;
+  display:block;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+}
+
+.empty-state{
+  border:1px dashed rgba(42,95,144,0.35);
+  border-radius: 18px;
+  padding: 18px;
+  background: rgba(42,95,144,0.05);
+}
+.empty-state h3{ margin:0; font-weight: 900; color:#1d2b3a; }
+.empty-state p{ margin:6px 0 0; color:#6b7686; font-weight:700; }
+
+.membros-head{
+  padding: 16px;
+  border-bottom: 1px solid #eef0f4;
+  display:flex; align-items:flex-end; justify-content:space-between;
+}
+.membros-head h3{ margin:0; font-weight: 900; color:#1d2b3a; }
+.membros-head small{ color:#7a8696; font-weight:800; }
+.membros-section{ padding: 12px 14px; }
+.membros-title{ color:#7a8696; font-weight: 900; letter-spacing: 0.05em; font-size: 0.82rem; margin-bottom: 8px; }
+.membros-list{ display:flex; flex-direction:column; gap: 10px; }
+.membro-item{
+  display:flex; align-items:center; justify-content:space-between;
+  gap: 10px;
+  padding: 10px 10px;
+  border: 1px solid #eef0f4;
+  border-radius: 14px;
+}
+.membro-left{ display:flex; align-items:center; gap: 10px; min-width:0; }
+.membro-avatar{
+  width:34px;height:34px;border-radius: 12px;
+  background:#f1f4f9;
+  overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+  font-weight:900;
+  color:#1f2d3d;
+}
+.membro-avatar img{ width:100%; height:100%; object-fit:cover; }
+.membro-name{
+  font-weight: 900; color:#1d2b3a;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.membro-badge{
+  font-weight: 900;
+  font-size: 0.82rem;
+  color: #1f2d3d;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #eef0f4;
+  background:#fff;
+}
+.membro-badge.dono{
+  border-color: rgba(42,95,144,0.35);
+  background: rgba(42,95,144,0.08);
+  color: var(--cor2);
+}
+
+@media (max-width: 1100px){
+  .grupo-grid{ grid-template-columns: minmax(0, 1fr) 300px; }
+  .grupo-members{ display:none; }
+}
+@media (max-width: 1200px){
+  body[data-page="grupo"] main{
+    margin-left: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+  }
+  body[data-page="grupo"] .grupo-page{
+    padding: 0 0 calc(var(--doke-btm-real, 66px) + 10px + env(safe-area-inset-bottom));
+    width: 100%;
+    max-width: none;
+  }
+  .grupo-grid{ grid-template-columns: 1fr !important; gap: 0 !important; }
+  .grupo-grid,
+  .grupo-center,
+  .grupo-sidecol{ width: 100%; min-width: 0; }
+  .grupo-pane{
+    max-height: none;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .grupo-cover{ border-radius: 0; }
+  .grupo-hero-toggle{ display:inline-flex; }
+  #grupoCenterPane #grupoCover{ display:none; }
+  #grupoCenterPane.hero-open #grupoCover{ display:block; }
+  #grupoCenterPane.hero-open .grupo-hero-toggle{ margin-top: 8px; }
+  .grupo-pane.grupo-nav{
+    border-radius: 0;
+    box-shadow: none;
+    margin: 0;
+  }
+  .grupo-sidecol{ order: 2; }
+  .grupo-center{ order: 1; }
+}
+
+body[data-page="grupo"] main{ display:block !important; }
+body[data-page="grupo"] main > .grupo-page{ width: 100% !important; max-width: none !important; }
+
+</style>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body data-page="grupo">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
+
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
+
+  <div class="item">
+<a href="mensagens.html">
+<i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+</div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+
+<main>
+<div class="grupo-page">
+<div class="grupo-grid">
+<section class="grupo-pane grupo-center" id="grupoCenterPane">
+<div class="inner">
+<button class="grupo-hero-toggle" id="btnToggleGrupoHero" type="button" aria-expanded="false">
+<i class="bx bx-image"></i>
+<span id="toggleHeroLabel">Mostrar capa</span>
+</button>
+<div class="grupo-hero" id="grupoHero">
+<div class="grupo-cover" id="grupoCover"></div>
+<div class="grupo-hero-info">
+<div class="grupo-hero-left">
+<div class="grupo-avatar" id="grupoAvatar"><div class="initial">…</div></div>
+<div class="grupo-hero-text">
+<h2 id="grupoNome">Carregando…</h2>
+<p id="grupoDesc"></p>
+<div class="grupo-meta">
+<span id="grupoTipo"></span> <span id="grupoMetaSep">·</span> <span id="grupoMembrosCount"></span>
+</div>
+</div>
+</div>
+<div class="grupo-hero-actions">
+<button class="btn-icon-mini" id="btnCopiarLink" title="Copiar link"><i class="bx bx-link"></i></button>
+<button class="btn-icon-mini" id="btnAbrirArquivos" title="Arquivos"><i class="bx bx-folder-open"></i></button>
+<button class="btn-icon-mini" id="btnConfigGrupo" style="display:none;" title="Configurações"><i class="bx bx-cog"></i></button>
+</div>
+</div>
+</div>
+<div class="join-gate" id="joinGate" style="display:none;">
+<div class="join-gate-title" id="joinGateTitle">Entre no grupo</div>
+<div class="join-gate-sub" id="joinGateSub">Toque para entrar e começar a postar.</div>
+<button class="join-gate-btn" id="btnJoinGate">Entrar no grupo</button>
+</div>
+<div class="grupo-composer" id="composerBox">
+<div class="reply-bar" id="replyBar" style="display:none;">
+<div class="reply-bar-info">
+<div class="reply-bar-title" id="replyBarTitle">Respondendo</div>
+<div class="reply-bar-preview" id="replyBarPreview"></div>
+</div>
+<button class="reply-bar-close" id="btnCloseReply" title="Cancelar">×</button>
+</div>
+<div class="composer-row">
+<label class="btn-icon" title="Anexar">
+<i class="bx bx-paperclip"></i>
+<input accept="image/*,video/*,audio/*,application/pdf" hidden="" id="postArquivo" type="file"/>
+</label>
+<input autocomplete="off" class="composer-input" id="postTexto" placeholder="Digite uma mensagem para o grupo..." type="text"/>
+<button class="btn-icon" id="btnMic" title="Áudio"><i class="bx bx-microphone"></i></button>
+<button class="btn-send" id="btnEnviarPost" title="Enviar"><i class="bx bx-send"></i></button>
+</div>
+<div class="composer-sub">
+<i class="bx bx-shield-quarter"></i> Respeite as regras do grupo.
+              <span id="audioStatus" style="margin-left:auto; display:none; font-weight:800;"></span>
+</div>
+<div id="audioPreview" style="display:none; padding:10px 12px 12px; border-top:1px solid #eef0f4;">
+<audio controls="" id="audioPlayer" style="width:100%;"></audio>
+<div style="display:flex; gap:10px; margin-top:10px;">
+<button class="tab-btn" id="btnCancelarAudio" style="flex:1;" type="button">Cancelar áudio</button>
+<button class="tab-btn active" id="btnEnviarAudio" style="flex:1;" type="button">Enviar áudio</button>
+</div>
+</div>
+</div>
+<div class="grupo-feed" id="grupoFeed">
+<div class="empty-state" id="feedEmpty" style="display:none;">
+<h3>Sem posts ainda</h3>
+<p>Seja o primeiro a postar no grupo.</p>
+</div>
+</div>
+<!-- Área Arquivos (placeholder real: lista vazia até você plugar Storage) -->
+<div class="grupo-feed" id="tabArquivos" style="display:none; padding-top:16px;">
+<div class="empty-state">
+<h3>Nenhum arquivo enviado</h3>
+<p>Quando você ligar o Storage do Supabase, os arquivos do grupo aparecem aqui.</p>
+</div>
+</div>
+<!-- Área Sobre -->
+<div class="grupo-feed" id="tabSobre" style="display:none; padding-top:16px;">
+<div class="post-card" style="padding:14px;">
+<div style="font-weight:900; color:#1d2b3a; margin-bottom:8px;">Sobre o grupo</div>
+<div id="sobreTexto" style="font-weight:700; color:#2a3340; line-height:1.4;"></div>
+</div>
+</div>
+</div>
+</section>
+<div class="grupo-sidecol">
+<section class="grupo-pane grupo-nav">
+<div class="grupo-nav-head">
+<button class="btn-voltar" onclick="history.back()" title="Voltar"><i class="bx bx-left-arrow-alt" style="font-size:22px; color:var(--cor2);"></i></button>
+<div class="grupo-nav-title" id="navGrupoNome">Grupo</div>
+</div>
+<div class="grupo-channels">
+<button class="grupo-channel active" data-tab="feed"><i class="bx bx-hash"></i> Feed</button>
+<button class="grupo-channel" data-tab="arquivos"><i class="bx bx-folder"></i> Arquivos</button>
+<button class="grupo-channel" data-tab="sobre"><i class="bx bx-info-circle"></i> Sobre</button>
+</div>
+<!-- Admin (Dono/Mod): fica escondido em "Configurações" (não ocupa espaço) -->
+<div class="grupo-admin-mini" id="grupoAdminMini" style="display:none;">
+<button class="grupo-channel" data-tab="config" id="btnAbrirConfig"><i class="bx bx-cog"></i> Configurações</button>
+</div>
+</section>
+<section class="grupo-pane grupo-requests" id="requestsPane" style="display:none;">
+<div class="membros-head" style="border-bottom:1px solid #eef0f4;">
+<h3>Solicitações</h3>
+<small id="requestsSub">×</small>
+</div>
+<div class="requests-wrap">
+<div class="requests-list" id="listaSolicitacoes"></div>
+<div class="requests-foot">
+<button class="tab-btn" id="btnRefreshSolicitacoes" style="width:100%;" type="button">Atualizar solicitações</button>
+</div>
+</div>
+</section>
+<section class="grupo-pane grupo-members">
+<div class="membros-head">
+<h3>Membros</h3>
+<small id="membrosSub">×</small>
+</div>
+<div class="membros-section">
+<div class="membros-title">ONLINE (<span id="countOnline">0</span>)</div>
+<div class="membros-list" id="listaOnline"></div>
+</div>
+<div class="membros-section">
+<div class="membros-title">OFFLINE (<span id="countOffline">0</span>)</div>
+<div class="membros-list" id="listaOffline"></div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+<!-- Configurações do grupo (somente Dono/Mods) -->
+<div aria-hidden="true" class="modal-overlay" id="modalGrupoConfig">
+<div class="modal-card" style="max-width:560px;">
+<button id="btnFecharConfig" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.6rem; cursor:pointer;">×</button>
+<h2 style="margin-bottom:8px; color:var(--cor2);">Configurações do grupo</h2>
+<p style="margin:0 0 16px; color:#667085; font-weight:700;">Ajustes rápidos (apenas para o dono/mods).</p>
+<div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px;">
+<button class="tab-btn active" id="tabCfgEditar" type="button">Editar</button>
+<button class="tab-btn" id="tabCfgCargos" type="button">Cargos</button>
+<button class="tab-btn" id="tabCfgSilenciados" type="button">Silenciados</button>
+</div>
+<div id="cfgEditar">
+<label class="form-label">Nome do grupo</label>
+<input class="form-input" id="cfgNome" placeholder="" type="text">
+<label class="form-label">Descrição</label>
+<textarea class="form-textarea" id="cfgDesc" placeholder=""></textarea>
+<div style="margin-top:14px; padding:12px; border:1px solid #eef0f4; border-radius:12px; background:#f7f9fc;">
+<div style="font-weight:900; color:#1d2b3a; margin-bottom:6px;">Aparência</div>
+<div style="color:#667085; font-weight:700; font-size:0.95rem; margin-bottom:10px;">Troque a foto e a capa do grupo (os arquivos sobem no Storage e atualizam a tabela <b>comunidades</b>).</div>
+<div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:10px;">
+<button class="tab-btn" id="btnTrocarFotoGrupo" type="button">Trocar foto</button>
+<button class="tab-btn" id="btnTrocarCapaGrupo" type="button">Trocar capa</button>
+<input accept="image/*" id="inputFotoGrupo" style="display:none;" type="file">
+<input accept="image/*" id="inputCapaGrupo" style="display:none;" type="file">
+</input></input></div>
+<div style="display:grid; grid-template-columns: 120px 1fr; gap:12px; align-items:center;">
+<div>
+<div style="font-weight:800; color:#1d2b3a; margin-bottom:6px;">Foto</div>
+<div id="previewFotoGrupo" style="width:100px; height:100px; border-radius:20px; overflow:hidden; border:1px solid #e6eaf0; background:#fff;"></div>
+</div>
+<div>
+<div style="font-weight:800; color:#1d2b3a; margin-bottom:6px;">Capa</div>
+<div id="previewCapaGrupo" style="width:100%; height:100px; border-radius:14px; overflow:hidden; border:1px solid #e6eaf0; background:#fff;"></div>
+</div>
+</div>
+</div>
+<button class="btn-submit-modal" id="btnSalvarGrupo" type="button">Salvar alterações</button>
+</input></div>
+<div id="cfgCargos" style="display:none;">
+<div style="background:#f7f9fc; border:1px solid #eef0f4; border-radius:12px; padding:12px; margin-bottom:12px;">
+<div style="font-weight:900; color:#1d2b3a; margin-bottom:6px;">Cargos do grupo</div>
+<div style="color:#667085; font-weight:700; font-size:0.95rem;">Gerencie os cargos do grupo. Tabela usada: <b>comunidade_cargos</b> (colunas: <b>comunidade_id</b>, <b>nome</b>, <b>cor</b>, <b>nivel</b>, <b>criado_por</b>, <b>criado_em</b>).</div>
+</div>
+<div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+<input class="form-input" id="cargoNome" placeholder="Nome do cargo (ex: Moderador)" style="margin:0;"/>
+<input class="form-input" id="cargoCor" placeholder="#2a5f90" style="margin:0; width:120px;"/>
+<button class="btn-prim" id="btnCriarCargo" style="white-space:nowrap;" type="button">Criar</button>
+</div>
+<div id="listaCargos" style="display:flex; flex-direction:column; gap:10px;"></div>
+</div>
+<div id="cfgSilenciados" style="display:none;">
+<div style="background:#f7f9fc; border:1px solid #eef0f4; border-radius:12px; padding:12px; margin-bottom:12px;">
+<div style="font-weight:900; color:#1d2b3a; margin-bottom:6px;">Usuários silenciados</div>
+<div style="color:#667085; font-weight:700; font-size:0.95rem;">Gerencie silenciamentos. Tabela usada: <b>comunidade_mutes</b>.</div>
+</div>
+<div id="listaSilenciados" style="display:flex; flex-direction:column; gap:10px;"></div>
+<button class="tab-btn" id="btnRefreshSilenciados" style="width:100%; margin-top:10px;" type="button">Atualizar silenciados</button>
+</div>
+</div>
+</div>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item active" href="comunidade.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png"/><span>Grupos</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<script>
+(function(){
+  // Toast simples (sem alert)
+  function toast(title, msg){
+    try{
+      const t = document.createElement('div');
+      t.style.position='fixed';
+      t.style.right='16px';
+      t.style.bottom='16px';
+      t.style.zIndex='99999';
+      t.style.maxWidth='380px';
+      t.style.background='#111827';
+      t.style.color='#fff';
+      t.style.padding='12px 14px';
+      t.style.borderRadius='14px';
+      t.style.boxShadow='0 20px 40px rgba(0,0,0,0.35)';
+      t.innerHTML = '<div style="font-weight:900; margin-bottom:4px;">'+(title||'')+'</div><div style="opacity:0.9; font-weight:700; font-size:0.92rem;">'+(msg||'')+'</div>';
+      document.body.appendChild(t);
+      setTimeout(()=>{ t.style.opacity='0'; t.style.transition='opacity .25s'; }, 2600);
+      setTimeout(()=>{ t.remove(); }, 3000);
+    }catch(e){}
+  }
+
+  const $ = (id)=>document.getElementById(id);
+  const qs = (k)=>new URLSearchParams(window.location.search).get(k);
+
+  const WAIT_MS = 10000;
+
+  function wireMobileHeroToggle(){
+    const pane = $('grupoCenterPane');
+    const hero = $('grupoHero');
+    const btn = $('btnToggleGrupoHero');
+    const label = $('toggleHeroLabel');
+    if(!pane || !hero || !btn) return;
+
+    const mq = window.matchMedia('(max-width: 1200px)');
+    const setState = (open) => {
+      pane.classList.toggle('hero-open', !!open);
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if(label) label.textContent = open ? 'Ocultar capa' : 'Mostrar capa';
+    };
+
+    const applyByViewport = () => {
+      if (mq.matches) setState(false);
+      else setState(true);
+    };
+
+    btn.addEventListener('click', () => {
+      setState(!pane.classList.contains('hero-open'));
+    });
+
+    if (typeof mq.addEventListener === 'function') mq.addEventListener('change', applyByViewport);
+    else if (typeof mq.addListener === 'function') mq.addListener(applyByViewport);
+
+    applyByViewport();
+  }
+
+  async function waitFor(predicate, timeout=WAIT_MS){
+    const t0 = Date.now();
+    while(Date.now()-t0 < timeout){
+      try{ if(predicate()) return true; }catch(e){}
+      await new Promise(r=>setTimeout(r, 80));
+    }
+    return false;
+  }
+
+  function getSB(){
+    const w = window;
+
+    // candidatos comuns (dependendo de como o supabase-init.js?v=20260218v43'function') return c;
+    }
+
+    // alguns projetos setam window.supabase = createClient(...)
+    if(w.supabase && typeof w.supabase.from === 'function') return w.supabase;
+
+    return null;
+  }
+
+  function safeText(v){ return (v==null?'':String(v)); }
+
+  function setFatal(title, msg){
+    try{
+      const n = document.getElementById('grupoNome');
+      const d = document.getElementById('grupoDesc');
+      const t = document.getElementById('grupoTipo');
+      const mc = document.getElementById('grupoMembrosCount');
+      if(n) n.textContent = title || 'Erro';
+      if(d) d.textContent = msg || '';
+      if(t) t.textContent = '';
+      if(mc) mc.textContent = '';
+      const nav = document.getElementById('navGrupoNome');
+      if(nav) nav.textContent = title || 'Grupo';
+      const empty = document.getElementById('feedEmpty');
+      if(empty){
+        empty.style.display='block';
+        const h = empty.querySelector('h3');
+        const p = empty.querySelector('p');
+        if(h) h.textContent = title || 'Erro';
+        if(p) p.textContent = msg || '';
+      }
+    }catch(e){}
+  }
+
+
+  function setCover(url){
+    const el = $('grupoCover');
+    if(!el) return;
+    if(url){
+      el.style.backgroundImage = 'url('+url+')';
+      el.style.backgroundSize = 'cover';
+      el.style.backgroundPosition = 'center';
+    }else{
+      el.style.backgroundImage = '';
+    }
+  }
+
+  function setAvatar(url, initial){
+    const box = $('grupoAvatar');
+    if(!box) return;
+    if(url){
+      box.innerHTML = '<img src="'+url+'" alt="capa" onerror="this.remove();" loading="lazy" decoding="async">';
+    }else{
+      box.innerHTML = '<div class="initial">'+(initial||'D')+'</div>';
+    }
+  }
+
+  async function getUserDoc(uid){
+    // Usa Firestore compat (se existir) só para nome/foto, sem depender para o grupo funcionar
+    try{
+      if(!(window.db && window.doc && window.getDoc)) return null;
+      const ref = window.doc(window.db, "usuarios", uid);
+      const snap = await window.getDoc(ref);
+      if(!snap.exists()) return null;
+      return snap.data();
+    }catch(e){ return null; }
+  }
+
+  function pickUserName(u){
+    return u?.user || u?.usuario || u?.nome || u?.name || u?.apelido || null;
+  }
+  function pickUserPhoto(u){
+    return u?.foto || u?.foto_url || u?.photoURL || u?.avatar || u?.imagem || null;
+  }
+
+  function inferMediaType(url){
+    const u = String(url||'').toLowerCase();
+    if(u.endsWith('.pdf')) return 'application/pdf';
+    if(u.match(/\.(mp3|wav|m4a|ogg|webm)$/)) return 'audio';
+    if(u.match(/\.(mp4|webm|mov|mkv|ogg)$/)) return 'video';
+    if(u.match(/\.(png|jpg|jpeg|gif|webp)$/)) return 'image';
+    return '';
+  }
+
+  function renderMedia(container, url, tipo){
+    if(!url) return;
+    const t = (tipo || inferMediaType(url) || '').toLowerCase();
+    const box = document.createElement('div');
+    box.className = 'post-media';
+
+    if(t.includes('pdf') || url.toLowerCase().endsWith('.pdf')){
+      box.innerHTML = '<a href="'+url+'" target="_blank" style="font-weight:900; color:var(--cor2);"><i class="bx bx-file"></i> Abrir PDF</a>';
+    }else if(t.includes('audio') || url.match(/\.(mp3|wav|m4a|ogg|webm)$/i)){
+      box.innerHTML = '<audio src="'+url+'" controls style="width:100%;"></audio>';
+    }else if(t.includes('video') || url.match(/\.(mp4|webm|mov|mkv|ogg)$/i)){
+      box.innerHTML = '<video src="'+url+'" controls style="width:100%; border-radius:14px;"></video>';
+    }else{
+      box.innerHTML = '<img src="'+url+'" style="width:100%; border-radius:14px;" onerror="this.style.display=\'none\'" loading="lazy" decoding="async">';
+    }
+    container.appendChild(box);
+  }
+
+  
+  async function loadGrupo(client, grupoId){
+    // Tabela: comunidades (id pode ser uuid/text/int dependendo do seu schema)
+    const gid = String(grupoId);
+
+    async function tryBy(column, value){
+      try{
+        const { data, error } = await client.from('comunidades').select('*').eq(column, value).maybeSingle();
+        if(data) return data;
+
+        // se deu erro de coluna inexistente, só ignora e tenta outro
+        const msg = String(error?.message || '').toLowerCase();
+        if(msg.includes('does not exist') || msg.includes('undefined_column')) return null;
+        if(String(error?.code || '') === '42703') return null; // postgres undefined_column
+        return null;
+      }catch(e){
+        return null;
+      }
+    }
+
+    // 1) id como texto
+    let g = await tryBy('id', gid);
+    if(g) return g;
+
+    // 2) id como número (caso seja serial/int)
+    if(/^\d+$/.test(gid)){
+      g = await tryBy('id', Number(gid));
+      if(g) return g;
+    }
+
+    // 3) colunas alternativas (se você usa código/slug para link)
+    const altCols = ['codigo','slug','code','link_code','invite_code'];
+    for(const col of altCols){
+      g = await tryBy(col, gid);
+      if(g) return g;
+    }
+
+    throw new Error('Grupo não encontrado.');
+  }
+
+
+  async function ensureMember(client, grupoId, uid){
+    if(!uid) return null;
+    const now = new Date().toISOString();
+
+    // coluna comunidade_id • text na tabela comunidade_membros
+    const { data: found, error: e1 } = await client
+      .from('comunidade_membros')
+      .select('*')
+      .eq('comunidade_id', String(grupoId))
+      .eq('user_uid', String(uid))
+      .maybeSingle();
+
+    if(e1 && String(e1.code||'') !== 'PGRST116'){ // PGRST116 = no rows
+      // mesmo com RLS, a tabela pode existir; apenas segue
+    }
+
+    if(!found){
+      const ins = {
+        comunidade_id: String(grupoId),
+        user_uid: String(uid),
+        status: 'online',
+        joined_at: now,
+        last_seen: now
+      };
+      const { data: inserted, error } = await client.from('comunidade_membros').insert(ins).select('*').maybeSingle();
+      if(!error) return inserted || ins;
+      return null;
+    }else{
+      const { error } = await client
+        .from('comunidade_membros')
+        .update({ status: 'online', last_seen: now })
+        .eq('id', found.id);
+      return found;
+    }
+  }
+
+  async function loadCargos(client, grupoId){
+    const { data, error } = await client
+      .from('comunidade_cargos')
+      .select('*')
+      .eq('comunidade_id', String(grupoId))
+      .order('nivel', { ascending: true, nullsFirst: false })
+      .order('nome', { ascending: true });
+    if(error) return [];
+    return data || [];
+  }
+
+  function renderCargosUI(cargos){
+    const box = $('listaCargos');
+    if(!box) return;
+    box.innerHTML = '';
+
+    if(!cargos.length){
+      const empty = document.createElement('div');
+      empty.style.color = '#667085';
+      empty.style.fontWeight = '800';
+      empty.textContent = 'Sem cargos ainda.';
+      box.appendChild(empty);
+      return;
+    }
+
+    for(const c of cargos){
+      const row = document.createElement('div');
+      row.style.display='flex';
+      row.style.alignItems='center';
+      row.style.gap='10px';
+      row.style.border='1px solid #eef0f4';
+      row.style.borderRadius='12px';
+      row.style.padding='10px';
+      row.innerHTML = `
+        <div style="width:14px;height:14px;border-radius:5px;background:${c.cor || '#cbd5e1'};"></div>
+        <div style="font-weight:900; color:#1d2b3a; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${safeText(c.nome)}</div>
+        <div style="font-weight:900; color:#667085;">${c.nivel ?? ''}</div>
+      `;
+      box.appendChild(row);
+    }
+  }
+
+  async function loadMembers(client, grupoId, donoUid, cargosMap){
+    const now = Date.now();
+    const FIVE_MIN = 5*60*1000;
+
+    const { data, error } = await client
+      .from('comunidade_membros')
+      .select('*')
+      .eq('comunidade_id', String(grupoId))
+      .order('joined_at', { ascending: true });
+
+    const membros = (!error && data) ? data : [];
+    const online = [];
+    const offline = [];
+
+    for(const m of membros){
+      const last = m.last_seen ? new Date(m.last_seen).getTime() : 0;
+      const isOnline = (String(m.status||'').toLowerCase()==='online') || (last && (now-last) < FIVE_MIN);
+      (isOnline ? online : offline).push(m);
+    }
+
+    $('countOnline').textContent = String(online.length);
+    $('countOffline').textContent = String(offline.length);
+    $('membrosSub').textContent = String(membros.length) + ' no total';
+
+    async function renderList(targetId, items){
+      const box = $(targetId);
+      if(!box) return;
+      box.innerHTML = '';
+
+      for(const m of items){
+        const uid = String(m.user_uid || '');
+        const udoc = uid ? await getUserDoc(uid) : null;
+        const nome = (pickUserName(udoc) || uid.slice(0, 8)).toString();
+        const foto = pickUserPhoto(udoc);
+        const initial = (nome?.trim()?.[0] || 'U').toUpperCase();
+
+        let badgeText = 'Membro';
+        let badgeColor = '#e5e7eb';
+        let badgeTextColor = '#1f2937';
+
+        if(donoUid && uid === String(donoUid)){
+          badgeText = 'Dono';
+          badgeColor = 'rgba(42,95,144,0.12)';
+          badgeTextColor = '#1f4d75';
+        }else if(m.role_id && cargosMap && cargosMap[m.role_id]){
+          const c = cargosMap[m.role_id];
+          badgeText = c.nome || 'Cargo';
+          if(c.cor){
+            badgeColor = c.cor;
+            badgeTextColor = '#fff';
+          }
+        }
+
+        const item = document.createElement('div');
+        item.className='membro-item';
+        item.innerHTML = `
+          <div class="membro-left">
+            <div class="membro-avatar">${foto ? `<img src="${foto}" onerror="this.remove()" loading="lazy" decoding="async">` : initial}</div>
+            <div class="membro-name">${safeText(nome)}</div>
+          </div>
+          <div class="membro-badge ${badgeText==='Dono'?'dono':''}" style="background:${badgeColor}; color:${badgeTextColor};">${safeText(badgeText)}</div>
+        `;
+        box.appendChild(item);
+      }
+    }
+
+    await renderList('listaOnline', online);
+    await renderList('listaOffline', offline);
+  }
+
+  async function loadPosts(client, grupoId){
+    const feed = $('grupoFeed');
+    const empty = $('feedEmpty');
+    if(!feed) return;
+
+    const { data, error } = await client
+      .from('comunidade_posts')
+      .select('*')
+      .or(`comunidadeId.eq.${grupoId},comunidade_id.eq.${grupoId}`)
+      .order('data', { ascending:false, nullsFirst:false })
+      .order('created_at', { ascending:false, nullsFirst:false })
+      .limit(60);
+
+    const posts = (!error && data) ? data : [];
+    Array.from(feed.querySelectorAll('.post-card')).forEach(n=>n.remove());
+
+    if(!posts.length){
+      if(empty) empty.style.display='block';
+      return;
+    }
+    if(empty) empty.style.display='none';
+
+    for(const p of posts){
+      const nome = p.autorNome || p.autor_nome || p.autor_user || 'Usuário';
+      const foto = p.autorFoto || p.autor_foto || '';
+      const initial = (String(nome).trim()[0] || 'U').toUpperCase();
+
+      const texto = p.texto || '';
+      const created = p.data || p.created_at || p.criado_em || null;
+      const time = created ? new Date(created).toLocaleString('pt-BR') : '';
+
+      const mediaUrl = p.midia_url || p.imagem || null;
+      const mediaType = p.midia_tipo || inferMediaType(mediaUrl) || '';
+
+      const card = document.createElement('div');
+      card.className='post-card';
+
+      const head = document.createElement('div');
+      head.className='post-head';
+      head.innerHTML = `
+        <div class="post-user">
+          <div class="avatar">${foto ? `<img src="${foto}" onerror="this.remove()" loading="lazy" decoding="async">` : initial}</div>
+          <div class="name">${safeText(nome)}</div>
+        </div>
+        <div class="post-time">${safeText(time)}</div>
+      `;
+
+      const body = document.createElement('div');
+      body.className='post-body';
+      body.innerHTML = `${safeText(texto)}`;
+
+      if(mediaUrl){
+        renderMedia(body, mediaUrl, mediaType);
+      }
+
+      card.appendChild(head);
+      card.appendChild(body);
+      feed.appendChild(card);
+    }
+  }
+
+  async function uploadFile(client, file, grupoId, uid){
+    const bucket = localStorage.getItem('DOKE_SUPABASE_STORAGE_BUCKET') || 'posts';
+    const safeName = (file.name || 'arquivo').replace(/[^\w.\-]+/g,'_');
+    const path = `grupos/${String(grupoId)}/${String(uid)}/${Date.now()}_${safeName}`;
+
+    const { error } = await client.storage.from(bucket).upload(path, file, { upsert:true });
+    if(error) throw error;
+
+    const { data } = client.storage.from(bucket).getPublicUrl(path);
+    const url = data?.publicUrl;
+    if(!url) throw new Error('Não consegui gerar URL pública do arquivo (bucket privado?).');
+    return url;
+  }
+
+  async function insertPost(client, grupoId, uid, texto, mediaUrl, mediaType, meta){
+    const now = new Date().toISOString();
+
+    const autorNome = meta?.nome || 'Usuário';
+    const autorFoto = meta?.foto || null;
+    const autorUser = meta?.user || null;
+    const autorIsPro = !!meta?.isPro;
+
+    const payload = {
+      // schema "novo"
+      comunidadeId: String(grupoId),
+      autorUid: String(uid),
+      autorNome: autorNome,
+      autorFoto: autorFoto,
+      autorIsPro: autorIsPro,
+      texto: texto || '',
+      imagem: (mediaUrl && (String(mediaType).includes('image'))) ? mediaUrl : null,
+      likes: 0,
+      likesArray: [],
+      data: now,
+
+      // schema "paralelo"
+      comunidade_id: String(grupoId),
+      autor_uid: String(uid),
+      autor_nome: autorNome,
+      autor_user: autorUser,
+      autor_foto: autorFoto,
+      midia_url: mediaUrl || null,
+      midia_tipo: mediaType || null,
+      created_at: now
+    };
+
+    // remove undefined (supabase rejeita)
+    Object.keys(payload).forEach(k=>payload[k]===undefined && delete payload[k]);
+
+    const { error } = await client.from('comunidade_posts').insert(payload);
+    if(error) throw error;
+  }
+
+  // Áudio (MediaRecorder)
+  let recorder = null;
+  let audioBlob = null;
+  let audioStream = null;
+
+  async function startRecording(){
+    audioBlob = null;
+    const status = $('audioStatus');
+    if(status){ status.style.display='inline'; status.textContent='Gravando…'; }
+
+    audioStream = await navigator.mediaDevices.getUserMedia({ audio:true });
+    recorder = new MediaRecorder(audioStream);
+    const chunks = [];
+    recorder.ondataavailable = (e)=>{ if(e.data && e.data.size) chunks.push(e.data); };
+    recorder.onstop = ()=>{
+      audioBlob = new Blob(chunks, { type: recorder.mimeType || 'audio/webm' });
+      if(audioStream){ audioStream.getTracks().forEach(t=>t.stop()); audioStream=null; }
+      if(status){ status.textContent='Áudio pronto'; }
+      showAudioPreview(audioBlob);
+    };
+    recorder.start();
+  }
+
+  function stopRecording(){
+    if(recorder && recorder.state !== 'inactive'){
+      recorder.stop();
+    }
+  }
+
+  function clearAudio(){
+    audioBlob = null;
+    const prev = $('audioPreview');
+    const status = $('audioStatus');
+    if(prev) prev.style.display='none';
+    if(status){ status.style.display='none'; status.textContent=''; }
+    const btnMic = $('btnMic');
+    if(btnMic) btnMic.classList.remove('recording');
+  }
+
+  function showAudioPreview(blob){
+    const prev = $('audioPreview');
+    const player = $('audioPlayer');
+    if(!prev || !player) return;
+    player.src = URL.createObjectURL(blob);
+    prev.style.display='block';
+  }
+
+  // =========================
+  // Auth helpers (Firebase compat / Supabase / localStorage)
+  // =========================
+  function safeLsGet(key){
+    try{ return localStorage.getItem(key); }catch(_){ return null; }
+  }
+  async function wait(ms){ return new Promise(r=>setTimeout(r, ms)); }
+
+  function getFirebaseAuthObj(){
+    // Compat scripts (firebase-auth-compat-supabase.js?v=20260217v12'function') return window.auth;
+    // Firebase SDK compat
+    try{
+      if(window.firebase && typeof window.firebase.auth === 'function') return window.firebase.auth();
+    }catch(_){ }
+    return null;
+  }
+
+  async function waitForFirebaseUser(maxMs=1500){
+    const start = Date.now();
+    while(Date.now() - start < maxMs){
+      const authObj = getFirebaseAuthObj();
+      const u = authObj?.currentUser || null;
+      if(u?.uid) return u;
+      await wait(60);
+    }
+    return null;
+  }
+
+  async function resolveAuth(client){
+    // 1) Firebase
+    const fbUser = await waitForFirebaseUser(1500);
+    if(fbUser?.uid) return { uid: String(fbUser.uid), provider: 'firebase', user: fbUser };
+
+    // 2) Supabase (se existir usuário autenticado)
+    try{
+      if(client?.auth?.getUser){
+        const { data } = await client.auth.getUser();
+        const sid = data?.user?.id;
+        if(sid) return { uid: String(sid), provider: 'supabase', user: data.user };
+      }
+    }catch(_){ }
+
+    // 3) Variáveis globais usadas no projeto
+    const maybe = window.usuarioAtual || window.userAtual || window.currentUser || window.usuarioLogado || null;
+    if(maybe?.uid) return { uid: String(maybe.uid), provider: 'global', user: maybe };
+    if(maybe?.id) return { uid: String(maybe.id), provider: 'global', user: maybe };
+
+    // 4) localStorage fallback (compat com várias páginas do Doke)
+    const directKeys = ['uid','user_uid','userId','idUser','usuario_uid','doke_uid','currentUserUid','firebaseUid'];
+    for(const k of directKeys){
+      const v = safeLsGet(k);
+      if(v && String(v).trim()) return { uid: String(v).trim(), provider: 'localStorage' };
+    }
+
+    // 5) localStorage com JSON do usuário
+    const jsonKeys = ['user','usuario','usuarioLogado','DOKE_USER','doke_user','authUser','currentUser'];
+    for(const k of jsonKeys){
+      const raw = safeLsGet(k);
+      if(!raw) continue;
+      try{
+        const obj = JSON.parse(raw);
+        const id = obj?.uid || obj?.user_uid || obj?.id || obj?.userId || obj?.usuario_id;
+        if(id) return { uid: String(id), provider: 'localStorageJson', user: obj };
+      }catch(_){ }
+    }
+
+    return { uid: null, provider: 'none' };
+  }
+
+  async function init(){
+    wireMobileHeroToggle();
+
+    const okSB = await waitFor(()=>!!getSB());
+    if(!okSB){
+      toast('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página.');
+      setFatal('Supabase indisponível', 'Não consegui acessar o cliente do Supabase nessa página. Confira se o supabase-init.js?v=20260218v43');
+      return;
+    }
+    const client = getSB();
+
+    const grupoId =
+      qs('id') || qs('grupoId') || qs('gid') || qs('grupo') || qs('comunidade') || qs('comunidade_id') ||
+      localStorage.getItem('DOKE_OPEN_GRUPO_ID') || localStorage.getItem('DOKE_GRUPO_ID');
+
+    if(!grupoId){
+      toast('Grupo não encontrado', 'URL sem parâmetro id.');
+      setFatal('Grupo não encontrado', 'A URL precisa ter ?id=... (ou ?grupoId=...). Confira se o link que abre o grupo está passando o parâmetro corretamente.');
+      return;
+    }
+
+    // usuário atual (via compat auth)
+    await waitFor(()=>!!window.auth, 6000);
+    const authInfo = await resolveAuth(client);
+    const uid = authInfo?.uid || null;
+    console.log('[DOKE] Auth detectado:', authInfo);
+
+    // Carrega grupo
+    let grupo;
+    try{
+      grupo = await loadGrupo(client, grupoId);
+    }catch(e){
+      console.error(e);
+      toast('Falha ao carregar', 'Não consegui buscar o grupo no Supabase (tabela comunidades).');
+      setFatal('Falha ao carregar', 'Não consegui buscar o grupo no Supabase. Verifique o id passado na URL, o nome/coluna da tabela comunidades e as policies (RLS).');
+      return;
+    }
+
+    const nome = grupo?.nome || 'Grupo';
+    const tipo = grupo?.tipo || '';
+    const desc = grupo?.descricao || '';
+    const capa = grupo?.capa || '';
+    const donoUid = grupo?.donoUid || grupo?.dono_uid || null;
+
+    $('grupoNome').textContent = nome;
+    const navNome = $('navGrupoNome');
+    if(navNome) navNome.textContent = nome;
+    $('grupoTipo').textContent = tipo ? tipo : '';
+    $('grupoDesc').textContent = desc ? desc : '';
+    $('grupoMembrosCount').textContent = (grupo?.membrosCount!=null) ? (grupo.membrosCount + ' membros') : '';
+    $('sobreTexto').textContent = desc || '—';
+    setCover(capa);
+    setAvatar(capa, (nome.trim()[0]||'D').toUpperCase());
+
+    // Link copiar
+    const btnCopiar = $('btnCopiarLink');
+    if(btnCopiar){
+      btnCopiar.addEventListener('click', async ()=>{
+        try{
+          await navigator.clipboard.writeText(window.location.href);
+          toast('Copiado', 'Link do grupo copiado.');
+        }catch(e){
+          toast('Erro', 'Não consegui copiar. Copie manualmente pela barra do navegador.');
+        }
+      });
+    }
+
+    // Tabs
+    document.querySelectorAll('.grupo-channel').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        document.querySelectorAll('.grupo-channel').forEach(b=>b.classList.remove('active'));
+        btn.classList.add('active');
+        const tab = btn.getAttribute('data-tab');
+        $('grupoFeed').style.display = (tab==='feed') ? 'flex' : 'none';
+        $('tabArquivos').style.display = (tab==='arquivos') ? 'block' : 'none';
+        $('tabSobre').style.display = (tab==='sobre') ? 'block' : 'none';
+      });
+    });
+
+    // Admin (config)
+    const souDono = uid && donoUid && String(uid)===String(donoUid);
+    const btnCfg = $('btnConfigGrupo');
+    const adminMini = $('grupoAdminMini');
+    if(souDono){
+      if(btnCfg) btnCfg.style.display='inline-flex';
+      if(adminMini) adminMini.style.display='block';
+    }
+
+    // Modal config open/close
+    const modalCfg = $('modalGrupoConfig');
+    const openCfg = ()=>{ if(modalCfg){ modalCfg.style.display='flex'; modalCfg.setAttribute('aria-hidden','false'); } };
+    const closeCfg = ()=>{ if(modalCfg){ modalCfg.style.display='none'; modalCfg.setAttribute('aria-hidden','true'); } };
+
+    if(btnCfg) btnCfg.addEventListener('click', openCfg);
+    const btnAbrirConfig = $('btnAbrirConfig');
+    if(btnAbrirConfig) btnAbrirConfig.addEventListener('click', openCfg);
+    const btnFechar = $('btnFecharConfig');
+    if(btnFechar) btnFechar.addEventListener('click', closeCfg);
+    if(modalCfg) modalCfg.addEventListener('click', (e)=>{ if(e.target===modalCfg) closeCfg(); });
+
+    // Preencher inputs de editar
+    const cfgNome = $('cfgNome'); const cfgDesc = $('cfgDesc');
+    if(cfgNome) cfgNome.value = nome;
+    if(cfgDesc) cfgDesc.value = desc;
+
+    // Tabs config (Editar/Cargos)
+    const tabEdit = $('tabCfgEditar'); const tabCargos = $('tabCfgCargos');
+    const boxEdit = $('cfgEditar'); const boxCargos = $('cfgCargos');
+    if(tabEdit && tabCargos && boxEdit && boxCargos){
+      tabEdit.addEventListener('click', ()=>{
+        tabEdit.classList.add('active'); tabCargos.classList.remove('active');
+        boxEdit.style.display='block'; boxCargos.style.display='none';
+      });
+      tabCargos.addEventListener('click', ()=>{
+        tabCargos.classList.add('active'); tabEdit.classList.remove('active');
+        boxEdit.style.display='none'; boxCargos.style.display='block';
+      });
+    }
+
+    // Salvar nome/desc (apenas dono)
+    const btnSalvar = $('btnSalvarGrupo');
+    if(btnSalvar){
+      btnSalvar.addEventListener('click', async ()=>{
+        if(!souDono){ toast('Sem permissóo', 'Apenas o dono pode editar.'); return; }
+        try{
+          const novoNome = (cfgNome?.value || '').trim();
+          const novaDesc = (cfgDesc?.value || '').trim();
+          const { error } = await client.from('comunidades').update({ nome: novoNome, descricao: novaDesc }).eq('id', grupoId);
+          if(error) throw error;
+          $('grupoNome').textContent = novoNome || nome;
+          $('grupoDesc').textContent = novaDesc || '';
+          $('sobreTexto').textContent = novaDesc || '—';
+          toast('Salvo', 'Grupo atualizado.');
+        }catch(e){
+          console.error(e);
+          toast('Erro', 'Não consegui salvar. Verifique RLS na tabela comunidades.');
+        }
+      });
+    }
+
+    // Cargos: criar + listar (apenas dono)
+    let cargos = await loadCargos(client, grupoId);
+    const cargosMap = {};
+    cargos.forEach(c=>{ cargosMap[c.id]=c; });
+    renderCargosUI(cargos);
+
+    const btnCriarCargo = $('btnCriarCargo');
+    if(btnCriarCargo){
+      btnCriarCargo.addEventListener('click', async ()=>{
+        if(!souDono){ toast('Sem permissóo', 'Apenas o dono pode criar cargos.'); return; }
+        const nomeCargo = ($('cargoNome')?.value || '').trim();
+        const corCargo = ($('cargoCor')?.value || '').trim();
+        if(!nomeCargo){ toast('Nome obrigatério', 'Digite o nome do cargo.'); return; }
+        try{
+          const now = new Date().toISOString();
+          const payload = { comunidade_id: String(grupoId), nome: nomeCargo, cor: corCargo || null, nivel: 1, criado_por: String(uid||''), criado_em: now };
+          const { error } = await client.from('comunidade_cargos').insert(payload);
+          if(error) throw error;
+          $('cargoNome').value=''; $('cargoCor').value='';
+          cargos = await loadCargos(client, grupoId);
+          cargos.length && cargos.forEach(c=>{ cargosMap[c.id]=c; });
+          renderCargosUI(cargos);
+          toast('Criado', 'Cargo adicionado.');
+        }catch(e){
+          console.error(e);
+          toast('Erro', 'Não consegui criar cargo. Verifique RLS da tabela comunidade_cargos.');
+        }
+      });
+    }
+
+    // Presença/membro
+    if(uid){
+      await ensureMember(client, grupoId, uid);
+    }else{
+      const prov = authInfo?.provider || 'none';
+      toast('Aviso', `Sessóo não detectada (${prov}). Você consegue ver, mas não consegue postar.`);
+    }
+
+    // Carregar membros + posts
+    await loadMembers(client, grupoId, donoUid, cargosMap);
+    await loadPosts(client, grupoId);
+
+    // Composer: enviar texto/anexo
+    const inputTexto = $('postTexto');
+    const inputArquivo = $('postArquivo');
+    const btnEnviar = $('btnEnviarPost');
+
+    async function currentMeta(){
+      const udoc = uid ? await getUserDoc(uid) : null;
+      const nomeU = pickUserName(udoc) || 'Usuário';
+      const fotoU = pickUserPhoto(udoc) || null;
+      const userU = udoc?.user || udoc?.usuario || null;
+      const isPro = !!(udoc?.isPro || udoc?.profissional || udoc?.tipo==='profissional');
+      return { nome: nomeU, foto: fotoU, user: userU, isPro };
+    }
+
+    async function sendPost({ texto, fileBlob, fileName, fileTypeHint }){
+      if(!uid){
+        toast('Faça login', 'Você precisa estar logado para postar.');
+        return;
+      }
+      const meta = await currentMeta();
+
+      let mediaUrl = null;
+      let mediaType = null;
+
+      if(fileBlob){
+        const f = new File([fileBlob], fileName || 'audio.webm', { type: fileBlob.type || fileTypeHint || 'audio/webm' });
+        mediaUrl = await uploadFile(client, f, grupoId, uid);
+        mediaType = f.type || fileTypeHint || inferMediaType(mediaUrl) || 'audio';
+      }else if(inputArquivo && inputArquivo.files && inputArquivo.files[0]){
+        const file = inputArquivo.files[0];
+        mediaUrl = await uploadFile(client, file, grupoId, uid);
+        mediaType = file.type || inferMediaType(mediaUrl);
+      }
+
+      await insertPost(client, grupoId, uid, texto || '', mediaUrl, mediaType, meta);
+
+      if(inputArquivo) inputArquivo.value = '';
+      if(inputTexto) inputTexto.value = '';
+      clearAudio();
+
+      await loadPosts(client, grupoId);
+      await loadMembers(client, grupoId, donoUid, cargosMap);
+      toast('Postado', 'Seu post foi enviado.');
+    }
+
+    if(btnEnviar){
+      btnEnviar.addEventListener('click', async ()=>{
+        const txt = (inputTexto?.value || '').trim();
+        const hasFile = inputArquivo && inputArquivo.files && inputArquivo.files[0];
+        if(!txt && !hasFile && !audioBlob){
+          toast('Escreva algo', 'Digite uma mensagem ou anexe um arquivo.');
+          return;
+        }
+        btnEnviar.disabled = true;
+        try{
+          if(audioBlob){
+            await sendPost({ texto: txt, fileBlob: audioBlob, fileName: 'audio.webm', fileTypeHint: 'audio/webm' });
+          }else{
+            await sendPost({ texto: txt });
+          }
+        }catch(e){
+          console.error(e);
+          const msg = String(e?.message || e);
+          if(msg.toLowerCase().includes('row level security') || msg.toLowerCase().includes('permission') || String(e?.code||'').startsWith('PGRST')){
+            toast('Falha ao enviar', 'Não consegui postar. Confira as policies (RLS) da tabela comunidade_posts e do bucket do Storage.');
+          }else{
+            toast('Falha ao enviar', msg);
+          }
+        }finally{
+          btnEnviar.disabled = false;
+        }
+      });
+    }
+
+    // Enter envia
+    if(inputTexto){
+      inputTexto.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){
+          e.preventDefault();
+          btnEnviar?.click();
+        }
+      });
+    }
+
+    // Áudio
+    const btnMic = $('btnMic');
+    if(btnMic && navigator.mediaDevices && window.MediaRecorder){
+      btnMic.addEventListener('click', async ()=>{
+        try{
+          if(btnMic.classList.contains('recording')){
+            btnMic.classList.remove('recording');
+            stopRecording();
+          }else{
+            btnMic.classList.add('recording');
+            await startRecording();
+          }
+        }catch(e){
+          console.error(e);
+          toast('Áudio indisponível', 'Permissóo de microfone negada ou navegador não suporta.');
+          btnMic.classList.remove('recording');
+        }
+      });
+    }else if(btnMic){
+      btnMic.style.display='none';
+    }
+
+    const btnCancelarAudio = $('btnCancelarAudio');
+    if(btnCancelarAudio) btnCancelarAudio.addEventListener('click', clearAudio);
+
+    const btnEnviarAudio = $('btnEnviarAudio');
+    if(btnEnviarAudio) btnEnviarAudio.addEventListener('click', ()=>{ btnEnviar?.click(); });
+
+  }
+
+  if(document.readyState === 'loading'){
+    window.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
+</script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

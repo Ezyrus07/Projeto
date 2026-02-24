@@ -1,0 +1,794 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Criar Conta | Doke</title>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<!-- Supabase (UMD) + init -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<style>
+    :root{
+      --card-radius: 22px;
+      --shadow: 0 18px 60px rgba(0,0,0,.22);
+      --ring: 0 0 0 4px rgba(11,119,104,.12);
+    }
+
+    body{
+      background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.16), transparent 60%),
+                  linear-gradient(135deg, var(--cor0) 0%, #064e42 55%, #043a31 100%);
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      overflow-x: hidden;
+    }
+
+    .auth-shell{
+      width: 100%;
+      max-width: 940px;
+      display: grid;
+      grid-template-columns: 1.1fr .9fr;
+      gap: 22px;
+      align-items: stretch;
+    }
+
+    @media (max-width: 900px){
+      .auth-shell{ grid-template-columns: 1fr; max-width: 520px; }
+      .auth-aside{ display:none; }
+    }
+
+    @media (max-width: 1024px){
+      body.doke-shell-active{
+        place-items: start center;
+        padding-top: calc(var(--doke-h, 56px) + 20px);
+      }
+      body.doke-shell-active .auth-shell{
+        margin-top: 10px;
+      }
+    }
+
+    .auth-card{
+      background: #fff;
+      border-radius: var(--card-radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+      position: relative;
+      animation: pop .45s ease both;
+    }
+    @keyframes pop { from { opacity:0; transform: translateY(10px) scale(.99);} to {opacity:1; transform:none;} }
+
+    .auth-card-inner{ padding: 30px 30px 24px; }
+
+    .btn-voltar{
+      position:absolute;
+      top: 16px;
+      left: 16px;
+      width: 42px;
+      height: 42px;
+      display:grid;
+      place-items:center;
+      border-radius: 14px;
+      background: rgba(0,0,0,.04);
+      color:#667;
+      text-decoration:none;
+      transition:.2s ease;
+    }
+    .btn-voltar:hover{ background: rgba(0,0,0,.07); transform: translateY(-1px); color: var(--cor2); }
+
+    .brand{
+      display:flex;
+      align-items:center;
+      gap: 14px;
+      margin: 10px 0 10px;
+    }
+    .brand img{ width: 110px; height:auto; }
+    .brand .tag{
+      margin-left:auto;
+      font-size:.78rem;
+      font-weight:700;
+      color: #0a2e2a;
+      background: rgba(11,119,104,.10);
+      border: 1px solid rgba(11,119,104,.14);
+      padding: 6px 10px;
+      border-radius: 999px;
+    }
+
+    .auth-title{
+      margin: 10px 0 4px;
+      font-size: 1.7rem;
+      letter-spacing: -.02em;
+      color: #0b2a28;
+    }
+    .auth-subtitle{
+      margin: 0 0 18px;
+      color: #667;
+      font-size: .96rem;
+      line-height: 1.35;
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 520px){
+      .grid{ grid-template-columns: 1fr; }
+    }
+
+    .form-group{ margin-bottom: 12px; text-align:left; }
+    .form-group label{
+      display:block;
+      font-size: .9rem;
+      font-weight: 700;
+      color:#3b4653;
+      margin-bottom: 8px;
+    }
+
+    .input-icon{ position:relative; }
+    .input-icon > i{
+      position:absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color:#96a0aa;
+      font-size: 1.2rem;
+    }
+    .input-icon input{
+      width: 100%;
+      padding: 12px 14px 12px 44px;
+      border: 1px solid #e5e8ee;
+      border-radius: 14px;
+      font-size: 1rem;
+      outline: none;
+      transition: .2s ease;
+      background: #fafbfc;
+      font-family: var(--fonte-padrao, system-ui, sans-serif);
+    }
+    .input-icon input:focus{
+      border-color: rgba(11,119,104,.55);
+      background:#fff;
+      box-shadow: var(--ring);
+    }
+
+    .hint{
+      font-size: .82rem;
+      color:#7a8794;
+      margin-top: 6px;
+    }
+
+    .pw-meter{
+      display:flex;
+      gap: 10px;
+      align-items:center;
+      margin-top: 8px;
+    }
+    .pw-bar{
+      flex:1;
+      height: 10px;
+      border-radius: 999px;
+      background:#eef2f6;
+      overflow:hidden;
+      border: 1px solid #e7ebf0;
+    }
+    .pw-bar > div{
+      height:100%;
+      width: 0%;
+      border-radius: 999px;
+      transition: .2s ease;
+      background: var(--cor3);
+    }
+    .pw-label{
+      min-width: 90px;
+      text-align:right;
+      font-size: .82rem;
+      font-weight: 800;
+      color:#8a96a3;
+    }
+
+    /* Mantï¿½m apenas um indicador de forï¿½a nesta pï¿½gina (o .pw-meter). */
+    .auth-card .doke-pw-meter{ display: none !important; }
+
+    .btn-primary{
+      width: 100%;
+      padding: 14px 16px;
+      border: none;
+      border-radius: 999px;
+      cursor:pointer;
+      font-weight: 800;
+      font-size: 1rem;
+      color: #fff;
+      background: linear-gradient(135deg, var(--cor2), #1a3c5e);
+      box-shadow: 0 10px 22px rgba(42,95,144,.28);
+      transition: .2s ease;
+      margin-top: 6px;
+    }
+    .btn-primary:hover{ transform: translateY(-2px); filter: brightness(.98); }
+    .btn-primary:disabled{ opacity:.72; cursor:not-allowed; transform:none; }
+
+    .footer-login{
+      margin-top: 14px;
+      font-size: .92rem;
+      color:#6b7785;
+      text-align:center;
+    }
+    .footer-login a{
+      color: var(--cor2);
+      font-weight: 900;
+      text-decoration:none;
+    }
+    .footer-login a:hover{ text-decoration: underline; }
+
+    .msg{
+      margin-top: 14px;
+      padding: 12px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      display:none;
+      font-size: .92rem;
+      line-height: 1.35;
+    }
+    .msg.show{ display:block; }
+    .msg.ok{ background: rgba(0,200,81,.08); border-color: rgba(0,200,81,.18); color:#136b3a; }
+    .msg.err{ background: rgba(243,91,91,.10); border-color: rgba(243,91,91,.18); color:#7b1a1a; }
+
+    .auth-aside{
+      border-radius: var(--card-radius);
+      background: linear-gradient(135deg, rgba(255,255,255,.12), rgba(255,255,255,.03));
+      border: 1px solid rgba(255,255,255,.12);
+      box-shadow: 0 16px 45px rgba(0,0,0,.20);
+      padding: 26px 26px 22px;
+      color: rgba(255,255,255,.92);
+      position: relative;
+      overflow:hidden;
+    }
+    .auth-aside:before{
+      content:"";
+      position:absolute;
+      inset:-80px -120px auto auto;
+      width: 280px;
+      height: 280px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 30% 30%, rgba(255,255,255,.24), transparent 60%);
+      opacity:.9;
+    }
+    .aside-title{
+      font-size: 1.25rem;
+      margin: 4px 0 10px;
+      letter-spacing:-.01em;
+    }
+    .aside-p{
+      margin: 0 0 14px;
+      color: rgba(255,255,255,.80);
+      line-height: 1.45;
+      font-size: .95rem;
+    }
+    .aside-list{
+      display:grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .aside-item{
+      display:flex;
+      gap: 10px;
+      align-items:flex-start;
+      padding: 12px 12px;
+      border-radius: 16px;
+      background: rgba(0,0,0,.14);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+    .aside-item i{
+      font-size: 1.25rem;
+      opacity:.95;
+      margin-top: 1px;
+    }
+    .aside-item b{ display:block; margin-bottom:2px; }
+    .aside-item span{ color: rgba(255,255,255,.78); font-size: .9rem; }
+
+    @media (min-width: 901px) and (max-height: 920px){
+      body{
+        place-items: start center;
+        padding-top: 14px;
+        padding-bottom: 14px;
+      }
+      .auth-shell{
+        max-width: 900px;
+        gap: 16px;
+      }
+      .auth-card-inner{
+        padding: 24px 24px 18px;
+      }
+      .auth-title{
+        font-size: 1.56rem;
+        margin-top: 6px;
+      }
+      .auth-subtitle{
+        margin-bottom: 12px;
+        font-size: .92rem;
+      }
+      .form-group{
+        margin-bottom: 10px;
+      }
+      .input-icon input{
+        padding-top: 10px;
+        padding-bottom: 10px;
+      }
+      .btn-primary{
+        padding: 12px 14px;
+      }
+      .auth-aside{
+        padding: 18px 18px 14px;
+      }
+      .aside-list{
+        gap: 8px;
+      }
+      .aside-item{
+        padding: 10px;
+      }
+    }
+
+    @media (max-width: 900px){
+      body,
+      body.doke-shell-active{
+        background: radial-gradient(900px 600px at 15% 10%, rgba(255,255,255,.16), transparent 60%),
+                    linear-gradient(135deg, var(--cor0) 0%, #064e42 55%, #043a31 100%) !important;
+        padding-left: 14px !important;
+        padding-right: 14px !important;
+      }
+      .auth-shell{
+        width: min(86vw, 430px);
+        max-width: 430px;
+        margin: 0 auto 12px;
+      }
+      .auth-card{
+        border: 1px solid rgba(255,255,255,.35);
+        box-shadow: 0 16px 42px rgba(2,6,23,.22);
+        background: rgba(255,255,255,.97);
+      }
+      .auth-card::before{
+        content: none;
+      }
+      .auth-card-inner{
+        padding: 22px 16px 18px;
+      }
+    }
+  </style>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet">
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+</head>
+<body>
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<div class="auth-shell">
+<div class="auth-card">
+<a aria-label="Voltar" class="btn-voltar" href="login.html"><i class="bx bx-arrow-back"></i></a>
+<div class="auth-card-inner">
+<div class="brand">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+<span class="tag">Novo por aqui</span>
+</div>
+<h2 class="auth-title">Crie sua conta</h2>
+<p class="auth-subtitle">Junte-se é comunidade Doke. Em menos de 1 minuto você já pode explorar e anunciar.</p>
+<form data-guard-submit="" id="formCadastro" novalidate="">
+<div class="grid">
+<div class="form-group">
+<label for="usuario">Nome de Usuário (@)</label>
+<div class="input-icon">
+<i class="bx bx-at"></i>
+<input autocomplete="username" id="usuario" maxlength="20" placeholder="Seu usuário" required="" type="text"/>
+</div>
+<div class="hint">Sem espaços. Pode usar ponto e underline.</div>
+</div>
+<div class="form-group">
+<label for="nome">Nome Completo</label>
+<div class="input-icon">
+<i class="bx bx-user"></i>
+<input autocomplete="name" id="nome" maxlength="40" placeholder="Seu nome" required="" type="text"/>
+</div>
+</div>
+</div>
+<div class="form-group">
+<label for="dataNascimento">Data de nascimento</label>
+<div class="input-icon">
+<i class="bx bx-calendar"></i>
+<input autocomplete="bday" id="dataNascimento" required="" type="date"/>
+</div>
+<div class="hint">Você precisa ter pelo menos 18 anos.</div>
+</div>
+<div class="form-group">
+<label for="email">E-mail</label>
+<div class="input-icon">
+<i class="bx bx-envelope"></i>
+<input autocomplete="email" id="email" placeholder="seu@email.com" required="" type="email"/>
+</div>
+</div>
+<div class="form-group">
+<label for="senha">Senha</label>
+<div class="input-icon">
+<i class="bx bx-lock-alt"></i>
+<input autocomplete="new-password" id="senha" placeholder="Crie uma senha forte" required="" type="password"/>
+</div>
+<div class="pw-meter">
+<div class="pw-bar"><div id="pwBar"></div></div>
+<div class="pw-label" id="pwLabel">×</div>
+</div>
+</div>
+<div class="form-group">
+<label for="confirmarSenha">Confirmar senha</label>
+<div class="input-icon">
+<i class="bx bx-lock-alt"></i>
+<input autocomplete="new-password" id="confirmarSenha" placeholder="Repita sua senha" required="" type="password"/>
+</div>
+</div>
+<button class="btn-primary" id="btnCriar" type="submit">Criar Conta</button>
+<div class="msg" id="msg"></div>
+<div class="footer-login">
+            Já tem uma conta? <a href="login.html">Fazer login</a>
+</div>
+</form>
+</div>
+</div>
+<aside class="auth-aside">
+<h3 class="aside-title">Tudo pronto para começar</h3>
+<p class="aside-p">Seu perfil nasce como <b>Cliente</b>. Se quiser anunciar, você ativa o modo <b>Profissional</b> depois com 1 clique.</p>
+<div class="aside-list">
+<div class="aside-item">
+<i class="bx bx-check-shield"></i>
+<div>
+<b>Conta segura</b>
+<span>Cadastro via Supabase Auth. Você mantém controle total.</span>
+</div>
+</div>
+<div class="aside-item">
+<i class="bx bx-video"></i>
+<div>
+<b>Feed moderno</b>
+<span>Fotos/vídeos e vídeos-curtos com modais padronizados.</span>
+</div>
+</div>
+<div class="aside-item">
+<i class="bx bx-package"></i>
+<div>
+<b>Orçamento em 1 clique</b>
+<span>Solicite orçamento direto do anúncio.</span>
+</div>
+</div>
+</div>
+</aside>
+</div>
+<script>
+    function showMsg(type, text){
+      const el = document.getElementById("msg");
+      el.className = "msg show " + (type === "ok" ? "ok" : "err");
+      el.textContent = text;
+    }
+
+    function normalizeHandle(raw){
+      let h = String(raw || "").trim().toLowerCase();
+      h = h.replace(/\s+/g, "");
+      if (!h) return "";
+      if (!h.startsWith("@")) h = "@" + h;
+      if (!/^@[a-z0-9._]+$/.test(h)) return "__INVALID__";
+      const body = h.slice(1);
+      if (body.length < 3) return "__SHORT__";
+      if (body.length > 20) return "__LONG__";
+      return h;
+    }
+
+    function isMissingColumnError(err){
+      const msg = String(err?.message || err || "").toLowerCase();
+      return (
+        (msg.includes("column") && msg.includes("does not exist")) ||
+        (msg.includes("could not find") && msg.includes("column")) ||
+        (msg.includes("schema cache") && msg.includes("column")) ||
+        (msg.includes("not found") && msg.includes("column"))
+      );
+    }
+
+    function pwScore(pw){
+      const s = String(pw || "");
+      let score = 0;
+      if (s.length >= 6) score++;
+      if (s.length >= 10) score++;
+      if (/[A-Z]/.test(s)) score++;
+      if (/[0-9]/.test(s)) score++;
+      if (/[^A-Za-z0-9]/.test(s)) score++;
+      return Math.min(score, 5);
+    }
+
+    function updatePwMeter(){
+      const pw = document.getElementById("senha").value;
+      const score = pwScore(pw);
+      const bar = document.getElementById("pwBar");
+      const label = document.getElementById("pwLabel");
+
+      if (!pw) {
+        bar.style.width = "0%";
+        bar.style.background = "#e5eaf0";
+        label.textContent = "";
+        label.style.color = "#8a96a3";
+        return;
+      }
+
+      const pct = [0, 25, 45, 65, 85, 100][score] || 0;
+      bar.style.width = pct + "%";
+      bar.style.background = score <= 1 ? "var(--cor3)" : (score <= 3 ? "var(--cor2)" : "var(--cor0)");
+
+      const text = ["—","Fraca","Ok","Boa","Forte","Muito forte"][score] || "—";
+      label.textContent = text;
+      label.style.color = score <= 1 ? "var(--cor3)" : (score <= 3 ? "#2a5f90" : "var(--cor0)");
+    }
+
+    document.getElementById("senha").addEventListener("input", updatePwMeter);
+    updatePwMeter();
+
+    function todayISO(){
+      const d = new Date();
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      const dd = String(d.getDate()).padStart(2, "0");
+      return `${d.getFullYear()}-${mm}-${dd}`;
+    }
+
+    function calcAgeFromISO(iso){
+      const m = String(iso || "").match(/^(\d{4})-(\d{2})-(\d{2})$/);
+      if (!m) return NaN;
+      const y = Number(m[1]);
+      const mo = Number(m[2]);
+      const da = Number(m[3]);
+      if (!y || !mo || !da) return NaN;
+      const now = new Date();
+      let age = now.getFullYear() - y;
+      const beforeBirthday = (now.getMonth() + 1) < mo || ((now.getMonth() + 1) === mo && now.getDate() < da);
+      if (beforeBirthday) age -= 1;
+      return age;
+    }
+
+    const birthInput = document.getElementById("dataNascimento");
+    if (birthInput) birthInput.max = todayISO();
+
+    async function insertUserProfileWithFallback(supabase, perfilBase){
+      let perfilPersistido = { ...perfilBase };
+      let { error: insErr } = await supabase.from("usuarios").insert([perfilPersistido]);
+      if (insErr && isMissingColumnError(insErr)) {
+        const msg = String(insErr?.message || "").toLowerCase();
+        if (msg.includes("data_nascimento")) delete perfilPersistido.data_nascimento;
+        if (msg.includes("conta_status")) delete perfilPersistido.conta_status;
+        if (msg.includes("conta_ativa")) delete perfilPersistido.conta_ativa;
+        if (msg.includes("conta_excluida_em")) delete perfilPersistido.conta_excluida_em;
+        if (msg.includes("conta_desativada_em")) delete perfilPersistido.conta_desativada_em;
+
+        let retryInsert = await supabase.from("usuarios").insert([perfilPersistido]);
+        insErr = retryInsert.error;
+        if (insErr && isMissingColumnError(insErr)) {
+          delete perfilPersistido.data_nascimento;
+          delete perfilPersistido.conta_status;
+          delete perfilPersistido.conta_ativa;
+          delete perfilPersistido.conta_excluida_em;
+          delete perfilPersistido.conta_desativada_em;
+          retryInsert = await supabase.from("usuarios").insert([perfilPersistido]);
+          insErr = retryInsert.error;
+        }
+      }
+      if (insErr) throw insErr;
+      return perfilPersistido;
+    }
+
+    async function ensureSupabase(){
+      const pick = () => window.sb || window.supabaseClient || window.sbClient || window.supabase;
+      let sb = pick();
+      if (!sb || typeof sb.from !== "function" || !sb.auth) {
+        // pequena espera para casos de carregamento assóncrono
+        await new Promise((r) => setTimeout(r, 80));
+        sb = pick();
+      }
+      if (!sb || typeof sb.from !== "function" || !sb.auth) {
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260218v43");
+      }
+      return sb;
+    }
+
+    document.getElementById("formCadastro").addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const btn = document.getElementById("btnCriar");
+      const nome = document.getElementById("nome").value.trim().slice(0, 40);
+      const usuarioRaw = document.getElementById("usuario").value;
+      const email = document.getElementById("email").value.trim();
+      const senha = document.getElementById("senha").value;
+      const confirmarSenha = document.getElementById("confirmarSenha").value;
+      const dataNascimento = document.getElementById("dataNascimento").value;
+
+      const handle = normalizeHandle(usuarioRaw);
+      const idade = calcAgeFromISO(dataNascimento);
+
+      if (!nome || nome.length < 2) return showMsg("err", "Digite seu nome completo.");
+      if (handle === "__INVALID__") return showMsg("err", "Nome de usuário inválido. Use apenas letras, números, ponto e underline.");
+      if (handle === "__SHORT__") return showMsg("err", "Nome de usuário muito curto.");
+      if (handle === "__LONG__") return showMsg("err", "Nome de usuário muito longo. Use até 20 caracteres.");
+      if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
+      if (!dataNascimento) return showMsg("err", "Informe sua data de nascimento.");
+      if (!Number.isFinite(idade)) return showMsg("err", "Data de nascimento invalida.");
+      if (idade < 18) return showMsg("err", "Você precisa ter pelo menos 18 anos para criar conta.");
+      if ((senha || "").length < 6) return showMsg("err", "A senha precisa ter no mínimo 6 caracteres.");
+      if (senha !== confirmarSenha) return showMsg("err", "As senhas não coincidem.");
+
+      btn.disabled = true;
+      btn.textContent = "Criando...";
+
+      try {
+        const supabase = await ensureSupabase();
+
+        // Username uniqueness (table: usuários)
+        let existing = null;
+        let exErr = null;
+        const firstCheck = await supabase
+          .from("usuarios")
+          .select("uid, email, conta_status, conta_ativa, conta_excluida_em")
+          .eq("user", handle)
+          .maybeSingle();
+        existing = firstCheck.data;
+        exErr = firstCheck.error;
+
+        const missingDeleteCols = isMissingColumnError(exErr);
+        if (missingDeleteCols) {
+          const fallbackCheck = await supabase
+            .from("usuarios")
+            .select("uid, email")
+            .eq("user", handle)
+            .maybeSingle();
+          existing = fallbackCheck.data;
+          exErr = fallbackCheck.error;
+        }
+
+        // ignore "no rows" variations (maybeSingle can return "no rows" codes depending on version)
+        if (exErr && exErr.code && exErr.code !== "PGRST116") {
+          // If it's a real error, stop.
+          // If you get an RLS error here, fix policies on table 'usuários'.
+          throw exErr;
+        }
+
+        if (existing) {
+          const sameEmail = String(existing.email || "").trim().toLowerCase() === email.toLowerCase();
+          const status = String(existing.conta_status || "").toLowerCase();
+          const isInactive = status === "excluida" || status === "desativada" || !!existing.conta_excluida_em || existing.conta_ativa === false;
+
+          if (!isInactive && !sameEmail) {
+            showMsg("err", "Esse nome de usuário já está em uso.");
+            return;
+          }
+        }
+
+        const { data: signData, error: signErr } = await supabase.auth.signUp({
+          email,
+          password: senha,
+          options: { data: { nome, user: handle, data_nascimento: dataNascimento } }
+        });
+        if (signErr) throw signErr;
+
+        const uid = signData.user?.id;
+        if (!uid) {
+          showMsg("ok", "Conta criada! Verifique seu e-mail para confirmar e depois faça login.");
+          return;
+        }
+
+        const dataAtual = new Date();
+        const meses = ["Jan","Fev","Mar","Abr","Mai","Jun","Jul","Ago","Set","Out","Nov","Dez"];
+
+const novoPerfil = {
+  id: uid,          // ðŸ”¥ ESSENCIAL
+  uid: uid,         // opcional (se quiser manter)
+  nome,
+  user: handle,
+  email,
+  data_nascimento: dataNascimento,
+  isProfissional: false,
+  bio: "Olá! Sou novo na comunidade Doke.",
+  local: "Brasil",
+  foto: "https://placehold.co/150x150?text=" + nome.charAt(0).toUpperCase(),
+  conta_status: "ativa",
+  conta_ativa: true,
+  membroDesde: `${meses[dataAtual.getMonth()]} ${dataAtual.getFullYear()}`,
+  disponivel: true,
+  stats: { seguidores: 0, seguindo: 0, avaliacoes: 0 }
+};
+
+
+        const perfilPersistido = await insertUserProfileWithFallback(supabase, novoPerfil);
+
+        localStorage.setItem("doke_usuario_perfil", JSON.stringify(perfilPersistido));
+        localStorage.setItem("usuarioLogado", "true");
+        localStorage.setItem("doke_uid", uid);
+
+        showMsg("ok", "Conta criada! Redirecionando...");
+        setTimeout(() => { window.location.href = "perfil-usuário.html"; }, 700);
+
+      } catch (e) {
+        const errMsg = String(e?.message || "");
+        const errCode = String(e?.code || "");
+
+        if (errCode === "user_already_exists" || errMsg.toLowerCase().includes("already registered")) {
+          showMsg("err", "Este e-mail já está cadastrado. Se a conta foi excluída, finalize a exclusóo total e tente novamente.");
+        } else if (isMissingColumnError(e) && errMsg.toLowerCase().includes("conta_ativa")) {
+          showMsg("err", "Seu banco ainda não tem o campo conta_ativa. Rode o SQL de atualizacao e tente novamente.");
+        } else if (errMsg.toLowerCase().includes("password")) {
+          showMsg("err", "Senha inválida ou muito fraca.");
+        } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
+          showMsg("err", "Permissóo negada. Verifique as políticas (RLS) no Supabase para a tabela 'usuários'.");
+        } else if (
+          errMsg.toLowerCase().includes("duplicate key") ||
+          errMsg.toLowerCase().includes("unique constraint")
+        ) {
+          showMsg("err", "Esse nome de usuário ainda está reservado. Tente outro nome de usuário.");
+        } else {
+          showMsg("err", errMsg || "Erro ao criar conta.");
+        }
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Criar Conta";
+      }
+    });
+  </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+

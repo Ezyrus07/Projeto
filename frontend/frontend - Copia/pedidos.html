@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pedidos | Doke</title>
+  <meta name="theme-color" content="#0b7768"/>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+  <link href="style.css?v=20260211v45" rel="stylesheet"/>
+  <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+  <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+  <link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
+  <link href="doke-toast.css" rel="stylesheet"/>
+  <link href="doke-alerts.css" rel="stylesheet"/>
+  <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+  <link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
+  <link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
+  <script defer src="script.js?v=20260218v60"></script>
+  <style>
+    :root{
+      --bg:#eef3f8;
+      --panel:#ffffff;
+      --line:#dbe5f2;
+      --text:#0f2440;
+      --muted:#5f748f;
+      --brand:#0b7768;
+      --danger:#d92f64;
+    }
+
+    body[data-page="pedidos"]{background:var(--bg); color:var(--text);}
+    body[data-page="pedidos"] .dp-wrap{padding:22px 18px 100px;}
+    @media (min-width:1024px){
+      body[data-page="pedidos"] .dp-wrap{
+        margin-left:var(--sidebar-width,0);
+        padding:30px 40px 120px;
+        width:auto;
+        max-width:none;
+      }
+    }
+
+    .orders-page{max-width:1240px; margin:0 auto;}
+    .hero{
+      background:radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.20), transparent 55%), linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+      border-radius:20px;
+      padding:40px;
+      color:#fff;
+      display:flex;
+      gap:18px;
+      align-items:flex-end;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      box-shadow:0 10px 30px rgba(42,95,144,.25);
+      position:relative;
+      overflow:hidden;
+    }
+    .hero::before{
+      content:'';
+      position:absolute;
+      top:-50px;
+      right:-20px;
+      width:200px;
+      height:200px;
+      background:rgba(255,255,255,.05);
+      border-radius:50%;
+      pointer-events:none;
+    }
+    .hero h1{
+      margin:0;
+      font-size:2rem;
+      line-height:1.05;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:#fff;
+    }
+    .hero p{
+      margin:8px 0 0;
+      color:rgba(255,255,255,.86);
+      font-size:.95rem;
+    }
+    .badge-count{
+      background:#ff2e63;
+      color:#fff;
+      font-size:.8rem;
+      padding:3px 10px;
+      border-radius:12px;
+      vertical-align:middle;
+      box-shadow:0 2px 5px rgba(0,0,0,.2);
+      font-weight:800;
+    }
+    .hero-stats{display:flex; gap:10px; flex-wrap:wrap;}
+    .hero-stat{
+      min-width:100px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.24);
+      border-radius:16px;
+      padding:10px 12px;
+      text-align:center;
+      backdrop-filter:blur(4px);
+    }
+    .hero-stat small{display:block; font-size:.72rem; color:rgba(255,255,255,.86);}
+    .hero-stat strong{display:block; margin-top:2px; font-size:1.06rem;}
+
+    .toolbar{display:grid; grid-template-columns:1fr auto; gap:10px; margin:14px 0 10px;}
+    .search{display:flex; align-items:center; gap:10px; border:1px solid var(--line); background:#fff; border-radius:14px; padding:11px 13px; box-shadow:0 8px 18px rgba(15,36,64,.06);}
+    .search i{font-size:20px; color:#6682a6;}
+    .search input{border:none; outline:none; width:100%; background:transparent; color:var(--text); font-size:15px;}
+
+    .toolbar-actions{display:flex; gap:10px;}
+    .btn-ui{border:1px solid var(--line); background:#fff; color:#203f63; border-radius:12px; min-height:44px; padding:0 14px; font-weight:800; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap; box-shadow:0 8px 18px rgba(15,36,64,.06);}
+    .btn-ui i{font-size:18px;}
+
+    .filters{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px;}
+    .chip{border:1px solid var(--line); background:#fff; color:#355575; border-radius:999px; min-height:38px; padding:0 14px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
+    .chip.active{border-color:rgba(11,119,104,.34); background:rgba(11,119,104,.1); color:var(--brand);}
+
+    .panel{border:1px solid var(--line); background:var(--panel); border-radius:22px; box-shadow:0 10px 24px rgba(15,36,64,.07); padding:16px;}
+    .panel-head{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:10px;}
+    .panel-head h2{margin:0; font-size:20px; display:flex; align-items:center; gap:8px;}
+    .panel-head p{margin:0; color:var(--muted); font-weight:600;}
+
+    .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}
+    .card{background:linear-gradient(180deg,#ffffff 0%, #f4f8ff 100%); border:1px solid #d5e3f4; border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 8px 20px rgba(15,36,64,.06); position:relative;}
+    .card.selected{
+      border-color:rgba(11,119,104,.42);
+      box-shadow:0 14px 30px rgba(11,119,104,.18);
+      background:linear-gradient(180deg,#ffffff 0%, #ebf8f4 100%);
+    }
+    .card-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .card-select{
+      width:28px;
+      height:28px;
+      min-width:28px;
+      border:1px solid #cddbeb;
+      border-radius:999px;
+      background:#fff;
+      color:#6c83a2;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      cursor:pointer;
+    }
+    .select-mode .card-select{display:inline-flex;}
+    .card.selected .card-select{
+      background:#0b7768;
+      border-color:#0b7768;
+      color:#fff;
+    }
+    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+    .tag{border:1px solid #d9e5f3; background:#f6fbff; color:#315579; border-radius:999px; padding:6px 10px; font-size:.76rem; font-weight:800; display:inline-flex; align-items:center; gap:5px;}
+    .tag.type{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
+    .tag.pending{background:#fff5e8; color:#b86f08; border-color:#f4dbb8;}
+    .tag.progress{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
+    .tag.done{background:#eef2f8; color:#526a86; border-color:#dbe5f2;}
+    .tag.urgent{background:#fff0f5; color:var(--danger); border-color:#f8cfe0;}
+
+    .user{display:flex; align-items:center; gap:10px; min-width:0;}
+    .user img{width:44px; height:44px; border-radius:50%; object-fit:cover; border:1px solid #d8e4f2; background:#eef3f9;}
+    .user-meta{min-width:0;}
+    .user-meta strong{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;}
+    .user-meta span{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted); font-size:.84rem;}
+
+    .title{margin:0; font-size:1.1rem; line-height:1.18;}
+    .desc{margin:0; color:var(--muted); line-height:1.35; font-size:.92rem;}
+
+    .meta{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+    .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px;}
+    .meta-item i{font-size:17px; color:#5b78a0; margin-top:2px;}
+    .meta-item small{display:block; color:#6d829f; font-size:.73rem; line-height:1;}
+    .meta-item strong{display:block; margin-top:4px; font-size:.94rem; line-height:1.2;}
+
+    .footer{margin-top:2px; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+    .unread{border:1px solid #dbe6f2; background:#f6fbff; color:#35597f; border-radius:999px; min-height:34px; padding:0 12px; font-size:.85rem; font-weight:800; display:inline-flex; align-items:center; gap:6px;}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;}
+    .btn-order{min-height:40px; border-radius:12px; border:1px solid #d8e4f1; background:#fff; color:#1b3a5b; padding:0 13px; font-weight:800; display:inline-flex; align-items:center; gap:7px; cursor:pointer;}
+    .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
+
+    .empty{display:none; min-height:220px; border:1px dashed #d5e2f2; border-radius:16px; background:#fbfdff; color:#607791; align-items:center; justify-content:center; flex-direction:column; text-align:center; gap:8px; padding:18px;}
+    .empty.show{display:flex;}
+    .empty i{font-size:34px; color:#8ea4bf;}
+
+    .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:90px; z-index:9999; background:#102846; color:#fff; padding:10px 14px; border-radius:999px; font-weight:700; display:none; box-shadow:0 12px 24px rgba(0,0,0,.24);}    
+    .toast.show{display:block;}
+    .desc{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .inline-chat-shell{
+      position:fixed;
+      inset:0;
+      z-index:12000;
+      display:none;
+      flex-direction:column;
+      background:#eaf0f7;
+    }
+    .inline-chat-shell.open{display:flex;}
+    .inline-chat-head{
+      height:58px;
+      min-height:58px;
+      border-bottom:1px solid #d9e4f2;
+      background:#fff;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 12px;
+    }
+    .inline-chat-title{
+      min-width:0;
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      overflow:hidden;
+    }
+    .inline-chat-title strong{
+      font-size:1rem;
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .inline-chat-title span{
+      font-size:.8rem;
+      color:#627a98;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .inline-chat-btn{
+      width:40px;
+      height:40px;
+      min-width:40px;
+      border-radius:12px;
+      border:1px solid #d8e3f1;
+      background:#fff;
+      color:#1d3e62;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-size:20px;
+    }
+    .inline-chat-frame{
+      flex:1;
+      width:100%;
+      border:none;
+      background:#eef3f8;
+    }
+
+    .details-modal{
+      position:fixed;
+      inset:0;
+      z-index:12100;
+      background:rgba(8,19,34,.52);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .details-modal.open{display:flex;}
+    .details-card{
+      width:min(820px,100%);
+      max-height:min(86vh,880px);
+      overflow:auto;
+      background:#fff;
+      border:1px solid #d9e4f1;
+      border-radius:18px;
+      box-shadow:0 20px 44px rgba(9,22,40,.24);
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+    .details-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid #edf2f8;
+      padding-bottom:10px;
+    }
+    .details-head h3{margin:0; font-size:1.08rem;}
+    .details-head p{margin:4px 0 0; color:#5e7592; font-size:.86rem;}
+    .details-close{
+      width:36px;
+      height:36px;
+      border:1px solid #d8e3f1;
+      border-radius:10px;
+      background:#fff;
+      color:#2a4b6f;
+      cursor:pointer;
+    }
+    .details-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+    .details-item{
+      border:1px solid #dce8f4;
+      background:#f7fbff;
+      border-radius:10px;
+      padding:8px 10px;
+    }
+    .details-item small{display:block; color:#69809e; font-size:.73rem;}
+    .details-item strong{display:block; margin-top:3px; font-size:.92rem; line-height:1.25;}
+    .details-block{
+      border:1px solid #dce8f4;
+      background:#fbfdff;
+      border-radius:12px;
+      padding:10px;
+    }
+    .details-block h4{margin:0 0 6px; font-size:.88rem; color:#32567b;}
+    .details-block p{margin:0; color:#2a4464; font-size:.9rem; white-space:pre-wrap; line-height:1.35;}
+    .triagem-list{display:grid; gap:8px;}
+    .triagem-row{
+      border:1px dashed #d4e2f2;
+      border-radius:10px;
+      background:#fff;
+      padding:8px;
+    }
+    .triagem-row small{display:block; color:#5f7898; font-size:.74rem;}
+    .triagem-row strong{display:block; margin-top:4px; font-size:.9rem; color:#153553; white-space:pre-wrap;}
+    .anexos-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+      gap:8px;
+    }
+    .anexo-item{
+      border:1px solid #d8e5f4;
+      background:#fff;
+      border-radius:10px;
+      overflow:hidden;
+    }
+    .anexo-item a{
+      display:block;
+      color:#1e4268;
+      text-decoration:none;
+    }
+    .anexo-item img{
+      width:100%;
+      height:110px;
+      object-fit:cover;
+      display:block;
+      background:#eef3fa;
+    }
+    .anexo-caption{
+      display:block;
+      padding:7px 8px;
+      font-size:.78rem;
+      line-height:1.25;
+      word-break:break-word;
+    }
+
+    @media (max-width:1023px){
+      body[data-page="pedidos"] .dp-wrap{padding:12px 12px 94px; margin-left:0;}
+      .toolbar{grid-template-columns:1fr;}
+      .toolbar-actions{display:grid; grid-template-columns:1fr 1fr;}
+      .grid{grid-template-columns:1fr;}
+    }
+
+    @media (max-width:768px){
+      body[data-page="pedidos"] .dp-wrap{padding:10px 10px 88px;}
+      .hero{padding:20px; border-radius:18px; gap:14px;}
+      .hero h1{font-size:1.7rem;}
+      .hero p{font-size:.88rem; margin-top:6px;}
+      .hero-stat{min-width:92px; padding:8px 10px;}
+      .toolbar{gap:6px; margin:8px 0 8px;}
+      .toolbar-actions{
+        display:flex;
+        overflow-x:auto;
+        scrollbar-width:none;
+        -webkit-overflow-scrolling:touch;
+      }
+      .toolbar-actions::-webkit-scrollbar{display:none;}
+      .search{min-height:36px; padding:7px 10px; border-radius:12px;}
+      .search input{font-size:13.5px;}
+      .toolbar-actions{gap:6px;}
+      .btn-ui{min-height:34px; padding:0 10px; font-size:.8rem; border-radius:10px;}
+      .btn-ui{flex:0 0 auto;}
+      .btn-ui i{font-size:15px;}
+      .filters{gap:5px; margin-bottom:8px;}
+      .chip{min-height:30px; padding:0 10px; font-size:.78rem;}
+      .panel{padding:10px; border-radius:16px;}
+      .panel-head{margin-bottom:8px;}
+      .panel-head h2{font-size:.95rem;}
+      .panel-head p{font-size:.74rem;}
+      .grid{gap:8px;}
+      .card{padding:9px; border-radius:12px; gap:7px;}
+      .tags{gap:5px;}
+      .tag{padding:5px 8px; font-size:.7rem;}
+      .user{gap:8px;}
+      .user img{width:34px; height:34px;}
+      .user-meta strong{font-size:.88rem;}
+      .user-meta span{font-size:.73rem;}
+      .title{font-size:.95rem; line-height:1.15;}
+      .desc{font-size:.8rem; line-height:1.2; -webkit-line-clamp:1;}
+      .meta{gap:5px;}
+      .meta-item{padding:6px 7px; border-radius:9px; gap:6px;}
+      .meta-item i{font-size:14px;}
+      .meta-item small{font-size:.66rem;}
+      .meta-item strong{font-size:.79rem; margin-top:2px;}
+      .footer{padding-top:7px; gap:6px;}
+      .unread{min-height:28px; font-size:.73rem; padding:0 8px;}
+      .actions{gap:6px;}
+      .btn-order{min-height:32px; font-size:.75rem; padding:0 9px; border-radius:9px;}
+      .filters{
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        scrollbar-width:none;
+        -webkit-overflow-scrolling:touch;
+        padding-bottom:2px;
+      }
+      .filters::-webkit-scrollbar{display:none;}
+      .chip{flex:0 0 auto;}
+      .card-select{width:24px; height:24px; min-width:24px; font-size:16px;}
+      .inline-chat-head{height:52px; min-height:52px; padding:6px 8px;}
+      .inline-chat-btn{width:34px; height:34px; min-width:34px; border-radius:10px; font-size:18px;}
+      .inline-chat-title strong{font-size:.9rem;}
+      .inline-chat-title span{font-size:.72rem;}
+      .details-modal{padding:10px;}
+      .details-card{border-radius:14px; padding:10px;}
+      .details-grid{grid-template-columns:1fr;}
+      .anexo-item img{height:90px;}
+    }
+
+    @media (max-width:540px){
+      .hero{padding:16px; border-radius:16px;}
+      .hero-stats{width:100%; justify-content:space-between;}
+      .meta{grid-template-columns:1fr 1fr;}
+      .footer{flex-direction:column; align-items:stretch;}
+      .actions{margin-left:0; width:100%;}
+      .btn-order{flex:1; justify-content:center;}
+    }
+  </style>
+</head>
+<body data-page="pedidos">
+  <header class="navbar-mobile">
+    <div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a><a href="login.html"></a></div>
+  </header>
+
+  <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+
+  <header class="navbar-desktop">
+    <div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+    <nav class="menu">
+      <div class="cep-wrapper">
+        <a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+          <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg>
+          <span id="textoCepSpan">Informe seu CEP</span>
+        </a>
+        <div class="cep-popup" id="boxCep">
+          <p>Digite seu CEP:</p>
+          <div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+        </div>
+      </div>
+      <a href="escolheranuncio.html">Anunciar</a>
+      <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+      <a href="novidades.html">Novidades</a>
+    </nav>
+    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+  </header>
+
+  <aside class="sidebar-icones">
+    <div id="logo"><a href="index.html"><img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+    <div class="item"><a href="index.html"><i class="bx bx-home-alt icon azul"></i><span>Início</span></a></div>
+    <div class="item" id="pvSearchSidebarItem"><a aria-label="Pesquisar" class="pv-search-toggle" href="#"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
+    <div class="item"><a href="negocios.html"><i class="bx bx-store icon verde"></i><span>Negócios</span></a></div>
+    <div class="item"><a href="notificacoes.html"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a></div>
+    <div class="item"><a href="mensagens.html"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a></div>
+    <div class="item ativo"><a href="pedidos.html"><i class="bx bx-package icon verde"></i><span>Pedidos</span></a></div>
+    <div class="item"><a href="comunidade.html"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a></div>
+    <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
+    <div class="item"><a href="mais.html"><i class="bx bx-menu icon azul"></i><span>Mais</span></a></div>
+  </aside>
+
+  <main class="dp-wrap">
+    <div class="orders-page">
+      <section class="hero">
+        <div>
+          <h1>Pedidos <span class="badge-count" id="heroCount">0</span></h1>
+          <p>Gerencie seus pedidos com dados reais e acesso rapido ao chat.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><small>Hoje</small><strong id="statToday">0</strong></div>
+          <div class="hero-stat"><small>Em andamento</small><strong id="statProgress">0</strong></div>
+          <div class="hero-stat"><small>Urgentes</small><strong id="statUrgent">0</strong></div>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <label class="search" aria-label="Buscar pedidos">
+          <i class='bx bx-search'></i>
+          <input id="searchInput" type="text" placeholder="Buscar por cliente, servico, ID ou descricao"/>
+        </label>
+        <div class="toolbar-actions">
+          <button class="btn-ui" id="sortBtn" type="button"><i class='bx bx-sort-alt-2'></i><span id="sortLabel">Mais recentes</span></button>
+          <button class="btn-ui" id="selectBtn" type="button"><i class='bx bx-check-square'></i><span id="selectLabel">Selecionar</span></button>
+          <button class="btn-ui" id="refreshBtn" type="button"><i class='bx bx-refresh'></i><span>Atualizar</span></button>
+        </div>
+      </section>
+
+      <div class="filters" role="tablist" aria-label="Filtros de pedidos">
+        <button class="chip active" data-filter="all" type="button"><i class='bx bx-grid-alt'></i><span>Todos</span></button>
+        <button class="chip" data-filter="pending" type="button">Pendentes</button>
+        <button class="chip" data-filter="progress" type="button">Em andamento</button>
+        <button class="chip" data-filter="done" type="button">Finalizados</button>
+        <button class="chip" data-filter="urgent" type="button"><i class='bx bx-error'></i><span>Urgentes</span></button>
+      </div>
+
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <h2><i class='bx bx-package'></i> Pedidos</h2>
+            <p id="ordersSubtitle">Carregando...</p>
+          </div>
+        </div>
+
+        <div class="grid" id="ordersGrid"></div>
+
+        <div class="empty" id="emptyState">
+          <i class='bx bx-inbox'></i>
+          <strong>Nenhum pedido encontrado</strong>
+          <span>Tente outro filtro ou atualize os dados.</span>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+    <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+    <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+    <a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+    <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+  </nav>
+
+  <div class="toast" id="toast">OK</div>
+  <section class="inline-chat-shell" id="inlineChatShell" aria-hidden="true">
+    <header class="inline-chat-head">
+      <button class="inline-chat-btn" id="inlineChatBack" type="button" aria-label="Fechar chat"><i class='bx bx-arrow-back'></i></button>
+      <div class="inline-chat-title">
+        <strong id="inlineChatTitle">Chat do pedido</strong>
+        <span id="inlineChatSub">Selecione um pedido</span>
+      </div>
+      <button class="inline-chat-btn" id="inlineChatOpenTab" type="button" aria-label="Abrir chat em nova guia"><i class='bx bx-link-external'></i></button>
+    </header>
+    <iframe class="inline-chat-frame" id="inlineChatFrame" title="Chat do pedido"></iframe>
+  </section>
+
+  <section class="details-modal" id="detailsModal" aria-hidden="true">
+    <article class="details-card" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
+      <div class="details-head">
+        <div>
+          <h3 id="detailsTitle">Detalhes do pedido</h3>
+          <p id="detailsSubtitle">Carregando dados...</p>
+        </div>
+        <button class="details-close" id="detailsCloseBtn" type="button" aria-label="Fechar detalhes"><i class='bx bx-x'></i></button>
+      </div>
+
+      <div class="details-grid" id="detailsGrid"></div>
+
+      <div class="details-block">
+        <h4>Descrição</h4>
+        <p id="detailsDescription">Sem descrição.</p>
+      </div>
+
+      <div class="details-block">
+        <h4>Triagem</h4>
+        <div class="triagem-list" id="detailsTriagem"></div>
+      </div>
+
+      <div class="details-block">
+        <h4>Anexos</h4>
+        <div class="anexos-grid" id="detailsAnexos"></div>
+      </div>
+    </article>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js?v=20260218v43"></script>
+  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
+  <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js?v=20260217v33"></script>
+  <script src="doke-shell.js?v=20260218v47"></script>
+
+  <script>
+    (function(){
+      const state = { pedidos: [], filter: 'all', query: '', sort: 'recent', detailsById: new Map(), activeChatUrl: '', selectMode: false, selected: new Set() };
+      const el = {
+        grid: document.getElementById('ordersGrid'),
+        empty: document.getElementById('emptyState'),
+        subtitle: document.getElementById('ordersSubtitle'),
+        count: document.getElementById('heroCount'),
+        statToday: document.getElementById('statToday'),
+        statProgress: document.getElementById('statProgress'),
+        statUrgent: document.getElementById('statUrgent'),
+        search: document.getElementById('searchInput'),
+        sortBtn: document.getElementById('sortBtn'),
+        sortLabel: document.getElementById('sortLabel'),
+        selectBtn: document.getElementById('selectBtn'),
+        selectLabel: document.getElementById('selectLabel'),
+        refreshBtn: document.getElementById('refreshBtn'),
+        chips: Array.from(document.querySelectorAll('.chip[data-filter]')),
+        toast: document.getElementById('toast'),
+        inlineChatShell: document.getElementById('inlineChatShell'),
+        inlineChatFrame: document.getElementById('inlineChatFrame'),
+        inlineChatBack: document.getElementById('inlineChatBack'),
+        inlineChatOpenTab: document.getElementById('inlineChatOpenTab'),
+        inlineChatTitle: document.getElementById('inlineChatTitle'),
+        inlineChatSub: document.getElementById('inlineChatSub'),
+        detailsModal: document.getElementById('detailsModal'),
+        detailsCloseBtn: document.getElementById('detailsCloseBtn'),
+        detailsSubtitle: document.getElementById('detailsSubtitle'),
+        detailsGrid: document.getElementById('detailsGrid'),
+        detailsDescription: document.getElementById('detailsDescription'),
+        detailsTriagem: document.getElementById('detailsTriagem'),
+        detailsAnexos: document.getElementById('detailsAnexos')
+      };
+
+      function showToast(msg){
+        if(!el.toast) return;
+        el.toast.textContent = String(msg || 'OK');
+        el.toast.classList.add('show');
+        clearTimeout(window.__ordersToastTimer);
+        window.__ordersToastTimer = setTimeout(() => el.toast.classList.remove('show'), 1800);
+      }
+
+      function esc(v){
+        return String(v ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+      }
+
+      function parseJSON(raw){
+        if(!raw) return null;
+        try { return JSON.parse(raw); } catch (_) { return null; }
+      }
+
+      function asArray(input){
+        if(Array.isArray(input)) return input;
+        if(input && typeof input === 'object'){
+          if(Array.isArray(input.items)) return input.items;
+          if(Array.isArray(input.data)) return input.data;
+          if(Array.isArray(input.rows)) return input.rows;
+          if(Array.isArray(input.pedidos)) return input.pedidos;
+          if(Array.isArray(input.orcamentos)) return input.orcamentos;
+        }
+        return [];
+      }
+
+      function pick(obj, keys, fallback){
+        for(const k of keys){
+          const v = obj ? obj[k] : null;
+          if(v == null) continue;
+          const s = String(v).trim();
+          if(s) return s;
+        }
+        return fallback;
+      }
+
+      function toDate(v){
+        if(!v) return null;
+        if(v instanceof Date && Number.isFinite(v.getTime())) return v;
+        if(typeof v === 'number'){
+          const d = new Date(v > 1e12 ? v : v * 1000);
+          return Number.isFinite(d.getTime()) ? d : null;
+        }
+        if(typeof v === 'string'){
+          const n = Number(v.trim());
+          if(Number.isFinite(n)){
+            const dn = new Date(v.trim().length >= 13 ? n : n * 1000);
+            if(Number.isFinite(dn.getTime())) return dn;
+          }
+          const d = new Date(v);
+          return Number.isFinite(d.getTime()) ? d : null;
+        }
+        if(typeof v === 'object'){
+          if(typeof v.toDate === 'function'){
+            const d = v.toDate();
+            if(d instanceof Date && Number.isFinite(d.getTime())) return d;
+          }
+          if(typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+          if(typeof v._seconds === 'number') return new Date(v._seconds * 1000);
+        }
+        return null;
+      }
+
+      function formatUpdated(v){
+        const d = toDate(v);
+        if(!d) return String(v || 'recentemente');
+        const diff = Date.now() - d.getTime();
+        if(diff < 60000) return 'agora';
+        if(diff < 3600000) return `ha ${Math.max(1, Math.round(diff/60000))} min`;
+        if(diff < 86400000) return `ha ${Math.max(1, Math.round(diff/3600000))} h`;
+        return d.toLocaleDateString('pt-BR');
+      }
+
+      function statusCode(raw){
+        const s = String(raw || 'pendente').toLowerCase();
+        if(s.includes('and') || s.includes('aceit') || s.includes('pago')) return 'andamento';
+        if(s.includes('fin') || s.includes('conc')) return 'finalizado';
+        return 'pendente';
+      }
+
+      function statusLabel(s){
+        if(s === 'andamento') return 'Em andamento';
+        if(s === 'finalizado') return 'Finalizado';
+        return 'Pendente';
+      }
+
+      function statusClass(s){
+        if(s === 'andamento') return 'progress';
+        if(s === 'finalizado') return 'done';
+        return 'pending';
+      }
+
+      function looksLikeImage(url){
+        const s = String(url || '').toLowerCase();
+        return /\.(png|jpe?g|webp|gif|bmp|svg)(\?|$)/.test(s) || s.includes('/storage/v1/object/public/');
+      }
+
+      function normalizeMediaUrl(v){
+        if(!v) return '';
+        if(typeof v === 'string') return v.trim();
+        if(typeof v === 'object'){
+          return String(v.url || v.src || v.link || '').trim();
+        }
+        return '';
+      }
+
+      function normalizeId(v){
+        const id = String(v == null ? '' : v).trim();
+        if(!id) return '';
+        if(/^PD-\d+$/i.test(id)) return '';
+        if(/^TEMP-/i.test(id)) return '';
+        if(/^NEW-/i.test(id)) return '';
+        return id;
+      }
+
+      function normalizePedido(row, idx, forcedId){
+        if(!row || typeof row !== 'object') return null;
+        const id = normalizeId(forcedId || pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+        if(!id) return null;
+
+        const uidAtual = resolveUid();
+        const deUid = pick(row, ['deUid','deuid','de_uid','clienteUid','clienteuid','cliente_uid'], '');
+        const paraUid = pick(row, ['paraUid','parauid','para_uid','prestadorUid','prestadoruid','prestador_uid'], '');
+        const isSouCliente = !!uidAtual && !!deUid && String(uidAtual) === String(deUid);
+        const isSouProfissional = !!uidAtual && !!paraUid && String(uidAtual) === String(paraUid);
+
+        const nome = isSouCliente
+          ? pick(row, ['paraNome','nomePrestador','profissionalNome','nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome'], 'Cliente')
+          : isSouProfissional
+            ? pick(row, ['deNome','nomeCliente','clienteNome','nome','cliente','usuarioNome','userName','paraNome'], 'Cliente')
+            : pick(row, ['nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome','paraNome'], 'Cliente');
+
+        const usuarioBase = isSouCliente
+          ? pick(row, ['paraUser','usuarioPrestador','usernamePrestador','usuario','username','user','handle'], nome || 'cliente')
+          : isSouProfissional
+            ? pick(row, ['deUser','usuarioCliente','usernameCliente','usuario','username','user','handle'], nome || 'cliente')
+            : pick(row, ['usuario','username','user','handle','deUser','paraUser'], nome || 'cliente');
+        const usuario = usuarioBase.startsWith('@') ? usuarioBase : `@${usuarioBase.toLowerCase().replace(/\s+/g,'.')}`;
+        const titulo = pick(row, ['titulo','servicoReferencia','nomeServico','servico','assunto','pedidoTitulo','orcamentoTitulo','title'], 'Pedido');
+        const descricao = pick(row, ['descricao','descricaoBase','mensagem','mensagemInicial','detalhes','observacoes','preview','ultimaMensagem'], 'Sem detalhes adicionais.');
+        const tipoRaw = pick(row, ['tipo','tipoPedido','categoriaTipo'], '');
+        const tipo = tipoRaw || (String(titulo).toLowerCase().includes('orc') ? 'Orcamento' : 'Servico');
+        const status = statusCode(pick(row, ['status','statusPedido','situacao','estado'], 'pendente'));
+
+        const updatedRaw = pick(row, ['dataAtualizacao','updatedAt','updatedat','ultimaAtualizacao','timestamp','lastMessageAt','createdAt'], '');
+        const createdRaw = pick(row, ['criadoEm','createdAt','createdat','dataCriacao','dataPedido'], updatedRaw || new Date().toISOString());
+
+        return {
+          id,
+          usuario,
+          nome,
+          avatar: pick(row, isSouCliente
+            ? ['paraFoto','fotoPrestador','profilePicture','avatar','foto','fotoPerfil','profissionalFoto','deFoto','fotoCliente']
+            : isSouProfissional
+              ? ['deFoto','fotoCliente','profilePicture','avatar','foto','fotoPerfil','paraFoto','profissionalFoto']
+              : ['avatar','foto','fotoCliente','fotoPerfil','profilePicture','deFoto','paraFoto','clienteFoto','profissionalFoto']
+          , 'assets/Imagens/user_placeholder.png'),
+          titulo,
+          descricao,
+          tipo,
+          status,
+          urgente: !!(row.urgente || String(row.prioridade || '').toLowerCase() === 'alta' || String(row.priority || '').toLowerCase() === 'high'),
+          prazo: pick(row, ['prazo','paraQuando','dataEspecifica','deadline','turno'], 'A combinar'),
+          atualizado: formatUpdated(updatedRaw || createdRaw),
+          valor: pick(row, ['valor','preco','orcamento','faixa','precoFormatado','valorOrcamento','valor_orcamento'], 'Sob Orcamento'),
+          naoLidas: Number(row.naoLidas || row.naolidas || row.unread || row.unreadCount || row.mensagensNaoLidas || row.qtdNaoLidas || 0) || 0,
+          criadoEm: (toDate(createdRaw) || new Date()).toISOString(),
+          categoria: pick(row, ['categoria','area','segmento','tipoServico'], 'Geral'),
+          deUid,
+          paraUid,
+          anuncioId: pick(row, ['anuncioId','anuncio_id','aid','anuncioid'], ''),
+          servicoReferencia: pick(row, ['servicoReferencia','titulo','nomeServico','servico'], ''),
+          mensagemInicial: pick(row, ['mensagemInicial','descricao','descricaoBase','detalhes'], ''),
+          descricaoBase: pick(row, ['descricaoBase','descricao','mensagemInicial'], ''),
+          paraQuando: pick(row, ['paraQuando','prazo','dataEspecifica'], ''),
+          dataEspecifica: pick(row, ['dataEspecifica'], ''),
+          turno: pick(row, ['turno'], ''),
+          respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
+          localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
+          modoAtend: pick(row, ['modoAtend','modo_atend'], ''),
+          statusOriginal: pick(row, ['status','statusPedido','situacao','estado'], ''),
+          anexos: Array.isArray(row.anexos) ? row.anexos : []
+        };
+      }
+
+      function mergePedidos(list){
+        const map = new Map();
+        (list || []).forEach((p) => {
+          if(!p || !p.id) return;
+          const key = String(p.id);
+          const cur = map.get(key);
+          if(!cur){ map.set(key, {...p}); return; }
+          const next = {...cur};
+          Object.keys(p).forEach((k) => {
+            const v = p[k];
+            if(k === 'naoLidas'){ next[k] = Math.max(Number(next[k] || 0), Number(v || 0)); return; }
+            if(k === 'descricao' && String(v || '').length > String(next[k] || '').length){ next[k] = v; return; }
+            if(Array.isArray(v) && v.length && (!Array.isArray(next[k]) || !next[k].length)){ next[k] = v; return; }
+            if(v && typeof v === 'object' && !Array.isArray(v) && (!next[k] || typeof next[k] !== 'object' || Array.isArray(next[k]))){ next[k] = v; return; }
+            if((next[k] == null || String(next[k]).trim() === '' || String(next[k]) === '—') && String(v ?? '').trim() !== '') next[k] = v;
+          });
+          map.set(key, next);
+        });
+        return Array.from(map.values());
+      }
+
+      function looksPedidoRow(row){
+        if(!row || typeof row !== 'object') return false;
+        const id = normalizeId(pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+        if(!id) return false;
+        const directSignals = [
+          row.pedidoId, row.idPedido, row.orcamentoId, row.statusPedido, row.paraQuando,
+          row.dataEspecifica, row.prazo, row.descricaoBase, row.respostasTriagem,
+          row.formularioRespostas, row.modoAtend, row.localizacao, row.localização, row.servicoReferencia
+        ];
+        if(directSignals.some(Boolean)) return true;
+        const keys = Object.keys(row).map((k) => String(k || '').toLowerCase());
+        return keys.some((k) =>
+          k.includes('pedido') ||
+          k.includes('orcamento') ||
+          k.includes('prazo') ||
+          k.includes('triagem')
+        );
+      }
+
+      function loadLocal(){
+        let list = [];
+        if(Array.isArray(window.pedidosCache)){
+          list = list.concat(window.pedidosCache.map((r,i)=>normalizePedido(r,i)).filter(Boolean));
+        }
+
+        const primaryKeys = [
+          'doke_pedidos','pedidos','DOKE_PEDIDOS','meus_pedidos','cachePedidos','doke_cache_pedidos',
+          'orcamentos','doke_orcamentos','orcamentosCache','doke_orcamentos_cache','doke_cache_orcamentos','orcamentos_pedidos'
+        ];
+
+        primaryKeys.forEach((key) => {
+          const arr = asArray(parseJSON(localStorage.getItem(key)));
+          arr.forEach((row, idx) => {
+            const n = normalizePedido(row, idx);
+            if(n) list.push(n);
+          });
+        });
+
+        const singleRows = [
+          parseJSON(localStorage.getItem('doke_pedido_contexto')),
+          parseJSON(localStorage.getItem('doke_pedido_detalhes')),
+          parseJSON(localStorage.getItem('pedidoAtual')),
+          parseJSON(localStorage.getItem('doke_chat_prefill')),
+          parseJSON(localStorage.getItem('pedidoSelecionado'))
+        ].filter(Boolean);
+        singleRows.forEach((row, idx) => {
+          const n = normalizePedido(row, idx);
+          if(n) list.push(n);
+        });
+
+        return mergePedidos(list);
+      }
+      function resolveUid(){
+        const perfil = parseJSON(localStorage.getItem('doke_usuario_perfil')) || {};
+        return String(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid || localStorage.getItem('doke_uid') || perfil.uid || perfil.id || '').trim();
+      }
+
+      function mine(row, uid){
+        if(!uid) return true;
+        const fields = [
+          row.deUid,row.deuid,row.de_uid,row.clienteUid,row.clienteuid,row.cliente_uid,row.uidCliente,row.uid_cliente,row.solicitanteUid,row.solicitante_uid,
+          row.paraUid,row.parauid,row.para_uid,row.prestadorUid,row.prestadoruid,row.prestador_uid,row.profissionalUid,row.profissionaluid,row.profissional_uid,row.uidPrestador,row.uid_prestador,
+          row.participante1,row.participante2,row.uid1,row.uid2,row.clienteId,row.profissionalId
+        ].map(v => String(v || '').trim()).filter(Boolean);
+        if(Array.isArray(row.participantes)) fields.push(...row.participantes.map(v => String(v || '').trim()).filter(Boolean));
+        return fields.includes(String(uid));
+      }
+
+      async function loadFirestore(){
+        const { getFirestore, collection, query, limit, getDocs } = window || {};
+        if(typeof getFirestore !== 'function' || typeof collection !== 'function' || typeof query !== 'function' || typeof limit !== 'function' || typeof getDocs !== 'function') return [];
+        const uid = resolveUid();
+        const db = window.db || getFirestore();
+
+        try{
+          const snap = await getDocs(query(collection(db, 'pedidos'), limit(300)));
+          const out = [];
+          let idx = 0;
+          snap.forEach((d) => {
+            const row = d.data() || {};
+            if(!mine(row, uid)) return;
+            const n = normalizePedido(row, idx++, d.id);
+            if(n) out.push(n);
+          });
+          return mergePedidos(out);
+        }catch(err){
+          console.warn('Firestore pedidos erro:', err);
+          return [];
+        }
+      }
+
+      function sortList(list){
+        const arr = [...list];
+        if(state.sort === 'updated') return arr.sort((a,b)=>String(a.atualizado).localeCompare(String(b.atualizado), 'pt-BR'));
+        if(state.sort === 'unread') return arr.sort((a,b)=>Number(b.naoLidas||0)-Number(a.naoLidas||0) || (new Date(b.criadoEm)-new Date(a.criadoEm)));
+        if(state.sort === 'urgent') return arr.sort((a,b)=>Number(b.urgente)-Number(a.urgente) || (new Date(b.criadoEm)-new Date(a.criadoEm)));
+        return arr.sort((a,b)=>new Date(b.criadoEm)-new Date(a.criadoEm));
+      }
+
+      function filtered(){
+        let arr = [...state.pedidos];
+        if(state.filter === 'pending') arr = arr.filter(p=>p.status === 'pendente');
+        if(state.filter === 'progress') arr = arr.filter(p=>p.status === 'andamento');
+        if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado');
+        if(state.filter === 'urgent') arr = arr.filter(p=>p.urgente);
+
+        const q = state.query.trim().toLowerCase();
+        if(q){
+          arr = arr.filter(p => [p.id,p.nome,p.usuario,p.titulo,p.descricao,p.categoria,p.tipo,p.prazo,p.valor].filter(Boolean).join(' ').toLowerCase().includes(q));
+        }
+
+        return sortList(arr);
+      }
+
+      function card(p){
+        const selected = state.selected.has(String(p.id));
+        return `
+          <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}">
+            <div class="card-top">
+              <div class="tags">
+                <span class="tag type"><i class='bx bx-receipt'></i>${esc(p.tipo)}</span>
+                <span class="tag ${statusClass(p.status)}">${esc(statusLabel(p.status))}</span>
+                ${p.urgente ? `<span class="tag urgent"><i class='bx bx-error'></i>Urgente</span>` : ''}
+              </div>
+              <button class="card-select" type="button" data-action="select" data-id="${esc(p.id)}" aria-label="Selecionar pedido">
+                <i class='bx ${selected ? 'bxs-check-circle' : 'bx-circle'}'></i>
+              </button>
+            </div>
+
+            <div class="user">
+              <img src="${esc(normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png')}" alt="Avatar" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'"/>
+              <div class="user-meta">
+                <strong>${esc(p.usuario || p.nome)}</strong>
+                <span>${esc(p.id)} • ${esc(p.categoria || 'Geral')}</span>
+              </div>
+            </div>
+
+            <h3 class="title">${esc(p.titulo)}</h3>
+            <p class="desc">${esc(p.descricao || 'Sem detalhes adicionais.')}</p>
+
+            <div class="meta">
+              <div class="meta-item"><i class='bx bx-time-five'></i><div><small>Prazo</small><strong>${esc(p.prazo || 'A combinar')}</strong></div></div>
+              <div class="meta-item"><i class='bx bx-refresh'></i><div><small>Atualizado</small><strong>${esc(p.atualizado || 'recentemente')}</strong></div></div>
+              <div class="meta-item"><i class='bx bx-wallet'></i><div><small>Valor</small><strong>${esc(String(p.valor ?? 'Sob Orcamento'))}</strong></div></div>
+              <div class="meta-item"><i class='bx bx-message-dots'></i><div><small>Chat</small><strong>${p.naoLidas ? `${p.naoLidas} nao lida${p.naoLidas > 1 ? 's' : ''}` : 'Sem novas'}</strong></div></div>
+            </div>
+
+            <div class="footer">
+              <span class="unread"><i class='bx bx-message-rounded-dots'></i>${p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas'}</span>
+              <div class="actions">
+                <button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>
+                <button class="btn-order" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i>Detalhes</button>
+              </div>
+            </div>
+          </article>
+        `;
+      }
+
+      function counters(list){
+        return {
+          all: list.length,
+          today: list.filter(p => String(p.atualizado).includes('agora') || String(p.atualizado).includes('ha')).length,
+          progress: list.filter(p => p.status === 'andamento').length,
+          urgent: list.filter(p => p.urgente).length
+        };
+      }
+
+      function render(){
+        const list = filtered();
+        const c = counters(state.pedidos);
+        const existing = new Set((state.pedidos || []).map((p) => String(p.id)));
+        Array.from(state.selected).forEach((id) => { if(!existing.has(String(id))) state.selected.delete(String(id)); });
+        document.body.classList.toggle('select-mode', !!state.selectMode);
+        el.count.textContent = String(c.all);
+        el.statToday.textContent = String(c.today);
+        el.statProgress.textContent = String(c.progress);
+        el.statUrgent.textContent = String(c.urgent);
+        el.subtitle.textContent = list.length ? `Mostrando ${list.length} pedido${list.length > 1 ? 's' : ''}` : 'Nenhum pedido encontrado';
+        el.grid.innerHTML = list.map(card).join('');
+        el.empty.classList.toggle('show', list.length === 0);
+        el.grid.style.display = list.length ? 'grid' : 'none';
+        el.chips.forEach(ch => ch.classList.toggle('active', ch.dataset.filter === state.filter));
+        if(el.selectLabel){
+          const total = state.selected.size;
+          el.selectLabel.textContent = state.selectMode ? (total ? `${total} selecionado${total > 1 ? 's' : ''}` : 'Cancelar') : 'Selecionar';
+        }
+      }
+
+      function sortLabel(){
+        if(state.sort === 'updated') return 'Atualizacao';
+        if(state.sort === 'unread') return 'Nao lidas';
+        if(state.sort === 'urgent') return 'Urgentes';
+        return 'Mais recentes';
+      }
+
+      function nextSort(){
+        if(state.sort === 'recent') state.sort = 'unread';
+        else if(state.sort === 'unread') state.sort = 'urgent';
+        else if(state.sort === 'urgent') state.sort = 'updated';
+        else state.sort = 'recent';
+        el.sortLabel.textContent = sortLabel();
+      }
+
+      function byId(id){
+        return state.pedidos.find(p => String(p.id) === String(id)) || null;
+      }
+
+      function detailsValue(v, fallback){
+        const s = String(v == null ? '' : v).trim();
+        return s || (fallback || '-');
+      }
+
+      async function fetchPedidoCompleto(p){
+        if(!p || !p.id) return null;
+        const pid = String(p.id);
+        const cached = state.detailsById.get(pid);
+        if(cached) return mergePedidos([p, cached])[0] || p;
+
+        const { getFirestore, getDoc, doc } = window || {};
+        if(typeof getFirestore !== 'function' || typeof getDoc !== 'function' || typeof doc !== 'function'){
+          return p;
+        }
+
+        try{
+          const db = window.db || getFirestore();
+          const snap = await getDoc(doc(db, 'pedidos', pid));
+          if(!snap.exists()) return p;
+          const row = snap.data() || {};
+          const normalized = normalizePedido(row, 0, pid);
+          if(!normalized) return p;
+          const merged = mergePedidos([p, normalized, {
+            id: pid,
+            respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
+            localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
+            mensagemInicial: pick(row, ['mensagemInicial','descricaoBase','descricao'], normalized.mensagemInicial || ''),
+            descricaoBase: pick(row, ['descricaoBase','mensagemInicial','descricao'], normalized.descricaoBase || ''),
+            paraQuando: pick(row, ['paraQuando','prazo','dataEspecifica'], normalized.paraQuando || ''),
+            turno: pick(row, ['turno'], normalized.turno || ''),
+            modoAtend: pick(row, ['modoAtend','modo_atend'], normalized.modoAtend || ''),
+            servicoReferencia: pick(row, ['servicoReferencia','titulo','nomeServico','servico'], normalized.servicoReferencia || '')
+          }])[0];
+
+          if(merged){
+            state.detailsById.set(pid, merged);
+            state.pedidos = mergePedidos([...(state.pedidos || []), merged]);
+            render();
+            return merged;
+          }
+          return p;
+        }catch(err){
+          console.warn('Falha ao carregar detalhes do pedido:', err);
+          return p;
+        }
+      }
+
+            function collectAnexos(p){
+        const out = [];
+        const pushUrl = (url, name) => {
+          const u = normalizeMediaUrl(url);
+          if(!u) return;
+          if(out.some((item) => item.url === u)) return;
+          out.push({ url: u, name: name || '' });
+        };
+
+        if(Array.isArray(p.anexos)){
+          p.anexos.forEach((a, idx) => {
+            if(typeof a === 'string') pushUrl(a, `Anexo ${idx + 1}`);
+            else if(a && typeof a === 'object') pushUrl(a.url || a.src || a.link, a.nome || a.name || `Anexo ${idx + 1}`);
+          });
+        }
+
+        const triagem = Array.isArray(p.respostasTriagem) ? p.respostasTriagem : [];
+        triagem.forEach((row) => {
+          const raw = typeof row === 'object' ? String(row.resposta || '') : String(row || '');
+          const namedMatch = raw.match(/^\s*([^\n]+?)\s*-\s*https?:\/\//i);
+          const maybeName = namedMatch ? namedMatch[1].trim() : '';
+          const matches = raw.match(/https?:\/\/[^\s)]+/g) || [];
+          matches.forEach((url) => {
+            const clean = url.replace(/[.,;!?]+$/, '');
+            const name = maybeName || clean.split('/').pop() || 'Anexo';
+            pushUrl(clean, name);
+          });
+        });
+
+        return out;
+      }
+
+      function renderDetailsModal(p){
+        if(!p) return;
+        const locObj = p.localizacao || {};
+        const locText = [
+          locObj.endereco || locObj['endereço'] || '',
+          locObj.numero || locObj['número'] || '',
+          locObj.complemento || '',
+          locObj.referencia || ''
+        ].map((v)=>String(v || '').trim()).filter(Boolean).join(', ');
+
+        const rows = [
+          ['ID', detailsValue(p.id)],
+          ['Cliente', detailsValue(p.nome || p.usuario, 'Cliente')],
+          ['Status', detailsValue(statusLabel(p.status))],
+          ['Tipo', detailsValue(p.tipo)],
+          ['Prazo', detailsValue(p.paraQuando || p.prazo, 'A combinar')],
+          ['Turno', detailsValue(p.turno, 'Nao informado')],
+          ['Modo', detailsValue(p.modoAtend, 'Nao informado')],
+          ['Valor', detailsValue(p.valor, 'Sob orcamento')]
+        ];
+
+        el.detailsSubtitle.textContent = `${detailsValue(p.usuario || p.nome, '@cliente')} • ${detailsValue(p.categoria, 'Geral')}`;
+        el.detailsGrid.innerHTML = rows.map(([k,v]) => `<div class="details-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('');
+        el.detailsDescription.textContent = detailsValue(p.mensagemInicial || p.descricaoBase || p.descricao, 'Sem descricao.');
+
+        const triagem = Array.isArray(p.respostasTriagem) ? p.respostasTriagem : [];
+        const triagemRows = [];
+        if(locText){
+          triagemRows.push({ pergunta:'Local', resposta: locText });
+        }
+        triagem.forEach((item, idx) => {
+          if(item && typeof item === 'object'){
+            triagemRows.push({
+              pergunta: detailsValue(item.pergunta, `Pergunta ${idx + 1}`),
+              resposta: detailsValue(item.resposta, '')
+            });
+          }else if(item != null){
+            triagemRows.push({ pergunta:`Triagem ${idx + 1}`, resposta: detailsValue(item, '') });
+          }
+        });
+        if(!triagemRows.length){
+          triagemRows.push({ pergunta:'Triagem', resposta:'Sem respostas de triagem neste pedido.' });
+        }
+        el.detailsTriagem.innerHTML = triagemRows.map((r) => `
+          <div class="triagem-row">
+            <small>${esc(r.pergunta)}</small>
+            <strong>${esc(r.resposta)}</strong>
+          </div>
+        `).join('');
+
+        const anexos = collectAnexos(p);
+        if(!anexos.length){
+          el.detailsAnexos.innerHTML = `<div class="triagem-row"><small>Anexos</small><strong>Sem anexos neste pedido.</strong></div>`;
+        }else{
+          el.detailsAnexos.innerHTML = anexos.map((a, idx) => {
+            const isImg = looksLikeImage(a.url);
+            return `
+              <div class="anexo-item">
+                <a href="${esc(a.url)}" target="_blank" rel="noopener">
+                  ${isImg ? `<img src="${esc(a.url)}" alt="Anexo ${idx + 1}" onerror="this.style.display='none'"/>` : ''}
+                  <span class="anexo-caption">${esc(a.name || `Anexo ${idx + 1}`)}</span>
+                </a>
+              </div>
+            `;
+          }).join('');
+        }
+
+        el.detailsModal.classList.add('open');
+        el.detailsModal.setAttribute('aria-hidden', 'false');
+      }
+
+      function closeDetailsModal(){
+        el.detailsModal.classList.remove('open');
+        el.detailsModal.setAttribute('aria-hidden', 'true');
+      }
+
+      function openInlineChat(p){
+        if(!p || !p.id){ showToast('Pedido invalido para abrir chat.'); return; }
+        try{
+          localStorage.setItem('doke_pedido_contexto', JSON.stringify(p));
+          localStorage.setItem('pedidoAtual', JSON.stringify(p));
+          localStorage.setItem('doke_chat_prefill', JSON.stringify({ pedidoId: p.id, titulo: p.titulo, usuario: p.usuario, nome: p.nome, origem: 'pedidos.html' }));
+        }catch(_){ }
+
+        const pid = encodeURIComponent(String(p.id));
+        const chatUrl = `chat.html?embed=1&chatId=${pid}&pedidoId=${pid}&from=pedidos&aba=pedidos&origin=pedido`;
+        state.activeChatUrl = chatUrl;
+
+        el.inlineChatTitle.textContent = p.titulo || 'Chat do pedido';
+        el.inlineChatSub.textContent = `${p.usuario || p.nome || '@cliente'} • ${p.id}`;
+        if(el.inlineChatFrame.getAttribute('src') !== chatUrl){
+          el.inlineChatFrame.setAttribute('src', chatUrl);
+        }
+        el.inlineChatShell.classList.add('open');
+        el.inlineChatShell.setAttribute('aria-hidden', 'false');
+        document.body.style.overflow = 'hidden';
+      }
+
+      function closeInlineChat(){
+        el.inlineChatShell.classList.remove('open');
+        el.inlineChatShell.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+      }
+
+      function openChat(p){
+        openInlineChat(p);
+      }
+
+      async function openDetails(p){
+        if(!p || !p.id){ showToast('Pedido invalido para abrir detalhes.'); return; }
+        try{
+          localStorage.setItem('doke_pedido_detalhes', JSON.stringify(p));
+          localStorage.setItem('pedidoAtual', JSON.stringify(p));
+        }catch(_){ }
+        const full = await fetchPedidoCompleto(p);
+        renderDetailsModal(full || p);
+      }
+
+      function toggleSelectMode(force){
+        const next = typeof force === 'boolean' ? force : !state.selectMode;
+        state.selectMode = next;
+        if(!next) state.selected.clear();
+        render();
+      }
+
+      function toggleSelected(id){
+        const key = String(id || '');
+        if(!key) return;
+        if(state.selected.has(key)) state.selected.delete(key);
+        else state.selected.add(key);
+        render();
+      }
+
+      function setupFallbacks(){
+        window.toggleCep = window.toggleCep || function(e){ if(e) e.preventDefault(); const box = document.getElementById('boxCep'); if(box) box.style.display = box.style.display === 'block' ? 'none' : 'block'; };
+        window.salvarCep = window.salvarCep || function(){ const val = String(document.getElementById('inputCep')?.value || '').trim(); if(!val) return; localStorage.setItem('doke_cep', val); const span = document.getElementById('textoCepSpan'); if(span) span.textContent = val; const box = document.getElementById('boxCep'); if(box) box.style.display='none'; showToast('CEP salvo'); };
+        window.abrirMenuMobile = window.abrirMenuMobile || function(){ document.querySelector('.sidebar-icones')?.classList.add('menu-aberto'); document.body.classList.add('menu-ativo'); const ov = document.getElementById('overlay-menu'); if(ov) ov.style.display='block'; };
+        window.fecharMenuMobile = window.fecharMenuMobile || function(){ document.querySelector('.sidebar-icones')?.classList.remove('menu-aberto'); document.body.classList.remove('menu-ativo'); const ov = document.getElementById('overlay-menu'); if(ov) ov.style.display='none'; };
+        window.irParaMeuPerfil = window.irParaMeuPerfil || function(e){ if(e) e.preventDefault(); location.href='meuperfil.html'; };
+
+        const cep = localStorage.getItem('doke_cep');
+        if(cep){ const span = document.getElementById('textoCepSpan'); if(span) span.textContent = cep; }
+      }
+
+      async function hydrate(forceFs){
+        const local = loadLocal();
+        let merged = mergePedidos(local);
+        if(forceFs || merged.length < 3){
+          const fs = await loadFirestore();
+          merged = mergePedidos([...(merged || []), ...(fs || [])]);
+        }
+        state.pedidos = merged;
+        render();
+      }
+
+      function bind(){
+        el.search.addEventListener('input', () => { state.query = String(el.search.value || ''); render(); });
+        el.sortBtn.addEventListener('click', () => { nextSort(); render(); });
+        el.selectBtn.addEventListener('click', () => toggleSelectMode());
+        el.refreshBtn.addEventListener('click', async () => { el.refreshBtn.disabled = true; await hydrate(true); el.refreshBtn.disabled = false; showToast('Pedidos atualizados'); });
+        el.chips.forEach(ch => ch.addEventListener('click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
+        el.grid.addEventListener('click', (ev) => {
+          const btn = ev.target.closest('button[data-action][data-id]');
+          if(btn){
+            const p = byId(btn.dataset.id);
+            if(btn.dataset.action === 'select'){ toggleSelected(btn.dataset.id); return; }
+            if(state.selectMode){ toggleSelected(btn.dataset.id); return; }
+            if(btn.dataset.action === 'chat') openChat(p); else openDetails(p);
+            return;
+          }
+          const cardEl = ev.target.closest('.card[data-id]');
+          if(!cardEl || !state.selectMode) return;
+          toggleSelected(cardEl.dataset.id);
+        });
+        el.inlineChatBack.addEventListener('click', closeInlineChat);
+        el.inlineChatOpenTab.addEventListener('click', () => {
+          if(!state.activeChatUrl) return;
+          window.open(state.activeChatUrl, '_blank', 'noopener');
+        });
+        el.detailsCloseBtn.addEventListener('click', closeDetailsModal);
+        el.detailsModal.addEventListener('click', (ev) => {
+          if(ev.target === el.detailsModal) closeDetailsModal();
+        });
+        document.addEventListener('keydown', (ev) => {
+          if(ev.key !== 'Escape') return;
+          if(el.detailsModal.classList.contains('open')) closeDetailsModal();
+          if(el.inlineChatShell.classList.contains('open')) closeInlineChat();
+        });
+        window.addEventListener('storage', (ev) => { const key = String(ev?.key || ''); if(!key || /(pedido|orcamento|doke_)/i.test(key)) hydrate(false); });
+      }
+
+      setupFallbacks();
+      bind();
+      hydrate(true);
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,707 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Dados Pessoais | Doke</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<style>
+        /* ================= VARIÃƒÆ’Ã‚ÂVEIS E RESET ================= */
+        :root {
+            --cor0: #0b7768; /* Verde Principal */
+            --cor1: #737373; /* Cinza Texto */
+            --cor2: #2a5f90; /* Azul TÃƒÆ’Ã‚Â­tulos */
+            --cor3: #f35b5b; /* Vermelho/Alerta */
+            --cor4: #ecedf2; /* Cinza Fundo Claro */
+            --cor-borda: #e0e0e0;
+            --fonte-padrao: 'Poppins', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
+
+        body {
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: row; 
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; }
+
+        /* ================= ÃƒÆ’Ã‚ÂREA PRINCIPAL (Direita) ================= */
+        .main-content {
+            flex: 1; 
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 270px; /* Compensa a sidebar fixa */
+            }
+        }
+
+        /* Topo com BotÃƒÆ’Ã‚Â£o Voltar */
+        .page-header {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem; transition: 0.2s;
+        }
+        .btn-back:hover { background: white; color: var(--cor2); }
+        .page-header h1 {
+            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÆ’Ã‚Â© escuro */
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Card do FormulÃƒÆ’Ã‚Â¡rio */
+        .form-card {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0;
+        }
+
+        /* Foto de Perfil Centralizada */
+        .profile-photo-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            margin-top: -80px; 
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 110px;
+            height: 110px;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #fff;
+        }
+
+        .edit-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--cor0);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .edit-icon:hover { transform: scale(1.1); }
+
+        .profile-photo-area span {
+            margin-top: 10px;
+            color: var(--cor1);
+            font-size: 0.9rem;
+        }
+
+        /* Inputs */
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--cor1);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #eee;
+            background-color: #fbfbfb;
+            border-radius: 10px;
+            font-size: 1rem;
+            color: #333;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            background-color: #fff;
+            border-color: var(--cor2);
+            box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.1);
+        }
+
+        .input-readonly {
+            background-color: #f0f0f0 !important;
+            color: #888 !important;
+            cursor: default;
+        }
+
+        .btn-salvar {
+            width: 100%;
+            padding: 16px;
+            background: var(--cor0);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-salvar:hover { background-color: #086659; transform: translateY(-2px); }
+
+        /* RESPONSIVIDADE (Celular) */
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-bottom: 80px; } 
+            
+            .main-content { padding: 20px; margin-left: 0; }
+            .form-card { padding: 25px; box-shadow: none; background: transparent; border: none; }
+            .input-group input { background: white; border: 1px solid #ddd; }
+            
+            .navbar-mobile {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px 20px;
+                background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                position: sticky; top: 0; z-index: 99;
+            }
+        }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet">
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<body data-page="mais">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="mensagens.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<main class="main-content"><div class="content-wrapper"><div class="settings-shell" id="settingsShell"><aside aria-label="Ajustes" class="settings-side">
+<div class="settings-profile" onclick="irParaPerfilCorreto()" onkeypress="if(event.key==='Enter'||event.key===' '){irParaPerfilCorreto();}" role="button" tabindex="0">
+<img alt="Foto" class="profile-avatar" decoding="async" id="mais-foto" loading="lazy" src="https://placehold.co/150"/>
+<div class="settings-profile__meta">
+<p class="settings-profile__name" id="mais-nome">Carregando...</p>
+<div class="settings-profile__user" id="mais-user">@carregando</div>
+</div>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</div>
+<hr class="settings-side__divider"/>
+<div class="settings-side__group">
+<div class="settings-side__title">MINHA CONTA</div>
+<a class="settings-nav-item" data-section="dadospessoais" href="dadospessoais.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-user"></i></span>
+<span class="settings-nav-text">Dados pessoais</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
+<span class="settings-nav-text">Endereços</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="senha" href="senha.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
+<span class="settings-nav-text">Segurança e senha</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-credit-card"></i></span>
+<span class="settings-nav-text">Pagamentos</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">PREFERÃƒƒÅ NCIAS</div>
+<div class="settings-toggle-row">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
+<span class="settings-toggle-label">Modo escuro</span>
+<label class="switch" style="margin-left:auto;">
+<input id="darkModeSwitch" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
+<span class="settings-nav-text">Notificações</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="idioma" href="idioma.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-globe"></i></span>
+<span class="settings-nav-text">Idioma</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="privacidade" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-quarter"></i></span>
+<span class="settings-nav-text">Privacidade de mensagens</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">SUPORTE</div>
+<a class="settings-nav-item" data-section="ajuda" href="ajuda.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-help-circle"></i></span>
+<span class="settings-nav-text">Central de ajuda</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="#" onclick="return false;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-file"></i></span>
+<span class="settings-nav-text">Termos de uso</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="sobre-doke" href="sobre-doke.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-info-circle"></i></span>
+<span class="settings-nav-text">Sobre a Doke</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Dados pessoais</h1><p>Atualize suas informações básicas e de contato.</p></div></div><div class="settings-frame-card"><div class="form-card">
+<div class="profile-photo-area">
+<div class="avatar-container">
+<img class="avatar-img" decoding="async" id="profilePreview" loading="lazy" src="https://placehold.co/150"/>
+<label class="edit-icon" for="uploadFoto">
+<i class="bx bx-camera"></i>
+</label>
+<input accept="image/*" hidden="" id="uploadFoto" onchange="previewImage(event)" type="file"/>
+<input id="hiddenFotoBase64" type="hidden"/>
+</div>
+<span>Toque no ícone para alterar</span>
+</div>
+<form onsubmit="salvarDados(event)">
+<div class="input-group">
+<label>Nome Completo</label>
+<input id="inputNome" maxlength="40" placeholder="Carregando..." required="" type="text"/>
+</div>
+<div class="input-group">
+<label>E-mail</label>
+<input class="input-readonly" id="inputEmail" placeholder="Carregando..." readonly="" type="email"/>
+<small style="color:#999; font-size:0.8rem; margin-top:5px; display:block;">O e-mail não pode ser alterado por aqui.</small>
+</div>
+<div class="input-group">
+<label>CPF / CNPJ</label>
+<input class="input-readonly" id="inputDoc" placeholder="Não informado" readonly="" type="text"/>
+</div>
+<div class="input-group">
+<label>Telefone / WhatsApp</label>
+<input id="inputTel" maxlength="15" onkeyup="mascaraTel(this)" placeholder="(00) 00000-0000" type="tel"/>
+</div>
+<div class="input-group">
+<label>Data de Nascimento</label>
+<input id="inputNasc" type="date"/>
+</div>
+<button class="btn-salvar" id="btnSalvar" type="submit">Salvar Alterações</button>
+</form>
+</div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<script>
+        // Dados Pessoais (Supabase) - carrega do Auth + tabela usuários + validação (tornar-profissional)
+        // Objetivo: o que vocÃƒÆ’Ã‚ª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
+
+        const safeJSON = (k, fallback = null) => {
+            try { return JSON.parse(localStorage.getItem(k) || '') || fallback; } catch { return fallback; }
+        };
+
+        const normalizeLocalHandle = (h, nome) => {
+            let v = (h || '').trim();
+            if (!v || /\s/.test(v)) v = nome ? nome.split(' ')[0] : '';
+            if (!v) v = 'usuario';
+            v = v.replace(/^@+/, '').trim();
+            if (!v.startsWith('@')) v = '@' + v;
+            return v;
+        };
+
+        const pickBestName = (...cands) => {
+            const list = cands.map(v => String(v || '').trim()).filter(Boolean);
+            if (!list.length) return '';
+            let best = list[0];
+            let bestScore = -1;
+            for (const v of list) {
+                const hasSpace = v.includes(' ') ? 10 : 0;
+                const score = hasSpace + Math.min(v.length, 40) / 4;
+                if (score > bestScore) {
+                    bestScore = score;
+                    best = v;
+                }
+            }
+            return best;
+        };
+
+        function preencherCampos(dados) {
+            const setValue = (id, value) => {
+                const el = document.getElementById(id);
+                if (el) el.value = value;
+            };
+            setValue('inputNome', String(dados.nome || "").slice(0, 40));
+            setValue('inputEmail', dados.email || "");
+            setValue('inputDoc', dados.cpf_cnpj || "Não informado");
+            setValue('inputTel', dados.telefone || dados.telefone_comercial || "");
+            setValue('inputNasc', dados.data_nascimento || "");
+
+            if (dados.foto) {
+                const preview = document.getElementById('profilePreview');
+                if (preview) preview.src = dados.foto;
+                setValue('hiddenFotoBase64', dados.foto);
+            }
+        }
+
+        async function carregarPerfilReal() {
+            // proteÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚£o simples
+            const logado = localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
+            if (!logado) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (!window.sb?.auth) {
+                alert('Supabase nÃƒÆ’Ã‚£o inicializado.');
+                return;
+            }
+
+            const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
+
+            // 1) Auth
+            const { data: authData, error: authErr } = await window.sb.auth.getUser();
+            const authUser = authData?.user || null;
+            if (authErr || !authUser) {
+                // tenta ao menos usar o cache local
+                if (perfilLocal && (perfilLocal.nome || perfilLocal.email)) {
+                    preencherCampos(perfilLocal);
+                    return;
+                }
+                window.location.href = 'login.html';
+                return;
+            }
+
+            const uid = authUser.id;
+            const email = authUser.email || perfilLocal.email || '';
+
+            // 2) usuários
+            let usr = null;
+            try {
+                const { data, error } = await window.sb
+                    .from('usuarios')
+                    .select('*')
+                    .or(`uid.eq.${uid},id.eq.${uid}`)
+                    .maybeSingle();
+                if (!error) usr = data || null;
+            } catch (_) {}
+
+            // 3) profissional_validacao (dados do tornar-profissional)
+            let val = null;
+            try {
+                const usuarioId = usr?.id || uid;
+                const { data, error } = await window.sb
+                    .from('profissional_validacao')
+                    .select('*')
+                    .or(`usuario_id.eq.${usuarioId},user_id.eq.${uid},uid.eq.${uid}`)
+                    .limit(1);
+                if (!error && Array.isArray(data) && data.length) val = data[0];
+            } catch (_) {}
+
+            // 4) Merge (prioridade: usuários -> validação -> auth meta -> cache)
+            const meta = authUser.user_metadata || {};
+            const nome = pickBestName(
+                usr?.nome,
+                meta.full_name,
+                meta.nome_completo,
+                meta.name,
+                meta.nome,
+                val?.nome,
+                perfilLocal.nome,
+                (email ? email.split('@')[0] : '')
+            );
+
+            const userHandle = normalizeLocalHandle(
+                usr?.user || meta.user || meta.username || perfilLocal.user,
+                nome
+            );
+
+            const cpfCnpj = (usr?.cpf_cnpj || usr?.cpf || usr?.cnpj || val?.cpf || val?.cnpj || perfilLocal.cpf_cnpj || '');
+            const telefone = (usr?.telefone || usr?.telefone_comercial || val?.telefone || val?.whatsapp || perfilLocal.telefone || perfilLocal.telefone_comercial || '');
+            const nasc = (usr?.data_nascimento || val?.data_nascimento || val?.nascimento || perfilLocal.data_nascimento || '');
+            const foto = (usr?.foto || meta.foto || perfilLocal.foto || '');
+
+            const merged = {
+                ...perfilLocal,
+                uid,
+                id: usr?.id || perfilLocal.id || uid,
+                email,
+                nome,
+                user: userHandle,
+                foto,
+                cpf_cnpj: cpfCnpj || 'Não informado',
+                telefone,
+                data_nascimento: nasc,
+            };
+
+            localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
+            localStorage.setItem('usuarioLogado', 'true');
+
+            preencherCampos(merged);
+        }
+
+        document.addEventListener('DOMContentLoaded', carregarPerfilReal);
+
+        // FunÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚£o global para salvar (chamada pelo form)
+        window.salvarDados = async function(e) {
+            e.preventDefault();
+            const btn = document.getElementById('btnSalvar');
+            const textoOriginal = btn.innerText;
+
+            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Salvando...";
+            btn.disabled = true;
+
+            try {
+                const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
+                const { data: authData } = await window.sb.auth.getUser();
+                const authUser = authData?.user || null;
+                if (!authUser) throw new Error('SessÃƒÆ’Ã‚£o expirada. FaÃƒÆ’Ã‚§a login novamente.');
+
+                const uid = authUser.id;
+                const nome = String(document.getElementById('inputNome')?.value || '').trim().slice(0, 40);
+                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÆ’Ã‚¡lido (mÃƒÆ’Ã‚­nimo 2 caracteres).');
+                const telefone = String(document.getElementById('inputTel')?.value || '').trim();
+                const nasc = document.getElementById('inputNasc')?.value || '';
+                const foto = document.getElementById('hiddenFotoBase64')?.value || perfilLocal.foto || '';
+
+                // Atualiza cache local imediatamente
+                const merged = {
+                    ...perfilLocal,
+                    nome,
+                    telefone,
+                    data_nascimento: nasc,
+                    foto,
+                };
+                localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
+
+                // Melhor esforÃƒÆ’Ã‚§o: atualiza tabela usuários (se existir colunas)
+                const patch = { nome, telefone, data_nascimento: nasc, foto };
+                try {
+                    await window.sb
+                        .from('usuarios')
+                        .update(patch)
+                        .or(`uid.eq.${uid},id.eq.${uid}`);
+                } catch (_) {}
+
+                // Melhor esforÃƒÆ’Ã‚§o: espelha no Auth metadata
+                try {
+                    await window.sb.auth.updateUser({
+                        data: {
+                            nome,
+                            nome_completo: nome,
+                            full_name: nome,
+                            foto
+                        }
+                    });
+                } catch (_) {}
+
+                btn.innerHTML = "<i class='bx bx-check'></i> Salvo!";
+                setTimeout(() => (btn.innerText = textoOriginal), 1200);
+            } catch (err) {
+                console.error(err);
+                alert(err?.message || 'Erro ao salvar.');
+                btn.innerText = textoOriginal;
+            } finally {
+                btn.disabled = false;
+            }
+        };
+    </script>
+<script>
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if(file) {
+                // Tamanho maximo 2MB para nÃƒÆ’Ã‚£o travar localStorage/Firestore
+                if(file.size > 2 * 1024 * 1024) {
+                    alert("A imagem ÃƒÆ’Ã‚© muito grande. Escolha uma menor que 2MB.");
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(e){
+                    // Mostra preview
+                    const preview = document.getElementById('profilePreview');
+                    if (preview) preview.src = e.target.result;
+                    // Salva Base64 no input oculto para enviar depois
+                    const hiddenFoto = document.getElementById('hiddenFotoBase64');
+                    if (hiddenFoto) hiddenFoto.value = e.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function mascaraTel(input) {
+            let v = input.value.replace(/\D/g,'');
+            v = v.replace(/^(\d{2})(\d)/g,"($1) $2");
+            v = v.replace(/(\d)(\d{4})$/,"$1-$2");
+            input.value = v;
+        }
+    </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+<script defer="True" src="settings-pages.js"></script></body>
+</html>
+
+
+
+
+
+
+
+

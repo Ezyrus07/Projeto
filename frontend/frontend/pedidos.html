@@ -1,1531 +1,1911 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pedidos | Doke</title>
-  <meta name="theme-color" content="#0b7768" />
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet" />
-  <link href="style.css" rel="stylesheet" />
-  <link href="doke-shell.css" rel="stylesheet" />
-  <link href="doke-responsive.css?v=20260209v24" rel="stylesheet" />
-<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
-<link href="doke-toast.css" rel="stylesheet"/>
-<link href="doke-alerts.css" rel="stylesheet"/>
-<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-shell.css?v=20260207v21" rel="stylesheet"/>
-<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
-<link href="doke-tablet-fix.css?v=20260213v2" rel="stylesheet"/>
-  
-
+  <meta name="theme-color" content="#0b7768"/>
+  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+  <link href="style.css?v=20260211v45" rel="stylesheet"/>
+  <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+  <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+  <link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
+  <link href="doke-toast.css" rel="stylesheet"/>
+  <link href="doke-alerts.css" rel="stylesheet"/>
+  <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+  <link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
+  <link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
+  <script defer src="script.js?v=20260218v60"></script>
   <style>
     :root{
       --bg:#eef3f8;
-      --panel:#fff;
-      --line:#dbe6f3;
+      --panel:#ffffff;
+      --line:#dbe5f2;
       --text:#0f2440;
-      --muted:#5c6f8a;
+      --muted:#5f748f;
       --brand:#0b7768;
-      --blue:#1f4d75;
-      --radius:20px;
+      --danger:#d92f64;
     }
-    body{background:var(--bg);}
 
-    @media (min-width: 1024px){
-      main.dp-wrap{margin-left: var(--sidebar-width,0px); padding:34px 40px 28px; width:auto; max-width:none;}
+    body[data-page="pedidos"]{background:var(--bg); color:var(--text);}
+    body[data-page="pedidos"] .dp-wrap{padding:22px 18px 100px;}
+    @media (min-width:1024px){
+      body[data-page="pedidos"] .dp-wrap{
+        margin-left:var(--sidebar-width,0);
+        padding:30px 40px 120px;
+        width:auto;
+        max-width:none;
+      }
     }
-    /* container */
-    .ped-container{width:100%;max-width:1400px;margin:0 auto;padding:18px 18px 90px;}
-    @media (min-width: 1100px){ .ped-container{padding:26px 24px 110px;}}
 
-    /* hero (match notificacoes.html) */
-    .ped-hero{
-      background: radial-gradient(1200px 500px at 50% 0%, rgba(255,255,255,.20), transparent 55%),
-                  linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
-      padding: 40px;
-      border-radius: 20px;
-      margin: 0 0 18px;
+    .orders-page{max-width:1240px; margin:0 auto;}
+    .hero{
+      background:radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.20), transparent 55%), linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+      border-radius:20px;
+      padding:40px;
       color:#fff;
-      box-shadow: 0 10px 30px rgba(42,95,144,.25);
-      position:relative; overflow:hidden;
-      display:flex; justify-content:space-between; align-items:flex-end; flex-wrap:wrap; gap:18px;
+      display:flex;
+      gap:18px;
+      align-items:flex-end;
+      justify-content:space-between;
+      flex-wrap:wrap;
+      box-shadow:0 10px 30px rgba(42,95,144,.25);
+      position:relative;
+      overflow:hidden;
     }
-    .ped-hero::before{
+    .hero::before{
       content:'';
-      position:absolute; top:-50px; right:-20px;
-      width:200px; height:200px; background:rgba(255,255,255,.05);
+      position:absolute;
+      top:-50px;
+      right:-20px;
+      width:200px;
+      height:200px;
+      background:rgba(255,255,255,.05);
       border-radius:50%;
       pointer-events:none;
     }
-    .ped-hero h1{ font-size: 2rem; margin-bottom: 5px; font-weight: 700; color: white; display: flex; align-items: center; gap: 10px; line-height:1.1; }
-    .ped-hero p{ color: rgba(255,255,255,0.85); font-size: 0.95rem; margin:0; max-width:560px; }
-    .hero-badge{ background: #ff2e63; color: white; font-size: 0.8rem; padding: 3px 10px; border-radius: 12px; vertical-align: middle; box-shadow: 0 2px 5px rgba(0,0,0,0.2); display:inline-flex; align-items:center; justify-content:center; min-width:0; height:auto; }
-    .hero-mini{ display:flex; gap:14px; flex-wrap:wrap; background: rgba(255,255,255,0.12); border:1px solid rgba(255,255,255,0.2); padding: 10px 16px; border-radius: 18px; backdrop-filter: blur(5px); }
-    .mini-item{min-width:92px}
-    .mini-item small{display:block; font-size:.78rem; color:rgba(255,255,255,.85)}
-    .mini-item strong{display:block; font-size:1.05rem; margin-top:2px; color:#fff;}
-
-    @media (max-width: 900px){
-      .ped-container{padding:10px 12px 92px;}
-      .ped-hero{padding:22px; border-radius:18px;}
-      .ped-hero h1{font-size:1.8rem;}
-      .hero-mini{width:100%; justify-content:space-between}
+    .hero h1{
+      margin:0;
+      font-size:2rem;
+      line-height:1.05;
+      display:flex;
+      gap:10px;
+      align-items:center;
+      color:#fff;
     }
-
-    /* toolbar */
-    .ped-toolbar{
-      display:grid; grid-template-columns: 1fr auto auto;
-      gap:12px; align-items:center;
-      margin-bottom:10px;
+    .hero p{
+      margin:8px 0 0;
+      color:rgba(255,255,255,.86);
+      font-size:.95rem;
     }
-    .search{
-      display:flex; align-items:center; gap:10px;
-      background:rgba(255,255,255,.9);
-      border:1px solid var(--line);
+    .badge-count{
+      background:#ff2e63;
+      color:#fff;
+      font-size:.8rem;
+      padding:3px 10px;
+      border-radius:12px;
+      vertical-align:middle;
+      box-shadow:0 2px 5px rgba(0,0,0,.2);
+      font-weight:800;
+    }
+    .hero-stats{display:flex; gap:10px; flex-wrap:wrap;}
+    .hero-stat{
+      min-width:100px;
+      background:rgba(255,255,255,.14);
+      border:1px solid rgba(255,255,255,.24);
       border-radius:16px;
-      padding:12px 14px;
-      box-shadow:0 8px 18px rgba(15,36,64,.06);
+      padding:10px 12px;
+      text-align:center;
+      backdrop-filter:blur(4px);
     }
-    .search i{color:#6c7fa0; font-size:20px}
-    .search input{
-      border:none; outline:none; background:transparent; width:100%;
-      font-size:15px; color:var(--text);
-    }
-    .btn{
-      border:1px solid var(--line);
-      background:#fff;
-      border-radius:14px;
-      padding:12px 14px;
-      font-weight:700;
-      color:#163150;
-      display:inline-flex; align-items:center; gap:10px;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(15,36,64,.06);
-      white-space:nowrap;
-    }
-    .btn i{font-size:18px; color:#4f6788}
-    .btn.primary{background:linear-gradient(180deg,#0b7768,#0a6a5d); color:#fff; border-color:transparent}
-    .btn.primary i{color:#fff}
+    .hero-stat small{display:block; font-size:.72rem; color:rgba(255,255,255,.86);}
+    .hero-stat strong{display:block; margin-top:2px; font-size:1.06rem;}
 
-    @media (max-width: 900px){
-      .ped-toolbar{grid-template-columns:1fr 1fr; }
-      .ped-toolbar .btn:nth-child(3){grid-column:1 / -1}
-    }
+    .toolbar{display:grid; grid-template-columns:1fr auto; gap:10px; margin:14px 0 10px;}
+    .search{display:flex; align-items:center; gap:10px; border:1px solid var(--line); background:#fff; border-radius:14px; padding:11px 13px; box-shadow:0 8px 18px rgba(15,36,64,.06);}
+    .search i{font-size:20px; color:#6682a6;}
+    .search input{border:none; outline:none; width:100%; background:transparent; color:var(--text); font-size:15px;}
 
-    /* chips */
-    .chips{display:flex; gap:10px; flex-wrap:wrap; margin: 10px 0 10px;}
-    .chip{
-      border:1px solid var(--line);
-      background:#fff;
-      color:#395575;
-      padding:8px 12px;
+    .toolbar-actions{display:flex; gap:10px;}
+    .btn-ui{border:1px solid var(--line); background:#fff; color:#203f63; border-radius:12px; min-height:44px; padding:0 14px; font-weight:800; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap; box-shadow:0 8px 18px rgba(15,36,64,.06);}
+    .btn-ui i{font-size:18px;}
+
+    .filters{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px;}
+    .chip{border:1px solid var(--line); background:#fff; color:#355575; border-radius:999px; min-height:38px; padding:0 14px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
+    .chip.active{border-color:rgba(11,119,104,.34); background:rgba(11,119,104,.1); color:var(--brand);}
+
+    .panel{border:1px solid var(--line); background:var(--panel); border-radius:22px; box-shadow:0 10px 24px rgba(15,36,64,.07); padding:16px;}
+    .panel-head{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:10px;}
+    .panel-head h2{margin:0; font-size:20px; display:flex; align-items:center; gap:8px;}
+    .panel-head p{margin:0; color:var(--muted); font-weight:600;}
+
+    .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}
+    .card{background:linear-gradient(180deg,#ffffff 0%, #f4f8ff 100%); border:1px solid #d5e3f4; border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 8px 20px rgba(15,36,64,.06); position:relative;}
+    .card.selected{
+      border-color:rgba(11,119,104,.42);
+      box-shadow:0 14px 30px rgba(11,119,104,.18);
+      background:linear-gradient(180deg,#ffffff 0%, #ebf8f4 100%);
+    }
+    .card-top{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:8px;
+    }
+    .card-select{
+      width:28px;
+      height:28px;
+      min-width:28px;
+      border:1px solid #cddbeb;
       border-radius:999px;
-      font-weight:700;
-      cursor:pointer;
-      display:inline-flex; align-items:center; gap:8px;
-    }
-    .chip.active{background:rgba(11,119,104,.10); border-color:rgba(11,119,104,.25); color:#0b7768}
-
-    /* quick actions */
-    .quick-actions{display:flex; gap:10px; flex-wrap:wrap; margin: 6px 0 16px;}
-    .quick-actions .btn{padding:10px 12px; border-radius:12px}
-    @media (max-width: 520px){
-      .quick-actions .btn span{display:none}
-      .quick-actions .btn{padding:10px 12px}
-    }
-
-    /* list panel */
-    .panel{
       background:#fff;
-      border:1px solid var(--line);
-      border-radius:22px;
-      box-shadow:0 10px 22px rgba(15,36,64,.06);
-      padding:18px;
-    }
-    .panel-header{display:flex; align-items:baseline; justify-content:space-between; gap:10px; margin-bottom:10px}
-    .panel-header h2{margin:0; font-size:18px; color:var(--text); display:flex; gap:10px; align-items:center}
-    .panel-header p{margin:0; color:var(--muted); font-weight:600}
-
-    .cards-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; margin-top:14px}
-    @media (max-width: 900px){ .cards-grid{grid-template-columns:1fr} }
-    @media (min-width: 1400px){ .cards-grid{grid-template-columns:repeat(3,minmax(0,1fr))} }
-
-    .empty-state{
+      color:#6c83a2;
       display:none;
-      min-height:240px;
+      align-items:center;
+      justify-content:center;
+      font-size:18px;
+      cursor:pointer;
+    }
+    .select-mode .card-select{display:inline-flex;}
+    .card.selected .card-select{
+      background:#0b7768;
+      border-color:#0b7768;
+      color:#fff;
+    }
+    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+    .tag{border:1px solid #d9e5f3; background:#f6fbff; color:#315579; border-radius:999px; padding:6px 10px; font-size:.76rem; font-weight:800; display:inline-flex; align-items:center; gap:5px;}
+    .tag.type{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
+    .tag.pending{background:#fff5e8; color:#b86f08; border-color:#f4dbb8;}
+    .tag.progress{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
+    .tag.done{background:#eef2f8; color:#526a86; border-color:#dbe5f2;}
+    .tag.urgent{background:#fff0f5; color:var(--danger); border-color:#f8cfe0;}
+
+    .user{display:flex; align-items:center; gap:10px; min-width:0;}
+    .user img{width:44px; height:44px; border-radius:50%; object-fit:cover; border:1px solid #d8e4f2; background:#eef3f9;}
+    .user-meta{min-width:0;}
+    .user-meta strong{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;}
+    .user-meta span{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted); font-size:.84rem;}
+
+    .title{margin:0; font-size:1.1rem; line-height:1.18;}
+    .desc{margin:0; color:var(--muted); line-height:1.35; font-size:.92rem;}
+
+    .meta{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
+    .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px;}
+    .meta-item i{font-size:17px; color:#5b78a0; margin-top:2px;}
+    .meta-item small{display:block; color:#6d829f; font-size:.73rem; line-height:1;}
+    .meta-item strong{display:block; margin-top:4px; font-size:.94rem; line-height:1.2;}
+
+    .footer{margin-top:2px; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+    .unread{border:1px solid #dbe6f2; background:#f6fbff; color:#35597f; border-radius:999px; min-height:34px; padding:0 12px; font-size:.85rem; font-weight:800; display:inline-flex; align-items:center; gap:6px;}
+    .actions{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;}
+    .btn-order{min-height:40px; border-radius:12px; border:1px solid #d8e4f1; background:#fff; color:#1b3a5b; padding:0 13px; font-weight:800; display:inline-flex; align-items:center; gap:7px; cursor:pointer;}
+    .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
+
+    .empty{display:none; min-height:220px; border:1px dashed #d5e2f2; border-radius:16px; background:#fbfdff; color:#607791; align-items:center; justify-content:center; flex-direction:column; text-align:center; gap:8px; padding:18px;}
+    .empty.show{display:flex;}
+    .empty i{font-size:34px; color:#8ea4bf;}
+
+    .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:90px; z-index:9999; background:#102846; color:#fff; padding:10px 14px; border-radius:999px; font-weight:700; display:none; box-shadow:0 12px 24px rgba(0,0,0,.24);}    
+    .toast.show{display:block;}
+    .desc{
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+    }
+
+    .inline-chat-shell{
+      position:fixed;
+      z-index:12000;
+      display:none;
+      flex-direction:column;
+      background:#eef3f8;
+      border:1px solid #d9e4f2;
       border-radius:18px;
-      border:1px dashed #d7e2ef;
+      box-shadow:0 24px 46px rgba(9,22,40,.24);
+      overflow:hidden;
+      width:min(560px, calc(100vw - 36px));
+      right:18px;
+      top:86px;
+      bottom:18px;
+    }
+    .inline-chat-shell::before{content:none;}
+    .inline-chat-shell.open{display:flex;}
+    .inline-chat-head{
+      height:58px;
+      min-height:58px;
+      border-bottom:1px solid #d9e4f2;
       background:#fff;
-      align-items:center; justify-content:center;
-      flex-direction:column; gap:10px; text-align:center;
-      padding:22px; color:#5f7392;
-      margin-top:14px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      padding:8px 12px;
     }
-    .empty-state.show{display:flex}
-    .empty-state i{font-size:34px; color:#95a6bf}
-
-    /* selection bulk bar */
-    #bulkBar{display:none; margin-top:10px; padding:12px; border:1px solid var(--line); border-radius:16px; background:#f7fbff;}
-    #bulkBar.show{display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:space-between;}
-    #bulkInfo{color:#375777; font-weight:700}
-    .bulk-actions{display:flex; gap:10px; flex-wrap:wrap}
-
-    /* chat drawer */
-    .chat-drawer{position:fixed; inset:0; z-index:9999; display:none;}
-    .chat-drawer.open{display:block;}
-    .chat-backdrop{position:absolute; inset:0; background:rgba(15,24,40,.45);}
-    .chat-panel{
-      position:absolute; top:0; right:0; height:100%;
-      width:min(520px, 92vw);
+    .inline-chat-title{
+      min-width:0;
+      flex:1;
+      display:flex;
+      align-items:center;
+      gap:10px;
+      overflow:hidden;
+    }
+    .inline-chat-avatar{
+      width:40px;
+      height:40px;
+      min-width:40px;
+      border-radius:50%;
+      object-fit:cover;
+      border:1px solid #d8e4f2;
+      background:#edf3f9;
+    }
+    .inline-chat-title-text{min-width:0; display:flex; flex-direction:column; overflow:hidden;}
+    .inline-chat-title strong{
+      font-size:1rem;
+      line-height:1.15;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .inline-chat-title span{
+      font-size:.8rem;
+      color:#627a98;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .inline-chat-btn{
+      width:40px;
+      height:40px;
+      min-width:40px;
+      border-radius:12px;
+      border:1px solid #d8e3f1;
       background:#fff;
-      border-left:1px solid var(--line);
-      box-shadow:-20px 0 40px rgba(0,0,0,.18);
-      display:flex; flex-direction:column;
+      color:#1d3e62;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      cursor:pointer;
+      font-size:20px;
     }
-    .chat-panel header{
-      height:56px; display:flex; align-items:center; justify-content:space-between;
-      padding:0 12px; border-bottom:1px solid var(--line);
+    .inline-chat-menu-btn{font-size:22px;}
+    .inline-chat-stage{flex:1; min-height:0; display:flex; flex-direction:column; background:#eef3f8;}
+    .inline-chat-body{flex:1; min-height:0; display:flex; flex-direction:column; padding:10px; gap:10px;}
+    .inline-chat-order-pill{
+      border:1px solid #d8e4f2; background:#fff; border-radius:12px; padding:8px 10px; color:#355678;
+      font-size:.84rem; display:flex; align-items:center; gap:8px;
+    }
+    .inline-chat-order-pill i{color:#5f7fa6; font-size:18px;}
+    .inline-chat-messages{
+      flex:1; min-height:0; overflow:auto; border:1px solid #dde7f4; border-radius:14px; background:#eaf0f7; padding:12px;
+      display:flex; flex-direction:column; gap:10px;
+    }
+    .inline-chat-empty{
+      margin:auto; text-align:center; color:#6f849f; font-size:1rem;
+    }
+    .inline-msg{
+      max-width:min(78%, 380px);
+      border-radius:16px;
+      padding:10px 12px;
+      box-shadow:0 6px 14px rgba(15,36,64,.07);
+      line-height:1.3;
+      white-space:pre-wrap;
+      word-break:break-word;
+      font-size:.95rem;
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+    .inline-msg.me{align-self:flex-end; background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-bottom-right-radius:8px;}
+    .inline-msg.other{align-self:flex-start; background:#fff; color:#173554; border:1px solid #d7e3f2; border-bottom-left-radius:8px;}
+    .inline-msg-meta{font-size:.72rem; opacity:.78; align-self:flex-end;}
+    .inline-chat-composer{
+      display:flex; align-items:center; gap:8px; padding:10px; background:#fff; border-top:1px solid #d9e4f2;
+    }
+    .composer-mini{
+      width:40px; height:40px; min-width:40px; border-radius:999px; border:1px solid #d8e3f1; background:#fff; color:#1b3f63;
+      display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px;
+    }
+    .composer-mini.money{background:#f3c612; border-color:#ebbd00; color:#fff;}
+    .composer-mini.send{background:#0aa193; border-color:#0aa193; color:#fff;}
+    .composer-field{
+      flex:1; min-width:0; height:48px; border-radius:999px; border:1px solid #dce6f3; background:#eef2f7; padding:0 16px;
+      font-size:15px; color:#122f4d; outline:none;
+    }
+    .composer-field::placeholder{color:#7288a2;}
+
+    .details-modal{
+      position:fixed;
+      inset:0;
+      z-index:12100;
+      background:rgba(8,19,34,.52);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+    }
+    .details-modal.open{display:flex;}
+    .details-card{
+      width:min(820px,100%);
+      max-height:min(86vh,880px);
+      overflow:auto;
       background:#fff;
+      border:1px solid #d9e4f1;
+      border-radius:18px;
+      box-shadow:0 20px 44px rgba(9,22,40,.24);
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
     }
-    .chat-panel header strong{color:var(--text); font-size:15px}
-    .chat-close{
-      width:40px; height:40px; border-radius:12px; border:1px solid var(--line);
-      background:#fff; cursor:pointer; display:grid; place-items:center;
+    .details-head{
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+      border-bottom:1px solid #edf2f8;
+      padding-bottom:10px;
     }
-    .chat-frame{flex:1; width:100%; border:0;}
-    @media (max-width: 900px){
-      .chat-panel{width:100%;}
+    .details-head h3{margin:0; font-size:1.08rem;}
+    .details-head p{margin:4px 0 0; color:#5e7592; font-size:.86rem;}
+    .details-close{
+      width:36px;
+      height:36px;
+      border:1px solid #d8e3f1;
+      border-radius:10px;
+      background:#fff;
+      color:#2a4b6f;
+      cursor:pointer;
+    }
+    .details-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:8px;
+    }
+    .details-item{
+      border:1px solid #dce8f4;
+      background:#f7fbff;
+      border-radius:10px;
+      padding:8px 10px;
+    }
+    .details-item small{display:block; color:#69809e; font-size:.73rem;}
+    .details-item strong{display:block; margin-top:3px; font-size:.92rem; line-height:1.25;}
+    .details-block{
+      border:1px solid #dce8f4;
+      background:#fbfdff;
+      border-radius:12px;
+      padding:10px;
+    }
+    .details-block h4{margin:0 0 6px; font-size:.88rem; color:#32567b;}
+    .details-block p{margin:0; color:#2a4464; font-size:.9rem; white-space:pre-wrap; line-height:1.35;}
+    .triagem-list{display:grid; gap:8px;}
+    .triagem-row{
+      border:1px dashed #d4e2f2;
+      border-radius:10px;
+      background:#fff;
+      padding:8px;
+    }
+    .triagem-row small{display:block; color:#5f7898; font-size:.74rem;}
+    .triagem-row strong{display:block; margin-top:4px; font-size:.9rem; color:#153553; white-space:pre-wrap;}
+    .anexos-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit, minmax(120px, 1fr));
+      gap:8px;
+    }
+    .anexo-item{
+      border:1px solid #d8e5f4;
+      background:#fff;
+      border-radius:10px;
+      overflow:hidden;
+    }
+    .anexo-item a{
+      display:block;
+      color:#1e4268;
+      text-decoration:none;
+    }
+    .anexo-item img{
+      width:100%;
+      height:110px;
+      object-fit:cover;
+      display:block;
+      background:#eef3fa;
+    }
+    .anexo-caption{
+      display:block;
+      padding:7px 8px;
+      font-size:.78rem;
+      line-height:1.25;
+      word-break:break-word;
     }
 
-    /* toast */
-    .toast{position:fixed; left:50%; transform:translateX(-50%); bottom:92px; z-index:99999;
-      background:#102846; color:#fff; padding:10px 14px; border-radius:999px; display:none;
-      box-shadow:0 12px 24px rgba(0,0,0,.25); font-weight:700}
-    .toast.show{display:block}
+    @media (min-width:1024px){
+      .inline-chat-shell{
+        right:24px;
+        top:calc(var(--header-offset, 78px) + 8px);
+        bottom:24px;
+        width:min(560px, calc(100vw - var(--sidebar-width, 0px) - 72px));
+      }
+    }
 
-    .no-scroll{overflow:hidden}
+    @media (max-width:1023px){
+      body[data-page="pedidos"] .dp-wrap{padding:12px 12px 94px; margin-left:0;}
+      .toolbar{grid-template-columns:1fr;}
+      .toolbar-actions{display:grid; grid-template-columns:1fr 1fr;}
+      .grid{grid-template-columns:1fr;}
+    }
+
+    @media (max-width:768px){
+      body[data-page="pedidos"] .dp-wrap{padding:10px 10px 88px;}
+      .hero{padding:20px; border-radius:18px; gap:14px;}
+      .hero h1{font-size:1.7rem;}
+      .hero p{font-size:.88rem; margin-top:6px;}
+      .hero-stat{min-width:92px; padding:8px 10px;}
+      .toolbar{gap:6px; margin:8px 0 8px;}
+      .toolbar-actions{
+        display:flex;
+        overflow-x:auto;
+        scrollbar-width:none;
+        -webkit-overflow-scrolling:touch;
+      }
+      .toolbar-actions::-webkit-scrollbar{display:none;}
+      .search{min-height:36px; padding:7px 10px; border-radius:12px;}
+      .search input{font-size:13.5px;}
+      .toolbar-actions{gap:6px;}
+      .btn-ui{min-height:34px; padding:0 10px; font-size:.8rem; border-radius:10px;}
+      .btn-ui{flex:0 0 auto;}
+      .btn-ui i{font-size:15px;}
+      .filters{gap:5px; margin-bottom:8px;}
+      .chip{min-height:30px; padding:0 10px; font-size:.78rem;}
+      .panel{padding:10px; border-radius:16px;}
+      .panel-head{margin-bottom:8px;}
+      .panel-head h2{font-size:.95rem;}
+      .panel-head p{font-size:.74rem;}
+      .grid{gap:8px;}
+      .card{padding:9px; border-radius:12px; gap:7px;}
+      .tags{gap:5px;}
+      .tag{padding:5px 8px; font-size:.7rem;}
+      .user{gap:8px;}
+      .user img{width:34px; height:34px;}
+      .user-meta strong{font-size:.88rem;}
+      .user-meta span{font-size:.73rem;}
+      .title{font-size:.95rem; line-height:1.15;}
+      .desc{font-size:.8rem; line-height:1.2; -webkit-line-clamp:1;}
+      .meta{gap:5px;}
+      .meta-item{padding:6px 7px; border-radius:9px; gap:6px;}
+      .meta-item i{font-size:14px;}
+      .meta-item small{font-size:.66rem;}
+      .meta-item strong{font-size:.79rem; margin-top:2px;}
+      .footer{padding-top:7px; gap:6px;}
+      .unread{min-height:28px; font-size:.73rem; padding:0 8px;}
+      .actions{gap:6px;}
+      .btn-order{min-height:32px; font-size:.75rem; padding:0 9px; border-radius:9px;}
+      .filters{
+        flex-wrap:nowrap;
+        overflow-x:auto;
+        scrollbar-width:none;
+        -webkit-overflow-scrolling:touch;
+        padding-bottom:2px;
+      }
+      .filters::-webkit-scrollbar{display:none;}
+      .chip{flex:0 0 auto;}
+      .card-select{width:24px; height:24px; min-width:24px; font-size:16px;}
+      .inline-chat-head{height:52px; min-height:52px; padding:6px 8px;}
+      .inline-chat-btn{width:34px; height:34px; min-width:34px; border-radius:10px; font-size:18px;}
+      .inline-chat-title strong{font-size:.9rem;}
+      .inline-chat-title span{font-size:.72rem;}
+      .inline-chat-avatar{width:34px;height:34px;min-width:34px;}
+      .composer-mini{width:34px;height:34px;min-width:34px;font-size:16px;}
+      .composer-field{height:40px;font-size:14px;padding:0 12px;}
+      .inline-chat-shell{left:0; right:0; top:0; bottom:0; width:auto; border-radius:0; border:none; box-shadow:none;}
+      .inline-chat-body{padding:8px; gap:8px;}
+      .inline-chat-messages{border-radius:12px; padding:10px;}
+      .inline-msg{max-width:88%; font-size:.9rem;}
+      .inline-chat-order-pill{padding:7px 9px; font-size:.78rem;}
+      .details-modal{padding:10px;}
+      .details-card{border-radius:14px; padding:10px;}
+      .details-grid{grid-template-columns:1fr;}
+      .anexo-item img{height:90px;}
+    }
+
+    @media (max-width:540px){
+      .hero{padding:16px; border-radius:16px;}
+      .hero-stats{width:100%; justify-content:space-between;}
+      .meta{grid-template-columns:1fr 1fr;}
+      .footer{flex-direction:column; align-items:stretch;}
+      .actions{margin-left:0; width:100%;}
+      .btn-order{flex:1; justify-content:center;}
+    }
   
-    /* ===== hard overrides: shell parity + pedidos cards ===== */
-    body[data-page="pedidos"] main.dp-wrap{padding-top:clamp(16px,2vw,26px);}
-    body[data-page="pedidos"] .ped-container{max-width:1200px !important; padding-inline:0 !important;}
-    body[data-page="pedidos"] .ped-hero{min-height:170px; border-radius:28px; padding:28px 34px; background:linear-gradient(135deg,#1f4d75 0%, #0f6d73 100%) !important; box-shadow:0 12px 30px rgba(18,43,76,.12);}
-    body[data-page="pedidos"] .ped-hero h1{font-size:clamp(34px,3.4vw,56px); line-height:1.03; letter-spacing:-.02em; display:flex; align-items:center; gap:14px;}
-    body[data-page="pedidos"] .ped-hero p{font-size:clamp(14px,1.15vw,18px); opacity:.98; margin-top:10px; max-width:650px;}
-    body[data-page="pedidos"] .hero-badge{display:inline-grid; place-items:center; min-width:46px; height:46px; border-radius:999px; padding:0 12px; background:#ff3b72; color:#fff; font-weight:800; font-size:1.55rem; box-shadow:0 8px 18px rgba(255,59,114,.25);}
-    body[data-page="pedidos"] .hero-mini{border-radius:22px; border:1px solid rgba(255,255,255,.2); background:rgba(255,255,255,.14); backdrop-filter:blur(4px); padding:16px 18px;}
-    body[data-page="pedidos"] .panel{border-radius:26px; border:1px solid #dbe6f3; box-shadow:0 8px 24px rgba(15,36,64,.06);}
-    body[data-page="pedidos"] .cards-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px;}
-    body[data-page="pedidos"] .pedido-card{position:relative; background:#fff !important; border:1px solid #dbe6f3 !important; border-radius:22px !important; box-shadow:0 10px 24px rgba(15,36,64,.07) !important; padding:16px !important; display:flex !important; flex-direction:column !important; gap:12px !important; min-height:100%;}
-    body[data-page="pedidos"] .pedido-card:hover{transform:translateY(-2px); box-shadow:0 14px 28px rgba(15,36,64,.11)!important;}
-    body[data-page="pedidos"] .pedido-card.selected{outline:2px solid rgba(42,95,144,.24);}
-    body[data-page="pedidos"] .card-select{position:absolute; top:12px; right:12px; width:34px; height:34px; border-radius:10px; border:1px solid #dbe6f3; background:#fff; display:grid; place-items:center; color:#56739a;}
-    body[data-page="pedidos"] .card-chips{display:flex; gap:8px; flex-wrap:wrap; padding-right:44px; margin-bottom:2px;}
-    body[data-page="pedidos"] .tag{display:inline-flex; align-items:center; gap:6px; padding:8px 12px; border-radius:999px; font-weight:700; font-size:.82rem; line-height:1; border:1px solid #dfe9f4; background:#f8fbff; color:#32527d;}
-    body[data-page="pedidos"] .tag.tipo{background:#edf8f6; border-color:#cfeae4; color:#0b7768;}
-    body[data-page="pedidos"] .tag.pendente{background:#fff5e8; border-color:#f2d7af; color:#b06d08;}
-    body[data-page="pedidos"] .tag.andamento{background:#eaf8f3; border-color:#cdebdc; color:#0b7768;}
-    body[data-page="pedidos"] .tag.finalizado{background:#eef2f7; border-color:#dce4ef; color:#536882;}
-    body[data-page="pedidos"] .tag.urgente{background:#fff0f4; border-color:#f8cbda; color:#d82d63;}
-    body[data-page="pedidos"] .card-user{display:flex; align-items:center; gap:12px;}
-    body[data-page="pedidos"] .card-user img{width:48px; height:48px; border-radius:50%; object-fit:cover; border:1px solid #dbe6f3; background:#eef3f8;}
-    body[data-page="pedidos"] .user-meta{min-width:0;}
-    body[data-page="pedidos"] .user-meta strong{display:block; font-size:1rem; color:#112744; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    body[data-page="pedidos"] .user-meta span{display:block; font-size:.88rem; color:#62758f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    body[data-page="pedidos"] .pedido-title{margin:0; color:#0f2440; font-size:1.15rem; line-height:1.25; font-weight:800;}
-    body[data-page="pedidos"] .pedido-desc{margin:0; color:#667992; font-size:.96rem; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;}
-    body[data-page="pedidos"] .meta-grid{display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important;}
-    body[data-page="pedidos"] .meta-box{display:flex; gap:10px; align-items:flex-start; background:#f7faff; border:1px solid #dfe9f4; border-radius:14px; padding:10px 12px;}
-    body[data-page="pedidos"] .meta-box i{font-size:1.05rem; color:#5e77a0; margin-top:2px;}
-    body[data-page="pedidos"] .meta-box small{display:block; color:#6e8099; font-size:.78rem; line-height:1.1;}
-    body[data-page="pedidos"] .meta-box strong{display:block; color:#122947; font-size:1rem; line-height:1.15; margin-top:3px;}
-    body[data-page="pedidos"] .card-footer{display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:2px;}
-    body[data-page="pedidos"] .news-pill{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:7px 12px; font-weight:700; font-size:.88rem; border:1px solid #d6e4f3; background:#f1f7ff; color:#315887;}
-    body[data-page="pedidos"] .action-group{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap;}
-    body[data-page="pedidos"] .btn-chat, body[data-page="pedidos"] .btn-detail{height:44px; border-radius:14px; padding:0 16px; font-weight:800; font-size:1rem; border:1px solid #d8e4f1; display:inline-flex; align-items:center; gap:8px; cursor:pointer;}
-    body[data-page="pedidos"] .btn-chat{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.2);}
-    body[data-page="pedidos"] .btn-detail{background:#fff; color:#18365e;}
-    @media (max-width: 1200px){ body[data-page="pedidos"] .ped-container{max-width:none !important;} }
-
-    body[data-page="pedidos"] main.dp-wrap{display:block;}
-    body[data-page="pedidos"] .ped-toolbar, body[data-page="pedidos"] .ped-filters, body[data-page="pedidos"] .ped-quick-actions, body[data-page="pedidos"] .ped-list-wrap{max-width:1360px; margin-left:auto; margin-right:auto;}
-    body[data-page="pedidos"] .ped-list-wrap{padding:20px 20px 22px;}
-    @media (max-width: 900px){ body[data-page="pedidos"] .cards-grid{grid-template-columns:1fr !important;} body[data-page="pedidos"] .ped-hero{padding:20px 18px; min-height:auto; gap:14px;} body[data-page="pedidos"] .ped-hero h1{font-size:clamp(30px,7vw,44px);} body[data-page="pedidos"] .ped-hero p{font-size:.95rem;} body[data-page="pedidos"] .hero-badge{min-width:36px;height:36px;font-size:1.1rem;} body[data-page="pedidos"] .meta-grid{grid-template-columns:1fr !important;} body[data-page="pedidos"] .card-footer{align-items:stretch;} body[data-page="pedidos"] .action-group{width:100%; margin-left:0;} body[data-page="pedidos"] .btn-chat, body[data-page="pedidos"] .btn-detail{flex:1; justify-content:center;} }
-
-.pedidos-avatar-header{display:inline-flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:999px;overflow:hidden;border:2px solid #fff;box-shadow:0 2px 10px rgba(15,36,64,.08);margin-left:8px}.pedidos-avatar-header img{width:100%;height:100%;object-fit:cover}
-
-    /* alias fixes for pedidos card classes */
-    body[data-page="pedidos"] .tag.status-pending{background:#fff5e8; border-color:#f2d7af; color:#b06d08;}
-    body[data-page="pedidos"] .tag.status-progress{background:#eaf8f3; border-color:#cdebdc; color:#0b7768;}
-    body[data-page="pedidos"] .tag.status-done{background:#eef2f7; border-color:#dce4ef; color:#536882;}
-    body[data-page="pedidos"] .msg-badge{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:7px 12px; font-weight:700; font-size:.88rem; border:1px solid #d6e4f3; background:#f1f7ff; color:#315887;}
-    body[data-page="pedidos"] .card-actions{display:flex; gap:10px; margin-left:auto; flex-wrap:wrap;}
-    body[data-page="pedidos"] .btn-action{height:44px; border-radius:14px; padding:0 16px; font-weight:800; font-size:1rem; border:1px solid #d8e4f1; display:inline-flex; align-items:center; gap:8px; cursor:pointer; background:#fff; color:#18365e;}
-    body[data-page="pedidos"] .btn-action.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.2);}
-    @media (max-width: 900px){ body[data-page="pedidos"] .card-actions{width:100%; margin-left:0;} body[data-page="pedidos"] .btn-action{flex:1; justify-content:center;} }
-
-
-    /* sidebar badge parity */
-    .sidebar-icones .item a{position:relative;}
-    .sidebar-icones .badge-sidebar,.sidebar-icones .badge-chat-sidebar{position:absolute; right:12px; top:50%; transform:translateY(-50%); min-width:22px; height:22px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; padding:0 6px; background:#ff3f78; color:#fff; font-weight:800; font-size:.8rem; line-height:1; box-shadow:0 4px 10px rgba(255,63,120,.25); border:2px solid #fff;}
-    .sidebar-icones .badge-sidebar:empty,.sidebar-icones .badge-chat-sidebar:empty{display:none;}
-    .sidebar-icones .doke-inline-badge{position:absolute; right:12px; top:50%; transform:translateY(-50%); min-width:22px; height:22px; border-radius:999px; display:inline-flex; align-items:center; justify-content:center; padding:0 6px; background:#ff3f78; color:#fff; font-weight:800; font-size:.8rem; line-height:1; box-shadow:0 4px 10px rgba(255,63,120,.25); border:2px solid #fff;}
-    .sidebar-icones .doke-inline-badge:empty{display:none;}
-
-    /* largura alinhada com outras telas */
-    body[data-page="pedidos"] .dp-wrap{max-width:calc(100vw - 300px);}
-    body[data-page="pedidos"] .ped-container{max-width:1360px; margin:0 auto;}
-    @media (max-width:1100px){ body[data-page="pedidos"] .dp-wrap{max-width:none;} }
-
-
-
-    /* mobile refinements (hero/cards/filtros) */
-    @media (max-width: 768px){
-      body[data-page="pedidos"] main.dp-wrap{padding-top:10px !important;}
-      body[data-page="pedidos"] .ped-container{padding:8px 10px 86px !important;}
-      body[data-page="pedidos"] .ped-hero{padding:16px !important; border-radius:18px !important; gap:10px !important; min-height:auto !important;}
-      body[data-page="pedidos"] .ped-hero h1{font-size:clamp(28px,8vw,34px) !important; gap:8px !important;}
-      body[data-page="pedidos"] .ped-hero p{font-size:.86rem !important; line-height:1.3 !important; margin-top:4px !important; max-width:none !important;}
-      body[data-page="pedidos"] .hero-badge{min-width:30px !important; height:30px !important; font-size:.95rem !important; padding:0 8px !important;}
-      body[data-page="pedidos"] .hero-mini{width:100% !important; display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:8px !important; padding:10px 12px !important; border-radius:14px !important;}
-      body[data-page="pedidos"] .mini-item{min-width:0 !important;}
-      body[data-page="pedidos"] .mini-item small{font-size:.7rem !important;}
-      body[data-page="pedidos"] .mini-item strong{font-size:.95rem !important;}
-
-      body[data-page="pedidos"] .ped-toolbar{grid-template-columns:1fr 1fr !important; gap:8px !important; margin-bottom:8px !important;}
-      body[data-page="pedidos"] .ped-toolbar .search{grid-column:1 / -1; padding:10px 12px !important; border-radius:14px !important;}
-      body[data-page="pedidos"] .ped-toolbar .btn{padding:10px 12px !important; border-radius:12px !important; justify-content:center; font-size:.92rem;}
-      body[data-page="pedidos"] .ped-toolbar .btn i{font-size:16px;}
-
-      body[data-page="pedidos"] .chips{gap:8px !important; margin:8px 0 8px !important; flex-wrap:wrap !important;}
-      body[data-page="pedidos"] .chip{padding:8px 10px !important; font-size:.9rem !important;}
-      body[data-page="pedidos"] .quick-actions{gap:8px !important; margin:2px 0 10px !important;}
-      body[data-page="pedidos"] .quick-actions .btn{padding:9px 11px !important; min-width:44px;}
-
-      body[data-page="pedidos"] .ped-list-wrap{padding:12px !important; border-radius:18px !important;}
-      body[data-page="pedidos"] .panel-header h2{font-size:16px !important;}
-      body[data-page="pedidos"] .cards-grid{gap:12px !important; margin-top:10px !important;}
-      body[data-page="pedidos"] .pedido-card{padding:12px !important; border-radius:16px !important; gap:10px !important;}
-      body[data-page="pedidos"] .card-chips{gap:6px !important; padding-right:36px !important;}
-      body[data-page="pedidos"] .tag{padding:6px 10px !important; font-size:.74rem !important;}
-      body[data-page="pedidos"] .card-select{width:28px !important; height:28px !important; top:10px !important; right:10px !important; border-radius:8px !important;}
-      body[data-page="pedidos"] .card-user img{width:40px !important; height:40px !important;}
-      body[data-page="pedidos"] .user-meta strong{font-size:.94rem !important;}
-      body[data-page="pedidos"] .user-meta span{font-size:.78rem !important;}
-      body[data-page="pedidos"] .pedido-title{font-size:1rem !important;}
-      body[data-page="pedidos"] .pedido-desc{font-size:.88rem !important; -webkit-line-clamp:2 !important;}
-      body[data-page="pedidos"] .meta-box{padding:8px 10px !important; border-radius:12px !important;}
-      body[data-page="pedidos"] .meta-box small{font-size:.72rem !important;}
-      body[data-page="pedidos"] .meta-box strong{font-size:.9rem !important;}
-      body[data-page="pedidos"] .news-pill, body[data-page="pedidos"] .msg-badge{padding:6px 10px !important; font-size:.8rem !important;}
-      body[data-page="pedidos"] .btn-chat, body[data-page="pedidos"] .btn-detail, body[data-page="pedidos"] .btn-action{height:40px !important; padding:0 12px !important; font-size:.9rem !important; border-radius:12px !important;}
+    /* ===== Inline chat (mesmo padrão do chat.html) ===== */
+    .doke-inline-chat{height:100%; display:flex; flex-direction:column; background:#eef3f8;}
+    .doke-chat-header{
+      height:58px; min-height:58px;
+      border-bottom:1px solid #d9e4f2;
+      background:#fff;
+      display:flex; align-items:center; gap:10px;
+      padding:8px 12px;
     }
-
-
-/* PATCH pedidos compact + padrao */
-.ped-hero{min-height:190px; border-radius:28px; padding:30px 26px;}
-.ped-hero__title{font-size:clamp(40px,4vw,68px)!important; line-height:.98;}
-.ped-hero__badge{min-width:44px;height:44px;font-size:1.55rem;border-radius:999px;}
-.ped-hero__subtitle{font-size:clamp(16px,1.3vw,19px); max-width:760px;}
-.ped-hero__stats{border-radius:24px; min-width:400px; padding:14px 22px;}
-.ped-hero__stats .n{font-size:18px;}
-/* sidebar badges iguais ao shell */
-.sidebar-icones .item{position:relative;}
-.sidebar-icones .item .badge-menu, .sidebar-icones .item .badge-side, .sidebar-icones .item .badge{position:absolute; right:10px; top:50%; transform:translateY(-50%); min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:#ff3f76; color:#fff; display:inline-flex; align-items:center; justify-content:center; font-size:12px; font-weight:800; box-shadow:0 6px 14px rgba(255,63,118,.28); line-height:1;}
-.pedidos-list{display:grid; gap:16px;}
-.pedidos-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:18px;}
-.pedido-card{border-radius:24px; padding:18px 18px 16px;}
-.pedido-card .top-tags{gap:8px; margin-bottom:12px;}
-.pedido-card .meta-grid{gap:10px;}
-.pedido-card .meta-box{padding:10px 12px; min-height:60px;}
-.pedido-card .actions-row{padding:10px 12px; gap:10px;}
-.pedido-card .btn{min-height:44px;}
-/* mobile */
-@media (max-width: 900px){
-  .ped-shell-main{padding:16px 14px 28px;}
-  .ped-hero{padding:18px 16px; min-height:auto; border-radius:20px; gap:12px;}
-  .ped-hero__title{font-size:clamp(28px,8vw,40px)!important;}
-  .ped-hero__badge{min-width:32px;height:32px;font-size:1rem;}
-  .ped-hero__subtitle{font-size:13px; line-height:1.35;}
-  .ped-hero__stats{min-width:0; width:100%; padding:10px 12px; border-radius:16px;}
-  .ped-hero__stats .label{font-size:10px;}
-  .ped-hero__stats .n{font-size:16px;}
-  .ped-toolbar-row{gap:10px;}
-  .ped-toolbar-row.actions{grid-template-columns:1fr 1fr;}
-  .pedidos-grid{grid-template-columns:1fr; gap:12px;}
-  .pedido-card{padding:14px 12px 12px; border-radius:18px;}
-  .pedido-card .head{gap:10px;}
-  .pedido-card .avatar{width:44px;height:44px;}
-  .pedido-card .title{font-size:15px; margin:8px 0 4px;}
-  .pedido-card .desc{font-size:13px; margin-bottom:10px; line-height:1.35;}
-  .pedido-card .meta-grid{grid-template-columns:1fr 1fr; gap:8px;}
-  .pedido-card .meta-box{min-height:54px; padding:8px 10px; border-radius:12px;}
-  .pedido-card .meta-box .k{font-size:11px;}
-  .pedido-card .meta-box .v{font-size:12px;}
-  .pedido-card .actions-row{padding:8px; border-radius:12px; display:grid; grid-template-columns:1fr 1fr; align-items:center;}
-  .pedido-card .btn-chat, .pedido-card .btn-detail{min-height:40px; font-size:14px; padding:0 12px;}
-  .pedido-card .chip-unread{grid-column:1/-1; justify-self:start; margin-bottom:4px;}
-  .ped-filters{gap:8px; align-items:flex-start;}
-  .ped-filters .chip{height:38px; padding:0 12px; font-size:14px;}
-}
-@media (max-width: 520px){
-  .ped-shell-main{padding:12px 10px 24px;}
-  .ped-hero{margin-top:8px;}
-  .ped-hero__stats{display:grid; grid-template-columns:repeat(3,1fr); gap:8px;}
-  .ped-hero__stats .stat{padding:0;}
-  .ped-toolbar-row.actions{grid-template-columns:1fr;}
-  .pedidos-grid{gap:10px;}
-  .pedido-card .meta-grid{grid-template-columns:1fr;}
-  .pedido-card .actions-row{grid-template-columns:1fr 1fr;}
-}
-
-
-/* === HOTFIX FINAL PEDIDOS (layout/hero/sidebar/mobile) === */
-.sidebar-icones .item{position:relative;}
-.sidebar-icones .item a{position:relative; display:flex; align-items:center; gap:12px; width:100%;}
-.sidebar-icones .item .badge-side,
-.sidebar-icones .item .badge-menu,
-.sidebar-icones .item .badge,
-.sidebar-icones .item .doke-inline-badge{position:absolute !important; right:12px; top:50%; transform:translateY(-50%); min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:#ff3f78; color:#fff; font-weight:800; font-size:12px; line-height:1; display:inline-flex; align-items:center; justify-content:center; border:2px solid #fff; box-shadow:0 8px 16px rgba(255,63,120,.22); z-index:3;}
-.sidebar-icones .item .doke-inline-badge:empty{display:none!important;}
-.sidebar-icones .item .doke-inline-badge + .doke-inline-badge{display:none!important;}
-
-/* largura/padrão shell igual páginas principais */
-.main-content, .pedidos-page, .pedidos-wrap{max-width:1200px !important; width:calc(100% - 48px) !important; margin-left:auto !important; margin-right:auto !important;}
-
-/* hero alinhado ao padrão de notificações */
-.ped-hero, .pedidos-hero, .hero-pedidos{border-radius:28px !important; min-height:190px !important; padding:28px 28px !important; display:grid !important; grid-template-columns:1fr auto !important; align-items:center !important; gap:18px !important; overflow:hidden;}
-.ped-hero h1, .pedidos-hero h1, .hero-pedidos h1{font-size:clamp(2.2rem,4vw,3.15rem) !important; line-height:1.05 !important; font-weight:800 !important; margin:0 0 8px !important;}
-.ped-hero p, .pedidos-hero p, .hero-pedidos p{font-size:1rem !important; line-height:1.35 !important; margin:0 !important; opacity:.98;}
-.ped-hero .hero-badge, .pedidos-hero .hero-badge, .hero-pedidos .hero-badge{width:40px !important; height:40px !important; min-width:40px !important; font-size:1.2rem !important; font-weight:800 !important;}
-.ped-hero .hero-stats, .pedidos-hero .hero-stats, .hero-pedidos .hero-stats{min-width:390px !important; padding:14px 22px !important; border-radius:22px !important; background:rgba(255,255,255,.14) !important; border:1px solid rgba(255,255,255,.22) !important; backdrop-filter:blur(6px);}
-.ped-hero .hero-stats .stat, .pedidos-hero .hero-stats .stat, .hero-pedidos .hero-stats .stat{min-width:0 !important;}
-
-/* cards */
-.pedidos-list, .pedidos-grid, .cards-grid{display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:20px !important; align-items:start !important;}
-.pedido-card, .order-card, .card-pedido{height:auto !important; min-height:0 !important; padding:18px !important; border-radius:20px !important;}
-.pedido-card .top-badges, .order-card .top-badges, .card-pedido .top-badges{margin-bottom:12px !important;}
-.pedido-card .meta-grid, .order-card .meta-grid, .card-pedido .meta-grid{display:grid !important; grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:10px !important;}
-.pedido-card .actions-row, .order-card .actions-row, .card-pedido .actions-row{display:grid !important; grid-template-columns:auto 1fr auto !important; gap:10px !important; align-items:center !important;}
-.pedido-card .btn-chat, .order-card .btn-chat, .card-pedido .btn-chat{min-height:46px !important;}
-
-/* filtros */
-.filters-row, .ped-filters-row{display:flex !important; flex-wrap:wrap !important; gap:10px !important; align-items:center !important;}
-.filters-row .chip, .ped-filters-row .chip{margin:0 !important;}
-
-/* mobile compacto */
-@media (max-width: 768px){
-  .main-content, .pedidos-page, .pedidos-wrap{width:calc(100% - 16px) !important;}
-  .ped-hero, .pedidos-hero, .hero-pedidos{grid-template-columns:1fr !important; min-height:auto !important; padding:16px !important; border-radius:20px !important; gap:12px !important;}
-  .ped-hero h1, .pedidos-hero h1, .hero-pedidos h1{font-size:2.1rem !important; margin-bottom:6px !important;}
-  .ped-hero p, .pedidos-hero p, .hero-pedidos p{font-size:.9rem !important; line-height:1.3 !important;}
-  .ped-hero .hero-badge, .pedidos-hero .hero-badge, .hero-pedidos .hero-badge{width:34px !important; height:34px !important; min-width:34px !important; font-size:1rem !important;}
-  .ped-hero .hero-stats, .pedidos-hero .hero-stats, .hero-pedidos .hero-stats{min-width:0 !important; width:100% !important; padding:10px 12px !important; border-radius:16px !important;}
-  .ped-hero .hero-stats .row, .pedidos-hero .hero-stats .row, .hero-pedidos .hero-stats .row{display:grid !important; grid-template-columns:repeat(3,1fr) !important; gap:8px !important;}
-  .pedidos-list, .pedidos-grid, .cards-grid{grid-template-columns:1fr !important; gap:12px !important;}
-  .pedido-card, .order-card, .card-pedido{padding:12px !important; border-radius:16px !important;}
-  .pedido-card .meta-grid, .order-card .meta-grid, .card-pedido .meta-grid{grid-template-columns:1fr !important; gap:8px !important;}
-  .pedido-card .actions-row, .order-card .actions-row, .card-pedido .actions-row{grid-template-columns:1fr 1fr !important; gap:8px !important;}
-  .pedido-card .actions-row .badge-new, .pedido-card .actions-row .new-pill, .order-card .actions-row .badge-new, .card-pedido .actions-row .badge-new{grid-column:1 / -1 !important; justify-self:start !important;}
-  .pedido-card .btn-chat, .order-card .btn-chat, .card-pedido .btn-chat,
-  .pedido-card .btn-details, .order-card .btn-details, .card-pedido .btn-details{width:100% !important; min-height:40px !important; padding:0 12px !important; font-size:.95rem !important;}
-  .filters-row, .ped-filters-row{gap:8px !important;}
-  .filters-row .chip, .ped-filters-row .chip{padding:10px 12px !important; font-size:.92rem !important;}
-  .toolbar-row, .ped-toolbar-row{display:grid !important; grid-template-columns:1fr !important; gap:8px !important;}
-  .toolbar-row > *, .ped-toolbar-row > *{width:100% !important;}
-}
-
-
-  <style id="pedidos-chat-migrate-patch">
-    /* ===== Patch: chat integrado em pedidos + mobile compacto ===== */
-    .chat-drawer{position:fixed; inset:0; z-index:9999; display:none;}
-    .chat-drawer.open{display:block;}
-    .chat-backdrop{position:absolute; inset:0; background:rgba(10,18,32,.5); backdrop-filter:blur(2px);}
-    .chat-panel{
-      position:absolute; top:0; right:0; height:100%;
-      width:min(560px,94vw); background:#fff;
-      border-left:1px solid #dbe6f3; box-shadow:-20px 0 48px rgba(9,18,35,.22);
-      display:flex; flex-direction:column;
+    .chat-back{
+      width:38px; height:38px; border-radius:12px;
+      border:1px solid #e6eef7; background:#fff;
+      display:grid; place-items:center; cursor:pointer;
     }
-    .chat-panel header{display:flex; align-items:center; gap:10px; justify-content:space-between; height:auto; min-height:58px; padding:10px 12px; border-bottom:1px solid #e3edf7; background:#fff;}
-    .chat-head-main{min-width:0; display:flex; flex-direction:column; gap:2px;}
-    .chat-head-main strong{font-size:15px; line-height:1.15; color:#10233f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .chat-head-main small{font-size:12px; color:#62758f; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .chat-close{width:40px; height:40px; border-radius:12px; border:1px solid #dbe6f3; background:#fff; cursor:pointer; display:grid; place-items:center; color:#29496f; flex:0 0 auto;}
-    .pedido-chat-context{padding:10px 12px; border-bottom:1px solid #eaf1f8; background:linear-gradient(180deg,#f8fbff,#ffffff);}
-    .pedido-chat-context .ctx-top{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px;}
-    .pedido-chat-context .ctx-title{font-weight:800; color:#0f2744; line-height:1.2; font-size:14px;}
-    .pedido-chat-context .ctx-status{display:inline-flex; align-items:center; gap:6px; border-radius:999px; padding:6px 10px; font-size:11px; font-weight:800; border:1px solid #d6e5f3; background:#f2f8ff; color:#345a87; white-space:nowrap;}
-    .pedido-chat-context .ctx-grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
-    .pedido-chat-context .ctx-item{background:#f7fbff; border:1px solid #e0ebf6; border-radius:12px; padding:8px 10px;}
-    .pedido-chat-context .ctx-item small{display:block; color:#6e8099; font-size:11px; line-height:1.1;}
-    .pedido-chat-context .ctx-item strong{display:block; color:#102744; font-size:13px; line-height:1.2; margin-top:3px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .pedido-chat-messages{flex:1; overflow:auto; padding:14px 12px 10px; background:
-      radial-gradient(circle at top left, rgba(42,95,144,.06), transparent 32%),
-      radial-gradient(circle at bottom right, rgba(41,143,127,.06), transparent 34%),
-      #f6f9fd;}
-    .pedido-chat-messages-inner{display:flex; flex-direction:column; gap:10px;}
-    .pedido-chat-empty{display:none; text-align:center; color:#6f839c; border:1px dashed #d9e7f4; border-radius:14px; padding:16px; background:#fff;}
-    .pedido-chat-msg{display:flex; gap:8px; align-items:flex-end; max-width:88%;}
-    .pedido-chat-msg.is-me{margin-left:auto; flex-direction:row-reverse;}
-    .pedido-chat-msg .bubble{padding:10px 12px; border-radius:14px; border:1px solid #e0e9f4; background:#fff; box-shadow:0 6px 18px rgba(12,27,55,.05);}
-    .pedido-chat-msg.is-me .bubble{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.18);}
-    .pedido-chat-msg .meta{font-size:11px; color:#70839c; margin-top:4px; display:flex; gap:6px; align-items:center;}
-    .pedido-chat-msg.is-me .meta{justify-content:flex-end; color:rgba(255,255,255,.88);}
-    .pedido-chat-msg .author{font-weight:800; font-size:11px; color:#4e6482;}
-    .pedido-chat-msg.is-me .author{color:rgba(255,255,255,.92);}
-    .pedido-chat-msg .text{white-space:pre-wrap; word-break:break-word; line-height:1.33; font-size:13px;}
-    .pedido-chat-msg.system{max-width:100%; justify-content:center;}
-    .pedido-chat-msg.system .bubble{background:#eef5ff; border-style:dashed; color:#3e5e86;}
-    .pedido-chat-composer{padding:10px 12px calc(10px + env(safe-area-inset-bottom, 0px)); border-top:1px solid #e3edf7; background:#fff;}
-    .pedido-chat-composer .row{display:flex; gap:8px; align-items:flex-end;}
-    .pedido-chat-input{flex:1; min-height:44px; max-height:110px; resize:none; border-radius:14px; border:1px solid #d7e4f2; background:#f8fbff; padding:11px 12px; font:inherit; color:#102744; line-height:1.3;}
-    .pedido-chat-input:focus{outline:none; border-color:#86aee0; box-shadow:0 0 0 3px rgba(42,95,144,.13);}
-    .pedido-chat-send{height:44px; min-width:44px; padding:0 14px; border-radius:14px; border:0; cursor:pointer; font-weight:800; color:#fff; background:linear-gradient(135deg,#0f8f7a,#0b7768); box-shadow:0 8px 18px rgba(11,119,104,.2); display:inline-flex; align-items:center; justify-content:center; gap:6px;}
-    .pedido-chat-send:disabled{opacity:.55; cursor:not-allowed; box-shadow:none;}
-    .pedido-chat-tip{margin-top:6px; color:#73859d; font-size:11px;}
-    html.no-scroll, body.no-scroll{overflow:hidden;}
-    @media (max-width: 900px){
-      .chat-panel{width:100%; border-left:0;}
+    .chat-back:hover{background:#f7fafc;}
+    .chat-peer{display:flex; align-items:center; gap:10px; min-width:0; flex:1;}
+    .chat-avatar{width:40px; height:40px; border-radius:50%; overflow:hidden; background:#e2e8f0; flex:0 0 auto; display:grid; place-items:center;}
+    .chat-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
+    .chat-peer-meta{min-width:0;}
+    .chat-peer-name{font-weight:800; color:#0f172a; font-size:0.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .chat-peer-sub{font-size:0.78rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .chat-menu-btn{
+      width:38px; height:38px; border-radius:12px;
+      border:1px solid #e6eef7; background:#fff;
+      display:grid; place-items:center; cursor:pointer;
     }
-    @media (max-width: 768px){
-      body[data-page="pedidos"] .ped-container{padding:8px 10px 86px !important;}
-      body[data-page="pedidos"] .ped-toolbar{grid-template-columns:1fr 1fr !important; gap:8px !important; margin-bottom:8px !important;}
-      body[data-page="pedidos"] .ped-toolbar .search{grid-column:1 / -1 !important;}
-      body[data-page="pedidos"] .ped-toolbar .btn{height:44px !important; min-height:44px !important; border-radius:12px !important; padding:0 12px !important; font-size:.92rem !important; justify-content:flex-start !important;}
-      body[data-page="pedidos"] .ped-toolbar #sortBtn, 
-      body[data-page="pedidos"] .ped-toolbar #toggleSelectionBtn{display:flex !important;}
-      body[data-page="pedidos"] .search{min-height:46px !important; border-radius:14px !important; padding:0 12px !important;}
-      body[data-page="pedidos"] .search input{font-size:.95rem !important;}
-      body[data-page="pedidos"] .chips{gap:8px !important; margin:8px 0 10px !important;}
-      body[data-page="pedidos"] .chip{height:42px !important; border-radius:999px !important; padding:0 14px !important; font-size:.9rem !important;}
-      body[data-page="pedidos"] .quick-actions{gap:8px !important; margin-bottom:10px !important;}
-      body[data-page="pedidos"] .quick-actions .btn{height:42px !important; min-height:42px !important; border-radius:12px !important; padding:0 12px !important; font-size:.88rem !important; flex:0 0 auto !important;}
-      body[data-page="pedidos"] .panel{border-radius:18px !important;}
-      body[data-page="pedidos"] .ped-list-wrap, body[data-page="pedidos"] .panel{padding:0 !important;}
-      body[data-page="pedidos"] .panel-header{padding:14px 14px 0 !important;}
-      body[data-page="pedidos"] #bulkBar{margin:10px 14px 0 !important; border-radius:14px !important; padding:10px !important;}
-      body[data-page="pedidos"] .cards-grid{gap:12px !important; margin-top:10px !important; padding:0 12px 12px !important;}
-      body[data-page="pedidos"] .pedido-card{padding:12px !important; border-radius:16px !important; gap:10px !important;}
-      body[data-page="pedidos"] .card-chips{gap:6px !important; padding-right:40px !important;}
-      body[data-page="pedidos"] .tag{padding:6px 10px !important; font-size:.75rem !important;}
-      body[data-page="pedidos"] .card-select{top:10px !important; right:10px !important; width:30px !important; height:30px !important; border-radius:9px !important;}
-      body[data-page="pedidos"] .card-user img{width:42px !important; height:42px !important;}
-      body[data-page="pedidos"] .user-meta strong{font-size:.95rem !important;}
-      body[data-page="pedidos"] .user-meta span{font-size:.79rem !important;}
-      body[data-page="pedidos"] .pedido-title{font-size:1.02rem !important; line-height:1.2 !important;}
-      body[data-page="pedidos"] .pedido-desc{font-size:.88rem !important; -webkit-line-clamp:2 !important;}
-      body[data-page="pedidos"] .meta-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important; gap:8px !important;}
-      body[data-page="pedidos"] .meta-box{padding:8px 9px !important; border-radius:12px !important; gap:8px !important;}
-      body[data-page="pedidos"] .meta-box i{font-size:.95rem !important;}
-      body[data-page="pedidos"] .meta-box small{font-size:.7rem !important;}
-      body[data-page="pedidos"] .meta-box strong{font-size:.88rem !important;}
-      body[data-page="pedidos"] .card-footer{gap:8px !important;}
-      body[data-page="pedidos"] .msg-badge{padding:6px 10px !important; font-size:.8rem !important;}
-      body[data-page="pedidos"] .card-actions{width:100% !important; gap:8px !important;}
-      body[data-page="pedidos"] .btn-action{height:40px !important; min-height:40px !important; border-radius:12px !important; padding:0 12px !important; font-size:.88rem !important;}
+    .chat-menu-btn:hover{background:#f7fafc;}
+    .doke-chat-body{
+      flex:1; overflow:auto;
+      padding:14px 14px 18px;
+      display:flex; flex-direction:column; gap:10px;
     }
-    @media (max-width: 420px){
-      body[data-page="pedidos"] .hero-mini{grid-template-columns:1fr !important; gap:6px !important;}
-      body[data-page="pedidos"] .quick-actions .btn span{display:none;}
-      body[data-page="pedidos"] .quick-actions .btn{width:42px !important; padding:0 !important; justify-content:center !important;}
-      body[data-page="pedidos"] .meta-grid{grid-template-columns:1fr !important;}
-      body[data-page="pedidos"] .card-actions{flex-direction:column !important;}
-      body[data-page="pedidos"] .btn-action{width:100% !important; justify-content:center !important;}
-      .pedido-chat-context .ctx-grid{grid-template-columns:1fr;}
-      .pedido-chat-msg{max-width:94%;}
-      .pedido-chat-send span{display:none;}
-      .pedido-chat-send{padding:0 12px; min-width:44px;}
+    .doke-chat-composer{
+      border-top:1px solid #d9e4f2;
+      background:#eef3f8;
+      padding:10px 12px 12px;
     }
-  </style>
+    .composer-row{display:flex; align-items:center; gap:10px; background:#eef3f8;}
+    .composer-input-wrap{flex:1; display:flex; align-items:center; background:#fff; border:1px solid #d9e4f2; border-radius:999px; padding:0 14px; height:46px;}
+    #mensagemInput{border:none; outline:none; width:100%; height:40px; font-size:0.96rem; background:transparent;}
+    .composer-mini{
+      width:40px; height:40px; border-radius:50%;
+      border:none; display:grid; place-items:center;
+      cursor:pointer;
+      background:#fff; color:#0f766e;
+      box-shadow:0 6px 16px rgba(15,23,42,0.08);
+    }
+    .composer-mini.money{background:#facc15; color:#111827;}
+    .btn-attach{ background: #e0e0e0; color:#555; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:1.2rem;}
+    .btn-enviar{ background: var(--ux-brand, #0b7768); color:#fff; border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:1.1rem; box-shadow:0 10px 20px rgba(11,119,104,.28);}
+    .btn-enviar i, .btn-attach i, .chat-menu-btn i{margin:0; line-height:1; display:block;}
+    .btn-dm{border:none; border-radius:12px; padding:10px 14px; cursor:pointer; font-weight:700;}
+    .btn-dm-cancel{background:#eef2f7; color:#0f172a;}
+    .btn-dm-confirm{background: var(--ux-brand, #0b7768); color:#fff;}
+    .recording-indicator{display:flex; align-items:center; gap:10px;}
+    .recording-indicator .red-dot{width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 0 6px rgba(239,68,68,.16);}
+    /* Mensagens */
+    .msg-row{display:flex; width:100%;}
+    .msg-row.msg-row-me{justify-content:flex-end;}
+    .msg-row.msg-row-other{justify-content:flex-start;}
+    .msg-bubble{max-width:68%; padding:10px 14px; border-radius:16px; font-size:0.92rem; position:relative; box-shadow:0 4px 12px rgba(15,23,42,0.08); line-height:1.45; word-break:break-word;}
+    .msg-enviada{background: var(--ux-brand, #0b7768); color:#fff; border-top-right-radius:6px;}
+    .msg-recebida{background:#fff; color:#0f172a; border-top-left-radius:6px;}
+    .msg-footer{display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:6px;}
+    .msg-hora{font-size:0.72rem; opacity:.85;}
+    .msg-media{margin-top:8px;}
+    .msg-media img{max-width:100%; border-radius:14px; display:block;}
+    .msg-media video{max-width:100%; border-radius:14px; display:block;}
+    .msg-media audio{width:100%;}
+    .msg-file{display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.14);}
+    .msg-recebida .msg-file{background:#f1f5f9;}
 
 </style>
-
-<!-- Overrides V10: padronização do HERO, badges e compactação mobile -->
-<style>
-  .ped-hero{
-    background: linear-gradient(135deg,#1f4d75 0%, #0f6d73 100%) !important;
-    border-radius: 28px !important;
-    min-height: 190px !important;
-    padding: 34px 32px !important;
-    box-shadow: 0 18px 40px rgba(15,37,59,.18) !important;
-  }
-  .ped-hero .title{ font-size: clamp(32px, 4vw, 56px) !important; letter-spacing: -.02em; }
-  .ped-hero .subtitle{ max-width: 720px; opacity:.92; }
-  .ped-hero .stats{
-    background: rgba(255,255,255,.16) !important;
-    border: 1px solid rgba(255,255,255,.18) !important;
-    border-radius: 22px !important;
-    padding: 14px 16px !important;
-    gap: 18px !important;
-    min-width: 320px;
-  }
-
-  /* Controls: evita ficar "deslocado" */
-  @media (max-width: 700px){
-    .controls{ grid-template-columns: 1fr !important; gap: 10px !important; }
-    .controls .search{ width: 100% !important; }
-    .controls .rightActions{ width: 100% !important; display:grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-    .chips{ overflow-x: auto !important; -webkit-overflow-scrolling: touch; padding-bottom: 6px; }
-  }
-
-  @media (max-width: 560px){
-    .ped-hero{ padding: 18px 16px !important; min-height: auto !important; grid-template-columns: 1fr !important; gap: 14px !important; }
-    .ped-hero .title{ font-size: 36px !important; }
-    .ped-hero .stats{ width: 100% !important; min-width: 0 !important; justify-content: space-between !important; }
-
-    .pedido-card{ padding: 14px !important; border-radius: 18px !important; }
-    .pedido-card .avatar{ width: 38px !important; height: 38px !important; }
-    .pedido-card .metaGrid{ grid-template-columns: 1fr !important; gap: 8px !important; }
-    .pedido-card .metaItem{ padding: 10px 12px !important; }
-    .pedido-card .actions{ display:grid !important; grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-    .pedido-card .actions .btn{ width: 100% !important; padding: 12px !important; }
-  }
-</style>
-
 </head>
-
 <body data-page="pedidos">
   <header class="navbar-mobile">
-<div id="logo-mobile">
-<a href="index.html">
-<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</a>
-</div>
-<div class="botoes-direita">
-<a class="entrar" href="login.html">Entrar</a>
-<a href="login.html">
-</a>
-</div>
-</header>
+    <div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a><a href="login.html"></a></div>
+  </header>
+
   <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+
   <header class="navbar-desktop">
-<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
-<nav class="menu">
-<div class="cep-wrapper">
-<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
-<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
-<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
-</svg>
-<span id="textoCepSpan">Informe seu CEP</span>
-</a>
-<div class="cep-popup" id="boxCep">
-<p>Digite seu CEP:</p>
-<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
-</div>
-</div>
-<a href="escolheranuncio.html">Anunciar</a>
-<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
-<a href="novidades.html">Novidades</a>
-</nav>
-<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
-</header>
-  <aside class="sidebar-icones">
-<div id="logo">
-<a href="index.html">
-<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
-</a>
-</div>
-<div class="item">
-<a href="index.html">
-<i class="bx bx-home-alt icon azul"></i>
-<span>Início</span>
-</a>
-</div>
-<div class="item" id="pvSearchSidebarItem">
-<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
-<i class="bx bx-search-alt-2 icon azul"></i>
-<span>Pesquisar</span>
-</a>
-</div>
-<div class="item">
-<a href="negocios.html">
-<i class="bx bx-store icon verde"></i>
-<span>Negócios</span>
-</a>
-</div>
-<div class="item">
-<a class="nav-item-com-badge" href="notificacoes.html" aria-label="Notificações">
-<i class="bx bx-bell icon azul"></i>
-<span>Notificações</span>
-<span class="badge-notificacao" id="sidebarNotifBadge" style="display:none">0</span>
-</a>
-
-</div>
-<div class="item">
-<a class="nav-item-com-badge" href="mensagens.html" aria-label="Mensagens">
-<i class="bx bx-message-rounded-dots icon azul"></i>
-<span>Mensagens</span>
-<span class="badge-notificacao" id="sidebarMsgBadge" style="display:none">0</span>
-</a>
-
-</div>
-<div class="item ativo">
-<a href="pedidos.html">
-<i class="bx bx-package icon verde"></i>
-<span>Pedidos</span>
-</a>
-</div>
-<div class="item">
-<a href="comunidade.html">
-<i class="bx bx-group icon verde"></i>
-<span>Comunidades</span>
-</a>
-</div>
-<div class="item">
-<a href="#" onclick="irParaMeuPerfil(event)">
-<i class="bx bx-user icon verde"></i>
-<span>Perfil</span>
-</a>
-</div>
-<div class="item">
-<a href="mais.html">
-<i class="bx bx-menu icon azul"></i>
-<span>Mais</span>
-</a>
-</div>
-</aside>
-  <main class="dp-wrap">
-    <div class="ped-container">
-      <section class="ped-hero">
-        <div>
-          <h1>Pedidos <span class="hero-badge" id="heroCount">0</span></h1>
-          <p>Gerencie suas solicitações e acompanhe o progresso em tempo real.</p>
-          <span id="mobilePedidoCount" style="display:none"></span>
+    <div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+    <nav class="menu">
+      <div class="cep-wrapper">
+        <a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+          <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg>
+          <span id="textoCepSpan">Informe seu CEP</span>
+        </a>
+        <div class="cep-popup" id="boxCep">
+          <p>Digite seu CEP:</p>
+          <div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
         </div>
-        <div class="hero-mini" aria-label="Resumo">
-          <div class="mini-item"><small>Hoje</small><strong id="miniToday">0</strong></div>
-          <div class="mini-item"><small>Em andamento</small><strong id="miniProgress">0</strong></div>
-          <div class="mini-item"><small>Urgentes</small><strong id="miniUrgent">0</strong></div>
-        </div>
-      </section>
-
-      <section class="ped-toolbar">
-        <div class="search">
-          <i class='bx bx-search'></i>
-          <input id="searchInput" type="text" placeholder="Buscar por nome, serviço ou ID do pedido" />
-        </div>
-        <button class="btn" id="sortBtn" type="button" title="Ordenar">
-          <i class='bx bx-sort-alt-2'></i>
-          <span id="sortLabel">Mais recentes</span>
-        </button>
-        <button class="btn" id="toggleSelectionBtn" type="button" title="Selecionar">
-          <i class='bx bx-select-multiple'></i>
-          <span>Selecionar pedidos</span>
-        </button>
-      </section>
-
-      <div class="chips" role="tablist" aria-label="Filtros">
-        <button class="chip active" data-filter="all"><span>Todos</span></button>
-        <button class="chip" data-filter="pending"><span>Pendentes</span></button>
-        <button class="chip" data-filter="progress"><span>Em andamento</span></button>
-        <button class="chip" data-filter="done"><span>Finalizados</span></button>
-        <button class="chip" data-filter="urgent"><span>Urgentes</span></button>
       </div>
+      <a href="escolheranuncio.html">Anunciar</a>
+      <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+      <a href="novidades.html">Novidades</a>
+    </nav>
+    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+  </header>
 
-      <div class="quick-actions">
-        <button class="btn" id="agendaBtn" type="button"><i class='bx bx-calendar'></i><span>Agenda</span></button>
-        <button class="btn" id="orcamentosBtn" type="button"><i class='bx bx-receipt'></i><span>Orçamentos</span></button>
+  <aside class="sidebar-icones">
+    <div id="logo"><a href="index.html"><img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+    <div class="item"><a href="index.html"><i class="bx bx-home-alt icon azul"></i><span>Início</span></a></div>
+    <div class="item" id="pvSearchSidebarItem"><a aria-label="Pesquisar" class="pv-search-toggle" href="#"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
+    <div class="item"><a href="negocios.html"><i class="bx bx-store icon verde"></i><span>Negócios</span></a></div>
+    <div class="item"><a href="notificacoes.html"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a></div>
+    <div class="item"><a href="mensagens.html"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a></div>
+    <div class="item ativo"><a href="pedidos.html"><i class="bx bx-package icon verde"></i><span>Pedidos</span></a></div>
+    <div class="item"><a href="comunidade.html"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a></div>
+    <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
+    <div class="item"><a href="mais.html"><i class="bx bx-menu icon azul"></i><span>Mais</span></a></div>
+  </aside>
+
+  <main class="dp-wrap">
+    <div class="orders-page">
+      <section class="hero">
+        <div>
+          <h1>Pedidos <span class="badge-count" id="heroCount">0</span></h1>
+          <p>Gerencie seus pedidos com dados reais e acesso rapido ao chat.</p>
+        </div>
+        <div class="hero-stats">
+          <div class="hero-stat"><small>Hoje</small><strong id="statToday">0</strong></div>
+          <div class="hero-stat"><small>Em andamento</small><strong id="statProgress">0</strong></div>
+          <div class="hero-stat"><small>Urgentes</small><strong id="statUrgent">0</strong></div>
+        </div>
+      </section>
+
+      <section class="toolbar">
+        <label class="search" aria-label="Buscar pedidos">
+          <i class='bx bx-search'></i>
+          <input id="searchInput" type="text" placeholder="Buscar por cliente, servico, ID ou descricao"/>
+        </label>
+        <div class="toolbar-actions">
+          <button class="btn-ui" id="sortBtn" type="button"><i class='bx bx-sort-alt-2'></i><span id="sortLabel">Mais recentes</span></button>
+          <button class="btn-ui" id="selectBtn" type="button"><i class='bx bx-check-square'></i><span id="selectLabel">Selecionar</span></button>
+          <button class="btn-ui" id="refreshBtn" type="button"><i class='bx bx-refresh'></i><span>Atualizar</span></button>
+        </div>
+      </section>
+
+      <div class="filters" role="tablist" aria-label="Filtros de pedidos">
+        <button class="chip active" data-filter="all" type="button"><i class='bx bx-grid-alt'></i><span>Todos</span></button>
+        <button class="chip" data-filter="pending" type="button">Pendentes</button>
+        <button class="chip" data-filter="progress" type="button">Em andamento</button>
+        <button class="chip" data-filter="done" type="button">Finalizados</button>
+        <button class="chip" data-filter="urgent" type="button"><i class='bx bx-error'></i><span>Urgentes</span></button>
       </div>
 
       <section class="panel">
-        <div class="panel-header">
+        <div class="panel-head">
           <div>
             <h2><i class='bx bx-package'></i> Pedidos</h2>
-            <p id="listSubtitle">Mostrando 0 pedidos</p>
+            <p id="ordersSubtitle">Carregando...</p>
           </div>
         </div>
 
-        <div id="bulkBar">
-          <div id="bulkInfo">0 selecionados</div>
-          <div class="bulk-actions">
-            <button class="btn" id="bulkFinalizeBtn" type="button"><i class='bx bx-check'></i>Finalizar</button>
-            <button class="btn" id="bulkArchiveBtn" type="button"><i class='bx bx-archive-in'></i>Arquivar</button>
-            <button class="btn" id="bulkClearBtn" type="button"><i class='bx bx-x'></i>Limpar</button>
-          </div>
-        </div>
+        <div class="grid" id="ordersGrid"></div>
 
-        <div id="cardsGrid" class="cards-grid"></div>
-
-        <div id="emptyState" class="empty-state">
+        <div class="empty" id="emptyState">
           <i class='bx bx-inbox'></i>
           <strong>Nenhum pedido encontrado</strong>
-          <span>Tente ajustar os filtros ou a busca.</span>
+          <span>Tente outro filtro ou atualize os dados.</span>
         </div>
       </section>
     </div>
   </main>
 
   <nav class="bottom-nav">
-<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
-<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
-<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
-<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
-</nav>
+    <a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+    <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+    <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+    <a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+    <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+  </nav>
 
-  
-  <!-- Chat drawer (integrado ao pedidos.html) -->
-  <div class="chat-drawer" id="chatDrawer" aria-hidden="true">
-    <div class="chat-backdrop" data-close="1"></div>
-    <div class="chat-panel" role="dialog" aria-modal="true" aria-label="Chat do pedido">
-      <header>
-        <div class="chat-head-main">
-          <strong id="pedidoChatHeadTitle">Chat do pedido</strong>
-          <small id="pedidoChatHeadSub">Selecione um pedido para conversar</small>
+  <div class="toast" id="toast">OK</div>
+    <section class="inline-chat-shell" id="inlineChatShell" aria-hidden="true">
+    <div class="doke-inline-chat">
+      <header class="doke-chat-header">
+        <button class="chat-back" id="inlineChatBack" type="button" aria-label="Voltar"><i class='bx bx-arrow-back'></i></button>
+        <div class="chat-peer">
+          <div class="chat-avatar">
+            <img id="inlineChatAvatar" alt="Foto de perfil" src="https://via.placeholder.com/40" />
+          </div>
+          <div class="chat-peer-meta">
+            <div class="chat-peer-name" id="inlineChatName">Usuário</div>
+            <div class="chat-peer-sub" id="inlineChatSub">Offline</div>
+          </div>
         </div>
-        <button class="chat-close" type="button" data-close="1" aria-label="Fechar"><i class='bx bx-x'></i></button>
+        <button class="chat-menu-btn" id="inlineChatMenu" type="button" aria-label="Opções"><i class='bx bx-dots-vertical-rounded'></i></button>
       </header>
 
-      <div class="pedido-chat-context" id="pedidoChatContext">
-        <div class="ctx-top">
-          <div class="ctx-title" id="pedidoChatTitulo">Pedido</div>
-          <div class="ctx-status" id="pedidoChatStatus"><i class='bx bx-package'></i><span>—</span></div>
-        </div>
-        <div class="ctx-grid">
-          <div class="ctx-item"><small>ID</small><strong id="pedidoChatId">—</strong></div>
-          <div class="ctx-item"><small>Cliente</small><strong id="pedidoChatCliente">—</strong></div>
-          <div class="ctx-item"><small>Prazo</small><strong id="pedidoChatPrazo">—</strong></div>
-          <div class="ctx-item"><small>Valor</small><strong id="pedidoChatValor">—</strong></div>
-        </div>
+      <div class="doke-chat-body" id="areaMensagens" aria-live="polite">
+        <div class="inline-chat-empty" id="inlineChatEmpty">Nenhuma mensagem.</div>
       </div>
 
-      <div class="pedido-chat-messages" id="pedidoChatMessages" aria-live="polite">
-        <div class="pedido-chat-messages-inner" id="pedidoChatMessagesInner"></div>
-        <div class="pedido-chat-empty" id="pedidoChatEmpty">Nenhuma mensagem ainda. Envie a primeira mensagem deste pedido.</div>
-      </div>
+      <div class="doke-chat-composer">
+        <div id="area-input-texto" class="composer-row">
+          <button class="composer-mini money" id="inlineChatMoneyBtn" type="button" title="Cobrança"><i class='bx bx-money'></i></button>
 
-      <div class="pedido-chat-composer">
-        <div class="row">
-          <textarea class="pedido-chat-input" id="pedidoChatInput" rows="1" placeholder="Digite uma mensagem sobre este pedido..."></textarea>
-          <button class="pedido-chat-send" id="pedidoChatSend" type="button"><i class='bx bx-send'></i><span>Enviar</span></button>
+          <input id="inlineChatFile" type="file" hidden />
+          <button class="btn-attach" id="inlineChatAttachBtn" type="button" title="Anexar"><i class='bx bx-paperclip'></i></button>
+
+          <div class="composer-input-wrap">
+            <input id="mensagemInput" type="text" placeholder="Digite uma mensagem..." autocomplete="off" />
+          </div>
+
+          <button class="btn-enviar" id="btn-mic" type="button" onclick="iniciarGravacao()" style="background:#e0e0e0; color:#555;"><i class="bx bxs-microphone"></i></button>
+          <button class="btn-enviar" id="btn-send-txt" type="button" onclick="enviarMensagemTexto()"><i class="bx bxs-send"></i></button>
         </div>
-        <div class="pedido-chat-tip">Enter envia • Shift+Enter quebra linha</div>
+
+        <div id="uiGravando" style="display:none; align-items:center; gap:12px; padding:10px 12px; background:#fff;">
+          <div class="recording-indicator">
+            <div class="red-dot"></div>
+            <span id="timerGravacao">00:00</span>
+          </div>
+          <span style="flex:1; color:#64748b; font-size:0.92rem;">Gravando áudio...</span>
+          <button class="btn-dm btn-dm-cancel" type="button" onclick="cancelarGravacao()">Cancelar</button>
+          <button class="btn-dm btn-dm-confirm" type="button" onclick="enviarAudio()">Enviar</button>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
 
+  <section class="details-modal" id="detailsModal" aria-hidden="true">
+    <article class="details-card" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
+      <div class="details-head">
+        <div>
+          <h3 id="detailsTitle">Detalhes do pedido</h3>
+          <p id="detailsSubtitle">Carregando dados...</p>
+        </div>
+        <button class="details-close" id="detailsCloseBtn" type="button" aria-label="Fechar detalhes"><i class='bx bx-x'></i></button>
+      </div>
 
-  <div class="toast" id="fakeToast">OK</div>
+      <div class="details-grid" id="detailsGrid"></div>
+
+      <div class="details-block">
+        <h4>Descrição</h4>
+        <p id="detailsDescription">Sem descrição.</p>
+      </div>
+
+      <div class="details-block">
+        <h4>Triagem</h4>
+        <div class="triagem-list" id="detailsTriagem"></div>
+      </div>
+
+      <div class="details-block">
+        <h4>Anexos</h4>
+        <div class="anexos-grid" id="detailsAnexos"></div>
+      </div>
+    </article>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js?v=20260218v43"></script>
+  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
+  <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js?v=20260217v33"></script>
+  <script src="doke-shell.js?v=20260218v47"></script>
 
   <script>
     (function(){
-      const fallbackPedidos = [];
-
-      const state = {
-        pedidos: loadPedidos(),
-        filter: 'all',
-        query: '',
-        sort: 'recent',
-        selectionMode: false,
-        selected: new Set()
-      };
-
+      const state = { pedidos: [], filter: 'all', query: '', sort: 'recent', detailsById: new Map(), activeChatUrl: '', activeChatPedido: null, areaMensagens: [], selectMode: false, selected: new Set() };
       const el = {
-        cardsGrid: document.getElementById('cardsGrid'),
-        emptyState: document.getElementById('emptyState'),
-        listSubtitle: document.getElementById('listSubtitle'),
-        searchInput: document.getElementById('searchInput'),
+        grid: document.getElementById('ordersGrid'),
+        empty: document.getElementById('emptyState'),
+        subtitle: document.getElementById('ordersSubtitle'),
+        count: document.getElementById('heroCount'),
+        statToday: document.getElementById('statToday'),
+        statProgress: document.getElementById('statProgress'),
+        statUrgent: document.getElementById('statUrgent'),
+        search: document.getElementById('searchInput'),
         sortBtn: document.getElementById('sortBtn'),
         sortLabel: document.getElementById('sortLabel'),
+        selectBtn: document.getElementById('selectBtn'),
+        selectLabel: document.getElementById('selectLabel'),
+        refreshBtn: document.getElementById('refreshBtn'),
         chips: Array.from(document.querySelectorAll('.chip[data-filter]')),
-        kpiBtns: Array.from(document.querySelectorAll('.kpi[data-kpi]')),
-        heroCount: document.getElementById('heroCount'),
-        miniToday: document.getElementById('miniToday'),
-        miniProgress: document.getElementById('miniProgress'),
-        miniUrgent: document.getElementById('miniUrgent'),
-        mobilePedidoCount: document.getElementById('mobilePedidoCount'),
-        toggleSelectionBtn: document.getElementById('toggleSelectionBtn'),
-        bulkBar: document.getElementById('bulkBar'),
-        bulkInfo: document.getElementById('bulkInfo'),
-        bulkClearBtn: document.getElementById('bulkClearBtn'),
-        bulkFinalizeBtn: document.getElementById('bulkFinalizeBtn'),
-        bulkArchiveBtn: document.getElementById('bulkArchiveBtn'),
-        agendaBtn: document.getElementById('agendaBtn'),
-        orcamentosBtn: document.getElementById('orcamentosBtn')
+        toast: document.getElementById('toast'),
+        inlineChatShell: document.getElementById('inlineChatShell'),
+        inlineChatBack: document.getElementById('inlineChatBack'),
+        inlineChatMenu: document.getElementById('inlineChatMenu'),
+        inlineChatTitle: document.getElementById('inlineChatTitle'),
+        inlineChatSub: document.getElementById('inlineChatSub'),
+        inlineChatAvatar: document.getElementById('inlineChatAvatar'),
+        inlineChatOrderPill: document.getElementById('inlineChatOrderPill'),
+        inlineChatOrderLabel: document.getElementById('inlineChatOrderLabel'),
+        areaMensagens: document.getElementById('areaMensagens'),
+        inlineChatEmpty: document.getElementById('inlineChatEmpty'),
+        inlineChatComposer: document.getElementById('inlineChatComposer'),
+        inlineChatInput: document.getElementById('inlineChatInput'),
+        inlineChatMoneyBtn: document.getElementById('inlineChatMoneyBtn'),
+        inlineChatAttachBtn: document.getElementById('inlineChatAttachBtn'),
+        inlineChatMicBtn: document.getElementById('inlineChatMicBtn'),
+        detailsModal: document.getElementById('detailsModal'),
+        detailsCloseBtn: document.getElementById('detailsCloseBtn'),
+        detailsSubtitle: document.getElementById('detailsSubtitle'),
+        detailsGrid: document.getElementById('detailsGrid'),
+        detailsDescription: document.getElementById('detailsDescription'),
+        detailsTriagem: document.getElementById('detailsTriagem'),
+        detailsAnexos: document.getElementById('detailsAnexos')
       };
 
-      function loadPedidos(){
-        try{
-          if(Array.isArray(window.pedidosCache) && window.pedidosCache.length){
-            const list = normalizePedidos(window.pedidosCache); if(list.length) return list;
+      function showToast(msg){
+        if(!el.toast) return;
+        el.toast.textContent = String(msg || 'OK');
+        el.toast.classList.add('show');
+        clearTimeout(window.__ordersToastTimer);
+        window.__ordersToastTimer = setTimeout(() => el.toast.classList.remove('show'), 1800);
+      }
+
+      function esc(v){
+        return String(v ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+      }
+
+      function parseJSON(raw){
+        if(!raw) return null;
+        try { return JSON.parse(raw); } catch (_) { return null; }
+      }
+
+      function asArray(input){
+        if(Array.isArray(input)) return input;
+        if(input && typeof input === 'object'){
+          if(Array.isArray(input.items)) return input.items;
+          if(Array.isArray(input.data)) return input.data;
+          if(Array.isArray(input.rows)) return input.rows;
+          if(Array.isArray(input.pedidos)) return input.pedidos;
+          if(Array.isArray(input.orcamentos)) return input.orcamentos;
+        }
+        return [];
+      }
+
+      function pick(obj, keys, fallback){
+        for(const k of keys){
+          const v = obj ? obj[k] : null;
+          if(v == null) continue;
+          const s = String(v).trim();
+          if(s) return s;
+        }
+        return fallback;
+      }
+
+      function toDate(v){
+        if(!v) return null;
+        if(v instanceof Date && Number.isFinite(v.getTime())) return v;
+        if(typeof v === 'number'){
+          const d = new Date(v > 1e12 ? v : v * 1000);
+          return Number.isFinite(d.getTime()) ? d : null;
+        }
+        if(typeof v === 'string'){
+          const n = Number(v.trim());
+          if(Number.isFinite(n)){
+            const dn = new Date(v.trim().length >= 13 ? n : n * 1000);
+            if(Number.isFinite(dn.getTime())) return dn;
           }
-        }catch(e){}
-        const candidates = [
-          // pedidos
-          'doke_pedidos','pedidos','DOKE_PEDIDOS','meus_pedidos','cachePedidos','doke_cache_pedidos',
-          // orçamentos (muitos fluxos salvam como orçamento)
-          'orcamentos','doke_orcamentos','orcamentosCache','doke_orcamentos_cache','doke_cache_orcamentos',
-          // compat
-          'orcamentos_pedidos'
-        ];
-        for(const key of candidates){
-          try{
-            const raw = localStorage.getItem(key);
-            if(!raw) continue;
-            const parsed = JSON.parse(raw);
-            const list = normalizePedidos(parsed);
-            if(list.length) return list;
-          }catch(e){}
+          const d = new Date(v);
+          return Number.isFinite(d.getTime()) ? d : null;
         }
-        // Fallback: monta pedidos a partir do cache de anúncios/home para evitar tela vazia
-        const anuncioKeys = ['doke_cache_home_anuncios_v4','doke_cache_home_anuncios','cacheAnuncios','anuncios'];
-        for(const key of anuncioKeys){
-          try{
-            const raw = localStorage.getItem(key);
-            if(!raw) continue;
-            const parsed = JSON.parse(raw);
-            const anuncios = Array.isArray(parsed) ? parsed : (parsed && (parsed.items || parsed.anuncios || parsed.data)) || [];
-            const list = normalizeAnunciosToPedidos(anuncios);
-            if(list.length) return list;
-          }catch(e){}
+        if(typeof v === 'object'){
+          if(typeof v.toDate === 'function'){
+            const d = v.toDate();
+            if(d instanceof Date && Number.isFinite(d.getTime())) return d;
+          }
+          if(typeof v.seconds === 'number') return new Date(v.seconds * 1000);
+          if(typeof v._seconds === 'number') return new Date(v._seconds * 1000);
         }
-        return (fallbackPedidos && fallbackPedidos.length ? fallbackPedidos : [{id:"PD-2786",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"Orçamento: Teste",descricao:"Teste",tipo:"Orçamento",status:"pendente",urgente:false,prazo:"A combinar",atualizado:"hoje",valor:"Sob Orçamento",naoLidas:2,criadoEm:new Date().toISOString(),categoria:"Encanador"},{id:"PD-2787",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"Orçamento: TESTE 2",descricao:"Teste",tipo:"Orçamento",status:"andamento",urgente:false,prazo:"A combinar",atualizado:"há 2h",valor:"Sob Orçamento",naoLidas:0,criadoEm:new Date(Date.now()-7200000).toISOString(),categoria:"Tecnologia"}]);
+        return null;
       }
 
-      function normalizePedidos(input){
-        const arr = Array.isArray(input)
-          ? input
-          : (input && (Array.isArray(input.pedidos)
-              ? input.pedidos
-              : (Array.isArray(input.orcamentos) ? input.orcamentos : [])));
-        return arr.map((p, idx) => {
-          const statusRaw = String(p.status || p.situacao || p.estado || 'pendente').toLowerCase();
-          let status = 'pendente';
-          if(statusRaw.includes('and')) status = 'andamento';
-          else if(statusRaw.includes('fin') || statusRaw.includes('conc')) status = 'finalizado';
-          else if(statusRaw.includes('pend')) status = 'pendente';
-          const urgente = Boolean(p.urgente || p.priority === 'high' || p.prioridade === 'alta');
-          const id = String(p.id || p.codigo || `PD-${2800+idx}`);
-          const nome = p.nome || p.clienteNome || p.cliente || p.usuarioNome || 'Cliente';
-          const usuario = p.usuario || p.username || `@${String(nome).toLowerCase().replace(/\s+/g,'.')}`;
-          const titulo = p.titulo || p.nomeServico || p.servico || p.assunto || 'Pedido sem título';
-          const descricao = p.descricao || p.mensagem || p.detalhes || 'Sem detalhes adicionais.';
-          const tipo = p.tipo || (String(titulo).toLowerCase().includes('orçamento') ? 'Orçamento' : 'Serviço');
-          return {
-            id,
-            usuario,
-            nome,
-            avatar: p.avatar || p.foto || 'assets/Imagens/user_placeholder.png',
-            titulo,
-            descricao,
-            tipo,
-            status,
-            urgente,
-            prazo: p.prazo || p.deadline || 'Sem prazo',
-            atualizado: p.atualizado || p.ultimaAtualizacao || 'recentemente',
-            valor: p.valor || p.preco || p.orcamento || '—',
-            naoLidas: Number(p.naoLidas || p.unread || p.mensagensNaoLidas || 0) || 0,
-            criadoEm: p.criadoEm || p.createdAt || new Date().toISOString(),
-            categoria: p.categoria || 'Geral'
-          };
-        });
+      function formatUpdated(v){
+        const d = toDate(v);
+        if(!d) return String(v || 'recentemente');
+        const diff = Date.now() - d.getTime();
+        if(diff < 60000) return 'agora';
+        if(diff < 3600000) return `ha ${Math.max(1, Math.round(diff/60000))} min`;
+        if(diff < 86400000) return `ha ${Math.max(1, Math.round(diff/3600000))} h`;
+        return d.toLocaleDateString('pt-BR');
       }
 
-
-      function normalizeAnunciosToPedidos(input){
-        const arr = Array.isArray(input) ? input : [];
-        return arr.slice(0, 24).map((a, idx) => {
-          const titulo = a.titulo || a.nome || a.title || a.servico || a.categoria || 'Orçamento';
-          const nome = a.nomeProfissional || a.nome || a.usuarioNome || a.cliente || a.autor || 'Cliente';
-          const usuarioBase = (a.usuario || a.username || a.handle || nome || 'cliente').toString();
-          const usuario = usuarioBase.startsWith('@') ? usuarioBase : '@' + usuarioBase.toLowerCase().replace(/\s+/g,'.');
-          const categoria = a.categoria || a.tipo || a.segmento || 'Serviço';
-          const valorRaw = a.valor || a.preco || a.preço || a.orcamento || a.faixa || '—';
-          const desc = a.descricao || a.descrição || a.resumo || a.texto || 'Pedido gerado a partir de anúncio salvo no cache.';
-          return {
-            id: String(a.id || a.codigo || a.anuncioId || `PD-CACHE-${idx+1}`),
-            usuario,
-            nome,
-            avatar: a.avatar || a.foto || a.imagemPerfil || 'assets/Imagens/user_placeholder.png',
-            titulo: String(titulo).toLowerCase().includes('orçamento') ? String(titulo) : `Orçamento: ${titulo}`,
-            descricao: desc,
-            tipo: 'Orçamento',
-            status: idx % 3 === 0 ? 'pendente' : 'andamento',
-            urgente: Boolean(a.urgente || a.priority === 'high' || (typeof valorRaw === 'number' && valorRaw > 1000 && idx % 4 === 0)),
-            prazo: a.prazo || a.deadline || 'A combinar',
-            atualizado: a.atualizado || a.ultimaAtualizacao || (idx % 2 ? 'há 2h' : 'hoje'),
-            valor: typeof valorRaw === 'number' ? `R$ ${valorRaw}` : String(valorRaw),
-            naoLidas: Number(a.naoLidas || a.unread || (idx % 4 === 0 ? 2 : 0)) || 0,
-            criadoEm: a.criadoEm || a.createdAt || new Date(Date.now() - (idx+1)*3600*1000).toISOString(),
-            categoria: String(categoria)
-          };
-        });
+      function statusCode(raw){
+        const s = String(raw || 'pendente').toLowerCase();
+        if(s.includes('and') || s.includes('aceit') || s.includes('pago')) return 'andamento';
+        if(s.includes('fin') || s.includes('conc')) return 'finalizado';
+        return 'pendente';
       }
 
-      function getCounters(list){
-        return {
-          all: list.length,
-          andamento: list.filter(p => p.status === 'andamento').length,
-          urgente: list.filter(p => p.urgente).length,
-          finalizado: list.filter(p => p.status === 'finalizado').length,
-          today: list.filter(p => String(p.atualizado).includes('min') || String(p.atualizado).includes('h') || String(p.atualizado).toLowerCase().includes('hoje')).length
-        };
-      }
-
-      function applyFilter(list){
-        let out = [...list];
-        const q = state.query.trim().toLowerCase();
-        if(state.filter === 'pendente') out = out.filter(p => p.status === 'pendente');
-        if(state.filter === 'andamento') out = out.filter(p => p.status === 'andamento');
-        if(state.filter === 'finalizado') out = out.filter(p => p.status === 'finalizado');
-        if(state.filter === 'urgente') out = out.filter(p => p.urgente);
-        if(q){
-          out = out.filter(p => [p.id,p.nome,p.usuario,p.titulo,p.descricao,p.categoria,p.tipo]
-            .filter(Boolean).join(' ').toLowerCase().includes(q));
-        }
-        out.sort(sorter(state.sort));
-        return out;
-      }
-
-      function sorter(mode){
-        if(mode === 'oldest') return (a,b) => new Date(a.criadoEm) - new Date(b.criadoEm);
-        if(mode === 'urgent') return (a,b) => Number(b.urgente) - Number(a.urgente) || statusWeight(b) - statusWeight(a) || new Date(b.criadoEm) - new Date(a.criadoEm);
-        if(mode === 'name') return (a,b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR');
-        return (a,b) => new Date(b.criadoEm) - new Date(a.criadoEm);
-      }
-      function statusWeight(p){
-        if(p.status === 'andamento') return 3;
-        if(p.status === 'pendente') return 2;
-        if(p.status === 'finalizado') return 1;
-        return 0;
-      }
-
-      function statusTagClass(status){
-        if(status === 'andamento') return 'status-progress';
-        if(status === 'finalizado') return 'status-done';
-        return 'status-pending';
-      }
-      function statusLabel(status){
-        if(status === 'andamento') return 'Em andamento';
-        if(status === 'finalizado') return 'Finalizado';
+      function statusLabel(s){
+        if(s === 'andamento') return 'Em andamento';
+        if(s === 'finalizado') return 'Finalizado';
         return 'Pendente';
       }
 
-      function render(){
-        const allCounters = getCounters(state.pedidos);
-        const list = applyFilter(state.pedidos);
-
-        el.heroCount.textContent = allCounters.all;
-        if (el.mobilePedidoCount) el.mobilePedidoCount.textContent = allCounters.all;
-        if (el.miniToday) el.miniToday.textContent = allCounters.today;
-        if (el.miniProgress) el.miniProgress.textContent = allCounters.andamento;
-        if (el.miniUrgent) el.miniUrgent.textContent = allCounters.urgente;
-
-        if (el.listSubtitle) el.listSubtitle.textContent = list.length
-          ? `Mostrando ${list.length} pedido${list.length > 1 ? 's' : ''}${state.filter !== 'all' ? ` • filtro: ${labelFilter(state.filter)}` : ''}`
-          : `Nenhum pedido encontrado${state.filter !== 'all' ? ` para o filtro ${labelFilter(state.filter)}` : ''}`;
-
-        document.getElementById('appRoot')?.classList.toggle('selection-mode', state.selectionMode);
-        el.bulkBar?.classList.toggle('show', state.selectionMode);
-        updateBulkInfo();
-
-        if (el.cardsGrid) { try { el.cardsGrid.innerHTML = list.map(cardHTML).join(''); } catch(err){ console.error('Erro render pedidos', err); el.cardsGrid.innerHTML = list.map(p => `<article class=\"pedido-card\"><h3 class=\"pedido-title\">${escapeHtml(p.titulo||'Pedido')}</h3><p class=\"pedido-desc\">${escapeHtml(p.descricao||'')}</p><div class=\"card-actions\"><button class=\"btn-action primary\" data-action=\"chat\" data-id=\"${escapeAttr(p.id)}\">Abrir chat</button><button class=\"btn-action\" data-action=\"details\" data-id=\"${escapeAttr(p.id)}\">Detalhes</button></div></article>`).join(''); } }
-        el.emptyState?.classList.toggle('show', list.length === 0);
-        if (el.cardsGrid) el.cardsGrid.style.display = list.length ? 'grid' : 'none';
-
-        if (el.cardsGrid) bindCardEvents();
-        syncActiveStates();
+      function statusClass(s){
+        if(s === 'andamento') return 'progress';
+        if(s === 'finalizado') return 'done';
+        return 'pending';
       }
 
-      function labelFilter(f){
-        return ({all:'Todos',pendente:'Pendentes',andamento:'Em andamento',finalizado:'Finalizados',urgente:'Urgentes'})[f] || 'Todos';
+      function looksLikeImage(url){
+        const s = String(url || '').toLowerCase();
+        return /\.(png|jpe?g|webp|gif|bmp|svg)(\?|$)/.test(s) || s.includes('/storage/v1/object/public/');
       }
 
-      function cardHTML(p){
+      function normalizeMediaUrl(v){
+        if(!v) return '';
+        if(typeof v === 'string') return v.trim();
+        if(typeof v === 'object'){
+          return String(v.url || v.src || v.link || '').trim();
+        }
+        return '';
+      }
+
+      function deepAvatarCandidate(obj){
+        if(!obj || typeof obj !== 'object') return '';
+        return normalizeMediaUrl(obj.foto || obj.avatar || obj.photoURL || obj.profilePicture || obj.imagem || obj.imagemPerfil || obj.urlFoto || obj.fotoUrl || obj.foto_url || obj.image || obj.imageUrl || obj.image_url);
+      }
+
+      function pickAvatarFromRow(row, isSouCliente, isSouProfissional){
+        const direct = pick(row, isSouCliente
+          ? ['paraFoto','fotoPrestador','profilePicture','avatar','foto','fotoPerfil','profissionalFoto','deFoto','fotoCliente','photoURL','userPhoto','userPhotoURL','clienteFotoUrl','profissionalFotoUrl']
+          : isSouProfissional
+            ? ['deFoto','fotoCliente','profilePicture','avatar','foto','fotoPerfil','paraFoto','profissionalFoto','photoURL','userPhoto','userPhotoURL','clienteFotoUrl','profissionalFotoUrl']
+            : ['avatar','foto','fotoCliente','fotoPerfil','profilePicture','deFoto','paraFoto','clienteFoto','profissionalFoto','photoURL','userPhoto','userPhotoURL','clienteFotoUrl','profissionalFotoUrl']
+        , '');
+        const extra = [
+          row.user, row.usuarioObj, row.usuarioData, row.usuario, row.perfil, row.profile,
+          row.clienteObj, row.clienteData, row.cliente, row.profissionalObj, row.profissionalData, row.profissional,
+          row.de, row.para, row.remetente, row.destinatario
+        ];
+        const nested = extra.map(deepAvatarCandidate).find(Boolean) || '';
+        return normalizeMediaUrl(direct) || nested || 'assets/Imagens/user_placeholder.png';
+      }
+
+      function normalizeId(v){
+        const id = String(v == null ? '' : v).trim();
+        if(!id) return '';
+        if(/^PD-\d+$/i.test(id)) return '';
+        if(/^TEMP-/i.test(id)) return '';
+        if(/^NEW-/i.test(id)) return '';
+        return id;
+      }
+
+      function normalizePedido(row, idx, forcedId){
+        if(!row || typeof row !== 'object') return null;
+        const id = normalizeId(forcedId || pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+        if(!id) return null;
+
+        const uidAtual = resolveUid();
+        const deUid = pick(row, ['deUid','deuid','de_uid','clienteUid','clienteuid','cliente_uid'], '');
+        const paraUid = pick(row, ['paraUid','parauid','para_uid','prestadorUid','prestadoruid','prestador_uid'], '');
+        const isSouCliente = !!uidAtual && !!deUid && String(uidAtual) === String(deUid);
+        const isSouProfissional = !!uidAtual && !!paraUid && String(uidAtual) === String(paraUid);
+
+        const nome = isSouCliente
+          ? pick(row, ['paraNome','nomePrestador','profissionalNome','nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome'], 'Cliente')
+          : isSouProfissional
+            ? pick(row, ['deNome','nomeCliente','clienteNome','nome','cliente','usuarioNome','userName','paraNome'], 'Cliente')
+            : pick(row, ['nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome','paraNome'], 'Cliente');
+
+        const usuarioBase = isSouCliente
+          ? pick(row, ['paraUser','usuarioPrestador','usernamePrestador','usuario','username','user','handle'], nome || 'cliente')
+          : isSouProfissional
+            ? pick(row, ['deUser','usuarioCliente','usernameCliente','usuario','username','user','handle'], nome || 'cliente')
+            : pick(row, ['usuario','username','user','handle','deUser','paraUser'], nome || 'cliente');
+        const usuario = usuarioBase.startsWith('@') ? usuarioBase : `@${usuarioBase.toLowerCase().replace(/\s+/g,'.')}`;
+        const titulo = pick(row, ['titulo','servicoReferencia','nomeServico','servico','assunto','pedidoTitulo','orcamentoTitulo','title'], 'Pedido');
+        const descricao = pick(row, ['descricao','descricaoBase','mensagem','mensagemInicial','detalhes','observacoes','preview','ultimaMensagem'], 'Sem detalhes adicionais.');
+        const tipoRaw = pick(row, ['tipo','tipoPedido','categoriaTipo'], '');
+        const tipo = tipoRaw || (String(titulo).toLowerCase().includes('orc') ? 'Orcamento' : 'Servico');
+        const status = statusCode(pick(row, ['status','statusPedido','situacao','estado'], 'pendente'));
+
+        const updatedRaw = pick(row, ['dataAtualizacao','updatedAt','updatedat','ultimaAtualizacao','timestamp','lastMessageAt','createdAt'], '');
+        const createdRaw = pick(row, ['criadoEm','createdAt','createdat','dataCriacao','dataPedido'], updatedRaw || new Date().toISOString());
+
+        return {
+          id,
+          usuario,
+          nome,
+          avatar: pickAvatarFromRow(row, isSouCliente, isSouProfissional),
+          titulo,
+          descricao,
+          tipo,
+          status,
+          urgente: !!(row.urgente || String(row.prioridade || '').toLowerCase() === 'alta' || String(row.priority || '').toLowerCase() === 'high'),
+          prazo: pick(row, ['prazo','paraQuando','dataEspecifica','deadline','turno'], 'A combinar'),
+          atualizado: formatUpdated(updatedRaw || createdRaw),
+          valor: pick(row, ['valor','preco','orcamento','faixa','precoFormatado','valorOrcamento','valor_orcamento'], 'Sob Orcamento'),
+          naoLidas: Number(row.naoLidas || row.naolidas || row.unread || row.unreadCount || row.mensagensNaoLidas || row.qtdNaoLidas || 0) || 0,
+          criadoEm: (toDate(createdRaw) || new Date()).toISOString(),
+          categoria: pick(row, ['categoria','area','segmento','tipoServico'], 'Geral'),
+          deUid,
+          paraUid,
+          anuncioId: pick(row, ['anuncioId','anuncio_id','aid','anuncioid'], ''),
+          servicoReferencia: pick(row, ['servicoReferencia','titulo','nomeServico','servico'], ''),
+          mensagemInicial: pick(row, ['mensagemInicial','descricao','descricaoBase','detalhes'], ''),
+          descricaoBase: pick(row, ['descricaoBase','descricao','mensagemInicial'], ''),
+          paraQuando: pick(row, ['paraQuando','prazo','dataEspecifica'], ''),
+          dataEspecifica: pick(row, ['dataEspecifica'], ''),
+          turno: pick(row, ['turno'], ''),
+          respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
+          localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
+          modoAtend: pick(row, ['modoAtend','modo_atend'], ''),
+          statusOriginal: pick(row, ['status','statusPedido','situacao','estado'], ''),
+          anexos: Array.isArray(row.anexos) ? row.anexos : []
+        };
+      }
+
+      function mergePedidos(list){
+        const map = new Map();
+        (list || []).forEach((p) => {
+          if(!p || !p.id) return;
+          const key = String(p.id);
+          const cur = map.get(key);
+          if(!cur){ map.set(key, {...p}); return; }
+          const next = {...cur};
+          Object.keys(p).forEach((k) => {
+            const v = p[k];
+            if(k === 'naoLidas'){ next[k] = Math.max(Number(next[k] || 0), Number(v || 0)); return; }
+            if(k === 'descricao' && String(v || '').length > String(next[k] || '').length){ next[k] = v; return; }
+            if(Array.isArray(v) && v.length && (!Array.isArray(next[k]) || !next[k].length)){ next[k] = v; return; }
+            if(v && typeof v === 'object' && !Array.isArray(v) && (!next[k] || typeof next[k] !== 'object' || Array.isArray(next[k]))){ next[k] = v; return; }
+            if((next[k] == null || String(next[k]).trim() === '' || String(next[k]) === '—') && String(v ?? '').trim() !== '') next[k] = v;
+          });
+          map.set(key, next);
+        });
+        return Array.from(map.values());
+      }
+
+      function looksPedidoRow(row){
+        if(!row || typeof row !== 'object') return false;
+        const id = normalizeId(pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+        if(!id) return false;
+        const directSignals = [
+          row.pedidoId, row.idPedido, row.orcamentoId, row.statusPedido, row.paraQuando,
+          row.dataEspecifica, row.prazo, row.descricaoBase, row.respostasTriagem,
+          row.formularioRespostas, row.modoAtend, row.localizacao, row.localização, row.servicoReferencia
+        ];
+        if(directSignals.some(Boolean)) return true;
+        const keys = Object.keys(row).map((k) => String(k || '').toLowerCase());
+        return keys.some((k) =>
+          k.includes('pedido') ||
+          k.includes('orcamento') ||
+          k.includes('prazo') ||
+          k.includes('triagem')
+        );
+      }
+
+      function loadLocal(){
+        let list = [];
+        if(Array.isArray(window.pedidosCache)){
+          list = list.concat(window.pedidosCache.map((r,i)=>normalizePedido(r,i)).filter(Boolean));
+        }
+
+        const primaryKeys = [
+          'doke_pedidos','pedidos','DOKE_PEDIDOS','meus_pedidos','cachePedidos','doke_cache_pedidos',
+          'orcamentos','doke_orcamentos','orcamentosCache','doke_orcamentos_cache','doke_cache_orcamentos','orcamentos_pedidos'
+        ];
+
+        primaryKeys.forEach((key) => {
+          const arr = asArray(parseJSON(localStorage.getItem(key)));
+          arr.forEach((row, idx) => {
+            const n = normalizePedido(row, idx);
+            if(n) list.push(n);
+          });
+        });
+
+        const singleRows = [
+          parseJSON(localStorage.getItem('doke_pedido_contexto')),
+          parseJSON(localStorage.getItem('doke_pedido_detalhes')),
+          parseJSON(localStorage.getItem('pedidoAtual')),
+          parseJSON(localStorage.getItem('doke_chat_prefill')),
+          parseJSON(localStorage.getItem('pedidoSelecionado'))
+        ].filter(Boolean);
+        singleRows.forEach((row, idx) => {
+          const n = normalizePedido(row, idx);
+          if(n) list.push(n);
+        });
+
+        return mergePedidos(list);
+      }
+      function resolveUid(){
+        const perfil = parseJSON(localStorage.getItem('doke_usuario_perfil')) || {};
+        return String(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid || localStorage.getItem('doke_uid') || perfil.uid || perfil.id || '').trim();
+      }
+
+      function mine(row, uid){
+        if(!uid) return true;
+        const fields = [
+          row.deUid,row.deuid,row.de_uid,row.clienteUid,row.clienteuid,row.cliente_uid,row.uidCliente,row.uid_cliente,row.solicitanteUid,row.solicitante_uid,
+          row.paraUid,row.parauid,row.para_uid,row.prestadorUid,row.prestadoruid,row.prestador_uid,row.profissionalUid,row.profissionaluid,row.profissional_uid,row.uidPrestador,row.uid_prestador,
+          row.participante1,row.participante2,row.uid1,row.uid2,row.clienteId,row.profissionalId
+        ].map(v => String(v || '').trim()).filter(Boolean);
+        if(Array.isArray(row.participantes)) fields.push(...row.participantes.map(v => String(v || '').trim()).filter(Boolean));
+        return fields.includes(String(uid));
+      }
+
+      async function loadFirestore(){
+        const { getFirestore, collection, query, limit, getDocs } = window || {};
+        if(typeof getFirestore !== 'function' || typeof collection !== 'function' || typeof query !== 'function' || typeof limit !== 'function' || typeof getDocs !== 'function') return [];
+        const uid = resolveUid();
+        const db = window.db || getFirestore();
+
+        try{
+          const snap = await getDocs(query(collection(db, 'pedidos'), limit(300)));
+          const out = [];
+          let idx = 0;
+          snap.forEach((d) => {
+            const row = d.data() || {};
+            if(!mine(row, uid)) return;
+            const n = normalizePedido(row, idx++, d.id);
+            if(n) out.push(n);
+          });
+          return mergePedidos(out);
+        }catch(err){
+          console.warn('Firestore pedidos erro:', err);
+          return [];
+        }
+      }
+
+      function sortList(list){
+        const arr = [...list];
+        if(state.sort === 'updated') return arr.sort((a,b)=>String(a.atualizado).localeCompare(String(b.atualizado), 'pt-BR'));
+        if(state.sort === 'unread') return arr.sort((a,b)=>Number(b.naoLidas||0)-Number(a.naoLidas||0) || (new Date(b.criadoEm)-new Date(a.criadoEm)));
+        if(state.sort === 'urgent') return arr.sort((a,b)=>Number(b.urgente)-Number(a.urgente) || (new Date(b.criadoEm)-new Date(a.criadoEm)));
+        return arr.sort((a,b)=>new Date(b.criadoEm)-new Date(a.criadoEm));
+      }
+
+      function filtered(){
+        let arr = [...state.pedidos];
+        if(state.filter === 'pending') arr = arr.filter(p=>p.status === 'pendente');
+        if(state.filter === 'progress') arr = arr.filter(p=>p.status === 'andamento');
+        if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado');
+        if(state.filter === 'urgent') arr = arr.filter(p=>p.urgente);
+
+        const q = state.query.trim().toLowerCase();
+        if(q){
+          arr = arr.filter(p => [p.id,p.nome,p.usuario,p.titulo,p.descricao,p.categoria,p.tipo,p.prazo,p.valor].filter(Boolean).join(' ').toLowerCase().includes(q));
+        }
+
+        return sortList(arr);
+      }
+
+      function card(p){
         const selected = state.selected.has(String(p.id));
-        const avatar = p.avatar || 'assets/Imagens/user_placeholder.png';
         return `
-          <article class="pedido-card ${selected ? 'selected' : ''}" data-id="${escapeHtml(p.id)}">
-            <button class="card-select" type="button" aria-label="Selecionar pedido ${escapeHtml(p.id)}"><i class='bx bx-check'></i></button>
-
-            <div class="card-chips">
-              <span class="tag tipo"><i class='bx bx-receipt'></i>${escapeHtml(p.tipo)}</span>
-              <span class="tag ${statusTagClass(p.status)}">${escapeHtml(statusLabel(p.status))}</span>
-              ${p.urgente ? `<span class="tag urgente"><i class='bx bx-error'></i>Urgente</span>` : ''}
+          <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}">
+            <div class="card-top">
+              <div class="tags">
+                <span class="tag type"><i class='bx bx-receipt'></i>${esc(p.tipo)}</span>
+                <span class="tag ${statusClass(p.status)}">${esc(statusLabel(p.status))}</span>
+                ${p.urgente ? `<span class="tag urgent"><i class='bx bx-error'></i>Urgente</span>` : ''}
+              </div>
+              <button class="card-select" type="button" data-action="select" data-id="${esc(p.id)}" aria-label="Selecionar pedido">
+                <i class='bx ${selected ? 'bxs-check-circle' : 'bx-circle'}'></i>
+              </button>
             </div>
 
-            <div class="card-user">
-              <img src="${escapeAttr(avatar)}" alt="Avatar de ${escapeAttr(p.nome || p.usuario || 'usuário')}" onerror="this.src='assets/Imagens/user_placeholder.png'">
+            <div class="user">
+              <img src="${esc(normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png')}" alt="Avatar" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'"/>
               <div class="user-meta">
-                <strong>${escapeHtml(p.usuario || p.nome || 'Cliente')}</strong>
-                <span>${escapeHtml(p.id)} • ${escapeHtml(p.categoria || 'Geral')}</span>
+                <strong>${esc(p.usuario || p.nome)}</strong>
+                <span>${esc(p.categoria || 'Geral')}</span>
               </div>
             </div>
 
-            <h3 class="pedido-title">${escapeHtml(p.titulo)}</h3>
-            <p class="pedido-desc">${escapeHtml(p.descricao || 'Sem detalhes adicionais.')}</p>
+            <h3 class="title">${esc(p.titulo)}</h3>
+            <p class="desc">${esc(p.descricao || 'Sem detalhes adicionais.')}</p>
 
-            <div class="meta-grid">
-              <div class="meta-box"><i class='bx bx-time-five'></i><div><small>Prazo</small><strong>${escapeHtml(p.prazo || 'Sem prazo')}</strong></div></div>
-              <div class="meta-box"><i class='bx bx-refresh'></i><div><small>Atualizado</small><strong>${escapeHtml(p.atualizado || '—')}</strong></div></div>
-              <div class="meta-box"><i class='bx bx-wallet'></i><div><small>Valor</small><strong>${escapeHtml(String(p.valor ?? '—'))}</strong></div></div>
-              <div class="meta-box"><i class='bx bx-message-dots'></i><div><small>Chat</small><strong>${p.naoLidas ? `${p.naoLidas} não lida${p.naoLidas>1?'s':''}` : 'Sem novas'}</strong></div></div>
+            <div class="meta">
+              <div class="meta-item"><i class='bx bx-time-five'></i><div><small>Prazo</small><strong>${esc(p.prazo || 'A combinar')}</strong></div></div>
+              <div class="meta-item"><i class='bx bx-refresh'></i><div><small>Atualizado</small><strong>${esc(p.atualizado || 'recentemente')}</strong></div></div>
+              <div class="meta-item"><i class='bx bx-wallet'></i><div><small>Valor</small><strong>${esc(String(p.valor ?? 'Sob Orcamento'))}</strong></div></div>
+              <div class="meta-item"><i class='bx bx-message-dots'></i><div><small>Chat</small><strong>${p.naoLidas ? `${p.naoLidas} nao lida${p.naoLidas > 1 ? 's' : ''}` : 'Sem novas'}</strong></div></div>
             </div>
 
-            <div class="card-footer">
-              <div class="footer-left">
-                <span class="msg-badge"><i class='bx bx-message-rounded-dots'></i>${p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas'}</span>
-              </div>
-              <div class="card-actions">
-                <button class="btn-action primary" type="button" data-action="chat" data-id="${escapeAttr(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>
-                <button class="btn-action" type="button" data-action="details" data-id="${escapeAttr(p.id)}"><i class='bx bx-file'></i>Detalhes</button>
+            <div class="footer">
+              <span class="unread"><i class='bx bx-message-rounded-dots'></i>${p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas'}</span>
+              <div class="actions">
+                <button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>
+                <button class="btn-order" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i>Detalhes</button>
               </div>
             </div>
           </article>
         `;
       }
 
-      function bindCardEvents(){
-        el.cardsGrid.querySelectorAll('.pedido-card').forEach(card => {
-          const id = card.getAttribute('data-id');
-          const selectBtn = card.querySelector('.card-select');
-          selectBtn?.addEventListener('click', (ev) => {
-            ev.stopPropagation();
-            toggleSelected(id);
-          });
-          card.querySelectorAll('[data-action]').forEach(btn => {
-            btn.addEventListener('click', (ev) => {
-              ev.stopPropagation();
-              const action = btn.getAttribute('data-action');
-              if(action === 'chat') openPedidoChat(id); else openPedidoDetails(id);
-            });
-          });
-          if(state.selectionMode){
-            card.addEventListener('click', () => toggleSelected(id));
-            card.style.cursor = 'pointer';
-          } else {
-            card.style.cursor = 'default';
-          }
-        });
-      }
-
-
-      function getPedidoById(id){
-        return (state.pedidos || []).find(p => String(p.id) === String(id)) || null;
-      }
-
-      
-      
-      function openPedidoChat(id){
-        const pedido = getPedidoById(id);
-        try{
-          if(pedido){
-            localStorage.setItem('doke_pedido_contexto', JSON.stringify(pedido));
-            localStorage.setItem('pedidoAtual', JSON.stringify(pedido));
-            localStorage.setItem('doke_chat_prefill', JSON.stringify({
-              pedidoId: pedido.id,
-              titulo: pedido.titulo,
-              usuario: pedido.usuario,
-              nome: pedido.nome,
-              origem: 'pedidos.html'
-            }));
-          }
-        }catch(e){}
-        if(!pedido){
-          fakeToast('Não foi possível abrir o chat deste pedido.');
-          return;
-        }
-        openChatDrawer(pedido);
-      }
-
-      function openPedidoDetails(id){
-        const pedido = getPedidoById(id);
-        try{ if(pedido) localStorage.setItem('doke_pedido_detalhes', JSON.stringify(pedido)); }catch(e){}
-        const pid = encodeURIComponent(String(id || pedido?.id || ''));
-        location.href = `orcamento.html${pid ? `?pedidoId=${pid}` : ''}`;
-      }
-
-
-      // ===== Chat Drawer helpers (integrado, sem iframe/chat.html) =====
-      const chatDrawer = document.getElementById('chatDrawer');
-      const chatEls = {
-        headTitle: document.getElementById('pedidoChatHeadTitle'),
-        headSub: document.getElementById('pedidoChatHeadSub'),
-        titulo: document.getElementById('pedidoChatTitulo'),
-        status: document.getElementById('pedidoChatStatus'),
-        id: document.getElementById('pedidoChatId'),
-        cliente: document.getElementById('pedidoChatCliente'),
-        prazo: document.getElementById('pedidoChatPrazo'),
-        valor: document.getElementById('pedidoChatValor'),
-        messagesWrap: document.getElementById('pedidoChatMessages'),
-        messagesInner: document.getElementById('pedidoChatMessagesInner'),
-        empty: document.getElementById('pedidoChatEmpty'),
-        input: document.getElementById('pedidoChatInput'),
-        send: document.getElementById('pedidoChatSend')
-      };
-      let activeChatPedidoId = null;
-
-      function chatKey(pedidoId){ return `doke_pedido_chat_msgs_${String(pedidoId)}`; }
-
-      function normalizeChatMsg(m){
-        if(!m) return null;
-        const who = (m.who === 'me' || m.who === 'other' || m.who === 'system') ? m.who : 'other';
-        const text = String(m.text ?? '').trim();
-        if(!text) return null;
+      function counters(list){
         return {
-          id: String(m.id || `msg_${Date.now()}_${Math.random().toString(36).slice(2,8)}`),
-          who,
-          text,
-          author: String(m.author || (who === 'me' ? 'Você' : who === 'system' ? 'Sistema' : 'Cliente')),
-          ts: m.ts || new Date().toISOString()
+          all: list.length,
+          today: list.filter(p => String(p.atualizado).includes('agora') || String(p.atualizado).includes('ha')).length,
+          progress: list.filter(p => p.status === 'andamento').length,
+          urgent: list.filter(p => p.urgente).length
         };
       }
 
-      function loadChatMessages(pedido){
-        if(!pedido) return [];
+      function render(){
+        const list = filtered();
+        const c = counters(state.pedidos);
+        const existing = new Set((state.pedidos || []).map((p) => String(p.id)));
+        Array.from(state.selected).forEach((id) => { if(!existing.has(String(id))) state.selected.delete(String(id)); });
+        document.body.classList.toggle('select-mode', !!state.selectMode);
+        el.count.textContent = String(c.all);
+        el.statToday.textContent = String(c.today);
+        el.statProgress.textContent = String(c.progress);
+        el.statUrgent.textContent = String(c.urgent);
+        el.subtitle.textContent = list.length ? `Mostrando ${list.length} pedido${list.length > 1 ? 's' : ''}` : 'Nenhum pedido encontrado';
+        el.grid.innerHTML = list.map(card).join('');
+        el.empty.classList.toggle('show', list.length === 0);
+        el.grid.style.display = list.length ? 'grid' : 'none';
+        el.chips.forEach(ch => ch.classList.toggle('active', ch.dataset.filter === state.filter));
+        if(el.selectLabel){
+          const total = state.selected.size;
+          el.selectLabel.textContent = state.selectMode ? (total ? `${total} selecionado${total > 1 ? 's' : ''}` : 'Cancelar') : 'Selecionar';
+        }
+      }
+
+      function sortLabel(){
+        if(state.sort === 'updated') return 'Atualizacao';
+        if(state.sort === 'unread') return 'Nao lidas';
+        if(state.sort === 'urgent') return 'Urgentes';
+        return 'Mais recentes';
+      }
+
+      function nextSort(){
+        if(state.sort === 'recent') state.sort = 'unread';
+        else if(state.sort === 'unread') state.sort = 'urgent';
+        else if(state.sort === 'urgent') state.sort = 'updated';
+        else state.sort = 'recent';
+        el.sortLabel.textContent = sortLabel();
+      }
+
+      function byId(id){
+        return state.pedidos.find(p => String(p.id) === String(id)) || null;
+      }
+
+      function detailsValue(v, fallback){
+        const s = String(v == null ? '' : v).trim();
+        return s || (fallback || '-');
+      }
+
+      async function fetchPedidoCompleto(p){
+        if(!p || !p.id) return null;
+        const pid = String(p.id);
+        const cached = state.detailsById.get(pid);
+        if(cached) return mergePedidos([p, cached])[0] || p;
+
+        const { getFirestore, getDoc, doc } = window || {};
+        if(typeof getFirestore !== 'function' || typeof getDoc !== 'function' || typeof doc !== 'function'){
+          return p;
+        }
+
         try{
-          const raw = localStorage.getItem(chatKey(pedido.id));
-          if(raw){
-            const parsed = JSON.parse(raw);
-            const list = (Array.isArray(parsed) ? parsed : []).map(normalizeChatMsg).filter(Boolean);
-            if(list.length) return list;
+          const db = window.db || getFirestore();
+          const snap = await getDoc(doc(db, 'pedidos', pid));
+          if(!snap.exists()) return p;
+          const row = snap.data() || {};
+          const normalized = normalizePedido(row, 0, pid);
+          if(!normalized) return p;
+          const merged = mergePedidos([p, normalized, {
+            id: pid,
+            respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
+            localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
+            mensagemInicial: pick(row, ['mensagemInicial','descricaoBase','descricao'], normalized.mensagemInicial || ''),
+            descricaoBase: pick(row, ['descricaoBase','mensagemInicial','descricao'], normalized.descricaoBase || ''),
+            paraQuando: pick(row, ['paraQuando','prazo','dataEspecifica'], normalized.paraQuando || ''),
+            turno: pick(row, ['turno'], normalized.turno || ''),
+            modoAtend: pick(row, ['modoAtend','modo_atend'], normalized.modoAtend || ''),
+            servicoReferencia: pick(row, ['servicoReferencia','titulo','nomeServico','servico'], normalized.servicoReferencia || '')
+          }])[0];
+
+          if(merged){
+            state.detailsById.set(pid, merged);
+            state.pedidos = mergePedidos([...(state.pedidos || []), merged]);
+            render();
+            return merged;
           }
-        }catch(e){}
-        const seeded = [];
-        seeded.push({
-          id:`sys_${pedido.id}`, who:'system', author:'Sistema',
-          text:`Chat iniciado para o pedido ${pedido.id}.`,
-          ts: new Date().toISOString()
-        });
-        if(String(pedido.descricao || '').trim()){
-          seeded.push({
-            id:`cli_${pedido.id}`, who:'other', author: pedido.nome || pedido.usuario || 'Cliente',
-            text:String(pedido.descricao).trim(),
-            ts: new Date().toISOString()
+          return p;
+        }catch(err){
+          console.warn('Falha ao carregar detalhes do pedido:', err);
+          return p;
+        }
+      }
+
+            function collectAnexos(p){
+        const out = [];
+        const pushUrl = (url, name) => {
+          const u = normalizeMediaUrl(url);
+          if(!u) return;
+          if(out.some((item) => item.url === u)) return;
+          out.push({ url: u, name: name || '' });
+        };
+
+        if(Array.isArray(p.anexos)){
+          p.anexos.forEach((a, idx) => {
+            if(typeof a === 'string') pushUrl(a, `Anexo ${idx + 1}`);
+            else if(a && typeof a === 'object') pushUrl(a.url || a.src || a.link, a.nome || a.name || `Anexo ${idx + 1}`);
           });
         }
-        saveChatMessages(pedido.id, seeded);
-        return seeded;
+
+        const triagem = Array.isArray(p.respostasTriagem) ? p.respostasTriagem : [];
+        triagem.forEach((row) => {
+          const raw = typeof row === 'object' ? String(row.resposta || '') : String(row || '');
+          const namedMatch = raw.match(/^\s*([^\n]+?)\s*-\s*https?:\/\//i);
+          const maybeName = namedMatch ? namedMatch[1].trim() : '';
+          const matches = raw.match(/https?:\/\/[^\s)]+/g) || [];
+          matches.forEach((url) => {
+            const clean = url.replace(/[.,;!?]+$/, '');
+            const name = maybeName || clean.split('/').pop() || 'Anexo';
+            pushUrl(clean, name);
+          });
+        });
+
+        return out;
       }
 
-      function saveChatMessages(pedidoId, list){
-        try{ localStorage.setItem(chatKey(pedidoId), JSON.stringify((list||[]).slice(-200))); }catch(e){}
+      function renderDetailsModal(p){
+        if(!p) return;
+        const locObj = p.localizacao || {};
+        const locText = [
+          locObj.endereco || locObj['endereço'] || '',
+          locObj.numero || locObj['número'] || '',
+          locObj.complemento || '',
+          locObj.referencia || ''
+        ].map((v)=>String(v || '').trim()).filter(Boolean).join(', ');
+
+        const rows = [
+          ['ID', detailsValue(p.id)],
+          ['Cliente', detailsValue(p.nome || p.usuario, 'Cliente')],
+          ['Status', detailsValue(statusLabel(p.status))],
+          ['Tipo', detailsValue(p.tipo)],
+          ['Prazo', detailsValue(p.paraQuando || p.prazo, 'A combinar')],
+          ['Turno', detailsValue(p.turno, 'Nao informado')],
+          ['Modo', detailsValue(p.modoAtend, 'Nao informado')],
+          ['Valor', detailsValue(p.valor, 'Sob orcamento')]
+        ];
+
+        el.detailsSubtitle.textContent = `${detailsValue(p.usuario || p.nome, '@cliente')} • ${detailsValue(p.categoria, 'Geral')}`;
+        el.detailsGrid.innerHTML = rows.map(([k,v]) => `<div class="details-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('');
+        el.detailsDescription.textContent = detailsValue(p.mensagemInicial || p.descricaoBase || p.descricao, 'Sem descricao.');
+
+        const triagem = Array.isArray(p.respostasTriagem) ? p.respostasTriagem : [];
+        const triagemRows = [];
+        if(locText){
+          triagemRows.push({ pergunta:'Local', resposta: locText });
+        }
+        triagem.forEach((item, idx) => {
+          if(item && typeof item === 'object'){
+            triagemRows.push({
+              pergunta: detailsValue(item.pergunta, `Pergunta ${idx + 1}`),
+              resposta: detailsValue(item.resposta, '')
+            });
+          }else if(item != null){
+            triagemRows.push({ pergunta:`Triagem ${idx + 1}`, resposta: detailsValue(item, '') });
+          }
+        });
+        if(!triagemRows.length){
+          triagemRows.push({ pergunta:'Triagem', resposta:'Sem respostas de triagem neste pedido.' });
+        }
+        el.detailsTriagem.innerHTML = triagemRows.map((r) => `
+          <div class="triagem-row">
+            <small>${esc(r.pergunta)}</small>
+            <strong>${esc(r.resposta)}</strong>
+          </div>
+        `).join('');
+
+        const anexos = collectAnexos(p);
+        if(!anexos.length){
+          el.detailsAnexos.innerHTML = `<div class="triagem-row"><small>Anexos</small><strong>Sem anexos neste pedido.</strong></div>`;
+        }else{
+          el.detailsAnexos.innerHTML = anexos.map((a, idx) => {
+            const isImg = looksLikeImage(a.url);
+            return `
+              <div class="anexo-item">
+                <a href="${esc(a.url)}" target="_blank" rel="noopener">
+                  ${isImg ? `<img src="${esc(a.url)}" alt="Anexo ${idx + 1}" onerror="this.style.display='none'"/>` : ''}
+                  <span class="anexo-caption">${esc(a.name || `Anexo ${idx + 1}`)}</span>
+                </a>
+              </div>
+            `;
+          }).join('');
+        }
+
+        el.detailsModal.classList.add('open');
+        el.detailsModal.setAttribute('aria-hidden', 'false');
       }
 
-      function formatClock(ts){
+      function closeDetailsModal(){
+        el.detailsModal.classList.remove('open');
+        el.detailsModal.setAttribute('aria-hidden', 'true');
+      }
+
+      function inlineChatStorageKey(pedidoId){
+        return `doke_inline_chat_msgs::${String(pedidoId || '').trim()}`;
+      }
+
+      function timeHHMM(ts){
+        try{ return new Date(ts || Date.now()).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }); }
+        catch(_){ return ''; }
+      }
+
+      function loadInlineChatMessages(pedidoId){
         try{
+          const list = parseJSON(localStorage.getItem(inlineChatStorageKey(pedidoId)));
+          return Array.isArray(list) ? list.filter(m => m && typeof m === 'object') : [];
+        }catch(_){ return []; }
+      }
+
+      function saveInlineChatMessages(pedidoId, list){
+        try{ localStorage.setItem(inlineChatStorageKey(pedidoId), JSON.stringify(Array.isArray(list) ? list.slice(-200) : [])); }catch(_){ }
+      }
+
+      function renderInlineChatMessages(){
+        if(!el.areaMensagens) return;
+        const list = Array.isArray(state.areaMensagens) ? state.areaMensagens : [];
+        el.areaMensagens.innerHTML = '';
+        if(!list.length){
+          const empty = document.createElement('div');
+          empty.className = 'inline-chat-empty';
+          empty.id = 'inlineChatEmpty';
+          empty.textContent = 'Nenhuma mensagem.';
+          el.areaMensagens.appendChild(empty);
+          return;
+        }
+        for(const m of list){
+          const row = document.createElement('div');
+          row.className = `inline-msg ${m.from === 'other' ? 'other' : 'me'}`;
+          const txt = document.createElement('div');
+          txt.textContent = String(m.text || '');
+          const meta = document.createElement('div');
+          meta.className = 'inline-msg-meta';
+          meta.textContent = timeHHMM(m.ts);
+          row.appendChild(txt);
+          row.appendChild(meta);
+          el.areaMensagens.appendChild(row);
+        }
+        el.areaMensagens.scrollTop = el.areaMensagens.scrollHeight;
+      }
+
+      function updateInlineChatLayout(){
+        const shell = el.inlineChatShell;
+        if(!shell || !shell.classList.contains('open')) return;
+        if(window.innerWidth <= 768) return;
+        let top = 86;
+        const desktopHeader = document.querySelector('.topbar, .navbar-desktop, header.navbar');
+        if(desktopHeader){
+          const r = desktopHeader.getBoundingClientRect();
+          if(r.height > 10) top = Math.max(64, Math.round(r.bottom + 8));
+        }
+        shell.style.top = `${top}px`;
+        shell.style.bottom = '18px';
+        shell.style.right = '18px';
+      }
+
+      function renderInlineChatHeader(p){
+        const nome = p.nome || p.usuario || p.titulo || 'Usuário';
+        const subt = p.usuario && p.nome && p.usuario !== p.nome ? `${p.usuario} • ${p.categoria || 'Geral'}` : (p.categoria || 'Offline');
+        el.inlineChatTitle.textContent = nome;
+        el.inlineChatSub.textContent = subt;
+        const avatar = normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png';
+        if(el.inlineChatAvatar) el.inlineChatAvatar.src = avatar;
+        if(el.inlineChatOrderLabel) el.inlineChatOrderLabel.textContent = `${p.titulo || 'Pedido'} • ${p.id || ''}`.trim();
+      }
+
+      function handleInlineChatSend(ev){
+        if(ev) ev.preventDefault();
+        const pedido = state.activeChatPedido;
+        if(!pedido || !pedido.id){ showToast('Selecione um pedido.'); return; }
+        const text = String(el.inlineChatInput?.value || '').trim();
+        if(!text) return;
+        const list = Array.isArray(state.areaMensagens) ? state.areaMensagens.slice() : [];
+        list.push({ id: `m_${Date.now()}`, text, ts: Date.now(), from:'me' });
+        state.areaMensagens = list;
+        saveInlineChatMessages(pedido.id, list);
+        if(el.inlineChatInput) el.inlineChatInput.value = '';
+        renderInlineChatMessages();
+      }
+
+      function stubChatAction(label){
+        showToast(`${label} em breve`);
+      }
+
+            // ===== INLINE CHAT (Firestore) =====
+      // Reutiliza o mesmo schema do chat.html: subcollection "mensagens" em pedidos/<id>/mensagens
+      let chatIdAtual = null;
+      let colecaoAtual = 'pedidos';
+      let chatUnsubscribe = null;
+
+      const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      const nl2br = (s) => escHtml(s).replace(/\n/g, '<br>');
+
+      function parseTs(ts){
+        try{
+          if(!ts) return null;
+          if(ts instanceof Date) return ts;
+          if(typeof ts === 'object' && typeof ts.seconds === 'number') return new Date(ts.seconds*1000);
           const d = new Date(ts);
-          if(!isFinite(d.getTime())) return '';
-          return d.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-        }catch(e){ return ''; }
+          return isNaN(d.getTime()) ? null : d;
+        }catch(_){ return null; }
       }
 
-      function statusLabelForChat(status){
-        if(status === 'andamento') return 'Em andamento';
-        if(status === 'finalizado') return 'Finalizado';
-        return 'Pendente';
-      }
+      function setInlineHeader(p){
+        const nome = p?.nome || p?.usuario || p?.userName || 'Usuário';
+        const user = p?.usuario || p?.username || p?.user || '';
+        const sub = user ? `@${String(user).replace(/^@/,'')} • Geral` : 'Geral';
+        const avatar = (p?.fotoUrl || p?.foto || p?.avatar || p?.avatarUrl || '').trim();
 
-      function hydrateChatContext(pedido){
-        if(!pedido || !chatEls.titulo) return;
-        chatEls.headTitle.textContent = pedido.usuario || pedido.nome || 'Chat do pedido';
-        chatEls.headSub.textContent = `${pedido.id || ''} • ${pedido.categoria || 'Geral'}`.trim();
-        chatEls.titulo.textContent = pedido.titulo || 'Pedido';
-        chatEls.id.textContent = pedido.id || '—';
-        chatEls.cliente.textContent = pedido.nome || pedido.usuario || 'Cliente';
-        chatEls.prazo.textContent = pedido.prazo || 'Sem prazo';
-        chatEls.valor.textContent = String(pedido.valor ?? '—');
-        if(chatEls.status){
-          chatEls.status.innerHTML = `<i class='bx bx-package'></i><span>${escapeHtml(statusLabelForChat(pedido.status))}</span>`;
+        const elName = document.getElementById('inlineChatName');
+        const elSub = document.getElementById('inlineChatSub');
+        const elAv = document.getElementById('inlineChatAvatar');
+        if(elName) elName.textContent = nome;
+        if(elSub) elSub.textContent = sub;
+        if(elAv){
+          if(avatar){
+            elAv.src = avatar;
+            elAv.onerror = () => { elAv.onerror = null; elAv.src = 'https://via.placeholder.com/40'; };
+          }else{
+            elAv.src = 'https://via.placeholder.com/40';
+          }
         }
       }
 
-      function renderChatMessages(pedido){
-        if(!pedido || !chatEls.messagesInner) return;
-        const list = loadChatMessages(pedido);
-        chatEls.messagesInner.innerHTML = list.map(m => {
-          const cls = m.who === 'me' ? 'pedido-chat-msg is-me' : (m.who === 'system' ? 'pedido-chat-msg system' : 'pedido-chat-msg');
-          return `
-            <div class="${cls}">
-              <div class="bubble">
-                <div class="author">${escapeHtml(m.author || (m.who === 'me' ? 'Você' : 'Cliente'))}</div>
-                <div class="text">${escapeHtml(m.text)}</div>
-                <div class="meta"><span>${escapeHtml(formatClock(m.ts))}</span>${m.who === 'me' ? "<i class='bx bx-check-double'></i>" : ''}</div>
+      function renderMensagens(snapshot){
+        const container = document.getElementById('areaMensagens');
+        const empty = document.getElementById('inlineChatEmpty');
+        if(!container) return;
+
+        const docs = snapshot?.docs || [];
+        if(empty) empty.style.display = docs.length ? 'none' : 'block';
+
+        const myUid = String(currentUserUid || auth?.currentUser?.uid || '').trim();
+
+        let html = '';
+        for(const d of docs){
+          const m = d.data() || {};
+          const sender = String(m.senderUid || m.senderuid || m.sender || '').trim();
+          const souEu = !!(myUid && sender && sender === myUid);
+          const rowCls = souEu ? 'msg-row msg-row-me' : 'msg-row msg-row-other';
+          const bubbleCls = souEu ? 'msg-bubble msg-enviada' : 'msg-bubble msg-recebida';
+          const dt = parseTs(m.timestamp);
+          const hora = dt ? dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
+
+          const tipo = String(m.tipo || 'texto').toLowerCase();
+          const texto = String(m.texto || '').trim();
+          const url = String(m.url || '').trim();
+
+          let corpo = '';
+          if(tipo === 'imagem' && url){
+            corpo = `<div class="msg-media"><img src="${escHtml(url)}" alt="imagem" loading="lazy"></div>` + (texto ? `<div style="margin-top:8px;">${nl2br(texto)}</div>` : '');
+          }else if(tipo === 'video' && url){
+            corpo = `<div class="msg-media"><video src="${escHtml(url)}" controls playsinline></video></div>` + (texto ? `<div style="margin-top:8px;">${nl2br(texto)}</div>` : '');
+          }else if(tipo === 'audio' && url){
+            corpo = `<div class="msg-media"><audio src="${escHtml(url)}" controls></audio></div>` + (texto ? `<div style="margin-top:8px;">${nl2br(texto)}</div>` : '');
+          }else if((tipo === 'arquivo' || tipo === 'file') && url){
+            const nomeArq = texto || 'Arquivo';
+            corpo = `<a class="msg-file" href="${escHtml(url)}" target="_blank" rel="noopener"><i class='bx bx-file'></i><span>${escHtml(nomeArq)}</span></a>`;
+          }else{
+            corpo = nl2br(texto || '');
+          }
+
+          html += `
+            <div class="${rowCls}">
+              <div class="${bubbleCls}">
+                ${corpo || ''}
+                <div class="msg-footer"><span class="msg-hora">${escHtml(hora)}</span></div>
               </div>
             </div>
           `;
-        }).join('');
-        if(chatEls.empty) chatEls.empty.style.display = list.length ? 'none' : 'block';
-        requestAnimationFrame(() => {
-          try{ chatEls.messagesWrap.scrollTop = chatEls.messagesWrap.scrollHeight; }catch(e){}
-        });
+        }
+        container.innerHTML = html || '';
+        // auto scroll bottom
+        try{ container.scrollTop = container.scrollHeight; }catch(_){}
       }
 
-      function resizeChatInput(){
-        if(!chatEls.input) return;
-        chatEls.input.style.height = 'auto';
-        const h = Math.min(Math.max(chatEls.input.scrollHeight, 44), 110);
-        chatEls.input.style.height = h + 'px';
+      function carregarMensagens(colecao, docId){
+        if(!docId) return;
+        if(chatUnsubscribe) { try{ chatUnsubscribe(); }catch(_){} }
+        const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
+        chatUnsubscribe = onSnapshot(q, (snap) => renderMensagens(snap), (err) => console.warn('onSnapshot chat', err));
       }
 
-      function markPedidoChatAsRead(pedidoId){
-        let changed = false;
-        state.pedidos = (state.pedidos || []).map(p => {
-          if(String(p.id) !== String(pedidoId)) return p;
-          if(Number(p.naoLidas || 0) === 0) return p;
-          changed = true;
-          return { ...p, naoLidas: 0, atualizado: 'agora' };
-        });
-        if(changed) render();
-      }
+      // reply meta (mantido para compatibilidade com chat.html)
+      function applyReplyMetaToText(texto){ return String(texto || ''); }
 
-      function openChatDrawer(pedido){
-        if(!chatDrawer || !pedido) return;
-        activeChatPedidoId = String(pedido.id);
-        chatDrawer.classList.add('open');
-        chatDrawer.setAttribute('aria-hidden','false');
-        document.documentElement.classList.add('no-scroll');
-        document.body.classList.add('no-scroll');
-        hydrateChatContext(pedido);
-        markPedidoChatAsRead(pedido.id);
-        renderChatMessages(getPedidoById(pedido.id) || pedido);
-        if(chatEls.input){
-          chatEls.input.value = '';
-          resizeChatInput();
-          setTimeout(() => { try{ chatEls.input.focus(); }catch(e){} }, 60);
+      window.enviarMensagemTexto = async function(){
+        const input = document.getElementById('mensagemInput');
+        const texto = String(input?.value || '').trim();
+        if(!texto) return;
+        if(!chatIdAtual || !colecaoAtual) return;
+
+        const uid = currentUserUid || auth?.currentUser?.uid || null;
+        if(!uid){ showToast('Faça login para enviar mensagem'); return; }
+
+        try{
+          input.value = '';
+          await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
+            tipo: 'texto',
+            texto: applyReplyMetaToText(texto),
+            senderUid: uid,
+            timestamp: new Date(),
+            lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
+          });
+          try{
+            await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: texto.slice(0,140), dataAtualizacao: new Date().toISOString() });
+          }catch(_){}
+        }catch(err){
+          console.error('enviarMensagemTexto', err);
+          showToast('Erro ao enviar mensagem');
+        }
+      };
+
+      async function enviarAnexoArquivo(file){
+        if(!file) return;
+        if(!chatIdAtual || !colecaoAtual) return;
+
+        try{
+          const storage = (typeof getStorage === 'function') ? getStorage() : (window.storage || null);
+          const mkRef = (typeof ref === 'function') ? ref : window.ref;
+          const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
+          const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
+          if(!storage || !mkRef || !uploadFn || !getUrlFn) throw new Error('Storage não configurado');
+
+          const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g,'_');
+          const path = `chat/${colecaoAtual}/${chatIdAtual}/${Date.now()}_${safeName}`;
+          const r = mkRef(storage, path);
+          const snapshot = await uploadFn(r, file);
+          const url = await getUrlFn(snapshot.ref || r);
+
+          const uid = currentUserUid || auth?.currentUser?.uid || null;
+          const isImg = String(file.type || '').startsWith('image/');
+          await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
+            tipo: isImg ? 'imagem' : 'arquivo',
+            texto: applyReplyMetaToText(safeName),
+            url,
+            senderUid: uid,
+            timestamp: new Date(),
+            lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
+          });
+          try{
+            const preview = isImg ? 'Imagem' : `Arquivo: ${safeName}`;
+            await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
+          }catch(_){}
+        }catch(err){
+          console.error('enviarAnexoArquivo', err);
+          showToast('Falha ao enviar anexo');
         }
       }
 
-      function closeChatDrawer(){
-        if(!chatDrawer) return;
-        chatDrawer.classList.remove('open');
-        chatDrawer.setAttribute('aria-hidden','true');
-        document.documentElement.classList.remove('no-scroll');
-        document.body.classList.remove('no-scroll');
+      // --- ÁUDIO (mesmo comportamento do chat.html, porém mínimo) ---
+      window.mediaRecorder = null;
+      window.audioChunks = [];
+      window.timerInterval = null;
+      window.audioRecordStartedAt = 0;
+
+      window.iniciarGravacao = async function(){
+        if(!navigator.mediaDevices?.getUserMedia){
+          alert("Seu navegador não suporta gravação de áudio.");
+          return;
+        }
+        try{
+          const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
+          window.mediaRecorder = new MediaRecorder(stream);
+          window.audioChunks = [];
+          window.mediaRecorder.ondataavailable = (e) => window.audioChunks.push(e.data);
+          window.mediaRecorder.start();
+          window.audioRecordStartedAt = Date.now();
+
+          document.getElementById('area-input-texto').style.display='none';
+          document.getElementById('uiGravando').style.display='flex';
+
+          let segundos=0;
+          const timer = document.getElementById('timerGravacao');
+          if(timer) timer.textContent='00:00';
+          window.timerInterval = setInterval(()=>{
+            segundos++;
+            const mins = String(Math.floor(segundos/60)).padStart(2,'0');
+            const secs = String(segundos%60).padStart(2,'0');
+            if(timer) timer.textContent = `${mins}:${secs}`;
+          },1000);
+        }catch(err){
+          console.error(err);
+          alert("Permita o uso do microfone para gravar áudio.");
+        }
+      };
+
+      window.cancelarGravacao = function(){
+        try{
+          if(window.mediaRecorder){
+            window.mediaRecorder.stop();
+            window.mediaRecorder.stream.getTracks().forEach(t=>t.stop());
+          }
+        }catch(_){}
+        clearInterval(window.timerInterval);
+        window.audioChunks=[];
+        window.audioRecordStartedAt=0;
+        document.getElementById('uiGravando').style.display='none';
+        document.getElementById('area-input-texto').style.display='flex';
+      };
+
+      window.enviarAudio = async function(){
+        if(!window.mediaRecorder) return;
+        try{
+          await new Promise((resolve)=>{ window.mediaRecorder.onstop = resolve; window.mediaRecorder.stop(); });
+          window.mediaRecorder.stream.getTracks().forEach(t=>t.stop());
+        }catch(_){}
+
+        clearInterval(window.timerInterval);
+
+        const uid = currentUserUid || auth?.currentUser?.uid || null;
+        if(!uid){ showToast('Faça login para enviar áudio'); window.cancelarGravacao(); return; }
+        if(!chatIdAtual || !colecaoAtual){ showToast('Nenhuma conversa aberta'); window.cancelarGravacao(); return; }
+
+        const audioBlob = new Blob(window.audioChunks, { type:'audio/webm' });
+        const gravacaoInicio = Number(window.audioRecordStartedAt || 0);
+        const duracaoAudioSec = gravacaoInicio > 0 ? Math.max(1, Math.round((Date.now()-gravacaoInicio)/1000)) : 0;
+        window.audioRecordStartedAt=0;
+
+        document.getElementById('uiGravando').style.display='none';
+        document.getElementById('area-input-texto').style.display='flex';
+
+        try{
+          const storage = (typeof getStorage === 'function') ? getStorage() : (window.storage || null);
+          const mkRef = (typeof ref === 'function') ? ref : window.ref;
+          const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
+          const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
+          if(!storage || !mkRef || !uploadFn || !getUrlFn) throw new Error('Storage não configurado');
+
+          const nomeArquivo = `chat/${colecaoAtual}/${chatIdAtual}/audio_${Date.now()}.webm`;
+          const storageRef = mkRef(storage, nomeArquivo);
+          const snapshot = await uploadFn(storageRef, audioBlob);
+          const downloadUrl = await getUrlFn(snapshot.ref || storageRef);
+
+          await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
+            tipo:'audio',
+            url: downloadUrl,
+            texto: applyReplyMetaToText('Mensagem de voz'),
+            duracaoSegundos: duracaoAudioSec,
+            senderUid: uid,
+            timestamp: new Date(),
+            lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
+          });
+          try{
+            await updateDoc(doc(db,"pedidos",chatIdAtual), { ultimaMensagem:'Mensagem de voz', dataAtualizacao:new Date().toISOString() });
+          }catch(_){}
+        }catch(err){
+          console.error('enviarAudio', err);
+          showToast('Falha ao enviar áudio');
+        }finally{
+          window.audioChunks=[];
+          window.mediaRecorder=null;
+        }
+      };
+
+      function openInlineChat(p){
+        if(!p || !p.id){ showToast('Pedido inválido para abrir chat.'); return; }
+
+        // mantém contexto no storage (compat)
+        try{
+          localStorage.setItem('doke_pedido_contexto', JSON.stringify(p));
+          localStorage.setItem('pedidoAtual', JSON.stringify(p));
+        }catch(_){}
+
+        chatIdAtual = String(p.id);
+        colecaoAtual = 'pedidos';
+
+        setInlineHeader(p);
+
+        el.inlineChatShell.classList.add('open');
+        el.inlineChatShell.setAttribute('aria-hidden','false');
+
+        carregarMensagens(colecaoAtual, chatIdAtual);
+
+        // binds
+        const fileInput = document.getElementById('inlineChatFile');
+        const attachBtn = document.getElementById('inlineChatAttachBtn');
+        if(attachBtn && fileInput){
+          attachBtn.onclick = () => fileInput.click();
+          fileInput.onchange = () => {
+            const f = fileInput.files && fileInput.files[0];
+            if(f) enviarAnexoArquivo(f);
+            fileInput.value = '';
+          };
+        }
+
+        setTimeout(()=> document.getElementById('mensagemInput')?.focus(), 40);
       }
 
-      function sendCurrentPedidoMessage(){
-        if(!activeChatPedidoId) return;
-        const pedido = getPedidoById(activeChatPedidoId);
-        if(!pedido || !chatEls.input) return;
-        const text = String(chatEls.input.value || '').trim();
-        if(!text) return;
-        const list = loadChatMessages(pedido);
-        list.push({
-          id:`me_${Date.now()}`, who:'me', author:'Você', text,
-          ts: new Date().toISOString()
-        });
-        saveChatMessages(pedido.id, list);
-        chatEls.input.value = '';
-        resizeChatInput();
-        state.pedidos = (state.pedidos || []).map(p => String(p.id) === String(pedido.id) ? ({...p, atualizado:'agora'}) : p);
+      function closeInlineChat(){
+        el.inlineChatShell.classList.remove('open');
+        el.inlineChatShell.setAttribute('aria-hidden','true');
+        if(chatUnsubscribe){ try{ chatUnsubscribe(); }catch(_){} chatUnsubscribe=null; }
+      }
+
+      function openChat(p){
+        openInlineChat(p);
+      }
+
+      async function openDetails(p){
+        if(!p || !p.id){ showToast('Pedido invalido para abrir detalhes.'); return; }
+        try{
+          localStorage.setItem('doke_pedido_detalhes', JSON.stringify(p));
+          localStorage.setItem('pedidoAtual', JSON.stringify(p));
+        }catch(_){ }
+        const full = await fetchPedidoCompleto(p);
+        renderDetailsModal(full || p);
+      }
+
+      function toggleSelectMode(force){
+        const next = typeof force === 'boolean' ? force : !state.selectMode;
+        state.selectMode = next;
+        if(!next) state.selected.clear();
         render();
-        renderChatMessages(getPedidoById(pedido.id) || pedido);
-      }
-
-      chatDrawer?.querySelectorAll('[data-close]')?.forEach(elm => elm.addEventListener('click', closeChatDrawer));
-      chatEls.send?.addEventListener('click', sendCurrentPedidoMessage);
-      chatEls.input?.addEventListener('input', resizeChatInput);
-      chatEls.input?.addEventListener('keydown', (e) => {
-        if(e.key === 'Enter' && !e.shiftKey){
-          e.preventDefault();
-          sendCurrentPedidoMessage();
-        }
-      });
-      document.addEventListener('keydown', (e)=>{
-        if(e.key === 'Escape' && chatDrawer?.getAttribute('aria-hidden') === 'false') closeChatDrawer();
-      });
-
-
-function syncActiveStates(){
-        el.chips.forEach(btn => btn.classList.toggle('active', btn.dataset.filter === state.filter));
-        (el.kpiBtns || []).forEach(btn => btn.classList.toggle('active', btn.dataset.kpi === state.filter || (btn.dataset.kpi === 'all' && state.filter === 'all')));
-        el.toggleSelectionBtn.classList.toggle('active', state.selectionMode);
       }
 
       function toggleSelected(id){
-        if(!state.selectionMode) return;
-        if(state.selected.has(id)) state.selected.delete(id); else state.selected.add(id);
-        updateBulkInfo();
+        const key = String(id || '');
+        if(!key) return;
+        if(state.selected.has(key)) state.selected.delete(key);
+        else state.selected.add(key);
         render();
       }
 
-      function updateBulkInfo(){
-        const n = state.selected.size;
-        if(!el.bulkInfo) return;
-        el.bulkInfo.textContent = `${n} pedido${n !== 1 ? 's' : ''} selecionado${n !== 1 ? 's' : ''}`;
+      function setupFallbacks(){
+        window.toggleCep = window.toggleCep || function(e){ if(e) e.preventDefault(); const box = document.getElementById('boxCep'); if(box) box.style.display = box.style.display === 'block' ? 'none' : 'block'; };
+        window.salvarCep = window.salvarCep || function(){ const val = String(document.getElementById('inputCep')?.value || '').trim(); if(!val) return; localStorage.setItem('doke_cep', val); const span = document.getElementById('textoCepSpan'); if(span) span.textContent = val; const box = document.getElementById('boxCep'); if(box) box.style.display='none'; showToast('CEP salvo'); };
+        window.abrirMenuMobile = window.abrirMenuMobile || function(){ document.querySelector('.sidebar-icones')?.classList.add('menu-aberto'); document.body.classList.add('menu-ativo'); const ov = document.getElementById('overlay-menu'); if(ov) ov.style.display='block'; };
+        window.fecharMenuMobile = window.fecharMenuMobile || function(){ document.querySelector('.sidebar-icones')?.classList.remove('menu-aberto'); document.body.classList.remove('menu-ativo'); const ov = document.getElementById('overlay-menu'); if(ov) ov.style.display='none'; };
+        window.irParaMeuPerfil = window.irParaMeuPerfil || function(e){ if(e) e.preventDefault(); location.href='meuperfil.html'; };
+
+        const cep = localStorage.getItem('doke_cep');
+        if(cep){ const span = document.getElementById('textoCepSpan'); if(span) span.textContent = cep; }
       }
 
-      function cycleSort(){
-        const order = ['recent','urgent','oldest','name'];
-        const labels = {recent:'Mais recentes', urgent:'Urgentes primeiro', oldest:'Mais antigos', name:'Nome do cliente'};
-        const idx = order.indexOf(state.sort);
-        state.sort = order[(idx + 1) % order.length];
-        el.sortLabel.textContent = labels[state.sort];
-        render();
-      }
-
-      function finalizeSelected(){
-        if(!state.selected.size){ fakeToast('Selecione pelo menos 1 pedido.'); return; }
-        state.pedidos = state.pedidos.map(p => state.selected.has(String(p.id)) ? {...p, status:'finalizado', urgente:false, atualizado:'agora'} : p);
-        state.selected.clear();
-        render();
-        fakeToast('Pedidos finalizados.');
-      }
-
-      function archiveSelected(){
-        if(!state.selected.size){ fakeToast('Selecione pelo menos 1 pedido.'); return; }
-        state.pedidos = state.pedidos.filter(p => !state.selected.has(String(p.id)));
-        state.selected.clear();
-        render();
-        fakeToast('Pedidos arquivados da lista atual.');
-      }
-
-      function clearSelection(){
-        state.selected.clear();
-        state.selectionMode = false;
-        render();
-      }
-
-      function escapeHtml(v){
-        return String(v ?? '').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-      }
-      function escapeAttr(v){ return escapeHtml(v); }
-
-      function fakeToast(msg){
-        let t = document.getElementById('fakeToast');
-        if(!t){
-          t = document.createElement('div');
-          t.id = 'fakeToast';
-          t.style.cssText = 'position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 14px;border-radius:12px;font-weight:700;font-size:.9rem;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:9999;opacity:0;transition:.2s;pointer-events:none;max-width:92vw;text-align:center';
-          document.body.appendChild(t);
+      async function hydrate(forceFs){
+        const local = loadLocal();
+        let merged = mergePedidos(local);
+        if(forceFs || merged.length < 3){
+          const fs = await loadFirestore();
+          merged = mergePedidos([...(merged || []), ...(fs || [])]);
         }
-        t.textContent = msg;
-        t.style.opacity = '1';
-        clearTimeout(fakeToast._timer);
-        fakeToast._timer = setTimeout(() => { t.style.opacity = '0'; }, 1400);
-      }
-
-
-// Menu lateral (mobile) simples para esta página
-document.querySelector('.mobile-header .hamb')?.addEventListener('click', () => {
-  const sb = document.querySelector('.sidebar');
-  if(!sb) return;
-  const isOpen = sb.classList.toggle('menu-open');
-  if(isOpen){
-    document.body.classList.add('menu-open-pedidos');
-  }else{
-    document.body.classList.remove('menu-open-pedidos');
-  }
-});
-
-document.addEventListener('click', (ev) => {
-  if(window.innerWidth > 900) return;
-  const sb = document.querySelector('.sidebar');
-  const hb = document.querySelector('.mobile-header .hamb');
-  if(!sb || !hb || !sb.classList.contains('menu-open')) return;
-  if(sb.contains(ev.target) || hb.contains(ev.target)) return;
-  sb.classList.remove('menu-open');
-  document.body.classList.remove('menu-open-pedidos');
-});
-
-// Compatibilidade mínima com shell/header padrão
-window.toggleCep = window.toggleCep || function(ev){ if(ev) ev.preventDefault(); fakeToast('Campo de CEP disponível no header principal do site.'); };
-window.salvarCep = window.salvarCep || function(){ fakeToast('CEP salvo.'); };
-window.fecharMenuMobile = window.fecharMenuMobile || function(){};
-window.irParaMeuPerfil = window.irParaMeuPerfil || function(ev){ if(ev) ev.preventDefault(); location.href='meuperfil.html'; };
-
-const cepLinkTop = (document.getElementById('linkCepTop')||document.getElementById('linkCep'));
-cepLinkTop?.addEventListener('click', function(ev){
-  ev.preventDefault();
-  const val = prompt('Digite seu CEP (opcional):', localStorage.getItem('doke_cep') || '');
-  if(val === null) return;
-  const clean = String(val).trim();
-  if(clean){ localStorage.setItem('doke_cep', clean); (document.getElementById('textoCepSpanTop')||document.getElementById('textoCepSpan')).textContent = clean; fakeToast('CEP atualizado.'); }
-});
-try{
-  const savedCep = localStorage.getItem('doke_cep');
-  if(savedCep) (document.getElementById('textoCepSpanTop')||document.getElementById('textoCepSpan')).textContent = savedCep;
-}catch(e){}
-
-      // Eventos gerais
-      el.searchInput.addEventListener('input', () => { state.query = el.searchInput.value; render(); });
-      el.sortBtn.addEventListener('click', cycleSort);
-      el.toggleSelectionBtn.addEventListener('click', () => {
-        state.selectionMode = !state.selectionMode;
-        if(!state.selectionMode) state.selected.clear();
+        state.pedidos = merged;
         render();
-      });
-      el.bulkClearBtn.addEventListener('click', clearSelection);
-      el.bulkFinalizeBtn.addEventListener('click', finalizeSelected);
-      el.bulkArchiveBtn.addEventListener('click', archiveSelected);
-      el.agendaBtn.addEventListener('click', () => { window.location.href = 'mensagens.html?aba=agenda'; });
-      el.orcamentosBtn.addEventListener('click', () => { window.location.href = 'orcamento.html'; });
+      }
 
-      el.chips.forEach(btn => btn.addEventListener('click', () => { state.filter = btn.dataset.filter; render(); }));
-      (el.kpiBtns || []).forEach(btn => btn.addEventListener('click', () => { state.filter = btn.dataset.kpi; render(); }));
+      function bind(){
+        el.search.addEventListener('input', () => { state.query = String(el.search.value || ''); render(); });
+        el.sortBtn.addEventListener('click', () => { nextSort(); render(); });
+        el.selectBtn.addEventListener('click', () => toggleSelectMode());
+        el.refreshBtn.addEventListener('click', async () => { el.refreshBtn.disabled = true; await hydrate(true); el.refreshBtn.disabled = false; showToast('Pedidos atualizados'); });
+        el.chips.forEach(ch => ch.addEventListener('click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
+        el.grid.addEventListener('click', (ev) => {
+          const btn = ev.target.closest('button[data-action][data-id]');
+          if(btn){
+            const p = byId(btn.dataset.id);
+            if(btn.dataset.action === 'select'){ toggleSelected(btn.dataset.id); return; }
+            if(state.selectMode){ toggleSelected(btn.dataset.id); return; }
+            if(btn.dataset.action === 'chat') openChat(p); else openDetails(p);
+            return;
+          }
+          const cardEl = ev.target.closest('.card[data-id]');
+          if(!cardEl || !state.selectMode) return;
+          toggleSelected(cardEl.dataset.id);
+        });
+        el.inlineChatBack.addEventListener('click', closeInlineChat);
+        el.inlineChatMenu?.addEventListener('click', () => stubChatAction('Opções do chat'));
+        el.inlineChatComposer?.addEventListener('submit', handleInlineChatSend);
+        el.inlineChatMoneyBtn?.addEventListener('click', () => stubChatAction('Cobrança'));
+        el.inlineChatAttachBtn?.addEventListener('click', () => stubChatAction('Anexos'));
+        el.inlineChatMicBtn?.addEventListener('click', () => stubChatAction('Áudio'));
+        el.inlineChatShell.addEventListener('click', (ev) => {
+          if(window.innerWidth <= 768) return;
+          if(ev.target === el.inlineChatShell) closeInlineChat();
+        });
+        window.addEventListener('resize', updateInlineChatLayout);
+        el.detailsCloseBtn.addEventListener('click', closeDetailsModal);
+        el.detailsModal.addEventListener('click', (ev) => {
+          if(ev.target === el.detailsModal) closeDetailsModal();
+        });
+        document.addEventListener('keydown', (ev) => {
+          if(ev.key !== 'Escape') return;
+          if(el.detailsModal.classList.contains('open')) closeDetailsModal();
+          if(el.inlineChatShell.classList.contains('open')) closeInlineChat();
+        });
+        window.addEventListener('storage', (ev) => { const key = String(ev?.key || ''); if(!key || /(pedido|orcamento|doke_)/i.test(key)) hydrate(false); });
+      }
 
-      render();
-    })();
-  </script>
-<script src="doke-toast.js"></script>
-<script src="doke-alerts.js?v=20260217v33"></script>
-<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
-<script>
-(function pedidosHeaderAvatarSync(){
-  try{
-    const raw = localStorage.getItem('usuarioLogado') || localStorage.getItem('usuario') || localStorage.getItem('userProfile');
-    if(!raw) return;
-    const u = typeof raw === 'string' ? JSON.parse(raw) : raw;
-    const foto = u?.foto || u?.fotoPerfil || u?.avatar || u?.profileImage || u?.photoURL;
-    if(!foto) return;
-    document.querySelectorAll('.navbar-desktop .botoes-direita .entrar, .navbar-mobile .botoes-direita .entrar').forEach(btn=>btn.style.display='none');
-    document.querySelectorAll('.navbar-desktop .botoes-direita, .navbar-mobile .botoes-direita').forEach(box=>{
-      if(box.querySelector('.pedidos-avatar-header')) return;
-      const a=document.createElement('a'); a.href='perfil.html'; a.className='pedidos-avatar-header';
-      a.innerHTML='<img alt="Perfil" src="'+foto+'" onerror="this.remove()">';
-      box.appendChild(a);
-    });
-  }catch(e){}
-})();
-</script>
-
-  <script>
-    (function pedidosBadgesAndRender(){
-      // BADGES: usa o mesmo CSS global do site (style.css) -> .badge-notificacao
-      function readNumber(keys){
-        for(const k of keys){
-          const raw = localStorage.getItem(k);
-          if(raw == null) continue;
-          const n = Number(raw);
-          if(Number.isFinite(n)) return n;
-        }
-        return 0;
-      }
-      function setBadge(el, value){
-        if(!el) return;
-        const v = Number(value)||0;
-        el.textContent = String(v);
-        el.style.display = v>0 ? 'flex' : 'none';
-      }
-      function syncBadges(){
-        const notif = readNumber(['doke_notif_unread','notificacoes_nao_lidas','notifCount','notificacoesCount']);
-        const msg   = readNumber(['doke_msg_unread','mensagens_nao_lidas','msgCount','mensagensCount']);
-        setBadge(document.getElementById('sidebarNotifBadge'), notif);
-        setBadge(document.getElementById('sidebarMsgBadge'), msg);
-      }
-      function forceRenderPedidos(){
-        try{
-          if(typeof renderAll === 'function') renderAll();
-          else if(typeof init === 'function') init();
-        }catch(e){ console.warn('pedidos forceRender', e); }
-      }
-      window.addEventListener('load', function(){
-        setTimeout(syncBadges, 60);
-        setTimeout(forceRenderPedidos, 90);
-      });
-      window.addEventListener('storage', function(){
-        setTimeout(syncBadges, 60);
-        setTimeout(forceRenderPedidos, 120);
-      });
-      document.addEventListener('visibilitychange', function(){
-        if(!document.hidden){ setTimeout(syncBadges, 60); setTimeout(forceRenderPedidos, 120); }
-      });
+      setupFallbacks();
+      bind();
+      hydrate(true);
     })();
   </script>
 </body>

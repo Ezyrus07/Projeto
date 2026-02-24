@@ -1,0 +1,768 @@
+﻿<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ðŸ”§ Diagnóstico Avançado - Doke</title>
+    <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2d3748;
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.08);
+        }
+
+        .card h2 {
+            color: #2d3748;
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-item {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #e2e8f0;
+            background: #f7fafc;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .test-item.pending {
+            border-left-color: #ecc94b;
+        }
+
+        .test-item.success {
+            border-left-color: #48bb78;
+            background: #f0fff4;
+        }
+
+        .test-item.error {
+            border-left-color: #f56565;
+            background: #fff5f5;
+        }
+
+        .test-item.warning {
+            border-left-color: #ed8936;
+            background: #fffaf0;
+        }
+
+        .status-icon {
+            font-size: 1.5rem;
+        }
+
+        .status-icon.pending { color: #ecc94b; }
+        .status-icon.success { color: #48bb78; }
+        .status-icon.error { color: #f56565; }
+        .status-icon.warning { color: #ed8936; }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-danger {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #e53e3e;
+        }
+
+        .btn-success {
+            background: #48bb78;
+            color: white;
+        }
+
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+
+        .code-block {
+            background: #2d3748;
+            color: #f7fafc;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            margin-top: 10px;
+        }
+
+        .alert {
+            padding: 15px 20px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+
+        .alert-info {
+            background: #ebf8ff;
+            border-left: 4px solid #4299e1;
+            color: #2c5282;
+        }
+
+        .alert-warning {
+            background: #fffaf0;
+            border-left: 4px solid #ed8936;
+            color: #7c2d12;
+        }
+
+        .alert-danger {
+            background: #fff5f5;
+            border-left: 4px solid #f56565;
+            color: #742a2a;
+        }
+
+        .alert-success {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            color: #22543d;
+        }
+
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 15px;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s;
+        }
+
+        .detail-text {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-top: 5px;
+        }
+
+        .test-label {
+            font-weight: 600;
+            color: #2d3748;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.5rem;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1><i class='bx bx-wrench'></i> Diagnóstico Avançado do Sistema</h1>
+            <p>Ferramenta para identificar e corrigir problemas do Doke</p>
+        </div>
+
+        <div class="card">
+            <h2><i class='bx bx-info-circle'></i> Instruções</h2>
+            <div class="alert alert-info">
+                <i class='bx bx-help-circle' style="font-size: 1.5rem;"></i>
+                <div>
+                    <strong>Como usar esta ferramenta:</strong>
+                    <ol style="margin-top: 8px; padding-left: 20px;">
+                        <li>Clique em "Iniciar Diagnóstico Completo"</li>
+                        <li>Aguarde os testes serem executados</li>
+                        <li>Veja os resultados e correções sugeridas</li>
+                        <li>Use os botões de ação para corrigir problemas</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2><i class='bx bx-test-tube'></i> Testes do Sistema</h2>
+            <div id="progressContainer" class="hidden">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                </div>
+                <p style="text-align: center; margin-top: 10px; color: #718096;" id="progressText">Preparando testes...</p>
+            </div>
+            <div id="testsContainer"></div>
+            <div class="actions">
+                <button class="btn btn-primary" onclick="iniciarDiagnostico()">
+                    <i class='bx bx-play-circle'></i> Iniciar Diagnóstico Completo
+                </button>
+            </div>
+        </div>
+
+        <div class="card" id="resultsCard" class="hidden">
+            <h2><i class='bx bx-clipboard-check'></i> Resumo e Ações</h2>
+            <div id="resultsContainer"></div>
+            <div class="actions" id="actionsContainer"></div>
+        </div>
+
+        <div class="card">
+            <h2><i class='bx bx-cog'></i> Ações Rápidas</h2>
+            <div class="actions">
+                <button class="btn btn-danger" onclick="limparCacheCompleto()">
+                    <i class='bx bx-trash'></i> Limpar Todo o Cache
+                </button>
+                <button class="btn btn-success" onclick="testarConexaoSupabase()">
+                    <i class='bx bx-wifi'></i> Testar Supabase
+                </button>
+                <button class="btn btn-primary" onclick="exportarDiagnostico()">
+                    <i class='bx bx-download'></i> Exportar Relatório
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-init.js?v=20260218v43"></script>
+<script src="doke-auto-fix.js?v=20260215v10"></script>
+    <script>
+        const testes = [
+            {
+                id: 'supabase-connection',
+                nome: 'Conexão com Supabase',
+                teste: async () => {
+                    const sb = window.sb || window.supabaseClient;
+                    if (!sb) throw new Error('Cliente Supabase não inicializado');
+                    
+                    const url = window.SUPABASE_URL || window.DOKE_SUPABASE_URL;
+                    const key = window.SUPABASE_ANON_KEY || window.DOKE_SUPABASE_ANON_KEY;
+                    
+                    if (!url || url.includes('YOURPROJECT')) {
+                        throw new Error('URL do Supabase não configurada corretamente');
+                    }
+                    
+                    if (!key || key.length < 100) {
+                        throw new Error('Chave do Supabase inválida');
+                    }
+
+                    // Testa conexão real
+                    const response = await fetch(`${url}/auth/v1/health`, {
+                        headers: { 'apikey': key }
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Servidor retornou status ${response.status}`);
+                    }
+
+                    return { ok: true, detalhes: `Conectado em ${url}` };
+                }
+            },
+            {
+                id: 'auth-session',
+                nome: 'Sessão de Autenticação',
+                teste: async () => {
+                    const sb = window.sb || window.supabaseClient;
+                    if (!sb) throw new Error('Cliente Supabase não disponível');
+
+                    const { data, error } = await sb.auth.getSession();
+                    
+                    if (error) throw error;
+                    
+                    const user = data?.session?.user;
+                    
+                    if (!user) {
+                        return { ok: false, aviso: 'Nenhum usuário logado (normal se estiver deslogado)' };
+                    }
+
+                    return { 
+                        ok: true, 
+                        detalhes: `Usuário logado: ${user.email}`,
+                        dados: { uid: user.id, email: user.email }
+                    };
+                }
+            },
+            {
+                id: 'localstorage-check',
+                nome: 'Verificação do LocalStorage',
+                teste: async () => {
+                    const perfil = localStorage.getItem('doke_usuario_perfil');
+                    const logado = localStorage.getItem('usuarioLogado');
+                    const uid = localStorage.getItem('doke_uid');
+
+                    const problemas = [];
+                    
+                    if (logado === 'true' && !perfil) {
+                        problemas.push('Marcado como logado mas sem perfil');
+                    }
+
+                    if (perfil) {
+                        try {
+                            const p = JSON.parse(perfil);
+                            if (!p.nome && !p.user) {
+                                problemas.push('Perfil sem dados básicos');
+                            }
+                        } catch (e) {
+                            problemas.push('Perfil corrompido (JSON inválido)');
+                        }
+                    }
+
+                    if (problemas.length > 0) {
+                        throw new Error(problemas.join(', '));
+                    }
+
+                    return { 
+                        ok: true, 
+                        detalhes: `Estado: ${logado === 'true' ? 'Logado' : 'Deslogado'}`,
+                        dados: { logado, temPerfil: !!perfil, uid }
+                    };
+                }
+            },
+            {
+                id: 'database-access',
+                nome: 'Acesso ao Banco de Dados',
+                teste: async () => {
+                    const sb = window.sb || window.supabaseClient;
+                    if (!sb) throw new Error('Cliente Supabase não disponível');
+
+                    // Tenta ler da tabela usuários (teste de RLS)
+                    const { data, error } = await sb
+                        .from('usuarios')
+                        .select('uid')
+                        .limit(1);
+
+                    if (error) {
+                        if (error.code === '42P01') {
+                            throw new Error('Tabela "usuários" não existe no banco');
+                        }
+                        throw new Error(`Erro RLS: ${error.message}`);
+                    }
+
+                    return { 
+                        ok: true, 
+                        detalhes: 'Políticas RLS configuradas corretamente'
+                    };
+                }
+            },
+            {
+                id: 'cache-versions',
+                nome: 'Versões de Cache',
+                teste: async () => {
+                    const buildTag = window.__DOKE_BUILD__;
+                    
+                    if (!buildTag) {
+                        throw new Error('Build tag não encontrada');
+                    }
+
+                    // Verifica se há conflito de versões
+                    const scripts = Array.from(document.querySelectorAll('script[src]'));
+                    const versoes = scripts
+                        .map(s => s.src.match(/v=([^&]+)/)?.[1])
+                        .filter(Boolean);
+
+                    const versoesUnicas = [...new Set(versoes)];
+
+                    if (versoesUnicas.length > 3) {
+                        return {
+                            ok: false,
+                            aviso: `${versoesUnicas.length} versões diferentes detectadas`,
+                            detalhes: versoesUnicas.join(', ')
+                        };
+                    }
+
+                    return { 
+                        ok: true, 
+                        detalhes: `Build: ${buildTag}, Versões: ${versoesUnicas.length}`
+                    };
+                }
+            }
+        ];
+
+        let resultadosTestes = {};
+
+        async function iniciarDiagnostico() {
+            const container = document.getElementById('testsContainer');
+            const progressContainer = document.getElementById('progressContainer');
+            const progressFill = document.getElementById('progressFill');
+            const progressText = document.getElementById('progressText');
+            
+            container.innerHTML = '';
+            resultadosTestes = {};
+            progressContainer.classList.remove('hidden');
+            
+            let completados = 0;
+            const total = testes.length;
+
+            for (const teste of testes) {
+                const itemDiv = criarItemTeste(teste);
+                container.appendChild(itemDiv);
+
+                progressText.textContent = `Executando: ${teste.nome}...`;
+                
+                try {
+                    const resultado = await teste.teste();
+                    resultadosTestes[teste.id] = resultado;
+                    
+                    if (resultado.ok) {
+                        atualizarItemTeste(teste.id, 'success', resultado.detalhes);
+                    } else if (resultado.aviso) {
+                        atualizarItemTeste(teste.id, 'warning', resultado.aviso);
+                    }
+                } catch (error) {
+                    resultadosTestes[teste.id] = { ok: false, erro: error.message };
+                    atualizarItemTeste(teste.id, 'error', error.message);
+                }
+
+                completados++;
+                const progresso = (completados / total) * 100;
+                progressFill.style.width = `${progresso}%`;
+                
+                await new Promise(resolve => setTimeout(resolve, 300));
+            }
+
+            progressText.textContent = 'Diagnóstico concluído!';
+            setTimeout(() => {
+                progressContainer.classList.add('hidden');
+            }, 2000);
+
+            mostrarResumo();
+        }
+
+        function criarItemTeste(teste) {
+            const div = document.createElement('div');
+            div.className = 'test-item pending';
+            div.id = `test-${teste.id}`;
+            div.innerHTML = `
+                <div>
+                    <div class="test-label">${teste.nome}</div>
+                    <div class="detail-text">Aguardando...</div>
+                </div>
+                <i class='bx bx-loader bx-spin status-icon pending'></i>
+            `;
+            return div;
+        }
+
+        function atualizarItemTeste(id, status, mensagem) {
+            const div = document.getElementById(`test-${id}`);
+            if (!div) return;
+
+            const icones = {
+                success: 'bx-check-circle',
+                error: 'bx-x-circle',
+                warning: 'bx-error-circle'
+            };
+
+            div.className = `test-item ${status}`;
+            div.querySelector('.detail-text').textContent = mensagem;
+            div.querySelector('.status-icon').className = `bx ${icones[status]} status-icon ${status}`;
+        }
+
+        function mostrarResumo() {
+            const resultsCard = document.getElementById('resultsCard');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const actionsContainer = document.getElementById('actionsContainer');
+            
+            resultsCard.classList.remove('hidden');
+
+            const sucessos = Object.values(resultadosTestes).filter(r => r.ok).length;
+            const falhas = Object.values(resultadosTestes).filter(r => !r.ok).length;
+
+            let html = '';
+            let acoes = '';
+
+            if (falhas === 0) {
+                html = `
+                    <div class="alert alert-success">
+                        <i class='bx bx-check-circle' style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>✅ Sistema Funcionando Perfeitamente!</strong>
+                            <p style="margin-top: 5px;">Todos os ${sucessos} testes passaram. Seu site deve estar operacional.</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                html = `
+                    <div class="alert alert-danger">
+                        <i class='bx bx-error-circle' style="font-size: 1.5rem;"></i>
+                        <div>
+                            <strong>âš ï¸ ${falhas} Problema(s) Encontrado(s)</strong>
+                            <p style="margin-top: 5px;">${sucessos} testes passaram, ${falhas} falharam.</p>
+                        </div>
+                    </div>
+                `;
+
+                // Ações específicas baseadas nos erros
+                if (!resultadosTestes['supabase-connection']?.ok) {
+                    acoes += `
+                        <button class="btn btn-danger" onclick="corrigirSupabase()">
+                            <i class='bx bx-wrench'></i> Reconfigurar Supabase
+                        </button>
+                    `;
+                }
+
+                if (!resultadosTestes['localstorage-check']?.ok) {
+                    acoes += `
+                        <button class="btn btn-danger" onclick="limparCacheCompleto()">
+                            <i class='bx bx-trash'></i> Limpar Cache Corrompido
+                        </button>
+                    `;
+                }
+
+                if (!resultadosTestes['database-access']?.ok) {
+                    acoes += `
+                        <button class="btn btn-danger" onclick="mostrarSqlFix()">
+                            <i class='bx bx-data'></i> Ver Script SQL de Correção
+                        </button>
+                    `;
+                }
+            }
+
+            resultsContainer.innerHTML = html;
+            actionsContainer.innerHTML = acoes;
+        }
+
+        async function limparCacheCompleto() {
+            if (!confirm('Isso irá limpar TODOS os dados salvos (login, perfil, preferências). Continuar?')) {
+                return;
+            }
+
+            try {
+                // Limpa localStorage
+                const keysToRemove = [];
+                for (let i = 0; i < localStorage.length; i++) {
+                    const key = localStorage.key(i);
+                    if (key.startsWith('doke_') || key.startsWith('sb-') || key.includes('supabase')) {
+                        keysToRemove.push(key);
+                    }
+                }
+                keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                // Limpa sessionStorage
+                sessionStorage.clear();
+
+                // Faz logout do Supabase
+                const sb = window.sb || window.supabaseClient;
+                if (sb) {
+                    await sb.auth.signOut();
+                }
+
+                alert('✅ Cache limpo com sucesso! Recarregando a página...');
+                setTimeout(() => {
+                    window.location.reload();
+                }, 1000);
+            } catch (error) {
+                alert('âŒ Erro ao limpar cache: ' + error.message);
+            }
+        }
+
+        async function testarConexaoSupabase() {
+            const sb = window.sb || window.supabaseClient;
+            
+            if (!sb) {
+                alert('âŒ Cliente Supabase não inicializado');
+                return;
+            }
+
+            try {
+                const { data, error } = await sb.auth.getSession();
+                
+                if (error) throw error;
+
+                alert(`✅ Conexão OK!\n\nUsuário: ${data.session?.user?.email || 'Nenhum usuário logado'}`);
+            } catch (error) {
+                alert(`âŒ Erro na conexão:\n\n${error.message}`);
+            }
+        }
+
+        function corrigirSupabase() {
+            const modal = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;" onclick="this.remove()">
+                    <div style="background: white; padding: 30px; border-radius: 15px; max-width: 600px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                        <h2 style="margin-bottom: 20px;"><i class='bx bx-wrench'></i> Reconfigurar Supabase</h2>
+                        <p style="margin-bottom: 15px;">Acesse seu projeto Supabase e copie as credenciais:</p>
+                        <ol style="margin-bottom: 20px; padding-left: 20px; line-height: 1.8;">
+                            <li>Vá em <strong>Settings > API</strong></li>
+                            <li>Copie a <strong>Project URL</strong></li>
+                            <li>Copie a <strong>anon/public key</strong> (JWT grande)</li>
+                            <li>Cole no arquivo <code>supabase-init.js</code> (linhas 14-15)</li>
+                        </ol>
+                        <div class="code-block">
+const DEFAULT_URL = "SUA_URL_AQUI";
+const DEFAULT_KEY = "SUA_CHAVE_AQUI";
+                        </div>
+                        <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="this.closest('div[onclick]').click()">Entendi</button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modal);
+        }
+
+        function mostrarSqlFix() {
+            const sql = `-- Execute este SQL no Supabase (aba SQL Editor):
+
+-- 1. Habilitar RLS na tabela usuários
+ALTER TABLE usuários ENABLE ROW LEVEL SECURITY;
+
+-- 2. Permitir leitura pública de perfis
+CREATE POLICY "Perfis públicos são visíveis"
+ON usuários FOR SELECT
+USING (true);
+
+-- 3. Usuários podem atualizar próprio perfil
+CREATE POLICY "Usuários podem atualizar próprio perfil"
+ON usuários FOR UPDATE
+USING (auth.uid() = uid);
+
+-- 4. Permitir criação de novo perfil no signup
+CREATE POLICY "Usuários podem criar próprio perfil"
+ON usuários FOR INSERT
+WITH CHECK (auth.uid() = uid);`;
+
+            const modal = `
+                <div style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 9999;" onclick="this.remove()">
+                    <div style="background: white; padding: 30px; border-radius: 15px; max-width: 700px; max-height: 80vh; overflow-y: auto;" onclick="event.stopPropagation()">
+                        <h2 style="margin-bottom: 20px;"><i class='bx bx-data'></i> Script SQL de Correção</h2>
+                        <p style="margin-bottom: 15px;">Copie e execute este SQL no Supabase:</p>
+                        <div class="code-block" style="white-space: pre-wrap;">${sql}</div>
+                        <button class="btn btn-primary" style="margin-top: 20px; width: 100%;" onclick="copiarSQL(\`${sql}\`)">
+                            <i class='bx bx-copy'></i> Copiar SQL
+                        </button>
+                    </div>
+                </div>
+            `;
+            document.body.insertAdjacentHTML('beforeend', modal);
+        }
+
+        function copiarSQL(sql) {
+            navigator.clipboard.writeText(sql).then(() => {
+                alert('✅ SQL copiado! Cole no Supabase > SQL Editor');
+            }).catch(() => {
+                alert('âŒ Erro ao copiar. Copie manualmente.');
+            });
+        }
+
+        function exportarDiagnostico() {
+            const relatorio = {
+                timestamp: new Date().toISOString(),
+                testes: resultadosTestes,
+                navegador: navigator.userAgent,
+                url: window.location.href
+            };
+
+            const blob = new Blob([JSON.stringify(relatorio, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `diagnostico-doke-${Date.now()}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+        }
+
+        // Executa um teste rápido ao carregar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const sb = window.sb || window.supabaseClient;
+                if (!sb) {
+                    const container = document.querySelector('.card');
+                    container.insertAdjacentHTML('afterbegin', `
+                        <div class="alert alert-danger">
+                            <i class='bx bx-error-circle' style="font-size: 1.5rem;"></i>
+                            <div>
+                                <strong>âš ï¸ Supabase não inicializado!</strong>
+                                <p style="margin-top: 5px;">O cliente Supabase não foi carregado. Verifique se o arquivo supabase-init.js existe e está configurado.</p>
+                            </div>
+                        </div>
+                    `);
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,430 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Perfil Profissional | Doke</title>
+<link href="style.css?v=20260211v45" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="perfil-upgrade.css?v=20260209v29" rel="stylesheet">
+<link href="page-perfil.css?v=20260211v56" rel="stylesheet"/>
+<link href="perfil-qna.css?v=20260205" rel="stylesheet">
+<link href="doke-beforeafter.css?v=20260211v3" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
+<script defer="" src="script.js?v=20260218v60"></script>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260211v24" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260213v2" rel="stylesheet"/>
+</head>
+<body class="dp-page" data-page="perfil">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<!-- Sidebar (mantÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚©m padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚£o do site) -->
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="mensagens.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<!-- ConteÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚ºdo principal -->
+<main class="dp-wrap">
+<div class="dp-skeleton dp-theme-profissional" data-mode="public" data-theme="profissional" id="dpRoot">
+<section class="dp-card">
+<div class="dp-cover" id="dpCover">
+<div class="dp-coverActions">
+<button class="dp-btn" id="dpCoverBtn" type="button"><i class="bx bx-image-add"></i> Alterar capa</button>
+<input accept="image/*" hidden="" id="dpCoverInput" type="file"/>
+</div>
+</div>
+<div class="dp-body">
+<div class="dp-avatarWrap">
+<div class="dp-avatar">
+<img alt="Foto" decoding="async" id="dpAvatarImg" loading="lazy" style="display:none"/>
+<div id="dpAvatarLetter" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:52px;color:#9aa6b2;">U</div>
+</div>
+<button class="dp-avatarBtn" id="dpAvatarBtn" title="Alterar foto" type="button"><i class="bx bx-camera"></i></button>
+<input accept="image/*" hidden="" id="dpAvatarInput" type="file"/>
+</div>
+<div class="dp-info">
+<h1 class="dp-name" id="dpName">Carregando...</h1>
+<div class="dp-handle" id="dpHandle">@usuário</div>
+<div class="dp-bio" id="dpBio">Carregando...</div>
+<div class="dp-meta" id="dpChips"></div>
+<div aria-label="Estatísticas" class="dp-statsWrap">
+<button aria-label="Ver estatísticas anteriores" class="dp-statsNav dp-statsPrev" type="button"><i class="bx bx-chevron-left"></i></button>
+<div aria-label="Estatísticas" class="dp-stats">
+<div class="dp-stat"><b id="dpFollowers">0</b><span>Seguidores</span></div>
+<div class="dp-stat"><b id="dpFollowing">0</b><span>Seguindo</span></div>
+<div class="dp-stat" data-pro-only=""><b id="dpReviews">0</b><span>Avaliações</span></div>
+</div>
+<button aria-label="Ver estatísticas seguintes" class="dp-statsNav dp-statsNext" type="button"><i class="bx bx-chevron-right"></i></button>
+</div>
+</div>
+<div class="dp-actions">
+<div class="dp-availability" id="dpAvailabilityRow">
+<span id="dpStatusText">Disponível</span>
+<div class="dp-switch" id="dpSwitch"><span></span></div>
+</div>
+<div class="dp-actionsRow">
+<button class="dp-primary" data-sticky-cta="" data-sticky-cta-label="Solicitar orÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento" id="dpOrcBtn" style="display:none;" type="button"><i class="bx bx-package"></i> Solicitar orçamento</button>
+<button class="dp-secondary" id="dpFriendBtn" style="display:none;" type="button"><i class="bx bx-user-plus"></i> Amizade</button>
+<button class="dp-secondary" id="dpFollowBtn" style="display:none;" type="button"><i class="bx bx-heart"></i> Seguir</button>
+<button class="dp-secondary" id="dpMessageBtn" style="display:none;" type="button"><i class="bx bx-message-rounded"></i> Mensagem</button>
+<button class="dp-secondary" id="dpEditBtn" type="button"><i class="bx bx-edit"></i> Editar perfil</button>
+<button class="dp-secondary" id="dpMoreBtn" title="Mais" type="button"><i class="bx bx-dots-horizontal-rounded"></i></button>
+</div>
+</div>
+</div>
+</section>
+<div aria-label="Seções do perfil" class="dp-tabs" role="tablist">
+<button class="dp-tab active" data-tab="publicacoes" type="button"><i class="bx bx-grid-alt"></i> Publicações</button>
+<button class="dp-tab" data-pro-only="" data-tab="reels" type="button"><i class="bx bx-video"></i> Vídeos curtos</button>
+<button class="dp-tab" data-pro-only="" data-tab="servicos" type="button"><i class="bx bx-briefcase"></i> Serviços</button>
+<button class="dp-tab" data-pro-only="" data-tab="portfolio" type="button"><i class="bx bx-collection"></i> Portfólio</button>
+<button class="dp-tab" data-pro-only="" data-tab="avaliacoes" type="button"><i class="bx bx-star"></i> Avaliações</button>
+<button class="dp-tab" data-pro-only="" data-tab="perguntas" type="button"><i class="bx bx-help-circle"></i> Perguntas</button>
+<button class="dp-tab" data-pro-owner-only="" data-tab="estatisticas" type="button"><i class="bx bx-line-chart"></i> Estatísticas <span class="dp-betaPill">BETA</span></button>
+<button class="dp-tab" data-tab="sobre" type="button"><i class="bx bx-info-circle"></i> Sobre</button>
+</div>
+<!-- Sections -->
+<section class="dp-section" data-tab="publicacoes">
+<div class="dp-sectionHeader">
+<h2>Publicações</h2>
+<button class="dp-newBtn" id="dpNewPublicacao" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid" id="dpGridPublicacoes">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-grid-alt"></i>
+<div>
+<b>Nenhuma publicação ainda</b>
+<span>Quando você postar algo, vai aparecer aqui.</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="reels" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Vídeos curtos</h2>
+<button class="dp-newBtn" id="dpNewReel" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid" id="dpGridReels">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-video"></i>
+<div>
+<b>Sem vídeos curtos</b>
+<span>Poste vídeos curtos para ganhar destaque.</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="servicos" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Serviços</h2>
+<button class="dp-newBtn" id="dpNewServico" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid lista-cards-premium" id="dpGridServicos">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-briefcase"></i>
+<div>
+<b>Nenhum serviço ainda</b>
+<span>Serviços</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="portfolio" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Portfólio</h2>
+<button class="dp-newBtn" id="dpNewPortfolio" type="button"><i class="bx bx-plus"></i> Novo</button>
+</div>
+<div class="dp-grid" id="dpGridPortfolio">
+<div class="dp-empty dp-emptyState">
+<i class="bx bx-collection"></i>
+<div>
+<b>Portfólio vazio</b>
+<span>Adicione imagens e projetos para aumentar confiança.</span>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="avaliacoes" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Avaliações</h2>
+<button class="dp-newBtn" id="dpWriteAvaliacao" style="display:none;" type="button"><i class="bx bx-star"></i> Avaliar</button>
+</div>
+<div id="dpBoxAvaliacoes"></div>
+</section>
+<section class="dp-section" data-pro-only="" data-tab="perguntas" id="qnaSection" style="display:none;">
+<div class="qna-card">
+<div class="qna-head">
+<h3 class="qna-title">Perguntas</h3>
+<details class="qna-help-popover">
+<summary aria-label="Como funciona">?</summary>
+<div class="qna-help-box">
+          As perguntas são públicas. O profissional pode responder para ajudar outros clientes.
+        </div>
+</details>
+</div>
+<div aria-label="Filtros de perguntas" class="qna-filters" role="group">
+<span class="qna-chip active" data-filter="all">Todas</span>
+<span class="qna-chip" data-filter="unanswered">Sem resposta</span>
+<span class="qna-chip" data-filter="answered">Respondidas</span>
+<span class="qna-chip" data-filter="hidden" id="qnaFilterHidden" style="display:none;">Ocultas</span>
+</div>
+<div id="qnaAskWrap" style="margin-top:14px;">
+<label style="display:block;font-weight:900;margin-bottom:8px;color:#102a35;">Faça uma pergunta</label>
+<textarea class="dp-textarea" id="qnaQuestionText" placeholder="Ex.: Você atende aos finais de semana? Qual o prazo médio? Qual região você atende?"></textarea>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:10px;">
+<button class="dp-primary" id="qnaAskBtn" type="button"><i class="bx bx-send"></i> Perguntar</button>
+</div>
+</div>
+<div class="qna-empty" id="qnaLoginHint" style="display:none; margin-top:14px;">
+      Você precisa estar logado para perguntar. <a href="login.html" style="font-weight:900;color:#0b7768;">Entrar</a>
+</div>
+<div class="qna-list" id="qnaList" style="margin-top:14px;"></div>
+<div class="qna-empty" id="qnaEmpty" style="display:none;margin-top:14px;">
+      Ainda não há perguntas aqui. Seja o primeiro a perguntar!
+    </div>
+<div class="qna-more" id="qnaMoreWrap">
+<button class="dp-secondary" id="qnaMoreBtn" type="button">Ver mais</button>
+</div>
+</div>
+</section>
+<section class="dp-section" data-pro-owner-only="" data-tab="estatisticas" style="display:none;">
+<div class="dp-sectionHeader dp-sectionHeader--analytics">
+<div>
+<h2>Estatísticas</h2>
+<span class="dp-subtle">Acompanhe o desempenho do perfil e anúncios.</span>
+</div>
+<div class="dp-analyticsControls">
+<label class="dp-analyticsLabel">
+        Período
+        <select class="dp-select" id="dpAnalyticsRange">
+<option value="7">7 dias</option>
+<option selected="" value="14">14 dias</option>
+<option value="30">30 dias</option>
+<option value="90">90 dias</option>
+</select>
+</label>
+<button class="dp-secondary dp-analyticsRefresh" id="dpAnalyticsRefresh" type="button">
+<i class="bx bx-refresh"></i> Atualizar
+      </button>
+</div>
+</div>
+<div class="dp-analyticsGrid">
+<div class="dp-analyticsLeft">
+<div class="dp-kpiRow" id="dpKpiRow"></div>
+<div class="dp-chartGrid">
+<div class="dp-card dp-chartCard">
+<div class="dp-chartHead">
+<div>
+<b>Orçamentos e mensagens</b>
+<span class="dp-subtle" id="dpChartSubtitle">ÃƒƒÅ¡ltimos 14 dias</span>
+</div>
+<div class="dp-chartLegend">
+<span><i class="dp-dot dp-dot--views"></i> Orçamentos</span>
+<span><i class="dp-dot dp-dot--clicks"></i> Mensagens</span>
+</div>
+</div>
+<canvas class="dp-chartCanvas" height="260" id="dpChartViews" width="900"></canvas>
+</div>
+<div class="dp-card dp-chartCard">
+<div class="dp-chartHead">
+<div>
+<b>Top categorias</b>
+<span class="dp-subtle">Onde você mais aparece</span>
+</div>
+</div>
+<div class="dp-bars" id="dpTopCats"></div>
+</div>
+<div class="dp-card dp-chartCard">
+<div class="dp-chartHead">
+<div>
+<b>Funil</b>
+<span class="dp-subtle">Impressões -&gt; Cliques -&gt; Orçamentos</span>
+</div>
+</div>
+<div class="dp-funnel" id="dpFunnel"></div>
+</div>
+</div>
+</div>
+<div class="dp-analyticsRight">
+<div class="dp-card dp-aiCard" id="dpAiCard">
+<div class="dp-aiHead">
+<div class="dp-aiTitleRow">
+<div class="dp-aiBrand">
+<span class="dp-aiIcon"><i class="bx bx-bot"></i></span>
+<b>DOKE-AI</b>
+<span class="dp-betaPill">BETA</span>
+</div>
+<button aria-label="Ocultar DOKE-AI" class="dp-aiToggle" id="dpAiToggle" type="button"><i class="bx bx-chevron-down"></i></button>
+</div>
+<span class="dp-subtle">Peça sugestões para melhorar anúncios e perfil (demo, sem IA real ainda).</span>
+</div>
+<div aria-live="polite" class="dp-aiMsgs" id="dpAiMsgs"></div>
+<div class="dp-aiQuick">
+<button class="dp-aiChip" data-q="Como melhorar meu anÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âºncio para vender mais?">Melhorar anúncio</button>
+<button class="dp-aiChip" data-q="O que falta no meu perfil para passar mais confianÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§a?">Melhorar perfil</button>
+<button class="dp-aiChip" data-q="Me dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âª ideias de tÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­tulos e descriÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes para meus serviÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os.">Títulos &amp; descrições</button>
+<button class="dp-aiChip" data-q="Como conseguir mais avaliaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes e seguidores?">Crescer</button>
+</div>
+<div class="dp-aiInputRow">
+<input class="dp-aiInput" id="dpAiInput" placeholder="Escreva sua pergunta..." type="text"/>
+<button aria-label="Enviar" class="dp-aiSend" id="dpAiSend" type="button">
+<i class="bx bx-send"></i>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<section class="dp-section" data-tab="sobre" style="display:none;">
+<div class="dp-sectionHeader">
+<h2>Sobre</h2>
+</div>
+<div class="dp-card" style="padding:18px;">
+<p style="margin:0; color:rgba(0,0,0,.75); line-height:1.4">
+<span id="dpAboutText">As informações do perfil aparecem aqui. (Bio, local e tempo de membro são editáveis no botão "Editar perfil".)</span>
+</p>
+</div>
+</section>
+</div>
+</main>
+<!-- Modal -->
+<div aria-hidden="true" class="dp-modalOverlay" id="dpModalOverlay">
+<div aria-modal="true" class="dp-modal" role="dialog">
+<div class="dp-modalHead">
+<b id="dpModalTitle">Modal</b>
+<button aria-label="Fechar" class="dp-x" id="dpModalClose" type="button">×</button>
+</div>
+<div class="dp-modalBody" id="dpModalBody"></div>
+<div class="dp-modalFoot">
+<button class="dp-ghost" id="dpModalCancel" type="button">Cancelar</button>
+<button class="dp-save" id="dpModalSave" type="button">Salvar</button>
+</div>
+</div>
+</div>
+<script src="perfil-upgrade.js?v=20260217v35"></script>
+<script defer="" src="perfil-qna.js?v=20260212v2"></script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
