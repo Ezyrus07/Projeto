@@ -1,5 +1,5 @@
 ﻿(function(){
-  window.__DOKE_SHELL_BUILD__ = "20260218v47";
+  window.__DOKE_SHELL_BUILD__ = "20260224v48";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   const PAGES = {
@@ -111,6 +111,8 @@
       }
     }catch(e){}
     try{ clearCookieEverywhere(DOKE_DEV_SESSION_COOKIE); }catch(_e){}
+    try{ localStorage.removeItem("doke_last_auth_provider"); }catch(_e){}
+    try{ sessionStorage.removeItem("doke_last_auth_provider"); }catch(_e){}
   }
 
   function getProfile(){
@@ -399,21 +401,28 @@
 
   function ensureGlobalAuthActions(){
     ensureFallbackDropdownBehavior();
-    if (typeof window.fazerLogout !== "function") {
-      window.fazerLogout = async function(){
-        let confirmed = false;
-        try {
-          confirmed = (typeof window.dokeConfirm === "function")
-            ? await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")
-            : window.confirm("Tem certeza que deseja sair?");
-        } catch (_e) {
-          confirmed = window.confirm("Tem certeza que deseja sair?");
-        }
-        if(!confirmed) return false;
+    const legacyLogout = (typeof window.fazerLogout === "function") ? window.fazerLogout : null;
+    window.fazerLogout = async function(){
+      let confirmed = false;
+      try {
+        confirmed = (typeof window.dokeConfirm === "function")
+          ? await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")
+          : window.confirm("Tem certeza que deseja sair?");
+      } catch (_e) {
+        confirmed = window.confirm("Tem certeza que deseja sair?");
+      }
+      if(!confirmed) return false;
+      try {
         await performShellSignOut("login.html?logout=1");
         return true;
-      };
-    }
+      } catch (e) {
+        try { console.error(e); } catch(_err) {}
+        if (typeof legacyLogout === "function" && legacyLogout !== window.fazerLogout) {
+          try { return await legacyLogout(); } catch (_e2) {}
+        }
+        return false;
+      }
+    };
 
     if (typeof window.alternarConta !== "function") {
       window.alternarConta = async function(){

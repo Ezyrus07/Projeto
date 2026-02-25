@@ -189,12 +189,6 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
       target = r.usuário;
     }
 
-    if(!target || !target.id){
-      emptyEl.textContent = "Não foi possível carregar as perguntas deste perfil.";
-      emptyEl.style.display = "";
-      return;
-    }
-
     // auth + me
     const sess = await client.auth.getSession();
     const authUser = sess?.data?.session?.user || null;
@@ -203,6 +197,15 @@ function looksUUID(v){ return typeof v==="string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[
       const r = await getUsuarioByAuthUid(client, authUser.id);
       if(r.error) console.error(r.error);
       me = r.usuário || null;
+    }
+
+    if((!target || !target.id) && me && me.id){
+      target = me;
+    }
+    if(!target || !target.id){
+      emptyEl.textContent = "Não foi possível carregar as perguntas deste perfil.";
+      emptyEl.style.display = "";
+      return;
     }
 
     const canAnswer = !!(me && (me.id === target.id || String(me.uid) === String(target.uid)));

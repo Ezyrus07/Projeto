@@ -5,7 +5,21 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Pedidos | Doke</title>
   <meta name="theme-color" content="#0b7768"/>
+  <script>
+    (function(){
+      try{
+        var p = String(location.pathname || '');
+        if(p.indexOf('/frontend/frontend/') !== -1){
+          var fixed = p.replace('/frontend/frontend/', '/frontend/');
+          location.replace(fixed + (location.search || '') + (location.hash || ''));
+        }
+      }catch(_e){}
+    })();
+  </script>
+
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+  <link href="chat-redesign.css" rel="stylesheet"/>
+  <link href="page-chat.css" rel="stylesheet"/>
   <link href="style.css?v=20260211v45" rel="stylesheet"/>
   <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
   <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
@@ -28,6 +42,9 @@
     }
 
     body[data-page="pedidos"]{background:var(--bg); color:var(--text);}
+    @media (min-width:1024px){
+      #logo-desktop{display:none !important;}
+    }
     body[data-page="pedidos"] .dp-wrap{padding:22px 18px 100px;}
     @media (min-width:1024px){
       body[data-page="pedidos"] .dp-wrap{
@@ -37,6 +54,40 @@
         max-width:none;
       }
     }
+
+    @media (min-width:1024px){
+      /* evita logo duplicada: sidebar já exibe a marca */
+      body[data-page="pedidos"] .navbar-desktop #logo-desktop,
+      body[data-page="pedidos"] .navbar-desktop [id="logo-desktop"],
+      body[data-page="pedidos"] header.navbar-desktop > #logo-desktop{
+        display:none !important;
+        width:0 !important;
+        min-width:0 !important;
+        margin:0 !important;
+        padding:0 !important;
+        overflow:hidden !important;
+      }
+      body[data-page="pedidos"] .navbar-desktop .menu{margin-left:auto; margin-right:auto;}
+      body[data-page="pedidos"] .navbar-desktop .botoes-direita{margin-left:auto;}
+    }
+
+    @media (min-width:1024px) and (max-width:1366px){
+      body[data-page="pedidos"] .dp-wrap{padding:18px 16px 108px;}
+      .orders-page{max-width:none;}
+      .hero{padding:26px; gap:14px;}
+      .hero h1{font-size:1.8rem;}
+      .hero p{font-size:.9rem;}
+      .hero-stat{min-width:92px; padding:9px 10px;}
+      .toolbar{grid-template-columns:minmax(0,1fr);}
+      .toolbar-actions{flex-wrap:wrap;}
+      .toolbar-actions .btn-ui{min-height:42px;}
+    }
+
+    body[data-page="pedidos"] .dp-wrap{min-width:0;}
+    .orders-page{width:100%; min-width:0;}
+    .hero{min-width:0;}
+    .hero > div:first-child{min-width:0; flex:1 1 340px;}
+    .hero h1, .hero p{word-break:break-word;}
 
     .orders-page{max-width:1240px; margin:0 auto;}
     .hero{
@@ -109,6 +160,7 @@
     .toolbar-actions{display:flex; gap:10px;}
     .btn-ui{border:1px solid var(--line); background:#fff; color:#203f63; border-radius:12px; min-height:44px; padding:0 14px; font-weight:800; display:inline-flex; align-items:center; gap:8px; cursor:pointer; white-space:nowrap; box-shadow:0 8px 18px rgba(15,36,64,.06);}
     .btn-ui i{font-size:18px;}
+    .btn-ui.active{border-color:rgba(11,119,104,.35); background:rgba(11,119,104,.1); color:#0b7768;}
 
     .filters{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px;}
     .chip{border:1px solid var(--line); background:#fff; color:#355575; border-radius:999px; min-height:38px; padding:0 14px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
@@ -118,6 +170,11 @@
     .panel-head{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-bottom:10px;}
     .panel-head h2{margin:0; font-size:20px; display:flex; align-items:center; gap:8px;}
     .panel-head p{margin:0; color:var(--muted); font-weight:600;}
+    #bulkBar{display:none; margin:0 0 10px; padding:10px 12px; border:1px solid #dce9f5; border-radius:14px; background:#f7fbff;}
+    #bulkBar.show{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+    #bulkInfo{font-weight:800; color:#2f537d; font-size:.92rem;}
+    .bulk-actions{display:flex; gap:8px; flex-wrap:wrap;}
+    .bulk-actions .btn-ui{min-height:38px; padding:0 12px;}
 
     .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}
     .card{background:linear-gradient(180deg,#ffffff 0%, #f4f8ff 100%); border:1px solid #d5e3f4; border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 8px 20px rgba(15,36,64,.06); position:relative;}
@@ -125,6 +182,7 @@
       border-color:rgba(11,119,104,.42);
       box-shadow:0 14px 30px rgba(11,119,104,.18);
       background:linear-gradient(180deg,#ffffff 0%, #ebf8f4 100%);
+      outline:2px solid rgba(42,95,144,.2);
     }
     .card-top{
       display:flex;
@@ -133,26 +191,29 @@
       gap:8px;
     }
     .card-select{
-      width:28px;
-      height:28px;
-      min-width:28px;
-      border:1px solid #cddbeb;
-      border-radius:999px;
+      position:absolute;
+      top:12px;
+      right:12px;
+      width:34px;
+      height:34px;
+      min-width:34px;
+      border:1px solid #dbe6f3;
+      border-radius:10px;
       background:#fff;
-      color:#6c83a2;
-      display:none;
+      color:#56739a;
+      display:inline-flex;
       align-items:center;
       justify-content:center;
-      font-size:18px;
+      font-size:20px;
       cursor:pointer;
+      transition:.2s ease;
     }
-    .select-mode .card-select{display:inline-flex;}
     .card.selected .card-select{
       background:#0b7768;
       border-color:#0b7768;
       color:#fff;
     }
-    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap;}
+    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-right:44px;}
     .tag{border:1px solid #d9e5f3; background:#f6fbff; color:#315579; border-radius:999px; padding:6px 10px; font-size:.76rem; font-weight:800; display:inline-flex; align-items:center; gap:5px;}
     .tag.type{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
     .tag.pending{background:#fff5e8; color:#b86f08; border-color:#f4dbb8;}
@@ -180,6 +241,8 @@
     .actions{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;}
     .btn-order{min-height:40px; border-radius:12px; border:1px solid #d8e4f1; background:#fff; color:#1b3a5b; padding:0 13px; font-weight:800; display:inline-flex; align-items:center; gap:7px; cursor:pointer;}
     .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
+    .btn-order.accept{background:linear-gradient(135deg,#1f9f53,#188848); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(31,159,83,.22);}
+    .btn-order.reject{background:#fff1f2; color:#b4233b; border-color:#fecdd3;}
 
     .empty{display:none; min-height:220px; border:1px dashed #d5e2f2; border-radius:16px; background:#fbfdff; color:#607791; align-items:center; justify-content:center; flex-direction:column; text-align:center; gap:8px; padding:18px;}
     .empty.show{display:flex;}
@@ -194,125 +257,43 @@
       overflow:hidden;
     }
 
-    .inline-chat-shell{
-      position:fixed;
-      z-index:12000;
-      display:none;
-      flex-direction:column;
-      background:#eef3f8;
-      border:1px solid #d9e4f2;
-      border-radius:18px;
-      box-shadow:0 24px 46px rgba(9,22,40,.24);
+    .chat-drawer{position:fixed; inset:0; z-index:12000; display:none; padding:0;}
+    .chat-drawer.open{display:block;}
+    .chat-backdrop{position:absolute; inset:0; background:rgba(10,18,32,.38); backdrop-filter:blur(1.5px);}
+    .chat-panel-embed{
+      position:absolute;
+      inset:0 0 0 var(--sidebar-width, 250px);
+      width:auto;
+      height:100dvh;
+      min-height:100dvh;
+      max-width:none;
+      border-radius:0;
       overflow:hidden;
-      width:min(560px, calc(100vw - 36px));
-      right:18px;
-      top:86px;
-      bottom:18px;
-    }
-    .inline-chat-shell::before{content:none;}
-    .inline-chat-shell.open{display:flex;}
-    .inline-chat-head{
-      height:58px;
-      min-height:58px;
-      border-bottom:1px solid #d9e4f2;
       background:#fff;
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-      padding:8px 12px;
+      border-top:1px solid #dbe7f3;
+      border-left:1px solid #dbe7f3;
+      box-shadow:-14px 0 34px rgba(15,23,42,.18);
+      z-index:1;
     }
-    .inline-chat-title{
-      min-width:0;
-      flex:1;
-      display:flex;
-      align-items:center;
-      gap:10px;
-      overflow:hidden;
-    }
-    .inline-chat-avatar{
-      width:40px;
-      height:40px;
-      min-width:40px;
-      border-radius:50%;
-      object-fit:cover;
-      border:1px solid #d8e4f2;
-      background:#edf3f9;
-    }
-    .inline-chat-title-text{min-width:0; display:flex; flex-direction:column; overflow:hidden;}
-    .inline-chat-title strong{
-      font-size:1rem;
-      line-height:1.15;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .inline-chat-title span{
-      font-size:.8rem;
-      color:#627a98;
-      white-space:nowrap;
-      overflow:hidden;
-      text-overflow:ellipsis;
-    }
-    .inline-chat-btn{
-      width:40px;
-      height:40px;
-      min-width:40px;
-      border-radius:12px;
-      border:1px solid #d8e3f1;
-      background:#fff;
-      color:#1d3e62;
+    .pedido-chat-frame{display:block; width:100%; height:100%; border:0; background:#fff;}
+    .chat-close-float{
+      position:absolute;
+      top:10px;
+      right:10px;
+      z-index:20;
+      width:42px;
+      height:42px;
+      border-radius:14px;
+      border:1px solid #d7e5f4;
+      background:rgba(255,255,255,.92);
+      color:#0f2744;
       display:inline-flex;
       align-items:center;
       justify-content:center;
+      box-shadow:0 8px 18px rgba(15,23,42,.12);
       cursor:pointer;
-      font-size:20px;
     }
-    .inline-chat-menu-btn{font-size:22px;}
-    .inline-chat-stage{flex:1; min-height:0; display:flex; flex-direction:column; background:#eef3f8;}
-    .inline-chat-body{flex:1; min-height:0; display:flex; flex-direction:column; padding:10px; gap:10px;}
-    .inline-chat-order-pill{
-      border:1px solid #d8e4f2; background:#fff; border-radius:12px; padding:8px 10px; color:#355678;
-      font-size:.84rem; display:flex; align-items:center; gap:8px;
-    }
-    .inline-chat-order-pill i{color:#5f7fa6; font-size:18px;}
-    .inline-chat-messages{
-      flex:1; min-height:0; overflow:auto; border:1px solid #dde7f4; border-radius:14px; background:#eaf0f7; padding:12px;
-      display:flex; flex-direction:column; gap:10px;
-    }
-    .inline-chat-empty{
-      margin:auto; text-align:center; color:#6f849f; font-size:1rem;
-    }
-    .inline-msg{
-      max-width:min(78%, 380px);
-      border-radius:16px;
-      padding:10px 12px;
-      box-shadow:0 6px 14px rgba(15,36,64,.07);
-      line-height:1.3;
-      white-space:pre-wrap;
-      word-break:break-word;
-      font-size:.95rem;
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-    }
-    .inline-msg.me{align-self:flex-end; background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-bottom-right-radius:8px;}
-    .inline-msg.other{align-self:flex-start; background:#fff; color:#173554; border:1px solid #d7e3f2; border-bottom-left-radius:8px;}
-    .inline-msg-meta{font-size:.72rem; opacity:.78; align-self:flex-end;}
-    .inline-chat-composer{
-      display:flex; align-items:center; gap:8px; padding:10px; background:#fff; border-top:1px solid #d9e4f2;
-    }
-    .composer-mini{
-      width:40px; height:40px; min-width:40px; border-radius:999px; border:1px solid #d8e3f1; background:#fff; color:#1b3f63;
-      display:inline-flex; align-items:center; justify-content:center; cursor:pointer; font-size:18px;
-    }
-    .composer-mini.money{background:#f3c612; border-color:#ebbd00; color:#fff;}
-    .composer-mini.send{background:#0aa193; border-color:#0aa193; color:#fff;}
-    .composer-field{
-      flex:1; min-width:0; height:48px; border-radius:999px; border:1px solid #dce6f3; background:#eef2f7; padding:0 16px;
-      font-size:15px; color:#122f4d; outline:none;
-    }
-    .composer-field::placeholder{color:#7288a2;}
+    html.no-scroll, body.no-scroll{overflow:hidden;}
 
     .details-modal{
       position:fixed;
@@ -418,13 +399,10 @@
       word-break:break-word;
     }
 
-    @media (min-width:1024px){
-      .inline-chat-shell{
-        right:24px;
-        top:calc(var(--header-offset, 78px) + 8px);
-        bottom:24px;
-        width:min(560px, calc(100vw - var(--sidebar-width, 0px) - 72px));
-      }
+    @media (max-width:1360px){
+      .hero{padding:28px; gap:14px; align-items:flex-start;}
+      .hero-stats{width:100%; justify-content:flex-start;}
+      .hero-stat{min-width:110px;}
     }
 
     @media (max-width:1023px){
@@ -454,6 +432,10 @@
       .btn-ui{min-height:34px; padding:0 10px; font-size:.8rem; border-radius:10px;}
       .btn-ui{flex:0 0 auto;}
       .btn-ui i{font-size:15px;}
+      #bulkBar{padding:8px 10px; border-radius:12px;}
+      #bulkInfo{font-size:.8rem;}
+      .bulk-actions{width:100%;}
+      .bulk-actions .btn-ui{flex:1; justify-content:center; min-height:34px; padding:0 8px; font-size:.78rem;}
       .filters{gap:5px; margin-bottom:8px;}
       .chip{min-height:30px; padding:0 10px; font-size:.78rem;}
       .panel{padding:10px; border-radius:16px;}
@@ -488,19 +470,7 @@
       }
       .filters::-webkit-scrollbar{display:none;}
       .chip{flex:0 0 auto;}
-      .card-select{width:24px; height:24px; min-width:24px; font-size:16px;}
-      .inline-chat-head{height:52px; min-height:52px; padding:6px 8px;}
-      .inline-chat-btn{width:34px; height:34px; min-width:34px; border-radius:10px; font-size:18px;}
-      .inline-chat-title strong{font-size:.9rem;}
-      .inline-chat-title span{font-size:.72rem;}
-      .inline-chat-avatar{width:34px;height:34px;min-width:34px;}
-      .composer-mini{width:34px;height:34px;min-width:34px;font-size:16px;}
-      .composer-field{height:40px;font-size:14px;padding:0 12px;}
-      .inline-chat-shell{left:0; right:0; top:0; bottom:0; width:auto; border-radius:0; border:none; box-shadow:none;}
-      .inline-chat-body{padding:8px; gap:8px;}
-      .inline-chat-messages{border-radius:12px; padding:10px;}
-      .inline-msg{max-width:88%; font-size:.9rem;}
-      .inline-chat-order-pill{padding:7px 9px; font-size:.78rem;}
+      .card-select{width:28px; height:28px; min-width:28px; top:10px; right:10px; border-radius:9px; font-size:16px;}
       .details-modal{padding:10px;}
       .details-card{border-radius:14px; padding:10px;}
       .details-grid{grid-template-columns:1fr;}
@@ -509,85 +479,103 @@
 
     @media (max-width:540px){
       .hero{padding:16px; border-radius:16px;}
-      .hero-stats{width:100%; justify-content:space-between;}
+      .hero-stats{
+        width:100%;
+        display:grid;
+        grid-template-columns:repeat(3, minmax(0,1fr));
+        gap:7px;
+      }
+      .hero-stat{
+        min-width:0;
+        width:100%;
+        padding:8px 7px;
+        border-radius:13px;
+      }
+      .hero-stat small{
+        white-space:normal;
+        line-height:1.2;
+        font-size:.64rem;
+      }
+      .hero-stat strong{font-size:.95rem;}
       .meta{grid-template-columns:1fr 1fr;}
       .footer{flex-direction:column; align-items:stretch;}
       .actions{margin-left:0; width:100%;}
       .btn-order{flex:1; justify-content:center;}
     }
-  
-    /* ===== Inline chat (mesmo padrão do chat.html) ===== */
-    .doke-inline-chat{height:100%; display:flex; flex-direction:column; background:#eef3f8;}
-    .doke-chat-header{
-      height:58px; min-height:58px;
-      border-bottom:1px solid #d9e4f2;
-      background:#fff;
-      display:flex; align-items:center; gap:10px;
-      padding:8px 12px;
-    }
-    .chat-back{
-      width:38px; height:38px; border-radius:12px;
-      border:1px solid #e6eef7; background:#fff;
-      display:grid; place-items:center; cursor:pointer;
-    }
-    .chat-back:hover{background:#f7fafc;}
-    .chat-peer{display:flex; align-items:center; gap:10px; min-width:0; flex:1;}
-    .chat-avatar{width:40px; height:40px; border-radius:50%; overflow:hidden; background:#e2e8f0; flex:0 0 auto; display:grid; place-items:center;}
-    .chat-avatar img{width:100%; height:100%; object-fit:cover; display:block;}
-    .chat-peer-meta{min-width:0;}
-    .chat-peer-name{font-weight:800; color:#0f172a; font-size:0.98rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .chat-peer-sub{font-size:0.78rem; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
-    .chat-menu-btn{
-      width:38px; height:38px; border-radius:12px;
-      border:1px solid #e6eef7; background:#fff;
-      display:grid; place-items:center; cursor:pointer;
-    }
-    .chat-menu-btn:hover{background:#f7fafc;}
-    .doke-chat-body{
-      flex:1; overflow:auto;
-      padding:14px 14px 18px;
-      display:flex; flex-direction:column; gap:10px;
-    }
-    .doke-chat-composer{
-      border-top:1px solid #d9e4f2;
-      background:#eef3f8;
-      padding:10px 12px 12px;
-    }
-    .composer-row{display:flex; align-items:center; gap:10px; background:#eef3f8;}
-    .composer-input-wrap{flex:1; display:flex; align-items:center; background:#fff; border:1px solid #d9e4f2; border-radius:999px; padding:0 14px; height:46px;}
-    #mensagemInput{border:none; outline:none; width:100%; height:40px; font-size:0.96rem; background:transparent;}
-    .composer-mini{
-      width:40px; height:40px; border-radius:50%;
-      border:none; display:grid; place-items:center;
-      cursor:pointer;
-      background:#fff; color:#0f766e;
-      box-shadow:0 6px 16px rgba(15,23,42,0.08);
-    }
-    .composer-mini.money{background:#facc15; color:#111827;}
-    .btn-attach{ background: #e0e0e0; color:#555; border:none; width:40px; height:40px; border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:1.2rem;}
-    .btn-enviar{ background: var(--ux-brand, #0b7768); color:#fff; border:none; width:44px; height:44px; border-radius:50%; cursor:pointer; display:grid; place-items:center; font-size:1.1rem; box-shadow:0 10px 20px rgba(11,119,104,.28);}
-    .btn-enviar i, .btn-attach i, .chat-menu-btn i{margin:0; line-height:1; display:block;}
-    .btn-dm{border:none; border-radius:12px; padding:10px 14px; cursor:pointer; font-weight:700;}
-    .btn-dm-cancel{background:#eef2f7; color:#0f172a;}
-    .btn-dm-confirm{background: var(--ux-brand, #0b7768); color:#fff;}
-    .recording-indicator{display:flex; align-items:center; gap:10px;}
-    .recording-indicator .red-dot{width:10px; height:10px; border-radius:50%; background:#ef4444; box-shadow:0 0 0 6px rgba(239,68,68,.16);}
-    /* Mensagens */
-    .msg-row{display:flex; width:100%;}
-    .msg-row.msg-row-me{justify-content:flex-end;}
-    .msg-row.msg-row-other{justify-content:flex-start;}
-    .msg-bubble{max-width:68%; padding:10px 14px; border-radius:16px; font-size:0.92rem; position:relative; box-shadow:0 4px 12px rgba(15,23,42,0.08); line-height:1.45; word-break:break-word;}
-    .msg-enviada{background: var(--ux-brand, #0b7768); color:#fff; border-top-right-radius:6px;}
-    .msg-recebida{background:#fff; color:#0f172a; border-top-left-radius:6px;}
-    .msg-footer{display:flex; align-items:center; justify-content:flex-end; gap:6px; margin-top:6px;}
-    .msg-hora{font-size:0.72rem; opacity:.85;}
-    .msg-media{margin-top:8px;}
-    .msg-media img{max-width:100%; border-radius:14px; display:block;}
-    .msg-media video{max-width:100%; border-radius:14px; display:block;}
-    .msg-media audio{width:100%;}
-    .msg-file{display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:14px; background:rgba(255,255,255,0.14);}
-    .msg-recebida .msg-file{background:#f1f5f9;}
 
+    @media (max-width:420px){
+      .orders-page{max-width:100%; min-width:0;}
+      .hero{
+        padding:14px !important;
+        border-radius:16px !important;
+        display:grid !important;
+        grid-template-columns:1fr !important;
+        align-items:start !important;
+        gap:10px !important;
+      }
+      .hero h1{
+        font-size:clamp(1.9rem, 9vw, 2.35rem) !important;
+        line-height:1.05 !important;
+      }
+      .hero p{
+        font-size:.78rem !important;
+        line-height:1.35 !important;
+        max-width:100% !important;
+      }
+      .badge-count{font-size:.8rem !important; padding:2px 8px !important;}
+      .hero-stats{
+        width:100% !important;
+        display:grid !important;
+        grid-template-columns:repeat(3, minmax(0,1fr)) !important;
+        gap:6px !important;
+      }
+      .hero-stat{min-width:0 !important; width:100% !important; padding:7px 6px !important; border-radius:13px !important;}
+      .hero-stat small{white-space:normal; overflow:visible; text-overflow:initial; font-size:.62rem !important; line-height:1.2;}
+      .hero-stat strong{font-size:.92rem !important;}
+    }
+
+    @media (max-width:1023px){
+      .chat-drawer{padding:0;}
+      .chat-panel-embed{
+        inset:0;
+        width:100%;
+        height:100dvh;
+        max-width:none;
+        border-radius:0;
+        border:0;
+      }
+      .chat-close-float{top:max(8px, env(safe-area-inset-top,0px) + 6px); right:8px;}
+      #bulkBar{padding:10px;}
+    }
+  
+/* === PATCH: parity do chat no pedidos (header + cobrança + mídia) === */
+.pedido-chat-panel .chat-header,
+.pedido-chat-inline .chat-header{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border-bottom:1px solid #d9e3f3;background:#fff;min-height:72px;}
+.pedido-chat-panel .chat-header-left,.pedido-chat-inline .chat-header-left{display:flex;align-items:center;gap:10px;min-width:0;flex:1;}
+.pedido-chat-panel .chat-avatar,.pedido-chat-inline .chat-avatar{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #e8eef8;background:#f3f6fb;}
+.pedido-chat-panel .chat-header-info,.pedido-chat-inline .chat-header-info{min-width:0;display:flex;flex-direction:column;}
+.pedido-chat-panel .chat-header-info h3,.pedido-chat-inline .chat-header-info h3{margin:0;font-size:14px;line-height:1.2;font-weight:800;color:#14233c;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pedido-chat-panel .chat-header-info p,.pedido-chat-inline .chat-header-info p{margin:2px 0 0;font-size:11px;color:#6f7f99;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.pedido-chat-panel .chat-header-tools,.pedido-chat-inline .chat-header-tools{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;}
+.pedido-chat-panel .icon-btn,.pedido-chat-inline .icon-btn{width:40px;height:40px;border-radius:12px;border:1px solid #d6e0ef;background:#fff;color:#173867;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.pedido-chat-panel .btn-cobranca,.pedido-chat-inline .btn-cobranca{height:40px;display:inline-flex;align-items:center;gap:8px;padding:0 12px;border-radius:12px;border:1px solid #cfe0f4;background:linear-gradient(180deg,#ffffff,#f4f8ff);color:#173867;font-weight:700;font-size:13px;box-shadow:0 4px 10px rgba(17,57,107,.06);cursor:pointer;}
+.pedido-chat-panel .btn-cobranca:hover,.pedido-chat-inline .btn-cobranca:hover{background:linear-gradient(180deg,#f9fbff,#edf4ff);}
+.pedido-chat-panel .btn-cobranca i,.pedido-chat-inline .btn-cobranca i{font-size:14px;}
+.pedido-chat-panel .mensagem-lista,.pedido-chat-inline .mensagem-lista{padding:14px;overflow:auto;background:#edf2f8;}
+.pedido-chat-panel .mensagem-vazia,.pedido-chat-inline .mensagem-vazia{height:100%;min-height:220px;display:grid;place-items:center;color:#6f84a3;font-weight:500;}
+.pedido-chat-panel .preview-media img,.pedido-chat-inline .preview-media img,.pedido-chat-panel .msg-media img,.pedido-chat-inline .msg-media img{max-width:100%;height:auto;display:block;border-radius:14px;object-fit:cover;}
+.pedido-chat-panel .composer,.pedido-chat-inline .composer,.pedido-chat-panel .chat-input-area,.pedido-chat-inline .chat-input-area{display:flex;align-items:center;gap:10px;padding:10px 12px;border-top:1px solid #d9e3f3;background:#fff;}
+.pedido-chat-panel .chat-input,.pedido-chat-inline .chat-input,.pedido-chat-panel .mensagem-input,.pedido-chat-inline .mensagem-input{flex:1;min-width:0;height:48px;border-radius:24px;border:1px solid #d6e0ef;background:#f5f8fd;padding:0 16px;font-size:15px;color:#173867;}
+.pedido-chat-panel .chat-send,.pedido-chat-inline .chat-send,.pedido-chat-panel .btn-enviar,.pedido-chat-inline .btn-enviar{width:46px;height:46px;border:none;border-radius:50%;background:#0b9b8c;color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 22px rgba(11,155,140,.25);cursor:pointer;}
+.pedido-chat-panel .chat-send:disabled,.pedido-chat-inline .chat-send:disabled{opacity:.5;cursor:not-allowed;box-shadow:none;}
+/* impedir estouro visual do chat embutido */
+.pedido-chat-panel{overflow:hidden;}
+.pedido-chat-panel *{max-width:100%;box-sizing:border-box;}
+@media (max-width: 900px){
+  .pedido-chat-panel .btn-cobranca .btn-label,.pedido-chat-inline .btn-cobranca .btn-label{display:none;}
+  .pedido-chat-panel .btn-cobranca,.pedido-chat-inline .btn-cobranca{width:40px;padding:0;justify-content:center;}
+  .pedido-chat-panel .chat-header,.pedido-chat-inline .chat-header{padding:10px;}
+}
 </style>
 </head>
 <body data-page="pedidos">
@@ -673,6 +661,15 @@
           </div>
         </div>
 
+        <div id="bulkBar">
+          <div id="bulkInfo">0 pedidos selecionados</div>
+          <div class="bulk-actions">
+            <button class="btn-ui" id="bulkFinalizeBtn" type="button"><i class='bx bx-check'></i>Finalizar</button>
+            <button class="btn-ui" id="bulkArchiveBtn" type="button"><i class='bx bx-archive-in'></i>Arquivar</button>
+            <button class="btn-ui" id="bulkClearBtn" type="button"><i class='bx bx-x'></i>Limpar</button>
+          </div>
+        </div>
+
         <div class="grid" id="ordersGrid"></div>
 
         <div class="empty" id="emptyState">
@@ -693,53 +690,15 @@
   </nav>
 
   <div class="toast" id="toast">OK</div>
-    <section class="inline-chat-shell" id="inlineChatShell" aria-hidden="true">
-    <div class="doke-inline-chat">
-      <header class="doke-chat-header">
-        <button class="chat-back" id="inlineChatBack" type="button" aria-label="Voltar"><i class='bx bx-arrow-back'></i></button>
-        <div class="chat-peer">
-          <div class="chat-avatar">
-            <img id="inlineChatAvatar" alt="Foto de perfil" src="https://via.placeholder.com/40" />
-          </div>
-          <div class="chat-peer-meta">
-            <div class="chat-peer-name" id="inlineChatName">Usuário</div>
-            <div class="chat-peer-sub" id="inlineChatSub">Offline</div>
-          </div>
-        </div>
-        <button class="chat-menu-btn" id="inlineChatMenu" type="button" aria-label="Opções"><i class='bx bx-dots-vertical-rounded'></i></button>
-      </header>
-
-      <div class="doke-chat-body" id="areaMensagens" aria-live="polite">
-        <div class="inline-chat-empty" id="inlineChatEmpty">Nenhuma mensagem.</div>
-      </div>
-
-      <div class="doke-chat-composer">
-        <div id="area-input-texto" class="composer-row">
-          <button class="composer-mini money" id="inlineChatMoneyBtn" type="button" title="Cobrança"><i class='bx bx-money'></i></button>
-
-          <input id="inlineChatFile" type="file" hidden />
-          <button class="btn-attach" id="inlineChatAttachBtn" type="button" title="Anexar"><i class='bx bx-paperclip'></i></button>
-
-          <div class="composer-input-wrap">
-            <input id="mensagemInput" type="text" placeholder="Digite uma mensagem..." autocomplete="off" />
-          </div>
-
-          <button class="btn-enviar" id="btn-mic" type="button" onclick="iniciarGravacao()" style="background:#e0e0e0; color:#555;"><i class="bx bxs-microphone"></i></button>
-          <button class="btn-enviar" id="btn-send-txt" type="button" onclick="enviarMensagemTexto()"><i class="bx bxs-send"></i></button>
-        </div>
-
-        <div id="uiGravando" style="display:none; align-items:center; gap:12px; padding:10px 12px; background:#fff;">
-          <div class="recording-indicator">
-            <div class="red-dot"></div>
-            <span id="timerGravacao">00:00</span>
-          </div>
-          <span style="flex:1; color:#64748b; font-size:0.92rem;">Gravando áudio...</span>
-          <button class="btn-dm btn-dm-cancel" type="button" onclick="cancelarGravacao()">Cancelar</button>
-          <button class="btn-dm btn-dm-confirm" type="button" onclick="enviarAudio()">Enviar</button>
-        </div>
-      </div>
+    <div class="chat-drawer chat-drawer-embed" id="chatDrawer" aria-hidden="true">
+    <div class="chat-backdrop" data-close="1"></div>
+    <div class="chat-panel-embed" role="dialog" aria-modal="true" aria-label="Chat do pedido">
+      <button class="chat-close-float" type="button" data-close="1" aria-label="Fechar chat">
+        <i class='bx bx-x'></i>
+      </button>
+      <iframe id="pedidoChatFrame" class="pedido-chat-frame" title="Chat do pedido" loading="eager"></iframe>
     </div>
-  </section>
+  </div>
 
   <section class="details-modal" id="detailsModal" aria-hidden="true">
     <article class="details-card" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
@@ -776,11 +735,11 @@
   <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
   <script src="doke-toast.js"></script>
   <script src="doke-alerts.js?v=20260217v33"></script>
-  <script src="doke-shell.js?v=20260218v47"></script>
+  <script src="doke-shell.js?v=20260224v48"></script>
 
   <script>
     (function(){
-      const state = { pedidos: [], filter: 'all', query: '', sort: 'recent', detailsById: new Map(), activeChatUrl: '', activeChatPedido: null, areaMensagens: [], selectMode: false, selected: new Set() };
+      const state = { pedidos: [], filter: 'all', query: '', sort: 'recent', detailsById: new Map(), activeChatUrl: '', selectMode: false, selected: new Set() };
       const el = {
         grid: document.getElementById('ordersGrid'),
         empty: document.getElementById('emptyState'),
@@ -797,21 +756,13 @@
         refreshBtn: document.getElementById('refreshBtn'),
         chips: Array.from(document.querySelectorAll('.chip[data-filter]')),
         toast: document.getElementById('toast'),
-        inlineChatShell: document.getElementById('inlineChatShell'),
-        inlineChatBack: document.getElementById('inlineChatBack'),
-        inlineChatMenu: document.getElementById('inlineChatMenu'),
-        inlineChatTitle: document.getElementById('inlineChatTitle'),
-        inlineChatSub: document.getElementById('inlineChatSub'),
-        inlineChatAvatar: document.getElementById('inlineChatAvatar'),
-        inlineChatOrderPill: document.getElementById('inlineChatOrderPill'),
-        inlineChatOrderLabel: document.getElementById('inlineChatOrderLabel'),
-        areaMensagens: document.getElementById('areaMensagens'),
-        inlineChatEmpty: document.getElementById('inlineChatEmpty'),
-        inlineChatComposer: document.getElementById('inlineChatComposer'),
-        inlineChatInput: document.getElementById('inlineChatInput'),
-        inlineChatMoneyBtn: document.getElementById('inlineChatMoneyBtn'),
-        inlineChatAttachBtn: document.getElementById('inlineChatAttachBtn'),
-        inlineChatMicBtn: document.getElementById('inlineChatMicBtn'),
+        bulkBar: document.getElementById('bulkBar'),
+        bulkInfo: document.getElementById('bulkInfo'),
+        bulkFinalizeBtn: document.getElementById('bulkFinalizeBtn'),
+        bulkArchiveBtn: document.getElementById('bulkArchiveBtn'),
+        bulkClearBtn: document.getElementById('bulkClearBtn'),
+        chatDrawer: document.getElementById('chatDrawer'),
+        chatFrame: document.getElementById('pedidoChatFrame'),
         detailsModal: document.getElementById('detailsModal'),
         detailsCloseBtn: document.getElementById('detailsCloseBtn'),
         detailsSubtitle: document.getElementById('detailsSubtitle'),
@@ -900,20 +851,28 @@
       function statusCode(raw){
         const s = String(raw || 'pendente').toLowerCase();
         if(s.includes('and') || s.includes('aceit') || s.includes('pago')) return 'andamento';
+        if(s.includes('recus') || s.includes('cancel') || s.includes('negad') || s.includes('reprov')) return 'recusado';
         if(s.includes('fin') || s.includes('conc')) return 'finalizado';
         return 'pendente';
       }
 
       function statusLabel(s){
         if(s === 'andamento') return 'Em andamento';
+        if(s === 'recusado') return 'Recusado';
         if(s === 'finalizado') return 'Finalizado';
         return 'Pendente';
       }
 
       function statusClass(s){
         if(s === 'andamento') return 'progress';
+        if(s === 'recusado') return 'done';
         if(s === 'finalizado') return 'done';
         return 'pending';
+      }
+
+      function isPendenteStatus(status){
+        const s = String(status || '').toLowerCase();
+        return s === 'pendente' || s.includes('pend') || s.includes('aguard') || s.includes('novo') || s.includes('analise');
       }
 
       function looksLikeImage(url){
@@ -928,27 +887,6 @@
           return String(v.url || v.src || v.link || '').trim();
         }
         return '';
-      }
-
-      function deepAvatarCandidate(obj){
-        if(!obj || typeof obj !== 'object') return '';
-        return normalizeMediaUrl(obj.foto || obj.avatar || obj.photoURL || obj.profilePicture || obj.imagem || obj.imagemPerfil || obj.urlFoto || obj.fotoUrl || obj.foto_url || obj.image || obj.imageUrl || obj.image_url);
-      }
-
-      function pickAvatarFromRow(row, isSouCliente, isSouProfissional){
-        const direct = pick(row, isSouCliente
-          ? ['paraFoto','fotoPrestador','profilePicture','avatar','foto','fotoPerfil','profissionalFoto','deFoto','fotoCliente','photoURL','userPhoto','userPhotoURL','clienteFotoUrl','profissionalFotoUrl']
-          : isSouProfissional
-            ? ['deFoto','fotoCliente','profilePicture','avatar','foto','fotoPerfil','paraFoto','profissionalFoto','photoURL','userPhoto','userPhotoURL','clienteFotoUrl','profissionalFotoUrl']
-            : ['avatar','foto','fotoCliente','fotoPerfil','profilePicture','deFoto','paraFoto','clienteFoto','profissionalFoto','photoURL','userPhoto','userPhotoURL','clienteFotoUrl','profissionalFotoUrl']
-        , '');
-        const extra = [
-          row.user, row.usuarioObj, row.usuarioData, row.usuario, row.perfil, row.profile,
-          row.clienteObj, row.clienteData, row.cliente, row.profissionalObj, row.profissionalData, row.profissional,
-          row.de, row.para, row.remetente, row.destinatario
-        ];
-        const nested = extra.map(deepAvatarCandidate).find(Boolean) || '';
-        return normalizeMediaUrl(direct) || nested || 'assets/Imagens/user_placeholder.png';
       }
 
       function normalizeId(v){
@@ -996,7 +934,12 @@
           id,
           usuario,
           nome,
-          avatar: pickAvatarFromRow(row, isSouCliente, isSouProfissional),
+          avatar: pick(row, isSouCliente
+            ? ['paraFoto','fotoPrestador','profilePicture','avatar','foto','fotoPerfil','profissionalFoto','deFoto','fotoCliente']
+            : isSouProfissional
+              ? ['deFoto','fotoCliente','profilePicture','avatar','foto','fotoPerfil','paraFoto','profissionalFoto']
+              : ['avatar','foto','fotoCliente','fotoPerfil','profilePicture','deFoto','paraFoto','clienteFoto','profissionalFoto']
+          , 'assets/Imagens/user_placeholder.png'),
           titulo,
           descricao,
           tipo,
@@ -1149,7 +1092,7 @@
         let arr = [...state.pedidos];
         if(state.filter === 'pending') arr = arr.filter(p=>p.status === 'pendente');
         if(state.filter === 'progress') arr = arr.filter(p=>p.status === 'andamento');
-        if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado');
+        if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado' || p.status === 'recusado');
         if(state.filter === 'urgent') arr = arr.filter(p=>p.urgente);
 
         const q = state.query.trim().toLowerCase();
@@ -1162,6 +1105,7 @@
 
       function card(p){
         const selected = state.selected.has(String(p.id));
+        const pendente = isPendenteStatus(p.status);
         return `
           <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}">
             <div class="card-top">
@@ -1171,7 +1115,7 @@
                 ${p.urgente ? `<span class="tag urgent"><i class='bx bx-error'></i>Urgente</span>` : ''}
               </div>
               <button class="card-select" type="button" data-action="select" data-id="${esc(p.id)}" aria-label="Selecionar pedido">
-                <i class='bx ${selected ? 'bxs-check-circle' : 'bx-circle'}'></i>
+                <i class='bx bx-check'></i>
               </button>
             </div>
 
@@ -1194,8 +1138,10 @@
             </div>
 
             <div class="footer">
-              <span class="unread"><i class='bx bx-message-rounded-dots'></i>${p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas'}</span>
+              <span class="unread"><i class='bx bx-message-rounded-dots'></i>${pendente ? 'Novo pedido' : (p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas')}</span>
               <div class="actions">
+                ${pendente ? `<button class="btn-order accept" type="button" data-action="accept" data-id="${esc(p.id)}"><i class='bx bx-check'></i>Aceitar</button>` : ``}
+                ${pendente ? `<button class="btn-order reject" type="button" data-action="reject" data-id="${esc(p.id)}"><i class='bx bx-x'></i>Recusar</button>` : ``}
                 <button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>
                 <button class="btn-order" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i>Detalhes</button>
               </div>
@@ -1207,6 +1153,7 @@
       function counters(list){
         return {
           all: list.length,
+          pending: list.filter(p => isPendenteStatus(p.status)).length,
           today: list.filter(p => String(p.atualizado).includes('agora') || String(p.atualizado).includes('ha')).length,
           progress: list.filter(p => p.status === 'andamento').length,
           urgent: list.filter(p => p.urgente).length
@@ -1219,7 +1166,8 @@
         const existing = new Set((state.pedidos || []).map((p) => String(p.id)));
         Array.from(state.selected).forEach((id) => { if(!existing.has(String(id))) state.selected.delete(String(id)); });
         document.body.classList.toggle('select-mode', !!state.selectMode);
-        el.count.textContent = String(c.all);
+        if(el.bulkBar) el.bulkBar.classList.toggle('show', !!state.selectMode);
+        el.count.textContent = String(c.pending);
         el.statToday.textContent = String(c.today);
         el.statProgress.textContent = String(c.progress);
         el.statUrgent.textContent = String(c.urgent);
@@ -1228,6 +1176,8 @@
         el.empty.classList.toggle('show', list.length === 0);
         el.grid.style.display = list.length ? 'grid' : 'none';
         el.chips.forEach(ch => ch.classList.toggle('active', ch.dataset.filter === state.filter));
+        if(el.selectBtn) el.selectBtn.classList.toggle('active', !!state.selectMode);
+        updateBulkInfo();
         if(el.selectLabel){
           const total = state.selected.size;
           el.selectLabel.textContent = state.selectMode ? (total ? `${total} selecionado${total > 1 ? 's' : ''}` : 'Cancelar') : 'Selecionar';
@@ -1409,409 +1359,107 @@
         el.detailsModal.setAttribute('aria-hidden', 'true');
       }
 
-      function inlineChatStorageKey(pedidoId){
-        return `doke_inline_chat_msgs::${String(pedidoId || '').trim()}`;
-      }
-
-      function timeHHMM(ts){
-        try{ return new Date(ts || Date.now()).toLocaleTimeString('pt-BR', { hour:'2-digit', minute:'2-digit' }); }
-        catch(_){ return ''; }
-      }
-
-      function loadInlineChatMessages(pedidoId){
-        try{
-          const list = parseJSON(localStorage.getItem(inlineChatStorageKey(pedidoId)));
-          return Array.isArray(list) ? list.filter(m => m && typeof m === 'object') : [];
-        }catch(_){ return []; }
-      }
-
-      function saveInlineChatMessages(pedidoId, list){
-        try{ localStorage.setItem(inlineChatStorageKey(pedidoId), JSON.stringify(Array.isArray(list) ? list.slice(-200) : [])); }catch(_){ }
-      }
-
-      function renderInlineChatMessages(){
-        if(!el.areaMensagens) return;
-        const list = Array.isArray(state.areaMensagens) ? state.areaMensagens : [];
-        el.areaMensagens.innerHTML = '';
-        if(!list.length){
-          const empty = document.createElement('div');
-          empty.className = 'inline-chat-empty';
-          empty.id = 'inlineChatEmpty';
-          empty.textContent = 'Nenhuma mensagem.';
-          el.areaMensagens.appendChild(empty);
-          return;
-        }
-        for(const m of list){
-          const row = document.createElement('div');
-          row.className = `inline-msg ${m.from === 'other' ? 'other' : 'me'}`;
-          const txt = document.createElement('div');
-          txt.textContent = String(m.text || '');
-          const meta = document.createElement('div');
-          meta.className = 'inline-msg-meta';
-          meta.textContent = timeHHMM(m.ts);
-          row.appendChild(txt);
-          row.appendChild(meta);
-          el.areaMensagens.appendChild(row);
-        }
-        el.areaMensagens.scrollTop = el.areaMensagens.scrollHeight;
-      }
-
-      function updateInlineChatLayout(){
-        const shell = el.inlineChatShell;
-        if(!shell || !shell.classList.contains('open')) return;
-        if(window.innerWidth <= 768) return;
-        let top = 86;
-        const desktopHeader = document.querySelector('.topbar, .navbar-desktop, header.navbar');
-        if(desktopHeader){
-          const r = desktopHeader.getBoundingClientRect();
-          if(r.height > 10) top = Math.max(64, Math.round(r.bottom + 8));
-        }
-        shell.style.top = `${top}px`;
-        shell.style.bottom = '18px';
-        shell.style.right = '18px';
-      }
-
-      function renderInlineChatHeader(p){
-        const nome = p.nome || p.usuario || p.titulo || 'Usuário';
-        const subt = p.usuario && p.nome && p.usuario !== p.nome ? `${p.usuario} • ${p.categoria || 'Geral'}` : (p.categoria || 'Offline');
-        el.inlineChatTitle.textContent = nome;
-        el.inlineChatSub.textContent = subt;
-        const avatar = normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png';
-        if(el.inlineChatAvatar) el.inlineChatAvatar.src = avatar;
-        if(el.inlineChatOrderLabel) el.inlineChatOrderLabel.textContent = `${p.titulo || 'Pedido'} • ${p.id || ''}`.trim();
-      }
-
-      function handleInlineChatSend(ev){
-        if(ev) ev.preventDefault();
-        const pedido = state.activeChatPedido;
-        if(!pedido || !pedido.id){ showToast('Selecione um pedido.'); return; }
-        const text = String(el.inlineChatInput?.value || '').trim();
-        if(!text) return;
-        const list = Array.isArray(state.areaMensagens) ? state.areaMensagens.slice() : [];
-        list.push({ id: `m_${Date.now()}`, text, ts: Date.now(), from:'me' });
-        state.areaMensagens = list;
-        saveInlineChatMessages(pedido.id, list);
-        if(el.inlineChatInput) el.inlineChatInput.value = '';
-        renderInlineChatMessages();
-      }
-
-      function stubChatAction(label){
-        showToast(`${label} em breve`);
-      }
-
-            // ===== INLINE CHAT (Firestore) =====
-      // Reutiliza o mesmo schema do chat.html: subcollection "mensagens" em pedidos/<id>/mensagens
-      let chatIdAtual = null;
-      let colecaoAtual = 'pedidos';
-      let chatUnsubscribe = null;
-
-      const escHtml = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-      const nl2br = (s) => escHtml(s).replace(/\n/g, '<br>');
-
-      function parseTs(ts){
-        try{
-          if(!ts) return null;
-          if(ts instanceof Date) return ts;
-          if(typeof ts === 'object' && typeof ts.seconds === 'number') return new Date(ts.seconds*1000);
-          const d = new Date(ts);
-          return isNaN(d.getTime()) ? null : d;
-        }catch(_){ return null; }
-      }
-
-      function setInlineHeader(p){
-        const nome = p?.nome || p?.usuario || p?.userName || 'Usuário';
-        const user = p?.usuario || p?.username || p?.user || '';
-        const sub = user ? `@${String(user).replace(/^@/,'')} • Geral` : 'Geral';
-        const avatar = (p?.fotoUrl || p?.foto || p?.avatar || p?.avatarUrl || '').trim();
-
-        const elName = document.getElementById('inlineChatName');
-        const elSub = document.getElementById('inlineChatSub');
-        const elAv = document.getElementById('inlineChatAvatar');
-        if(elName) elName.textContent = nome;
-        if(elSub) elSub.textContent = sub;
-        if(elAv){
-          if(avatar){
-            elAv.src = avatar;
-            elAv.onerror = () => { elAv.onerror = null; elAv.src = 'https://via.placeholder.com/40'; };
-          }else{
-            elAv.src = 'https://via.placeholder.com/40';
-          }
-        }
-      }
-
-      function renderMensagens(snapshot){
-        const container = document.getElementById('areaMensagens');
-        const empty = document.getElementById('inlineChatEmpty');
-        if(!container) return;
-
-        const docs = snapshot?.docs || [];
-        if(empty) empty.style.display = docs.length ? 'none' : 'block';
-
-        const myUid = String(currentUserUid || auth?.currentUser?.uid || '').trim();
-
-        let html = '';
-        for(const d of docs){
-          const m = d.data() || {};
-          const sender = String(m.senderUid || m.senderuid || m.sender || '').trim();
-          const souEu = !!(myUid && sender && sender === myUid);
-          const rowCls = souEu ? 'msg-row msg-row-me' : 'msg-row msg-row-other';
-          const bubbleCls = souEu ? 'msg-bubble msg-enviada' : 'msg-bubble msg-recebida';
-          const dt = parseTs(m.timestamp);
-          const hora = dt ? dt.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) : '';
-
-          const tipo = String(m.tipo || 'texto').toLowerCase();
-          const texto = String(m.texto || '').trim();
-          const url = String(m.url || '').trim();
-
-          let corpo = '';
-          if(tipo === 'imagem' && url){
-            corpo = `<div class="msg-media"><img src="${escHtml(url)}" alt="imagem" loading="lazy"></div>` + (texto ? `<div style="margin-top:8px;">${nl2br(texto)}</div>` : '');
-          }else if(tipo === 'video' && url){
-            corpo = `<div class="msg-media"><video src="${escHtml(url)}" controls playsinline></video></div>` + (texto ? `<div style="margin-top:8px;">${nl2br(texto)}</div>` : '');
-          }else if(tipo === 'audio' && url){
-            corpo = `<div class="msg-media"><audio src="${escHtml(url)}" controls></audio></div>` + (texto ? `<div style="margin-top:8px;">${nl2br(texto)}</div>` : '');
-          }else if((tipo === 'arquivo' || tipo === 'file') && url){
-            const nomeArq = texto || 'Arquivo';
-            corpo = `<a class="msg-file" href="${escHtml(url)}" target="_blank" rel="noopener"><i class='bx bx-file'></i><span>${escHtml(nomeArq)}</span></a>`;
-          }else{
-            corpo = nl2br(texto || '');
-          }
-
-          html += `
-            <div class="${rowCls}">
-              <div class="${bubbleCls}">
-                ${corpo || ''}
-                <div class="msg-footer"><span class="msg-hora">${escHtml(hora)}</span></div>
-              </div>
-            </div>
-          `;
-        }
-        container.innerHTML = html || '';
-        // auto scroll bottom
-        try{ container.scrollTop = container.scrollHeight; }catch(_){}
-      }
-
-      function carregarMensagens(colecao, docId){
-        if(!docId) return;
-        if(chatUnsubscribe) { try{ chatUnsubscribe(); }catch(_){} }
-        const q = query(collection(db, colecao, docId, "mensagens"), orderBy("timestamp", "asc"));
-        chatUnsubscribe = onSnapshot(q, (snap) => renderMensagens(snap), (err) => console.warn('onSnapshot chat', err));
-      }
-
-      // reply meta (mantido para compatibilidade com chat.html)
-      function applyReplyMetaToText(texto){ return String(texto || ''); }
-
-      window.enviarMensagemTexto = async function(){
-        const input = document.getElementById('mensagemInput');
-        const texto = String(input?.value || '').trim();
-        if(!texto) return;
-        if(!chatIdAtual || !colecaoAtual) return;
-
-        const uid = currentUserUid || auth?.currentUser?.uid || null;
-        if(!uid){ showToast('Faça login para enviar mensagem'); return; }
-
-        try{
-          input.value = '';
-          await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
-            tipo: 'texto',
-            texto: applyReplyMetaToText(texto),
-            senderUid: uid,
-            timestamp: new Date(),
-            lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
-          });
-          try{
-            await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: texto.slice(0,140), dataAtualizacao: new Date().toISOString() });
-          }catch(_){}
-        }catch(err){
-          console.error('enviarMensagemTexto', err);
-          showToast('Erro ao enviar mensagem');
-        }
-      };
-
-      async function enviarAnexoArquivo(file){
-        if(!file) return;
-        if(!chatIdAtual || !colecaoAtual) return;
-
-        try{
-          const storage = (typeof getStorage === 'function') ? getStorage() : (window.storage || null);
-          const mkRef = (typeof ref === 'function') ? ref : window.ref;
-          const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
-          const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
-          if(!storage || !mkRef || !uploadFn || !getUrlFn) throw new Error('Storage não configurado');
-
-          const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g,'_');
-          const path = `chat/${colecaoAtual}/${chatIdAtual}/${Date.now()}_${safeName}`;
-          const r = mkRef(storage, path);
-          const snapshot = await uploadFn(r, file);
-          const url = await getUrlFn(snapshot.ref || r);
-
-          const uid = currentUserUid || auth?.currentUser?.uid || null;
-          const isImg = String(file.type || '').startsWith('image/');
-          await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
-            tipo: isImg ? 'imagem' : 'arquivo',
-            texto: applyReplyMetaToText(safeName),
-            url,
-            senderUid: uid,
-            timestamp: new Date(),
-            lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
-          });
-          try{
-            const preview = isImg ? 'Imagem' : `Arquivo: ${safeName}`;
-            await updateDoc(doc(db, "pedidos", chatIdAtual), { ultimaMensagem: preview, dataAtualizacao: new Date().toISOString() });
-          }catch(_){}
-        }catch(err){
-          console.error('enviarAnexoArquivo', err);
-          showToast('Falha ao enviar anexo');
-        }
-      }
-
-      // --- ÁUDIO (mesmo comportamento do chat.html, porém mínimo) ---
-      window.mediaRecorder = null;
-      window.audioChunks = [];
-      window.timerInterval = null;
-      window.audioRecordStartedAt = 0;
-
-      window.iniciarGravacao = async function(){
-        if(!navigator.mediaDevices?.getUserMedia){
-          alert("Seu navegador não suporta gravação de áudio.");
-          return;
-        }
-        try{
-          const stream = await navigator.mediaDevices.getUserMedia({ audio:true });
-          window.mediaRecorder = new MediaRecorder(stream);
-          window.audioChunks = [];
-          window.mediaRecorder.ondataavailable = (e) => window.audioChunks.push(e.data);
-          window.mediaRecorder.start();
-          window.audioRecordStartedAt = Date.now();
-
-          document.getElementById('area-input-texto').style.display='none';
-          document.getElementById('uiGravando').style.display='flex';
-
-          let segundos=0;
-          const timer = document.getElementById('timerGravacao');
-          if(timer) timer.textContent='00:00';
-          window.timerInterval = setInterval(()=>{
-            segundos++;
-            const mins = String(Math.floor(segundos/60)).padStart(2,'0');
-            const secs = String(segundos%60).padStart(2,'0');
-            if(timer) timer.textContent = `${mins}:${secs}`;
-          },1000);
-        }catch(err){
-          console.error(err);
-          alert("Permita o uso do microfone para gravar áudio.");
-        }
-      };
-
-      window.cancelarGravacao = function(){
-        try{
-          if(window.mediaRecorder){
-            window.mediaRecorder.stop();
-            window.mediaRecorder.stream.getTracks().forEach(t=>t.stop());
-          }
-        }catch(_){}
-        clearInterval(window.timerInterval);
-        window.audioChunks=[];
-        window.audioRecordStartedAt=0;
-        document.getElementById('uiGravando').style.display='none';
-        document.getElementById('area-input-texto').style.display='flex';
-      };
-
-      window.enviarAudio = async function(){
-        if(!window.mediaRecorder) return;
-        try{
-          await new Promise((resolve)=>{ window.mediaRecorder.onstop = resolve; window.mediaRecorder.stop(); });
-          window.mediaRecorder.stream.getTracks().forEach(t=>t.stop());
-        }catch(_){}
-
-        clearInterval(window.timerInterval);
-
-        const uid = currentUserUid || auth?.currentUser?.uid || null;
-        if(!uid){ showToast('Faça login para enviar áudio'); window.cancelarGravacao(); return; }
-        if(!chatIdAtual || !colecaoAtual){ showToast('Nenhuma conversa aberta'); window.cancelarGravacao(); return; }
-
-        const audioBlob = new Blob(window.audioChunks, { type:'audio/webm' });
-        const gravacaoInicio = Number(window.audioRecordStartedAt || 0);
-        const duracaoAudioSec = gravacaoInicio > 0 ? Math.max(1, Math.round((Date.now()-gravacaoInicio)/1000)) : 0;
-        window.audioRecordStartedAt=0;
-
-        document.getElementById('uiGravando').style.display='none';
-        document.getElementById('area-input-texto').style.display='flex';
-
-        try{
-          const storage = (typeof getStorage === 'function') ? getStorage() : (window.storage || null);
-          const mkRef = (typeof ref === 'function') ? ref : window.ref;
-          const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
-          const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
-          if(!storage || !mkRef || !uploadFn || !getUrlFn) throw new Error('Storage não configurado');
-
-          const nomeArquivo = `chat/${colecaoAtual}/${chatIdAtual}/audio_${Date.now()}.webm`;
-          const storageRef = mkRef(storage, nomeArquivo);
-          const snapshot = await uploadFn(storageRef, audioBlob);
-          const downloadUrl = await getUrlFn(snapshot.ref || storageRef);
-
-          await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
-            tipo:'audio',
-            url: downloadUrl,
-            texto: applyReplyMetaToText('Mensagem de voz'),
-            duracaoSegundos: duracaoAudioSec,
-            senderUid: uid,
-            timestamp: new Date(),
-            lidoEm: uid ? { [uid]: new Date().toISOString() } : {}
-          });
-          try{
-            await updateDoc(doc(db,"pedidos",chatIdAtual), { ultimaMensagem:'Mensagem de voz', dataAtualizacao:new Date().toISOString() });
-          }catch(_){}
-        }catch(err){
-          console.error('enviarAudio', err);
-          showToast('Falha ao enviar áudio');
-        }finally{
-          window.audioChunks=[];
-          window.mediaRecorder=null;
-        }
-      };
-
       function openInlineChat(p){
-        if(!p || !p.id){ showToast('Pedido inválido para abrir chat.'); return; }
-
-        // mantém contexto no storage (compat)
+        if(!p || !p.id){ showToast('Pedido invalido para abrir chat.'); return; }
         try{
           localStorage.setItem('doke_pedido_contexto', JSON.stringify(p));
           localStorage.setItem('pedidoAtual', JSON.stringify(p));
-        }catch(_){}
+          localStorage.setItem('doke_chat_prefill', JSON.stringify({ pedidoId: p.id, titulo: p.titulo, usuario: p.usuario, nome: p.nome, origem: 'pedidos.html' }));
+        }catch(_){ }
 
-        chatIdAtual = String(p.id);
-        colecaoAtual = 'pedidos';
+        const meUid = resolveUid();
+        const outroUid = String(
+          (meUid && p.deUid && p.paraUid)
+            ? (String(p.deUid) === String(meUid) ? p.paraUid : p.deUid)
+            : (p.paraUid || p.deUid || '')
+        ).trim();
+        const peerName = String(p.nome || p.usuario || '').trim();
+        const peerPhoto = normalizeMediaUrl(p.avatar);
+        const statusHint = String(p.statusOriginal || p.status || '').trim();
+        const pid = encodeURIComponent(String(p.id));
+        const q = [
+          'embed=1',
+          `chatId=${pid}`,
+          `pedidoId=${pid}`,
+          'from=pedidos',
+          'aba=pedidos',
+          'origin=pedido'
+        ];
+        if(outroUid) q.push(`outroUid=${encodeURIComponent(outroUid)}`);
+        if(peerName) q.push(`peerName=${encodeURIComponent(peerName)}`);
+        if(peerPhoto) q.push(`peerPhoto=${encodeURIComponent(peerPhoto)}`);
+        if(statusHint) q.push(`status=${encodeURIComponent(statusHint)}`);
+        const chatUrl = `chat.html?${q.join('&')}`;
+        state.activeChatUrl = chatUrl;
 
-        setInlineHeader(p);
-
-        el.inlineChatShell.classList.add('open');
-        el.inlineChatShell.setAttribute('aria-hidden','false');
-
-        carregarMensagens(colecaoAtual, chatIdAtual);
-
-        // binds
-        const fileInput = document.getElementById('inlineChatFile');
-        const attachBtn = document.getElementById('inlineChatAttachBtn');
-        if(attachBtn && fileInput){
-          attachBtn.onclick = () => fileInput.click();
-          fileInput.onchange = () => {
-            const f = fileInput.files && fileInput.files[0];
-            if(f) enviarAnexoArquivo(f);
-            fileInput.value = '';
-          };
+        if(el.chatFrame && el.chatFrame.getAttribute('src') !== chatUrl){
+          el.chatFrame.setAttribute('src', chatUrl);
         }
-
-        setTimeout(()=> document.getElementById('mensagemInput')?.focus(), 40);
+        if(el.chatDrawer){
+          el.chatDrawer.classList.add('open');
+          el.chatDrawer.setAttribute('aria-hidden', 'false');
+        }
+        document.documentElement.classList.add('no-scroll');
+        document.body.classList.add('no-scroll');
       }
 
       function closeInlineChat(){
-        el.inlineChatShell.classList.remove('open');
-        el.inlineChatShell.setAttribute('aria-hidden','true');
-        if(chatUnsubscribe){ try{ chatUnsubscribe(); }catch(_){} chatUnsubscribe=null; }
+        if(el.chatDrawer){
+          el.chatDrawer.classList.remove('open');
+          el.chatDrawer.setAttribute('aria-hidden', 'true');
+        }
+        document.documentElement.classList.remove('no-scroll');
+        document.body.classList.remove('no-scroll');
+        try{ el.chatFrame?.contentWindow?.postMessage?.({type:'doke-chat-pause'}, '*'); }catch(_){ }
       }
 
       function openChat(p){
         openInlineChat(p);
+      }
+
+      async function persistPedidoStatus(p, nextStatus){
+        const { getFirestore, doc, updateDoc } = window || {};
+        if(typeof getFirestore !== 'function' || typeof doc !== 'function' || typeof updateDoc !== 'function') return false;
+        const db = window.db || getFirestore();
+        const nowIso = new Date().toISOString();
+        const payload = {
+          status: nextStatus,
+          statusPedido: nextStatus,
+          situacao: nextStatus,
+          estado: nextStatus,
+          dataAtualizacao: nowIso,
+          updatedAt: nowIso
+        };
+        if(nextStatus === 'aceito') payload.dataAceite = nowIso;
+        if(nextStatus === 'recusado') payload.dataRecusa = nowIso;
+        await updateDoc(doc(db, 'pedidos', String(p.id)), payload);
+        return true;
+      }
+
+      async function decidePedido(p, nextStatus){
+        if(!p || !p.id){
+          showToast('Pedido invalido.');
+          return;
+        }
+        const pid = String(p.id);
+        const normalized = statusCode(nextStatus);
+        try{
+          await persistPedidoStatus(p, nextStatus);
+        }catch(err){
+          console.warn('Falha ao atualizar status do pedido:', err);
+        }
+        state.pedidos = (state.pedidos || []).map((item) => {
+          if(String(item.id) !== pid) return item;
+          return {
+            ...item,
+            status: normalized,
+            statusOriginal: nextStatus,
+            atualizado: 'agora',
+            urgente: nextStatus === 'recusado' ? false : item.urgente
+          };
+        });
+        render();
+        showToast(nextStatus === 'aceito' ? 'Pedido aceito.' : 'Pedido recusado.');
       }
 
       async function openDetails(p){
@@ -1839,6 +1487,37 @@
         render();
       }
 
+      function updateBulkInfo(){
+        if(!el.bulkInfo) return;
+        const total = state.selected.size;
+        el.bulkInfo.textContent = `${total} pedido${total !== 1 ? 's' : ''} selecionado${total !== 1 ? 's' : ''}`;
+      }
+
+      function clearSelection(){
+        state.selected.clear();
+        state.selectMode = false;
+        render();
+      }
+
+      function finalizeSelected(){
+        if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
+        state.pedidos = (state.pedidos || []).map((p) => {
+          if(!state.selected.has(String(p.id))) return p;
+          return { ...p, status: 'finalizado', urgente: false, atualizado: 'agora' };
+        });
+        state.selected.clear();
+        render();
+        showToast('Pedidos finalizados.');
+      }
+
+      function archiveSelected(){
+        if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
+        state.pedidos = (state.pedidos || []).filter((p) => !state.selected.has(String(p.id)));
+        state.selected.clear();
+        render();
+        showToast('Pedidos arquivados da lista.');
+      }
+
       function setupFallbacks(){
         window.toggleCep = window.toggleCep || function(e){ if(e) e.preventDefault(); const box = document.getElementById('boxCep'); if(box) box.style.display = box.style.display === 'block' ? 'none' : 'block'; };
         window.salvarCep = window.salvarCep || function(){ const val = String(document.getElementById('inputCep')?.value || '').trim(); if(!val) return; localStorage.setItem('doke_cep', val); const span = document.getElementById('textoCepSpan'); if(span) span.textContent = val; const box = document.getElementById('boxCep'); if(box) box.style.display='none'; showToast('CEP salvo'); };
@@ -1851,61 +1530,92 @@
       }
 
       async function hydrate(forceFs){
-        const local = loadLocal();
+        let local = [];
+        try{ local = loadLocal(); }catch(err){ console.warn('loadLocal erro:', err); }
         let merged = mergePedidos(local);
         if(forceFs || merged.length < 3){
-          const fs = await loadFirestore();
-          merged = mergePedidos([...(merged || []), ...(fs || [])]);
+          try{
+            const fs = await loadFirestore();
+            merged = mergePedidos([...(merged || []), ...(fs || [])]);
+          }catch(err){
+            console.warn('loadFirestore erro:', err);
+          }
         }
         state.pedidos = merged;
         render();
       }
 
       function bind(){
-        el.search.addEventListener('input', () => { state.query = String(el.search.value || ''); render(); });
-        el.sortBtn.addEventListener('click', () => { nextSort(); render(); });
-        el.selectBtn.addEventListener('click', () => toggleSelectMode());
-        el.refreshBtn.addEventListener('click', async () => { el.refreshBtn.disabled = true; await hydrate(true); el.refreshBtn.disabled = false; showToast('Pedidos atualizados'); });
-        el.chips.forEach(ch => ch.addEventListener('click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
-        el.grid.addEventListener('click', (ev) => {
+        const on = (node, evt, fn) => { if (node && typeof node.addEventListener === 'function') node.addEventListener(evt, fn); };
+        on(el.search, 'input', () => { state.query = String(el.search?.value || ''); render(); });
+        on(el.sortBtn, 'click', () => { nextSort(); render(); });
+        on(el.selectBtn, 'click', () => toggleSelectMode());
+        on(el.bulkFinalizeBtn, 'click', finalizeSelected);
+        on(el.bulkArchiveBtn, 'click', archiveSelected);
+        on(el.bulkClearBtn, 'click', clearSelection);
+        on(el.refreshBtn, 'click', async () => { if(el.refreshBtn){ el.refreshBtn.disabled = true; } await hydrate(true); if(el.refreshBtn){ el.refreshBtn.disabled = false; } showToast('Pedidos atualizados'); });
+        (el.chips || []).forEach(ch => on(ch, 'click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
+        on(el.grid, 'click', (ev) => {
           const btn = ev.target.closest('button[data-action][data-id]');
           if(btn){
             const p = byId(btn.dataset.id);
-            if(btn.dataset.action === 'select'){ toggleSelected(btn.dataset.id); return; }
+            const action = String(btn.dataset.action || '');
+            if(btn.dataset.action === 'select'){
+              if(!state.selectMode) state.selectMode = true;
+              toggleSelected(btn.dataset.id);
+              return;
+            }
             if(state.selectMode){ toggleSelected(btn.dataset.id); return; }
-            if(btn.dataset.action === 'chat') openChat(p); else openDetails(p);
+            if(action === 'accept'){ decidePedido(p, 'aceito'); return; }
+            if(action === 'reject'){ decidePedido(p, 'recusado'); return; }
+            if(action === 'chat'){ openChat(p); return; }
+            if(action === 'details'){ openDetails(p); return; }
             return;
           }
           const cardEl = ev.target.closest('.card[data-id]');
           if(!cardEl || !state.selectMode) return;
           toggleSelected(cardEl.dataset.id);
         });
-        el.inlineChatBack.addEventListener('click', closeInlineChat);
-        el.inlineChatMenu?.addEventListener('click', () => stubChatAction('Opções do chat'));
-        el.inlineChatComposer?.addEventListener('submit', handleInlineChatSend);
-        el.inlineChatMoneyBtn?.addEventListener('click', () => stubChatAction('Cobrança'));
-        el.inlineChatAttachBtn?.addEventListener('click', () => stubChatAction('Anexos'));
-        el.inlineChatMicBtn?.addEventListener('click', () => stubChatAction('Áudio'));
-        el.inlineChatShell.addEventListener('click', (ev) => {
-          if(window.innerWidth <= 768) return;
-          if(ev.target === el.inlineChatShell) closeInlineChat();
-        });
-        window.addEventListener('resize', updateInlineChatLayout);
-        el.detailsCloseBtn.addEventListener('click', closeDetailsModal);
-        el.detailsModal.addEventListener('click', (ev) => {
+        document.querySelectorAll('#chatDrawer [data-close]').forEach((btn) => on(btn, 'click', closeInlineChat));
+        on(el.detailsCloseBtn, 'click', closeDetailsModal);
+        on(el.detailsModal, 'click', (ev) => {
           if(ev.target === el.detailsModal) closeDetailsModal();
         });
         document.addEventListener('keydown', (ev) => {
           if(ev.key !== 'Escape') return;
           if(el.detailsModal.classList.contains('open')) closeDetailsModal();
-          if(el.inlineChatShell.classList.contains('open')) closeInlineChat();
+          if(el.chatDrawer?.classList.contains('open')) closeInlineChat();
         });
         window.addEventListener('storage', (ev) => { const key = String(ev?.key || ''); if(!key || /(pedido|orcamento|doke_)/i.test(key)) hydrate(false); });
       }
 
-      setupFallbacks();
-      bind();
-      hydrate(true);
+      function bootstrapPedidos(){
+        try{
+          setupFallbacks();
+          bind();
+          setTimeout(() => {
+            try {
+              const loadingText = String(state?.subtitleEl?.textContent || '');
+              const semPedidos = !Array.isArray(state?.pedidos) || state.pedidos.length === 0;
+              if (/Carregando/i.test(loadingText) && semPedidos) {
+                render([], { preservePanel:true });
+              }
+            } catch (_e) {}
+          }, 2200);
+          hydrate(true).catch((err) => {
+            console.error('[pedidos] hydrate error', err);
+            try{ state.pedidos = mergePedidos(loadLocal()); }catch(_){ state.pedidos = []; }
+            render();
+            try{ showToast('Erro ao carregar pedidos. Mostrando dados locais.'); }catch(_){ }
+          });
+        }catch(err){
+          console.error('[pedidos] bootstrap error', err);
+          try{ state.pedidos = mergePedidos(loadLocal()); }catch(_){ state.pedidos = []; }
+          try{ render(); }catch(_){ }
+        }
+      }
+
+      bootstrapPedidos();
     })();
   </script>
 </body>

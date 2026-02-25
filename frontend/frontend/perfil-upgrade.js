@@ -104,6 +104,168 @@
       ...(includeSelfFallback ? getCachedPerfilIdentityKeys() : [])
     ]);
   }
+
+  function installWheelBridgeForHorizontalStrips(){
+    if(window.__dpWheelBridgeBound) return;
+    window.__dpWheelBridgeBound = true;
+    const selector = ".dp-tabs, .dp-stats, .dp-actionsRow, .dp-meta, .qna-filters";
+    document.addEventListener("wheel", (ev)=>{
+      try{
+        if(!ev || ev.defaultPrevented) return;
+        if(ev.shiftKey || ev.ctrlKey || ev.metaKey || ev.altKey) return;
+        const t = ev.target instanceof Element ? ev.target : null;
+        if(!t) return;
+        if(t.closest("textarea,input,select,[contenteditable='true']")) return;
+        const strip = t.closest(selector);
+        if(!strip) return;
+        const dx = Math.abs(Number(ev.deltaX || 0));
+        const dy = Math.abs(Number(ev.deltaY || 0));
+        if(dy <= 0 || dy < dx) return;
+        const hasHorizontalOverflow = (strip.scrollWidth - strip.clientWidth) > 6;
+        if(!hasHorizontalOverflow) return;
+        ev.preventDefault();
+        window.scrollBy({ top: ev.deltaY, left: 0, behavior: "auto" });
+      }catch(_e){}
+    }, { passive: false });
+  }
+
+  function readLocalReviewedPedidoIds(){
+    try{
+      const out = new Set();
+      const ls = window.localStorage;
+      if(!ls) return out;
+      for(let i=0;i<ls.length;i++){
+        const k = ls.key(i);
+        if(!k || !k.startsWith("doke_avaliado_")) continue;
+        const id = normalizeIdentity(k.slice("doke_avaliado_".length));
+        if(id) out.add(id);
+      }
+      return out;
+    }catch(_e){ return new Set(); }
+  }
+
+  function isPedidoFinalizadoStatus(v){
+    const s = String(v || "").trim().toLowerCase();
+    return ["finalizado","concluido","concluído","entregue","feito","concluido_com_sucesso"].includes(s);
+  }
+
+  function pedidoMatchesReviewerAndTarget(pedido, ctx){
+    const meKeys = uniqueStrings([
+      ctx?.me?.id, ctx?.me?.uid, ctx?.me?.auth_uid, ctx?.me?.authUid,
+      ctx?.authUser?.id
+    ]);
+    const targetKeys = uniqueStrings([
+      ctx?.target?.id, ctx?.target?.uid, ctx?.target?.auth_uid, ctx?.target?.authUid,
+      ctx?.targetId
+    ]);
+    if(!meKeys.length || !targetKeys.length) return false;
+
+    const clienteKeys = uniqueStrings([
+      pedido?.deUid, pedido?.deuid, pedido?.clienteUid, pedido?.cliente_uid,
+      pedido?.clienteId, pedido?.cliente_id, pedido?.deId, pedido?.de_id,
+      pedido?.solicitanteUid, pedido?.solicitante_id
+    ]);
+    const profKeys = uniqueStrings([
+      pedido?.paraUid, pedido?.parauid, pedido?.profissionalUid, pedido?.profissional_uid,
+      pedido?.profissionalId, pedido?.profissional_id, pedido?.paraId, pedido?.para_id,
+      pedido?.prestadorUid, pedido?.prestador_id
+    ]);
+
+    const clienteMatch = clienteKeys.some((k)=> meKeys.includes(k));
+    const profMatch = profKeys.some((k)=> targetKeys.includes(k));
+    return clienteMatch && profMatch;
+  }
+
+  async function findPendingReviewOrdersForProfile(ctx){
+    if(!ctx?.me || !ctx?.target || ctx.canEdit) return [];
+    if(String(ctx.pageMode || "").toLowerCase() !== "public") return [];
+    if(roleFromUsuario(ctx.target) !== "profissional") return [];
+    if(!window.db || typeof window.collection !== "function" || typeof window.query !== "function" || typeof window.where !== "function" || typeof window.getDocs !== "function"){
+      return [];
+    }
+
+    const reviewedLocal = readLocalReviewedPedidoIds();
+    const seen = new Map();
+    const clienteCandidates = uniqueStrings([
+      ctx?.me?.uid,
+      ctx?.authUser?.id,
+      ctx?.me?.id
+    ]);
+    const queryFields = ["deUid", "deuid", "clienteUid", "clienteuid", "clienteId", "clienteid"];
+
+    for(const field of queryFields){
+      for(const val of clienteCandidates){
+        try{
+          const q = window.query(window.collection(window.db, "pedidos"), window.where(field, "==", val));
+          const snap = await window.getDocs(q);
+          snap.forEach((docSnap)=>{
+            const data = (typeof docSnap.data === "function") ? (docSnap.data() || {}) : {};
+            const id = normalizeIdentity(docSnap.id || data.id);
+            if(!id || seen.has(id)) return;
+            seen.set(id, { id, ...data });
+          });
+        }catch(_e){ /* ignora índices/campos ausentes */ }
+      }
+    }
+
+    const pending = [];
+    for(const pedido of seen.values()){
+      if(!pedidoMatchesReviewerAndTarget(pedido, ctx)) continue;
+      const pedidoId = normalizeIdentity(pedido.id);
+      if(!pedidoId) continue;
+      if(reviewedLocal.has(pedidoId)) continue;
+      if(pedido.avaliado === true) continue;
+      if(isPedidoFinalizadoStatus(pedido.status) !== true) continue;
+      pending.push(pedido);
+    }
+
+    pending.sort((a,b)=>{
+      const da = new Date(a.updatedAt || a.finalizadoEm || a.dataFinalizacao || a.criadoEm || a.createdAt || 0).getTime() || 0;
+      const db = new Date(b.updatedAt || b.finalizadoEm || b.dataFinalizacao || b.criadoEm || b.createdAt || 0).getTime() || 0;
+      return db - da;
+    });
+    return pending;
+  }
+
+  async function syncWriteAvaliacaoEligibility(ctx){
+    const btn = $("#dpWriteAvaliacao");
+    if(!btn) return;
+    const canAttempt = !!(ctx && !ctx.canEdit && ctx.me && String(ctx.pageMode || "").toLowerCase() === "public" && roleFromUsuario(ctx.target) === "profissional");
+    if(!canAttempt){
+      showIf("#dpWriteAvaliacao", false);
+      if(ctx){ ctx.pendingReviewOrderId = null; ctx.pendingReviewOrderIds = []; }
+      return;
+    }
+    btn.disabled = true;
+    btn.dataset.state = "checking";
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Verificando';
+    try{
+      const pending = await findPendingReviewOrdersForProfile(ctx);
+      const ids = pending.map(p => normalizeIdentity(p.id)).filter(Boolean);
+      ctx.pendingReviewOrderIds = ids;
+      ctx.pendingReviewOrderId = ids[0] || null;
+      const hasPending = ids.length > 0;
+      showIf("#dpWriteAvaliacao", hasPending);
+      if(hasPending){
+        const extra = ids.length > 1 ? ` (${ids.length})` : "";
+        btn.innerHTML = `<i class='bx bx-star'></i> Avaliar pedido${extra}`;
+        btn.title = ids.length > 1 ? "Você tem mais de um pedido pendente para avaliar." : "Avaliar pedido pendente";
+      }else{
+        btn.innerHTML = `<i class='bx bx-check-circle'></i> Sem pendência para avaliar`;
+        btn.title = "Você só pode avaliar quando houver um pedido finalizado pendente.";
+      }
+    }catch(e){
+      console.error(e);
+      showIf("#dpWriteAvaliacao", false);
+      if(ctx){ ctx.pendingReviewOrderId = null; ctx.pendingReviewOrderIds = []; }
+    }finally{
+      btn.disabled = false;
+      btn.dataset.state = "ready";
+      if(btn.style.display === "none") btn.innerHTML = originalHtml;
+    }
+  }
+
   function isOwnProfile(ctx){
     if(!ctx) return false;
     if(ctx.canEdit) return true;
@@ -696,11 +858,25 @@
     }
 
     $("#dpMenuLogout", menu).onclick = async ()=>{
+      try{
+        if(window.__dokeAuthActions?.fazerLogout){
+          await window.__dokeAuthActions.fazerLogout();
+          return;
+        }
+        if(typeof window.fazerLogout === "function"){
+          await window.fazerLogout();
+          return;
+        }
+      }catch(e){ console.error(e); }
+
       const client = mustSupa();
       if(!client) return;
-      await client.auth.signOut();
+      try{ window.dokeAllowSignOut?.(); }catch(_e){}
+      try{ await client.auth.signOut(); }catch(_e){}
+      try{ if(window.auth?.signOut) await window.auth.signOut(); }catch(_e){}
+      try{ localStorage.removeItem("usuarioLogado"); }catch(_e){}
       toast("Saiu da conta.");
-      setTimeout(()=> window.location.href = "login.html", 400);
+      setTimeout(()=> window.location.replace("login.html?logout=1"), 300);
     };
 
     const r = anchorEl.getBoundingClientRect();
@@ -4600,46 +4776,25 @@ if(!rangeSel || !refreshBtn) return;
       }
       window.location.href = "anunciar.html";
     });
-
-    // Avaliar (cliente no perfil profissional)
-    $("#dpWriteAvaliacao")?.addEventListener("click", ()=>{
-      if(!ctx.me?.id) return toast("Faça login para avaliar.");
+    // Avaliar (cliente no perfil profissional) — somente com pedido pendente
+    $("#dpWriteAvaliacao")?.addEventListener("click", async ()=>{
+      if(!ctx.me?.id && !ctx.authUser?.id) return toast("Faça login para avaliar.");
       if(ctx.canEdit) return toast("Você não pode se avaliar.");
-      modal.open("Avaliar profissional", `
-        <div class="dp-form">
-          <div>
-            <label>Nota</label>
-            <select class="dp-select" id="dpAvalNota">
-              <option value="5">â˜…â˜…â˜…â˜…â˜… (5)</option>
-              <option value="4">â˜…â˜…â˜…â˜…â˜† (4)</option>
-              <option value="3">â˜…â˜…â˜…â˜†â˜† (3)</option>
-              <option value="2">â˜…â˜…â˜†â˜†â˜† (2)</option>
-              <option value="1">â˜…â˜†â˜†â˜†â˜† (1)</option>
-            </select>
-          </div>
-          <div>
-            <label>Comentário</label>
-            <textarea class="dp-textarea" id="dpAvalMsg" placeholder="Conte como foi o serviço..."></textarea>
-          </div>
-        </div>
-      `, async ()=>{
-        const client = mustSupa();
-        if(!client) return;
-        try{
-          await createAvaliacao(client, ctx, {
-            profissionalId: ctx.target.id,
-            nota: $("#dpAvalNota")?.value || 5,
-            comentario: safeStr($("#dpAvalMsg")?.value)
-          });
-          modal.close();
-          toast("Avaliação enviada!");
-          loadAvaliacoes(ctx.client, ctx.target);
-        }catch(e){
-          console.error(e);
-          toast("Erro ao enviar avaliação.");
+      try{
+        if(!ctx.pendingReviewOrderId){
+          await syncWriteAvaliacaoEligibility(ctx);
         }
-      });
+        const pendingId = normalizeIdentity(ctx.pendingReviewOrderId);
+        if(!pendingId){
+          return toast("Você só pode avaliar quando houver um pedido finalizado pendente.");
+        }
+        window.location.href = `avaliar.html?pedidoId=${encodeURIComponent(pendingId)}`;
+      }catch(e){
+        console.error(e);
+        toast("Não foi possível verificar sua pendência de avaliação.");
+      }
     });
+
 
     // Editar perfil
     $("#dpEditBtn")?.addEventListener("click", ()=>{
@@ -5129,10 +5284,11 @@ if(!rangeSel || !refreshBtn) return;
       try{ initTabs(ctx); }catch(e){ console.error(e); }
       try{ initStatsNav(); }catch(e){ console.error(e); }
       try{ initSectionActions(ctx); }catch(e){ console.error(e); }
+      try{ installWheelBridgeForHorizontalStrips(); }catch(e){ console.error(e); }
 
-      // show write review only for public professional + logged in and not owner
-      const showWrite = !!(pageMode === "public" && roleFromUsuario(target) === "profissional" && me && me.id !== target.id);
-      showIf("#dpWriteAvaliacao", showWrite);
+      // CTA de avaliação só aparece quando existir pedido finalizado pendente para este profissional
+      showIf("#dpWriteAvaliacao", false);
+      syncWriteAvaliacaoEligibility(ctx).catch(e=>console.error(e));
 
     }catch(err){
       console.error(err);
