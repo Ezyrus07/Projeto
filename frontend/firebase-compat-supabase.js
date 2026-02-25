@@ -533,17 +533,20 @@ function buildTableFromPath(parts){
     // Mapeia campos camelCase -> snake_case usados no schema atual
     // (mantém ambos para compat com código legado)
     if (out.maxParcelas != null && out.maxparcelas == null) out.maxparcelas = out.maxParcelas;
-    if (out.ultimaMensagem != null && out.ultimamensagem == null) out.ultimamensagem = out.ultimaMensagem;
     if (out.dataAtualizacao != null && out.dataatualizacao == null) out.dataatualizacao = out.dataAtualizacao;
     if (out.pedidoId != null && out.pedido_id == null) out.pedido_id = out.pedidoId;
     if (out.pedidoId != null && out.pedidoid == null) out.pedidoid = out.pedidoId;
     if (out.pedido_id != null && out.pedidoid == null) out.pedidoid = out.pedido_id;
+    if (out.deUid != null && out.deuid == null) out.deuid = out.deUid;
+    if (out.deUid != null && out.de_uid == null) out.de_uid = out.deUid;
+    if (out.deuid != null && out.de_uid == null) out.de_uid = out.deuid;
+    if (out.paraUid != null && out.parauid == null) out.parauid = out.paraUid;
+    if (out.paraUid != null && out.para_uid == null) out.para_uid = out.paraUid;
+    if (out.parauid != null && out.para_uid == null) out.para_uid = out.parauid;
     if (out.conversaId != null && out.conversa_id == null) out.conversa_id = out.conversaId;
     if (out.conversaId != null && out.conversaid == null) out.conversaid = out.conversaId;
     if (out.conversa_id != null && out.conversaid == null) out.conversaid = out.conversa_id;
     if (out.respostasTriagem != null && out.respostas_triagem == null) out.respostas_triagem = out.respostasTriagem;
-    if (out.respostasTriagem != null && out.respostastriagem == null) out.respostastriagem = out.respostasTriagem;
-    if (out.respostas_triagem != null && out.respostastriagem == null) out.respostastriagem = out.respostas_triagem;
     if (out.formularioRespostas != null && out.formulario_respostas == null) out.formulario_respostas = out.formularioRespostas;
     if (out.formularioRespostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formularioRespostas;
     if (out.formulario_respostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formulario_respostas;
@@ -1058,4 +1061,3 @@ function buildTableFromPath(parts){
 
   console.log("[DOKE] Firestore compat carregado.");
 })();
-

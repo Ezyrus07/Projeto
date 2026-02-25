@@ -2438,19 +2438,30 @@
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 <style id="doke-chat-embed-mode">
+  html.embed-chat-mode{height:100% !important;}
   body.embed-chat-mode{background:#fff !important; overflow:hidden !important;}
+  body.embed-chat-mode{
+    --navbar-height-mobile: 0px !important;
+    --bottom-nav-height: 0px !important;
+  }
   body.embed-chat-mode > .popup,
   body.embed-chat-mode > .navbar-mobile,
   body.embed-chat-mode > .navbar-desktop,
   body.embed-chat-mode > .sidebar-icones,
   body.embed-chat-mode > .bottom-nav,
   body.embed-chat-mode > #overlay-menu{display:none !important;}
-  body.embed-chat-mode .messenger-layout{margin:0 !important; inset:0 !important; width:100% !important; max-width:none !important; min-width:0 !important; height:100dvh !important; border-radius:0 !important; box-shadow:none !important; border:none !important; grid-template-columns:1fr !important; display:grid !important;}
+  body.embed-chat-mode .doke-mobile-header,
+  body.embed-chat-mode .doke-bottom-nav,
+  body.embed-chat-mode .doke-drawer,
+  body.embed-chat-mode .doke-drawer-backdrop,
+  body.embed-chat-mode .doke-search-overlay{display:none !important;}
+  body.embed-chat-mode .messenger-layout{margin:0 !important; margin-left:0 !important; margin-top:0 !important; inset:auto !important; width:100% !important; max-width:none !important; min-width:0 !important; height:100dvh !important; border-radius:0 !important; box-shadow:none !important; border:none !important; grid-template-columns:1fr !important; display:grid !important; position:fixed !important; top:0 !important; left:0 !important; right:0 !important; bottom:0 !important;}
   body.embed-chat-mode .coluna-lista{display:none !important;}
-  body.embed-chat-mode .coluna-chat{width:100% !important; flex:1 1 auto !important; border-left:0 !important;}
+  body.embed-chat-mode .coluna-chat{width:100% !important; flex:1 1 auto !important; border-left:0 !important; min-width:0 !important; display:flex !important; flex-direction:column !important;}
   body.embed-chat-mode #chat-placeholder{display:none !important;}
   body.embed-chat-mode #box-conversa-real{display:flex !important; height:100% !important;}
   body.embed-chat-mode .chat-header{border-radius:0 !important;}
+  body.embed-chat-mode #chatStatus{display:none !important;}
   body.embed-chat-mode .btn-voltar-mobile{display:none !important;}
   body.embed-chat-mode .mensagens-body{padding-bottom:90px !important;}
   body.embed-chat-mode .chat-footer{position:sticky !important; bottom:0 !important;}
@@ -2468,11 +2479,17 @@
     var params = new URLSearchParams(window.location.search || '');
     var isEmbed = params.get('embed') === '1' || params.get('embed') === 'true' || params.get('from') === 'pedidos' || params.get('origin') === 'pedido' || (window.self !== window.top);
     if(!isEmbed) return;
+    window.__DOKE_DISABLE_SHELL__ = true;
     document.documentElement.classList.add('embed-chat-mode');
     var apply = function(){
       try{
+        document.body.setAttribute('data-doke-shell','off');
         document.body.classList.add('embed-chat-mode');
+        document.body.classList.remove('doke-shell-active','doke-no-main','doke-drawer-open','doke-search-open','doke-menu-open');
         document.body.setAttribute('data-embed-chat','1');
+        document.querySelectorAll('.doke-mobile-header,.doke-bottom-nav,.doke-drawer,.doke-drawer-backdrop,.doke-search-overlay,.doke-bottom-spacer').forEach(function(node){
+          try{ node.remove(); }catch(e){}
+        });
       }catch(e){}
     };
     if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', apply, { once:true });
@@ -8176,12 +8193,36 @@ function persistPedidosFieldCaps() {
         };
     }
 
+    const broadFetchCooldownUntil = Object.create(null);
+    let broadFetchLastWarnAt = 0;
+    function isNetworkFetchError(err){
+        const msg = String(err?.message || err?.details || err?.hint || '').toLowerCase();
+        return msg.includes('failed to fetch')
+            || msg.includes('networkerror')
+            || msg.includes('insufficient_resources')
+            || msg.includes('network request failed')
+            || msg.includes('load failed');
+    }
+
     async function fetchRowsBroadPaged(tableName, opts = {}) {
         try {
             const sb = window.sb || window.supabaseClient || window.__supabaseClient || null;
             if (!sb || typeof sb.from !== 'function' || !tableName) return [];
-            const pageSize = Math.max(50, Math.min(500, Number(opts.pageSize || 200)));
-            const maxPages = Math.max(1, Math.min(12, Number(opts.maxPages || 6)));
+            const tableKey = String(tableName || '').trim().toLowerCase();
+            const now = Date.now();
+            const cooldownUntil = Number(broadFetchCooldownUntil[tableKey] || 0);
+            if (cooldownUntil > now) return [];
+            let isEmbed = false;
+            try {
+                const params = new URLSearchParams(window.location.search);
+                isEmbed = params.get('embed') === '1';
+            } catch (_) {}
+            const isMobile = window.matchMedia && window.matchMedia('(max-width: 1023px)').matches;
+            const conservativeMode = !!(isEmbed || isMobile);
+            const maxPageSizeCap = conservativeMode ? 120 : 500;
+            const maxPagesCap = conservativeMode ? 3 : 12;
+            const pageSize = Math.max(40, Math.min(maxPageSizeCap, Number(opts.pageSize || (conservativeMode ? 90 : 200))));
+            const maxPages = Math.max(1, Math.min(maxPagesCap, Number(opts.maxPages || (conservativeMode ? 3 : 6))));
             const out = [];
             const seen = new Set();
             for (let page = 0; page < maxPages; page++) {
@@ -8197,12 +8238,20 @@ function persistPedidosFieldCaps() {
                 } catch (e) {
                     const msg = String(e?.message || e?.details || e?.hint || '').toLowerCase();
                     if (Number(e?.status || 0) === 400 || msg.includes('bad request')) break;
+                    if (isNetworkFetchError(e)) {
+                        broadFetchCooldownUntil[tableKey] = Date.now() + 20000;
+                        break;
+                    }
                     throw e;
                 }
                 const error = res?.error || null;
                 if (error) {
                     const msg = String(error?.message || error?.details || error?.hint || '').toLowerCase();
                     if (Number(error?.status || 0) === 400 || msg.includes('bad request')) break;
+                    if (isNetworkFetchError(error)) {
+                        broadFetchCooldownUntil[tableKey] = Date.now() + 20000;
+                        break;
+                    }
                     throw error;
                 }
                 const rows = Array.isArray(res?.data) ? res.data : [];
@@ -8216,6 +8265,16 @@ function persistPedidosFieldCaps() {
             }
             return out;
         } catch (e) {
+            const now = Date.now();
+            if (isNetworkFetchError(e)) {
+                const tableKey = String(tableName || '').trim().toLowerCase();
+                broadFetchCooldownUntil[tableKey] = now + 20000;
+                if ((now - broadFetchLastWarnAt) > 10000) {
+                    broadFetchLastWarnAt = now;
+                    console.warn('Falha no fallback amplo paginado (rede), aplicando cooldown', tableName, e);
+                }
+                return [];
+            }
             console.warn('Falha no fallback amplo paginado', tableName, e);
             return [];
         }
@@ -8437,6 +8496,27 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         const btnC = document.getElementById('btn-cobranca-topo');
         const btnP = document.getElementById('btn-pagamento');
         const divAcoesPro = document.getElementById('acoes-profissional-header');
+        const fallbackNomeContato = String(nomePadrao || 'Usuario').trim() || 'Usuario';
+        const fallbackFotoContato = String(fotoPadrao || chatContatoFotoAtual || 'assets/Imagens/user_placeholder.png').trim() || 'assets/Imagens/user_placeholder.png';
+        const applyPeerHeaderFallback = () => {
+            const nomeEl = document.getElementById('chatNome');
+            const avatarEl = document.getElementById('chatAvatar');
+            const statusEl = document.getElementById('chatStatus');
+            if (nomeEl) nomeEl.innerText = fallbackNomeContato;
+            if (avatarEl) {
+                avatarEl.src = fallbackFotoContato;
+                avatarEl.onerror = function(){ this.onerror = null; this.src = 'assets/Imagens/user_placeholder.png'; };
+                if (uidOutro) avatarEl.onclick = () => window.abrirPerfilUsuario(uidOutro, false);
+                else avatarEl.onclick = null;
+            }
+            if (statusEl && !String(statusEl.innerText || '').trim()) {
+                statusEl.innerText = 'Carregando contato...';
+                statusEl.style.color = "#888";
+                statusEl.style.fontWeight = "400";
+            }
+            chatContatoFotoAtual = fallbackFotoContato || chatContatoFotoAtual || '';
+        };
+        applyPeerHeaderFallback();
 
         statusPedidoAtual = (colecao === 'pedidos') ? (statusDoc || 'pendente') : 'pendente';
         avaliadoPedidoAtual = false;
@@ -8558,6 +8638,9 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
         // 2. CARREGA DADOS DO USU?RIO + STATUS ONLINE (VISUAL MELHORADO)
               if (outroUserUnsub) { try { outroUserUnsub(); } catch (_) {} outroUserUnsub = null; }
+              if (!uidOutro) {
+                  applyPeerHeaderFallback();
+              } else {
               outroUserUnsub = onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
                 const d = docSnap.data() || {};
@@ -8619,8 +8702,13 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         atualizarMenuConversa();
                     }).catch(() => {});
                 }
+            } else {
+                applyPeerHeaderFallback();
             }
+        }, () => {
+            applyPeerHeaderFallback();
         });
+        }
 
         restaurarRascunhoChat();
         carregarMensagens(colecao, idDoc);
@@ -9613,6 +9701,10 @@ window.confirmarGerarCobranca = async function(){
         const params = new URLSearchParams(window.location.search);
         const chatId = params.get('chatId') || params.get('pedidoId');
         const uidOutro = params.get('uid') || params.get('userUid');
+        const peerUidHint = params.get('outroUid') || params.get('peerUid') || '';
+        const peerNameHint = params.get('peerName') || params.get('nome') || '';
+        const peerPhotoHint = params.get('peerPhoto') || params.get('foto') || '';
+        const statusHint = params.get('status') || '';
 
         if (uidOutro) {
             await abrirConversaComUid(uidOutro);
@@ -9623,17 +9715,28 @@ window.confirmarGerarCobranca = async function(){
 
         try {
             const pSnap = await getDoc(doc(db, 'pedidos', chatId));
-            if (!pSnap.exists()) return;
+            if (!pSnap.exists()) {
+                if (peerUidHint) {
+                    await window.abrirChat(chatId, peerUidHint, peerNameHint || '', peerPhotoHint || '', 'pedidos', statusHint || 'pendente');
+                }
+                return;
+            }
             const p = pSnap.data();
 
             // Descobre o outro usu?rio
             const deUid = getDeUid(p);
             const paraUid = getParaUid(p);
-            const outroUid = (deUid === meUid) ? paraUid : deUid;
+            const outroUid = ((deUid === meUid) ? paraUid : deUid) || peerUidHint;
 
             // Abre como pedido (isso vai mostrar o status e travar/destravar o chat)
-            await window.abrirChat(chatId, outroUid, '', '', 'pedidos', p.status || '');
+            await window.abrirChat(chatId, outroUid || '', peerNameHint || '', peerPhotoHint || '', 'pedidos', p.status || statusHint || 'pendente');
         } catch (e) {
+            if (peerUidHint) {
+                try {
+                    await window.abrirChat(chatId, peerUidHint, peerNameHint || '', peerPhotoHint || '', 'pedidos', statusHint || 'pendente');
+                    return;
+                } catch (_) {}
+            }
             console.error('DeepLink chatId erro:', e);
         }
     }
@@ -10052,7 +10155,7 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260224v48"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
 <script>
   (function(){
     function triggerChatResync(reason, force){
@@ -10105,5 +10208,3 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
 </script>
 </body>
 </html>
-
-

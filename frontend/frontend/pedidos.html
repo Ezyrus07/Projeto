@@ -219,6 +219,9 @@
     .tag.pending{background:#fff5e8; color:#b86f08; border-color:#f4dbb8;}
     .tag.progress{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
     .tag.done{background:#eef2f8; color:#526a86; border-color:#dbe5f2;}
+    .tag.role-client{background:#eef6ff; color:#1f4f86; border-color:#cfe2f8;}
+    .tag.role-pro{background:#ecfaf5; color:#11664d; border-color:#cceedd;}
+    .tag.role-me{background:#f4f7fb; color:#425b78; border-color:#d8e4f2;}
     .tag.urgent{background:#fff0f5; color:var(--danger); border-color:#f8cfe0;}
 
     .user{display:flex; align-items:center; gap:10px; min-width:0;}
@@ -243,6 +246,33 @@
     .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
     .btn-order.accept{background:linear-gradient(135deg,#1f9f53,#188848); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(31,159,83,.22);}
     .btn-order.reject{background:#fff1f2; color:#b4233b; border-color:#fecdd3;}
+    .card-decision-top{
+      display:flex;
+      gap:8px;
+      flex-wrap:wrap;
+      margin-top:-2px;
+    }
+    .card-decision-top .btn-order{
+      min-height:36px;
+      padding:0 12px;
+      font-size:.82rem;
+      border-radius:11px;
+      justify-content:center;
+      flex:1 1 140px;
+    }
+    .recusa-note{
+      margin:0;
+      border:1px solid #fecdd3;
+      background:#fff1f2;
+      color:#9f1239;
+      border-radius:11px;
+      padding:8px 10px;
+      font-size:.82rem;
+      line-height:1.35;
+      display:flex;
+      align-items:flex-start;
+      gap:6px;
+    }
 
     .empty{display:none; min-height:220px; border:1px dashed #d5e2f2; border-radius:16px; background:#fbfdff; color:#607791; align-items:center; justify-content:center; flex-direction:column; text-align:center; gap:8px; padding:18px;}
     .empty.show{display:flex;}
@@ -262,37 +292,151 @@
     .chat-backdrop{position:absolute; inset:0; background:rgba(10,18,32,.38); backdrop-filter:blur(1.5px);}
     .chat-panel-embed{
       position:absolute;
-      inset:0 0 0 var(--sidebar-width, 250px);
-      width:auto;
-      height:100dvh;
-      min-height:100dvh;
-      max-width:none;
-      border-radius:0;
+      top:var(--navbar-height-desktop, 76px);
+      right:0;
+      bottom:0;
+      width:min(860px, calc(100vw - var(--sidebar-width, 250px) - 12px));
+      min-width:520px;
+      max-width:calc(100vw - var(--sidebar-width, 250px));
+      border-radius:16px 0 0 0;
       overflow:hidden;
       background:#fff;
       border-top:1px solid #dbe7f3;
       border-left:1px solid #dbe7f3;
       box-shadow:-14px 0 34px rgba(15,23,42,.18);
       z-index:1;
+      display:flex;
+      flex-direction:column;
     }
-    .pedido-chat-frame{display:block; width:100%; height:100%; border:0; background:#fff;}
-    .chat-close-float{
-      position:absolute;
-      top:10px;
-      right:10px;
-      z-index:20;
-      width:42px;
-      height:42px;
-      border-radius:14px;
+    .chat-panel-embed.maximized{
+      top:0;
+      left:0;
+      right:0;
+      bottom:0;
+      width:100vw !important;
+      max-width:none !important;
+      min-width:0;
+      border-radius:0;
+      border:0;
+    }
+    .pedido-chat-frame{display:block; width:100%; height:100%; border:0; background:#fff; flex:1 1 auto; min-height:0;}
+    .chat-panel-toolbar{
+      height:56px;
+      min-height:56px;
+      border-bottom:1px solid #dbe7f3;
+      background:linear-gradient(180deg,#ffffff 0%, #f7fbff 100%);
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      padding:0 10px 0 14px;
+      gap:10px;
+      flex:0 0 auto;
+    }
+    .chat-panel-title{
+      min-width:0;
+      display:flex;
+      align-items:center;
+      gap:8px;
+      color:#173867;
+      font-weight:800;
+      font-size:.92rem;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .chat-panel-title i{font-size:18px; color:#0b7768;}
+    .chat-panel-controls{
+      position:relative;
+      z-index:3;
+      display:flex;
+      gap:8px;
+      flex:0 0 auto;
+    }
+    .chat-size-controls{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      margin-right:2px;
+      padding:3px 8px;
+      border:1px solid #dbe7f3;
+      border-radius:999px;
+      background:#fff;
+      box-shadow:0 4px 10px rgba(15,23,42,.08);
+    }
+    .chat-width-readout{
+      min-width:46px;
+      padding:0 4px;
+      text-align:center;
+      font-size:.72rem;
+      font-weight:800;
+      color:#335377;
+      user-select:none;
+    }
+    .chat-size-controls .chat-control-btn{
+      width:30px;
+      height:30px;
+      border-radius:999px;
+      box-shadow:none;
+    }
+    .chat-size-controls .chat-control-btn:hover{
+      transform:none;
+      box-shadow:none;
+      background:#f8fbff;
+    }
+    .chat-size-controls .chat-control-btn:disabled{
+      opacity:.45;
+      cursor:not-allowed;
+      box-shadow:none;
+      transform:none;
+    }
+    .chat-control-btn{
+      position:relative;
+      width:36px;
+      height:36px;
+      border-radius:11px;
       border:1px solid #d7e5f4;
       background:rgba(255,255,255,.92);
       color:#0f2744;
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      box-shadow:0 8px 18px rgba(15,23,42,.12);
+      box-shadow:0 4px 10px rgba(15,23,42,.10);
       cursor:pointer;
+      transition:transform .18s ease, box-shadow .18s ease, background-color .18s ease;
     }
+    .chat-control-btn:hover{
+      transform:translateY(-1px);
+      box-shadow:0 8px 16px rgba(15,23,42,.16);
+      background:#fff;
+    }
+    .chat-resize-handle{
+      position:absolute;
+      left:-8px;
+      top:56px;
+      bottom:0;
+      width:16px;
+      cursor:ew-resize;
+      z-index:4;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:linear-gradient(90deg, rgba(11,119,104,.14) 0%, rgba(11,119,104,.04) 60%, rgba(11,119,104,0) 100%);
+    }
+    .chat-resize-handle::before{
+      content:'';
+      width:4px;
+      height:46px;
+      border-radius:999px;
+      background:
+        radial-gradient(circle, #7a93b3 1.1px, transparent 1.2px) center 2px/4px 8px repeat-y;
+      opacity:.9;
+    }
+    .chat-panel-embed.maximized .chat-resize-handle{display:none;}
+    .chat-panel-embed.maximized .chat-size-controls{
+      opacity:.55;
+      pointer-events:none;
+    }
+    body.chat-resizing{user-select:none; cursor:ew-resize;}
     html.no-scroll, body.no-scroll{overflow:hidden;}
 
     .details-modal{
@@ -306,6 +450,66 @@
       padding:16px;
     }
     .details-modal.open{display:flex;}
+    .doke-prompt-modal{
+      position:fixed;
+      inset:0;
+      z-index:12200;
+      display:none;
+      align-items:center;
+      justify-content:center;
+      background:rgba(8,19,34,.55);
+      padding:14px;
+    }
+    .doke-prompt-modal.open{display:flex;}
+    .doke-prompt-card{
+      width:min(520px, 100%);
+      border-radius:16px;
+      border:1px solid #dce6f2;
+      border-left:5px solid #dc3545;
+      background:#fff;
+      box-shadow:0 16px 38px rgba(0,0,0,.14);
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    .doke-prompt-title{margin:0; font-size:1rem; font-weight:800; color:#1f2937;}
+    .doke-prompt-text{margin:0; font-size:.9rem; color:#4b5563; line-height:1.35;}
+    .doke-prompt-input{
+      width:100%;
+      min-height:98px;
+      resize:vertical;
+      border:1px solid #d1deec;
+      border-radius:12px;
+      background:#f8fbff;
+      color:#0f2440;
+      padding:10px 12px;
+      font-size:.92rem;
+      outline:none;
+    }
+    .doke-prompt-input:focus{
+      border-color:#0b5ed7;
+      box-shadow:0 0 0 2px rgba(11,94,215,.12);
+      background:#fff;
+    }
+    .doke-prompt-error{min-height:18px; margin:0; font-size:.8rem; color:#b4233b; font-weight:700;}
+    .doke-prompt-actions{display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;}
+    .doke-prompt-btn{
+      min-height:38px;
+      border-radius:10px;
+      border:1px solid #d8e3f1;
+      background:#fff;
+      color:#1f3b60;
+      padding:0 14px;
+      font-weight:800;
+      cursor:pointer;
+    }
+    .doke-prompt-btn.confirm{
+      border-color:transparent;
+      background:linear-gradient(135deg,#c91f4b,#a9143b);
+      color:#fff;
+      box-shadow:0 8px 20px rgba(201,31,75,.25);
+    }
     .details-card{
       width:min(820px,100%);
       max-height:min(86vh,880px);
@@ -461,6 +665,9 @@
       .unread{min-height:28px; font-size:.73rem; padding:0 8px;}
       .actions{gap:6px;}
       .btn-order{min-height:32px; font-size:.75rem; padding:0 9px; border-radius:9px;}
+      .card-decision-top{gap:6px; margin-top:0;}
+      .card-decision-top .btn-order{flex:1 1 calc(50% - 6px); min-height:32px; font-size:.74rem; padding:0 8px;}
+      .recusa-note{font-size:.75rem; padding:7px 8px; border-radius:9px;}
       .filters{
         flex-wrap:nowrap;
         overflow-x:auto;
@@ -501,6 +708,9 @@
       .footer{flex-direction:column; align-items:stretch;}
       .actions{margin-left:0; width:100%;}
       .btn-order{flex:1; justify-content:center;}
+      .doke-prompt-card{padding:12px; border-radius:14px;}
+      .doke-prompt-actions{width:100%;}
+      .doke-prompt-btn{flex:1;}
     }
 
     @media (max-width:420px){
@@ -544,7 +754,14 @@
         border-radius:0;
         border:0;
       }
-      .chat-close-float{top:max(8px, env(safe-area-inset-top,0px) + 6px); right:8px;}
+      .chat-panel-toolbar{
+        height:52px;
+        min-height:52px;
+        padding:0 8px 0 10px;
+      }
+      .chat-size-controls{display:none !important;}
+      .chat-resize-handle,
+      #chatExpandBtn{display:none !important;}
       #bulkBar{padding:10px;}
     }
   
@@ -690,12 +907,30 @@
   </nav>
 
   <div class="toast" id="toast">OK</div>
-    <div class="chat-drawer chat-drawer-embed" id="chatDrawer" aria-hidden="true">
+  <div class="chat-drawer chat-drawer-embed" id="chatDrawer" aria-hidden="true">
     <div class="chat-backdrop" data-close="1"></div>
     <div class="chat-panel-embed" role="dialog" aria-modal="true" aria-label="Chat do pedido">
-      <button class="chat-close-float" type="button" data-close="1" aria-label="Fechar chat">
-        <i class='bx bx-x'></i>
-      </button>
+      <div class="chat-panel-toolbar">
+        <div class="chat-panel-title" id="chatPanelTitle"><i class='bx bx-message-square-detail'></i><span>Chat do pedido</span></div>
+        <div class="chat-panel-controls">
+          <div class="chat-size-controls" id="chatSizeControls">
+            <button class="chat-control-btn" id="chatNarrowBtn" type="button" aria-label="Diminuir largura do chat" title="Diminuir largura">
+              <i class='bx bx-chevron-left'></i>
+            </button>
+            <span class="chat-width-readout" id="chatWidthLabel" aria-hidden="true">--</span>
+            <button class="chat-control-btn" id="chatWidenBtn" type="button" aria-label="Aumentar largura do chat" title="Aumentar largura">
+              <i class='bx bx-chevron-right'></i>
+            </button>
+          </div>
+          <button class="chat-control-btn" id="chatExpandBtn" type="button" aria-label="Expandir chat" title="Expandir chat" aria-pressed="false">
+            <i class='bx bx-expand-alt'></i>
+          </button>
+          <button class="chat-control-btn chat-close-float" type="button" data-close="1" aria-label="Fechar chat">
+            <i class='bx bx-x'></i>
+          </button>
+        </div>
+      </div>
+      <div class="chat-resize-handle" id="chatResizeHandle" aria-hidden="true"></div>
       <iframe id="pedidoChatFrame" class="pedido-chat-frame" title="Chat do pedido" loading="eager"></iframe>
     </div>
   </div>
@@ -729,6 +964,19 @@
     </article>
   </section>
 
+  <section class="doke-prompt-modal" id="rejectPromptModal" aria-hidden="true">
+    <article class="doke-prompt-card" role="dialog" aria-modal="true" aria-labelledby="rejectPromptTitle">
+      <h3 class="doke-prompt-title" id="rejectPromptTitle">Justificar recusa</h3>
+      <p class="doke-prompt-text">Informe a justificativa da recusa (minimo de 5 caracteres):</p>
+      <textarea id="rejectPromptInput" class="doke-prompt-input" placeholder="Ex.: Nao tenho disponibilidade para esta data."></textarea>
+      <p class="doke-prompt-error" id="rejectPromptError"></p>
+      <div class="doke-prompt-actions">
+        <button class="doke-prompt-btn" id="rejectPromptCancelBtn" type="button">Cancelar</button>
+        <button class="doke-prompt-btn confirm" id="rejectPromptConfirmBtn" type="button">Confirmar recusa</button>
+      </div>
+    </article>
+  </section>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="supabase-init.js?v=20260218v43"></script>
   <script src="firebase-compat-supabase.js?v=20260212v25"></script>
@@ -739,7 +987,23 @@
 
   <script>
     (function(){
-      const state = { pedidos: [], filter: 'all', query: '', sort: 'recent', detailsById: new Map(), activeChatUrl: '', selectMode: false, selected: new Set() };
+      const CHAT_WIDTH_KEY = 'doke_pedidos_chat_width_v1';
+      const CHAT_WIDTH_STEP = 72;
+      const state = {
+        pedidos: [],
+        filter: 'all',
+        query: '',
+        sort: 'recent',
+        detailsById: new Map(),
+        activeChatUrl: '',
+        selectMode: false,
+        selected: new Set(),
+        chatWidth: 0,
+        chatMaximized: false,
+        chatResizing: false,
+        chatResizeStartX: 0,
+        chatResizeStartWidth: 0
+      };
       const el = {
         grid: document.getElementById('ordersGrid'),
         empty: document.getElementById('emptyState'),
@@ -762,6 +1026,13 @@
         bulkArchiveBtn: document.getElementById('bulkArchiveBtn'),
         bulkClearBtn: document.getElementById('bulkClearBtn'),
         chatDrawer: document.getElementById('chatDrawer'),
+        chatPanel: document.querySelector('#chatDrawer .chat-panel-embed'),
+        chatPanelTitle: document.getElementById('chatPanelTitle'),
+        chatNarrowBtn: document.getElementById('chatNarrowBtn'),
+        chatWidenBtn: document.getElementById('chatWidenBtn'),
+        chatWidthLabel: document.getElementById('chatWidthLabel'),
+        chatExpandBtn: document.getElementById('chatExpandBtn'),
+        chatResizeHandle: document.getElementById('chatResizeHandle'),
         chatFrame: document.getElementById('pedidoChatFrame'),
         detailsModal: document.getElementById('detailsModal'),
         detailsCloseBtn: document.getElementById('detailsCloseBtn'),
@@ -769,7 +1040,12 @@
         detailsGrid: document.getElementById('detailsGrid'),
         detailsDescription: document.getElementById('detailsDescription'),
         detailsTriagem: document.getElementById('detailsTriagem'),
-        detailsAnexos: document.getElementById('detailsAnexos')
+        detailsAnexos: document.getElementById('detailsAnexos'),
+        rejectPromptModal: document.getElementById('rejectPromptModal'),
+        rejectPromptInput: document.getElementById('rejectPromptInput'),
+        rejectPromptError: document.getElementById('rejectPromptError'),
+        rejectPromptCancelBtn: document.getElementById('rejectPromptCancelBtn'),
+        rejectPromptConfirmBtn: document.getElementById('rejectPromptConfirmBtn')
       };
 
       function showToast(msg){
@@ -850,14 +1126,16 @@
 
       function statusCode(raw){
         const s = String(raw || 'pendente').toLowerCase();
+        if(s.includes('cancel')) return 'cancelado';
         if(s.includes('and') || s.includes('aceit') || s.includes('pago')) return 'andamento';
-        if(s.includes('recus') || s.includes('cancel') || s.includes('negad') || s.includes('reprov')) return 'recusado';
+        if(s.includes('recus') || s.includes('negad') || s.includes('reprov')) return 'recusado';
         if(s.includes('fin') || s.includes('conc')) return 'finalizado';
         return 'pendente';
       }
 
       function statusLabel(s){
         if(s === 'andamento') return 'Em andamento';
+        if(s === 'cancelado') return 'Cancelado';
         if(s === 'recusado') return 'Recusado';
         if(s === 'finalizado') return 'Finalizado';
         return 'Pendente';
@@ -865,6 +1143,7 @@
 
       function statusClass(s){
         if(s === 'andamento') return 'progress';
+        if(s === 'cancelado') return 'done';
         if(s === 'recusado') return 'done';
         if(s === 'finalizado') return 'done';
         return 'pending';
@@ -873,6 +1152,197 @@
       function isPendenteStatus(status){
         const s = String(status || '').toLowerCase();
         return s === 'pendente' || s.includes('pend') || s.includes('aguard') || s.includes('novo') || s.includes('analise');
+      }
+
+      function canOpenChat(p){
+        const raw = String(p?.statusOriginal || p?.status || '').toLowerCase();
+        if(raw.includes('aceit') || raw.includes('pago')) return true;
+        if(raw === 'andamento') return true;
+        return false;
+      }
+
+      function isStatusFinalizadoOuRecusado(p){
+        const sNorm = String(p?.status || '').toLowerCase();
+        const sRaw = String(p?.statusOriginal || '').toLowerCase();
+        return sNorm === 'finalizado' || sNorm === 'recusado' || sNorm === 'cancelado' || sRaw.includes('finaliz') || sRaw.includes('recus') || sRaw.includes('cancel');
+      }
+
+      function getSidebarWidth(){
+        const rawCss = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--sidebar-width') || '');
+        if(Number.isFinite(rawCss) && rawCss > 0) return rawCss;
+        const sidebar = document.querySelector('.sidebar-icones');
+        const w = sidebar?.getBoundingClientRect?.().width || 0;
+        return Number.isFinite(w) && w > 0 ? w : 250;
+      }
+
+      function isDesktopChatMode(){
+        return window.innerWidth >= 1024;
+      }
+
+      function getChatPanelBounds(){
+        const sidebar = getSidebarWidth();
+        const available = Math.max(420, Math.round(window.innerWidth - sidebar));
+        const keepOrdersVisible = Math.max(280, Math.min(560, Math.round(window.innerWidth * 0.28)));
+        const minWidth = Math.min(760, Math.max(500, Math.round(available * 0.48)));
+        const maxByViewport = Math.min(1120, available);
+        const maxBySplit = available - keepOrdersVisible;
+        const maxWidth = Math.max(minWidth, Math.min(maxByViewport, maxBySplit));
+        return { minWidth, maxWidth, available };
+      }
+
+      function getDefaultChatWidth(){
+        const { minWidth, maxWidth, available } = getChatPanelBounds();
+        const preferred = Math.round(available * 0.6);
+        return Math.max(minWidth, Math.min(maxWidth, preferred));
+      }
+
+      function clampChatWidth(v){
+        const { minWidth, maxWidth } = getChatPanelBounds();
+        const n = Number(v || 0);
+        if(!Number.isFinite(n) || n <= 0){
+          return getDefaultChatWidth();
+        }
+        return Math.max(minWidth, Math.min(maxWidth, Math.round(n)));
+      }
+
+      function persistChatWidth(){
+        if(!state.chatWidth) return;
+        try{ localStorage.setItem(CHAT_WIDTH_KEY, String(state.chatWidth)); }catch(_){}
+      }
+
+      function setChatPanelTitle(p){
+        if(!el.chatPanelTitle) return;
+        const nome = String(p?.nome || p?.usuario || '').trim();
+        const titulo = String(p?.titulo || '').trim();
+        const text = [nome, titulo].filter(Boolean).join(' - ');
+        el.chatPanelTitle.innerHTML = `<i class='bx bx-message-square-detail'></i><span>${esc(text || 'Chat do pedido')}</span>`;
+      }
+
+      function isAllowedChatIframeLocation(href){
+        const src = String(href || '').toLowerCase();
+        if(!src || src === 'about:blank') return true;
+        return src.includes('/chat.html') || /chat\.html(\?|#|$)/i.test(src);
+      }
+
+      function ensureIframeLockedInChat(){
+        if(!el.chatFrame || !state.activeChatUrl) return;
+        let href = '';
+        try{
+          href = String(el.chatFrame.contentWindow?.location?.href || '');
+        }catch(_){
+          href = String(el.chatFrame.getAttribute('src') || '');
+        }
+        if(isAllowedChatIframeLocation(href)) return;
+        el.chatFrame.setAttribute('src', state.activeChatUrl);
+        showToast('Navegação bloqueada neste painel. Use Fechar para sair do chat.');
+      }
+
+      function setChatExpandButtonState(){
+        if(!el.chatExpandBtn) return;
+        const expanded = !!state.chatMaximized;
+        el.chatExpandBtn.setAttribute('aria-pressed', expanded ? 'true' : 'false');
+        el.chatExpandBtn.setAttribute('title', expanded ? 'Restaurar tamanho' : 'Expandir chat');
+        el.chatExpandBtn.setAttribute('aria-label', expanded ? 'Restaurar tamanho do chat' : 'Expandir chat');
+        el.chatExpandBtn.innerHTML = `<i class='bx ${expanded ? 'bx-collapse-alt' : 'bx-expand-alt'}'></i>`;
+      }
+
+      function updateChatWidthUi(){
+        const hasDesktop = isDesktopChatMode();
+        const { minWidth, maxWidth } = getChatPanelBounds();
+        const width = clampChatWidth(state.chatWidth || localStorage.getItem(CHAT_WIDTH_KEY));
+        if(el.chatNarrowBtn){
+          el.chatNarrowBtn.disabled = !hasDesktop || state.chatMaximized || width <= minWidth;
+        }
+        if(el.chatWidenBtn){
+          el.chatWidenBtn.disabled = !hasDesktop || state.chatMaximized || width >= maxWidth;
+        }
+        if(el.chatWidthLabel){
+          if(!hasDesktop){
+            el.chatWidthLabel.textContent = '--';
+            el.chatWidthLabel.title = '';
+          }else if(state.chatMaximized){
+            el.chatWidthLabel.textContent = 'MAX';
+            el.chatWidthLabel.title = 'Tela inteira';
+          }else{
+            const pct = Math.round((width / Math.max(1, window.innerWidth)) * 100);
+            el.chatWidthLabel.textContent = `${pct}%`;
+            el.chatWidthLabel.title = `${width}px`;
+          }
+        }
+      }
+
+      function applyChatPanelLayout(){
+        if(!el.chatPanel) return;
+        if(!isDesktopChatMode()){
+          state.chatResizing = false;
+          state.chatMaximized = false;
+          el.chatPanel.classList.remove('maximized');
+          el.chatPanel.style.width = '';
+          document.body.classList.remove('chat-resizing');
+          setChatExpandButtonState();
+          updateChatWidthUi();
+          return;
+        }
+
+        if(state.chatMaximized){
+          el.chatPanel.classList.add('maximized');
+          el.chatPanel.style.width = '';
+        }else{
+          el.chatPanel.classList.remove('maximized');
+          state.chatWidth = clampChatWidth(state.chatWidth || localStorage.getItem(CHAT_WIDTH_KEY));
+          el.chatPanel.style.width = `${state.chatWidth}px`;
+        }
+        setChatExpandButtonState();
+        updateChatWidthUi();
+      }
+
+      function toggleChatMaximize(){
+        if(!isDesktopChatMode()) return;
+        state.chatMaximized = !state.chatMaximized;
+        applyChatPanelLayout();
+      }
+
+      function startChatResize(ev){
+        if(!isDesktopChatMode() || state.chatMaximized || !el.chatPanel) return;
+        if(ev.button !== 0) return;
+        ev.preventDefault();
+        state.chatResizing = true;
+        state.chatResizeStartX = ev.clientX;
+        state.chatResizeStartWidth = el.chatPanel.getBoundingClientRect().width;
+        document.body.classList.add('chat-resizing');
+      }
+
+      function handleChatResizeMove(ev){
+        if(!state.chatResizing || !el.chatPanel) return;
+        const delta = state.chatResizeStartX - ev.clientX;
+        const width = clampChatWidth(state.chatResizeStartWidth + delta);
+        state.chatWidth = width;
+        el.chatPanel.style.width = `${width}px`;
+        updateChatWidthUi();
+      }
+
+      function stopChatResize(){
+        if(!state.chatResizing) return;
+        state.chatResizing = false;
+        document.body.classList.remove('chat-resizing');
+        persistChatWidth();
+      }
+
+      function nudgeChatWidth(delta){
+        if(!isDesktopChatMode() || state.chatMaximized) return;
+        const base = clampChatWidth(state.chatWidth || localStorage.getItem(CHAT_WIDTH_KEY));
+        state.chatWidth = clampChatWidth(base + Number(delta || 0));
+        if(el.chatPanel) el.chatPanel.style.width = `${state.chatWidth}px`;
+        updateChatWidthUi();
+        persistChatWidth();
+      }
+
+      function resetChatWidth(){
+        if(!isDesktopChatMode() || state.chatMaximized) return;
+        state.chatWidth = getDefaultChatWidth();
+        if(el.chatPanel) el.chatPanel.style.width = `${state.chatWidth}px`;
+        updateChatWidthUi();
+        persistChatWidth();
       }
 
       function looksLikeImage(url){
@@ -910,13 +1380,13 @@
         const isSouProfissional = !!uidAtual && !!paraUid && String(uidAtual) === String(paraUid);
 
         const nome = isSouCliente
-          ? pick(row, ['paraNome','nomePrestador','profissionalNome','nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome'], 'Cliente')
+          ? pick(row, ['paraNome','nomePrestador','profissionalNome','nomeProfissional','prestadorNome','profissional_nome','prestador_nome','nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome'], 'Profissional')
           : isSouProfissional
             ? pick(row, ['deNome','nomeCliente','clienteNome','nome','cliente','usuarioNome','userName','paraNome'], 'Cliente')
             : pick(row, ['nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome','paraNome'], 'Cliente');
 
         const usuarioBase = isSouCliente
-          ? pick(row, ['paraUser','usuarioPrestador','usernamePrestador','usuario','username','user','handle'], nome || 'cliente')
+          ? pick(row, ['paraUser','usuarioPrestador','usernamePrestador','profissionalUser','profissional_user','prestadorUser','prestador_user','usuario','username','user','handle'], nome || 'profissional')
           : isSouProfissional
             ? pick(row, ['deUser','usuarioCliente','usernameCliente','usuario','username','user','handle'], nome || 'cliente')
             : pick(row, ['usuario','username','user','handle','deUser','paraUser'], nome || 'cliente');
@@ -929,16 +1399,21 @@
 
         const updatedRaw = pick(row, ['dataAtualizacao','updatedAt','updatedat','ultimaAtualizacao','timestamp','lastMessageAt','createdAt'], '');
         const createdRaw = pick(row, ['criadoEm','createdAt','createdat','dataCriacao','dataPedido'], updatedRaw || new Date().toISOString());
+        const recusaObj = (row.recusa && typeof row.recusa === 'object') ? row.recusa : {};
+        const meuPapel = isSouCliente ? 'cliente' : (isSouProfissional ? 'profissional' : pick(row, ['meuPapel','papelMeu','papel_usuario'], ''));
+        const papelContato = isSouCliente ? 'profissional' : (isSouProfissional ? 'cliente' : pick(row, ['papelContato','papel_outro','papelDestino'], ''));
+        const papelContatoLabel = papelContato === 'profissional' ? 'Profissional' : (papelContato === 'cliente' ? 'Cliente' : '');
+        const meuPapelLabel = meuPapel === 'profissional' ? 'Voce: Profissional' : (meuPapel === 'cliente' ? 'Voce: Cliente' : '');
 
         return {
           id,
           usuario,
           nome,
           avatar: pick(row, isSouCliente
-            ? ['paraFoto','fotoPrestador','profilePicture','avatar','foto','fotoPerfil','profissionalFoto','deFoto','fotoCliente']
+            ? ['paraFoto','fotoPrestador','fotoProfissional','profissionalFoto','profissional_foto','prestadorFoto','prestador_foto','fotoContato','contatoFoto','profilePicture','avatar','foto','fotoPerfil','deFoto','fotoCliente']
             : isSouProfissional
-              ? ['deFoto','fotoCliente','profilePicture','avatar','foto','fotoPerfil','paraFoto','profissionalFoto']
-              : ['avatar','foto','fotoCliente','fotoPerfil','profilePicture','deFoto','paraFoto','clienteFoto','profissionalFoto']
+              ? ['deFoto','fotoCliente','fotoContato','contatoFoto','profilePicture','avatar','foto','fotoPerfil','paraFoto','profissionalFoto']
+              : ['avatar','foto','fotoContato','contatoFoto','fotoCliente','fotoPerfil','profilePicture','deFoto','paraFoto','clienteFoto','profissionalFoto']
           , 'assets/Imagens/user_placeholder.png'),
           titulo,
           descricao,
@@ -951,6 +1426,10 @@
           naoLidas: Number(row.naoLidas || row.naolidas || row.unread || row.unreadCount || row.mensagensNaoLidas || row.qtdNaoLidas || 0) || 0,
           criadoEm: (toDate(createdRaw) || new Date()).toISOString(),
           categoria: pick(row, ['categoria','area','segmento','tipoServico'], 'Geral'),
+          meuPapel,
+          meuPapelLabel,
+          papelContato,
+          papelContatoLabel,
           deUid,
           paraUid,
           anuncioId: pick(row, ['anuncioId','anuncio_id','aid','anuncioid'], ''),
@@ -964,11 +1443,21 @@
           localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
           modoAtend: pick(row, ['modoAtend','modo_atend'], ''),
           statusOriginal: pick(row, ['status','statusPedido','situacao','estado'], ''),
+          motivoRecusa: pick(row, ['motivoRecusa','justificativaRecusa','recusaMotivo','motivoRejeicao','motivo_recusa','motivoCancelamento','motivo_cancelamento'], pick(recusaObj, ['motivo','justificativa','descricao'], '')),
           anexos: Array.isArray(row.anexos) ? row.anexos : []
         };
       }
 
       function mergePedidos(list){
+        const statusRank = (val) => {
+          const s = String(val || '').toLowerCase();
+          if(!s) return -1;
+          if(s.includes('finaliz') || s.includes('conc')) return 4;
+          if(s.includes('recus') || s.includes('cancel') || s.includes('negad') || s.includes('reprov')) return 3;
+          if(s.includes('and') || s.includes('aceit') || s.includes('pago')) return 2;
+          if(s.includes('pend') || s.includes('aguard') || s.includes('novo') || s.includes('analise')) return 1;
+          return 0;
+        };
         const map = new Map();
         (list || []).forEach((p) => {
           if(!p || !p.id) return;
@@ -978,6 +1467,18 @@
           const next = {...cur};
           Object.keys(p).forEach((k) => {
             const v = p[k];
+            if(k === 'status' || k === 'statusOriginal'){
+              const curRank = statusRank(next[k]);
+              const newRank = statusRank(v);
+              if(newRank > curRank && String(v || '').trim() !== '') next[k] = v;
+              return;
+            }
+            if(k === 'motivoRecusa'){
+              const curTxt = String(next[k] || '').trim();
+              const newTxt = String(v || '').trim();
+              if(newTxt && (!curTxt || newTxt.length > curTxt.length)) next[k] = newTxt;
+              return;
+            }
             if(k === 'naoLidas'){ next[k] = Math.max(Number(next[k] || 0), Number(v || 0)); return; }
             if(k === 'descricao' && String(v || '').length > String(next[k] || '').length){ next[k] = v; return; }
             if(Array.isArray(v) && v.length && (!Array.isArray(next[k]) || !next[k].length)){ next[k] = v; return; }
@@ -1009,9 +1510,12 @@
       }
 
       function loadLocal(){
+        const uid = resolveUid();
+        if(!uid) return [];
+        const hidden = getHiddenPedidosSet();
         let list = [];
         if(Array.isArray(window.pedidosCache)){
-          list = list.concat(window.pedidosCache.map((r,i)=>normalizePedido(r,i)).filter(Boolean));
+          list = list.concat(window.pedidosCache.map((r,i)=>normalizePedido(r,i)).filter((p) => p && !hidden.has(String(p.id))));
         }
 
         const primaryKeys = [
@@ -1023,7 +1527,7 @@
           const arr = asArray(parseJSON(localStorage.getItem(key)));
           arr.forEach((row, idx) => {
             const n = normalizePedido(row, idx);
-            if(n) list.push(n);
+            if(n && !hidden.has(String(n.id))) list.push(n);
           });
         });
 
@@ -1036,7 +1540,7 @@
         ].filter(Boolean);
         singleRows.forEach((row, idx) => {
           const n = normalizePedido(row, idx);
-          if(n) list.push(n);
+          if(n && !hidden.has(String(n.id))) list.push(n);
         });
 
         return mergePedidos(list);
@@ -1046,8 +1550,93 @@
         return String(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid || localStorage.getItem('doke_uid') || perfil.uid || perfil.id || '').trim();
       }
 
+      function ensurePedidosAuth(){
+        const uid = resolveUid();
+        if(uid) return true;
+        const next = encodeURIComponent((location.pathname || '').split('/').pop() || 'pedidos.html');
+        try{ showToast('Faça login para acessar seus pedidos.'); }catch(_){}
+        setTimeout(() => { location.href = `login.html?next=${next}`; }, 120);
+        return false;
+      }
+
+      function hiddenPedidosKey(){
+        const uid = resolveUid() || 'anon';
+        return `doke_hidden_pedidos_${uid}`;
+      }
+
+      function getHiddenPedidosSet(){
+        try{
+          const arr = parseJSON(localStorage.getItem(hiddenPedidosKey()));
+          if(Array.isArray(arr)) return new Set(arr.map((v) => String(v || '').trim()).filter(Boolean));
+        }catch(_){}
+        return new Set();
+      }
+
+      function persistHiddenPedidosSet(set){
+        try{
+          localStorage.setItem(hiddenPedidosKey(), JSON.stringify(Array.from(set)));
+        }catch(_){}
+      }
+
+      function addHiddenPedidos(ids){
+        const set = getHiddenPedidosSet();
+        (ids || []).forEach((id) => {
+          const key = String(id || '').trim();
+          if(key) set.add(key);
+        });
+        persistHiddenPedidosSet(set);
+      }
+
+      function patchPedidoRowLike(row, id, status, motivoRecusa){
+        if(!row || typeof row !== 'object') return row;
+        const rid = normalizeId(pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+        if(String(rid) !== String(id)) return row;
+        const out = { ...row };
+        const nowIso = new Date().toISOString();
+        out.status = status;
+        out.statusPedido = status;
+        out.situacao = status;
+        out.estado = status;
+        out.dataAtualizacao = nowIso;
+        out.updatedAt = nowIso;
+        if(status === 'aceito') out.dataAceite = nowIso;
+        if(status === 'recusado'){
+          const motivo = String(motivoRecusa || '').trim();
+          out.dataRecusa = nowIso;
+          out.motivoRecusa = motivo;
+          out.justificativaRecusa = motivo;
+          out.recusaMotivo = motivo;
+          out.motivoRejeicao = motivo;
+          out.motivo = motivo;
+          out.recusa = { motivo, data: nowIso };
+        }
+        return out;
+      }
+
+      function patchLocalPedidoCaches(id, status, motivoRecusa){
+        const arrKeys = [
+          'doke_pedidos','pedidos','DOKE_PEDIDOS','meus_pedidos','cachePedidos','doke_cache_pedidos',
+          'orcamentos','doke_orcamentos','orcamentosCache','doke_orcamentos_cache','doke_cache_orcamentos','orcamentos_pedidos'
+        ];
+        arrKeys.forEach((key) => {
+          const raw = parseJSON(localStorage.getItem(key));
+          const arr = asArray(raw);
+          if(!arr.length) return;
+          const next = arr.map((row) => patchPedidoRowLike(row, id, status, motivoRecusa));
+          try{ localStorage.setItem(key, JSON.stringify(next)); }catch(_){}
+        });
+
+        const singleKeys = ['doke_pedido_contexto','doke_pedido_detalhes','pedidoAtual','pedidoSelecionado'];
+        singleKeys.forEach((key) => {
+          const row = parseJSON(localStorage.getItem(key));
+          if(!row || typeof row !== 'object') return;
+          const next = patchPedidoRowLike(row, id, status, motivoRecusa);
+          try{ localStorage.setItem(key, JSON.stringify(next)); }catch(_){}
+        });
+      }
+
       function mine(row, uid){
-        if(!uid) return true;
+        if(!uid) return false;
         const fields = [
           row.deUid,row.deuid,row.de_uid,row.clienteUid,row.clienteuid,row.cliente_uid,row.uidCliente,row.uid_cliente,row.solicitanteUid,row.solicitante_uid,
           row.paraUid,row.parauid,row.para_uid,row.prestadorUid,row.prestadoruid,row.prestador_uid,row.profissionalUid,row.profissionaluid,row.profissional_uid,row.uidPrestador,row.uid_prestador,
@@ -1061,6 +1650,7 @@
         const { getFirestore, collection, query, limit, getDocs } = window || {};
         if(typeof getFirestore !== 'function' || typeof collection !== 'function' || typeof query !== 'function' || typeof limit !== 'function' || typeof getDocs !== 'function') return [];
         const uid = resolveUid();
+        const hidden = getHiddenPedidosSet();
         const db = window.db || getFirestore();
 
         try{
@@ -1071,7 +1661,7 @@
             const row = d.data() || {};
             if(!mine(row, uid)) return;
             const n = normalizePedido(row, idx++, d.id);
-            if(n) out.push(n);
+            if(n && !hidden.has(String(n.id))) out.push(n);
           });
           return mergePedidos(out);
         }catch(err){
@@ -1092,7 +1682,7 @@
         let arr = [...state.pedidos];
         if(state.filter === 'pending') arr = arr.filter(p=>p.status === 'pendente');
         if(state.filter === 'progress') arr = arr.filter(p=>p.status === 'andamento');
-        if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado' || p.status === 'recusado');
+        if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado' || p.status === 'recusado' || p.status === 'cancelado');
         if(state.filter === 'urgent') arr = arr.filter(p=>p.urgente);
 
         const q = state.query.trim().toLowerCase();
@@ -1106,18 +1696,40 @@
       function card(p){
         const selected = state.selected.has(String(p.id));
         const pendente = isPendenteStatus(p.status);
+        const isProfViewer = String(p.meuPapel || '') === 'profissional';
+        const isClientViewer = String(p.meuPapel || '') === 'cliente';
+        const canDecide = pendente && isProfViewer;
+        const canCancel = pendente && isClientViewer;
+        const chatLiberado = canOpenChat(p);
+        const motivoRecusa = String(p.motivoRecusa || '').trim();
+        const isRecusado = String(p.status || '').toLowerCase() === 'recusado';
         return `
           <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}">
             <div class="card-top">
               <div class="tags">
                 <span class="tag type"><i class='bx bx-receipt'></i>${esc(p.tipo)}</span>
                 <span class="tag ${statusClass(p.status)}">${esc(statusLabel(p.status))}</span>
+                ${p.papelContato === 'cliente' ? `<span class="tag role-client"><i class='bx bx-user'></i>Cliente</span>` : ``}
+                ${p.papelContato === 'profissional' ? `<span class="tag role-pro"><i class='bx bx-briefcase'></i>Profissional</span>` : ``}
+                ${p.meuPapelLabel ? `<span class="tag role-me">${esc(p.meuPapelLabel)}</span>` : ``}
                 ${p.urgente ? `<span class="tag urgent"><i class='bx bx-error'></i>Urgente</span>` : ''}
               </div>
               <button class="card-select" type="button" data-action="select" data-id="${esc(p.id)}" aria-label="Selecionar pedido">
                 <i class='bx bx-check'></i>
               </button>
             </div>
+
+            ${canDecide ? `
+              <div class="card-decision-top">
+                <button class="btn-order accept" type="button" data-action="accept" data-id="${esc(p.id)}"><i class='bx bx-check'></i>Aceitar</button>
+                <button class="btn-order reject" type="button" data-action="reject" data-id="${esc(p.id)}"><i class='bx bx-x'></i>Recusar</button>
+              </div>
+            ` : ``}
+            ${canCancel ? `
+              <div class="card-decision-top">
+                <button class="btn-order reject" type="button" data-action="cancel" data-id="${esc(p.id)}"><i class='bx bx-x-circle'></i>Cancelar pedido</button>
+              </div>
+            ` : ``}
 
             <div class="user">
               <img src="${esc(normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png')}" alt="Avatar" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'"/>
@@ -1129,6 +1741,7 @@
 
             <h3 class="title">${esc(p.titulo)}</h3>
             <p class="desc">${esc(p.descricao || 'Sem detalhes adicionais.')}</p>
+            ${isRecusado && motivoRecusa ? `<p class="recusa-note"><i class='bx bx-error-circle'></i><span>${esc(motivoRecusa)}</span></p>` : ``}
 
             <div class="meta">
               <div class="meta-item"><i class='bx bx-time-five'></i><div><small>Prazo</small><strong>${esc(p.prazo || 'A combinar')}</strong></div></div>
@@ -1140,9 +1753,7 @@
             <div class="footer">
               <span class="unread"><i class='bx bx-message-rounded-dots'></i>${pendente ? 'Novo pedido' : (p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas')}</span>
               <div class="actions">
-                ${pendente ? `<button class="btn-order accept" type="button" data-action="accept" data-id="${esc(p.id)}"><i class='bx bx-check'></i>Aceitar</button>` : ``}
-                ${pendente ? `<button class="btn-order reject" type="button" data-action="reject" data-id="${esc(p.id)}"><i class='bx bx-x'></i>Recusar</button>` : ``}
-                <button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>
+                ${chatLiberado ? `<button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>` : ``}
                 <button class="btn-order" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i>Detalhes</button>
               </div>
             </div>
@@ -1303,6 +1914,10 @@
           ['Modo', detailsValue(p.modoAtend, 'Nao informado')],
           ['Valor', detailsValue(p.valor, 'Sob orcamento')]
         ];
+        const motivoRecusa = detailsValue(p.motivoRecusa, '');
+        if(String(p.status || '').toLowerCase() === 'recusado' && motivoRecusa){
+          rows.push(['Motivo da recusa', motivoRecusa]);
+        }
 
         el.detailsSubtitle.textContent = `${detailsValue(p.usuario || p.nome, '@cliente')} • ${detailsValue(p.categoria, 'Geral')}`;
         el.detailsGrid.innerHTML = rows.map(([k,v]) => `<div class="details-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('');
@@ -1361,6 +1976,8 @@
 
       function openInlineChat(p){
         if(!p || !p.id){ showToast('Pedido invalido para abrir chat.'); return; }
+        if(!canOpenChat(p)){ showToast('O chat sera liberado quando o pedido for aceito.'); return; }
+        setChatPanelTitle(p);
         try{
           localStorage.setItem('doke_pedido_contexto', JSON.stringify(p));
           localStorage.setItem('pedidoAtual', JSON.stringify(p));
@@ -1399,11 +2016,15 @@
           el.chatDrawer.classList.add('open');
           el.chatDrawer.setAttribute('aria-hidden', 'false');
         }
+        state.chatMaximized = false;
+        state.chatWidth = clampChatWidth(state.chatWidth || localStorage.getItem(CHAT_WIDTH_KEY));
+        applyChatPanelLayout();
         document.documentElement.classList.add('no-scroll');
         document.body.classList.add('no-scroll');
       }
 
       function closeInlineChat(){
+        stopChatResize();
         if(el.chatDrawer){
           el.chatDrawer.classList.remove('open');
           el.chatDrawer.setAttribute('aria-hidden', 'true');
@@ -1417,7 +2038,71 @@
         openInlineChat(p);
       }
 
-      async function persistPedidoStatus(p, nextStatus){
+      function askRecusaMotivo(){
+        return new Promise((resolve) => {
+          const modal = el.rejectPromptModal;
+          const input = el.rejectPromptInput;
+          const err = el.rejectPromptError;
+          const btnCancel = el.rejectPromptCancelBtn;
+          const btnConfirm = el.rejectPromptConfirmBtn;
+          if(!modal || !input || !err || !btnCancel || !btnConfirm){
+            const fallback = window.prompt('Informe a justificativa da recusa (minimo de 5 caracteres):', '');
+            const motivoFallback = fallback == null ? null : String(fallback || '').trim();
+            resolve(motivoFallback && motivoFallback.length >= 5 ? motivoFallback : null);
+            return;
+          }
+
+          const cleanup = () => {
+            modal.classList.remove('open');
+            modal.setAttribute('aria-hidden', 'true');
+            modal.removeEventListener('click', onBackdrop);
+            btnCancel.removeEventListener('click', onCancel);
+            btnConfirm.removeEventListener('click', onConfirm);
+            input.removeEventListener('keydown', onKeydown);
+            document.removeEventListener('keydown', onEscape);
+          };
+          const done = (value) => {
+            cleanup();
+            resolve(value);
+          };
+          const onBackdrop = (ev) => { if(ev.target === modal) done(null); };
+          const onCancel = () => done(null);
+          const onConfirm = () => {
+            const motivo = String(input.value || '').trim();
+            if(motivo.length < 5){
+              err.textContent = 'Digite ao menos 5 caracteres.';
+              input.focus();
+              return;
+            }
+            done(motivo);
+          };
+          const onKeydown = (ev) => {
+            if(ev.key === 'Enter' && (ev.ctrlKey || ev.metaKey)){
+              ev.preventDefault();
+              onConfirm();
+            }
+          };
+          const onEscape = (ev) => {
+            if(ev.key === 'Escape' && modal.classList.contains('open')){
+              ev.preventDefault();
+              done(null);
+            }
+          };
+
+          input.value = '';
+          err.textContent = '';
+          modal.classList.add('open');
+          modal.setAttribute('aria-hidden', 'false');
+          modal.addEventListener('click', onBackdrop);
+          btnCancel.addEventListener('click', onCancel);
+          btnConfirm.addEventListener('click', onConfirm);
+          input.addEventListener('keydown', onKeydown);
+          document.addEventListener('keydown', onEscape);
+          setTimeout(() => input.focus(), 20);
+        });
+      }
+
+      async function persistPedidoStatus(p, nextStatus, motivoRecusa){
         const { getFirestore, doc, updateDoc } = window || {};
         if(typeof getFirestore !== 'function' || typeof doc !== 'function' || typeof updateDoc !== 'function') return false;
         const db = window.db || getFirestore();
@@ -1431,35 +2116,74 @@
           updatedAt: nowIso
         };
         if(nextStatus === 'aceito') payload.dataAceite = nowIso;
-        if(nextStatus === 'recusado') payload.dataRecusa = nowIso;
+        if(nextStatus === 'cancelado') payload.dataCancelamento = nowIso;
+        if(nextStatus === 'recusado'){
+          payload.dataRecusa = nowIso;
+          const motivo = String(motivoRecusa || '').trim();
+          if(motivo){
+            payload.motivoRecusa = motivo;
+            payload.justificativaRecusa = motivo;
+            payload.recusaMotivo = motivo;
+            payload.motivoRejeicao = motivo;
+            payload.motivo = motivo;
+            payload.recusa = { motivo, data: nowIso };
+          }
+        }
         await updateDoc(doc(db, 'pedidos', String(p.id)), payload);
         return true;
       }
 
       async function decidePedido(p, nextStatus){
+        if(!ensurePedidosAuth()) return;
         if(!p || !p.id){
           showToast('Pedido invalido.');
           return;
         }
+        const meuPapel = String(p?.meuPapel || '').toLowerCase();
+        if((nextStatus === 'aceito' || nextStatus === 'recusado') && meuPapel !== 'profissional'){
+          showToast('Somente o profissional pode aceitar ou recusar este pedido.');
+          return;
+        }
+        if(nextStatus === 'cancelado'){
+          if(meuPapel !== 'cliente'){
+            showToast('Somente o cliente pode cancelar este pedido.');
+            return;
+          }
+          if(!isPendenteStatus(p.status)){
+            showToast('So e possivel cancelar enquanto o pedido estiver pendente.');
+            return;
+          }
+          const ok = (typeof window.dokeConfirm === 'function')
+            ? await window.dokeConfirm('Cancelar este pedido? O profissional ainda nao respondeu.', 'Cancelar pedido')
+            : window.confirm('Cancelar este pedido?');
+          if(!ok) return;
+        }
         const pid = String(p.id);
         const normalized = statusCode(nextStatus);
+        const motivoRecusa = nextStatus === 'recusado' ? await askRecusaMotivo() : '';
+        if(nextStatus === 'recusado' && !motivoRecusa) return;
+        let savedServer = true;
         try{
-          await persistPedidoStatus(p, nextStatus);
+          await persistPedidoStatus(p, nextStatus, motivoRecusa);
         }catch(err){
+          savedServer = false;
           console.warn('Falha ao atualizar status do pedido:', err);
         }
+        patchLocalPedidoCaches(pid, nextStatus, motivoRecusa);
         state.pedidos = (state.pedidos || []).map((item) => {
           if(String(item.id) !== pid) return item;
           return {
             ...item,
             status: normalized,
             statusOriginal: nextStatus,
+            motivoRecusa: nextStatus === 'recusado' ? motivoRecusa : '',
             atualizado: 'agora',
             urgente: nextStatus === 'recusado' ? false : item.urgente
           };
         });
         render();
-        showToast(nextStatus === 'aceito' ? 'Pedido aceito.' : 'Pedido recusado.');
+        if(savedServer) showToast(nextStatus === 'aceito' ? 'Pedido aceito.' : (nextStatus === 'recusado' ? 'Pedido recusado.' : 'Pedido cancelado.'));
+        else showToast('Atualizado localmente. Conecte-se para sincronizar no servidor.');
       }
 
       async function openDetails(p){
@@ -1489,8 +2213,23 @@
 
       function updateBulkInfo(){
         if(!el.bulkInfo) return;
-        const total = state.selected.size;
-        el.bulkInfo.textContent = `${total} pedido${total !== 1 ? 's' : ''} selecionado${total !== 1 ? 's' : ''}`;
+        const selectedItems = (state.pedidos || []).filter((p) => state.selected.has(String(p.id)));
+        const total = selectedItems.length;
+        const clearable = selectedItems.filter(isStatusFinalizadoOuRecusado).length;
+        el.bulkInfo.textContent = total
+          ? `${total} selecionado(s) - ${clearable} apto(s) para limpar`
+          : '0 pedidos selecionados';
+        if(el.bulkFinalizeBtn){
+          el.bulkFinalizeBtn.disabled = (total === 0);
+          el.bulkFinalizeBtn.title = 'A finalizacao so ocorre apos confirmacao do cliente no app dele.';
+        }
+        if(el.bulkArchiveBtn){
+          el.bulkArchiveBtn.disabled = (total === 0);
+        }
+        if(el.bulkClearBtn){
+          el.bulkClearBtn.disabled = (clearable === 0);
+          el.bulkClearBtn.title = clearable ? 'Limpar pedidos finalizados ou recusados' : 'Selecione pedidos recusados/finalizados para limpar';
+        }
       }
 
       function clearSelection(){
@@ -1501,21 +2240,34 @@
 
       function finalizeSelected(){
         if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
-        state.pedidos = (state.pedidos || []).map((p) => {
-          if(!state.selected.has(String(p.id))) return p;
-          return { ...p, status: 'finalizado', urgente: false, atualizado: 'agora' };
-        });
-        state.selected.clear();
-        render();
-        showToast('Pedidos finalizados.');
+        showToast('A finalizacao depende da confirmacao do cliente na tela dele.');
       }
 
       function archiveSelected(){
         if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
+        const ids = Array.from(state.selected).map((id) => String(id));
+        addHiddenPedidos(ids);
         state.pedidos = (state.pedidos || []).filter((p) => !state.selected.has(String(p.id)));
         state.selected.clear();
         render();
         showToast('Pedidos arquivados da lista.');
+      }
+
+      function clearSelectedDoneOrRejected(){
+        if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
+        const selectedItems = (state.pedidos || []).filter((p) => state.selected.has(String(p.id)));
+        const canClearIds = new Set(selectedItems.filter(isStatusFinalizadoOuRecusado).map((p) => String(p.id)));
+        if(!canClearIds.size){
+          showToast('Limpar so funciona para pedidos finalizados ou recusados.');
+          return;
+        }
+        addHiddenPedidos(Array.from(canClearIds));
+        const before = state.pedidos.length;
+        state.pedidos = (state.pedidos || []).filter((p) => !canClearIds.has(String(p.id)));
+        Array.from(canClearIds).forEach((id) => state.selected.delete(String(id)));
+        const removed = before - state.pedidos.length;
+        render();
+        showToast(`${removed} pedido${removed !== 1 ? 's' : ''} limpo${removed !== 1 ? 's' : ''}.`);
       }
 
       function setupFallbacks(){
@@ -1552,7 +2304,7 @@
         on(el.selectBtn, 'click', () => toggleSelectMode());
         on(el.bulkFinalizeBtn, 'click', finalizeSelected);
         on(el.bulkArchiveBtn, 'click', archiveSelected);
-        on(el.bulkClearBtn, 'click', clearSelection);
+        on(el.bulkClearBtn, 'click', clearSelectedDoneOrRejected);
         on(el.refreshBtn, 'click', async () => { if(el.refreshBtn){ el.refreshBtn.disabled = true; } await hydrate(true); if(el.refreshBtn){ el.refreshBtn.disabled = false; } showToast('Pedidos atualizados'); });
         (el.chips || []).forEach(ch => on(ch, 'click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
         on(el.grid, 'click', (ev) => {
@@ -1568,6 +2320,7 @@
             if(state.selectMode){ toggleSelected(btn.dataset.id); return; }
             if(action === 'accept'){ decidePedido(p, 'aceito'); return; }
             if(action === 'reject'){ decidePedido(p, 'recusado'); return; }
+            if(action === 'cancel'){ decidePedido(p, 'cancelado'); return; }
             if(action === 'chat'){ openChat(p); return; }
             if(action === 'details'){ openDetails(p); return; }
             return;
@@ -1577,6 +2330,15 @@
           toggleSelected(cardEl.dataset.id);
         });
         document.querySelectorAll('#chatDrawer [data-close]').forEach((btn) => on(btn, 'click', closeInlineChat));
+        on(el.chatNarrowBtn, 'click', () => nudgeChatWidth(-CHAT_WIDTH_STEP));
+        on(el.chatWidenBtn, 'click', () => nudgeChatWidth(CHAT_WIDTH_STEP));
+        on(el.chatWidthLabel, 'dblclick', resetChatWidth);
+        on(el.chatExpandBtn, 'click', toggleChatMaximize);
+        on(el.chatResizeHandle, 'mousedown', startChatResize);
+        on(el.chatFrame, 'load', ensureIframeLockedInChat);
+        document.addEventListener('mousemove', handleChatResizeMove);
+        document.addEventListener('mouseup', stopChatResize);
+        window.addEventListener('resize', applyChatPanelLayout);
         on(el.detailsCloseBtn, 'click', closeDetailsModal);
         on(el.detailsModal, 'click', (ev) => {
           if(ev.target === el.detailsModal) closeDetailsModal();
@@ -1591,8 +2353,13 @@
 
       function bootstrapPedidos(){
         try{
+          if(!ensurePedidosAuth()) return;
           setupFallbacks();
           bind();
+          state.chatWidth = clampChatWidth(localStorage.getItem(CHAT_WIDTH_KEY));
+          state.chatMaximized = false;
+          setChatExpandButtonState();
+          applyChatPanelLayout();
           setTimeout(() => {
             try {
               const loadingText = String(state?.subtitleEl?.textContent || '');

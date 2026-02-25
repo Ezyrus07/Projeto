@@ -610,8 +610,29 @@
     }
   }
 
-    async function ensureShell(){
+  async function ensureShell(){
     setShellAuthStateReady(false);
+    let embedChatMode = false;
+    try{
+      const params = new URLSearchParams(location.search || "");
+      const byParam =
+        params.get("embed") === "1" ||
+        params.get("embed") === "true" ||
+        params.get("from") === "pedidos" ||
+        params.get("origin") === "pedido";
+      const byDom =
+        document.documentElement.classList.contains("embed-chat-mode") ||
+        document.body?.classList?.contains("embed-chat-mode") ||
+        document.body?.getAttribute("data-embed-chat") === "1";
+      embedChatMode = byParam || byDom || window.__DOKE_DISABLE_SHELL__ === true;
+    }catch(_e){}
+    if(embedChatMode){
+      try{
+        document.body?.classList?.remove("doke-shell-active","doke-no-main","doke-drawer-open","doke-search-open","doke-menu-open");
+      }catch(_e){}
+      setShellAuthStateReady(true);
+      return;
+    }
     const body = document.body;
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
@@ -1282,6 +1303,5 @@
     ensureShell();
   }
 })();
-
 
 

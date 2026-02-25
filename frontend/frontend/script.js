@@ -3055,8 +3055,10 @@ window.verificarEstadoLogin = async function() {
     } catch (_e) {}
 
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+    const forcedLogoutAt = Number(localStorage.getItem('doke_force_logged_out_at') || sessionStorage.getItem('doke_force_logged_out_at') || 0);
+    const forceLogoutActive = Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < 120000;
     let perfil = {};
-    let resolvedUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+    let resolvedUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || window.firebaseAuth?.currentUser || null);
     let sessionUser = null;
 
     try {
@@ -3065,10 +3067,10 @@ window.verificarEstadoLogin = async function() {
         perfil = {};
     }
 
-    if (!resolvedUser) {
+    if (!resolvedUser && !forceLogoutActive) {
         try { resolvedUser = await dokeResolveAuthUser(); } catch (_e) { resolvedUser = null; }
     }
-    if (!resolvedUser && window.sb?.auth?.getSession) {
+    if (!resolvedUser && !forceLogoutActive && window.sb?.auth?.getSession) {
         try {
             const { data, error } = await window.sb.auth.getSession();
             if (!error && data?.session?.user) {
@@ -3091,6 +3093,7 @@ window.verificarEstadoLogin = async function() {
     const uidCache = String(localStorage.getItem('doke_uid') || "").trim();
     let resolvedUid = uidAuth || uidPerfil || uidCache;
     let logado = !!resolvedUid || localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo || !!resolvedUser;
+    if (forceLogoutActive) logado = false;
 
     if (logado && resolvedUid) {
         try {
@@ -3388,14 +3391,24 @@ function dokeClearLocalAuthCache() {
         localStorage.removeItem('doke_uid');
         localStorage.removeItem('doke_auth_session_backup');
         localStorage.removeItem('doke_next_account');
+        localStorage.removeItem('doke_cached_auth_user');
+        localStorage.removeItem('doke_cached_auth_uid');
+        localStorage.removeItem('doke_cached_auth_token');
         const authKeys = Object.keys(localStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
         authKeys.forEach((k) => localStorage.removeItem(k));
+        const firebaseKeys = Object.keys(localStorage).filter((k) => /^firebase:/i.test(k));
+        firebaseKeys.forEach((k) => localStorage.removeItem(k));
     } catch (_e) {}
     try {
         sessionStorage.removeItem('usuarioLogado');
         sessionStorage.removeItem('doke_uid');
         sessionStorage.removeItem('doke_usuario_perfil');
         sessionStorage.removeItem('doke_next_account');
+        sessionStorage.removeItem('doke_cached_auth_user');
+        sessionStorage.removeItem('doke_cached_auth_uid');
+        sessionStorage.removeItem('doke_cached_auth_token');
+        const sbSessionKeys = Object.keys(sessionStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+        sbSessionKeys.forEach((k) => sessionStorage.removeItem(k));
     } catch (_e) {}
     try { dokeClearCookieEverywhere(DOKE_DEV_SESSION_COOKIE); } catch (_e) {}
 }
@@ -3418,18 +3431,24 @@ async function dokeSignOutEverywhere() {
 
     let signedOut = false;
     try {
-        const sbAuth = window.sb?.auth || window.supabaseClient?.auth || null;
-        if (sbAuth?.signOut) {
+        const sbAuthCandidates = [
+            window.sb?.auth,
+            window.supabaseClient?.auth,
+            window.sbClient?.auth,
+            window.supabase?.auth
+        ].filter(Boolean);
+        for (const sbAuth of sbAuthCandidates) {
+            if (!sbAuth?.signOut) continue;
             const ok = await callSignOut(sbAuth.signOut.bind(sbAuth));
             signedOut = signedOut || ok;
         }
-        const authObj = window.auth || auth || null;
+        const authObj = window.auth || window.firebaseAuth || window.__dokeAuthCompat?.auth || null;
         if (authObj?.signOut) {
             const ok = await callSignOut(authObj.signOut.bind(authObj));
             signedOut = signedOut || ok;
         }
         if (typeof window.signOut === "function") {
-            const ok = await callSignOut(window.signOut, [window.auth || auth || {}]);
+            const ok = await callSignOut(window.signOut, [authObj || window.auth || {}]);
             signedOut = signedOut || ok;
         }
     } finally {
@@ -3440,10 +3459,17 @@ async function dokeSignOutEverywhere() {
 
 
 async function dokeSignOutAndGo(targetHref) {
+    const nextHref = String(targetHref || "login.html");
     try { if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000); } catch (_e) {}
+    try { dokeClearLocalAuthCache(); } catch (_e) {}
     try { await dokeSignOutEverywhere(); } catch (_e) {}
-    dokeClearLocalAuthCache();
-    window.location.href = String(targetHref || "login.html");
+    try { dokeClearLocalAuthCache(); } catch (_e) {}
+    try { localStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { sessionStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { window.location.replace(nextHref); } catch (_e) { window.location.href = nextHref; }
+    setTimeout(() => {
+        try { if (!String(window.location.href || '').includes('login.html')) window.location.href = nextHref; } catch (_e) {}
+    }, 300);
 }
 
 window.alternarConta = async function() {
@@ -4368,6 +4394,7 @@ window.realizarLogin = async function(e) {
         localStorage.setItem('usuarioLogado', 'true');
         localStorage.setItem('doke_usuario_perfil', JSON.stringify(dadosUsuario));
         localStorage.setItem('doke_uid', user.uid);
+        try { localStorage.removeItem('doke_force_logged_out_at'); sessionStorage.removeItem('doke_force_logged_out_at'); } catch (_) {}
         try {
             dokeRememberLoggedAccount({
                 uid: user.uid || dadosUsuario.uid || dadosUsuario.id || "",

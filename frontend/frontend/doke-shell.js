@@ -1,5 +1,5 @@
 ﻿(function(){
-  window.__DOKE_SHELL_BUILD__ = "20260224v48";
+  window.__DOKE_SHELL_BUILD__ = "20260218v47";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   const PAGES = {
@@ -111,8 +111,6 @@
       }
     }catch(e){}
     try{ clearCookieEverywhere(DOKE_DEV_SESSION_COOKIE); }catch(_e){}
-    try{ localStorage.removeItem("doke_last_auth_provider"); }catch(_e){}
-    try{ sessionStorage.removeItem("doke_last_auth_provider"); }catch(_e){}
   }
 
   function getProfile(){
@@ -401,28 +399,21 @@
 
   function ensureGlobalAuthActions(){
     ensureFallbackDropdownBehavior();
-    const legacyLogout = (typeof window.fazerLogout === "function") ? window.fazerLogout : null;
-    window.fazerLogout = async function(){
-      let confirmed = false;
-      try {
-        confirmed = (typeof window.dokeConfirm === "function")
-          ? await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")
-          : window.confirm("Tem certeza que deseja sair?");
-      } catch (_e) {
-        confirmed = window.confirm("Tem certeza que deseja sair?");
-      }
-      if(!confirmed) return false;
-      try {
+    if (typeof window.fazerLogout !== "function") {
+      window.fazerLogout = async function(){
+        let confirmed = false;
+        try {
+          confirmed = (typeof window.dokeConfirm === "function")
+            ? await window.dokeConfirm("Tem certeza que deseja sair?", "Sair")
+            : window.confirm("Tem certeza que deseja sair?");
+        } catch (_e) {
+          confirmed = window.confirm("Tem certeza que deseja sair?");
+        }
+        if(!confirmed) return false;
         await performShellSignOut("login.html?logout=1");
         return true;
-      } catch (e) {
-        try { console.error(e); } catch(_err) {}
-        if (typeof legacyLogout === "function" && legacyLogout !== window.fazerLogout) {
-          try { return await legacyLogout(); } catch (_e2) {}
-        }
-        return false;
-      }
-    };
+      };
+    }
 
     if (typeof window.alternarConta !== "function") {
       window.alternarConta = async function(){
@@ -619,8 +610,29 @@
     }
   }
 
-    async function ensureShell(){
+  async function ensureShell(){
     setShellAuthStateReady(false);
+    let embedChatMode = false;
+    try{
+      const params = new URLSearchParams(location.search || "");
+      const byParam =
+        params.get("embed") === "1" ||
+        params.get("embed") === "true" ||
+        params.get("from") === "pedidos" ||
+        params.get("origin") === "pedido";
+      const byDom =
+        document.documentElement.classList.contains("embed-chat-mode") ||
+        document.body?.classList?.contains("embed-chat-mode") ||
+        document.body?.getAttribute("data-embed-chat") === "1";
+      embedChatMode = byParam || byDom || window.__DOKE_DISABLE_SHELL__ === true;
+    }catch(_e){}
+    if(embedChatMode){
+      try{
+        document.body?.classList?.remove("doke-shell-active","doke-no-main","doke-drawer-open","doke-search-open","doke-menu-open");
+      }catch(_e){}
+      setShellAuthStateReady(true);
+      return;
+    }
     const body = document.body;
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
@@ -1291,6 +1303,5 @@
     ensureShell();
   }
 })();
-
 
 

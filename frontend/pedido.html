@@ -597,6 +597,41 @@
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 
+
+<style id="pedido-chat-drawer-fit-fix">
+  
+/* Fix definitivo: chat embutido encaixado na área de conteúdo (respeita header + sidebar no desktop) */
+.chat-drawer-embed{
+  --chat-drawer-left: 0px;
+  --chat-drawer-top: 0px;
+  --chat-drawer-right: 0px;
+  --chat-drawer-bottom: 0px;
+}
+.chat-drawer-embed .chat-panel-embed{
+  position: fixed !important;
+  top: calc(var(--chat-drawer-top, 0px) + 8px) !important;
+  right: calc(var(--chat-drawer-right, 0px) + 8px) !important;
+  bottom: calc(var(--chat-drawer-bottom, 0px) + 8px) !important;
+  left: calc(var(--chat-drawer-left, 0px) + 8px) !important;
+  width: auto !important;
+  height: auto !important;
+  max-width: none !important;
+  border-radius: 14px !important;
+  overflow: hidden !important;
+  background: #fff !important;
+  border: 1px solid #dbe7f3 !important;
+  box-shadow: 0 30px 70px rgba(15,23,42,.22) !important;
+}
+.chat-drawer-embed .pedido-chat-frame{ width:100% !important; height:100% !important; display:block !important; }
+@media (max-width: 900px){
+  .chat-drawer-embed .chat-panel-embed{
+    top: 0 !important; right: 0 !important; bottom: 0 !important; left: 0 !important;
+    border-radius: 0 !important; border: 0 !important;
+  }
+}
+
+</style>
+
 </head>
 
 <body data-page="pedidos">
@@ -867,6 +902,61 @@
         return (fallbackPedidos && fallbackPedidos.length ? fallbackPedidos : [{id:"PD-2786",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"Orçamento: Teste",descricao:"Teste",tipo:"Orçamento",status:"pendente",urgente:false,prazo:"A combinar",atualizado:"hoje",valor:"Sob Orçamento",naoLidas:2,criadoEm:new Date().toISOString(),categoria:"Encanador"},{id:"PD-2787",usuario:"@cliente",nome:"Cliente",avatar:"assets/Imagens/user_placeholder.png",titulo:"Orçamento: TESTE 2",descricao:"Teste",tipo:"Orçamento",status:"andamento",urgente:false,prazo:"A combinar",atualizado:"há 2h",valor:"Sob Orçamento",naoLidas:0,criadoEm:new Date(Date.now()-7200000).toISOString(),categoria:"Tecnologia"}]);
       }
 
+
+
+      function deepGet(obj, path){
+        try{ return path.split('.').reduce((acc, k) => (acc == null ? undefined : acc[k]), obj); }catch(e){ return undefined; }
+      }
+      function normalizeUrlCandidate(v){
+        if(!v) return '';
+        if(typeof v === 'string'){
+          const s = v.trim();
+          if(!s) return '';
+          if(/^data:image\//i.test(s)) return s;
+          if(/^(https?:)?\//i.test(s)) return s;
+          if(s.startsWith('assets/')) return s;
+          if(/\.(png|jpe?g|webp|gif|avif)(\?|#|$)/i.test(s)) return s;
+          return '';
+        }
+        if(typeof v === 'object'){
+          return normalizeUrlCandidate(v.url || v.src || v.foto || v.avatar || v.photoURL || v.downloadURL || v.imagem || v.imagemPerfil);
+        }
+        return '';
+      }
+      function extractAvatarFromAny(obj){
+        if(!obj || typeof obj !== 'object') return '';
+        const paths = [
+          'avatar','foto','fotoPerfil','imagemPerfil','imagem','profileImage','profile_image','photoURL','photoUrl','fotoURL',
+          'cliente.avatar','cliente.foto','cliente.fotoPerfil','cliente.imagemPerfil','cliente.photoURL',
+          'clienteData.avatar','clienteData.foto','clienteData.fotoPerfil',
+          'usuario.avatar','usuario.foto','usuario.fotoPerfil','usuario.imagemPerfil','usuario.photoURL',
+          'usuarioData.avatar','usuarioData.foto','usuarioData.fotoPerfil',
+          'autor.avatar','autor.foto','autor.fotoPerfil',
+          'prestador.avatar','prestador.foto','prestador.fotoPerfil','profissional.avatar','profissional.foto','profissional.fotoPerfil',
+          'solicitante.avatar','solicitante.foto','solicitante.fotoPerfil'
+        ];
+        for(const path of paths){
+          const val = deepGet(obj, path);
+          const url = normalizeUrlCandidate(val);
+          if(url) return url;
+        }
+        for(const [k,v] of Object.entries(obj)){
+          if(/avatar|foto|photo|imagem/i.test(k)){
+            const url = normalizeUrlCandidate(v);
+            if(url) return url;
+          }
+        }
+        return '';
+      }
+      function resolvePedidoCounterpartyUid(p){
+        const candidates = [
+          p?.uid, p?.userUid, p?.usuarioUid, p?.clienteUid, p?.uidCliente, p?.solicitanteUid, p?.autorUid, p?.prestadorUid, p?.profissionalUid,
+          p?.raw?.uid, p?.raw?.userUid, p?.raw?.usuarioUid, p?.raw?.clienteUid, p?.raw?.uidCliente, p?.raw?.solicitanteUid, p?.raw?.autorUid, p?.raw?.prestadorUid, p?.raw?.profissionalUid,
+          p?.raw?.cliente?.uid, p?.raw?.usuario?.uid, p?.raw?.autor?.uid, p?.raw?.solicitante?.uid, p?.raw?.prestador?.uid
+        ];
+        return String(candidates.find(v => v != null && String(v).trim()) || '');
+      }
+
       function normalizePedidos(input){
         const arr = Array.isArray(input)
           ? input
@@ -890,7 +980,7 @@
             id,
             usuario,
             nome,
-            avatar: p.avatar || p.foto || 'assets/Imagens/user_placeholder.png',
+            avatar: extractAvatarFromAny(p) || 'assets/Imagens/user_placeholder.png',
             titulo,
             descricao,
             tipo,
@@ -901,7 +991,9 @@
             valor: p.valor || p.preco || p.orcamento || '—',
             naoLidas: Number(p.naoLidas || p.unread || p.mensagensNaoLidas || 0) || 0,
             criadoEm: p.criadoEm || p.createdAt || new Date().toISOString(),
-            categoria: p.categoria || 'Geral'
+            categoria: p.categoria || 'Geral',
+            userUid: resolvePedidoCounterpartyUid(p),
+            raw: p
           };
         });
       }
@@ -921,7 +1013,7 @@
             id: String(a.id || a.codigo || a.anuncioId || `PD-CACHE-${idx+1}`),
             usuario,
             nome,
-            avatar: a.avatar || a.foto || a.imagemPerfil || 'assets/Imagens/user_placeholder.png',
+            avatar: extractAvatarFromAny(a) || 'assets/Imagens/user_placeholder.png',
             titulo: String(titulo).toLowerCase().includes('orçamento') ? String(titulo) : `Orçamento: ${titulo}`,
             descricao: desc,
             tipo: 'Orçamento',
@@ -932,7 +1024,9 @@
             valor: typeof valorRaw === 'number' ? `R$ ${valorRaw}` : String(valorRaw),
             naoLidas: Number(a.naoLidas || a.unread || (idx % 4 === 0 ? 2 : 0)) || 0,
             criadoEm: a.criadoEm || a.createdAt || new Date(Date.now() - (idx+1)*3600*1000).toISOString(),
-            categoria: String(categoria)
+            categoria: String(categoria),
+            userUid: resolvePedidoCounterpartyUid(a),
+            raw: a
           };
         });
       }
@@ -986,6 +1080,66 @@
         return 'Pendente';
       }
 
+
+
+      const pedidoAvatarCache = Object.create(null);
+      async function findAvatarForPedido(p){
+        if(!p) return '';
+        const direct = extractAvatarFromAny(p) || extractAvatarFromAny(p.raw || {});
+        if(direct) return direct;
+
+        const uid = resolvePedidoCounterpartyUid(p);
+        if(!uid) return '';
+        if(pedidoAvatarCache[uid]) return pedidoAvatarCache[uid];
+
+        // caches locais mais comuns
+        try{
+          const lsKeys = ['usuarioLogado','doke_usuario_logado','doke_user','doke_profile','perfilUsuario'];
+          for(const k of lsKeys){
+            const raw = localStorage.getItem(k);
+            if(!raw) continue;
+            const parsed = JSON.parse(raw);
+            if(String(parsed?.uid || parsed?.id || '') === uid){
+              const url = extractAvatarFromAny(parsed);
+              if(url){ pedidoAvatarCache[uid] = url; return url; }
+            }
+          }
+        }catch(e){}
+
+        const getDocFn = window.getDoc;
+        const docFn = window.doc;
+        const dbInst = window.db || (typeof window.getFirestore === 'function' ? window.getFirestore() : null);
+        if(dbInst && getDocFn && docFn){
+          const collections = ['usuarios','users','perfis','usuarios_publicos'];
+          for(const colName of collections){
+            try{
+              const snap = await getDocFn(docFn(dbInst, colName, uid));
+              if(snap && snap.exists && snap.exists()){
+                const data = snap.data() || {};
+                const url = extractAvatarFromAny(data);
+                if(url){ pedidoAvatarCache[uid] = url; return url; }
+              }
+            }catch(e){}
+          }
+        }
+        return '';
+      }
+
+      function hydrateVisiblePedidoAvatars(){
+        const imgs = Array.from(document.querySelectorAll('.pedido-card img[data-avatar-for]'));
+        if(!imgs.length) return;
+        imgs.forEach(async (img) => {
+          try{
+            const current = String(img.getAttribute('src') || '');
+            if(current && !/user_placeholder\.png/i.test(current)) return;
+            const pid = img.getAttribute('data-avatar-for');
+            const pedido = getPedidoById(pid);
+            const url = await findAvatarForPedido(pedido);
+            if(url) img.src = url;
+          }catch(e){}
+        });
+      }
+
       function render(){
         const allCounters = getCounters(state.pedidos);
         const list = applyFilter(state.pedidos);
@@ -1009,6 +1163,7 @@
         if (el.cardsGrid) el.cardsGrid.style.display = list.length ? 'grid' : 'none';
 
         if (el.cardsGrid) bindCardEvents();
+        requestAnimationFrame(() => hydrateVisiblePedidoAvatars());
         syncActiveStates();
       }
 
@@ -1030,10 +1185,10 @@
             </div>
 
             <div class="card-user">
-              <img src="${escapeAttr(avatar)}" alt="Avatar de ${escapeAttr(p.nome || p.usuario || 'usuário')}" onerror="this.src='assets/Imagens/user_placeholder.png'">
+              <img data-avatar-for="${escapeAttr(p.id)}" src="${escapeAttr(avatar)}" alt="Avatar de ${escapeAttr(p.nome || p.usuario || 'usuário')}" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'">
               <div class="user-meta">
                 <strong>${escapeHtml(p.usuario || p.nome || 'Cliente')}</strong>
-                <span>${escapeHtml(p.id)} • ${escapeHtml(p.categoria || 'Geral')}</span>
+                <span>${escapeHtml(p.categoria || p.tipo || 'Geral')}</span>
               </div>
             </div>
 
@@ -1274,13 +1429,129 @@ function buildEmbeddedChatUrl(pedido){
   if(pedido && pedido.id != null) params.set('pedidoId', String(pedido.id));
   params.set('from', 'pedidos');
   params.set('origin', 'pedido');
+  params.set('embed', '1');
   return 'chat.html?' + params.toString();
 }
+
+
+
+function syncChatDrawerFrameLayout(){
+  if(!chatDrawer) return;
+
+  // Mobile: fullscreen (CSS media query já resolve)
+  if(window.innerWidth <= 900){
+    chatDrawer.style.setProperty('--chat-drawer-left', '0px');
+    chatDrawer.style.setProperty('--chat-drawer-top', '0px');
+    chatDrawer.style.setProperty('--chat-drawer-right', '0px');
+    chatDrawer.style.setProperty('--chat-drawer-bottom', '0px');
+    return;
+  }
+
+  let left = 0, top = 0, right = 0, bottom = 0;
+
+  // Preferir a área real de conteúdo (main), para não cobrir header/topbar nem menu lateral
+  const mainWrap = document.querySelector('main.dp-wrap') || document.querySelector('.dp-wrap') || document.querySelector('main');
+  if(mainWrap){
+    const rect = mainWrap.getBoundingClientRect();
+    if(rect && rect.width > 100 && rect.height > 80){
+      left = Math.max(0, Math.round(rect.left));
+      top = Math.max(0, Math.round(rect.top));
+      right = Math.max(0, Math.round(window.innerWidth - rect.right));
+      bottom = 0;
+    }
+  }
+
+  // Fallbacks defensivos se o main não estiver disponível/medido
+  if(left <= 0){
+    const sb = document.querySelector('.sidebar-icones') || document.querySelector('.sidebar');
+    if(sb){
+      const r = sb.getBoundingClientRect();
+      if(r && r.width > 120 && r.right > 0) left = Math.max(0, Math.round(r.right));
+    }
+  }
+  if(top <= 0){
+    const hd = document.querySelector('.navbar-desktop') || document.querySelector('.navbar-mobile') || document.querySelector('header');
+    if(hd){
+      const r = hd.getBoundingClientRect();
+      if(r && r.bottom > 0) top = Math.max(0, Math.round(r.bottom));
+    }
+  }
+
+  chatDrawer.style.setProperty('--chat-drawer-left', left + 'px');
+  chatDrawer.style.setProperty('--chat-drawer-top', top + 'px');
+  chatDrawer.style.setProperty('--chat-drawer-right', right + 'px');
+  chatDrawer.style.setProperty('--chat-drawer-bottom', bottom + 'px');
+}
+
+function patchEmbeddedChatFrameUI(pedido){
+  const frame = chatEls.frame;
+  if(!frame) return;
+  try{
+    const doc = frame.contentDocument || frame.contentWindow?.document;
+    if(!doc) return;
+    const body = doc.body;
+    if(body){ body.classList.add('embed-chat-mode'); body.setAttribute('data-embed-chat','1'); }
+    doc.documentElement?.classList?.add('embed-chat-mode');
+
+    let style = doc.getElementById('pedido-embed-visual-fix');
+    if(!style){
+      style = doc.createElement('style');
+      style.id = 'pedido-embed-visual-fix';
+      style.textContent = `
+        html, body { margin:0 !important; height:100% !important; background:#fff !important; }
+        html.embed-chat-mode, body.embed-chat-mode { height:100% !important; overflow:hidden !important; }
+        body.embed-chat-mode .messenger-layout { margin:0 !important; margin-left:0 !important; margin-top:0 !important; inset:auto !important; width:100% !important; max-width:none !important; min-width:0 !important; height:100dvh !important; border-radius:0 !important; position:fixed !important; top:0 !important; left:0 !important; right:0 !important; bottom:0 !important; grid-template-columns:1fr !important; display:grid !important; }
+        body.embed-chat-mode .coluna-lista, body.embed-chat-mode #chat-placeholder { display:none !important; }
+        body.embed-chat-mode .coluna-chat { width:100% !important; min-width:0 !important; display:flex !important; flex-direction:column !important; border-left:0 !important; }
+        body.embed-chat-mode #box-conversa-real { display:flex !important; height:100% !important; }
+        body.embed-chat-mode .chat-header { padding-right:64px !important; }
+        body.embed-chat-mode #chatStatus { display:none !important; }
+      `;
+      (doc.head || doc.documentElement).appendChild(style);
+    }
+
+    const avatarEl = doc.getElementById('chatAvatar');
+    const nomeEl = doc.getElementById('chatNome');
+    const statusEl = doc.getElementById('chatStatus');
+    if(avatarEl && pedido?.avatar && !/user_placeholder\.png$/i.test(String(pedido.avatar||''))){
+      avatarEl.src = pedido.avatar;
+    }
+    if(nomeEl && pedido){
+      const displayName = pedido.nome || pedido.usuario || 'Cliente';
+      if(displayName) nomeEl.textContent = String(displayName);
+    }
+    if(statusEl){
+      statusEl.textContent = '';
+      statusEl.style.display = 'none';
+    }
+  }catch(e){}
+}
+
+function bindEmbeddedChatFrameLoad(pedido){
+  const frame = chatEls.frame;
+  if(!frame) return;
+  frame.onload = function(){
+    patchEmbeddedChatFrameUI(pedido);
+    setTimeout(function(){ patchEmbeddedChatFrameUI(pedido); }, 250);
+    setTimeout(function(){ patchEmbeddedChatFrameUI(pedido); }, 900);
+    setTimeout(function(){ patchEmbeddedChatFrameUI(pedido); }, 1800);
+  };
+}
+
+window.addEventListener('resize', syncChatDrawerFrameLayout);
 
 function openChatDrawer(pedido){
   if(!chatDrawer || !pedido) return;
   activeChatPedidoId = String(pedido.id);
 
+  try{
+    const imgFromCard = document.querySelector(`.pedido-card img[data-avatar-for="${CSS && CSS.escape ? CSS.escape(String(pedido.id)) : String(pedido.id).replace(/"/g,'\\"')}"]`) || document.querySelector('.pedido-card img[data-avatar-for]');
+    const srcFromCard = imgFromCard && imgFromCard.getAttribute('src');
+    if(srcFromCard && !/user_placeholder\.png$/i.test(String(srcFromCard))){ pedido.avatar = srcFromCard; }
+  }catch(e){}
+
+  syncChatDrawerFrameLayout();
+  bindEmbeddedChatFrameLoad(pedido);
   chatDrawer.classList.add('open');
   chatDrawer.setAttribute('aria-hidden','false');
   document.documentElement.classList.add('no-scroll');
@@ -1289,7 +1560,11 @@ function openChatDrawer(pedido){
   if(chatUnsub) { try{ chatUnsub(); }catch(e){} chatUnsub = null; }
   if(chatEls.frame){
     const nextSrc = buildEmbeddedChatUrl(pedido);
-    if(chatEls.frame.getAttribute('src') !== nextSrc){ chatEls.frame.setAttribute('src', nextSrc); }
+    if(chatEls.frame.getAttribute('src') !== nextSrc){
+      chatEls.frame.setAttribute('src', nextSrc);
+    }else{
+      patchEmbeddedChatFrameUI(pedido);
+    }
   }
   markPedidoChatAsRead(pedido.id);
 }

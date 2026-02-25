@@ -6223,11 +6223,11 @@ function ensureModalPostDetalhe() {
                 <div class="modal-footer-actions">
                     <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
                         <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
+                        <i class='bx bx-message-rounded' onclick="toggleModalComments(true)" style="cursor:pointer;"></i>
                         <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
-                    <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
+                    <div class="modal-comment-compose" style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
                         <input type="text" id="inputComentarioModal" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
                         <button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
                     </div>
@@ -6236,6 +6236,28 @@ function ensureModalPostDetalhe() {
         </div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+}
+
+// Em telas pequenas: não mostrar comentários automaticamente no modal da publicação.
+// Eles só abrem quando o usuário toca no ícone de comentários.
+window.toggleModalComments = function(forceOpen) {
+    const modal = document.getElementById('modalPostDetalhe');
+    if (!modal) return;
+    const isSmall = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+    if (!isSmall) {
+        const inp = document.getElementById('inputComentarioModal');
+        if (inp) inp.focus();
+        return;
+    }
+    const open = forceOpen === true ? true : !modal.classList.contains('modal-comments-open');
+    modal.classList.toggle('modal-comments-open', open);
+    modal.classList.toggle('modal-comments-collapsed', !open);
+    if (open) {
+        setTimeout(() => {
+            const inp = document.getElementById('inputComentarioModal');
+            if (inp) inp.focus();
+        }, 80);
+    }
 }
 
 function getRelatedCount(value) {
@@ -6306,7 +6328,15 @@ window.abrirModalPost = async function(id, colecao) {
 
     // Limpa conteúdos anteriores
     document.getElementById('modalMediaContainer').innerHTML = '<div style="height:100%; display:flex; align-items:center; justify-content:center;"><i class="bx bx-loader-alt bx-spin" style="color:white; font-size:3rem;"></i></div>';
-    document.getElementById('modalCommentsList').innerHTML = "";
+    // Reseta a área mantendo o container de legenda
+    document.getElementById('modalCommentsList').innerHTML = '<div id="modalCaption" style="font-size: 0.9rem; margin-bottom: 20px;"></div>';
+
+    // Mobile: comentários começam recolhidos
+    try{
+        const isSmall = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+        modal.classList.toggle('modal-comments-collapsed', !!isSmall);
+        modal.classList.toggle('modal-comments-open', false);
+    }catch(e){}
     
     // Trava o botão de like enquanto carrega
     const iconLike = document.getElementById('btnLikeModalIcon');
@@ -6392,19 +6422,14 @@ async function carregarComentariosNoModal(id, colecao) {
     const list = document.getElementById('modalCommentsList');
     const user = auth.currentUser;
 
-    const legendaDiv = document.getElementById('modalCaption');
-    let legendaHTML = "";
-    if (legendaDiv && legendaDiv.style.display !== 'none') {
-        legendaHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${legendaDiv.innerHTML}</div>`;
-    }
-
-    list.innerHTML = `${legendaHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+    list.insertAdjacentHTML('beforeend', '<div class="modal-comments-loader" style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>');
 
     try {
         const q = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
         const snapshot = await getDocs(q);
 
-        list.innerHTML = legendaHTML;
+        const loader = list.querySelector('.modal-comments-loader');
+        if (loader) loader.remove();
 
         if (snapshot.empty) {
             list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>');
@@ -6531,18 +6556,13 @@ function maybeScrollToModalComment() {
 async function carregarComentariosSupabase(publicacaoId) {
     const list = document.getElementById('modalCommentsList');
     if (!list) return;
-
-    const captionDiv = document.getElementById('modalCaption');
-    let captionHTML = "";
-    if (captionDiv && captionDiv.style.display !== 'none') {
-        captionHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${captionDiv.innerHTML}</div>`;
-    }
-
-    list.innerHTML = `${captionHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+    list.insertAdjacentHTML('beforeend', '<div class="modal-comments-loader" style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>');
 
     const client = getSupabaseClient();
     if (!client) {
-        list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>`;
+        const loader = list.querySelector('.modal-comments-loader');
+        if (loader) loader.remove();
+        list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>');
         return;
     }
 
@@ -6555,7 +6575,9 @@ async function carregarComentariosSupabase(publicacaoId) {
     if (error) {
         if (isMissingTableError(error)) {
             window._dokePublicacoesSocialStatus = false;
-            list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>`;
+            const loader = list.querySelector('.modal-comments-loader');
+            if (loader) loader.remove();
+            list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Comentarios indisponiveis.</p>');
             return;
         }
         const retry = await client
@@ -6569,11 +6591,14 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     if (error) {
         console.error("Erro comentarios supabase:", error);
-        list.innerHTML = `${captionHTML}<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>`;
+        const loader = list.querySelector('.modal-comments-loader');
+        if (loader) loader.remove();
+        list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>');
         return;
     }
 
-    list.innerHTML = captionHTML;
+    const loader = list.querySelector('.modal-comments-loader');
+    if (loader) loader.remove();
 
     if (!data || data.length === 0) {
         list.insertAdjacentHTML('beforeend', '<p style="color:#999; font-size:0.8rem; margin-top:10px; text-align:center;">Nenhum comentario.</p>');

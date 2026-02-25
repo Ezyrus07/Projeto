@@ -3158,3 +3158,28 @@ body[data-page="home"] .categorias-em-alta:has(#listaCategorias.is-loading) .cat
 @media (max-width: 560px){
   body[data-page="home"] #listaCategorias.cat-track.is-loading{ grid-template-columns:repeat(3,minmax(0,1fr)); gap:10px; }
 }
+
+
+/* === Hotfix mobile: categorias com "peek" da próxima === */
+@media (max-width: 760px){
+  body[data-page="home"] .categorias-min .cat-carousel{
+    overflow: visible !important;
+  }
+  body[data-page="home"] .categorias-min .cat-track{
+    display: flex !important;
+    overflow-x: auto !important;
+    overscroll-behavior-x: contain;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    /* padding extra à direita para sempre sobrar um "preview" */
+    padding: 8px 14px 10px !important;
+    padding-right: 44px !important;
+    gap: 10px !important;
+  }
+  body[data-page="home"] .categorias-min .cat-card{
+    flex: 0 0 96px !important;
+    width: 96px !important;
+    min-width: 96px !important;
+    scroll-snap-align: start;
+  }
+}
