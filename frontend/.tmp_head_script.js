@@ -6223,7 +6223,7 @@ function ensureModalPostDetalhe() {
                 <div class="modal-footer-actions">
                     <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
                         <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
+						<i class='bx bx-message-rounded' onclick="toggleComentariosModal()" style="cursor:pointer;"></i>
                         <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
@@ -6237,6 +6237,22 @@ function ensureModalPostDetalhe() {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
+
+// Controle de comentários no modal (mobile-first)
+// Toggle no ícone de balão.
+window.toggleComentariosModal = function() {
+    const modal = document.getElementById('modalPostDetalhe');
+    if (!modal) return;
+    const content = modal.querySelector('.modal-content');
+    if (!content) return;
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+    // No desktop, mantém comentários sempre visíveis
+    if (!isMobile) {
+        content.classList.remove('is-comments-collapsed');
+        return;
+    }
+    content.classList.toggle('is-comments-collapsed');
+};
 
 function getRelatedCount(value) {
     return (Array.isArray(value) ? value[0]?.count : value?.count) || 0;
@@ -6300,6 +6316,17 @@ window.abrirModalPost = async function(id, colecao) {
     // 1. Reset Visual e Exibição
     modal.style.display = 'flex'; 
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
+
+    // Mobile: abre com comentários recolhidos (para dar mais relevância ao conteúdo)
+    try {
+        const content = modal.querySelector('.modal-content');
+        const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+        if (content) {
+            if (isMobile) content.classList.add('is-comments-collapsed');
+            else content.classList.remove('is-comments-collapsed');
+        }
+	    // comentários agora são toggláveis pelo ícone de balão (bx-message-rounded)
+    } catch(e){}
     window.currentPostId = id;
     window.currentCollection = colecao;
     window.currentPostAuthorUid = null; // Reseta
@@ -8284,6 +8311,16 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
 
   modal.style.display = 'flex';
   try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
+  // Mobile: abre com comentários recolhidos (conteúdo tem mais relevância que thread)
+  try {
+    const content = modal.querySelector('.modal-content');
+    const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
+    if (content) {
+      if (isMobile) content.classList.add('is-comments-collapsed');
+      else content.classList.remove('is-comments-collapsed');
+    }
+	    // comentários agora são toggláveis pelo ícone de balão (bx-message-rounded)
+  } catch(e){}
 };
 
 // ================== SOCIAL ACTIONS (COMMENTS/REPORT/PIN) ==================

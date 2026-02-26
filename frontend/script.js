@@ -8608,7 +8608,7 @@ function ensureModalPostDetalhe() {
                 <div class="modal-footer-actions">
                     <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
                         <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
+						<i class='bx bx-message-rounded' onclick="toggleComentariosModal()" style="cursor:pointer;"></i>
                         <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
@@ -11189,6 +11189,16 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
         _abrirModalUnificadoOriginal(dadosRecebidos, tipo, colecao);
     }
 
+    // Mobile: por padrão, abre com comentários recolhidos (toggle no ícone de balão)
+    try {
+        const modal = document.getElementById('modalPostDetalhe');
+        const content = modal ? modal.querySelector('.modal-content') : null;
+        if (content) {
+            const isMobile = window.matchMedia('(max-width: 760px)').matches;
+            content.classList.toggle('is-comments-collapsed', isMobile);
+        }
+    } catch (e) {}
+
     if (window.currentPostId && window.currentCollection) {
         carregarComentariosNoModal(window.currentPostId, window.currentCollection);
         if (auth.currentUser) verificarStatusLike(window.currentPostId, window.currentCollection, auth.currentUser.uid);
@@ -11201,6 +11211,16 @@ window.abrirModalPost = async function(id, colecao) {
     if (typeof _abrirModalPostOriginal === "function") {
         await _abrirModalPostOriginal(id, colecao);
     }
+
+    // Mobile: abre recolhido
+    try {
+        const modal = document.getElementById('modalPostDetalhe');
+        const content = modal ? modal.querySelector('.modal-content') : null;
+        if (content) {
+            const isMobile = window.matchMedia('(max-width: 760px)').matches;
+            content.classList.toggle('is-comments-collapsed', isMobile);
+        }
+    } catch (e) {}
     window.currentSupaPostType = null;
     window.currentSupaReelId = null;
     window.currentSupaReelAuthorId = null;
@@ -11217,7 +11237,39 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     if (typeof _abrirModalPublicacaoOriginal === "function") {
         await _abrirModalPublicacaoOriginal(publicacaoId);
     }
+
+    // Mobile: abre recolhido
+    try {
+        const modal = document.getElementById('modalPostDetalhe');
+        const content = modal ? modal.querySelector('.modal-content') : null;
+        if (content) {
+            const isMobile = window.matchMedia('(max-width: 760px)').matches;
+            content.classList.toggle('is-comments-collapsed', isMobile);
+        }
+    } catch (e) {}
     atualizarBotaoDenunciaPost();
+};
+
+// Toggle de comentários no modal (mobile): usa o ícone de balão
+// - Ao recolher: a mídia ocupa o espaço
+// - Ao expandir: comentários reaparecem
+window.toggleComentariosModal = function() {
+    const modal = document.getElementById('modalPostDetalhe');
+    const content = modal ? modal.querySelector('.modal-content') : null;
+    if (!content) return;
+
+    const collapsed = content.classList.toggle('is-comments-collapsed');
+
+    // Se abriu, desce pro começo da lista (sem forçar teclado)
+    if (!collapsed) {
+        const list = modal.querySelector('.modal-comments-section');
+        if (list) {
+            // evita pulo agressivo
+            setTimeout(() => {
+                try { list.scrollTop = 0; } catch (e) {}
+            }, 0);
+        }
+    }
 };
 
 window.verificarLikeComentario = async function(commentId, parentId, isReply) {

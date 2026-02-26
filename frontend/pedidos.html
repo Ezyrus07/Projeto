@@ -1,11 +1,12 @@
 <!DOCTYPE html>
+
 <html lang="pt-br">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Pedidos | Doke</title>
-  <meta name="theme-color" content="#0b7768"/>
-  <script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Pedidos | Doke</title>
+<meta content="#0b7768" name="theme-color"/>
+<script>
     (function(){
       try{
         var p = String(location.pathname || '');
@@ -16,21 +17,20 @@
       }catch(_e){}
     })();
   </script>
-
-  <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
-  <link href="chat-redesign.css" rel="stylesheet"/>
-  <link href="page-chat.css" rel="stylesheet"/>
-  <link href="style.css?v=20260211v45" rel="stylesheet"/>
-  <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
-  <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
-  <link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
-  <link href="doke-toast.css" rel="stylesheet"/>
-  <link href="doke-alerts.css" rel="stylesheet"/>
-  <link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
-  <link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
-  <link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
-  <script defer src="script.js?v=20260218v60"></script>
-  <style>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="chat-redesign.css" rel="stylesheet"/>
+<link href="page-chat.css" rel="stylesheet"/>
+<link href="style.css?v=20260211v45" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-fixes.css?v=20260117" rel="stylesheet"/>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260212v42" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<style>
     :root{
       --bg:#eef3f8;
       --panel:#ffffff;
@@ -163,6 +163,8 @@
     .btn-ui.active{border-color:rgba(11,119,104,.35); background:rgba(11,119,104,.1); color:#0b7768;}
 
     .filters{display:flex; gap:8px; flex-wrap:wrap; margin:0 0 12px;}
+    .filters.filters-collapsible{display:none;}
+    .filters.filters-collapsible.show{display:flex;}
     .chip{border:1px solid var(--line); background:#fff; color:#355575; border-radius:999px; min-height:38px; padding:0 14px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:7px;}
     .chip.active{border-color:rgba(11,119,104,.34); background:rgba(11,119,104,.1); color:var(--brand);}
 
@@ -177,13 +179,33 @@
     .bulk-actions .btn-ui{min-height:38px; padding:0 12px;}
 
     .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}
-    .card{background:linear-gradient(180deg,#ffffff 0%, #f4f8ff 100%); border:1px solid #d5e3f4; border-radius:18px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 8px 20px rgba(15,36,64,.06); position:relative;}
-    .card.selected{
-      border-color:rgba(11,119,104,.42);
-      box-shadow:0 14px 30px rgba(11,119,104,.18);
-      background:linear-gradient(180deg,#ffffff 0%, #ebf8f4 100%);
-      outline:2px solid rgba(42,95,144,.2);
+    /* Card com mais contraste (nao some no fundo do painel) */
+    .card{
+      background:#ffffff;
+      border:1px solid rgba(23,56,103,.14);
+      border-radius:18px;
+      padding:14px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      box-shadow:0 14px 34px rgba(15,36,64,.10);
+      position:relative;
+      overflow:hidden;
     }
+    .card::before{
+      content:"";
+      position:absolute;
+      left:0; right:0; top:0;
+      height:4px;
+      background:linear-gradient(90deg,#2a5f90 0%, #0b9b8c 100%);
+      opacity:.95;
+    }
+    .card.selected{
+      border-color:rgba(11,119,104,.45);
+      box-shadow:0 18px 42px rgba(11,119,104,.22);
+      outline:2px solid rgba(42,95,144,.18);
+    }
+    .card.selected::before{background:linear-gradient(90deg,#0b9b8c 0%, #2a5f90 100%);}
     .card-top{
       display:flex;
       align-items:flex-start;
@@ -232,6 +254,28 @@
 
     .title{margin:0; font-size:1.1rem; line-height:1.18;}
     .desc{margin:0; color:var(--muted); line-height:1.35; font-size:.92rem;}
+
+    .need-preview{
+      margin:10px 0 0;
+      padding:10px 12px;
+      border:1px dashed rgba(11,119,104,.28);
+      background:rgba(11,119,104,.06);
+      border-radius:14px;
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      color:var(--text);
+    }
+    .need-preview i{color:var(--brand); font-size:1.05rem; margin-top:2px;}
+    .need-preview span{
+      flex:1;
+      display:-webkit-box;
+      -webkit-line-clamp:2;
+      -webkit-box-orient:vertical;
+      overflow:hidden;
+      line-height:1.25;
+      font-size:.92rem;
+    }
 
     .meta{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
     .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px;}
@@ -656,6 +700,8 @@
       .user-meta span{font-size:.73rem;}
       .title{font-size:.95rem; line-height:1.15;}
       .desc{font-size:.8rem; line-height:1.2; -webkit-line-clamp:1;}
+      .need-preview{margin-top:6px; padding:8px 10px; border-radius:12px;}
+      .need-preview span{font-size:.82rem; -webkit-line-clamp:2;}
       .meta{gap:5px;}
       .meta-item{padding:6px 7px; border-radius:9px; gap:6px;}
       .meta-item i{font-size:14px;}
@@ -711,7 +757,58 @@
       .doke-prompt-card{padding:12px; border-radius:14px;}
       .doke-prompt-actions{width:100%;}
       .doke-prompt-btn{flex:1;}
-    }
+    
+/* --- Mobile compact cards (Pedidos) --- */
+.card{padding:12px; border-radius:18px;}
+.card-top{gap:10px;}
+.tags{gap:6px;}
+.tags .tag{padding:6px 10px; border-radius:999px; font-size:.72rem;}
+.tags .role-client, .tags .role-pro, .tags .role-me{display:none;}
+.title{font-size:1.02rem;}
+.desc{
+  margin-top:4px;
+  display:-webkit-box;
+  -webkit-line-clamp:1;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+}
+
+/* Meta row becomes horizontal pills */
+.meta{
+  display:flex !important;
+  flex-wrap:nowrap !important;
+  overflow-x:auto !important;
+  -webkit-overflow-scrolling:touch;
+  gap:8px !important;
+  padding-bottom:2px;
+}
+.meta-item{
+  flex:0 0 auto;
+  min-width:max-content;
+  padding:7px 9px;
+  border-radius:12px;
+}
+.meta-item small{display:none !important;}
+.meta-item strong{
+  margin-top:0 !important;
+  font-size:.86rem !important;
+  white-space:nowrap;
+}
+
+/* Footer + buttons */
+.unread{display:none;}
+.actions{gap:8px;}
+.btn-order{min-height:40px; border-radius:12px; padding:0 12px; font-size:.9rem;}
+.btn-order i{font-size:1.05rem;}
+.btn-order.secondary{
+  flex:0 0 44px;
+  width:44px;
+  padding:0;
+  justify-content:center;
+}
+.btn-order.secondary .btn-text{display:none;}
+
+}
 
     @media (max-width:420px){
       .orders-page{max-width:100%; min-width:0;}
@@ -797,196 +894,176 @@
 </style>
 </head>
 <body data-page="pedidos">
-  <header class="navbar-mobile">
-    <div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
-    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a><a href="login.html"></a></div>
-  </header>
-
-  <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
-
-  <header class="navbar-desktop">
-    <div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
-    <nav class="menu">
-      <div class="cep-wrapper">
-        <a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
-          <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg>
-          <span id="textoCepSpan">Informe seu CEP</span>
-        </a>
-        <div class="cep-popup" id="boxCep">
-          <p>Digite seu CEP:</p>
-          <div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
-        </div>
-      </div>
-      <a href="escolheranuncio.html">Anunciar</a>
-      <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
-      <a href="novidades.html">Novidades</a>
-    </nav>
-    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
-  </header>
-
-  <aside class="sidebar-icones">
-    <div id="logo"><a href="index.html"><img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
-    <div class="item"><a href="index.html"><i class="bx bx-home-alt icon azul"></i><span>Início</span></a></div>
-    <div class="item" id="pvSearchSidebarItem"><a aria-label="Pesquisar" class="pv-search-toggle" href="#"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
-    <div class="item"><a href="negocios.html"><i class="bx bx-store icon verde"></i><span>Negócios</span></a></div>
-    <div class="item"><a href="notificacoes.html"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a></div>
-    <div class="item"><a href="mensagens.html"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a></div>
-    <div class="item ativo"><a href="pedidos.html"><i class="bx bx-package icon verde"></i><span>Pedidos</span></a></div>
-    <div class="item"><a href="comunidade.html"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a></div>
-    <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
-    <div class="item"><a href="mais.html"><i class="bx bx-menu icon azul"></i><span>Mais</span></a></div>
-  </aside>
-
-  <main class="dp-wrap">
-    <div class="orders-page">
-      <section class="hero">
-        <div>
-          <h1>Pedidos <span class="badge-count" id="heroCount">0</span></h1>
-          <p>Gerencie seus pedidos com dados reais e acesso rapido ao chat.</p>
-        </div>
-        <div class="hero-stats">
-          <div class="hero-stat"><small>Hoje</small><strong id="statToday">0</strong></div>
-          <div class="hero-stat"><small>Em andamento</small><strong id="statProgress">0</strong></div>
-          <div class="hero-stat"><small>Urgentes</small><strong id="statUrgent">0</strong></div>
-        </div>
-      </section>
-
-      <section class="toolbar">
-        <label class="search" aria-label="Buscar pedidos">
-          <i class='bx bx-search'></i>
-          <input id="searchInput" type="text" placeholder="Buscar por cliente, servico, ID ou descricao"/>
-        </label>
-        <div class="toolbar-actions">
-          <button class="btn-ui" id="sortBtn" type="button"><i class='bx bx-sort-alt-2'></i><span id="sortLabel">Mais recentes</span></button>
-          <button class="btn-ui" id="selectBtn" type="button"><i class='bx bx-check-square'></i><span id="selectLabel">Selecionar</span></button>
-          <button class="btn-ui" id="refreshBtn" type="button"><i class='bx bx-refresh'></i><span>Atualizar</span></button>
-        </div>
-      </section>
-
-      <div class="filters" role="tablist" aria-label="Filtros de pedidos">
-        <button class="chip active" data-filter="all" type="button"><i class='bx bx-grid-alt'></i><span>Todos</span></button>
-        <button class="chip" data-filter="pending" type="button">Pendentes</button>
-        <button class="chip" data-filter="progress" type="button">Em andamento</button>
-        <button class="chip" data-filter="done" type="button">Finalizados</button>
-        <button class="chip" data-filter="urgent" type="button"><i class='bx bx-error'></i><span>Urgentes</span></button>
-      </div>
-
-      <section class="panel">
-        <div class="panel-head">
-          <div>
-            <h2><i class='bx bx-package'></i> Pedidos</h2>
-            <p id="ordersSubtitle">Carregando...</p>
-          </div>
-        </div>
-
-        <div id="bulkBar">
-          <div id="bulkInfo">0 pedidos selecionados</div>
-          <div class="bulk-actions">
-            <button class="btn-ui" id="bulkFinalizeBtn" type="button"><i class='bx bx-check'></i>Finalizar</button>
-            <button class="btn-ui" id="bulkArchiveBtn" type="button"><i class='bx bx-archive-in'></i>Arquivar</button>
-            <button class="btn-ui" id="bulkClearBtn" type="button"><i class='bx bx-x'></i>Limpar</button>
-          </div>
-        </div>
-
-        <div class="grid" id="ordersGrid"></div>
-
-        <div class="empty" id="emptyState">
-          <i class='bx bx-inbox'></i>
-          <strong>Nenhum pedido encontrado</strong>
-          <span>Tente outro filtro ou atualize os dados.</span>
-        </div>
-      </section>
-    </div>
-  </main>
-
-  <nav class="bottom-nav">
-    <a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
-    <a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
-    <a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
-    <a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
-    <a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
-  </nav>
-
-  <div class="toast" id="toast">OK</div>
-  <div class="chat-drawer chat-drawer-embed" id="chatDrawer" aria-hidden="true">
-    <div class="chat-backdrop" data-close="1"></div>
-    <div class="chat-panel-embed" role="dialog" aria-modal="true" aria-label="Chat do pedido">
-      <div class="chat-panel-toolbar">
-        <div class="chat-panel-title" id="chatPanelTitle"><i class='bx bx-message-square-detail'></i><span>Chat do pedido</span></div>
-        <div class="chat-panel-controls">
-          <div class="chat-size-controls" id="chatSizeControls">
-            <button class="chat-control-btn" id="chatNarrowBtn" type="button" aria-label="Diminuir largura do chat" title="Diminuir largura">
-              <i class='bx bx-chevron-left'></i>
-            </button>
-            <span class="chat-width-readout" id="chatWidthLabel" aria-hidden="true">--</span>
-            <button class="chat-control-btn" id="chatWidenBtn" type="button" aria-label="Aumentar largura do chat" title="Aumentar largura">
-              <i class='bx bx-chevron-right'></i>
-            </button>
-          </div>
-          <button class="chat-control-btn" id="chatExpandBtn" type="button" aria-label="Expandir chat" title="Expandir chat" aria-pressed="false">
-            <i class='bx bx-expand-alt'></i>
-          </button>
-          <button class="chat-control-btn chat-close-float" type="button" data-close="1" aria-label="Fechar chat">
-            <i class='bx bx-x'></i>
-          </button>
-        </div>
-      </div>
-      <div class="chat-resize-handle" id="chatResizeHandle" aria-hidden="true"></div>
-      <iframe id="pedidoChatFrame" class="pedido-chat-frame" title="Chat do pedido" loading="eager"></iframe>
-    </div>
-  </div>
-
-  <section class="details-modal" id="detailsModal" aria-hidden="true">
-    <article class="details-card" role="dialog" aria-modal="true" aria-labelledby="detailsTitle">
-      <div class="details-head">
-        <div>
-          <h3 id="detailsTitle">Detalhes do pedido</h3>
-          <p id="detailsSubtitle">Carregando dados...</p>
-        </div>
-        <button class="details-close" id="detailsCloseBtn" type="button" aria-label="Fechar detalhes"><i class='bx bx-x'></i></button>
-      </div>
-
-      <div class="details-grid" id="detailsGrid"></div>
-
-      <div class="details-block">
-        <h4>Descrição</h4>
-        <p id="detailsDescription">Sem descrição.</p>
-      </div>
-
-      <div class="details-block">
-        <h4>Triagem</h4>
-        <div class="triagem-list" id="detailsTriagem"></div>
-      </div>
-
-      <div class="details-block">
-        <h4>Anexos</h4>
-        <div class="anexos-grid" id="detailsAnexos"></div>
-      </div>
-    </article>
-  </section>
-
-  <section class="doke-prompt-modal" id="rejectPromptModal" aria-hidden="true">
-    <article class="doke-prompt-card" role="dialog" aria-modal="true" aria-labelledby="rejectPromptTitle">
-      <h3 class="doke-prompt-title" id="rejectPromptTitle">Justificar recusa</h3>
-      <p class="doke-prompt-text">Informe a justificativa da recusa (minimo de 5 caracteres):</p>
-      <textarea id="rejectPromptInput" class="doke-prompt-input" placeholder="Ex.: Nao tenho disponibilidade para esta data."></textarea>
-      <p class="doke-prompt-error" id="rejectPromptError"></p>
-      <div class="doke-prompt-actions">
-        <button class="doke-prompt-btn" id="rejectPromptCancelBtn" type="button">Cancelar</button>
-        <button class="doke-prompt-btn confirm" id="rejectPromptConfirmBtn" type="button">Confirmar recusa</button>
-      </div>
-    </article>
-  </section>
-
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js?v=20260218v43"></script>
-  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-  <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
-  <script src="doke-toast.js"></script>
-  <script src="doke-alerts.js?v=20260217v33"></script>
-  <script src="doke-shell.js?v=20260224v48"></script>
-
-  <script>
+<header class="navbar-mobile">
+<div id="logo-mobile"><a href="index.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a><a href="login.html"></a></div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+<div id="logo"><a href="index.html"><img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<div class="item"><a href="index.html"><i class="bx bx-home-alt icon azul"></i><span>Início</span></a></div>
+<div class="item" id="pvSearchSidebarItem"><a aria-label="Pesquisar" class="pv-search-toggle" href="#"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
+<div class="item"><a href="negocios.html"><i class="bx bx-store icon verde"></i><span>Negócios</span></a></div>
+<div class="item"><a href="notificacoes.html"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a></div>
+<div class="item"><a href="mensagens.html"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a></div>
+<div class="item ativo"><a href="pedidos.html"><i class="bx bx-package icon verde"></i><span>Pedidos</span></a></div>
+<div class="item"><a href="comunidade.html"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a></div>
+<div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
+<div class="item"><a href="mais.html"><i class="bx bx-menu icon azul"></i><span>Mais</span></a></div>
+</aside>
+<main class="dp-wrap">
+<div class="orders-page">
+<section class="hero">
+<div>
+<h1>Pedidos <span class="badge-count" id="heroCount">0</span></h1>
+<p>Gerencie seus pedidos com dados reais e acesso rapido ao chat.</p>
+</div>
+<div class="hero-stats">
+<div class="hero-stat"><small>Hoje</small><strong id="statToday">0</strong></div>
+<div class="hero-stat"><small>Em andamento</small><strong id="statProgress">0</strong></div>
+<div class="hero-stat"><small>Urgentes</small><strong id="statUrgent">0</strong></div>
+</div>
+</section>
+<section class="toolbar">
+<label aria-label="Buscar pedidos" class="search search-collapsible">
+<i class="bx bx-search"></i>
+<input id="searchInput" placeholder="Buscar por cliente, servico, ID ou descricao" type="text"/>
+</label>
+<div class="toolbar-actions">
+<button class="btn-ui" id="sortBtn" type="button"><i class="bx bx-sort-alt-2"></i><span id="sortLabel">Mais recentes</span></button>
+<button class="btn-ui" id="selectBtn" type="button"><i class="bx bx-check-square"></i><span id="selectLabel">Selecionar</span></button>
+<button class="btn-ui" id="refreshBtn" type="button"><i class="bx bx-refresh"></i><span>Atualizar</span></button><button class="btn-ui" id="filtersBtn" type="button" aria-expanded="false"><i class="bx bx-filter"></i><span>Filtros</span></button>
+</div>
+</section>
+<div aria-label="Filtros de pedidos" class="filters filters-collapsible" id="filtersBar" role="tablist">
+<button class="chip active" data-filter="all" type="button"><i class="bx bx-grid-alt"></i><span>Todos</span></button>
+<button class="chip" data-filter="pending" type="button">Pendentes</button>
+<button class="chip" data-filter="progress" type="button">Em andamento</button>
+<button class="chip" data-filter="done" type="button">Finalizados</button>
+<button class="chip" data-filter="urgent" type="button"><i class="bx bx-error"></i><span>Urgentes</span></button>
+</div>
+<section class="panel">
+<div class="panel-head">
+<div>
+<h2><i class="bx bx-package"></i> Pedidos</h2>
+<p id="ordersSubtitle">Carregando...</p>
+</div>
+</div>
+<div id="bulkBar">
+<div id="bulkInfo">0 pedidos selecionados</div>
+<div class="bulk-actions">
+<button class="btn-ui" id="bulkFinalizeBtn" type="button"><i class="bx bx-check"></i>Finalizar</button>
+<button class="btn-ui" id="bulkArchiveBtn" type="button"><i class="bx bx-archive-in"></i>Arquivar</button>
+<button class="btn-ui" id="bulkClearBtn" type="button"><i class="bx bx-x"></i>Limpar</button>
+</div>
+</div>
+<div class="grid" id="ordersGrid"></div>
+<div class="empty" id="emptyState">
+<i class="bx bx-inbox"></i>
+<strong>Nenhum pedido encontrado</strong>
+<span>Tente outro filtro ou atualize os dados.</span>
+</div>
+</section>
+</div>
+</main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<div class="toast" id="toast">OK</div>
+<div aria-hidden="true" class="chat-drawer chat-drawer-embed" id="chatDrawer">
+<div class="chat-backdrop" data-close="1"></div>
+<div aria-label="Chat do pedido" aria-modal="true" class="chat-panel-embed" role="dialog">
+<div class="chat-panel-toolbar">
+<div class="chat-panel-title" id="chatPanelTitle"><i class="bx bx-message-square-detail"></i><span>Chat do pedido</span></div>
+<div class="chat-panel-controls">
+<div class="chat-size-controls" id="chatSizeControls">
+<button aria-label="Diminuir largura do chat" class="chat-control-btn" id="chatNarrowBtn" title="Diminuir largura" type="button">
+<i class="bx bx-chevron-left"></i>
+</button>
+<span aria-hidden="true" class="chat-width-readout" id="chatWidthLabel">--</span>
+<button aria-label="Aumentar largura do chat" class="chat-control-btn" id="chatWidenBtn" title="Aumentar largura" type="button">
+<i class="bx bx-chevron-right"></i>
+</button>
+</div>
+<button aria-label="Expandir chat" aria-pressed="false" class="chat-control-btn" id="chatExpandBtn" title="Expandir chat" type="button">
+<i class="bx bx-expand-alt"></i>
+</button>
+<button aria-label="Fechar chat" class="chat-control-btn chat-close-float" data-close="1" type="button">
+<i class="bx bx-x"></i>
+</button>
+</div>
+</div>
+<div aria-hidden="true" class="chat-resize-handle" id="chatResizeHandle"></div>
+<iframe class="pedido-chat-frame" id="pedidoChatFrame" loading="eager" title="Chat do pedido"></iframe>
+</div>
+</div>
+<section aria-hidden="true" class="details-modal" id="detailsModal">
+<article aria-labelledby="detailsTitle" aria-modal="true" class="details-card" role="dialog">
+<div class="details-head">
+<div>
+<h3 id="detailsTitle">Detalhes do pedido</h3>
+<p id="detailsSubtitle">Carregando dados...</p>
+</div>
+<button aria-label="Fechar detalhes" class="details-close" id="detailsCloseBtn" type="button"><i class="bx bx-x"></i></button>
+</div>
+<div class="details-grid" id="detailsGrid"></div>
+<div class="details-block">
+<h4>Descrição</h4>
+<p id="detailsDescription">Sem descrição.</p>
+</div>
+<div class="details-block">
+<h4>Triagem</h4>
+<div class="triagem-list" id="detailsTriagem"></div>
+</div>
+<div class="details-block">
+<h4>Anexos</h4>
+<div class="anexos-grid" id="detailsAnexos"></div>
+</div>
+</article>
+</section>
+<section aria-hidden="true" class="doke-prompt-modal" id="rejectPromptModal">
+<article aria-labelledby="rejectPromptTitle" aria-modal="true" class="doke-prompt-card" role="dialog">
+<h3 class="doke-prompt-title" id="rejectPromptTitle">Justificar recusa</h3>
+<p class="doke-prompt-text">Informe a justificativa da recusa (minimo de 5 caracteres):</p>
+<textarea class="doke-prompt-input" id="rejectPromptInput" placeholder="Ex.: Nao tenho disponibilidade para esta data."></textarea>
+<p class="doke-prompt-error" id="rejectPromptError"></p>
+<div class="doke-prompt-actions">
+<button class="doke-prompt-btn" id="rejectPromptCancelBtn" type="button">Cancelar</button>
+<button class="doke-prompt-btn confirm" id="rejectPromptConfirmBtn" type="button">Confirmar recusa</button>
+</div>
+</article>
+</section>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script src="doke-shell.js?v=20260224v48"></script>
+<script>
     (function(){
       const CHAT_WIDTH_KEY = 'doke_pedidos_chat_width_v1';
       const CHAT_WIDTH_STEP = 72;
@@ -1019,6 +1096,9 @@
         selectBtn: document.getElementById('selectBtn'),
         selectLabel: document.getElementById('selectLabel'),
         refreshBtn: document.getElementById('refreshBtn'),
+        filtersBtn: document.getElementById('filtersBtn'),
+        filtersBar: document.getElementById('filtersBar'),
+        toolbar: document.querySelector('section.toolbar'),
         chips: Array.from(document.querySelectorAll('.chip[data-filter]')),
         toast: document.getElementById('toast'),
         bulkBar: document.getElementById('bulkBar'),
@@ -1048,6 +1128,10 @@
         rejectPromptCancelBtn: document.getElementById('rejectPromptCancelBtn'),
         rejectPromptConfirmBtn: document.getElementById('rejectPromptConfirmBtn')
       };
+
+
+      // garante que a página continue rolando (principalmente em mobile)
+      lockScrollIfNeeded();
 
       function showToast(msg){
         if(!el.toast) return;
@@ -1704,6 +1788,10 @@
         const chatLiberado = canOpenChat(p);
         const motivoRecusa = String(p.motivoRecusa || '').trim();
         const isRecusado = String(p.status || '').toLowerCase() === 'recusado';
+        const rawNeed = String(p.mensagemInicial || p.descricaoBase || p.servicoReferencia || '').trim();
+        const rawDesc = String(p.descricao || '').trim();
+        const rawTitle = String(p.titulo || '').trim();
+        const needPreview = (rawNeed && rawNeed !== rawDesc && rawNeed !== rawTitle && rawNeed.toLowerCase() !== 'sem detalhes adicionais.') ? rawNeed : '';
         return `
           <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}">
             <div class="card-top">
@@ -1741,7 +1829,8 @@
             </div>
 
             <h3 class="title">${esc(p.titulo)}</h3>
-            <p class="desc">${esc(p.descricao || 'Sem detalhes adicionais.')}</p>
+            ${needPreview ? `<p class="need-preview"><i class='bx bx-bulb'></i><span>${esc(needPreview)}</span></p>` : ``}
+            ${p.descricao ? `<p class="desc">${esc(p.descricao)}</p>` : ``}
             ${isRecusado && motivoRecusa ? `<p class="recusa-note"><i class='bx bx-error-circle'></i><span>${esc(motivoRecusa)}</span></p>` : ``}
 
             <div class="meta">
@@ -1754,8 +1843,8 @@
             <div class="footer">
               <span class="unread"><i class='bx bx-message-rounded-dots'></i>${pendente ? 'Novo pedido' : (p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas')}</span>
               <div class="actions">
-                ${chatLiberado ? `<button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i>Abrir chat</button>` : ``}
-                <button class="btn-order" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i>Detalhes</button>
+                ${chatLiberado ? `<button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i><span class="btn-text">Abrir chat</span></button>` : ``}
+                <button class="btn-order secondary" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i><span class="btn-text">Detalhes</span></button>
               </div>
             </div>
           </article>
@@ -1975,6 +2064,22 @@
         el.detailsModal.setAttribute('aria-hidden', 'true');
       }
 
+      function lockScrollIfNeeded(){
+        const isMobile = window.matchMedia('(max-width: 900px)').matches;
+        const isOpen = !!(el.chatDrawer && el.chatDrawer.classList.contains('open'));
+        if(isMobile && isOpen){
+          document.documentElement.classList.add('no-scroll');
+          document.body.classList.add('no-scroll');
+        }else{
+          // Nao recursar aqui (isso gerava "Maximum call stack size exceeded").
+          // Quando nao estiver no mobile ou o chat estiver fechado, liberamos o scroll.
+          document.documentElement.classList.remove('no-scroll');
+          document.body.classList.remove('no-scroll');
+        }
+      }
+
+      window.addEventListener('resize', lockScrollIfNeeded);
+
       function openInlineChat(p){
         if(!p || !p.id){ showToast('Pedido invalido para abrir chat.'); return; }
         if(!canOpenChat(p)){ showToast('O chat sera liberado quando o pedido for aceito.'); return; }
@@ -2020,8 +2125,7 @@
         state.chatMaximized = false;
         state.chatWidth = clampChatWidth(state.chatWidth || localStorage.getItem(CHAT_WIDTH_KEY));
         applyChatPanelLayout();
-        document.documentElement.classList.add('no-scroll');
-        document.body.classList.add('no-scroll');
+        lockScrollIfNeeded();
       }
 
       function closeInlineChat(){
@@ -2307,7 +2411,14 @@
         on(el.bulkArchiveBtn, 'click', archiveSelected);
         on(el.bulkClearBtn, 'click', clearSelectedDoneOrRejected);
         on(el.refreshBtn, 'click', async () => { if(el.refreshBtn){ el.refreshBtn.disabled = true; } await hydrate(true); if(el.refreshBtn){ el.refreshBtn.disabled = false; } showToast('Pedidos atualizados'); });
-        (el.chips || []).forEach(ch => on(ch, 'click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
+
+        on(el.filtersBtn, 'click', () => {
+          if(!el.filtersBar) return;
+          const open = el.filtersBar.classList.toggle('show');
+          el.filtersBtn.classList.toggle('active', open);
+          el.filtersBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        });
+(el.chips || []).forEach(ch => on(ch, 'click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
         on(el.grid, 'click', (ev) => {
           const btn = ev.target.closest('button[data-action][data-id]');
           if(btn){
