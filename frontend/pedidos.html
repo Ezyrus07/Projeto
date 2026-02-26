@@ -178,8 +178,12 @@
     .bulk-actions{display:flex; gap:8px; flex-wrap:wrap;}
     .bulk-actions .btn-ui{min-height:38px; padding:0 12px;}
 
-    .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px;}
-    /* Card com mais contraste (nao some no fundo do painel) */
+    .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-content:start; align-items:start; grid-auto-rows:min-content;}
+    /* Card com mais contraste (nao some no fundo do painel)
+       + altura fixa para todos terem a mesma dimensão */
+    /* Altura uniforme dos cards (ajustada para evitar cortes quando tags/descrição quebram linha) */
+    /* Altura uniforme dos cards (desktop/tablet). Mantemos um valor seguro para não cortar ações/rodapé */
+    :root{--pedido-card-h: 440px;}
     .card{
       background:#ffffff;
       border:1px solid rgba(23,56,103,.14);
@@ -187,11 +191,19 @@
       padding:14px;
       display:flex;
       flex-direction:column;
-      gap:10px;
-      box-shadow:0 14px 34px rgba(15,36,64,.10);
+      gap:8px;
+	      box-shadow:0 14px 34px rgba(15,36,64,.10);
+	      transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
+	      cursor:pointer;
       position:relative;
       overflow:hidden;
+      height:var(--pedido-card-h);
     }
+	    .card:hover{
+	      transform:translateY(-3px);
+	      box-shadow:0 20px 46px rgba(15,36,64,.14);
+	      border-color:rgba(42,95,144,.26);
+	    }
     .card::before{
       content:"";
       position:absolute;
@@ -200,12 +212,19 @@
       background:linear-gradient(90deg,#2a5f90 0%, #0b9b8c 100%);
       opacity:.95;
     }
+    /* Barra superior por status (diferencia visual rapida) */
+    .card[data-status="pendente"]::before{background:linear-gradient(90deg,#f59e0b 0%, #fbbf24 100%);} /* amarelo */
+    .card[data-status="andamento"]::before{background:linear-gradient(90deg,#0b9b8c 0%, #2dd4bf 100%);} /* verde/teal */
+    .card[data-status="finalizado"]::before{background:linear-gradient(90deg,#94a3b8 0%, #64748b 100%);} /* cinza */
+    .card[data-status="cancelado"]::before{background:linear-gradient(90deg,#ef4444 0%, #b91c1c 100%);} /* vermelho */
+    .card[data-status="recusado"]::before{background:linear-gradient(90deg,#ef4444 0%, #b91c1c 100%);} /* vermelho */
     .card.selected{
       border-color:rgba(11,119,104,.45);
       box-shadow:0 18px 42px rgba(11,119,104,.22);
       outline:2px solid rgba(42,95,144,.18);
     }
-    .card.selected::before{background:linear-gradient(90deg,#0b9b8c 0%, #2a5f90 100%);}
+    /* Selecionado: mantem a cor do status, so aumenta contraste */
+    .card.selected::before{filter:saturate(1.08) brightness(.95);}
     .card-top{
       display:flex;
       align-items:flex-start;
@@ -235,7 +254,13 @@
       border-color:#0b7768;
       color:#fff;
     }
-    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-right:44px;}
+    /* limita a área de tags para não variar a altura entre cards */
+    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-right:44px; max-height:56px; overflow:hidden;}
+
+    /* Quando o chat está aberto, mostramos só os 2 chips principais (tipo + status)
+       para reduzir ruído visual */
+    body[data-page="pedidos"].chat-open .card .tags{flex-wrap:nowrap; max-height:none; overflow:visible;}
+    body[data-page="pedidos"].chat-open .card .tags .tag:nth-child(n+3){display:none;}
     .tag{border:1px solid #d9e5f3; background:#f6fbff; color:#315579; border-radius:999px; padding:6px 10px; font-size:.76rem; font-weight:800; display:inline-flex; align-items:center; gap:5px;}
     .tag.type{background:#eaf8f4; color:#0b7768; border-color:#cde8df;}
     .tag.pending{background:#fff5e8; color:#b86f08; border-color:#f4dbb8;}
@@ -252,8 +277,12 @@
     .user-meta strong{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:1rem;}
     .user-meta span{display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:var(--muted); font-size:.84rem;}
 
-    .title{margin:0; font-size:1.1rem; line-height:1.18;}
-    .desc{margin:0; color:var(--muted); line-height:1.35; font-size:.92rem;}
+    .title{margin:0; font-size:1.1rem; line-height:1.18;
+      display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;
+    }
+    .desc{margin:0; color:var(--muted); line-height:1.35; font-size:.92rem;
+      display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
+    }
 
     .need-preview{
       margin:10px 0 0;
@@ -277,13 +306,16 @@
       font-size:.92rem;
     }
 
+    body.chat-open .need-preview{display:none !important;}
+
     .meta{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
     .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px;}
     .meta-item i{font-size:17px; color:#5b78a0; margin-top:2px;}
     .meta-item small{display:block; color:#6d829f; font-size:.73rem; line-height:1;}
     .meta-item strong{display:block; margin-top:4px; font-size:.94rem; line-height:1.2;}
 
-    .footer{margin-top:2px; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+    /* footer sempre “grudado” no fim do card (altura uniforme) */
+    .footer{margin-top:auto; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
     .unread{border:1px solid #dbe6f2; background:#f6fbff; color:#35597f; border-radius:999px; min-height:34px; padding:0 12px; font-size:.85rem; font-weight:800; display:inline-flex; align-items:center; gap:6px;}
     .actions{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;}
     .btn-order{min-height:40px; border-radius:12px; border:1px solid #d8e4f1; background:#fff; color:#1b3a5b; padding:0 13px; font-weight:800; display:inline-flex; align-items:center; gap:7px; cursor:pointer;}
@@ -334,6 +366,52 @@
     .chat-drawer{position:fixed; inset:0; z-index:12000; display:none; padding:0;}
     .chat-drawer.open{display:block;}
     .chat-backdrop{position:absolute; inset:0; background:rgba(10,18,32,.38); backdrop-filter:blur(1.5px);}
+
+    /* === Split view do chat (desktop) === */
+    .content-split{display:block;}
+    .chat-side{display:none; min-width:0;}
+    @media (min-width: 1024px){
+      body[data-page="pedidos"].chat-split-open .content-split{display:grid; grid-template-columns: minmax(560px, 1fr) minmax(420px, 520px); gap:16px; align-items:start;}
+      /* Em split view, a lista de pedidos deve ter a mesma altura do chat e rolar internamente */
+      body[data-page="pedidos"].chat-split-open .content-split > section.panel{
+        position:sticky;
+        top:12px;
+        height:calc(100vh - 24px);
+        overflow:hidden;
+        display:flex;
+        flex-direction:column;
+      }
+      body[data-page="pedidos"].chat-split-open .content-split > section.panel .panel-head{flex:0 0 auto;}
+      body[data-page="pedidos"].chat-split-open .content-split > section.panel #bulkBar{flex:0 0 auto;}
+      body[data-page="pedidos"].chat-split-open .content-split > section.panel #ordersGrid{
+        flex:1 1 auto;
+        overflow:auto;
+        /* evita cortar o topo dos cards (chips) no início do scroll */
+        padding-top:12px;
+        padding-right:6px;
+        padding-left:2px;
+        padding-bottom:14px;
+      }
+      body[data-page="pedidos"].chat-split-open .content-split > section.panel #emptyState{
+        flex:1 1 auto;
+        overflow:auto;
+        margin-top:0;
+      }
+      @media (max-width: 1280px){
+        body[data-page="pedidos"].chat-split-open .grid{grid-template-columns:1fr;}
+      }
+
+      /* Expandir chat (desktop) para ocupar tambem a area da lista de pedidos */
+      body[data-page="pedidos"].chat-split-open.chat-split-full .content-split{grid-template-columns: 1fr;}
+      body[data-page="pedidos"].chat-split-open.chat-split-full .content-split > section.panel{display:none;}
+      body[data-page="pedidos"].chat-split-open .chat-side{display:block;}
+      body[data-page="pedidos"].chat-split-open .chat-backdrop{display:none !important;}
+      body[data-page="pedidos"].chat-split-open .chat-drawer{display:block; position:static; inset:auto; padding:0; background:transparent;}
+      body[data-page="pedidos"].chat-split-open .chat-panel-embed{position:sticky; top:12px; left:auto; right:auto; bottom:auto; height:calc(100vh - 24px); max-width:none; width:100%; min-width:0; border-radius:18px; box-shadow:0 18px 40px rgba(15,23,42,.18);}
+      body[data-page="pedidos"].chat-split-open .pedido-chat-frame{height:100%;}
+      body[data-page="pedidos"].chat-split-open .chat-resize-handle{display:none !important;}
+      body[data-page="pedidos"].chat-split-open .chat-size-controls{display:none !important;}
+    }
     .chat-panel-embed{
       position:absolute;
       top:var(--navbar-height-desktop, 76px);
@@ -891,6 +969,10 @@
   .pedido-chat-panel .btn-cobranca,.pedido-chat-inline .btn-cobranca{width:40px;padding:0;justify-content:center;}
   .pedido-chat-panel .chat-header,.pedido-chat-inline .chat-header{padding:10px;}
 }
+
+/* perfil clicável no card */
+.card-pedido .user{ cursor:pointer; }
+.card-pedido .user:hover .user-meta strong{ text-decoration: underline; }
 </style>
 </head>
 <body data-page="pedidos">
@@ -961,6 +1043,7 @@
 <button class="chip" data-filter="done" type="button">Finalizados</button>
 <button class="chip" data-filter="urgent" type="button"><i class="bx bx-error"></i><span>Urgentes</span></button>
 </div>
+<div class="content-split" id="contentSplit">
 <section class="panel">
 <div class="panel-head">
 <div>
@@ -983,6 +1066,8 @@
 <span>Tente outro filtro ou atualize os dados.</span>
 </div>
 </section>
+<aside aria-hidden="true" class="chat-side" id="chatSide"></aside>
+</div>
 </div>
 </main>
 <nav class="bottom-nav">
@@ -1073,6 +1158,7 @@
         query: '',
         sort: 'recent',
         detailsById: new Map(),
+	        userByUid: new Map(),
         activeChatUrl: '',
         selectMode: false,
         selected: new Set(),
@@ -1106,8 +1192,10 @@
         bulkFinalizeBtn: document.getElementById('bulkFinalizeBtn'),
         bulkArchiveBtn: document.getElementById('bulkArchiveBtn'),
         bulkClearBtn: document.getElementById('bulkClearBtn'),
+        contentSplit: document.getElementById('contentSplit'),
         chatDrawer: document.getElementById('chatDrawer'),
         chatPanel: document.querySelector('#chatDrawer .chat-panel-embed'),
+        chatSide: document.getElementById('chatSide'),
         chatPanelTitle: document.getElementById('chatPanelTitle'),
         chatNarrowBtn: document.getElementById('chatNarrowBtn'),
         chatWidenBtn: document.getElementById('chatWidenBtn'),
@@ -1129,6 +1217,26 @@
         rejectPromptConfirmBtn: document.getElementById('rejectPromptConfirmBtn')
       };
 
+      // Abrir perfil ao clicar no avatar ou @usuario
+      if(el.grid){
+        el.grid.addEventListener('click', (ev) => {
+          const target = ev.target && ev.target.closest ? ev.target.closest('.card-pedido .user[data-profile]') : null;
+          if(!target) return;
+          const uid = String(target.getAttribute('data-profile-uid') || '').trim();
+          const user = String(target.getAttribute('data-profile-user') || '').trim();
+          if(uid){
+            try{ if(typeof window.abrirPerfil === 'function') return window.abrirPerfil(uid); }catch(_){ }
+            location.href = `perfil-profissional.html?uid=${encodeURIComponent(uid)}`;
+            return;
+          }
+          if(user){
+            // fallback por username
+            location.href = `perfil-profissional.html?user=${encodeURIComponent(user)}`;
+          }
+        });
+      }
+
+
 
       // garante que a página continue rolando (principalmente em mobile)
       lockScrollIfNeeded();
@@ -1143,6 +1251,18 @@
 
       function esc(v){
         return String(v ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
+      }
+
+      function displayHandle(p){
+        const u = String((p && p.usuario) || '').trim();
+        if(u) return u.startsWith('@') ? u : `@${u}`;
+        // fallback curto (não usa nome completo com vários sobrenomes)
+        const nome = String((p && p.nome) || '').trim();
+        if(nome){
+          const first = nome.split(/\s+/)[0].toLowerCase().replace(/[^a-z0-9_\.]/gi,'');
+          return first ? `@${first}` : '@usuario';
+        }
+        return '@usuario';
       }
 
       function parseJSON(raw){
@@ -1364,6 +1484,19 @@
           el.chatPanel.classList.remove('maximized');
           el.chatPanel.style.width = '';
           document.body.classList.remove('chat-resizing');
+          document.body.classList.remove('chat-split-full');
+          setChatExpandButtonState();
+          updateChatWidthUi();
+          return;
+        }
+
+        // Em split view (desktop), permitimos expandir para ocupar tambem a area dos pedidos
+        if(document.body.classList.contains('chat-split-open')){
+          state.chatResizing = false;
+          el.chatPanel.classList.remove('maximized');
+          el.chatPanel.style.width = '';
+          document.body.classList.remove('chat-resizing');
+          document.body.classList.toggle('chat-split-full', !!state.chatMaximized);
           setChatExpandButtonState();
           updateChatWidthUi();
           return;
@@ -1470,12 +1603,16 @@
             ? pick(row, ['deNome','nomeCliente','clienteNome','nome','cliente','usuarioNome','userName','paraNome'], 'Cliente')
             : pick(row, ['nome','nomeCliente','clienteNome','cliente','usuarioNome','userName','deNome','paraNome'], 'Cliente');
 
-        const usuarioBase = isSouCliente
-          ? pick(row, ['paraUser','usuarioPrestador','usernamePrestador','profissionalUser','profissional_user','prestadorUser','prestador_user','usuario','username','user','handle'], nome || 'profissional')
-          : isSouProfissional
-            ? pick(row, ['deUser','usuarioCliente','usernameCliente','usuario','username','user','handle'], nome || 'cliente')
-            : pick(row, ['usuario','username','user','handle','deUser','paraUser'], nome || 'cliente');
-        const usuario = usuarioBase.startsWith('@') ? usuarioBase : `@${usuarioBase.toLowerCase().replace(/\s+/g,'.')}`;
+	        // IMPORTANT: não inventar @handle a partir do nome completo (vira "@nome.sobrenome..." gigantesco).
+	        // Se não houver user explícito no pedido, deixamos vazio e o enrich (usuarios/usuarios_legacy) resolve.
+	        const usuarioBase = isSouCliente
+	          ? pick(row, ['paraUser','usuarioPrestador','usernamePrestador','profissionalUser','profissional_user','prestadorUser','prestador_user','usuario','username','user','handle'], '')
+	          : isSouProfissional
+	            ? pick(row, ['deUser','usuarioCliente','usernameCliente','usuario','username','user','handle'], '')
+	            : pick(row, ['usuario','username','user','handle','deUser','paraUser'], '');
+	        const usuario = usuarioBase
+	          ? (String(usuarioBase).startsWith('@') ? String(usuarioBase) : `@${String(usuarioBase).trim()}`)
+	          : '';
         const titulo = pick(row, ['titulo','servicoReferencia','nomeServico','servico','assunto','pedidoTitulo','orcamentoTitulo','title'], 'Pedido');
         const descricao = pick(row, ['descricao','descricaoBase','mensagem','mensagemInicial','detalhes','observacoes','preview','ultimaMensagem'], 'Sem detalhes adicionais.');
         const tipoRaw = pick(row, ['tipo','tipoPedido','categoriaTipo'], '');
@@ -1635,6 +1772,162 @@
         return String(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid || localStorage.getItem('doke_uid') || perfil.uid || perfil.id || '').trim();
       }
 
+	      function isPlaceholderAvatar(url){
+	        const s = String(url || '').trim();
+	        if(!s) return true;
+	        if(/user_placeholder\.png$/i.test(s)) return true;
+	        if(s.includes('assets/Imagens/user_placeholder.png')) return true;
+	        return false;
+	      }
+
+	      	  async function fetchUsuarioPerfil(key, mode){
+	        const raw = String(key || '').trim();
+	        if(!raw) return null;
+	        const kind = mode || (raw.startsWith('user:') ? 'user' : 'uid');
+	        const cacheKey = (raw.startsWith('uid:') || raw.startsWith('user:')) ? raw : `${kind}:${raw}`;
+	        if(state.userByUid.has(cacheKey)) return state.userByUid.get(cacheKey);
+
+	        const sb = window.sb;
+	        if(!sb || typeof sb.from !== 'function'){
+	          state.userByUid.set(cacheKey, null);
+	          return null;
+	        }
+
+	        	  const cols = 'id,uid,user,nome,foto,categoria,area,isProfissional,is_profissional';
+	        	  try{
+	        	    // Primeiro tenta view/tabela pública (evita RLS bloqueando SELECT em "usuarios")
+	        	    async function tryTable(table){
+	        	      let q = sb.from(table).select(cols).limit(1);
+
+	        	      // Compat: usuarios_legacy costuma ter uid_text (e às vezes "usuario"/"username" no lugar de "user")
+	        	      const uidField = table === 'usuarios_legacy' ? 'uid_text' : 'uid';
+	        	      const userFieldCandidates = ['user','usuario','username'];
+
+	        	      if(kind === 'user'){
+	        	        const u = raw.replace(/^user:/,'').replace(/^@/,'').trim();
+	        	        if(!u) return { data: null, error: null };
+	        	        // tenta eq em qualquer coluna compatível
+	        	        // supabase-js não suporta "or" com ilike em colunas diferentes de forma simples; fazemos OR eq.
+	        	        q = q.or(userFieldCandidates.map((f)=> `${f}.eq.${u}`).join(','));
+	        	      }else{
+	        	        const u = raw.replace(/^uid:/,'').trim();
+	        	        q = q.or(`${uidField}.eq.${u},id.eq.${u}`);
+	        	      }
+
+	        	      const res = (q.maybeSingle ? await q.maybeSingle() : await q);
+	        	      return res;
+	        	    }
+
+	        	    let { data, error } = await tryTable('usuarios_legacy');
+	        	    if((error || !data)){
+	        	      // fallback para tabela principal
+	        	      const r2 = await tryTable('usuarios');
+	        	      data = r2?.data || null;
+	        	      error = r2?.error || null;
+	        	    }
+	          if(error){
+	            console.warn('[pedidos] usuarios fetch error:', error);
+	            state.userByUid.set(cacheKey, null);
+	            return null;
+	          }
+
+	          // normaliza foto para URL pública (bucket "perfil")
+	          if(data && data.foto){
+	            const f = String(data.foto).trim();
+	            if(f && !/^https?:\/\//i.test(f) && !f.includes('/storage/v1/object/public/')){
+	              try{
+	                const pub = sb.storage?.from?.('perfil')?.getPublicUrl?.(f);
+	                const url = pub?.data?.publicUrl;
+	                if(url) data.foto = url;
+	              }catch(_){}
+	            }
+	          }
+
+	          state.userByUid.set(cacheKey, data || null);
+	          return data || null;
+	        }catch(err){
+	          console.warn('[pedidos] usuarios fetch exception:', err);
+	          state.userByUid.set(cacheKey, null);
+	          return null;
+	        }
+	      }
+
+	      function otherUidFromPedido(p){
+	        if(!p) return '';
+	        // Se eu sou cliente, o outro é o profissional (paraUid). Se sou profissional, o outro é o cliente (deUid).
+	        if(String(p.meuPapel || '') === 'cliente') return String(p.paraUid || '').trim();
+	        if(String(p.meuPapel || '') === 'profissional') return String(p.deUid || '').trim();
+	        // fallback
+	        const uid = resolveUid();
+	        const a = String(p.deUid || '').trim();
+	        const b = String(p.paraUid || '').trim();
+	        if(uid && a && uid === a) return b;
+	        if(uid && b && uid === b) return a;
+	        return b || a;
+	      }
+
+	      function otherUserFromPedido(p){
+	        const u = String((p && (p.usuario || p.user || p.username)) || '').trim();
+	        return u.replace(/^@/,'').trim();
+	      }
+
+
+
+	      async function enrichPedidosComUsuarios(pedidos){
+	        const arr = Array.isArray(pedidos) ? pedidos : [];
+	        if(!arr.length) return arr;
+
+	        const keysSet = new Set();
+	        arr.forEach((p) => {
+	          const ouid = otherUidFromPedido(p);
+	          if(ouid) keysSet.add(`uid:${String(ouid).trim()}`);
+	          else{
+	            const u = otherUserFromPedido(p);
+	            if(u) keysSet.add(`user:${u}`);
+	          }
+	        });
+
+	        const keys = Array.from(keysSet).filter(Boolean);
+	        if(!keys.length) return arr;
+
+	        const CONC = 8;
+	        let i = 0;
+	        const results = new Map();
+	        async function worker(){
+	          while(i < keys.length){
+	            const idx = i++;
+	            const k = keys[idx];
+	            const mode = k.startsWith('user:') ? 'user' : 'uid';
+	            const data = await fetchUsuarioPerfil(k, mode);
+	            results.set(k, data);
+	          }
+	        }
+	        await Promise.all(Array.from({length: Math.min(CONC, keys.length)}, worker));
+
+	        arr.forEach((p) => {
+	          const ouid = otherUidFromPedido(p);
+	          const uhandle = otherUserFromPedido(p);
+	          const k = ouid ? `uid:${String(ouid).trim()}` : (uhandle ? `user:${uhandle}` : '');
+	          const u = k ? results.get(k) : null;
+	          if(!u) return;
+
+	          const nome = String(u.nome || '').trim();
+	          const user = String(u.user || u.usuario || u.username || '').trim();
+	          const foto = normalizeMediaUrl(u.foto);
+	          const cat = String(u.categoria || u.area || '').trim();
+
+	          if(nome) p.nome = nome;
+	          if(user){
+	            const handle = user.startsWith('@') ? user : `@${user}`;
+	            p.usuario = handle;
+	          }
+	          if(foto && (isPlaceholderAvatar(p.avatar) || !p.avatar)) p.avatar = foto;
+	          if(cat && (!p.categoria || p.categoria === 'Geral')) p.categoria = cat;
+	        });
+
+	        return arr;
+	      }
+
       function ensurePedidosAuth(){
         const uid = resolveUid();
         if(uid) return true;
@@ -1644,23 +1937,47 @@
         return false;
       }
 
+      
       function hiddenPedidosKey(){
-        const uid = resolveUid() || 'anon';
-        return `doke_hidden_pedidos_${uid}`;
+        const uid = resolveUid();
+        // Usa chave por-usuario quando houver UID, mas também mantém uma chave global
+        // para evitar que itens "voltem" caso o UID não esteja disponível em algum reload.
+        return uid ? `doke_hidden_pedidos_${uid}` : `doke_hidden_pedidos`;
+      }
+
+      function hiddenPedidosGlobalKey(){
+        return `doke_hidden_pedidos`;
       }
 
       function getHiddenPedidosSet(){
-        try{
-          const arr = parseJSON(localStorage.getItem(hiddenPedidosKey()));
-          if(Array.isArray(arr)) return new Set(arr.map((v) => String(v || '').trim()).filter(Boolean));
-        }catch(_){}
-        return new Set();
+        const out = new Set();
+
+        const readKey = (k) => {
+          try{
+            const arr = parseJSON(localStorage.getItem(k));
+            if(Array.isArray(arr)){
+              arr.forEach((v) => {
+                const s = String(v || '').trim();
+                if(s) out.add(s);
+              });
+            }
+          }catch(_){ }
+        };
+
+        // Sempre lê a global
+        readKey(hiddenPedidosGlobalKey());
+
+        // E a do usuário (se existir)
+        const uid = resolveUid();
+        if(uid) readKey(`doke_hidden_pedidos_${uid}`);
+
+        return out;
       }
 
       function persistHiddenPedidosSet(set){
-        try{
-          localStorage.setItem(hiddenPedidosKey(), JSON.stringify(Array.from(set)));
-        }catch(_){}
+        const arr = JSON.stringify(Array.from(set));
+        try{ localStorage.setItem(hiddenPedidosKey(), arr); }catch(_){}
+        try{ localStorage.setItem(hiddenPedidosGlobalKey(), arr); }catch(_){}
       }
 
       function addHiddenPedidos(ids){
@@ -1670,6 +1987,41 @@
           if(key) set.add(key);
         });
         persistHiddenPedidosSet(set);
+      }
+
+      // Remove pedidos de caches locais para garantir que nao retornem apos reload.
+      // Isso complementa o "hidden set" (que filtra na leitura), lidando com casos
+      // em que o ID possa variar entre fontes (localStorage / Firestore).
+      function purgePedidosFromLocalCaches(ids){
+        const idset = new Set((ids || []).map((v) => String(v || '').trim()).filter(Boolean));
+        if(!idset.size) return;
+
+        // window.pedidosCache (se existir)
+        try{
+          if(Array.isArray(window.pedidosCache)){
+            window.pedidosCache = window.pedidosCache.filter((row) => {
+              const rid = normalizeId(pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+              return !idset.has(String(rid));
+            });
+          }
+        }catch(_){ }
+
+        // localStorage arrays mais comuns
+        const keys = [
+          'doke_pedidos','pedidos','DOKE_PEDIDOS','meus_pedidos','cachePedidos','doke_cache_pedidos',
+          'orcamentos','doke_orcamentos','orcamentosCache','doke_orcamentos_cache','doke_cache_orcamentos','orcamentos_pedidos'
+        ];
+        keys.forEach((key) => {
+          try{
+            const arr = asArray(parseJSON(localStorage.getItem(key)));
+            if(!arr.length) return;
+            const next = arr.filter((row) => {
+              const rid = normalizeId(pick(row, ['id','codigo','pedidoId','idPedido','orderId','orcamentoId','chatId','threadId','postid','docId'], ''));
+              return !idset.has(String(rid));
+            });
+            if(next.length !== arr.length) localStorage.setItem(key, JSON.stringify(next));
+          }catch(_){ }
+        });
       }
 
       function patchPedidoRowLike(row, id, status, motivoRecusa){
@@ -1748,7 +2100,10 @@
             const n = normalizePedido(row, idx++, d.id);
             if(n && !hidden.has(String(n.id))) out.push(n);
           });
-          return mergePedidos(out);
+	          const merged = mergePedidos(out);
+	          // Enriquecer com usuario/foto a partir da tabela usuarios (Supabase)
+	          try{ await enrichPedidosComUsuarios(merged); }catch(_e){}
+	          return mergePedidos(merged);
         }catch(err){
           console.warn('Firestore pedidos erro:', err);
           return [];
@@ -1793,7 +2148,7 @@
         const rawTitle = String(p.titulo || '').trim();
         const needPreview = (rawNeed && rawNeed !== rawDesc && rawNeed !== rawTitle && rawNeed.toLowerCase() !== 'sem detalhes adicionais.') ? rawNeed : '';
         return `
-          <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}">
+          <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}" data-status="${esc(String(p.status||''))}">
             <div class="card-top">
               <div class="tags">
                 <span class="tag type"><i class='bx bx-receipt'></i>${esc(p.tipo)}</span>
@@ -1820,10 +2175,10 @@
               </div>
             ` : ``}
 
-            <div class="user">
+            <div class="user" data-profile="1" data-profile-uid="${esc(otherUidFromPedido(p))}" data-profile-user="${esc(otherUserFromPedido(p))}">
               <img src="${esc(normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png')}" alt="Avatar" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'"/>
               <div class="user-meta">
-                <strong>${esc(p.usuario || p.nome)}</strong>
+                <strong>${esc(displayHandle(p))}</strong>
                 <span>${esc(p.categoria || 'Geral')}</span>
               </div>
             </div>
@@ -2115,25 +2470,58 @@
         const chatUrl = `chat.html?${q.join('&')}`;
         state.activeChatUrl = chatUrl;
 
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+
+        // No desktop, abrimos em split view (lista à esquerda, chat à direita)
+        if(isDesktop && el.chatSide && el.chatPanel){
+          document.body.classList.add('chat-open');
+          document.body.classList.add('chat-split-open');
+          document.body.classList.remove('chat-split-full');
+          el.chatSide.setAttribute('aria-hidden', 'false');
+          // garante que o painel esteja dockado no aside (sem overlay/backdrop)
+          if(!el.chatSide.contains(el.chatPanel)) el.chatSide.appendChild(el.chatPanel);
+          if(el.chatDrawer){
+            el.chatDrawer.classList.remove('open');
+            el.chatDrawer.setAttribute('aria-hidden', 'true');
+          }
+          document.documentElement.classList.remove('no-scroll');
+          document.body.classList.remove('no-scroll');
+        }
+
         if(el.chatFrame && el.chatFrame.getAttribute('src') !== chatUrl){
           el.chatFrame.setAttribute('src', chatUrl);
         }
-        if(el.chatDrawer){
+        if(!isDesktop && el.chatDrawer){
+          document.body.classList.add('chat-open');
           el.chatDrawer.classList.add('open');
           el.chatDrawer.setAttribute('aria-hidden', 'false');
         }
         state.chatMaximized = false;
         state.chatWidth = clampChatWidth(state.chatWidth || localStorage.getItem(CHAT_WIDTH_KEY));
         applyChatPanelLayout();
-        lockScrollIfNeeded();
+        if(!isDesktop) lockScrollIfNeeded();
       }
 
       function closeInlineChat(){
         stopChatResize();
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+        // Fecha split view no desktop
+        if(isDesktop){
+          document.body.classList.remove('chat-split-open');
+          document.body.classList.remove('chat-split-full');
+          document.body.classList.remove('chat-open');
+          if(el.chatSide) el.chatSide.setAttribute('aria-hidden', 'true');
+          // devolve o painel para o drawer (para funcionar no mobile)
+          if(el.chatDrawer && el.chatPanel && !el.chatDrawer.contains(el.chatPanel)){
+            el.chatDrawer.appendChild(el.chatPanel);
+          }
+        }
+
         if(el.chatDrawer){
           el.chatDrawer.classList.remove('open');
           el.chatDrawer.setAttribute('aria-hidden', 'true');
         }
+        document.body.classList.remove('chat-open');
         document.documentElement.classList.remove('no-scroll');
         document.body.classList.remove('no-scroll');
         try{ el.chatFrame?.contentWindow?.postMessage?.({type:'doke-chat-pause'}, '*'); }catch(_){ }
@@ -2352,6 +2740,7 @@
         if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
         const ids = Array.from(state.selected).map((id) => String(id));
         addHiddenPedidos(ids);
+        purgePedidosFromLocalCaches(ids);
         state.pedidos = (state.pedidos || []).filter((p) => !state.selected.has(String(p.id)));
         state.selected.clear();
         render();
@@ -2367,6 +2756,7 @@
           return;
         }
         addHiddenPedidos(Array.from(canClearIds));
+        purgePedidosFromLocalCaches(Array.from(canClearIds));
         const before = state.pedidos.length;
         state.pedidos = (state.pedidos || []).filter((p) => !canClearIds.has(String(p.id)));
         Array.from(canClearIds).forEach((id) => state.selected.delete(String(id)));
@@ -2390,6 +2780,7 @@
         let local = [];
         try{ local = loadLocal(); }catch(err){ console.warn('loadLocal erro:', err); }
         let merged = mergePedidos(local);
+	      try{ await enrichPedidosComUsuarios(merged); }catch(_e){}
         if(forceFs || merged.length < 3){
           try{
             const fs = await loadFirestore();
@@ -2441,7 +2832,10 @@
           if(!cardEl || !state.selectMode) return;
           toggleSelected(cardEl.dataset.id);
         });
-        document.querySelectorAll('#chatDrawer [data-close]').forEach((btn) => on(btn, 'click', closeInlineChat));
+        document.addEventListener('click', (ev) => {
+          const btn = ev.target.closest('#chatDrawer [data-close], #chatSide [data-close]');
+          if(btn) closeInlineChat();
+        });
         on(el.chatNarrowBtn, 'click', () => nudgeChatWidth(-CHAT_WIDTH_STEP));
         on(el.chatWidenBtn, 'click', () => nudgeChatWidth(CHAT_WIDTH_STEP));
         on(el.chatWidthLabel, 'dblclick', resetChatWidth);

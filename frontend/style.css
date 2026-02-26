@@ -1335,8 +1335,33 @@ body.doke-auth-ready .navbar-desktop .botoes-direita > *{
     display: flex; flex-wrap: wrap; gap: 10px;
 }
 .filtro-checks-row label {
-    display: inline-flex; align-items: center; gap: 6px;
-    font-size: 0.85rem; color: #555;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: #334155;
+    border: 1px solid #e2e8f0;
+    background: #fff;
+    padding: 8px 12px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.filtro-checks-row label:hover{
+    border-color: rgba(11,119,104,.35);
+    box-shadow: 0 8px 18px rgba(2, 8, 23, 0.06);
+}
+
+.filtro-checks-row input[type="checkbox"]{
+    width: 16px;
+    height: 16px;
+    accent-color: var(--cor0);
+}
+
+.filtro-checks-row input[type="checkbox"]:focus{
+    outline: 2px solid rgba(11,119,104,.25);
+    outline-offset: 2px;
 }
 
 /* Loading overlay (pedidos/anunciar) */
@@ -1950,7 +1975,7 @@ body.doke-auth-ready .navbar-desktop .botoes-direita > *{
   to { opacity: 1; transform: translateY(0); }
 }
 
-.busca-hint{background:rgba(42,95,144,0.08); color:#555; padding:10px 12px; border-radius:12px; font-size:0.88rem; margin:0 0 12px;}
+.busca-hint{background:rgba(42,95,144,0.08); color:#555; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; border-radius:12px; font-size:0.88rem; margin:0 0 12px;}
 .recentes-container h4 { font-size: 0.9rem; color: #333; margin: 10px 0; font-weight: 700; }
 .recent-item {
   display: flex; align-items: center; gap: 10px; padding: 12px 0;
@@ -2866,7 +2891,7 @@ body.dark-mode {
   }
   .busca-input-container input { color: #fff; }
   .busca-dropdown { background: #2a2a2d; border-color: #333; }
-  .busca-hint{background:rgba(42,95,144,0.08); color:#555; padding:10px 12px; border-radius:12px; font-size:0.88rem; margin:0 0 12px;}
+  .busca-hint{background:rgba(42,95,144,0.08); color:#555; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; border-radius:12px; font-size:0.88rem; margin:0 0 12px;}
   
   .filtros-container select, .select {
     background-color: #363639;
@@ -8481,7 +8506,7 @@ html[data-theme="dark"] .toggle-line .toggle-text span{ color:rgba(232,238,246,.
   background:rgba(255,255,255,.16);
   color:#fff;
   border-radius:12px;
-  padding:10px 12px;
+  padding: calc(10px + env(safe-area-inset-top)) 12px 10px;
   cursor:pointer;
   display:inline-flex;
   align-items:center;
@@ -9128,7 +9153,7 @@ body[data-page="home"] .secao-busca{
 .toast-login h4{margin:0; font-size:1rem}
 .toast-login p{margin:6px 0 0; color:#666; font-size:.92rem}
 .toast-login .tl-actions{display:flex; gap:10px; margin-top:12px}
-.toast-login .tl-actions a{flex:1; text-align:center; padding:10px 12px; border-radius:12px; font-weight:700; text-decoration:none}
+.toast-login .tl-actions a{flex:1; text-align:center; padding: calc(10px + env(safe-area-inset-top)) 12px 10px; border-radius:12px; font-weight:700; text-decoration:none}
 .toast-login .tl-actions a.primary{background:linear-gradient(120deg, var(--cor0), var(--cor2)); color:#fff}
 .toast-login .tl-actions a.ghost{border:1px solid rgba(0,0,0,0.12); color:#222}
 .toast-login .tl-close{border:none; background:transparent; cursor:pointer; color:#666}
@@ -12207,3 +12232,69 @@ body.doke-modal-open{overflow:hidden}
     padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
   }
 }
+
+
+/* App install banner (mobile/tablet) */
+.doke-app-banner{
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10001;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  height: var(--doke-app-banner-h, 56px);
+  padding: 8px 12px;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(15,23,42,.08);
+}
+
+/* Reserve space so the banner doesn't cover the page content */
+.has-doke-app-banner body{
+  padding-top: var(--doke-app-banner-h, 56px);
+}
+
+/* If the site header/topbar is sticky/fixed at the very top, offset it when banner is present */
+.has-doke-app-banner header,
+.has-doke-app-banner .topbar,
+.has-doke-app-banner .header,
+.has-doke-app-banner .mobile-header{
+  top: var(--doke-app-banner-h, 0px) !important;
+}
+
+.doke-app-banner__left{display:flex; align-items:center; gap:10px; min-width:0;}
+.doke-app-banner__icon{
+  width:36px; height:36px; border-radius:12px;
+  display:grid; place-items:center;
+  font-weight:900;
+  background: linear-gradient(135deg, rgba(42,95,144,.18), rgba(11,122,109,.18));
+  color: #0f172a;
+  flex:0 0 auto;
+}
+.doke-app-banner__txt{display:flex; flex-direction:column; min-width:0;}
+.doke-app-banner__txt strong{font-size:13px; line-height:1.1;}
+.doke-app-banner__txt span{font-size:12px; color:#64748b; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+.doke-app-banner__right{display:flex; align-items:center; gap:8px;}
+.doke-app-banner__btn{
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:800;
+  font-size:12px;
+  background:#0b7a6d;
+  color:#fff;
+  text-decoration:none;
+  border:1px solid rgba(0,0,0,.06);
+}
+.doke-app-banner__close{
+  width:34px; height:34px;
+  border-radius:12px;
+  border:1px solid rgba(15,23,42,.10);
+  background:#fff;
+}
+@media (min-width: 1025px){
+  .doke-app-banner{display:none;}
+}
+

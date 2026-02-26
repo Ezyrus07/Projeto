@@ -3450,7 +3450,7 @@ function ensureTheme(ctx, theme){
       const client = mustSupa();
       if(!client) return;
 
-      const up = await uploadToStorage(client, { bucket: "perfil", path: `covers/${storageId}/cover`, file });
+      const up = await uploadToStorage(client, { bucket: "perfil", path: `${storageId}/covers/cover`, file });
       if(up.error){
         console.error(up.error);
         toast("Erro ao enviar capa.");
@@ -3482,7 +3482,7 @@ function ensureTheme(ctx, theme){
       const client = mustSupa();
       if(!client) return;
 
-      const up = await uploadToStorage(client, { bucket: "perfil", path: `avatars/${storageId}/avatar`, file });
+      const up = await uploadToStorage(client, { bucket: "perfil", path: `${storageId}/avatars/avatar`, file });
       if(up.error){
         console.error(up.error);
         toast("Erro ao enviar foto.");
