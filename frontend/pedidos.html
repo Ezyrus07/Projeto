@@ -183,46 +183,38 @@
        + altura fixa para todos terem a mesma dimensão */
     /* Altura uniforme dos cards (ajustada para evitar cortes quando tags/descrição quebram linha) */
     /* Altura uniforme dos cards (desktop/tablet). Mantemos um valor seguro para não cortar ações/rodapé */
-    :root{--pedido-card-h: 440px;}
+    :root{}
     .card{
       background:#ffffff;
-      border:1px solid rgba(23,56,103,.14);
-      border-radius:18px;
-      padding:14px;
+      border-radius:20px;
+      padding:18px;
+      border:1px solid #edf2f7;
+      border-bottom:4px solid #2a5f90; /* default */
+      box-shadow:0 10px 30px rgba(0,0,0,0.04);
       display:flex;
       flex-direction:column;
-      gap:8px;
-	      box-shadow:0 14px 34px rgba(15,36,64,.10);
-	      transition:transform .16s ease, box-shadow .16s ease, border-color .16s ease;
-	      cursor:pointer;
+      gap:10px;
+      transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+      cursor:pointer;
       position:relative;
       overflow:hidden;
-      height:var(--pedido-card-h);
+      height:auto;
     }
-	    .card:hover{
-	      transform:translateY(-3px);
-	      box-shadow:0 20px 46px rgba(15,36,64,.14);
-	      border-color:rgba(42,95,144,.26);
-	    }
-    .card::before{
-      content:"";
-      position:absolute;
-      left:0; right:0; top:0;
-      height:4px;
-      background:linear-gradient(90deg,#2a5f90 0%, #0b9b8c 100%);
-      opacity:.95;
-    }
-    /* Barra superior por status (diferencia visual rapida) */
-    .card[data-status="pendente"]::before{background:linear-gradient(90deg,#f59e0b 0%, #fbbf24 100%);} /* amarelo */
-    .card[data-status="andamento"]::before{background:linear-gradient(90deg,#0b9b8c 0%, #2dd4bf 100%);} /* verde/teal */
-    .card[data-status="finalizado"]::before{background:linear-gradient(90deg,#94a3b8 0%, #64748b 100%);} /* cinza */
-    .card[data-status="cancelado"]::before{background:linear-gradient(90deg,#ef4444 0%, #b91c1c 100%);} /* vermelho */
-    .card[data-status="recusado"]::before{background:linear-gradient(90deg,#ef4444 0%, #b91c1c 100%);} /* vermelho */
-    .card.selected{
-      border-color:rgba(11,119,104,.45);
-      box-shadow:0 18px 42px rgba(11,119,104,.22);
-      outline:2px solid rgba(42,95,144,.18);
-    }
+
+    /* Cor por status (padrão carteira) */
+    .card[data-status="pendente"]{border-bottom-color:#f1c40f;}
+    .card[data-status="andamento"]{border-bottom-color:#0b9b8c;}
+    .card[data-status="finalizado"]{border-bottom-color:#94a3b8;}
+    .card[data-status="cancelado"]{border-bottom-color:#ef4444;}
+    .card[data-status="recusado"]{border-bottom-color:#ef4444;}
+
+	    .card:hover{transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,0.08); border-color:#e2e8f0;}
+    /* amarelo */
+    /* verde/teal */
+    /* cinza */
+    /* vermelho */
+    /* vermelho */
+    .card.selected{border-color:rgba(11,119,104,.45); box-shadow:0 16px 40px rgba(11,119,104,.16), 0 0 0 2px rgba(42,95,144,.14);}
     /* Selecionado: mantem a cor do status, so aumenta contraste */
     .card.selected::before{filter:saturate(1.08) brightness(.95);}
     .card-top{
@@ -280,9 +272,53 @@
     .title{margin:0; font-size:1.1rem; line-height:1.18;
       display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical; overflow:hidden;
     }
+    .title-row{display:flex; align-items:flex-start; gap:8px;}
+    .title-row .title{flex:1; min-width:0;}
+    .title-row{min-height:1.35em;}
+    .need-info{
+      flex:0 0 auto;
+      width:34px; height:34px;
+      border-radius:12px;
+      border:1px dashed rgba(11,119,104,.35);
+      background:rgba(11,119,104,.06);
+      color:var(--brand);
+      display:inline-grid;
+      place-items:center;
+      cursor:pointer;
+      position:relative;
+    }
+    .need-info i{font-size:18px;}
+    .need-info::after{
+      content: attr(data-tip);
+      position:absolute;
+      left:0;
+      top:calc(100% + 8px);
+      min-width:220px;
+      max-width:320px;
+      padding:10px 12px;
+      border-radius:14px;
+      background:#0b1f2b;
+      color:#fff;
+      font-size:.86rem;
+      line-height:1.25;
+      box-shadow:0 14px 34px rgba(0,0,0,.22);
+      opacity:0;
+      transform:translateY(-4px);
+      pointer-events:none;
+      transition:opacity .15s ease, transform .15s ease;
+      z-index:50;
+    }
+    .need-info:hover::after,
+    .need-info.is-open::after{
+      opacity:1;
+      transform:translateY(0);
+      pointer-events:none;
+    }
     .desc{margin:0; color:var(--muted); line-height:1.35; font-size:.92rem;
       display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;
     }
+    /* Reservar espaco para manter cards com alturas parecidas (mesmo sem descricao) */
+    .desc{min-height:2.7em;}
 
     .need-preview{
       margin:10px 0 0;
@@ -306,7 +342,9 @@
       font-size:.92rem;
     }
 
+    /* Quando o chat estiver aberto, esconder o resumo/preview do pedido para reduzir ruído */
     body.chat-open .need-preview{display:none !important;}
+    body.chat-open .need-info{display:none !important;}
 
     .meta{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
     .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px;}
@@ -315,10 +353,12 @@
     .meta-item strong{display:block; margin-top:4px; font-size:.94rem; line-height:1.2;}
 
     /* footer sempre “grudado” no fim do card (altura uniforme) */
-    .footer{margin-top:auto; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
-    .unread{border:1px solid #dbe6f2; background:#f6fbff; color:#35597f; border-radius:999px; min-height:34px; padding:0 12px; font-size:.85rem; font-weight:800; display:inline-flex; align-items:center; gap:6px;}
-    .actions{display:flex; gap:8px; flex-wrap:wrap; margin-left:auto;}
+    .footer{margin-top:auto; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap;}
+    .actions{display:flex; gap:8px; flex-wrap:nowrap; margin-left:auto; width:100%;}
     .btn-order{min-height:40px; border-radius:12px; border:1px solid #d8e4f1; background:#fff; color:#1b3a5b; padding:0 13px; font-weight:800; display:inline-flex; align-items:center; gap:7px; cursor:pointer;}
+    .actions .btn-order{flex:1; justify-content:center; min-width:0;}
+    .actions .btn-order .btn-text{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+
     .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
     .btn-order.accept{background:linear-gradient(135deg,#1f9f53,#188848); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(31,159,83,.22);}
     .btn-order.reject{background:#fff1f2; color:#b4233b; border-color:#fecdd3;}
@@ -559,7 +599,7 @@
       pointer-events:none;
     }
     body.chat-resizing{user-select:none; cursor:ew-resize;}
-    html.no-scroll, body.no-scroll{overflow:hidden;}
+    body.no-scroll{overflow:hidden; touch-action:none;}
 
     .details-modal{
       position:fixed;
@@ -788,7 +828,6 @@
       .meta-item small{font-size:.66rem;}
       .meta-item strong{font-size:.79rem; margin-top:2px;}
       .footer{padding-top:7px; gap:6px;}
-      .unread{min-height:28px; font-size:.73rem; padding:0 8px;}
       .actions{gap:6px;}
       .btn-order{min-height:32px; font-size:.75rem; padding:0 9px; border-radius:9px;}
       .card-decision-top{gap:6px; margin-top:0;}
@@ -876,7 +915,6 @@
 }
 
 /* Footer + buttons */
-.unread{display:none;}
 .actions{gap:8px;}
 .btn-order{min-height:40px; border-radius:12px; padding:0 12px; font-size:.9rem;}
 .btn-order i{font-size:1.05rem;}
@@ -975,6 +1013,71 @@
 /* perfil clicável no card */
 .card-pedido .user{ cursor:pointer; }
 .card-pedido .user:hover .user-meta strong{ text-decoration: underline; }
+
+      /* Chat ativo: destaca o pedido referente ao chat aberto */
+      .card.chat-active{background: rgba(11,119,104,0.06); border-color: rgba(11,119,104,0.35); box-shadow:0 16px 40px rgba(11,119,104,.14), 0 0 0 2px rgba(11,119,104,.10);}
+      .btn-order.danger{
+        background: #ffffff;
+        border-color: rgba(220, 38, 38, 0.35);
+        color: #b91c1c;
+      }
+      .btn-order.danger:hover{
+        background: rgba(220, 38, 38, 0.06);
+      }
+
+
+
+@media (min-width: 1025px){
+  body[data-page="pedidos"] .card{
+    height: 400px;
+  }
+  body[data-page="pedidos"] .card .tags{max-height: 64px; overflow:hidden;}
+  body[data-page="pedidos"] .card .desc{min-height:2.7em;}
+}
+
+
+/* ===== Ajuste: cards menores e 3 por fileira no desktop (sem chat aberto) ===== */
+@media (min-width: 1400px){
+  body[data-page="pedidos"]:not(.chat-split-open) #ordersGrid.grid{
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
+/* Quando o chat estiver aberto (split), mantém 2 colunas para não esmagar */
+body[data-page="pedidos"].chat-split-open #ordersGrid.grid{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Cards um pouco mais compactos no desktop */
+body[data-page="pedidos"] .card{
+  padding: 12px;
+  border-radius: 16px;
+  gap: 7px;
+}
+
+/* Mobile/tablet: card sem altura fixa */
+@media (max-width: 1024px){
+      .card{min-height:auto;}
+
+  :root{  }
+  body[data-page="pedidos"] .card{ height:auto; }
+  body[data-page="pedidos"] #ordersGrid.grid{ grid-template-columns: 1fr; }
+}
+
+/* Scroll interno dos pedidos (desktop split) */
+body[data-page="pedidos"].chat-split-open #ordersPanel,
+body[data-page="pedidos"].chat-split-open #ordersList,
+body[data-page="pedidos"].chat-split-open #ordersGridWrap{
+  height: calc(100vh - 220px);
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 14px 14px 18px;
+  scroll-padding-top: 14px;
+  scroll-padding-bottom: 18px;
+}
+
+#ordersGrid{overflow: visible;}
 </style>
 </head>
 <body data-page="pedidos">
@@ -1162,6 +1265,7 @@
         detailsById: new Map(),
 	        userByUid: new Map(),
         activeChatUrl: '',
+        activePedidoId: '',
         selectMode: false,
         selected: new Set(),
         chatWidth: 0,
@@ -1255,7 +1359,18 @@
         return String(v ?? '').replace(/[&<>"']/g, (m) => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[m]));
       }
 
-      function displayHandle(p){
+      // Para usar texto em atributos (data-*, title, etc.) sem quebrar HTML.
+      function escAttr(v){
+        return esc(String(v ?? '').replace(/\s+/g,' ').trim());
+      }
+
+      
+      function cssEsc(v){
+        try{ return (window.CSS && typeof window.CSS.escape === 'function') ? window.CSS.escape(String(v)) : String(v).replace(/[^a-zA-Z0-9_-]/g,'\\$&'); }
+        catch(_){ return String(v).replace(/[^a-zA-Z0-9_-]/g,'\\$&'); }
+      }
+
+function displayHandle(p){
         const u = String((p && p.usuario) || '').trim();
         if(u) return u.startsWith('@') ? u : `@${u}`;
         // fallback curto (não usa nome completo com vários sobrenomes)
@@ -1360,6 +1475,12 @@
         const s = String(status || '').toLowerCase();
         return s === 'pendente' || s.includes('pend') || s.includes('aguard') || s.includes('novo') || s.includes('analise');
       }
+
+      function isEmAndamentoStatus(status){
+        const s = String(status || '').toLowerCase();
+        return s.includes('andamento') || s.includes('em andamento');
+      }
+
 
       function canOpenChat(p){
         const raw = String(p?.statusOriginal || p?.status || '').toLowerCase();
@@ -1627,7 +1748,8 @@
         const meuPapel = isSouCliente ? 'cliente' : (isSouProfissional ? 'profissional' : pick(row, ['meuPapel','papelMeu','papel_usuario'], ''));
         const papelContato = isSouCliente ? 'profissional' : (isSouProfissional ? 'cliente' : pick(row, ['papelContato','papel_outro','papelDestino'], ''));
         const papelContatoLabel = papelContato === 'profissional' ? 'Profissional' : (papelContato === 'cliente' ? 'Cliente' : '');
-        const meuPapelLabel = meuPapel === 'profissional' ? 'Voce: Profissional' : (meuPapel === 'cliente' ? 'Voce: Cliente' : '');
+        // Removido conforme pedido: nao exibir chip "Voce: Profissional/Cliente".
+        const meuPapelLabel = '';
 
         return {
           id,
@@ -2117,7 +2239,11 @@
         if(state.sort === 'updated') return arr.sort((a,b)=>String(a.atualizado).localeCompare(String(b.atualizado), 'pt-BR'));
         if(state.sort === 'unread') return arr.sort((a,b)=>Number(b.naoLidas||0)-Number(a.naoLidas||0) || (new Date(b.criadoEm)-new Date(a.criadoEm)));
         if(state.sort === 'urgent') return arr.sort((a,b)=>Number(b.urgente)-Number(a.urgente) || (new Date(b.criadoEm)-new Date(a.criadoEm)));
-        return arr.sort((a,b)=>new Date(b.criadoEm)-new Date(a.criadoEm));
+        return arr.sort((a,b)=>{
+          const pa = isEmAndamentoStatus(a.status)?0:(isPendenteStatus(a.status)?1:2);
+          const pb = isEmAndamentoStatus(b.status)?0:(isPendenteStatus(b.status)?1:2);
+          return pa-pb || (new Date(b.criadoEm)-new Date(a.criadoEm));
+        });
       }
 
       function filtered(){
@@ -2137,6 +2263,7 @@
 
       function card(p){
         const selected = state.selected.has(String(p.id));
+        const isActive = document.body.classList.contains('chat-open') && state.activePedidoId && String(state.activePedidoId) === String(p.id);
         const pendente = isPendenteStatus(p.status);
         const isProfViewer = String(p.meuPapel || '') === 'profissional';
         const isClientViewer = String(p.meuPapel || '') === 'cliente';
@@ -2150,15 +2277,14 @@
         const rawTitle = String(p.titulo || '').trim();
         const needPreview = (rawNeed && rawNeed !== rawDesc && rawNeed !== rawTitle && rawNeed.toLowerCase() !== 'sem detalhes adicionais.') ? rawNeed : '';
         return `
-          <article class="card ${selected ? 'selected' : ''}" data-id="${esc(p.id)}" data-status="${esc(String(p.status||''))}">
+          <article class="card ${selected ? 'selected' : ''} ${isActive ? 'chat-active' : ''}" data-id="${esc(p.id)}" data-status="${esc(String(p.status||''))}">
             <div class="card-top">
               <div class="tags">
                 <span class="tag type"><i class='bx bx-receipt'></i>${esc(p.tipo)}</span>
                 <span class="tag ${statusClass(p.status)}">${esc(statusLabel(p.status))}</span>
                 ${p.papelContato === 'cliente' ? `<span class="tag role-client"><i class='bx bx-user'></i>Cliente</span>` : ``}
                 ${p.papelContato === 'profissional' ? `<span class="tag role-pro"><i class='bx bx-briefcase'></i>Profissional</span>` : ``}
-                ${p.meuPapelLabel ? `<span class="tag role-me">${esc(p.meuPapelLabel)}</span>` : ``}
-                ${p.urgente ? `<span class="tag urgent"><i class='bx bx-error'></i>Urgente</span>` : ''}
+                                ${p.urgente ? `<span class="tag urgent"><i class='bx bx-error'></i>Urgente</span>` : ''}
               </div>
               <button class="card-select" type="button" data-action="select" data-id="${esc(p.id)}" aria-label="Selecionar pedido">
                 <i class='bx bx-check'></i>
@@ -2185,8 +2311,10 @@
               </div>
             </div>
 
-            <h3 class="title">${esc(p.titulo)}</h3>
-            ${needPreview ? `<p class="need-preview"><i class='bx bx-bulb'></i><span>${esc(needPreview)}</span></p>` : ``}
+            <div class="title-row">
+              <h3 class="title">${esc(p.titulo)}</h3>
+              ${needPreview ? `<button class="need-info" type="button" aria-label="Ver informacoes do pedido" data-tip="${escAttr(needPreview)}"><i class='bx bx-info-circle'></i></button>` : ``}
+            </div>
             ${p.descricao ? `<p class="desc">${esc(p.descricao)}</p>` : ``}
             ${isRecusado && motivoRecusa ? `<p class="recusa-note"><i class='bx bx-error-circle'></i><span>${esc(motivoRecusa)}</span></p>` : ``}
 
@@ -2198,9 +2326,8 @@
             </div>
 
             <div class="footer">
-              <span class="unread"><i class='bx bx-message-rounded-dots'></i>${pendente ? 'Novo pedido' : (p.naoLidas ? `${p.naoLidas} novas` : 'Sem novas')}</span>
-              <div class="actions">
-                ${chatLiberado ? `<button class="btn-order primary" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i><span class="btn-text">Abrir chat</span></button>` : ``}
+<div class="actions">
+                ${chatLiberado ? `<button class="btn-order primary ${isActive ? 'danger' : ''}" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i><span class="btn-text">${isActive ? 'Fechar chat' : 'Abrir chat'}</span></button>` : ``}
                 <button class="btn-order secondary" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i><span class="btn-text">Detalhes</span></button>
               </div>
             </div>
@@ -2423,24 +2550,44 @@
 
       function lockScrollIfNeeded(){
         const isMobile = window.matchMedia('(max-width: 900px)').matches;
-        const isOpen = !!(el.chatDrawer && el.chatDrawer.classList.contains('open'));
-        if(isMobile && isOpen){
-          document.documentElement.classList.add('no-scroll');
-          document.body.classList.add('no-scroll');
-        }else{
-          // Nao recursar aqui (isso gerava "Maximum call stack size exceeded").
-          // Quando nao estiver no mobile ou o chat estiver fechado, liberamos o scroll.
-          document.documentElement.classList.remove('no-scroll');
-          document.body.classList.remove('no-scroll');
-        }
+        const drawerOpen = document.body.classList.contains('chat-drawer-open');
+        // Só trava o scroll no mobile, quando o drawer do chat estiver realmente aberto
+        document.body.classList.toggle('no-scroll', !!(isMobile && drawerOpen));
       }
 
       window.addEventListener('resize', lockScrollIfNeeded);
 
-      function openInlineChat(p){
+      
+      function setActivePedidoCard(pedidoId){
+        const pid = String(pedidoId||'');
+        // clear previous
+        if(state.activePedidoId){
+          const prev = document.querySelector(`.card[data-id="${cssEsc(String(state.activePedidoId))}"]`);
+          if(prev) prev.classList.remove('chat-active');
+          const prevBtn = document.querySelector(`button[data-action="chat"][data-id="${cssEsc(String(state.activePedidoId))}"]`);
+          if(prevBtn){
+            const t = prevBtn.querySelector('.btn-text');
+            if(t) t.textContent = 'Abrir chat';
+            prevBtn.classList.remove('danger');
+          }
+        }
+        state.activePedidoId = pid;
+        if(!pid) return;
+        const card = document.querySelector(`.card[data-id="${cssEsc(pid)}"]`);
+        if(card) card.classList.add('chat-active');
+        const btn = document.querySelector(`button[data-action="chat"][data-id="${cssEsc(pid)}"]`);
+        if(btn){
+          const t = btn.querySelector('.btn-text');
+          if(t) t.textContent = 'Fechar chat';
+          btn.classList.add('danger');
+        }
+      }
+
+function openInlineChat(p){
         if(!p || !p.id){ showToast('Pedido invalido para abrir chat.'); return; }
         if(!canOpenChat(p)){ showToast('O chat sera liberado quando o pedido for aceito.'); return; }
         setChatPanelTitle(p);
+        setActivePedidoCard(p.id);
         try{
           localStorage.setItem('doke_pedido_contexto', JSON.stringify(p));
           localStorage.setItem('pedidoAtual', JSON.stringify(p));
@@ -2506,6 +2653,7 @@
 
       function closeInlineChat(){
         stopChatResize();
+        setActivePedidoCard('');
         const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
         // Fecha split view no desktop
         if(isDesktop){
@@ -2813,6 +2961,15 @@
         });
 (el.chips || []).forEach(ch => on(ch, 'click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
         on(el.grid, 'click', (ev) => {
+          const infoBtn = ev.target.closest('.need-info');
+          if(infoBtn){
+            ev.preventDefault();
+            ev.stopPropagation();
+            // Fecha outros
+            document.querySelectorAll('.need-info.is-open').forEach((b)=>{ if(b!==infoBtn) b.classList.remove('is-open'); });
+            infoBtn.classList.toggle('is-open');
+            return;
+          }
           const btn = ev.target.closest('button[data-action][data-id]');
           if(btn){
             const p = byId(btn.dataset.id);
@@ -2826,7 +2983,15 @@
             if(action === 'accept'){ decidePedido(p, 'aceito'); return; }
             if(action === 'reject'){ decidePedido(p, 'recusado'); return; }
             if(action === 'cancel'){ decidePedido(p, 'cancelado'); return; }
-            if(action === 'chat'){ openChat(p); return; }
+            if(action === 'chat'){
+              const pid = String(btn.dataset.id||'');
+              if(document.body.classList.contains('chat-open') && state.activePedidoId && String(state.activePedidoId)===pid){
+                closeInlineChat();
+                return;
+              }
+              openChat(p);
+              return;
+            }
             if(action === 'details'){ openDetails(p); return; }
             return;
           }
@@ -2835,6 +3000,10 @@
           toggleSelected(cardEl.dataset.id);
         });
         document.addEventListener('click', (ev) => {
+          // fecha tooltip de preview ao clicar fora
+          if(!ev.target.closest('.need-info')){
+            document.querySelectorAll('.need-info.is-open').forEach((b)=>b.classList.remove('is-open'));
+          }
           const btn = ev.target.closest('#chatDrawer [data-close], #chatSide [data-close]');
           if(btn) closeInlineChat();
         });

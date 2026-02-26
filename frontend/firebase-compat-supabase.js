@@ -527,6 +527,17 @@ function buildTableFromPath(parts){
     return queryBuilder.or(orExpr);
   }
 
+  // Normaliza nome de campo usado em queries (where/orderBy) para bater com schemas legados.
+  // Muitos schemas usam colunas "deuid/parauid" enquanto o código legado consulta "deUid/paraUid".
+  function normalizeQueryField(field){
+    const f = String(field || "").trim();
+    if(!f) return f;
+    // Se já é snake_case ou já está em minúsculo, mantém.
+    if(f.includes("_") || f === f.toLowerCase()) return f;
+    // camelCase -> lower sem underscores: deUid -> deuid, dataAtualizacao -> dataatualizacao
+    return f.replace(/[A-Z]/g, (m) => m.toLowerCase());
+  }
+
   function normalizePayload(payload){
     const out = { ...(payload||{}) };
 
@@ -590,15 +601,16 @@ function buildTableFromPath(parts){
       if (parent && parent.id && fk) base = base.eq(quotePgField(fk), parent.id);
       for (const c of whereClauses) {
         const op = c.op;
-        if (op === "==" || op === "=") base = base.eq(quotePgField(c.field), c.value);
-        else if (op === "!=") base = base.neq(quotePgField(c.field), c.value);
-        else if (op === ">") base = base.gt(quotePgField(c.field), c.value);
-        else if (op === ">=") base = base.gte(quotePgField(c.field), c.value);
-        else if (op === "<") base = base.lt(quotePgField(c.field), c.value);
-        else if (op === "<=") base = base.lte(quotePgField(c.field), c.value);
-        else if (op === "in") base = base.in(quotePgField(c.field), c.value);
-        else if (op === "array-contains") base = base.contains(quotePgField(c.field), [c.value]);
-        else base = base.eq(quotePgField(c.field), c.value);
+        const field = quotePgField(normalizeQueryField(c.field));
+        if (op === "==" || op === "=") base = base.eq(field, c.value);
+        else if (op === "!=") base = base.neq(field, c.value);
+        else if (op === ">") base = base.gt(field, c.value);
+        else if (op === ">=") base = base.gte(field, c.value);
+        else if (op === "<") base = base.lt(field, c.value);
+        else if (op === "<=") base = base.lte(field, c.value);
+        else if (op === "in") base = base.in(field, c.value);
+        else if (op === "array-contains") base = base.contains(field, [c.value]);
+        else base = base.eq(field, c.value);
       }
       return base;
     };
@@ -636,7 +648,7 @@ function buildTableFromPath(parts){
       let r = buildBase(fk);
       for (const o of orders) {
         const asc = (String(o.dir || "asc").toLowerCase() !== "desc");
-        r = r.order(quotePgField(o.field), { ascending: asc });
+        r = r.order(quotePgField(normalizeQueryField(o.field)), { ascending: asc });
       }
       if (Number.isFinite(limitN)) r = r.limit(limitN);
       return await withTimeout(r, READ_TIMEOUT_MS, `timeout_supabase_getdocs_${String(q.table || "unknown")}`);
