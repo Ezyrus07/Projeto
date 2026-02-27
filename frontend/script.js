@@ -8769,14 +8769,9 @@ window.abrirModalPost = async function(id, colecao) {
         }
 
         // --- CARREGA COMENT?RIOS ---
-        const isMobileModal = window.matchMedia('(max-width: 760px)').matches;
         const listEl = document.getElementById('modalCommentsList');
-        if (!isMobileModal) {
-            carregarComentariosNoModal(id, colecao);
-            if (listEl) listEl.dataset.loaded = "1";
-        } else if (listEl) {
-            listEl.dataset.loaded = "0";
-        }
+        carregarComentariosNoModal(id, colecao);
+        if (listEl) listEl.dataset.loaded = "1";
 
     } catch(e) { console.error("Erro modal:", e); }
 }
@@ -9292,13 +9287,8 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     window.currentSupaPublicacaoAuthorId = item.user_id;
 
     await verificarStatusLikeSupabase(publicacaoId);
-    const isMobileModal = window.matchMedia('(max-width: 760px)').matches;
-    if (!isMobileModal) {
-        carregarComentariosSupabase(publicacaoId);
-        commentsList.dataset.loaded = "1";
-    } else {
-        commentsList.dataset.loaded = "0";
-    }
+    carregarComentariosSupabase(publicacaoId);
+    commentsList.dataset.loaded = "1";
 }
 // Fun??o para fechar clicando fora
 window.fecharModalPost = function(e) {
@@ -10241,7 +10231,10 @@ window.fecharModalPostForce = function() {
         modal.style.display = 'none';
         const content = modal.querySelector('.modal-content');
         const list = modal.querySelector('.modal-comments-section');
-        if (content) content.classList.remove('is-comments-collapsed');
+        if (content) {
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+        }
         if (list) list.dataset.loaded = "0";
         
         // Limpa v?deo/imagem para parar som
@@ -11210,23 +11203,18 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
     try {
         const modal = document.getElementById('modalPostDetalhe');
         const content = modal ? modal.querySelector('.modal-content') : null;
-        const list = modal ? modal.querySelector('.modal-comments-section') : null;
+        const list = document.getElementById('modalCommentsList');
         if (content) {
-            const isMobile = window.matchMedia('(max-width: 760px)').matches;
-            content.classList.toggle('is-comments-collapsed', isMobile);
-            if (isMobile && list) list.dataset.loaded = "0";
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+            if (list) list.dataset.loaded = "1";
         }
     } catch (e) {}
 
     if (window.currentPostId && window.currentCollection) {
-        const isMobile = window.matchMedia('(max-width: 760px)').matches;
         const list = document.getElementById('modalCommentsList');
-        if (isMobile) {
-            if (list) list.dataset.loaded = "0";
-        } else {
-            carregarComentariosNoModal(window.currentPostId, window.currentCollection);
-            if (list) list.dataset.loaded = "1";
-        }
+        carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+        if (list) list.dataset.loaded = "1";
         if (auth.currentUser) verificarStatusLike(window.currentPostId, window.currentCollection, auth.currentUser.uid);
     }
     atualizarBotaoDenunciaPost();
@@ -11242,11 +11230,11 @@ window.abrirModalPost = async function(id, colecao) {
     try {
         const modal = document.getElementById('modalPostDetalhe');
         const content = modal ? modal.querySelector('.modal-content') : null;
-        const list = modal ? modal.querySelector('.modal-comments-section') : null;
+        const list = document.getElementById('modalCommentsList');
         if (content) {
-            const isMobile = window.matchMedia('(max-width: 760px)').matches;
-            content.classList.toggle('is-comments-collapsed', isMobile);
-            if (isMobile && list) list.dataset.loaded = "0";
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+            if (list) list.dataset.loaded = "1";
         }
     } catch (e) {}
     window.currentSupaPostType = null;
@@ -11270,11 +11258,11 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     try {
         const modal = document.getElementById('modalPostDetalhe');
         const content = modal ? modal.querySelector('.modal-content') : null;
-        const list = modal ? modal.querySelector('.modal-comments-section') : null;
+        const list = document.getElementById('modalCommentsList');
         if (content) {
-            const isMobile = window.matchMedia('(max-width: 760px)').matches;
-            content.classList.toggle('is-comments-collapsed', isMobile);
-            if (isMobile && list) list.dataset.loaded = "0";
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+            if (list) list.dataset.loaded = "1";
         }
     } catch (e) {}
     atualizarBotaoDenunciaPost();
@@ -11288,32 +11276,30 @@ window.toggleComentariosModal = function() {
     const content = modal ? modal.querySelector('.modal-content') : null;
     if (!content) return;
 
-    const collapsed = content.classList.toggle('is-comments-collapsed');
-
-    if (!collapsed) {
-        const list = modal.querySelector('.modal-comments-section');
-        const shouldLazyLoad = window.matchMedia('(max-width: 760px)').matches;
-        if (shouldLazyLoad && list && list.dataset.loaded !== "1") {
-            try {
-                if (window.currentPostSource === "supabase") {
-                    if (window.currentSupaPostType === "videos_curtos" && window.currentSupaReelId) {
-                        carregarComentariosReelSupabase(window.currentSupaReelId);
-                    } else if (window.currentSupaPublicacaoId) {
-                        carregarComentariosSupabase(window.currentSupaPublicacaoId);
-                    }
-                } else if (window.currentCollection === "reels" && window.currentPostId) {
-                    carregarComentariosReel(window.currentPostId);
-                } else if (window.currentPostId && window.currentCollection) {
-                    carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+    content.classList.remove('is-comments-collapsed');
+    const expanded = content.classList.toggle('is-comments-expanded');
+    const list = modal.querySelector('.modal-comments-section');
+    const shouldLazyLoad = window.matchMedia('(max-width: 760px)').matches;
+    if (shouldLazyLoad && list && list.dataset.loaded !== "1") {
+        try {
+            if (window.currentPostSource === "supabase") {
+                if (window.currentSupaPostType === "videos_curtos" && window.currentSupaReelId) {
+                    carregarComentariosReelSupabase(window.currentSupaReelId);
+                } else if (window.currentSupaPublicacaoId) {
+                    carregarComentariosSupabase(window.currentSupaPublicacaoId);
                 }
-                list.dataset.loaded = "1";
-            } catch (e) {}
-        }
-        if (list) {
-            setTimeout(() => {
-                try { list.scrollTop = 0; } catch (e) {}
-            }, 0);
-        }
+            } else if (window.currentCollection === "reels" && window.currentPostId) {
+                carregarComentariosReel(window.currentPostId);
+            } else if (window.currentPostId && window.currentCollection) {
+                carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+            }
+            list.dataset.loaded = "1";
+        } catch (e) {}
+    }
+    if (list) {
+        setTimeout(() => {
+            try { if (expanded) list.scrollTop = 0; } catch (e) {}
+        }, 0);
     }
 };
 

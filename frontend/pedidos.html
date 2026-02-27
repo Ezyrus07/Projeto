@@ -1188,6 +1188,8 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     width:100% !important;
     max-width:100% !important;
     overflow-x:hidden !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   body[data-page="pedidos"] .dp-wrap{
@@ -1207,6 +1209,26 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     max-width:100% !important;
     min-width:0 !important;
     box-sizing:border-box !important;
+  }
+
+  /* mobile: evita "dois scrolls" brigando (container interno x pagina) */
+  body[data-page="pedidos"] .content-split,
+  body[data-page="pedidos"] .panel,
+  body[data-page="pedidos"] #ordersGrid,
+  body[data-page="pedidos"] #emptyState{
+    height:auto !important;
+    max-height:none !important;
+    overflow:visible !important;
+  }
+
+  /* evita travar gesto vertical em iOS por causa de barras horizontais */
+  body[data-page="pedidos"] .toolbar-actions,
+  body[data-page="pedidos"] .filters{
+    overflow:visible !important;
+    overflow-x:visible !important;
+    -webkit-overflow-scrolling:auto !important;
+    flex-wrap:wrap !important;
+    touch-action:pan-y !important;
   }
 
   body[data-page="pedidos"] .hero{
@@ -2717,7 +2739,11 @@ function displayHandle(p){
 
       function lockScrollIfNeeded(){
         const isMobile = window.matchMedia('(max-width: 900px)').matches;
-        const drawerOpen = !!(el.chatDrawer && el.chatDrawer.classList.contains('open'));
+        const drawerOpen = !!(
+          el.chatDrawer &&
+          el.chatDrawer.classList.contains('open') &&
+          document.body.classList.contains('chat-drawer-open')
+        );
         document.documentElement.classList.toggle('no-scroll', !!(isMobile && drawerOpen));
         document.body.classList.toggle('no-scroll', !!(isMobile && drawerOpen));
         if (!(isMobile && drawerOpen)) {
