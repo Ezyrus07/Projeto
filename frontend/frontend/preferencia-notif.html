@@ -1,0 +1,657 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Preferências de Notificação | Doke</title>
+<script defer="" src="script.js?v=20260218v60"></script>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+<style>
+        /* ================= ESTILOS LOCAIS ================= */
+        
+        /* Ajuste fino para garantir que o conteÃºdo desÃ§a (caso o style.css nÃ£o tenha padding suficiente no main) */
+        main {
+            padding-bottom: 10px;
+        }
+
+        /* Container do TÃ­tulo + Voltar */
+        .page-header {
+            width: 100%; 
+            max-width: 600px; /* Largura fixa para alinhar com o card */
+            margin: 0 auto 20px auto; /* Centraliza na tela */
+            display: flex; 
+            align-items: center; 
+            gap: 15px;
+        }
+
+        /* BotÃ£o Voltar Circular */
+        .btn-back {
+            background: rgba(255,255,255,0.25); 
+            border: 1px solid rgba(255,255,255,0.4);
+            width: 42px; 
+            height: 42px; 
+            border-radius: 50%;
+            display: flex; 
+            align-items: center; 
+            justify-content: center;
+            color: white; 
+            font-size: 1.6rem; 
+            transition: 0.2s;
+            text-decoration: none;
+            flex-shrink: 0;
+        }
+        .btn-back:hover { 
+            background: white; 
+            color: var(--cor2); 
+        }
+
+        .page-header h1 { 
+            color: white; 
+            text-shadow: 0 2px 4px rgba(0,0,0,0.15); 
+            font-size: 1.8rem; 
+            font-weight: 700; 
+            margin: 0;
+        }
+
+        /* CartÃ£o Branco Central */
+        .settings-card {
+            background: white; 
+            width: 100%; 
+            max-width: 700px; /* Define a largura mÃ¡xima */
+            margin: 0 auto;   /* CENTRALIZA O CARD */
+            border-radius: 16px; 
+            box-shadow: 0 8px 25px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0; 
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        /* TÃ­tulos das SeÃ§Ãµes */
+        .section-title {
+            font-size: 1.1rem; 
+            color: var(--cor2); 
+            font-weight: 700;
+            margin-bottom: 25px; 
+            padding-bottom: 12px; 
+            border-bottom: 1px solid #eee;
+        }
+
+        /* Linhas de OpÃ§Ã£o (Toggle) */
+        .toggle-row {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            padding: 18px 0; 
+            border-bottom: 1px solid #fbfbfb;
+        }
+        .toggle-row:last-child { border-bottom: none; }
+        
+        .toggle-info h4 { margin: 0; font-size: 1rem; color: #333; font-weight: 600; }
+        .toggle-info p { margin: 4px 0 0 0; font-size: 0.85rem; color: #888; }
+        
+        /* BotÃ£o Switch Personalizado */
+        .switch { position: relative; display: inline-block; width: 52px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        
+        .slider {
+            position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #e0e0e0; transition: .3s; border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px;
+            background-color: white; transition: .3s; border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        
+        input:checked + .slider { background-color: var(--cor0); }
+        input:checked + .slider:before { transform: translateX(24px); }
+
+        /* EspaÃ§amento entre grupos */
+        .group-spacer { margin-top: 40px; }
+
+        /* BotÃ£o Salvar */
+        .btn-save {
+            width: 100%; 
+            padding: 16px; 
+            background: var(--cor0); 
+            color: white;
+            border: none; 
+            border-radius: 12px; 
+            font-weight: 700; 
+            cursor: pointer;
+            margin-top: 30px; 
+            transition: 0.2s; 
+            font-size: 1rem;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .btn-save:hover { 
+            background: #086659; 
+            transform: translateY(-2px); 
+            box-shadow: 0 5px 15px rgba(11, 119, 104, 0.2);
+        }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .page-header h1 { font-size: 1.5rem; }
+            .settings-card { padding: 25px; }
+            main { padding-top: 100px; padding-left: 20px; padding-right: 20px; }
+        }
+    
+        /* Preview de notificaÃ§Ã£o */
+        .notif-preview{padding:14px 14px; margin:18px 0 14px;}
+        .np-head{display:flex;align-items:center;gap:10px;font-weight:900;color:#0f172a;margin-bottom:10px;}
+        .np-head i{font-size:20px;color:var(--cor0);}
+        .np-toast{
+          border:1px solid rgba(2,6,23,.08);
+          background:rgba(255,255,255,.72);
+          border-radius:14px;
+          padding:12px 12px;
+          box-shadow:0 10px 26px rgba(2,6,23,.06);
+        }
+        .np-title{font-weight:900;color:#0f172a;margin-bottom:4px;}
+        .np-text{color:rgba(2,6,23,.70);line-height:1.35;}
+        .np-channels{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;}
+        .np-chip{
+          display:inline-flex;align-items:center;gap:8px;
+          padding:8px 10px;border-radius:999px;
+          border:1px solid rgba(2,6,23,.10);
+          background:rgba(11,119,104,.06);
+          color:#0b7768;font-weight:800;font-size:12.5px;
+        }
+        .np-chip.off{background:rgba(2,6,23,.04);color:rgba(2,6,23,.55);}
+        .np-chip i{font-size:16px;}
+
+</style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<body data-page="mais">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<main><div class="content-wrapper"><div class="settings-shell" id="settingsShell"><aside aria-label="Ajustes" class="settings-side">
+<div class="settings-profile" onclick="irParaPerfilCorreto()" onkeypress="if(event.key==='Enter'||event.key===' '){irParaPerfilCorreto();}" role="button" tabindex="0">
+<img alt="Foto" class="profile-avatar" decoding="async" id="mais-foto" loading="lazy" src="https://placehold.co/150"/>
+<div class="settings-profile__meta">
+<p class="settings-profile__name" id="mais-nome">Carregando...</p>
+<div class="settings-profile__user" id="mais-user">@carregando</div>
+</div>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</div>
+<hr class="settings-side__divider"/>
+<div class="settings-side__group">
+<div class="settings-side__title">MINHA CONTA</div>
+<a class="settings-nav-item" data-section="dadospessoais" href="dadospessoais.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-user"></i></span>
+<span class="settings-nav-text">Dados pessoais</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
+<span class="settings-nav-text">Endereços</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="senha" href="senha.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
+<span class="settings-nav-text">Segurança e senha</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-credit-card"></i></span>
+<span class="settings-nav-text">Pagamentos</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">PREFERÊNCIAS</div>
+<div class="settings-toggle-row">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
+<span class="settings-toggle-label">Modo escuro</span>
+<label class="switch" style="margin-left:auto;">
+<input id="darkModeSwitch" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
+<span class="settings-nav-text">Notificações</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="idioma" href="idioma.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-globe"></i></span>
+<span class="settings-nav-text">Idioma</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="privacidade" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-quarter"></i></span>
+<span class="settings-nav-text">Privacidade de mensagens</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">SUPORTE</div>
+<a class="settings-nav-item" data-section="ajuda" href="ajuda.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-help-circle"></i></span>
+<span class="settings-nav-text">Central de ajuda</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="#" onclick="return false;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-file"></i></span>
+<span class="settings-nav-text">Termos de uso</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="sobre-doke" href="sobre-doke.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-info-circle"></i></span>
+<span class="settings-nav-text">Sobre a Doke</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Notificações</h1><p>Escolha o que você quer receber e quando.</p></div></div><div class="settings-frame-card"><div class="settings-card">
+<div class="section-title">Canais de ComúnicaÃ§Ã£o</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>Notificações Push</h4>
+<p>Receber alertas no celular e navegador.</p>
+</div>
+<label class="switch">
+<input checked="" data-pref-key="push" id="prefPush" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>E-mail</h4>
+<p>Resumos semanais e avisos importantes.</p>
+</div>
+<label class="switch">
+<input checked="" data-pref-key="email" id="prefEmail" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>WhatsApp / SMS</h4>
+<p>Avisos urgentes sobre serviços e segurança.</p>
+</div>
+<label class="switch">
+<input data-pref-key="whatsapp" id="prefWhatsapp" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="group-spacer"></div>
+<div class="section-title">Tipos de Notificação</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>Mensagens e Chat</h4>
+<p>Quando alguém envia uma mensagem direta.</p>
+</div>
+<label class="switch">
+<input checked="" data-pref-key="mensagens_chat" id="prefMensagens" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>Atualizações de Pedidos</h4>
+<p>Mudanças de status, novos orçamentos, etc.</p>
+</div>
+<label class="switch">
+<input checked="" data-pref-key="pedidos" id="prefPedidos" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>Dicas e Comunidade</h4>
+<p>Novidades nos grupos que você participa.</p>
+</div>
+<label class="switch">
+<input checked="" data-pref-key="comunidade" id="prefComunidade" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="toggle-row">
+<div class="toggle-info">
+<h4>Promoções e Ofertas</h4>
+<p>Descontos exclusivos e campanhas da Doke.</p>
+</div>
+<label class="switch">
+<input data-pref-key="promocoes" id="prefPromocoes" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<div class="notif-preview doke-soft-card">
+<div class="np-head"><i class="bx bx-bell"></i> Preview</div>
+<div class="np-body">
+<div class="np-toast">
+<div class="np-title">Nova mensagem</div>
+<div class="np-text">João: “Oi! Você está disponível hoje?â€</div>
+</div>
+<div class="np-channels" id="npChannels"></div>
+</div>
+</div>
+<button class="btn-save" onclick="salvarPreferencias()">Salvar Alterações</button>
+</div></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
+<nav class="bottom-nav">
+<a class="item active" href="index.html">
+<img alt="Início" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
+<span>Início</span>
+</a>
+<a class="item" href="busca.html">
+<img alt="Explorar" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/>
+<span>Explorar</span>
+</a>
+<a class="item" href="anunciar.html">
+<img alt="Anunciar" class="icon azul" decoding="async" loading="lazy" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" src="assets/Imagens/icone-anunciar.png"/>
+<span>Anunciar</span>
+</a>
+<a class="item" href="notificacoes.html">
+<img alt="Notificações" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
+<span>Notificações</span>
+</a>
+<a class="item" href="#" onclick="irParaMeuPerfil(event)">
+<img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
+<span>Perfil</span>
+</a>
+</nav>
+<script>
+        const PREFS_KEY = "doke_notif_prefs_v1";
+        const DEFAULT_PREFS = {
+            push: true,
+            email: true,
+            whatsapp: false,
+            mensagens_chat: true,
+            pedidos: true,
+            comunidade: true,
+            promocoes: false
+        };
+
+        const readJSON = (key, fallback) => {
+            try {
+                const raw = localStorage.getItem(key);
+                if (!raw) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed ?? fallback;
+            } catch (_) {
+                return fallback;
+            }
+        };
+
+        const writeJSON = (key, value) => {
+            try { localStorage.setItem(key, JSON.stringify(value)); } catch (_) {}
+        };
+
+        const getPrefInputs = () => Array.from(document.querySelectorAll("input[data-pref-key]"));
+
+        const applyPrefs = (prefs) => {
+            getPrefInputs().forEach((input) => {
+                const key = input.dataset.prefKey;
+                if (!key) return;
+                input.checked = !!prefs[key];
+            });
+        };
+
+        const collectPrefs = () => {
+            const prefs = { ...DEFAULT_PREFS };
+            getPrefInputs().forEach((input) => {
+                const key = input.dataset.prefKey;
+                if (!key) return;
+                prefs[key] = !!input.checked;
+            });
+            return prefs;
+        };
+
+        const savePrefsLocal = (prefs) => {
+            writeJSON(PREFS_KEY, prefs);
+            const perfil = readJSON("doke_usuario_perfil", {}) || {};
+            perfil.notif_prefs = prefs;
+            writeJSON("doke_usuario_perfil", perfil);
+        };
+
+        const getSupabaseClientLocal = () =>
+            (typeof window.getSupabaseClient === "function"
+                ? window.getSupabaseClient()
+                : (window.sb || window.supabaseClient || null));
+
+        const loadPrefsSupabase = async () => {
+            const sb = getSupabaseClientLocal();
+            if (!sb?.auth?.getUser || !sb.from) return null;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return null;
+
+                const { data: row, error } = await sb
+                    .from("usuarios")
+                    .select("notif_prefs")
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`)
+                    .maybeSingle();
+
+                if (error) return null;
+                if (row && typeof row.notif_prefs === "object" && row.notif_prefs) {
+                    return row.notif_prefs;
+                }
+                return null;
+            } catch (_) {
+                return null;
+            }
+        };
+
+        const savePrefsSupabase = async (prefs) => {
+            const sb = getSupabaseClientLocal();
+            if (!sb?.auth?.getUser || !sb.from) return;
+
+            try {
+                const { data } = await sb.auth.getUser();
+                const user = data?.user;
+                if (!user?.id) return;
+
+                await sb
+                    .from("usuarios")
+                    .update({ notif_prefs: prefs })
+                    .or(`uid.eq.${user.id},id.eq.${user.id}`);
+            } catch (error) {
+                // optional sync, ignore if schema does not have this field
+                console.warn("[prefs] sync supabase ignorado:", error?.message || error);
+            }
+        };
+
+        window.salvarPreferencias = async function() {
+            const btn = document.querySelector(".btn-save");
+            if (!btn) return;
+
+            const originalText = btn.innerText;
+            btn.disabled = true;
+            btn.innerText = "Salvando...";
+
+            try {
+                const prefs = collectPrefs();
+                savePrefsLocal(prefs);
+                await savePrefsSupabase(prefs);
+                updatePreviewChannels();
+
+                btn.innerText = "Salvo com sucesso!";
+                btn.style.background = "#199e63";
+            } catch (error) {
+                console.error(error);
+                btn.innerText = "Não foi possivel salvar";
+                btn.style.background = "#d9534f";
+            } finally {
+                setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.style.background = "var(--cor0)";
+                    btn.disabled = false;
+                }, 1800);
+            }
+        };
+
+        function updatePreviewChannels() {
+            const push = document.getElementById("prefPush");
+            const email = document.getElementById("prefEmail");
+            const wa = document.getElementById("prefWhatsapp");
+            const el = document.getElementById("npChannels");
+            if (!el) return;
+
+            const chips = [];
+            if (push?.checked) chips.push({ txt: "Push", icon: "bx-mobile" });
+            if (email?.checked) chips.push({ txt: "E-mail", icon: "bx-envelope" });
+            if (wa?.checked) chips.push({ txt: "WhatsApp/SMS", icon: "bx-message-square-dots" });
+
+            if (!chips.length) {
+                el.innerHTML = "<span class=\"np-chip off\"><i class='bx bx-bell-off'></i> Todos os canais desativados</span>";
+                return;
+            }
+            el.innerHTML = chips
+                .map((c) => `<span class=\"np-chip\"><i class='bx ${c.icon}'></i> ${c.txt}</span>`)
+                .join("");
+        }
+
+        document.addEventListener("change", function(e) {
+            if (e?.target?.matches("input[data-pref-key]")) {
+                updatePreviewChannels();
+            }
+        });
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            const localPrefs = { ...DEFAULT_PREFS, ...(readJSON(PREFS_KEY, {}) || {}) };
+            applyPrefs(localPrefs);
+            updatePreviewChannels();
+
+            const remotePrefs = await loadPrefsSupabase();
+            if (remotePrefs && typeof remotePrefs === "object") {
+                const merged = { ...DEFAULT_PREFS, ...remotePrefs };
+                applyPrefs(merged);
+                savePrefsLocal(merged);
+                updatePreviewChannels();
+            }
+        });
+
+    </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+<script defer="True" src="settings-pages.js"></script></body>
+</html>
+
+
+
+
+
+
+
+

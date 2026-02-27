@@ -150,15 +150,9 @@
 </a>
 </div>
 <div class="item">
-<a href="mensagens.html">
+<a href="chat.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
-</a>
-</div>
-<div class="item">
-<a href="pedidos.html">
-<i class="bx bx-package icon verde"></i>
-<span>Pedidos</span>
 </a>
 </div>
 <div class="item">
@@ -282,19 +276,13 @@
 </div>
 </section>
 <section class="videos-container">
-
-<div class="videos-header-top sec-head-row sec-head-row--inline is-blue">
-  <div class="sec-head-left">
-    <h2 class="sec-title" id="categorias-title2">Videos curtos</h2>
-  </div>
-  <div class="sec-head-right">
-    <a class="sec-link sec-link--solid" href="video-curtos.html" aria-label="Ver todos os vídeos curtos">Ver tudo</a>
-    <button aria-label="Videos curtos anteriores" class="carousel-nav vid-prev" type="button">❮</button>
-    <button aria-label="Próximos vídeos curtos" class="carousel-nav vid-next" type="button">❯</button>
-  </div>
+<div class="videos-header-top sec-head-row">
+<h2 class="sec-title" id="categorias-title2">Videos curtos</h2>
+<div class="sec-head-actions">
+<button aria-label="Videos curtos anteriores" class="carousel-nav vid-prev" type="button">❮</button>
+<button aria-label="Próximos vídeos curtos" class="carousel-nav vid-next" type="button">❯</button>
 </div>
-
-
+</div>
 <div class="tiktok-scroll-wrapper" id="galeria-dinamica">
 <div aria-hidden="true" class="tiktok-card is-skeleton">
 <div class="tiktok-skel-media skeleton"></div>
@@ -343,19 +331,13 @@
 </div>
 </section>
 <section class="fotos-container">
-
-<div class="section-feed-title sec-head-row sec-head-row--inline is-green" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
-  <div class="sec-head-left">
-    <h2 class="sec-title sec-title-light">Publicações</h2>
-  </div>
-  <div class="sec-head-right">
-    <a class="sec-link sec-link--solid" href="feed.html" aria-label="Ver todas as publicações">Ver tudo</a>
-    <button aria-label="Publicações anteriores" class="carousel-nav pub-prev" type="button">❮</button>
-    <button aria-label="Próximas publicações" class="carousel-nav pub-next" type="button">❯</button>
-  </div>
+<div class="section-feed-title sec-head-row" style="padding: 0; margin-bottom: 25px; margin-top: 40px;">
+<h2 class="sec-title sec-title-light">Publicações</h2>
+<div class="sec-head-actions">
+<button aria-label="Publicações anteriores" class="carousel-nav pub-prev" type="button">❮</button>
+<button aria-label="Próximas publicações" class="carousel-nav pub-next" type="button">❯</button>
 </div>
-
-
+</div>
 <div aria-busy="true" class="feed-publicacoes-grid" id="feed-global-container">
 <div aria-hidden="true" class="feed-publicacao-card dp-item pub-skel">
 <div class="dp-itemMedia pub-skel-media"><span class="pub-skel-media-fill skeleton"></span></div>
@@ -487,7 +469,7 @@
 <div class="grid-loc">
 <label class="sr-only" for="selectEstado">Estado</label>
 <select class="select-premium" id="selectEstado" name="selectEstado">
-<option disabled="" selected="" value="">Estado</option>
+<option disabled="" selected="" value="">Selecionar UF</option>
 <option value="BA">Bahia</option>
 <option value="SP">SÓo Paulo</option>
 </select>
@@ -680,7 +662,7 @@
 <div class="modal-footer-actions">
 <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
 <i class="bx bx-heart" id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-<i class="bx bx-message-rounded" onclick="toggleComentariosModal()" style="cursor:pointer;"></i>
+<i class="bx bx-message-rounded" onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
 <i class="bx bx-paper-plane" onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
 </div>
 <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
@@ -839,61 +821,9 @@
     }
   })();
 </script>
-
-<script>
-(function(){
-  function setActive(btn){
-    const wrap = btn.closest('.segmented-filters');
-    if(!wrap) return;
-    wrap.querySelectorAll('.seg-filter').forEach(b=>b.classList.toggle('is-active', b===btn));
-  }
-
-  async function refetchPublicacoes(mode){
-    // Se existir função global do seu app, usa.
-    if(typeof window.carregarPublicacoesIndex === 'function'){
-      try{ await window.carregarPublicacoesIndex({mode}); return true; }catch(e){}
-    }
-    // Fallback: apenas reordena/filtra itens já renderizados se tiver data-following
-    const cont=document.getElementById('feed-global-container');
-    if(!cont) return false;
-    const cards=[...cont.querySelectorAll('.feed-publicacao-card')].filter(c=>!c.classList.contains('pub-skel'));
-    if(!cards.length) return false;
-    cards.forEach(c=>{
-      const following = c.getAttribute('data-following') === '1';
-      c.style.display = (mode==='seguindo' && !following) ? 'none' : '';
-    });
-    return true;
-  }
-
-  async function refetchVideos(mode){
-    if(typeof window.carregarVideosCurtosIndex === 'function'){
-      try{ await window.carregarVideosCurtosIndex({mode}); return true; }catch(e){}
-    }
-    const cont=document.getElementById('galeria-dinamica');
-    if(!cont) return false;
-    const cards=[...cont.querySelectorAll('.tiktok-card')].filter(c=>!c.classList.contains('is-skeleton'));
-    if(!cards.length) return false;
-    cards.forEach(c=>{
-      const following = c.getAttribute('data-following') === '1';
-      c.style.display = (mode==='seguindo' && !following) ? 'none' : '';
-    });
-    return true;
-  }
-
-  document.addEventListener('click', async (ev)=>{
-    const btn = ev.target.closest('.seg-filter');
-    if(!btn) return;
-    const target = btn.getAttribute('data-target');
-    const mode = btn.getAttribute('data-filter');
-    setActive(btn);
-    if(target==='publicacoes') await refetchPublicacoes(mode);
-    if(target==='videos') await refetchVideos(mode);
-  });
-})();
-</script>
-
 </body>
 </html>
+
 
 
 

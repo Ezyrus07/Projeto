@@ -1,0 +1,598 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Comunidades - Doke</title>
+    <meta name="description" content="Participe de comunidades, publique conteï¿½dos e interaja com grupos locais.">
+    <meta property="og:title" content="Doke ï¿½ Comunidade">
+    <meta property="og:description" content="Participe de comunidades, publique conteï¿½dos e interaja com grupos locais.">
+    <meta property="og:type" content="website">
+    <meta property="og:image" content="assets/Imagens/doke-logo.png">
+    <meta name="theme-color" content="#0b7768">
+
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<script defer="" src="comunidades-supabase-patch.js"></script>
+<script defer="" src="comunidades-meusgrupos-fix.js"></script>
+<style>
+        /* ======================================================
+           ESTILOS ESPECÃFICOS DA PÃGINA COMUNIDADES
+           ====================================================== */
+        
+        body { background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px); }
+
+        main { padding: 20px; max-width: 1600px; }
+        @media (min-width: 1024px) {
+            main { margin-left: 270px; padding: 30px 40px; width: auto; }
+        }
+
+        .comm-hero-container {
+                background: radial-gradient(1200px 500px at 50% 0%, rgba(255, 255, 255, 0.20), transparent 55%), linear-gradient(135deg, #1f4d75 0%, #13324f 55%, #0b7768 140%);
+            padding: 40px; border-radius: 20px; margin-bottom: 40px;
+            color: white; box-shadow: 0 10px 30px rgba(42, 95, 144, 0.25);
+            position: relative; overflow: hidden;
+        }
+        .comm-hero-container::before {
+            content: ''; position: absolute; top: -50px; right: -50px;
+            width: 200px; height: 200px; background: rgba(255,255,255,0.05);
+            border-radius: 50%; pointer-events: none;
+        }
+
+        .comm-header {
+            display: flex; justify-content: space-between; align-items: flex-end;
+            margin-bottom: 30px; flex-wrap: wrap; gap: 20px; position: relative; z-index: 2;
+        }
+        .comm-title h1 { color: white; font-size: 2.2rem; margin-bottom: 8px; font-weight: 700; }
+        .comm-title p { color: rgba(255,255,255,0.85); font-size: 1rem; max-width: 500px; }
+
+        .header-actions { display: flex; gap: 15px; align-items: center; }
+        .search-bar-comm {
+            display: flex; align-items: center; background: white;
+            padding: 12px 20px; border-radius: 50px; width: 320px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1); transition: 0.3s;
+        }
+        .search-bar-comm input { background: transparent; border: none; outline: none; width: 100%; color: #333; }
+        
+        .btn-create-comm {
+            background: #00d2d3; color: #005f5f; border: none; padding: 12px 25px;
+            border-radius: 30px; font-weight: 700; cursor: pointer; display: flex; 
+            align-items: center; gap: 8px; box-shadow: 0 4px 15px rgba(0, 210, 211, 0.3);
+            transition: 0.2s; white-space: nowrap;
+        }
+        .btn-create-comm:hover { background: #fff; color: var(--cor2); }
+
+        /* Meus Grupos */
+        .my-groups-section { position: relative; z-index: 2; }
+        .section-label { color: white; font-size: 0.85rem; font-weight: 700; margin-bottom: 15px; text-transform: uppercase; opacity: 0.8; }
+        .groups-scroll { display: flex; gap: 20px; overflow-x: auto; padding-bottom: 10px; scrollbar-width: none; min-height: 90px; }
+        .my-group-item { display: flex; flex-direction: column; align-items: center; gap: 10px; cursor: pointer; min-width: 80px; transition: 0.2s; }
+        .group-img-ring {
+            width: 70px; height: 70px; border-radius: 20px; padding: 3px;
+            background: rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center;
+        }
+        .group-img-ring img { width: 100%; height: 100%; border-radius: 17px; object-fit: cover; background: white; }
+        .my-group-item span { color: white; font-size: 0.8rem; font-weight: 600; text-align: center; }
+
+        /* Layout Principal */
+        .comm-layout { display: grid; grid-template-columns: 1fr 350px; gap: 30px; }
+        /* Filtros (chips) com setas ï¿½ scroll horizontal com toque */
+        .comm-filter-nav{ position: relative; display:flex; align-items:center; gap: 10px; margin-bottom: 25px; }
+        .filter-tabs { 
+            display: flex; gap: 12px; 
+            overflow-x: auto; overflow-y: hidden;
+            flex: 1 1 auto;
+            -webkit-overflow-scrolling: touch;
+            scroll-behavior: smooth;
+            scrollbar-width: none;
+            touch-action: pan-x pan-y;
+            padding: 0 52px; /* evita chips ficarem embaixo das setas */
+        }
+        .filter-tabs::-webkit-scrollbar{ display:none; }
+
+/* Mobile: swipe nos chips (sem setas) */
+@media (max-width: 1024px){
+  .chips-arrow.comm-filter-arrow{ display:none !important; }
+  .filter-tabs{ padding: 0 !important; }
+}
+
+        .tab-btn{ scroll-snap-align: start; }
+        .chips-arrow.comm-filter-arrow{
+            width: 42px; height: 42px;
+            border-radius: 14px;
+            border: 1px solid #e6e9ef;
+            background: #fff;
+            display:flex; align-items:center; justify-content:center;
+            cursor: pointer;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+        }
+        .chips-arrow.comm-filter-arrow i{ font-size: 22px; color: var(--cor2); }
+        .chips-arrow.comm-filter-arrow:disabled{ opacity: .35; cursor: default; }
+        .comm-filter-arrow.left{ position:absolute; left: 6px; z-index: 5; }
+        .comm-filter-arrow.right{ position:absolute; right: 6px; z-index: 5; }
+
+        .tab-btn {
+            padding: 10px 24px; border: 1px solid #e0e0e0; background: white; border-radius: 30px;
+            font-weight: 600; color: #555; cursor: pointer; white-space: nowrap; transition: 0.2s;
+        }
+        .tab-btn.active { background: var(--cor2); color: white; border-color: var(--cor2); }
+
+        .grid-comunidades { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+        
+
+/* ===========================
+   Compat com render do script.js?v=20260218v60
+   (classes .com-card / .my-group-cover)
+   =========================== */
+.com-card{
+    background: white; border-radius: 16px; overflow: hidden;
+    border: 1px solid #eee; transition: 0.3s; cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.03);
+    display:flex; flex-direction: column;
+}
+.com-card:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+.com-cover{ height: 110px; background-size: cover; background-position: center; background-color: #eee; }
+.com-body{
+    padding: 16px 16px 14px;
+    display:flex; gap: 14px; align-items: flex-start;
+}
+.com-avatar{
+    width: 64px; height: 64px; border-radius: 16px; background: white;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.10);
+    border: 1px solid #eef0f4;
+    flex: 0 0 auto;
+    margin-top: -34px;
+    overflow:hidden;
+}
+.com-avatar img{ width:100%; height:100%; object-fit:cover; }
+.com-avatar i{ font-size: 28px; color: var(--cor2); }
+.com-info{ min-width:0; flex:1; }
+.com-title{ font-size: 1.15rem; font-weight: 800; color: #1d2b3a; margin-bottom: 6px; }
+.com-desc{ font-size: 0.92rem; font-weight: 700; color: #5a6676; line-height: 1.35; margin-bottom: 10px; }
+.com-meta{ display:flex; flex-wrap:wrap; gap:8px; align-items:center; }
+.pill{
+    font-size: 0.72rem; font-weight: 900; border-radius: 999px;
+    padding: 6px 10px; border: 1px solid #e6e9ef; background:#fff; color:#1d2b3a;
+}
+.meta-small{ font-size: 0.78rem; color:#7a8797; font-weight: 800; }
+.btn-ver-grupo{
+    margin-left:auto;
+    align-self:center;
+    padding: 10px 12px;
+    border: 1px solid #e6e9ef;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #0b7768, #2f80ed);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+    white-space: nowrap;
+}
+.btn-ver-grupo:hover{ filter: brightness(1.02); }
+
+/* Meus grupos (render novo do script.js?v=20260218v60) */
+.my-group-item{
+    min-width: 220px;
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.16);
+    border-radius: 16px;
+    padding: 10px;
+    display:flex;
+    gap: 10px;
+    align-items:center;
+}
+.my-group-cover{
+    width: 54px; height: 54px;
+    border-radius: 14px;
+    background-size: cover;
+    background-position: center;
+    background-color: rgba(255,255,255,0.20);
+    border: 1px solid rgba(255,255,255,0.20);
+    flex: 0 0 auto;
+}
+.my-group-info{ min-width:0; flex:1; }
+.my-group-title{ color:#fff; font-weight: 900; font-size: 0.95rem; white-space: nowrap; overflow:hidden; text-overflow: ellipsis; }
+.my-group-sub{ color: rgba(255,255,255,0.8); font-weight: 800; font-size: 0.78rem; margin-top: 2px; }
+.btn-abrir-grupo{
+    border:none;
+    border-radius: 12px;
+    padding: 9px 12px;
+    background: rgba(255,255,255,0.14);
+    color:#fff;
+    font-weight: 900;
+    cursor:pointer;
+    border: 1px solid rgba(255,255,255,0.18);
+}
+.btn-abrir-grupo:hover{ background: rgba(255,255,255,0.20); }
+
+
+        .card-comm {
+            background: white; border-radius: 16px; overflow: hidden;
+            border: 1px solid #eee; transition: 0.3s; display: flex; flex-direction: column;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.03); cursor: pointer;
+        }
+        .card-comm:hover { transform: translateY(-5px); box-shadow: 0 12px 30px rgba(0,0,0,0.08); }
+        .card-cover { height: 110px; background-size: cover; background-position: center; position: relative; background-color: #eee; }
+        .card-tag {
+            position: absolute; top: 10px; right: 10px; padding: 4px 12px;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 700; color: white; text-transform: uppercase;
+        }
+        .tag-pro { background: var(--cor0); }
+        .tag-condo { background: var(--cor2); }
+        .tag-hobby { background: #9b59b6; }
+
+        .card-body { padding: 18px; margin-top: -40px; flex: 1; display: flex; flex-direction: column; }
+        .card-icon {
+            width: 64px; height: 64px; border-radius: 16px; background: white;
+            padding: 4px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); margin-bottom: 12px; position: relative; z-index: 2;
+        }
+        .card-icon img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; }
+        .card-title { font-size: 1.15rem; font-weight: 700; color: #333; margin-bottom: 6px; }
+        .card-desc { font-size: 0.9rem; color: #666; margin-bottom: 15px; line-height: 1.5; }
+        .members-preview { display: flex; align-items: center; margin-bottom: 15px; margin-top: auto; }
+        .mem-avatar { width: 30px; height: 30px; border-radius: 50%; border: 2px solid white; margin-left: -10px; background:#ddd; }
+        .mem-count { font-size: 0.8rem; color: #888; margin-left: 10px; font-weight: 500; }
+        .card-footer { padding: 15px 18px; border-top: 1px solid #f5f5f5; background: #fafafa; }
+        .btn-entrar { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; background: white; color: #555; font-weight: 700; cursor: pointer; }
+        .btn-entrar:hover { background: var(--cor2); color: white; border-color: var(--cor2); }
+
+
+        /* ===========================
+           Ajustes Mobile/Touch (iPhone/Android)
+           - centraliza e evita overflow
+           - melhora toque nos filtros
+           - corrige botï¿½o Entrar/Entrou
+           =========================== */
+        @media (max-width: 640px) {
+            main{ padding: 14px; }
+            .comm-hero-container{ padding: 18px; border-radius: 18px; margin-bottom: 22px; }
+            .comm-header{ align-items: flex-start; }
+            .comm-title h1{ font-size: 1.8rem; }
+            .header-actions{ width: 100%; flex-direction: column; align-items: stretch; gap: 12px; }
+            .search-bar-comm{ width: 100%; }
+            .btn-create-comm{ width: 100%; justify-content: center; }
+
+            .groups-scroll{ gap: 12px; padding-bottom: 6px; }
+            .my-group-item{ min-width: 210px; }
+
+            .comm-layout{ grid-template-columns: 1fr; gap: 18px; }
+
+            /* chips com setas ï¿½ garante que a ï¿½rea clicï¿½vel nï¿½o fique ï¿½presaï¿½ */
+            .comm-filter-nav{ margin-bottom: 18px; }
+            .filter-tabs{ padding: 0 56px; }
+
+            /* Card comunidade ï¿½ botï¿½o entra como linha prï¿½pria */
+            .com-body{ flex-wrap: wrap; }
+            .com-info{ min-width: 0; }
+            .com-meta{ width: 100%; }
+            .btn-ver-grupo{
+                width: 100%;
+                margin-left: 0;
+                margin-top: 10px;
+                padding: 12px 14px;
+                border-radius: 14px;
+            }
+        }
+
+        /* Sidebar Widgets */
+        .widget-box { background: white; border-radius: 16px; padding: 25px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); border: 1px solid #eee; margin-bottom: 25px; }
+        .widget-title { font-size: 1.1rem; font-weight: 700; color: var(--cor2); margin-bottom: 20px; border-bottom: 2px solid #f5f5f5; padding-bottom: 10px; }
+        .topic-item { display: flex; gap: 15px; margin-bottom: 15px; }
+        .topic-icon { width: 40px; height: 40px; background: #f0f7ff; color: var(--cor2); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.3rem; flex-shrink: 0; }
+        
+        /* Modal Criar */
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
+        .modal-card { background: white; width: 90%; max-width: 500px; border-radius: 16px; padding: 30px; position: relative; animation: zoomIn 0.3s; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .form-label { display: block; font-weight: 600; margin-bottom: 8px; color: #444; }
+        .form-input, .form-select, .form-textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; margin-bottom: 15px; outline: none; }
+        .btn-submit-modal { width: 100%; padding: 14px; background: var(--cor2); color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
+
+        @media (max-width: 768px) {
+            .comm-layout { display: flex; flex-direction: column; }
+            .comm-hero-container { padding: 30px 20px; border-radius: 0 0 20px 20px; margin: -20px -15px 30px -15px; }
+            .comm-header { flex-direction: column; align-items: flex-start; }
+            .search-bar-comm, .btn-create-comm { width: 100%; justify-content: center; }
+            .grid-comunidades { grid-template-columns: 1fr; }
+            main { margin-left: 0 !important; padding: 20px !important; }
+        }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+  <link rel="stylesheet" href="page-comunidade.css?v=20260209v24">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body data-page="comunidade">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
+
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+
+<main>
+<div class="comm-hero-container">
+<div class="comm-header">
+<div class="comm-title">
+<h1>Comunidades</h1>
+<p>Conecte-se, troque experiências e cresóa junto com outros profissionais e vizinhos.</p>
+</div>
+<div class="header-actions">
+<div class="search-bar-comm">
+<i class="bx bx-search"></i>
+<input id="inputBuscaComm" onkeyup="filtrarComunidadesTela(this.value)" placeholder="Buscar grupos..." type="text"/>
+</div>
+<button class="btn-create-comm" onclick="abrirModalCriarComm()"><i class="bx bx-plus-circle"></i> Criar Grupo</button>
+</div>
+</div>
+<section class="my-groups-section">
+<div class="section-label">Meus Grupos</div>
+<div class="groups-scroll" id="listaMeusGrupos">
+<div style="color:rgba(255,255,255,0.7); padding:10px;">Carregando seus grupos...</div>
+</div>
+</section>
+</div>
+<div class="comm-layout">
+<div class="main-feed-comm">
+<div class="comm-filter-nav">
+<button aria-label="Categorias anteriores" class="chips-arrow comm-filter-arrow left" onclick="scrollCommFiltros(-1)" type="button">
+<i class="bx bx-chevron-left"></i>
+</button>
+<div class="filter-tabs" id="commFilterTabs">
+<button class="tab-btn active" onclick="filtrarComunidadesTipo('todos', this)">Descobrir</button>
+<button class="tab-btn" onclick="filtrarComunidadesTipo('Pro', this)">Profissionais</button>
+<button class="tab-btn" onclick="filtrarComunidadesTipo('Condomï¿½nio', this)">Condomínios</button>
+<button class="tab-btn" onclick="filtrarComunidadesTipo('Hobby', this)">Hobbies</button>
+</div>
+<button aria-label="Próximas categorias" class="chips-arrow comm-filter-arrow right" onclick="scrollCommFiltros(1)" type="button">
+<i class="bx bx-chevron-right"></i>
+</button>
+</div>
+<div class="grid-comunidades" id="listaComunidades">
+<div style="text-align:center; padding:40px; color:#888; grid-column:1/-1;">
+<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i>
+<p>Buscando comunidades...</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Início</span></a>
+<a class="item active" href="comunidade.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png"/><span>Grupos</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<div class="modal-overlay" id="modalCriarComm">
+<div class="modal-card">
+<button onclick="fecharModalCriarComm()" style="position:absolute; top:15px; right:15px; border:none; background:none; font-size:1.5rem; cursor:pointer;">×</button>
+<h2 style="margin-bottom:20px; color:var(--cor2);">Novo Grupo</h2>
+<form onsubmit="criarNovaComunidade(event)">
+<label class="form-label">Nome do Grupo</label>
+<input class="form-input" id="commNome" placeholder="Ex: Eletricistas Unidos" required="" type="text"/>
+<label class="form-label">Descrição</label>
+<textarea class="form-textarea" id="commDesc" placeholder="Sobre o que • este grupo?" required=""></textarea>
+<label class="form-label">Tipo de Comunidade</label>
+<select class="form-select" id="commTipo">
+<option value="Pro">Profissional (Networking)</option>
+<option value="Condomínio">Condomínio / Vizinhos</option>
+<option value="Hobby">Hobby / Interesse</option>
+</select>
+<label class="form-label">Imagem de Capa (Opcional)</label>
+<input accept="image/*" class="form-input" id="commFoto" type="file"/>
+<button class="btn-submit-modal" type="submit">Criar Comunidade</button>
+</form>
+</div>
+</div>
+<script>
+  window.abrirModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'flex';
+  }
+  window.fecharModalCriarComm = function() {
+    document.getElementById('modalCriarComm').style.display = 'none';
+  }
+
+  function _getCardTitle(card){
+    const t = card.querySelector('.com-title') || card.querySelector('.card-title') || card.querySelector('[data-title]');
+    return (t ? t.textContent : '').trim();
+  }
+
+  function _getCardTipo(card){
+    const attr = (card.getAttribute('data-tipo') || '').trim();
+    if (attr) return attr;
+    const pill = card.querySelector('.pill');
+    return (pill ? pill.textContent : '').trim();
+  }
+
+  window.filtrarComunidadesTela = function(termo) {
+    const q = (termo || '').toLowerCase().trim();
+    const cards = document.querySelectorAll('.com-card, .card-comm');
+    cards.forEach(card => {
+      const titulo = _getCardTitle(card).toLowerCase();
+      card.style.display = (!q || titulo.includes(q)) ? '' : 'none';
+    });
+  }
+
+  window.filtrarComunidadesTipo = function(tipo, btn) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    if (btn) btn.classList.add('active');
+
+    const target = (tipo || 'todos').toLowerCase();
+    const cards = document.querySelectorAll('.com-card, .card-comm');
+
+    cards.forEach(card => {
+      const t = _getCardTipo(card).toLowerCase();
+      const ok = (target === 'todos') || (t === target) || (t.includes(target));
+      card.style.display = ok ? '' : 'none';
+    });
+  }
+
+  function atualizarSetasFiltrosComm() {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const prev = document.querySelector('.comm-filter-arrow.left');
+    const next = document.querySelector('.comm-filter-arrow.right');
+    const maxLeft = Math.max(0, tabs.scrollWidth - tabs.clientWidth);
+    if (prev) prev.disabled = tabs.scrollLeft <= 2;
+    if (next) next.disabled = tabs.scrollLeft >= maxLeft - 2;
+  }
+
+  window.scrollCommFiltros = function(dir) {
+    const tabs = document.getElementById('commFilterTabs');
+    if (!tabs) return;
+    const amount = Math.max(150, Math.floor(tabs.clientWidth * 0.75));
+    tabs.scrollBy({ left: (dir < 0 ? -amount : amount), behavior: 'smooth' });
+  }
+
+  // Inicia carregamento (dados reais)
+  document.addEventListener('DOMContentLoaded', () => {
+    try{
+      if (window.carregarComunidadesGerais) window.carregarComunidadesGerais();
+      if (window.carregarMeusGrupos) window.carregarMeusGrupos();
+    }catch(e){ console.warn(e); }
+
+    const tabs = document.getElementById('commFilterTabs');
+    if (tabs) {
+      tabs.addEventListener('scroll', atualizarSetasFiltrosComm, { passive: true });
+      window.addEventListener('resize', atualizarSetasFiltrosComm);
+      setTimeout(atualizarSetasFiltrosComm, 40);
+    }
+  });
+</script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

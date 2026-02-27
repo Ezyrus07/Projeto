@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Busca | Doke</title>
+<meta content="Busque serviï¿½os e anï¿½ncios com filtros inteligentes e resultados prï¿½ximos." name="description"/>
+<meta content="Doke ï¿½ Busca" property="og:title"/>
+<meta content="Busque serviï¿½os e anï¿½ncios com filtros inteligentes e resultados prï¿½ximos." property="og:description"/>
+<meta content="website" property="og:type"/>
+<meta content="assets/Imagens/doke-logo.png" property="og:image"/>
+<meta content="#0b7768" name="theme-color"/>
+<link href="style.css?v=20260211v45" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet">
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<style>
+        /* =========================================
+           ESTILOS ESPECÃFICOS DA PÃGINA DE BUSCA
+           ========================================= */
+        
+        /* Ajuste do Main para suportar Sidebar */
+        @media (min-width: 1024px) {
+            main {
+                margin-left: 270px; /* Espaï¿½o da Sidebar do Menu Principal */
+                padding: 30px 40px;
+                max-width: 1600px;
+            }
+        }
+
+        /* LAYOUT 2 COLUNAS (SIDEBAR + FEED) */
+        .search-layout {
+            display: grid;
+            grid-template-columns: 280px 1fr; /* Sidebar fixa 280px, Resto flexï¿½vel */
+            gap: 30px;
+            align-items: start;
+            margin-top: 20px;
+        }
+
+        /* SIDEBAR DE FILTROS */
+        .filters-sidebar {
+            background: white;
+            border-radius: 16px;
+            padding: 25px;
+            border: 1px solid #f0f0f0;
+            position: sticky;
+            top: 20px; /* Fica fixo ao rolar */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        }
+
+        .filters-header {
+            display: flex; justify-content: space-between; align-items: center;
+            margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee;
+        }
+        .filters-header h3 { font-size: 1.1rem; color: #333; display: flex; align-items: center; gap: 8px; margin: 0; }
+        .btn-clean-filters { font-size: 0.8rem; color: var(--cor0); cursor: pointer; background: none; border: none; font-weight: 600; }
+
+        .filter-group { margin-bottom: 25px; }
+        .filter-label { font-size: 0.9rem; font-weight: 700; color: #555; margin-bottom: 12px; display: block; }
+
+        /* Inputs da Sidebar */
+        .input-sidebar, .select-sidebar {
+            width: 100%; padding: 10px 15px;
+            border: 1px solid #e0e0e0; border-radius: 8px;
+            font-size: 0.9rem; background: #f9f9f9;
+            margin-bottom: 10px; outline: none;
+        }
+        .input-sidebar:focus { border-color: var(--cor2); background: white; }
+        .radius-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .btn-loc {
+            border: 1px solid #e2e8f0;
+            background: #fff;
+            color: #0b7768;
+            font-weight: 700;
+            padding: 8px 12px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        .btn-loc:hover { background: #f0fdfa; }
+        .radius-status { font-size: 0.75rem; color: #64748b; margin-top: 6px; }
+
+        /* Radio buttons estilizados como lista */
+        .radio-list { display: flex; flex-direction: column; gap: 10px; }
+        .radio-item { display: flex; align-items: center; gap: 10px; cursor: pointer; font-size: 0.95rem; color: #666; }
+        .radio-item input { accent-color: var(--cor2); }
+
+        /* AREA DE RESULTADOS */
+        .results-header { margin-bottom: 20px; }
+        .results-count { color: #888; font-size: 0.9rem; }
+        .results-query { color: var(--cor2); font-weight: 700; font-size: 1.4rem; margin: 0; }
+
+        /* Ajuste da Seï¿½ï¿½o de Busca (Herdado do Index, mas ajustado margens) */
+        .secao-busca {
+            padding: 20px 0 40px 0 !important; /* Remove padding lateral excessivo se houver */
+            margin-top: 0 !important;
+            text-align: center;
+            background: none ;
+            box-shadow: none ;
+        }
+
+        /* Responsividade Mobile */
+        @media (max-width: 900px) {
+            .search-layout { grid-template-columns: 1fr; } /* Empilha */
+            .filters-sidebar { position: static; margin-bottom: 30px; }
+            main { margin-left: 0; padding: 20px; }
+        }
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-feedpatch.css?v=20260207v26" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260211v24" rel="stylesheet"/>
+<link href="doke-responsive.css?v=20260209v24" rel="stylesheet"/>
+<link href="page-busca.css?v=20260209v30" rel="stylesheet"/>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+</head>
+<body data-page="busca">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Início</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<div aria-hidden="true" class="filters-backdrop" id="filtersBackdrop"></div>
+<main>
+<section class="secao-busca">
+<div class="busca-wrapper active" id="buscaWrapper">
+<div class="busca-input-container">
+<input autocomplete="off" id="inputBusca" onkeypress="verificarEnterBusca(event)" placeholder="Descreva o que você está procurando" type="text"/>
+<button class="btn-search-circle" onclick="novaBusca()">
+<svg fill="none" height="24" stroke="white" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" viewbox="0 0 24 24" width="24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+<polyline points="12 5 19 12 12 19"></polyline>
+</svg>
+</button>
+</div>
+</div>
+<div class="busca-mobile-action">
+<button class="btn-procurar btn-procurar-mobile" onclick="novaBusca()" type="button">Procurar serviços</button>
+</div>
+</section>
+<div class="search-layout">
+<aside class="filters-sidebar">
+<div class="filters-header">
+<h3><i class="bx bx-filter-alt"></i> Filtros</h3>
+<button class="btn-clean-filters" onclick="limparFiltros()">Limpar</button>
+</div>
+<div class="filter-group">
+<span class="filter-label">Ordenar por</span>
+<select class="select-sidebar" id="filtroOrdenacao" onchange="aplicarFiltrosBusca()">
+<option value="recente">Mais Recentes</option>
+<option value="qualidade">Maior Qualidade</option>
+<option value="menor_preco">Menor Preço</option>
+<option value="melhor_avaliação">Melhor Avaliação</option>
+</select>
+</div>
+<div class="filter-group">
+<span class="filter-label">Faixa de Preço</span>
+<input class="input-sidebar" id="filtroPreco" onchange="aplicarFiltrosBusca()" placeholder="Preço Máximo (R$)" type="number"/>
+</div>
+<div class="filter-group">
+<div class="filter-label-row">
+<span class="filter-label">Localização</span>
+<button class="btn-cep-inline btn-geo-inline" id="btnCepInlineBusca" onclick="usarMinhaLocalizacao()" type="button"><i class="bx bx-current-location"></i> Localização</button>
+</div>
+<select class="select-sidebar" id="selectEstado" onchange="aplicarFiltrosBusca()">
+<option value="">Todos Estados</option>
+</select>
+<select class="select-sidebar" id="selectCidade" onchange="aplicarFiltrosBusca()">
+<option value="">Todas Cidades</option>
+</select>
+<select class="select-sidebar" disabled="" id="selectBairro" onchange="aplicarFiltrosBusca()">
+<option value="">Todos Bairros</option>
+</select>
+<div class="radius-row">
+<select class="select-sidebar" id="filtroRaio" onchange="aplicarFiltrosBusca()">
+<option value="">Sem raio</option>
+<option value="1">Até 1 km</option>
+<option value="3">Até 3 km</option>
+<option value="5">Até 5 km</option>
+<option value="10">Até 10 km</option>
+<option value="25">Até 25 km</option>
+</select>
+<button class="btn-loc" onclick="usarMinhaLocalizacao()" type="button">Usar minha localização</button>
+</div>
+<div class="radius-status" id="radiusStatus"></div>
+</div>
+<div class="filter-group">
+<span class="filter-label">Tipo de Serviço</span>
+<div class="radio-list">
+<label class="radio-item">
+<input checked="" name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="todos"/> Todos
+                        </label>
+<label class="radio-item">
+<input name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="Online"/> Online
+                        </label>
+<label class="radio-item">
+<input name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="Presencial"/> Presencial
+                        </label>
+<label class="radio-item">
+<input name="tipoAtend" onchange="aplicarFiltrosBusca()" type="radio" value="Ambos"/> Ambos
+                        </label>
+</div>
+</div>
+<div class="filter-group">
+<div class="filtros-rapidos">
+<div class="filtros-rapidos-header">
+<span>Filtros rápidos</span>
+<button class="chips-arrow" onclick="scrollChips(this)" type="button"><i class="bx bx-chevron-right"></i></button>
+</div>
+<div class="filtros-chips-scroll" data-chips="">
+<button class="chip-tag ativo" data-chip="todos" onclick="ativarChip(this)">Todos</button>
+<button class="chip-tag" data-chip="tendencias" onclick="ativarChip(this)"><i class="bx bx-trending-up"></i> Tendências</button>
+<button class="chip-tag" data-chip="perto" onclick="ativarChip(this)"><i class="bx bx-map"></i> Perto de você</button>
+<button class="chip-tag" data-chip="super" onclick="ativarChip(this)"><i class="bx bx-star"></i> Super Profissionais</button>
+<button class="chip-tag" data-chip="recem" onclick="ativarChip(this)"><i class="bx bx-time"></i> Recém-chegados</button>
+<button class="chip-tag" data-chip="verificados" onclick="ativarChip(this)"><i class="bx bx-badge-check"></i> Verificados</button>
+</div>
+</div>
+</div>
+<div class="filter-group">
+<span class="filter-label">Categoria</span>
+<select class="select-sidebar" id="filtroCategoria" onchange="aplicarFiltrosBusca()">
+<option value="todas">Todas</option>
+</select>
+</div>
+<div class="filter-group">
+<span class="filter-label">Tipo de Preço</span>
+<select class="select-sidebar" id="filtroTipoPreco" onchange="aplicarFiltrosBusca()">
+<option value="todos">Todos</option>
+<option value="preco_fixo">Preço Fixo</option>
+<option value="sob_orcamento">Sob Orçamento</option>
+</select>
+</div>
+<div class="filter-group">
+<span class="filter-label">Pagamentos aceitos</span>
+<div class="filtro-checks-row">
+<label><input id="filtroPgPix" onchange="aplicarFiltrosBusca()" type="checkbox"/> Pix</label>
+<label><input id="filtroPgCredito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Crédito</label>
+<label><input id="filtroPgDebito" onchange="aplicarFiltrosBusca()" type="checkbox"/> Débito</label>
+</div>
+</div>
+<div class="filter-group">
+<span class="filter-label">Extras</span>
+<div class="filtro-checks-row">
+<label><input id="filtroGarantia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Com garantia</label>
+<label><input id="filtroEmergencia" onchange="aplicarFiltrosBusca()" type="checkbox"/> Emergência</label>
+<label><input id="filtroFormulario" onchange="aplicarFiltrosBusca()" type="checkbox"/> Tem formulário</label>
+</div>
+</div>
+</aside>
+<div class="results-content">
+<div class="results-header">
+<h2 class="results-query" id="categorias-title">Resultados da busca</h2>
+<span class="results-count" id="contador-resultados">Mostrando 0 resultados</span>
+<button aria-label="Abrir filtros" class="btn-filtros-mobile" id="btnOpenFilters" type="button"><i class="bx bx-slider-alt"></i>Filtros</button>
+</div>
+<div class="doke-toolbar" id="dokeBuscaToolbar" style="max-width: 1100px; margin: 0 auto;">
+<div aria-label="Filtros rápidos" class="doke-toolbar__chips">
+<button class="doke-chip-btn" data-chip-toggle="filtroGarantia" type="button"><i class="bx bx-badge-check"></i>Garantia</button>
+<button class="doke-chip-btn" data-chip-toggle="filtroEmergencia" type="button"><i class="bx bx-bolt-circle"></i>Emergência</button>
+<button class="doke-chip-btn" data-chip-toggle="filtroFormulario" type="button"><i class="bx bx-list-check"></i>Com formulário</button>
+</div>
+<div class="doke-toolbar__sort">
+<select aria-label="Ordenar" id="dokeSortMirror">
+<option value="recente">Mais recente</option>
+<option value="avaliado">Melhor avaliado</option>
+<option value="perto">Mais perto</option>
+<option value="preco">Menor preço</option>
+</select>
+</div>
+</div>
+<div class="lista-cards-premium" id="feedAnuncios">
+<div style="padding:40px; text-align:center; width:100%; color:#999;">
+<i class="bx bx-loader-alt bx-spin" style="font-size:2rem;"></i>
+<p>Carregando...</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<script>
+        // Função auxiliar para limpar filtros visualmente
+        function limparFiltros() {
+            document.getElementById('filtroPreco').value = "";
+            document.getElementById('filtroOrdenacao').value = "recente";
+            document.getElementById('selectEstado').value = "";
+            document.getElementById('selectCidade').value = "";
+            document.getElementById('selectCidade').disabled = true;
+            document.getElementById('selectBairro').value = "";
+            document.getElementById('selectBairro').disabled = true;
+            document.getElementById('filtroRaio').value = "";
+            const rs = document.getElementById('radiusStatus');
+            if (rs) rs.textContent = "";
+            document.getElementById('filtroCategoria').value = "todas";
+            document.getElementById('filtroTipoPreco').value = "todos";
+            document.getElementById('filtroPgPix').checked = false;
+            document.getElementById('filtroPgCredito').checked = false;
+            document.getElementById('filtroPgDebito').checked = false;
+            document.getElementById('filtroGarantia').checked = false;
+            document.getElementById('filtroEmergencia').checked = false;
+            document.getElementById('filtroFormulario').checked = false;
+            document.querySelector('input[name="tipoAtend"][value="todos"]').checked = true;
+            window.__dokeChipFiltro = 'todos';
+            document.querySelectorAll('.chip-tag').forEach(c => c.classList.remove('ativo'));
+            const chipTodos = document.querySelector('.chip-tag[data-chip="todos"]');
+            if (chipTodos) chipTodos.classList.add('ativo');
+            if(window.aplicarFiltrosBusca) window.aplicarFiltrosBusca();
+        }
+        
+        function verificarEnterBusca(e) {
+            if(e.key === 'Enter') {
+                if(window.novaBusca) window.novaBusca();
+            }
+        }
+    </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer="" src="doke-feedpatch.js?v=20260209v2"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+<script defer="" src="page-busca.js?v=20260207v21"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+

@@ -1,0 +1,301 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Sobre a Doke</title>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-shell.css?v=20260207v21" rel="stylesheet">
+<link href="doke-responsive.css?v=20260207v21" rel="stylesheet"/>
+<link href="page-ajustes.css?v=20260208v01" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
+<link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="settings-shell.css" rel="stylesheet"/><link href="settings-pages.css" rel="stylesheet"/></head>
+<body data-page="mais">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">×</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+<aside class="sidebar-icones">
+<div id="logo">
+<a href="index.html">
+<img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="item">
+<a href="index.html">
+<i class="bx bx-home-alt icon azul"></i>
+<span>Inicio</span>
+</a>
+</div>
+<div class="item" id="pvSearchSidebarItem">
+<a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+<i class="bx bx-search-alt-2 icon azul"></i>
+<span>Pesquisar</span>
+</a>
+</div>
+<div class="item">
+<a href="empresas.html">
+<i class="bx bx-store icon verde"></i>
+<span>Empresas</span>
+</a>
+</div>
+<div class="item">
+<a href="notificacoes.html">
+<i class="bx bx-bell icon azul"></i>
+<span>Notificações</span>
+</a>
+</div>
+<div class="item">
+<a href="chat.html">
+<i class="bx bx-message-rounded-dots icon azul"></i>
+<span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="comunidade.html">
+<i class="bx bx-group icon verde"></i>
+<span>Comunidades</span>
+</a>
+</div>
+<div class="item">
+<a href="#" onclick="irParaMeuPerfil(event)">
+<i class="bx bx-user icon verde"></i>
+<span>Perfil</span>
+</a>
+</div>
+<div class="item">
+<a href="mais.html">
+<i class="bx bx-menu icon azul"></i>
+<span>Mais</span>
+</a>
+</div>
+</aside>
+<main class="main-content"><div class="content-wrapper"><div class="settings-shell" id="settingsShell"><aside aria-label="Ajustes" class="settings-side">
+<div class="settings-profile" onclick="irParaPerfilCorreto()" onkeypress="if(event.key==='Enter'||event.key===' '){irParaPerfilCorreto();}" role="button" tabindex="0">
+<img alt="Foto" class="profile-avatar" decoding="async" id="mais-foto" loading="lazy" src="https://placehold.co/150"/>
+<div class="settings-profile__meta">
+<p class="settings-profile__name" id="mais-nome">Carregando...</p>
+<div class="settings-profile__user" id="mais-user">@carregando</div>
+</div>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</div>
+<hr class="settings-side__divider"/>
+<div class="settings-side__group">
+<div class="settings-side__title">MINHA CONTA</div>
+<a class="settings-nav-item" data-section="dadospessoais" href="dadospessoais.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-user"></i></span>
+<span class="settings-nav-text">Dados pessoais</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="enderecos" href="enderecos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-map"></i></span>
+<span class="settings-nav-text">Endereços</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="senha" href="senha.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
+<span class="settings-nav-text">Segurança e senha</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="pagamentos" href="pagamentos.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-credit-card"></i></span>
+<span class="settings-nav-text">Pagamentos</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">PREFERÊNCIAS</div>
+<div class="settings-toggle-row">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-moon"></i></span>
+<span class="settings-toggle-label">Modo escuro</span>
+<label class="switch" style="margin-left:auto;">
+<input id="darkModeSwitch" type="checkbox"/>
+<span class="slider round"></span>
+</label>
+</div>
+<a class="settings-nav-item" data-section="preferencia-notif" href="preferencia-notif.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-bell"></i></span>
+<span class="settings-nav-text">Notificações</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="idioma" href="idioma.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-globe"></i></span>
+<span class="settings-nav-text">Idioma</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="privacidade" href="privacidade.html" id="itemPrivacidadeProfissional" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-quarter"></i></span>
+<span class="settings-nav-text">Privacidade de mensagens</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+<div class="settings-side__group">
+<div class="settings-side__title">SUPORTE</div>
+<a class="settings-nav-item" data-section="ajuda" href="ajuda.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-help-circle"></i></span>
+<span class="settings-nav-text">Central de ajuda</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="#" onclick="return false;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-file"></i></span>
+<span class="settings-nav-text">Termos de uso</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" data-section="sobre-doke" href="sobre-doke.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-info-circle"></i></span>
+<span class="settings-nav-text">Sobre a Doke</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+</div>
+</aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Sobre a Doke</h1><p>Informações do app, versão e links úteis.</p></div></div><div class="settings-frame-card"><section class="sobre-wrap">
+<article class="sobre-card">
+<h2>O que e a Doke</h2>
+<p>
+        A Doke conecta pessoas, profissionais e estabelecimentos locais em um unico lugar.
+        O foco e descobrir serviços e negócios por conteudo real: publicações, videos curtos e localização.
+      </p>
+<div class="sobre-meta">
+<span class="sobre-chip"><i class="bx bx-compass"></i> Busca local</span>
+<span class="sobre-chip"><i class="bx bx-video"></i> Videos curtos</span>
+<span class="sobre-chip"><i class="bx bx-map"></i> Mapa próximo</span>
+</div>
+</article>
+<article class="sobre-card">
+<h2>Como usar melhor</h2>
+<ul class="sobre-list">
+<li class="sobre-item"><strong>1.</strong> Descreva o que você quer com detalhes para receber resultados mais precisos.</li>
+<li class="sobre-item"><strong>2.</strong> Compare perfis por portfolio, nota e respostas recentes de clientes.</li>
+<li class="sobre-item"><strong>3.</strong> Use o chat para validar prazo, escopo e valor antes de fechar serviço.</li>
+</ul>
+</article>
+<article class="sobre-card">
+<h2>Informações da conta atual</h2>
+<p><strong>Conta:</strong> <span id="sobreConta">@visitante</span></p>
+<p><strong>Tipo:</strong> <span id="sobreTipo">Cliente</span></p>
+<p><strong>Versao:</strong> <span id="sobreVersao">20260208v01</span></p>
+<div class="sobre-meta">
+<button class="sobre-chip" id="btnCopiarInfo" type="button"><i class="bx bx-copy"></i> Copiar info tecnica</button>
+<a class="sobre-link" href="novidades.html">Ver novidades</a>
+</div>
+</article>
+</section></div></section></div><div aria-hidden="true" class="settings-drawer-overlay" id="settingsDrawerOverlay"></div></div></main>
+<nav class="bottom-nav">
+<a class="item" href="index.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/><span>Inicio</span></a>
+<a class="item" href="busca.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/><span>Explorar</span></a>
+<a class="item" href="anunciar.html"><img class="icon azul" decoding="async" loading="lazy" src="assets/Imagens/icone-anunciar.png"/><span>Anunciar</span></a>
+<a class="item" href="notificacoes.html"><img class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/><span>Notificações</span></a>
+<a class="item" href="meuperfil.html"><img class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/><span>Perfil</span></a>
+</nav>
+<script>
+  (function(){
+    const readJSON = (key, fallback = null) => {
+      try { return JSON.parse(localStorage.getItem(key) || "") || fallback; } catch (_) { return fallback; }
+    };
+
+    function hydrate() {
+      const perfil = readJSON("doke_usuario_perfil", {}) || {};
+      const conta = document.getElementById("sobreConta");
+      const tipo = document.getElementById("sobreTipo");
+      const versao = document.getElementById("sobreVersao");
+
+      if (conta) conta.textContent = perfil.user || "@visitante";
+      if (tipo) {
+        tipo.textContent = perfil.isProfissional ? "Profissional" : (perfil.isEmpresa ? "Negócio" : "Cliente");
+      }
+      if (versao) versao.textContent = "20260208v01";
+    }
+
+    function bindCopy() {
+      const btn = document.getElementById("btnCopiarInfo");
+      if (!btn) return;
+      btn.addEventListener("click", async () => {
+        const perfil = readJSON("doke_usuario_perfil", {}) || {};
+        const payload = [
+          "Doke info",
+          `conta=${perfil.user || "@visitante"}`,
+          `tipo=${perfil.isProfissional ? "profissional" : (perfil.isEmpresa ? "negocio" : "cliente")}`,
+          "versao=20260208v01"
+        ].join("\\n");
+
+        try {
+          await navigator.clipboard.writeText(payload);
+          if (window.dokeDelight?.toast) window.dokeDelight.toast("Info copiada.");
+        } catch (_) {
+          alert(payload);
+        }
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      hydrate();
+      bindCopy();
+    });
+  })();
+</script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+<script defer="True" src="settings-pages.js"></script></body>
+</html>
+
+
+
+
+
+
+
+

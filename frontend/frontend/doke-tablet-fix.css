@@ -1,0 +1,99 @@
+/* DOKE Tablet + Layout Fixes — v20260209v1
+   Objetivo: travar grids no tablet horizontal, centralizar conteúdo, evitar logo duplicada.
+*/
+
+/* ===== Perfil: centralização consistente no tablet (900-1024px) ===== */
+@media (min-width: 900px) and (max-width: 1024px){
+  body[data-page="perfil"] .dp-wrap{
+    max-width: var(--dp-content-width, 1200px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 22px 18px 40px !important;
+  }
+}
+
+/* ===== Perfil: desktop sempre centralizado considerando sidebar ===== */
+@media (min-width: 1025px){
+  body[data-page="perfil"] main.dp-wrap{
+    width: auto !important;
+    max-width: none !important;
+    margin-left: var(--sidebar-width, 0px) !important;
+    margin-right: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    box-sizing: border-box !important;
+    padding-left: clamp(16px, 2vw, 28px) !important;
+    padding-right: clamp(16px, 2vw, 28px) !important;
+  }
+
+  body[data-page="perfil"] #dpRoot{
+    width: min(100%, var(--dp-content-width, 1200px)) !important;
+    max-width: var(--dp-content-width, 1200px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* ===== Perfil: Tablet horizontal (4 colunas mídia) ===== */
+@media (min-width: 900px) and (max-width: 1200px){
+  body[data-page="perfil"] #dpGridPublicacoes{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  body[data-page="perfil"] #dpGridPortfolio{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  /* Anúncios/serviços: 2 por linha no tablet landscape */
+  body[data-page="perfil"] #dpGridServicos{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+/* ===== Perfil: Mobile/tablet geral (evita cards gigantes) ===== */
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemMedia,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemMedia{
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+body[data-page="perfil"] .dp-reelMedia{
+  aspect-ratio: 9 / 16 !important;
+  object-fit: cover !important;
+}
+
+/* ===== Header/Sidebar: evitar marca duplicada ===== */
+/* 768+ (desktop base): por padrão, mantém 1 marca visível */
+@media (min-width: 768px) and (max-width: 1023px){
+  /* Tablet retrato: marca no header (logo-desktop), não na sidebar */
+  #logo-desktop{ display: block !important; }
+  .sidebar-icones #logo{ display: none !important; }
+}
+@media (min-width: 1024px){
+  /* Desktop / tablet largo: marca só na sidebar (fecha duplicação) */
+  #logo-desktop{ display: none !important; }
+  .sidebar-icones #logo{ display: block !important; }
+
+  /* Alguns HTMLs acabam renderizando #logo-desktop dentro do header mesmo com sidebar aberta */
+  .navbar-desktop #logo-desktop{ display: none !important; }
+}
+
+/* ===== Centralização: evitar “tudo puxado pra direita” no tablet ===== */
+@media (min-width: 768px) and (max-width: 1200px){
+  .navbar-desktop{ padding: 0 16px !important; }
+  main{ padding: 28px 18px !important; }
+}
+
+/* ===== Grids gerais: impedir overflow lateral em tablet ===== */
+@media (min-width: 768px) and (max-width: 1200px){
+  .dp-grid, .grid, .categorias-grid, .videos-curtos-grid, .publicacoes-grid{
+    min-width: 0;
+  }
+}

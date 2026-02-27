@@ -197,7 +197,7 @@
       transition:transform .18s ease, box-shadow .18s ease, border-color .18s ease;
       cursor:pointer;
       position:relative;
-      overflow:hidden;
+      overflow:visible;
       height:auto;
     }
 
@@ -1078,6 +1078,50 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
 }
 
 #ordersGrid{overflow: visible;}
+
+/* ===== Mobile: não usar containers com altura fixa/overflow auto (causa 'piscada' no iOS) ===== */
+@media (max-width: 1024px){
+  body[data-page="pedidos"]{ overflow:auto !important; }
+  body[data-page="pedidos"] #ordersGridWrap{
+    height:auto !important;
+    overflow:visible !important;
+    padding: 0 !important;
+  }
+  body[data-page="pedidos"] #ordersGrid{ overflow: visible !important; }
+}
+
+/* Botão check do pedido (alinhamento) */
+.card-select{
+  width:38px; height:38px;
+  display:grid; place-items:center;
+}
+.card-select i{ font-size:20px; line-height:1; }
+
+/* Botão X do chat (alinhamento) */
+.pedido-chat-panel .chat-close,
+.pedido-chat-inline .chat-close,
+.pedido-chat-panel .btn-close,
+.pedido-chat-inline .btn-close{
+  width:40px; height:40px;
+  display:grid; place-items:center;
+}
+.pedido-chat-panel .chat-close i,
+.pedido-chat-inline .chat-close i,
+.pedido-chat-panel .btn-close i,
+.pedido-chat-inline .btn-close i{ font-size:20px; line-height:1; }
+
+/* Tooltip do resumo do pedido: nunca cortar na lateral */
+.card .need-tip,
+.card .need-tooltip,
+.card .need-pop{
+  max-width: calc(100% - 56px) !important;
+}
+.card .need-tip,
+.card .need-tooltip,
+.card .need-pop{
+  right: 12px !important;
+  left: auto !important;
+}
 </style>
 </head>
 <body data-page="pedidos">
@@ -2555,6 +2599,10 @@ function displayHandle(p){
         document.body.classList.toggle('no-scroll', !!(isMobile && drawerOpen));
       }
 
+
+      // Segurança: nunca deixe scroll travado ao carregar
+      document.body.classList.remove('no-scroll');
+      document.body.classList.remove('chat-drawer-open');
       window.addEventListener('resize', lockScrollIfNeeded);
 
       

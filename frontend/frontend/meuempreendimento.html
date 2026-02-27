@@ -1,0 +1,1979 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1" name="viewport"/>
+<title>Meu Empreendimento | Doke</title>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="perfil-upgrade.css?v=20260207v27" rel="stylesheet">
+<link rel="stylesheet" href="page-perfil.css?v=20260208v42">
+<link href="https://unpkg.com" rel="preconnect"/>
+<link crossorigin="" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<style>
+    /* =========================================================
+       PERFIL EMPRESA ï¿½â‚¬ï¿½ visual diferente (empresa) + 
+       ========================================================= */
+    :root {
+      --ep-accent: #F5B400;
+      --ep-ink: #0c111a;
+      --ep-ink2: rgba(12,17,26,.72);
+      --ep-border: rgba(0,0,0,.08);
+      --ep-card: #ffffff;
+      --ep-soft: rgba(245,176,0,.14);
+      --ep-grad: linear-gradient(135deg, #0c111a 0%, #0b7768 70%, #2a5f90 140%);
+    }
+
+    /* Compensa sidebar fixa */
+    .ep-page {
+      margin-left: var(--sidebar-width);
+      padding: 24px 20px 110px;
+    }
+    @media (min-width: 901px){
+      .ep-page{ padding-bottom: 30px; }
+    }
+    .ep-container {
+      max-width: 1240px;
+      margin: 0 auto;
+    }
+
+    /* Hero */
+    .ep-hero {
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 18px 55px rgba(0,0,0,.10);
+      border: 1px solid var(--ep-border);
+      background: var(--ep-card);
+    }
+    .ep-cover {
+      position: relative;
+      height: 210px;
+      background: var(--ep-grad);
+      background-size: cover;
+      background-position: center;
+      isolation: isolate;
+    }
+    .ep-cover::after {
+      content:"";
+      position:absolute; inset:0;
+      background:
+        radial-gradient(circle at 20% 20%, rgba(245,176,0,.28), transparent 40%),
+        radial-gradient(circle at 90% 10%, rgba(255,255,255,.12), transparent 35%),
+        linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.55));
+      z-index:0;
+    }
+    .ep-coverTools {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      z-index: 2;
+      display:flex;
+      gap:10px;
+      align-items:center;
+    }
+    .ep-coverBtn {
+      border: 1px solid rgba(255,255,255,.22);
+      background: rgba(0,0,0,.22);
+      color: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor:pointer;
+      display:flex;
+      gap:8px;
+      align-items:center;
+      backdrop-filter: blur(10px);
+    }
+    .ep-coverBtn:hover{ background: rgba(0,0,0,.30); }
+
+    .ep-heroBody {
+      display:grid;
+      grid-template-columns: 150px 1fr;
+      gap: 18px;
+      padding: 18px 18px 20px;
+      align-items: start;
+    }
+
+    .ep-logoWrap {
+      margin-top: -72px;
+      display:flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: flex-start;
+    }
+    .ep-logo {
+      width: 138px;
+      height: 138px;
+      border-radius: 22px;
+      background: #fff;
+      border: 5px solid #fff;
+      box-shadow: 0 16px 40px rgba(0,0,0,.14);
+      overflow:hidden;
+      position: relative;
+    }
+    .ep-logo img {
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:none;
+    }
+    .ep-logoLetter {
+      width:100%;
+      height:100%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight: 900;
+      font-size: 54px;
+      color: rgba(12,17,26,.55);
+      background: linear-gradient(180deg, rgba(245,176,0,.18), rgba(42,95,144,.10));
+    }
+    .ep-logoBtn {
+      border: 1px solid var(--ep-border);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 12px;
+      font-weight: 800;
+      cursor:pointer;
+      display:flex;
+      gap:8px;
+      align-items:center;
+    }
+    .ep-logoBtn:hover{ background: rgba(0,0,0,.03); }
+
+    .ep-titleRow {
+      display:flex;
+      flex-wrap:wrap;
+      align-items:center;
+      gap: 10px;
+      margin-top: 2px;
+    }
+    .ep-name {
+      margin: 0;
+      font-size: 34px;
+      line-height: 1.05;
+      color: var(--ep-ink);
+      letter-spacing: -0.02em;
+    }
+    .ep-badge {
+      display:inline-flex;
+      align-items:center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 999px;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      border: 1px solid var(--ep-border);
+      background: #fff;
+      color: var(--ep-ink);
+      white-space: nowrap;
+    }
+    .ep-badge-empresa {
+      background: linear-gradient(180deg, rgba(245,176,0,.22), rgba(245,176,0,.10));
+      border-color: rgba(245,176,0,.35);
+    }
+    .ep-badge-verified {
+      background: rgba(11,119,104,.10);
+      border-color: rgba(11,119,104,.28);
+    }
+    .ep-badge-open {
+      background: rgba(11,119,104,.12);
+      border-color: rgba(11,119,104,.30);
+      color: #0b7768;
+    }
+    .ep-badge-closed {
+      background: rgba(243,91,91,.10);
+      border-color: rgba(243,91,91,.28);
+      color: #b83333;
+    }
+
+    .ep-subRow {
+      margin-top: 10px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+    }
+    .ep-chip {
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 999px;
+      background: #fff;
+      border: 1px solid var(--ep-border);
+      color: rgba(0,0,0,.75);
+      font-weight: 800;
+      font-size: 13px;
+    }
+    .ep-chip i{ color: var(--cor0); font-size: 18px; }
+    .ep-chip-muted{ color: rgba(0,0,0,.60); font-weight: 700; }
+
+    .ep-slogan {
+      margin: 12px 0 0;
+      color: var(--ep-ink2);
+      font-weight: 600;
+      max-width: 860px;
+      line-height: 1.35;
+    }
+
+    .ep-actions {
+      margin-top: 14px;
+      display:flex;
+      flex-wrap:wrap;
+      gap: 10px;
+      align-items:center;
+    }
+    .ep-btn {
+      display:inline-flex;
+      align-items:center;
+      gap: 8px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid var(--ep-border);
+      background: #fff;
+      cursor:pointer;
+      font-weight: 900;
+      color: rgba(0,0,0,.82);
+      box-shadow: 0 12px 24px rgba(0,0,0,.06);
+    }
+    .ep-btn:hover{ transform: translateY(-1px); }
+    .ep-btn:active{ transform: translateY(0); }
+    .ep-primary {
+      background: linear-gradient(90deg, rgba(245,176,0,.95), rgba(245,176,0,.70));
+      border-color: rgba(245,176,0,.55);
+      color: #111;
+    }
+    .ep-outline {
+      background: rgba(245,176,0,.10);
+      border-color: rgba(245,176,0,.35);
+      color: #111;
+    }
+
+    .ep-kpis {
+      margin-top: 16px;
+      display:flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .ep-kpi {
+      min-width: 160px;
+      flex: 0 0 auto;
+      border: 1px solid var(--ep-border);
+      background: #fff;
+      border-radius: 16px;
+      padding: 12px 14px;
+    }
+    .ep-kpi .v{ font-weight: 900; font-size: 20px; color: var(--ep-ink); display:flex; gap:8px; align-items:center; }
+    .ep-kpi .l{ font-weight: 700; color: rgba(0,0,0,.55); font-size: 12px; text-transform: uppercase; letter-spacing:.06em; margin-top: 4px; }
+
+    /* Layout abaixo */
+    .ep-layout {
+      margin-top: 18px;
+      display:grid;
+      grid-template-columns: 1fr 380px;
+      gap: 16px;
+      align-items: start;
+    }
+
+    .ep-card {
+      background: #fff;
+      border: 1px solid var(--ep-border);
+      border-radius: 18px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.07);
+      padding: 16px;
+    }
+    .ep-card h3 {
+      margin: 0 0 10px;
+      font-size: 15px;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,.65);
+    }
+
+    /* Tabs */
+    .ep-tabs {
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      padding: 12px;
+      background: #fff;
+      border: 1px solid var(--ep-border);
+      border-radius: 18px;
+      box-shadow: 0 14px 40px rgba(0,0,0,.06);
+    }
+    .ep-tab {
+      border: 1px solid var(--ep-border);
+      background: #fff;
+      padding: 10px 12px;
+      border-radius: 999px;
+      font-weight: 900;
+      cursor:pointer;
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      color: rgba(0,0,0,.78);
+    }
+    .ep-tab.active {
+      background: rgba(245,176,0,.16);
+      border-color: rgba(245,176,0,.42);
+      color: rgba(0,0,0,.88);
+    }
+
+    .ep-section {
+      margin-top: 12px;
+    }
+
+    /* Destaques */
+    .ep-highlights {
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .ep-pill {
+      display:inline-flex;
+      gap: 8px;
+      align-items:center;
+      padding: 10px 12px;
+      border-radius: 999px;
+      border: 1px solid rgba(11,119,104,.22);
+      background: rgba(11,119,104,.07);
+      font-weight: 800;
+      color: rgba(0,0,0,.75);
+    }
+    .ep-pill i{ color: var(--cor0); font-size: 18px; }
+
+    /* Galeria */
+    .ep-grid {
+      display:grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .ep-photo {
+      border-radius: 16px;
+      overflow:hidden;
+      border: 1px solid var(--ep-border);
+      background: rgba(0,0,0,.03);
+      aspect-ratio: 1 / 1;
+      position: relative;
+    }
+    .ep-photo img {
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .ep-photo .ep-empty {
+      position:absolute; inset:0;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color: rgba(0,0,0,.45);
+      font-weight: 800;
+    }
+
+    /*  */
+    .ep-catalog {
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+    .ep-item {
+      border: 1px solid var(--ep-border);
+      border-radius: 18px;
+      overflow:hidden;
+      background: #fff;
+      box-shadow: 0 12px 30px rgba(0,0,0,.06);
+      display:grid;
+      grid-template-columns: 110px 1fr;
+      min-height: 110px;
+    }
+    .ep-item .media {
+      background: rgba(0,0,0,.05);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+    .ep-item .media img {
+      width:100%;
+      height:100%;
+      object-fit: cover;
+      display:block;
+    }
+    .ep-item .content {
+      padding: 12px 12px 12px;
+    }
+    .ep-item .t {
+      margin:0;
+      font-weight: 900;
+      color: rgba(0,0,0,.86);
+    }
+    .ep-item .d {
+      margin:6px 0 0;
+      color: rgba(0,0,0,.62);
+      font-weight: 650;
+      font-size: 13px;
+      line-height: 1.25;
+    }
+    .ep-item .row {
+      margin-top: 10px;
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .ep-item .p {
+      font-weight: 900;
+      color: rgba(0,0,0,.84);
+    }
+    .ep-item .tag {
+      font-weight: 900;
+      font-size: 11px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      border: 1px solid rgba(245,176,0,.40);
+      background: rgba(245,176,0,.12);
+      color: rgba(0,0,0,.85);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      white-space: nowrap;
+    }
+
+    /* Mapa */
+    .ep-map {
+      height: 280px;
+      border-radius: 18px;
+      overflow:hidden;
+      border: 1px solid var(--ep-border);
+    }
+
+    /* Gestï¿½o */
+    .ep-form {
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .ep-field label {
+      display:block;
+      font-weight: 900;
+      font-size: 12px;
+      letter-spacing: .06em;
+      text-transform: uppercase;
+      color: rgba(0,0,0,.60);
+      margin-bottom: 6px;
+    }
+    .ep-field input, .ep-field textarea, .ep-field select {
+      width: 100%;
+      border: 1px solid var(--ep-border);
+      border-radius: 14px;
+      padding: 12px 12px;
+      font: inherit;
+      background: #fff;
+      outline: none;
+    }
+    .ep-field textarea{ min-height: 110px; resize: vertical; }
+    .ep-formActions {
+      display:flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .ep-small {
+      font-size: 13px;
+      color: rgba(0,0,0,.62);
+      font-weight: 650;
+      line-height: 1.35;
+    }
+
+    /* Responsivo */
+    @media (max-width: 1100px){
+      .ep-layout{ grid-template-columns: 1fr; }
+      .ep-aside{ order: 2; }
+    }
+    @media (max-width: 900px){
+      .ep-page{ margin-left: 0; padding: 16px 14px 110px; }
+      .ep-heroBody{ grid-template-columns: 1fr; }
+      .ep-logoWrap{ margin-top: -68px; }
+      .ep-logo{ width: 118px; height: 118px; border-radius: 20px; }
+      .ep-name{ font-size: 28px; }
+      .ep-kpi{ min-width: 145px; }
+      .ep-grid{ grid-template-columns: repeat(2, 1fr); }
+      .ep-catalog{ grid-template-columns: 1fr; }
+      .ep-item{ grid-template-columns: 92px 1fr; }
+    }
+  </style>
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body class="dp-page" data-page="perfil">
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>In&iacute;cio</span>
+    </a>
+  </div>
+
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notifica&ccedil;&otilde;es</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+
+<main class="ep-page">
+<div class="ep-container">
+<!-- HERO EMPRESA -->
+<section class="ep-hero">
+<div class="ep-cover" id="epCover">
+<div class="ep-coverTools">
+<button class="ep-coverBtn" id="epCoverBtn" type="button"><i class="bx bx-image-add"></i> Capa</button>
+<input accept="image/*" hidden="" id="epCoverInput" type="file"/>
+</div>
+</div>
+<div class="ep-heroBody">
+<div class="ep-logoWrap">
+<div class="ep-logo">
+<img alt="Logo" decoding="async" id="epLogoImg" loading="lazy">
+<div class="ep-logoLetter" id="epLogoLetter">E</div>
+</img></div>
+<button class="ep-logoBtn" id="epLogoBtn" type="button"><i class="bx bx-image"></i> Logo</button>
+<input accept="image/*" hidden="" id="epLogoInput" type="file"/>
+</div>
+<div>
+<div class="ep-titleRow">
+<h1 class="ep-name" id="epName">Minha empresa</h1>
+<span class="ep-badge ep-badge-empresa"><i class="bx bxs-store"></i> Empresa</span>
+<span class="ep-badge ep-badge-verified" id="epVerified" style="display:none;"><i class="bx bxs-badge-check"></i> Verificada</span>
+<span class="ep-badge ep-badge-open" id="epOpenBadge" style="display:none;"><i class="bx bx-time-five"></i> Aberto agora</span>
+<span class="ep-badge ep-badge-closed" id="epClosedBadge" style="display:none;"><i class="bx bx-lock-alt"></i> Fechado</span>
+</div>
+<div class="ep-subRow">
+<span class="ep-chip" id="epCategory"><i class="bx bx-category"></i> Estabelecimento</span>
+<span class="ep-chip" id="epPrice" style="display:none;"><i class="bx bx-purchase-tag"></i> $$</span>
+<span class="ep-chip ep-chip-muted" id="epLocation" style="display:none;"><i class="bx bx-map"></i> ×</span>
+</div>
+<p class="ep-slogan" id="epSlogan">Perfil de empresa: horários, localização, catélogo e avaliações • tudo organizado.</p>
+<div class="ep-actions">
+<button class="ep-btn ep-primary" id="epBtnMessage" type="button"><i class="bx bxs-message-rounded-dots"></i> Mensagem</button>
+<button class="ep-btn" id="epBtnRoute" type="button"><i class="bx bx-navigation"></i> Rotas</button>
+<button class="ep-btn" id="epBtnSave" type="button"><i class="bx bx-bookmark"></i> Salvar</button>
+<button class="ep-btn ep-outline" id="epBtnReserve" style="display:none;" type="button"><i class="bx bx-calendar"></i> Reservar</button>
+<button class="ep-btn ep-outline" id="epBtnEdit" type="button"><i class="bx bx-edit-alt"></i> Editar perfil</button>
+</div>
+<div class="ep-kpis">
+<div class="ep-kpi">
+<div class="v"><i class="bx bxs-star" style="color:var(--ep-accent)"></i> <span id="epRating">0.0</span></div>
+<div class="l">Avaliação</div>
+</div>
+<div class="ep-kpi">
+<div class="v"><span id="epReviews">0</span></div>
+<div class="l">Avaliações</div>
+</div>
+<div class="ep-kpi">
+<div class="v"><span id="epResponse">×</span></div>
+<div class="l">Tempo de resposta</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- CONTEÚDO -->
+<section class="ep-layout">
+<div class="ep-main">
+<div class="ep-tabs" role="tablist">
+<button class="ep-tab active" data-tab="visao" type="button"><i class="bx bx-grid-alt"></i> Visóo geral</button>
+<button class="ep-tab" data-tab="catalogo" type="button"><i class="bx bx-restaurant"></i> Catélogo</button>
+<button class="ep-tab" data-tab="fotos" type="button"><i class="bx bx-image"></i> Fotos</button>
+<button class="ep-tab" data-tab="avaliacoes" type="button"><i class="bx bx-star"></i> Avaliações</button>
+<button class="ep-tab" data-tab="gestao" id="epTabGestao" style="display:none;" type="button"><i class="bx bx-cog"></i> Gestáo</button>
+</div>
+<!-- VISÓO GERAL -->
+<section class="ep-section" data-tabpanel="visao">
+<div class="ep-card">
+<h3>Destaques</h3>
+<div class="ep-highlights" id="epHighlights"></div>
+<div class="ep-small" id="epHighlightsEmpty" style="display:none;">Adicione diferenciais do seu estabelecimento (ex.: Wi-Fi, Pet Friendly, Entrega, Acessóvel).</div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Sobre</h3>
+<p class="ep-small" id="epAbout">×</p>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Mapa</h3>
+<div class="ep-map" id="epMap"></div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Prévia do catélogo</h3>
+<div class="ep-catalog" id="epCatalogPreview"></div>
+<div class="ep-small" id="epCatalogEmpty" style="display:none;">Nenhum item cadastrado ainda. Um bom catélogo aumenta MUITO a conversóo.</div>
+</div>
+</section>
+<!-- CATÉLOGO -->
+<section class="ep-section" data-tabpanel="catalogo" style="display:none;">
+<div class="ep-card">
+<h3>Catélogo</h3>
+<div class="ep-catalog" id="epCatalog"></div>
+<div class="ep-small" id="epCatalogEmpty2" style="display:none;">Crie itens (serviços/produtos/cardápio) e deixe tudo claro para o cliente.</div>
+</div>
+</section>
+<!-- FOTOS -->
+<section class="ep-section" data-tabpanel="fotos" style="display:none;">
+<div class="ep-card">
+<h3>Fotos</h3>
+<div class="ep-grid" id="epGallery"></div>
+<div class="ep-small" id="epGalleryEmpty" style="display:none;">Sem fotos ainda. Fotos reais do local/serviço vendem muito mais.</div>
+<div class="ep-formActions" id="epGalleryActions" style="display:none; margin-top:12px;">
+<button class="ep-btn ep-outline" id="epAddPhotos" type="button"><i class="bx bx-upload"></i> Adicionar fotos</button>
+<input accept="image/*" hidden="" id="epPhotosInput" multiple="" type="file"/>
+</div>
+</div>
+</section>
+<!-- AVALIAÇÕES -->
+<section class="ep-section" data-tabpanel="avaliacoes" style="display:none;">
+<div class="ep-card">
+<h3>Avaliações</h3>
+<div class="ep-small" id="epReviewsSummary">Carregando...</div>
+<div id="epReviewsList" style="margin-top:12px;"></div>
+<div class="ep-formActions" id="epReviewActions" style="margin-top:12px;">
+<button class="ep-btn ep-outline" id="epBtnAvaliar" type="button"><i class="bx bx-star"></i> Avaliar</button>
+</div>
+</div>
+</section>
+<!-- GESTÁO (Dono) -->
+<section class="ep-section" data-tabpanel="gestao" style="display:none;">
+<div class="ep-card">
+<h3>Configurações da empresa</h3>
+<div class="ep-form">
+<div class="ep-field">
+<label>Nome fantasia</label>
+<input id="fNome" placeholder="Ex.: Doke Café"/>
+</div>
+<div class="ep-field">
+<label>Categoria</label>
+<input id="fCategoria" placeholder="Ex.: Restaurante, Barbearia, Loja..."/>
+</div>
+<div class="ep-field">
+<label>Faixa de preço</label>
+<select id="fPreco">
+<option value="">×</option>
+<option value="$">$</option>
+<option value="$$">$$</option>
+<option value="$$$">$$$</option>
+</select>
+</div>
+<div class="ep-field">
+<label>Tempo de resposta</label>
+<input id="fResposta" placeholder="Ex.: ~1h, ~15min, no mesmo dia"/>
+</div>
+<div class="ep-field" style="grid-column:1/-1;">
+<label>Descrição</label>
+<textarea id="fDescricao" placeholder="Conte o que sua empresa faz e o que torna ela diferente..."></textarea>
+</div>
+<div class="ep-field" style="grid-column:1/-1;">
+<label>Endereço</label>
+<input id="fEndereco" placeholder="Rua X, 123 - Bairro, Cidade - UF"/>
+</div>
+<div class="ep-field">
+<label>Latitude</label>
+<input id="fLat" placeholder="-23.55"/>
+</div>
+<div class="ep-field">
+<label>Longitude</label>
+<input id="fLng" placeholder="-46.69"/>
+</div>
+<div class="ep-field">
+<label>Telefone</label>
+<input id="fTelefone" placeholder="(11) 99999-9999"/>
+</div>
+<div class="ep-field">
+<label>WhatsApp</label>
+<input id="fWhatsapp" placeholder="(11) 99999-9999"/>
+</div>
+<div class="ep-field">
+<label>Site</label>
+<input id="fSite" placeholder="https://..."/>
+</div>
+<div class="ep-field">
+<label>Instagram</label>
+<input id="fInstagram" placeholder="@suaempresa"/>
+</div>
+<div class="ep-field">
+<label>URL de reserva (opcional)</label>
+<input id="fReserva" placeholder="Link para agendamento/reserva"/>
+</div>
+<div class="ep-field">
+<label>Verificado</label>
+<select id="fVerificado">
+<option value="false"></option>
+<option value="true">Sim</option>
+</select>
+</div>
+</div>
+<div class="ep-formActions">
+<button class="ep-btn ep-primary" id="btnSalvarEmpresa" type="button"><i class="bx bx-save"></i> Salvar alterações</button>
+<button class="ep-btn" id="btnPreviewPublico" type="button"><i class="bx bx-link-external"></i> Ver como cliente</button>
+</div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Destaques (chips)</h3>
+<div class="ep-formActions" style="margin-bottom:10px;">
+<input id="fNovoDestaque" placeholder="Ex.: Wi-Fi, Pet Friendly, Entrega..." style="flex:1; min-width:240px; border:1px solid var(--ep-border); border-radius:14px; padding:12px;"/>
+<button class="ep-btn ep-outline" id="btnAddDestaque" type="button"><i class="bx bx-plus"></i> Adicionar</button>
+</div>
+<div class="ep-highlights" id="epHighlightsManage"></div>
+<div class="ep-small" style="margin-top:8px;">Destaques aparecem no topo e aumentam a conversóo.</div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Catélogo</h3>
+<div class="ep-formActions">
+<button class="ep-btn ep-outline" id="btnAddItem" type="button"><i class="bx bx-plus"></i> Novo item</button>
+</div>
+<div id="epCatalogManage" style="margin-top:12px;"></div>
+<div class="ep-small">Dica: use foto + descrição curta + preço (ou àsob consulta).</div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Horários</h3>
+<div class="ep-small" style="margin-bottom:10px;">Formato: <b>09:00-18:00</b> ou <b>Fechado</b>.</div>
+<div class="ep-form">
+<div class="ep-field"><label>Segunda</label><input id="hSeg" placeholder="09:00-18:00"/></div>
+<div class="ep-field"><label>Terça</label><input id="hTer" placeholder="09:00-18:00"/></div>
+<div class="ep-field"><label>Quarta</label><input id="hQua" placeholder="09:00-18:00"/></div>
+<div class="ep-field"><label>Quinta</label><input id="hQui" placeholder="09:00-18:00"/></div>
+<div class="ep-field"><label>Sexta</label><input id="hSex" placeholder="09:00-18:00"/></div>
+<div class="ep-field"><label>SÓbado</label><input id="hSab" placeholder="10:00-16:00"/></div>
+<div class="ep-field"><label>Domingo</label><input id="hDom" placeholder="Fechado"/></div>
+</div>
+<div class="ep-formActions">
+<button class="ep-btn ep-primary" id="btnSalvarHorarios" type="button"><i class="bx bx-save"></i> Salvar horários</button>
+</div>
+</div>
+</section>
+</div>
+<!-- ASIDE -->
+<aside class="ep-aside">
+<div class="ep-card">
+<h3>Contato</h3>
+<div class="ep-small" id="epContact">
+              ×
+            </div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Horários</h3>
+<div class="ep-small" id="epHours">
+              ×
+            </div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Endereço</h3>
+<div class="ep-small" id="epAddress">
+              ×
+            </div>
+<div class="ep-formActions" style="margin-top:12px;">
+<button class="ep-btn ep-outline" id="epBtnCopyAddr" type="button"><i class="bx bx-copy"></i> Copiar</button>
+<button class="ep-btn" id="epBtnOpenMap" type="button"><i class="bx bx-map-alt"></i> Abrir mapa</button>
+</div>
+</div>
+<div class="ep-card" style="margin-top:12px;">
+<h3>Confiança</h3>
+<div class="ep-small" id="epTrust">
+              Pagamento protegido Doke • Perfil de empresa • Transparência no catélogo
+            </div>
+</div>
+</aside>
+</section>
+</div>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<script src="script.js?v=20260218v60"></script>
+<script crossorigin="" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const FORCE_EDIT_MODE = true;
+
+  // ============================
+  // Helpers
+  // ============================
+  const $ = (sel)=> document.querySelector(sel);
+  const clone = (obj)=> (window.structuredClone ? structuredClone(obj) : JSON.parse(JSON.stringify(obj)));
+  const uuid = ()=> (crypto?.randomUUID ? uuid() : (Date.now().toString(36)+Math.random().toString(36).slice(2)));
+
+  function toast(msg){
+    // usa toast do projeto se existir
+    if(window.mostrarToast) return window.mostrarToast(msg);
+    try{
+      let t = document.getElementById("epToast");
+      if(!t){
+        t = document.createElement("div");
+        t.id = "epToast";
+        t.style.position="fixed";
+        t.style.left="50%";
+        t.style.bottom="18px";
+        t.style.transform="translateX(-50%)";
+        t.style.background="rgba(0,0,0,.82)";
+        t.style.color="#fff";
+        t.style.padding="10px 14px";
+        t.style.borderRadius="14px";
+        t.style.fontWeight="800";
+        t.style.zIndex="9999";
+        t.style.boxShadow="0 14px 30px rgba(0,0,0,.25)";
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.display="block";
+      clearTimeout(t._tm);
+      t._tm = setTimeout(()=> t.style.display="none", 2200);
+    }catch(_){
+      alert(msg);
+    }
+  }
+
+  function supa(){
+    return window.sb || window.supabaseClient || window.sbClient || window.supabase;
+  }
+  function mustSupa(){
+    const c = supa();
+    if(!c?.from || !c?.auth){
+      console.error("[DOKE] Supabase não inicializado. Verifique supabase-init.js?v=20260218v43");
+      toast("Supabase não configurado.");
+      return null;
+    }
+    return c;
+  }
+
+  async function getSession(client){
+    const { data, error } = await client.auth.getUser();
+    if(error) return { error };
+    return { session: null, user: data?.user || null };
+  }
+
+  async function getUsuarioByAuthUid(client, authUid){
+    const { data, error } = await client.from("usuarios").select("*").eq("uid", authUid).maybeSingle();
+    if(error) return { error };
+    return { usuario: data || null };
+  }
+
+  async function getUsuarioByIdOrUid(client, id){
+    let r = await client.from("usuarios").select("*").eq("id", id).maybeSingle();
+    if(!r.error && !r.data) r = await client.from("usuarios").select("*").eq("uid", id).maybeSingle();
+    if(r.error) return { error: r.error };
+    return { usuario: r.data || null };
+  }
+
+  async function getUsuarioByUsername(client, username){
+    const { data, error } = await client.from("usuarios").select("*").eq("user", username).maybeSingle();
+    if(error) return { error };
+    return { usuario: data || null };
+  }
+
+  async function updateUsuario(client, rowId, patch){
+    let r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
+    if(r.error) return { error: r.error };
+    if(Array.isArray(r.data) && r.data.length) return { error: null };
+    r = await client.from("usuarios").update(patch).eq("uid", rowId).select("id,uid");
+    return { error: r.error || null };
+  }
+
+  function parseStats(usuario){
+    const s = usuario?.stats;
+    if(!s) return {};
+    if(typeof s === "object") return s;
+    try{ return JSON.parse(s); }catch(_ ){ return {}; }
+  }
+
+  function deepMerge(a,b){
+    if(!b || typeof b !== "object") return a;
+    for(const k of Object.keys(b)){
+      const bv = b[k];
+      if(bv && typeof bv === "object" && !Array.isArray(bv)){
+        a[k] = deepMerge(a[k] && typeof a[k] === "object" ? a[k] : {}, bv);
+      }else{
+        a[k] = bv;
+      }
+    }
+    return a;
+  }
+
+  async function patchStats(client, rowId, currentStats, patchObj){
+    const next = deepMerge(structuredClone(currentStats || {}), patchObj || {});
+    const { error } = await updateUsuario(client, rowId, { stats: next });
+    return { error, stats: next };
+  }
+
+  async function uploadToStorage(client, { bucket, path, file }){
+    try{
+      const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+      const safePath = `${path}.${ext}`.replaceAll("//","/");
+      const { error: upErr } = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
+      if(upErr) return { error: upErr };
+      const { data } = client.storage.from(bucket).getPublicUrl(safePath);
+      return { url: data?.publicUrl || null, path: safePath };
+    }catch(e){
+      return { error: e };
+    }
+  }
+
+  function safeText(v){ return (v ?? "").toString(); }
+
+  // ============================
+  // Open now logic
+  // ============================
+  const dayKey = ["dom","seg","ter","qua","qui","sex","sab"];
+  const dayLabel = {
+    seg:"Seg", ter:"Ter", qua:"Qua", qui:"Qui", sex:"Sex", sab:"", dom:"Dom"
+  };
+
+  function parseRange(str){
+    if(!str) return null;
+    const t = str.toLowerCase().trim();
+    if(t === "fechado" || t === "closed") return null;
+    const m = t.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if(!m) return null;
+    const sh = Number(m[1]), sm = Number(m[2]), eh = Number(m[3]), em = Number(m[4]);
+    return { sh, sm, eh, em };
+  }
+
+  function isOpenNow(horarios){
+    try{
+      const now = new Date();
+      const dk = dayKey[now.getDay()];
+      const val = horarios?.[dk];
+      const r = parseRange(val);
+      if(!r) return { open:false };
+      const cur = now.getHours()*60 + now.getMinutes();
+      const start = r.sh*60 + r.sm;
+      const end = r.eh*60 + r.em;
+      const open = cur >= start && cur <= end;
+      return { open, today: dk, range: r };
+    }catch(_){
+      return { open:false };
+    }
+  }
+
+  function fmtHours(horarios){
+    if(!horarios) return "";
+    const order = ["seg","ter","qua","qui","sex","sab","dom"];
+    return order.map(k => {
+      const v = horarios[k] || "—";
+      return `<div><b>${dayLabel[k]}</b>: ${safeText(v)}</div>`;
+    }).join("");
+  }
+
+  // ============================
+  // Rendering
+  // ============================
+  let MAP, MARKER;
+  function initMap(lat, lng){
+    const el = $("#epMap");
+    if(!el) return;
+    const center = [lat || -23.55052, lng || -46.633308];
+    if(!MAP){
+      MAP = L.map(el, { zoomControl:true }).setView(center, 14);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: "&copy; OpenStreetMap"
+      }).addTo(MAP);
+      MARKER = L.marker(center).addTo(MAP);
+    }else{
+      MAP.setView(center, 14);
+      MARKER?.setLatLng(center);
+    }
+  }
+
+  function setCover(url){
+    const c = $("#epCover");
+    if(!c) return;
+    if(url) c.style.backgroundImage = `url('${url}')`;
+  }
+  function setLogo(url, letter){
+    const img = $("#epLogoImg");
+    const lt = $("#epLogoLetter");
+    if(url){
+      img.src = url;
+      img.style.display = "block";
+      lt.style.display = "none";
+    }else{
+      img.removeAttribute("src");
+      img.style.display = "none";
+      lt.textContent = (letter || "E").slice(0,1).toUpperCase();
+      lt.style.display = "flex";
+    }
+  }
+
+  function renderHighlights(arr){
+    const wrap = $("#epHighlights");
+    const wrapM = $("#epHighlightsManage");
+    const empty = $("#epHighlightsEmpty");
+    wrap.innerHTML = "";
+    if(wrapM) wrapM.innerHTML = "";
+    const list = Array.isArray(arr) ? arr.filter(Boolean) : [];
+    empty.style.display = list.length ? "none" : "block";
+    if(!list.length) return;
+    list.forEach((t, idx) => {
+      const pill = document.createElement("div");
+      pill.className = "ep-pill";
+      pill.innerHTML = `<i class='bx bx-check-circle'></i> ${safeText(t)}`;
+      wrap.appendChild(pill);
+
+      if(wrapM){
+        const pill2 = document.createElement("div");
+        pill2.className = "ep-pill";
+        pill2.style.borderColor = "rgba(245,176,0,.35)";
+        pill2.style.background = "rgba(245,176,0,.12)";
+        pill2.innerHTML = `<i class='bx bx-x' style="cursor:pointer"></i> <span>${safeText(t)}</span>`;
+        pill2.querySelector("i").addEventListener("click", ()=> {
+          state.empresa.destaques = state.empresa.destaques.filter((_,i)=> i!==idx);
+          renderAll();
+        });
+        wrapM.appendChild(pill2);
+      }
+    });
+  }
+
+  function renderGallery(urls){
+    const grid = $("#epGallery");
+    const empty = $("#epGalleryEmpty");
+    grid.innerHTML = "";
+    const list = Array.isArray(urls) ? urls.filter(Boolean) : [];
+    empty.style.display = list.length ? "none" : "block";
+    if(!list.length){
+      // preenche 6 placeholders no público pra ficar bonito
+      for(let i=0;i<6;i++) {
+        const ph = document.createElement("div");
+        ph.className = "ep-photo";
+        ph.innerHTML = `<div class="ep-empty"><i class='bx bx-image' style="font-size:28px"></i></div>`;
+        grid.appendChild(ph);
+      }
+      return;
+    }
+    list.forEach(u=> {
+      const box = document.createElement("div");
+      box.className = "ep-photo";
+      box.innerHTML = `<img loading="lazy" src="${u}" alt="Foto"/>`;
+      grid.appendChild(box);
+    });
+  }
+
+  function money(v){
+    if(v === null || v === undefined || v === "") return "";
+    const n = Number(v);
+    if(Number.isNaN(n)) return safeText(v);
+    return n.toLocaleString("pt-BR", { style:"currency", currency:"BRL" });
+  }
+
+  function renderCatalog(items, targetEl){
+    const wrap = $(targetEl);
+    if(!wrap) return;
+    wrap.innerHTML = "";
+    const list = Array.isArray(items) ? items : [];
+    list.forEach((it, idx)=> {
+      const url = it.foto || "";
+      const price = it.preco ? money(it.preco) : (it.preco_texto || "Sob consulta");
+      const tag = it.tag || it.destaque || "";
+      const el = document.createElement("div");
+      el.className = "ep-item";
+      el.innerHTML = `
+        <div class="media">${ url ? `<img loading="lazy" src="${url}" alt="Foto"/>` : `<i class='bx bx-image' style="font-size:34px;color:rgba(0,0,0,.35)"></i>` }</div>
+        <div class="content">
+          <p class="t">${safeText(it.titulo || "Item")}</p>
+          <p class="d">${safeText(it.descricao || "")}</p>
+          <div class="row">
+            <span class="p">${price}</span>
+            ${tag ? `<span class="tag">${safeText(tag)}</span>` : `<span></span>`}
+          </div>
+        </div>
+      `;
+      wrap.appendChild(el);
+    });
+  }
+
+  function renderCatalogPreview(items){
+    const preview = Array.isArray(items) ? items.slice(0, 4) : [];
+    renderCatalog(preview, "#epCatalogPreview");
+    $("#epCatalogEmpty").style.display = preview.length ? "none" : "block";
+  }
+
+  function renderCatalogFull(items){
+    const list = Array.isArray(items) ? items : [];
+    renderCatalog(list, "#epCatalog");
+    $("#epCatalogEmpty2").style.display = list.length ? "none" : "block";
+  }
+
+  function renderCatalogManage(items){
+    const wrap = $("#epCatalogManage");
+    const listWrap = $("#epCatalogManage"); // keep
+    const list = Array.isArray(items) ? items : [];
+    const host = $("#epCatalogManage");
+    if(!host) return;
+    host.innerHTML = "";
+    if(!list.length){
+      host.innerHTML = `<div class="ep-small">Sem itens ainda. Clique em <b>Novo item</b>.</div>`;
+      return;
+    }
+    list.forEach((it, idx)=> {
+      const card = document.createElement("div");
+      card.className = "ep-card";
+      card.style.boxShadow = "none";
+      card.style.marginBottom = "10px";
+      card.innerHTML = `
+        <div style="display:flex; gap:12px; align-items:flex-start;">
+          <div style="width:92px; height:92px; border-radius:16px; overflow:hidden; border:1px solid var(--ep-border); background:rgba(0,0,0,.05); flex:0 0 auto; display:flex; align-items:center; justify-content:center;">
+            ${ it.foto ? `<img src="${it.foto}" style="width:100%;height:100%;object-fit:cover;" / loading="lazy" decoding="async">` : `<i class='bx bx-image' style="font-size:30px;color:rgba(0,0,0,.35)"></i>` }
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; gap:10px; align-items:center;">
+              <b>${safeText(it.titulo || "Item")}</b>
+              <span style="font-weight:900;color:rgba(0,0,0,.72)">${ it.preco ? money(it.preco) : (it.preco_texto || "Sob consulta") }</span>
+            </div>
+            <div class="ep-small" style="margin-top:6px;">${safeText(it.descricao || "")}</div>
+            <div class="ep-formActions" style="margin-top:10px;">
+              <button class="ep-btn ep-outline" data-act="edit" data-idx="${idx}" type="button"><i class='bx bx-edit'></i> Editar</button>
+              <button class="ep-btn" data-act="del" data-idx="${idx}" type="button"><i class='bx bx-trash'></i> Remover</button>
+            </div>
+          </div>
+        </div>
+      `;
+      host.appendChild(card);
+    });
+
+    host.querySelectorAll("button[data-act]").forEach(btn=>{
+      btn.addEventListener("click", ()=> {
+        const idx = Number(btn.dataset.idx);
+        const act = btn.dataset.act;
+        if(act==="del"){
+          state.empresa.catalogo.splice(idx,1);
+          renderAll();
+          return;
+        }
+        if(act==="edit"){
+          openItemModal(idx);
+        }
+      });
+    });
+  }
+
+  function setOpenBadges(horarios){
+    const r = isOpenNow(horarios);
+    const open = $("#epOpenBadge");
+    const closed = $("#epClosedBadge");
+    if(r.open){
+      open.style.display="inline-flex";
+      closed.style.display="none";
+    }else{
+      open.style.display="none";
+      closed.style.display="inline-flex";
+    }
+  }
+
+  // ============================
+  // Reviews (simple)
+  // ============================
+  async function loadReviews(target){
+    const client = mustSupa();
+    if(!client) return { avg:0, count:0, list:[] };
+    const key = target?.uid || target?.id;
+    if(!key) return { avg:0, count:0, list:[] };
+    const cols = ["profissionalUid", "profissional_id", "profissionalId", "target_uid", "target_id"];
+    let data = null;
+    for(const c of cols){
+      try{
+        const r = await client.from("avaliacoes").select("*").eq(c, key).limit(60);
+        if(!r.error && Array.isArray(r.data) && r.data.length){
+          data = r.data;
+          break;
+        }
+      }catch(_){
+        // ignore
+      }
+    }
+    if(!Array.isArray(data)) data = [];
+    const notes = data.map(a=> Number(a.media ?? a.nota ?? 0)).filter(n=> n>0);
+    const avg = notes.length ? (notes.reduce((s,v)=> s+v,0)/notes.length) : 0;
+    return { avg, count: data.length, list: data };
+  }
+
+  function renderReviews(reviews){
+    const summary = $("#epReviewsSummary");
+    const list = $("#epReviewsList");
+    const avg = reviews.avg || 0;
+    const count = reviews.count || 0;
+    summary.innerHTML = `<b>${avg.toFixed(1)}</b> • ${count} avaliações`;
+    list.innerHTML = "";
+
+    if(!count){
+      list.innerHTML = `<div class="ep-small">Ainda sem avaliações.</div>`;
+      return;
+    }
+    reviews.list.slice(0, 12).forEach(a=> {
+      const n = Number(a.media ?? a.nota ?? 0) || 0;
+      const msg = safeText(a.comentario ?? a.mensagem ?? a.msg ?? "");
+      const date = a.data || a.created_at || a.createdAt || "";
+      const d = date ? new Date(date) : null;
+      const dtx = d && !isNaN(d) ? d.toLocaleDateString("pt-BR") : "";
+      const card = document.createElement("div");
+      card.className = "ep-card";
+      card.style.boxShadow = "none";
+      card.style.marginBottom = "10px";
+      card.innerHTML = `
+        <div style="display:flex; justify-content:space-between; gap:12px; align-items:center;">
+          <div style="font-weight:900;"><i class='bx bxs-star' style="color:var(--ep-accent)"></i> ${n.toFixed(1)}</div>
+          <div style="color:rgba(0,0,0,.55); font-weight:800; font-size:12px;">${dtx}</div>
+        </div>
+        <div class="ep-small" style="margin-top:8px;">${ msg || "—" }</div>
+      `;
+      list.appendChild(card);
+    });
+  }
+
+  // ============================
+  // State + Actions
+  // ============================
+  const state = {
+    me: null,
+    target: null,
+    canEdit: false,
+    stats: {},
+    empresa: {
+      nome_fantasia: "",
+      categoria: "",
+      faixa_preco: "",
+      resposta: "",
+      descricao: "",
+      endereco: "",
+      lat: "",
+      lng: "",
+      telefone: "",
+      whatsapp: "",
+      site: "",
+      instagram: "",
+      reserva_url: "",
+      verificado: false,
+      destaques: [],
+      horarios: {},
+      galeria: [],
+      catalogo: [],
+      media: {}
+    },
+    reviews: { avg:0, count:0, list:[] }
+  };
+
+  function applyEmpresaDefaults(e){
+    const out = clone(state.empresa);
+    if(e && typeof e === "object") {
+      // merge shallow
+      for(const k of Object.keys(out)) {
+        if(e[k] !== undefined) out[k] = e[k];
+      }
+      // nested
+      out.horarios = (e.horarios && typeof e.horarios === "object") ? e.horarios : (out.horarios || {});
+      out.media = (e.media && typeof e.media === "object") ? e.media : (out.media || {});
+      out.destaques = Array.isArray(e.destaques) ? e.destaques : (out.destaques || []);
+      out.galeria = Array.isArray(e.galeria) ? e.galeria : (out.galeria || []);
+      out.catalogo = Array.isArray(e.catalogo) ? e.catalogo : (out.catalogo || []);
+    }
+    return out;
+  }
+
+  function getFavKey(){
+    return "doke_fav_empresas_v1";
+  }
+  function getFavs(){
+    try{
+      const raw = localStorage.getItem(getFavKey());
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch(_){
+      return [];
+    }
+  }
+  function setFavs(arr){
+    localStorage.setItem(getFavKey(), JSON.stringify(arr || []));
+  }
+  function isFav(id){
+    return getFavs().includes(String(id));
+  }
+  function toggleFav(id){
+    const s = String(id);
+    const arr = getFavs();
+    const idx = arr.indexOf(s);
+    if(idx>=0) arr.splice(idx,1); else arr.unshift(s);
+    setFavs(arr.slice(0,200));
+    return idx<0;
+  }
+
+  function updateSaveBtn(){
+    const btn = $("#epBtnSave");
+    const id = state.target?.id || state.target?.uid;
+    if(!btn || !id) return;
+    const fav = isFav(id);
+    btn.innerHTML = fav ? "<i class='bx bxs-bookmark'></i> Salvo" : "<i class='bx bx-bookmark'></i> Salvar";
+  }
+
+  function renderAll(){
+    const u = state.target || {};
+    const e = state.empresa || {};
+
+    $("#epName").textContent = e.nome_fantasia || u.nome || u.user || "Empresa";
+    $("#epCategory").innerHTML = `<i class='bx bx-category'></i> ${safeText(e.categoria || "Estabelecimento")}`;
+
+    if(e.faixa_preco){
+      const pr = $("#epPrice");
+      pr.style.display="inline-flex";
+      pr.innerHTML = `<i class='bx bx-purchase-tag'></i> ${safeText(e.faixa_preco)}`;
+    }else{
+      $("#epPrice").style.display="none";
+    }
+
+    const locText = e.endereco || u.local || "";
+    if(locText){
+      const loc = $("#epLocation");
+      loc.style.display="inline-flex";
+      loc.innerHTML = `<i class='bx bx-map'></i> ${safeText(locText)}`;
+    }else{
+      $("#epLocation").style.display="none";
+    }
+
+    $("#epSlogan").textContent = e.descricao || u.bio || "—";
+    $("#epAbout").textContent = e.descricao || u.bio || "—";
+
+    // verified
+    const ver = $("#epVerified");
+    const vbool = (e.verificado === true || e.verificado === "true");
+    ver.style.display = vbool ? "inline-flex" : "none";
+
+    // response
+    $("#epResponse").textContent = e.resposta || "—";
+
+    // cover/logo
+    setCover(e.media?.cover_url || u.capa || u.capa_url || "");
+    setLogo(e.media?.logo_url || u.foto || u.foto_url || "", (e.nome_fantasia || u.nome || u.user || "E")[0]);
+
+    // highlights
+    renderHighlights(e.destaques);
+
+    // hours
+    setOpenBadges(e.horarios);
+    $("#epHours").innerHTML = fmtHours(e.horarios) || "—";
+
+    // address
+    $("#epAddress").textContent = e.endereco || "—";
+
+    // contact
+    const parts = [];
+    if(e.telefone) parts.push(`<div><b>Telefone</b>: ${safeText(e.telefone)}</div>`);
+    if(e.whatsapp) parts.push(`<div><b>WhatsApp</b>: ${safeText(e.whatsapp)}</div>`);
+    if(e.site) parts.push(`<div><b>Site</b>: <a href="${e.site}" target="_blank" rel="noopener">${e.site}</a></div>`);
+    if(e.instagram) {
+      const ig = safeText(e.instagram).replace(/^@/,"");
+      parts.push(`<div><b>Instagram</b>: <a href="https://instagram.com/${ig}" target="_blank" rel="noopener">@${ig}</a></div>`);
+    }
+    $("#epContact").innerHTML = parts.length ? parts.join("") : "—";
+
+    // reserve button
+    const bRes = $("#epBtnReserve");
+    if(e.reserva_url){
+      bRes.style.display = "inline-flex";
+    }else{
+      bRes.style.display = "none";
+    }
+
+    // map
+    const lat = Number(e.lat);
+    const lng = Number(e.lng);
+    initMap(!isNaN(lat) ? lat : null, !isNaN(lng) ? lng : null);
+
+    // gallery
+    renderGallery(e.galeria);
+
+    // catalog
+    renderCatalogPreview(e.catalogo);
+    renderCatalogFull(e.catalogo);
+
+    if(state.canEdit){
+      renderCatalogManage(e.catalogo);
+      fillForms();
+    }
+
+    // kpis from reviews
+    $("#epRating").textContent = (state.reviews.avg || 0).toFixed(1);
+    $("#epReviews").textContent = String(state.reviews.count || 0);
+
+    renderReviews(state.reviews);
+    updateSaveBtn();
+  }
+
+  function fillForms(){
+    const e = state.empresa;
+    $("#fNome").value = e.nome_fantasia || "";
+    $("#fCategoria").value = e.categoria || "";
+    $("#fPreco").value = e.faixa_preco || "";
+    $("#fResposta").value = e.resposta || "";
+    $("#fDescricao").value = e.descricao || "";
+    $("#fEndereco").value = e.endereco || "";
+    $("#fLat").value = e.lat || "";
+    $("#fLng").value = e.lng || "";
+    $("#fTelefone").value = e.telefone || "";
+    $("#fWhatsapp").value = e.whatsapp || "";
+    $("#fSite").value = e.site || "";
+    $("#fInstagram").value = e.instagram || "";
+    $("#fReserva").value = e.reserva_url || "";
+    $("#fVerificado").value = (e.verificado === true || e.verificado === "true") ? "true" : "false";
+
+    const h = e.horarios || {};
+    $("#hSeg").value = h.seg || "";
+    $("#hTer").value = h.ter || "";
+    $("#hQua").value = h.qua || "";
+    $("#hQui").value = h.qui || "";
+    $("#hSex").value = h.sex || "";
+    $("#hSab").value = h.sab || "";
+    $("#hDom").value = h.dom || "";
+  }
+
+  function bindTabs(){
+    document.querySelectorAll(".ep-tab").forEach(btn=>{
+      btn.addEventListener("click", ()=> {
+        document.querySelectorAll(".ep-tab").forEach(b=> b.classList.remove("active"));
+        btn.classList.add("active");
+        const tab = btn.dataset.tab;
+        document.querySelectorAll("[data-tabpanel]").forEach(p=> {
+          p.style.display = (p.dataset.tabpanel === tab) ? "" : "none";
+        });
+      });
+    });
+  }
+
+  function wireActions(){
+    $("#epBtnSave").addEventListener("click", ()=> {
+      const id = state.target?.id || state.target?.uid;
+      if(!id) return;
+      const on = toggleFav(id);
+      updateSaveBtn();
+      toast(on ? "Salvo nos favoritos." : "Removido dos favoritos.");
+    });
+
+    $("#epBtnMessage").addEventListener("click", ()=> {
+      const id = state.target?.id || state.target?.uid;
+      if(!id) return toast("Sem destino.");
+      // abre chat com a empresa
+      window.location.href = `chat.html?id=${encodeURIComponent(id)}`;
+    });
+
+    $("#epBtnRoute").addEventListener("click", ()=> {
+      const e = state.empresa;
+      const q = e.endereco || "";
+      const lat = e.lat, lng = e.lng;
+      const url = (lat && lng) ? `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`
+                              : `https://www.google.com/maps?q=${encodeURIComponent(q)}`;
+      window.open(url, "_blank");
+    });
+
+    $("#epBtnOpenMap").addEventListener("click", ()=> {
+      const e = state.empresa;
+      const q = e.endereco || "";
+      const lat = e.lat, lng = e.lng;
+      const url = (lat && lng) ? `https://www.google.com/maps?q=${encodeURIComponent(lat)},${encodeURIComponent(lng)}`
+                              : `https://www.google.com/maps?q=${encodeURIComponent(q)}`;
+      window.open(url, "_blank");
+    });
+
+    $("#epBtnCopyAddr").addEventListener("click", async ()=> {
+      try{
+        await navigator.clipboard.writeText(state.empresa.endereco || "");
+        toast("Endereço copiado.");
+      }catch(_){
+        toast(" foi  copiar.");
+      }
+    });
+
+    $("#epBtnReserve").addEventListener("click", ()=> {
+      const url = state.empresa.reserva_url;
+      if(url) window.open(url, "_blank");
+    });
+
+    const editBtn = $("#epBtnEdit");
+    if(editBtn){
+      editBtn.addEventListener("click", ()=> {
+        // abre a aba de 
+        const tab = document.querySelector('.ep-tab[data-tab="gestao"]');
+        tab?.click();
+      });
+    }
+  }
+
+  async function saveEmpresaPatch(patch){
+    const client = mustSupa();
+    if(!client) return false;
+    const current = parseStats(state.target);
+    const { error, stats } = await patchStats(client, state.target.id, current, patch);
+    if(error){
+      console.error(error);
+      toast("Sem  para salvar.");
+      return false;
+    }
+    state.target.stats = stats;
+    state.stats = stats;
+    state.empresa = applyEmpresaDefaults(stats.empresa || {});
+    return true;
+  }
+
+  async function initMedia(){
+    const client = mustSupa();
+    if(!client) return;
+
+    const coverBtn = $("#epCoverBtn");
+    const coverInput = $("#epCoverInput");
+    const logoBtn = $("#epLogoBtn");
+    const logoInput = $("#epLogoInput");
+
+    // só mostra controles se puder editar
+    if(!state.canEdit){
+      coverBtn.style.display = "none";
+      logoBtn.style.display = "none";
+      return;
+    }
+
+    coverBtn.addEventListener("click", ()=> coverInput.click());
+    logoBtn.addEventListener("click", ()=> logoInput.click());
+
+    coverInput.addEventListener("change", async ()=> {
+      const f = coverInput.files?.[0];
+      if(!f) return;
+      toast("Enviando capa...");
+      const storageId = state.me?.uid || state.me?.id || state.target?.uid || state.target?.id;
+      const up = await uploadToStorage(client, {
+        bucket: "perfil",
+        path: `empresa/${storageId}/capa/${uuid()}`,
+        file: f
+      });
+      if(up.error) {
+        console.error(up.error);
+        toast("Falha ao enviar capa.");
+        return;
+      }
+      // salva: stats.empresa.media.cover_url +  capa do usuário (opcional)
+      const ok = await saveEmpresaPatch({
+        empresa: {
+          media: { cover_url: up.url, cover_path: up.path, cover_updated_at: new Date().toISOString() }
+        }
+      });
+      if(ok){
+        await updateUsuario(client, state.target.id, { capa: up.url });
+        setCover(up.url);
+        toast("Capa salva!");
+      }
+    });
+
+    logoInput.addEventListener("change", async ()=> {
+      const f = logoInput.files?.[0];
+      if(!f) return;
+      toast("Enviando logo...");
+      const storageId = state.me?.uid || state.me?.id || state.target?.uid || state.target?.id;
+      const up = await uploadToStorage(client, {
+        bucket: "perfil",
+        path: `empresa/${storageId}/logo/${uuid()}`,
+        file: f
+      });
+      if(up.error) {
+        console.error(up.error);
+        toast("Falha ao enviar logo.");
+        return;
+      }
+      const ok = await saveEmpresaPatch({
+        empresa: {
+          media: { logo_url: up.url, logo_path: up.path, logo_updated_at: new Date().toISOString() }
+        }
+      });
+      if(ok){
+        await updateUsuario(client, state.target.id, { foto: up.url });
+        setLogo(up.url, $("#epName").textContent?.[0] || "E");
+        toast("Logo salvo!");
+      }
+    });
+  }
+
+  function openItemModal(editIndex){
+    const existing = (editIndex !== null && editIndex !== undefined) ? (state.empresa.catalogo[editIndex] || {}) : {};
+
+    const modal = document.createElement("div");
+    modal.style.position="fixed";
+    modal.style.inset="0";
+    modal.style.background="rgba(0,0,0,.45)";
+    modal.style.zIndex="9999";
+    modal.style.display="flex";
+    modal.style.alignItems="center";
+    modal.style.justifyContent="center";
+    modal.style.padding="16px";
+
+    modal.innerHTML = `
+      <div style="width:min(720px, 100%); background:#fff; border-radius:18px; border:1px solid var(--ep-border); box-shadow:0 20px 60px rgba(0,0,0,.18); overflow:hidden;">
+        <div style="padding:14px 16px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--ep-border);">
+          <b>${ editIndex!=null ? "Editar item" : "Novo item" }</b>
+          <button id="mClose" class="ep-btn" type="button" style="box-shadow:none;"><i class='bx bx-x'></i></button>
+        </div>
+        <div style="padding:16px;">
+          <div class="ep-form">
+            <div class="ep-field" style="grid-column:1/-1;">
+              <label></label>
+              <input id="mTitulo" placeholder="Ex.: Corte masculino" value="${safeText(existing.titulo || "")}" />
+            </div>
+            <div class="ep-field">
+              <label>Preço (número)</label>
+              <input id="mPreco" placeholder="Ex.: 59.90" value="${ existing.preco ?? "" }" />
+            </div>
+            <div class="ep-field">
+              <label> (texto)</label>
+              <input id="mPrecoTxt" placeholder="Ex.: Sob consulta" value="${safeText(existing.preco_texto || "")}" />
+            </div>
+            <div class="ep-field" style="grid-column:1/-1;">
+              <label>Descrição</label>
+              <textarea id="mDesc" placeholder="Curto e direto...">${safeText(existing.descricao || "")}</textarea>
+            </div>
+            <div class="ep-field">
+              <label>Tag (opcional)</label>
+              <input id="mTag" placeholder="Ex.: Mais vendido" value="${safeText(existing.tag || "")}" />
+            </div>
+            <div class="ep-field">
+              <label>Foto (URL opcional)</label>
+              <input id="mFoto" placeholder="https://..." value="${safeText(existing.foto || "")}" />
+            </div>
+          </div>
+          <div class="ep-formActions">
+            <button class="ep-btn ep-primary" id="mSave" type="button"><i class='bx bx-save'></i> Salvar</button>
+            <button class="ep-btn" id="mCancel" type="button"><i class='bx bx-x'></i> Cancelar</button>
+          </div>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.querySelector("#mClose").onclick = ()=> modal.remove();
+    modal.querySelector("#mCancel").onclick = ()=> modal.remove();
+    modal.addEventListener("click", (e)=> {
+      if(e.target === modal) modal.remove();
+    });
+
+    modal.querySelector("#mSave").onclick = ()=> {
+      const titulo = modal.querySelector("#mTitulo").value.trim();
+      const preco = modal.querySelector("#mPreco").value.trim();
+      const precoTxt = modal.querySelector("#mPrecoTxt").value.trim();
+      const descricao = modal.querySelector("#mDesc").value.trim();
+      const tag = modal.querySelector("#mTag").value.trim();
+      const foto = modal.querySelector("#mFoto").value.trim();
+
+      if(!titulo) return toast(" um .");
+
+      const item = {
+        titulo,
+        descricao,
+        tag,
+        foto,
+        preco: preco ? Number(preco) : null,
+        preco_texto: precoTxt || ""
+      };
+
+      if(editIndex!=null){
+        state.empresa.catalogo[editIndex] = item;
+      }else{
+        state.empresa.catalogo.unshift(item);
+      }
+      renderAll();
+      modal.remove();
+    };
+  }
+
+  function bindGestao(){
+    if(!state.canEdit) return;
+
+    $("#epTabGestao").style.display = "";
+    $("#epBtnEdit").style.display = "";
+
+    $("#btnSalvarEmpresa").addEventListener("click", async ()=> {
+      const e = state.empresa;
+      e.nome_fantasia = $("#fNome").value.trim();
+      e.categoria = $("#fCategoria").value.trim();
+      e.faixa_preco = $("#fPreco").value.trim();
+      e.resposta = $("#fResposta").value.trim();
+      e.descricao = $("#fDescricao").value.trim();
+      e.endereco = $("#fEndereco").value.trim();
+      e.lat = $("#fLat").value.trim();
+      e.lng = $("#fLng").value.trim();
+      e.telefone = $("#fTelefone").value.trim();
+      e.whatsapp = $("#fWhatsapp").value.trim();
+      e.site = $("#fSite").value.trim();
+      e.instagram = $("#fInstagram").value.trim();
+      e.reserva_url = $("#fReserva").value.trim();
+      e.verificado = ($("#fVerificado").value === "true");
+
+      const ok = await saveEmpresaPatch({ empresa: e });
+      if(ok){
+        toast("Dados salvos!");
+        // atualiza mapa
+        renderAll();
+      }
+    });
+
+    $("#btnPreviewPublico").addEventListener("click", ()=> {
+      const id = state.target?.id || state.target?.uid;
+      if(!id) return;
+      window.open(`perfil-empresa.html?id=${encodeURIComponent(id)}`, "_blank");
+    });
+
+    $("#btnAddDestaque").addEventListener("click", ()=> {
+      const v = $("#fNovoDestaque").value.trim();
+      if(!v) return;
+      state.empresa.destaques = Array.isArray(state.empresa.destaques) ? state.empresa.destaques : [];
+      state.empresa.destaques.unshift(v);
+      $("#fNovoDestaque").value = "";
+      renderAll();
+    });
+
+    $("#btnAddItem").addEventListener("click", ()=> openItemModal(null));
+
+    $("#btnSalvarHorarios").addEventListener("click", async ()=> {
+      const h = {
+        seg: $("#hSeg").value.trim(),
+        ter: $("#hTer").value.trim(),
+        qua: $("#hQua").value.trim(),
+        qui: $("#hQui").value.trim(),
+        sex: $("#hSex").value.trim(),
+        sab: $("#hSab").value.trim(),
+        dom: $("#hDom").value.trim()
+      };
+      state.empresa.horarios = h;
+      const ok = await saveEmpresaPatch({ empresa: { horarios: h } });
+      if(ok){
+        toast("Horários salvos!");
+        renderAll();
+      }
+    });
+
+    // galeria
+    $("#epGalleryActions").style.display = "";
+    $("#epAddPhotos").addEventListener("click", ()=> $("#epPhotosInput").click());
+    $("#epPhotosInput").addEventListener("change", async ()=> {
+      const client = mustSupa();
+      if(!client) return;
+      const files = Array.from($("#epPhotosInput").files || []).slice(0, 12);
+      if(!files.length) return;
+      toast("Enviando fotos...");
+      const storageId = state.me?.uid || state.me?.id || state.target?.uid || state.target?.id;
+      const urls = [];
+      for(const f of files){
+        const up = await uploadToStorage(client, {
+          bucket: "perfil",
+          path: `empresa/${storageId}/galeria/${uuid()}`,
+          file: f
+        });
+        if(up?.url) urls.push(up.url);
+      }
+      state.empresa.galeria = Array.isArray(state.empresa.galeria) ? state.empresa.galeria : [];
+      state.empresa.galeria = urls.concat(state.empresa.galeria);
+      const ok = await saveEmpresaPatch({ empresa: { galeria: state.empresa.galeria } });
+      if(ok){
+        toast("Fotos adicionadas!");
+        renderAll();
+      }
+    });
+  }
+
+  function setupVisibility(){
+    // Em público, se a pessoa abrir o "meuempreendimento" sem estar logada, vira apenas visualização
+    // Em editável, mostramos o botão editar sempre, mas  só quando canEdit.
+    if(state.canEdit){
+      // ok
+    }else{
+      $("#epTabGestao").style.display = "none";
+      $("#epBtnEdit").style.display = FORCE_EDIT_MODE ? "none" : "none";
+      $("#epGalleryActions").style.display = "none";
+    }
+  }
+
+  async function init(){
+    bindTabs();
+    wireActions();
+
+    const client = mustSupa();
+    if(!client) return;
+
+    // resolve alvo
+    const sp = new URLSearchParams(location.search);
+    const qId = sp.get("id");
+    const qUser = sp.get("user");
+
+    const sess = await getSession(client);
+    if(sess?.user){
+      const meRes = await getUsuarioByAuthUid(client, sess.user.id);
+      if(!meRes.error) state.me = meRes.usuario;
+    }
+
+    // editable page: se não passar id/user, mostra o préprio.
+    let target = null;
+    if(qId){
+      const r = await getUsuarioByIdOrUid(client, qId);
+      target = r.usuario;
+    }else if(qUser){
+      const r = await getUsuarioByUsername(client, qUser);
+      target = r.usuario;
+    }else{
+      target = state.me;
+    }
+
+    if(!target){
+      toast("Empresa não encontrada.");
+      return;
+    }
+
+    state.target = target;
+    state.stats = parseStats(target);
+    state.empresa = applyEmpresaDefaults(state.stats.empresa || {});
+    state.canEdit = !!(FORCE_EDIT_MODE && state.me && (state.me.id === target.id || state.me.uid === target.uid));
+
+    // Public page: nunca pode editar
+    if(!FORCE_EDIT_MODE) state.canEdit = false;
+
+    // load reviews
+    state.reviews = await loadReviews(target);
+
+    setupVisibility();
+    await initMedia();
+    bindGestao();
+
+    // ações (avaliar) - por enquanto só abre modal simples
+    $("#epBtnAvaliar").addEventListener("click", ()=> {
+      if(state.canEdit) return toast("Você não pode se avaliar.");
+      toast("A tela de avaliação pode abrir um modal e salvar em 'avaliacoes'.");
+    });
+
+    renderAll();
+  }
+
+  init();
+  </script>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+

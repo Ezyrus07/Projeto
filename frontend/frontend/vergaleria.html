@@ -1,0 +1,432 @@
+﻿<!DOCTYPE html>
+
+<html lang="pt-br">
+<head>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="supabase-init.js?v=20260218v43"></script>
+<script src="firebase-compat-supabase.js?v=20260212v25"></script>
+<script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Galeria de Vídeos | Doke</title>
+<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
+<link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+<script defer="" src="script.js?v=20260218v60"></script>
+<style>
+        /* ===========================================
+           ESTILOS DA GALERIA DE Vï¿½DEOS
+           (Patch v3: tï¿½picos/carrossï¿½is)
+           =========================================== */
+        
+        /* Ajuste do Main para compensar Sidebar Desktop */
+        @media (min-width: 1024px) {
+            main { margin-left: var(--sidebar-width); padding: 40px; }
+        }
+
+        /* Cabeï¿½alho da Pï¿½gina (Igual Categoria) */
+        .page-header {
+            max-width: 1200px; margin: 0 auto 30px auto; padding: 0 20px;
+        }
+        .page-breadcrumb { font-size: 0.85rem; color: #888; margin-bottom: 10px; }
+        .page-breadcrumb a { text-decoration: none; color: inherit; }
+        .page-title { color: var(--cor2); font-size: 1.8rem; margin: 0; display: flex; align-items: center; gap: 10px; }
+        .page-subtitle { color: #666; margin-top: 5px; font-size: 0.95rem; }
+
+        /* Container Principal */
+        .gallery-container {
+            max-width: 1200px; margin: 0 auto; padding: 0 20px 60px 20px;
+        }
+
+        /* GRID DE Vï¿½DEOS (Adaptaï¿½ï¿½o do Card TikTok para Grid) */
+        .video-grid {
+            display: grid;
+            /* Cards verticais com tamanho mï¿½nimo de 240px */
+            grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        /* Card de Vï¿½deo na Galeria */
+        .gallery-video-card {
+            position: relative;
+            background: #000;
+            border-radius: 16px;
+            overflow: hidden;
+            aspect-ratio: 9/16; /* Formato Vertical TikTok */
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: pointer;
+            border: 1px solid #eee;
+        }
+
+        .gallery-video-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+        }
+
+        /* Imagem de Fundo */
+        .gv-bg {
+            width: 100%; height: 100%; object-fit: cover;
+            opacity: 0.9; transition: 0.5s;
+        }
+        .gallery-video-card:hover .gv-bg { transform: scale(1.05); opacity: 0.8; }
+
+        /* Badge (Categoria) */
+        .gv-badge {
+            position: absolute; top: 10px; left: 10px;
+            background: rgba(255,255,255,0.2); backdrop-filter: blur(5px);
+            color: white; font-size: 0.7rem; font-weight: 700;
+            padding: 4px 10px; border-radius: 20px; z-index: 5;
+            border: 1px solid rgba(255,255,255,0.3); text-transform: uppercase;
+        }
+
+        /* Ãcone Play */
+        .gv-play {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 50px; color: rgba(255,255,255,0.8); z-index: 2; pointer-events: none;
+            transition: 0.3s;
+        }
+        .gallery-video-card:hover .gv-play { transform: translate(-50%, -50%) scale(1.2); color: white; }
+
+        /* Informaï¿½ï¿½es Inferiores (Overlay) */
+        .gv-info {
+            position: absolute; bottom: 0; left: 0; right: 0;
+            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+            padding: 20px 15px 15px 15px; color: white; z-index: 3;
+        }
+        
+        .gv-user-link { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; text-decoration: none; color: inherit; }
+        .gv-user-link img { width: 24px; height: 24px; border-radius: 50%; border: 1px solid white; }
+        .gv-user-link span { font-size: 0.8rem; font-weight: 600; text-shadow: 0 1px 2px rgba(0,0,0,0.8); }
+        
+        .gv-desc {
+            font-size: 0.85rem; line-height: 1.3; color: #eee;
+            display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+        }
+
+        /* Botï¿½o Carregar Mais */
+        .load-more-container { text-align: center; margin-top: 50px; }
+        .btn-load-more {
+            background: transparent; border: 1px solid var(--cor0); color: var(--cor0);
+            padding: 10px 30px; border-radius: 30px; font-weight: 600; cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-load-more:hover { background: var(--cor0); color: white; }
+
+        /* Responsividade */
+        @media (max-width: 768px) {
+            .page-header { padding: 20px 20px 0 20px; }
+            .gallery-container { padding: 0 15px 80px 15px; }
+            .video-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; }
+            .gv-play { font-size: 30px; }
+        }
+    
+        .vg-topicos{ max-width: var(--home-section-width, 1100px); margin: 18px auto; padding: 0 16px; }
+        .vg-head h2{ margin:0; font-size:1.35rem; }
+        .vg-head p{ margin:6px 0 0; color:rgba(0,0,0,.6); }
+        .vg-topic{ margin-top: 14px; }
+        .vg-topic-title{ font-weight: 900; color: #102a28; margin: 10px 0; }
+        .vg-row{ display:flex; gap: 12px; overflow:auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+        .vg-row > * { scroll-snap-align: start; }
+        .vg-empty{ padding: 14px; background:#fff; border:1px dashed rgba(0,0,0,.18); border-radius: 14px; color:rgba(0,0,0,.65); margin-top: 12px;}
+    </style>
+<!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+<link href="doke-toast.css" rel="stylesheet"/>
+<link href="doke-alerts.css" rel="stylesheet"/>
+<link href="doke-ux.css?v=20260207v21" rel="stylesheet"/>
+<link rel="stylesheet" href="doke-shell.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-responsive.css?v=20260207v21">
+
+<link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
+<link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
+</head>
+<body>
+<div class="popup" id="popup">
+<div class="popup-content">
+<span class="close-btn" onclick="fecharPopup()">&times;</span>
+<p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+<a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+<p class="criar">
+                Não tem uma conta?
+                <a href="cadastro.html">Criar conta</a>
+</p>
+</div>
+</div>
+<header class="navbar-mobile">
+<div id="logo-mobile">
+<a href="index.html">
+<img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+</a>
+</div>
+<div class="botoes-direita">
+<a class="entrar" href="login.html">Entrar</a>
+<a href="login.html">
+</a>
+</div>
+
+</header>
+<div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+<header class="navbar-desktop">
+<div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/></a></div>
+<nav class="menu">
+<div class="cep-wrapper">
+<a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+<svg fill="currentColor" height="16" viewbox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+<path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+</svg>
+<span id="textoCepSpan">Informe seu CEP</span>
+</a>
+<div class="cep-popup" id="boxCep">
+<p>Digite seu CEP:</p>
+<div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"/><button onclick="salvarCep()">OK</button></div>
+</div>
+</div>
+<a href="escolheranuncio.html">Anunciar</a>
+<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="novidades.html">Novidades</a>
+</nav>
+<div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+</header>
+
+<aside class="sidebar-icones">
+  <div id="logo">
+    <a href="index.html">
+      <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png"/>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="index.html">
+      <i class='bx bx-home-alt icon azul'></i>
+      <span>Início</span>
+    </a>
+  </div>
+
+  <div class="item" id="pvSearchSidebarItem">
+    <a href="#" class="pv-search-toggle" aria-label="Pesquisar">
+      <i class='bx bx-search-alt-2 icon azul'></i>
+      <span>Pesquisar</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="empresas.html">
+      <i class='bx bx-store icon verde'></i>
+      <span>Empresas</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="notificacoes.html">
+      <i class='bx bx-bell icon azul'></i>
+      <span>Notificações</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
+      <span>Mensagens</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="comunidade.html">
+      <i class='bx bx-group icon verde'></i>
+      <span>Comunidades</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="#" onclick="irParaMeuPerfil(event)">
+      <i class='bx bx-user icon verde'></i>
+      <span>Perfil</span>
+    </a>
+  </div>
+
+  <div class="item">
+    <a href="mais.html">
+      <i class='bx bx-menu icon azul'></i>
+      <span>Mais</span>
+    </a>
+  </div>
+</aside>
+
+
+<main>
+<section class="vg-topicos" id="vgTopicos">
+<div class="vg-head">
+<h2>Vídeos curtos</h2>
+<p>Explore tópicos com rolagem horizontal</p>
+</div>
+<div class="vg-topic" data-topic="Em alta">
+<div class="vg-topic-title">Em alta</div>
+<div class="vg-row" id="vgReelsEmAlta"></div>
+</div>
+<div class="vg-topic" data-topic="Para vocï¿½">
+<div class="vg-topic-title">Para você</div>
+<div class="vg-row" id="vgReelsParaVoce"></div>
+</div>
+<div class="vg-empty" id="vgReelsEmpty" style="display:none;">Sem vídeos curtos ainda.</div>
+</section>
+<section class="vg-topicos" id="vgPublicacoes">
+<div class="vg-head">
+<h2>Publicações</h2>
+<p>Galeria por tópicos (fotos e vídeos)</p>
+</div>
+<div class="vg-topic" data-topic="Recentes">
+<div class="vg-topic-title">Recentes</div>
+<div class="vg-row" id="vgPubsRecentes"></div>
+</div>
+<div class="vg-empty" id="vgPubsEmpty" style="display:none;">Sem publicações ainda.</div>
+</section>
+<div class="page-header">
+<div class="page-breadcrumb">
+<a href="index.html">Início</a> &gt; <strong>Galeria de Vídeos</strong>
+</div>
+<h1 class="page-title"><i class="bx bx-play-circle"></i> Galeria de Trabalhos</h1>
+<p class="page-subtitle">Assista a transformações reais feitas pelos profissionais da Doke.</p>
+</div>
+<div class="gallery-container">
+<div class="filtros-container-premium">
+<div class="filtros-header-row">
+<h3 class="filtros-titulo"><i class="bx bx-filter-alt"></i> Filtrar por Categoria</h3>
+</div>
+<div class="filtros-chips-scroll">
+<button class="chip-tag ativo" onclick="ativarChip(this)">Todos</button>
+<button class="chip-tag" onclick="ativarChip(this)">ðŸŽ¨ Pintura</button>
+<button class="chip-tag" onclick="ativarChip(this)">⚡ Elétrica</button>
+<button class="chip-tag" onclick="ativarChip(this)">ðŸ§¹ Limpeza</button>
+<button class="chip-tag" onclick="ativarChip(this)">ðŸ› ï¸ Montagem</button>
+<button class="chip-tag" onclick="ativarChip(this)">â„ï¸ Ar Condicionado</button>
+<button class="chip-tag" onclick="ativarChip(this)">ðŸš¿ Hidráulica</button>
+</div>
+</div>
+<div class="video-grid">
+<div class="gallery-video-card" onclick="window.location.href='video.html'">
+<div class="gv-badge">Pintura</div>
+<img class="gv-bg" decoding="async" loading="lazy" src="https://images.unsplash.com/photo-1562259949-e8e7689d7828?q=80&amp;w=600&amp;auto=format&amp;fit=crop"/>
+<div class="gv-play"><i class="bx bx-play"></i></div>
+<div class="gv-info">
+<a class="gv-user-link" href="perfil-usuario.html?user=marcos_pinturas">
+<img decoding="async" loading="lazy" src="https://i.pravatar.cc/150?img=12"/> <span>@marcos_pinturas</span>
+</a>
+<div class="gv-desc">Pintura geométrica na sala. Cliente amou o resultado! ✨</div>
+</div>
+</div>
+<div class="gallery-video-card" onclick="window.location.href='video.html'">
+<div class="gv-badge">Montagem</div>
+<img class="gv-bg" decoding="async" loading="lazy" src="https://images.unsplash.com/photo-1595428774223-ef52624120d2?q=80&amp;w=600&amp;auto=format&amp;fit=crop"/>
+<div class="gv-play"><i class="bx bx-play"></i></div>
+<div class="gv-info">
+<a class="gv-user-link" href="perfil-usuario.html?user=joao_montador">
+<img decoding="async" loading="lazy" src="https://i.pravatar.cc/150?img=85"/> <span>@joao_montador</span>
+</a>
+<div class="gv-desc">Montagem de guarda-roupa 6 portas em tempo recorde. ðŸ› ï¸</div>
+</div>
+</div>
+<div class="gallery-video-card" onclick="window.location.href='video.html'">
+<div class="gv-badge">Limpeza</div>
+<img class="gv-bg" decoding="async" loading="lazy" src="https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&amp;w=600&amp;auto=format&amp;fit=crop"/>
+<div class="gv-play"><i class="bx bx-play"></i></div>
+<div class="gv-info">
+<a class="gv-user-link" href="perfil-usuario.html?user=clean_sofa">
+<img decoding="async" loading="lazy" src="https://i.pravatar.cc/150?img=65"/> <span>@clean_sofa</span>
+</a>
+<div class="gv-desc">Higienização profunda de sofá retrátil. Veja a sujeira saindo! ðŸ˜±</div>
+</div>
+</div>
+<div class="gallery-video-card" onclick="window.location.href='video.html'">
+<div class="gv-badge">Elétrica</div>
+<img class="gv-bg" decoding="async" loading="lazy" src="https://images.unsplash.com/photo-1621905251189-08b45d6a269e?q=80&amp;w=600&amp;auto=format&amp;fit=crop"/>
+<div class="gv-play"><i class="bx bx-play"></i></div>
+<div class="gv-info">
+<a class="gv-user-link" href="perfil-usuario.html?user=eletro_ana">
+<img decoding="async" loading="lazy" src="https://i.pravatar.cc/150?img=44"/> <span>@eletro_ana</span>
+</a>
+<div class="gv-desc">Instalação de quadro de distribuição novo. Segurança total. ⚡</div>
+</div>
+</div>
+<div class="gallery-video-card" onclick="window.location.href='video.html'">
+<div class="gv-badge">Reforma</div>
+<img class="gv-bg" decoding="async" loading="lazy" src="https://images.unsplash.com/photo-1505798577917-a65157d3320a?q=80&amp;w=600&amp;auto=format&amp;fit=crop"/>
+<div class="gv-play"><i class="bx bx-play"></i></div>
+<div class="gv-info">
+<a class="gv-user-link" href="perfil-usuario.html?user=pedro_obras">
+<img decoding="async" loading="lazy" src="https://i.pravatar.cc/150?img=33"/> <span>@pedro_obras</span>
+</a>
+<div class="gv-desc">Reforma completa de banheiro com porcelanato láquido.</div>
+</div>
+</div>
+<div class="gallery-video-card" onclick="window.location.href='video.html'">
+<div class="gv-badge">Jardinagem</div>
+<img class="gv-bg" decoding="async" loading="lazy" src="https://images.unsplash.com/photo-1589923188900-85dae5233271?q=80&amp;w=600&amp;auto=format&amp;fit=crop"/>
+<div class="gv-play"><i class="bx bx-play"></i></div>
+<div class="gv-info">
+<a class="gv-user-link" href="perfil-usuario.html?user=verde_vida">
+<img decoding="async" loading="lazy" src="https://i.pravatar.cc/150?img=10"/> <span>@verde_vida</span>
+</a>
+<div class="gv-desc">Paisagismo em varanda gourmet. Transformação verde! ðŸŒ¿</div>
+</div>
+</div>
+</div>
+<div class="load-more-container">
+<button class="btn-load-more">Carregar Mais Vídeos</button>
+</div>
+</div>
+<section class="rodape-container2"></section>
+</main>
+<footer class="main-footer">
+<div class="footer-content">
+<div class="footer-col brand-col">
+<h2 class="footer-logo-text" style="color:white;">doke</h2>
+<p class="footer-desc">A DOKE revoluciona a prestação de serviços com o <strong>Pagamento Garantido</strong>.</p>
+</div>
+<div class="footer-col"><h4>Empresa</h4><ul><li><a href="#">Quem somos</a></li></ul></div>
+<div class="footer-col"><h4>Suporte</h4><ul><li><a href="#">Ajuda</a></li></ul></div>
+<div class="footer-col"><h4>Legal</h4><ul><li><a href="#">Termos</a></li></ul></div>
+</div>
+<div class="footer-bottom"><p>© 2026 Doke.</p></div>
+</footer>
+<nav class="bottom-nav">
+<a class="item active" href="index.html">
+<img alt="Início" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png"/>
+<span>Início</span>
+</a>
+<a class="item" href="busca.html">
+<img alt="Explorar" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/622/622669.png"/>
+<span>Explorar</span>
+</a>
+<a class="item" href="anunciar.html">
+<img alt="Anunciar" class="icon azul" decoding="async" loading="lazy" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1077/1077114.png'" src="assets/Imagens/icone-anunciar.png"/>
+<span>Anunciar</span>
+</a>
+<a class="item" href="notificacoes.html">
+<img alt="Notificações" class="icon azul" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1827/1827392.png"/>
+<span>Notificações</span>
+</a>
+<a class="item" href="perfil.html">
+<img alt="Perfil" class="icon verde" decoding="async" loading="lazy" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png"/>
+<span>Perfil</span>
+</a>
+</nav>
+<script src="doke-toast.js"></script>
+<script src="doke-alerts.js?v=20260217v33"></script>
+<script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script src="doke-shell.js?v=20260218v47"></script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
