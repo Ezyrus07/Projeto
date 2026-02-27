@@ -655,7 +655,9 @@
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);
-    const profileHref = isLogged ? PAGES.perfil : "login.html";
+    // Evita "falso deslogado" por race de sessão no mobile:
+    // o perfil decide localmente e redireciona para login só se realmente necessário.
+    const profileHref = PAGES.perfil;
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const labelAnunciar = "Anunciar";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
@@ -905,7 +907,8 @@
             </button>
           </div>
           <div class="doke-chip-row" role="list">
-            <button class="doke-chip active" type="button" data-search-target="users"><i class='bx bx-user'></i> Usuários</button>
+            <button class="doke-chip active" type="button" data-search-target="all"><i class='bx bx-grid-alt'></i> Todos</button>
+            <button class="doke-chip" type="button" data-search-target="users"><i class='bx bx-user'></i> Usuários</button>
             <button class="doke-chip" type="button" data-search-target="ads"><i class='bx bx-badge-check'></i> Anúncios</button>
           </div>
           <div class="doke-recent">
@@ -929,9 +932,9 @@
       const inp = overlay.querySelector(".doke-search-input");
       const results = overlay.querySelector(".doke-search-results");
       const recent = overlay.querySelector(".doke-recent");
-      searchTarget = "users";
+      searchTarget = "all";
       overlay.querySelectorAll(".doke-chip").forEach((b)=> b.classList.remove("active"));
-      overlay.querySelector('.doke-chip[data-search-target="users"]')?.classList.add("active");
+      overlay.querySelector('.doke-chip[data-search-target="all"]')?.classList.add("active");
       if(inp) inp.value = "";
       if(results){
         results.hidden = true;
@@ -1184,19 +1187,19 @@
       const note = recentsEmpty
         ? `<div class="doke-search-explore-note">Sugestões para começar sem digitar.</div>`
         : `<div class="doke-search-explore-note">Enquanto isso, veja sugestões aleatórias.</div>`;
+      const showUsers = searchTarget === "all" || searchTarget === "users";
+      const showAds = searchTarget === "all" || searchTarget === "ads";
       results.innerHTML = `
         ${note}
-        <div class="doke-results-title">Anúncios</div>
-        ${buildAdsResultHtml(ads)}
-        <div class="doke-results-title">Profissionais</div>
-        ${buildUserResultHtml((users || []).filter(u => u && u.isProfissional === true))}
+        ${showAds ? `<div class="doke-results-title">Anúncios</div>${buildAdsResultHtml(ads)}` : ``}
+        ${showUsers ? `<div class="doke-results-title">Profissionais</div>${buildUserResultHtml((users || []).filter(u => u && u.isProfissional === true))}` : ``}
       `;
       bindOverlayResultClicks(results);
     }
 
 
     let searchToken = 0;
-    let searchTarget = "users"; // users | ads
+    let searchTarget = "all"; // all | users | ads
     async function renderSearchResults(term){
       if(!overlay) return;
       const results = overlay.querySelector(".doke-search-results");
@@ -1221,15 +1224,15 @@
       const currentToken = ++searchToken;
       results.innerHTML = `<div class="doke-search-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Buscando...</span></div>`;
 
-      const shouldSearchUsers = searchTarget === "users";
-      const shouldSearchAds = searchTarget === "ads";
+      const shouldSearchUsers = searchTarget === "all" || searchTarget === "users";
+      const shouldSearchAds = searchTarget === "all" || searchTarget === "ads";
       const [users, ads] = await Promise.all([
         shouldSearchUsers ? searchUsers(q) : Promise.resolve([]),
         shouldSearchAds ? searchAds(q) : Promise.resolve([])
       ]);
       if(currentToken !== searchToken) return;
 
-      const actionHtml = shouldSearchAds ? `
+      const actionHtml = (searchTarget === "ads") ? `
         <button class="doke-result-action" type="button" data-q="${escapeHtml(q)}">
           <i class='bx bx-right-arrow-alt'></i>
           <div>
@@ -1257,7 +1260,7 @@
       q = (q || overlay.querySelector(".doke-search-input")?.value || "").trim();
       if(!q) return;
       const forceAds = !!opts.forceAds;
-      if(searchTarget === "users" && !forceAds){
+      if((searchTarget === "users" || searchTarget === "all") && !forceAds){
         renderSearchResults(q);
         return;
       }
@@ -1356,7 +1359,7 @@
           overlay.querySelectorAll(".doke-chip").forEach(b=>b.classList.remove("active"));
           btn.classList.add("active");
           const target = btn.getAttribute("data-search-target");
-          if(target === "users" || target === "ads"){
+          if(target === "all" || target === "users" || target === "ads"){
             searchTarget = target;
             renderSearchResults(overlay.querySelector(".doke-search-input")?.value || "");
           }
@@ -1476,5 +1479,3 @@
     ensureShell();
   }
 })();
-
-

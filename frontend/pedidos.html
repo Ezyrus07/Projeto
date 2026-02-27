@@ -1221,14 +1221,12 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     overflow:visible !important;
   }
 
-  /* evita travar gesto vertical em iOS por causa de barras horizontais */
+  /* barras horizontais: manter swipe no eixo X sem bloquear rolagem vertical da pagina */
   body[data-page="pedidos"] .toolbar-actions,
   body[data-page="pedidos"] .filters{
-    overflow:visible !important;
-    overflow-x:visible !important;
-    -webkit-overflow-scrolling:auto !important;
-    flex-wrap:wrap !important;
-    touch-action:pan-y !important;
+    overflow-y:hidden !important;
+    -webkit-overflow-scrolling:touch !important;
+    touch-action:pan-x pan-y !important;
   }
 
   body[data-page="pedidos"] .hero{
@@ -1248,12 +1246,14 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     width:100% !important;
     display:grid !important;
     grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    grid-auto-flow:column !important;
     gap:8px !important;
   }
 
   body[data-page="pedidos"] .hero-stat{
     width:100% !important;
     min-width:0 !important;
+    grid-column:auto !important;
     padding:8px 6px !important;
   }
 
@@ -1272,12 +1272,22 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     width:100% !important;
     display:grid !important;
     grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    grid-auto-flow:column !important;
     gap:8px !important;
     align-items:stretch !important;
   }
   body[data-page="pedidos"] .hero-stat{
     min-width:0 !important;
     width:100% !important;
+    grid-column:auto !important;
+    flex:1 1 0 !important;
+    max-width:none !important;
+    min-height:84px !important;
+    height:84px !important;
+    display:flex !important;
+    flex-direction:column !important;
+    justify-content:center !important;
+    align-items:center !important;
     padding:8px 6px !important;
     border-radius:12px !important;
   }
@@ -1299,7 +1309,9 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     flex-wrap:nowrap !important;
     gap:6px !important;
     overflow-x:auto !important;
+    overflow-y:hidden !important;
     -webkit-overflow-scrolling:touch !important;
+    touch-action:pan-x pan-y !important;
   }
   body[data-page="pedidos"] .filters.filters-inline{
     display:none !important;
@@ -1309,8 +1321,10 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     gap:6px !important;
     max-width:min(68vw, 520px) !important;
     overflow-x:auto !important;
+    overflow-y:hidden !important;
     scrollbar-width:none;
     -webkit-overflow-scrolling:touch;
+    touch-action:pan-x pan-y !important;
   }
   body[data-page="pedidos"] .filters.filters-inline.show{
     display:flex !important;
@@ -1371,11 +1385,6 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
 <h1>Pedidos <span class="badge-count" id="heroCount">0</span></h1>
 <p>Gerencie seus pedidos com dados reais e acesso rapido ao chat.</p>
 </div>
-<div class="hero-stats">
-<div class="hero-stat"><small>Hoje</small><strong id="statToday">0</strong></div>
-<div class="hero-stat"><small>Em andamento</small><strong id="statProgress">0</strong></div>
-<div class="hero-stat"><small>Urgentes</small><strong id="statUrgent">0</strong></div>
-</div>
 </section>
 <section class="toolbar">
 <label aria-label="Buscar pedidos" class="search search-collapsible">
@@ -1389,11 +1398,10 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
 </div>
 </section>
 <div aria-label="Filtros de pedidos" class="filters filters-collapsible" id="filtersBar" role="tablist">
-<button class="chip active" data-filter="all" type="button"><i class="bx bx-grid-alt"></i><span>Todos</span></button>
-<button class="chip" data-filter="pending" type="button">Pendentes</button>
-<button class="chip" data-filter="progress" type="button">Em andamento</button>
-<button class="chip" data-filter="done" type="button">Finalizados</button>
-<button class="chip" data-filter="urgent" type="button"><i class="bx bx-error"></i><span>Urgentes</span></button>
+<button class="chip active" data-filter="all" type="button"><i class="bx bx-grid-alt"></i><span id="chipAllLabel">Todos (0)</span></button>
+<button class="chip" data-filter="today" type="button"><span id="chipTodayLabel">Hoje (0)</span></button>
+<button class="chip" data-filter="progress" type="button"><span id="chipProgressLabel">Em andamento (0)</span></button>
+<button class="chip" data-filter="urgent" type="button"><i class="bx bx-error"></i><span id="chipUrgentLabel">Urgentes (0)</span></button>
 </div>
 <div class="content-split" id="contentSplit">
 <section class="panel">
@@ -1529,6 +1537,10 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
         statToday: document.getElementById('statToday'),
         statProgress: document.getElementById('statProgress'),
         statUrgent: document.getElementById('statUrgent'),
+        chipAllLabel: document.getElementById('chipAllLabel'),
+        chipTodayLabel: document.getElementById('chipTodayLabel'),
+        chipProgressLabel: document.getElementById('chipProgressLabel'),
+        chipUrgentLabel: document.getElementById('chipUrgentLabel'),
         search: document.getElementById('searchInput'),
         sortBtn: document.getElementById('sortBtn'),
         sortLabel: document.getElementById('sortLabel'),
@@ -2497,6 +2509,7 @@ function displayHandle(p){
       function filtered(){
         let arr = [...state.pedidos];
         if(state.filter === 'pending') arr = arr.filter(p=>p.status === 'pendente');
+        if(state.filter === 'today') arr = arr.filter(p=>String(p.atualizado).includes('agora') || String(p.atualizado).includes('ha'));
         if(state.filter === 'progress') arr = arr.filter(p=>p.status === 'andamento');
         if(state.filter === 'done') arr = arr.filter(p=>p.status === 'finalizado' || p.status === 'recusado' || p.status === 'cancelado');
         if(state.filter === 'urgent') arr = arr.filter(p=>p.urgente);
@@ -2601,9 +2614,13 @@ function displayHandle(p){
         document.body.classList.toggle('select-mode', !!state.selectMode);
         if(el.bulkBar) el.bulkBar.classList.toggle('show', !!state.selectMode);
         el.count.textContent = String(c.pending);
-        el.statToday.textContent = String(c.today);
-        el.statProgress.textContent = String(c.progress);
-        el.statUrgent.textContent = String(c.urgent);
+        if(el.statToday) el.statToday.textContent = String(c.today);
+        if(el.statProgress) el.statProgress.textContent = String(c.progress);
+        if(el.statUrgent) el.statUrgent.textContent = String(c.urgent);
+        if(el.chipAllLabel) el.chipAllLabel.textContent = `Todos (${c.all})`;
+        if(el.chipTodayLabel) el.chipTodayLabel.textContent = `Hoje (${c.today})`;
+        if(el.chipProgressLabel) el.chipProgressLabel.textContent = `Em andamento (${c.progress})`;
+        if(el.chipUrgentLabel) el.chipUrgentLabel.textContent = `Urgentes (${c.urgent})`;
         el.subtitle.textContent = list.length ? `Mostrando ${list.length} pedido${list.length > 1 ? 's' : ''}` : 'Nenhum pedido encontrado';
         el.grid.innerHTML = list.map(card).join('');
         el.empty.classList.toggle('show', list.length === 0);

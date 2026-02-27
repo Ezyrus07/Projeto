@@ -718,46 +718,78 @@
     try{
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       let safePath = `${path}.${ext}`.replaceAll("//","/");
+      const buckets = Array.from(new Set([bucket, "perfil1", "perfil"].filter(Boolean)));
+      const candidates = [safePath];
 
-      let upRes = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
-      let upErr = upRes?.error || null;
+      // Compatibilidade com policies que exigem prefixo por tipo:
+      // - covers/{uid}/cover.ext
+      // - avatars/{uid}/avatar.ext
+      const m1 = safePath.match(/^([^/]+)\/(covers|avatars)\/(.+)$/i); // uid/covers/...
+      if(m1){
+        const uid = m1[1];
+        const kind = m1[2].toLowerCase();
+        const rest = m1[3];
+        candidates.push(`${kind}/${uid}/${rest}`);
+      }
+      const m2 = safePath.match(/^(covers|avatars)\/([^/]+)\/(.+)$/i); // covers/uid/...
+      if(m2){
+        const kind = m2[1].toLowerCase();
+        const uid = m2[2];
+        const rest = m2[3];
+        candidates.push(`${uid}/${kind}/${rest}`);
+      }
 
-      if (upErr && isPermissionDeniedError(upErr) && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+      let authUid = "";
+      try{
+        const sess = await client.auth.getSession().catch(() => null);
+        authUid = String(sess?.data?.session?.user?.id || "").trim();
+        if(!authUid && typeof window.dokeResolveAuthUser === "function"){
+          const resolved = await window.dokeResolveAuthUser().catch(() => null);
+          authUid = String(resolved?.id || resolved?.uid || "").trim();
+        }
+      }catch(_){}
+      if(authUid){
+        const withUidPrefix = candidates
+          .filter((p) => p && !String(p).startsWith(`${authUid}/`))
+          .map((p) => `${authUid}/${p}`);
+        candidates.push(...withUidPrefix);
+      }
+
+      const tryUpload = async () => {
+        let lastErr = null;
+        for(const b of buckets){
+          for(const candidate of Array.from(new Set(candidates))){
+            const upRes = await client.storage.from(b).upload(candidate, file, { upsert: true, cacheControl: "3600" });
+            const upErr = upRes?.error || null;
+            if(!upErr){
+              const { data } = client.storage.from(b).getPublicUrl(candidate);
+              return { url: data?.publicUrl || null, path: candidate, bucket: b, error: null };
+            }
+            lastErr = upErr;
+          }
+        }
+        return { url: null, path: null, bucket: null, error: lastErr || new Error("Falha ao enviar arquivo.") };
+      };
+
+      let result = await tryUpload();
+      if(!result.error){
+        return { url: result.url, path: result.path, bucket: result.bucket };
+      }
+
+      if (isPermissionDeniedError(result.error) && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
         try {
           const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
           if (restored) {
-            upRes = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
-            upErr = upRes?.error || null;
-          }
-        } catch (_) {}
-      }
-
-      if (upErr && isPermissionDeniedError(upErr)) {
-        try {
-          let authUid = "";
-          const sess = await client.auth.getSession().catch(() => null);
-          authUid = String(sess?.data?.session?.user?.id || "").trim();
-          if (!authUid && typeof window.dokeResolveAuthUser === "function") {
-            const resolved = await window.dokeResolveAuthUser().catch(() => null);
-            authUid = String(resolved?.id || resolved?.uid || "").trim();
-          }
-          const prefixed = authUid && !safePath.startsWith(`${authUid}/`) ? `${authUid}/${safePath}` : "";
-          if (prefixed) {
-            const prefRes = await client.storage.from(bucket).upload(prefixed, file, { upsert: true, cacheControl: "3600" });
-            const prefErr = prefRes?.error || null;
-            if (!prefErr) {
-              safePath = prefixed;
-              upErr = null;
-            } else {
-              upErr = prefErr;
+            result = await tryUpload();
+            if(!result.error){
+              return { url: result.url, path: result.path, bucket: result.bucket };
             }
           }
         } catch (_) {}
       }
 
-      if(upErr) return { error: upErr };
-      const { data } = client.storage.from(bucket).getPublicUrl(safePath);
-      return { url: data?.publicUrl || null, path: safePath };
+      if(result.error) return { error: result.error };
+      return { url: result.url, path: result.path, bucket: result.bucket };
     }catch(e){
       return { error: e };
     }
@@ -1048,6 +1080,13 @@
       }
 
       if (strictSessionMode) {
+        if (typeof window.dokeResolveAuthUser === "function") {
+          try {
+            const resolved = await window.dokeResolveAuthUser();
+            const compatResolved = normalizeAuthUserCandidate(resolved);
+            if (compatResolved) return { session: null, user: compatResolved };
+          } catch (_) {}
+        }
         const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
         if (compatCurrent) return { session: null, user: compatCurrent };
         if (error) return { error };
@@ -1060,6 +1099,13 @@
       return { session: null, user: null };
     }catch(err){
       if (strictSessionMode) {
+        if (typeof window.dokeResolveAuthUser === "function") {
+          try {
+            const resolved = await window.dokeResolveAuthUser();
+            const compatResolved = normalizeAuthUserCandidate(resolved);
+            if (compatResolved) return { session: null, user: compatResolved };
+          } catch (_) {}
+        }
         const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
         if (compatCurrent) return { session: null, user: compatCurrent };
         return { error: err };
@@ -3450,7 +3496,7 @@ function ensureTheme(ctx, theme){
       const client = mustSupa();
       if(!client) return;
 
-      const up = await uploadToStorage(client, { bucket: "perfil", path: `${storageId}/covers/cover`, file });
+      const up = await uploadToStorage(client, { bucket: "perfil", path: `covers/${storageId}/cover`, file });
       if(up.error){
         console.error(up.error);
         toast("Erro ao enviar capa.");
@@ -3482,7 +3528,7 @@ function ensureTheme(ctx, theme){
       const client = mustSupa();
       if(!client) return;
 
-      const up = await uploadToStorage(client, { bucket: "perfil", path: `${storageId}/avatars/avatar`, file });
+      const up = await uploadToStorage(client, { bucket: "perfil", path: `avatars/${storageId}/avatar`, file });
       if(up.error){
         console.error(up.error);
         toast("Erro ao enviar foto.");
