@@ -1266,6 +1266,64 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     display:block;
     pointer-events:auto;
   }
+
+  /* Hero compacto: hoje/em andamento/urgentes sempre na mesma linha */
+  body[data-page="pedidos"] .hero-stats{
+    width:100% !important;
+    display:grid !important;
+    grid-template-columns:repeat(3, minmax(0, 1fr)) !important;
+    gap:8px !important;
+    align-items:stretch !important;
+  }
+  body[data-page="pedidos"] .hero-stat{
+    min-width:0 !important;
+    width:100% !important;
+    padding:8px 6px !important;
+    border-radius:12px !important;
+  }
+  body[data-page="pedidos"] .hero-stat small{
+    font-size:.66rem !important;
+    line-height:1.2 !important;
+    white-space:nowrap !important;
+    overflow:hidden !important;
+    text-overflow:ellipsis !important;
+  }
+  body[data-page="pedidos"] .hero-stat strong{
+    font-size:.98rem !important;
+  }
+
+  /* Filtros compactos ao lado do botão em mobile/tablet */
+  body[data-page="pedidos"] .toolbar-actions{
+    display:flex !important;
+    align-items:center !important;
+    flex-wrap:nowrap !important;
+    gap:6px !important;
+    overflow-x:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+  body[data-page="pedidos"] .filters.filters-inline{
+    display:none !important;
+    margin:0 !important;
+    padding:0 !important;
+    flex-wrap:nowrap !important;
+    gap:6px !important;
+    max-width:min(68vw, 520px) !important;
+    overflow-x:auto !important;
+    scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
+  }
+  body[data-page="pedidos"] .filters.filters-inline.show{
+    display:flex !important;
+  }
+  body[data-page="pedidos"] .filters.filters-inline::-webkit-scrollbar{
+    display:none;
+  }
+  body[data-page="pedidos"] .filters.filters-inline .chip{
+    flex:0 0 auto !important;
+    min-height:34px !important;
+    padding:0 10px !important;
+    font-size:.78rem !important;
+  }
 }
 </style>
 </head>
@@ -1480,6 +1538,7 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
         filtersBtn: document.getElementById('filtersBtn'),
         filtersBar: document.getElementById('filtersBar'),
         toolbar: document.querySelector('section.toolbar'),
+        toolbarActions: document.querySelector('section.toolbar .toolbar-actions'),
         chips: Array.from(document.querySelectorAll('.chip[data-filter]')),
         toast: document.getElementById('toast'),
         bulkBar: document.getElementById('bulkBar'),
@@ -3167,6 +3226,31 @@ function openInlineChat(p){
         render();
       }
 
+      const filtersDock = {
+        parent: el.filtersBar ? el.filtersBar.parentElement : null,
+        next: el.filtersBar ? el.filtersBar.nextElementSibling : null
+      };
+
+      function syncFiltersPlacement(){
+        if(!el.filtersBar || !el.toolbarActions || !filtersDock.parent) return;
+        const compact = window.matchMedia('(max-width: 1023px)').matches;
+        if(compact){
+          if(el.filtersBar.parentElement !== el.toolbarActions){
+            el.toolbarActions.appendChild(el.filtersBar);
+          }
+          el.filtersBar.classList.add('filters-inline');
+        }else{
+          if(el.filtersBar.parentElement !== filtersDock.parent){
+            if(filtersDock.next && filtersDock.next.parentElement === filtersDock.parent){
+              filtersDock.parent.insertBefore(el.filtersBar, filtersDock.next);
+            }else{
+              filtersDock.parent.appendChild(el.filtersBar);
+            }
+          }
+          el.filtersBar.classList.remove('filters-inline');
+        }
+      }
+
       function bind(){
         const on = (node, evt, fn) => { if (node && typeof node.addEventListener === 'function') node.addEventListener(evt, fn); };
         on(el.search, 'input', () => { state.query = String(el.search?.value || ''); render(); });
@@ -3179,10 +3263,12 @@ function openInlineChat(p){
 
         on(el.filtersBtn, 'click', () => {
           if(!el.filtersBar) return;
+          syncFiltersPlacement();
           const open = el.filtersBar.classList.toggle('show');
           el.filtersBtn.classList.toggle('active', open);
           el.filtersBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
         });
+        window.addEventListener('resize', syncFiltersPlacement);
 (el.chips || []).forEach(ch => on(ch, 'click', () => { state.filter = ch.dataset.filter || 'all'; render(); }));
         on(el.grid, 'click', (ev) => {
           const infoBtn = ev.target.closest('.need-info');
@@ -3256,6 +3342,7 @@ function openInlineChat(p){
         try{
           if(!ensurePedidosAuth()) return;
           setupFallbacks();
+          syncFiltersPlacement();
           bind();
           state.chatWidth = clampChatWidth(localStorage.getItem(CHAT_WIDTH_KEY));
           state.chatMaximized = false;
