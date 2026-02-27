@@ -8769,7 +8769,14 @@ window.abrirModalPost = async function(id, colecao) {
         }
 
         // --- CARREGA COMENT?RIOS ---
-        carregarComentariosNoModal(id, colecao);
+        const isMobileModal = window.matchMedia('(max-width: 760px)').matches;
+        const listEl = document.getElementById('modalCommentsList');
+        if (!isMobileModal) {
+            carregarComentariosNoModal(id, colecao);
+            if (listEl) listEl.dataset.loaded = "1";
+        } else if (listEl) {
+            listEl.dataset.loaded = "0";
+        }
 
     } catch(e) { console.error("Erro modal:", e); }
 }
@@ -9285,7 +9292,13 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     window.currentSupaPublicacaoAuthorId = item.user_id;
 
     await verificarStatusLikeSupabase(publicacaoId);
-    carregarComentariosSupabase(publicacaoId);
+    const isMobileModal = window.matchMedia('(max-width: 760px)').matches;
+    if (!isMobileModal) {
+        carregarComentariosSupabase(publicacaoId);
+        commentsList.dataset.loaded = "1";
+    } else {
+        commentsList.dataset.loaded = "0";
+    }
 }
 // Fun??o para fechar clicando fora
 window.fecharModalPost = function(e) {
@@ -11280,9 +11293,19 @@ window.toggleComentariosModal = function() {
     if (!collapsed) {
         const list = modal.querySelector('.modal-comments-section');
         const shouldLazyLoad = window.matchMedia('(max-width: 760px)').matches;
-        if (shouldLazyLoad && list && list.dataset.loaded !== "1" && window.currentPostId && window.currentCollection) {
+        if (shouldLazyLoad && list && list.dataset.loaded !== "1") {
             try {
-                carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+                if (window.currentPostSource === "supabase") {
+                    if (window.currentSupaPostType === "videos_curtos" && window.currentSupaReelId) {
+                        carregarComentariosReelSupabase(window.currentSupaReelId);
+                    } else if (window.currentSupaPublicacaoId) {
+                        carregarComentariosSupabase(window.currentSupaPublicacaoId);
+                    }
+                } else if (window.currentCollection === "reels" && window.currentPostId) {
+                    carregarComentariosReel(window.currentPostId);
+                } else if (window.currentPostId && window.currentCollection) {
+                    carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+                }
                 list.dataset.loaded = "1";
             } catch (e) {}
         }

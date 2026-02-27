@@ -1180,6 +1180,71 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
   right: 12px !important;
   left: auto !important;
 }
+
+/* Hotfix final mobile: impedir dispersao horizontal e manter hero compacto */
+@media (max-width: 1023px){
+  html,
+  body[data-page="pedidos"]{
+    width:100% !important;
+    max-width:100% !important;
+    overflow-x:hidden !important;
+  }
+
+  body[data-page="pedidos"] .dp-wrap{
+    margin-left:0 !important;
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    padding:10px 10px calc(90px + env(safe-area-inset-bottom)) !important;
+  }
+
+  body[data-page="pedidos"] .orders-page,
+  body[data-page="pedidos"] .content-split,
+  body[data-page="pedidos"] .hero,
+  body[data-page="pedidos"] .toolbar,
+  body[data-page="pedidos"] .panel{
+    width:100% !important;
+    max-width:100% !important;
+    min-width:0 !important;
+    box-sizing:border-box !important;
+  }
+
+  body[data-page="pedidos"] .hero{
+    display:grid !important;
+    grid-template-columns:1fr !important;
+    gap:10px !important;
+    align-items:start !important;
+    padding:16px !important;
+  }
+
+  body[data-page="pedidos"] .hero > div:first-child{
+    min-width:0 !important;
+    flex:unset !important;
+  }
+
+  body[data-page="pedidos"] .hero-stats{
+    width:100% !important;
+    display:grid !important;
+    grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+    gap:8px !important;
+  }
+
+  body[data-page="pedidos"] .hero-stat{
+    width:100% !important;
+    min-width:0 !important;
+    padding:8px 6px !important;
+  }
+
+  body[data-page="pedidos"] .chat-drawer{
+    display:none;
+    pointer-events:none;
+  }
+
+  body[data-page="pedidos"] .chat-drawer.open{
+    display:block;
+    pointer-events:auto;
+  }
+}
 </style>
 </head>
 <body data-page="pedidos">
@@ -1888,7 +1953,7 @@ function displayHandle(p){
           dataEspecifica: pick(row, ['dataEspecifica'], ''),
           turno: pick(row, ['turno'], ''),
           respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
-          localizacao: row.localizacao || row.localizaÃ§Ã£o || row['localizacao'] || row['localizaÃ§Ã£o'] || null,
+          localizacao: row.localizacao || row['localizacao'] || row['localizaÃ§Ã£o'] || row['localização'] || null,
           modoAtend: pick(row, ['modoAtend','modo_atend'], ''),
           statusOriginal: pick(row, ['status','statusPedido','situacao','estado'], ''),
           motivoRecusa: pick(row, ['motivoRecusa','justificativaRecusa','recusaMotivo','motivoRejeicao','motivo_recusa','motivoCancelamento','motivo_cancelamento'], pick(recusaObj, ['motivo','justificativa','descricao'], '')),
@@ -1945,7 +2010,7 @@ function displayHandle(p){
         const directSignals = [
           row.pedidoId, row.idPedido, row.orcamentoId, row.statusPedido, row.paraQuando,
           row.dataEspecifica, row.prazo, row.descricaoBase, row.respostasTriagem,
-          row.formularioRespostas, row.modoAtend, row.localizacao, row.localizaÃ§Ã£o, row.servicoReferencia
+          row.formularioRespostas, row.modoAtend, row.localizacao, row['localizaÃ§Ã£o'], row['localização'], row.servicoReferencia
         ];
         if(directSignals.some(Boolean)) return true;
         const keys = Object.keys(row).map((k) => String(k || '').toLowerCase());
@@ -2516,7 +2581,7 @@ function displayHandle(p){
           const merged = mergePedidos([p, normalized, {
             id: pid,
             respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
-            localizacao: row.localizacao || row.localizaÃ§Ã£o || row['localizacao'] || row['localizaÃ§Ã£o'] || null,
+            localizacao: row.localizacao || row['localizacao'] || row['localizaÃ§Ã£o'] || row['localização'] || null,
             mensagemInicial: pick(row, ['mensagemInicial','descricaoBase','descricao'], normalized.mensagemInicial || ''),
             descricaoBase: pick(row, ['descricaoBase','mensagemInicial','descricao'], normalized.descricaoBase || ''),
             paraQuando: pick(row, ['paraQuando','prazo','dataEspecifica'], normalized.paraQuando || ''),
@@ -2661,14 +2726,29 @@ function displayHandle(p){
         }
       }
 
+      function forceCloseChatDrawer(){
+        if(el.chatDrawer){
+          el.chatDrawer.classList.remove('open');
+          el.chatDrawer.setAttribute('aria-hidden', 'true');
+        }
+        document.body.classList.remove('chat-drawer-open');
+        document.body.classList.remove('chat-open');
+        document.documentElement.classList.remove('no-scroll');
+        document.body.classList.remove('no-scroll');
+      }
+
 
       // Seguranca: nunca deixe scroll travado ao carregar
+      forceCloseChatDrawer();
       document.documentElement.classList.remove('no-scroll');
       document.body.classList.remove('no-scroll');
       document.body.classList.remove('chat-drawer-open');
       window.addEventListener('resize', lockScrollIfNeeded);
       window.addEventListener('pageshow', lockScrollIfNeeded);
       window.addEventListener('focus', lockScrollIfNeeded);
+      window.addEventListener('pageshow', () => {
+        if(!document.body.classList.contains('chat-open')) forceCloseChatDrawer();
+      });
       document.addEventListener('visibilitychange', function(){
         if (!document.hidden) lockScrollIfNeeded();
       });
