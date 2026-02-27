@@ -10,7 +10,7 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Anunciar Serviço Completo | Doke</title>
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="style.css?v=20260227v01" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-fixes.css" rel="stylesheet"/>
@@ -660,6 +660,44 @@ h3#dokeAlertTitle{
     padding-top: 12px !important;
   }
 }
+
+/* Mobile hardening: evita quebra de layout e melhora clique/scroll */
+@media (max-width: 760px){
+  body[data-page="anunciar"]{
+    overflow-x: hidden !important;
+  }
+  body[data-page="anunciar"] main{
+    width: 100% !important;
+    max-width: 100% !important;
+    overflow-x: hidden !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  body[data-page="anunciar"] .content-wrapper,
+  body[data-page="anunciar"] .anuncio-card{
+    width: 100% !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+  }
+  body[data-page="anunciar"] .anuncio-card{
+    border-radius: 16px !important;
+    padding: 14px !important;
+  }
+  body[data-page="anunciar"] .form-nav{
+    position: sticky !important;
+    bottom: calc(66px + env(safe-area-inset-bottom)) !important;
+    z-index: 20 !important;
+    background: #fff !important;
+    border-radius: 14px !important;
+    padding: 10px !important;
+    margin-top: 16px !important;
+    box-shadow: 0 8px 18px rgba(0,0,0,.08) !important;
+  }
+  body[data-page="anunciar"] .upload-zone{
+    min-height: 140px !important;
+    touch-action: manipulation !important;
+  }
+}
 </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -1114,9 +1152,7 @@ h3#dokeAlertTitle{
         }
 
         // 2. Verifica se é profissional
-        
-// Gate profissional: tenta confirmar no Supabase (evita loop infinito quando o cache/localStorage está desatualizado)
-document.addEventListener('DOMContentLoaded', () => {
+        // Gate profissional: tenta confirmar no Supabase (evita loop infinito quando o cache/localStorage está desatualizado)
   (async () => {
     try {
       const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil')||'null');
@@ -1171,9 +1207,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch(e) {
       console.warn('[DOKE] Gate profissional falhou:', e);
     }
-  })()
-});
-
+  })();
     });
 
     // --- UPLOAD VISUAL HELPER ---
@@ -1191,11 +1225,12 @@ document.addEventListener('DOMContentLoaded', () => {
     function processarFotos(input) {
         if (input.files) {
             const files = Array.from(input.files);
-            if (fotosParaEnviar.length + files.length > 5) { alert("Máximo de 5 fotos permitidas."); return; }
+            if ((window.fotosParaEnviar || []).length + files.length > 5) { alert("Máximo de 5 fotos permitidas."); return; }
             files.forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(e) {
-                    fotosParaEnviar.push(e.target.result);
+                    window.fotosParaEnviar = Array.isArray(window.fotosParaEnviar) ? window.fotosParaEnviar : [];
+                    window.fotosParaEnviar.push(e.target.result);
                     const div = document.createElement('div');
                     div.style.position = "relative";
                     div.innerHTML = `<img src="${e.target.result}" class="foto-thumb" loading="lazy" decoding="async"><div class="btn-remove-foto" onclick="removerFoto(this, '${e.target.result}')">×</div>`;
@@ -1207,9 +1242,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function removerFoto(elemento, fotoBase64) {
-        fotosParaEnviar = fotosParaEnviar.filter(f => f !== fotoBase64);
+        window.fotosParaEnviar = (Array.isArray(window.fotosParaEnviar) ? window.fotosParaEnviar : []).filter(f => f !== fotoBase64);
         elemento.parentElement.remove();
     }
+    window.processarFotos = processarFotos;
+    window.removerFoto = removerFoto;
 
     // --- CATEGORIAS ---
     const todasCategorias = ["Eletricista", "Encanador", "Pintura", "Limpeza", "Frete", "Tecnologia", "Aulas", "Beleza", "Reforma"];
@@ -2521,6 +2558,18 @@ document.addEventListener('DOMContentLoaded', () => {
     hookDocInput();
     hookStepNextValidation();
     hookPublish();
+    const galeriaInput = document.getElementById('upload-galeria');
+    const galeriaZone = galeriaInput ? galeriaInput.closest('.upload-zone') : null;
+    if (galeriaInput && galeriaZone) {
+      galeriaZone.addEventListener('click', function(ev){
+        if (ev.target === galeriaInput) return;
+        galeriaInput.click();
+      });
+      galeriaZone.addEventListener('touchend', function(ev){
+        ev.preventDefault();
+        galeriaInput.click();
+      }, { passive: false });
+    }
   });
 })();
 </script>
@@ -2540,11 +2589,9 @@ function abrirPreview(){
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
+<script src="doke-shell.js?v=20260227v01"></script>
 </body>
 </html>
-
-
 
 
 

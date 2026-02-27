@@ -40,7 +40,8 @@
   }
 
   function renderEmpty(el){
-    el.innerHTML = `<div class="like-empty">Nada curtido ainda.</div>`); }
+    el.innerHTML = `<div class="like-empty">Nada curtido ainda.</div>`;
+  }
 
   function makeItem({ id, kind, title, desc, thumbUrl, isVídeo, openFn, unlikeFn }){
     const card = document.createElement('div');
@@ -201,8 +202,13 @@
           thumbUrl: thumb,
           isVídeo: true,
           openFn: () => {
-            // abre o viewer original (feed)
-            window.openDetalhesModal()`feed.html?start=sb-${encodeURIComponent(String(v.id))}`); },
+            const start = `sb-${encodeURIComponent(String(v.id))}`;
+            if (typeof window.openDetalhesModal === 'function') {
+              window.openDetalhesModal(`feed.html?start=${start}`);
+            } else {
+              window.location.href = `feed.html?start=${start}`;
+            }
+          },
           unlikeFn: async () => {
             const { error: delErr } = await c.from('videos_curtos_curtidas').delete().eq('video_id', v.id).eq('user_id', uid);
             return !delErr;

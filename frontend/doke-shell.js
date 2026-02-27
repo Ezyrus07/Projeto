@@ -434,6 +434,25 @@
         alternarConta: window.alternarConta
       };
     } catch (_e) {}
+
+    // Hard fallback: garante logout mesmo se algum script externo quebrar o onclick.
+    if (!window.__dokeHardLogoutBound) {
+      window.__dokeHardLogoutBound = true;
+      document.addEventListener("click", async (ev) => {
+        const target = ev?.target?.closest?.('.item-sair,[data-action="logout"],a[onclick*="fazerLogout"]');
+        if (!target) return;
+        if (ev.defaultPrevented) return;
+        ev.preventDefault();
+        try {
+          if (typeof window.fazerLogout === "function") {
+            const out = window.fazerLogout();
+            if (out && typeof out.then === "function") await out;
+            return;
+          }
+        } catch (_e) {}
+        await performShellSignOut("login.html?logout=1");
+      });
+    }
   }
 
   function syncClassicDesktopHeader(opts){

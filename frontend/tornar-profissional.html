@@ -12,7 +12,7 @@
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260218v43"></script>
-<link href="style.css?v=20260207v26" rel="stylesheet"/>
+<link href="style.css?v=20260227v01" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-fixes.css" rel="stylesheet"/>
@@ -339,6 +339,45 @@
     .doke-toast .title { font-weight: 900; color: #0f172a; font-size: 0.95rem; line-height: 1.2; }
     .doke-toast .msg { color: #334155; font-size: 0.88rem; margin-top: 2px; line-height: 1.3; }
     @keyframes dokeToastIn { from { transform: translateY(6px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    /* Mobile hardening */
+    @media (max-width: 900px){
+      html, body{
+        max-width: 100% !important;
+        overflow-x: hidden !important;
+      }
+
+      body{
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        touch-action: pan-y !important;
+      }
+
+      main{
+        margin-left: 0 !important;
+        padding: 14px 12px calc(120px + env(safe-area-inset-bottom)) !important;
+      }
+
+      .anuncio-card{
+        padding: 18px 14px !important;
+      }
+
+      .upload-zone{
+        min-height: 150px !important;
+        touch-action: manipulation !important;
+      }
+
+      .form-nav{
+        position: sticky !important;
+        bottom: calc(var(--doke-btm-real, var(--doke-btm, 66px)) + env(safe-area-inset-bottom)) !important;
+        background: rgba(255,255,255,.94) !important;
+        backdrop-filter: blur(6px) !important;
+        border: 1px solid #e2e8f0 !important;
+        border-radius: 14px !important;
+        padding: 10px !important;
+        z-index: 30 !important;
+      }
+    }
   </style>
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
@@ -985,6 +1024,17 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
 
       if(!input) return;
 
+      if(zone){
+        zone.addEventListener("click", (ev)=>{
+          if(ev.target === input) return;
+          input.click();
+        });
+        zone.addEventListener("touchend", (ev)=>{
+          ev.preventDefault();
+          input.click();
+        }, { passive: false });
+      }
+
       input.addEventListener("change", ()=>{
         const f = input.files && input.files[0];
         if(!f) return;
@@ -1153,12 +1203,9 @@ document.addEventListener("DOMContentLoaded", ()=>{
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
+<script src="doke-shell.js?v=20260227v01"></script>
 </body>
 </html>
-
-
-
 
 
 

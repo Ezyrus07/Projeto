@@ -718,7 +718,7 @@
     try{
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       let safePath = `${path}.${ext}`.replaceAll("//","/");
-      const buckets = Array.from(new Set([bucket, "perfil1", "perfil"].filter(Boolean)));
+      const buckets = Array.from(new Set([bucket, "perfil"].filter(Boolean)));
       const candidates = [safePath];
 
       // Compatibilidade com policies que exigem prefixo por tipo:
@@ -749,10 +749,21 @@
         }
       }catch(_){}
       if(authUid){
+        const normalized = [];
+        for (const p of candidates) {
+          const mTop = String(p).match(/^(covers|avatars)\/[^/]+\/(.+)$/i);
+          if (mTop) {
+            normalized.push(`${authUid}/${mTop[1].toLowerCase()}/${mTop[2]}`);
+          }
+          const mUidFirst = String(p).match(/^[^/]+\/(covers|avatars)\/(.+)$/i);
+          if (mUidFirst) {
+            normalized.push(`${authUid}/${mUidFirst[1].toLowerCase()}/${mUidFirst[2]}`);
+          }
+        }
         const withUidPrefix = candidates
           .filter((p) => p && !String(p).startsWith(`${authUid}/`))
           .map((p) => `${authUid}/${p}`);
-        candidates.push(...withUidPrefix);
+        candidates.push(...normalized, ...withUidPrefix);
       }
 
       const tryUpload = async () => {
@@ -969,6 +980,20 @@
   // -----------------------------
   async function getSessionUser(client){
     const strictSessionMode = window.DOKE_STRICT_AUTH_SESSION !== false;
+    const allowCachedFallbackInStrict = (() => {
+      try{
+        const forcedLogoutAt = Number(localStorage.getItem("doke_force_logged_out_at") || sessionStorage.getItem("doke_force_logged_out_at") || 0);
+        const forceLogoutActive = Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < (12 * 60 * 60 * 1000);
+        if(forceLogoutActive) return false;
+      }catch(_){}
+      try{
+        const lsLogado = localStorage.getItem("usuarioLogado") === "true";
+        const hasPerfil = !!localStorage.getItem("doke_usuario_perfil");
+        return lsLogado || hasPerfil;
+      }catch(_){
+        return false;
+      }
+    })();
     function normalizeAuthUserCandidate(raw){
       if(!raw || typeof raw !== "object") return null;
       const uid = normalizeIdentity(
@@ -1089,6 +1114,10 @@
         }
         const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
         if (compatCurrent) return { session: null, user: compatCurrent };
+        if (allowCachedFallbackInStrict) {
+          const cachedUser = pickCachedUser();
+          if (cachedUser) return { session: null, user: cachedUser };
+        }
         if (error) return { error };
         return { session: null, user: null };
       }
@@ -1108,6 +1137,10 @@
         }
         const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
         if (compatCurrent) return { session: null, user: compatCurrent };
+        if (allowCachedFallbackInStrict) {
+          const cachedUser = pickCachedUser();
+          if (cachedUser) return { session: null, user: cachedUser };
+        }
         return { error: err };
       }
       const cachedUser = pickCachedUser();
@@ -1150,16 +1183,73 @@
     return { usuario: r.usuario || null };
   }
 
+  async function getAuthUidForWrite(client){
+    try{
+      const sess = await client?.auth?.getSession?.().catch(() => null);
+      const uid = normalizeIdentity(sess?.data?.session?.user?.id);
+      if(uid) return uid;
+    }catch(_){}
+
+    try{
+      if(typeof window.dokeResolveAuthUser === "function"){
+        const resolved = await window.dokeResolveAuthUser();
+        const uid = normalizeIdentity(resolved?.id || resolved?.uid);
+        if(uid) return uid;
+      }
+    }catch(_){}
+
+    try{
+      const compatUid = normalizeIdentity(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid);
+      if(compatUid) return compatUid;
+    }catch(_){}
+
+    try{
+      const lsUid = normalizeIdentity(localStorage.getItem("doke_uid"));
+      if(lsUid) return lsUid;
+    }catch(_){}
+
+    return "";
+  }
+
   async function updateUsuario(client, rowId, patch){
-    // UUID => atualiza por `uid` (auth.uid()).
-    if(looksUUID(rowId)){
-      const r = await client.from("usuarios").update(patch).eq("uid", rowId).select("id,uid");
-      return { error: r.error || null };
+    const authUid = await getAuthUidForWrite(client);
+    const keys = uniqueStrings([authUid, rowId]);
+    const attempts = [];
+
+    // prioridade: uid (auth) -> uid_text (legado texto) -> id (legado serial/uuid)
+    for(const key of keys){
+      if(looksUUID(key)){
+        attempts.push({ col: "uid", value: key });
+      }
+    }
+    for(const key of keys){
+      if(looksUUID(key)){
+        attempts.push({ col: "uid_text", value: key });
+      }
+    }
+    for(const key of keys){
+      attempts.push({ col: "id", value: key });
     }
 
-    // Legado: id serial/int
-    const r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
-    return { error: r.error || null };
+    const seen = new Set();
+    let lastErr = null;
+    for(const att of attempts){
+      const id = `${att.col}:${att.value}`;
+      if(!att.value || seen.has(id)) continue;
+      seen.add(id);
+      const res = await client
+        .from("usuarios")
+        .update(patch)
+        .eq(att.col, att.value)
+        .select("id,uid")
+        .limit(1);
+      if(!res?.error) return { error: null };
+      lastErr = res.error;
+      if(!isPermissionDeniedError(res.error) && !isQueryValueCompatError(res.error) && !isUsuariosCompatError(res.error)){
+        return { error: res.error };
+      }
+    }
+    return { error: lastErr || null };
   }
 
   function parseStats(usuario){
@@ -3688,7 +3778,7 @@ function ensureTheme(ctx, theme){
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
 
     let updateTabsHint = ()=>{};
-    const enableTabsOverflowHint = false;
+    const enableTabsOverflowHint = true;
     if(tabsWrap && enableTabsOverflowHint){
       const shouldUseHint = ()=>{
         if(!(prevNav && nextNav)) return true;
