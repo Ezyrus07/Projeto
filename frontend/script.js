@@ -10226,6 +10226,10 @@ window.fecharModalPostForce = function() {
     const modal = document.getElementById('modalPostDetalhe');
     if (modal) {
         modal.style.display = 'none';
+        const content = modal.querySelector('.modal-content');
+        const list = modal.querySelector('.modal-comments-section');
+        if (content) content.classList.remove('is-comments-collapsed');
+        if (list) list.dataset.loaded = "0";
         
         // Limpa v?deo/imagem para parar som
         const mediaBox = document.getElementById('modalMediaContainer');
@@ -11193,14 +11197,23 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
     try {
         const modal = document.getElementById('modalPostDetalhe');
         const content = modal ? modal.querySelector('.modal-content') : null;
+        const list = modal ? modal.querySelector('.modal-comments-section') : null;
         if (content) {
             const isMobile = window.matchMedia('(max-width: 760px)').matches;
             content.classList.toggle('is-comments-collapsed', isMobile);
+            if (isMobile && list) list.dataset.loaded = "0";
         }
     } catch (e) {}
 
     if (window.currentPostId && window.currentCollection) {
-        carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+        const isMobile = window.matchMedia('(max-width: 760px)').matches;
+        const list = document.getElementById('modalCommentsList');
+        if (isMobile) {
+            if (list) list.dataset.loaded = "0";
+        } else {
+            carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+            if (list) list.dataset.loaded = "1";
+        }
         if (auth.currentUser) verificarStatusLike(window.currentPostId, window.currentCollection, auth.currentUser.uid);
     }
     atualizarBotaoDenunciaPost();
@@ -11216,9 +11229,11 @@ window.abrirModalPost = async function(id, colecao) {
     try {
         const modal = document.getElementById('modalPostDetalhe');
         const content = modal ? modal.querySelector('.modal-content') : null;
+        const list = modal ? modal.querySelector('.modal-comments-section') : null;
         if (content) {
             const isMobile = window.matchMedia('(max-width: 760px)').matches;
             content.classList.toggle('is-comments-collapsed', isMobile);
+            if (isMobile && list) list.dataset.loaded = "0";
         }
     } catch (e) {}
     window.currentSupaPostType = null;
@@ -11242,9 +11257,11 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     try {
         const modal = document.getElementById('modalPostDetalhe');
         const content = modal ? modal.querySelector('.modal-content') : null;
+        const list = modal ? modal.querySelector('.modal-comments-section') : null;
         if (content) {
             const isMobile = window.matchMedia('(max-width: 760px)').matches;
             content.classList.toggle('is-comments-collapsed', isMobile);
+            if (isMobile && list) list.dataset.loaded = "0";
         }
     } catch (e) {}
     atualizarBotaoDenunciaPost();
@@ -11260,11 +11277,16 @@ window.toggleComentariosModal = function() {
 
     const collapsed = content.classList.toggle('is-comments-collapsed');
 
-    // Se abriu, desce pro começo da lista (sem forçar teclado)
     if (!collapsed) {
         const list = modal.querySelector('.modal-comments-section');
+        const shouldLazyLoad = window.matchMedia('(max-width: 760px)').matches;
+        if (shouldLazyLoad && list && list.dataset.loaded !== "1" && window.currentPostId && window.currentCollection) {
+            try {
+                carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+                list.dataset.loaded = "1";
+            } catch (e) {}
+        }
         if (list) {
-            // evita pulo agressivo
             setTimeout(() => {
                 try { list.scrollTop = 0; } catch (e) {}
             }, 0);
