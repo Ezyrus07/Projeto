@@ -272,7 +272,7 @@
           window.location.href = "login.html";
           return;
         }
-        window.location.href = `chat.html?uid=${encodeURIComponent(otherUidMsg)}`;
+        window.location.href = `mensagens.html?uid=${encodeURIComponent(otherUidMsg)}`;
       };
     };
     if(!btn) return;
@@ -718,46 +718,89 @@
     try{
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       let safePath = `${path}.${ext}`.replaceAll("//","/");
+      const buckets = Array.from(new Set([bucket, "perfil"].filter(Boolean)));
+      const candidates = [safePath];
 
-      let upRes = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
-      let upErr = upRes?.error || null;
+      // Compatibilidade com policies que exigem prefixo por tipo:
+      // - covers/{uid}/cover.ext
+      // - avatars/{uid}/avatar.ext
+      const m1 = safePath.match(/^([^/]+)\/(covers|avatars)\/(.+)$/i); // uid/covers/...
+      if(m1){
+        const uid = m1[1];
+        const kind = m1[2].toLowerCase();
+        const rest = m1[3];
+        candidates.push(`${kind}/${uid}/${rest}`);
+      }
+      const m2 = safePath.match(/^(covers|avatars)\/([^/]+)\/(.+)$/i); // covers/uid/...
+      if(m2){
+        const kind = m2[1].toLowerCase();
+        const uid = m2[2];
+        const rest = m2[3];
+        candidates.push(`${uid}/${kind}/${rest}`);
+      }
 
-      if (upErr && isPermissionDeniedError(upErr) && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
+      let authUid = "";
+      try{
+        const sess = await client.auth.getSession().catch(() => null);
+        authUid = String(sess?.data?.session?.user?.id || "").trim();
+        if(!authUid && typeof window.dokeResolveAuthUser === "function"){
+          const resolved = await window.dokeResolveAuthUser().catch(() => null);
+          authUid = String(resolved?.id || resolved?.uid || "").trim();
+        }
+      }catch(_){}
+      if(authUid){
+        const normalized = [];
+        for (const p of candidates) {
+          const mTop = String(p).match(/^(covers|avatars)\/[^/]+\/(.+)$/i);
+          if (mTop) {
+            normalized.push(`${authUid}/${mTop[1].toLowerCase()}/${mTop[2]}`);
+          }
+          const mUidFirst = String(p).match(/^[^/]+\/(covers|avatars)\/(.+)$/i);
+          if (mUidFirst) {
+            normalized.push(`${authUid}/${mUidFirst[1].toLowerCase()}/${mUidFirst[2]}`);
+          }
+        }
+        const withUidPrefix = candidates
+          .filter((p) => p && !String(p).startsWith(`${authUid}/`))
+          .map((p) => `${authUid}/${p}`);
+        candidates.push(...normalized, ...withUidPrefix);
+      }
+
+      const tryUpload = async () => {
+        let lastErr = null;
+        for(const b of buckets){
+          for(const candidate of Array.from(new Set(candidates))){
+            const upRes = await client.storage.from(b).upload(candidate, file, { upsert: true, cacheControl: "3600" });
+            const upErr = upRes?.error || null;
+            if(!upErr){
+              const { data } = client.storage.from(b).getPublicUrl(candidate);
+              return { url: data?.publicUrl || null, path: candidate, bucket: b, error: null };
+            }
+            lastErr = upErr;
+          }
+        }
+        return { url: null, path: null, bucket: null, error: lastErr || new Error("Falha ao enviar arquivo.") };
+      };
+
+      let result = await tryUpload();
+      if(!result.error){
+        return { url: result.url, path: result.path, bucket: result.bucket };
+      }
+
+      if (isPermissionDeniedError(result.error) && typeof window.dokeRestoreSupabaseSessionFromStorage === "function") {
         try {
           const restored = await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
           if (restored) {
-            upRes = await client.storage.from(bucket).upload(safePath, file, { upsert: true, cacheControl: "3600" });
-            upErr = upRes?.error || null;
-          }
-        } catch (_) {}
-      }
-
-      if (upErr && isPermissionDeniedError(upErr)) {
-        try {
-          let authUid = "";
-          const sess = await client.auth.getSession().catch(() => null);
-          authUid = String(sess?.data?.session?.user?.id || "").trim();
-          if (!authUid && typeof window.dokeResolveAuthUser === "function") {
-            const resolved = await window.dokeResolveAuthUser().catch(() => null);
-            authUid = String(resolved?.id || resolved?.uid || "").trim();
-          }
-          const prefixed = authUid && !safePath.startsWith(`${authUid}/`) ? `${authUid}/${safePath}` : "";
-          if (prefixed) {
-            const prefRes = await client.storage.from(bucket).upload(prefixed, file, { upsert: true, cacheControl: "3600" });
-            const prefErr = prefRes?.error || null;
-            if (!prefErr) {
-              safePath = prefixed;
-              upErr = null;
-            } else {
-              upErr = prefErr;
+            result = await tryUpload();
+            if(!result.error){
+              return { url: result.url, path: result.path, bucket: result.bucket };
             }
           }
         } catch (_) {}
       }
 
-      if(upErr) return { error: upErr };
-      const { data } = client.storage.from(bucket).getPublicUrl(safePath);
-      return { url: data?.publicUrl || null, path: safePath };
+      if(result.error) return { error: result.error };
+      return { url: result.url, path: result.path, bucket: result.bucket };
     }catch(e){
       return { error: e };
     }
@@ -937,6 +980,20 @@
   // -----------------------------
   async function getSessionUser(client){
     const strictSessionMode = window.DOKE_STRICT_AUTH_SESSION !== false;
+    const allowCachedFallbackInStrict = (() => {
+      try{
+        const forcedLogoutAt = Number(localStorage.getItem("doke_force_logged_out_at") || sessionStorage.getItem("doke_force_logged_out_at") || 0);
+        const forceLogoutActive = Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < (12 * 60 * 60 * 1000);
+        if(forceLogoutActive) return false;
+      }catch(_){}
+      try{
+        const lsLogado = localStorage.getItem("usuarioLogado") === "true";
+        const hasPerfil = !!localStorage.getItem("doke_usuario_perfil");
+        return lsLogado || hasPerfil;
+      }catch(_){
+        return false;
+      }
+    })();
     function normalizeAuthUserCandidate(raw){
       if(!raw || typeof raw !== "object") return null;
       const uid = normalizeIdentity(
@@ -1048,8 +1105,19 @@
       }
 
       if (strictSessionMode) {
+        if (typeof window.dokeResolveAuthUser === "function") {
+          try {
+            const resolved = await window.dokeResolveAuthUser();
+            const compatResolved = normalizeAuthUserCandidate(resolved);
+            if (compatResolved) return { session: null, user: compatResolved };
+          } catch (_) {}
+        }
         const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
         if (compatCurrent) return { session: null, user: compatCurrent };
+        if (allowCachedFallbackInStrict) {
+          const cachedUser = pickCachedUser();
+          if (cachedUser) return { session: null, user: cachedUser };
+        }
         if (error) return { error };
         return { session: null, user: null };
       }
@@ -1060,8 +1128,19 @@
       return { session: null, user: null };
     }catch(err){
       if (strictSessionMode) {
+        if (typeof window.dokeResolveAuthUser === "function") {
+          try {
+            const resolved = await window.dokeResolveAuthUser();
+            const compatResolved = normalizeAuthUserCandidate(resolved);
+            if (compatResolved) return { session: null, user: compatResolved };
+          } catch (_) {}
+        }
         const compatCurrent = normalizeAuthUserCandidate(window.auth?.currentUser || null);
         if (compatCurrent) return { session: null, user: compatCurrent };
+        if (allowCachedFallbackInStrict) {
+          const cachedUser = pickCachedUser();
+          if (cachedUser) return { session: null, user: cachedUser };
+        }
         return { error: err };
       }
       const cachedUser = pickCachedUser();
@@ -1104,16 +1183,73 @@
     return { usuario: r.usuario || null };
   }
 
+  async function getAuthUidForWrite(client){
+    try{
+      const sess = await client?.auth?.getSession?.().catch(() => null);
+      const uid = normalizeIdentity(sess?.data?.session?.user?.id);
+      if(uid) return uid;
+    }catch(_){}
+
+    try{
+      if(typeof window.dokeResolveAuthUser === "function"){
+        const resolved = await window.dokeResolveAuthUser();
+        const uid = normalizeIdentity(resolved?.id || resolved?.uid);
+        if(uid) return uid;
+      }
+    }catch(_){}
+
+    try{
+      const compatUid = normalizeIdentity(window.auth?.currentUser?.uid || window.firebaseAuth?.currentUser?.uid);
+      if(compatUid) return compatUid;
+    }catch(_){}
+
+    try{
+      const lsUid = normalizeIdentity(localStorage.getItem("doke_uid"));
+      if(lsUid) return lsUid;
+    }catch(_){}
+
+    return "";
+  }
+
   async function updateUsuario(client, rowId, patch){
-    // UUID => atualiza por `uid` (auth.uid()).
-    if(looksUUID(rowId)){
-      const r = await client.from("usuarios").update(patch).eq("uid", rowId).select("id,uid");
-      return { error: r.error || null };
+    const authUid = await getAuthUidForWrite(client);
+    const keys = uniqueStrings([authUid, rowId]);
+    const attempts = [];
+
+    // prioridade: uid (auth) -> uid_text (legado texto) -> id (legado serial/uuid)
+    for(const key of keys){
+      if(looksUUID(key)){
+        attempts.push({ col: "uid", value: key });
+      }
+    }
+    for(const key of keys){
+      if(looksUUID(key)){
+        attempts.push({ col: "uid_text", value: key });
+      }
+    }
+    for(const key of keys){
+      attempts.push({ col: "id", value: key });
     }
 
-    // Legado: id serial/int
-    const r = await client.from("usuarios").update(patch).eq("id", rowId).select("id,uid");
-    return { error: r.error || null };
+    const seen = new Set();
+    let lastErr = null;
+    for(const att of attempts){
+      const id = `${att.col}:${att.value}`;
+      if(!att.value || seen.has(id)) continue;
+      seen.add(id);
+      const res = await client
+        .from("usuarios")
+        .update(patch)
+        .eq(att.col, att.value)
+        .select("id,uid")
+        .limit(1);
+      if(!res?.error) return { error: null };
+      lastErr = res.error;
+      if(!isPermissionDeniedError(res.error) && !isQueryValueCompatError(res.error) && !isUsuariosCompatError(res.error)){
+        return { error: res.error };
+      }
+    }
+    return { error: lastErr || null };
   }
 
   function parseStats(usuario){
@@ -2173,6 +2309,23 @@ function ensureTheme(ctx, theme){
     window.location.href = `anunciar.html?mode=edit&id=${encodeURIComponent(ids[0])}`;
   }
 
+  function normalizeFotosValue(value){
+    if (Array.isArray(value)) return value.map(v => String(v || "").trim()).filter(Boolean);
+    if (typeof value === "string") {
+      const raw = value.trim();
+      if (!raw) return [];
+      if ((raw.startsWith("[") && raw.endsWith("]")) || (raw.startsWith('"') && raw.endsWith('"'))) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.map(v => String(v || "").trim()).filter(Boolean);
+          if (typeof parsed === "string" && parsed.trim()) return [parsed.trim()];
+        } catch (_) {}
+      }
+      return [raw];
+    }
+    return [];
+  }
+
   function registerServicoSelectableCard(card, servicoId){
     if(!card) return;
     const id = String(servicoId || "").trim();
@@ -2373,8 +2526,8 @@ function ensureTheme(ctx, theme){
       card.setAttribute("role", "button");
       card.tabIndex = 0;
       card.dataset.pubId = String(item.id || "");
-      const title = item.titulo || item.legenda || "";
-      const desc = item.descricao || (item.titulo ? item.legenda : "") || "";
+      const title = stripLinkedAidMarker(item.titulo || item.legenda || "");
+      const desc = stripLinkedAidMarker(item.descricao || (item.titulo ? item.legenda : "") || "");
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
@@ -2490,8 +2643,8 @@ function ensureTheme(ctx, theme){
         <div class="dp-reelMedia">
           <video src="${item.video_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} muted loop playsinline preload="metadata"></video>
           <div class="dp-reelOverlay">
-            <b>${escapeHtml(item.titulo || "Video curto")}</b>
-            <p>${escapeHtml(item.descricao || "")}</p>
+            <b>${escapeHtml(stripLinkedAidMarker(item.titulo || "Video curto"))}</b>
+            <p>${escapeHtml(stripLinkedAidMarker(item.descricao || ""))}</p>
           </div>
           <div class="dp-reelPlay"><i class='bx bx-play'></i></div>
         </div>
@@ -2596,8 +2749,8 @@ function ensureTheme(ctx, theme){
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
-          <b>${escapeHtml(item.titulo || "")}</b>
-          <p>${escapeHtml(item.descricao || "")}</p>
+          <b>${escapeHtml(stripLinkedAidMarker(item.titulo || ""))}</b>
+          <p>${escapeHtml(stripLinkedAidMarker(item.descricao || ""))}</p>
           ${(() => {
             const d = item.data_entrega || item.dataEntrega || item.delivered_at || item.created_at || item.createdAt || item.createdat;
             const dt = d ? new Date(d) : null;
@@ -2894,8 +3047,8 @@ function ensureTheme(ctx, theme){
           };
         }
         const a = anunciosMap.get(String(id)) || {};
-        const fotos = Array.isArray(a.fotos) ? a.fotos : (a.fotos ? [a.fotos] : []);
-        const img = fotos[0] || a.img || "";
+        const fotos = normalizeFotosValue(a.fotos);
+        const img = fotos[0] || a.img || a.imagem || a.foto || a.capa || "";
         return {
           titulo: a.titulo || `Serviço ${id}`,
           categoria: a.categoria || "",
@@ -3254,10 +3407,102 @@ function ensureTheme(ctx, theme){
   // -----------------------------
   // Create items
   // -----------------------------
-  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, afterFile, capaFile }){
+  const DOKE_LINK_AID_REGEX = /\[\[doke:aid:([^\]]+)\]\]/i;
+  const DOKE_LINK_AID_CLEAN_REGEX = /\s*\[\[doke:aid:[^\]]+\]\]\s*/gi;
+  const DOKE_LINK_AID_FIELDS = ["anuncioId", "anuncio_id", "servico_id", "servicoId", "anuncio"];
+  function normalizeLinkedAid(value){
+    const v = String(value || "").trim();
+    if(!v) return "";
+    return v.startsWith("sb-") ? v.slice(3) : v;
+  }
+  function stripLinkedAidMarker(text){
+    return String(text || "").replace(DOKE_LINK_AID_CLEAN_REGEX, " ").replace(/\s{2,}/g, " ").trim();
+  }
+  function appendLinkedAidMarker(text, anuncioId){
+    const clean = stripLinkedAidMarker(text);
+    const aid = normalizeLinkedAid(anuncioId);
+    if(!aid) return clean;
+    return [clean, `[[doke:aid:${aid}]]`].filter(Boolean).join("\n\n");
+  }
+  function nextLinkFieldPayload(anuncioId, blockedMessage){
+    const aid = normalizeLinkedAid(anuncioId);
+    if(!aid) return {};
+    const blocked = String(blockedMessage || "").toLowerCase();
+    for(const field of DOKE_LINK_AID_FIELDS){
+      if(blocked.includes(String(field).toLowerCase())) continue;
+      return { [field]: aid };
+    }
+    return {};
+  }
+  async function fetchOwnedAnunciosForLink(client, ctx){
+    if(!client?.from) return [];
+    const ownerValues = uniqueStrings([
+      ctx?.target?.uid,
+      ctx?.me?.uid,
+      ctx?.target?.id,
+      ctx?.me?.id
+    ]);
+    const cached = Array.isArray(window.__dpCachedAnuncios) ? window.__dpCachedAnuncios.slice() : [];
+    const list = [];
+    const pushRows = (rows) => {
+      (rows || []).forEach((row) => {
+        if(!row || !row.id) return;
+        list.push(row);
+      });
+    };
+    if(cached.length){
+      pushRows(cached);
+    }
+    const ownerCols = ["uid", "owner_uid", "user_uid", "profissional_id", "profissionalId", "user_id"];
+    for(const col of ownerCols){
+      if(!ownerValues.length) break;
+      try{
+        const res = await client
+          .from("anuncios")
+          .select("id,titulo,categoria,preco,img,fotos,uid,created_at")
+          .in(col, ownerValues)
+          .limit(120);
+        if(res?.error){
+          if(isMissingColumnError(res.error, col) || isMissingTableError(res.error)) continue;
+          continue;
+        }
+        if(Array.isArray(res.data) && res.data.length){
+          pushRows(res.data);
+          break;
+        }
+      }catch(_){}
+    }
+    const dedup = new Map();
+    list.forEach((a) => {
+      const id = String(a?.id || "").trim();
+      if(!id || dedup.has(id)) return;
+      dedup.set(id, a);
+    });
+    return Array.from(dedup.values());
+  }
+  function buildLinkSelectHtml(selectId, anuncios, label){
+    const opts = (anuncios || []).map((a) => {
+      const id = String(a?.id || "").trim();
+      if(!id) return "";
+      const titulo = escapeHtml(a?.titulo || "Anuncio");
+      const categoria = escapeHtml(a?.categoria || "Geral");
+      return `<option value="${escapeAttr(id)}">${titulo} · ${categoria}</option>`;
+    }).filter(Boolean).join("");
+    return `
+      <div>
+        <label>${label || "Vincular a um anuncio (opcional)"}</label>
+        <select class="dp-select" id="${selectId}">
+          <option value="">Nao vincular agora</option>
+          ${opts}
+        </select>
+      </div>`;
+  }
+
+  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, afterFile, capaFile, linkedAnuncioId }){
     // upload to storage
     const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
+    const legendaComMeta = appendLinkedAidMarker(legenda, linkedAnuncioId);
     // Antes x Depois: usa thumb_url como 'depois'
     if(tipo === 'antes_depois' && afterFile){
       const upAfter = await uploadToStorage(client, { bucket:'perfil', path:`publicacoes/${storageId}/depois/${crypto.randomUUID()}`, file: afterFile });
@@ -3275,9 +3520,10 @@ function ensureTheme(ctx, theme){
       user_id: ctx.me.id,
       tipo,
       titulo,
-      legenda,
+      legenda: legendaComMeta,
       media_url: up.url
     };
+    Object.assign(payload, nextLinkFieldPayload(linkedAnuncioId));
     if(thumbUrl) payload.thumb_url = thumbUrl;
     let { error } = await client.from("publicacoes").insert(payload);
     if(error && error.code === "PGRST204"){
@@ -3287,13 +3533,14 @@ function ensureTheme(ctx, theme){
         tipo,
         media_url: up.url
       };
+      Object.assign(retry, nextLinkFieldPayload(linkedAnuncioId, msg));
       if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
       if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
-      if(legenda){
+      if(legendaComMeta){
         if(!msg.includes("legenda")) {
-          retry.legenda = legenda;
+          retry.legenda = legendaComMeta;
         } else if(!msg.includes("descricao")) {
-          retry.descricao = legenda;
+          retry.descricao = legendaComMeta;
         }
       }
       const r2 = await client.from("publicacoes").insert(retry);
@@ -3302,9 +3549,10 @@ function ensureTheme(ctx, theme){
     if(error) throw error;
   }
 
-  async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
+  async function createReel(client, ctx, { titulo, descricao, file, capaFile, linkedAnuncioId }){
     const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
+    const descricaoComMeta = appendLinkedAidMarker(descricao, linkedAnuncioId);
     if(capaFile){
       const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
       if(upCover.error) throw upCover.error;
@@ -3315,9 +3563,10 @@ function ensureTheme(ctx, theme){
     const payload = {
       user_id: ctx.me.id,
       titulo,
-      descricao,
+      descricao: descricaoComMeta,
       video_url: up.url
     };
+    Object.assign(payload, nextLinkFieldPayload(linkedAnuncioId));
     if(thumbUrl) payload.thumb_url = thumbUrl;
     let { error } = await client.from("videos_curtos").insert(payload);
     if(error && error.code === "PGRST204"){
@@ -3326,8 +3575,9 @@ function ensureTheme(ctx, theme){
         user_id: ctx.me.id,
         video_url: up.url
       };
+      Object.assign(retry, nextLinkFieldPayload(linkedAnuncioId, msg));
       if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
-      if(descricao && !msg.includes("descricao")) retry.descricao = descricao;
+      if(descricaoComMeta && !msg.includes("descricao")) retry.descricao = descricaoComMeta;
       if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
       const r2 = await client.from("videos_curtos").insert(retry);
       error = r2.error || null;
@@ -3335,16 +3585,32 @@ function ensureTheme(ctx, theme){
     if(error) throw error;
   }
 
-  async function createPortfolioItem(client, ctx, { titulo, descricao, file }){
+  async function createPortfolioItem(client, ctx, { titulo, descricao, file, linkedAnuncioId }){
     const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
+    const descricaoComMeta = appendLinkedAidMarker(descricao, linkedAnuncioId);
     const up = await uploadToStorage(client, { bucket:"perfil", path:`portfolio/${storageId}/${crypto.randomUUID()}`, file });
     if(up.error) throw up.error;
-    const { error } = await client.from("portfolio").insert({
+    const payload = {
       profissional_id: ctx.me.id,
       titulo,
-      descricao,
+      descricao: descricaoComMeta,
       media_url: up.url
-    });
+    };
+    Object.assign(payload, nextLinkFieldPayload(linkedAnuncioId));
+    let { error } = await client.from("portfolio").insert(payload);
+    if(error && error.code === "PGRST204"){
+      const msg = String(error.message || "").toLowerCase();
+      const retry = {
+        profissional_id: ctx.me.id,
+        media_url: up.url
+      };
+      Object.assign(retry, nextLinkFieldPayload(linkedAnuncioId, msg));
+      if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
+      if(descricaoComMeta && !msg.includes("descricao")) retry.descricao = descricaoComMeta;
+      if(!retry.profissional_id && !msg.includes("profissional_id")) retry.profissional_id = ctx.me.id;
+      const r2 = await client.from("portfolio").insert(retry);
+      error = r2.error || null;
+    }
     if(error) throw error;
   }
 
@@ -3642,7 +3908,7 @@ function ensureTheme(ctx, theme){
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
 
     let updateTabsHint = ()=>{};
-    const enableTabsOverflowHint = false;
+    const enableTabsOverflowHint = true;
     if(tabsWrap && enableTabsOverflowHint){
       const shouldUseHint = ()=>{
         if(!(prevNav && nextNav)) return true;
@@ -4446,8 +4712,10 @@ if(!rangeSel || !refreshBtn) return;
     ensureReelsSelectionControls(ctx);
     ensureServicosSelectionControls(ctx);
     // Novo Publicação
-    $("#dpNewPublicacao")?.addEventListener("click", ()=>{
+    $("#dpNewPublicacao")?.addEventListener("click", async ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
+      const clientForLink = mustSupa();
+      const anunciosVinculo = clientForLink ? await fetchOwnedAnunciosForLink(clientForLink, ctx).catch(()=>[]) : [];
       modal.open("Nova publicação", `
         <div class="dp-form">
           <div class="dp-row2">
@@ -4481,6 +4749,7 @@ if(!rangeSel || !refreshBtn) return;
             <label>Descrição</label>
             <textarea class="dp-textarea" id="dpPubDesc" placeholder="Conte o que foi feito..."></textarea>
           </div>
+          ${buildLinkSelectHtml("dpPubLinkedAnuncio", anunciosVinculo, "Vincular ao anúncio (opcional)")}
         </div>
       `, async ()=>{
         const client = mustSupa();
@@ -4498,7 +4767,8 @@ if(!rangeSel || !refreshBtn) return;
               titulo: safeStr($("#dpPubTitulo")?.value),
               descricao: safeStr($("#dpPubDesc")?.value),
               file,
-              capaFile
+              capaFile,
+              linkedAnuncioId: normalizeLinkedAid($("#dpPubLinkedAnuncio")?.value)
             });
             modal.close();
             toast("Video curto publicado!");
@@ -4511,7 +4781,8 @@ if(!rangeSel || !refreshBtn) return;
             legenda: safeStr($("#dpPubDesc")?.value),
             file,
             afterFile: tipo === "antes_depois" ? afterFile : null,
-            capaFile: tipo === "video" ? capaFile : null
+            capaFile: tipo === "video" ? capaFile : null,
+            linkedAnuncioId: normalizeLinkedAid($("#dpPubLinkedAnuncio")?.value)
           });
           modal.close();
           toast("Publicado!");
@@ -4546,9 +4817,11 @@ if(!rangeSel || !refreshBtn) return;
     });
 
     // Novo Reel
-    $("#dpNewReel")?.addEventListener("click", ()=>{
+    $("#dpNewReel")?.addEventListener("click", async ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
       if(!isProfissionalUsuario(ctx.me)) return toast("Disponível para perfil profissional.");
+      const clientForLink = mustSupa();
+      const anunciosVinculo = clientForLink ? await fetchOwnedAnunciosForLink(clientForLink, ctx).catch(()=>[]) : [];
       modal.open("Novo video curto", `
         <div class="dp-form">
           <div>
@@ -4567,6 +4840,7 @@ if(!rangeSel || !refreshBtn) return;
             <label>Descrição</label>
             <textarea class="dp-textarea" id="dpReelDesc"></textarea>
           </div>
+          ${buildLinkSelectHtml("dpReelLinkedAnuncio", anunciosVinculo, "Vincular ao anúncio (opcional)")}
         </div>
       `, async ()=>{
         const client = mustSupa();
@@ -4579,7 +4853,8 @@ if(!rangeSel || !refreshBtn) return;
             titulo: safeStr($("#dpReelTitulo")?.value),
             descricao: safeStr($("#dpReelDesc")?.value),
             file,
-            capaFile
+            capaFile,
+            linkedAnuncioId: normalizeLinkedAid($("#dpReelLinkedAnuncio")?.value)
           });
           modal.close();
           toast("Video curto publicado!");
@@ -4587,6 +4862,52 @@ if(!rangeSel || !refreshBtn) return;
         }catch(e){
           console.error(e);
           toast("Erro ao publicar.");
+        }
+      }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
+    });
+
+    // Novo item de Portfolio
+    $("#dpNewPortfolio")?.addEventListener("click", async ()=>{
+      if(!ctx.canEdit) return toast("Apenas no seu perfil.");
+      if(!isProfissionalUsuario(ctx.me)) return toast("Disponível para perfil profissional.");
+      const clientForLink = mustSupa();
+      const anunciosVinculo = clientForLink ? await fetchOwnedAnunciosForLink(clientForLink, ctx).catch(()=>[]) : [];
+      modal.open("Novo item do portfolio", `
+        <div class="dp-form">
+          <div>
+            <label>Arquivo</label>
+            <input class="dp-input" type="file" id="dpPortFile" accept="image/*,video/*"/>
+          </div>
+          <div>
+            <label>Título</label>
+            <input class="dp-input" id="dpPortTitulo" placeholder="Ex: Reforma concluída" />
+          </div>
+          <div class="full">
+            <label>Descrição</label>
+            <textarea class="dp-textarea" id="dpPortDesc" placeholder="Explique o resultado, prazo e principais entregas."></textarea>
+          </div>
+          <div class="full">
+            ${buildLinkSelectHtml("dpPortLinkedAnuncio", anunciosVinculo, "Vincular ao anúncio (opcional)")}
+          </div>
+        </div>
+      `, async ()=>{
+        const client = mustSupa();
+        if(!client) return;
+        const file = $("#dpPortFile")?.files?.[0];
+        if(!file) return toast("Selecione um arquivo.");
+        try{
+          await createPortfolioItem(client, ctx, {
+            titulo: safeStr($("#dpPortTitulo")?.value),
+            descricao: safeStr($("#dpPortDesc")?.value),
+            file,
+            linkedAnuncioId: normalizeLinkedAid($("#dpPortLinkedAnuncio")?.value)
+          });
+          modal.close();
+          toast("Item do portfolio publicado!");
+          loadPortfolio(ctx.client, ctx.target.id, ctx);
+        }catch(e){
+          console.error(e);
+          toast("Erro ao publicar no portfolio.");
         }
       }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
     });
@@ -5171,11 +5492,11 @@ async function loadServicosPerfil(ctx) {
     const titulo = anuncio.titulo || "Sem titulo";
     const descricao = anuncio.descricao || "";
     const preco = anuncio.preco || "A combinar";
-    const fotos = Array.isArray(anuncio.fotos) ? anuncio.fotos : (anuncio.fotos ? [anuncio.fotos] : []);
-    const img = fotos[0] || anuncio.img || "https://placehold.co/600x400";
+    const fotos = normalizeFotosValue(anuncio.fotos);
+    const img = fotos[0] || anuncio.img || anuncio.imagem || anuncio.foto || anuncio.capa || "https://placehold.co/600x400";
     const uid = anuncio.uid || anuncio.user_uid || anuncio.useruid || anuncio.prof_uid || "";
     card.innerHTML = `
-      <button class="btn-topo-avaliacao" onclick="window.location.href='detalhes.html?id=${anuncio.id}'">
+      <button class="btn-topo-avaliacao" onclick="window.openDetalhesModal('detalhes.html?id=${anuncio.id}')">
         <i class='bx bx-info-circle'></i> Mais Informacoes
       </button>
       <div class="cp-body">
@@ -5679,7 +6000,8 @@ async function loadServicosPerfil(ctx) {
         const row = document.createElement("div");
         row.className = "dp-adrow";
 
-        const img = (Array.isArray(a.fotos) && a.fotos[0]) || a.img || "https://placehold.co/600x400";
+        const fotos = normalizeFotosValue(a.fotos);
+        const img = fotos[0] || a.img || a.imagem || a.foto || a.capa || "https://placehold.co/600x400";
         const isAtivo = (a.ativo !== false);
 
         row.innerHTML = `
@@ -5753,7 +6075,12 @@ async function loadServicosPerfil(ctx) {
 
     if(!body) return;
 
-    const fotos = (Array.isArray(anuncio.fotos) && anuncio.fotos.length) ? anuncio.fotos.slice() : (anuncio.img ? [anuncio.img] : []);
+    const fotos = (() => {
+      const list = normalizeFotosValue(anuncio.fotos);
+      if (list.length) return list.slice();
+      const fb = String(anuncio.img || anuncio.imagem || anuncio.foto || anuncio.capa || "").trim();
+      return fb ? [fb] : [];
+    })();
 
     body.innerHTML = `
       <form id="dpEditFormV2">

@@ -8,8 +8,7 @@
     comunidades: "comunidade.html",
     negocios: "negocios.html",
     perfil: "meuperfil.html",
-    chat: "mensagens.html",
-    pedidos: "pedidos.html",
+    chat: "chat.html",
     notif: "notificacoes.html",
     mais: "mais.html"
   };
@@ -434,25 +433,6 @@
         alternarConta: window.alternarConta
       };
     } catch (_e) {}
-
-    // Hard fallback: garante logout mesmo se algum script externo quebrar o onclick.
-    if (!window.__dokeHardLogoutBound) {
-      window.__dokeHardLogoutBound = true;
-      document.addEventListener("click", async (ev) => {
-        const target = ev?.target?.closest?.('.item-sair,[data-action="logout"],a[onclick*="fazerLogout"]');
-        if (!target) return;
-        if (ev.defaultPrevented) return;
-        ev.preventDefault();
-        try {
-          if (typeof window.fazerLogout === "function") {
-            const out = window.fazerLogout();
-            if (out && typeof out.then === "function") await out;
-            return;
-          }
-        } catch (_e) {}
-        await performShellSignOut("login.html?logout=1");
-      });
-    }
   }
 
   function syncClassicDesktopHeader(opts){
@@ -629,29 +609,8 @@
     }
   }
 
-  async function ensureShell(){
+    async function ensureShell(){
     setShellAuthStateReady(false);
-    let embedChatMode = false;
-    try{
-      const params = new URLSearchParams(location.search || "");
-      const byParam =
-        params.get("embed") === "1" ||
-        params.get("embed") === "true" ||
-        params.get("from") === "pedidos" ||
-        params.get("origin") === "pedido";
-      const byDom =
-        document.documentElement.classList.contains("embed-chat-mode") ||
-        document.body?.classList?.contains("embed-chat-mode") ||
-        document.body?.getAttribute("data-embed-chat") === "1";
-      embedChatMode = byParam || byDom || window.__DOKE_DISABLE_SHELL__ === true;
-    }catch(_e){}
-    if(embedChatMode){
-      try{
-        document.body?.classList?.remove("doke-shell-active","doke-no-main","doke-drawer-open","doke-search-open","doke-menu-open");
-      }catch(_e){}
-      setShellAuthStateReady(true);
-      return;
-    }
     const body = document.body;
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
@@ -674,9 +633,7 @@
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);
-    // Evita "falso deslogado" por race de sessão no mobile:
-    // o perfil decide localmente e redireciona para login só se realmente necessário.
-    const profileHref = PAGES.perfil;
+    const profileHref = isLogged ? PAGES.perfil : "login.html";
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const labelAnunciar = "Anunciar";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
@@ -796,7 +753,6 @@
         <div class="doke-logo"><img src="${LOGO_SRC}" alt="Doke" style="height:28px;width:auto;display:block;"></div>
         <div class="doke-h-actions">
           <a class="doke-icon-btn" href="${PAGES.notif}" aria-label="Notificações"><i class='bx bx-bell'></i><span class="doke-badge" style="display:none">0</span></a>
-          <a class="doke-icon-btn doke-pedidos-btn" href="${PAGES.pedidos}" aria-label="Pedidos"><i class='bx bx-package'></i></a>
           <a class="doke-icon-btn" href="${PAGES.chat}" aria-label="Mensagens"><i class='bx bx-message-rounded-dots'></i><span class="doke-badge" style="display:none">0</span></a>
           <div class="profile-container doke-mobile-profile">
             <button class="doke-avatar-btn" type="button" aria-label="Perfil">
@@ -835,7 +791,6 @@
           <a href="${PAGES.comunidades}"><i class='bx bx-group'></i> Comunidades</a>
           <a href="${PAGES.notif}"><i class='bx bx-bell'></i> Notificações</a>
           <a href="${PAGES.chat}"><i class='bx bx-message-rounded-dots'></i> Mensagens</a>
-          <a href="${PAGES.pedidos}"><i class='bx bx-package'></i> Pedidos</a>
           <a href="${profileHref}"><i class='bx bx-user'></i> Perfil</a>
           <a href="${PAGES.mais}"><i class='bx bx-dots-horizontal-rounded'></i> Mais</a>
         </nav>
@@ -928,7 +883,7 @@
           <div class="doke-chip-row" role="list">
             <button class="doke-chip active" type="button" data-search-target="all"><i class='bx bx-grid-alt'></i> Todos</button>
             <button class="doke-chip" type="button" data-search-target="users"><i class='bx bx-user'></i> Usuários</button>
-            <button class="doke-chip" type="button" data-search-target="ads"><i class='bx bx-badge-check'></i> Anúncios</button>
+            <button class="doke-chip" type="button" data-search-target="ads"><i class='bx bx-store-alt'></i> Serviços</button>
           </div>
           <div class="doke-recent">
             <h4>Buscas recentes</h4>
@@ -1010,7 +965,7 @@
       if(!sb?.from) return [];
       const t = String(term || "").trim();
       if(t.length < 2) return [];
-      const safe = t.replace(/[%_]/g, "\$&");
+      const safe = t.replace(/[%_]/g, "\\$&");
       try{
         const { data, error } = await sb
           .from("usuarios_legacy")
@@ -1024,199 +979,6 @@
       }
     }
 
-    function shufflePick(list, limit){
-      const arr = Array.isArray(list) ? list.slice() : [];
-      for(let i = arr.length - 1; i > 0; i -= 1){
-        const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
-      }
-      return arr.slice(0, Math.max(0, Number(limit) || 0));
-    }
-
-    function isTruthyActive(v){
-      if(v === undefined || v === null) return true;
-      if(v === true || v === 1) return true;
-      const t = String(v).trim().toLowerCase();
-      return !(t === "false" || t === "0" || t === "inativo" || t === "inactive");
-    }
-
-    function getAdPriceLabel(a){
-      const raw = a?.preco ?? a?.["preço"] ?? a?.valor ?? a?.price ?? "";
-      const txt = String(raw || "").trim();
-      return txt || "A combinar";
-    }
-
-    function getAdImage(a){
-      const fotos = Array.isArray(a?.fotos) ? a.fotos : (a?.fotos ? [a.fotos] : []);
-      return String(fotos[0] || a?.img || a?.foto || "").trim();
-    }
-
-    function buildUserResultHtml(list){
-      if(!Array.isArray(list) || !list.length){
-        return `<div class="doke-search-empty"><i class='bx bx-user-x'></i><span>Nenhum usuário encontrado.</span></div>`;
-      }
-      return list.map((u) => {
-        const uid = String(u.uid || u.id || "").trim();
-        const nome = String(u.nome || "").trim();
-        const handleBase = String(u.user || (nome ? nome.split(" ")[0] : "usuario")).trim();
-        const handle = handleBase.startsWith("@") ? handleBase : `@${handleBase}`;
-        const foto = String(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid || handle)}`);
-        const isProf = u.isProfissional === true;
-        const subtitulo = isProf
-          ? String(u.categoria_profissional || "Profissional")
-          : (nome || "Usuário");
-        const perfil = isProf ? "perfil-profissional.html" : "perfil-usuario.html";
-        return `
-          <button class="doke-user-result" type="button" data-go="${perfil}?uid=${encodeURIComponent(uid)}">
-            <img src="${escapeHtml(foto)}" alt="">
-            <div class="doke-user-result-main">
-              <strong>${escapeHtml(handle)}</strong>
-              <small>${escapeHtml(subtitulo)}</small>
-            </div>
-            <span class="doke-user-pill">${isProf ? "Profissional" : "Usuário"}</span>
-          </button>
-        `;
-      }).join("");
-    }
-
-    function buildAdsResultHtml(list){
-      if(!Array.isArray(list) || !list.length){
-        return `<div class="doke-search-empty"><i class='bx bx-store-alt'></i><span>Nenhum anúncio encontrado.</span></div>`;
-      }
-      return list.map((a) => {
-        const aid = String(a?.id || a?.anuncio_id || "").trim();
-        const titulo = String(a?.titulo || a?.title || a?.nome || "Anúncio").trim();
-        const categoria = String(a?.categoria || a?.categoria_profissional || a?.tipo || "Serviço").trim();
-        const preco = getAdPriceLabel(a);
-        const img = getAdImage(a);
-        const goto = aid ? `detalhes.html?id=${encodeURIComponent(aid)}` : "busca.html";
-        return `
-          <button class="doke-ad-result" type="button" data-go="${goto}">
-            <div class="doke-ad-thumb${img ? "" : " no-img"}">${img ? `<img src="${escapeHtml(img)}" alt="">` : `<i class='bx bx-image'></i>`}</div>
-            <div class="doke-ad-main">
-              <strong>${escapeHtml(titulo)}</strong>
-              <small>${escapeHtml(categoria)}</small>
-            </div>
-            <div class="doke-ad-side">
-              <span class="doke-ad-price">${escapeHtml(preco)}</span>
-              <span class="doke-ad-pill">Anúncio</span>
-            </div>
-          </button>
-        `;
-      }).join("");
-    }
-
-    async function searchAds(term){
-      const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase
-        || (typeof window.getSupabaseClient === "function" ? window.getSupabaseClient() : null);
-      if(!sb?.from) return [];
-      const t = String(term || "").trim();
-      if(t.length < 2) return [];
-      const safe = t.replace(/[%_]/g, "\$&");
-      try{
-        const { data, error } = await sb
-          .from("anuncios")
-          .select("*")
-          .or(`titulo.ilike.%${safe}%,categoria.ilike.%${safe}%`)
-          .limit(12);
-        if(error) return [];
-        const rows = Array.isArray(data) ? data : [];
-        return rows.filter((a) => isTruthyActive(a?.ativo));
-      }catch(_){
-        return [];
-      }
-    }
-
-    const searchExploreCache = { ts: 0, users: [], ads: [] };
-    async function getExploreData(){
-      const now = Date.now();
-      if((now - (searchExploreCache.ts || 0)) < 90000 && (searchExploreCache.users.length || searchExploreCache.ads.length)){
-        return {
-          users: shufflePick(searchExploreCache.users, 4),
-          ads: shufflePick(searchExploreCache.ads, 4)
-        };
-      }
-      const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase
-        || (typeof window.getSupabaseClient === "function" ? window.getSupabaseClient() : null);
-      if(!sb?.from) return { users: [], ads: [] };
-
-      let users = [];
-      let ads = [];
-      try{
-        const { data, error } = await sb
-          .from("usuarios_legacy")
-          .select("id, uid, user, nome, foto, isProfissional, categoria_profissional")
-          .eq("isProfissional", true)
-          .limit(24);
-        if(!error && Array.isArray(data)) users = data;
-      }catch(_){ }
-      if(!users.length){
-        try{
-          const { data, error } = await sb
-            .from("usuarios")
-            .select("id, uid, user, nome, foto, isProfissional, categoria_profissional")
-            .eq("isProfissional", true)
-            .limit(24);
-          if(!error && Array.isArray(data)) users = data;
-        }catch(_){ }
-      }
-
-      try{
-        const { data, error } = await sb
-          .from("anuncios")
-          .select("*")
-          .limit(24);
-        if(!error && Array.isArray(data)) ads = data.filter((a) => isTruthyActive(a?.ativo));
-      }catch(_){ }
-
-      searchExploreCache.ts = now;
-      searchExploreCache.users = Array.isArray(users) ? users.slice() : [];
-      searchExploreCache.ads = Array.isArray(ads) ? ads.slice() : [];
-
-      return {
-        users: shufflePick(searchExploreCache.users, 4),
-        ads: shufflePick(searchExploreCache.ads, 4)
-      };
-    }
-
-    function bindOverlayResultClicks(results){
-      if(!results) return;
-      results.querySelector(".doke-result-action")?.addEventListener("click", () => {
-        const btn = results.querySelector(".doke-result-action");
-        const q = btn?.getAttribute("data-q") || "";
-        goSearch(q, { forceAds: true });
-      });
-      results.querySelectorAll(".doke-user-result, .doke-ad-result").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          const go = btn.getAttribute("data-go") || "";
-          if(go) location.href = go;
-        });
-      });
-    }
-
-    async function renderExploreResults(currentToken, results, recent){
-      if(!results || !recent) return;
-      recent.style.display = "";
-      results.hidden = false;
-      results.innerHTML = `<div class="doke-search-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Carregando sugestões...</span></div>`;
-      const { users, ads } = await getExploreData();
-      if(currentToken !== searchToken) return;
-      let recentsEmpty = true;
-      try{ recentsEmpty = !(JSON.parse(localStorage.getItem("doke_recent_searches") || "[]") || []).length; }catch(_){ recentsEmpty = true; }
-      const note = recentsEmpty
-        ? `<div class="doke-search-explore-note">Sugestões para começar sem digitar.</div>`
-        : `<div class="doke-search-explore-note">Enquanto isso, veja sugestões aleatórias.</div>`;
-      const showUsers = searchTarget === "all" || searchTarget === "users";
-      const showAds = searchTarget === "all" || searchTarget === "ads";
-      results.innerHTML = `
-        ${note}
-        ${showAds ? `<div class="doke-results-title">Anúncios</div>${buildAdsResultHtml(ads)}` : ``}
-        ${showUsers ? `<div class="doke-results-title">Profissionais</div>${buildUserResultHtml((users || []).filter(u => u && u.isProfissional === true))}` : ``}
-      `;
-      bindOverlayResultClicks(results);
-    }
-
-
     let searchToken = 0;
     let searchTarget = "all"; // all | users | ads
     async function renderSearchResults(term){
@@ -1227,14 +989,10 @@
 
       const q = String(term || "").trim();
       if(q.length < 2){
-        const currentToken = ++searchToken;
-        if(bottom && bottom.classList.contains("doke-bottom-nav")){
-          await renderExploreResults(currentToken, results, recent);
-        }else{
-          results.hidden = true;
-          results.innerHTML = "";
-          recent.style.display = "";
-        }
+        searchToken += 1;
+        results.hidden = true;
+        results.innerHTML = "";
+        recent.style.display = "";
         return;
       }
 
@@ -1243,43 +1001,66 @@
       const currentToken = ++searchToken;
       results.innerHTML = `<div class="doke-search-loading"><i class='bx bx-loader-alt bx-spin'></i><span>Buscando...</span></div>`;
 
-      const shouldSearchUsers = searchTarget === "all" || searchTarget === "users";
-      const shouldSearchAds = searchTarget === "all" || searchTarget === "ads";
-      const [users, ads] = await Promise.all([
-        shouldSearchUsers ? searchUsers(q) : Promise.resolve([]),
-        shouldSearchAds ? searchAds(q) : Promise.resolve([])
-      ]);
+      const shouldSearchUsers = searchTarget !== "ads";
+      const shouldShowAdsAction = searchTarget !== "users";
+      const users = shouldSearchUsers ? await searchUsers(q) : [];
       if(currentToken !== searchToken) return;
 
-      const actionHtml = (searchTarget === "ads") ? `
+      const actionHtml = shouldShowAdsAction ? `
         <button class="doke-result-action" type="button" data-q="${escapeHtml(q)}">
           <i class='bx bx-right-arrow-alt'></i>
           <div>
-            <strong>Buscar anúncios por "${escapeHtml(q)}"</strong>
-            <small>Abrir resultados completos</small>
+            <strong>Buscar serviços por "${escapeHtml(q)}"</strong>
+            <small>Abrir resultados de anúncios</small>
           </div>
         </button>
       ` : ``;
 
-      const usersHtml = shouldSearchUsers ? buildUserResultHtml(users) : "";
-      const adsHtml = shouldSearchAds ? buildAdsResultHtml(ads) : "";
+      const usersHtml = users.length
+        ? users.map((u) => {
+            const uid = String(u.uid || u.id || "").trim();
+            const nome = String(u.nome || "").trim();
+            const handleBase = String(u.user || (nome ? nome.split(" ")[0] : "usuario")).trim();
+            const handle = handleBase.startsWith("@") ? handleBase : `@${handleBase}`;
+            const foto = String(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid || handle)}`);
+            const isProf = u.isProfissional === true;
+            const subtitulo = isProf
+              ? String(u.categoria_profissional || "Profissional")
+              : (nome || "Usuário");
+            const perfil = isProf ? "perfil-profissional.html" : "perfil-usuario.html";
+            return `
+              <button class="doke-user-result" type="button" data-go="${perfil}?uid=${encodeURIComponent(uid)}">
+                <img src="${escapeHtml(foto)}" alt="">
+                <div class="doke-user-result-main">
+                  <strong>${escapeHtml(handle)}</strong>
+                  <small>${escapeHtml(subtitulo)}</small>
+                </div>
+                <span class="doke-user-pill">${isProf ? "Profissional" : "Usuário"}</span>
+              </button>
+            `;
+          }).join("")
+        : `<div class="doke-search-empty"><i class='bx bx-user-x'></i><span>Nenhum usuário encontrado.</span></div>`;
 
       results.innerHTML = `
         ${actionHtml}
         ${shouldSearchUsers ? `<div class="doke-results-title">Usuários</div>${usersHtml}` : ``}
-        ${shouldSearchAds ? `<div class="doke-results-title">Anúncios</div>${adsHtml}` : ``}
       `;
 
-      bindOverlayResultClicks(results);
+      results.querySelector(".doke-result-action")?.addEventListener("click", () => goSearch(q, { forceAds: true }));
+      results.querySelectorAll(".doke-user-result").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const go = btn.getAttribute("data-go") || "";
+          if(go) location.href = go;
+        });
+      });
     }
-
 
     function goSearch(q, opts = {}){
       if(!overlay) return;
       q = (q || overlay.querySelector(".doke-search-input")?.value || "").trim();
       if(!q) return;
       const forceAds = !!opts.forceAds;
-      if((searchTarget === "users" || searchTarget === "all") && !forceAds){
+      if(searchTarget === "users" && !forceAds){
         renderSearchResults(q);
         return;
       }
@@ -1498,3 +1279,6 @@
     ensureShell();
   }
 })();
+
+
+

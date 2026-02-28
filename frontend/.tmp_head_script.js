@@ -3180,7 +3180,7 @@ window.carregarFiltrosLocalizacao = async function() {
             locaisMap[uf][cidade].add(bairro);
         });
 
-        selEstado.innerHTML = '<option value="" disabled selected>Estado</option>';
+        selEstado.innerHTML = '<option value="" disabled selected>Selecionar UF</option>';
         Object.keys(locaisMap).sort().forEach(uf => {
             selEstado.innerHTML += `<option value="${uf}">${uf}</option>`;
         });
@@ -3307,8 +3307,7 @@ function buildPublicacoesSelect({ withJoin, withSocial }) {
         if (optional[col] !== false) cols.push(col);
     });
     const base = cols.join(", ");
-    // Evita depender de relacionamento com nome variável (e/ou acento). Usuários são anexados via query separada.
-    const join = "";
+    const join = withJoin ? ", usuários (id, uid, nome, user, foto)" : "";
     const social = withSocial ? ", publicacoes_curtidas(count), publicacoes_comentarios(count)" : "";
     return `${base}${join}${social}`;
 }
@@ -3412,17 +3411,14 @@ async function fetchSupabasePublicacoesFeed() {
         for (const combo of combos) {
             const select = buildPublicacoesSelect(combo);
             const { data, error } = await client
-                // Tabela no Supabase: publicacoes (sem acento)
-                .from("publicacoes")
+                .from("publicações")
                 .select(select)
                 .order("created_at", { ascending: false })
                 .limit(40);
             if (!error) {
-                // Join por relacionamento tem variações de nome. Preferimos anexar usuários via query separada.
-                if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
+                if (select.includes("usuários")) window._dokePublicacoesJoinStatus = true;
                 if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
-                // Anexa usuários por user_id (evita dependência do nome do relacionamento)
-                return await attachSupabaseUsersById(data || []);
+                return data || [];
             }
             lastError = error;
             const beforeKey = publicacoesStatusKey();
@@ -3705,7 +3701,7 @@ window.carregarFeedGlobal = async function() {
         }
         const item = entry.data || {};
         if (!item.media_url) return;
-        const autor = item.usuários || item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
+        const autor = item.usuarios || (supaUserRow && item.user_id === supaUserRow.id ? supaUserRow : {});
         const autorHandle = normalizeHandle(autor.user || autor.nome || "usuario");
         const autorFoto = autor.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(String(autor.uid||autor.id||item.user_id||entry.id||"u"))}`;
         const when = formatFeedDateShort(item.created_at || item.data || entry.createdAt || "");
@@ -6227,7 +6223,7 @@ function ensureModalPostDetalhe() {
                 <div class="modal-footer-actions">
                     <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
                         <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-						<i class='bx bx-message-rounded' onclick="toggleComentariosModal()" style="cursor:pointer;"></i>
+                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
                         <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
@@ -6241,43 +6237,6 @@ function ensureModalPostDetalhe() {
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
 }
-
-// Controle de comentários no modal (mobile-first)
-// Toggle no ícone de balão.
-window.toggleComentariosModal = function() {
-    const modal = document.getElementById('modalPostDetalhe');
-    if (!modal) return;
-    const content = modal.querySelector('.modal-content');
-    if (!content) return;
-    const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-    // No desktop, mantém comentários sempre visíveis
-    if (!isMobile) {
-        content.classList.remove('is-comments-collapsed');
-        return;
-    }
-    const wasCollapsed = content.classList.contains('is-comments-collapsed');
-    content.classList.toggle('is-comments-collapsed');
-
-    // Se estava colapsado e acabou de abrir, carrega comentários sob demanda.
-    const nowCollapsed = content.classList.contains('is-comments-collapsed');
-    if (wasCollapsed && !nowCollapsed) {
-        const alreadyLoaded = modal.dataset.commentsLoaded === "true";
-        if (!alreadyLoaded) {
-            modal.dataset.commentsLoaded = "loading";
-            try {
-                if (window.currentPostSource === "supabase" && window.currentSupaPublicacaoId) {
-                    carregarComentariosSupabase(window.currentSupaPublicacaoId).finally(() => { modal.dataset.commentsLoaded = "true"; });
-                } else if (window.currentPostId && window.currentCollection) {
-                    carregarComentariosNoModal(window.currentPostId, window.currentCollection).finally(() => { modal.dataset.commentsLoaded = "true"; });
-                } else {
-                    modal.dataset.commentsLoaded = "false";
-                }
-            } catch(_e) {
-                modal.dataset.commentsLoaded = "false";
-            }
-        }
-    }
-};
 
 function getRelatedCount(value) {
     return (Array.isArray(value) ? value[0]?.count : value?.count) || 0;
@@ -6309,13 +6268,7 @@ async function fetchSupabasePublicacaoById(publicacaoId) {
             if (!error) {
                 if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
                 if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
-                // Anexa usuário autor via query separada
-                try {
-                    const enriched = await attachSupabaseUsersById([data].filter(Boolean));
-                    return enriched && enriched[0] ? enriched[0] : data;
-                } catch(_e) {
-                    return data;
-                }
+                return data;
             }
             lastError = error;
             const beforeKey = publicacoesStatusKey();
@@ -6347,17 +6300,6 @@ window.abrirModalPost = async function(id, colecao) {
     // 1. Reset Visual e Exibição
     modal.style.display = 'flex'; 
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
-
-    // Mobile: abre com comentários recolhidos (para dar mais relevância ao conteúdo)
-    try {
-        const content = modal.querySelector('.modal-content');
-        const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-        if (content) {
-            if (isMobile) content.classList.add('is-comments-collapsed');
-            else content.classList.remove('is-comments-collapsed');
-        }
-	    // comentários agora são toggláveis pelo ícone de balão (bx-message-rounded)
-    } catch(e){}
     window.currentPostId = id;
     window.currentCollection = colecao;
     window.currentPostAuthorUid = null; // Reseta
@@ -6441,20 +6383,8 @@ window.abrirModalPost = async function(id, colecao) {
             iconLike.style.opacity = '1';
         }
 
-        // --- COMENTÁRIOS ---
-        // No mobile, abrimos priorizando a mídia e carregamos comentários somente quando o usuário tocar no balão.
-        try {
-            const content = modal.querySelector('.modal-content');
-            const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-            modal.dataset.commentsLoaded = "false";
-            if (!isMobile || (content && !content.classList.contains('is-comments-collapsed'))) {
-                await carregarComentariosNoModal(id, colecao);
-                modal.dataset.commentsLoaded = "true";
-            }
-        } catch(_e) {
-            carregarComentariosNoModal(id, colecao);
-            modal.dataset.commentsLoaded = "true";
-        }
+        // --- CARREGA COMENTÁRIOS ---
+        carregarComentariosNoModal(id, colecao);
 
     } catch(e) { console.error("Erro modal:", e); }
 }
@@ -6618,8 +6548,7 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     let { data, error } = await client
         .from("publicacoes_comentarios")
-        // Evita depender do nome do relacionamento (pode variar). Vamos anexar usuários depois.
-        .select("id, texto, created_at, user_id")
+        .select("id, texto, created_at, user_id, usuários (id, nome, user, foto)")
         .eq("publicacao_id", publicacaoId)
         .order("created_at", { ascending: true });
 
@@ -6651,11 +6580,8 @@ async function carregarComentariosSupabase(publicacaoId) {
         return;
     }
 
-    // Anexa usuários por user_id (usuarios_legacy)
-    try { data = await attachSupabaseUsersById(data || []); } catch(_e) {}
-
     data.forEach((c) => {
-        const userInfo = c.usuários || c.usuarios || {};
+        const userInfo = c.usuarios || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
         const uidAttr = userInfo.uid ? `data-uid="${userInfo.uid}"` : "";
@@ -6879,18 +6805,6 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     modal.style.display = 'flex';
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
-
-    // Mobile: abre recolhido (prioriza mídia). Comentários são carregados ao tocar no balão.
-    try {
-        const content = modal.querySelector('.modal-content');
-        const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-        if (content) {
-            if (isMobile) content.classList.add('is-comments-collapsed');
-            else content.classList.remove('is-comments-collapsed');
-        }
-        modal.dataset.commentsLoaded = "false";
-    } catch(_e) {}
-
     window.currentPostSource = "supabase";
     window.currentSupaPublicacaoId = publicacaoId;
     window.currentSupaPublicacaoAuthorId = null;
@@ -6921,7 +6835,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     }
 
     const autorFallback = await getSupabaseUserRow();
-    const autor = item.usuários || item.usuarios || (autorFallback && item.user_id === autorFallback.id ? autorFallback : {});
+    const autor = item.usuarios || (autorFallback && item.user_id === autorFallback.id ? autorFallback : {});
     const autorNome = normalizeHandle(autor.user || autor.nome || "usuario");
     const autorFoto = autor.foto || "https://placehold.co/50";
     window.currentSupaPublicacaoAuthorUid = autor.uid || null;
@@ -6986,19 +6900,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     window.currentSupaPublicacaoAuthorId = item.user_id;
 
     await verificarStatusLikeSupabase(publicacaoId);
-
-    // Comentários: desktop carrega imediatamente; mobile carrega sob demanda.
-    try {
-        const content = modal.querySelector('.modal-content');
-        const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-        if (!isMobile || (content && !content.classList.contains('is-comments-collapsed'))) {
-            await carregarComentariosSupabase(publicacaoId);
-            modal.dataset.commentsLoaded = "true";
-        }
-    } catch(_e) {
-        carregarComentariosSupabase(publicacaoId);
-        modal.dataset.commentsLoaded = "true";
-    }
+    carregarComentariosSupabase(publicacaoId);
 }
 // Função para fechar clicando fora
 window.fecharModalPost = function(e) {
@@ -7260,7 +7162,7 @@ window.carregarReelsHome = async function() {
                 autorUser = item.autorUser || "@user";
                 tag = item.tag || "NOVO";
             } else {
-                const autor = item.usuários || item.usuarios || {};
+                const autor = item.usuarios || {};
                 videoUrl = item.video_url || "";
                 capaUrl = item.thumb_url || "https://placehold.co/240x400";
                 autorUser = autor.user || autor.nome || "@usuario";
@@ -8382,16 +8284,6 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
 
   modal.style.display = 'flex';
   try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
-  // Mobile: abre com comentários recolhidos (conteúdo tem mais relevância que thread)
-  try {
-    const content = modal.querySelector('.modal-content');
-    const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-    if (content) {
-      if (isMobile) content.classList.add('is-comments-collapsed');
-      else content.classList.remove('is-comments-collapsed');
-    }
-	    // comentários agora são toggláveis pelo ícone de balão (bx-message-rounded)
-  } catch(e){}
 };
 
 // ================== SOCIAL ACTIONS (COMMENTS/REPORT/PIN) ==================
@@ -8772,22 +8664,7 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
     }
 
     if (window.currentPostId && window.currentCollection) {
-        // No mobile: comentários sob demanda (balão). No desktop: carrega direto.
-        try {
-            const modal = document.getElementById('modalPostDetalhe');
-            const content = modal?.querySelector('.modal-content');
-            const isMobile = window.matchMedia && window.matchMedia('(max-width: 760px)').matches;
-            if (modal) modal.dataset.commentsLoaded = "false";
-
-            if (!isMobile || (content && !content.classList.contains('is-comments-collapsed'))) {
-                carregarComentariosNoModal(window.currentPostId, window.currentCollection);
-                if (modal) modal.dataset.commentsLoaded = "true";
-            }
-        } catch(_e) {
-            carregarComentariosNoModal(window.currentPostId, window.currentCollection);
-            try { const modal = document.getElementById('modalPostDetalhe'); if (modal) modal.dataset.commentsLoaded = "true"; } catch(__) {}
-        }
-
+        carregarComentariosNoModal(window.currentPostId, window.currentCollection);
         if (auth.currentUser) verificarStatusLike(window.currentPostId, window.currentCollection, auth.currentUser.uid);
     }
     atualizarBotaoDenunciaPost();
@@ -9737,8 +9614,7 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     let { data, error } = await client
         .from(cfg.commentsTable)
-        // Evita depender de relacionamento com nome variável.
-        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id")
+        .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usuários (id, nome, user, foto)")
         .eq(cfg.postIdField, cfg.postId)
         .is("parent_id", null)
         .order("pinned", { ascending: false })
@@ -9771,15 +9647,12 @@ async function carregarComentariosSupabase(publicacaoId) {
         return;
     }
 
-    // Anexa usuários
-    try { data = await attachSupabaseUsersById(data || []); } catch(_e) {}
-
     const user = auth.currentUser;
     const userRow = user ? await getSupabaseUserRow() : null;
     const checks = [];
 
     data.forEach((c) => {
-        const userInfo = c.usuários || c.usuarios || {};
+        const userInfo = c.usuários || {};
         const nome = normalizeHandle(userInfo.user || userInfo.nome || "usuario");
         const foto = userInfo.foto || "https://placehold.co/50";
         const uidAttr = userInfo.uid ? `data-uid="${userInfo.uid}"` : "";
@@ -10736,7 +10609,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const uid = String(u.uid || u.id || '').trim();
       const foto = u.foto || `https://i.pravatar.cc/80?u=${encodeURIComponent(uid || 'u')}`;
       const nomeFull = u.nome || '';
-      const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+      const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuário'));
       const isProf = u.isProfissional === true;
       const categoria = u.categoria_profissional || 'Profissional';
       const st = (u.stats && typeof u.stats === 'object') ? u.stats : {};
@@ -10744,7 +10617,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const m = Number(st.media || st.nota || 0) || 0;
       const meta = isProf ? `★ ${n>0 ? m.toFixed(1) : 'Novo'} (${n})` : '';
       const sub = isProf ? categoria : (nomeFull || '');
-      const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+      const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuário.html?uid=${encodeURIComponent(uid)}`;
       return `
         <div class="pv-user-card"
              data-uid="${escapeHtml(uid)}"
@@ -10842,8 +10715,8 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>
 
         <div class="ig-search-tabs" role="tablist" aria-label="Tipo de pesquisa">
-          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usu&aacute;rios</button>
-          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">An&uacute;ncios</button>
+          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usuários</button>
+          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">Anúncios</button>
         </div>
 
         <div class="ig-search-body">
@@ -10980,7 +10853,7 @@ function syncClear(){
         <div class="ig-empty">
           <i class='bx bx-time-five'></i>
           <div>
-            <div class="ig-empty-title">Sem hist&oacute;rico</div>
+            <div class="ig-empty-title">Sem histórico</div>
             <div class="ig-empty-sub">Suas pesquisas recentes aparecem aqui.</div>
           </div>
         </div>
@@ -11000,15 +10873,15 @@ function syncClear(){
         recentsEl.innerHTML = users.slice(0, 12).map(u=>{
           const uid = escapeHtml(String(u.uid||''));
           const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
-          const handle = escapeHtml(u.handle || '@usuario');
+          const handle = escapeHtml(u.handle || '@usuário');
           const nome = escapeHtml(u.nome || '');
-          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usu&aacute;rio'));
-          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
+          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuário'));
+          const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuário.html?uid=${encodeURIComponent(u.uid||'')}`;
           return `
             <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
               <img class="ig-avatar" src="${foto}" alt="">
               <div class="ig-main">
-                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usu&aacute;rio'}</span></div>
+                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usuário'}</span></div>
                 <div class="ig-line2">${nome || (u.isProf ? 'Conta profissional' : 'Conta')}</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
@@ -11098,7 +10971,7 @@ function syncClear(){
             <i class='bx bx-search'></i>
             <div>
               <div class="ig-empty-title">Nada encontrado</div>
-              <div class="ig-empty-sub">Tente outro nome ou @usuario.</div>
+              <div class="ig-empty-sub">Tente outro nome ou @usuário.</div>
             </div>
           </div>
         `;
@@ -11109,12 +10982,11 @@ function syncClear(){
         const uid = String(u.uid || u.id || '').trim();
         const foto = u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`;
         const nomeFull = u.nome || '';
-        // Preferir o @ real do banco. Se não houver, cai para um fallback curto.
-        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
+        const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuário'));
         const isProf = u.isProfissional === true;
         const categoria = u.categoria_profissional || 'Profissional';
-        const sub = isProf ? categoria : (nomeFull || 'Usu&aacute;rio');
-        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
+        const sub = isProf ? categoria : (nomeFull || 'Usuário');
+        const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuário.html?uid=${encodeURIComponent(uid)}`;
         return `
           <div class="ig-row ig-row-user" role="listitem"
                data-uid="${escapeHtml(uid)}"
@@ -11125,8 +10997,8 @@ function syncClear(){
                data-goto="${escapeHtml(goto)}">
             <img class="ig-avatar" src="${escapeHtml(foto)}" alt="">
             <div class="ig-main">
-              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usu&aacute;rio'}</span></div>
-              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usu&aacute;rio'))}</div>
+              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usuário'}</span></div>
+              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usuário'))}</div>
             </div>
           </div>
         `;

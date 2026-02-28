@@ -483,6 +483,173 @@ async function dokeHydrateCompatAuthFromSession() {
     } catch (_e) {}
 })();
 
+// =========================================================
+// Modal de Detalhes (abre detalhes.html em overlay sem sair da pagina)
+// =========================================================
+window.openDetalhesModal = function(url) {
+  try {
+    if (!url) return;
+    const u = new URL(url, window.location.href);
+    if (!/\/detalhes\.html$/i.test(u.pathname)) {
+      window.location.href = u.toString();
+      return;
+    }
+    if (!u.searchParams.has("embed")) u.searchParams.set("embed", "1");
+
+    if (typeof window.__dokeDetalhesModalClose === "function") {
+      try { window.__dokeDetalhesModalClose({ immediate: true }); } catch (_) {}
+    }
+
+    const overlay = document.createElement("div");
+    overlay.id = "doke-detalhes-overlay";
+
+    const backdrop = document.createElement("button");
+    backdrop.type = "button";
+    backdrop.className = "doke-modal-backdrop";
+    backdrop.setAttribute("aria-label", "Fechar detalhes");
+
+    const shell = document.createElement("section");
+    shell.className = "doke-modal-shell";
+    shell.setAttribute("role", "dialog");
+    shell.setAttribute("aria-modal", "true");
+    shell.setAttribute("aria-label", "Detalhes do servico");
+
+    const head = document.createElement("div");
+    head.className = "doke-modal-head";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "doke-modal-close";
+    closeBtn.setAttribute("aria-label", "Fechar");
+    closeBtn.textContent = "x";
+
+    const frame = document.createElement("iframe");
+    frame.className = "doke-modal-iframe";
+    frame.title = "Detalhes";
+    frame.loading = "eager";
+    frame.src = u.toString();
+
+    head.appendChild(closeBtn);
+    shell.appendChild(head);
+    shell.appendChild(frame);
+    overlay.appendChild(backdrop);
+    overlay.appendChild(shell);
+
+    // Desktop: nao cobre o menu lateral
+    try {
+      if (window.matchMedia && window.matchMedia("(min-width: 1025px)").matches) {
+        const side = document.querySelector(".sidebar-icones");
+        if (side) {
+          const rect = side.getBoundingClientRect();
+          const leftOffset = Math.max(0, Math.round(rect.right));
+          if (leftOffset > 40 && leftOffset < (window.innerWidth - 240)) {
+            overlay.style.left = `${leftOffset}px`;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Lock forte do scroll do fundo (mantem so o detalhes rolando)
+    const prevBodyPos = document.body.style.position || "";
+    const prevBodyTop = document.body.style.top || "";
+    const prevBodyLeft = document.body.style.left || "";
+    const prevBodyRight = document.body.style.right || "";
+    const prevBodyWidth = document.body.style.width || "";
+    const prevBodyOverflow = document.body.style.overflow || "";
+    const prevHtmlOverflow = document.documentElement.style.overflow || "";
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.dataset.dokeModalScrollY = String(scrollY);
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
+    document.body.appendChild(overlay);
+    document.body.classList.add("doke-modal-open");
+    requestAnimationFrame(() => overlay.classList.add("is-open"));
+
+    let closed = false;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
+    };
+    const close = (opts = {}) => {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener("keydown", onKey, true);
+      document.body.classList.remove("doke-modal-open");
+      document.body.style.position = prevBodyPos;
+      document.body.style.top = prevBodyTop;
+      document.body.style.left = prevBodyLeft;
+      document.body.style.right = prevBodyRight;
+      document.body.style.width = prevBodyWidth;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      const restoreY = parseInt(document.body.dataset.dokeModalScrollY || "0", 10);
+      delete document.body.dataset.dokeModalScrollY;
+      try { window.scrollTo(0, Number.isFinite(restoreY) ? restoreY : 0); } catch (_) {}
+      overlay.classList.remove("is-open");
+      if (opts.immediate) {
+        overlay.remove();
+      } else {
+        setTimeout(() => overlay.remove(), 160);
+      }
+      if (window.__dokeDetalhesModalClose === close) {
+        window.__dokeDetalhesModalClose = null;
+      }
+    };
+
+    window.__dokeDetalhesModalClose = close;
+    window.closeDetalhesModal = close;
+    document.addEventListener("keydown", onKey, true);
+    backdrop.addEventListener("click", () => close());
+    closeBtn.addEventListener("click", () => close());
+    const preventBgScroll = (e) => {
+      if (!shell.contains(e.target)) e.preventDefault();
+    };
+    overlay.addEventListener("wheel", preventBgScroll, { passive: false });
+    overlay.addEventListener("touchmove", preventBgScroll, { passive: false });
+  } catch (err) {
+    window.location.href = url;
+  }
+};
+
+(function dokeInitDetalhesModalDelegation() {
+  if (window.__dokeDetalhesModalDelegationInit) return;
+  window.__dokeDetalhesModalDelegationInit = true;
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!event.target || !event.target.closest) return;
+
+    const anchor = event.target.closest("a[href]");
+    if (!anchor) return;
+    const hrefRaw = String(anchor.getAttribute("href") || "").trim();
+    if (!hrefRaw || hrefRaw.startsWith("#") || hrefRaw.startsWith("javascript:")) return;
+    if (hrefRaw.startsWith("mailto:") || hrefRaw.startsWith("tel:")) return;
+    if (anchor.hasAttribute("download")) return;
+
+    const targetAttr = String(anchor.getAttribute("target") || "").toLowerCase();
+    if (targetAttr && targetAttr !== "_self") return;
+
+    let targetUrl;
+    try { targetUrl = new URL(hrefRaw, window.location.href); } catch (_) { return; }
+    if (targetUrl.origin !== window.location.origin) return;
+    if (!/\/detalhes\.html$/i.test(targetUrl.pathname)) return;
+    if (/\/detalhes\.html$/i.test(window.location.pathname)) return;
+
+    event.preventDefault();
+    window.openDetalhesModal(targetUrl.toString());
+  }, true);
+})();
+
+
 // Protege export helpers: N?O sobrescreva o bridge (firebase-compat-supabase.js)
 // quando ele estiver ativo.
 const __hasFirestoreBridge = !!window.__dokeFirestoreCompat;
@@ -693,7 +860,7 @@ window.publicarConteudoUnificado = async function(event) {
         
         let dados = {
             uid: user.uid,
-            autorNome: perfilLocal.nome || "Usu?rio",
+            autorNome: perfilLocal.nome || "Usuario",
             autorUser: perfilLocal.user || "@usuario",
             autorFoto: perfilLocal.foto || "https://placehold.co/150",
             data: new Date().toISOString(),
@@ -728,17 +895,59 @@ window.publicarConteudoUnificado = async function(event) {
 
 function setScrollLock(locked) {
     const root = document.documentElement;
-    if (root) root.classList.toggle('no-scroll', locked);
-    if (document.body) document.body.classList.toggle('no-scroll', locked);
-    if (!locked) {
-        try {
-            if (root) root.style.overflow = '';
-            if (document.body) {
-                document.body.style.overflow = '';
-                document.body.style.overflowY = '';
-            }
-        } catch (_) {}
+    const body = document.body;
+    if (!root || !body) return;
+
+    const isIOS = /iP(ad|hone|od)/.test(navigator.userAgent || '');
+    const alreadyLocked = root.classList.contains('no-scroll') || body.classList.contains('no-scroll');
+
+    if (locked) {
+        // Salva posição atual só na transição "destravado -> travado"
+        if (!alreadyLocked) {
+            try { window.__dokeScrollY = window.scrollY || document.documentElement.scrollTop || 0; } catch (_) { window.__dokeScrollY = 0; }
+        }
+
+        root.classList.add('no-scroll');
+        body.classList.add('no-scroll');
+
+        // iOS Safari: overflow hidden sozinho costuma "quebrar" o scroll depois; fixamos o body.
+        if (isIOS) {
+            const y = Number(window.__dokeScrollY || 0) || 0;
+            body.style.position = 'fixed';
+            body.style.top = `-${y}px`;
+            body.style.left = '0';
+            body.style.right = '0';
+            body.style.width = '100%';
+        } else {
+            // Browsers comuns
+            body.style.overflow = 'hidden';
+        }
+        return;
     }
+
+    // unlock
+    root.classList.remove('no-scroll');
+    body.classList.remove('no-scroll');
+
+    // limpa estilos
+    const top = body.style.top;
+    body.style.position = '';
+    body.style.top = '';
+    body.style.left = '';
+    body.style.right = '';
+    body.style.width = '';
+    body.style.overflow = '';
+    body.style.overflowY = '';
+
+    // restaura posição no iOS
+    if (isIOS) {
+        const y = top ? Math.abs(parseInt(top, 10)) : (Number(window.__dokeScrollY || 0) || 0);
+        try { window.scrollTo(0, y || 0); } catch (_) {}
+    }
+
+    try {
+        if (root) root.style.overflow = '';
+    } catch (_) {}
 }
 
 const DOKE_SCROLL_LOCK_SELECTORS = [
@@ -1206,7 +1415,7 @@ try {
             
             // ADICIONE ESTES CAMPOS: Garante que nasce n?o lido
             notificacaoLidaProfissional: false, 
-            notificacaoLidaCliente: true // Eu (cliente) j? li o que acabei de enviar
+            notificacaoLidaCliente: true // Eu (cliente) ja li o que acabei de enviar
         };
 
         if (pedidoExistente && pedidoExistente.id) {
@@ -1234,7 +1443,7 @@ window.verificarNotificacoes = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
-        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
+        document.querySelectorAll('a[href="mensagens.html"]').forEach(link => {
             const existing = link.querySelector('.badge-notificacao');
             if(existing) existing.remove();
             if (qtd > 0) {
@@ -1331,7 +1540,7 @@ function getActorPerfil() {
 async function getSupabaseUidByUserId(userId) {
     if (!userId) return null;
 
-    // Se j? for UUID, tratamos como o pr?prio `uid` do Auth (evita .eq("id", uuid) e erro 400/520).
+    // Se ja for UUID, tratamos como o pr?prio `uid` do Auth (evita .eq("id", uuid) e erro 400/520).
     if (isUuid(userId)) return String(userId);
 
     if (_dokeSupabaseUidCache.has(userId)) return _dokeSupabaseUidCache.get(userId);
@@ -1559,9 +1768,25 @@ window.dokeBuildCardPremium = function(anuncio) {
       return `<i class='bx ${isOn ? "bxs-star" : "bx-star"}'></i>`;
     }).join("");
 
-    const fotos = Array.isArray(anuncio.fotos) && anuncio.fotos.length
-      ? anuncio.fotos
-      : [anuncio.img || "https://placehold.co/900x600?text=Sem+Imagem"];
+    const normalizeFotosAnuncio = (value) => {
+      if (Array.isArray(value)) return value.map(v => String(v || "").trim()).filter(Boolean);
+      if (typeof value === "string") {
+        const raw = value.trim();
+        if (!raw) return [];
+        if ((raw.startsWith("[") && raw.endsWith("]")) || (raw.startsWith('"') && raw.endsWith('"'))) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed.map(v => String(v || "").trim()).filter(Boolean);
+            if (typeof parsed === "string" && parsed.trim()) return [parsed.trim()];
+          } catch (_) {}
+        }
+        return [raw];
+      }
+      return [];
+    };
+    const fotosRaw = normalizeFotosAnuncio(anuncio.fotos);
+    const fotoFallback = String(anuncio.img || anuncio.imagem || anuncio.foto || anuncio.capa || "").trim();
+    const fotos = fotosRaw.length ? fotosRaw : [fotoFallback || "https://placehold.co/900x600?text=Sem+Imagem"];
     const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
     const fotoPrincipal = String(fotos[0] || "");
     const fotosExtras = Math.max(0, fotos.length - 1);
@@ -1674,7 +1899,11 @@ window.dokeBuildCardPremium = function(anuncio) {
         ratingBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          window.location.href = detalhesReviewsUrl;
+          if (typeof window.openDetalhesModal === "function") {
+            window.openDetalhesModal(detalhesReviewsUrl);
+          } else {
+            window.location.href = detalhesReviewsUrl;
+          }
         });
       }
 
@@ -1726,7 +1955,11 @@ window.dokeBuildCardPremium = function(anuncio) {
             'button,a,input,textarea,select,label,.cp-more,.cp-fav-btn,.cp-rating-link,.js-card-categoria,.js-card-tag,.img-cover,.cp-v2-moreCount,.js-user-link'
           );
           if (interactive) return;
-          window.location.href = detalhesBaseUrl;
+          if (typeof window.openDetalhesModal === "function") {
+            window.openDetalhesModal(detalhesBaseUrl);
+          } else {
+            window.location.href = detalhesBaseUrl;
+          }
         });
       }
     } catch (_) {}
@@ -2294,7 +2527,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
             } catch (fireErr) {
                 lastLoadError = fireErr;
                 if (!dokeLooksLikeNetworkAbort(fireErr)) {
-                    console.warn("Falha ao carregar an?ncios via compat:", fireErr);
+                    console.warn("Falha ao carregar anuncios via compat:", fireErr);
                 }
             }
         }
@@ -2324,8 +2557,8 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         listaAnuncios = dokeDedupAnuncios(listaAnuncios);
-        // N?o mostrar an?ncios desativados no feed p?blico
-        // (an?ncios antigos sem o campo 'ativo' continuam aparecendo)
+        // N?o mostrar anuncios desativados no feed p?blico
+        // (anuncios antigos sem o campo 'ativo' continuam aparecendo)
         listaAnuncios = listaAnuncios.filter(a => a.ativo !== false);
         dokeWriteCache(DOKE_CACHE_KEYS.anuncios, listaAnuncios);
 
@@ -2360,7 +2593,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         }
 
         if (listaFinal.length === 0) {
-            // Nada encontrado: sugere alguns an?ncios embaixo (quando houver termo de busca)
+            // Nada encontrado: sugere alguns anuncios embaixo (quando houver termo de busca)
             if (termoBusca && termoBusca.trim() !== "" && listaAnuncios.length) {
                 const sugest = listaAnuncios.slice(0, 8);
                 feed.innerHTML = `
@@ -2437,7 +2670,7 @@ window.carregarAnunciosDoFirebase = async function(termoBusca = "") {
         return;
     } catch (erro) {
         console.error("Erro no carregamento:", erro);
-        feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar an?ncios.</p>`;
+        feed.innerHTML = `<p style="text-align:center; padding:20px;">Erro ao carregar anuncios.</p>`;
         feed.setAttribute('aria-busy', 'false');
     } finally {
         window.__dokeAnunciosLoading = false;
@@ -2918,7 +3151,7 @@ async function protegerPaginasRestritas() {
     const isLocalDevHost = /^(localhost|127\.0\.0\.1)$/i.test(String(location.hostname || ""));
     if (isLocalDevHost) return;
 
-    const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
+    const paginasRestritas = ['meuperfil.html', 'mensagens.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
 
     const caminhoAtual = window.location.pathname || "";
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
@@ -2971,8 +3204,10 @@ window.verificarEstadoLogin = async function() {
     } catch (_e) {}
 
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
+    const forcedLogoutAt = Number(localStorage.getItem('doke_force_logged_out_at') || sessionStorage.getItem('doke_force_logged_out_at') || 0);
+    const forceLogoutActive = Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < 120000;
     let perfil = {};
-    let resolvedUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+    let resolvedUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || window.firebaseAuth?.currentUser || null);
     let sessionUser = null;
 
     try {
@@ -2981,10 +3216,10 @@ window.verificarEstadoLogin = async function() {
         perfil = {};
     }
 
-    if (!resolvedUser) {
+    if (!resolvedUser && !forceLogoutActive) {
         try { resolvedUser = await dokeResolveAuthUser(); } catch (_e) { resolvedUser = null; }
     }
-    if (!resolvedUser && window.sb?.auth?.getSession) {
+    if (!resolvedUser && !forceLogoutActive && window.sb?.auth?.getSession) {
         try {
             const { data, error } = await window.sb.auth.getSession();
             if (!error && data?.session?.user) {
@@ -3007,6 +3242,7 @@ window.verificarEstadoLogin = async function() {
     const uidCache = String(localStorage.getItem('doke_uid') || "").trim();
     let resolvedUid = uidAuth || uidPerfil || uidCache;
     let logado = !!resolvedUid || localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo || !!resolvedUser;
+    if (forceLogoutActive) logado = false;
 
     if (logado && resolvedUid) {
         try {
@@ -3304,14 +3540,24 @@ function dokeClearLocalAuthCache() {
         localStorage.removeItem('doke_uid');
         localStorage.removeItem('doke_auth_session_backup');
         localStorage.removeItem('doke_next_account');
+        localStorage.removeItem('doke_cached_auth_user');
+        localStorage.removeItem('doke_cached_auth_uid');
+        localStorage.removeItem('doke_cached_auth_token');
         const authKeys = Object.keys(localStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
         authKeys.forEach((k) => localStorage.removeItem(k));
+        const firebaseKeys = Object.keys(localStorage).filter((k) => /^firebase:/i.test(k));
+        firebaseKeys.forEach((k) => localStorage.removeItem(k));
     } catch (_e) {}
     try {
         sessionStorage.removeItem('usuarioLogado');
         sessionStorage.removeItem('doke_uid');
         sessionStorage.removeItem('doke_usuario_perfil');
         sessionStorage.removeItem('doke_next_account');
+        sessionStorage.removeItem('doke_cached_auth_user');
+        sessionStorage.removeItem('doke_cached_auth_uid');
+        sessionStorage.removeItem('doke_cached_auth_token');
+        const sbSessionKeys = Object.keys(sessionStorage).filter((k) => /^sb-[a-z0-9-]+-auth-token$/i.test(k));
+        sbSessionKeys.forEach((k) => sessionStorage.removeItem(k));
     } catch (_e) {}
     try { dokeClearCookieEverywhere(DOKE_DEV_SESSION_COOKIE); } catch (_e) {}
 }
@@ -3334,18 +3580,24 @@ async function dokeSignOutEverywhere() {
 
     let signedOut = false;
     try {
-        const sbAuth = window.sb?.auth || window.supabaseClient?.auth || null;
-        if (sbAuth?.signOut) {
+        const sbAuthCandidates = [
+            window.sb?.auth,
+            window.supabaseClient?.auth,
+            window.sbClient?.auth,
+            window.supabase?.auth
+        ].filter(Boolean);
+        for (const sbAuth of sbAuthCandidates) {
+            if (!sbAuth?.signOut) continue;
             const ok = await callSignOut(sbAuth.signOut.bind(sbAuth));
             signedOut = signedOut || ok;
         }
-        const authObj = window.auth || auth || null;
+        const authObj = window.auth || window.firebaseAuth || window.__dokeAuthCompat?.auth || null;
         if (authObj?.signOut) {
             const ok = await callSignOut(authObj.signOut.bind(authObj));
             signedOut = signedOut || ok;
         }
         if (typeof window.signOut === "function") {
-            const ok = await callSignOut(window.signOut, [window.auth || auth || {}]);
+            const ok = await callSignOut(window.signOut, [authObj || window.auth || {}]);
             signedOut = signedOut || ok;
         }
     } finally {
@@ -3356,10 +3608,17 @@ async function dokeSignOutEverywhere() {
 
 
 async function dokeSignOutAndGo(targetHref) {
+    const nextHref = String(targetHref || "login.html");
     try { if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000); } catch (_e) {}
+    try { dokeClearLocalAuthCache(); } catch (_e) {}
     try { await dokeSignOutEverywhere(); } catch (_e) {}
-    dokeClearLocalAuthCache();
-    window.location.href = String(targetHref || "login.html");
+    try { dokeClearLocalAuthCache(); } catch (_e) {}
+    try { localStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { sessionStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { window.location.replace(nextHref); } catch (_e) { window.location.href = nextHref; }
+    setTimeout(() => {
+        try { if (!String(window.location.href || '').includes('login.html')) window.location.href = nextHref; } catch (_e) {}
+    }, 300);
 }
 
 window.alternarConta = async function() {
@@ -4160,10 +4419,10 @@ window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
         return; 
     }
 
-    // TRAVA 2: Verifica se j? visualizou nesta sess?o (Anti-F5)
+    // TRAVA 2: Verifica se ja visualizou nesta sess?o (Anti-F5)
     const chaveStorage = `view_anuncio_${idAnuncio}`;
     if (sessionStorage.getItem(chaveStorage)) {
-        console.log("Visualiza??o j? contabilizada nesta sess?o.");
+        console.log("Visualiza??o ja contabilizada nesta sess?o.");
         return;
     }
 
@@ -4173,7 +4432,7 @@ window.registrarVisualizacao = async function(idAnuncio, idDonoAnuncio) {
             views: increment(1) 
         });
         
-        // Marca que j? viu para n?o contar de novo at? fechar o navegador
+        // Marca que ja viu para n?o contar de novo at? fechar o navegador
         sessionStorage.setItem(chaveStorage, "true");
         console.log("View contabilizada +1");
 
@@ -4279,11 +4538,12 @@ window.realizarLogin = async function(e) {
         const user = userCredential.user;
         const docRef = doc(window.db, "usuarios", user.uid);
         const docSnap = await getDoc(docRef);
-        let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usu?rio", email: email };
+        let dadosUsuario = docSnap.exists() ? docSnap.data() : { nome: "Usuario", email: email };
 
         localStorage.setItem('usuarioLogado', 'true');
         localStorage.setItem('doke_usuario_perfil', JSON.stringify(dadosUsuario));
         localStorage.setItem('doke_uid', user.uid);
+        try { localStorage.removeItem('doke_force_logged_out_at'); sessionStorage.removeItem('doke_force_logged_out_at'); } catch (_) {}
         try {
             dokeRememberLoggedAccount({
                 uid: user.uid || dadosUsuario.uid || dadosUsuario.id || "",
@@ -4332,7 +4592,7 @@ window.carregarFiltrosLocalizacao = async function() {
             locaisMap[uf][cidade].add(bairro);
         });
 
-        selEstado.innerHTML = '<option value="" disabled selected>Selecionar UF</option>';
+        selEstado.innerHTML = '<option value="" disabled selected>Estado</option>';
         Object.keys(locaisMap).sort().forEach(uf => {
             selEstado.innerHTML += `<option value="${uf}">${uf}</option>`;
         });
@@ -5188,7 +5448,7 @@ window.carregarFeedGlobal = async function() {
             : `<div class="dp-itemMedia" style="display:flex;align-items:center;justify-content:center;min-height:220px;background:linear-gradient(160deg,#0f2f57,#0b7768);color:#eef7ff;font-weight:700;">Sem midia</div>`;
 
         const clickAction = (entry.source === "supabase_anuncio")
-            ? `window.location.href='detalhes.html?id=${encodeURIComponent(String(item.id || ""))}'`
+            ? `window.openDetalhesModal('detalhes.html?id=${encodeURIComponent(String(item.id || ""))}')`
             : `abrirModalPublicacao('${entry.id}')`;
         const html = `
             <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="${clickAction}" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
@@ -5295,7 +5555,7 @@ function setupFeedVideoPreview(container) {
 }
 
 window.carregarPerfil = function() {
-    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usu?rio", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
+    const usuario = JSON.parse(localStorage.getItem('doke_usuario_perfil')) || { nome: "Novo Usuario", user: "@usuario", bio: "Edite seu perfil.", local: "Brasil", foto: "https://placehold.co/150", membroDesde: "2024" };
     if(document.getElementById('nomePerfilDisplay')) document.getElementById('nomePerfilDisplay').innerText = usuario.nome;
     if(document.getElementById('bioPerfilDisplay')) document.getElementById('bioPerfilDisplay').innerText = usuario.bio;
     if(document.getElementById('fotoPerfilDisplay')) document.getElementById('fotoPerfilDisplay').src = usuario.foto;
@@ -5436,7 +5696,7 @@ document.addEventListener("DOMContentLoaded", async function() {
         });
     });
 
-    // 4. L?gica de Busca e An?ncios
+    // 4. L?gica de Busca e Anuncios
     const params = new URLSearchParams(window.location.search);
     const termoUrl = params.get('q');
     const inputBusca = document.getElementById('inputBusca');
@@ -5830,7 +6090,7 @@ window.abrirChatInterno = async function(uidCliente, idPedido, nomeCliente, foto
         // 4. Carrega as mensagens em tempo real (Subcole??o)
         const qMsgs = query(collection(db, "pedidos", idPedido, "mensagens"), orderBy("timestamp", "asc"));
         
-        // Se j? existir um listener anterior, cancela ele para n?o duplicar
+        // Se ja existir um listener anterior, cancela ele para n?o duplicar
         if(chatUnsubscribe) chatUnsubscribe();
 
         chatUnsubscribe = onSnapshot(qMsgs, (snapshot) => {
@@ -6011,7 +6271,7 @@ window.carregarDadosExplorar = function() {
     // 1. Carrega Categorias
     if(window.carregarCategorias) window.carregarCategorias();
 
-    // 2. Carrega Inspira??es (Com Fallback para An?ncios)
+    // 2. Carrega Inspira??es (Com Fallback para Anuncios)
     carregarInspiracoes();
 
     // 3. Carrega Profissionais
@@ -6031,9 +6291,9 @@ async function carregarInspiracoes() {
         let listaParaMostrar = [];
         let tipoCard = 'trabalho';
 
-        // Se n?o tiver trabalhos (portf?lio), busca an?ncios normais para preencher
+        // Se n?o tiver trabalhos (portf?lio), busca anuncios normais para preencher
         if (snapshot.empty) {
-            console.log("Sem trabalhos, buscando an?ncios...");
+            console.log("Sem trabalhos, buscando anuncios...");
             q = query(collection(db, "anuncios"), limit(8));
             snapshot = await getDocs(q);
             tipoCard = 'anuncio';
@@ -6094,7 +6354,7 @@ async function carregarListaProfissionaisReal() {
     if (!container) return;
 
     try {
-        // Busca usu?rios onde isProfissional ? true
+        // Busca usuarios onde isProfissional ? true
         const q = query(collection(db, "usuarios"), where("isProfissional", "==", true), limit(10));
         const snapshot = await getDocs(q);
 
@@ -6117,7 +6377,7 @@ async function carregarListaProfissionaisReal() {
             const foto = user.foto || "https://i.pravatar.cc/150";
             
             // L?gica do Nome: Prioriza o @usuario, sen?o pega o primeiro nome
-            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usu?rio");
+            let nomeExibicao = user.user || (user.nome ? user.nome.split(' ')[0] : "Usuario");
             if (!nomeExibicao.startsWith('@') && user.user) {
                 nomeExibicao = user.user; // Garante que usa o handle se existir
             }
@@ -6182,7 +6442,7 @@ window.criarNovaComunidade = async function(e) {
     btn.disabled = true;
 
     try {
-        let capaUrl = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22400%22%20viewBox%3D%220%200%201200%20400%22%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232a5f90%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237b2cbf%22/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%221200%22%20height%3D%22400%22%20fill%3D%22url%28%23g%29%22/%3E%0A%3C/svg%3E"; // Capa padr?o (gradiente Doke, sem depender de links externos)
+        let capaUrl = "data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%221200%22%20height%3D%22400%22%20viewBox%3D%220%200%201200%20400%22%3E%0A%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20x2%3D%221%22%20y1%3D%220%22%20y2%3D%221%22%3E%0A%3Cstop%20offset%3D%220%22%20stop-color%3D%22%232a5f90%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237b2cbf%22/%3E%0A%3C/linearGradient%3E%3C/defs%3E%0A%3Crect%20width%3D%221200%22%20height%3D%22400%22%20fill%3D%22url%28%23g%29%22/%3E%0A%3C/svg%3E"; // Capa padrao (gradiente Doke, sem depender de links externos)
 
         // Se o usu?rio selecionou foto, converte para Base64
         if (fileInput.files && fileInput.files[0]) {
@@ -6839,7 +7099,7 @@ window.tocarAudio = function(btn, url) {
     const icon = btn.querySelector('i');
     
     if (btn.classList.contains('playing')) {
-        // Se j? est? tocando, n?o faz nada ou pausa (impl. simples toca do zero)
+        // Se ja est? tocando, n?o faz nada ou pausa (impl. simples toca do zero)
         return; 
     }
 
@@ -6978,7 +7238,7 @@ window.iniciarPreview = function(card) {
     const timer = window.setTimeout(() => {
         hoverPreviewTimers.delete(card);
 
-        // Verifica se o v?deo j? existe para n?o criar duplicado
+        // Verifica se o v?deo ja existe para n?o criar duplicado
         let video = card.querySelector('.video-preview-hover');
 
         if (!video) {
@@ -7025,7 +7285,7 @@ window.pararPreview = function(card) {
     const video = card.querySelector('.video-preview-hover');
     if (video) {
         video.pause();
-        video.currentTime = 0; // Volta para o in?cio
+        video.currentTime = 0; // Volta para o inicio
         video.remove(); // Remove o elemento para economizar mem?ria do navegador
     }
 };
@@ -7279,12 +7539,13 @@ window.monitorarNotificacoesGlobal = function(uid) {
         };
     }
 
-    const qRecebidos = query(collection(db, "pedidos"), where("para_uid", "==", resolvedUid));
-    const qRecebidosAlt = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
-    const qEnviados = query(collection(db, "pedidos"), where("de_uid", "==", resolvedUid));
-    const qEnviadosAlt = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
-    const qSociais = query(collection(db, "notificacoes"), where("para_uid", "==", resolvedUid), where("lida", "==", false));
-    const qSociaisAlt = query(collection(db, "notificacoes"), where("paraUid", "==", resolvedUid), where("lida", "==", false));
+    // Evita ruído de 400 em schemas sem colunas snake_case; mantém variantes camelCase/lowercase.
+    const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
+    const qRecebidosAlt = query(collection(db, "pedidos"), where("parauid", "==", resolvedUid));
+    const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
+    const qEnviadosAlt = query(collection(db, "pedidos"), where("deuid", "==", resolvedUid));
+    const qSociais = query(collection(db, "notificacoes"), where("paraUid", "==", resolvedUid), where("lida", "==", false));
+    const qSociaisAlt = query(collection(db, "notificacoes"), where("parauid", "==", resolvedUid), where("lida", "==", false));
     const LEGACY_NOTIF_COLLECTION = "notifica\u00E7\u00F5es";
     const qSociaisLegacy = query(collection(db, LEGACY_NOTIF_COLLECTION), where("parauid", "==", resolvedUid), where("lida", "==", false));
     const qSociaisLegacyAlt = query(collection(db, LEGACY_NOTIF_COLLECTION), where("paraUid", "==", resolvedUid), where("lida", "==", false));
@@ -7323,30 +7584,58 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
     };
 
+    // Badge no header mobile pode variar entre páginas:
+    // - Algumas usam o shell novo (.doke-mobile-header .doke-icon-btn)
+    // - Outras usam o header legado (.navbar-mobile .botoes-direita)
+    // Para evitar que a bolinha "suma" ao navegar entre HTMLs, sincronizamos ambos.
     const syncShellBadge = (href, total) => {
-        document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
-            let badge = link.querySelector('.doke-badge');
-            if (!badge) {
-                badge = document.createElement('span');
-                badge.className = 'doke-badge';
-                link.appendChild(badge);
-            }
-            if (total > 0) {
-                badge.innerText = total > 99 ? '99+' : String(total);
-                badge.style.display = 'flex';
-            } else {
-                badge.style.display = 'none';
-            }
-        });
+        const selectors = [
+            `.doke-mobile-header a.doke-icon-btn[href="${href}"]`,
+            `.navbar-mobile .botoes-direita a[href="${href}"]`,
+            `.navbar-mobile a[href="${href}"]`
+        ];
+
+        const style = `
+            position:absolute; top:-6px; right:-6px;
+            background:#ff2e63; color:#fff;
+            font-size:10px; font-weight:800;
+            min-width:18px; height:18px;
+            border-radius:999px;
+            display:none; align-items:center; justify-content:center;
+            border:2px solid #fff; z-index:999;
+            box-shadow:0 2px 6px rgba(0,0,0,.25);
+            padding:0 5px;
+        `;
+
+        document.querySelectorAll(selectors.join(','))
+            .forEach((link) => {
+                if (!link) return;
+                if (getComputedStyle(link).position === 'static') {
+                    link.style.position = 'relative';
+                }
+                let badge = link.querySelector('.doke-badge');
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'doke-badge';
+                    badge.style.cssText = style;
+                    link.appendChild(badge);
+                }
+                if (total > 0) {
+                    badge.innerText = total > 99 ? '99+' : String(total);
+                    badge.style.display = 'flex';
+                } else {
+                    badge.style.display = 'none';
+                }
+            });
     };
 
     const commitBadges = (notif, chat) => {
         const safeNotif = Math.max(0, Number(notif || 0) || 0);
         const safeChat = Math.max(0, Number(chat || 0) || 0);
         syncSidebarBadge('notificacoes.html', 'badge-sidebar', safeNotif);
-        syncSidebarBadge('chat.html', 'badge-chat-sidebar', safeChat);
+        syncSidebarBadge('mensagens.html', 'badge-chat-sidebar', safeChat);
         syncShellBadge('notificacoes.html', safeNotif);
-        syncShellBadge('chat.html', safeChat);
+        syncShellBadge('mensagens.html', safeChat);
         state.lastTotals = { notif: safeNotif, chat: safeChat };
         if (safeNotif > 0 || safeChat > 0) state.lastNonZeroAt = Date.now();
         writePersistedBadges(safeNotif, safeChat);
@@ -7896,7 +8185,7 @@ document.addEventListener("DOMContentLoaded", function() {
             // 3. Ao fechar a aba ou atualizar, marca como Offline
             window.addEventListener('beforeunload', () => {
                 // O navigator.sendBeacon ? mais confi?vel para fechamento de aba
-                // Mas como estamos usando Firestore SDK, tentamos o update padr?o:
+                // Mas como estamos usando Firestore SDK, tentamos o update padrao:
                 window.marcarComoOffline(user.uid);
             });
 
@@ -8243,7 +8532,7 @@ window.abrirFeedVideos = async function(idInicial) {
 
             // Dados Padr?o (Fallback)
             let fotoFinal = "https://placehold.co/150"; 
-            let nomeFinal = "Usu?rio Doke";
+            let nomeFinal = "Usuario Doke";
             let userFinal = "@usuario";
 
             // Se tiver UID, busca dados frescos do usu?rio
@@ -8468,7 +8757,7 @@ function ensureModalPostDetalhe() {
                 <div class="modal-footer-actions">
                     <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
                         <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
+						<i class='bx bx-message-rounded' onclick="toggleComentariosModal()" style="cursor:pointer;"></i>
                         <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
                     </div>
                     <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
@@ -8629,7 +8918,9 @@ window.abrirModalPost = async function(id, colecao) {
         }
 
         // --- CARREGA COMENT?RIOS ---
+        const listEl = document.getElementById('modalCommentsList');
         carregarComentariosNoModal(id, colecao);
+        if (listEl) listEl.dataset.loaded = "1";
 
     } catch(e) { console.error("Erro modal:", e); }
 }
@@ -9146,6 +9437,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     await verificarStatusLikeSupabase(publicacaoId);
     carregarComentariosSupabase(publicacaoId);
+    commentsList.dataset.loaded = "1";
 }
 // Fun??o para fechar clicando fora
 window.fecharModalPost = function(e) {
@@ -9221,7 +9513,7 @@ async function carregarReelsIndex() {
     if(!container) return;
 
     try {
-        // Busca os ?ltimos 10 reels de todos os usu?rios
+        // Busca os ?ltimos 10 reels de todos os usuarios
         const q = query(collection(db, "reels"), orderBy("data", "desc"), limit(10));
         const snapshot = await Promise.race([
             getDocs(q),
@@ -9770,7 +10062,7 @@ window.carregarStoriesGlobal = async function() {
 
         if (snapshot.empty) return;
 
-        // 4. Agrupa stories por Usu?rio (UID)
+        // 4. Agrupa stories por Usuario (UID)
         const storiesPorUsuario = {};
 
         snapshot.forEach(doc => {
@@ -9789,7 +10081,7 @@ window.carregarStoriesGlobal = async function() {
 
         // 5. Renderiza as bolinhas (Um por usu?rio)
         Object.values(storiesPorUsuario).forEach(grupo => {
-            // Ignora o pr?prio usu?rio no feed global (j? tem o bot?o "Seu Story")
+            // Ignora o pr?prio usu?rio no feed global (ja tem o bot?o "Seu Story")
             if (user && grupo.infoUser.uid === user.uid) return;
 
             // Pega o story mais recente para a borda ou l?gica de "visto"
@@ -10086,6 +10378,13 @@ window.fecharModalPostForce = function() {
     const modal = document.getElementById('modalPostDetalhe');
     if (modal) {
         modal.style.display = 'none';
+        const content = modal.querySelector('.modal-content');
+        const list = modal.querySelector('.modal-comments-section');
+        if (content) {
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+        }
+        if (list) list.dataset.loaded = "0";
         
         // Limpa v?deo/imagem para parar som
         const mediaBox = document.getElementById('modalMediaContainer');
@@ -10196,7 +10495,7 @@ window.toggleVerRespostas = function(parentId, btnElement) {
     const container = document.getElementById(`replies-${parentId}`);
     
     if (container.style.display === 'block') {
-        // Se j? est? aberto, esconde
+        // Se ja est? aberto, esconde
         container.style.display = 'none';
         btnElement.innerHTML = btnElement.innerHTML.replace("Esconder", "Ver");
     } else {
@@ -11049,8 +11348,22 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
         _abrirModalUnificadoOriginal(dadosRecebidos, tipo, colecao);
     }
 
+    // Mobile: por padrão, abre com comentários recolhidos (toggle no ícone de balão)
+    try {
+        const modal = document.getElementById('modalPostDetalhe');
+        const content = modal ? modal.querySelector('.modal-content') : null;
+        const list = document.getElementById('modalCommentsList');
+        if (content) {
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+            if (list) list.dataset.loaded = "1";
+        }
+    } catch (e) {}
+
     if (window.currentPostId && window.currentCollection) {
+        const list = document.getElementById('modalCommentsList');
         carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+        if (list) list.dataset.loaded = "1";
         if (auth.currentUser) verificarStatusLike(window.currentPostId, window.currentCollection, auth.currentUser.uid);
     }
     atualizarBotaoDenunciaPost();
@@ -11061,6 +11374,18 @@ window.abrirModalPost = async function(id, colecao) {
     if (typeof _abrirModalPostOriginal === "function") {
         await _abrirModalPostOriginal(id, colecao);
     }
+
+    // Mobile: abre recolhido
+    try {
+        const modal = document.getElementById('modalPostDetalhe');
+        const content = modal ? modal.querySelector('.modal-content') : null;
+        const list = document.getElementById('modalCommentsList');
+        if (content) {
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+            if (list) list.dataset.loaded = "1";
+        }
+    } catch (e) {}
     window.currentSupaPostType = null;
     window.currentSupaReelId = null;
     window.currentSupaReelAuthorId = null;
@@ -11077,7 +11402,54 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     if (typeof _abrirModalPublicacaoOriginal === "function") {
         await _abrirModalPublicacaoOriginal(publicacaoId);
     }
+
+    // Mobile: abre recolhido
+    try {
+        const modal = document.getElementById('modalPostDetalhe');
+        const content = modal ? modal.querySelector('.modal-content') : null;
+        const list = document.getElementById('modalCommentsList');
+        if (content) {
+            content.classList.remove('is-comments-collapsed');
+            content.classList.remove('is-comments-expanded');
+            if (list) list.dataset.loaded = "1";
+        }
+    } catch (e) {}
     atualizarBotaoDenunciaPost();
+};
+
+// Toggle de comentários no modal (mobile): usa o ícone de balão
+// - Ao recolher: a mídia ocupa o espaço
+// - Ao expandir: comentários reaparecem
+window.toggleComentariosModal = function() {
+    const modal = document.getElementById('modalPostDetalhe');
+    const content = modal ? modal.querySelector('.modal-content') : null;
+    if (!content) return;
+
+    content.classList.remove('is-comments-collapsed');
+    const expanded = content.classList.toggle('is-comments-expanded');
+    const list = modal.querySelector('.modal-comments-section');
+    const shouldLazyLoad = window.matchMedia('(max-width: 760px)').matches;
+    if (shouldLazyLoad && list && list.dataset.loaded !== "1") {
+        try {
+            if (window.currentPostSource === "supabase") {
+                if (window.currentSupaPostType === "videos_curtos" && window.currentSupaReelId) {
+                    carregarComentariosReelSupabase(window.currentSupaReelId);
+                } else if (window.currentSupaPublicacaoId) {
+                    carregarComentariosSupabase(window.currentSupaPublicacaoId);
+                }
+            } else if (window.currentCollection === "reels" && window.currentPostId) {
+                carregarComentariosReel(window.currentPostId);
+            } else if (window.currentPostId && window.currentCollection) {
+                carregarComentariosNoModal(window.currentPostId, window.currentCollection);
+            }
+            list.dataset.loaded = "1";
+        } catch (e) {}
+    }
+    if (list) {
+        setTimeout(() => {
+            try { if (expanded) list.scrollTop = 0; } catch (e) {}
+        }, 0);
+    }
 };
 
 window.verificarLikeComentario = async function(commentId, parentId, isReply) {
@@ -12692,7 +13064,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       carousel.appendChild(item);
     });
 
-    // Garante in?cio visual no primeiro item, sem "meio card" na esquerda.
+    // Garante inicio visual no primeiro item, sem "meio card" na esquerda.
     carousel.scrollLeft = 0;
   }
 
@@ -13093,15 +13465,15 @@ async function carregarComentariosSupabase(publicacaoId) {
   // ----------------------------
   // PESQUISA ESTILO INSTAGRAM (NO MENU LATERAL)
   // - Abre dentro do menu lateral (sem navegar)
-  // - Recentes separados: Usu?rios e An?ncios
+  // - Recentes separados: Usuarios e Anuncios
   // ----------------------------
   function initIgSidebarSearch(){
     const sidebar = document.querySelector('aside.sidebar-icones');
     if(!sidebar || sidebar.dataset.igSearchBound) return;
     sidebar.dataset.igSearchBound = '1';
 
-    const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // j? usado na busca inline
-    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de an?ncios
+    const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // ja usado na busca inline
+    const ADS_HIST_KEY  = 'doke_historico_busca';            // novo: termos de anuncios
     const MODE_KEY      = 'doke_ig_search_mode_v1';
 
     const readKey = (key, fb=[]) => {
@@ -13126,13 +13498,13 @@ async function carregarComentariosSupabase(publicacaoId) {
         </a>
       `;
       const logo = sidebar.querySelector('#logo');
-      // coloca "Pesquisar" logo abaixo do item "In?cio" (padr?o do menu)
+      // coloca "Pesquisar" logo abaixo do item "Inicio" (padrao do menu)
       const links = Array.from(sidebar.querySelectorAll('.item a'));
       const inicioLink = links.find(a => {
         const sp = a.querySelector('span');
         const label = (sp ? sp.textContent : '').trim().toLowerCase();
         const href = (a.getAttribute('href') || '').trim().toLowerCase();
-        return label === 'in?cio' || label === 'inicio' || href === 'index.html';
+        return label === 'inicio' || label === 'inicio' || href === 'index.html';
       });
       const inicioItem = inicioLink ? inicioLink.closest('.item') : null;
       if (inicioItem && inicioItem.parentNode === sidebar) {
@@ -13158,17 +13530,17 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>
 
         <div class="ig-search-inputwrap" role="search">
-          <label class="sr-only" for="igSearchInput">Pesquisar usu?rios</label>
+          <label class="sr-only" for="igSearchInput">Pesquisar usuarios</label>
           <i class='bx bx-search'></i>
-          <input class="ig-search-input" id="igSearchInput" name="igSearchInput" type="text" placeholder="Pesquisar usu?rios" autocomplete="off" />
+          <input class="ig-search-input" id="igSearchInput" name="igSearchInput" type="text" placeholder="Pesquisar usuarios" autocomplete="off" />
           <button class="ig-search-clear" type="button" aria-label="Limpar">
             <i class='bx bx-x'></i>
           </button>
         </div>
 
         <div class="ig-search-tabs" role="tablist" aria-label="Tipo de pesquisa">
-          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usu?rios</button>
-          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">An?ncios</button>
+          <button type="button" class="ig-tab is-active" data-mode="users" role="tab" aria-selected="true">Usuarios</button>
+          <button type="button" class="ig-tab" data-mode="ads" role="tab" aria-selected="false">Anuncios</button>
         </div>
 
         <div class="ig-search-body">
@@ -13222,7 +13594,7 @@ function syncClear(){
         t.classList.toggle('is-active', on);
         t.setAttribute('aria-selected', on ? 'true' : 'false');
       });
-      input.placeholder = mode === 'ads' ? 'Pesquisar an?ncios' : 'Pesquisar usu?rios';
+      input.placeholder = mode === 'ads' ? 'Pesquisar anuncios' : 'Pesquisar usuarios';
       syncClear();
       render();
       input.focus();
@@ -13264,7 +13636,7 @@ function syncClear(){
       const t = String(term||'').trim();
       if(t.length < 2) return;
 
-      // Mant?m em sincronia com o hist?rico global da busca
+      // Mant?m em sincronia com o historico global da busca
       try{ if(typeof window.salvarBusca === 'function') window.salvarBusca(t); }catch(_){}
 
       let arr = readAdsRecents();
@@ -13305,7 +13677,7 @@ function syncClear(){
         <div class="ig-empty">
           <i class='bx bx-time-five'></i>
           <div>
-            <div class="ig-empty-title">Sem hist?rico</div>
+            <div class="ig-empty-title">Sem historico</div>
             <div class="ig-empty-sub">Suas pesquisas recentes aparecem aqui.</div>
           </div>
         </div>
@@ -13325,15 +13697,15 @@ function syncClear(){
         recentsEl.innerHTML = users.slice(0, 12).map(u=>{
           const uid = escapeHtml(String(u.uid||''));
           const foto = escapeHtml(u.foto || `https://i.pravatar.cc/88?u=${encodeURIComponent(uid||'u')}`);
-          const handle = escapeHtml(u.handle || '@usuario');
+          const handle = escapeHtml(normalizeHandle(u.user || u.handle || 'usuario'));
           const nome = escapeHtml(u.nome || '');
-          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usu?rio'));
+          const sub = escapeHtml(u.isProf ? (u.nome ? u.nome : 'Profissional') : (u.nome ? u.nome : 'Usuario'));
           const goto = u.isProf ? `perfil-profissional.html?uid=${encodeURIComponent(u.uid||'')}` : `perfil-usuario.html?uid=${encodeURIComponent(u.uid||'')}`;
           return `
             <div class="ig-row" role="listitem" data-uid="${uid}" data-goto="${escapeHtml(goto)}">
               <img class="ig-avatar" src="${foto}" alt="">
               <div class="ig-main">
-                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usu?rio'}</span></div>
+                <div class="ig-line1"><span class="ig-handle">${handle}</span><span class="ig-badge ${u.isProf ? 'is-prof' : 'is-user'}">${u.isProf ? 'Profissional' : 'Usuario'}</span></div>
                 <div class="ig-line2">${nome || (u.isProf ? 'Conta profissional' : 'Conta')}</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
@@ -13365,7 +13737,7 @@ function syncClear(){
               <div class="ig-ico"><i class='bx bx-search'></i></div>
               <div class="ig-main">
                 <div class="ig-line1">${q}</div>
-                <div class="ig-line2">Pesquisar an?ncios</div>
+                <div class="ig-line2">Pesquisar anuncios</div>
               </div>
               <button class="ig-remove" type="button" aria-label="Remover"><i class='bx bx-x'></i></button>
             </div>
@@ -13394,7 +13766,7 @@ function syncClear(){
         <div class="ig-row ig-row-action" role="listitem" data-q="${escapeHtml(term)}">
           <div class="ig-ico"><i class='bx bx-right-arrow-alt'></i></div>
           <div class="ig-main">
-            <div class="ig-line1">Pesquisar an?ncios por ?${escapeHtml(term)}?</div>
+            <div class="ig-line1">Pesquisar anuncios por ?${escapeHtml(term)}?</div>
             <div class="ig-line2">Abrir resultados</div>
           </div>
         </div>
@@ -13437,7 +13809,7 @@ function syncClear(){
         const handle = normalizeHandle(u.user || (nomeFull ? String(nomeFull).split(' ')[0] : 'usuario'));
         const isProf = u.isProfissional === true;
         const categoria = u.categoria_profissional || 'Profissional';
-        const sub = isProf ? categoria : (nomeFull || 'Usu?rio');
+        const sub = isProf ? categoria : (nomeFull || 'Usuario');
         const goto = isProf ? `perfil-profissional.html?uid=${encodeURIComponent(uid)}` : `perfil-usuario.html?uid=${encodeURIComponent(uid)}`;
         return `
           <div class="ig-row ig-row-user" role="listitem"
@@ -13449,8 +13821,8 @@ function syncClear(){
                data-goto="${escapeHtml(goto)}">
             <img class="ig-avatar" src="${escapeHtml(foto)}" alt="">
             <div class="ig-main">
-              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usu?rio'}</span></div>
-              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usu?rio'))}</div>
+              <div class="ig-line1"><span class="ig-handle">${escapeHtml(handle)}</span><span class="ig-badge ${isProf ? 'is-prof' : 'is-user'}">${isProf ? 'Profissional' : 'Usuario'}</span></div>
+              <div class="ig-line2">${escapeHtml(nomeFull || (isProf ? categoria : 'Usuario'))}</div>
             </div>
           </div>
         `;
@@ -13464,7 +13836,7 @@ function syncClear(){
           const foto = row.getAttribute('data-foto') || '';
           const isProf = row.getAttribute('data-isprof') === '1';
           const goto = row.getAttribute('data-goto') || '';
-          // salva no hist?rico
+          // salva no historico
           let arr = readUserRecents();
           arr = arr.filter(x => String(x.uid||'') !== String(uid));
           arr = [{
@@ -13558,7 +13930,7 @@ function syncClear(){
 
 function buildPvQuickSearchSection(anchorSection, mountEl){
       if (!isHome()) return;
-      // Busca r?pida (dentro do "Para voc?" por padr?o)
+      // Busca r?pida (dentro do "Para voc?" por padrao)
       if (document.getElementById('pvQuickSearchSection')) return;
 
       // ---- Pesquisa estilo Instagram no menu lateral (abre dentro do menu) ----
@@ -13579,7 +13951,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
           <div class="pv-inline-toggles" role="tablist" aria-label="Filtrar busca">
             <button type="button" class="pv-toggle is-active" data-mode="pro" role="tab" aria-selected="true">Profissionais</button>
-            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usu?rios</button>
+            <button type="button" class="pv-toggle" data-mode="user" role="tab" aria-selected="false">Usuarios</button>
           </div>
         </div>
 
@@ -13628,7 +14000,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
           b.classList.toggle('is-active', on);
           b.setAttribute('aria-selected', on ? 'true' : 'false');
         });
-        input.placeholder = mode === 'pro' ? 'Buscar profissionais...' : 'Buscar usu?rios...';
+        input.placeholder = mode === 'pro' ? 'Buscar profissionais...' : 'Buscar usuarios...';
         results.innerHTML = '';
         renderHistory();
         if (input.value.trim().length >= 2) run();
@@ -13698,7 +14070,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
         const users = arr.filter(x => x.t === 'user');
         const terms = arr.filter(x => x.t === 'term');
 
-        // regra: mostrar hist?rico "de usu?rios" primeiro; termos s? se n?o houver usu?rios
+        // regra: mostrar historico "de usuarios" primeiro; termos s? se n?o houver usuarios
         const showUsers = users.length > 0;
         const list = showUsers ? users : terms;
 
@@ -13776,7 +14148,7 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
 
         results.innerHTML = list.map(buildUserCardMini).join('');
 
-        // captura clique pra salvar hist?rico de perfil antes do redirect
+        // captura clique pra salvar historico de perfil antes do redirect
         results.querySelectorAll('.pv-user-card').forEach(card=>{
           card.addEventListener('click', ()=>{
             try{
@@ -14134,6 +14506,35 @@ function agruparProfissionais(anuncios) {
   }));
 }
 
+// Regras de transição entre "Novos" e "Destaque"
+const PRO_RULES = {
+  // Profissional fica em "Novos" somente nesse período (sem avaliações)
+  NOVO_MAX_DIAS: 30,
+  // Ao receber a 1ª avaliação, sai de "Novos" e vai para "Destaque"
+  DESTAQUE_MIN_AVALIACOES: 1
+};
+
+function parseDateMs(value){
+  if(!value) return 0;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function isProfissionalNovo(p, nowMs){
+  const n = Number(p?.numAvaliacoes || 0);
+  if (n > 0) return false;
+  const createdMs = parseDateMs(p?.dataCriacao);
+  // Sem data válida: mantém como "novo" para não sumir injustamente.
+  if (!createdMs) return true;
+  const ageDays = (nowMs - createdMs) / 86400000;
+  return ageDays <= PRO_RULES.NOVO_MAX_DIAS;
+}
+
+function isProfissionalDestaque(p){
+  const n = Number(p?.numAvaliacoes || 0);
+  return n >= PRO_RULES.DESTAQUE_MIN_AVALIACOES;
+}
+
 /*************************************************
  * CARREGA PROFISSIONAIS NO INDEX
  *************************************************/
@@ -14172,16 +14573,21 @@ async function carregarProfissionaisIndex() {
   }
 
   const profs = agruparProfissionais(anuncios || []);
+  const nowMs = Date.now();
 
-  // ? Destaque = s? quem tem avalia??o
+  // Destaque = já recebeu avaliações (regra de promoção automática)
   const destaque = profs
-    .filter(p => p.numAvaliacoes > 0)
-    .sort((a, b) => b.mediaAvaliacao - a.mediaAvaliacao)
+    .filter(isProfissionalDestaque)
+    .sort((a, b) => {
+      const byNota = (b.mediaAvaliacao || 0) - (a.mediaAvaliacao || 0);
+      if (byNota !== 0) return byNota;
+      return (b.numAvaliacoes || 0) - (a.numAvaliacoes || 0);
+    })
     .slice(0, 10);
 
-  // ?? Novos = sem avalia??o
+  // Novos = sem avaliação e dentro da janela de novos
   const novos = profs
-    .filter(p => p.numAvaliacoes === 0)
+    .filter(p => isProfissionalNovo(p, nowMs))
     .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
     .slice(0, 10);
 
@@ -14205,7 +14611,7 @@ async function carregarProfissionaisIndex() {
         <i class='bx bx-user-plus'></i>
         <div class="pros-empty-text">
           <div class="pros-empty-title">Ainda não há profissionais novos cadastrados.</div>
-          <div class="pros-empty-sub">Quer aparecer aqui? Complete seu cadastro profissional.</div>
+          <div class="pros-empty-sub">Sem avaliações nos primeiros ${PRO_RULES.NOVO_MAX_DIAS} dias aparecem aqui.</div>
         </div>
         <a class="pros-empty-btn" href="tornar-profissional.html">Começar</a>
       </div>
@@ -14229,7 +14635,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 /*************************************************
  * NEG?CIOS (negocios.html / perfil-empresa.html / negocio.html)
- * - Sem WhatsApp: CTA sempre leva para chat.html
+ * - Sem WhatsApp: CTA sempre leva para mensagens.html
  * - Localiza??o: usa CEP salvo e bot?o "Usar localiza??o atual" (geo)
  *************************************************/
 (function(){
@@ -14277,7 +14683,7 @@ document.addEventListener('DOMContentLoaded', function(){
   }
 
   function toast(msg){
-    // usa o toast j? existente no projeto, se tiver
+    // usa o toast ja existente no projeto, se tiver
     if (typeof window.mostrarToast === 'function') { window.mostrarToast(msg); return; }
     const el = document.createElement('div');
     el.textContent = msg;
@@ -14316,7 +14722,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <div class="neg-loc">${escapeHtml(loc||'')}&nbsp;</div>
           <div class="neg-actions">
             <a class="btn btn-primary" href="negocio.html?id=${encodeURIComponent(id||'')}">Ver</a>
-            <a class="btn btn-ghost" href="chat.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
+            <a class="btn btn-ghost" href="mensagens.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
           </div>
         </div>
       </article>
@@ -14500,7 +14906,7 @@ document.addEventListener('DOMContentLoaded', function(){
       if (desc) desc.textContent = data.descricao || 'Sem descri??o.';
       if (meta) meta.textContent = [data.bairro, data.cidade, data.estado].filter(Boolean).join(', ');
       const chatBtn = root.querySelector('[data-chat]');
-      if (chatBtn) chatBtn.href = `chat.html?negocio_id=${encodeURIComponent(id)}`;
+      if (chatBtn) chatBtn.href = `mensagens.html?negocio_id=${encodeURIComponent(id)}`;
     }catch(err){
       console.warn('negocio load error', err);
     }
@@ -14566,3 +14972,82 @@ document.addEventListener('DOMContentLoaded', function(){
     toUpgrade();
   }, true);
 });
+
+
+// -----------------------------
+// App install banner (mobile/tablet)
+// -----------------------------
+(function(){
+  try{
+    const mq = window.matchMedia && window.matchMedia("(max-width: 1024px)");
+    if(!mq || !mq.matches) return;
+    const key = "doke_hide_app_banner_v1";
+    if(localStorage.getItem(key)==="1") return;
+
+    // Fixed banner height so we can offset the header immediately (prevents header "disappearing" on load).
+    const BANNER_H = 56; // px
+
+    const header = document.querySelector("header") || document.querySelector(".topbar") || document.body;
+    const banner = document.createElement("div");
+    banner.className = "doke-app-banner";
+    banner.innerHTML = `
+      <div class="doke-app-banner__left">
+        <div class="doke-app-banner__icon">doke</div>
+        <div class="doke-app-banner__txt">
+          <strong>Baixe o app</strong>
+          <span>Experiencia melhor no celular</span>
+        </div>
+      </div>
+      <div class="doke-app-banner__right">
+        <a class="doke-app-banner__btn" href="#" role="button">Baixar</a>
+        <button class="doke-app-banner__close" type="button" aria-label="Fechar">✕</button>
+      </div>
+    `;
+    const closeBtn = banner.querySelector(".doke-app-banner__close");
+    closeBtn && closeBtn.addEventListener("click", ()=>{
+      localStorage.setItem(key,"1");
+      banner.remove();
+      try{
+        document.documentElement.classList.remove('has-doke-app-banner');
+        document.documentElement.style.removeProperty('--doke-app-banner-h');
+        try{
+          const headerEl = document.querySelector('header') || document.querySelector('.topbar');
+          if(headerEl){ headerEl.style.top = ''; headerEl.style.marginTop = ''; }
+        }catch(__){ }
+      }catch(_){ }
+    });
+    const btn = banner.querySelector(".doke-app-banner__btn");
+    btn && btn.addEventListener("click", (e)=>{
+      const url = (window.DOKE_APP_DOWNLOAD_URL || "").toString().trim();
+      if(!url || url==="#" ){
+        e.preventDefault();
+        if(typeof window.toast === "function") window.toast("Link do app ainda nao configurado.");
+        return;
+      }
+      btn.href = url;
+      btn.target = "_blank";
+      btn.rel = "noopener";
+    });
+
+    // Apply offset BEFORE inserting the banner to avoid overlap flicker.
+    document.documentElement.classList.add('has-doke-app-banner');
+    document.documentElement.style.setProperty('--doke-app-banner-h', BANNER_H + 'px');
+
+    // Always mount banner at the very top of <body> (above fixed headers).
+    document.body.prepend(banner);
+
+    // update on resize
+    mq.addEventListener && mq.addEventListener("change", (ev)=>{
+      if(!ev.matches) {
+        banner.remove();
+        document.documentElement.classList.remove('has-doke-app-banner');
+        document.documentElement.style.removeProperty('--doke-app-banner-h');
+        try{
+          const headerEl = document.querySelector('header') || document.querySelector('.topbar');
+          if(headerEl){ headerEl.style.top = ''; headerEl.style.marginTop = ''; }
+        }catch(__){ }
+      }
+    });
+  }catch(_){}
+})();
+

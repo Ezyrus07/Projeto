@@ -299,17 +299,7 @@ main.enderecos-main{
 <div class="item" id="pvSearchSidebarItem"><a aria-label="Pesquisar" class="pv-search-toggle" href="#"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
 <div class="item"><a href="empresas.html"><i class="bx bx-store icon verde"></i><span>Empresas</span></a></div>
 <div class="item"><a href="notificacoes.html"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a></div>
-<div class="item">
-<a href="mensagens.html">
-<i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span>
-</a>
-</div>
-<div class="item">
-<a href="pedidos.html">
-<i class="bx bx-package icon verde"></i>
-<span>Pedidos</span>
-</a>
-</div>
+<div class="item"><a href="chat.html"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a></div>
 <div class="item"><a href="comunidade.html"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a></div>
 <div class="item"><a href="#" onclick="irParaMeuPerfil(event)"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
 <div class="item"><a href="mais.html"><i class="bx bx-menu icon azul"></i><span>Mais</span></a></div>
@@ -394,6 +384,7 @@ main.enderecos-main{
 </aside><section class="settings-main"><div class="settings-hero"><button aria-label="Abrir menu" class="settings-burger" id="settingsBurger" type="button"><i class="bx bx-menu"></i></button><div><h1>Endereços</h1><p>Salve mais de um local e use no orçamento com 1 toque.</p></div></div><div class="settings-frame-card"><section class="addr-wrap">
 <div class="addr-toolbar">
 <input class="addr-search" id="addrSearch" placeholder="Buscar por apelido, rua, bairro ou cidade" type="text"/>
+<button class="addr-action secondary" id="btnVoltarAnunciar" style="display:none;" type="button"><i class="bx bx-arrow-back"></i> Voltar ao anúncio</button>
 <button class="addr-action" id="btnNovoEndereco" type="button"><i class="bx bx-plus"></i> Novo endereço</button>
 </div>
 <form class="addr-form" id="addrForm">
@@ -448,6 +439,9 @@ main.enderecos-main{
   const FORM_ID = "addrForm";
   const LIST_ID = "addrList";
   const SEARCH_ID = "addrSearch";
+  const URL_PARAMS = new URLSearchParams(window.location.search);
+  const CAME_FROM_ANUNCIAR = URL_PARAMS.get("from") === "anunciar";
+  const RETURN_TO = String(URL_PARAMS.get("return") || "anunciar.html?from_enderecos=1").trim();
   const STATE = {
     editingId: "",
     list: []
@@ -479,29 +473,26 @@ main.enderecos-main{
   function getStorageKey(){
     return "doke_address_book_" + getCurrentUid();
   }
+  function getSelectedStorageKey(){
+    return "doke_selected_address_" + getCurrentUid();
+  }
 
   function looksLikeUuid(value){
     return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(value || "").trim());
   }
 
   function sanitizeAddress(addr){
-    const enderecoVal = String((addr && (addr.endereço || addr.endereco)) || "").trim();
-    const numeroVal = String((addr && (addr.número || addr.numero)) || "").trim();
-    const updatedVal = String((addr && (addr.updatedAt || addr.updated_at)) || new Date().toISOString());
     return {
-      id: String((addr && addr.id) || ("addr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8))),
-      label: String((addr && (addr.label || addr.apelido)) || "").trim(),
-      cep: normalizeCep((addr && addr.cep) || ""),
-      endereco: enderecoVal,
-      numero: numeroVal,
-      endereço: enderecoVal,
-      número: numeroVal,
-      complemento: String((addr && addr.complemento) || "").trim(),
-      referencia: String((addr && addr.referencia) || "").trim(),
-      info: String((addr && addr.info) || "").trim(),
-      principal: !!(addr && addr.principal),
-      updatedAt: updatedVal,
-      updated_at: updatedVal
+      id: String(addr?.id || ("addr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8))),
+      label: String(addr?.label || addr?.apelido || "").trim(),
+      cep: normalizeCep(addr?.cep || ""),
+      endereco: String(addr?.endereco || addr?.endereço || "").trim(),
+      numero: String(addr?.numero || addr?.número || "").trim(),
+      complemento: String(addr?.complemento || "").trim(),
+      referencia: String(addr?.referencia || "").trim(),
+      info: String(addr?.info || "").trim(),
+      principal: !!addr?.principal,
+      updatedAt: String(addr?.updatedAt || addr?.updated_at || new Date().toISOString())
     };
   }
 
@@ -532,7 +523,7 @@ main.enderecos-main{
   }
 
   function enderecoResumo(addr){
-    const p1 = [addr.endereço, addr.número ? ("Nº " + addr.número) : ""].filter(Boolean).join(", ");
+    const p1 = [addr.endereco, addr.numero ? ("Nº " + addr.numero) : ""].filter(Boolean).join(", ");
     const p2 = [addr.complemento, addr.referencia].filter(Boolean).join(" • ");
     return { p1, p2, info: String(addr.info || "").trim() };
   }
@@ -549,7 +540,7 @@ main.enderecos-main{
     if (!q) return list;
     return list.filter((addr) => {
       const hay = [
-        addr.label, addr.cep, addr.endereço, addr.número, addr.complemento, addr.referencia, addr.info
+        addr.label, addr.cep, addr.endereco, addr.numero, addr.complemento, addr.referencia, addr.info
       ].join(" ").toLowerCase();
       return hay.includes(q);
     });
@@ -592,8 +583,8 @@ main.enderecos-main{
   function fillForm(addr){
     document.getElementById("addrLabel").value = addr?.label || "";
     document.getElementById("addrCep").value = addr?.cep || "";
-    document.getElementById("addrEndereco").value = addr?.endereço || "";
-    document.getElementById("addrNumero").value = addr?.número || "";
+    document.getElementById("addrEndereco").value = addr?.endereco || "";
+    document.getElementById("addrNumero").value = addr?.numero || "";
     document.getElementById("addrComplemento").value = addr?.complemento || "";
     document.getElementById("addrReferencia").value = addr?.referencia || "";
     document.getElementById("addrInfo").value = addr?.info || "";
@@ -604,8 +595,8 @@ main.enderecos-main{
       id: STATE.editingId || "",
       label: document.getElementById("addrLabel").value,
       cep: document.getElementById("addrCep").value,
-      endereço: document.getElementById("addrEndereco").value,
-      número: document.getElementById("addrNumero").value,
+      endereco: document.getElementById("addrEndereco").value,
+      numero: document.getElementById("addrNumero").value,
       complemento: document.getElementById("addrComplemento").value,
       referencia: document.getElementById("addrReferencia").value,
       info: document.getElementById("addrInfo").value
@@ -613,7 +604,7 @@ main.enderecos-main{
   }
 
   function formIsValid(addr){
-    return !!(String(addr.cep || "").replace(/\D/g, "").length === 8 && String(addr.endereço || "").trim() && String(addr.número || "").trim());
+    return !!(String(addr.cep || "").replace(/\D/g, "").length === 8 && String(addr.endereco || "").trim() && String(addr.numero || "").trim());
   }
 
   function closeForm(){
@@ -650,8 +641,8 @@ main.enderecos-main{
         id: row.id,
         label: row.apelido || "",
         cep: row.cep || "",
-        endereço: row.endereco || row.endereço || "",
-        número: row.numero || row.número || "",
+        endereco: row.endereco || "",
+        numero: row.numero || "",
         complemento: row.complemento || "",
         referencia: row.referencia || "",
         info: row.info || "",
@@ -675,8 +666,8 @@ main.enderecos-main{
         uid: looksLikeUuid(uid) ? uid : null,
         apelido: addr.label || "",
         cep: addr.cep || "",
-        endereco: addr.endereço || addr.endereco || "",
-        numero: addr.número || addr.numero || "",
+        endereco: addr.endereco || "",
+        numero: addr.numero || "",
         complemento: addr.complemento || "",
         referencia: addr.referencia || "",
         info: addr.info || "",
@@ -789,6 +780,15 @@ main.enderecos-main{
   }
 
   function wireEvents(){
+    if (CAME_FROM_ANUNCIAR) {
+      const backBtn = document.getElementById("btnVoltarAnunciar");
+      if (backBtn) {
+        backBtn.style.display = "inline-flex";
+        backBtn.addEventListener("click", () => {
+          window.location.href = RETURN_TO;
+        });
+      }
+    }
     document.getElementById("btnNovoEndereco")?.addEventListener("click", () => openForm(null));
     document.getElementById("btnCancelarEndereco")?.addEventListener("click", () => closeForm());
     document.getElementById(FORM_ID)?.addEventListener("submit", (e) => {
@@ -803,9 +803,18 @@ main.enderecos-main{
     document.getElementById(LIST_ID)?.addEventListener("click", (ev) => {
       const btn = ev.target.closest("button[data-action]");
       const card = ev.target.closest(".addr-card");
-      if (!btn || !card) return;
+      if (!card) return;
       const id = String(card.dataset.id || "");
       if (!id) return;
+      if (!btn && CAME_FROM_ANUNCIAR) {
+        const found = STATE.list.find((x) => String(x.id) === id);
+        if (found) {
+          localStorage.setItem(getSelectedStorageKey(), JSON.stringify(sanitizeAddress(found)));
+          window.location.href = RETURN_TO;
+        }
+        return;
+      }
+      if (!btn) return;
       const action = String(btn.dataset.action || "");
       if (action === "principal") {
         markAsPrincipal(id).catch((e) => console.error(e));

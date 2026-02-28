@@ -211,7 +211,7 @@
         el("a", { class:"btn-action ghost", href: `negócio.html?id=${encodeURIComponent(n.id||"")}` }, [
           el("i", { class:"bx bx-store" }), " Ver negócio"
         ]),
-        el("a", { class:"btn-action primary", href: `mensagens.html?negócio=${encodeURIComponent(n.id||"")}` }, [
+        el("a", { class:"btn-action primary", href: `chat.html?negócio=${encodeURIComponent(n.id||"")}` }, [
           el("i", { class:"bx bx-chat" }), " Chat"
         ])
       ])

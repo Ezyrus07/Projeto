@@ -157,7 +157,7 @@
     if (ratingText) metaBits.push(`<span><i class='bx bx-star'></i> ${ratingText}</span>`);
 
     const hrefPerfil = b.id ? `negócio.html?id=${encodeURIComponent(b.id)}` : "negócio.html";
-    const hrefChat = b.id ? `mensagens.html?negocio_id=${encodeURIComponent(b.id)}` : "mensagens.html";
+    const hrefChat = b.id ? `chat.html?negocio_id=${encodeURIComponent(b.id)}` : "chat.html";
 
     return `
       <article class="neg-card">

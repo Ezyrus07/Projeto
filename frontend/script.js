@@ -484,45 +484,170 @@ async function dokeHydrateCompatAuthFromSession() {
 })();
 
 // =========================================================
-// Modal de Detalhes (abre detalhes.html em um iframe sem sair da página)
+// Modal de Detalhes (abre detalhes.html em overlay sem sair da pagina)
 // =========================================================
 window.openDetalhesModal = function(url) {
   try {
     if (!url) return;
     const u = new URL(url, window.location.href);
-    if (!u.searchParams.has('embed')) u.searchParams.set('embed', '1');
+    if (!/\/detalhes\.html$/i.test(u.pathname)) {
+      window.location.href = u.toString();
+      return;
+    }
+    if (!u.searchParams.has("embed")) u.searchParams.set("embed", "1");
 
-    const existing = document.getElementById('doke-detalhes-overlay');
-    if (existing) existing.remove();
+    if (typeof window.__dokeDetalhesModalClose === "function") {
+      try { window.__dokeDetalhesModalClose({ immediate: true }); } catch (_) {}
+    }
 
-    const overlay = document.createElement('div');
-    overlay.id = 'doke-detalhes-overlay';
-    overlay.innerHTML = `
-      <div class="doke-modal-backdrop" data-close="1"></div>
-      <div class="doke-modal-shell" role="dialog" aria-modal="true">
-        <button class="doke-modal-close" aria-label="Fechar" data-close="1">×</button>
-        <iframe class="doke-modal-iframe" src="${u.toString()}" title="Detalhes"></iframe>
-      </div>
-    `;
+    const overlay = document.createElement("div");
+    overlay.id = "doke-detalhes-overlay";
+
+    const backdrop = document.createElement("button");
+    backdrop.type = "button";
+    backdrop.className = "doke-modal-backdrop";
+    backdrop.setAttribute("aria-label", "Fechar detalhes");
+
+    const shell = document.createElement("section");
+    shell.className = "doke-modal-shell";
+    shell.setAttribute("role", "dialog");
+    shell.setAttribute("aria-modal", "true");
+    shell.setAttribute("aria-label", "Detalhes do servico");
+
+    const head = document.createElement("div");
+    head.className = "doke-modal-head";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "doke-modal-close";
+    closeBtn.setAttribute("aria-label", "Fechar");
+    closeBtn.textContent = "x";
+
+    const frame = document.createElement("iframe");
+    frame.className = "doke-modal-iframe";
+    frame.title = "Detalhes";
+    frame.loading = "eager";
+    frame.src = u.toString();
+
+    head.appendChild(closeBtn);
+    shell.appendChild(head);
+    shell.appendChild(frame);
+    overlay.appendChild(backdrop);
+    overlay.appendChild(shell);
+
+    // Desktop: nao cobre o menu lateral
+    try {
+      if (window.matchMedia && window.matchMedia("(min-width: 1025px)").matches) {
+        const side = document.querySelector(".sidebar-icones");
+        if (side) {
+          const rect = side.getBoundingClientRect();
+          const leftOffset = Math.max(0, Math.round(rect.right));
+          if (leftOffset > 40 && leftOffset < (window.innerWidth - 240)) {
+            overlay.style.left = `${leftOffset}px`;
+          }
+        }
+      }
+    } catch (_) {}
+
+    // Lock forte do scroll do fundo (mantem so o detalhes rolando)
+    const prevBodyPos = document.body.style.position || "";
+    const prevBodyTop = document.body.style.top || "";
+    const prevBodyLeft = document.body.style.left || "";
+    const prevBodyRight = document.body.style.right || "";
+    const prevBodyWidth = document.body.style.width || "";
+    const prevBodyOverflow = document.body.style.overflow || "";
+    const prevHtmlOverflow = document.documentElement.style.overflow || "";
+    const scrollY = window.scrollY || window.pageYOffset || 0;
+    document.body.dataset.dokeModalScrollY = String(scrollY);
+    document.body.style.position = "fixed";
+    document.body.style.top = `-${scrollY}px`;
+    document.body.style.left = "0";
+    document.body.style.right = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
+
     document.body.appendChild(overlay);
-    document.body.classList.add('doke-modal-open');
+    document.body.classList.add("doke-modal-open");
+    requestAnimationFrame(() => overlay.classList.add("is-open"));
 
-    const close = () => {
-      document.body.classList.remove('doke-modal-open');
-      overlay.remove();
-      document.removeEventListener('keydown', onKey);
+    let closed = false;
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        close();
+      }
     };
-    const onKey = (e) => { if (e.key === 'Escape') close(); };
-    document.addEventListener('keydown', onKey);
+    const close = (opts = {}) => {
+      if (closed) return;
+      closed = true;
+      document.removeEventListener("keydown", onKey, true);
+      document.body.classList.remove("doke-modal-open");
+      document.body.style.position = prevBodyPos;
+      document.body.style.top = prevBodyTop;
+      document.body.style.left = prevBodyLeft;
+      document.body.style.right = prevBodyRight;
+      document.body.style.width = prevBodyWidth;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
+      const restoreY = parseInt(document.body.dataset.dokeModalScrollY || "0", 10);
+      delete document.body.dataset.dokeModalScrollY;
+      try { window.scrollTo(0, Number.isFinite(restoreY) ? restoreY : 0); } catch (_) {}
+      overlay.classList.remove("is-open");
+      if (opts.immediate) {
+        overlay.remove();
+      } else {
+        setTimeout(() => overlay.remove(), 160);
+      }
+      if (window.__dokeDetalhesModalClose === close) {
+        window.__dokeDetalhesModalClose = null;
+      }
+    };
 
-    overlay.addEventListener('click', (e) => {
-      const t = e.target;
-      if (t && t.getAttribute && t.getAttribute('data-close') === '1') close();
-    });
+    window.__dokeDetalhesModalClose = close;
+    window.closeDetalhesModal = close;
+    document.addEventListener("keydown", onKey, true);
+    backdrop.addEventListener("click", () => close());
+    closeBtn.addEventListener("click", () => close());
+    const preventBgScroll = (e) => {
+      if (!shell.contains(e.target)) e.preventDefault();
+    };
+    overlay.addEventListener("wheel", preventBgScroll, { passive: false });
+    overlay.addEventListener("touchmove", preventBgScroll, { passive: false });
   } catch (err) {
     window.location.href = url;
   }
 };
+
+(function dokeInitDetalhesModalDelegation() {
+  if (window.__dokeDetalhesModalDelegationInit) return;
+  window.__dokeDetalhesModalDelegationInit = true;
+
+  document.addEventListener("click", (event) => {
+    if (event.defaultPrevented || event.button !== 0) return;
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    if (!event.target || !event.target.closest) return;
+
+    const anchor = event.target.closest("a[href]");
+    if (!anchor) return;
+    const hrefRaw = String(anchor.getAttribute("href") || "").trim();
+    if (!hrefRaw || hrefRaw.startsWith("#") || hrefRaw.startsWith("javascript:")) return;
+    if (hrefRaw.startsWith("mailto:") || hrefRaw.startsWith("tel:")) return;
+    if (anchor.hasAttribute("download")) return;
+
+    const targetAttr = String(anchor.getAttribute("target") || "").toLowerCase();
+    if (targetAttr && targetAttr !== "_self") return;
+
+    let targetUrl;
+    try { targetUrl = new URL(hrefRaw, window.location.href); } catch (_) { return; }
+    if (targetUrl.origin !== window.location.origin) return;
+    if (!/\/detalhes\.html$/i.test(targetUrl.pathname)) return;
+    if (/\/detalhes\.html$/i.test(window.location.pathname)) return;
+
+    event.preventDefault();
+    window.openDetalhesModal(targetUrl.toString());
+  }, true);
+})();
 
 
 // Protege export helpers: N?O sobrescreva o bridge (firebase-compat-supabase.js)
@@ -1643,9 +1768,25 @@ window.dokeBuildCardPremium = function(anuncio) {
       return `<i class='bx ${isOn ? "bxs-star" : "bx-star"}'></i>`;
     }).join("");
 
-    const fotos = Array.isArray(anuncio.fotos) && anuncio.fotos.length
-      ? anuncio.fotos
-      : [anuncio.img || "https://placehold.co/900x600?text=Sem+Imagem"];
+    const normalizeFotosAnuncio = (value) => {
+      if (Array.isArray(value)) return value.map(v => String(v || "").trim()).filter(Boolean);
+      if (typeof value === "string") {
+        const raw = value.trim();
+        if (!raw) return [];
+        if ((raw.startsWith("[") && raw.endsWith("]")) || (raw.startsWith('"') && raw.endsWith('"'))) {
+          try {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed)) return parsed.map(v => String(v || "").trim()).filter(Boolean);
+            if (typeof parsed === "string" && parsed.trim()) return [parsed.trim()];
+          } catch (_) {}
+        }
+        return [raw];
+      }
+      return [];
+    };
+    const fotosRaw = normalizeFotosAnuncio(anuncio.fotos);
+    const fotoFallback = String(anuncio.img || anuncio.imagem || anuncio.foto || anuncio.capa || "").trim();
+    const fotos = fotosRaw.length ? fotosRaw : [fotoFallback || "https://placehold.co/900x600?text=Sem+Imagem"];
     const jsonFotos = JSON.stringify(fotos).replace(/"/g, '&quot;');
     const fotoPrincipal = String(fotos[0] || "");
     const fotosExtras = Math.max(0, fotos.length - 1);
@@ -1758,7 +1899,11 @@ window.dokeBuildCardPremium = function(anuncio) {
         ratingBtn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          window.location.href = detalhesReviewsUrl;
+          if (typeof window.openDetalhesModal === "function") {
+            window.openDetalhesModal(detalhesReviewsUrl);
+          } else {
+            window.location.href = detalhesReviewsUrl;
+          }
         });
       }
 
@@ -1810,7 +1955,11 @@ window.dokeBuildCardPremium = function(anuncio) {
             'button,a,input,textarea,select,label,.cp-more,.cp-fav-btn,.cp-rating-link,.js-card-categoria,.js-card-tag,.img-cover,.cp-v2-moreCount,.js-user-link'
           );
           if (interactive) return;
-          window.location.href = detalhesBaseUrl;
+          if (typeof window.openDetalhesModal === "function") {
+            window.openDetalhesModal(detalhesBaseUrl);
+          } else {
+            window.location.href = detalhesBaseUrl;
+          }
         });
       }
     } catch (_) {}
@@ -14357,6 +14506,35 @@ function agruparProfissionais(anuncios) {
   }));
 }
 
+// Regras de transição entre "Novos" e "Destaque"
+const PRO_RULES = {
+  // Profissional fica em "Novos" somente nesse período (sem avaliações)
+  NOVO_MAX_DIAS: 30,
+  // Ao receber a 1ª avaliação, sai de "Novos" e vai para "Destaque"
+  DESTAQUE_MIN_AVALIACOES: 1
+};
+
+function parseDateMs(value){
+  if(!value) return 0;
+  const ms = new Date(value).getTime();
+  return Number.isFinite(ms) ? ms : 0;
+}
+
+function isProfissionalNovo(p, nowMs){
+  const n = Number(p?.numAvaliacoes || 0);
+  if (n > 0) return false;
+  const createdMs = parseDateMs(p?.dataCriacao);
+  // Sem data válida: mantém como "novo" para não sumir injustamente.
+  if (!createdMs) return true;
+  const ageDays = (nowMs - createdMs) / 86400000;
+  return ageDays <= PRO_RULES.NOVO_MAX_DIAS;
+}
+
+function isProfissionalDestaque(p){
+  const n = Number(p?.numAvaliacoes || 0);
+  return n >= PRO_RULES.DESTAQUE_MIN_AVALIACOES;
+}
+
 /*************************************************
  * CARREGA PROFISSIONAIS NO INDEX
  *************************************************/
@@ -14395,16 +14573,21 @@ async function carregarProfissionaisIndex() {
   }
 
   const profs = agruparProfissionais(anuncios || []);
+  const nowMs = Date.now();
 
-  // ? Destaque = s? quem tem avalia??o
+  // Destaque = já recebeu avaliações (regra de promoção automática)
   const destaque = profs
-    .filter(p => p.numAvaliacoes > 0)
-    .sort((a, b) => b.mediaAvaliacao - a.mediaAvaliacao)
+    .filter(isProfissionalDestaque)
+    .sort((a, b) => {
+      const byNota = (b.mediaAvaliacao || 0) - (a.mediaAvaliacao || 0);
+      if (byNota !== 0) return byNota;
+      return (b.numAvaliacoes || 0) - (a.numAvaliacoes || 0);
+    })
     .slice(0, 10);
 
-  // ?? Novos = sem avalia??o
+  // Novos = sem avaliação e dentro da janela de novos
   const novos = profs
-    .filter(p => p.numAvaliacoes === 0)
+    .filter(p => isProfissionalNovo(p, nowMs))
     .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
     .slice(0, 10);
 
@@ -14428,7 +14611,7 @@ async function carregarProfissionaisIndex() {
         <i class='bx bx-user-plus'></i>
         <div class="pros-empty-text">
           <div class="pros-empty-title">Ainda não há profissionais novos cadastrados.</div>
-          <div class="pros-empty-sub">Quer aparecer aqui? Complete seu cadastro profissional.</div>
+          <div class="pros-empty-sub">Sem avaliações nos primeiros ${PRO_RULES.NOVO_MAX_DIAS} dias aparecem aqui.</div>
         </div>
         <a class="pros-empty-btn" href="tornar-profissional.html">Começar</a>
       </div>

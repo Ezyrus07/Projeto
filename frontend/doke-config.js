@@ -12,7 +12,7 @@ window.DOKE_CONFIG = window.DOKE_CONFIG || {
   supportEmail: "",
 
   // Chat interno (página)
-  supportChatUrl: "mensagens.html"
+  supportChatUrl: "chat.html"
 };
 
 

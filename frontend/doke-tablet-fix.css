@@ -97,3 +97,93 @@ body[data-page="perfil"] .dp-reelMedia{
     min-width: 0;
   }
 }
+
+/* =========================================================
+   TABLET (iPad/Android) — tratar como "mobile" sem afetar desktop
+   Critério: tela grande + touch (pointer:coarse)
+   ========================================================= */
+
+@media (min-width: 1025px) and (max-width: 1400px) and (pointer: coarse){
+  .navbar-desktop,
+  .sidebar,
+  .sidebar-icones,
+  #sidebar,
+  .menu-lateral,
+  .nav-lateral{ display: none !important; }
+
+  .navbar-mobile{ display: flex !important; }
+  .bottom-nav{ display: flex !important; }
+
+  main{
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+    box-sizing: border-box !important;
+  }
+
+  .secao-busca,
+  .categorias-container,
+  .videos-container,
+  .fotos-container,
+  .anuncio-container,
+  .para-voce-section,
+  .pros-section{
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  body[data-page="home"] #galeria-dinamica{
+    padding: 8px 0 10px !important;
+    gap: 12px !important;
+  }
+  body[data-page="home"] #galeria-dinamica .dp-reelCard,
+  body[data-page="home"] #galeria-dinamica .tiktok-card,
+  body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton{
+    width: clamp(160px, calc((100vw - 120px) / 5), 210px) !important;
+    min-width: clamp(160px, calc((100vw - 120px) / 5), 210px) !important;
+    height: clamp(300px, 42vh, 360px) !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 14px !important;
+    padding: 8px 2px 14px !important;
+  }
+  body[data-page="home"] #feed-global-container .feed-publicacao-card{
+    flex: 0 0 clamp(210px, calc((100vw - 140px) / 4), 290px) !important;
+    min-width: clamp(210px, calc((100vw - 140px) / 4), 290px) !important;
+  }
+
+  body[data-page="busca"] .search-layout{ grid-template-columns: 1fr !important; }
+  body[data-page="busca"] .filters-sidebar{
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 14px !important;
+  }
+  body[data-page="busca"] .busca-wrapper,
+  body[data-page="busca"] .results-wrapper{
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body[data-page="chat"] .coluna-lista{
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+  }
+  body[data-page="chat"] .coluna-chat{
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #fff !important;
+    z-index: 9999 !important;
+    transform: translateX(100%) !important;
+    transition: transform .25s ease !important;
+  }
+  body[data-page="chat"].mobile-chat-open .coluna-chat{ transform: translateX(0) !important; }
+  body[data-page="chat"].mobile-chat-open{ overflow: hidden !important; }
+}

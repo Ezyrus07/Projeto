@@ -435,13 +435,22 @@ function buildTableFromPath(parts){
   }
 
   function normalizeQueryFieldNameDoke(field){
-    return String(field || '').trim().replace(/^["']|["']$/g, "");
+    const raw = String(field || '').trim();
+    if (!raw) return raw;
+    const aliasMap = {
+      deuid: 'deUid',
+      parauid: 'paraUid',
+      usuariouid: 'usuarioUid',
+      destinatariouid: 'destinatarioUid',
+      remetenteuid: 'remetenteUid'
+    };
+    return aliasMap[raw.toLowerCase()] || raw;
   }
 
   function quotePgField(field){
-    // No compat REST (DokeQuery), filtros devem usar a chave sem aspas.
-    // Isso evita URLs com %22campo%22=eq... e reduz 400 em schemas legados.
-    return String(normalizeQueryFieldNameDoke(field) || "");
+    const raw = String(normalizeQueryFieldNameDoke(field) || "");
+    if (!raw) return raw;
+    return /[A-Z]/.test(raw) ? `"${raw}"` : raw;
   }
 
   function parseMissingColumn(error){
@@ -527,37 +536,23 @@ function buildTableFromPath(parts){
     return queryBuilder.or(orExpr);
   }
 
-  // Normaliza nome de campo usado em queries (where/orderBy) para bater com schemas legados.
-  // Muitos schemas usam colunas "deuid/parauid" enquanto o código legado consulta "deUid/paraUid".
-  function normalizeQueryField(field){
-    const f = String(field || "").trim();
-    if(!f) return f;
-    // Se já é snake_case ou já está em minúsculo, mantém.
-    if(f.includes("_") || f === f.toLowerCase()) return f;
-    // camelCase -> lower sem underscores: deUid -> deuid, dataAtualizacao -> dataatualizacao
-    return f.replace(/[A-Z]/g, (m) => m.toLowerCase());
-  }
-
   function normalizePayload(payload){
     const out = { ...(payload||{}) };
 
     // Mapeia campos camelCase -> snake_case usados no schema atual
     // (mantém ambos para compat com código legado)
     if (out.maxParcelas != null && out.maxparcelas == null) out.maxparcelas = out.maxParcelas;
+    if (out.ultimaMensagem != null && out.ultimamensagem == null) out.ultimamensagem = out.ultimaMensagem;
     if (out.dataAtualizacao != null && out.dataatualizacao == null) out.dataatualizacao = out.dataAtualizacao;
     if (out.pedidoId != null && out.pedido_id == null) out.pedido_id = out.pedidoId;
     if (out.pedidoId != null && out.pedidoid == null) out.pedidoid = out.pedidoId;
     if (out.pedido_id != null && out.pedidoid == null) out.pedidoid = out.pedido_id;
-    if (out.deUid != null && out.deuid == null) out.deuid = out.deUid;
-    if (out.deUid != null && out.de_uid == null) out.de_uid = out.deUid;
-    if (out.deuid != null && out.de_uid == null) out.de_uid = out.deuid;
-    if (out.paraUid != null && out.parauid == null) out.parauid = out.paraUid;
-    if (out.paraUid != null && out.para_uid == null) out.para_uid = out.paraUid;
-    if (out.parauid != null && out.para_uid == null) out.para_uid = out.parauid;
     if (out.conversaId != null && out.conversa_id == null) out.conversa_id = out.conversaId;
     if (out.conversaId != null && out.conversaid == null) out.conversaid = out.conversaId;
     if (out.conversa_id != null && out.conversaid == null) out.conversaid = out.conversa_id;
     if (out.respostasTriagem != null && out.respostas_triagem == null) out.respostas_triagem = out.respostasTriagem;
+    if (out.respostasTriagem != null && out.respostastriagem == null) out.respostastriagem = out.respostasTriagem;
+    if (out.respostas_triagem != null && out.respostastriagem == null) out.respostastriagem = out.respostas_triagem;
     if (out.formularioRespostas != null && out.formulario_respostas == null) out.formulario_respostas = out.formularioRespostas;
     if (out.formularioRespostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formularioRespostas;
     if (out.formulario_respostas != null && out.formulariorespostas == null) out.formulariorespostas = out.formulario_respostas;
@@ -601,16 +596,15 @@ function buildTableFromPath(parts){
       if (parent && parent.id && fk) base = base.eq(quotePgField(fk), parent.id);
       for (const c of whereClauses) {
         const op = c.op;
-        const field = quotePgField(normalizeQueryField(c.field));
-        if (op === "==" || op === "=") base = base.eq(field, c.value);
-        else if (op === "!=") base = base.neq(field, c.value);
-        else if (op === ">") base = base.gt(field, c.value);
-        else if (op === ">=") base = base.gte(field, c.value);
-        else if (op === "<") base = base.lt(field, c.value);
-        else if (op === "<=") base = base.lte(field, c.value);
-        else if (op === "in") base = base.in(field, c.value);
-        else if (op === "array-contains") base = base.contains(field, [c.value]);
-        else base = base.eq(field, c.value);
+        if (op === "==" || op === "=") base = base.eq(quotePgField(c.field), c.value);
+        else if (op === "!=") base = base.neq(quotePgField(c.field), c.value);
+        else if (op === ">") base = base.gt(quotePgField(c.field), c.value);
+        else if (op === ">=") base = base.gte(quotePgField(c.field), c.value);
+        else if (op === "<") base = base.lt(quotePgField(c.field), c.value);
+        else if (op === "<=") base = base.lte(quotePgField(c.field), c.value);
+        else if (op === "in") base = base.in(quotePgField(c.field), c.value);
+        else if (op === "array-contains") base = base.contains(quotePgField(c.field), [c.value]);
+        else base = base.eq(quotePgField(c.field), c.value);
       }
       return base;
     };
@@ -648,7 +642,7 @@ function buildTableFromPath(parts){
       let r = buildBase(fk);
       for (const o of orders) {
         const asc = (String(o.dir || "asc").toLowerCase() !== "desc");
-        r = r.order(quotePgField(normalizeQueryField(o.field)), { ascending: asc });
+        r = r.order(quotePgField(o.field), { ascending: asc });
       }
       if (Number.isFinite(limitN)) r = r.limit(limitN);
       return await withTimeout(r, READ_TIMEOUT_MS, `timeout_supabase_getdocs_${String(q.table || "unknown")}`);
@@ -1073,3 +1067,4 @@ function buildTableFromPath(parts){
 
   console.log("[DOKE] Firestore compat carregado.");
 })();
+

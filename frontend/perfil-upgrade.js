@@ -2309,6 +2309,23 @@ function ensureTheme(ctx, theme){
     window.location.href = `anunciar.html?mode=edit&id=${encodeURIComponent(ids[0])}`;
   }
 
+  function normalizeFotosValue(value){
+    if (Array.isArray(value)) return value.map(v => String(v || "").trim()).filter(Boolean);
+    if (typeof value === "string") {
+      const raw = value.trim();
+      if (!raw) return [];
+      if ((raw.startsWith("[") && raw.endsWith("]")) || (raw.startsWith('"') && raw.endsWith('"'))) {
+        try {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) return parsed.map(v => String(v || "").trim()).filter(Boolean);
+          if (typeof parsed === "string" && parsed.trim()) return [parsed.trim()];
+        } catch (_) {}
+      }
+      return [raw];
+    }
+    return [];
+  }
+
   function registerServicoSelectableCard(card, servicoId){
     if(!card) return;
     const id = String(servicoId || "").trim();
@@ -2509,8 +2526,8 @@ function ensureTheme(ctx, theme){
       card.setAttribute("role", "button");
       card.tabIndex = 0;
       card.dataset.pubId = String(item.id || "");
-      const title = item.titulo || item.legenda || "";
-      const desc = item.descricao || (item.titulo ? item.legenda : "") || "";
+      const title = stripLinkedAidMarker(item.titulo || item.legenda || "");
+      const desc = stripLinkedAidMarker(item.descricao || (item.titulo ? item.legenda : "") || "");
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
@@ -2626,8 +2643,8 @@ function ensureTheme(ctx, theme){
         <div class="dp-reelMedia">
           <video src="${item.video_url}"${item.thumb_url ? ` poster="${item.thumb_url}"` : ""} muted loop playsinline preload="metadata"></video>
           <div class="dp-reelOverlay">
-            <b>${escapeHtml(item.titulo || "Video curto")}</b>
-            <p>${escapeHtml(item.descricao || "")}</p>
+            <b>${escapeHtml(stripLinkedAidMarker(item.titulo || "Video curto"))}</b>
+            <p>${escapeHtml(stripLinkedAidMarker(item.descricao || ""))}</p>
           </div>
           <div class="dp-reelPlay"><i class='bx bx-play'></i></div>
         </div>
@@ -2732,8 +2749,8 @@ function ensureTheme(ctx, theme){
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
-          <b>${escapeHtml(item.titulo || "")}</b>
-          <p>${escapeHtml(item.descricao || "")}</p>
+          <b>${escapeHtml(stripLinkedAidMarker(item.titulo || ""))}</b>
+          <p>${escapeHtml(stripLinkedAidMarker(item.descricao || ""))}</p>
           ${(() => {
             const d = item.data_entrega || item.dataEntrega || item.delivered_at || item.created_at || item.createdAt || item.createdat;
             const dt = d ? new Date(d) : null;
@@ -3030,8 +3047,8 @@ function ensureTheme(ctx, theme){
           };
         }
         const a = anunciosMap.get(String(id)) || {};
-        const fotos = Array.isArray(a.fotos) ? a.fotos : (a.fotos ? [a.fotos] : []);
-        const img = fotos[0] || a.img || "";
+        const fotos = normalizeFotosValue(a.fotos);
+        const img = fotos[0] || a.img || a.imagem || a.foto || a.capa || "";
         return {
           titulo: a.titulo || `Serviço ${id}`,
           categoria: a.categoria || "",
@@ -3390,10 +3407,102 @@ function ensureTheme(ctx, theme){
   // -----------------------------
   // Create items
   // -----------------------------
-  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, afterFile, capaFile }){
+  const DOKE_LINK_AID_REGEX = /\[\[doke:aid:([^\]]+)\]\]/i;
+  const DOKE_LINK_AID_CLEAN_REGEX = /\s*\[\[doke:aid:[^\]]+\]\]\s*/gi;
+  const DOKE_LINK_AID_FIELDS = ["anuncioId", "anuncio_id", "servico_id", "servicoId", "anuncio"];
+  function normalizeLinkedAid(value){
+    const v = String(value || "").trim();
+    if(!v) return "";
+    return v.startsWith("sb-") ? v.slice(3) : v;
+  }
+  function stripLinkedAidMarker(text){
+    return String(text || "").replace(DOKE_LINK_AID_CLEAN_REGEX, " ").replace(/\s{2,}/g, " ").trim();
+  }
+  function appendLinkedAidMarker(text, anuncioId){
+    const clean = stripLinkedAidMarker(text);
+    const aid = normalizeLinkedAid(anuncioId);
+    if(!aid) return clean;
+    return [clean, `[[doke:aid:${aid}]]`].filter(Boolean).join("\n\n");
+  }
+  function nextLinkFieldPayload(anuncioId, blockedMessage){
+    const aid = normalizeLinkedAid(anuncioId);
+    if(!aid) return {};
+    const blocked = String(blockedMessage || "").toLowerCase();
+    for(const field of DOKE_LINK_AID_FIELDS){
+      if(blocked.includes(String(field).toLowerCase())) continue;
+      return { [field]: aid };
+    }
+    return {};
+  }
+  async function fetchOwnedAnunciosForLink(client, ctx){
+    if(!client?.from) return [];
+    const ownerValues = uniqueStrings([
+      ctx?.target?.uid,
+      ctx?.me?.uid,
+      ctx?.target?.id,
+      ctx?.me?.id
+    ]);
+    const cached = Array.isArray(window.__dpCachedAnuncios) ? window.__dpCachedAnuncios.slice() : [];
+    const list = [];
+    const pushRows = (rows) => {
+      (rows || []).forEach((row) => {
+        if(!row || !row.id) return;
+        list.push(row);
+      });
+    };
+    if(cached.length){
+      pushRows(cached);
+    }
+    const ownerCols = ["uid", "owner_uid", "user_uid", "profissional_id", "profissionalId", "user_id"];
+    for(const col of ownerCols){
+      if(!ownerValues.length) break;
+      try{
+        const res = await client
+          .from("anuncios")
+          .select("id,titulo,categoria,preco,img,fotos,uid,created_at")
+          .in(col, ownerValues)
+          .limit(120);
+        if(res?.error){
+          if(isMissingColumnError(res.error, col) || isMissingTableError(res.error)) continue;
+          continue;
+        }
+        if(Array.isArray(res.data) && res.data.length){
+          pushRows(res.data);
+          break;
+        }
+      }catch(_){}
+    }
+    const dedup = new Map();
+    list.forEach((a) => {
+      const id = String(a?.id || "").trim();
+      if(!id || dedup.has(id)) return;
+      dedup.set(id, a);
+    });
+    return Array.from(dedup.values());
+  }
+  function buildLinkSelectHtml(selectId, anuncios, label){
+    const opts = (anuncios || []).map((a) => {
+      const id = String(a?.id || "").trim();
+      if(!id) return "";
+      const titulo = escapeHtml(a?.titulo || "Anuncio");
+      const categoria = escapeHtml(a?.categoria || "Geral");
+      return `<option value="${escapeAttr(id)}">${titulo} · ${categoria}</option>`;
+    }).filter(Boolean).join("");
+    return `
+      <div>
+        <label>${label || "Vincular a um anuncio (opcional)"}</label>
+        <select class="dp-select" id="${selectId}">
+          <option value="">Nao vincular agora</option>
+          ${opts}
+        </select>
+      </div>`;
+  }
+
+  async function createPublicacao(client, ctx, { tipo, titulo, legenda, file, afterFile, capaFile, linkedAnuncioId }){
     // upload to storage
     const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
+    const legendaComMeta = appendLinkedAidMarker(legenda, linkedAnuncioId);
     // Antes x Depois: usa thumb_url como 'depois'
     if(tipo === 'antes_depois' && afterFile){
       const upAfter = await uploadToStorage(client, { bucket:'perfil', path:`publicacoes/${storageId}/depois/${crypto.randomUUID()}`, file: afterFile });
@@ -3411,9 +3520,10 @@ function ensureTheme(ctx, theme){
       user_id: ctx.me.id,
       tipo,
       titulo,
-      legenda,
+      legenda: legendaComMeta,
       media_url: up.url
     };
+    Object.assign(payload, nextLinkFieldPayload(linkedAnuncioId));
     if(thumbUrl) payload.thumb_url = thumbUrl;
     let { error } = await client.from("publicacoes").insert(payload);
     if(error && error.code === "PGRST204"){
@@ -3423,13 +3533,14 @@ function ensureTheme(ctx, theme){
         tipo,
         media_url: up.url
       };
+      Object.assign(retry, nextLinkFieldPayload(linkedAnuncioId, msg));
       if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
       if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
-      if(legenda){
+      if(legendaComMeta){
         if(!msg.includes("legenda")) {
-          retry.legenda = legenda;
+          retry.legenda = legendaComMeta;
         } else if(!msg.includes("descricao")) {
-          retry.descricao = legenda;
+          retry.descricao = legendaComMeta;
         }
       }
       const r2 = await client.from("publicacoes").insert(retry);
@@ -3438,9 +3549,10 @@ function ensureTheme(ctx, theme){
     if(error) throw error;
   }
 
-  async function createReel(client, ctx, { titulo, descricao, file, capaFile }){
+  async function createReel(client, ctx, { titulo, descricao, file, capaFile, linkedAnuncioId }){
     const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
     let thumbUrl = null;
+    const descricaoComMeta = appendLinkedAidMarker(descricao, linkedAnuncioId);
     if(capaFile){
       const upCover = await uploadToStorage(client, { bucket:"perfil", path:`reels/${storageId}/capa/${crypto.randomUUID()}`, file: capaFile });
       if(upCover.error) throw upCover.error;
@@ -3451,9 +3563,10 @@ function ensureTheme(ctx, theme){
     const payload = {
       user_id: ctx.me.id,
       titulo,
-      descricao,
+      descricao: descricaoComMeta,
       video_url: up.url
     };
+    Object.assign(payload, nextLinkFieldPayload(linkedAnuncioId));
     if(thumbUrl) payload.thumb_url = thumbUrl;
     let { error } = await client.from("videos_curtos").insert(payload);
     if(error && error.code === "PGRST204"){
@@ -3462,8 +3575,9 @@ function ensureTheme(ctx, theme){
         user_id: ctx.me.id,
         video_url: up.url
       };
+      Object.assign(retry, nextLinkFieldPayload(linkedAnuncioId, msg));
       if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
-      if(descricao && !msg.includes("descricao")) retry.descricao = descricao;
+      if(descricaoComMeta && !msg.includes("descricao")) retry.descricao = descricaoComMeta;
       if(thumbUrl && !msg.includes("thumb_url")) retry.thumb_url = thumbUrl;
       const r2 = await client.from("videos_curtos").insert(retry);
       error = r2.error || null;
@@ -3471,16 +3585,32 @@ function ensureTheme(ctx, theme){
     if(error) throw error;
   }
 
-  async function createPortfolioItem(client, ctx, { titulo, descricao, file }){
+  async function createPortfolioItem(client, ctx, { titulo, descricao, file, linkedAnuncioId }){
     const storageId = ctx.authUser?.id || ctx.me?.uid || ctx.me?.id;
+    const descricaoComMeta = appendLinkedAidMarker(descricao, linkedAnuncioId);
     const up = await uploadToStorage(client, { bucket:"perfil", path:`portfolio/${storageId}/${crypto.randomUUID()}`, file });
     if(up.error) throw up.error;
-    const { error } = await client.from("portfolio").insert({
+    const payload = {
       profissional_id: ctx.me.id,
       titulo,
-      descricao,
+      descricao: descricaoComMeta,
       media_url: up.url
-    });
+    };
+    Object.assign(payload, nextLinkFieldPayload(linkedAnuncioId));
+    let { error } = await client.from("portfolio").insert(payload);
+    if(error && error.code === "PGRST204"){
+      const msg = String(error.message || "").toLowerCase();
+      const retry = {
+        profissional_id: ctx.me.id,
+        media_url: up.url
+      };
+      Object.assign(retry, nextLinkFieldPayload(linkedAnuncioId, msg));
+      if(titulo && !msg.includes("titulo")) retry.titulo = titulo;
+      if(descricaoComMeta && !msg.includes("descricao")) retry.descricao = descricaoComMeta;
+      if(!retry.profissional_id && !msg.includes("profissional_id")) retry.profissional_id = ctx.me.id;
+      const r2 = await client.from("portfolio").insert(retry);
+      error = r2.error || null;
+    }
     if(error) throw error;
   }
 
@@ -4582,8 +4712,10 @@ if(!rangeSel || !refreshBtn) return;
     ensureReelsSelectionControls(ctx);
     ensureServicosSelectionControls(ctx);
     // Novo Publicação
-    $("#dpNewPublicacao")?.addEventListener("click", ()=>{
+    $("#dpNewPublicacao")?.addEventListener("click", async ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
+      const clientForLink = mustSupa();
+      const anunciosVinculo = clientForLink ? await fetchOwnedAnunciosForLink(clientForLink, ctx).catch(()=>[]) : [];
       modal.open("Nova publicação", `
         <div class="dp-form">
           <div class="dp-row2">
@@ -4617,6 +4749,7 @@ if(!rangeSel || !refreshBtn) return;
             <label>Descrição</label>
             <textarea class="dp-textarea" id="dpPubDesc" placeholder="Conte o que foi feito..."></textarea>
           </div>
+          ${buildLinkSelectHtml("dpPubLinkedAnuncio", anunciosVinculo, "Vincular ao anúncio (opcional)")}
         </div>
       `, async ()=>{
         const client = mustSupa();
@@ -4634,7 +4767,8 @@ if(!rangeSel || !refreshBtn) return;
               titulo: safeStr($("#dpPubTitulo")?.value),
               descricao: safeStr($("#dpPubDesc")?.value),
               file,
-              capaFile
+              capaFile,
+              linkedAnuncioId: normalizeLinkedAid($("#dpPubLinkedAnuncio")?.value)
             });
             modal.close();
             toast("Video curto publicado!");
@@ -4647,7 +4781,8 @@ if(!rangeSel || !refreshBtn) return;
             legenda: safeStr($("#dpPubDesc")?.value),
             file,
             afterFile: tipo === "antes_depois" ? afterFile : null,
-            capaFile: tipo === "video" ? capaFile : null
+            capaFile: tipo === "video" ? capaFile : null,
+            linkedAnuncioId: normalizeLinkedAid($("#dpPubLinkedAnuncio")?.value)
           });
           modal.close();
           toast("Publicado!");
@@ -4682,9 +4817,11 @@ if(!rangeSel || !refreshBtn) return;
     });
 
     // Novo Reel
-    $("#dpNewReel")?.addEventListener("click", ()=>{
+    $("#dpNewReel")?.addEventListener("click", async ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
       if(!isProfissionalUsuario(ctx.me)) return toast("Disponível para perfil profissional.");
+      const clientForLink = mustSupa();
+      const anunciosVinculo = clientForLink ? await fetchOwnedAnunciosForLink(clientForLink, ctx).catch(()=>[]) : [];
       modal.open("Novo video curto", `
         <div class="dp-form">
           <div>
@@ -4703,6 +4840,7 @@ if(!rangeSel || !refreshBtn) return;
             <label>Descrição</label>
             <textarea class="dp-textarea" id="dpReelDesc"></textarea>
           </div>
+          ${buildLinkSelectHtml("dpReelLinkedAnuncio", anunciosVinculo, "Vincular ao anúncio (opcional)")}
         </div>
       `, async ()=>{
         const client = mustSupa();
@@ -4715,7 +4853,8 @@ if(!rangeSel || !refreshBtn) return;
             titulo: safeStr($("#dpReelTitulo")?.value),
             descricao: safeStr($("#dpReelDesc")?.value),
             file,
-            capaFile
+            capaFile,
+            linkedAnuncioId: normalizeLinkedAid($("#dpReelLinkedAnuncio")?.value)
           });
           modal.close();
           toast("Video curto publicado!");
@@ -4723,6 +4862,52 @@ if(!rangeSel || !refreshBtn) return;
         }catch(e){
           console.error(e);
           toast("Erro ao publicar.");
+        }
+      }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
+    });
+
+    // Novo item de Portfolio
+    $("#dpNewPortfolio")?.addEventListener("click", async ()=>{
+      if(!ctx.canEdit) return toast("Apenas no seu perfil.");
+      if(!isProfissionalUsuario(ctx.me)) return toast("Disponível para perfil profissional.");
+      const clientForLink = mustSupa();
+      const anunciosVinculo = clientForLink ? await fetchOwnedAnunciosForLink(clientForLink, ctx).catch(()=>[]) : [];
+      modal.open("Novo item do portfolio", `
+        <div class="dp-form">
+          <div>
+            <label>Arquivo</label>
+            <input class="dp-input" type="file" id="dpPortFile" accept="image/*,video/*"/>
+          </div>
+          <div>
+            <label>Título</label>
+            <input class="dp-input" id="dpPortTitulo" placeholder="Ex: Reforma concluída" />
+          </div>
+          <div class="full">
+            <label>Descrição</label>
+            <textarea class="dp-textarea" id="dpPortDesc" placeholder="Explique o resultado, prazo e principais entregas."></textarea>
+          </div>
+          <div class="full">
+            ${buildLinkSelectHtml("dpPortLinkedAnuncio", anunciosVinculo, "Vincular ao anúncio (opcional)")}
+          </div>
+        </div>
+      `, async ()=>{
+        const client = mustSupa();
+        if(!client) return;
+        const file = $("#dpPortFile")?.files?.[0];
+        if(!file) return toast("Selecione um arquivo.");
+        try{
+          await createPortfolioItem(client, ctx, {
+            titulo: safeStr($("#dpPortTitulo")?.value),
+            descricao: safeStr($("#dpPortDesc")?.value),
+            file,
+            linkedAnuncioId: normalizeLinkedAid($("#dpPortLinkedAnuncio")?.value)
+          });
+          modal.close();
+          toast("Item do portfolio publicado!");
+          loadPortfolio(ctx.client, ctx.target.id, ctx);
+        }catch(e){
+          console.error(e);
+          toast("Erro ao publicar no portfolio.");
         }
       }, { saveLabel: "Publicar", savingLabel: "Publicando..." });
     });
@@ -5307,8 +5492,8 @@ async function loadServicosPerfil(ctx) {
     const titulo = anuncio.titulo || "Sem titulo";
     const descricao = anuncio.descricao || "";
     const preco = anuncio.preco || "A combinar";
-    const fotos = Array.isArray(anuncio.fotos) ? anuncio.fotos : (anuncio.fotos ? [anuncio.fotos] : []);
-    const img = fotos[0] || anuncio.img || "https://placehold.co/600x400";
+    const fotos = normalizeFotosValue(anuncio.fotos);
+    const img = fotos[0] || anuncio.img || anuncio.imagem || anuncio.foto || anuncio.capa || "https://placehold.co/600x400";
     const uid = anuncio.uid || anuncio.user_uid || anuncio.useruid || anuncio.prof_uid || "";
     card.innerHTML = `
       <button class="btn-topo-avaliacao" onclick="window.openDetalhesModal('detalhes.html?id=${anuncio.id}')">
@@ -5815,7 +6000,8 @@ async function loadServicosPerfil(ctx) {
         const row = document.createElement("div");
         row.className = "dp-adrow";
 
-        const img = (Array.isArray(a.fotos) && a.fotos[0]) || a.img || "https://placehold.co/600x400";
+        const fotos = normalizeFotosValue(a.fotos);
+        const img = fotos[0] || a.img || a.imagem || a.foto || a.capa || "https://placehold.co/600x400";
         const isAtivo = (a.ativo !== false);
 
         row.innerHTML = `
@@ -5889,7 +6075,12 @@ async function loadServicosPerfil(ctx) {
 
     if(!body) return;
 
-    const fotos = (Array.isArray(anuncio.fotos) && anuncio.fotos.length) ? anuncio.fotos.slice() : (anuncio.img ? [anuncio.img] : []);
+    const fotos = (() => {
+      const list = normalizeFotosValue(anuncio.fotos);
+      if (list.length) return list.slice();
+      const fb = String(anuncio.img || anuncio.imagem || anuncio.foto || anuncio.capa || "").trim();
+      return fb ? [fb] : [];
+    })();
 
     body.innerHTML = `
       <form id="dpEditFormV2">

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -10,7 +10,7 @@
 <script defer="" src="script.js?v=20260218v60"></script>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Detalhes do Serviço | Doke</title>
+<title>Detalhes do ServiÃ§o | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <link href="style.css?v=20260211v43" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
@@ -54,6 +54,7 @@
             display: grid;
             grid-template-columns: 1fr 380px; /* Coluna princ + Sidebar */
             gap: 40px;
+            align-items: start;
             margin-top: 20px;
         }
 
@@ -76,7 +77,53 @@
             body[data-page="detalhes"] .doke-sticky-cta { display: none !important; }
         }
 
-        /* --- COLUNA ESQUERDA (CONTEï¿½DO) --- */
+        /* Embed mode: quando abre em modal por cima da busca/listagem */
+        body.doke-embed-mode .navbar-mobile,
+        body.doke-embed-mode .navbar-desktop,
+        body.doke-embed-mode .sidebar-icones,
+        body.doke-embed-mode .bottom-nav,
+        body.doke-embed-mode .doke-bottom-nav,
+        body.doke-embed-mode #overlay-menu {
+            display: none !important;
+        }
+        body.doke-embed-mode {
+            background: #f4f7fb;
+        }
+        body.doke-embed-mode main {
+            margin: 0 auto !important;
+            margin-top: 0 !important;
+            width: 100% !important;
+            max-width: 1280px;
+            padding: 16px !important;
+        }
+        body.doke-embed-mode .right-col {
+            align-self: start !important;
+            position: sticky !important;
+            top: 16px !important;
+            height: fit-content !important;
+        }
+        body.doke-embed-mode .sidebar-sticky {
+            position: static !important;
+            top: auto !important;
+        }
+        @media (max-width: 900px) {
+            body.doke-embed-mode main {
+                max-width: 100%;
+                padding: 12px !important;
+                padding-bottom: 12px !important;
+            }
+            body.doke-embed-mode .right-col {
+                position: static !important;
+                top: auto !important;
+                height: auto !important;
+            }
+            body.doke-embed-mode .sidebar-sticky {
+                position: static !important;
+                top: auto !important;
+            }
+        }
+
+        /* --- COLUNA ESQUERDA (CONTEÃ¯Â¿Â½DO) --- */
         
         /* Galeria Estilo Airbnb */
         .gallery-wrapper {
@@ -109,7 +156,7 @@
         }
         .thumb:hover, .thumb.active { opacity: 1; border: 2px solid var(--primary); }
 
-        /* Cabeï¿½alho do Serviï¿½o */
+        /* CabeÃ¯Â¿Â½alho do ServiÃ¯Â¿Â½o */
         .service-header { margin-bottom: 25px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
         .breadcrumb { font-size: 0.85rem; color: var(--text-light); margin-bottom: 10px; display: block; }
         h1.service-title { font-size: 2rem; margin: 5px 0 10px; font-weight: 700; line-height: 1.2; color: #0f3460; }
@@ -124,7 +171,7 @@
         .rating-badge.rating-link:hover { opacity: .82; }
         .location-badge i { color: var(--text-light); }
 
-        /* Seï¿½ï¿½es de Conteï¿½do */
+        /* SeÃ¯Â¿Â½Ã¯Â¿Â½es de ConteÃ¯Â¿Â½do */
         .content-section {
             background: white;
             padding: 30px;
@@ -135,7 +182,129 @@
         }
         .section-title { font-size: 1.25rem; margin-bottom: 20px; font-weight: 700; color: #2d3436; }
 
-        /* Grid de Destaques (ï¿½cones) */
+        /* Midias relacionadas ao anuncio */
+        .linked-media-section{
+            border: 1px solid #c7ece4;
+            background:
+              radial-gradient(120% 120% at 100% 0%, rgba(11,119,104,.10) 0%, rgba(11,119,104,0) 55%),
+              linear-gradient(180deg, #f8fffd 0%, #ffffff 100%);
+        }
+        .linked-media-head{
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            gap:12px;
+            flex-wrap:wrap;
+        }
+        .linked-media-badge{
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:6px 10px;
+            border-radius:999px;
+            font-size:.78rem;
+            font-weight:800;
+            color:#05675d;
+            background:rgba(11,119,104,.10);
+            border:1px solid rgba(11,119,104,.25);
+        }
+        .linked-media-sub{
+            margin: 8px 0 14px;
+            color:#4b5563;
+            font-size:.92rem;
+        }
+        .linked-media-grid{
+            display:grid;
+            grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+            gap:12px;
+        }
+        .lm-card{
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            background: #fff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            min-height: 210px;
+            transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+        }
+        .lm-card:hover{
+            transform: translateY(-2px);
+            border-color: rgba(11,119,104,.35);
+            box-shadow: 0 10px 28px rgba(2,8,23,.09);
+        }
+        .lm-thumb{
+            width:100%;
+            height:128px;
+            object-fit:cover;
+            display:block;
+            background:#e5e7eb;
+        }
+        .lm-thumb-placeholder{
+            width:100%;
+            height:128px;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            background: linear-gradient(135deg, #0f2f57, #0b7768);
+            color:#fff;
+            font-weight:800;
+            font-size:.9rem;
+            letter-spacing:.02em;
+        }
+        .lm-body{
+            padding:10px 12px 12px;
+            display:flex;
+            flex-direction:column;
+            gap:6px;
+        }
+        .lm-kind{
+            align-self:flex-start;
+            display:inline-flex;
+            align-items:center;
+            gap:6px;
+            padding:4px 8px;
+            border-radius:999px;
+            font-size:.72rem;
+            font-weight:800;
+            color:#0b7768;
+            background:#ecfdf5;
+            border:1px solid #bbf7d0;
+        }
+        .lm-title{
+            font-size:.95rem;
+            font-weight:800;
+            color:#0f172a;
+            line-height:1.25;
+            margin:0;
+        }
+        .lm-desc{
+            font-size:.84rem;
+            color:#6b7280;
+            margin:0;
+            line-height:1.35;
+        }
+        .lm-footer{
+            margin-top:12px;
+            display:flex;
+            justify-content:flex-end;
+        }
+        .lm-profile-link{
+            display:inline-flex;
+            align-items:center;
+            gap:8px;
+            border:1px solid rgba(11,119,104,.35);
+            color:#0b7768;
+            text-decoration:none;
+            border-radius:999px;
+            padding:8px 12px;
+            font-size:.82rem;
+            font-weight:800;
+            background:#fff;
+        }
+        .lm-profile-link:hover{ filter:brightness(.98); }
+
+        /* Grid de Destaques (Ã¯Â¿Â½cones) */
         .highlights-grid {
             display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 20px;
         }
@@ -309,7 +478,7 @@
         #qa-section .qa-meta{ color:#6b7280; font-size:.85rem; }
         #qa-section .qa-empty{ display:flex; align-items:center; gap: 10px; padding: 12px; border-radius: 16px; background: #fff; border: 1px dashed #e5e7eb; }
 
-        /* CEP popup (header) - ajuste mobile para botï¿½o Buscar/OK */
+        /* CEP popup (header) - ajuste mobile para botÃ¯Â¿Â½o Buscar/OK */
         @media (max-width: 640px){
             .cep-popup{
                 width: min(92vw, 360px) !important;
@@ -343,25 +512,6 @@
 
 <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1">
 <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1">
-<style>
-/* embed mode: quando aberto em iframe/modal */
-html.is-embed body{background:transparent!important}
-html.is-embed .navbar-mobile,
-html.is-embed .navbar-desktop,
-html.is-embed .sidebar-icones,
-html.is-embed .bottom-nav{display:none!important}
-html.is-embed .content,
-html.is-embed main{margin:0!important;padding:14px!important}
-</style>
-<script>
-(function(){
-  try{
-    var p=new URLSearchParams(location.search);
-    var isEmbed=p.get("embed")==="1" || (window.self!==window.top);
-    if(isEmbed){ document.documentElement.classList.add("is-embed"); }
-  }catch(e){}
-})();
-</script>
 </head>
 <body data-page="detalhes">
 <div class="popup" id="popup">
@@ -370,7 +520,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                Não tem uma conta?
+                NÃ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -421,7 +571,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
   <div class="item">
     <a href="index.html">
       <i class='bx bx-home-alt icon azul'></i>
-      <span>Início</span>
+      <span>InÃ­cio</span>
     </a>
   </div>
 
@@ -435,29 +585,23 @@ html.is-embed main{margin:0!important;padding:14px!important}
   <div class="item">
     <a href="negocios.html">
       <i class='bx bx-store icon verde'></i>
-      <span>Negócios</span>
+      <span>NegÃ³cios</span>
     </a>
   </div>
 
   <div class="item">
     <a href="notificacoes.html">
       <i class='bx bx-bell icon azul'></i>
-      <span>Notificações</span>
+      <span>NotificaÃ§Ãµes</span>
     </a>
   </div>
 
   <div class="item">
-<a href="mensagens.html">
-<i class='bx bx-message-rounded-dots icon azul'></i>
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
       <span>Mensagens</span>
-</a>
-</div>
-<div class="item">
-<a href="pedidos.html">
-<i class="bx bx-package icon verde"></i>
-<span>Pedidos</span>
-</a>
-</div>
+    </a>
+  </div>
 
   <div class="item">
     <a href="comunidade.html">
@@ -490,18 +634,18 @@ html.is-embed main{margin:0!important;padding:14px!important}
 <div id="main-content" style="display: none; contents: inherit;">
 <section class="left-col">
 <div class="gallery-wrapper">
-<img alt="Capa do Serviço" class="main-image" decoding="async" id="main-img" loading="lazy" src=""/>
+<img alt="Capa do ServiÃ§o" class="main-image" decoding="async" id="main-img" loading="lazy" src=""/>
 <div class="thumbnails" id="thumb-list"></div>
 </div>
 <div class="service-header">
-<span class="breadcrumb">Explorar &gt; Serviços &gt; <span id="bread-cat">Categoria</span></span>
+<span class="breadcrumb">Explorar &gt; ServiÃ§os &gt; <span id="bread-cat">Categoria</span></span>
 <div id="badges-area" style="margin-top: 10px;"></div>
 <h1 class="service-title" id="service-title">...</h1>
 <div class="meta-info">
 <div class="rating-badge rating-link" id="meta-rating-link" role="button" tabindex="0" aria-label="Ver avaliacoes">
 <div id="top-stars" style="color:#f1c40f; margin-right:5px;"></div>
 <span id="meta-rating">0.0</span>
-<span style="font-weight:400; color:#777; margin-left: 5px;">(<span id="meta-count">0</span> avaliações)</span>
+<span style="font-weight:400; color:#777; margin-left: 5px;">(<span id="meta-count">0</span> avaliaÃ§Ãµes)</span>
 </div>
 <div class="location-badge">
 <i class="bx bxs-map"></i> <span id="meta-location">...</span>
@@ -512,12 +656,12 @@ html.is-embed main{margin:0!important;padding:14px!important}
 </div>
 </div>
 <div class="content-section">
-<h2 class="section-title">Sobre o Serviço</h2>
+<h2 class="section-title">Sobre o ServiÃ§o</h2>
 <p id="service-desc" style="line-height: 1.8; color: #555; white-space: pre-line;">...</p>
 <div class="highlights-grid" style="margin-top: 30px;">
 <div class="highlight-item">
 <i class="bx bx-medal"></i>
-<span class="highlight-label">Experiência</span>
+<span class="highlight-label">ExperiÃªncia</span>
 <span class="highlight-value" id="hl-xp">--</span>
 </div>
 <div class="highlight-item">
@@ -548,6 +692,22 @@ html.is-embed main{margin:0!important;padding:14px!important}
 </div>
 </div>
 
+<div class="content-section linked-media-section" id="linked-media-section" style="display:none;">
+  <div class="linked-media-head">
+    <div>
+      <span class="linked-media-badge"><i class='bx bx-bolt-circle'></i> Trabalhos reais ligados a este serviço</span>
+      <h2 class="section-title" style="margin:10px 0 0;">Veja resultados deste anúncio</h2>
+    </div>
+  </div>
+  <p class="linked-media-sub">Prévia rápida de publicações, vídeos curtos e portfólio relacionados. Isso aumenta confiança e conversão.</p>
+  <div class="linked-media-grid" id="linked-media-grid"></div>
+  <div class="lm-footer">
+    <a href="#" id="linked-media-profile-link" class="lm-profile-link">
+      Ver tudo no perfil <i class='bx bx-right-arrow-alt'></i>
+    </a>
+  </div>
+</div>
+
 <!-- ============================
      PERGUNTAS & RESPOSTAS (Marketplaces)
      ============================ -->
@@ -555,9 +715,9 @@ html.is-embed main{margin:0!important;padding:14px!important}
   <h2 class="section-title">Perguntas e respostas</h2>
 
   <div class="qa-ask">
-    <textarea id="qaInput" placeholder="Tire suas dúvidas com o profissional..." maxlength="400"></textarea>
+    <textarea id="qaInput" placeholder="Tire suas dÃºvidas com o profissional..." maxlength="400"></textarea>
     <div class="qa-ask-actions">
-      <small id="qaHint" style="color:#777;">Seja objetivo. Você pode perguntar sobre preço, prazo, materiais, etc.</small>
+      <small id="qaHint" style="color:#777;">Seja objetivo. VocÃª pode perguntar sobre preÃ§o, prazo, materiais, etc.</small>
       <button id="qaSend" type="button" class="qa-btn">
         <i class='bx bx-send'></i> Enviar
       </button>
@@ -583,9 +743,9 @@ html.is-embed main{margin:0!important;padding:14px!important}
 </div>
 </div>
 <div class="content-section">
-<h2 class="section-title">Avaliações de Clientes</h2>
+<h2 class="section-title">AvaliaÃ§Ãµes de Clientes</h2>
 <div id="reviews-list">
-<p style="color:#777; font-style: italic;">Carregando avaliações...</p>
+<p style="color:#777; font-style: italic;">Carregando avaliaÃ§Ãµes...</p>
 </div>
 </div>
 </section>
@@ -593,9 +753,9 @@ html.is-embed main{margin:0!important;padding:14px!important}
 <div class="sidebar-sticky">
 <span class="price-label">Investimento a partir de</span>
 <div class="price-value" id="price-display">R$ --</div>
-<span class="price-sub" id="payment-display">Aceita Cartão, Pix e Boleto</span>
+<span class="price-sub" id="payment-display">Aceita CartÃ£o, Pix e Boleto</span>
 <button class="btn-hire" id="btn-contact" style="margin-top: 20px;">
-<i class="bx bx-message-square-detail"></i> Solicitar Orçamento
+<i class="bx bx-message-square-detail"></i> Solicitar OrÃ§amento
                     </button>
 <div style="text-align: center; margin-top: 15px; font-size: 0.8rem; color: #888;">
 <i class="bx bx-shield-check"></i> Pagamento seguro via Doke
@@ -609,10 +769,10 @@ html.is-embed main{margin:0!important;padding:14px!important}
 </div>
 </div>
 <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 20px;">
-<strong style="font-size:0.9rem; display:block; margin-bottom:10px;">Política de Cancelamento</strong>
+<strong style="font-size:0.9rem; display:block; margin-bottom:10px;">PolÃ­tica de Cancelamento</strong>
 <div style="display:flex; align-items:center; gap:8px;">
 <i class="bx bx-info-circle" style="color:var(--primary);"></i>
-<span id="policy-text" style="font-size:0.85rem; color:#555;">Flexível</span>
+<span id="policy-text" style="font-size:0.85rem; color:#555;">FlexÃ­vel</span>
 </div>
 </div>
 </div>
@@ -626,10 +786,17 @@ html.is-embed main{margin:0!important;padding:14px!important}
         // Pega ID da URL
         const params = new URLSearchParams(window.location.search);
         const idAnuncio = params.get('id');
+        const isPreviewMode = String(params.get('preview') || '') === '1';
+        const isEmbedMode = String(params.get('embed') || '') === '1';
+        const previewStorageKey = 'doke_preview_anuncio';
         const scrollToParam = String(params.get('scroll') || '').toLowerCase();
+        if (isEmbedMode) {
+            document.body.classList.add('doke-embed-mode');
+            document.documentElement.classList.add('doke-embed-mode');
+        }
             let detalhesAvaliacaoCtx = {
                 id: idAnuncio || "",
-                titulo: "Serviço",
+                titulo: "ServiÃ§o",
                 categoria: "",
                 preco: "",
                 img: ""
@@ -726,18 +893,305 @@ html.is-embed main{margin:0!important;padding:14px!important}
             });
         }
 
+        const DOKE_LINKED_AID_REGEX = /\[\[doke:aid:([^\]]+)\]\]/i;
+        const DOKE_LINKED_AID_CLEAN_REGEX = /\s*\[\[doke:aid:[^\]]+\]\]\s*/gi;
+        function normalizeAnuncioRefId(value) {
+            const v = String(value || "").trim();
+            if (!v) return "";
+            return v.startsWith("sb-") ? v.slice(3) : v;
+        }
+        function stripLinkedAidMarker(value) {
+            return String(value || "").replace(DOKE_LINKED_AID_CLEAN_REGEX, " ").replace(/\s{2,}/g, " ").trim();
+        }
+        function extractLinkedAidFromText(value) {
+            const m = String(value || "").match(DOKE_LINKED_AID_REGEX);
+            return normalizeAnuncioRefId(m?.[1] || "");
+        }
+        function resolveLinkedAidFromRow(row) {
+            const byColumn = normalizeAnuncioRefId(
+                row?.anuncioId || row?.anuncio_id || row?.anuncioid || row?.anuncio || row?.servico_id || row?.servicoId || row?.servico
+            );
+            if (byColumn) return byColumn;
+            return (
+              extractLinkedAidFromText(row?.descricao) ||
+              extractLinkedAidFromText(row?.legenda) ||
+              extractLinkedAidFromText(row?.texto) ||
+              extractLinkedAidFromText(row?.titulo)
+            );
+        }
+        function summarizeText(value, max = 90) {
+            const text = stripLinkedAidMarker(value);
+            if (!text) return "";
+            if (text.length <= max) return text;
+            return `${text.slice(0, Math.max(10, max - 3))}...`;
+        }
+        function isMissingColumnLikeError(error, column) {
+            const msg = String(error?.message || error?.details || error?.hint || "").toLowerCase();
+            const col = String(column || "").toLowerCase();
+            if (!msg) return false;
+            if (msg.includes("schema cache")) return true;
+            if (msg.includes("could not find") && msg.includes("column")) return !col || msg.includes(col);
+            if (msg.includes("column") && msg.includes("does not exist")) return !col || msg.includes(col);
+            return false;
+        }
+        async function detectSupabaseColumn(table, candidates) {
+            const sb = getSupabaseRef();
+            if (!sb?.from) return null;
+            for (const col of (candidates || [])) {
+                if (!col) continue;
+                try {
+                    const res = await sb.from(table).select(col).limit(1);
+                    if (res?.error) {
+                        if (isMissingColumnLikeError(res.error, col)) continue;
+                        return col;
+                    }
+                    return col;
+                } catch (_) {}
+            }
+            return null;
+        }
+        async function fetchRowsByOwner(table, ownerValues, ownerColumnCandidates, dateColumnCandidates) {
+            const sb = getSupabaseRef();
+            const owners = Array.from(new Set((ownerValues || []).map((v) => String(v || "").trim()).filter(Boolean)));
+            if (!sb?.from || !owners.length) return [];
+
+            const ownerCol = await detectSupabaseColumn(table, ownerColumnCandidates || []);
+            if (!ownerCol) return [];
+            const dateCol = await detectSupabaseColumn(table, dateColumnCandidates || []);
+
+            let queryBuilder = sb.from(table).select("*").in(ownerCol, owners).limit(120);
+            if (dateCol) {
+                try { queryBuilder = queryBuilder.order(dateCol, { ascending: false }); } catch (_) {}
+            }
+            let { data, error } = await queryBuilder;
+            if (error || !Array.isArray(data)) {
+                // fallback simples para bases que não aceitam .in nesse campo
+                const merged = [];
+                for (const owner of owners) {
+                    try {
+                        let q = sb.from(table).select("*").eq(ownerCol, owner).limit(60);
+                        if (dateCol) q = q.order(dateCol, { ascending: false });
+                        const r = await q;
+                        if (!r?.error && Array.isArray(r.data)) merged.push(...r.data);
+                    } catch (_) {}
+                }
+                data = merged;
+            }
+            return Array.isArray(data) ? data : [];
+        }
+        async function carregarMidiasRelacionadas(anuncioId, ownerUid, perfilProf, anuncioData) {
+            const section = document.getElementById("linked-media-section");
+            const grid = document.getElementById("linked-media-grid");
+            const profileLink = document.getElementById("linked-media-profile-link");
+            if (!section || !grid || !profileLink) return;
+            section.style.display = "none";
+            grid.innerHTML = "";
+
+            const targetAid = normalizeAnuncioRefId(anuncioId);
+            if (!targetAid) return;
+
+            const ownerValues = Array.from(new Set([
+                String(ownerUid || "").trim(),
+                String(perfilProf?.uid || "").trim(),
+                String(perfilProf?.id || "").trim(),
+                String(anuncioData?.uid || "").trim(),
+                String(anuncioData?.owner_uid || "").trim(),
+                String(anuncioData?.usuario_uid || "").trim(),
+                String(anuncioData?.user_uid || "").trim(),
+                String(anuncioData?.profissional_id || "").trim()
+            ].filter(Boolean)));
+            if (!ownerValues.length) return;
+
+            const profileUid = String(ownerUid || perfilProf?.uid || perfilProf?.id || "").trim();
+            profileLink.href = profileUid
+                ? `perfil-profissional.html?uid=${encodeURIComponent(profileUid)}`
+                : "perfil-profissional.html";
+
+            const configs = [
+                {
+                    table: "publicacoes",
+                    kind: "Publicacao",
+                    icon: "bx-image-alt",
+                    ownerCols: ["user_id", "uid", "user_uid", "owner_id", "autorUid"],
+                    dateCols: ["created_at", "createdAt", "createdat", "data"],
+                    getMedia: (row) => String(row?.thumb_url || row?.media_url || "").trim(),
+                    getTitle: (row) => stripLinkedAidMarker(row?.titulo || row?.descricao || row?.legenda || "Publicacao"),
+                    getDesc: (row) => summarizeText(row?.descricao || row?.legenda || row?.texto || ""),
+                    isVideo: (row) => String(row?.tipo || "").toLowerCase() === "video" || /\.(mp4|mov|webm|m4v|avi)(\?|$)/i.test(String(row?.media_url || ""))
+                },
+                {
+                    table: "videos_curtos",
+                    kind: "Video curto",
+                    icon: "bx-play-circle",
+                    ownerCols: ["user_id", "uid", "user_uid", "owner_id", "autorUid"],
+                    dateCols: ["created_at", "createdAt", "createdat", "data"],
+                    getMedia: (row) => String(row?.thumb_url || row?.video_url || "").trim(),
+                    getTitle: (row) => stripLinkedAidMarker(row?.titulo || "Video curto"),
+                    getDesc: (row) => summarizeText(row?.descricao || row?.legenda || ""),
+                    isVideo: () => true
+                },
+                {
+                    table: "portfolio",
+                    kind: "Portfolio",
+                    icon: "bx-briefcase",
+                    ownerCols: ["profissional_id", "user_id", "uid", "owner_id"],
+                    dateCols: ["created_at", "createdAt", "createdat", "data"],
+                    getMedia: (row) => String(row?.media_url || row?.thumb_url || "").trim(),
+                    getTitle: (row) => stripLinkedAidMarker(row?.titulo || "Projeto no portfolio"),
+                    getDesc: (row) => summarizeText(row?.descricao || row?.legenda || ""),
+                    isVideo: (row) => /\.(mp4|mov|webm|m4v|avi)(\?|$)/i.test(String(row?.media_url || ""))
+                }
+            ];
+
+            const collected = [];
+            for (const cfg of configs) {
+                let rows = [];
+                try { rows = await fetchRowsByOwner(cfg.table, ownerValues, cfg.ownerCols, cfg.dateCols); } catch (_) {}
+                rows.forEach((row) => {
+                    const linkedAid = resolveLinkedAidFromRow(row);
+                    if (!linkedAid || String(linkedAid) !== String(targetAid)) return;
+                    const mediaUrl = cfg.getMedia(row);
+                    const title = summarizeText(cfg.getTitle(row), 70) || cfg.kind;
+                    const desc = cfg.getDesc(row);
+                    const timestamp = new Date(row?.created_at || row?.createdAt || row?.createdat || row?.data || 0).getTime() || 0;
+                    collected.push({
+                        key: `${cfg.table}:${row?.id || `${cfg.kind}-${timestamp}-${Math.random()}`}`,
+                        kind: cfg.kind,
+                        icon: cfg.icon,
+                        mediaUrl,
+                        title,
+                        desc,
+                        isVideo: !!cfg.isVideo(row),
+                        ts: timestamp
+                    });
+                });
+            }
+
+            const dedup = [];
+            const seen = new Set();
+            collected
+              .sort((a, b) => b.ts - a.ts)
+              .forEach((item) => {
+                if (seen.has(item.key)) return;
+                seen.add(item.key);
+                dedup.push(item);
+              });
+
+            if (!dedup.length) return;
+
+            const preview = dedup.slice(0, 4);
+            grid.innerHTML = preview.map((item) => {
+                const mediaHtml = item.mediaUrl
+                    ? `<img class="lm-thumb" src="${escapeHtml(item.mediaUrl)}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async">`
+                    : `<div class="lm-thumb-placeholder"><i class='bx ${item.icon}' style="font-size:22px; margin-right:6px;"></i> Prévia</div>`;
+                return `
+                  <article class="lm-card">
+                    ${mediaHtml}
+                    <div class="lm-body">
+                      <span class="lm-kind"><i class='bx ${item.icon}'></i>${escapeHtml(item.kind)}</span>
+                      <h3 class="lm-title">${escapeHtml(item.title)}</h3>
+                      ${item.desc ? `<p class="lm-desc">${escapeHtml(item.desc)}</p>` : ``}
+                    </div>
+                  </article>`;
+            }).join("");
+
+            section.style.display = "block";
+        }
+
+        function initEmbedSidebarFollowFallback() {
+            if (!isEmbedMode) return;
+            const rightCol = document.querySelector("aside.right-col");
+            const panel = rightCol?.querySelector(".sidebar-sticky");
+            if (!rightCol || !panel) return;
+
+            const reset = () => {
+                panel.style.position = "";
+                panel.style.top = "";
+                panel.style.left = "";
+                panel.style.width = "";
+                panel.style.maxHeight = "";
+                panel.style.overflowY = "";
+                panel.style.zIndex = "";
+            };
+            const apply = () => {
+                if (window.innerWidth <= 900) {
+                    reset();
+                    return;
+                }
+                const rect = rightCol.getBoundingClientRect();
+                if (!rect.width || rect.width < 120) {
+                    reset();
+                    return;
+                }
+                panel.style.position = "fixed";
+                panel.style.top = "16px";
+                panel.style.left = `${Math.round(rect.left)}px`;
+                panel.style.width = `${Math.round(rect.width)}px`;
+                panel.style.maxHeight = "calc(100vh - 32px)";
+                panel.style.overflowY = "auto";
+                panel.style.zIndex = "4";
+            };
+
+            const run = () => requestAnimationFrame(apply);
+            if (!window.__dokeEmbedSidebarFollowBound) {
+                window.__dokeEmbedSidebarFollowBound = true;
+                window.addEventListener("resize", run, { passive: true });
+                window.addEventListener("scroll", run, { passive: true });
+                window.addEventListener("orientationchange", run);
+            }
+            run();
+            setTimeout(run, 220);
+        }
+
         // ===========================================
-        // FUNÇÃO PRINCIPAL
+        // FUNÃ‡ÃƒO PRINCIPAL
         // ===========================================
         async function initPage() {
+            if (isPreviewMode) {
+                try {
+                    const raw = localStorage.getItem(previewStorageKey);
+                    if (!raw) {
+                        alert("PrÃ©-visualizaÃ§Ã£o vazia. Preencha o anÃºncio antes.");
+                        window.location.href = "anunciar.html";
+                        return;
+                    }
+                    const draft = JSON.parse(raw);
+                    if (!draft || typeof draft !== "object") throw new Error("preview invÃ¡lido");
+
+                    renderizarDetalhes({ ...draft, __perfil: {} });
+
+                    const btnContact = document.getElementById("btn-contact");
+                    if (btnContact) {
+                        btnContact.innerHTML = "<i class='bx bx-left-arrow-alt'></i> Voltar para editar";
+                        btnContact.onclick = () => { window.location.href = "anunciar.html?from_preview=1"; };
+                    }
+                    const linkPerfil = document.getElementById("link-perfil");
+                    if (linkPerfil) {
+                        linkPerfil.innerText = "PrÃ©-visualizaÃ§Ã£o";
+                        linkPerfil.href = "anunciar.html?from_preview=1";
+                    }
+                    const provSince = document.getElementById("prov-since");
+                    if (provSince) provSince.innerText = "Modo prÃ©-visualizaÃ§Ã£o";
+                    const reviewsList = document.getElementById("reviews-list");
+                    if (reviewsList) {
+                        reviewsList.innerHTML = "<p style='color:#777; font-style: italic;'>As avaliaÃ§Ãµes reais aparecem apÃ³s a publicaÃ§Ã£o.</p>";
+                    }
+                    return;
+                } catch (e) {
+                    console.error(e);
+                    alert("NÃ£o foi possÃ­vel abrir a prÃ©-visualizaÃ§Ã£o.");
+                    window.location.href = "anunciar.html?from_preview=1";
+                    return;
+                }
+            }
             if(!idAnuncio) {
-                alert("Serviço não encontrado.");
+                alert("ServiÃ§o nÃ£o encontrado.");
                 window.location.href = "busca.html";
                 return;
             }
 
             try {
-                // 1. Busca Dados do Anúncio (Firebase -> fallback Supabase)
+                // 1. Busca Dados do AnÃºncio (Firebase -> fallback Supabase)
                 let data = null;
                 try {
                     const dbRef = getDbRef();
@@ -755,16 +1209,26 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 }
 
                 if (!data) {
-                    document.getElementById('loader').innerHTML = "<h3>Anúncio removido ou indisponível.</h3>";
+                    document.getElementById('loader').innerHTML = "<h3>AnÃºncio removido ou indisponÃ­vel.</h3>";
                     return;
                 }
 
+                const ownerUid = String(
+                    data.owner_uid ||
+                    data.usuario_uid ||
+                    data.user_uid ||
+                    data.uid ||
+                    data.profissional_id ||
+                    data.profissionalId ||
+                    ""
+                ).trim();
+
                 // 2. Busca dados do perfil (para fotos e infos do profissional)
                 let perfil = null;
-                if (data.uid) {
+                if (ownerUid) {
                     try {
-                        // 1) tenta pelo id (caso o id do usuário seja o uid)
-                        const uSnap = await getDoc(doc(getDbRef(), "usuarios", data.uid));
+                        // 1) tenta pelo id (caso o id do usuÃ¡rio seja o uid)
+                        const uSnap = await getDoc(doc(getDbRef(), "usuarios", ownerUid));
                         if (uSnap.exists()) perfil = uSnap.data();
                     } catch (e) {
                         console.warn("Falha ao carregar perfil por id:", e);
@@ -772,7 +1236,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                     try {
                         // 2) tenta por coluna uid (caso a tabela use id separado)
                         if (!perfil) {
-                            const q = query(collection(getDbRef(), "usuarios"), where("uid", "==", data.uid));
+                            const q = query(collection(getDbRef(), "usuarios"), where("uid", "==", ownerUid));
                             const s = await getDocs(q);
                             if (s && !s.empty) perfil = s.docs[0].data();
                         }
@@ -781,7 +1245,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                     }
                     if (!perfil) {
                         try {
-                            perfil = await buscarPerfilSupabasePorUid(data.uid);
+                            perfil = await buscarPerfilSupabasePorUid(ownerUid);
                         } catch (_) {}
                     }
                 }
@@ -789,7 +1253,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 if (!perfil) {
                     try {
                         const local = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null");
-                        if (local && local.uid && data.uid && String(local.uid) === String(data.uid)) {
+                        if (local && local.uid && ownerUid && String(local.uid) === String(ownerUid)) {
                             perfil = local;
                         }
                     } catch (_) {}
@@ -797,13 +1261,19 @@ html.is-embed main{margin:0!important;padding:14px!important}
 
                 renderizarDetalhes({ ...data, __perfil: perfil });
 
-                // Perguntas & Respostas (Supabase)
-                try{ initPerguntasRespostas(idAnuncio, data.uid, perfil); }catch(e){ console.warn(e); }
+                try {
+                    await carregarMidiasRelacionadas(idAnuncio, ownerUid, perfil, data);
+                } catch (e) {
+                    console.warn("Falha ao carregar midias relacionadas:", e);
+                }
 
-                // 3. Busca Dados REAIS do Profissional (Nota, Total de Serviços)
-                if(data.uid) {
-                    carregarAvaliacoesReais(data.uid, idAnuncio);
-                    carregarPrazoMedio(data.uid);
+                // Perguntas & Respostas (Supabase)
+                try{ initPerguntasRespostas(idAnuncio, ownerUid, perfil); }catch(e){ console.warn(e); }
+
+                // 3. Busca Dados REAIS do Profissional (Nota, Total de ServiÃ§os)
+                if(ownerUid) {
+                    carregarAvaliacoesReais(ownerUid, idAnuncio);
+                    carregarPrazoMedio(ownerUid);
                 }
 
             } catch (err) {
@@ -813,7 +1283,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
         }
 
         // ===========================================
-        // RENDERIZAÇÃO ESTÁTICA (DO ANÚNCIO)
+        // RENDERIZAÃ‡ÃƒO ESTÃTICA (DO ANÃšNCIO)
         // ===========================================
         function renderizarDetalhes(d) {
             document.getElementById('loader').style.display = 'none';
@@ -823,19 +1293,19 @@ html.is-embed main{margin:0!important;padding:14px!important}
 
             // -- HEADER & TEXTOS --
             document.title = `${d.titulo} | Doke`;
-            document.getElementById('service-title').innerText = d.titulo || "Serviço sem título";
+            document.getElementById('service-title').innerText = d.titulo || "ServiÃ§o sem tÃ­tulo";
             document.getElementById('bread-cat').innerText = (d.categorias || "Geral").split(',')[0];
-            document.getElementById('meta-location').innerText = (d.cidade && d.uf) ? `${d.cidade}, ${d.uf}` : "Localização não informada";
-            document.getElementById('service-desc').innerText = d.descricao || "Sem descrição.";
+            document.getElementById('meta-location').innerText = (d.cidade && d.uf) ? `${d.cidade}, ${d.uf}` : "LocalizaÃ§Ã£o nÃ£o informada";
+            document.getElementById('service-desc').innerText = d.descricao || "Sem descriÃ§Ã£o.";
 
-            // -- TAGS DE EMERGÊNCIA --
+            // -- TAGS DE EMERGÃŠNCIA --
             if(d.atendeEmergencia) {
                 document.getElementById('badges-area').innerHTML += `
-                    <span class="tag-emergency"><i class='bx bxs-alarm-exclamation'></i> Atendimento de Emergência (24h)</span>
+                    <span class="tag-emergency"><i class='bx bxs-alarm-exclamation'></i> Atendimento de EmergÃªncia (24h)</span>
                 `;
             }
 
-            // -- GALERIA (ANÚNCIO + PERFIL) --
+            // -- GALERIA (ANÃšNCIO + PERFIL) --
             const fotos = (() => {
                 const lista = [];
                 const push = (v) => {
@@ -847,7 +1317,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                     if (!lista.includes(src)) lista.push(src);
                 };
 
-                // Fotos do anúncio
+                // Fotos do anÃºncio
                 push(d.fotos || []);
                 push(d.img);
                 push(d.imagem);
@@ -898,8 +1368,8 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 document.getElementById('diploma-link').href = d.diplomaUrl;
             }
 
-            // -- SIDEBAR (PREÇO E AUTOR) --
-            const displayPrice = (d.preco && d.preco !== 'Sob Orçamento') ? `R$ ${d.preco}` : "Sob Orçamento";
+            // -- SIDEBAR (PREÃ‡O E AUTOR) --
+            const displayPrice = (d.preco && d.preco !== 'Sob OrÃ§amento') ? `R$ ${d.preco}` : "Sob OrÃ§amento";
             document.getElementById('price-display').innerText = displayPrice;
             
             if(d.pagamentosAceitos && d.pagamentosAceitos.length) {
@@ -915,22 +1385,22 @@ html.is-embed main{margin:0!important;padding:14px!important}
             document.getElementById('prov-name').innerText = d.nomeAutor || perfil.nome || perfil.user || "Profissional Doke";
             document.getElementById('prov-img').src = d.fotoAutor || perfil.foto || perfil.foto_url || perfil.avatar || "assets/Imagens/user_placeholder.png";
             document.getElementById('link-perfil').href = provUid ? `perfil-profissional.html?uid=${encodeURIComponent(provUid)}` : "perfil-profissional.html";
-            document.getElementById('policy-text').innerText = d.politicaCancelamento || "Padrão da plataforma";
+            document.getElementById('policy-text').innerText = d.politicaCancelamento || "PadrÃ£o da plataforma";
             detalhesAvaliacaoCtx = {
                 id: String(idAnuncio || d.id || d.anuncioId || ""),
-                titulo: d.titulo || "Serviço",
+                titulo: d.titulo || "ServiÃ§o",
                 categoria: String(d.categorias || d.categoria || "Geral").split(",")[0].trim(),
-                preco: (d.preco && d.preco !== "Sob Orçamento") ? `R$ ${d.preco}` : "Sob Orçamento",
+                preco: (d.preco && d.preco !== "Sob OrÃ§amento") ? `R$ ${d.preco}` : "Sob OrÃ§amento",
                 img: fotos[0] || d.img || d.imagem || ""
             };
             
-            // Botão Contato
+            // BotÃ£o Contato
             document.getElementById('btn-contact').onclick = () => {
                 const userLogado = localStorage.getItem('usuarioLogado');
                 if(!userLogado) {
                     window.location.href = "login.html";
                 } else {
-                    window.location.href = `mensagens.html?iniciar=${d.uid}&servico=${encodeURIComponent(d.titulo)}`;
+                    window.location.href = `chat.html?iniciar=${d.uid}&servico=${encodeURIComponent(d.titulo)}`;
                 }
             };
 
@@ -940,16 +1410,20 @@ html.is-embed main{margin:0!important;padding:14px!important}
             // rating do topo -> rolar para avaliacoes
             bindTopRatingLink();
 
-            // Scroll opcional vindo do card (estrelas -> avaliações)
+            // Scroll opcional vindo do card (estrelas -> avaliaÃ§Ãµes)
             tryScrollToRequestedSection();
+
+            // Fallback de layout para modal embed no desktop:
+            // garante painel da direita acompanhando a rolagem.
+            try { initEmbedSidebarFollowFallback(); } catch (_) {}
         }
 
         function renderizarAgenda(agenda) {
             const container = document.getElementById('agenda-container');
-            const diasMap = { 'seg':'SEG', 'ter':'TER', 'qua':'QUA', 'qui':'QUI', 'sex':'SEX', 'sab':'SÁB', 'dom':'DOM' };
+            const diasMap = { 'seg':'SEG', 'ter':'TER', 'qua':'QUA', 'qui':'QUI', 'sex':'SEX', 'sab':'SÃB', 'dom':'DOM' };
             
             if(!agenda) {
-                container.innerHTML = "<p>Horário a combinar.</p>";
+                container.innerHTML = "<p>HorÃ¡rio a combinar.</p>";
                 return;
             }
 
@@ -968,7 +1442,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
         }
 
         // ===========================================
-        // BUSCA DE AVALIAÇÕES REAIS (SEM DADOS FALSOS)
+        // BUSCA DE AVALIAÃ‡Ã•ES REAIS (SEM DADOS FALSOS)
         // ===========================================
         async function carregarAvaliacoesReais(uidProfissional, anuncioId) {
             const list = document.getElementById('reviews-list');
@@ -980,7 +1454,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 { id: "pontualidade", label: "Pontualidade" },
                 { id: "profissionalismo", label: "Profissionalismo" },
                 { id: "qualidade", label: "Qualidade" },
-                { id: "preco", label: "Preço / Valor" },
+                { id: "preco", label: "PreÃ§o / Valor" },
                 { id: "atendimento", label: "Atendimento" }
             ];
             const critLabels = ["Pessimo", "Ruim", "Regular", "Bom", "Otimo"];
@@ -1132,7 +1606,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                     document.getElementById('meta-rating').innerText = "0.0";
                     document.getElementById('meta-count').innerText = "0";
                     document.getElementById('top-stars').innerHTML = gerarEstrelasHTML(0);
-                    list.innerHTML = `<div class="fr-empty" style="padding:14px 8px;">Este anuncio ainda não possui avaliacoes.</div>`;
+                    list.innerHTML = `<div class="fr-empty" style="padding:14px 8px;">Este anuncio ainda nÃ£o possui avaliacoes.</div>`;
                     return;
                 }
 
@@ -1320,7 +1794,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                                 <div class="fr-criteria-title">Detalhes por criterio</div>
                                 <div class="fr-criteria-nav">
                                     <button class="fr-nav-btn" data-dir="-1" aria-label="Anterior">&#8249;</button>
-                                    <button class="fr-nav-btn" data-dir="1" aria-label="Próximo">&#8250;</button>
+                                    <button class="fr-nav-btn" data-dir="1" aria-label="PrÃ³ximo">&#8250;</button>
                                 </div>
                             </div>
                             <div class="fr-criteria-viewport">
@@ -1449,7 +1923,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
         function gerarEstrelasHTML(nota) {
             let html = "";
             for(let i=1; i<=5; i++) {
-                // Se a nota for maior ou igual a 'i', estrela cheia. Senão vazia.
+                // Se a nota for maior ou igual a 'i', estrela cheia. SenÃ£o vazia.
                 html += (i <= Math.round(nota)) ? "<i class='bx bxs-star'></i>" : "<i class='bx bx-star'></i>";
             }
             return html;
@@ -1466,7 +1940,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
         }
 
         // ============================================================
-        // PERGUNTAS & RESPOSTAS (Supabase) é padrão marketplace
+        // PERGUNTAS & RESPOSTAS (Supabase) Ã© padrÃ£o marketplace
         // Tabelas suportadas: perguntas_profissional (novo) e perguntas_respostas (legado)
         // ============================================================
         async function initPerguntasRespostas(anuncioId, uidProfissional, perfilProf){
@@ -1478,12 +1952,20 @@ html.is-embed main{margin:0!important;padding:14px!important}
 
             const sb = window.sb;
             if(!sb || !sb.from){
-                qaList.innerHTML = '<p style="color:#777;">Supabase não inicializado.</p>';
+                qaList.innerHTML = '<p style="color:#777;">Supabase nÃ£o inicializado.</p>';
                 return;
             }
 
             const me = await sb.auth.getUser().then(r=>r.data?.user||null).catch(()=>null);
-            const isOwner = !!(me && uidProfissional && String(me.id) === String(uidProfissional));
+            let perfilLocal = {};
+            try { perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null') || {}; } catch(_e){}
+            const myIds = Array.from(new Set([
+              String(me?.id || '').trim(),
+              String(me?.uid || '').trim(),
+              String(perfilLocal?.uid || '').trim(),
+              String(perfilLocal?.id || '').trim()
+            ].filter(Boolean)));
+            const isOwner = !!(uidProfissional && myIds.some((id) => String(id) === String(uidProfissional)));
             const isMissingTableError = (error) => {
               const raw = String(error?.message || error?.details || error?.hint || "").toLowerCase();
               return (
@@ -1532,8 +2014,8 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 }
 
                 if (error) {
-                    // Se a tabela não existir ainda, mostra orientação (sem quebrar a página)
-                    qaList.innerHTML = `<p style="color:#b91c1c;">Não consegui carregar as perguntas (tabela ausente ou permissão). Rode o SQL: <b>supabase_perguntas_profissional.sql</b></p>`;
+                    // Se a tabela nÃ£o existir ainda, mostra orientaÃ§Ã£o (sem quebrar a pÃ¡gina)
+                    qaList.innerHTML = `<p style="color:#b91c1c;">NÃ£o consegui carregar as perguntas (tabela ausente ou permissÃ£o). Rode o SQL: <b>supabase_perguntas_profissional.sql</b></p>`;
                     return;
                 }
 
@@ -1545,7 +2027,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
 
                 qaList.innerHTML = '';
                 data.forEach(row => {
-                    const name = row.perguntador_nome || row.asked_by_nome || 'Usuário';
+                    const name = row.perguntador_nome || row.asked_by_nome || 'UsuÃ¡rio';
                     const dt = toDateLabel(row.created_at);
                     const answered = !!(row.resposta && String(row.resposta).trim());
                     const canReply = isOwner && !answered;
@@ -1593,7 +2075,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                             .eq("id", id));
                         }
                         btn.disabled = false; btn.style.opacity = '1';
-                        if(error){ alert('Não consegui enviar a resposta.'); return; }
+                        if(error){ alert('NÃ£o consegui enviar a resposta.'); return; }
                         await load();
                     });
                 });
@@ -1604,18 +2086,18 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 const texto = (input.value || '').trim();
                 if(!texto) return;
                 if(!me){
-                    alert('Faça login para perguntar.');
+                    alert('FaÃ§a login para perguntar.');
                     window.location.href = 'login.html';
                     return;
                 }
                 btnSend.disabled = true; btnSend.style.opacity = '0.7';
                 const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null') || {};
-                const nome = perfilLocal.user || perfilLocal.nome || me.user_metadata?.nome || me.email || 'Usuário';
+                const nome = perfilLocal.user || perfilLocal.nome || me.user_metadata?.nome || me.email || 'UsuÃ¡rio';
                 let error = null;
                 if (qaSource === "perguntas_profissional") {
                   if (!uidProfissional) {
                     btnSend.disabled = false; btnSend.style.opacity = '1';
-                    alert('Não foi possível identificar o profissional deste anúncio.');
+                    alert('NÃ£o foi possÃ­vel identificar o profissional deste anÃºncio.');
                     return;
                   }
                   ({ error } = await sb
@@ -1641,7 +2123,7 @@ html.is-embed main{margin:0!important;padding:14px!important}
                 }
                 btnSend.disabled = false; btnSend.style.opacity = '1';
                 if(error){
-                    alert('Não consegui enviar a pergunta. Rode o SQL do projeto (supabase_perguntas_profissional.sql).');
+                    alert('NÃ£o consegui enviar a pergunta. Rode o SQL do projeto (supabase_perguntas_profissional.sql).');
                     return;
                 }
                 input.value = '';
@@ -1691,6 +2173,8 @@ html.is-embed main{margin:0!important;padding:14px!important}
 </script>
 </body>
 </html>
+
+
 
 
 

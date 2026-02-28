@@ -183,7 +183,7 @@
     .bulk-actions{display:flex; gap:8px; flex-wrap:wrap;}
     .bulk-actions .btn-ui{min-height:38px; padding:0 12px;}
 
-    .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-content:start; align-items:start; grid-auto-rows:min-content;}
+    .grid{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-content:start; align-items:start; grid-auto-rows:min-content; padding-top:6px;}
     /* Card com mais contraste (nao some no fundo do painel)
        + altura fixa para todos terem a mesma dimensÃ£o */
     /* Altura uniforme dos cards (ajustada para evitar cortes quando tags/descriÃ§Ã£o quebram linha) */
@@ -213,7 +213,7 @@
     .card[data-status="cancelado"]{border-bottom-color:#ef4444;}
     .card[data-status="recusado"]{border-bottom-color:#ef4444;}
 
-	    .card:hover{transform:translateY(-3px); box-shadow:0 16px 40px rgba(0,0,0,0.08); border-color:#e2e8f0;}
+	    .card:hover{transform:none; box-shadow:0 16px 40px rgba(0,0,0,0.08); border-color:#e2e8f0;}
     /* amarelo */
     /* verde/teal */
     /* cinza */
@@ -229,9 +229,7 @@
       gap:8px;
     }
     .card-select{
-      position:absolute;
-      top:12px;
-      right:12px;
+      position:static;
       width:34px;
       height:34px;
       min-width:34px;
@@ -252,7 +250,7 @@
       color:#fff;
     }
     /* limita a Ã¡rea de tags para nÃ£o variar a altura entre cards */
-    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap; padding-right:44px; max-height:56px; overflow:hidden;}
+    .tags{display:flex; align-items:center; gap:8px; flex-wrap:wrap; max-height:56px; overflow:hidden; flex:1 1 auto; min-width:0;}
 
     /* Quando o chat estÃ¡ aberto, mostramos sÃ³ os 2 chips principais (tipo + status)
        para reduzir ruÃ­do visual */
@@ -352,16 +350,18 @@
     body.chat-open .need-info{display:none !important;}
 
     .meta{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px;}
-    .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px;}
+    .meta-item{border:1px solid #dfe9f5; background:#f7fbff; border-radius:12px; padding:9px 10px; display:flex; align-items:flex-start; gap:8px; min-width:0;}
+    .meta-item > div{min-width:0;}
     .meta-item i{font-size:17px; color:#5b78a0; margin-top:2px;}
     .meta-item small{display:block; color:#6d829f; font-size:.73rem; line-height:1;}
-    .meta-item strong{display:block; margin-top:4px; font-size:.94rem; line-height:1.2;}
+    .meta-item strong{display:block; margin-top:4px; font-size:.94rem; line-height:1.2; word-break:break-word;}
 
     /* footer sempre â€œgrudadoâ€ no fim do card (altura uniforme) */
-    .footer{margin-top:auto; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:nowrap;}
-    .actions{display:flex; gap:8px; flex-wrap:nowrap; margin-left:auto; width:100%;}
+    .footer{margin-top:auto; border-top:1px solid #edf2f8; padding-top:10px; display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap:wrap;}
+    .actions{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-left:0; width:100%;}
+    .actions.single-action{grid-template-columns:1fr;}
     .btn-order{min-height:40px; border-radius:12px; border:1px solid #d8e4f1; background:#fff; color:#1b3a5b; padding:0 13px; font-weight:800; display:inline-flex; align-items:center; gap:7px; cursor:pointer;}
-    .actions .btn-order{flex:1; justify-content:center; min-width:0;}
+    .actions .btn-order{width:100%; justify-content:center; min-width:0;}
     .actions .btn-order .btn-text{white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
 
     .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
@@ -876,60 +876,11 @@
       .hero-stat strong{font-size:.95rem;}
       .meta{grid-template-columns:1fr 1fr;}
       .footer{flex-direction:column; align-items:stretch;}
-      .actions{margin-left:0; width:100%;}
-      .btn-order{flex:1; justify-content:center;}
+      .actions{margin-left:0; width:100%; grid-template-columns:1fr; gap:7px;}
+      .btn-order{justify-content:center;}
       .doke-prompt-card{padding:12px; border-radius:14px;}
       .doke-prompt-actions{width:100%;}
       .doke-prompt-btn{flex:1;}
-    
-/* --- Mobile compact cards (Pedidos) --- */
-.card{padding:12px; border-radius:18px;}
-.card-top{gap:10px;}
-.tags{gap:6px;}
-.tags .tag{padding:6px 10px; border-radius:999px; font-size:.72rem;}
-.tags .role-client, .tags .role-pro, .tags .role-me{display:none;}
-.title{font-size:1.02rem;}
-.desc{
-  margin-top:4px;
-  display:-webkit-box;
-  -webkit-line-clamp:1;
-  -webkit-box-orient:vertical;
-  overflow:hidden;
-}
-
-/* Meta row becomes horizontal pills */
-.meta{
-  display:flex !important;
-  flex-wrap:nowrap !important;
-  overflow-x:auto !important;
-  -webkit-overflow-scrolling:touch;
-  gap:8px !important;
-  padding-bottom:2px;
-}
-.meta-item{
-  flex:0 0 auto;
-  min-width:max-content;
-  padding:7px 9px;
-  border-radius:12px;
-}
-.meta-item small{display:none !important;}
-.meta-item strong{
-  margin-top:0 !important;
-  font-size:.86rem !important;
-  white-space:nowrap;
-}
-
-/* Footer + buttons */
-.actions{gap:8px;}
-.btn-order{min-height:40px; border-radius:12px; padding:0 12px; font-size:.9rem;}
-.btn-order i{font-size:1.05rem;}
-.btn-order.secondary{
-  flex:0 0 44px;
-  width:44px;
-  padding:0;
-  justify-content:center;
-}
-.btn-order.secondary .btn-text{display:none;}
 
 }
 
@@ -1033,11 +984,12 @@
 
 
 @media (min-width: 1025px){
-  body[data-page="pedidos"] .card{
-    height: 400px;
+  body[data-page="pedidos"] .card.card-pedido{
+    min-height: 380px;
+    height: auto;
   }
-  body[data-page="pedidos"] .card .tags{max-height: 64px; overflow:hidden;}
-  body[data-page="pedidos"] .card .desc{min-height:2.7em;}
+  body[data-page="pedidos"] .card.card-pedido .tags{max-height: 64px; overflow:hidden;}
+  body[data-page="pedidos"] .card.card-pedido .desc{min-height:2.7em;}
 }
 
 
@@ -1055,7 +1007,7 @@ body[data-page="pedidos"].chat-split-open #ordersGrid.grid{
 }
 
 /* Cards um pouco mais compactos no desktop */
-body[data-page="pedidos"] .card{
+body[data-page="pedidos"] .card.card-pedido{
   padding: 12px;
   border-radius: 16px;
   gap: 7px;
@@ -1066,7 +1018,7 @@ body[data-page="pedidos"] .card{
       .card{min-height:auto;}
 
   :root{  }
-  body[data-page="pedidos"] .card{ height:auto; }
+  body[data-page="pedidos"] .card.card-pedido{ height:auto; }
   body[data-page="pedidos"] #ordersGrid.grid{ grid-template-columns: 1fr; }
 }
 
@@ -1100,7 +1052,7 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
   body[data-page="pedidos"] .toolbar,
   body[data-page="pedidos"] .toolbar-actions,
   body[data-page="pedidos"] #ordersGrid,
-  body[data-page="pedidos"] .card{
+  body[data-page="pedidos"] .card.card-pedido{
     width:100% !important;
     max-width:100% !important;
     min-width:0 !important;
@@ -2606,7 +2558,7 @@ function displayHandle(p){
         const rawTitle = String(p.titulo || '').trim();
         const needPreview = (rawNeed && rawNeed !== rawDesc && rawNeed !== rawTitle && rawNeed.toLowerCase() !== 'sem detalhes adicionais.') ? rawNeed : '';
         return `
-          <article class="card ${selected ? 'selected' : ''} ${isActive ? 'chat-active' : ''}" data-id="${esc(p.id)}" data-status="${esc(String(p.status||''))}">
+          <article class="card card-pedido ${selected ? 'selected' : ''} ${isActive ? 'chat-active' : ''}" data-id="${esc(p.id)}" data-status="${esc(String(p.status||''))}">
             <div class="card-top">
               <div class="tags">
                 <span class="tag type"><i class='bx bx-receipt'></i>${esc(p.tipo)}</span>
@@ -2655,7 +2607,7 @@ function displayHandle(p){
             </div>
 
             <div class="footer">
-<div class="actions">
+              <div class="actions ${chatLiberado ? '' : 'single-action'}">
                 ${chatLiberado ? `<button class="btn-order primary ${isActive ? 'danger' : ''}" type="button" data-action="chat" data-id="${esc(p.id)}"><i class='bx bx-message-square-detail'></i><span class="btn-text">${isActive ? 'Fechar chat' : 'Abrir chat'}</span></button>` : ``}
                 <button class="btn-order secondary" type="button" data-action="details" data-id="${esc(p.id)}"><i class='bx bx-file'></i><span class="btn-text">Detalhes</span></button>
               </div>
@@ -2972,6 +2924,7 @@ function openInlineChat(p){
         const pid = encodeURIComponent(String(p.id));
         const q = [
           'embed=1',
+          'noshell=1',
           `chatId=${pid}`,
           `pedidoId=${pid}`,
           'from=pedidos',

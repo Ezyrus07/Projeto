@@ -318,7 +318,7 @@
         :where(.agenda-header input[type="checkbox"], .form-group input[type="checkbox"], #termos):checked{
             border-color: rgba(11,119,104,.75);
             background: linear-gradient(135deg, var(--cor2, #0095f6), var(--cor0, #2ecc71));
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M18.3 5.7 12 12l6.3 6.3-1.4 1.4L10.6 13.4 4.3 19.7 2.9 18.3 9.2 12 2.9 5.7 4.3 4.3 10.6 10.6 16.9 4.3z'/%3E%3C/svg%3E");
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='white' d='M20.3 6.7a1 1 0 0 1 0 1.4l-9.2 9.2a1 1 0 0 1-1.4 0L3.7 11.3a1 1 0 1 1 1.4-1.4l5.3 5.3 8.5-8.5a1 1 0 0 1 1.4 0z'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: center;
             background-size: 14px 14px;
@@ -340,6 +340,11 @@
             border-radius: 16px;
             border: 1px solid #e7eef5;
             box-shadow: 0 10px 22px rgba(0,0,0,.04);
+        }
+        .agenda-item.is-selected{
+            border-color: rgba(11,119,104,.45);
+            background: #f3fbf8;
+            box-shadow: 0 10px 24px rgba(11,119,104,.12);
         }
         .agenda-item:hover{ box-shadow: 0 14px 28px rgba(0,0,0,.06); }
         .agenda-header label{ font-size: 1rem; }
@@ -630,17 +635,11 @@ h3#dokeAlertTitle{
   </div>
 
   <div class="item">
-<a href="mensagens.html">
-<i class='bx bx-message-rounded-dots icon azul'></i>
+    <a href="chat.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
       <span>Mensagens</span>
-</a>
-</div>
-<div class="item">
-<a href="pedidos.html">
-<i class="bx bx-package icon verde"></i>
-<span>Pedidos</span>
-</a>
-</div>
+    </a>
+  </div>
 
   <div class="item">
     <a href="comunidade.html">
@@ -772,7 +771,7 @@ h3#dokeAlertTitle{
 <div class="checkbox-card"><input id="pg-credito" type="checkbox" value="Cartão de crédito"/><label for="pg-credito"><i class="bx bx-credit-card"></i> Crédito</label></div>
 <div class="checkbox-card"><input id="pg-debito" type="checkbox" value="Cartão de débito"/><label for="pg-debito"><i class="bx bx-credit-card-front"></i> Débito</label></div>
 <div class="checkbox-card"><input id="pg-dinheiro" type="checkbox" value="Dinheiro"/><label for="pg-dinheiro"><i class="bx bx-money"></i> Dinheiro</label></div>
-<div class="checkbox-card"><input id="pg-boleto" type="checkbox" value="Boleto"/><label for="pg-boleto"><i class="bx bx-package"></i> Boleto</label></div>
+<div class="checkbox-card"><input id="pg-boleto" type="checkbox" value="Boleto"/><label for="pg-boleto"><i class="bx bx-receipt"></i> Boleto</label></div>
 <div class="checkbox-card"><input id="pg-transfer" type="checkbox" value="Transferência"/><label for="pg-transfer"><i class="bx bx-transfer"></i> Transferência</label></div>
 </div>
 <small class="field-hint">Marque as formas de pagamento que você aceita.</small>
@@ -1060,7 +1059,10 @@ h3#dokeAlertTitle{
     window.toggleTime = function(dia) {
         const box = document.getElementById(`time-${dia}`);
         const chk = document.getElementById(`chk-${dia}`);
-        if(box) box.classList.toggle('show', !!(chk && chk.checked));
+        const checked = !!(chk && chk.checked);
+        if(box) box.classList.toggle('show', checked);
+        const item = chk && chk.closest ? chk.closest('.agenda-item') : null;
+        if(item) item.classList.toggle('is-selected', checked);
     }
     window.togglePriceInput = function() {
         const val = document.querySelector('input[name="tipo_preco"]:checked').value;
@@ -1685,6 +1687,8 @@ h3#dokeAlertTitle{
         if(chk){
           chk.checked = !!flag;
           if(t) t.classList.toggle('show', !!flag);
+          const item = chk.closest ? chk.closest('.agenda-item') : null;
+          if(item) item.classList.toggle('is-selected', !!flag);
         }
       });
     }
