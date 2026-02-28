@@ -1,4 +1,4 @@
-// ============================================================
+﻿// ============================================================
 // 1. IMPORTA??ES E CONFIGURA??O
 // ============================================================
 
@@ -902,7 +902,7 @@ function setScrollLock(locked) {
     const alreadyLocked = root.classList.contains('no-scroll') || body.classList.contains('no-scroll');
 
     if (locked) {
-        // Salva posição atual só na transição "destravado -> travado"
+        // Salva posiÃ§Ã£o atual sÃ³ na transiÃ§Ã£o "destravado -> travado"
         if (!alreadyLocked) {
             try { window.__dokeScrollY = window.scrollY || document.documentElement.scrollTop || 0; } catch (_) { window.__dokeScrollY = 0; }
         }
@@ -939,7 +939,7 @@ function setScrollLock(locked) {
     body.style.overflow = '';
     body.style.overflowY = '';
 
-    // restaura posição no iOS
+    // restaura posiÃ§Ã£o no iOS
     if (isIOS) {
         const y = top ? Math.abs(parseInt(top, 10)) : (Number(window.__dokeScrollY || 0) || 0);
         try { window.scrollTo(0, y || 0); } catch (_) {}
@@ -3124,7 +3124,7 @@ window.carregarProfissionais = async function() {
             avaliacaoHTML = `<span class="pro-rating" style="background:#e0f7fa; color:#006064;">Novo</span>`;
         } else {
             let media = (p.stats && p.stats.media) ? p.stats.media : 0; 
-            avaliacaoHTML = `<span class="pro-rating">⭐ ${media} (${numReviews})</span>`;
+            avaliacaoHTML = `<span class="pro-rating">â­ ${media} (${numReviews})</span>`;
         }
 
         const html = `
@@ -3993,7 +3993,7 @@ window.atualizarTelaCep = function(payload) {
         else if (cidade && uf) txt = `${cidade} - ${uf}`;
         else if (cidade) txt = cidade;
         else if (cep) txt = `CEP: ${cep}`;
-        else if (hasGeo) txt = 'Localização ativa';
+        else if (hasGeo) txt = 'LocalizaÃ§Ã£o ativa';
         s.innerText = txt;
         s.style.fontWeight = '700';
         s.style.color = 'var(--cor0)';
@@ -6367,7 +6367,7 @@ async function carregarListaProfissionaisReal() {
                     <img src="https://i.pravatar.cc/150?img=33" class="pro-avatar-lg">
                     <span class="pro-name">Seja o Primeiro</span>
                     <span class="pro-job">Cadastre-se Pro</span>
-                    <button class="btn-pro-action" onclick="window.location.href='tornar-profissional.html'">Começar</button>
+                    <button class="btn-pro-action" onclick="window.location.href='tornar-profissional.html'">ComeÃ§ar</button>
                 </div>`;
             return;
         }
@@ -6530,14 +6530,14 @@ function dokeCommEscapeHtml(value) {
 function dokeCommNormalizePrivacidade(comm) {
     const boolPrivate = [comm?.privado, comm?.is_private, comm?.private].find(v => typeof v === "boolean");
     if (typeof boolPrivate === "boolean") {
-        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "Público" };
+        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "PÃºblico" };
     }
 
     if (typeof comm?.publico === "boolean") {
-        return { isPrivate: !comm.publico, label: comm.publico ? "Público" : "Privado" };
+        return { isPrivate: !comm.publico, label: comm.publico ? "PÃºblico" : "Privado" };
     }
     if (typeof comm?.publica === "boolean") {
-        return { isPrivate: !comm.publica, label: comm.publica ? "Público" : "Privado" };
+        return { isPrivate: !comm.publica, label: comm.publica ? "PÃºblico" : "Privado" };
     }
 
     const raw = String(comm?.privacidade || comm?.privacy || "").trim();
@@ -6547,7 +6547,7 @@ function dokeCommNormalizePrivacidade(comm) {
         if (s.includes("pub")) return { isPrivate: false, label: raw };
         return { isPrivate: false, label: raw };
     }
-    return { isPrivate: false, label: "Público" };
+    return { isPrivate: false, label: "PÃºblico" };
 }
 
 async function dokeCommHasColumn(client, table, col) {
@@ -7568,7 +7568,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         };
     }
 
-    // Evita ruído de 400 em schemas sem colunas snake_case; mantém variantes camelCase/lowercase.
+    // Evita ruÃ­do de 400 em schemas sem colunas snake_case; mantÃ©m variantes camelCase/lowercase.
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
     const qRecebidosAlt = query(collection(db, "pedidos"), where("parauid", "==", resolvedUid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
@@ -7613,7 +7613,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
     };
 
-    // Badge no header mobile pode variar entre páginas:
+    // Badge no header mobile pode variar entre pÃ¡ginas:
     // - Algumas usam o shell novo (.doke-mobile-header .doke-icon-btn)
     // - Outras usam o header legado (.navbar-mobile .botoes-direita)
     // Para evitar que a bolinha "suma" ao navegar entre HTMLs, sincronizamos ambos.
@@ -8758,130 +8758,180 @@ window.currentSupaPublicacaoAuthorId = null;
 window.currentSupaPublicacaoAuthorUid = null;
 let processandoLike = false; // Trava para evitar cliques r?pidos
 
+function ensurePostModalStyles() {
+    if (document.getElementById('postModalV5Styles')) return;
+    const style = document.createElement('style');
+    style.id = 'postModalV5Styles';
+    style.textContent = `
+#modalPostDetalhe.ppv5-overlay{
+  position:fixed; inset:0; z-index:10080; display:none;
+  align-items:center; justify-content:center; padding:20px;
+  background:rgba(6,10,20,.72); backdrop-filter:blur(3px);
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-close{
+  position:fixed; top:14px; right:14px; width:42px; height:42px; border-radius:999px;
+  border:1px solid rgba(255,255,255,.28); background:rgba(14,20,34,.9); color:#fff;
+  display:inline-flex; align-items:center; justify-content:center; cursor:pointer;
+  box-shadow:0 10px 24px rgba(0,0,0,.35); font-size:23px; line-height:1;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-shell{
+  width:min(1140px, calc(100vw - 76px)); height:min(92vh, 920px);
+  display:grid; grid-template-columns:minmax(0,1.06fr) minmax(360px,.94fr);
+  background:#f6f8fc; border-radius:18px; overflow:hidden;
+  border:1px solid #d8e1ef; box-shadow:0 24px 55px rgba(3,11,25,.32);
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-media{
+  background:#091224; display:flex; align-items:center; justify-content:center;
+  min-width:0; min-height:0; overflow:hidden;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-media img,
+#modalPostDetalhe.ppv5-overlay .ppv5-media video{
+  width:100%; height:100%; object-fit:contain; background:#091224;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-panel{
+  min-width:0; min-height:0; display:grid; grid-template-rows:auto minmax(0,1fr) auto;
+  background:#f8fbff; border-left:1px solid #d8e1ef;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-head{
+  padding:12px 14px; border-bottom:1px solid #e0e8f3; background:#ffffff;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-author{
+  display:flex; align-items:center; gap:10px;
+}
+#modalPostDetalhe.ppv5-overlay #modalAvatar{
+  width:36px; height:36px; border-radius:999px; object-fit:cover; border:2px solid #edf2fa;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-authorMeta{
+  display:flex; flex-direction:column; min-width:0;
+}
+#modalPostDetalhe.ppv5-overlay #modalUsername{
+  font-size:.98rem; font-weight:800; color:#102543; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-authorMeta small{
+  font-size:.72rem; color:#6a7f99; font-weight:700;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments{
+  min-height:0; overflow-y:auto; padding:12px 14px;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-caption,
+#modalPostDetalhe.ppv5-overlay .ppv5-caption-copy{
+  margin-bottom:12px; color:#172c49; font-size:.92rem; line-height:1.42; word-break:break-word;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments .comment-text-content{ color:#152a47 !important; }
+#modalPostDetalhe.ppv5-overlay .ppv5-comments .comment-meta-row,
+#modalPostDetalhe.ppv5-overlay .ppv5-comments .comment-meta-row span,
+#modalPostDetalhe.ppv5-overlay .ppv5-comments .comment-date{ color:#6a7f99 !important; }
+#modalPostDetalhe.ppv5-overlay .ppv5-comments [style*="color:#999"]{ color:#6b7f98 !important; }
+#modalPostDetalhe.ppv5-overlay .ppv5-comments::-webkit-scrollbar{ width:8px; }
+#modalPostDetalhe.ppv5-overlay .ppv5-comments::-webkit-scrollbar-thumb{ background:#c8d5e8; border-radius:999px; }
+#modalPostDetalhe.ppv5-overlay .ppv5-footer{
+  border-top:1px solid #e0e8f3; background:#ffffff; padding:10px 14px 12px;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-actions{
+  display:flex; align-items:center; gap:14px; margin-bottom:8px;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-actions i{
+  font-size:1.52rem; color:#17345e; cursor:pointer;
+}
+#modalPostDetalhe.ppv5-overlay #btnLikeModalIcon.bxs-heart{ color:#e14367; }
+#modalPostDetalhe.ppv5-overlay .ppv5-actions .btn-report-post{
+  margin-left:auto; color:#ca6a2e; font-size:1.3rem;
+}
+#modalPostDetalhe.ppv5-overlay #modalLikesCount{
+  display:block; margin-bottom:8px; color:#122945; font-size:.92rem; font-weight:800;
+}
+#modalPostDetalhe.ppv5-overlay #btnExcluirModal{
+  width:100%; min-height:38px; margin:0 0 8px; border-radius:10px; border:1px solid #f2c8d1;
+  background:#fff5f8; color:#c54d67; font-weight:800; cursor:pointer;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-input{
+  display:flex; align-items:center; gap:8px; border-top:1px solid #e0e8f3; padding-top:10px;
+}
+#modalPostDetalhe.ppv5-overlay #inputComentarioModal{
+  flex:1; min-width:0; height:40px; border:1px solid #d9e4f2; border-radius:10px;
+  background:#f8fbff; color:#142c4a; padding:0 12px; outline:none; font-size:.92rem;
+}
+#modalPostDetalhe.ppv5-overlay #inputComentarioModal::placeholder{ color:#8ca0ba; }
+#modalPostDetalhe.ppv5-overlay .ppv5-input button{
+  height:40px; min-width:88px; border:none; border-radius:10px; cursor:pointer;
+  background:#1f6fb3; color:#fff; font-weight:800; font-size:.92rem;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-input button:disabled{
+  background:#9eb5cf; color:#f2f6fb; cursor:not-allowed;
+}
+@media (max-width:1060px){
+  #modalPostDetalhe.ppv5-overlay .ppv5-shell{
+    width:min(980px, calc(100vw - 40px)); height:min(94vh, 930px);
+    grid-template-columns:1fr; grid-template-rows:minmax(290px,48vh) 1fr;
+  }
+  #modalPostDetalhe.ppv5-overlay .ppv5-panel{ border-left:0; border-top:1px solid #d8e1ef; }
+}
+@media (max-width:760px){
+  #modalPostDetalhe.ppv5-overlay{ padding:0; align-items:stretch; justify-content:stretch; }
+  #modalPostDetalhe.ppv5-overlay .ppv5-close{
+    top:max(10px, env(safe-area-inset-top)); left:10px; right:auto; width:40px; height:40px; font-size:22px;
+  }
+  #modalPostDetalhe.ppv5-overlay .ppv5-shell{
+    width:100vw; height:100dvh; border:0; border-radius:0; box-shadow:none;
+    grid-template-columns:1fr; grid-template-rows:minmax(245px,44dvh) 1fr;
+  }
+  #modalPostDetalhe.ppv5-overlay .ppv5-media{ min-height:245px; }
+  #modalPostDetalhe.ppv5-overlay .ppv5-comments{ padding:10px 12px; }
+  #modalPostDetalhe.ppv5-overlay .ppv5-footer{
+    padding:10px 12px calc(10px + env(safe-area-inset-bottom));
+  }
+  #modalPostDetalhe.ppv5-overlay .ppv5-input button{ min-width:80px; }
+}
+`;
+    document.head.appendChild(style);
+}
+
 function applyPostModalLayoutRuntime() {
     const modal = document.getElementById('modalPostDetalhe');
-    if (!modal || !modal.classList.contains('doke-post-modal')) return;
-
-    const sheet = modal.querySelector('.doke-post-sheet');
-    const media = modal.querySelector('.doke-post-media');
-    const info = modal.querySelector('.doke-post-info');
-    const comments = modal.querySelector('.doke-post-comments');
-    const footer = modal.querySelector('.doke-post-footer');
-    const closeBtn = modal.querySelector('.doke-post-close-fab');
-    const width = window.innerWidth || document.documentElement.clientWidth || 0;
-    const isMobile = width <= 980;
-    const isSplitDesktop = width >= 1180;
-    const safeBottom = 'calc(10px + env(safe-area-inset-bottom))';
-
-    modal.style.setProperty('padding', isMobile ? '0' : '20px', 'important');
-    modal.style.setProperty('align-items', isMobile ? 'stretch' : 'center', 'important');
-    modal.style.setProperty('justify-content', isMobile ? 'stretch' : 'center', 'important');
-    if (closeBtn) {
-        if (isMobile) {
-            closeBtn.style.setProperty('left', '10px', 'important');
-            closeBtn.style.setProperty('right', 'auto', 'important');
-            closeBtn.style.setProperty('top', 'max(10px, env(safe-area-inset-top))', 'important');
-        } else {
-            closeBtn.style.setProperty('left', 'auto', 'important');
-            closeBtn.style.setProperty('right', '18px', 'important');
-            closeBtn.style.setProperty('top', '18px', 'important');
-        }
-    }
-
-    if (sheet) {
-        sheet.style.setProperty('display', 'grid', 'important');
-        if (isSplitDesktop) {
-            sheet.style.setProperty('grid-template-columns', 'minmax(0, 1.18fr) minmax(360px, .82fr)', 'important');
-            sheet.style.setProperty('grid-template-rows', '1fr', 'important');
-            sheet.style.setProperty('width', 'min(1280px, calc(100vw - 72px))', 'important');
-            sheet.style.setProperty('height', 'min(92vh, 930px)', 'important');
-            sheet.style.setProperty('border-radius', '16px', 'important');
-            sheet.style.setProperty('border-width', '1px', 'important');
-        } else if (isMobile) {
-            sheet.style.setProperty('grid-template-columns', '1fr', 'important');
-            sheet.style.setProperty('grid-template-rows', 'minmax(248px, 46dvh) 1fr', 'important');
-            sheet.style.setProperty('width', '100vw', 'important');
-            sheet.style.setProperty('height', '100dvh', 'important');
-            sheet.style.setProperty('border-radius', '0', 'important');
-            sheet.style.setProperty('border-width', '0', 'important');
-        } else {
-            sheet.style.setProperty('grid-template-columns', '1fr', 'important');
-            sheet.style.setProperty('grid-template-rows', 'minmax(300px, 52vh) 1fr', 'important');
-            sheet.style.setProperty('width', 'min(1040px, calc(100vw - 44px))', 'important');
-            sheet.style.setProperty('height', 'min(94vh, 930px)', 'important');
-            sheet.style.setProperty('border-radius', '20px', 'important');
-            sheet.style.setProperty('border-width', '1px', 'important');
-        }
-    }
-
-    if (media) {
-        media.style.setProperty('min-height', isSplitDesktop ? '0' : (isMobile ? '248px' : '300px'), 'important');
-        media.style.setProperty('max-height', 'none', 'important');
-        media.style.setProperty('overflow', 'hidden', 'important');
-        media.style.setProperty('background', '#000', 'important');
-    }
-
-    if (info) {
-        info.style.setProperty('min-height', '0', 'important');
-        info.style.setProperty('display', 'flex', 'important');
-        info.style.setProperty('flex-direction', 'column', 'important');
-        info.style.setProperty('justify-content', 'flex-start', 'important');
-        info.style.setProperty('overflow', 'hidden', 'important');
-        info.style.setProperty('border-left', isSplitDesktop ? '1px solid #262b36' : '0', 'important');
-        info.style.setProperty('border-top', isSplitDesktop ? '0' : '1px solid #262b36', 'important');
-    }
-
-    if (comments) {
-        comments.style.setProperty('flex', '1 1 auto', 'important');
-        comments.style.setProperty('min-height', '0', 'important');
-        comments.style.setProperty('max-height', 'none', 'important');
-        comments.style.setProperty('overflow-y', 'auto', 'important');
-    }
-
-    if (footer) {
-        footer.style.setProperty('position', 'static', 'important');
-        footer.style.setProperty('padding', isMobile ? `10px 12px ${safeBottom}` : '10px 14px 12px', 'important');
-    }
+    if (!modal || !modal.classList.contains('ppv5-overlay')) return;
+    const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+    if (vh > 0) modal.style.setProperty('--ppv5-vh', `${vh}px`);
 }
 
 function ensureModalPostDetalhe() {
+    ensurePostModalStyles();
     const modalExistente = document.getElementById('modalPostDetalhe');
     if (modalExistente) modalExistente.remove();
     const modalHtml = `
-    <div id="modalPostDetalhe" class="modal-overlay doke-post-modal" onclick="fecharModalPost(event)">
-        <button type="button" class="btn-close-modal btn-close-modal-fixed doke-post-close-fab" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">
+    <div id="modalPostDetalhe" class="ppv5-overlay" onclick="fecharModalPost(event)">
+        <button type="button" class="ppv5-close" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">
             <i class='bx bx-x'></i>
         </button>
-        <div class="modal-content doke-post-sheet" onclick="event.stopPropagation()">
-            <div class="modal-media-area doke-post-media" id="modalMediaContainer"></div>
-            <div class="modal-info-area doke-post-info">
-                <div class="modal-header doke-post-header">
-                    <div class="modal-author-info doke-post-author">
+        <section class="ppv5-shell" onclick="event.stopPropagation()">
+            <div id="modalMediaContainer" class="ppv5-media"></div>
+            <aside class="ppv5-panel">
+                <header class="ppv5-head">
+                    <div class="ppv5-author">
                         <img id="modalAvatar" src="" alt="Avatar">
-                        <div class="doke-post-author-text">
-                            <div id="modalUsername">User</div>
+                        <div class="ppv5-authorMeta">
+                            <strong id="modalUsername">User</strong>
                             <small>Publicacao</small>
                         </div>
                     </div>
+                </header>
+                <div id="modalCommentsList" class="ppv5-comments">
+                    <div id="modalCaption" class="ppv5-caption"></div>
                 </div>
-                <div class="modal-comments-section doke-post-comments" id="modalCommentsList">
-                    <div id="modalCaption" class="doke-post-caption"></div>
-                </div>
-                <div class="modal-footer-actions doke-post-footer">
-                    <div class="modal-actions-bar doke-post-actions">
+                <footer class="ppv5-footer">
+                    <div class="ppv5-actions">
                         <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" role="button" tabindex="0"></i>
                         <i class='bx bx-message-rounded' onclick="toggleComentariosModal()" role="button" tabindex="0"></i>
                         <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" role="button" tabindex="0"></i>
                     </div>
-                    <span id="modalLikesCount" class="doke-post-likes">0 curtidas</span>
-                    <button id="btnExcluirModal" type="button" class="doke-post-delete" style="display:none;">Excluir publicação</button>
-                    <div class="doke-post-input-row">
+                    <span id="modalLikesCount">0 curtidas</span>
+                    <button id="btnExcluirModal" type="button" style="display:none;">Excluir publicacao</button>
+                    <div class="ppv5-input">
                         <input type="text" id="inputComentarioModal" placeholder="Adicione um comentario...">
                         <button onclick="postarComentarioModal()">Publicar</button>
                     </div>
-                </div>
-            </div>
-        </div>
+                </footer>
+            </aside>
+        </section>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
     applyPostModalLayoutRuntime();
@@ -8890,7 +8940,6 @@ function ensureModalPostDetalhe() {
         window.__dokePostModalLayoutBound = true;
     }
 }
-
 function getRelatedCount(value) {
     return (Array.isArray(value) ? value[0]?.count : value?.count) || 0;
 }
@@ -9050,7 +9099,7 @@ async function carregarComentariosNoModal(id, colecao) {
     const legendaDiv = document.getElementById('modalCaption');
     let legendaHTML = "";
     if (legendaDiv && legendaDiv.style.display !== 'none') {
-        legendaHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${legendaDiv.innerHTML}</div>`;
+        legendaHTML = `<div class="ppv5-caption-copy">${legendaDiv.innerHTML}</div>`;
     }
 
     list.innerHTML = `${legendaHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
@@ -9190,7 +9239,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     const captionDiv = document.getElementById('modalCaption');
     let captionHTML = "";
     if (captionDiv && captionDiv.style.display !== 'none') {
-        captionHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${captionDiv.innerHTML}</div>`;
+        captionHTML = `<div class="ppv5-caption-copy">${captionDiv.innerHTML}</div>`;
     }
 
     list.innerHTML = `${captionHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
@@ -10498,12 +10547,7 @@ window.fecharModalPostForce = function() {
     const modal = document.getElementById('modalPostDetalhe');
     if (modal) {
         modal.style.display = 'none';
-        const content = modal.querySelector('.modal-content');
-        const list = modal.querySelector('.modal-comments-section');
-        if (content) {
-            content.classList.remove('is-comments-collapsed');
-            content.classList.remove('is-comments-expanded');
-        }
+        const list = modal.querySelector('#modalCommentsList');
         if (list) list.dataset.loaded = "0";
         
         // Limpa v?deo/imagem para parar som
@@ -11140,7 +11184,7 @@ function setReportButtonVisibility(btns, visible) {
 }
 
 function ensureReportButtons() {
-    const postActions = document.querySelector("#modalPostDetalhe .modal-actions-bar");
+    const postActions = document.querySelector("#modalPostDetalhe .ppv5-actions");
     if (postActions && !postActions.querySelector(".btn-report-post")) {
         const icon = document.createElement("i");
         icon.className = "bx bx-flag btn-report-post";
@@ -11468,16 +11512,9 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
         _abrirModalUnificadoOriginal(dadosRecebidos, tipo, colecao);
     }
 
-    // Mobile: por padrão, abre com comentários recolhidos (toggle no ícone de balão)
     try {
-        const modal = document.getElementById('modalPostDetalhe');
-        const content = modal ? modal.querySelector('.modal-content') : null;
         const list = document.getElementById('modalCommentsList');
-        if (content) {
-            content.classList.remove('is-comments-collapsed');
-            content.classList.remove('is-comments-expanded');
-            if (list) list.dataset.loaded = "1";
-        }
+        if (list) list.dataset.loaded = "1";
     } catch (e) {}
 
     if (window.currentPostId && window.currentCollection) {
@@ -11495,16 +11532,9 @@ window.abrirModalPost = async function(id, colecao) {
         await _abrirModalPostOriginal(id, colecao);
     }
 
-    // Mobile: abre recolhido
     try {
-        const modal = document.getElementById('modalPostDetalhe');
-        const content = modal ? modal.querySelector('.modal-content') : null;
         const list = document.getElementById('modalCommentsList');
-        if (content) {
-            content.classList.remove('is-comments-collapsed');
-            content.classList.remove('is-comments-expanded');
-            if (list) list.dataset.loaded = "1";
-        }
+        if (list) list.dataset.loaded = "1";
     } catch (e) {}
     window.currentSupaPostType = null;
     window.currentSupaReelId = null;
@@ -11523,33 +11553,20 @@ window.abrirModalPublicacao = async function(publicacaoId) {
         await _abrirModalPublicacaoOriginal(publicacaoId);
     }
 
-    // Mobile: abre recolhido
     try {
-        const modal = document.getElementById('modalPostDetalhe');
-        const content = modal ? modal.querySelector('.modal-content') : null;
         const list = document.getElementById('modalCommentsList');
-        if (content) {
-            content.classList.remove('is-comments-collapsed');
-            content.classList.remove('is-comments-expanded');
-            if (list) list.dataset.loaded = "1";
-        }
+        if (list) list.dataset.loaded = "1";
     } catch (e) {}
     atualizarBotaoDenunciaPost();
 };
 
-// Toggle de comentários no modal (mobile): usa o ícone de balão
-// - Ao recolher: a mídia ocupa o espaço
-// - Ao expandir: comentários reaparecem
 window.toggleComentariosModal = function() {
     const modal = document.getElementById('modalPostDetalhe');
-    const content = modal ? modal.querySelector('.modal-content') : null;
-    if (!content) return;
-
-    content.classList.remove('is-comments-collapsed');
-    const expanded = content.classList.toggle('is-comments-expanded');
-    const list = modal.querySelector('.modal-comments-section');
+    if (!modal) return;
+    const list = document.getElementById('modalCommentsList');
+    if (!list) return;
     const shouldLazyLoad = window.matchMedia('(max-width: 760px)').matches;
-    if (shouldLazyLoad && list && list.dataset.loaded !== "1") {
+    if (shouldLazyLoad && list.dataset.loaded !== "1") {
         try {
             if (window.currentPostSource === "supabase") {
                 if (window.currentSupaPostType === "videos_curtos" && window.currentSupaReelId) {
@@ -11565,11 +11582,9 @@ window.toggleComentariosModal = function() {
             list.dataset.loaded = "1";
         } catch (e) {}
     }
-    if (list) {
-        setTimeout(() => {
-            try { if (expanded) list.scrollTop = 0; } catch (e) {}
-        }, 0);
-    }
+    try { list.scrollTo({ top: 0, behavior: 'smooth' }); } catch (_) {}
+    const input = document.getElementById('inputComentarioModal');
+    if (input) input.focus({ preventScroll: true });
 };
 
 window.verificarLikeComentario = async function(commentId, parentId, isReply) {
@@ -12476,7 +12491,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     const captionDiv = document.getElementById('modalCaption');
     let captionHTML = "";
     if (captionDiv && captionDiv.style.display !== 'none') {
-        captionHTML = `<div id="modalCaption" style="margin-bottom: 15px; font-size: 0.9rem; color: #333; line-height: 1.4;">${captionDiv.innerHTML}</div>`;
+        captionHTML = `<div class="ppv5-caption-copy">${captionDiv.innerHTML}</div>`;
     }
 
     list.innerHTML = `${captionHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
@@ -13394,7 +13409,7 @@ async function carregarComentariosSupabase(publicacaoId) {
       const right = document.createElement('button');
       right.className = 'pro-arrow right';
       right.type = 'button';
-      right.setAttribute('aria-label', 'Próximo');
+      right.setAttribute('aria-label', 'PrÃ³ximo');
       right.innerHTML = '&#8250;';
 
       left.addEventListener('click', () => track.scrollBy({ left: -320, behavior: 'smooth' }));
@@ -14364,10 +14379,10 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
             <div class="pv-stack-main">
               <div class="pv-head">
                 <div class="pv-title-row">
-                  <h2>Para você</h2>
-                  <span class="pv-badge">Busca rápida</span>
+                  <h2>Para vocÃª</h2>
+                  <span class="pv-badge">Busca rÃ¡pida</span>
                 </div>
-                <div class="pv-sub">Use a busca para encontrar serviços e profissionais.</div>
+                <div class="pv-sub">Use a busca para encontrar serviÃ§os e profissionais.</div>
               </div>
 
                           </div>
@@ -14626,11 +14641,11 @@ function agruparProfissionais(anuncios) {
   }));
 }
 
-// Regras de transição entre "Novos" e "Destaque"
+// Regras de transiÃ§Ã£o entre "Novos" e "Destaque"
 const PRO_RULES = {
-  // Profissional fica em "Novos" somente nesse período (sem avaliações)
+  // Profissional fica em "Novos" somente nesse perÃ­odo (sem avaliaÃ§Ãµes)
   NOVO_MAX_DIAS: 30,
-  // Ao receber a 1ª avaliação, sai de "Novos" e vai para "Destaque"
+  // Ao receber a 1Âª avaliaÃ§Ã£o, sai de "Novos" e vai para "Destaque"
   DESTAQUE_MIN_AVALIACOES: 1
 };
 
@@ -14644,7 +14659,7 @@ function isProfissionalNovo(p, nowMs){
   const n = Number(p?.numAvaliacoes || 0);
   if (n > 0) return false;
   const createdMs = parseDateMs(p?.dataCriacao);
-  // Sem data válida: mantém como "novo" para não sumir injustamente.
+  // Sem data vÃ¡lida: mantÃ©m como "novo" para nÃ£o sumir injustamente.
   if (!createdMs) return true;
   const ageDays = (nowMs - createdMs) / 86400000;
   return ageDays <= PRO_RULES.NOVO_MAX_DIAS;
@@ -14695,7 +14710,7 @@ async function carregarProfissionaisIndex() {
   const profs = agruparProfissionais(anuncios || []);
   const nowMs = Date.now();
 
-  // Destaque = já recebeu avaliações (regra de promoção automática)
+  // Destaque = jÃ¡ recebeu avaliaÃ§Ãµes (regra de promoÃ§Ã£o automÃ¡tica)
   const destaque = profs
     .filter(isProfissionalDestaque)
     .sort((a, b) => {
@@ -14705,7 +14720,7 @@ async function carregarProfissionaisIndex() {
     })
     .slice(0, 10);
 
-  // Novos = sem avaliação e dentro da janela de novos
+  // Novos = sem avaliaÃ§Ã£o e dentro da janela de novos
   const novos = profs
     .filter(p => isProfissionalNovo(p, nowMs))
     .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
@@ -14718,7 +14733,7 @@ async function carregarProfissionaisIndex() {
         <i class='bx bx-award'></i>
         <div class="pros-empty-text">
           <div class="pros-empty-title">Nenhum profissional em destaque no momento.</div>
-          <div class="pros-empty-sub">Assim que receberem avaliações, eles aparecem aqui.</div>
+          <div class="pros-empty-sub">Assim que receberem avaliaÃ§Ãµes, eles aparecem aqui.</div>
         </div>
         <a class="pros-empty-btn" href="busca.html">Explorar</a>
       </div>
@@ -14730,10 +14745,10 @@ async function carregarProfissionaisIndex() {
       <div class="pros-empty">
         <i class='bx bx-user-plus'></i>
         <div class="pros-empty-text">
-          <div class="pros-empty-title">Ainda não há profissionais novos cadastrados.</div>
-          <div class="pros-empty-sub">Sem avaliações nos primeiros ${PRO_RULES.NOVO_MAX_DIAS} dias aparecem aqui.</div>
+          <div class="pros-empty-title">Ainda nÃ£o hÃ¡ profissionais novos cadastrados.</div>
+          <div class="pros-empty-sub">Sem avaliaÃ§Ãµes nos primeiros ${PRO_RULES.NOVO_MAX_DIAS} dias aparecem aqui.</div>
         </div>
-        <a class="pros-empty-btn" href="tornar-profissional.html">Começar</a>
+        <a class="pros-empty-btn" href="tornar-profissional.html">ComeÃ§ar</a>
       </div>
     `;
   } finally {
@@ -15120,7 +15135,7 @@ document.addEventListener('DOMContentLoaded', function(){
       </div>
       <div class="doke-app-banner__right">
         <a class="doke-app-banner__btn" href="#" role="button">Baixar</a>
-        <button class="doke-app-banner__close" type="button" aria-label="Fechar">✕</button>
+        <button class="doke-app-banner__close" type="button" aria-label="Fechar">âœ•</button>
       </div>
     `;
     const closeBtn = banner.querySelector(".doke-app-banner__close");
@@ -15170,4 +15185,5 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }catch(_){}
 })();
+
 

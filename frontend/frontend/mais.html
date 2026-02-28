@@ -306,9 +306,15 @@
 </a>
 </div>
 <div class="item">
-<a href="chat.html">
+<a href="mensagens.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
+</a>
+</div>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
 </a>
 </div>
 <div class="item">
@@ -463,7 +469,9 @@
             }
 
             if (!window.sb?.auth) {
-                alert('Supabase nÃƒÆ’Ã‚£o inicializado.');
+                if (typeof window.dokeAlert === 'function') window.dokeAlert('Supabase não inicializado.');
+                else if (typeof window.dokeToast === 'function') window.dokeToast('Supabase não inicializado.', { type: 'error' });
+                else alert('Supabase não inicializado.');
                 return;
             }
 
@@ -625,7 +633,10 @@
                 setTimeout(() => (btn.innerText = textoOriginal), 1200);
             } catch (err) {
                 console.error(err);
-                alert(err?.message || 'Erro ao salvar.');
+                const msg = err?.message || 'Erro ao salvar.';
+                if (typeof window.dokeAlert === 'function') window.dokeAlert(msg);
+                else if (typeof window.dokeToast === 'function') window.dokeToast(msg, { type: 'error' });
+                else alert(msg);
                 btn.innerText = textoOriginal;
             } finally {
                 btn.disabled = false;
@@ -638,7 +649,9 @@
             if(file) {
                 // Tamanho maximo 2MB para nÃƒÆ’Ã‚£o travar localStorage/Firestore
                 if(file.size > 2 * 1024 * 1024) {
-                    alert("A imagem ÃƒÆ’Ã‚© muito grande. Escolha uma menor que 2MB.");
+                    if (typeof window.dokeAlert === 'function') window.dokeAlert("A imagem é muito grande. Escolha uma menor que 2MB.");
+                    else if (typeof window.dokeToast === 'function') window.dokeToast("A imagem é muito grande. Escolha uma menor que 2MB.", { type: 'error' });
+                    else alert("A imagem é muito grande. Escolha uma menor que 2MB.");
                     return;
                 }
 
@@ -665,7 +678,7 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
+<script src="doke-shell.js?v=20260228v48"></script>
 <script defer="True" src="settings-pages.js"></script></body>
 </html>
 

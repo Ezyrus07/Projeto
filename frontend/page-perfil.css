@@ -2816,3 +2816,128 @@ body[data-page="perfil"] #modalPostDetalhe.doke-post-modal .doke-post-comments{
     grid-template-rows: minmax(248px, 46dvh) 1fr !important;
   }
 }
+
+/* =========================================================
+   Perfil: esconder setas de navegação (desktop + mobile)
+   ========================================================= */
+body[data-page="perfil"] #dpRoot .dp-tabsNav,
+body[data-page="perfil"] #dpRoot .dp-statsNav,
+body[data-page="perfil"] .dp-tabsNav,
+body[data-page="perfil"] .dp-statsNav{
+  display: none !important;
+}
+
+/* =========================================================
+   Perfil cliente (dono): UX de scroll + ações
+   ========================================================= */
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] .dp-tabs,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] .dp-stats{
+  scroll-snap-type: none !important;
+  overscroll-behavior: auto !important;
+}
+
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpNewPublicacao,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpSelectPublicacoesBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpSelectReelsBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpSelectServicosBtn,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpNewServico,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpNewPortfolio,
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpNewReel{
+  display: none !important;
+}
+
+@media (max-width: 767px){
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] .dp-actionsRow{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    overflow-x: visible !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpEditBtn{
+    grid-column: 1 / 2 !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpMoreBtn{
+    grid-column: 2 / 3 !important;
+    justify-self: end !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpBecomeProBtn{
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+  }
+}
+
+/* =========================================================
+   FIX FINAL - cliente dono (desktop/tablet)
+   - evita botão "Tornar Profissional" espremido
+   - evita travamento por sub-scroll horizontal no header do perfil
+   ========================================================= */
+@media (min-width: 768px){
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] .dp-actionsRow{
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) var(--dp-action-min-h) !important;
+    gap: 8px !important;
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+    align-items: stretch !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpEditBtn{
+    grid-column: 1 / 2 !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpBecomeProBtn{
+    grid-column: 2 / 3 !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    justify-content: center !important;
+    white-space: nowrap !important;
+    padding-inline: 12px !important;
+    font-size: 0.88rem !important;
+  }
+
+  body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpMoreBtn{
+    grid-column: 3 / 4 !important;
+    justify-self: end !important;
+  }
+}
+
+@media (min-width: 1025px){
+  body[data-page="perfil"] .sidebar-icones{
+    overflow-y: hidden !important;
+  }
+
+  body[data-page="perfil"] main.dp-wrap{
+    height: auto !important;
+    min-height: calc(100vh - var(--navbar-height-desktop, 80px)) !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabs,
+  body[data-page="perfil"] #dpRoot .dp-stats,
+  body[data-page="perfil"] #dpRoot .dp-actionsRow{
+    scroll-snap-type: none !important;
+    overflow-x: visible !important;
+    overscroll-behavior-x: auto !important;
+    touch-action: auto !important;
+  }
+}
+
+/* CTA cliente sem corte de texto */
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpBecomeProBtn{
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: nowrap !important;
+  justify-content: center !important;
+  padding-inline: 14px !important;
+  font-size: 0.84rem !important;
+  letter-spacing: 0 !important;
+}
+
+body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpBecomeProBtn i{
+  display: none !important;
+}

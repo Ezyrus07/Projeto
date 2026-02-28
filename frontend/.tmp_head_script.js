@@ -801,7 +801,7 @@ window.verificarNotificacoes = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
-        document.querySelectorAll('a[href="chat.html"]').forEach(link => {
+        document.querySelectorAll('a[href="mensagens.html"]').forEach(link => {
             const existing = link.querySelector('.badge-notificação');
             if(existing) existing.remove();
             if (qtd > 0) {
@@ -2246,7 +2246,7 @@ window.carregarProfissionais = async function() {
 // ============================================================
 
 function protegerPaginasRestritas() {
-    const paginasRestritas = ['meuperfil.html', 'chat.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
+    const paginasRestritas = ['meuperfil.html', 'mensagens.html', 'comunidade.html', 'notificacoes.html', 'mais.html', 'anunciar.html', 'orcamento.html', 'tornar-profissional.html'];
     const caminhoAtual = window.location.pathname;
     const paginaAtual = caminhoAtual.substring(caminhoAtual.lastIndexOf('/') + 1);
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');
@@ -11778,7 +11778,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 /*************************************************
  * NEGÓCIOS (negócios.html / perfil-empresa.html / negócio.html)
- * - Sem WhatsApp: CTA sempre leva para chat.html
+ * - Sem WhatsApp: CTA sempre leva para mensagens.html
  * - Localização: usa CEP salvo e botão "Usar localização atual" (geo)
  *************************************************/
 (function(){
@@ -11865,7 +11865,7 @@ document.addEventListener('DOMContentLoaded', function(){
           <div class="neg-loc">${escapeHtml(loc||'')}&nbsp;</div>
           <div class="neg-actions">
             <a class="btn btn-primary" href="negócio.html?id=${encodeURIComponent(id||'')}">Ver</a>
-            <a class="btn btn-ghost" href="chat.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
+            <a class="btn btn-ghost" href="mensagens.html?negocio_id=${encodeURIComponent(id||'')}">Chat</a>
           </div>
         </div>
       </article>
@@ -12049,7 +12049,7 @@ document.addEventListener('DOMContentLoaded', function(){
       if (desc) desc.textContent = data.descrição || 'Sem descrição.';
       if (meta) meta.textContent = [data.bairro, data.cidade, data.estado].filter(Boolean).join(', ');
       const chatBtn = root.querySelector('[data-chat]');
-      if (chatBtn) chatBtn.href = `chat.html?negocio_id=${encodeURIComponent(id)}`;
+      if (chatBtn) chatBtn.href = `mensagens.html?negocio_id=${encodeURIComponent(id)}`;
     }catch(err){
       console.warn('negócio load error', err);
     }
@@ -12115,3 +12115,4 @@ document.addEventListener('DOMContentLoaded', function(){
     toUpgrade();
   }, true);
 });
+

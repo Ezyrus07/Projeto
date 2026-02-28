@@ -4094,11 +4094,27 @@ function ensureTheme(ctx, theme){
     const nextNav = $(".dp-tabsNext");
     const tabsHost = tabsWrap ? (tabsWrap.closest(".dp-tabsWrap") || tabsWrap) : null;
     let sectionsWrap = $(".dp-sections");
+    const isTargetPro = !!isProfissionalUsuario(ctx?.target);
 
     const isProOwnerTabs = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     // Esconde aba/section de estatísticas para quem não é o dono profissional
     buttons.forEach(b=>{ if(b.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) b.style.display = "none"; });
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
+    // Perfil cliente não usa área de publicações
+    if(!isTargetPro){
+      buttons.forEach((b)=>{
+        if(String(b.dataset.tab || "") === "publicacoes"){
+          b.style.display = "none";
+        }
+      });
+      sections.forEach((s)=>{
+        if(String(s.dataset.tab || "") === "publicacoes"){
+          s.style.display = "none";
+          s.classList.add("dp-section--hidden");
+          s.setAttribute("aria-hidden", "true");
+        }
+      });
+    }
 
     let updateTabsHint = ()=>{};
     const enableTabsOverflowHint = true;
@@ -4204,6 +4220,19 @@ function ensureTheme(ctx, theme){
     }
 
     function activate(tab){
+      const hasTabVisible = (name)=>{
+        const btn = buttons.find((b)=> String(b.dataset.tab || "") === String(name || ""));
+        if(!btn) return false;
+        if(btn.style.display === "none") return false;
+        if(btn.hidden) return false;
+        return true;
+      };
+      if(!hasTabVisible(tab)){
+        const fallback =
+          buttons.find((b)=> b.style.display !== "none" && !b.hidden && String(b.dataset.tab || "") === "sobre") ||
+          buttons.find((b)=> b.style.display !== "none" && !b.hidden);
+        tab = fallback ? String(fallback.dataset.tab || "sobre") : "sobre";
+      }
       if(sectionsWrap){
         updateWrapHeight(sectionsWrap.offsetHeight, true);
       }
@@ -4229,7 +4258,7 @@ function ensureTheme(ctx, theme){
       }
 
       // Lazy load
-      if(tab === "publicacoes"){
+      if(tab === "publicacoes" && isTargetPro){
         ensurePublicacoesSelectionControls(ctx);
         loadPublicacoes(ctx.client, ctx.target.id, ctx);
       }
@@ -4251,7 +4280,11 @@ function ensureTheme(ctx, theme){
     });
 
     // default tab
-    activate("publicacoes");
+    if(isTargetPro){
+      activate("publicacoes");
+    }else{
+      activate("sobre");
+    }
   }
 
 
@@ -5246,7 +5279,7 @@ if(!rangeSel || !refreshBtn) return;
     // Solicitar Orçamento (para visitante)
     $("#dpOrcBtn")?.addEventListener("click", ()=>{
       const id = ctx.target?.id || "";
-      window.location.href = `orçamento.html?prof=${encodeURIComponent(id)}`;
+      window.location.href = `orcamento.html?prof=${encodeURIComponent(id)}`;
     });
 
     // Amizade (para visitante)
@@ -5316,8 +5349,10 @@ if(!rangeSel || !refreshBtn) return;
     const rootEl = $("#dpRoot");
     if(rootEl){
       rootEl.setAttribute("data-owner", isOwner ? "self" : "visitor");
+      rootEl.setAttribute("data-profile-role", isPro ? "profissional" : "cliente");
     }
     const allowEdit = !!(isOwner && ctx.pageMode !== "public");
+    const allowPublish = !!(allowEdit && isPro);
     showIf("#dpOrcBtn", !isOwner && isPro);
     showIf("#dpFriendBtn", !isOwner);
     showIf("#dpFollowBtn", !isOwner);
@@ -5328,13 +5363,13 @@ if(!rangeSel || !refreshBtn) return;
     showIf("#dpCoverBtn", allowEdit);
     showIf("#dpAvatarBtn", allowEdit);
     showIf("#dpAvailabilityRow", allowEdit);
-    showIf("#dpNewPublicacao", allowEdit);
-    showIf("#dpSelectPublicacoesBtn", allowEdit);
-    showIf("#dpSelectReelsBtn", allowEdit);
-    showIf("#dpSelectServicosBtn", allowEdit);
-    showIf("#dpNewServico", allowEdit);
-    showIf("#dpNewPortfolio", allowEdit);
-    showIf("#dpNewReel", allowEdit);
+    showIf("#dpNewPublicacao", allowPublish);
+    showIf("#dpSelectPublicacoesBtn", allowPublish);
+    showIf("#dpSelectReelsBtn", allowPublish);
+    showIf("#dpSelectServicosBtn", allowPublish);
+    showIf("#dpNewServico", allowPublish);
+    showIf("#dpNewPortfolio", allowPublish);
+    showIf("#dpNewReel", allowPublish);
     if(!allowEdit){
       setPublicacoesSelectMode(false, { silent: true });
       setReelsSelectMode(false, { silent: true });
@@ -5353,8 +5388,14 @@ if(!rangeSel || !refreshBtn) return;
 
     const becomeBtn = $("#dpBecomeProBtn");
     if (becomeBtn) {
+      if(allowEdit && !isPro){
+        becomeBtn.innerHTML = "<i class='bx bx-shield-quarter'></i> Ser profissional";
+        becomeBtn.title = "Tornar-se profissional";
+        becomeBtn.setAttribute("aria-label", "Tornar-se profissional");
+      }
       becomeBtn.onclick = ()=>{ window.location.href = "tornar-profissional.html"; };
     }
+    updateScrollLock();
     // availability
     initAvailability(ctx);
   }
@@ -5784,7 +5825,7 @@ async function loadServicosPerfil(ctx) {
           <small style="display:block; color:#999; font-size:0.7rem;">A partir de</small>
           <strong style="color:var(--cor0); font-size:1.1rem;">${preco}</strong>
         </div>
-        <button class="btn-solicitar" onclick="window.location.href='orçamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar orçamento</button>
+        <button class="btn-solicitar" onclick="window.location.href='orcamento.html?uid=${uid}&aid=${anuncio.id}'">Solicitar orçamento</button>
       </div>
     `;
     return card;

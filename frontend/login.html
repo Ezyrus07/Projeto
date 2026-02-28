@@ -1,4 +1,4 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -348,7 +348,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                NÃ£o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -357,11 +357,11 @@
 <div class="auth-shell">
 <aside class="auth-aside">
 <h3 class="aside-title">Bem-vindo de volta</h3>
-<p class="aside-p">Entre para ver seus anÃºncios, mensagens e novidades da comunidade.</p>
+<p class="aside-p">Entre para ver seus anúncios, mensagens e novidades da comunidade.</p>
 <div class="aside-kpi">
-<div class="kpi"><b>Feed</b><span>VÃ­deos curtos e posts</span></div>
-<div class="kpi"><b>OrÃ§amento</b><span>Solicite em 1 clique</span></div>
-<div class="kpi"><b>AvaliaÃ§Ãµes</b><span>ConfianÃ§a e reputaÃ§Ã£o</span></div>
+<div class="kpi"><b>Feed</b><span>Vídeos curtos e posts</span></div>
+<div class="kpi"><b>Orçamento</b><span>Solicite em 1 clique</span></div>
+<div class="kpi"><b>Avaliações</b><span>Confiança e reputação</span></div>
 <div class="kpi"><b>Perfil</b><span>Cliente ou Profissional</span></div>
 </div>
 </aside>
@@ -406,7 +406,7 @@
 <button class="btn-social apple" title="Apple (em breve)" type="button"><i class="bx bxl-apple"></i></button>
 </div>
 <div class="footer">
-          NÃ£o tem conta? <a href="cadastro.html">Cadastre-se</a>
+          Não tem conta? <a href="cadastro.html">Cadastre-se</a>
 </div>
 </div>
 </div>
@@ -423,7 +423,7 @@
         sb = pick();
       }
       if (!sb || typeof sb.from !== "function" || !sb.auth) {
-        throw new Error("Supabase nÃ£o inicializado. Verifique supabase-init.js?v=20260218v43");
+        throw new Error("Supabase não inicializado. Verifique supabase-init.js?v=20260218v43");
       }
       return sb;
     }
@@ -447,9 +447,9 @@ function showMsg(type, text){
       if (type !== "ok" && raw.toLowerCase().includes("failed to fetch")) {
         el.textContent =
           "Falha ao conectar no Supabase (CORS/Projeto pausado/offline). " +
-          "âœ… No painel do Supabase: Settings Ã¢â€ â€™ API Ã¢â€ â€™ CORS Allowed Origins, adicione " +
-          "http://localhost:5503 e http://127.0.0.1:5503 (e tambÃ©m 5500 se usar Live Server). " +
-          "Se o projeto estiver pausado, clique em Resume. Depois recarregue a pÃ¡gina.";
+          "? No painel do Supabase: Settings â†’ API â†’ CORS Allowed Origins, adicione " +
+          "http://localhost:5503 e http://127.0.0.1:5503 (e também 5500 se usar Live Server). " +
+          "Se o projeto estiver pausado, clique em Resume. Depois recarregue a página.";
       } else {
         el.textContent = raw || "Erro";
       }
@@ -486,7 +486,7 @@ function showMsg(type, text){
       const email = document.getElementById("email").value.trim();
       const senha = document.getElementById("senha").value;
 
-      if (!email.includes("@")) return showMsg("err", "Digite um e-mail vÃ¡lido.");
+      if (!email.includes("@")) return showMsg("err", "Digite um e-mail válido.");
       if (!senha) return showMsg("err", "Digite sua senha.");
 
       btn.disabled = true;
@@ -531,11 +531,11 @@ function showMsg(type, text){
         if (error) throw error;
 
         const uid = data.user?.id;
-        if (!uid) throw new Error("NÃ£o foi possÃ­vel obter seu usuÃ¡rio.");
+        if (!uid) throw new Error("Não foi possível obter seu usuário.");
         const accessTokenRaw = data?.session?.access_token || "";
         const refreshTokenRaw = data?.session?.refresh_token || "";
         if (!accessTokenRaw || !refreshTokenRaw) {
-          throw new Error("SessÃ£o nÃ£o iniciada. Tente entrar novamente.");
+          throw new Error("Sessão não iniciada. Tente entrar novamente.");
         }
 
         try {
@@ -584,7 +584,7 @@ function showMsg(type, text){
             } catch (_) {}
           }
           if (sessErr || !sessData?.session?.access_token) {
-            throw new Error("SessÃ£o nÃ£o persistiu no navegador.");
+            throw new Error("Sessão não persistiu no navegador.");
           }
         } catch (persistErr) {
           throw persistErr;
@@ -605,14 +605,14 @@ function showMsg(type, text){
         }
 
         if (perfilErr) {
-          console.warn("[DOKE] Perfil nÃ£o carregado:", perfilErr);
+          console.warn("[DOKE] Perfil não carregado:", perfilErr);
         }
 
         const statusConta = String(perfil?.conta_status || "").toLowerCase();
         const contaBloqueada = statusConta === "desativada" || statusConta === "excluida" || perfil?.conta_ativa === false;
         if (contaBloqueada) {
           try { await supabase.auth.signOut(); } catch (_) {}
-          throw new Error("Sua conta estÃ¡ desativada ou excluÃ­da. Entre em contato com o suporte para reativaÃ§Ã£o.");
+          throw new Error("Sua conta está desativada ou excluída. Entre em contato com o suporte para reativação.");
         }
 
         if (perfil) {
@@ -620,7 +620,7 @@ function showMsg(type, text){
           localStorage.setItem("doke_uid", perfil.uid || uid);
         } else {
           const meta = data.user?.user_metadata || {};
-          const nomeFallback = meta.nome || meta.full_name || (data.user?.email ? data.user.email.split("@")[0] : "UsuÃ¡rio");
+          const nomeFallback = meta.nome || meta.full_name || (data.user?.email ? data.user.email.split("@")[0] : "Usuário");
           const perfilFallback = {
             uid,
             id: uid,
@@ -678,7 +678,7 @@ function showMsg(type, text){
         } else if (errMsg.toLowerCase().includes("email not confirmed")) {
           showMsg("err", "Confirme seu e-mail antes de entrar.");
         } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
-          showMsg("err", "PermissÃ£o negada. Verifique as polÃ­ticas (RLS) do Supabase.");
+          showMsg("err", "Permissão negada. Verifique as políticas (RLS) do Supabase.");
         } else {
           showMsg("err", errMsg || "Erro ao entrar.");
         }
@@ -691,7 +691,7 @@ function showMsg(type, text){
     document.getElementById("btnReset").addEventListener("click", async (e) => {
       e.preventDefault();
       const email = document.getElementById("email").value.trim();
-      if (!email.includes("@")) return showMsg("err", "Digite seu e-mail acima para receber o link de redefiniÃ§Ã£o.");
+      if (!email.includes("@")) return showMsg("err", "Digite seu e-mail acima para receber o link de redefinição.");
 
       try {
         const supabase = await ensureSupabase();
@@ -699,14 +699,14 @@ function showMsg(type, text){
         if (error) throw error;
         showMsg("ok", "Enviamos um e-mail para redefinir sua senha.");
       } catch (err) {
-        showMsg("err", String(err?.message || err || "NÃ£o foi possÃ­vel enviar o e-mail."));
+        showMsg("err", String(err?.message || err || "Não foi possível enviar o e-mail."));
       }
     });
   </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
+<script src="doke-shell.js?v=20260228v48"></script>
 </body>
 </html>
 

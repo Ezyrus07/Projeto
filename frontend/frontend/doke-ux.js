@@ -23,7 +23,7 @@
   window.DOKE_CONFIG = window.DOKE_CONFIG || {
     whatsappSupport: "",
     supportEmail: "",
-    supportChatUrl: "chat.html"
+    supportChatUrl: "mensagens.html"
   };
 
   // ---------------------------
@@ -414,7 +414,7 @@
         if(href && href !== "#" && !href.startsWith("javascript")) return;
         e.preventDefault();
         if(kind === "chat"){
-          location.href = cfg.supportChatUrl || "chat.html";
+          location.href = cfg.supportChatUrl || "mensagens.html";
           return;
         }
         if(kind === "wpp"){
@@ -472,7 +472,7 @@
       const act = a.getAttribute("data-act");
       const cfg = window.DOKE_CONFIG || {};
       if(act === "chat"){
-        location.href = cfg.supportChatUrl || "chat.html";
+        location.href = cfg.supportChatUrl || "mensagens.html";
         return;
       }
       if(act === "wpp"){
@@ -534,6 +534,7 @@
   // caso carregue conteúdo depois
   window.addEventListener("pageshow", ()=>attachMasks());
 })();
+
 
 
 

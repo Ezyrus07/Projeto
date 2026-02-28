@@ -1,11 +1,11 @@
-ï»¿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260218v43"></script>
-<!-- Storage bucket padrÃ£o (Ã¡udios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
+<!-- Storage bucket padrão (áudios/arquivos do chat). Ajuste se mudar o bucket no Supabase Storage. -->
 <script>
     window.__DOKE_SUPABASE_STORAGE_BUCKET__ =
       window.__DOKE_SUPABASE_STORAGE_BUCKET__ ||
@@ -17,9 +17,9 @@
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Mensagens | Doke</title>
-<meta content="Converse com profissionais e clientes em um chat rÃƒÂ¡pido e responsivo." name="description"/>
+<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." name="description"/>
 <meta content="Doke - Chat" property="og:title"/>
-<meta content="Converse com profissionais e clientes em um chat rÃƒÂ¡pido e responsivo." property="og:description"/>
+<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <meta content="#0b7768" name="theme-color"/>
@@ -30,24 +30,9 @@
 <link href="doke-fixes.css" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <!-- script.js?v=20260218v60 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
-<script>
-  (function () {
-    try {
-      var params = new URLSearchParams(window.location.search || "");
-      var raw = String(params.get("embed") || "").toLowerCase();
-      var isEmbed = (raw === "1" || raw === "true" || raw === "yes");
-      window.__DOKE_CHAT_EMBED__ = !!isEmbed;
-      if (isEmbed) {
-        document.documentElement.classList.add("doke-chat-embed");
-      }
-    } catch (_) {
-      window.__DOKE_CHAT_EMBED__ = false;
-    }
-  })();
-</script>
 <style>
         /* =========================================================================
-           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRÃ¯Â¿Â½O)
+           LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRï¿½O)
            ========================================================================= */
         
         :root{
@@ -66,40 +51,6 @@
         html, body { height: 100%; margin: 0; padding: 0 !important; padding-top: 0 !important; padding-bottom: 0 !important; overflow: hidden; background: var(--ux-bg); font-family: 'Segoe UI', sans-serif; color: var(--ux-ink); }
 
         body[data-page="chat"], body[data-page="chat"].doke-shell-active{ padding-top: 0 !important; padding-bottom: 0 !important; }
-        body.doke-chat-embed{
-            padding:0 !important;
-            background:#fff !important;
-        }
-        body.doke-chat-embed .navbar-mobile,
-        body.doke-chat-embed .navbar-desktop,
-        body.doke-chat-embed .sidebar-icones,
-        body.doke-chat-embed .bottom-nav,
-        body.doke-chat-embed .popup,
-        body.doke-chat-embed #overlay-menu,
-        body.doke-chat-embed .doke-mobile-header,
-        body.doke-chat-embed .doke-bottom-nav,
-        body.doke-chat-embed .doke-drawer,
-        body.doke-chat-embed .doke-drawer-backdrop,
-        body.doke-chat-embed .doke-search-overlay{
-            display:none !important;
-        }
-        body.doke-chat-embed .messenger-layout{
-            position:fixed !important;
-            inset:0 !important;
-            width:100vw !important;
-            height:100vh !important;
-            margin:0 !important;
-            border:0 !important;
-            grid-template-columns:1fr !important;
-            background:#fff !important;
-        }
-        body.doke-chat-embed .coluna-lista{
-            display:none !important;
-        }
-        body.doke-chat-embed .coluna-chat{
-            display:flex !important;
-            width:100% !important;
-        }
 
         .navbar-mobile { justify-content: space-between; align-items: center; min-height: var(--navbar-height-mobile); }
         .navbar-mobile .mobile-controls { display: flex; align-items: center; gap: 12px; }
@@ -173,7 +124,8 @@
             align-items:center;
             justify-content:space-between;
             gap:12px;
-        }
+        flex-wrap:wrap;
+            }
         .lista-quick{
             margin-top:10px;
             display:flex;
@@ -184,31 +136,7 @@
 
         .titulo-msg { margin: 0 0 10px 0; color: var(--ux-ink); font-size: 1.5rem; font-weight: 800; letter-spacing: -0.01em; }
 
-        /* Abas */
-        .abas-container {
-            display: flex;
-            background: #eef2f7;
-            padding: 4px;
-            border-radius: 999px;
-        }
-        .aba-btn {
-            flex: 1;
-            border: none;
-            background: transparent;
-            padding: 8px;
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: #475569;
-            border-radius: 999px;
-            cursor: pointer;
-            transition: 0.2s;
-        }
-        .aba-btn.active {
-            background: #ffffff;
-            color: var(--ux-brand);
-            box-shadow: 0 6px 14px rgba(15,23,42,0.08);
-        }
-        .pedidos-filtros{
+        /* Abas */        .pedidos-filtros{
             display:flex;
             gap:8px;
             margin-top:10px;
@@ -655,7 +583,7 @@
             height: 100%; background: #f0f2f5; color: #555; text-align: center; border-bottom: 6px solid #009688;
         }
 
-        #box-conversa-real { display: none; flex-direction: column; height: 100%; overflow: hidden; }
+        #box-conversa-real { display: none; flex-direction: column; height: 100%; flex: 1 1 auto; min-height: 0; overflow: hidden; }
 
         .chat-header {
             height: 64px; background: rgba(255,255,255,0.92); border-bottom: 1px solid var(--ux-line);
@@ -1204,6 +1132,7 @@
         .chat-footer {
             min-height: 64px; background: #ffffff; border-top: 1px solid var(--ux-line);
             display: flex; align-items: center; padding: 12px 20px; gap: 10px; flex-shrink: 0;
+            margin-top: auto; position: sticky; bottom: 0; z-index: 8;
         }
         .input-msg { flex: 1; padding: 12px; border-radius: 8px; border: none; outline: none; }
         .btn-enviar { background: #009688; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: grid; place-items: center; font-size: 1.2rem; transition: opacity .18s ease, transform .18s ease; }
@@ -1243,6 +1172,7 @@
         }
 
         .btn-voltar-mobile { display: none; }
+        body.embed-chat .btn-voltar-mobile { display: none !important; }
 
 
         /* Fix flex overflow (texto vertical/colado) */
@@ -1264,6 +1194,9 @@
             .mobile-chat-open .coluna-chat { transform: translateX(0); }
             #chat-placeholder { display: none; }
             .btn-voltar-mobile { display: block; border: none; background: none; font-size: 1.5rem; color: #555; cursor: pointer; margin-right: 10px; }
+            #box-conversa-real { height: 100% !important; min-height: 0; }
+            .chat-footer { position: sticky; bottom: 0; margin-top: 0; }
+            .reply-bar { flex-shrink: 0; }
         }
         @media (max-width: 560px){
             .chat-header{ height: auto; padding: 10px 12px; gap: 10px; flex-wrap: wrap; align-content: flex-start; }
@@ -1395,7 +1328,7 @@
     border-bottom-left-radius: 4px;
 }
 
-/* Ã¯Â¿Â½rea de Mensagens com Fundo Personalizado */
+/* ï¿½rea de Mensagens com Fundo Personalizado */
 .mensagens-body {
     background-color: #f0f2f5;
     /* Adicionando um padr?o leve de fundo que lembra o WhatsApp */
@@ -1618,7 +1551,7 @@
 .detail-label { font-size: 0.75rem; color: #888; text-transform: uppercase; font-weight: 700; margin-bottom: 4px; }
 .detail-value { color: #333; font-weight: 500; line-height: 1.4; }
 
-/* BOTÃ¯Â¿Â½ES E LINKS DISCRETOS */
+/* BOTï¿½ES E LINKS DISCRETOS */
 .btn-detalhes {
     background: #f0fdfa; color: var(--cor0); border: 1px solid #ccfbf1;
     padding: 8px 12px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
@@ -1662,7 +1595,7 @@
 }
 .btn-cancelar-discreto:hover { background: #e74c3c; color: #fff; }
 
-/* BOTÃ¯Â¿Â½O MAIS DETALHES */
+/* BOTï¿½O MAIS DETALHES */
 .btn-detalhes-card {
     background: #f0f7f6; color: var(--cor0); border: 1px solid #d1e9e5;
     padding: 8px 12px; border-radius: 8px; font-size: 0.8rem; font-weight: 700;
@@ -2484,18 +2417,9 @@
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
 </head>
 <body data-page="chat">
-<script>
-  (function () {
-    try {
-      if (!window.__DOKE_CHAT_EMBED__) return;
-      document.body.classList.add("doke-chat-embed");
-      document.body.setAttribute("data-doke-shell", "off");
-    } catch (_) {}
-  })();
-</script>
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">Ã—</span>
+<span class="close-btn" onclick="fecharPopup()">×</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
@@ -2547,7 +2471,7 @@
 <div class="item">
 <a href="index.html">
 <i class="bx bx-home-alt icon azul"></i>
-<span>InÃ­cio</span>
+<span>Início</span>
 </a>
 </div>
 <div class="item" id="pvSearchSidebarItem">
@@ -2565,15 +2489,22 @@
 <div class="item">
 <a href="notificacoes.html">
 <i class="bx bx-bell icon azul"></i>
-<span>NotificaÃ§Ãµes</span>
+<span>Notificações</span>
 </a>
 </div>
 <div class="item">
-<a href="chat.html">
+<a href="mensagens.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
 </a>
-</div>
+  </div>
+
+  <div class="item">
+    <a href="pedidos.html">
+      <i class="bx bx-package icon verde"></i>
+<span>Pedidos</span>
+</a>
+  </div>
 <div class="item">
 <a href="comunidade.html">
 <i class="bx bx-group icon verde"></i>
@@ -2613,15 +2544,11 @@
 <div class="lista-header">
 <div class="lista-top">
 <h2 class="titulo-msg">Mensagens</h2>
-<div class="abas-container">
-<button class="aba-btn active" onclick="trocarAba('pedidos')">Pedidos</button>
-<button class="aba-btn" onclick="trocarAba('conversas')">Mensagens</button>
-</div>
 </div>
 <div class="lista-quick">
 <div class="lista-search">
 <i class="bx bx-search"></i>
-<input id="inputBuscaLista" placeholder="Buscar por nome ou serviÃ§o" type="text"/>
+<input id="inputBuscaLista" placeholder="Buscar por nome ou serviço" type="text"/>
 </div>
 <button class="filter-btn" id="toggleFilters" onclick="toggleListaFilters(event)">
                          Filtros <i class="bx bx-slider-alt"></i>
@@ -2629,7 +2556,7 @@
 <button class="filter-btn" id="btnSelecionarPedidos" onclick="iniciarSelecaoPedidos()" style="display:none;">
                         Selecionar <i class="bx bx-check-square"></i>
 </button>
-<button class="filter-btn" id="btnSelecionarConversas" onclick="iniciarSelecaoConversas()" style="display:none;">
+<button class="filter-btn" id="btnSelecionarConversas" onclick="iniciarSelecaoConversas()">
                         Selecionar <i class="bx bx-check-square"></i>
 </button>
 <div class="bulk-select-bar" id="pedidosBulkBar" style="display:none;">
@@ -2646,13 +2573,13 @@
 </div>
 </div>
 <div class="lista-filters-panel" id="listaFiltersPanel">
-<div class="pedidos-filtros" id="pedidosFilters">
+<div class="pedidos-filtros" id="pedidosFilters" style="display:none;">
 <button class="pf-btn active" data-status="todos">Todos</button>
 <button class="pf-btn" data-status="pendente">Pendentes</button>
 <button class="pf-btn" data-status="andamento">Em andamento</button>
 <button class="pf-btn" data-status="finalizado">Finalizados</button>
 </div>
-<div class="pedidos-filtros" id="conversasFilters" style="display:none;">
+<div class="pedidos-filtros" id="conversasFilters">
 <button class="pf-btn active" data-status="todos">Todos</button>
 <button class="pf-btn" data-status="andamento">Em andamento</button>
 <button class="pf-btn" data-status="finalizado">Finalizados</button>
@@ -2667,17 +2594,17 @@
 </div>
 </div>
 </div>
-<div class="lista-scroll" id="lista-pedidos">
+<div class="lista-scroll" id="lista-pedidos" style="display:none;">
 <div style="text-align:center; padding:20px; color:#999;">Carregando...</div>
 </div>
-<div class="lista-scroll" id="lista-conversas" style="display:none;">
+<div class="lista-scroll" id="lista-conversas">
 <div style="text-align:center; padding:20px; color:#999;">Carregando...</div>
 </div>
 <div class="agenda-panel" id="agendaPanel" style="display:none;">
 <div class="agenda-top">
-<button aria-label="MÃªs anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
+<button aria-label="Mês anterior" class="agenda-nav" onclick="navegarAgenda(-1)"><i class="bx bx-chevron-left"></i></button>
 <div class="agenda-title" id="agendaTitle">Agenda</div>
-<button aria-label="PrÃ³ximo mÃªs" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
+<button aria-label="Próximo mês" class="agenda-nav" onclick="navegarAgenda(1)"><i class="bx bx-chevron-right"></i></button>
 </div>
 <div class="agenda-weekdays">
 <span>Dom</span><span>Seg</span><span>Ter</span><span>Qua</span><span>Qui</span><span>Sex</span><span>Sab</span>
@@ -2692,14 +2619,14 @@
 <div class="coluna-chat">
 <div id="chat-placeholder">
 <img decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" style="opacity:0.5; margin-bottom:20px;" width="120"/>
-<p>Selecione uma conversa para comeÃ§ar.</p>
+<p>Selecione uma conversa para começar.</p>
 </div>
 <div id="box-conversa-real">
 <div class="chat-header">
 <button class="btn-voltar-mobile" onclick="fecharChatMobile()"><i class="bx bx-arrow-back"></i></button>
 <img alt="Foto do contato" decoding="async" id="chatAvatar" loading="lazy" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png';" src=""/>
 <div class="chat-info">
-<h4 id="chatNome">UsuÃ¡rio</h4>
+<h4 id="chatNome">Usuário</h4>
 <span id="chatStatus">Offline</span>
 <div class="chip-pedido-status chip-pendente" id="chipPedidoStatus" style="display:none;">Pedido em espera</div>
 </div>
@@ -2709,11 +2636,11 @@
 <button class="btn-header btn-aceitar-mini" onclick="acaoPedido('aceito')">Aceitar Pedido</button>
 </div>
 <div class="chat-header-tools">
-<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar CobranÃ§a">
-<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar CobranÃ§a</span>
+<button class="btn-cobranca" id="btn-cobranca-topo" onclick="gerarPagamento()" style="display:none;" title="Gerar Cobrança">
+<i class="bx bx-dollar-circle"></i> <span class="btn-label">Gerar Cobrança</span>
 </button>
 <div class="chat-menu" id="chatMenu">
-<button aria-label="Mais opÃ§Ãµes" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
+<button aria-label="Mais opções" class="chat-menu-btn" onclick="toggleChatMenuOptions(event)">
 <i class="bx bx-dots-vertical-rounded"></i>
 </button>
 <div class="chat-menu-dropdown">
@@ -2737,7 +2664,7 @@
 <div class="mensagens-body" id="areaMensagens"></div>
 <div class="reply-bar" id="replyBar">
 <div class="rb-left">
-<div class="rb-user" id="replyUser">@usuÃ¡rio</div>
+<div class="rb-user" id="replyUser">@usuário</div>
 <div class="rb-text" id="replyPreview"></div>
 </div>
 <button aria-label="Cancelar resposta" class="rb-close" onclick="cancelarResposta()" type="button">
@@ -2745,7 +2672,7 @@
 </button>
 </div>
 <div class="chat-footer" id="chatFooter">
-<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar CobranÃ§a">
+<button class="btn-enviar" id="btn-pagamento" onclick="gerarPagamento()" style="background:#f1c40f; display:none; margin-right:10px;" title="Gerar Cobrança">
 <i class="bx bx-dollar"></i>
 </button>
 <div id="area-input-texto" style="display:flex; flex:1; gap:10px; align-items:center;">
@@ -2766,7 +2693,7 @@
 <div class="red-dot"></div>
 <span id="timerGravacao">00:00</span>
 </div>
-<span style="flex:1; color:#666; font-size:0.9rem;">Gravando Ã¡udio...</span>
+<span style="flex:1; color:#666; font-size:0.9rem;">Gravando áudio...</span>
 <button onclick="cancelarGravacao()" style="color:#e74c3c; background:none; border:none; cursor:pointer; font-size:1.5rem;">
 <i class="bx bx-trash"></i>
 </button>
@@ -2794,7 +2721,7 @@
 <div class="recusa-content">
 <h3 style="margin:0; color:#333;">Recusar Pedido</h3>
 <p style="color:#666; font-size:0.9rem; margin:10px 0 0;">Por favor, informe ao cliente o motivo da recusa:</p>
-<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: NÃ£o tenho disponibilidade nesta data..."></textarea>
+<textarea class="recusa-input" id="motivoRecusaTexto" placeholder="Ex: Não tenho disponibilidade nesta data..."></textarea>
 <div style="display:flex; gap:10px;">
 <button onclick="fecharModalRecusa()" style="flex:1; background:#f0f0f0; border:none; border-radius:12px; cursor:pointer; font-weight:600;">Voltar</button>
 <button class="btn-confirm-recusa" onclick="confirmarRecusaFinal()">Confirmar Recusa</button>
@@ -2806,11 +2733,11 @@
 <div class="modal-icon-top">
 <i class="bx bx-check"></i>
 </div>
-<h3>ServiÃ§o Finalizado!</h3>
-<p>O pagamento foi liberado para o profissional com seguranÃ§a.</p>
+<h3>Serviço Finalizado!</h3>
+<p>O pagamento foi liberado para o profissional com segurança.</p>
 <div style="background:#fff9db; padding:15px; border-radius:12px; margin:20px 0; border:1px solid #ffe082;">
-<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experiÃªncia?</strong>
-<span style="font-size:0.9rem; color:#555;">Sua avaliaÃ§Ã£o ajuda a comunidade a contratar com confianÃ§a.</span>
+<strong style="color:#d35400; display:block; margin-bottom:5px;">Como foi sua experiência?</strong>
+<span style="font-size:0.9rem; color:#555;">Sua avaliação ajuda a comunidade a contratar com confiança.</span>
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="irParaAvaliacaoDireta()">
@@ -2824,21 +2751,21 @@
 </div>
 <div class="modal-overlay-custom" id="modalFinalizarPedido" style="display:none;">
 <div class="modal-box-custom bounceIn" style="max-width: 460px; text-align: left;">
-<button class="modal-close-x" type="button" aria-label="Fechar" onclick="fecharModalFinalizarPedido()">Ã—</button>
+<button class="modal-close-x" type="button" aria-label="Fechar" onclick="fecharModalFinalizarPedido()">×</button>
 <div class="modal-icon-top" style="background:#e8f5f1; color:#0b7768;">
 <i class="bx bx-check-double"></i>
 </div>
 <h3 style="text-align:center;">Finalizar pedido</h3>
 <p style="color:#666; font-size:0.92rem; margin: 8px 0 0; text-align:center;">
-            Confirme a conclusÃ£o do serviÃ§o. Anexe uma mÃ­dia Ãºnica ou um par antes/depois.
+            Confirme a conclusão do serviço. Anexe uma mídia única ou um par antes/depois.
         </p>
 <div class="finalizar-modo">
-<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> MÃ­dia Ãºnica</label>
+<label><input checked="" name="finalizarModo" onclick="alterarModoFinalizacao('unico')" type="radio" value="unico"/> Mídia única</label>
 <label><input name="finalizarModo" onclick="alterarModoFinalizacao('antes_depois')" type="radio" value="antes_depois"/> Antes e depois</label>
 </div>
 <div class="finalizar-upload" id="finalizarUploadUnico">
 <label class="btn-upload" for="finalizarAnexoUnico">
-<i class="bx bx-image-add"></i> Anexar mÃ­dia (opcional)
+<i class="bx bx-image-add"></i> Anexar mídia (opcional)
             </label>
 <small id="finalizarNomeArquivoUnico"></small>
 <input accept="image/*,video/*" id="finalizarAnexoUnico" style="display:none;" type="file"/>
@@ -2878,7 +2805,7 @@
 </div>
 <div class="modal-actions-col">
 <button class="btn-primary-modal" onclick="confirmarFinalizacaoPedido()">
-<i class="bx bx-check"></i> Finalizar serviÃ§o</button>
+<i class="bx bx-check"></i> Finalizar serviço</button>
 <button class="btn-secondary-modal" onclick="fecharModalFinalizarPedido()">Cancelar</button>
 </div>
 </div>
@@ -2890,7 +2817,7 @@
 <div class="md-content" style="max-width: 520px; text-align: left;">
 <div class="md-header">
 <div style="display:flex; align-items:center; gap:10px;">
-<i class="bx bx-receipt" style="font-size:1.3rem; color:var(--cor0);"></i>
+<i class="bx bx-package" style="font-size:1.3rem; color:var(--cor0);"></i>
 <strong>Detalhes do Pedido</strong>
 </div>
 <button onclick="fecharModalDetalhes()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
@@ -2905,7 +2832,7 @@
 <div class="md-header">
 <div style="display:flex; align-items:center; gap:10px;">
 <i class="bx bx-dollar-circle" style="font-size:1.3rem; color:#d4a600;"></i>
-<strong>Gerar cobranÃ§a</strong>
+<strong>Gerar cobrança</strong>
 </div>
 <button onclick="fecharModalGerarCobranca()" style="background:none; border:none; font-size:1.2rem; cursor:pointer; color:#666;">
 <i class="bx bx-x"></i>
@@ -2917,8 +2844,8 @@
 <input class="input-premium" id="cobrancaValorInput" inputmode="decimal" placeholder="R$ 0,00" type="text">
 </input></div>
 <div class="input-group" style="margin-bottom:12px;">
-<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">TÃ­tulo da cobranÃ§a</label>
-<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: MÃ£o de obra elÃ©trica" type="text">
+<label for="cobrancaTituloInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Título da cobrança</label>
+<input class="input-premium" id="cobrancaTituloInput" placeholder="Ex: Mão de obra elétrica" type="text">
 </input></div>
 <div class="input-group" style="margin-bottom:2px;">
 <label for="cobrancaParcelasInput" style="display:block; font-size:.84rem; color:#64748b; font-weight:700; margin-bottom:6px;">Parcelas sem juros</label>
@@ -2939,7 +2866,7 @@
 </div>
 <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
 <button class="btn-dm btn-dm-cancel" onclick="fecharModalGerarCobranca()" type="button">Cancelar</button>
-<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobranÃ§a</button>
+<button class="btn-dm btn-dm-confirm" id="btnConfirmarGerarCobranca" onclick="confirmarGerarCobranca()" type="button">Enviar cobrança</button>
 </div>
 </div>
 </div>
@@ -2951,7 +2878,7 @@
 
     const db = window.db || getFirestore();
     const auth = window.auth || getAuth();
-    // Storage (Supabase Storage via compat). Bucket padrÃ£o definido no <head>.
+    // Storage (Supabase Storage via compat). Bucket padrão definido no <head>.
     const storage = window.storage || (window.getStorage ? getStorage() : { bucket: 'posts' });
     window.storage = storage;
 
@@ -3069,7 +2996,7 @@
     let conversasFiltro = 'todos';
     let statusPedidoAtual = 'pendente';
     let avaliadoPedidoAtual = false;
-    let abaAtual = 'pedidos';
+    let abaAtual = 'conversas';
     let listaView = 'lista';
     let pedidosAgendaCache = [];
     let chatOutroUidAtual = '';
@@ -3902,7 +3829,7 @@
         const t = String(tipo || '').toLowerCase();
         if (t === 'imagem') return 'Imagem';
         if (t === 'arquivo') return 'Arquivo';
-        if (t === 'audio' || t === 'Ã¡udio' || t === 'voz') return 'Ã¡udio';
+        if (t === 'audio' || t === 'áudio' || t === 'voz') return 'áudio';
         if (t === 'pagamento') return 'Cobran?a';
         if (t === 'card_finalizado') return 'Pedido finalizado';
         if (t === 'card_avaliacao') return 'Avalia??o';
@@ -4252,7 +4179,7 @@
               ev?.preventDefault?.();
               ev?.stopPropagation?.();
           } catch (_) {}
-          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta mÃ­dia do pedido.';
+          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta mídia do pedido.';
           if (typeof window.dokeAlert === 'function') window.dokeAlert(txt, 'Portf?lio');
           else alert(txt);
       };
@@ -5655,7 +5582,7 @@
         btnCancel.style.display = 'block';
         btnConfirm.className = 'btn-dm btn-dm-confirm'; // Reset classes
         
-        // ï¿½cones e Cores
+        // ?cones e Cores
         if(type === 'alert') {
             icon.className = 'bx bx-info-circle'; icon.style.color = '#0b7768';
             btnCancel.style.display = 'none';
@@ -5702,7 +5629,7 @@
     
 
     // =========================================================================
-    // 2. FUN?ï¿½ES DE INJE?ï¿½O DO MODAL DE GARANTIA (INFO)
+    // 2. FUN??ES DE INJE??O DO MODAL DE GARANTIA (INFO)
     // =========================================================================
     document.addEventListener("DOMContentLoaded", () => {
         if (!document.getElementById('modalGarantiaInfo')) {
@@ -5817,6 +5744,14 @@
             currentUserUid = uid;
             startSidebarBadges();
             if (!pedidosRealtimeUnsubs.length) startPedidosRealtime();
+            try {
+                const params = new URLSearchParams(window.location.search || '');
+                const hasPedidoDeepLink = !!(params.get('chatId') || params.get('pedidoId')) &&
+                  (params.get('from') === 'pedidos' || params.has('pedidoId') || String(params.get('aba') || '').toLowerCase() === 'pedidos');
+                if (hasPedidoDeepLink) {
+                    await abrirChatDeepLink();
+                }
+            } catch (_) {}
             if (abaAtual === 'pedidos') ensurePedidosLoaded({ force: force || reason === 'pageshow' });
             else ensureConversasLoaded({ force: force || reason === 'pageshow' });
             if (chatIdAtual && colecaoAtual) {
@@ -5838,7 +5773,7 @@
     window.fecharModalDisputa = () => { const m = document.getElementById('modalDisputa'); if(m) m.style.display = 'none'; };
 
     // =========================================================================
-    // 3. FUN?ï¿½ES GERAIS DA APLICA?ï¿½O
+    // 3. FUN??ES GERAIS DA APLICA??O
     // =========================================================================
 
     window.irParaMeuPerfil = function(event) {
@@ -6132,7 +6067,7 @@
         let unreadPedidosCliente = 0;
         let unreadPedidosProf = 0;
         let unreadConvs = 0;
-        const updateChatBadge = () => ensureSidebarBadge('a[href="chat.html"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
+        const updateChatBadge = () => ensureSidebarBadge('a[href="mensagens.html"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
         let pedidosBadgeTimer = null;
         const refreshUnreadPedidos = async () => {
             try {
@@ -6311,6 +6246,18 @@ window.trocarAba = function(aba) {
             window.carregarListaConversas();
         }
         updatePedidosBulkUI();
+    };
+
+    window.abrirTelaPagar = function(url){
+        const target = String(url || '').trim();
+        if (!target) return;
+        try {
+            if (window.top && window.top !== window && window.top.location) {
+                window.top.location.href = target;
+                return;
+            }
+        } catch (_) {}
+        window.location.href = target;
     };
 
     // Detalhes do Pedido
@@ -6608,7 +6555,7 @@ window.trocarAba = function(aba) {
                 postfonte: 'supabase',
                 lida: false,
                 createdat: new Date().toISOString(),
-                link: `chat.html?chatId=${pedidoId}`
+                link: `mensagens.html?chatId=${pedidoId}`
             };
             if (extra && typeof extra === "object") {
                 const allow = [
@@ -6644,7 +6591,7 @@ window.trocarAba = function(aba) {
         if (!id) return;
         const meUid = currentUserUid || await ensureCurrentUserUid();
         if (!meUid) {
-            window.dokeAlert("FaÃ§a login para continuar.");
+            window.dokeAlert("Faça login para continuar.");
             return;
         }
         try {
@@ -6754,7 +6701,7 @@ window.trocarAba = function(aba) {
         if (!id || !msgId) return;
         const meUid = currentUserUid || await ensureCurrentUserUid();
         if (!meUid) {
-            window.dokeAlert("FaÃ§a login para continuar.");
+            window.dokeAlert("Faça login para continuar.");
             return;
         }
         const statusFinal = (String(decisao || '').toLowerCase() === 'aprovar') ? 'aprovado' : 'recusado';
@@ -6860,7 +6807,7 @@ window.trocarAba = function(aba) {
         if (!id) return;
         const meUid = currentUserUid || await ensureCurrentUserUid();
         if (!meUid) {
-            window.dokeAlert("FaÃ§a login para continuar.");
+            window.dokeAlert("Faça login para continuar.");
             return;
         }
         try {
@@ -7247,7 +7194,7 @@ window.confirmarFinalizacaoPedido = async () => {
     try {
         const actionUid = currentUserUid || await ensureCurrentUserUid();
         if (!actionUid) {
-            window.dokeAlert("FaÃ§a login para continuar.");
+            window.dokeAlert("Faça login para continuar.");
             return;
         }
         const modoAtual = finalizacaoModo === 'antes_depois' ? 'antes_depois' : 'unico';
@@ -7367,7 +7314,7 @@ window.confirmarFinalizacaoPedido = async () => {
     };
     document.addEventListener('DOMContentLoaded', ensureChatOverlaysOnBody);
     // =========================================================================
-    // 4. RENDERIZA?ï¿½O E CHAT
+    // 4. RENDERIZA??O E CHAT
     // =========================================================================
 
     async function carregarListaPedidos(opts = {}) {
@@ -7398,42 +7345,16 @@ window.confirmarFinalizacaoPedido = async () => {
             }
             container.dataset.dokeAuthRetry = "0";
             if (resolvedUid !== currentUserUid) currentUserUid = resolvedUid;
-            const deField = await resolvePedidosField('de');
-            const paraField = await resolvePedidosField('para');
-            if (!deField && !paraField) {
-                replaceListHtmlSmooth(container, `<div style="text-align:center; padding:30px; color:#999;">N?o foi poss?vel identificar os campos do pedido.</div>`, 'pedidos:no-fields');
-                return;
-            }
+            // Resolve campos (mantém compatibilidade com realtime), mas a listagem usa multi-campos + fallback.
+            await resolvePedidosField('de');
+            await resolvePedidosField('para');
             pedidosFieldsDirty = false;
-            const base = collection(db, "pedidos");
-            const qDe = deField ? query(base, where(deField, "==", resolvedUid)) : null;
-            const qPara = paraField ? query(base, where(paraField, "==", resolvedUid)) : null;
-            const [s1, s2] = await Promise.all([
-                qDe ? safeGetDocsWithField(qDe, deField) : emptySnap(),
-                qPara ? safeGetDocsWithField(qPara, paraField) : emptySnap()
-            ]);
 
             if (token !== pedidosRenderToken) return;
             const sigParts = [listaModo, pedidosFiltro, listaBusca];
             let htmlOut = "";
-            const itensRaw = [
-                ...s1.docs.map(d=>({d, papel:'cliente'})),
-                ...s2.docs.map(d=>({d, papel:'profissional'}))
-            ];
-            const map = new Map();
-            for (const it of itensRaw) {
-                const pid = it?.d?.id;
-                if (!pid) continue;
-                // Preferir "cliente" quando duplicar, pois ? a vis?o mais comum para o usu?rio final.
-                if (!map.has(pid) || (map.get(pid).papel !== 'cliente' && it.papel === 'cliente')) {
-                    map.set(pid, it);
-                }
-            }
-            const itens = Array.from(map.values()).sort((a, b) => {
-                const ta = getPedidoSortTs(a?.d?.data?.());
-                const tb = getPedidoSortTs(b?.d?.data?.());
-                return tb - ta;
-            });
+            const itens = await listarPedidosDoUsuarioMultiCampos(resolvedUid);
+            if (token !== pedidosRenderToken) return;
             const agendaItems = [];
 
             if(itens.length === 0) {
@@ -7527,11 +7448,11 @@ window.confirmarFinalizacaoPedido = async () => {
                 } else if (papelReal === 'cliente' && p.status === 'pendente') {
                     acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicita??o</button>`;
                 } else if (papelReal === 'cliente' && p.status === 'pago') {
-                     // Bot?o de ConclusÃ£o (Design Compacto)
+                     // Bot?o de Conclusão (Design Compacto)
                      acoesHtml = `
                         <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
                                 style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-                            <i class='bx bx-check'></i> Confirmar ConclusÃ£o
+                            <i class='bx bx-check'></i> Confirmar Conclusão
                         </button>`;
                 } else if (papelReal === 'profissional' && p.status === 'finalizado') {
                     const hasMedia = !!(p.finalizacaoMediaUrl || p.finalizacaoMediaURL);
@@ -7577,7 +7498,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         <div class="ip-andamento ${cardCloseBtn ? 'has-close' : ''}" data-pedido-id="${id}">
                             ${cardCloseBtn}
                             <div class="ip-andamento-icon">
-                                <i class='bx bx-receipt' style="font-size:20px;"></i>
+                                <i class='bx bx-package' style="font-size:20px;"></i>
                             </div>
                             <div class="ip-andamento-content">
                                 <div class="ip-andamento-title">${label}</div>
@@ -7697,9 +7618,23 @@ window.confirmarFinalizacaoPedido = async () => {
 
       function getConversaParticipantes(data) {
           const bag = new Set();
+          const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
           const pushUid = (value) => {
               const uid = String(value || '').trim();
               if (uid) bag.add(uid);
+          };
+          const scanAny = (value, depth = 0) => {
+              if (depth > 2 || value == null) return;
+              if (Array.isArray(value)) {
+                  value.forEach((v) => scanAny(v, depth + 1));
+                  return;
+              }
+              if (typeof value === 'object') {
+                  Object.values(value).forEach((v) => scanAny(v, depth + 1));
+                  return;
+              }
+              const s = String(value || '').trim();
+              if (uuidLike.test(s)) bag.add(s);
           };
           if (Array.isArray(data?.participantes)) data.participantes.forEach(pushUid);
           pushUid(data?.participante1);
@@ -7716,6 +7651,14 @@ window.confirmarFinalizacaoPedido = async () => {
           pushUid(data?.destinatarioUid);
           pushUid(data?.remetente_uid);
           pushUid(data?.destinatario_uid);
+          // Heurística para schemas legados: extrai UUIDs de campos/ninhos relacionados.
+          try {
+              for (const [k, v] of Object.entries(data || {})) {
+                  if (/(uid|particip|usuario|user|remet|destin|de_?uid|para_?uid)/i.test(String(k || ''))) {
+                      scanAny(v, 0);
+                  }
+              }
+          } catch (_) {}
           return Array.from(bag);
       }
 
@@ -7742,8 +7685,8 @@ window.confirmarFinalizacaoPedido = async () => {
           { field: "destinatario_uid", op: "==" }
       ];
       const conversaFieldCaps = Object.fromEntries(conversaFieldCandidates.map((c) => [c.field, true]));
-      const conversaFieldCapsStorageKey = "doke_chat_conversas_field_caps";
-      const conversaFieldCapsCookie = "doke_chat_conversas_field_caps";
+      const conversaFieldCapsStorageKey = "doke_chat_conversas_field_caps_v20260221";
+      const conversaFieldCapsCookie = "doke_chat_conversas_field_caps_v20260221";
       try {
           let rawSaved = localStorage.getItem(conversaFieldCapsStorageKey) || "";
           if (!rawSaved) {
@@ -7758,6 +7701,13 @@ window.confirmarFinalizacaoPedido = async () => {
               Object.keys(conversaFieldCaps).forEach((field) => {
                   if (saved[field] === false) conversaFieldCaps[field] = false;
               });
+          }
+      } catch (_) {}
+      try {
+          const vals = Object.values(conversaFieldCaps || {});
+          const falseCount = vals.filter((v) => v === false).length;
+          if (vals.length && falseCount >= Math.max(4, vals.length - 1)) {
+              Object.keys(conversaFieldCaps).forEach((k) => { conversaFieldCaps[k] = true; });
           }
       } catch (_) {}
       let conversaFieldsDirty = false;
@@ -7812,44 +7762,56 @@ window.confirmarFinalizacaoPedido = async () => {
           }
       }
 
-      async function listarConversasDoUsuario(uid) {
-          if (!uid) return [];
-          const base = collection(db, "conversas");
-          const consultas = conversaFieldCandidates
-              .filter(({ field }) => conversaFieldCaps[field] !== false)
-              .map(({ field, op }) => {
-                  const q = query(base, where(field, op, uid), limit(200));
-                  return { q, label: field, field };
-              });
+async function listarConversasDoUsuario(uid) {
+    if (!uid) return [];
+    const base = collection(db, "conversas");
+    const map = new Map();
 
-          const map = new Map();
-          if (consultas.length) {
-              const snaps = await Promise.all(
-                  consultas.map(({ q, label, field }) => safeGetDocsConversa(q, "conversas:" + label, field))
-              );
-              snaps.forEach((snap) => {
-                  (snap?.docs || []).forEach((docSnap) => {
-                      if (!docSnap?.id) return;
-                      map.set(docSnap.id, docSnap);
-                  });
-              });
-          }
+    // 1) Fallback amplo paginado primeiro (evita tempestade de 400 em schemas legados)
+    const broadRows = await fetchRowsBroadPaged("conversas", { pageSize: 200, maxPages: 8 });
+    for (const docSnap of (broadRows || [])) {
+        const data = docSnap?.data ? (docSnap.data() || {}) : {};
+        if (!conversaPertenceAoUsuario(data, uid)) continue;
+        if (!docSnap?.id) continue;
+        map.set(docSnap.id, docSnap);
+    }
+    if (map.size) return Array.from(map.values());
 
-          if (!map.size || conversaFieldsDirty) {
-              conversaFieldsDirty = false;
-              const fallbackSnap = await safeGetDocsConversa(query(base, limit(200)), "conversas:fallback");
-              (fallbackSnap?.docs || []).forEach((docSnap) => {
-                  const data = docSnap?.data ? (docSnap.data() || {}) : {};
-                  if (!conversaPertenceAoUsuario(data, uid)) return;
-                  if (!docSnap?.id) return;
-                  map.set(docSnap.id, docSnap);
-              });
-          }
+    // 2) Tenta leitura genérica sem filtro (muitas vezes funciona e evita probes por coluna)
+    const fallbackSnap = await safeGetDocsConversa(query(base, limit(300)), "conversas:fallback");
+    (fallbackSnap?.docs || []).forEach((docSnap) => {
+        const data = docSnap?.data ? (docSnap.data() || {}) : {};
+        if (!conversaPertenceAoUsuario(data, uid)) return;
+        if (!docSnap?.id) return;
+        map.set(docSnap.id, docSnap);
+    });
+    if (map.size) return Array.from(map.values());
+    if ((fallbackSnap?.docs || []).length) return [];
 
-          return Array.from(map.values());
-      }
+    // 3) Último fallback: campos conhecidos (compat com schemas restritos por RLS)
+    const consultas = conversaFieldCandidates
+        .filter(({ field }) => conversaFieldCaps[field] !== false)
+        .map(({ field, op }) => {
+            const q = query(base, where(field, op, uid), limit(200));
+            return { q, label: field, field };
+        });
 
-      window.carregarListaConversas = async function() {
+    if (consultas.length) {
+        const snaps = await Promise.all(
+            consultas.map(({ q, label, field }) => safeGetDocsConversa(q, "conversas:" + label, field))
+        );
+        snaps.forEach((snap) => {
+            (snap?.docs || []).forEach((docSnap) => {
+                if (!docSnap?.id) return;
+                map.set(docSnap.id, docSnap);
+            });
+        });
+    }
+
+    return Array.from(map.values());
+}
+
+window.carregarListaConversas = async function() {
           const container = document.getElementById('lista-conversas');
           if(!container) return;
           const hasContent = !!container.querySelector('.item-conversa');
@@ -7865,16 +7827,17 @@ window.confirmarFinalizacaoPedido = async () => {
               // 1) Conversas diretas
               const docsConv = await listarConversasDoUsuario(meUid);
 
-              // Junta e remove duplicados por outroUid (client-side)
+              // Junta e remove duplicados (prioriza por outroUid; se não houver UID, usa o id do documento)
               const map = new Map();
               for (const d of docsConv) {
                   const data = d.data() || {};
                   const outroUid = getOutroUidConversa(data, meUid);
-                  if(!outroUid) continue;
+                  const dedupeKey = outroUid || `doc:${String(d?.id || '')}`;
+                  if (!dedupeKey) continue;
                   const updatedTs = getConversaUpdated(data);
-                  const existing = map.get(outroUid);
+                  const existing = map.get(dedupeKey);
                   if (!existing || updatedTs > (existing.updatedTs || 0)) {
-                      map.set(outroUid, { kind:'conversa', id:d.id, data, updatedTs, outroUid });
+                      map.set(dedupeKey, { kind:'conversa', id:d.id, data, updatedTs, outroUid });
                   }
               }
               const itens = Array.from(map.values()).sort((a,b) => (b.updatedTs || 0) - (a.updatedTs || 0));
@@ -7898,7 +7861,6 @@ window.confirmarFinalizacaoPedido = async () => {
                       if (listaModo === 'arquivados' && !isArquivado) continue;
                       if (listaModo !== 'arquivados' && isArquivado) continue;
                       const outroUid = it.outroUid;
-                      if(!outroUid) continue;
                       const lastMsg = data.ultimaMensagem || data.ultimamensagem || '';
                       const reqStatus = String(
                           data.dmRequestStatus ||
@@ -7928,9 +7890,31 @@ window.confirmarFinalizacaoPedido = async () => {
                           : (reqStatus === 'recusado'
                               ? (souSolicitanteReq ? 'Solicita??o recusada' : 'Solicita??o recusada')
                               : (lastMsg || 'Toque para conversar'));
-                      const u = userByUid.get(outroUid) || {};
-                      if (!matchBusca(u.user, lastMsg)) continue;
-                      const silenciado = isContatoSilenciado(outroUid);
+                      const u = outroUid ? (userByUid.get(outroUid) || {}) : {};
+                      const fallbackNomeContato = String(
+                          data.nomeContato ||
+                          data.nome_contato ||
+                          data.contatoNome ||
+                          data.contato_nome ||
+                          data.nome ||
+                          data.titulo ||
+                          data.deNome ||
+                          data.de_nome ||
+                          data.paraNome ||
+                          data.para_nome ||
+                          'Usuário'
+                      );
+                      const fallbackFotoContato = String(
+                          data.fotoContato ||
+                          data.foto_contato ||
+                          data.avatar ||
+                          data.foto ||
+                          data.deFoto ||
+                          data.paraFoto ||
+                          ''
+                      );
+                      if (!matchBusca(u.user || fallbackNomeContato, lastMsg)) continue;
+                      const silenciado = outroUid ? isContatoSilenciado(outroUid) : false;
                       const isSelectedConversa = conversasSelecaoModo && conversasSelecionadas.has(String(it.id));
                       const selectMarker = conversasSelecaoModo
                         ? `<button class="ip-select-indicator ${isSelectedConversa ? 'selected' : ''}" title="${isSelectedConversa ? 'Desmarcar' : 'Selecionar'}" onclick="event.stopPropagation(); toggleSelecaoConversa('${it.id}')"><i class='bx ${isSelectedConversa ? 'bx-check' : 'bx-circle'}'></i></button>`
@@ -7938,10 +7922,10 @@ window.confirmarFinalizacaoPedido = async () => {
                       const unreadHtml = (!silenciado && isNaoLido(data.dataAtualizacao || data.updatedat || data.createdat || null, 'conversas', it.id)) ? '<span class="unread-dot"></span>' : "";
                       const mutedHtml = silenciado ? `<span class="muted-badge" title="Contato silenciado"><i class='bx bx-bell-off'></i></span>` : "";
                       rowsHtml.push(`
-                        <div class="item-conversa ${conversasSelecaoModo ? 'is-select-mode' : ''} ${isSelectedConversa ? 'is-selected' : ''}" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handleConversaCardClick(event, '${it.id}', '${outroUid}')">
-                          <img src="${u.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
+                        <div class="item-conversa ${conversasSelecaoModo ? 'is-select-mode' : ''} ${isSelectedConversa ? 'is-selected' : ''}" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid || ''}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handleConversaCardClick(event, '${it.id}', '${outroUid || ''}')">
+                          <img src="${u.foto || fallbackFotoContato || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                           <div class="ic-info">
-                            <div class="ic-nome">${u.user || 'Usu?rio'}</div>
+                            <div class="ic-nome">${u.user || fallbackNomeContato || 'Usu?rio'}</div>
                             <div class="ic-msg">${previewText}</div>
                           </div>
                           <div class="ic-meta">${selectMarker}${unreadHtml}${mutedHtml}</div>
@@ -7998,6 +7982,18 @@ window.confirmarFinalizacaoPedido = async () => {
         return '';
     }
 
+    function scanUidFromObjectByHints(obj, hints) {
+        if (!obj || typeof obj !== 'object') return '';
+        const uuidLike = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+        const entries = Object.entries(obj);
+        for (const [k, v] of entries) {
+            const key = String(k || '');
+            if (!hints.some((h) => key.toLowerCase().includes(h))) continue;
+            if (typeof v === 'string' && uuidLike.test(v.trim())) return v.trim();
+        }
+        return '';
+    }
+
     function getDeUid(p) {
         return pickUidFromData([
             p?.deUid,
@@ -8011,7 +8007,12 @@ window.confirmarFinalizacaoPedido = async () => {
             p?.solicitanteUid,
             p?.solicitante_uid,
             p?.remetenteUid,
-            p?.remetente_uid
+            p?.remetente_uid,
+            p?.clienteId,
+            p?.cliente_id,
+            p?.solicitanteId,
+            p?.solicitante_id,
+            scanUidFromObjectByHints(p, ['deuid','cliente','solicitante','remetente'])
         ]);
     }
 
@@ -8029,7 +8030,12 @@ window.confirmarFinalizacaoPedido = async () => {
             p?.uidPrestador,
             p?.uid_prestador,
             p?.destinatarioUid,
-            p?.destinatario_uid
+            p?.destinatario_uid,
+            p?.profissionalId,
+            p?.profissional_id,
+            p?.prestadorId,
+            p?.prestador_id,
+            scanUidFromObjectByHints(p, ['parauid','prestador','profissional','destinatario'])
         ]);
     }
 
@@ -8056,6 +8062,39 @@ window.confirmarFinalizacaoPedido = async () => {
     );
     let pedidosFieldsDirty = false;
     const pedidosFieldResolved = { de: null, para: null };
+const pedidosFieldCapsStorageKey = "doke_chat_pedidos_field_caps_v20260221";
+const pedidosFieldCapsCookie = "doke_chat_pedidos_field_caps_v20260221";
+try {
+    let rawSaved = localStorage.getItem(pedidosFieldCapsStorageKey) || "";
+    if (!rawSaved) {
+        const cookies = String(document.cookie || "").split(";");
+        const found = cookies.find((c) => String(c || "").trim().startsWith(pedidosFieldCapsCookie + "="));
+        if (found) {
+            rawSaved = decodeURIComponent(String(found).trim().slice((pedidosFieldCapsCookie + "=").length));
+        }
+    }
+    const saved = JSON.parse(rawSaved || "{}");
+    if (saved && typeof saved === "object") {
+        Object.keys(pedidosFieldCaps).forEach((field) => {
+            if (saved[field] === false) pedidosFieldCaps[field] = false;
+        });
+    }
+} catch (_) {}
+try {
+    const vals = Object.values(pedidosFieldCaps || {});
+    const falseCount = vals.filter((v) => v === false).length;
+    if (vals.length && falseCount >= Math.max(6, vals.length - 2)) {
+        Object.keys(pedidosFieldCaps).forEach((k) => { pedidosFieldCaps[k] = true; });
+    }
+} catch (_) {}
+function persistPedidosFieldCaps() {
+    try {
+        const raw = JSON.stringify(pedidosFieldCaps);
+        localStorage.setItem(pedidosFieldCapsStorageKey, raw);
+        document.cookie = `${pedidosFieldCapsCookie}=${encodeURIComponent(raw)}; path=/; max-age=${60 * 60 * 24 * 30}; samesite=lax`;
+    } catch (_) {}
+}
+
 
     function isMissingColumnErr(err) {
         const msg = String(err?.message || err?.details || err?.hint || "").toLowerCase();
@@ -8066,6 +8105,75 @@ window.confirmarFinalizacaoPedido = async () => {
         return { empty: true, size: 0, docs: [], forEach: () => {} };
     }
 
+    function makeClientSideDocSnapFromRow(row) {
+        const dataRow = (row && typeof row === 'object') ? row : {};
+        const idGuess = String(
+            dataRow.id ||
+            dataRow.uid ||
+            dataRow.docId ||
+            dataRow.docid ||
+            dataRow.pedidoId ||
+            dataRow.pedidoid ||
+            dataRow.conversaId ||
+            dataRow.conversaid ||
+            dataRow.chatId ||
+            dataRow.chatid ||
+            ''
+        ).trim();
+        if (!idGuess) return null;
+        return {
+            id: idGuess,
+            exists: () => true,
+            data: () => dataRow
+        };
+    }
+
+    async function fetchRowsBroadPaged(tableName, opts = {}) {
+        try {
+            const sb = window.sb || window.supabaseClient || window.__supabaseClient || null;
+            if (!sb || typeof sb.from !== 'function' || !tableName) return [];
+            const pageSize = Math.max(50, Math.min(500, Number(opts.pageSize || 200)));
+            const maxPages = Math.max(1, Math.min(12, Number(opts.maxPages || 6)));
+            const out = [];
+            const seen = new Set();
+            for (let page = 0; page < maxPages; page++) {
+                const from = page * pageSize;
+                const to = from + pageSize - 1;
+                let res;
+                try {
+                    res = await withTimeout(
+                        sb.from(tableName).select('*').range(from, to),
+                        25000,
+                        `supabase_broad_${tableName}_${page}`
+                    );
+                } catch (e) {
+                    const msg = String(e?.message || e?.details || e?.hint || '').toLowerCase();
+                    if (Number(e?.status || 0) === 400 || msg.includes('bad request')) break;
+                    throw e;
+                }
+                const error = res?.error || null;
+                if (error) {
+                    const msg = String(error?.message || error?.details || error?.hint || '').toLowerCase();
+                    if (Number(error?.status || 0) === 400 || msg.includes('bad request')) break;
+                    throw error;
+                }
+                const rows = Array.isArray(res?.data) ? res.data : [];
+                for (const row of rows) {
+                    const ds = makeClientSideDocSnapFromRow(row);
+                    if (!ds || !ds.id || seen.has(ds.id)) continue;
+                    seen.add(ds.id);
+                    out.push(ds);
+                }
+                if (rows.length < pageSize) break;
+            }
+            return out;
+        } catch (e) {
+            console.warn('Falha no fallback amplo paginado', tableName, e);
+            return [];
+        }
+    }
+
+
     async function safeGetDocsWithField(q, fieldKey) {
         if (fieldKey && !pedidosFieldCaps[fieldKey]) return emptySnap();
         try {
@@ -8073,6 +8181,7 @@ window.confirmarFinalizacaoPedido = async () => {
         } catch (e) {
             if (fieldKey && isMissingColumnErr(e)) {
                 pedidosFieldCaps[fieldKey] = false;
+                persistPedidosFieldCaps();
                 pedidosFieldsDirty = true;
                 return emptySnap();
             }
@@ -8080,22 +8189,162 @@ window.confirmarFinalizacaoPedido = async () => {
         }
     }
 
-    async function resolvePedidosField(kind) {
-        if (pedidosFieldResolved[kind]) return pedidosFieldResolved[kind];
-        const base = collection(db, "pedidos");
-        const candidates = pedidosFieldCandidates[kind] || [];
+function inferPedidosFieldFromDocs(kind, docsOrRows, uid) {
+    const target = String(uid || currentUserUid || "").trim();
+    if (!target) return null;
+    const candidates = pedidosFieldCandidates[kind] || [];
+    const docs = Array.isArray(docsOrRows) ? docsOrRows : [];
+    for (const docSnap of docs) {
+        const row = docSnap?.data ? (docSnap.data() || {}) : (docSnap || {});
+        if (!row || typeof row !== "object") continue;
         for (const fieldName of candidates) {
-            const q = query(base, where(fieldName, "==", currentUserUid), limit(1));
-            await safeGetDocsWithField(q, fieldName);
-            if (pedidosFieldCaps[fieldName]) {
+            if (String(row?.[fieldName] || "").trim() === target) {
                 pedidosFieldResolved[kind] = fieldName;
+                if (pedidosFieldCaps[fieldName] !== false) pedidosFieldCaps[fieldName] = true;
+                persistPedidosFieldCaps();
                 return fieldName;
             }
         }
-        return null;
+    }
+    return null;
+}
+
+async function resolvePedidosField(kind) {
+    if (pedidosFieldResolved[kind]) return pedidosFieldResolved[kind];
+    const base = collection(db, "pedidos");
+
+    // 1) Tenta inferir por leitura ampla (sem filtro por coluna) para evitar tempestade de 400.
+    try {
+        const broadRows = await fetchRowsBroadPaged("pedidos", { pageSize: 120, maxPages: 2 });
+        const inferredBroad = inferPedidosFieldFromDocs(kind, broadRows, currentUserUid);
+        if (inferredBroad) return inferredBroad;
+
+        const snapAll = await safeGetDocsWithField(query(base, limit(80)), null);
+        const inferredSnap = inferPedidosFieldFromDocs(kind, snapAll?.docs || [], currentUserUid);
+        if (inferredSnap) return inferredSnap;
+    } catch (_) {}
+
+    // 2) Só então faz probes por coluna (compat com RLS restritiva).
+    const candidates = pedidosFieldCandidates[kind] || [];
+    for (const fieldName of candidates) {
+        if (pedidosFieldCaps[fieldName] === false) continue;
+        const q = query(base, where(fieldName, "==", currentUserUid), limit(1));
+        const snap = await safeGetDocsWithField(q, fieldName);
+        if (pedidosFieldCaps[fieldName] === false) continue;
+        pedidosFieldResolved[kind] = fieldName;
+        persistPedidosFieldCaps();
+        // Se retornou algo, já é uma evidência melhor e mantemos.
+        if ((snap?.docs || []).length) return fieldName;
+        // Se a coluna existe mas veio vazia, também retorna para evitar novas sondagens em loop.
+        return fieldName;
+    }
+    return null;
+}
+
+async function listarPedidosDoUsuarioMultiCampos(uid) {
+    if (!uid) return [];
+    const base = collection(db, "pedidos");
+    const map = new Map();
+
+    // 1) Leitura ampla paginada primeiro (evita probes por coluna e suporta schema misto).
+    let broadRows = [];
+    try {
+        broadRows = await fetchRowsBroadPaged("pedidos", { pageSize: 200, maxPages: 8 });
+        inferPedidosFieldFromDocs('de', broadRows, uid);
+        inferPedidosFieldFromDocs('para', broadRows, uid);
+        (broadRows || []).forEach((d) => {
+            if (!d?.id) return;
+            const p = d.data ? (d.data() || {}) : {};
+            const deUid = getDeUid(p);
+            const paraUid = getParaUid(p);
+            const papel = (String(deUid || '') === String(uid)) ? 'cliente'
+                : (String(paraUid || '') === String(uid) ? 'profissional' : '');
+            if (!papel) return;
+            if (!map.has(d.id) || (map.get(d.id).papel !== 'cliente' && papel === 'cliente')) {
+                map.set(d.id, { d, papel });
+            }
+        });
+    } catch (e) {
+        console.warn('Falha na leitura ampla de pedidos', e);
     }
 
-    function getPedidoSortTs(p) {
+    // Se a leitura ampla trouxe linhas do usuário, evita consultas por campo.
+    if (map.size) {
+        return Array.from(map.values()).sort((a, b) => {
+            const ta = getPedidoSortTs(a?.d?.data?.());
+            const tb = getPedidoSortTs(b?.d?.data?.());
+            return tb - ta;
+        });
+    }
+
+    // 2) Tenta leitura genérica pelo wrapper (sem filtro) antes de sondar colunas.
+    try {
+        const snapAll = await safeGetDocsWithField(query(base, limit(300)), null);
+        const docsAll = (snapAll?.docs || []);
+        inferPedidosFieldFromDocs('de', docsAll, uid);
+        inferPedidosFieldFromDocs('para', docsAll, uid);
+        docsAll.forEach((d) => {
+            if (!d?.id) return;
+            const p = d.data ? (d.data() || {}) : {};
+            const deUid = getDeUid(p);
+            const paraUid = getParaUid(p);
+            const papel = (String(deUid || '') === String(uid)) ? 'cliente'
+                : (String(paraUid || '') === String(uid) ? 'profissional' : '');
+            if (!papel) return;
+            if (!map.has(d.id) || (map.get(d.id).papel !== 'cliente' && papel === 'cliente')) {
+                map.set(d.id, { d, papel });
+            }
+        });
+        if (map.size) {
+            return Array.from(map.values()).sort((a, b) => {
+                const ta = getPedidoSortTs(a?.d?.data?.());
+                const tb = getPedidoSortTs(b?.d?.data?.());
+                return tb - ta;
+            });
+        }
+        // Se conseguimos ler linhas mas nenhuma pertence ao usuário, não força probes.
+        if (docsAll.length) {
+            return [];
+        }
+    } catch (e) {
+        console.warn('Fallback genérico de pedidos falhou', e);
+    }
+
+    // 3) Compat com RLS restritiva: usa apenas campos resolvidos (sem varrer todos em paralelo).
+    try {
+        const deField = await resolvePedidosField('de');
+        const paraField = await resolvePedidosField('para');
+        const queries = [];
+        if (deField) queries.push({ field: deField, papel: 'cliente' });
+        if (paraField && paraField !== deField) queries.push({ field: paraField, papel: 'profissional' });
+
+        await Promise.all(queries.map(async ({ field, papel }) => {
+            try {
+                const q = query(base, where(field, "==", uid), limit(200));
+                const snap = await safeGetDocsWithField(q, field);
+                (snap?.docs || []).forEach((d) => {
+                    if (!d?.id) return;
+                    const prev = map.get(d.id);
+                    if (!prev || (prev.papel !== 'cliente' && papel === 'cliente')) {
+                        map.set(d.id, { d, papel });
+                    }
+                });
+            } catch (e) {
+                console.warn('Falha em consulta de pedidos por campo', field, e);
+            }
+        }));
+    } catch (e) {
+        console.warn('Probes de pedidos falharam', e);
+    }
+
+    return Array.from(map.values()).sort((a, b) => {
+        const ta = getPedidoSortTs(a?.d?.data?.());
+        const tb = getPedidoSortTs(b?.d?.data?.());
+        return tb - ta;
+    });
+}
+
+function getPedidoSortTs(p) {
         const raw = p?.dataPedido || p?.data_pedido || p?.dataAtualizacao || p?.dataAtualizacao || p?.createdat || p?.dataCriacao || p?.created_at || null;
         const dt = parseDataHora(raw);
         return dt ? dt.getTime() : 0;
@@ -8259,7 +8508,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
               syncChatHeaderLayout();
           }
 
-        // 2. CARREGA DADOS DO USUï¿½RIO + STATUS ONLINE (VISUAL MELHORADO)
+        // 2. CARREGA DADOS DO USU?RIO + STATUS ONLINE (VISUAL MELHORADO)
               if (outroUserUnsub) { try { outroUserUnsub(); } catch (_) {} outroUserUnsub = null; }
               outroUserUnsub = onSnapshot(doc(db, "usuarios", uidOutro), (docSnap) => {
             if (docSnap.exists()) {
@@ -8299,7 +8548,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     let isReallyOnline = (d.status === "Online" && diffMinutos < 3);
 
                     if (isReallyOnline) {
-                        // --- AQUI ESTï¿½ A MUDAN?A VISUAL ---
+                        // --- AQUI EST? A MUDAN?A VISUAL ---
                         elStatus.innerHTML = `
                             <div class="status-container-online">
                                 <div class="status-pulse"></div>
@@ -8310,7 +8559,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                         elStatus.style.color = ""; 
                         elStatus.style.fontWeight = "";
                     } else {
-                        // Status Offline (Texto Cinza PadrÃ£o)
+                        // Status Offline (Texto Cinza Padrão)
                         elStatus.innerText = `Visto por ?ltimo: ${formatarUltimaVez(d.ultimaVezOnline)}`;
                         elStatus.style.color = "#888";
                         elStatus.style.fontWeight = "400";
@@ -8369,7 +8618,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         div.innerHTML = `<i class='bx bx-lock-alt'></i> ${texto}`;
         chatBox.appendChild(div);
     }
-// EM CHAT.HTML - SUBSTITUA A FUN?ï¿½O carregarMensagens
+// EM CHAT.HTML - SUBSTITUA A FUN??O carregarMensagens
 
       function carregarMensagens(colecao, docId) {
           const container = document.getElementById('areaMensagens');
@@ -8585,7 +8834,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 let btnHtml = "";
 
                 if (jaPago) {
-                    // CASO 1: JÃ¡ PAGO (Verde para ambos)
+                    // CASO 1: Já PAGO (Verde para ambos)
                     btnHtml = `<button style="width:100%; padding:10px; background:#2ecc71; color:white; border:none; border-radius:8px; font-weight:bold; cursor:default;"><i class='bx bx-check'></i> Pago</button>`;
                 } else if (souEu) {
                     // CASO 2: EU SOU O PROFISSIONAL QUE ENVIOU (Aviso Cinza)
@@ -8594,7 +8843,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                                </div>`;
                 } else {
                     // CASO 3: EU SOU O CLIENTE (Bot?o Pagar)
-                    btnHtml = `<button onclick="window.location.href='${linkPagar}'" style="width:100%; padding:10px; background:var(--cor0); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Pagar Agora</button>`;
+                    btnHtml = `<button onclick="abrirTelaPagar('${linkPagar}')" style="width:100%; padding:10px; background:var(--cor0); color:white; border:none; border-radius:8px; font-weight:bold; cursor:pointer;">Pagar Agora</button>`;
                 }
 
                 const html = `
@@ -8607,7 +8856,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 htmlParts.push(html);
                 return; // evita gerar mensagem vazia embaixo do card
             }
-            // --- CARD AVALIA?ï¿½O (AMARELO) ---
+            // --- CARD AVALIA??O (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
                 // Card amarelo removido (o card com foto de finaliza??o j? cobre essa necessidade)
                 return;
@@ -8751,12 +9000,12 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                       Mensagem apagada
                   </div>`);
               }
-              // --- SOLICITA?ï¿½O DE REEMBOLSO ---
+              // --- SOLICITA??O DE REEMBOLSO ---
               else if (m.tipo === 'reembolso') {
                 const motivo = m.texto ? escapeHtml(m.texto) : "Solicita??o registrada.";
                 htmlParts.push(`
                 <div ${msgIdAttr} style="align-self:center; background:#fee2e2; border:1px solid #fecaca; padding:14px; border-radius:12px; margin:12px 0; text-align:center;">
-                    <i class='bx bx-receipt' style="color:#b91c1c; font-size:1.4rem;"></i>
+                    <i class='bx bx-package' style="color:#b91c1c; font-size:1.4rem;"></i>
                     <p style="margin:6px 0; font-weight:700; color:#7f1d1d;">Reembolso solicitado</p>
                     <div style="font-size:0.85rem; color:#7f1d1d;">${motivo}</div>
                 </div>`);
@@ -8802,7 +9051,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 </div>`;
                 htmlParts.push(wrapMensagemComAvatar(htmlFile));
             }
-            // --- MENSAGEM DE ï¿½UDIO ---
+            // --- MENSAGEM DE ?UDIO ---
               else if (m.tipo === 'audio') {
                   const corWave = souEu ? 'white' : '#555';
                   const corIcone = souEu ? 'var(--cor0)' : '#555';
@@ -8878,7 +9127,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
     // Gerar Pagamento usando Modais Bonitos
 // EM CHAT.HTML
 
-// SUBSTITUA A FUN?ï¿½O window.gerarPagamento NO CHAT.HTML POR ESTA:
+// SUBSTITUA A FUN??O window.gerarPagamento NO CHAT.HTML POR ESTA:
 
 function formatCurrencyBRLFromDigits(digits){
     const clean = String(digits || "").replace(/\D/g, "");
@@ -9316,17 +9565,49 @@ window.confirmarGerarCobranca = async function(){
         const params = new URLSearchParams(window.location.search);
         const chatId = params.get('chatId') || params.get('pedidoId');
         const uidOutro = params.get('uid') || params.get('userUid');
+        const outroUidParam = params.get('outroUid') || params.get('peerUid') || '';
+        const peerNameParam = params.get('peerName') || '';
+        const peerPhotoParam = params.get('peerPhoto') || '';
+        const statusParam = params.get('status') || '';
+        const fromPedidos = params.get('from') === 'pedidos' || params.has('pedidoId');
+        const abaParam = String(params.get('aba') || params.get('tab') || params.get('view') || '').toLowerCase();
+
+        if (chatId && (fromPedidos || abaParam === 'pedidos') && abaAtual !== 'pedidos') {
+            if (typeof trocarAba === 'function') {
+                trocarAba('pedidos');
+                setTimeout(() => { try { abrirChatDeepLink(); } catch (_) {} }, 140);
+                return;
+            }
+        }
 
         if (uidOutro) {
             await abrirConversaComUid(uidOutro);
             return;
         }
         const meUid = currentUserUid || await ensureCurrentUserUid();
-        if (!chatId || !meUid) return;
+        if (!chatId || !meUid) {
+            if (chatId && (fromPedidos || abaParam === 'pedidos')) {
+                setTimeout(() => { try { abrirChatDeepLink(); } catch (_) {} }, 550);
+            }
+            return;
+        }
 
         try {
             const pSnap = await getDoc(doc(db, 'pedidos', chatId));
-            if (!pSnap.exists()) return;
+            if (!pSnap.exists()) {
+                if (fromPedidos || abaParam === 'pedidos') {
+                    const fallbackOutro = String(outroUidParam || uidOutro || '').trim();
+                    await window.abrirChat(
+                        chatId,
+                        fallbackOutro,
+                        peerNameParam,
+                        peerPhotoParam,
+                        'pedidos',
+                        statusParam || 'pendente'
+                    );
+                }
+                return;
+            }
             const p = pSnap.data();
 
             // Descobre o outro usu?rio
@@ -9338,6 +9619,19 @@ window.confirmarGerarCobranca = async function(){
             await window.abrirChat(chatId, outroUid, '', '', 'pedidos', p.status || '');
         } catch (e) {
             console.error('DeepLink chatId erro:', e);
+            if (fromPedidos || abaParam === 'pedidos') {
+                try {
+                    const fallbackOutro = String(outroUidParam || uidOutro || '').trim();
+                    await window.abrirChat(
+                        chatId,
+                        fallbackOutro,
+                        peerNameParam,
+                        peerPhotoParam,
+                        'pedidos',
+                        statusParam || 'pendente'
+                    );
+                } catch (_) {}
+            }
         }
     }
 
@@ -9430,7 +9724,7 @@ window.confirmarGerarCobranca = async function(){
         resyncChatState('focus', { force: false });
     });
 
-    // --- VARIï¿½VEIS GLOBAIS PARA ï¿½UDIO ---
+    // --- VARI?VEIS GLOBAIS PARA ?UDIO ---
 window.mediaRecorder = null;
 window.audioChunks = [];
 window.timerInterval = null;
@@ -9445,7 +9739,7 @@ window.iniciarGravacao = async function() {
     }
     // Verifica suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Seu navegador n?o suporta grava??o de Ã¡udio.");
+        alert("Seu navegador n?o suporta grava??o de áudio.");
         return;
     }
 
@@ -9478,7 +9772,7 @@ window.iniciarGravacao = async function() {
 
     } catch (err) {
         console.error("Erro ao acessar microfone:", err);
-        alert("Permita o uso do microfone para gravar Ã¡udio.");
+        alert("Permita o uso do microfone para gravar áudio.");
     }
 }
 
@@ -9497,7 +9791,7 @@ window.cancelarGravacao = function() {
     document.getElementById('area-input-texto').style.display = 'flex';
 }
 
-// 3. Enviar Ã¡udio (Salvar no Firebase)
+// 3. Enviar áudio (Salvar no Firebase)
 window.enviarAudio = function() {
     if (!window.mediaRecorder) return;
     if (isConversaBloqueadaParaEnviar()) {
@@ -9506,10 +9800,10 @@ window.enviarAudio = function() {
         return;
     }
 
-    // Quando o Ã¡udio estiver pronto (evento onstop do recorder)
+    // Quando o áudio estiver pronto (evento onstop do recorder)
     window.mediaRecorder.onstop = async () => {
-        // Cria o arquivo de Ã¡udio (Blob)
-        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padrÃ£o web
+        // Cria o arquivo de áudio (Blob)
+        const audioBlob = new Blob(window.audioChunks, { type: 'audio/webm' }); // webm ? padrão web
         const gravacaoInicio = Number(window.audioRecordStartedAt || 0);
         const duracaoAudioSec = gravacaoInicio > 0
             ? Math.max(1, Math.round((Date.now() - gravacaoInicio) / 1000))
@@ -9537,7 +9831,7 @@ window.enviarAudio = function() {
             const uploadFn = (typeof uploadBytes === 'function') ? uploadBytes : window.uploadBytes;
             const getUrlFn = (typeof getDownloadURL === 'function') ? getDownloadURL : window.getDownloadURL;
             if (!storage || !mkRef || !uploadFn || !getUrlFn) {
-                throw new Error("Storage indispon?vel para Ã¡udio.");
+                throw new Error("Storage indispon?vel para áudio.");
             }
             const nomeArquivo = `audios/${chatIdAtual}/${Date.now()}.webm`;
             const storageRef = mkRef(storage, nomeArquivo);
@@ -9549,7 +9843,7 @@ window.enviarAudio = function() {
             const textoAudio = applyReplyMetaToText("Mensagem de voz");
             await addDoc(collection(db, colecaoAtual, chatIdAtual, "mensagens"), {
                 tipo: 'audio',
-                url: downloadUrl, // Link do Ã¡udio
+                url: downloadUrl, // Link do áudio
                 texto: textoAudio, // Texto de fallback + reply meta
                 duracaoSegundos: duracaoAudioSec,
                 senderUid: user.uid,
@@ -9578,8 +9872,8 @@ window.enviarAudio = function() {
             cancelarResposta();
 
         } catch (e) {
-            console.error("Erro no upload do Ã¡udio:", e);
-            alert("Erro ao enviar Ã¡udio.");
+            console.error("Erro no upload do áudio:", e);
+            alert("Erro ao enviar áudio.");
         } finally {
             btnSend.innerHTML = "<i class='bx bxs-send'></i>"; // Volta icone normal
         }
@@ -9646,7 +9940,7 @@ window.fecharGaleria = function(event) {
     }
 }
 
-// 4. Fun??o para Tocar Ã¡udio (Player customizado)
+// 4. Fun??o para Tocar áudio (Player customizado)
 window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
     const audio = new Audio(url);
     const icon = btn.querySelector('i');
@@ -9755,9 +10049,16 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
+<script src="doke-shell.js?v=20260228v48"></script>
 <script>
   (function(){
+    function markEmbedMode(){
+      try{
+        const params = new URLSearchParams(window.location.search || '');
+        const isEmbed = params.get('embed') === '1' || params.get('noshell') === '1' || params.get('from') === 'pedidos';
+        if(isEmbed && document.body) document.body.classList.add('embed-chat');
+      }catch(_){}
+    }
     function triggerChatResync(reason, force){
       try {
         if (typeof window.__dokeChatResync === 'function') {
@@ -9797,14 +10098,35 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
     });
     if (document.readyState === 'loading') {
       document.addEventListener('DOMContentLoaded', () => {
+        markEmbedMode();
         recoverPageScroll();
         triggerChatResync('domcontentloaded', true);
       });
     } else {
+      markEmbedMode();
       recoverPageScroll();
       triggerChatResync('init', true);
     }
   })();
+</script>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function(){
+    try{
+      if(typeof trocarAba !== 'function') return;
+      const params = new URLSearchParams(window.location.search || '');
+      const abaParam = String(params.get('aba') || params.get('tab') || params.get('view') || '').toLowerCase();
+      const wantsPedidos = params.get('from') === 'pedidos' || params.has('pedidoId') || abaParam === 'pedidos';
+      if(wantsPedidos){
+        trocarAba('pedidos');
+        setTimeout(() => { try { abrirChatDeepLink(); } catch(_){} }, 120);
+        setTimeout(() => { try { abrirChatDeepLink(); } catch(_){} }, 900);
+        setTimeout(() => { try { abrirChatDeepLink(); } catch(_){} }, 1900);
+        return;
+      }
+      trocarAba('conversas');
+    }catch(e){}
+  });
 </script>
 </body>
 </html>

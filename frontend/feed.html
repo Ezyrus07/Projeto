@@ -1,4 +1,4 @@
-Ôªø<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -27,11 +27,11 @@
 <body class="page-feed">
 <div class="popup" id="popup">
 <div class="popup-content">
-<span class="close-btn" onclick="fecharPopup()">√ó</span>
+<span class="close-btn" onclick="fecharPopup()">◊</span>
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N√£o tem uma conta?
+                N„o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -79,7 +79,7 @@
 <div class="item">
 <a href="index.html">
 <i class="bx bx-home-alt icon azul"></i>
-<span>In√≠cio</span>
+<span>InÌcio</span>
 </a>
 </div>
 <div class="item" id="pvSearchSidebarItem">
@@ -97,11 +97,11 @@
 <div class="item">
 <a href="notificacoes.html">
 <i class="bx bx-bell icon azul"></i>
-<span>Notifica√ß√µes</span>
+<span>NotificaÁıes</span>
 </a>
 </div>
 <div class="item">
-<a href="chat.html">
+<a href="mensagens.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
 </a>
@@ -135,11 +135,11 @@
 <div class="reel-comments-overlay" id="reelCommentsOverlay" onclick="if(event.target.id==='reelCommentsOverlay') fecharComentariosReel()" style="display: none;">
 <div class="reel-comments-card">
 <div class="reel-comments-header">
-<b>Coment√°rios</b>
+<b>Coment·rios</b>
 </div>
 <div class="reel-comments-list" id="reelCommentsList"></div>
 <div class="reel-comments-input">
-<input id="reelCommentInput" placeholder="Adicione um coment√°rio..." type="text"/>
+<input id="reelCommentInput" placeholder="Adicione um coment·rio..." type="text"/>
 <button onclick="enviarComentarioReel()" type="button">Publicar</button>
 </div>
 </div>
@@ -151,7 +151,7 @@
         const { getFirestore, collection, query, orderBy, where, limit, getDocs, getDoc, doc, setDoc, deleteDoc, updateDoc, increment, addDoc } = window;
         const { getAuth, onAuthStateChanged, signOut } = window;
 
-        // CONFIGURA√á√ÉO DO FIREBASE (Mesma do seu script.js?v=20260218v60)
+        // CONFIGURA«√O DO FIREBASE (Mesma do seu script.js?v=20260218v60)
         const firebaseConfig = {
             apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
             authDomain: "doke-site.firebaseapp.com",
@@ -189,7 +189,7 @@
             sairReels();
         });
 
-        // --- L√ìGICA DO FEED TIKTOK ---
+        // --- L”GICA DO FEED TIKTOK ---
 function getSupabaseClient() {
     return window.sb || window.supabaseClient || window.sbClient || window.supabase || null;
 }
@@ -197,21 +197,21 @@ function getSupabaseClient() {
 async function fetchSupabaseReelsFeed() {
     const client = getSupabaseClient();
     if (!client) return [];
-    const withJoin = "id, user_id, video_url, created_at, titulo, descri√ß√£o, thumb_url, usu√°rios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
+    const withJoin = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto), videos_curtos_curtidas(count)";
     let { data, error } = await client
         .from("videos_curtos")
         .select(withJoin)
         .order("created_at", { ascending: false })
         .limit(30);
     if (error) {
-        const joinOnly = "id, user_id, video_url, created_at, titulo, descri√ß√£o, thumb_url, usu√°rios (id, uid, nome, user, foto)";
+        const joinOnly = "id, user_id, video_url, created_at, titulo, descricao, thumb_url, usuarios (id, uid, nome, user, foto)";
         const retryJoin = await client
             .from("videos_curtos")
             .select(joinOnly)
             .order("created_at", { ascending: false })
             .limit(30);
         if (retryJoin.error) {
-            const fallback = "id, user_id, video_url, created_at, titulo, descri√ß√£o, thumb_url";
+            const fallback = "id, user_id, video_url, created_at, titulo, descricao, thumb_url";
             const retry = await client
                 .from("videos_curtos")
                 .select(fallback)
@@ -297,7 +297,7 @@ async function carregarReels() {
             uidSeguro = data.uid || "";
             likes = data.likes || 0;
         } else {
-            const autor = data.usuarios || {};
+            const autor = data.usuarios || data["usu·rios"] || {};
             videoUrl = data.video_url || "";
             capa = data.thumb_url || "";
             perfilFoto = autor.foto || "https://placehold.co/150";
@@ -401,7 +401,7 @@ async function carregarReels() {
             videos.forEach(video => observer.observe(video));
         }
 
-        // Fun√ß√µes Globais para o HTML acessar
+        // FunÁıes Globais para o HTML acessar
         window.togglePlayFeed = function(frame) {
             const video = frame.querySelector('video');
             const icon = frame.querySelector('.play-overlay');
@@ -490,7 +490,7 @@ async function carregarReels() {
                     <div class="reel-comment-item">
                         <img src="${c.foto || 'https://placehold.co/32'}" alt="" loading="lazy" decoding="async">
                         <div>
-                            <b>${c.user || 'Usu√°rio'}</b>
+                            <b>${c.user || 'Usu·rio'}</b>
                             <span>${c.texto || ''}</span>
                         </div>
                     </div>`;
@@ -525,7 +525,7 @@ async function carregarReels() {
             try {
                 await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
                     uid: user.uid,
-                    user: perfilLocal.user || "Usu√°rio",
+                    user: perfilLocal.user || "Usu·rio",
                     foto: perfilLocal.foto || "https://placehold.co/50",
                     texto: texto,
                     data: new Date().toISOString()
@@ -582,7 +582,7 @@ async function carregarReels() {
                 .eq("uid", authUser.uid)
                 .maybeSingle();
             if (error) {
-                console.error("Erro ao carregar usu√°rio supabase:", error);
+                console.error("Erro ao carregar usu·rio supabase:", error);
                 return null;
             }
             window._dokeSupabaseUserRow = data || null;
@@ -613,7 +613,7 @@ async function carregarReels() {
                 ? (rawUser.startsWith("@") ? rawUser : `@${rawUser}`)
                 : (nome ? `@${nome.split(" ")[0].toLowerCase()}` : "@usuario");
             return {
-                nome: nome || handle.replace("@", "") || "Usu√°rio",
+                nome: nome || handle.replace("@", "") || "Usu·rio",
                 user: handle,
                 foto: perfil.foto || "https://placehold.co/50"
             };
@@ -667,7 +667,7 @@ async function carregarReels() {
 
                 await addDoc(collection(db, "notificacoes"), payload);
             } catch (e) {
-                console.warn("Notifica√ß√£o social ignorada:", e);
+                console.warn("NotificaÁ„o social ignorada:", e);
             }
         }
 
@@ -684,7 +684,7 @@ async function carregarReels() {
                 const cfg = getSupabaseReelConfig();
                 let { data, error } = await client
                     .from(cfg.commentsTable)
-                    .select("user_id, usu√°rios (uid)")
+                    .select("user_id, usu·rios (uid)")
                     .eq("id", commentId)
                     .maybeSingle();
                 if (error) {
@@ -737,7 +737,7 @@ async function carregarReels() {
                 .in("id", missing);
 
             if (error || !Array.isArray(data)) {
-                if (error && !isMissingTableError(error)) console.error("Erro ao carregar usu√°rios:", error);
+                if (error && !isMissingTableError(error)) console.error("Erro ao carregar usu·rios:", error);
                 return items;
             }
 
@@ -1015,7 +1015,7 @@ async function carregarReels() {
 
             const ownerUid = btn.dataset.commentUid || "";
             if (window.currentReelCommentsSource !== "supabase" && ownerUid && ownerUid === user.uid) {
-                alert("N√£o pode denunciar o proprio comentario.");
+                alert("N„o pode denunciar o proprio comentario.");
                 return;
             }
 
@@ -1024,7 +1024,7 @@ async function carregarReels() {
                 const userRow = await getSupabaseUserRow();
                 if (!client || !userRow) return;
                 if (ownerUid && ownerUid === userRow.id) {
-                    alert("N√£o pode denunciar o proprio comentario.");
+                    alert("N„o pode denunciar o proprio comentario.");
                     return;
                 }
                 const cfg = getSupabaseReelConfig();
@@ -1158,7 +1158,7 @@ async function carregarReels() {
                 const cfg = getSupabaseReelConfig();
                 let { data, error } = await client
                     .from(cfg.commentsTable)
-                    .select("id, texto, created_at, user_id, like_count, usu√°rios (id, nome, user, foto)")
+                    .select("id, texto, created_at, user_id, like_count, usu·rios (id, nome, user, foto)")
                     .eq(cfg.postIdField, window.currentReelCommentsId)
                     .eq("parent_id", parentId)
                     .order("created_at", { ascending: true });
@@ -1258,7 +1258,7 @@ async function carregarReels() {
                         <div style="flex:1;">
                             <div style="display:flex; justify-content:space-between; align-items:center;">
                                 <div style="font-size:0.8rem;">
-                                    <span style="font-weight:700;">${escapeHtml(r.user || "Usu√°rio")}</span> ${badgeCriador}
+                                    <span style="font-weight:700;">${escapeHtml(r.user || "Usu·rio")}</span> ${badgeCriador}
                                     <span style="color:#333; margin-left:5px;">${escapeHtml(r.texto || "")}</span>
                                 </div>
                                 ${btnExcluir}
@@ -1360,7 +1360,7 @@ async function carregarReels() {
                 const parentRef = doc(db, "reels", window.currentReelCommentsId, "comentarios", parentId);
                 await addDoc(respostasRef, {
                     uid: user.uid,
-                    user: perfil.user || "Usu√°rio",
+                    user: perfil.user || "Usu·rio",
                     foto: perfil.foto || "https://placehold.co/50",
                     texto: texto,
                     data: new Date().toISOString(),
@@ -1455,7 +1455,7 @@ async function carregarReels() {
                             <div style="flex:1;">
                                 <div class="comment-header-row">
                                     <div class="comment-header-left">
-                                        <span class="comment-user-name">${escapeHtml(c.user || "Usu√°rio")}</span> ${badgeCriador} ${badgeFixado}
+                                        <span class="comment-user-name">${escapeHtml(c.user || "Usu·rio")}</span> ${badgeCriador} ${badgeFixado}
                                     </div>
                             <div class="comment-header-actions">
                                 ${btnPin}
@@ -1509,7 +1509,7 @@ async function carregarReels() {
             const cfg = getSupabaseReelConfig();
             let { data, error } = await client
                 .from(cfg.commentsTable)
-                .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usu√°rios (id, nome, user, foto)")
+                .select("id, texto, created_at, user_id, like_count, reply_count, pinned, parent_id, usu·rios (id, nome, user, foto)")
                 .eq(cfg.postIdField, id)
                 .is("parent_id", null)
                 .order("pinned", { ascending: false })
@@ -1706,7 +1706,7 @@ async function carregarReels() {
             try {
                 const novoComentario = await addDoc(collection(db, "reels", window.currentReelCommentsId, "comentarios"), {
                     uid: user.uid,
-                    user: perfilLocal.user || "Usu√°rio",
+                    user: perfilLocal.user || "Usu·rio",
                     foto: perfilLocal.foto || "https://placehold.co/50",
                     texto: texto,
                     data: new Date().toISOString(),
@@ -1802,7 +1802,7 @@ async function carregarReels() {
                 const userRow = await getSupabaseUserRow();
                 if (!client || !userRow) return;
                 if (ownerRowId && ownerRowId === userRow.id) {
-                    alert("N√£o pode denunciar o proprio video.");
+                    alert("N„o pode denunciar o proprio video.");
                     return;
                 }
                 const { data, error } = await client
@@ -1831,7 +1831,7 @@ async function carregarReels() {
             }
 
             if (ownerUid && ownerUid === user.uid) {
-                alert("N√£o pode denunciar o proprio video.");
+                alert("N„o pode denunciar o proprio video.");
                 return;
             }
             try {
@@ -1859,16 +1859,17 @@ async function carregarReels() {
         // Verifica Auth para Sidebar
         onAuthStateChanged(auth, (user) => {
             if(user) localStorage.setItem('usuarioLogado', 'true');
-            // Aqui voc√™ pode chamar a fun√ß√£o do script.js?v=20260218v60 principal se quiser carregar avatar
+            // Aqui vocÍ pode chamar a funÁ„o do script.js?v=20260218v60 principal se quiser carregar avatar
         });
 
     </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script><script defer="" src="doke-feedpatch.js"></script>
-<script src="doke-shell.js?v=20260218v47"></script>
+<script src="doke-shell.js?v=20260228v48"></script>
 </body>
 </html>
+
 
 
 

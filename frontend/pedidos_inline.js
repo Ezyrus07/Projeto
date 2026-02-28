@@ -1,4 +1,4 @@
-
+﻿
     (function(){
       const state = { pedidos: [], filter: 'all', query: '', sort: 'recent', detailsById: new Map(), activeChatUrl: '', selectMode: false, selected: new Set() };
       const el = {
@@ -213,7 +213,7 @@
           dataEspecifica: pick(row, ['dataEspecifica'], ''),
           turno: pick(row, ['turno'], ''),
           respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
-          localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
+          localizacao: row.localizacao || row.localizaÃ§Ã£o || row['localizacao'] || row['localizaÃ§Ã£o'] || null,
           modoAtend: pick(row, ['modoAtend','modo_atend'], ''),
           statusOriginal: pick(row, ['status','statusPedido','situacao','estado'], ''),
           anexos: Array.isArray(row.anexos) ? row.anexos : []
@@ -234,7 +234,7 @@
             if(k === 'descricao' && String(v || '').length > String(next[k] || '').length){ next[k] = v; return; }
             if(Array.isArray(v) && v.length && (!Array.isArray(next[k]) || !next[k].length)){ next[k] = v; return; }
             if(v && typeof v === 'object' && !Array.isArray(v) && (!next[k] || typeof next[k] !== 'object' || Array.isArray(next[k]))){ next[k] = v; return; }
-            if((next[k] == null || String(next[k]).trim() === '' || String(next[k]) === '—') && String(v ?? '').trim() !== '') next[k] = v;
+            if((next[k] == null || String(next[k]).trim() === '' || String(next[k]) === 'â€”') && String(v ?? '').trim() !== '') next[k] = v;
           });
           map.set(key, next);
         });
@@ -248,7 +248,7 @@
         const directSignals = [
           row.pedidoId, row.idPedido, row.orcamentoId, row.statusPedido, row.paraQuando,
           row.dataEspecifica, row.prazo, row.descricaoBase, row.respostasTriagem,
-          row.formularioRespostas, row.modoAtend, row.localizacao, row.localização, row.servicoReferencia
+          row.formularioRespostas, row.modoAtend, row.localizacao, row.localizaÃ§Ã£o, row.servicoReferencia
         ];
         if(directSignals.some(Boolean)) return true;
         const keys = Object.keys(row).map((k) => String(k || '').toLowerCase());
@@ -374,7 +374,7 @@
               <img src="${esc(normalizeMediaUrl(p.avatar) || 'assets/Imagens/user_placeholder.png')}" alt="Avatar" onerror="this.onerror=null;this.src='assets/Imagens/user_placeholder.png'"/>
               <div class="user-meta">
                 <strong>${esc(p.usuario || p.nome)}</strong>
-                <span>${esc(p.id)} • ${esc(p.categoria || 'Geral')}</span>
+                <span>${esc(p.id)} â€¢ ${esc(p.categoria || 'Geral')}</span>
               </div>
             </div>
 
@@ -474,7 +474,7 @@
           const merged = mergePedidos([p, normalized, {
             id: pid,
             respostasTriagem: Array.isArray(row.respostasTriagem) ? row.respostasTriagem : [],
-            localizacao: row.localizacao || row.localização || row['localizacao'] || row['localização'] || null,
+            localizacao: row.localizacao || row.localizaÃ§Ã£o || row['localizacao'] || row['localizaÃ§Ã£o'] || null,
             mensagemInicial: pick(row, ['mensagemInicial','descricaoBase','descricao'], normalized.mensagemInicial || ''),
             descricaoBase: pick(row, ['descricaoBase','mensagemInicial','descricao'], normalized.descricaoBase || ''),
             paraQuando: pick(row, ['paraQuando','prazo','dataEspecifica'], normalized.paraQuando || ''),
@@ -532,8 +532,8 @@
         if(!p) return;
         const locObj = p.localizacao || {};
         const locText = [
-          locObj.endereco || locObj['endereço'] || '',
-          locObj.numero || locObj['número'] || '',
+          locObj.endereco || locObj['endereÃ§o'] || '',
+          locObj.numero || locObj['nÃºmero'] || '',
           locObj.complemento || '',
           locObj.referencia || ''
         ].map((v)=>String(v || '').trim()).filter(Boolean).join(', ');
@@ -549,7 +549,7 @@
           ['Valor', detailsValue(p.valor, 'Sob orcamento')]
         ];
 
-        el.detailsSubtitle.textContent = `${detailsValue(p.usuario || p.nome, '@cliente')} • ${detailsValue(p.categoria, 'Geral')}`;
+        el.detailsSubtitle.textContent = `${detailsValue(p.usuario || p.nome, '@cliente')} â€¢ ${detailsValue(p.categoria, 'Geral')}`;
         el.detailsGrid.innerHTML = rows.map(([k,v]) => `<div class="details-item"><small>${esc(k)}</small><strong>${esc(v)}</strong></div>`).join('');
         el.detailsDescription.textContent = detailsValue(p.mensagemInicial || p.descricaoBase || p.descricao, 'Sem descricao.');
 
@@ -613,11 +613,11 @@
         }catch(_){ }
 
         const pid = encodeURIComponent(String(p.id));
-        const chatUrl = `chat.html?embed=1&chatId=${pid}&pedidoId=${pid}&from=pedidos&aba=pedidos&origin=pedido`;
+        const chatUrl = `mensagens.html?embed=1&chatId=${pid}&pedidoId=${pid}&from=pedidos&aba=pedidos&origin=pedido`;
         state.activeChatUrl = chatUrl;
 
         el.inlineChatTitle.textContent = p.titulo || 'Chat do pedido';
-        el.inlineChatSub.textContent = `${p.usuario || p.nome || '@cliente'} • ${p.id}`;
+        el.inlineChatSub.textContent = `${p.usuario || p.nome || '@cliente'} â€¢ ${p.id}`;
         if(el.inlineChatFrame.getAttribute('src') !== chatUrl){
           el.inlineChatFrame.setAttribute('src', chatUrl);
         }
