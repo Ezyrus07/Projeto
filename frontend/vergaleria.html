@@ -13,8 +13,10 @@
 <link href="style.css?v=20260207v26" rel="stylesheet"/>
 <link rel="stylesheet" href="doke-a11y.css?v=20260207v21">
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
+<link href="doke-beforeafter.css?v=20260211v3" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260218v60"></script>
+<script defer="" src="doke-beforeafter.js?v=20260211v3"></script>
 <style>
         /* ===========================================
            ESTILOS DA GALERIA DE Vï¿½DEOS
@@ -132,6 +134,41 @@
         .vg-row{ display:flex; gap: 12px; overflow:auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
         .vg-row > * { scroll-snap-align: start; }
         .vg-empty{ padding: 14px; background:#fff; border:1px dashed rgba(0,0,0,.18); border-radius: 14px; color:rgba(0,0,0,.65); margin-top: 12px;}
+        .vg-row a{ text-decoration:none; color:inherit; }
+        .vg-row .vg-reelCard{
+            flex: 0 0 clamp(170px, 28vw, 220px);
+            width: clamp(170px, 28vw, 220px);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .vg-row .vg-pubCard{
+            flex: 0 0 clamp(210px, 33vw, 280px);
+            width: clamp(210px, 33vw, 280px);
+            border-radius: 16px;
+            overflow: hidden;
+        }
+        .vg-row .vg-pubCard .dp-itemMedia{
+            min-height: 210px;
+            max-height: 210px;
+            height: 210px;
+        }
+        .vg-row .vg-pubCard .dp-itemMedia img,
+        .vg-row .vg-pubCard .dp-itemMedia video{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        @media (max-width: 768px){
+            .vg-topicos{ padding: 0 12px; }
+            .vg-row .vg-reelCard{
+                flex-basis: 44vw;
+                width: 44vw;
+            }
+            .vg-row .vg-pubCard{
+                flex-basis: 66vw;
+                width: 66vw;
+            }
+        }
     </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -290,6 +327,17 @@
 </div>
 <div class="vg-empty" id="vgPubsEmpty" style="display:none;">Sem publicações ainda.</div>
 </section>
+<section class="vg-topicos" id="vgAntesDepois">
+<div class="vg-head">
+<h2>Antes e depois</h2>
+<p>Transformações organizadas por tópicos</p>
+</div>
+<div class="vg-topic" data-topic="Transformações">
+<div class="vg-topic-title">Transformações</div>
+<div class="vg-row" id="vgAntesDepoisTransformacoes"></div>
+</div>
+<div class="vg-empty" id="vgAntesDepoisEmpty" style="display:none;">Sem antes e depois ainda.</div>
+</section>
 <div class="page-header">
 <div class="page-breadcrumb">
 <a href="index.html">Início</a> &gt; <strong>Galeria de Vídeos</strong>
@@ -423,10 +471,162 @@
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
+<script>
+(function(){
+  function byId(id){ return document.getElementById(id); }
+  function arr(v){ return Array.isArray(v) ? v : []; }
+  function esc(v){
+    return String(v || "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+  function dateTs(v){
+    const d = new Date(v || 0);
+    const t = d.getTime();
+    return Number.isFinite(t) ? t : 0;
+  }
+  function datePt(v){
+    const d = new Date(v || 0);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleDateString("pt-BR");
+  }
+  function countMaybe(raw){
+    if (Array.isArray(raw)) return raw.length;
+    if (raw && typeof raw === "object" && typeof raw.count === "number") return raw.count;
+    return 0;
+  }
+  function normalizeReel(item){
+    const video = String(item?.video_url || item?.videoUrl || item?.video || item?.url || item?.media_url || "").trim();
+    if (!video) return null;
+    const thumb = String(item?.thumb_url || item?.capa || item?.thumbnail || item?.img || "").trim();
+    const autor = item?.usuarios || {};
+    return {
+      id: String(item?.id || "").trim(),
+      video: video,
+      thumb: thumb,
+      titulo: String(item?.titulo || item?.title || "").trim(),
+      descricao: String(item?.descricao || item?.legenda || "").trim(),
+      autor: String(autor?.user || autor?.nome || "usuario").trim(),
+      createdAt: item?.created_at || item?.data || null,
+      likes: countMaybe(item?.videos_curtos_curtidas)
+    };
+  }
+  function normalizePub(item){
+    const media = String(item?.media_url || item?.imagem || item?.image_url || item?.img || item?.video_url || item?.videoUrl || "").trim();
+    if (!media) return null;
+    const autor = item?.usuarios || {};
+    const tipo = String(item?.tipo || "").trim().toLowerCase();
+    return {
+      id: String(item?.id || "").trim(),
+      tipo: tipo,
+      media: media,
+      thumb: String(item?.thumb_url || item?.capa || item?.thumbnail || "").trim(),
+      titulo: String(item?.titulo || item?.legenda || "Publicação").trim(),
+      descricao: String(item?.descricao || item?.legenda || "").trim(),
+      autor: String(autor?.user || autor?.nome || "usuario").trim(),
+      foto: String(autor?.foto || "").trim(),
+      createdAt: item?.created_at || item?.data || null
+    };
+  }
+  function renderRow(rowId, items, buildCard){
+    const row = byId(rowId);
+    if (!row) return 0;
+    row.innerHTML = items.map(buildCard).join("");
+    return items.length;
+  }
+  function renderReelCard(r){
+    const href = "feed.html?start=sb-" + encodeURIComponent(r.id || "");
+    const title = esc(r.titulo || ("@" + r.autor));
+    const desc = esc(r.descricao || "");
+    const posterAttr = r.thumb ? (' poster="' + esc(r.thumb) + '"') : "";
+    return (
+      '<a class="dp-reelCard dp-item--clickable vg-reelCard" href="' + href + '">' +
+        '<div class="dp-reelMedia">' +
+          '<video src="' + esc(r.video) + '"' + posterAttr + ' muted loop playsinline preload="metadata"></video>' +
+          '<div class="dp-reelOverlay">' +
+            '<b>' + title + '</b>' +
+            (desc ? ('<p>' + desc + '</p>') : "") +
+          '</div>' +
+          '<div class="dp-reelPlay"><i class="bx bx-play"></i></div>' +
+        '</div>' +
+      '</a>'
+    );
+  }
+  function renderPubCard(p){
+    const href = "feed.html?start=sb-" + encodeURIComponent(p.id || "");
+    const when = datePt(p.createdAt);
+    const avatar = p.foto || ("https://i.pravatar.cc/80?u=" + encodeURIComponent(p.autor || p.id || "user"));
+    const isVideo = p.tipo === "video" || p.media.toLowerCase().includes(".mp4");
+    const isAntesDepois = p.tipo === "antes_depois" && !!p.thumb;
+    let mediaHtml = "";
+    if (isVideo) {
+      mediaHtml = '<video src="' + esc(p.media) + '"' + (p.thumb ? (' poster="' + esc(p.thumb) + '"') : "") + ' muted playsinline preload="metadata"></video>';
+    } else if (isAntesDepois) {
+      mediaHtml = '<div class="dp-ba js-antes-depois" data-before="' + esc(p.media) + '" data-after="' + esc(p.thumb) + '"><img src="' + esc(p.media) + '" loading="lazy" alt=""></div>';
+    } else {
+      mediaHtml = '<img src="' + esc(p.media) + '" loading="lazy" alt="">';
+    }
+    return (
+      '<a class="feed-publicacao-card dp-item dp-item--clickable vg-pubCard" href="' + href + '">' +
+        '<div class="dp-itemMedia">' + mediaHtml + '</div>' +
+        '<div class="dp-itemBody">' +
+          '<div class="dp-itemAuthor">' +
+            '<img class="dp-itemAvatar" src="' + esc(avatar) + '" alt="" width="34" height="34" loading="lazy" decoding="async">' +
+            '<div class="dp-itemUser">@' + esc(p.autor.replace(/^@/, "")) + '</div>' +
+            (when ? ('<span class="dp-itemMeta">' + esc(when) + '</span>') : "") +
+          '</div>' +
+          '<b class="dp-itemTitle">' + esc(p.titulo || "Publicação") + '</b>' +
+          (p.descricao ? ('<p class="dp-itemDesc">' + esc(p.descricao) + '</p>') : "") +
+        '</div>' +
+      '</a>'
+    );
+  }
+  async function loadTopicos(){
+    let reels = [];
+    let pubs = [];
+    try {
+      if (typeof window.fetchSupabaseReelsHome === "function") {
+        reels = arr(await window.fetchSupabaseReelsHome()).map(normalizeReel).filter(Boolean);
+      }
+    } catch (_) {}
+    try {
+      if (typeof window.fetchSupabasePublicacoesFeed === "function") {
+        pubs = arr(await window.fetchSupabasePublicacoesFeed()).map(normalizePub).filter(Boolean);
+      }
+    } catch (_) {}
+
+    reels.sort((a, b) => dateTs(b.createdAt) - dateTs(a.createdAt));
+    pubs.sort((a, b) => dateTs(b.createdAt) - dateTs(a.createdAt));
+
+    const reelsEmAlta = reels.slice().sort((a, b) => (b.likes - a.likes) || (dateTs(b.createdAt) - dateTs(a.createdAt))).slice(0, 12);
+    const reelsParaVoce = (reels.slice(12, 24).length ? reels.slice(12, 24) : reels.slice(0, 12));
+    const pubsRecentes = pubs.slice(0, 12);
+    const antesDepois = pubs.filter((p) => p.tipo === "antes_depois" || !!p.thumb).slice(0, 12);
+
+    renderRow("vgReelsEmAlta", reelsEmAlta, renderReelCard);
+    renderRow("vgReelsParaVoce", reelsParaVoce, renderReelCard);
+    renderRow("vgPubsRecentes", pubsRecentes, renderPubCard);
+    renderRow("vgAntesDepoisTransformacoes", antesDepois, renderPubCard);
+
+    const reelsOk = reelsEmAlta.length + reelsParaVoce.length;
+    const pubsOk = pubsRecentes.length;
+    const antesOk = antesDepois.length;
+    if (byId("vgReelsEmpty")) byId("vgReelsEmpty").style.display = reelsOk ? "none" : "block";
+    if (byId("vgPubsEmpty")) byId("vgPubsEmpty").style.display = pubsOk ? "none" : "block";
+    if (byId("vgAntesDepoisEmpty")) byId("vgAntesDepoisEmpty").style.display = antesOk ? "none" : "block";
+
+    if (typeof window.setupAntesDepois === "function") window.setupAntesDepois(document);
+    else if (window.DokeAntesDepois && typeof window.DokeAntesDepois.refresh === "function") window.DokeAntesDepois.refresh(document);
+  }
+  document.addEventListener("DOMContentLoaded", loadTopicos);
+})();
+</script>
 <script src="doke-shell.js?v=20260218v47"></script>
 </body>
 </html>
-
 
 
 

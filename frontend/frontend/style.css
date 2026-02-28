@@ -13310,3 +13310,535 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
     max-height: 46dvh !important;
   }
 }
+
+/* =========================================================
+   Modal de publicação v2 (global, do zero)
+   ========================================================= */
+#modalPostDetalhe.doke-post-modal{
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 10080 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  padding: 22px !important;
+  background: rgba(8, 12, 22, 0.62) !important;
+  backdrop-filter: blur(8px);
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-close-fab{
+  position: fixed !important;
+  top: 18px !important;
+  left: 18px !important;
+  width: 54px !important;
+  height: 54px !important;
+  border-radius: 999px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  background: rgba(19, 31, 50, .88) !important;
+  color: #f5f8ff !important;
+  font-size: 30px !important;
+  line-height: 1 !important;
+  box-shadow: 0 10px 24px rgba(2,8,22,.35) !important;
+  cursor: pointer !important;
+  z-index: 10090 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-sheet{
+  width: min(980px, calc(100vw - 48px)) !important;
+  height: min(92vh, 920px) !important;
+  display: grid !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: minmax(300px, 58%) 1fr !important;
+  background: #f9fbff !important;
+  border: 1px solid rgba(255,255,255,.36) !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 70px rgba(6,14,28,.38) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-media{
+  position: relative !important;
+  background: linear-gradient(145deg, #061224 0%, #092246 48%, #071026 100%) !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-media img,
+#modalPostDetalhe.doke-post-modal .doke-post-media video{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: transparent !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-info{
+  min-width: 0 !important;
+  min-height: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  background: #ffffff !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-header{
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #e8edf5 !important;
+  background: #fff !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-author{
+  display: flex !important;
+  align-items: center !important;
+  gap: 10px !important;
+}
+
+#modalPostDetalhe.doke-post-modal #modalAvatar{
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 999px !important;
+  object-fit: cover !important;
+  border: 2px solid #ecf1f8 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-author-text{
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+}
+
+#modalPostDetalhe.doke-post-modal #modalUsername{
+  font-size: 1rem !important;
+  font-weight: 800 !important;
+  line-height: 1.2 !important;
+  color: #091c39 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-author-text small{
+  font-size: .72rem !important;
+  color: #6f7f95 !important;
+  font-weight: 700 !important;
+  letter-spacing: .02em !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  padding: 12px 16px 14px !important;
+  background: #fff !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-caption{
+  margin-bottom: 10px !important;
+  font-size: .94rem !important;
+  line-height: 1.45 !important;
+  color: #15253f !important;
+  word-break: break-word !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-footer{
+  flex: 0 0 auto !important;
+  border-top: 1px solid #e8edf5 !important;
+  background: #fff !important;
+  padding: 10px 16px 12px !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-actions{
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin-bottom: 8px !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-actions i{
+  font-size: 1.5rem !important;
+  color: #0b1f3d !important;
+  cursor: pointer !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-likes{
+  display: block !important;
+  margin-bottom: 8px !important;
+  font-size: .92rem !important;
+  font-weight: 800 !important;
+  color: #0c2040 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-delete{
+  display: none;
+  width: 100% !important;
+  margin: 0 0 8px !important;
+  min-height: 38px !important;
+  border-radius: 11px !important;
+  border: 1px solid #efb9b9 !important;
+  background: #fff8f8 !important;
+  color: #b92b2b !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-input-row{
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+#modalPostDetalhe.doke-post-modal #inputComentarioModal{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  border: 1px solid #dce5f1 !important;
+  padding: 0 12px !important;
+  outline: none !important;
+  background: #fbfdff !important;
+  font-size: .92rem !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-input-row button{
+  height: 42px !important;
+  min-width: 102px !important;
+  border: none !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #0a6f61, #0b8a77) !important;
+  color: #fff !important;
+  font-size: .95rem !important;
+  font-weight: 800 !important;
+  cursor: pointer !important;
+}
+
+@media (max-width: 980px){
+  #modalPostDetalhe.doke-post-modal{
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-close-fab{
+    top: max(10px, env(safe-area-inset-top)) !important;
+    left: 10px !important;
+    width: 42px !important;
+    height: 42px !important;
+    font-size: 24px !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-sheet{
+    width: 100vw !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(240px, 42dvh) 1fr !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-media{
+    min-height: 0 !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-info{
+    min-height: 0 !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-comments{
+    padding: 10px 12px 12px !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-footer{
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-input-row button{
+    min-width: 92px !important;
+  }
+}
+
+/* =========================================================
+   Modal de publicação v3 (Instagram-like final)
+   ========================================================= */
+#modalPostDetalhe.doke-post-modal{
+  --ig-bg: #111318;
+  --ig-panel: #13161d;
+  --ig-line: #272b35;
+  --ig-text: #f4f6fa;
+  --ig-muted: #9da6b5;
+  --ig-accent: #4ea1ff;
+  --ig-danger: #ff5b77;
+  background: rgba(0, 0, 0, 0.78) !important;
+  backdrop-filter: blur(4px) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-close-fab{
+  top: 18px !important;
+  right: 18px !important;
+  left: auto !important;
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 999px !important;
+  border: 1px solid #3a3f4b !important;
+  background: rgba(16, 18, 24, .92) !important;
+  color: #f2f4f8 !important;
+  box-shadow: 0 10px 24px rgba(0,0,0,.42) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-sheet{
+  width: min(1280px, calc(100vw - 72px)) !important;
+  height: min(92vh, 930px) !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.18fr) minmax(360px, .82fr) !important;
+  grid-template-rows: 1fr !important;
+  background: var(--ig-bg) !important;
+  border: 1px solid #2a303b !important;
+  border-radius: 16px !important;
+  overflow: hidden !important;
+  box-shadow: 0 20px 58px rgba(0,0,0,.56) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-media{
+  background: #000 !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-media img,
+#modalPostDetalhe.doke-post-modal .doke-post-media video{
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  background: transparent !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-info{
+  display: flex !important;
+  flex-direction: column !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+  background: var(--ig-panel) !important;
+  border-left: 1px solid var(--ig-line) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-header{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 11px 14px !important;
+  border-bottom: 1px solid var(--ig-line) !important;
+  background: var(--ig-panel) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-header::after{
+  content: "\22ef";
+  font-size: 20px;
+  line-height: 1;
+  color: #f3f5f8;
+  opacity: .95;
+}
+
+#modalPostDetalhe.doke-post-modal #modalAvatar{
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  border: 2px solid #434b57 !important;
+}
+
+#modalPostDetalhe.doke-post-modal #modalUsername{
+  color: var(--ig-text) !important;
+  font-size: .98rem !important;
+  font-weight: 800 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-author-text small{
+  color: var(--ig-muted) !important;
+  font-size: .72rem !important;
+  font-weight: 700 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments{
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  overflow-y: auto !important;
+  padding: 10px 14px 12px !important;
+  background: var(--ig-panel) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments,
+#modalPostDetalhe.doke-post-modal .doke-post-comments *{
+  color: #eaf0f7 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments #modalCaption{
+  color: var(--ig-text) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments [style*="color:#999"]{
+  color: var(--ig-muted) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-date,
+#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-meta-row,
+#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-meta-row span{
+  color: var(--ig-muted) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments::-webkit-scrollbar{
+  width: 8px;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-comments::-webkit-scrollbar-thumb{
+  background: #2d3441;
+  border-radius: 999px;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-footer{
+  border-top: 1px solid var(--ig-line) !important;
+  background: var(--ig-panel) !important;
+  padding: 10px 14px 12px !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-actions{
+  display: flex !important;
+  align-items: center !important;
+  gap: 14px !important;
+  margin-bottom: 8px !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-actions i{
+  font-size: 1.6rem !important;
+  color: var(--ig-text) !important;
+  cursor: pointer !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-actions i:hover{
+  opacity: .82 !important;
+}
+
+#modalPostDetalhe.doke-post-modal #btnLikeModalIcon.bxs-heart{
+  color: var(--ig-danger) !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-actions .btn-report-post{
+  margin-left: auto !important;
+  font-size: 1.34rem !important;
+  color: #ffbf6c !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-likes{
+  color: var(--ig-text) !important;
+  font-size: .92rem !important;
+  font-weight: 800 !important;
+  margin-bottom: 8px !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-delete{
+  border: 1px solid #702f3a !important;
+  background: rgba(139, 52, 66, .16) !important;
+  color: #ff9aaa !important;
+  border-radius: 10px !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-input-row{
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  border-top: 1px solid var(--ig-line) !important;
+  padding-top: 10px !important;
+}
+
+#modalPostDetalhe.doke-post-modal #inputComentarioModal{
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  height: 36px !important;
+  border: none !important;
+  border-radius: 0 !important;
+  outline: none !important;
+  background: transparent !important;
+  color: var(--ig-text) !important;
+  font-size: .93rem !important;
+  padding: 0 !important;
+}
+
+#modalPostDetalhe.doke-post-modal #inputComentarioModal::placeholder{
+  color: #8f99aa !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-input-row button{
+  border: none !important;
+  background: transparent !important;
+  color: var(--ig-accent) !important;
+  font-weight: 800 !important;
+  font-size: 1rem !important;
+  min-width: 58px !important;
+  height: 36px !important;
+  border-radius: 8px !important;
+  padding: 0 !important;
+}
+
+#modalPostDetalhe.doke-post-modal .doke-post-input-row button:disabled{
+  color: #6f7b8f !important;
+}
+
+@media (max-width: 1179px){
+  #modalPostDetalhe.doke-post-modal .doke-post-sheet{
+    width: min(1040px, calc(100vw - 44px)) !important;
+    height: min(94vh, 930px) !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(300px, 52vh) 1fr !important;
+    border-radius: 20px !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-info{
+    border-left: 0 !important;
+    border-top: 1px solid var(--ig-line) !important;
+  }
+}
+
+@media (max-width: 980px){
+  #modalPostDetalhe.doke-post-modal{
+    padding: 0 !important;
+    align-items: stretch !important;
+    justify-content: stretch !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-close-fab{
+    top: max(10px, env(safe-area-inset-top)) !important;
+    left: 10px !important;
+    right: auto !important;
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 22px !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-sheet{
+    width: 100vw !important;
+    height: 100dvh !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    grid-template-columns: 1fr !important;
+    grid-template-rows: minmax(248px, 46dvh) 1fr !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-media{
+    min-height: 248px !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-comments{
+    padding: 10px 12px 12px !important;
+  }
+
+  #modalPostDetalhe.doke-post-modal .doke-post-footer{
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
+  }
+}

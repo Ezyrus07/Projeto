@@ -227,11 +227,16 @@
             flex-direction: column;
             min-height: 210px;
             transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+            cursor: pointer;
         }
         .lm-card:hover{
             transform: translateY(-2px);
             border-color: rgba(11,119,104,.35);
             box-shadow: 0 10px 28px rgba(2,8,23,.09);
+        }
+        .lm-card:focus-visible{
+            outline: 2px solid rgba(11,119,104,.65);
+            outline-offset: 2px;
         }
         .lm-thumb{
             width:100%;
@@ -790,6 +795,22 @@
         const isEmbedMode = String(params.get('embed') || '') === '1';
         const previewStorageKey = 'doke_preview_anuncio';
         const scrollToParam = String(params.get('scroll') || '').toLowerCase();
+        function navigateApp(url) {
+            const target = String(url || "").trim();
+            if (!target) return;
+            const absolute = (() => {
+                try { return new URL(target, window.location.href).toString(); } catch (_) { return target; }
+            })();
+            if (isEmbedMode) {
+                try {
+                    if (window.top && window.top !== window) {
+                        window.top.location.href = absolute;
+                        return;
+                    }
+                } catch (_) {}
+            }
+            window.location.href = absolute;
+        }
         if (isEmbedMode) {
             document.body.classList.add('doke-embed-mode');
             document.documentElement.classList.add('doke-embed-mode');
@@ -1006,6 +1027,13 @@
             profileLink.href = profileUid
                 ? `perfil-profissional.html?uid=${encodeURIComponent(profileUid)}`
                 : "perfil-profissional.html";
+            if (isEmbedMode) {
+                profileLink.setAttribute("target", "_top");
+                profileLink.setAttribute("rel", "noopener");
+            } else {
+                profileLink.removeAttribute("target");
+                profileLink.removeAttribute("rel");
+            }
 
             const configs = [
                 {
@@ -1056,6 +1084,8 @@
                     const timestamp = new Date(row?.created_at || row?.createdAt || row?.createdat || row?.data || 0).getTime() || 0;
                     collected.push({
                         key: `${cfg.table}:${row?.id || `${cfg.kind}-${timestamp}-${Math.random()}`}`,
+                        rowId: String(row?.id || "").trim(),
+                        table: cfg.table,
                         kind: cfg.kind,
                         icon: cfg.icon,
                         mediaUrl,
@@ -1080,20 +1110,80 @@
             if (!dedup.length) return;
 
             const preview = dedup.slice(0, 4);
-            grid.innerHTML = preview.map((item) => {
-                const mediaHtml = item.mediaUrl
+            const openLinkedMediaItem = (item) => {
+                if (!item) return;
+                const rowId = String(item.rowId || "").trim();
+                const mediaUrl = String(item.mediaUrl || "").trim();
+                const isVideo = !!item.isVideo;
+                const table = String(item.table || "").toLowerCase();
+
+                if (table === "publicacoes" && rowId) {
+                    if (typeof window.abrirModalPublicacao === "function") {
+                        window.abrirModalPublicacao(rowId);
+                        return;
+                    }
+                    navigateApp(`feed.html?post=sb-${encodeURIComponent(rowId)}`);
+                    return;
+                }
+
+                if (table === "videos_curtos" && rowId) {
+                    navigateApp(`feed.html?start=sb-${encodeURIComponent(rowId)}`);
+                    return;
+                }
+
+                if (!mediaUrl) return;
+
+                if (!isVideo) {
+                    if (typeof window.abrirGaleria === "function") {
+                        window.abrirGaleria([mediaUrl], 0);
+                        return;
+                    }
+                    window.open(mediaUrl, "_blank", "noopener,noreferrer");
+                    return;
+                }
+
+                const modal = document.getElementById("modalPlayerVideo");
+                const player = document.getElementById("playerPrincipal");
+                if (modal && player) {
+                    player.src = mediaUrl;
+                    modal.style.display = "flex";
+                    if (typeof window.updateScrollLock === "function") window.updateScrollLock();
+                    const p = player.play?.();
+                    if (p && typeof p.catch === "function") p.catch(() => {});
+                    return;
+                }
+                window.open(mediaUrl, "_blank", "noopener,noreferrer");
+            };
+
+            grid.innerHTML = "";
+            preview.forEach((item) => {
+                const card = document.createElement("article");
+                card.className = "lm-card";
+                card.tabIndex = 0;
+                card.setAttribute("role", "button");
+                card.setAttribute("aria-label", `${item.kind}: ${item.title || "abrir mídia"}`);
+                card.innerHTML = `
+                  ${item.mediaUrl
                     ? `<img class="lm-thumb" src="${escapeHtml(item.mediaUrl)}" alt="${escapeHtml(item.title)}" loading="lazy" decoding="async">`
-                    : `<div class="lm-thumb-placeholder"><i class='bx ${item.icon}' style="font-size:22px; margin-right:6px;"></i> Prévia</div>`;
-                return `
-                  <article class="lm-card">
-                    ${mediaHtml}
-                    <div class="lm-body">
-                      <span class="lm-kind"><i class='bx ${item.icon}'></i>${escapeHtml(item.kind)}</span>
-                      <h3 class="lm-title">${escapeHtml(item.title)}</h3>
-                      ${item.desc ? `<p class="lm-desc">${escapeHtml(item.desc)}</p>` : ``}
-                    </div>
-                  </article>`;
-            }).join("");
+                    : `<div class="lm-thumb-placeholder"><i class='bx ${item.icon}' style="font-size:22px; margin-right:6px;"></i> Prévia</div>`
+                  }
+                  <div class="lm-body">
+                    <span class="lm-kind"><i class='bx ${item.icon}'></i>${escapeHtml(item.kind)}</span>
+                    <h3 class="lm-title">${escapeHtml(item.title)}</h3>
+                    ${item.desc ? `<p class="lm-desc">${escapeHtml(item.desc)}</p>` : ``}
+                  </div>`;
+                card.addEventListener("click", (event) => {
+                    event.preventDefault();
+                    openLinkedMediaItem(item);
+                });
+                card.addEventListener("keydown", (event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                        event.preventDefault();
+                        openLinkedMediaItem(item);
+                    }
+                });
+                grid.appendChild(card);
+            });
 
             section.style.display = "block";
         }
@@ -1385,6 +1475,13 @@
             document.getElementById('prov-name').innerText = d.nomeAutor || perfil.nome || perfil.user || "Profissional Doke";
             document.getElementById('prov-img').src = d.fotoAutor || perfil.foto || perfil.foto_url || perfil.avatar || "assets/Imagens/user_placeholder.png";
             document.getElementById('link-perfil').href = provUid ? `perfil-profissional.html?uid=${encodeURIComponent(provUid)}` : "perfil-profissional.html";
+            if (isEmbedMode) {
+                document.getElementById('link-perfil').setAttribute("target", "_top");
+                document.getElementById('link-perfil').setAttribute("rel", "noopener");
+            } else {
+                document.getElementById('link-perfil').removeAttribute("target");
+                document.getElementById('link-perfil').removeAttribute("rel");
+            }
             document.getElementById('policy-text').innerText = d.politicaCancelamento || "PadrÃ£o da plataforma";
             detalhesAvaliacaoCtx = {
                 id: String(idAnuncio || d.id || d.anuncioId || ""),
@@ -1398,9 +1495,11 @@
             document.getElementById('btn-contact').onclick = () => {
                 const userLogado = localStorage.getItem('usuarioLogado');
                 if(!userLogado) {
-                    window.location.href = "login.html";
+                    navigateApp(`login.html?next=${encodeURIComponent(`orcamento.html?uid=${encodeURIComponent(String(provUid || d.uid || ""))}&aid=${encodeURIComponent(String(idAnuncio || d.id || ""))}`)}`);
                 } else {
-                    window.location.href = `chat.html?iniciar=${d.uid}&servico=${encodeURIComponent(d.titulo)}`;
+                    const uidParam = encodeURIComponent(String(provUid || d.uid || ""));
+                    const aidParam = encodeURIComponent(String(idAnuncio || d.id || ""));
+                    navigateApp(`orcamento.html?uid=${uidParam}&aid=${aidParam}`);
                 }
             };
 

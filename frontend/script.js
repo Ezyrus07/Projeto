@@ -7470,6 +7470,35 @@ window.monitorarNotificacoesGlobal = function(uid) {
     }
     const resolvedUid = String(uid || "").trim();
     if (!resolvedUid) return;
+    if (!window.monitorarNotificacoesGlobal.__skipAuthCheck && window.sb?.auth?.getSession) {
+        window.sb.auth.getSession()
+            .then(({ data, error }) => {
+                const sessionUid = String(data?.session?.user?.id || "").trim();
+                const authOk = !error && !!sessionUid && sessionUid === resolvedUid;
+                if (!authOk) {
+                    try {
+                        const st = window.__dokeBadgeMonitor;
+                        if (st?.pollTimer) {
+                            clearInterval(st.pollTimer);
+                            st.pollTimer = null;
+                        }
+                        if (Array.isArray(st?.unsubs)) {
+                            st.unsubs.forEach((fn) => { try { fn && fn(); } catch (_) {} });
+                            st.unsubs = [];
+                        }
+                    } catch (_) {}
+                    return;
+                }
+                try {
+                    window.monitorarNotificacoesGlobal.__skipAuthCheck = true;
+                    window.monitorarNotificacoesGlobal(resolvedUid);
+                } finally {
+                    window.monitorarNotificacoesGlobal.__skipAuthCheck = false;
+                }
+            })
+            .catch(() => {});
+        return;
+    }
     if (!window.__dokeBadgeMonitor) {
         window.__dokeBadgeMonitor = { uid: "", unsubs: [], pollTimer: null, lastTotals: { notif: 0, chat: 0 } };
     }
@@ -8729,47 +8758,137 @@ window.currentSupaPublicacaoAuthorId = null;
 window.currentSupaPublicacaoAuthorUid = null;
 let processandoLike = false; // Trava para evitar cliques r?pidos
 
+function applyPostModalLayoutRuntime() {
+    const modal = document.getElementById('modalPostDetalhe');
+    if (!modal || !modal.classList.contains('doke-post-modal')) return;
+
+    const sheet = modal.querySelector('.doke-post-sheet');
+    const media = modal.querySelector('.doke-post-media');
+    const info = modal.querySelector('.doke-post-info');
+    const comments = modal.querySelector('.doke-post-comments');
+    const footer = modal.querySelector('.doke-post-footer');
+    const closeBtn = modal.querySelector('.doke-post-close-fab');
+    const width = window.innerWidth || document.documentElement.clientWidth || 0;
+    const isMobile = width <= 980;
+    const isSplitDesktop = width >= 1180;
+    const safeBottom = 'calc(10px + env(safe-area-inset-bottom))';
+
+    modal.style.setProperty('padding', isMobile ? '0' : '20px', 'important');
+    modal.style.setProperty('align-items', isMobile ? 'stretch' : 'center', 'important');
+    modal.style.setProperty('justify-content', isMobile ? 'stretch' : 'center', 'important');
+    if (closeBtn) {
+        if (isMobile) {
+            closeBtn.style.setProperty('left', '10px', 'important');
+            closeBtn.style.setProperty('right', 'auto', 'important');
+            closeBtn.style.setProperty('top', 'max(10px, env(safe-area-inset-top))', 'important');
+        } else {
+            closeBtn.style.setProperty('left', 'auto', 'important');
+            closeBtn.style.setProperty('right', '18px', 'important');
+            closeBtn.style.setProperty('top', '18px', 'important');
+        }
+    }
+
+    if (sheet) {
+        sheet.style.setProperty('display', 'grid', 'important');
+        if (isSplitDesktop) {
+            sheet.style.setProperty('grid-template-columns', 'minmax(0, 1.18fr) minmax(360px, .82fr)', 'important');
+            sheet.style.setProperty('grid-template-rows', '1fr', 'important');
+            sheet.style.setProperty('width', 'min(1280px, calc(100vw - 72px))', 'important');
+            sheet.style.setProperty('height', 'min(92vh, 930px)', 'important');
+            sheet.style.setProperty('border-radius', '16px', 'important');
+            sheet.style.setProperty('border-width', '1px', 'important');
+        } else if (isMobile) {
+            sheet.style.setProperty('grid-template-columns', '1fr', 'important');
+            sheet.style.setProperty('grid-template-rows', 'minmax(248px, 46dvh) 1fr', 'important');
+            sheet.style.setProperty('width', '100vw', 'important');
+            sheet.style.setProperty('height', '100dvh', 'important');
+            sheet.style.setProperty('border-radius', '0', 'important');
+            sheet.style.setProperty('border-width', '0', 'important');
+        } else {
+            sheet.style.setProperty('grid-template-columns', '1fr', 'important');
+            sheet.style.setProperty('grid-template-rows', 'minmax(300px, 52vh) 1fr', 'important');
+            sheet.style.setProperty('width', 'min(1040px, calc(100vw - 44px))', 'important');
+            sheet.style.setProperty('height', 'min(94vh, 930px)', 'important');
+            sheet.style.setProperty('border-radius', '20px', 'important');
+            sheet.style.setProperty('border-width', '1px', 'important');
+        }
+    }
+
+    if (media) {
+        media.style.setProperty('min-height', isSplitDesktop ? '0' : (isMobile ? '248px' : '300px'), 'important');
+        media.style.setProperty('max-height', 'none', 'important');
+        media.style.setProperty('overflow', 'hidden', 'important');
+        media.style.setProperty('background', '#000', 'important');
+    }
+
+    if (info) {
+        info.style.setProperty('min-height', '0', 'important');
+        info.style.setProperty('display', 'flex', 'important');
+        info.style.setProperty('flex-direction', 'column', 'important');
+        info.style.setProperty('justify-content', 'flex-start', 'important');
+        info.style.setProperty('overflow', 'hidden', 'important');
+        info.style.setProperty('border-left', isSplitDesktop ? '1px solid #262b36' : '0', 'important');
+        info.style.setProperty('border-top', isSplitDesktop ? '0' : '1px solid #262b36', 'important');
+    }
+
+    if (comments) {
+        comments.style.setProperty('flex', '1 1 auto', 'important');
+        comments.style.setProperty('min-height', '0', 'important');
+        comments.style.setProperty('max-height', 'none', 'important');
+        comments.style.setProperty('overflow-y', 'auto', 'important');
+    }
+
+    if (footer) {
+        footer.style.setProperty('position', 'static', 'important');
+        footer.style.setProperty('padding', isMobile ? `10px 12px ${safeBottom}` : '10px 14px 12px', 'important');
+    }
+}
+
 function ensureModalPostDetalhe() {
     const modalExistente = document.getElementById('modalPostDetalhe');
-    if (modalExistente) {
-        const jaTemBotao = modalExistente.querySelector('.btn-close-modal-fixed');
-        const modalContent = modalExistente.querySelector('.modal-content');
-        if (!jaTemBotao && modalContent) {
-            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">&times;</button>');
-        }
-        return;
-    }
+    if (modalExistente) modalExistente.remove();
     const modalHtml = `
-    <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">&times;</button>
-            <div class="modal-media-area" id="modalMediaContainer"></div>
-            <div class="modal-info-area">
-                <div class="modal-header">
-                    <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
-                        <img id="modalAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                        <div style="font-weight: bold; font-size: 0.95rem;" id="modalUsername">User</div>
+    <div id="modalPostDetalhe" class="modal-overlay doke-post-modal" onclick="fecharModalPost(event)">
+        <button type="button" class="btn-close-modal btn-close-modal-fixed doke-post-close-fab" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">
+            <i class='bx bx-x'></i>
+        </button>
+        <div class="modal-content doke-post-sheet" onclick="event.stopPropagation()">
+            <div class="modal-media-area doke-post-media" id="modalMediaContainer"></div>
+            <div class="modal-info-area doke-post-info">
+                <div class="modal-header doke-post-header">
+                    <div class="modal-author-info doke-post-author">
+                        <img id="modalAvatar" src="" alt="Avatar">
+                        <div class="doke-post-author-text">
+                            <div id="modalUsername">User</div>
+                            <small>Publicacao</small>
+                        </div>
                     </div>
                 </div>
-                <div class="modal-comments-section" id="modalCommentsList">
-                    <div id="modalCaption" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
+                <div class="modal-comments-section doke-post-comments" id="modalCommentsList">
+                    <div id="modalCaption" class="doke-post-caption"></div>
                 </div>
-                <div class="modal-footer-actions">
-                    <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
-                        <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-						<i class='bx bx-message-rounded' onclick="toggleComentariosModal()" style="cursor:pointer;"></i>
-                        <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
+                <div class="modal-footer-actions doke-post-footer">
+                    <div class="modal-actions-bar doke-post-actions">
+                        <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" role="button" tabindex="0"></i>
+                        <i class='bx bx-message-rounded' onclick="toggleComentariosModal()" role="button" tabindex="0"></i>
+                        <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" role="button" tabindex="0"></i>
                     </div>
-                    <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
-                    <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-                        <input type="text" id="inputComentarioModal" placeholder="Adicione um coment?rio..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
-                        <button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
+                    <span id="modalLikesCount" class="doke-post-likes">0 curtidas</span>
+                    <button id="btnExcluirModal" type="button" class="doke-post-delete" style="display:none;">Excluir publicação</button>
+                    <div class="doke-post-input-row">
+                        <input type="text" id="inputComentarioModal" placeholder="Adicione um comentario...">
+                        <button onclick="postarComentarioModal()">Publicar</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    applyPostModalLayoutRuntime();
+    if (!window.__dokePostModalLayoutBound) {
+        window.addEventListener('resize', applyPostModalLayoutRuntime, { passive: true });
+        window.__dokePostModalLayoutBound = true;
+    }
 }
 
 function getRelatedCount(value) {
@@ -8833,6 +8952,7 @@ window.abrirModalPost = async function(id, colecao) {
     
     // 1. Reset Visual e Exibi??o
     modal.style.display = 'flex'; 
+    applyPostModalLayoutRuntime();
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostId = id;
     window.currentCollection = colecao;
@@ -8905,8 +9025,7 @@ window.abrirModalPost = async function(id, colecao) {
 
         // Bot?o Excluir (S? aparece se eu for o dono)
         const btnDel = document.getElementById('btnExcluirModal');
-        if (user && data.uid === user.uid) btnDel.style.display = 'block';
-        else btnDel.style.display = 'none';
+        if (btnDel) btnDel.style.display = 'none';
 
         // --- VERIFICA??O DE LIKE ---
         if (user) {
@@ -9340,6 +9459,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     if (!modal || !mediaContainer || !commentsList) return;
 
     modal.style.display = 'flex';
+    applyPostModalLayoutRuntime();
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostSource = "supabase";
     window.currentSupaPublicacaoId = publicacaoId;

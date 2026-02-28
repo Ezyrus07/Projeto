@@ -439,9 +439,17 @@
                 const el = document.getElementById(id);
                 if (el) el.value = value;
             };
+            const docValue = (
+                dados.cpf_cnpj ||
+                dados.documento ||
+                dados.doc_num ||
+                dados.cpf ||
+                dados.cnpj ||
+                "Não informado"
+            );
             setValue('inputNome', String(dados.nome || "").slice(0, 40));
             setValue('inputEmail', dados.email || "");
-            setValue('inputDoc', dados.cpf_cnpj || "Não informado");
+            setValue('inputDoc', docValue);
             setValue('inputTel', dados.telefone || dados.telefone_comercial || "");
             setValue('inputNasc', dados.data_nascimento || "");
 
@@ -524,7 +532,23 @@
                 nome
             );
 
-            const cpfCnpj = (usr?.cpf_cnpj || usr?.cpf || usr?.cnpj || val?.cpf || val?.cnpj || perfilLocal.cpf_cnpj || '');
+            const cpfCnpj = (
+                usr?.cpf_cnpj ||
+                usr?.documento ||
+                usr?.doc_num ||
+                usr?.cpf ||
+                usr?.cnpj ||
+                val?.cpf_cnpj ||
+                val?.documento ||
+                val?.doc_num ||
+                val?.cpf ||
+                val?.cnpj ||
+                perfilLocal.cpf_cnpj ||
+                perfilLocal.documento ||
+                perfilLocal.doc_num ||
+                perfilLocal.cpf ||
+                ''
+            );
             const telefone = (usr?.telefone || usr?.telefone_comercial || val?.telefone || val?.whatsapp || perfilLocal.telefone || perfilLocal.telefone_comercial || '');
             const nasc = (usr?.data_nascimento || val?.data_nascimento || val?.nascimento || perfilLocal.data_nascimento || '');
             const foto = (usr?.foto || meta.foto || perfilLocal.foto || '');
@@ -650,7 +674,6 @@
 <script src="doke-shell.js?v=20260218v47"></script>
 <script defer="True" src="settings-pages.js"></script></body>
 </html>
-
 
 
 

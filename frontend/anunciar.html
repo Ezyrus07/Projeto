@@ -2636,11 +2636,15 @@ document.addEventListener('DOMContentLoaded', () => {
     async function sincronizarDadosPessoaisDoAnuncio(uid, payload = {}) {
         try {
             const perfilLocal = JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {};
-            const cpfCnpj = String(payload.cpf_cnpj || '').trim();
+            const cpfCnpj = String(payload.cpf_cnpj || payload.documento || payload.cpf || '').trim();
             const telefone = String(payload.telefone || '').trim();
 
             const atualizado = { ...perfilLocal };
-            if (cpfCnpj) atualizado.cpf_cnpj = cpfCnpj;
+            if (cpfCnpj) {
+                atualizado.cpf_cnpj = cpfCnpj;
+                atualizado.documento = cpfCnpj;
+                atualizado.cpf = cpfCnpj;
+            }
             if (telefone) {
                 atualizado.telefone = telefone;
                 atualizado.telefone_comercial = telefone;
@@ -2650,10 +2654,30 @@ document.addEventListener('DOMContentLoaded', () => {
             const sb = window.sb || window.supabase || window.supabaseClient || window.sbClient || null;
             if (sb?.from && uid) {
                 const patch = {};
-                if (cpfCnpj) patch.cpf_cnpj = cpfCnpj;
-                if (telefone) patch.telefone = telefone;
+                if (cpfCnpj) {
+                    patch.cpf_cnpj = cpfCnpj;
+                    patch.documento = cpfCnpj;
+                    patch.cpf = cpfCnpj;
+                }
+                if (telefone) {
+                    patch.telefone = telefone;
+                    patch.telefone_comercial = telefone;
+                }
                 if (Object.keys(patch).length) {
-                    await sb.from('usuarios').update(patch).or(`uid.eq.${uid},id.eq.${uid}`);
+                    try {
+                        await sb.from('usuarios').update(patch).or(`uid.eq.${uid},id.eq.${uid}`);
+                    } catch (_) {}
+                    try {
+                        await sb.from('usuarios_legacy').update(patch).or(`uid_text.eq.${uid},uid.eq.${uid},id.eq.${uid}`);
+                    } catch (_) {}
+                    try {
+                        await sb.from('profissional_validacao').update({
+                            cpf_cnpj: patch.cpf_cnpj || null,
+                            cpf: patch.cpf || null,
+                            documento: patch.documento || null,
+                            telefone: patch.telefone || null
+                        }).or(`user_id.eq.${uid},usuario_id.eq.${uid},uid.eq.${uid},id.eq.${uid}`);
+                    } catch (_) {}
                 }
             }
         } catch (e) {
