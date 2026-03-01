@@ -1832,7 +1832,7 @@ window.dokeBuildCardPremium = function(anuncio) {
         </div>
       </div>
 
-      <div class="cp-v2-rating">
+      <div class="cp-v2-rating ${qtdAvaliacoes === 0 ? 'is-empty' : ''}">
         <button type="button" class="cp-rating-link js-rating-open" aria-label="Ver avalia??es do an?ncio">
           <span class="cp-mini-stars" aria-hidden="true">${starsInline}</span>
           <span class="cp-mini-rating">${qtdAvaliacoes > 0 ? `${notaNum.toFixed(1)} (${qtdAvaliacoes} avalia??es)` : "Sem avalia??es"}</span>
@@ -4951,6 +4951,19 @@ async function attachSupabaseUsersById(items) {
     });
 }
 
+
+async function dokeMaybeRankFeed(contentType, items, limit){
+  try {
+    const client = getSupabasePublicClient() || getSupabaseClient();
+    const uid = (window.auth && window.auth.currentUser && window.auth.currentUser.uid) ? String(window.auth.currentUser.uid) : "";
+    if (!client || !window.DokeReco || !Array.isArray(items) || items.length === 0) return items;
+    const mixed = await window.DokeReco.rankAndMix({ client, uid, type: contentType, items, limit: limit || items.length });
+    return Array.isArray(mixed) && mixed.length ? mixed : items;
+  } catch (_) {
+    return items;
+  }
+}
+
 async function fetchSupabasePublicacoesFeed() {
     const client = getSupabasePublicClient() || getSupabaseClient();
     const cached = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
@@ -4987,8 +5000,10 @@ async function fetchSupabasePublicacoesFeed() {
                 if (!safeError) {
                     if (select.includes("usuarios")) window._dokePublicacoesJoinStatus = true;
                     if (select.includes("publicacoes_curtidas")) window._dokePublicacoesSocialStatus = true;
-                    const out = safeData || [];
+                    let out = safeData || [];
+                    out = await dokeMaybeRankFeed("publicacoes", out, 24);
                     dokeClearSupaDown();
+                    out = await dokeMaybeRankFeed("publicacoes", out, 24);
                     dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, out);
                     return out;
                 }
@@ -8775,6 +8790,7 @@ function ensurePostModalStyles() {
   box-shadow:0 10px 24px rgba(0,0,0,.35); font-size:23px; line-height:1;
 }
 #modalPostDetalhe.ppv5-overlay .ppv5-shell{
+  position:relative;
   width:min(1140px, calc(100vw - 76px)); height:min(92vh, 920px);
   display:grid; grid-template-columns:minmax(0,1.06fr) minmax(360px,.94fr);
   background:#f6f8fc; border-radius:18px; overflow:hidden;
@@ -8794,7 +8810,49 @@ function ensurePostModalStyles() {
 }
 #modalPostDetalhe.ppv5-overlay .ppv5-head{
   padding:12px 14px; border-bottom:1px solid #e0e8f3; background:#ffffff;
+  display:flex; align-items:center; justify-content:space-between; gap:10px;
 }
+#modalPostDetalhe.ppv5-overlay .ppv5-toggle{
+  height:34px;
+  padding:0 12px;
+  border-radius:999px;
+  border:1px solid rgba(19, 74, 88, .22);
+  background: rgba(255,255,255,.92);
+  color:#0f3e4d;
+  font-weight:700;
+  font-size:12px;
+  cursor:pointer;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-toggle-fab{
+  position:absolute;
+  top:14px;
+  right:14px;
+  z-index:5;
+  height:38px;
+  padding:0 14px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,.36);
+  background:rgba(12, 20, 36, .72);
+  color:#fff;
+  font-weight:800;
+  font-size:13px;
+  cursor:pointer;
+  display:none;
+}
+#modalPostDetalhe.ppv5-overlay.comments-hidden .ppv5-panel{ display:none; }
+#modalPostDetalhe.ppv5-overlay.comments-hidden .ppv5-shell{
+  grid-template-columns:1fr;
+  grid-template-rows:1fr !important;
+}
+#modalPostDetalhe.ppv5-overlay.comments-hidden .ppv5-media{
+  width:100% !important;
+  height:100% !important;
+  min-height:0 !important;
+}
+#modalPostDetalhe.ppv5-overlay.comments-hidden .ppv5-toggle-fab{ display:inline-flex; align-items:center; justify-content:center; }
 #modalPostDetalhe.ppv5-overlay .ppv5-author{
   display:flex; align-items:center; gap:10px;
 }
@@ -8875,6 +8933,13 @@ function ensurePostModalStyles() {
     width:100vw; height:100dvh; border:0; border-radius:0; box-shadow:none;
     grid-template-columns:1fr; grid-template-rows:minmax(245px,44dvh) 1fr;
   }
+  #modalPostDetalhe.ppv5-overlay .ppv5-toggle-fab{
+    top:max(12px, env(safe-area-inset-top));
+    right:12px;
+    height:36px;
+    font-size:12px;
+    padding:0 12px;
+  }
   #modalPostDetalhe.ppv5-overlay .ppv5-media{ min-height:245px; }
   #modalPostDetalhe.ppv5-overlay .ppv5-comments{ padding:10px 12px; }
   #modalPostDetalhe.ppv5-overlay .ppv5-footer{
@@ -8893,6 +8958,14 @@ function applyPostModalLayoutRuntime() {
     if (vh > 0) modal.style.setProperty('--ppv5-vh', `${vh}px`);
 }
 
+function resetComentariosPostToggle() {
+    const modal = document.getElementById('modalPostDetalhe');
+    if (!modal) return;
+    modal.classList.remove('comments-hidden');
+    const btn = modal.querySelector('.ppv5-toggle');
+    if (btn) btn.textContent = 'Esconder comentários';
+}
+
 function ensureModalPostDetalhe() {
     ensurePostModalStyles();
     const modalExistente = document.getElementById('modalPostDetalhe');
@@ -8904,6 +8977,7 @@ function ensureModalPostDetalhe() {
         </button>
         <section class="ppv5-shell" onclick="event.stopPropagation()">
             <div id="modalMediaContainer" class="ppv5-media"></div>
+            <button type="button" class="ppv5-toggle-fab" onclick="toggleComentariosPostModal()">Mostrar comentários</button>
             <aside class="ppv5-panel">
                 <header class="ppv5-head">
                     <div class="ppv5-author">
@@ -8913,6 +8987,7 @@ function ensureModalPostDetalhe() {
                             <small>Publicacao</small>
                         </div>
                     </div>
+                    <button type="button" class="ppv5-toggle" onclick="toggleComentariosPostModal(this)">Esconder comentários</button>
                 </header>
                 <div id="modalCommentsList" class="ppv5-comments">
                     <div id="modalCaption" class="ppv5-caption"></div>
@@ -8940,6 +9015,25 @@ function ensureModalPostDetalhe() {
         window.__dokePostModalLayoutBound = true;
     }
 }
+
+// Toggle (mobile) para esconder/mostrar comentários no modal de publicações
+window.toggleComentariosPostModal = function(btn){
+    const modal = document.getElementById('modalPostDetalhe');
+    if(!modal) return;
+    modal.classList.toggle('comments-hidden');
+    const hidden = modal.classList.contains('comments-hidden');
+    const label = hidden ? 'Mostrar comentários' : 'Esconder comentários';
+    const toggleBtn = btn || modal.querySelector('.ppv5-toggle');
+    if (toggleBtn) toggleBtn.textContent = label;
+    const topToggle = modal.querySelector('.ppv5-toggle');
+    const fabToggle = modal.querySelector('.ppv5-toggle-fab');
+    if (topToggle) topToggle.textContent = label;
+    if (fabToggle) fabToggle.textContent = label;
+    modal.querySelectorAll('.btn-toggle-comments').forEach((legacyBtn) => {
+        legacyBtn.textContent = label;
+    });
+};
+
 function getRelatedCount(value) {
     return (Array.isArray(value) ? value[0]?.count : value?.count) || 0;
 }
@@ -9000,6 +9094,7 @@ window.abrirModalPost = async function(id, colecao) {
     if(!modal) return;
     
     // 1. Reset Visual e Exibi??o
+    resetComentariosPostToggle();
     modal.style.display = 'flex'; 
     applyPostModalLayoutRuntime();
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
@@ -9507,6 +9602,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
     const commentsList = document.getElementById('modalCommentsList');
     if (!modal || !mediaContainer || !commentsList) return;
 
+    resetComentariosPostToggle();
     modal.style.display = 'flex';
     applyPostModalLayoutRuntime();
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
@@ -9787,6 +9883,23 @@ async function fetchSupabaseReelsHome() {
     if (Array.isArray(cached) && cached.length) return cached;
     if (!client) return cached || [];
     if (dokeIsSupaTemporarilyDown() && Array.isArray(cached) && cached.length) return cached;
+    const dedupReels = (items) => {
+        const out = [];
+        const seen = new Set();
+        for (const it of (items || [])) {
+            const key = [
+                String(it?.id || ''),
+                String(it?.video_url || it?.videoUrl || it?.url || ''),
+                String(it?.user_id || it?.uid || ''),
+                String(it?.created_at || it?.createdAt || it?.data || '').slice(0, 16)
+            ].join('|');
+            if (!key.trim() || seen.has(key)) continue;
+            seen.add(key);
+            out.push(it);
+        }
+        return out;
+    };
+
     const tryLoose = async () => {
         try {
             const loose = await dokeWithTimeout(
@@ -9808,10 +9921,11 @@ async function fetchSupabaseReelsHome() {
                 titulo: item?.titulo || item?.title || item?.nome || "",
                 descricao: item?.descricao || item?.legenda || item?.texto || ""
             })).filter((item) => !!item.id && !!item.video_url);
-            const withUsers = await attachSupabaseUsersById(normalized);
+            const withUsers = dedupReels(await attachSupabaseUsersById(normalized));
             dokeClearSupaDown();
-            dokeWriteCache(DOKE_CACHE_KEYS.reels, withUsers);
-            return withUsers;
+            const ranked = await dokeMaybeRankFeed("videos_curtos", withUsers, 14);
+            dokeWriteCache(DOKE_CACHE_KEYS.reels, ranked);
+            return ranked;
         } catch (_) {
             return null;
         }
@@ -9856,20 +9970,23 @@ async function fetchSupabaseReelsHome() {
                     else console.error("Erro ao carregar videos curtos supabase:", retry.error);
                     return cached || [];
                 }
-                const outFallback = await attachSupabaseUsersById(retry.data || []);
+            const outFallback = dedupReels(await attachSupabaseUsersById(retry.data || []));
                 dokeClearSupaDown();
-                dokeWriteCache(DOKE_CACHE_KEYS.reels, outFallback);
-                return outFallback;
+                const ranked = await dokeMaybeRankFeed("videos_curtos", outFallback, 14);
+                dokeWriteCache(DOKE_CACHE_KEYS.reels, ranked);
+                return ranked;
             }
-            const outJoin = await attachSupabaseUsersById(retryJoin.data || []);
+            const outJoin = dedupReels(await attachSupabaseUsersById(retryJoin.data || []));
             dokeClearSupaDown();
-            dokeWriteCache(DOKE_CACHE_KEYS.reels, outJoin);
-            return outJoin;
+            const ranked = await dokeMaybeRankFeed("videos_curtos", outJoin, 14);
+            dokeWriteCache(DOKE_CACHE_KEYS.reels, ranked);
+            return ranked;
         }
-        const out = await attachSupabaseUsersById(data || []);
+        const out = dedupReels(await attachSupabaseUsersById(data || []));
         dokeClearSupaDown();
-        dokeWriteCache(DOKE_CACHE_KEYS.reels, out);
-        return out;
+        const ranked = await dokeMaybeRankFeed("videos_curtos", out, 14);
+        dokeWriteCache(DOKE_CACHE_KEYS.reels, ranked);
+        return ranked;
     } catch (err) {
         const loose = await tryLoose();
         if (Array.isArray(loose)) return loose;
@@ -9975,15 +10092,39 @@ window.carregarReelsHome = async function() {
             return (bTime || 0) - (aTime || 0);
         });
 
+        const normalizeVideoUrl = (value) => String(value || "")
+            .trim()
+            .toLowerCase()
+            .replace(/[?#].*$/, "");
+        const uniqueFeedItems = [];
+        const seenSourceIds = new Set();
+        const seenVideoUrls = new Set();
+        for (const entry of feedItems) {
+            const source = String(entry?.source || "");
+            const item = entry?.data || {};
+            const sourceId = `${source}:${String(entry?.id || "")}`;
+            if (entry?.id && seenSourceIds.has(sourceId)) continue;
+            if (entry?.id) seenSourceIds.add(sourceId);
+
+            const videoUrlRaw = String(source).startsWith("firebase")
+                ? (item.videoUrl || item.video_url || item.video || item.url_video || item.url || item.media_url || "")
+                : (item.video_url || item.videoUrl || item.video || item.url || item.media_url || "");
+            const normalizedVideoUrl = normalizeVideoUrl(videoUrlRaw);
+            if (!normalizedVideoUrl) continue;
+            if (seenVideoUrls.has(normalizedVideoUrl)) continue;
+            seenVideoUrls.add(normalizedVideoUrl);
+            uniqueFeedItems.push(entry);
+        }
+
         container.innerHTML = "";
         window.listaReelsAtual = [];
 
-        if (feedItems.length === 0) {
+        if (uniqueFeedItems.length === 0) {
             container.innerHTML = "<p style='color:white; padding:20px;'>Sem videos.</p>";
             return;
         }
 
-        feedItems.forEach(entry => {
+        uniqueFeedItems.forEach(entry => {
             const source = entry.source;
             const item = entry.data || {};
             let videoUrl = "";
@@ -10547,6 +10688,7 @@ window.fecharModalPostForce = function() {
     const modal = document.getElementById('modalPostDetalhe');
     if (modal) {
         modal.style.display = 'none';
+        resetComentariosPostToggle();
         const list = modal.querySelector('#modalCommentsList');
         if (list) list.dataset.loaded = "0";
         
@@ -11097,6 +11239,7 @@ window.abrirModalUnificado = function(dadosRecebidos, tipo = 'video', colecao = 
   const modal = document.getElementById('modalPostDetalhe');
   const mediaArea = document.getElementById('modalMediaContainer');
   if (!modal || !mediaArea) return;
+  resetComentariosPostToggle();
 
   mediaArea.innerHTML = '';
   if (dados.videoUrl || dados.video || tipo === 'video') {
@@ -12417,7 +12560,24 @@ async function postarComentarioSupabase() {
     const client = getSupabaseClient();
     if (!client) return alert("Supabase nao configurado.");
 
-    const userRow = await getSupabaseUserRow();
+    let userRow = await getSupabaseUserRow();
+    if (!userRow) {
+        // Fallback: se a sessao existe mas o lookup do perfil falhou, usa o uid autenticado.
+        // Evita falso "Faca login para comentar." quando o usuario ja esta logado.
+        try {
+            const authUser = await dokeResolveAuthUser();
+            const uid = String(authUser?.uid || authUser?.id || "").trim();
+            if (uid) {
+                userRow = {
+                    id: uid,
+                    uid: uid,
+                    user: String(authUser?.user_metadata?.user || "").trim(),
+                    nome: String(authUser?.user_metadata?.nome || "").trim(),
+                    foto: String(authUser?.user_metadata?.foto || authUser?.user_metadata?.avatar_url || "").trim()
+                };
+            }
+        } catch (_) {}
+    }
     if (!userRow) return alert("Faca login para comentar.");
 
     const cfg = getSupabasePostConfig();
@@ -13602,9 +13762,55 @@ async function carregarComentariosSupabase(publicacaoId) {
   // - Abre dentro do menu lateral (sem navegar)
   // - Recentes separados: Usuarios e Anuncios
   // ----------------------------
+  function normalizeSidebarToIndexModel(){
+    const sidebar = document.querySelector('aside.sidebar-icones, aside.sidebar, .sidebar-icones');
+    if(!sidebar) return false;
+    if(sidebar.dataset.indexSidebarNormalized === '1') return true;
+
+    const current = (window.location.pathname || '').split('/').pop().toLowerCase();
+    const isActive = (href) => String(href || '').toLowerCase() === current;
+    const itemClass = (href) => isActive(href) ? 'item active' : 'item';
+
+    sidebar.innerHTML = `
+      <div id="logo">
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
+      </div>
+      <div class="${itemClass('index.html')}">
+        <a href="index.html"><i class='bx bx-home-alt icon azul'></i><span>Início</span></a>
+      </div>
+      <div class="item" id="pvSearchSidebarItem">
+        <a href="#" class="pv-search-toggle" aria-label="Pesquisar"><i class='bx bx-search-alt-2 icon azul'></i><span>Pesquisar</span></a>
+      </div>
+      <div class="${itemClass('negocios.html')}">
+        <a href="negocios.html"><i class='bx bx-store icon verde'></i><span>Negócios</span></a>
+      </div>
+      <div class="${itemClass('notificacoes.html')}">
+        <a href="notificacoes.html"><i class='bx bx-bell icon azul'></i><span>Notificações</span></a>
+      </div>
+      <div class="${itemClass('mensagens.html')}">
+        <a href="mensagens.html"><i class='bx bx-message-rounded-dots icon azul'></i><span>Mensagens</span></a>
+      </div>
+      <div class="${itemClass('pedidos.html')}">
+        <a href="pedidos.html"><i class='bx bx-package icon verde'></i><span>Pedidos</span></a>
+      </div>
+      <div class="${itemClass('comunidade.html')}">
+        <a href="comunidade.html"><i class='bx bx-group icon verde'></i><span>Comunidades</span></a>
+      </div>
+      <div class="item">
+        <a href="#" onclick="irParaMeuPerfil(event)"><i class='bx bx-user icon verde'></i><span>Perfil</span></a>
+      </div>
+      <div class="${itemClass('mais.html')}">
+        <a href="mais.html"><i class='bx bx-menu icon azul'></i><span>Mais</span></a>
+      </div>
+    `;
+
+    sidebar.dataset.indexSidebarNormalized = '1';
+    return true;
+  }
+
   function initIgSidebarSearch(){
-    const sidebar = document.querySelector('aside.sidebar-icones');
-    if(!sidebar || sidebar.dataset.igSearchBound) return;
+    const sidebar = document.querySelector('aside.sidebar-icones, aside.sidebar, .sidebar-icones');
+    if(!sidebar || sidebar.dataset.igSearchBound) return false;
     sidebar.dataset.igSearchBound = '1';
 
     const USER_HIST_KEY = 'doke_user_quicksearch_hist_v2';     // ja usado na busca inline
@@ -14056,12 +14262,58 @@ function syncClear(){
 
     // estado inicial
     setMode(mode);
+    return true;
   }
 
 
-  // [DOKE] garante inicializa??o do painel de Pesquisa no menu lateral em todas as p?ginas
-  // (o menu lateral existe em m?ltiplos HTMLs, ent?o n?o pode depender do 'Para voc?')
-  document.addEventListener('DOMContentLoaded', ()=>{ try{ initIgSidebarSearch(); }catch(e){} });
+  // [DOKE] garante inicializacao da busca lateral em qualquer HTML com sidebar,
+  // inclusive quando a sidebar e montada depois do DOMContentLoaded.
+  (function bootIgSidebarSearch(){
+    let tries = 0;
+    const maxTries = 25;
+    const run = () => {
+      tries += 1;
+      try{
+        normalizeSidebarToIndexModel();
+        if(initIgSidebarSearch()) return true;
+      }catch(_){}
+      if(tries >= maxTries) return false;
+      setTimeout(run, 220);
+      return false;
+    };
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', run, { once:true });
+    }else{
+      run();
+    }
+    window.addEventListener('load', run, { once:true });
+  })();
+
+  // Perfil: remove definitivamente o botão de "mais" (três pontinhos)
+  (function removePerfilMoreButton(){
+    const hide = () => {
+      const btn = document.getElementById('dpMoreBtn');
+      if(!btn) return false;
+      btn.style.display = 'none';
+      btn.setAttribute('hidden', 'hidden');
+      btn.setAttribute('aria-hidden', 'true');
+      return true;
+    };
+    const run = () => {
+      hide();
+      let tries = 0;
+      const timer = setInterval(() => {
+        tries += 1;
+        hide();
+        if(tries >= 20) clearInterval(timer);
+      }, 200);
+    };
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', run, { once:true });
+    }else{
+      run();
+    }
+  })();
 
 function buildPvQuickSearchSection(anchorSection, mountEl){
       if (!isHome()) return;
@@ -15185,5 +15437,3 @@ document.addEventListener('DOMContentLoaded', function(){
     });
   }catch(_){}
 })();
-
-

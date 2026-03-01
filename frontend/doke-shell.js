@@ -2,6 +2,13 @@
   window.__DOKE_SHELL_BUILD__ = "20260228v48";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
+  // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
+  const DOKE_DISABLE_SHELL_PAGES = ["login.html","cadastro.html","senha.html"];
+  const __dokeCurrentFile = String((location.pathname||"").split("/").pop()||"").toLowerCase();
+  if (DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile)) {
+    try { document.documentElement.classList.add("doke-no-shell"); } catch(_e) {}
+    return;
+  }
   const PAGES = {
     home: "index.html",
     search: "busca.html",
@@ -1533,7 +1540,6 @@
     ensureShell();
   }
 })();
-
 
 
 

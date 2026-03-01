@@ -1593,6 +1593,8 @@ textarea{
             return;
         }
 
+        aplicarFluxoSemDadosPessoais();
+
         // --- PREENCHIMENTO AUTOMÁTICO DE DADOS DE PERFIL ---
         const params = new URLSearchParams(window.location.search);
         function lockFieldById(id){
@@ -2090,7 +2092,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- CONTROLE DE STEPS ---
+    const SKIP_PERSONAL_STEP = true;
     let step = 1;
+
+    function aplicarFluxoSemDadosPessoais() {
+        if (!SKIP_PERSONAL_STEP) return;
+        const step3Circle = document.getElementById('p-3');
+        if (step3Circle) step3Circle.style.display = 'none';
+
+        const step4Circle = document.getElementById('p-4');
+        if (step4Circle) {
+            step4Circle.innerHTML = `<span class="step-num">3</span><div class="step-label">Agenda</div>`;
+        }
+
+        const step3 = document.getElementById('step-3');
+        if (step3) {
+            step3.style.display = 'none';
+            step3.querySelectorAll('input, select, textarea, button').forEach(el => {
+                el.disabled = true;
+                el.setAttribute('aria-disabled', 'true');
+            });
+        }
+    }
     window.changeStep = function(dir) {
         if(dir === 1) {
             const inputs = document.getElementById(`step-${step}`).querySelectorAll('input[required], select[required], textarea[required]');
@@ -2103,7 +2126,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById(`p-${step}`).classList.remove('active');
         
         let proximoPasso = step + dir;
-        if (anuncioIdEdicao && proximoPasso === 3) {
+        if (proximoPasso === 3 && (SKIP_PERSONAL_STEP || anuncioIdEdicao)) {
             if (dir > 0) proximoPasso = 4;
             else proximoPasso = 2;
         }
@@ -3387,12 +3410,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const inv2 = firstInvalidInStep(s2);
     if(inv2){ goToStep(2); inv2.reportValidity(); return false; }
 
-    // Step 3: doc validation + required
-    const s3 = document.getElementById('step-3');
-    const inv3 = firstInvalidInStep(s3);
-    if(inv3){ goToStep(3); inv3.reportValidity(); return false; }
-    if(!ensureEnderecoCompleto(true)){ goToStep(3); return false; }
-    if(!validateDoc()){ goToStep(3); return false; }
+    if(!SKIP_PERSONAL_STEP){
+      // Step 3: doc validation + required
+      const s3 = document.getElementById('step-3');
+      const inv3 = firstInvalidInStep(s3);
+      if(inv3){ goToStep(3); inv3.reportValidity(); return false; }
+      if(!ensureEnderecoCompleto(true)){ goToStep(3); return false; }
+      if(!validateDoc()){ goToStep(3); return false; }
+    }
 
     // Step 4: terms required + fotos required
     const s4 = document.getElementById('step-4');
@@ -3598,7 +3623,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if(currentStepEl && currentStepEl.id === 'step-1'){
           if(!ensureCategorias()) return;
         }
-        if(currentStepEl && currentStepEl.id === 'step-3'){
+        if(!SKIP_PERSONAL_STEP && currentStepEl && currentStepEl.id === 'step-3'){
           if(!ensureEnderecoCompleto(true)) return;
           if(!validateDoc()) return;
         }

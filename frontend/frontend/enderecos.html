@@ -465,13 +465,32 @@ main.enderecos-main{
     return String(v || "").trim();
   }
 
+  function getCurrentProfile(){
+    return safeParse(localStorage.getItem("doke_usuario_perfil"), null) || {};
+  }
+
   function getCurrentUid(){
-    const profile = safeParse(localStorage.getItem("doke_usuario_perfil"), null) || {};
-    return normalizeUidLike(profile.uid || profile.id || "guest");
+    const profile = getCurrentProfile();
+    const fallbackUid = normalizeUidLike(localStorage.getItem("doke_uid"));
+    const uid = normalizeUidLike(profile.uid || profile.id || fallbackUid || "guest");
+    return uid || "guest";
   }
 
   function getStorageKey(){
     return "doke_address_book_" + getCurrentUid();
+  }
+  function getStorageCandidates(){
+    const profile = getCurrentProfile();
+    const maybeUids = [
+      getCurrentUid(),
+      normalizeUidLike(profile.uid),
+      normalizeUidLike(profile.id),
+      normalizeUidLike(localStorage.getItem("doke_uid")),
+      "guest"
+    ].filter(Boolean);
+    const keys = maybeUids.map((u) => "doke_address_book_" + u);
+    keys.push("doke_enderecos");
+    return Array.from(new Set(keys));
   }
   function getSelectedStorageKey(){
     return "doke_selected_address_" + getCurrentUid();
@@ -486,8 +505,8 @@ main.enderecos-main{
       id: String(addr?.id || ("addr_" + Date.now() + "_" + Math.random().toString(36).slice(2, 8))),
       label: String(addr?.label || addr?.apelido || "").trim(),
       cep: normalizeCep(addr?.cep || ""),
-      endereco: String(addr?.endereco || addr?.endereço || "").trim(),
-      numero: String(addr?.numero || addr?.número || "").trim(),
+      endereco: String((addr && (addr.endereco || addr["endereço"])) || "").trim(),
+      numero: String((addr && (addr.numero || addr["número"])) || "").trim(),
       complemento: String(addr?.complemento || "").trim(),
       referencia: String(addr?.referencia || "").trim(),
       info: String(addr?.info || "").trim(),
@@ -496,15 +515,41 @@ main.enderecos-main{
     };
   }
 
+  function mergeAddressLists(lists){
+    const map = new Map();
+    (Array.isArray(lists) ? lists : []).forEach((list) => {
+      if (!Array.isArray(list)) return;
+      list.forEach((raw) => {
+        const addr = sanitizeAddress(raw);
+        const dedupeKey = [
+          String(addr.cep || "").replace(/\D/g, ""),
+          String(addr.endereco || "").trim().toLowerCase(),
+          String(addr.numero || "").trim().toLowerCase(),
+          String(addr.complemento || "").trim().toLowerCase()
+        ].join("|") || String(addr.id || "");
+        const prev = map.get(dedupeKey);
+        if (!prev || (addr.principal && !prev.principal)) {
+          map.set(dedupeKey, addr);
+        }
+      });
+    });
+    const out = Array.from(map.values()).slice(0, 40);
+    if (out.length && !out.some((x) => !!x.principal)) out[0].principal = true;
+    return out;
+  }
+
   function readLocal(){
-    const arr = safeParse(localStorage.getItem(getStorageKey()), []);
-    if (!Array.isArray(arr)) return [];
-    return arr.map(sanitizeAddress);
+    const lists = getStorageCandidates().map((key) => {
+      const arr = safeParse(localStorage.getItem(key), []);
+      return Array.isArray(arr) ? arr : [];
+    });
+    return mergeAddressLists(lists);
   }
 
   function writeLocal(list){
     const safe = (Array.isArray(list) ? list : []).map(sanitizeAddress).slice(0, 40);
     localStorage.setItem(getStorageKey(), JSON.stringify(safe));
+    localStorage.setItem("doke_enderecos", JSON.stringify(safe));
     const profile = safeParse(localStorage.getItem("doke_usuario_perfil"), null);
     if (profile && typeof profile === "object") {
       profile.enderecosSalvos = safe;

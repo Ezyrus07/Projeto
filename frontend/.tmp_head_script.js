@@ -6196,46 +6196,17 @@ window.currentSupaPublicacaoAuthorUid = null;
 let processandoLike = false; // Trava para evitar cliques rápidos
 
 function ensureModalPostDetalhe() {
-    const modalExistente = document.getElementById('modalPostDetalhe');
-    if (modalExistente) {
-        const jaTemBotao = modalExistente.querySelector('.btn-close-modal-fixed');
-        const modalContent = modalExistente.querySelector('.modal-content');
-        if (!jaTemBotao && modalContent) {
-            modalContent.insertAdjacentHTML('afterbegin', '<button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicação" onclick="fecharModalPostForce()">×</button>');
-        }
-        return;
-    }
-    const modalHtml = `
-    <div id="modalPostDetalhe" class="modal-overlay" onclick="fecharModalPost(event)">
-        <div class="modal-content" onclick="event.stopPropagation()">
-            <button type="button" class="btn-close-modal btn-close-modal-fixed" aria-label="Fechar publicação" onclick="fecharModalPostForce()">×</button>
-            <div class="modal-media-area" id="modalMediaContainer"></div>
-            <div class="modal-info-area">
-                <div class="modal-header">
-                    <div class="modal-author-info" style="display: flex; align-items: center; gap: 10px;">
-                        <img id="modalAvatar" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;">
-                        <div style="font-weight: bold; font-size: 0.95rem;" id="modalUsername">User</div>
-                    </div>
-                </div>
-                <div class="modal-comments-section" id="modalCommentsList">
-                    <div id="modalCaption" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
-                </div>
-                <div class="modal-footer-actions">
-                    <div class="modal-actions-bar" style="display: flex; gap: 15px; font-size: 1.6rem; margin-bottom: 10px;">
-                        <i class='bx bx-heart' id="btnLikeModalIcon" onclick="darLikeModal()" style="cursor:pointer;"></i>
-                        <i class='bx bx-message-rounded' onclick="document.getElementById('inputComentarioModal').focus()" style="cursor:pointer;"></i>
-                        <i class='bx bx-paper-plane' onclick="compartilharPostAtual()" style="cursor:pointer;"></i>
-                    </div>
-                    <span id="modalLikesCount" style="display: block; font-weight: bold; font-size: 0.9rem; margin-bottom: 10px;">0 curtidas</span>
-                    <div style="display: flex; gap: 10px; border-top: 1px solid #efefef; padding-top: 15px; margin-top: 10px;">
-                        <input type="text" id="inputComentarioModal" placeholder="Adicione um comentário..." style="flex:1; border:none; outline:none; font-size:0.9rem;">
-                        <button onclick="postarComentarioModal()" style="background:none; border:none; color:#0b7768; font-weight:bold; cursor:pointer;">Publicar</button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>`;
-    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    // Injeta CSS do modal (uma vez)
+    if (!document.getElementById('dokePostModalStyle')) {
+        const st = document.createElement('style');
+        st.id = 'dokePostModalStyle';
+        st.textContent = `
+/* ===== Doke: Modal de Publicação (responsivo) ===== */
+#modalPostDetalhe{
+  position:fixed; inset:0;
+  background: rgba(2,6,23,.72);
+  display:none; align-items:center; justify-content:center;
+  z-index:9999; padding:14px;
 }
 
 function getRelatedCount(value) {

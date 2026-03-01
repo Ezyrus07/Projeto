@@ -372,23 +372,6 @@
     font-size: 0.8rem;
     color: #64748b;
 }
-.address-selected{
-    margin-top: 10px;
-    border: 1px solid #dbe4ee;
-    border-radius: 12px;
-    padding: 12px;
-    background: #f8fafc;
-    color: #334155;
-    font-size: 0.84rem;
-    line-height: 1.45;
-}
-.address-selected strong{
-    color: #0f172a;
-    font-size: 0.9rem;
-}
-.address-selected span{
-    color: #64748b;
-}
 
 /* --- CARD RESUMO (STICKY) --- */
 .resumo-section {
@@ -839,55 +822,6 @@ body[data-page="orcamento"] main.main-orcamento::after{
 .orc-btn-ghost{ background:#fff; border: 1px solid #e7e7e7; color:#444; }
 .orc-btn-ghost:hover{ background:#f7f7f7; }
 
-
-  /* --- MOBILE FIX: botão "Adicionar endereço" sem quebrar + espaçamentos mais compactos no resumo --- */
-  @media (max-width: 520px){
-      .address-book-actions{
-          grid-template-columns: 1fr !important;
-      }
-      .address-book-actions .btn-outline{
-          width: 100% !important;
-          justify-content: center;
-          white-space: nowrap;
-          font-size: 0.82rem;
-          padding: 0 10px;
-      }
-      .address-book-head strong{
-          font-size: 0.88rem;
-      }
-  }
-  @media (max-width: 680px){
-      .card-prestador-resumo{
-          padding: 16px !important;
-          border-radius: 14px;
-      }
-      .header-resumo{
-          gap: 12px;
-          margin-bottom: 10px !important;
-      }
-      .stats-resumo{
-          gap: 10px;
-          margin-bottom: 10px !important;
-          font-size: 0.86rem;
-      }
-      .divisor{
-          margin: 10px 0 !important;
-      }
-      .lista-vantagens{
-          margin-bottom: 10px !important;
-      }
-      .lista-vantagens li{
-          margin-bottom: 8px !important;
-      }
-      .btn-enviar-orcamento{
-          padding: 12px !important;
-          font-size: 0.98rem;
-      }
-      .aviso-legal{
-          margin-top: 8px !important;
-      }
-  }
-
 </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
@@ -985,17 +919,11 @@ body[data-page="orcamento"] main.main-orcamento::after{
   </div>
 
   <div class="item">
-<a href="mensagens.html">
-<i class='bx bx-message-rounded-dots icon azul'></i>
+    <a href="mensagens.html">
+      <i class='bx bx-message-rounded-dots icon azul'></i>
       <span>Mensagens</span>
-</a>
-</div>
-<div class="item">
-<a href="pedidos.html">
-<i class="bx bx-package icon verde"></i>
-<span>Pedidos</span>
-</a>
-</div>
+    </a>
+  </div>
 
   <div class="item">
     <a href="comunidade.html">
@@ -1097,14 +1025,45 @@ body[data-page="orcamento"] main.main-orcamento::after{
 <div class="address-book-head">
 <strong>Toque para aplicar um endere&ccedil;o salvo</strong>
 <div class="address-book-actions">
-<button class="btn-outline" id="btnAdicionarEndereco" type="button"><i class="bx bx-plus"></i> Adicionar endere&ccedil;o</button>
+<button class="btn-outline" id="btnSalvarEndereco" type="button"><i class="bx bx-bookmark-plus"></i> Salvar atual</button>
+<a class="btn-outline btn-endereco-gerenciar" href="enderecos.html"><i class="bx bx-map-alt"></i> Gerenciar</a>
 </div>
 </div>
 <div class="address-book-cards" id="orc-endereco-cards">
 <div class="address-book-empty">Nenhum endere&ccedil;o salvo ainda.</div>
 </div>
-<p class="address-book-hint">Selecione um endere&ccedil;o salvo para enviar o pedido. Voc&ecirc; pode adicionar novos endere&ccedil;os a qualquer momento.</p>
-<div class="address-selected" id="orc-endereco-selecionado">Nenhum endere&ccedil;o selecionado.</div>
+<p class="address-book-hint">Salve mais de um endere&ccedil;o para n&atilde;o preencher tudo de novo.</p>
+</div>
+<div class="input-group">
+<label>CEP do servi&ccedil;o</label>
+<div class="cep-search-row">
+<input class="input-premium" id="cepOrcamento" placeholder="00000-000" type="text"/>
+<button class="btn-outline btn-buscar-cep" onclick="buscarEndereco()" type="button"><i class="bx bx-search"></i> Buscar CEP</button>
+</div>
+</div>
+<div class="grid-duplo">
+<div class="input-group">
+<label>Endere&ccedil;o</label>
+<input class="input-premium" id="endereco-completo" placeholder="Rua, bairro - cidade" type="text"/>
+</div>
+<div class="input-group">
+<label>N&uacute;mero</label>
+<input class="input-premium" id="numero-residencia" placeholder="Ex: 120" type="text"/>
+</div>
+</div>
+<div class="grid-duplo">
+<div class="input-group">
+<label>Complemento (opcional)</label>
+<input class="input-premium" id="complemento-residencia" placeholder="Apto, bloco, casa, etc" type="text"/>
+</div>
+<div class="input-group">
+<label>Ponto de refer&ecirc;ncia (opcional)</label>
+<input class="input-premium" id="referencia-residencia" placeholder="Ex: perto do mercado" type="text"/>
+</div>
+</div>
+<div class="input-group">
+<label>Mais informa&ccedil;&otilde;es (opcional)</label>
+<textarea class="input-premium area-texto" id="info-local" placeholder="Ex: port&atilde;o azul, interfone n&atilde;o funciona, falar com o porteiro..." style="min-height:90px;"></textarea>
 </div>
 </div>
 </section>
@@ -1401,7 +1360,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
         const uploaded = [];
         for (const file of window.__orc_anexos_files) {
             const safeName = String(file.name || 'anexo').replace(/[^a-zA-Z0-9._-]/g, '_');
-            const path = `orcamentos/${userUid}/${pedidoId}/${Date.now()}_${safeName}`;
+            const path = `orçamentos/${userUid}/${pedidoId}/${Date.now()}_${safeName}`;
             const storageRef = ref(storage, path);
             await uploadBytes(storageRef, file);
             const url = await getDownloadURL(storageRef);
@@ -1669,8 +1628,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
             id: String(addr?.id || `addr_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`),
             label: String(addr?.label || addr?.apelido || '').trim(),
             cep: normalizeCep(addr?.cep || ''),
-            endereço: String(addr?.endereço || addr?.endereco || '').trim(),
-            número: String(addr?.número || addr?.numero || '').trim(),
+            endereço: String(addr?.endereço || '').trim(),
+            número: String(addr?.número || '').trim(),
             complemento: String(addr?.complemento || '').trim(),
             referencia: String(addr?.referencia || '').trim(),
             info: String(addr?.info || '').trim(),
@@ -1719,13 +1678,12 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
     function getEnderecoFormData() {
         return sanitizeAddressPayload({
-            label: document.getElementById('addEnderecoLabel')?.value || '',
-            cep: document.getElementById('addEnderecoCep')?.value || '',
-            endereco: document.getElementById('addEnderecoRua')?.value || '',
-            numero: document.getElementById('addEnderecoNumero')?.value || '',
-            complemento: document.getElementById('addEnderecoComplemento')?.value || '',
-            referencia: document.getElementById('addEnderecoReferencia')?.value || '',
-            info: document.getElementById('addEnderecoInfo')?.value || ''
+            cep: document.getElementById('cepOrcamento')?.value || '',
+            endereço: document.getElementById('endereço-completo')?.value || '',
+            número: document.getElementById('número-residencia')?.value || '',
+            complemento: document.getElementById('complemento-residencia')?.value || '',
+            referencia: document.getElementById('referencia-residencia')?.value || '',
+            info: document.getElementById('info-local')?.value || ''
         });
     }
 
@@ -1748,28 +1706,25 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
     function preencherEnderecoNoFormulario(addr) {
         if (!addr) return;
-        renderEnderecoSelecionado(addr);
+        const cepEl = document.getElementById('cepOrcamento');
+        const endEl = document.getElementById('endereço-completo');
+        const numEl = document.getElementById('número-residencia');
+        const compEl = document.getElementById('complemento-residencia');
+        const refEl = document.getElementById('referencia-residencia');
+        const infoEl = document.getElementById('info-local');
+        if (cepEl) cepEl.value = normalizeCep(addr.cep || '');
+        if (endEl) endEl.value = addr.endereço || '';
+        if (numEl) numEl.value = addr.número || '';
+        if (compEl) compEl.value = addr.complemento || '';
+        if (refEl) refEl.value = addr.referencia || '';
+        if (infoEl) infoEl.value = addr.info || '';
     }
 
     function formularioEnderecoTemDados() {
-        const sel = document.getElementById('orc-endereco-salvo');
-        return !!String(sel?.value || '').trim();
-    }
-
-    function renderEnderecoSelecionado(addr) {
-        const box = document.getElementById('orc-endereco-selecionado');
-        if (!box) return;
-        if (!addr) {
-            box.innerHTML = 'Nenhum endereço selecionado.';
-            return;
-        }
-        const resumo = getEnderecoResumo(addr);
-        const extra = [addr.complemento, addr.referencia, addr.info].filter(Boolean).join(' • ');
-        box.innerHTML = `
-            <strong>${escapeHtmlEndereco(montarLabelEndereco(addr, 0))}</strong><br>
-            ${escapeHtmlEndereco(resumo)}
-            ${extra ? `<br><span>${escapeHtmlEndereco(extra)}</span>` : ''}
-        `;
+        const cep = String(document.getElementById('cepOrcamento')?.value || '').trim();
+        const end = String(document.getElementById('endereço-completo')?.value || '').trim();
+        const num = String(document.getElementById('número-residencia')?.value || '').trim();
+        return !!(cep || end || num);
     }
 
     function escapeHtmlEndereco(value){
@@ -1845,8 +1800,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 id: row.id,
                 label: row.apelido || '',
                 cep: row.cep || '',
-                endereço: row.endereco || row.endereço || '',
-                número: row.numero || row.número || '',
+                endereço: row.endereço || '',
+                número: row.número || '',
                 complemento: row.complemento || '',
                 referencia: row.referencia || '',
                 info: row.info || '',
@@ -1877,8 +1832,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 uid: looksLikeUuid(ownerUid) ? ownerUid : null,
                 apelido: addrNorm.label || '',
                 cep: addrNorm.cep || '',
-                endereco: addrNorm.endereço || addrNorm.endereco || '',
-                numero: addrNorm.número || addrNorm.numero || '',
+                endereço: addrNorm.endereço || '',
+                número: addrNorm.número || '',
                 complemento: addrNorm.complemento || '',
                 referencia: addrNorm.referencia || '',
                 info: addrNorm.info || '',
@@ -1916,8 +1871,8 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 id: savedRow.id,
                 label: savedRow.apelido || '',
                 cep: savedRow.cep || '',
-                endereço: savedRow.endereco || savedRow.endereço || '',
-                número: savedRow.numero || savedRow.número || '',
+                endereço: savedRow.endereço || '',
+                número: savedRow.número || '',
                 complemento: savedRow.complemento || '',
                 referencia: savedRow.referencia || '',
                 info: savedRow.info || '',
@@ -1933,7 +1888,7 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
     async function upsertEnderecoAtual(opts = {}) {
         const silent = !!opts.silent;
-        const current = sanitizeAddressPayload(opts.address || getEnderecoFormData());
+        const current = getEnderecoFormData();
         if (!isEnderecoMinimoValido(current)) {
             if (!silent) avisarValidacao('Preencha CEP, endereço e número para salvar.');
             return null;
@@ -1993,90 +1948,15 @@ body[data-page="orcamento"] main.main-orcamento::after{
         renderAddressBookCards(id);
     }
 
-    function abrirModalAdicionarEndereco() {
-        const modal = document.getElementById('modalAdicionarEndereco');
-        if (!modal) return;
-        modal.style.display = 'flex';
-        document.body.classList.add('doke-modal-open');
-    }
-
-    function fecharModalAdicionarEndereco() {
-        const modal = document.getElementById('modalAdicionarEndereco');
-        if (!modal) return;
-        modal.style.display = 'none';
-        document.body.classList.remove('doke-modal-open');
-    }
-
-    function limparFormularioAdicionarEndereco() {
-        ['addEnderecoLabel','addEnderecoCep','addEnderecoRua','addEnderecoNumero','addEnderecoComplemento','addEnderecoReferencia','addEnderecoInfo'].forEach((id) => {
-            const el = document.getElementById(id);
-            if (el) el.value = '';
-        });
-    }
-
-    function buscarCepModalAdicionarEndereco() {
-        const cepEl = document.getElementById('addEnderecoCep');
-        const ruaEl = document.getElementById('addEnderecoRua');
-        if (!cepEl || !ruaEl) return;
-        const cep = String(cepEl.value || '').replace(/\D/g, '');
-        if (cep.length !== 8) {
-            avisarValidacao('Digite um CEP válido com 8 números.');
-            return;
-        }
-        cepEl.value = normalizeCep(cep);
-        fetch(`https://viacep.com.br/ws/${cep}/json/`)
-            .then((r) => r.json())
-            .then((d) => {
-                if (d.erro) {
-                    avisarValidacao('CEP não encontrado.');
-                    return;
-                }
-                const rua = [d.logradouro, d.bairro].filter(Boolean).join(', ');
-                const cidade = [d.localidade, d.uf].filter(Boolean).join(' - ');
-                ruaEl.value = [rua, cidade].filter(Boolean).join(' - ');
-            })
-            .catch(() => avisarValidacao('Não foi possível buscar o CEP agora.'));
-    }
-
     async function initAddressBookUI() {
         renderAddressBookSelect();
-        renderEnderecoSelecionado(null);
-        const btnAdd = document.getElementById('btnAdicionarEndereco');
-        const btnSalvarModal = document.getElementById('btnSalvarEnderecoModal');
-        const btnCancelarModal = document.getElementById('btnCancelarEndereco');
-        const btnBuscarCepModal = document.getElementById('btnBuscarCepModal');
+        const btnSalvar = document.getElementById('btnSalvarEndereco');
         const select = document.getElementById('orc-endereco-salvo');
         const cardsWrap = document.getElementById('orc-endereco-cards');
-        const modal = document.getElementById('modalAdicionarEndereco');
 
-        if (btnAdd && btnAdd.dataset.bound !== '1') {
-            btnAdd.dataset.bound = '1';
-            btnAdd.addEventListener('click', abrirModalAdicionarEndereco);
-        }
-        if (btnCancelarModal && btnCancelarModal.dataset.bound !== '1') {
-            btnCancelarModal.dataset.bound = '1';
-            btnCancelarModal.addEventListener('click', fecharModalAdicionarEndereco);
-        }
-        if (btnBuscarCepModal && btnBuscarCepModal.dataset.bound !== '1') {
-            btnBuscarCepModal.dataset.bound = '1';
-            btnBuscarCepModal.addEventListener('click', buscarCepModalAdicionarEndereco);
-        }
-        if (btnSalvarModal && btnSalvarModal.dataset.bound !== '1') {
-            btnSalvarModal.dataset.bound = '1';
-            btnSalvarModal.addEventListener('click', async () => {
-                const saved = await upsertEnderecoAtual({ silent: false });
-                if (saved?.id) {
-                    applyEnderecoSelecionado(saved.id);
-                    limparFormularioAdicionarEndereco();
-                    fecharModalAdicionarEndereco();
-                }
-            });
-        }
-        if (modal && modal.dataset.bound !== '1') {
-            modal.dataset.bound = '1';
-            modal.addEventListener('click', (ev) => {
-                if (ev.target === modal) fecharModalAdicionarEndereco();
-            });
+        if (btnSalvar && btnSalvar.dataset.bound !== '1') {
+            btnSalvar.dataset.bound = '1';
+            btnSalvar.addEventListener('click', async () => { await upsertEnderecoAtual({ silent: false }); });
         }
         if (select && select.dataset.bound !== '1') {
             select.dataset.bound = '1';
@@ -2112,7 +1992,6 @@ body[data-page="orcamento"] main.main-orcamento::after{
             if (!formularioEnderecoTemDados()) preencherEnderecoNoFormulario(localList[0]);
             if (select) select.value = localList[0].id;
             renderAddressBookSelect(localList[0].id);
-            renderEnderecoSelecionado(localList[0]);
         }
 
         const remoto = await carregarAddressBookDoBanco();
@@ -2121,7 +2000,6 @@ body[data-page="orcamento"] main.main-orcamento::after{
             renderAddressBookSelect(remoto[0].id);
             if (!formularioEnderecoTemDados()) preencherEnderecoNoFormulario(remoto[0]);
             if (select) select.value = remoto[0].id;
-            renderEnderecoSelecionado(remoto[0]);
         }
     }
 
@@ -2381,15 +2259,20 @@ body[data-page="orcamento"] main.main-orcamento::after{
 
             // Valida?f??f?o: Localiza?f??f?o (somente quando presencial/ambos)
             const precisaLoc = !!window.__orc_precisa_localizacao;
-            const enderecoSelecionadoId = String(document.getElementById('orc-endereco-salvo')?.value || '').trim();
-            const enderecoSelecionado = enderecoSelecionadoId
-                ? readAddressBook().find((a) => String(a.id) === enderecoSelecionadoId)
-                : null;
             if (precisaLoc) {
-                const selectEndereco = document.getElementById('orc-endereco-salvo');
-                if (!enderecoSelecionado || !isEnderecoMinimoValido(enderecoSelecionado)) {
-                    return irParaCampoFaltante(selectEndereco, 'Selecione um endereço salvo para enviar o pedido.');
-                }
+                const cepEl = document.getElementById('cepOrcamento');
+                const endEl = document.getElementById('endereco-completo');
+                const numEl = document.getElementById('numero-residencia');
+                const cep = (cepEl ? cepEl.value : "").trim();
+                const end = (endEl ? endEl.value : "").trim();
+                const num = (numEl ? numEl.value : "").trim();
+
+                if (!cep) return irParaCampoFaltante(cepEl, 'Preencha o CEP do local do servi\u00e7o.');
+                if (!end) return irParaCampoFaltante(endEl, 'Preencha o endere\u00e7o do local do servi\u00e7o.');
+                if (!num) return irParaCampoFaltante(numEl, 'Preencha o n\u00famero do local do servi\u00e7o.');
+
+                // Salva/atualiza automaticamente o  validado para  futura.
+                upsertEnderecoAtual({ silent: true }).catch(() => {});
             }
 
             // Feedback Visual
@@ -2414,16 +2297,12 @@ body[data-page="orcamento"] main.main-orcamento::after{
                 const paraUserSeguro = normalizeUserHandle(prestador.user || prestador.userHandle || '', paraNomeSeguro).replace(/^@/, '');
                 
                 const precisaLoc = !!window.__orc_precisa_localizacao;
-                const enderecoSelecionadoId = String(document.getElementById('orc-endereco-salvo')?.value || '').trim();
-                const enderecoSelecionado = enderecoSelecionadoId
-                    ? readAddressBook().find((a) => String(a.id) === enderecoSelecionadoId)
-                    : null;
-                const cep = String(enderecoSelecionado?.cep || '').trim();
-                const end = String(enderecoSelecionado?.endereço || '').trim();
-                const num = String(enderecoSelecionado?.número || '').trim();
-                const comp = String(enderecoSelecionado?.complemento || '').trim();
-                const ref = String(enderecoSelecionado?.referencia || '').trim();
-                const info = String(enderecoSelecionado?.info || '').trim();
+                const cep = getInputValue('cepOrcamento').trim();
+                const end = getInputValue('endereco-completo').trim();
+                const num = getInputValue('numero-residencia').trim();
+                const comp = getInputValue('complemento-residencia').trim();
+                const ref = getInputValue('referencia-residencia').trim();
+                const info = getInputValue('info-local').trim();
                 const dataEspecifica = (function(){
                     const sel = document.getElementById('para-quando');
                     const v = sel ? sel.value : '';
@@ -2471,10 +2350,10 @@ Local do servi\u00e7o: ${loc}${extra}`;
                     })(),
                     dataEspecifica: dataEspecifica || "",
                     turno: document.getElementById('turno').value,
-                    localizacao: precisaLoc ? {
+                    localização: precisaLoc ? {
                         cep,
-                        endereco: end,
-                        numero: num,
+                        endereço: end,
+                        número: num,
                         complemento: comp,
                         referencia: ref,
                         info
@@ -2541,38 +2420,6 @@ Local do servi\u00e7o: ${loc}${extra}`;
 
                 // Sucesso
                 localStorage.setItem('doke_pedido_enviado', 'true');
-                try {
-                    const cacheRow = {
-                        id: pedidoIdFinal,
-                        deUid: user.uid,
-                        paraUid: paraUid,
-                        deNome: perfil.nome || "Cliente",
-                        deUser: normalizeUserHandle(perfil.user || perfil.userHandle || '', perfil.nome || 'cliente').replace(/^@/, ''),
-                        deFoto: perfil.foto || "https://i.pravatar.cc/150",
-                        paraNome: paraNomeSeguro,
-                        paraUser: paraUserSeguro,
-                        paraFoto: prestador.foto || "",
-                        anuncioId: anuncioIdFinal,
-                        servicoReferencia: titulo,
-                        mensagemInicial: pedidoPayload.mensagemInicial || descrição || "",
-                        descricaoBase: descrição || "",
-                        paraQuando: pedidoPayload.paraQuando || "",
-                        dataEspecifica: dataEspecifica || "",
-                        turno: document.getElementById('turno').value,
-                        respostasTriagem: respostasTriagem,
-                        localizacao: pedidoPayload.localizacao || null,
-                        modoAtend: window.__orc_modo_atend || "",
-                        status: "pendente",
-                        dataPedido: new Date().toISOString(),
-                        dataAtualizacao: new Date().toISOString(),
-                        ultimaMensagem: descrição || "Novo pedido enviado"
-                    };
-                    const key = 'doke_pedidos';
-                    const arr = JSON.parse(localStorage.getItem(key) || '[]');
-                    const list = Array.isArray(arr) ? arr : [];
-                    const next = [cacheRow, ...list.filter((r) => String(r?.id || '') !== String(pedidoIdFinal))].slice(0, 200);
-                    localStorage.setItem(key, JSON.stringify(next));
-                } catch (_) {}
                 if (window.dokeHideLoading) window.dokeHideLoading();
                 mostrarModalPedidoEnviado(pedidoIdFinal);
 
@@ -2646,8 +2493,9 @@ Local do servi\u00e7o: ${loc}${extra}`;
     // --- MODAL DE SUCESSO (AGUARDANDO ACEITE) ---
     function mostrarModalPedidoEnviado(pedidoId) {
         const modal = document.getElementById('modalPedidoEnviado');
-        const btnPedidos = document.getElementById('btnIrPedidosDireto');
-        if (btnPedidos) btnPedidos.href = `pedidos.html?pedidoId=${encodeURIComponent(pedidoId || '')}`;
+        const btnAbrir = document.getElementById('btnIrChatDireto');
+        const btnMensagens = document.getElementById('btnAcompanharPedidos');
+        if (btnAbrir) btnAbrir.href = `mensagens.html?chatId=${pedidoId}`;
 
         if (modal) {
             const fecharModalPedidoEnviado = () => {
@@ -2660,8 +2508,11 @@ Local do servi\u00e7o: ${loc}${extra}`;
             modal.addEventListener('click', (e) => {
                 if (e.target === modal) fecharModalPedidoEnviado();
             }, { once: true });
-            if (btnPedidos) {
-                btnPedidos.addEventListener('click', () => document.body.classList.remove('doke-modal-open'), { once: true });
+            if (btnAbrir) {
+                btnAbrir.addEventListener('click', () => document.body.classList.remove('doke-modal-open'), { once: true });
+            }
+            if (btnMensagens) {
+                btnMensagens.addEventListener('click', () => document.body.classList.remove('doke-modal-open'), { once: true });
             }
         }
     }
@@ -2835,6 +2686,12 @@ Local do servi\u00e7o: ${loc}${extra}`;
 
     function aplicarConfiguracoesDoAnuncio(anuncio) {
         const cardLoc = document.getElementById('card-localização');
+        const inputCep = document.getElementById('cepOrcamento');
+        const inputEnd = document.getElementById('endereço-completo');
+        const inputNum = document.getElementById('número-residencia');
+        const inputComp = document.getElementById('complemento-residencia');
+        const inputRef = document.getElementById('referencia-residencia');
+        const inputInfo = document.getElementById('info-local');
         const addressBookWrap = document.getElementById('orc-address-book-wrap');
 
         const modo = String(anuncio.modo_atend || "").toLowerCase().trim();
@@ -2851,9 +2708,18 @@ Local do servi\u00e7o: ${loc}${extra}`;
         if (!precisaLocalizacao) {
             if(cardLoc) cardLoc.style.display = 'none';
             if(addressBookWrap) addressBookWrap.style.display = 'none';
+            for (const el of [inputCep, inputEnd, inputNum]) {
+                if (el) { el.removeAttribute('required'); el.value = ""; }
+            }
+            for (const el of [inputComp, inputRef, inputInfo]) {
+                if (el) el.value = "";
+            }
         } else {
             if(cardLoc) cardLoc.style.display = 'block';
             if(addressBookWrap) addressBookWrap.style.display = 'block';
+            if (inputCep) inputCep.setAttribute('required', 'required');
+            if (inputEnd) inputEnd.setAttribute('required', 'required');
+            if (inputNum) inputNum.setAttribute('required', 'required');
         }
     }
 
@@ -2885,7 +2751,28 @@ Local do servi\u00e7o: ${loc}${extra}`;
         if (document.visibilityState === 'visible') liberarScrollOrcamento();
     });
 
-    window.buscarEndereco = buscarCepModalAdicionarEndereco;
+    window.buscarEndereco = function() {
+        const cepEl = document.getElementById('cepOrcamento');
+        if(!cepEl) return;
+        const cep = cepEl.value.replace(/\D/g, '');
+        if(cep.length !== 8) {
+            avisarValidacao("Digite um CEP v\u00e1lido com 8 n\u00fameros.");
+            return;
+        }
+        cepEl.value = normalizeCep(cep);
+        fetch(`https://viacep.com.br/ws/${cep}/json/`)
+            .then(r=>r.json())
+            .then(d=>{
+                if(d.erro){
+                    avisarValidacao("CEP n\u00e3o encontrado.");
+                    return;
+                }
+                const rua = [d.logradouro, d.bairro].filter(Boolean).join(", ");
+                const cidade = [d.localidade, d.uf].filter(Boolean).join(" - ");
+                document.getElementById('endereço-completo').value = [rua, cidade].filter(Boolean).join(" - ");
+            })
+            .catch(() => avisarValidacao("N\u00e3o foi poss\u00edvel buscar o CEP agora."));
+    }
 </script>
 <!-- Modal: Pedido enviado / aguardando aceite -->
 <div aria-labelledby="orcModalTitle" aria-modal="true" class="orc-modal-overlay" id="modalPedidoEnviado" role="dialog">
@@ -2908,7 +2795,8 @@ Local do servi\u00e7o: ${loc}${extra}`;
 </div>
 </div>
 <div class="orc-modal-footer">
-<a class="orc-btn orc-btn-primary" href="pedidos.html" id="btnIrPedidosDireto"><i class="bx bx-package"></i> Ir para pedidos</a>
+<a class="orc-btn orc-btn-ghost" href="mensagens.html" id="btnAcompanharPedidos"><i class="bx bx-chat"></i> Ver em Mensagens</a>
+<a class="orc-btn orc-btn-primary" href="mensagens.html" id="btnIrChatDireto"><i class="bx bx-message-dots"></i> Abrir pedido</a>
 </div>
 </div>
 </div>
@@ -2916,36 +2804,6 @@ Local do servi\u00e7o: ${loc}${extra}`;
 <div class="anexo-preview-content">
 <button aria-label="Fechar imagem" class="anexo-preview-close" onclick="fecharAnexoPreview()" type="button"><i class="bx bx-x"></i></button>
 <img alt="" id="anexoPreviewImg" src=""/>
-</div>
-</div>
-<div aria-labelledby="orcAddAddressTitle" aria-modal="true" class="orc-modal-overlay" id="modalAdicionarEndereco" role="dialog" style="display:none;">
-<div class="orc-modal">
-<div class="orc-modal-header">
-<div class="orc-modal-icon"><i class="bx bx-map"></i></div>
-<div>
-<h3 class="orc-modal-title" id="orcAddAddressTitle">Adicionar endere&ccedil;o</h3>
-<div style="font-size:0.85rem; color:#666; font-weight:600;">Salvo diretamente para seus pedidos</div>
-</div>
-</div>
-<div class="orc-modal-body">
-<div class="grid-duplo">
-<div class="input-group"><label>Apelido</label><input class="input-premium" id="addEnderecoLabel" placeholder="Ex: Casa, Trabalho" type="text"/></div>
-<div class="input-group"><label>CEP</label><div class="cep-search-row"><input class="input-premium" id="addEnderecoCep" placeholder="00000-000" type="text"/><button class="btn-outline btn-buscar-cep" id="btnBuscarCepModal" type="button"><i class="bx bx-search"></i> Buscar CEP</button></div></div>
-</div>
-<div class="grid-duplo">
-<div class="input-group"><label>Endere&ccedil;o</label><input class="input-premium" id="addEnderecoRua" placeholder="Rua, bairro - cidade" type="text"/></div>
-<div class="input-group"><label>N&uacute;mero</label><input class="input-premium" id="addEnderecoNumero" placeholder="Ex: 120" type="text"/></div>
-</div>
-<div class="grid-duplo">
-<div class="input-group"><label>Complemento (opcional)</label><input class="input-premium" id="addEnderecoComplemento" placeholder="Apto, bloco, casa, etc" type="text"/></div>
-<div class="input-group"><label>Ponto de refer&ecirc;ncia (opcional)</label><input class="input-premium" id="addEnderecoReferencia" placeholder="Ex: perto do mercado" type="text"/></div>
-</div>
-<div class="input-group"><label>Mais informa&ccedil;&otilde;es (opcional)</label><textarea class="input-premium area-texto" id="addEnderecoInfo" placeholder="Ex: port&atilde;o azul, interfone n&atilde;o funciona, falar com o porteiro..." style="min-height:90px;"></textarea></div>
-</div>
-<div class="orc-modal-footer">
-<button class="orc-btn orc-btn-ghost" id="btnCancelarEndereco" type="button">Cancelar</button>
-<button class="orc-btn orc-btn-primary" id="btnSalvarEnderecoModal" type="button"><i class="bx bx-check"></i> Salvar endere&ccedil;o</button>
-</div>
 </div>
 </div>
 <script src="doke-toast.js"></script>
@@ -2959,4 +2817,14 @@ document.addEventListener('keydown', function(evt){
 </script>
 </body>
 </html>
+
+
+
+
+
+
+
+
+
+
 

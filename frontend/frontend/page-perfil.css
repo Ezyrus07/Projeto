@@ -10,6 +10,19 @@ body[data-page="perfil"] .dp-statsNav{
   display: inline-flex !important;
 }
 
+/* Remover o botão de 3 pontinhos (Mais) do perfil em todas as telas */
+body[data-page="perfil"] #dpMoreBtn{
+  display: none !important;
+}
+
+/* No mobile, remove as setinhas de navegação (tabs/estatísticas) e deixa o swipe/scroll por toque */
+@media (max-width: 600px){
+  body[data-page="perfil"] .dp-tabsNav,
+  body[data-page="perfil"] .dp-statsNav{
+    display: none !important;
+  }
+}
+
 /* Evita scroll duplo no desktop: mantém apenas a rolagem da página. */
 @media (min-width: 1025px){
   body[data-page="perfil"] .sidebar-icones{
@@ -2479,7 +2492,7 @@ body[data-page="perfil"] .dp-tabsOverflowHint{
   border-radius: 999px !important;
   background: rgba(255, 255, 255, 0.96) !important;
   color: #0b7768 !important;
-  display: inline-flex !important;
+  display: none !important;
   align-items: center !important;
   justify-content: center !important;
   z-index: 6 !important;
@@ -2940,4 +2953,70 @@ body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"]
 
 body[data-page="perfil"] #dpRoot[data-owner="self"][data-profile-role="cliente"] #dpBecomeProBtn i{
   display: none !important;
+}
+
+/* ============================================================
+   Override final: setas no desktop, sem setas no mobile
+   ============================================================ */
+@media (min-width: 761px){
+  body[data-page="perfil"] #dpRoot .dp-tabsWrap,
+  body[data-page="perfil"] .dp-tabsWrap{
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabs,
+  body[data-page="perfil"] .dp-tabs{
+    flex: 1 1 auto !important;
+    min-width: 0 !important;
+    width: auto !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabsNav,
+  body[data-page="perfil"] .dp-tabsNav{
+    display: inline-flex !important;
+    position: static !important;
+    transform: none !important;
+    flex: 0 0 auto !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    z-index: 5 !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabsPrev,
+  body[data-page="perfil"] .dp-tabsPrev{
+    left: auto !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabsNext,
+  body[data-page="perfil"] .dp-tabsNext{
+    right: auto !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabsOverflowHint,
+  body[data-page="perfil"] .dp-tabsOverflowHint{
+    display: none !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabsPrev:disabled,
+  body[data-page="perfil"] #dpRoot .dp-tabsNext:disabled,
+  body[data-page="perfil"] .dp-tabsPrev:disabled,
+  body[data-page="perfil"] .dp-tabsNext:disabled{
+    opacity: .35 !important;
+    visibility: visible !important;
+    pointer-events: none !important;
+  }
+}
+
+@media (max-width: 760px){
+  body[data-page="perfil"] #dpRoot .dp-tabsNav,
+  body[data-page="perfil"] .dp-tabsNav{
+    display: none !important;
+  }
 }

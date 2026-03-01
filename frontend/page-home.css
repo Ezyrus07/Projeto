@@ -2686,13 +2686,18 @@ body[data-page="home"] .carousel-nav{
 @media (max-width: 767px){
   body[data-page="home"] .videos-container,
   body[data-page="home"] .fotos-container{
-    padding: 12px 10px 10px !important;
+    padding: 10px 10px 8px !important;
     border-radius: 16px !important;
   }
 
   body[data-page="home"] .videos-container .sec-title,
   body[data-page="home"] .fotos-container .sec-title{
-    font-size: 1.24rem !important;
+    font-size: 1.12rem !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-row,
+  body[data-page="home"] .fotos-container .sec-head-row{
+    margin-bottom: 8px !important;
   }
 
   body[data-page="home"] .fotos-container .section-feed-title{
@@ -2709,19 +2714,19 @@ body[data-page="home"] .carousel-nav{
   }
 
   body[data-page="home"] .tiktok-scroll-wrapper{
-    gap: 10px !important;
-    padding: 2px 0 4px !important;
+    gap: 8px !important;
+    padding: 0 0 2px !important;
   }
 
   body[data-page="home"] .tiktok-card{
-    width: 188px !important;
-    min-width: 188px !important;
-    height: 332px !important;
+    width: 166px !important;
+    min-width: 166px !important;
+    height: 292px !important;
   }
 
   body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item{
-    flex: 0 0 clamp(148px, 43vw, 168px) !important;
-    min-width: clamp(148px, 43vw, 168px) !important;
+    flex: 0 0 clamp(136px, 41vw, 156px) !important;
+    min-width: clamp(136px, 41vw, 156px) !important;
   }
 }
 
@@ -2812,8 +2817,16 @@ body[data-page="home"] .carousel-nav{
     margin: 0 !important;
   }
 
-  body[data-page="home"] .doke-bottom-nav a img,
-  body[data-page="home"] .doke-bottom-nav a .doke-nav-avatar,
+  /* Evita que o avatar do bottom-nav fique "menor" dentro do círculo (contain cria borda).
+     Mantém contain apenas para ícones/imagens não-avatar. */
+  body[data-page="home"] .doke-bottom-nav a .doke-nav-avatar{
+    display:block !important;
+    margin:0 auto !important;
+    width:100% !important;
+    height:100% !important;
+    object-fit: cover !important;
+  }
+  body[data-page="home"] .doke-bottom-nav a img:not(.doke-nav-avatar),
   body[data-page="home"] .bottom-nav .item img,
   body[data-page="home"] .bottom-nav .item .icon{
     display: block !important;
@@ -3008,9 +3021,10 @@ body[data-page="home"] .cp-header-clean{
   }
 
   body[data-page="home"] .secao-busca{
-    padding: 14px 14px 16px !important;
-    border-radius: 20px !important;
-    box-shadow: 0 10px 24px rgba(15,23,42,.08) !important;
+    /* Menos "peso" no topo (primeira dobra) */
+    padding: 12px 14px 12px !important;
+    border-radius: 18px !important;
+    box-shadow: 0 8px 18px rgba(15,23,42,.06) !important;
   }
   body[data-page="home"] .typing-container{
     margin-bottom: 8px !important;
@@ -3019,7 +3033,7 @@ body[data-page="home"] .cp-header-clean{
     position: relative !important;
     display: flex !important;
     align-items: center !important;
-    min-height: 58px !important;
+    min-height: 52px !important;
     border-radius: 999px !important;
     padding: 4px 8px !important;
     overflow: hidden !important;
@@ -3027,8 +3041,8 @@ body[data-page="home"] .cp-header-clean{
   body[data-page="home"] .busca-input-container input{
     width: 100% !important;
     min-width: 0 !important;
-    padding: 0 88px 0 14px !important;
-    font-size: .95rem !important;
+    padding: 0 82px 0 14px !important;
+    font-size: 16px !important; /* evita zoom iOS */
     line-height: 1.2 !important;
   }
   body[data-page="home"] .busca-input-container .btn-search-circle{
@@ -3037,10 +3051,10 @@ body[data-page="home"] .cp-header-clean{
     right: 6px !important;
     transform: translateY(-50%) !important;
     margin: 0 !important;
-    width: 50px !important;
-    height: 50px !important;
-    min-width: 50px !important;
-    min-height: 50px !important;
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
     z-index: 2 !important;
   }
   body[data-page="home"] .busca-input-container .btn-search-circle:hover,
@@ -3050,18 +3064,78 @@ body[data-page="home"] .cp-header-clean{
   body[data-page="home"] .botoes-busca{
     display: grid !important;
     grid-template-columns: 1fr !important;
-    gap: 10px !important;
-    margin-top: 12px !important;
+    gap: 8px !important;
+    margin-top: 10px !important;
   }
   body[data-page="home"] .botoes-busca .btn-procurar,
   body[data-page="home"] .botoes-busca .btn-anunciar{
-    min-height: 54px !important;
-    border-radius: 14px !important;
-    font-size: .98rem !important;
+    border-radius: 999px !important;
+  }
+
+  /* CTA primário vs secundário (mobile): reduz altura e ruído visual */
+  body[data-page="home"] .botoes-busca .btn-procurar{
+    min-height: 48px !important;
+    font-size: .96rem !important;
+  }
+  body[data-page="home"] .botoes-busca .btn-anunciar{
+    min-height: 42px !important;
+    font-size: .90rem !important;
+    background: #0b7768 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(11,119,104,.22) !important;
+    box-shadow: 0 10px 22px rgba(11,119,104,.20) !important;
   }
   body[data-page="home"] #btnScrollTop{
     right: 12px !important;
     bottom: calc(var(--bottom-nav-height, 62px) + 14px) !important;
+  }
+}
+
+/* =========================================================
+   Home mobile: Categorias em alta mais "app-like" (scroll-snap)
+   ========================================================= */
+@media (max-width: 600px){
+  body[data-page="home"] .categorias-container{
+    margin-top: 10px !important;
+  }
+
+  /* Remove setas (polui) e deixa o gesto horizontal natural */
+  body[data-page="home"] .cat-prev,
+  body[data-page="home"] .cat-next{
+    display: none !important;
+  }
+
+  body[data-page="home"] .cat-track{
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x mandatory;
+    scroll-padding-left: 14px;
+    gap: 12px !important;
+    padding: 4px 14px 6px !important;
+  }
+
+  body[data-page="home"] .cat-card{
+    scroll-snap-align: start;
+    flex: 0 0 auto;
+    width: 92px !important;
+    border-radius: 16px !important;
+    padding: 10px 10px 12px !important;
+  }
+
+  body[data-page="home"] .cat-ico{
+    width: 42px !important;
+    height: 42px !important;
+    margin-bottom: 8px !important;
+  }
+
+  body[data-page="home"] .cat-label{
+    font-size: .80rem !important;
+    line-height: 1.15 !important;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 }
 
@@ -3506,5 +3580,302 @@ body[data-page="home"] #modalPostDetalhe.doke-post-modal .doke-post-comments{
     border-width: 0 !important;
     grid-template-columns: 1fr !important;
     grid-template-rows: minmax(248px, 46dvh) 1fr !important;
+  }
+}
+
+
+/* =========================================================
+   Home mobile: compact Videos-curtos + Publicações (v2)
+   ========================================================= */
+@media (max-width: 560px){
+  body[data-page="home"] .videos-container,
+  body[data-page="home"] .fotos-container{
+    padding: 10px 10px 8px !important;
+    border-radius: 14px !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-row,
+  body[data-page="home"] .fotos-container .sec-head-row{
+    margin-bottom: 8px !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-title,
+  body[data-page="home"] .fotos-container .sec-title{
+    font-size: 1.10rem !important;
+  }
+
+  body[data-page="home"] .sec-link{
+    padding: 8px 12px !important;
+    font-size: .88rem !important;
+  }
+
+  /* Vídeos-curtos: cards menores para caber mais na tela */
+  body[data-page="home"] #galeria-dinamica{
+    gap: 10px !important;
+    padding: 4px 0 0 !important;
+  }
+  body[data-page="home"] .tiktok-card{
+    width: clamp(160px, 46vw, 190px) !important;
+    min-width: clamp(160px, 46vw, 190px) !important;
+    height: clamp(260px, 62vw, 300px) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 10px 18px rgba(2, 6, 23, 0.14) !important;
+  }
+
+  /* Publicações: mini-grid mais compacto */
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 10px !important;
+    padding: 4px 0 2px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex: 0 0 clamp(160px, 46vw, 190px) !important;
+    min-width: clamp(160px, 46vw, 190px) !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.12 !important;
+  }
+}
+
+
+/* COMPACT_MOBILE_V2: mais compacto (videos-curtos + publicacoes) */
+@media (max-width: 520px){
+  /* Header do lane (mobile): sem "vazio" em cima e alinhado à esquerda (igual desktop) */
+  body[data-page="home"] .sec-head-row--inline.is-blue{
+    padding: 8px 10px 6px !important;
+    border-radius: 14px !important;
+  }
+  body[data-page="home"] .videos-container .sec-head-left,
+  body[data-page="home"] .fotos-container .sec-head-left{
+    width: auto !important;
+    flex: 0 0 auto !important;
+    justify-content: flex-start !important;
+  }
+  body[data-page="home"] .videos-container .sec-title,
+  body[data-page="home"] .fotos-container .sec-title,
+  body[data-page="home"] .sec-head-row--inline.is-blue .sec-title{
+    text-align: left !important;
+    width: auto !important;
+  }
+  body[data-page="home"] .sec-head-row--inline.is-blue .sec-title{
+    font-size: 16px !important;
+    line-height: 1.15 !important;
+  }
+  body[data-page="home"] .sec-head-row--inline.is-blue .sec-link{
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+  }
+  body[data-page="home"] .sec-head-row--inline.is-blue .carousel-nav{
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  body[data-page="home"] .tiktok-scroll-wrapper{
+    padding: 10px 10px 6px !important;
+    padding-right: 64px !important; /* "peek" do próximo item */
+    gap: 10px !important;
+  }
+  body[data-page="home"] .tiktok-card{
+    width: 166px !important;
+    min-width: 166px !important;
+    height: 292px !important;
+    border-radius: 14px !important;
+    box-shadow: 0 10px 22px rgba(2,6,23,.14) !important;
+  }
+  body[data-page="home"] .tiktok-card .tiktok-title{
+    font-size: 12px !important;
+  }
+  body[data-page="home"] .tiktok-card .tiktok-subtitle{
+    font-size: 11px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 8px !important;
+    padding: 6px 0 2px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-card{
+    border-radius: 14px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-card .pub-media{
+    border-radius: 14px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-card .pub-content{
+    padding: 10px 10px 10px !important;
+  }
+}
+
+/* ============================================================
+   PATCH 2026-02-28E (v3)
+   Home mobile: ainda mais compacto (Vídeos curtos + Publicações)
+   ============================================================ */
+@media (max-width: 430px){
+  body[data-page="home"] .section-blue,
+  body[data-page="home"] .section-green{
+    padding: 14px 12px 14px !important;
+    border-radius: 18px !important;
+  }
+  body[data-page="home"] .sec-title{ font-size: 18px !important; }
+  body[data-page="home"] .sec-link{ font-size: 13px !important; padding: 8px 12px !important; }
+
+  /* Cards de vídeo-curto menores */
+  body[data-page="home"] .tiktok-scroll-wrapper{ gap: 10px !important; padding: 10px 0 6px !important; }
+  body[data-page="home"] .tiktok-card,
+  body[data-page="home"] .tiktok-card.is-skeleton{
+    flex: 0 0 150px !important;
+    min-width: 150px !important;
+    width: 150px !important;
+    height: 232px !important;
+    border-radius: 14px !important;
+  }
+  body[data-page="home"] .tiktok-card .video-ui-layer{ padding: 10px 10px 10px !important; }
+
+  /* Publicações mini-grid mais compacto */
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 10px !important;
+    padding: 10px 0 6px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex: 0 0 150px !important;
+    min-width: 150px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.05 !important;
+  }
+}
+
+/* PATCH 2026-03-01A
+   Videos-curtos mobile: reduzir espaço entre titulo e cards */
+@media (max-width: 520px){
+  body[data-page="home"] .videos-container{
+    padding: 8px 8px 6px !important;
+    gap: 8px !important;
+  }
+  body[data-page="home"] .videos-container .sec-head-row,
+  body[data-page="home"] .videos-container .sec-head-row--inline{
+    margin-bottom: 0 !important;
+    padding: 6px 8px 4px !important;
+  }
+  body[data-page="home"] #galeria-dinamica,
+  body[data-page="home"] .videos-container .tiktok-scroll-wrapper{
+    margin-top: 0 !important;
+    padding-top: 2px !important;
+    gap: 8px !important;
+  }
+  body[data-page="home"] #galeria-dinamica .dp-reelCard{
+    flex: 0 0 156px !important;
+    min-width: 156px !important;
+    width: 156px !important;
+    max-width: 156px !important;
+  }
+}
+
+@media (max-width: 430px){
+  body[data-page="home"] #galeria-dinamica,
+  body[data-page="home"] .videos-container .tiktok-scroll-wrapper{
+    padding-top: 0 !important;
+  }
+  body[data-page="home"] #galeria-dinamica .dp-reelCard{
+    flex: 0 0 146px !important;
+    min-width: 146px !important;
+    width: 146px !important;
+    max-width: 146px !important;
+  }
+}
+
+/* PATCH 2026-03-01B
+   iPhone 13 (390px): Publicações com mais foco na mídia e menos bloco branco */
+@media (max-width: 430px){
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 8px !important;
+    padding: 6px 0 2px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex: 0 0 calc(50% - 5px) !important;
+    width: calc(50% - 5px) !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    border-radius: 14px !important;
+    overflow: hidden !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.42 !important;
+    min-height: 182px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 7px 8px 8px !important;
+    gap: 4px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAuthor{
+    margin-bottom: 3px !important;
+    gap: 6px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAvatar{
+    width: 24px !important;
+    height: 24px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemUser{
+    font-size: .95rem !important;
+    line-height: 1.1 !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMeta{
+    display: none !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+    font-size: 1.01rem !important;
+    line-height: 1.1 !important;
+    margin: 0 !important;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2 !important;
+    -webkit-box-orient: vertical !important;
+    overflow: hidden !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+    display: none !important;
+  }
+}
+
+/* PATCH 2026-03-01C
+   Mobile final: cards menos finos + "peek" lateral (Publicações e Vídeos curtos) */
+@media (max-width: 430px){
+  /* Carrosséis com preview do próximo item */
+  body[data-page="home"] #galeria-dinamica,
+  body[data-page="home"] .videos-container .tiktok-scroll-wrapper,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 10px !important;
+    padding-right: 52px !important; /* deixa aparecer um "pedaço" do próximo card */
+    scroll-padding-right: 52px !important;
+  }
+
+  /* Vídeos curtos: menos fino */
+  body[data-page="home"] #galeria-dinamica .dp-reelCard,
+  body[data-page="home"] #galeria-dinamica .tiktok-card,
+  body[data-page="home"] .videos-container .tiktok-card{
+    flex: 0 0 156px !important;
+    min-width: 156px !important;
+    width: 156px !important;
+    max-width: 156px !important;
+  }
+
+  /* Publicações: menos fino e com mais foco na mídia */
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item{
+    flex: 0 0 170px !important;
+    min-width: 170px !important;
+    width: 170px !important;
+    max-width: 170px !important;
+    height: auto !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.44 !important;
+    min-height: 196px !important;
+  }
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+    flex: 0 0 auto !important;
+    min-height: 0 !important;
+    padding: 7px 8px 8px !important;
   }
 }

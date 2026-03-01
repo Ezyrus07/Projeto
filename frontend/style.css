@@ -30,6 +30,36 @@
   --doke-radius-lg: 16px;
 }
 
+/* =========================================================
+   iOS/Safari: evitar "zoom" ao tocar em inputs e double-tap
+   - iOS dá zoom automático em inputs com font-size < 16px.
+   - touch-action: manipulation reduz double-tap zoom.
+   Aplicar APENAS em telas menores.
+   ========================================================= */
+@media (max-width: 520px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  a,
+  button,
+  [role="button"],
+  .btn,
+  .chip,
+  .nav-item,
+  .icon-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
 html {
   background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
   background-repeat: no-repeat;
@@ -5550,13 +5580,45 @@ body.dark-mode {
 }
 
 .play-overlay {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    color: white; font-size: 80px; 
-    pointer-events: none; opacity: 0; transition: 0.1s;
-    background: rgba(0,0,0,0.2); border-radius: 50%; width: 100px; height: 100px;
-    display: flex; align-items: center; justify-content: center;
+    --po-size: 96px;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: var(--po-size);
+    height: var(--po-size);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .14s ease, transform .18s ease;
+    background: rgba(0, 0, 0, .35);
+    border: 1px solid rgba(255,255,255,.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.35);
 }
 .video-frame.paused .play-overlay { opacity: 1; }
+
+.play-overlay i {
+    font-size: 42px;
+    line-height: 1;
+    display: block;
+}
+
+.play-overlay i.bx-play { transform: translateX(2px); }
+
+.video-frame.tap-feedback .play-overlay {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+}
+
+@media (max-width: 600px) {
+  .play-overlay { --po-size: 76px; }
+  .play-overlay i { font-size: 34px; }
+}
 
 /* Infos (Texto dentro do ) */
 .video-info-overlay {
@@ -5831,6 +5893,63 @@ body.dark-mode {
         height: 100vh;
         aspect-ratio: auto;
         border-radius: 0;
+    }
+}
+
+/* =========================================================
+   FEED (VÍDEOS CURTOS) — Ajustes de área do vídeo (iOS/Android)
+   Objetivo: vídeo realmente "tela cheia" sem ficar por baixo do header/bottom-nav
+   e com overlays (ações/caption) respeitando safe-area.
+   ========================================================= */
+
+@media (max-width: 900px) {
+    body.page-feed .feed-main-container {
+        height: auto;
+        min-height: calc(100svh - var(--navbar-height-mobile) - var(--bottom-nav-height));
+        padding-top: var(--navbar-height-mobile);
+        padding-bottom: var(--bottom-nav-height);
+        overflow: hidden;
+    }
+
+    body.page-feed #containerReels.reels-scroll-container {
+        height: calc(100svh - var(--navbar-height-mobile) - var(--bottom-nav-height));
+        overscroll-behavior: contain;
+    }
+
+    body.page-feed .reel-page {
+        height: calc(100svh - var(--navbar-height-mobile) - var(--bottom-nav-height));
+        align-items: stretch;
+    }
+
+    body.page-feed .reels-layout,
+    body.page-feed .video-frame {
+        width: 100%;
+        height: 100%;
+    }
+
+    body.page-feed .video-frame {
+        border-radius: 0;
+        box-shadow: none;
+        background: #000;
+    }
+
+    body.page-feed .video-frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.28), rgba(0,0,0,0) 22%);
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    body.page-feed .actions-column {
+        right: 12px;
+        bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    }
+
+    body.page-feed .video-info-overlay {
+        padding: 18px;
+        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 18px);
     }
 }
 
@@ -6486,8 +6605,27 @@ body.dark-mode {
 
 /* Botão Fechar (X) */
 .btn-close-modal {
-    position: absolute; top: 10px; right: 20px; color: white;
-    font-size: 2rem; cursor: pointer; z-index: 10000;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    z-index: 10000;
+
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(6px);
+
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Responsividade Mobile */
@@ -7273,6 +7411,43 @@ body.dark-mode {
     z-index: 20003;
 }
 
+/* Botão: esconder/mostrar comentários */
+#modalPostDetalhe .btn-toggle-comments {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 20003;
+
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(6px);
+
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* Modo: somente mídia */
+#modalPostDetalhe.comments-hidden .modal-info-area {
+    display: none !important;
+}
+#modalPostDetalhe.comments-hidden .modal-media-area {
+    flex: 1 !important;
+    height: 100% !important;
+}
+#modalPostDetalhe.comments-hidden .btn-toggle-comments{
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 20004;
+}
+
 #modalPlayerVideo .btn-close-modal-fixed {
     position: absolute;
     top: 20px;
@@ -7304,6 +7479,13 @@ body.dark-mode {
     #modalPostDetalhe .btn-close-modal-fixed {
         top: 10px;
         right: 15px;
+    }
+
+    #modalPostDetalhe .btn-toggle-comments {
+        top: 10px;
+        left: 15px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
     }
 
     .typing-container {
@@ -11802,6 +11984,94 @@ body.menu-ativo #overlay-menu{
   }
 }
 
+/* Ajuste fino mobile (deixa o card menos alto e com hierarquia melhor) */
+@media (max-width: 520px){
+  .card-premium-v2 .cp-v2-top{
+    padding:10px 12px 4px;
+    align-items:center;
+  }
+
+  .card-premium-v2 .cp-avatar{
+    width:32px !important;
+    height:32px !important;
+  }
+
+  .card-premium-v2 .cp-v2-handle{
+    font-size:.95rem;
+  }
+
+  .card-premium-v2 .cp-v2-badges{
+    margin-top:3px;
+    flex-wrap:nowrap;
+    overflow:hidden;
+  }
+
+  .card-premium-v2 .cp-v2-badge{
+    font-size:.56rem;
+    padding:3px 7px;
+    white-space:nowrap;
+  }
+
+  /* Sem avaliações = não ocupa espaço no mobile */
+  .card-premium-v2 .cp-v2-rating.is-empty{ display:none; }
+
+  .card-premium-v2 .cp-v2-rating{
+    padding:0 12px 2px;
+  }
+
+  .card-premium-v2 .cp-mini-rating{
+    font-size:.72rem;
+  }
+
+  .card-premium-v2 .cp-v2-body{
+    padding:2px 12px 8px;
+  }
+
+  .card-premium-v2 .cp-v2-title{
+    font-size:.98rem;
+  }
+
+  .card-premium-v2 .cp-v2-location,
+  .card-premium-v2 .cp-v2-desc{
+    font-size:.72rem;
+  }
+
+  /* Imagem com recorte mais baixo no mobile */
+  .card-premium-v2 .cp-v2-mediaWrap{
+    aspect-ratio:16/10;
+  }
+
+  .card-premium-v2 .cp-v2-footer{
+    padding:8px 12px 10px;
+    gap:6px;
+  }
+
+  /* Tags em uma linha (sem aumentar altura do card) */
+  .card-premium-v2 .cp-v2-tags{
+    flex-wrap:nowrap;
+    overflow:hidden;
+  }
+
+  .card-premium-v2 .cp-v2-tag{
+    font-size:.68rem;
+    padding:4px 7px;
+    flex-shrink:0;
+  }
+
+  .card-premium-v2 .cp-v2-actionRow{
+    gap:10px;
+  }
+
+  .card-premium-v2 .cp-v2-priceValue{
+    font-size:1.08rem;
+  }
+
+  .card-premium-v2 .btn-solicitar{
+    min-height:44px;
+    font-size:.82rem;
+  }
+}
+
 /* Responsividade extra fora do home (busca/perfil/negócio) */
 @media (max-width: 1024px){
   body[data-page="busca"] #feedAnuncios,
@@ -13321,47 +13591,47 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   display: none;
   align-items: center !important;
   justify-content: center !important;
-  padding: 20px !important;
-  background: rgba(0, 0, 0, 0.72) !important;
-  backdrop-filter: blur(4px);
+  padding: 22px !important;
+  background: rgba(8, 12, 22, 0.62) !important;
+  backdrop-filter: blur(8px);
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-close-fab{
   position: fixed !important;
-  top: 14px !important;
-  left: 14px !important;
-  width: 44px !important;
-  height: 44px !important;
+  top: 18px !important;
+  left: 18px !important;
+  width: 54px !important;
+  height: 54px !important;
   border-radius: 999px !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  border: 1px solid #3a404b !important;
-  background: rgba(18, 22, 28, .92) !important;
-  color: #f3f5f8 !important;
-  font-size: 26px !important;
+  border: 1px solid rgba(255,255,255,.25) !important;
+  background: rgba(19, 31, 50, .88) !important;
+  color: #f5f8ff !important;
+  font-size: 30px !important;
   line-height: 1 !important;
-  box-shadow: 0 8px 22px rgba(0,0,0,.42) !important;
+  box-shadow: 0 10px 24px rgba(2,8,22,.35) !important;
   cursor: pointer !important;
   z-index: 10090 !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-sheet{
-  width: min(1240px, calc(100vw - 80px)) !important;
-  height: min(90vh, 920px) !important;
+  width: min(980px, calc(100vw - 48px)) !important;
+  height: min(92vh, 920px) !important;
   display: grid !important;
-  grid-template-columns: minmax(0, 1.22fr) minmax(360px, .78fr) !important;
-  grid-template-rows: 1fr !important;
-  background: #0f1318 !important;
-  border: 1px solid #2a313b !important;
-  border-radius: 16px !important;
+  grid-template-columns: 1fr !important;
+  grid-template-rows: minmax(300px, 58%) 1fr !important;
+  background: #f9fbff !important;
+  border: 1px solid rgba(255,255,255,.36) !important;
+  border-radius: 24px !important;
   overflow: hidden !important;
-  box-shadow: 0 18px 55px rgba(0,0,0,.55) !important;
+  box-shadow: 0 20px 70px rgba(6,14,28,.38) !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-media{
   position: relative !important;
-  background: #000 !important;
+  background: linear-gradient(145deg, #061224 0%, #092246 48%, #071026 100%) !important;
   min-width: 0 !important;
   min-height: 0 !important;
   display: flex !important;
@@ -13383,14 +13653,13 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   min-height: 0 !important;
   display: flex !important;
   flex-direction: column !important;
-  background: #11161d !important;
-  border-left: 1px solid #2a313b !important;
+  background: #ffffff !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-header{
-  padding: 12px 14px !important;
-  border-bottom: 1px solid #2a313b !important;
-  background: #11161d !important;
+  padding: 14px 16px !important;
+  border-bottom: 1px solid #e8edf5 !important;
+  background: #fff !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-author{
@@ -13400,11 +13669,11 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
 }
 
 #modalPostDetalhe.doke-post-modal #modalAvatar{
-  width: 34px !important;
-  height: 34px !important;
+  width: 42px !important;
+  height: 42px !important;
   border-radius: 999px !important;
   object-fit: cover !important;
-  border: 2px solid #434b57 !important;
+  border: 2px solid #ecf1f8 !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-author-text{
@@ -13414,18 +13683,18 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
 }
 
 #modalPostDetalhe.doke-post-modal #modalUsername{
-  font-size: .98rem !important;
+  font-size: 1rem !important;
   font-weight: 800 !important;
   line-height: 1.2 !important;
-  color: #f3f5f7 !important;
+  color: #091c39 !important;
   white-space: nowrap !important;
   overflow: hidden !important;
   text-overflow: ellipsis !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-author-text small{
-  font-size: .7rem !important;
-  color: #9ca6b4 !important;
+  font-size: .72rem !important;
+  color: #6f7f95 !important;
   font-weight: 700 !important;
   letter-spacing: .02em !important;
 }
@@ -13435,53 +13704,23 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   min-height: 0 !important;
   max-height: none !important;
   overflow-y: auto !important;
-  padding: 10px 14px 12px !important;
-  background: #11161d !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-comments,
-#modalPostDetalhe.doke-post-modal .doke-post-comments *{
-  color: #e9edf2 !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-date,
-#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-meta-row,
-#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-meta-row span{
-  color: #98a3b2 !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-report-btn{
-  border: none !important;
-  background: transparent !important;
-  color: #8fbaff !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-comments .comment-like-btn i.bxs-heart{
-  color: #ff4d7a !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-comments::-webkit-scrollbar{
-  width: 8px;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-comments::-webkit-scrollbar-thumb{
-  background: #2d3541;
-  border-radius: 999px;
+  padding: 12px 16px 14px !important;
+  background: #fff !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-caption{
   margin-bottom: 10px !important;
-  font-size: .92rem !important;
-  line-height: 1.42 !important;
-  color: #f1f3f6 !important;
+  font-size: .94rem !important;
+  line-height: 1.45 !important;
+  color: #15253f !important;
   word-break: break-word !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-footer{
   flex: 0 0 auto !important;
-  border-top: 1px solid #2a313b !important;
-  background: #11161d !important;
-  padding: 10px 14px 12px !important;
+  border-top: 1px solid #e8edf5 !important;
+  background: #fff !important;
+  padding: 10px 16px 12px !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-actions{
@@ -13492,17 +13731,9 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-actions i{
-  font-size: 1.58rem !important;
-  color: #f3f5f7 !important;
+  font-size: 1.5rem !important;
+  color: #0b1f3d !important;
   cursor: pointer !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-actions i:hover{
-  color: #ffffff !important;
-}
-
-#modalPostDetalhe.doke-post-modal #btnLikeModalIcon.bxs-heart{
-  color: #ff375f !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-likes{
@@ -13510,7 +13741,7 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   margin-bottom: 8px !important;
   font-size: .92rem !important;
   font-weight: 800 !important;
-  color: #f1f3f6 !important;
+  color: #0c2040 !important;
 }
 
 #modalPostDetalhe.doke-post-modal .doke-post-delete{
@@ -13519,9 +13750,9 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   margin: 0 0 8px !important;
   min-height: 38px !important;
   border-radius: 11px !important;
-  border: 1px solid #6b2d35 !important;
-  background: rgba(120, 36, 47, .18) !important;
-  color: #ff8a97 !important;
+  border: 1px solid #efb9b9 !important;
+  background: #fff8f8 !important;
+  color: #b92b2b !important;
   font-weight: 800 !important;
   cursor: pointer !important;
 }
@@ -13530,61 +13761,30 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   display: flex !important;
   align-items: center !important;
   gap: 8px !important;
-  border-top: 1px solid #2a313b !important;
-  padding-top: 10px !important;
 }
 
 #modalPostDetalhe.doke-post-modal #inputComentarioModal{
   flex: 1 1 auto !important;
   min-width: 0 !important;
-  height: 36px !important;
-  border-radius: 0 !important;
-  border: none !important;
-  padding: 0 !important;
+  height: 42px !important;
+  border-radius: 12px !important;
+  border: 1px solid #dce5f1 !important;
+  padding: 0 12px !important;
   outline: none !important;
-  background: transparent !important;
-  color: #f3f5f7 !important;
+  background: #fbfdff !important;
   font-size: .92rem !important;
 }
 
-#modalPostDetalhe.doke-post-modal #inputComentarioModal::placeholder{
-  color: #8f9aa9 !important;
-}
-
 #modalPostDetalhe.doke-post-modal .doke-post-input-row button{
-  height: 36px !important;
-  min-width: 56px !important;
+  height: 42px !important;
+  min-width: 102px !important;
   border: none !important;
-  border-radius: 8px !important;
-  background: transparent !important;
-  color: #4ea1ff !important;
-  font-size: 1.01rem !important;
+  border-radius: 12px !important;
+  background: linear-gradient(135deg, #0a6f61, #0b8a77) !important;
+  color: #fff !important;
+  font-size: .95rem !important;
   font-weight: 800 !important;
   cursor: pointer !important;
-  padding: 0 2px !important;
-}
-
-#modalPostDetalhe.doke-post-modal .doke-post-input-row button:disabled{
-  color: #6f7c8f !important;
-}
-
-@media (max-width: 1179px){
-  #modalPostDetalhe.doke-post-modal{
-    padding: 16px !important;
-  }
-
-  #modalPostDetalhe.doke-post-modal .doke-post-sheet{
-    width: min(980px, calc(100vw - 36px)) !important;
-    height: min(92vh, 920px) !important;
-    grid-template-columns: 1fr !important;
-    grid-template-rows: minmax(280px, 48vh) 1fr !important;
-    border-radius: 18px !important;
-  }
-
-  #modalPostDetalhe.doke-post-modal .doke-post-info{
-    border-left: none !important;
-    border-top: 1px solid #2a313b !important;
-  }
 }
 
 @media (max-width: 980px){
@@ -13613,7 +13813,7 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   }
 
   #modalPostDetalhe.doke-post-modal .doke-post-media{
-    min-height: 240px !important;
+    min-height: 0 !important;
   }
 
   #modalPostDetalhe.doke-post-modal .doke-post-info{
@@ -13629,7 +13829,7 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   }
 
   #modalPostDetalhe.doke-post-modal .doke-post-input-row button{
-    min-width: 56px !important;
+    min-width: 92px !important;
   }
 }
 

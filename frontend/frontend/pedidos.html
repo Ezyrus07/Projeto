@@ -378,6 +378,12 @@
     .btn-order.primary{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(11,119,104,.23);}
     .btn-order.accept{background:linear-gradient(135deg,#1f9f53,#188848); color:#fff; border-color:transparent; box-shadow:0 8px 18px rgba(31,159,83,.22);}
     .btn-order.reject{background:#fff1f2; color:#b4233b; border-color:#fecdd3;}
+    /* Hover fix: manter cores/contraste dos botoes no pedidos */
+    .btn-order:hover{filter:none; opacity:1;}
+    .btn-order.primary:hover{background:linear-gradient(135deg,#0f8f7a,#0b7768); color:#fff; border-color:transparent;}
+    .btn-order.accept:hover{background:linear-gradient(135deg,#1f9f53,#188848); color:#fff; border-color:transparent;}
+    .btn-order.reject:hover{background:#ffe9ec; color:#9f1239; border-color:#fda4af;}
+    .btn-order.secondary:hover{background:#f8fbff; color:#1b3a5b; border-color:#cfe0f4;}
     .card-decision-top{
       display:flex;
       gap:8px;
@@ -465,8 +471,6 @@
       body[data-page="pedidos"].chat-split-open .chat-drawer{display:block; position:static; inset:auto; padding:0; background:transparent;}
       body[data-page="pedidos"].chat-split-open .chat-panel-embed{position:sticky; top:12px; left:auto; right:auto; bottom:auto; height:calc(100vh - 24px); max-width:none; width:100%; min-width:0; border-radius:18px; box-shadow:0 18px 40px rgba(15,23,42,.18);}
       body[data-page="pedidos"].chat-split-open .pedido-chat-frame{height:100%;}
-      body[data-page="pedidos"].chat-split-open .chat-resize-handle{display:none !important;}
-      body[data-page="pedidos"].chat-split-open .chat-size-controls{display:none !important;}
     }
     .chat-panel-embed{
       position:absolute;
@@ -497,7 +501,8 @@
       border-radius:0;
       border:0;
     }
-    .pedido-chat-frame{display:block; width:100%; height:100%; border:0; background:#fff; flex:1 1 auto; min-height:0;}
+    .pedido-chat-frame{display:block; width:100%; height:100%; border:0; background:#fff; flex:1 1 auto; min-height:0; opacity:1; visibility:visible; transition:opacity .18s ease;}
+    .pedido-chat-frame.is-loading{opacity:0; visibility:hidden;}
     .chat-panel-toolbar{
       height:56px;
       min-height:56px;
@@ -929,14 +934,21 @@
     @media (max-width:1023px){
       .chat-drawer{padding:0;}
       .chat-panel-embed{
-        inset:0;
-        width:100%;
-        min-width:0;
-        height:100dvh;
-        max-width:none;
-        border-radius:0;
-        border:0;
+        /* Mobile: o chat precisa ocupar TODA a viewport (sem sobrar "vazio" abaixo)
+           e não deve herdar offsets de desktop (top: var(--navbar-height-desktop)). */
+        position:fixed !important;
+        top:0 !important;
+        right:0 !important;
+        bottom:0 !important;
+        left:0 !important;
+        width:100vw !important;
+        max-width:none !important;
+        min-width:0 !important;
+        height:100dvh !important;
+        border-radius:0 !important;
+        border:0 !important;
       }
+      .pedido-chat-frame{height:100% !important;}
       .chat-panel-toolbar{
         height:52px;
         min-height:52px;
@@ -1013,13 +1025,18 @@
 }
 
 /* Quando o chat estiver aberto (split), mantÃ©m 2 colunas para nÃ£o esmagar */
-body[data-page="pedidos"].chat-split-open #ordersGrid.grid{
-  grid-template-columns: 1fr;
+body[data-page="pedidos"].chat-split-open #ordersGrid.grid,
+body[data-page="pedidos"].chat-split-open #ordersGrid{
+  grid-template-columns: 1fr !important;
+}
+
+body[data-page="pedidos"].chat-split-open .card.card-pedido{
+  max-width:none !important;
 }
 
 @media (min-width: 1760px){
   body[data-page="pedidos"].chat-split-open #ordersGrid.grid{
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: 1fr !important;
   }
 }
 
@@ -1565,7 +1582,9 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
         chatMaximized: false,
         chatResizing: false,
         chatResizeStartX: 0,
-        chatResizeStartWidth: 0
+        chatResizeStartWidth: 0,
+        activeChatOutroUid: '',
+        activeChatStatusRaw: ''
       };
       const el = {
         grid: document.getElementById('ordersGrid'),
@@ -1861,6 +1880,141 @@ function displayHandle(p){
         if(isAllowedChatIframeLocation(href)) return;
         el.chatFrame.setAttribute('src', state.activeChatUrl);
         showToast('NavegaÃ§Ã£o bloqueada neste painel. Use Fechar para sair do chat.');
+      }
+
+      function setChatFrameLoading(isLoading){
+        if(!el.chatFrame) return;
+        el.chatFrame.classList.toggle('is-loading', !!isLoading);
+      }
+
+      function tuneChatIframeLayout(){
+        if(!el.chatFrame) return;
+        try{
+          const doc = el.chatFrame.contentDocument || el.chatFrame.contentWindow?.document;
+          if(!doc || !doc.head) return;
+          if(doc.getElementById('pedidosChatCompactPatch')) return;
+          const style = doc.createElement('style');
+          style.id = 'pedidosChatCompactPatch';
+          style.textContent = `
+            html, body{
+              height:100% !important;
+              margin:0 !important;
+              padding:0 !important;
+              overflow:hidden !important;
+            }
+            body[data-page="chat"] .messenger-layout{
+              position:relative !important;
+              inset:0 !important;
+              margin:0 !important;
+              margin-top:0 !important;
+              margin-left:0 !important;
+              top:0 !important;
+              right:0 !important;
+              bottom:0 !important;
+              left:0 !important;
+              width:100% !important;
+              height:100% !important;
+              max-height:none !important;
+              grid-template-columns:1fr !important;
+              border-left:0 !important;
+            }
+            body[data-page="chat"] .coluna-lista{
+              display:none !important;
+            }
+            body[data-page="chat"] .coluna-chat{
+              position:relative !important;
+              top:0 !important;
+              left:0 !important;
+              width:100% !important;
+              height:100% !important;
+              transform:none !important;
+            }
+            body[data-page="chat"] .coluna-chat,
+            body[data-page="chat"] #box-conversa-real{
+              display:flex !important;
+              flex-direction:column !important;
+              height:100% !important;
+              min-height:0 !important;
+            }
+            body[data-page="chat"] #chat-placeholder{
+              display:none !important;
+            }
+            body[data-page="chat"] .chat-header{
+              margin-top:0 !important;
+              top:0 !important;
+              min-height:58px !important;
+            }
+            body[data-page="chat"] .mensagens-body,
+            body[data-page="chat"] .mensagem-lista{
+              padding-top: 8px !important;
+              padding-bottom: 8px !important;
+              gap: 8px !important;
+            }
+            body[data-page="chat"] .msg-row{
+              margin: 4px 0 !important;
+            }
+            body[data-page="chat"] .msg-bubble{
+              margin: 0 !important;
+            }
+            body[data-page="chat"] .chat-footer,
+            body[data-page="chat"] .composer,
+            body[data-page="chat"] .chat-input-area{
+              position:sticky !important;
+              bottom:0 !important;
+              margin-top: 0 !important;
+              padding-top: 8px !important;
+              padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px)) !important;
+            }
+          `;
+          doc.head.appendChild(style);
+        }catch(_){}
+      }
+
+      function isPedidoChatVisibleInIframe(){
+        if(!el.chatFrame) return false;
+        try{
+          const doc = el.chatFrame.contentDocument || el.chatFrame.contentWindow?.document;
+          if(!doc || !doc.body) return false;
+          if(String(doc.body.getAttribute('data-page') || '').toLowerCase() !== 'chat') return false;
+          const box = doc.getElementById('box-conversa-real');
+          if(!box) return false;
+          const view = doc.defaultView;
+          const css = view && typeof view.getComputedStyle === 'function' ? view.getComputedStyle(box) : null;
+          if(css && css.display === 'none') return false;
+          return String(box.style?.display || '').toLowerCase() !== 'none';
+        }catch(_){
+          return false;
+        }
+      }
+
+      function waitForPedidoChatReady(maxWaitMs = 2800){
+        const startedAt = Date.now();
+        const tick = () => {
+          ensureIframeLockedInChat();
+          tuneChatIframeLayout();
+          forceOpenPedidoChatInIframe();
+          if(isPedidoChatVisibleInIframe() || (Date.now() - startedAt) >= maxWaitMs){
+            setChatFrameLoading(false);
+            return;
+          }
+          setTimeout(tick, 120);
+        };
+        tick();
+      }
+
+      function forceOpenPedidoChatInIframe(){
+        if(!el.chatFrame || !state.activePedidoId) return;
+        try{
+          const cw = el.chatFrame.contentWindow;
+          if(!cw) return;
+          const abrirChatFn = cw.abrirChat;
+          if(typeof abrirChatFn !== 'function') return;
+          const pedidoId = String(state.activePedidoId || '').trim();
+          const outroUid = String(state.activeChatOutroUid || '').trim();
+          const statusRaw = String(state.activeChatStatusRaw || 'pendente').trim();
+          if(!pedidoId) return;
+          abrirChatFn(pedidoId, outroUid, '', '', 'pedidos', statusRaw);
+        }catch(_){}
       }
 
       function setChatExpandButtonState(){
@@ -2966,6 +3120,8 @@ function openInlineChat(p){
         if(statusHint) q.push(`status=${encodeURIComponent(statusHint)}`);
         const chatUrl = `mensagens.html?${q.join('&')}`;
         state.activeChatUrl = chatUrl;
+        state.activeChatOutroUid = outroUid;
+        state.activeChatStatusRaw = statusHint || 'pendente';
 
         const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
 
@@ -2985,8 +3141,13 @@ function openInlineChat(p){
           document.body.classList.remove('no-scroll');
         }
 
-        if(el.chatFrame && el.chatFrame.getAttribute('src') !== chatUrl){
-          el.chatFrame.setAttribute('src', chatUrl);
+        if(el.chatFrame){
+          setChatFrameLoading(true);
+          if(el.chatFrame.getAttribute('src') !== chatUrl){
+            el.chatFrame.setAttribute('src', chatUrl);
+          }else{
+            waitForPedidoChatReady(1800);
+          }
         }
         if(!isDesktop && el.chatDrawer){
           document.body.classList.add('chat-open');
@@ -3389,7 +3550,9 @@ function openInlineChat(p){
         on(el.chatWidthLabel, 'dblclick', resetChatWidth);
         on(el.chatExpandBtn, 'click', toggleChatMaximize);
         on(el.chatResizeHandle, 'mousedown', startChatResize);
-        on(el.chatFrame, 'load', ensureIframeLockedInChat);
+        on(el.chatFrame, 'load', () => {
+          waitForPedidoChatReady(3200);
+        });
         document.addEventListener('mousemove', handleChatResizeMove);
         document.addEventListener('mouseup', stopChatResize);
         window.addEventListener('resize', applyChatPanelLayout);
@@ -3442,7 +3605,3 @@ function openInlineChat(p){
   </script>
 </body>
 </html>
-
-
-
-

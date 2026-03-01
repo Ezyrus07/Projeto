@@ -30,6 +30,36 @@
   --doke-radius-lg: 16px;
 }
 
+/* =========================================================
+   iOS/Safari: evitar "zoom" ao tocar em inputs e double-tap
+   - iOS dá zoom automático em inputs com font-size < 16px.
+   - touch-action: manipulation reduz double-tap zoom.
+   Aplicar APENAS em telas menores.
+   ========================================================= */
+@media (max-width: 520px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+
+  a,
+  button,
+  [role="button"],
+  .btn,
+  .chip,
+  .nav-item,
+  .icon-btn {
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  html,
+  body {
+    overflow-x: hidden;
+  }
+}
+
 html {
   background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
   background-repeat: no-repeat;
@@ -5550,13 +5580,45 @@ body.dark-mode {
 }
 
 .play-overlay {
-    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-    color: white; font-size: 80px; 
-    pointer-events: none; opacity: 0; transition: 0.1s;
-    background: rgba(0,0,0,0.2); border-radius: 50%; width: 100px; height: 100px;
-    display: flex; align-items: center; justify-content: center;
+    --po-size: 96px;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: var(--po-size);
+    height: var(--po-size);
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .14s ease, transform .18s ease;
+    background: rgba(0, 0, 0, .35);
+    border: 1px solid rgba(255,255,255,.18);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    box-shadow: 0 12px 40px rgba(0,0,0,.35);
 }
 .video-frame.paused .play-overlay { opacity: 1; }
+
+.play-overlay i {
+    font-size: 42px;
+    line-height: 1;
+    display: block;
+}
+
+.play-overlay i.bx-play { transform: translateX(2px); }
+
+.video-frame.tap-feedback .play-overlay {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.06);
+}
+
+@media (max-width: 600px) {
+  .play-overlay { --po-size: 76px; }
+  .play-overlay i { font-size: 34px; }
+}
 
 /* Infos (Texto dentro do ) */
 .video-info-overlay {
@@ -5831,6 +5893,63 @@ body.dark-mode {
         height: 100vh;
         aspect-ratio: auto;
         border-radius: 0;
+    }
+}
+
+/* =========================================================
+   FEED (VÍDEOS CURTOS) — Ajustes de área do vídeo (iOS/Android)
+   Objetivo: vídeo realmente "tela cheia" sem ficar por baixo do header/bottom-nav
+   e com overlays (ações/caption) respeitando safe-area.
+   ========================================================= */
+
+@media (max-width: 900px) {
+    body.page-feed .feed-main-container {
+        height: auto;
+        min-height: calc(100svh - var(--navbar-height-mobile) - var(--bottom-nav-height));
+        padding-top: var(--navbar-height-mobile);
+        padding-bottom: var(--bottom-nav-height);
+        overflow: hidden;
+    }
+
+    body.page-feed #containerReels.reels-scroll-container {
+        height: calc(100svh - var(--navbar-height-mobile) - var(--bottom-nav-height));
+        overscroll-behavior: contain;
+    }
+
+    body.page-feed .reel-page {
+        height: calc(100svh - var(--navbar-height-mobile) - var(--bottom-nav-height));
+        align-items: stretch;
+    }
+
+    body.page-feed .reels-layout,
+    body.page-feed .video-frame {
+        width: 100%;
+        height: 100%;
+    }
+
+    body.page-feed .video-frame {
+        border-radius: 0;
+        box-shadow: none;
+        background: #000;
+    }
+
+    body.page-feed .video-frame::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background: linear-gradient(to bottom, rgba(0,0,0,0.28), rgba(0,0,0,0) 22%);
+        pointer-events: none;
+        z-index: 3;
+    }
+
+    body.page-feed .actions-column {
+        right: 12px;
+        bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 16px);
+    }
+
+    body.page-feed .video-info-overlay {
+        padding: 18px;
+        padding-bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px) + 18px);
     }
 }
 
@@ -6486,8 +6605,27 @@ body.dark-mode {
 
 /* Botão Fechar (X) */
 .btn-close-modal {
-    position: absolute; top: 10px; right: 20px; color: white;
-    font-size: 2rem; cursor: pointer; z-index: 10000;
+    position: absolute;
+    top: 10px;
+    right: 20px;
+    z-index: 10000;
+
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid rgba(255,255,255,0.28);
+    border-radius: 999px;
+    background: rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(6px);
+
+    color: #fff;
+    font-size: 26px;
+    line-height: 1;
+    cursor: pointer;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 /* Responsividade Mobile */
@@ -7273,6 +7411,34 @@ body.dark-mode {
     z-index: 20003;
 }
 
+/* Botão: esconder/mostrar comentários */
+#modalPostDetalhe .btn-toggle-comments {
+    position: absolute;
+    top: 20px;
+    left: 30px;
+    z-index: 20003;
+
+    padding: 10px 14px;
+    border-radius: 999px;
+    border: 1px solid rgba(255,255,255,0.28);
+    background: rgba(2, 6, 23, 0.45);
+    backdrop-filter: blur(6px);
+
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.85rem;
+    cursor: pointer;
+}
+
+/* Modo: somente mídia */
+#modalPostDetalhe.comments-hidden .modal-info-area {
+    display: none !important;
+}
+#modalPostDetalhe.comments-hidden .modal-media-area {
+    flex: 1 !important;
+    height: 100% !important;
+}
+
 #modalPlayerVideo .btn-close-modal-fixed {
     position: absolute;
     top: 20px;
@@ -7304,6 +7470,13 @@ body.dark-mode {
     #modalPostDetalhe .btn-close-modal-fixed {
         top: 10px;
         right: 15px;
+    }
+
+    #modalPostDetalhe .btn-toggle-comments {
+        top: 10px;
+        left: 15px;
+        padding: 8px 12px;
+        font-size: 0.8rem;
     }
 
     .typing-container {
@@ -11799,6 +11972,94 @@ body.menu-ativo #overlay-menu{
   .card-premium-v2 .btn-solicitar{
     justify-content:center;
     width:100%;
+  }
+}
+
+/* Ajuste fino mobile (deixa o card menos alto e com hierarquia melhor) */
+@media (max-width: 520px){
+  .card-premium-v2 .cp-v2-top{
+    padding:10px 12px 4px;
+    align-items:center;
+  }
+
+  .card-premium-v2 .cp-avatar{
+    width:32px !important;
+    height:32px !important;
+  }
+
+  .card-premium-v2 .cp-v2-handle{
+    font-size:.95rem;
+  }
+
+  .card-premium-v2 .cp-v2-badges{
+    margin-top:3px;
+    flex-wrap:nowrap;
+    overflow:hidden;
+  }
+
+  .card-premium-v2 .cp-v2-badge{
+    font-size:.56rem;
+    padding:3px 7px;
+    white-space:nowrap;
+  }
+
+  /* Sem avaliações = não ocupa espaço no mobile */
+  .card-premium-v2 .cp-v2-rating.is-empty{ display:none; }
+
+  .card-premium-v2 .cp-v2-rating{
+    padding:0 12px 2px;
+  }
+
+  .card-premium-v2 .cp-mini-rating{
+    font-size:.72rem;
+  }
+
+  .card-premium-v2 .cp-v2-body{
+    padding:2px 12px 8px;
+  }
+
+  .card-premium-v2 .cp-v2-title{
+    font-size:.98rem;
+  }
+
+  .card-premium-v2 .cp-v2-location,
+  .card-premium-v2 .cp-v2-desc{
+    font-size:.72rem;
+  }
+
+  /* Imagem com recorte mais baixo no mobile */
+  .card-premium-v2 .cp-v2-mediaWrap{
+    aspect-ratio:16/10;
+  }
+
+  .card-premium-v2 .cp-v2-footer{
+    padding:8px 12px 10px;
+    gap:6px;
+  }
+
+  /* Tags em uma linha (sem aumentar altura do card) */
+  .card-premium-v2 .cp-v2-tags{
+    flex-wrap:nowrap;
+    overflow:hidden;
+  }
+
+  .card-premium-v2 .cp-v2-tag{
+    font-size:.68rem;
+    padding:4px 7px;
+    flex-shrink:0;
+  }
+
+  .card-premium-v2 .cp-v2-actionRow{
+    gap:10px;
+  }
+
+  .card-premium-v2 .cp-v2-priceValue{
+    font-size:1.08rem;
+  }
+
+  .card-premium-v2 .btn-solicitar{
+    min-height:44px;
+    font-size:.82rem;
   }
 }
 

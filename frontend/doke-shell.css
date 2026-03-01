@@ -16,7 +16,7 @@
 }
 
 @media (max-width:1024px){
-  html, body{ height:100%; }
+  html, body{ height:100%; max-width:100%; overflow-x:hidden; }
   :root{
     --doke-header-btn-size: 40px;
     --doke-header-icon-size: 22px;
@@ -26,6 +26,18 @@
     padding-top: var(--doke-h);
     padding-bottom: 0 !important;
 }
+
+
+/* FIX: body overflow hidden from legacy styles (style.css had body{-webkit-line-clamp... overflow:hidden})
+   Ensure pages remain scrollable under the shell. */
+  body.doke-shell-active{
+    display:block !important;
+    -webkit-line-clamp: unset !important;
+    -webkit-box-orient: initial !important;
+  }
+  body.doke-shell-active:not(.doke-menu-open):not(.doke-search-open):not(.doke-modal-open){
+    overflow-y:auto !important;
+  }
 
   /* Garante area clicavel/rolavel acima do bottom nav em qualquer página */
   body.doke-shell-active main{
@@ -402,6 +414,10 @@
     background: var(--doke-bg);
     display:none;
     overflow:auto;
+    overflow-x:hidden;
+    /* iOS/Safari: reduz flicker durante resize do viewport (teclado/address-bar) */
+    transform: translateZ(0);
+    will-change: transform;
     /* mais confortável no iOS (safe-area) e evita "colar" no topo */
     padding: calc(12px + env(safe-area-inset-top)) 14px calc(var(--doke-btm) + 18px + env(safe-area-inset-bottom));
   }
@@ -481,7 +497,33 @@
 
   /* Mobile: deixa a barra de busca mais "app-like" (menos pesada) */
   @media (max-width: 520px){
-    .doke-search-sheet{ padding: 12px; border-radius: 20px; }
+    /* No mobile, o overlay vira uma tela full-height (mais "app") */
+    .doke-search-overlay{
+      padding: env(safe-area-inset-top) 0 calc(var(--doke-btm) + env(safe-area-inset-bottom));
+      background: #fff;
+      overflow: hidden;
+    }
+    .doke-search-sheet{
+      padding: 12px 14px 14px;
+      border-radius: 0;
+      border: none;
+      box-shadow: none;
+      /* 100dvh pode oscilar no iOS quando o teclado abre/fecha; svh é mais estável */
+      height: calc(100vh - env(safe-area-inset-top) - var(--doke-btm) - env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      /* iOS: evite múltiplos scrollers (pisca/trava os indicadores) */
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      background: #fff;
+      transform: translateZ(0);
+    }
+
+    @supports (height: 100svh){
+      .doke-search-sheet{
+        height: calc(100svh - env(safe-area-inset-top) - var(--doke-btm) - env(safe-area-inset-bottom));
+      }
+    }
     .doke-search-top{ gap: 8px; }
     .doke-search-back{
       width:44px;
@@ -501,8 +543,17 @@
     .doke-search-go .bx{ color: var(--doke-green); font-size:20px; }
     .doke-search-go span{ display:none; }
     .doke-search-input{ height:48px; border-radius: 18px; }
-    .doke-chip-row{ padding: 2px 2px 6px; scroll-snap-type: x mandatory; }
+    .doke-chip-row{
+      padding: 6px 2px 10px;
+      scroll-snap-type: x mandatory;
+    }
     .doke-chip{ scroll-snap-align: start; }
+    /* No mobile o scroll fica no "sheet" inteiro (um scroller só) */
+    .doke-recent,
+    .doke-search-results{
+      overflow: visible;
+      -webkit-overflow-scrolling: auto;
+    }
   }
   .doke-chip-row{
     display:flex;
@@ -531,7 +582,7 @@
     border-color: rgba(11,119,104,.30);
     color: var(--doke-green);
   }
-  .doke-recent{
+  .doke-recent{ margin-top:10px; 
     margin-top: 12px;
     padding: 12px;
     border-radius: 16px;
@@ -664,6 +715,78 @@
     overflow: hidden;
     text-overflow: ellipsis;
   }
+
+  /* Resultados: Serviços/Anúncios (mobile drawer search) */
+  .doke-ad-result{
+    width:100%;
+    border: none;
+    background: transparent;
+    border-radius: 14px;
+    padding: 10px 8px;
+    display:grid;
+    grid-template-columns: 64px minmax(0, 1fr) auto;
+    align-items:center;
+    gap: 12px;
+    text-align:left;
+    cursor:pointer;
+    min-width: 0;
+  }
+  .doke-ad-result:hover{ background: rgba(11,119,104,.08); }
+  .doke-ad-thumb{
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    overflow:hidden;
+    background: rgba(2,6,23,.06);
+    border: 1px solid rgba(2,6,23,.08);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .doke-ad-thumb img{ width:100%; height:100%; object-fit: cover; display:block; }
+  .doke-ad-thumb.no-img{ color: var(--doke-muted); }
+  .doke-ad-thumb .bx{ font-size: 22px; }
+  .doke-ad-main{ min-width:0; display:grid; gap:3px; }
+  .doke-ad-main strong{
+    font-size: 14px;
+    color: var(--doke-text);
+    line-height: 1.15;
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .doke-ad-main small{
+    font-size: 12px;
+    color: var(--doke-muted);
+    white-space: nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .doke-ad-side{
+    display:flex;
+    flex-direction: column;
+    align-items:flex-end;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+  .doke-ad-price{
+    font-size: 12px;
+    font-weight: 900;
+    color: var(--doke-text);
+    white-space: nowrap;
+    max-width: 120px;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  .doke-ad-pill{
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--doke-green);
+    background: rgba(11,119,104,.12);
+    border: 1px solid rgba(11,119,104,.24);
+    border-radius: 999px;
+    padding: 3px 8px;
+  }
   .doke-search-empty{
     display:flex;
     align-items:center;
@@ -752,3 +875,18 @@
   }
 }
 
+
+
+/* Alias: markup uses .doke-chipRow (camelCase). Keep same styling as .doke-chip-row. */
+.doke-chipRow{ display:flex; gap:10px; overflow:auto; padding-bottom:4px; -webkit-overflow-scrolling:touch; }
+
+/* ============================================================
+   PATCH 2026-02-28F
+   Pesquisa (mobile): garante ordem correta (Filtros acima de Recentes)
+   ============================================================ */
+@media (max-width: 520px){
+  .doke-search-sheet{ display:flex !important; flex-direction:column !important; }
+  .doke-chipRow{ order: 2 !important; }
+  .doke-recent, .doke-recentWrap, .doke-recentCard{ order: 3 !important; }
+  .doke-search-results{ order: 4 !important; }
+}

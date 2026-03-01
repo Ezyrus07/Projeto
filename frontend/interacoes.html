@@ -21,6 +21,24 @@
   <link rel="stylesheet" href="page-interacoes.css"/>
 
   <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
+
+<style>
+/* Botão de esconder comentários (modal publicação) */
+#modalPostDetalhe .btn-toggle-comments{
+  margin-left: auto;
+  border: 1px solid rgba(2,6,23,.12);
+  background: #fff;
+  color:#0f172a;
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 12px;
+}
+#modalPostDetalhe.comments-hidden .modal-info-area{ display:none !important; }
+#modalPostDetalhe.comments-hidden .modal-media-area{ width:100% !important; }
+#modalPostDetalhe.comments-hidden .modal-content{ max-width: 100% !important; }
+</style>
+
 </head>
 
 <body data-page="interacoes">
@@ -74,6 +92,7 @@
 <img decoding="async" id="reelAvatar" loading="lazy" src="" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;"/>
 <div id="reelUsername" style="font-weight: bold; font-size: 0.95rem;">@usuário</div>
 </div>
+  <button class="btn-toggle-comments" type="button" onclick="toggleComentariosModalPost()">Esconder comentários</button>
 </div>
 <div class="modal-comments-section" id="reelCommentsBody">
 <div id="reelDesc" style="font-size: 0.9rem; margin-bottom: 20px;"></div>
@@ -101,6 +120,7 @@
 <div class="modal-overlay" id="modalPostDetalhe" onclick="fecharModalPost(event)">
 <div class="modal-content" onclick="event.stopPropagation()">
 <button aria-label="Fechar publicação" class="btn-close-modal btn-close-modal-fixed" onclick="fecharModalPostForce()" type="button">×</button>
+<button type="button" class="btn-toggle-comments" aria-label="Esconder comentários" onclick="toggleComentariosPostModal(this)">Esconder comentários</button>
 <div class="modal-media-area" id="modalMediaContainer"></div>
 <div class="modal-info-area">
 <div class="modal-header">
@@ -127,6 +147,16 @@
 </div>
 </div>
 </div>
+
+<script>
+  window.toggleComentariosPostModal = function(btn){
+    const modal = document.getElementById('modalPostDetalhe');
+    if(!modal) return;
+    modal.classList.toggle('comments-hidden');
+    const hidden = modal.classList.contains('comments-hidden');
+    if(btn) btn.textContent = hidden ? 'Mostrar comentários' : 'Esconder comentários';
+  };
+</script>
 
 <script src="doke-shell.js"></script>
   <script src="script.js"></script>
