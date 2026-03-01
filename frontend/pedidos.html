@@ -1393,6 +1393,64 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     flex:0 0 auto !important;
   }
 }
+
+/* =========================================================
+   PATCH 2026-03-01M
+   Pedidos mobile: tooltip do (i) sem corte + filtros visíveis
+   ========================================================= */
+@media (max-width: 768px){
+  body[data-page="pedidos"] .toolbar{
+    grid-template-columns: 1fr !important;
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .toolbar-actions{
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: visible !important;
+    flex-wrap: wrap !important;
+    align-items: flex-start !important;
+    padding-bottom: 0 !important;
+  }
+
+  body[data-page="pedidos"] .toolbar-actions .btn-ui{
+    flex: 0 0 auto !important;
+  }
+
+  body[data-page="pedidos"] .filters.filters-collapsible.show{
+    display: flex !important;
+    width: 100% !important;
+    margin-top: 8px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    scrollbar-width: none !important;
+  }
+
+  body[data-page="pedidos"] .filters.filters-collapsible.show::-webkit-scrollbar{
+    display: none !important;
+  }
+
+  body[data-page="pedidos"] .panel{
+    overflow: visible !important;
+  }
+
+  body[data-page="pedidos"] .need-info::after{
+    left: auto !important;
+    right: 0 !important;
+    min-width: min(72vw, 220px) !important;
+    max-width: min(86vw, 280px) !important;
+  }
+}
+
+@media (max-width: 1023px){
+  body[data-page="pedidos"] .toolbar-actions .filters.filters-inline.show{
+    flex: 1 0 100% !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-top: 8px !important;
+  }
+}
 </style>
 </head>
 <body data-page="pedidos">
@@ -3478,7 +3536,7 @@ function openInlineChat(p){
 
       function syncFiltersPlacement(){
         if(!el.filtersBar || !el.toolbarActions || !filtersDock.parent) return;
-        const compact = window.matchMedia('(max-width: 1023px)').matches;
+        const compact = window.matchMedia('(min-width: 769px) and (max-width: 1023px)').matches;
         if(compact){
           if(el.filtersBar.parentElement !== el.toolbarActions){
             el.toolbarActions.appendChild(el.filtersBar);

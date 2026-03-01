@@ -134,6 +134,93 @@
             border-radius: 10px; font-weight: 700; cursor: pointer;
         }
 
+        .pay-toast-wrap{
+            position: fixed;
+            right: 18px;
+            bottom: 18px;
+            z-index: 12000;
+            display: grid;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .pay-toast{
+            min-width: 260px;
+            max-width: 420px;
+            border-radius: 14px;
+            border: 1px solid rgba(15,23,42,0.1);
+            background: #fff;
+            box-shadow: 0 16px 34px rgba(15,23,42,0.16);
+            padding: 12px 14px;
+            color: #0f172a;
+            font-weight: 600;
+            transform: translateY(8px);
+            opacity: 0;
+            animation: payToastIn .18s ease forwards;
+        }
+        .pay-toast.success{ border-left: 4px solid #0b7768; }
+        .pay-toast.error{ border-left: 4px solid #dc2626; }
+        .pay-toast.warn{ border-left: 4px solid #d97706; }
+        @keyframes payToastIn{
+            to{ transform: translateY(0); opacity: 1; }
+        }
+
+        .pay-confirm-overlay{
+            position: fixed;
+            inset: 0;
+            background: rgba(2,6,23,.45);
+            backdrop-filter: blur(2px);
+            z-index: 12010;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+        .pay-confirm-modal{
+            width: min(420px, 100%);
+            background: #fff;
+            border-radius: 16px;
+            border: 1px solid rgba(15,23,42,.1);
+            box-shadow: 0 20px 42px rgba(15,23,42,.22);
+            overflow: hidden;
+        }
+        .pay-confirm-head{
+            padding: 16px 18px 8px;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #0f2233;
+        }
+        .pay-confirm-body{
+            padding: 0 18px 12px;
+            color: #475569;
+            line-height: 1.45;
+        }
+        .pay-confirm-actions{
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            padding: 12px 18px 16px;
+            border-top: 1px solid #eef2f7;
+        }
+        .pay-btn{
+            min-width: 112px;
+            height: 40px;
+            border-radius: 10px;
+            font-weight: 700;
+            border: 1px solid transparent;
+            cursor: pointer;
+        }
+        .pay-btn-cancel{
+            background: #fff;
+            color: #334155;
+            border-color: #d6dce5;
+        }
+        .pay-btn-danger{
+            background: #dc2626;
+            color: #fff;
+        }
+        .pay-btn-cancel:hover{ background:#f8fafc; }
+        .pay-btn-danger:hover{ background:#b91c1c; }
+
         /* --- SEÃƒÂ‡ÃƒÂƒÃ†Â’O 3: HISTÃƒÂ“RICO --- */
         .history-list { max-height: 300px; overflow-y: auto; }
         .history-item {
@@ -449,9 +536,49 @@
         );
 
         const showInfo = (msg) => {
-            if (window.dokeDelight?.toast) window.dokeDelight.toast(msg);
-            else alert(msg);
+            const wrapId = "payToastWrap";
+            let wrap = document.getElementById(wrapId);
+            if (!wrap) {
+                wrap = document.createElement("div");
+                wrap.id = wrapId;
+                wrap.className = "pay-toast-wrap";
+                document.body.appendChild(wrap);
+            }
+            const text = String(msg || "").toLowerCase();
+            const type = (text.includes("nao foi") || text.includes("erro") || text.includes("inv")) ? "error" : "success";
+            const toast = document.createElement("div");
+            toast.className = `pay-toast ${type}`;
+            toast.textContent = msg || "Ação concluída.";
+            wrap.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = "0";
+                toast.style.transform = "translateY(6px)";
+                toast.style.transition = "all .2s ease";
+            }, 2800);
+            setTimeout(() => toast.remove(), 3200);
         };
+
+        const confirmRemoveCard = () => new Promise((resolve) => {
+            const overlay = document.createElement("div");
+            overlay.className = "pay-confirm-overlay";
+            overlay.innerHTML = `
+              <div class="pay-confirm-modal" role="dialog" aria-modal="true" aria-label="Confirmar remoção de cartão">
+                <div class="pay-confirm-head">Remover cartão</div>
+                <div class="pay-confirm-body">Deseja remover este cartão salvo?</div>
+                <div class="pay-confirm-actions">
+                  <button type="button" class="pay-btn pay-btn-cancel" data-act="cancel">Cancelar</button>
+                  <button type="button" class="pay-btn pay-btn-danger" data-act="ok">Remover</button>
+                </div>
+              </div>
+            `;
+            const finish = (val) => { overlay.remove(); resolve(val); };
+            overlay.addEventListener("click", (e) => {
+                if (e.target === overlay) finish(false);
+            });
+            overlay.querySelector('[data-act="cancel"]')?.addEventListener("click", () => finish(false));
+            overlay.querySelector('[data-act="ok"]')?.addEventListener("click", () => finish(true));
+            document.body.appendChild(overlay);
+        });
 
         const guessBrand = (numero) => {
             if (/^4/.test(numero)) return { brand: "Visa", icon: "bxl-visa" };
@@ -611,8 +738,11 @@ listaCartoesLocal = readCards();
                 await persistCards(listaCartoesLocal);
 
                 renderizarCartoes();
-                toggleFormCartao();
                 limparForm();
+                const form = document.getElementById("form-cartao");
+                if (form && form.style.display === "block") {
+                    toggleFormCartao();
+                }
                 showInfo("CartÃ£o salvo com sucesso.");
             } catch (error) {
                 console.error(error);
@@ -645,6 +775,11 @@ listaCartoesLocal = readCards();
                 await persistCards(listaCartoesLocal);
 
                 renderizarCartoes();
+                limparForm();
+                const form = document.getElementById("form-cartao");
+                if (form && form.style.display === "block") {
+                    toggleFormCartao();
+                }
                 showInfo("Cartao teste salvo com sucesso.");
             } catch (error) {
                 console.error(error);
@@ -658,7 +793,8 @@ listaCartoesLocal = readCards();
         };
 
         window.removerCartaoReal = async function(id) {
-            if (!confirm("Remover este cartÃ£o?")) return;
+            const ok = await confirmRemoveCard();
+            if (!ok) return;
 
             try {
                 listaCartoesLocal = listaCartoesLocal.filter((c) => c.id !== id);
