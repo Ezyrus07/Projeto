@@ -1498,15 +1498,6 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
 <div class="chat-panel-toolbar">
 <div class="chat-panel-title" id="chatPanelTitle"><i class="bx bx-message-square-detail"></i><span>Chat do pedido</span></div>
 <div class="chat-panel-controls">
-<div class="chat-size-controls" id="chatSizeControls">
-<button aria-label="Diminuir largura do chat" class="chat-control-btn" id="chatNarrowBtn" title="Diminuir largura" type="button">
-<i class="bx bx-chevron-left"></i>
-</button>
-<span aria-hidden="true" class="chat-width-readout" id="chatWidthLabel">--</span>
-<button aria-label="Aumentar largura do chat" class="chat-control-btn" id="chatWidenBtn" title="Aumentar largura" type="button">
-<i class="bx bx-chevron-right"></i>
-</button>
-</div>
 <button aria-label="Expandir chat" aria-pressed="false" class="chat-control-btn" id="chatExpandBtn" title="Expandir chat" type="button">
 <i class="bx bx-expand-alt"></i>
 </button>
@@ -1866,7 +1857,11 @@ function displayHandle(p){
       function isAllowedChatIframeLocation(href){
         const src = String(href || '').toLowerCase();
         if(!src || src === 'about:blank') return true;
-        return src.includes('/mensagens.html') || /chat\.html(\?|#|$)/i.test(src);
+        const isChatPage = src.includes('/mensagens.html') || /chat\.html(\?|#|$)/i.test(src);
+        if(!isChatPage) return false;
+        // Garante que permaneça no modo embed (sem shell/sidebar) dentro do painel de pedidos.
+        const hasEmbedFlag = src.includes('embed=1') || src.includes('noshell=1') || src.includes('from=pedidos') || src.includes('origin=pedido');
+        return hasEmbedFlag;
       }
 
       function ensureIframeLockedInChat(){
@@ -1892,9 +1887,11 @@ function displayHandle(p){
         try{
           const doc = el.chatFrame.contentDocument || el.chatFrame.contentWindow?.document;
           if(!doc || !doc.head) return;
-          if(doc.getElementById('pedidosChatCompactPatch')) return;
+          try { doc.getElementById('pedidosChatCompactPatch')?.remove(); } catch (_) {}
+          try { doc.getElementById('pedidosChatCompactPatchV2')?.remove(); } catch (_) {}
+          if(doc.getElementById('pedidosChatCompactPatchV3')) return;
           const style = doc.createElement('style');
-          style.id = 'pedidosChatCompactPatch';
+          style.id = 'pedidosChatCompactPatchV3';
           style.textContent = `
             html, body{
               height:100% !important;
@@ -1902,16 +1899,34 @@ function displayHandle(p){
               padding:0 !important;
               overflow:hidden !important;
             }
+            body[data-page="chat"]{
+              --chat-top-offset: 0px !important;
+              --doke-h: 0px !important;
+              --navbar-height-mobile: 0px !important;
+              --doke-btm-real: 0px !important;
+              --bottom-nav-height: 0px !important;
+            }
+            /* Nunca mostrar shell/layout externo dentro do iframe do pedidos */
+            .sidebar-icones,
+            .navbar-desktop,
+            .navbar-mobile,
+            .bottom-nav,
+            .doke-mobile-header,
+            #overlay-menu{
+              display:none !important;
+              visibility:hidden !important;
+              pointer-events:none !important;
+            }
             body[data-page="chat"] .messenger-layout{
-              position:relative !important;
+              position:fixed !important;
               inset:0 !important;
-              margin:0 !important;
-              margin-top:0 !important;
-              margin-left:0 !important;
               top:0 !important;
               right:0 !important;
               bottom:0 !important;
               left:0 !important;
+              margin:0 !important;
+              margin-top:0 !important;
+              margin-left:0 !important;
               width:100% !important;
               height:100% !important;
               max-height:none !important;
@@ -1925,6 +1940,8 @@ function displayHandle(p){
               position:relative !important;
               top:0 !important;
               left:0 !important;
+              margin-top:0 !important;
+              padding-top:0 !important;
               width:100% !important;
               height:100% !important;
               transform:none !important;

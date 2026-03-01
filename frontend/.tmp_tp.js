@@ -72,7 +72,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         (error.code ? String(error.code) : null)
       ].filter(Boolean).map(x=>String(x).toLowerCase());
       const msg = parts.join(' | ');
-      // c�digos comuns do PostgREST quando coluna/tabela n�o existe: PGRST204
+      // cdigos comuns do PostgREST quando coluna/tabela no existe: PGRST204
       if(msg.includes('pgrst204')) return true;
       if(needle && (msg.includes(`could not find the '${needle}' column`) || msg.includes(`could not find the "${needle}" column`) || msg.includes(`column "${needle}" does not exist`) || msg.includes(`column '${needle}' does not exist`))) return true;
       return false;
@@ -205,7 +205,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       if(!uid) return null;
       // tenta uid primeiro, depois id (alguns projetos salvam id = auth.uid)
       const { data, error } = await sb
-        .from("usu�rios")
+        .from("usurios")
         .select("id, uid, user, nome, email")
         .or(`uid.eq.${uid},id.eq.${uid}`)
         .maybeSingle();
@@ -217,7 +217,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
 
     async function uploadDocumento(uid, file){
       if(!file) return null;
-      if(!sb?.storage) throw new Error("Supabase Storage n�o dispon�vel.");
+      if(!sb?.storage) throw new Error("Supabase Storage no disponvel.");
       const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
       const path = `validacao/${uid}/${Date.now()}.${ext}`;
       const { error: upErr } = await sb.storage.from("perfil").upload(path, file, {
@@ -267,7 +267,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           cpfEl.classList.add("locked-field");
         }
 
-        // Preview do documento j� enviado
+        // Preview do documento j enviado
         if(row.identidade_url){
           const img = document.getElementById("tpDocumentoPreview");
           const hint = document.getElementById("tpDocumentoHint");
@@ -277,7 +277,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
             img.style.display = "block";
           }
           if(hint){
-            hint.textContent = "Documento j� enviado";
+            hint.textContent = "Documento j enviado";
             hint.style.display = "block";
           }
           if(zone){
@@ -289,8 +289,8 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       }
     }
 
-    // Impede letras/s�mbolos e aplica m�scara a cada digita��o/paste.
-    // (Antes este helper n�o existia e quebrava todo o script, por isso nada funcionava.)
+    // Impede letras/smbolos e aplica mscara a cada digitao/paste.
+    // (Antes este helper no existia e quebrava todo o script, por isso nada funcionava.)
     function bindNumericGuards(el, maskFn){
       if(!el) return;
 
@@ -299,7 +299,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         el.value = maskFn ? maskFn(v) : v;
       };
 
-      // Evita caracteres n�o num�ricos entrando antes do input.
+      // Evita caracteres no numricos entrando antes do input.
       el.addEventListener('beforeinput', (e)=>{
         if(!e.data) return; // deletes etc.
         if(/\D/.test(e.data)) e.preventDefault();
@@ -312,7 +312,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           'Backspace','Delete','ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Tab','Home','End','Enter'
         ];
         if(allowed.includes(k)) return;
-        // Permite apenas d�gitos
+        // Permite apenas dgitos
         if(!/^\d$/.test(k)) e.preventDefault();
       });
 
@@ -320,7 +320,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       el.addEventListener('input', apply);
       el.addEventListener('blur', apply);
 
-      // aplica j� ao carregar
+      // aplica j ao carregar
       apply();
     }
 
@@ -348,14 +348,14 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
         const data = await res.json();
         if(data?.erro) {
-          toast("CEP n�o encontrado. Verifique e tente novamente.", "error");
+          toast("CEP no encontrado. Verifique e tente novamente.", "error");
           return;
         }
         document.getElementById("tpRua").value = data.logradouro || "";
         document.getElementById("tpBairro").value = data.bairro || "";
         document.getElementById("tpCidade").value = data.localidade || "";
         document.getElementById("tpUf").value = (data.uf || "").toUpperCase();
-        toast("Endere�o preenchido pelo CEP.", "success");
+        toast("Endereo preenchido pelo CEP.", "success");
         try{
           if(window.atualizarTelaCep){
             window.atualizarTelaCep({
@@ -368,7 +368,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         }catch(_e){}
       } catch(e) {
         console.warn("Erro CEP", e);
-        toast("N�o foi poss�vel buscar o CEP agora.", "error");
+        toast("No foi possvel buscar o CEP agora.", "error");
       }
     }
 
@@ -466,7 +466,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       if(!id) return null;
       return {
         id,
-        apelido: String(addr.apelido || addr.nome || addr.label || `Endere�o ${idx + 1}`).trim(),
+        apelido: String(addr.apelido || addr.nome || addr.label || `Endereo ${idx + 1}`).trim(),
         cep: String(addr.cep || "").trim(),
         rua: String(addr.rua || addr.logradouro || "").trim(),
         numero: String(addr.numero || "").trim(),
@@ -499,7 +499,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         addr.bairro,
         addr.cidade ? `${addr.cidade}${addr.uf ? `/${addr.uf}` : ""}` : "",
         addr.cep ? `CEP ${maskCEP(addr.cep)}` : ""
-      ].filter(Boolean).join(" � ");
+      ].filter(Boolean).join("  ");
     }
 
     function getSelectedAddressId(){
@@ -514,7 +514,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       if(!addr) return;
       setEnderecoFields(addr);
       if(opts.save !== false) saveSelectedAddressId(addr.id);
-      if(opts.toast !== false) toast("Endere�o aplicado.", "success");
+      if(opts.toast !== false) toast("Endereo aplicado.", "success");
     }
 
     function renderAddressCards(){
@@ -525,9 +525,9 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
       const list = loadAddressBook();
       const selectedId = getSelectedAddressId();
       if(!list.length){
-        wrap.innerHTML = '<div class="anr-address-empty">Nenhum endere�o salvo ainda.</div>';
+        wrap.innerHTML = '<div class="anr-address-empty">Nenhum endereo salvo ainda.</div>';
         if(manual) manual.classList.remove("show");
-        if(toggleBtn) toggleBtn.innerHTML = "<i class='bx bx-plus-circle'></i> N�o tenho endere�o salvo";
+        if(toggleBtn) toggleBtn.innerHTML = "<i class='bx bx-plus-circle'></i> No tenho endereo salvo";
         return;
       }
       wrap.innerHTML = list.map((addr)=>{
@@ -660,7 +660,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
             setManualAddressRequired(true);
           }catch(e){
             console.warn("Geo erro", e);
-            toast("N�o foi poss�vel obter sua localiza��o agora.", "error");
+            toast("No foi possvel obter sua localizao agora.", "error");
           }finally{
             btnGeo.disabled = false;
             btnGeo.innerHTML = old;
@@ -685,7 +685,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         const uid = await getAuthUid();
         const u = await resolveUsuario(uid);
         if(!u || !uid){
-          toast("Fa�a login para continuar.", "error");
+          toast("Faa login para continuar.", "error");
           return;
         }
 
@@ -698,7 +698,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         const cidade = (document.getElementById("tpCidade")?.value || "").trim();
         const bairro = (document.getElementById("tpBairro")?.value || "").trim();
         const rua = (document.getElementById("tpRua")?.value || "").trim();
-        const n�mero = (document.getElementById("tpNumero")?.value || "").trim();
+        const nmero = (document.getElementById("tpNumero")?.value || "").trim();
         const complemento = (document.getElementById("tpComplemento")?.value || "").trim();
         const docFile = document.getElementById("tpDocumento")?.files?.[0] || null;
 
@@ -706,14 +706,14 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
         const cpf = onlyDigits(cpfMasked);
         const cep = onlyDigits(cepMasked);
 
-        // Valida��es r�pidas
-        if(tel.length < 10){ toast("Telefone inv�lido. Use DDD + n�mero.", "error"); return; }
-        if(cpf.length !== 11){ toast("CPF inv�lido. Informe 11 d�gitos.", "error"); return; }
-        if(calcIdade(nasc) < 18){ toast("Voc� precisa ter 18 anos ou mais.", "error"); return; }
-        if(cep.length !== 8){ toast("CEP inv�lido. Informe 8 d�gitos.", "error"); return; }
-        if(uf.length !== 2){ toast("UF inv�lida.", "error"); return; }
-        if(!cidade || !bairro || !rua || !n�mero){
-          toast(manualOpen ? "Preencha o endere�o completo." : "Escolha um endere�o salvo ou abra o endere�o manual.", "error");
+        // Validaes rpidas
+        if(tel.length < 10){ toast("Telefone invlido. Use DDD + nmero.", "error"); return; }
+        if(cpf.length !== 11){ toast("CPF invlido. Informe 11 dgitos.", "error"); return; }
+        if(calcIdade(nasc) < 18){ toast("Voc precisa ter 18 anos ou mais.", "error"); return; }
+        if(cep.length !== 8){ toast("CEP invlido. Informe 8 dgitos.", "error"); return; }
+        if(uf.length !== 2){ toast("UF invlida.", "error"); return; }
+        if(!cidade || !bairro || !rua || !nmero){
+          toast(manualOpen ? "Preencha o endereo completo." : "Escolha um endereo salvo ou abra o endereo manual.", "error");
           return;
         }
         if(!docFile){ toast("Envie a foto do documento (RG ou CNH).", "error"); return; }
@@ -737,7 +737,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           cidade,
           bairro,
           rua,
-          n�mero,
+          nmero,
           complemento,
           identidade_url: docUrl,
           status: "pendente",
@@ -757,9 +757,9 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           const msg = (res.error && (res.error.message || res.error.error_description) || "Erro ao salvar dados.").toString();
 
           if(msg.toLowerCase().includes("row-level security")){
-            toast("Permiss�o negada (RLS). Rode o SQL do zip para criar pol�ticas.", "error");
+            toast("Permisso negada (RLS). Rode o SQL do zip para criar polticas.", "error");
           }else if(msg.toLowerCase().includes("does not exist") || msg.toLowerCase().includes("relation")){
-            toast("Tabela profissional_validacao n�o encontrada. Rode o SQL do zip.", "error");
+            toast("Tabela profissional_validacao no encontrada. Rode o SQL do zip.", "error");
           }else if(msg.toLowerCase().includes("could not find the")){
             toast("Sua tabela profissional_validacao tem colunas diferentes. Rode o SQL do zip (ou ajuste os nomes).", "error");
           }else{
@@ -768,7 +768,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           return;
         }
 
-        // Marca usu�rio como profissional (mant�m compatibilidade com schemas antigos)
+        // Marca usurio como profissional (mantm compatibilidade com schemas antigos)
         try{
           const orQ = [];
           if(u.id) orQ.push(`id.eq.${u.id}`);
@@ -786,7 +786,7 @@ function onlyDigits(v){ return (v || "").replace(/\D/g, ""); }
           localStorage.setItem("doke_usuario_perfil", JSON.stringify(merged));
         }catch(_e){}
 
-        toast("Dados enviados! Redirecionando para criar seu an�ncio...", "success");
+        toast("Dados enviados! Redirecionando para criar seu anncio...", "success");
         completed = true;
         setTimeout(()=>{ showObrigado(); }, 900);
 

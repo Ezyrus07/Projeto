@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
@@ -17,7 +17,7 @@
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <style>
         /* ======================================================
-           ESTILOS ESPECÍFICOS DE PAGAMENTO
+           ESTILOS ESPECÃƒÂFICOS DE PAGAMENTO
            ====================================================== */
         body { background-color: #f4f6f8; }
 
@@ -164,7 +164,7 @@
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 @keyframes scaleUp { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
 
-    /* --- Cart�es salvos (pagar.html) --- */
+    /* --- CartÃ¯Â¿Â½es salvos (pagar.html) --- */
 .saved-cards-panel{
   background:#fff;
   border:1px solid #eef2f7;
@@ -262,7 +262,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N�o tem uma conta?
+                NÃ£o tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -395,14 +395,14 @@
   <div class="saved-cards-head">
     <div class="saved-cards-title">
       <i class="bx bx-wallet"></i>
-      <span>Cart�es salvos</span>
+      <span>CartÃµes salvos</span>
     </div>
     <a class="saved-cards-manage" href="pagamentos.html">Gerenciar</a>
   </div>
   <div class="saved-cards-list" id="savedCardsList"></div>
-  <div class="saved-cards-hint" id="savedCardsHint">Selecione um cart�o salvo ou preencha um novo abaixo.</div>
+  <div class="saved-cards-hint" id="savedCardsHint">Selecione um cartao salvo para concluir o pagamento.</div>
 </div>
-<div class="form-grid">
+<div class="form-grid" id="manualCardFields" style="display:none;">
 <div class="input-group full-width">
 <label>Nome impresso no cart&atilde;o</label>
 <input class="input-payment" id="cardName" maxlength="50" placeholder="Como no cart&atilde;o" type="text"/>
@@ -425,6 +425,9 @@
 <option>1x de R$ 0,00 (Sem juros)</option>
 </select>
 </div>
+</div>
+<div class="saved-cards-hint" id="savedCardsEmptyHint" style="display:none;">
+  Nenhum cartao salvo. <a class="saved-cards-manage" href="pagamentos.html">Adicionar cartao</a>
 </div>
 </div>
 <div class="pix-area" id="area-pix">
@@ -475,7 +478,7 @@
     <div class="loader-circle" id="circuloLoader"></div>
     <i class="bx bxs-check-circle success-icon" id="iconeSucesso"></i>
     <div class="payment-status-text" id="textoStatus">Processando Pagamento...</div>
-    <p id="subTextoStatus" style="color:#666;">Por favor, n�o feche esta janela.</p>
+    <p id="subTextoStatus" style="color:#666;">Por favor, nÃ£o feche esta janela.</p>
   </div>
 </div>
 </main>
@@ -484,7 +487,7 @@
     const { initializeApp } = window;
     const { getFirestore, doc, updateDoc, getDoc, getDocs, collection, query, where, orderBy, limit, addDoc } = window;
 
-    // Suas configura��es
+    // Suas configuraÃ§Ãµes
     const firebaseConfig = {
         apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
         authDomain: "doke-site.firebaseapp.com",
@@ -497,7 +500,7 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // Vari�vel global para armazenar o valor num�rico correto
+    // VariÃ¡vel global para armazenar o valor numÂ–rico correto
     let valorGlobalParaSalvar = 0;
 
     const resumoDefaults = {
@@ -594,7 +597,7 @@
             const snap = await getDoc(doc(db, "usuarios", uid));
             return snap.exists() ? (snap.data() || {}) : null;
         } catch (e) {
-            console.warn("Erro ao carregar usu�rio:", e);
+            console.warn("Erro ao carregar usuÃ¡rio:", e);
             return null;
         }
     };
@@ -629,7 +632,7 @@
         }
     };
 
-    // Fun��o de abas (Cart�o/Pix)
+    // FunÃ§Ã£o de abas (CartÃ£o/Pix)
     window.mudarMetodo = (metodo) => {
         document.querySelectorAll('.tab-method').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.credit-card-form, .pix-area').forEach(f => f.classList.remove('active'));
@@ -642,7 +645,7 @@
         }
     };
 
-    // --- CARREGAMENTO E C�LCULOS ---
+    // --- CARREGAMENTO E CÃLCULOS ---
     window.onload = function() {
         const params = new URLSearchParams(window.location.search);
         const pedidoId = params.get('pedidoId');
@@ -661,15 +664,15 @@
         let maxParcelas = parseInt(params.get('parcelas') || params.get('maxparcelas') || pagamentoTemp.parcelas) || 1;
 
         // 1. Limpeza robusta do valor (transforma "R$ 23,00" ou "23" em float 23.00)
-        // Remove tudo que n�o for n�mero ou v�rgula
+        // Remove tudo que nÃ£o for nÃºmero ou vÃ­rgula
         let valorLimpo = valorBruto.replace(/[^\d,]/g, ''); 
-        // Se tiver v�rgula, troca por ponto para o JS entender
+        // Se tiver vÃ­rgula, troca por ponto para o JS entender
         valorLimpo = valorLimpo.replace(',', '.');
         
-        // Corrige caso o n�mero venha sem centavos (ex: "23" vira 23)
+        // Corrige caso o nÃºmero venha sem centavos (ex: "23" vira 23)
         // Mas se vier "23.00" (milhar) precisa tratar. 
-        // Assumindo padr�o brasileiro: ultimos 2 digitos s�o centavos se tiver pontua��o?
-        // Simplifica��o: Se o valor veio do prompt do script.js?v=20260218v60, ele est� formatado como "23,00".
+        // Assumindo padrÃ£o brasileiro: ultimos 2 digitos sÃ³o centavos se tiver pontuaÃ§Ã£o?
+        // SimplificaÃ§Ã£o: Se o valor veio do prompt do script.js?v=20260218v60, ele estÃ¡ formatado como "23,00".
         
         valorGlobalParaSalvar = parseFloat(valorLimpo);
         if (isNaN(valorGlobalParaSalvar)) valorGlobalParaSalvar = 0;
@@ -692,7 +695,7 @@
             }
         }
 
-        // Atualiza bot�o
+        // Atualiza botÃ£o
         const btnConfirmar = document.getElementById('btn-finalizar');
         if (btnConfirmar) {
             btnConfirmar.innerHTML = `Pagar ${valorFormatado}`;
@@ -720,7 +723,7 @@
                 if (error) return false;
                 const user = data?.user || null;
                 if (!user) return false;
-                const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "Usu�rio");
+                const nomeFallback = user.user_metadata?.nome || (user.email ? user.email.split('@')[0] : "UsuÃ¡rio");
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify({
                     nome: nomeFallback,
                     user: user.user_metadata?.user || nomeFallback,
@@ -908,7 +911,7 @@
             }
         }
 
-        // M�scaras visuais do cart�o
+        // MÃªscaras visuais do cartÃ£o
         document.getElementById('cardNumber')?.addEventListener('input', (e) => {
             let v = e.target.value.replace(/\D/g, '');
             v = v.replace(/(\d{4})(?=\d)/g, '$1 ');
@@ -923,22 +926,30 @@
             e.target.value = e.target.value.replace(/\D/g, '');
         });
 
-                // --- CART�ES SALVOS (localStorage) ---
+                // --- CARTÃ•ES SALVOS (localStorage) ---
         const initSavedCardsUI = () => {
             const panel = document.getElementById('savedCardsPanel');
             const listEl = document.getElementById('savedCardsList');
             const hintEl = document.getElementById('savedCardsHint');
+            const emptyHintEl = document.getElementById('savedCardsEmptyHint');
             const formEl = document.getElementById('form-cartao');
+            const manualFieldsEl = document.getElementById('manualCardFields');
 
             if (!panel || !listEl || !formEl) return;
 
             const cards = window.DokePayments?.getCards ? window.DokePayments.getCards() : [];
             if (!cards.length) {
                 panel.style.display = 'none';
+                if (emptyHintEl) emptyHintEl.style.display = 'block';
+                if (manualFieldsEl) manualFieldsEl.style.display = 'none';
+                window.__dokeSelectedCardId = null;
+                window.__dokeSelectedCardMeta = null;
                 return;
             }
 
             panel.style.display = 'block';
+            if (emptyHintEl) emptyHintEl.style.display = 'none';
+            if (manualFieldsEl) manualFieldsEl.style.display = 'none';
 
             const onSelect = (card) => {
                 if (!card) return;
@@ -953,12 +964,12 @@
                     if (!el) return;
                     el.value = '';
                     el.disabled = true;
-                    el.placeholder = 'Usando cart�o salvo';
+                    el.placeholder = 'Usando cartÃ£o salvo';
                 });
 
                 if (hintEl) {
-                    const label = `${card.brand || 'Cart�o'} final ${card.last4 || '----'}`;
-                    hintEl.textContent = `Selecionado: ${label}. Para usar outro, volte em �Gerenciar�.`;
+                    const label = `${card.brand || 'CartÃ£o'} final ${card.last4 || '----'}`;
+                    hintEl.textContent = `Selecionado: ${label}. Para trocar, use "Gerenciar".`;
                 }
             };
 
@@ -973,16 +984,19 @@
                     onSelect
                 });
             }
+
+            // Seleciona o primeiro cartao automaticamente para agilizar o pagamento.
+            if (cards[0]) onSelect(cards[0]);
         };
         initSavedCardsUI();
 
-        // --- L�GICA DE CONFIRMA�ÃO DE PAGAMENTO ---
+        // --- LÃ“GICA DE CONFIRMAÃ¯Â¿Â½ÃƒÂƒO DE PAGAMENTO ---
         const btnFinalizar = document.getElementById('btn-finalizar');
         if (!btnFinalizar) return;
         btnFinalizar.addEventListener('click', async () => {
             const pedidoId = params.get('pedidoId');
             
-            // 1. Valida��o ANTES de mostrar loading
+            // 1. ValidaÃ§Ã£o ANTES de mostrar loading
             if (!pedidoId) {
                 alert("Erro cr\u00EDtico: ID do pedido n\u00E3o encontrado. Volte ao chat e tente novamente.");
                 return;
@@ -993,18 +1007,14 @@
                 return;
             }
 
-            // Valida��o simples de campos do cart�o (se a aba cart�o estiver ativa)
+            // ValidaÃ§Ã£o simples de campos do cartÃ£o (se a aba cartÃ£o estiver ativa)
             const abaCartaoAtiva = document.getElementById('tab-cartao').classList.contains('active');
             const selectedCardId = window.__dokeSelectedCardId || null;
             const selectedCardMeta = window.__dokeSelectedCardMeta || null;
             const usandoCartaoSalvo = abaCartaoAtiva && !!selectedCardId;
             if (abaCartaoAtiva && !usandoCartaoSalvo) {
-                const num = document.getElementById('cardNumber').value;
-                const nome = document.getElementById('cardName').value;
-                if (num.length < 15 || nome.length < 3) {
-                    alert("Por favor, preencha os dados do cart\u00E3o corretamente.");
-                    return;
-                }
+                alert("Selecione um cartao salvo para continuar ou adicione um em Pagamentos.");
+                return;
             }
 
             // 2. Mostra Loading e Oculta Erro Anterior
@@ -1015,14 +1025,14 @@
             const subTexto = document.getElementById('subTextoStatus');
 
             overlay.style.display = 'flex';
-            circulo.style.display = 'block'; // Garante que o spinner apare�a
+            circulo.style.display = 'block'; // Garante que o spinner apareÂ–a
             icone.style.display = 'none';
             texto.innerText = "Processando Pagamento...";
             texto.style.color = "var(--cor2)";
             subTexto.innerText = "Por favor, n\u00E3o feche esta janela.";
 
             try {
-                // Simula processamento banc�rio
+                // Simula processamento bancÂ–rio
                 await new Promise(r => setTimeout(r, 2000));
 
                 // 3. Atualiza no Firebase
@@ -1040,12 +1050,12 @@
                     dataAtualizacao: new Date().toISOString()
                 });
 
-                // 4.1 Registra transa��o local (Hist�rico em Pagamentos)
+                // 4.1 Registra transaÃ§Ã£o local (HistÃ³rico em Pagamentos)
                 try {
                     const metodoAtivo = document.getElementById('tab-pix')?.classList.contains('active') ? 'pix' : 'card';
                     const cardMeta = window.__dokeSelectedCardMeta || null;
 
-                    let methodLabel = metodoAtivo === 'pix' ? 'PIX' : 'Cart�o';
+                    let methodLabel = metodoAtivo === 'pix' ? 'PIX' : 'CartÃ£o';
                     let last4 = '';
                     let brand = '';
 
@@ -1057,12 +1067,12 @@
                             const rawNum = (document.getElementById('cardNumber')?.value || '').replace(/\D/g,'');
                             last4 = rawNum.slice(-4);
                         }
-                        if (brand && last4) methodLabel = `${brand} ���� ${last4}`;
-                        else if (last4) methodLabel = `Cart�o ���� ${last4}`;
+                        if (brand && last4) methodLabel = `${brand} Â•Â•Â•Â• ${last4}`;
+                        else if (last4) methodLabel = `CartÃ£o Â•Â•Â•Â• ${last4}`;
                     }
 
                     const titulo = resumo.servico ? `Pagamento - ${resumo.servico}` : 'Pagamento';
-                    const subtitulo = resumo.profissional ? `Para ${resumo.profissional}` : 'Transa��o conclu�da';
+                    const subtitulo = resumo.profissional ? `Para ${resumo.profissional}` : 'TransaÃ§Ã£o concluÂ–da';
 
                     if (window.DokePayments?.addTransaction) {
                         window.DokePayments.addTransaction({
@@ -1075,7 +1085,7 @@
                         });
                     }
                 } catch (e) {
-                    console.warn('Falha ao registrar transa��o local:', e);
+                    console.warn('Falha ao registrar transaÃ§Ã£o local:', e);
                 }
 
                 // 4. Sucesso Visual
@@ -1115,6 +1125,8 @@
 <script src="doke-shell.js?v=20260228v48"></script>
 </body>
 </html>
+
+
 
 
 

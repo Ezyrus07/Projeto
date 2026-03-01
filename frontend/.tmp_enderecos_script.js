@@ -159,7 +159,7 @@
     if (!wrap) return;
     const filtered = applyFilter(STATE.list);
     if (!filtered.length) {
-      wrap.innerHTML = '<div class="addr-empty">Nenhum endere�o encontrado.</div>';
+      wrap.innerHTML = '<div class="addr-empty">Nenhum endereo encontrado.</div>';
       return;
     }
     wrap.innerHTML = filtered.map((addr, idx) => {

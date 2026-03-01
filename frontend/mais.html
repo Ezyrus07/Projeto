@@ -357,6 +357,16 @@
 <span class="settings-nav-text">Endereços</span>
 <i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
 </a>
+<a class="settings-nav-item" href="acompanhamento-profissional.html">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-check-shield"></i></span>
+<span class="settings-nav-text">Validação profissional</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
+<a class="settings-nav-item" href="admin-validacoes.html" id="settingsAdminValidationLink" style="display:none;">
+<span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-shield-check"></i></span>
+<span class="settings-nav-text">Painel de validacoes</span>
+<i aria-hidden="true" class="bx bx-chevron-right settings-nav-arrow"></i>
+</a>
 <a class="settings-nav-item" href="senha.html">
 <span class="settings-nav-icon"><i aria-hidden="true" class="bx bx-lock-alt"></i></span>
 <span class="settings-nav-text">Segurança e senha</span>
@@ -675,12 +685,73 @@
             input.value = v;
         }
     </script>
+<script>
+        (function () {
+            const link = document.getElementById('settingsAdminValidationLink');
+            if (!link) return;
+
+            const isAdminProfile = (profile) => {
+                const p = (profile && typeof profile === 'object') ? profile : {};
+                const role = String(p.role || p.tipo || p.perfil || '').toLowerCase().trim();
+                return (
+                    p.isAdmin === true ||
+                    p.is_admin === true ||
+                    p.admin === true ||
+                    role === 'admin' ||
+                    role === 'moderador'
+                );
+            };
+
+            const isStrictAdminByRpc = async () => {
+                const sb = window.sb || window.supabaseClient || window.supabase;
+                if (!sb?.rpc) return false;
+                try {
+                    const res = await sb.rpc('doke_is_admin');
+                    if (res?.error) return false;
+                    return res?.data === true;
+                } catch (_) {
+                    return false;
+                }
+            };
+
+            const setVisibility = async (profile) => {
+                const localAdmin = isAdminProfile(profile);
+                const rpcAdmin = await isStrictAdminByRpc();
+                const strictMenu = true;
+                const allowed = rpcAdmin || (!strictMenu && localAdmin);
+                link.style.display = allowed ? '' : 'none';
+            };
+
+            let local = {};
+            try { local = JSON.parse(localStorage.getItem('doke_usuario_perfil') || 'null') || {}; } catch (_) { local = {}; }
+            setVisibility(local);
+
+            const sb = window.sb || window.supabaseClient || window.supabase;
+            if (!sb?.auth?.getUser || !sb?.from) return;
+
+            (async () => {
+                try {
+                    const { data } = await sb.auth.getUser();
+                    const uid = data?.user?.id || '';
+                    if (!uid) return;
+                    const res = await sb.from('usuarios').select('*').or(`id.eq.${uid},uid.eq.${uid}`).limit(1);
+                    if (!res?.error && Array.isArray(res?.data) && res.data.length) {
+                        const merged = { ...local, ...res.data[0] };
+                        try { localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged)); } catch (_) {}
+                        setVisibility(merged);
+                    }
+                } catch (_) {}
+            })();
+        })();
+    </script>
 <script src="doke-toast.js"></script>
 <script src="doke-alerts.js?v=20260217v33"></script>
 <script defer="True" src="doke-config.js"></script><script defer="True" src="doke-ux.js"></script>
 <script src="doke-shell.js?v=20260228v48"></script>
-<script defer="True" src="settings-pages.js"></script></body>
+<script defer="True" src="settings-pages.js?v=20260301v02"></script></body>
 </html>
+
+
 
 
 

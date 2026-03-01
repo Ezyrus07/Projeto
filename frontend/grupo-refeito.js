@@ -238,7 +238,7 @@ async function detectAdmin(){
 function shortUid(u){
   const s = String(u||'');
   if (s.length <= 10) return s;
-  return s.slice(0,6) + 'â€¦' + s.slice(-4);
+  return s.slice(0,6) + '…' + s.slice(-4);
 }
 
 async function loadJoinRequests(){
@@ -264,7 +264,7 @@ async function loadJoinRequests(){
   }
 
   requestsPane.style.display='block';
-  requestsSub.textContent = 'Carregandoâ€¦';
+  requestsSub.textContent = 'Carregando…';
   requestsList.innerHTML = '<div style="padding:12px; color:#7a8797; font-weight:800;">Buscando solicitações pendentesâ€¦</div>';
 
   const { communityCol, userCol, statusCol } = memberSchema;
@@ -879,7 +879,7 @@ function wireRequestActions(rows){
     }catch(e){}
     if (isMuted){
       badge.classList.add('mute');
-      roleText = roleText + ' Â· Silenciado';
+      roleText = roleText + ' · Silenciado';
     }
     badge.textContent = roleText;
 

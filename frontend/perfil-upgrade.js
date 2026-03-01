@@ -2079,7 +2079,7 @@ function ensureTheme(ctx, theme){
   }
 
   function ensurePublicacoesSelectionControls(ctx){
-    const section = $('.dp-section[data-tab="publicações"]');
+    const section = $('.dp-section[data-tab="publicacoes"]');
     const header = section ? $(".dp-sectionHeader", section) : null;
     const canEdit = !!ctx?.canEdit;
 
@@ -3805,6 +3805,171 @@ function ensureTheme(ctx, theme){
     if(error) throw error;
   }
 
+  function normalizePedidoStatusLocal(v){
+    const raw = String(v || "").trim().toLowerCase();
+    if (!raw) return "pendente";
+    if (raw.includes("finaliz") || raw.includes("conclu")) return "finalizado";
+    if (raw.includes("cancel")) return "cancelado";
+    if (raw.includes("recus")) return "recusado";
+    if (raw.includes("pag")) return "pago";
+    if (raw.includes("aceit") || raw.includes("andamento")) return "aceito";
+    if (raw.includes("pend")) return "pendente";
+    return raw;
+  }
+
+  function isTruthyLike(value){
+    if (value === true || value === 1) return true;
+    const s = String(value || "").trim().toLowerCase();
+    return s === "1" || s === "true" || s === "sim" || s === "yes";
+  }
+
+  function parseDateAnySafe(v){
+    if (!v) return null;
+    if (v instanceof Date && !Number.isNaN(v.getTime())) return v;
+    if (typeof v === "number") {
+      const dNum = new Date(v);
+      return Number.isNaN(dNum.getTime()) ? null : dNum;
+    }
+    if (typeof v === "string") {
+      const t = Date.parse(v);
+      if (!Number.isNaN(t)) return new Date(t);
+      const m = v.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+      if (m) {
+        const d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+        return Number.isNaN(d.getTime()) ? null : d;
+      }
+      return null;
+    }
+    if (typeof v === "object") {
+      if (typeof v.toDate === "function") {
+        try { return v.toDate(); } catch (_) {}
+      }
+      if (typeof v.seconds === "number") {
+        const dSec = new Date(v.seconds * 1000);
+        return Number.isNaN(dSec.getTime()) ? null : dSec;
+      }
+      if (typeof v._seconds === "number") {
+        const dSec = new Date(v._seconds * 1000);
+        return Number.isNaN(dSec.getTime()) ? null : dSec;
+      }
+    }
+    return null;
+  }
+
+  async function findPendingPedidoAvaliacao(client, ctx){
+    if(!client || !client.from || !ctx?.me || !ctx?.target) return null;
+
+    const meKeys = uniqueStrings([
+      ...collectIdentityKeys(ctx.me),
+      ctx?.authUser?.id
+    ]);
+    const targetKeys = uniqueStrings([
+      ...collectIdentityKeys(ctx.target),
+      ctx?.target?.auth_uid,
+      ctx?.target?.authUid
+    ]);
+    if(!meKeys.length || !targetKeys.length) return null;
+
+    const sameAny = (arrA, arrB) => {
+      const a = new Set(uniqueStrings(arrA || []));
+      const b = uniqueStrings(arrB || []);
+      return b.some((v) => a.has(v));
+    };
+    const pickValues = (row, keys) => {
+      const vals = [];
+      if(!row || typeof row !== "object") return vals;
+      for(const k of (keys || [])){
+        const v = row?.[k];
+        if(v === undefined || v === null) continue;
+        vals.push(v);
+      }
+      return uniqueStrings(vals);
+    };
+    const getStatusFromRow = (row, statusCol) => {
+      const direct = statusCol ? row?.[statusCol] : undefined;
+      const fallback = direct ?? row?.status ?? row?.statusPedido ?? row?.status_pedido ?? row?.pedidoStatus ?? row?.pedido_status ?? row?.statusPagamento ?? row?.status_pagamento;
+      return normalizePedidoStatusLocal(fallback);
+    };
+    const getAvaliadoFromRow = (row, avaliadoCol) => {
+      const direct = avaliadoCol ? row?.[avaliadoCol] : undefined;
+      const fallback = direct ?? row?.avaliado ?? row?.pedidoAvaliado ?? row?.pedido_avaliado ?? row?.jaAvaliado ?? row?.ja_avaliado;
+      return isTruthyLike(fallback);
+    };
+    const getPedidoIdFromRow = (row) => String(row?.id || row?.pedidoId || row?.pedido_id || "").trim();
+    const isPendingForPair = (row, opts = {}) => {
+      const status = getStatusFromRow(row, opts.statusCol);
+      const avaliado = getAvaliadoFromRow(row, opts.avaliadoCol);
+      if (status !== "finalizado" || avaliado) return false;
+      const deVals = pickValues(row, [
+        opts.deCol,
+        "deUid","deuid","de_uid","clienteUid","clienteuid","cliente_uid","uidCliente","uid_cliente","cliente_id","clienteId"
+      ]);
+      const paraVals = pickValues(row, [
+        opts.paraCol,
+        "paraUid","parauid","para_uid","profissionalUid","profissionaluid","profissional_uid","prestadorUid","prestadoruid","prestador_uid","profissional_id","profissionalId","prestador_id","prestadorId"
+      ]);
+      return sameAny(deVals, meKeys) && sameAny(paraVals, targetKeys);
+    };
+
+    const deCol = await detectColumn(client, "pedidos", [
+      "deUid","deuid","de_uid","clienteUid","clienteuid","cliente_uid","uidCliente","uid_cliente","cliente_id","clienteId"
+    ]);
+    const paraCol = await detectColumn(client, "pedidos", [
+      "paraUid","parauid","para_uid","profissionalUid","profissionaluid","profissional_uid","prestadorUid","prestadoruid","prestador_uid","profissional_id","profissionalId","prestador_id","prestadorId"
+    ]);
+
+    const statusCol = await detectColumn(client, "pedidos", [
+      "status","statusPedido","status_pedido","pedidoStatus","pedido_status"
+    ]);
+    const avaliadoCol = await detectColumn(client, "pedidos", [
+      "avaliado","pedidoAvaliado","pedido_avaliado","jaAvaliado","ja_avaliado"
+    ]);
+    const dateCols = [
+      "dataFinalizado","dataConclusao","updated_at","updatedAt","dataAtualizacao","created_at","createdAt","dataPedido"
+    ];
+
+    try{
+      let pendentes = [];
+
+      if (deCol && paraCol) {
+        try {
+          const resNarrow = await client
+            .from("pedidos")
+            .select("*")
+            .in(deCol, meKeys)
+            .in(paraCol, targetKeys)
+            .limit(500);
+          if(!resNarrow?.error && Array.isArray(resNarrow?.data)){
+            pendentes = resNarrow.data.filter((row) => isPendingForPair(row, { deCol, paraCol, statusCol, avaliadoCol }));
+          }
+        } catch (_) {}
+      }
+
+      // Fallback robusto: carrega visíveis pela policy e filtra em memória por várias chaves
+      if(!pendentes.length){
+        const resWide = await client.from("pedidos").select("*").limit(1200);
+        if(!resWide?.error && Array.isArray(resWide?.data)){
+          pendentes = resWide.data.filter((row) => isPendingForPair(row, { deCol, paraCol, statusCol, avaliadoCol }));
+        }
+      }
+
+      if(!pendentes.length) return null;
+
+      pendentes.sort((a,b) => {
+        const da = dateCols.map((k)=> parseDateAnySafe(a?.[k])).find(Boolean) || new Date(0);
+        const db = dateCols.map((k)=> parseDateAnySafe(b?.[k])).find(Boolean) || new Date(0);
+        return db.getTime() - da.getTime();
+      });
+
+      const pedido = pendentes.find((row) => !!getPedidoIdFromRow(row)) || null;
+      const pedidoId = getPedidoIdFromRow(pedido);
+      if(!pedidoId) return null;
+      return { pedidoId, pedido };
+    }catch(_){
+      return null;
+    }
+  }
+
   // -----------------------------
   // Escape
   // -----------------------------
@@ -4095,11 +4260,15 @@ function ensureTheme(ctx, theme){
     const tabsHost = tabsWrap ? (tabsWrap.closest(".dp-tabsWrap") || tabsWrap) : null;
     let sectionsWrap = $(".dp-sections");
     const isTargetPro = !!isProfissionalUsuario(ctx?.target);
+    const isSelfProfile = !!ctx?.canEdit;
 
     const isProOwnerTabs = !!(isProfissionalUsuario(ctx?.target) && ctx?.canEdit);
     // Esconde aba/section de estatísticas para quem não é o dono profissional
     buttons.forEach(b=>{ if(b.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) b.style.display = "none"; });
     sections.forEach(s=>{ if(s.hasAttribute("data-pro-owner-only") && !isProOwnerTabs) s.style.display = "none"; });
+    // Esconde abas/seções exclusivas do próprio perfil para visitantes.
+    buttons.forEach(b=>{ if(b.hasAttribute("data-self-only") && !isSelfProfile) b.style.display = "none"; });
+    sections.forEach(s=>{ if(s.hasAttribute("data-self-only") && !isSelfProfile) s.style.display = "none"; });
     // Perfil cliente não usa área de publicações
     if(!isTargetPro){
       buttons.forEach((b)=>{
@@ -4117,7 +4286,12 @@ function ensureTheme(ctx, theme){
     }
 
     let updateTabsHint = ()=>{};
-    const enableTabsOverflowHint = true;
+    const enableTabsOverflowHint = false;
+    if(!enableTabsOverflowHint && tabsHost){
+      const staleHint = $(".dp-tabsOverflowHint", tabsHost);
+      if(staleHint) staleHint.remove();
+    }
+
     if(tabsWrap && enableTabsOverflowHint){
       const shouldUseHint = ()=>{
         if(!(prevNav && nextNav)) return true;
@@ -4285,6 +4459,189 @@ function ensureTheme(ctx, theme){
     }else{
       activate("sobre");
     }
+  }
+
+  function initValidationPanel(ctx){
+    const section = document.querySelector('.dp-section[data-tab="validacao"]');
+    if(!section || !ctx?.canEdit) return;
+
+    section.innerHTML = `
+      <div class="dp-sectionHeader">
+        <h2>Validação profissional</h2>
+      </div>
+      <div class="dp-card" style="padding:20px; border-radius:24px; box-shadow:0 10px 24px rgba(8,33,59,.06);">
+        <div style="display:grid; grid-template-columns:minmax(0,1.5fr) minmax(260px,1fr); gap:16px;">
+          <div>
+            <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:4px;">
+              <span style="font-size:13px; font-weight:800; letter-spacing:.08em; color:#64748b; text-transform:uppercase;">Status da solicitação</span>
+              <strong id="dpValStatusBadge" style="font-size:22px; line-height:1; padding:8px 14px; border-radius:999px; border:1px solid #f59e0b; background:#fff7ed; color:#b45309;">Pendente</strong>
+            </div>
+            <p id="dpValUpdated" style="margin:8px 0 0; color:rgba(0,0,0,.72);">Atualização: --</p>
+            <p id="dpValEstimate" style="margin:4px 0 0; color:rgba(0,0,0,.72);">Estimativa de análise: até 2 dias úteis.</p>
+            <p id="dpValReason" style="display:none; margin:8px 0 0; color:#9a3412; font-weight:700; background:#fff7ed; border:1px solid #fed7aa; padding:9px 12px; border-radius:12px;"></p>
+
+            <div id="dpValSteps" style="margin-top:12px; display:grid; gap:8px;">
+              <div data-step="enviado" style="border:1px solid #bde4d6; background:#e8f7f0; border-radius:14px; padding:12px 14px; font-weight:700; color:#0f6a45;"><i class='bx bx-upload' style="margin-right:6px;"></i>Dados e documentos enviados</div>
+              <div data-step="analise" style="border:1px dashed #d2dcec; background:#f7fafe; border-radius:14px; padding:12px 14px; color:#334155;"><i class='bx bx-search-alt-2' style="margin-right:6px;"></i>Em análise da equipe</div>
+              <div data-step="resultado" style="border:1px dashed #d2dcec; background:#f7fafe; border-radius:14px; padding:12px 14px; color:#334155;"><i class='bx bx-badge-check' style="margin-right:6px;"></i>Resultado da validação</div>
+            </div>
+
+            <div class="dp-actionsRow" style="margin-top:12px;">
+              <button class="dp-newBtn" id="dpValRefresh" type="button" style="min-width:230px;"><i class="bx bx-refresh"></i> Atualizar status</button>
+            </div>
+          </div>
+          <div class="dp-card" style="padding:16px; border-radius:20px; border:1px solid rgba(46,95,145,.12); background:linear-gradient(180deg,#ffffff 0%, #f8fbff 100%);">
+            <h3 style="margin:0 0 8px; font-size:36px;">Como funciona</h3>
+            <ol style="margin:0; padding-left:18px; color:rgba(0,0,0,.72); line-height:1.45;">
+              <li>Você envia seus dados e documento.</li>
+              <li>Um analista confere as informações.</li>
+              <li>Após aprovação, seu perfil profissional é liberado para anunciar.</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+    `;
+
+    const statusBadge = document.getElementById("dpValStatusBadge");
+    const updatedLine = document.getElementById("dpValUpdated");
+    const estimateLine = document.getElementById("dpValEstimate");
+    const reasonLine = document.getElementById("dpValReason");
+    const refreshBtn = document.getElementById("dpValRefresh");
+    const stepsRoot = document.getElementById("dpValSteps");
+
+    const fmtDate = (v)=>{
+      if(!v) return "--";
+      const d = new Date(v);
+      if(Number.isNaN(d.getTime())) return "--";
+      return d.toLocaleString("pt-BR");
+    };
+    const normalizeStatus = (v)=>{
+      const raw = String(v || "").trim().toLowerCase();
+      if(!raw) return "pendente";
+      if(raw.includes("apro")) return "aprovado";
+      if(raw.includes("reje") || raw.includes("recus")) return "rejeitado";
+      if(raw.includes("anal")) return "analise";
+      if(raw.includes("pend")) return "pendente";
+      return "pendente";
+    };
+    const setBadge = (status)=>{
+      const map = {
+        pendente: { label: "Pendente", color: "#b45309", border: "#f59e0b", bg: "#fff7ed" },
+        analise: { label: "Em análise", color: "#1e40af", border: "#93c5fd", bg: "#eff6ff" },
+        aprovado: { label: "Aprovado", color: "#0f766e", border: "#5eead4", bg: "#ecfeff" },
+        rejeitado: { label: "Rejeitado", color: "#b91c1c", border: "#fca5a5", bg: "#fef2f2" }
+      };
+      const info = map[status] || map.pendente;
+      statusBadge.textContent = info.label;
+      statusBadge.style.color = info.color;
+      statusBadge.style.borderColor = info.border;
+      statusBadge.style.background = info.bg;
+    };
+    const setSteps = (status)=>{
+      const steps = stepsRoot ? Array.from(stepsRoot.querySelectorAll("[data-step]")) : [];
+      const sentDone = true;
+      const reviewDone = (status === "analise" || status === "aprovado" || status === "rejeitado");
+      const resultDone = (status === "aprovado" || status === "rejeitado");
+      steps.forEach((el)=>{
+        const s = String(el.dataset.step || "");
+        const done = (s === "enviado" && sentDone) || (s === "analise" && reviewDone) || (s === "resultado" && resultDone);
+        el.style.border = done ? "1px solid #bde4d6" : "1px dashed #d2dcec";
+        el.style.background = done ? "#e8f7f0" : "#f7fafe";
+        el.style.color = done ? "#0f6a45" : "#334155";
+      });
+    };
+    const cacheStatus = (status, updatedAt)=>{
+      try{
+        const local = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null") || {};
+        local.isProfissional = (status === "aprovado");
+        local.proValidacaoStatus = status;
+        local.proValidacaoUpdatedAt = updatedAt || new Date().toISOString();
+        localStorage.setItem("doke_usuario_perfil", JSON.stringify(local));
+        localStorage.setItem("doke_pro_validacao_status", JSON.stringify({ status, updatedAt: local.proValidacaoUpdatedAt }));
+      }catch(_){}
+    };
+    const applyStatus = (status, updatedAt, reason)=>{
+      setBadge(status);
+      setSteps(status);
+      updatedLine.textContent = `Atualização: ${fmtDate(updatedAt)}`;
+      if(status === "aprovado") estimateLine.textContent = "Estimativa: processo concluído.";
+      else if(status === "rejeitado") estimateLine.textContent = "Estimativa: ajuste os dados e reenvie para nova análise.";
+      else if(status === "analise") estimateLine.textContent = "Estimativa de conclusão: até 2 dias úteis.";
+      else estimateLine.textContent = "Estimativa de análise: até 2 dias úteis.";
+      if(status === "rejeitado" && reason){
+        reasonLine.style.display = "block";
+        reasonLine.textContent = `Motivo: ${reason}`;
+      }else{
+        reasonLine.style.display = "none";
+        reasonLine.textContent = "";
+      }
+    };
+    const localStatus = ()=>{
+      try{
+        const p = JSON.parse(localStorage.getItem("doke_pro_validacao_status") || "null");
+        if(!p?.status) return false;
+        applyStatus(normalizeStatus(p.status), p.updatedAt || "", "");
+        return true;
+      }catch(_){
+        return false;
+      }
+    };
+    const pickBestRow = (rows, keys)=>{
+      if(!Array.isArray(rows) || !rows.length) return null;
+      const rowMatchesKeys = (row)=>{
+        const vals = [row?.user_id, row?.usuario_id, row?.uid, row?.owner_uid, row?.owner_id]
+          .map((v) => String(v || "").trim()).filter(Boolean);
+        return vals.some((v) => keys.has(v));
+      };
+      const matches = rows.filter((r)=> rowMatchesKeys(r));
+      const source = matches.length ? matches : rows;
+      const sorted = source.slice().sort((a, b) => new Date(b?.updated_at || b?.created_at || 0) - new Date(a?.updated_at || a?.created_at || 0));
+      if(matches.length) return sorted[0] || null;
+      if(rows.length === 1) return rows[0];
+      return null;
+    };
+
+    const loadStatus = async ()=>{
+      try{
+        const sb = ctx.client || window.sb;
+        const uid = String(ctx?.authUser?.id || ctx?.me?.uid || "").trim();
+        if(!sb || !uid){
+          setBadge("pendente");
+          updatedLine.textContent = "Atualização: faça login para acompanhar.";
+          return;
+        }
+        let res = await sb.from("profissional_validacao").select("*").order("updated_at", { ascending: false }).limit(80);
+        if(res?.error){
+          res = await sb.from("profissional_validacao").select("*").limit(80);
+        }
+        if(res?.error){
+          setBadge("pendente");
+          updatedLine.textContent = "Atualização: não foi possível carregar agora.";
+          return;
+        }
+        const local = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null") || {};
+        const keys = new Set([uid, String(local.id || "").trim(), String(local.uid || "").trim(), String(ctx?.me?.id || "").trim()].filter(Boolean));
+        const rows = Array.isArray(res?.data) ? res.data : [];
+        const row = pickBestRow(rows, keys);
+        if(!row){
+          applyStatus("pendente", "", "");
+          updatedLine.textContent = "Atualização: nenhuma solicitação encontrada.";
+          return;
+        }
+        const status = normalizeStatus(row.status || row.situacao || row.estado);
+        const updatedAt = row.updated_at || row.updatedAt || row.created_at || row.createdAt || "";
+        const reason = String(row.motivo || row.motivo_rejeicao || row.reason || "").trim();
+        applyStatus(status, updatedAt, reason);
+        cacheStatus(status, updatedAt);
+      }catch(_){
+        setBadge("pendente");
+        updatedLine.textContent = "Atualização: erro ao carregar o status.";
+      }
+    };
+
+    refreshBtn?.addEventListener("click", loadStatus);
+    localStatus();
+    loadStatus();
   }
 
 
@@ -5216,52 +5573,52 @@ if(!rangeSel || !refreshBtn) return;
     $("#dpNewServico")?.addEventListener("click", ()=>{
       if(!ctx.canEdit) return toast("Apenas no seu perfil.");
       if(!isProfissionalUsuario(ctx.me)){
-        window.location.href = "tornar-profissional.html";
+        const msg = "Para anunciar e receber novos clientes, primeiro ative seu perfil profissional. Leva só alguns minutos e libera todos os recursos de vendas.";
+        if (typeof window.dokeOpenProUpsellModal === "function") window.dokeOpenProUpsellModal();
+        else if (typeof window.dokeAlert === "function") window.dokeAlert(msg, "Ative seu perfil profissional");
+        else toast(msg);
         return;
       }
       window.location.href = "anunciar.html";
     });
 
     // Avaliar (cliente no perfil profissional)
-    $("#dpWriteAvaliacao")?.addEventListener("click", ()=>{
+    $("#dpWriteAvaliacao")?.addEventListener("click", async ()=>{
       if(!ctx.me?.id) return toast("Faça login para avaliar.");
       if(ctx.canEdit) return toast("Você não pode se avaliar.");
-      modal.open("Avaliar profissional", `
-        <div class="dp-form">
-          <div>
-            <label>Nota</label>
-            <select class="dp-select" id="dpAvalNota">
-              <option value="5">â˜…â˜…â˜…â˜…â˜… (5)</option>
-              <option value="4">â˜…â˜…â˜…â˜…â˜† (4)</option>
-              <option value="3">â˜…â˜…â˜…â˜†â˜† (3)</option>
-              <option value="2">â˜…â˜…â˜†â˜†â˜† (2)</option>
-              <option value="1">â˜…â˜†â˜†â˜†â˜† (1)</option>
-            </select>
-          </div>
-          <div>
-            <label>Comentário</label>
-            <textarea class="dp-textarea" id="dpAvalMsg" placeholder="Conte como foi o serviço..."></textarea>
-          </div>
-        </div>
-      `, async ()=>{
-        const client = mustSupa();
-        if(!client) return;
-        const guard = await ensureAuthSessionForWrite(client);
-        if(!guard.ok) return;
-        try{
-          await createAvaliacao(client, ctx, {
-            profissionalId: ctx.target.id,
-            nota: $("#dpAvalNota")?.value || 5,
-            comentario: safeStr($("#dpAvalMsg")?.value)
-          });
-          modal.close();
-          toast("Avaliação enviada!");
-          loadAvaliacoes(ctx.client, ctx.target);
-        }catch(e){
-          console.error(e);
-          toast("Erro ao enviar avaliação.");
+      const client = mustSupa();
+      if(!client) return;
+      const guard = await ensureAuthSessionForWrite(client);
+      if(!guard.ok) return;
+      const btn = $("#dpWriteAvaliacao");
+      const oldHtml = btn ? btn.innerHTML : "";
+      try{
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Verificando...";
         }
-      });
+        const pendencia = await findPendingPedidoAvaliacao(client, ctx);
+        if(!pendencia?.pedidoId){
+          toast("Sem pedido pendente para avaliação deste profissional.");
+          return;
+        }
+        const target = `avaliar.html?pedidoId=${encodeURIComponent(String(pendencia.pedidoId))}`;
+        try{
+          if(window.top && window.top !== window && window.top.location){
+            window.top.location.href = target;
+            return;
+          }
+        }catch(_){}
+        window.location.href = target;
+      }catch(e){
+        console.error(e);
+        toast("Não foi possível abrir a avaliação.");
+      }finally{
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = oldHtml || "<i class='bx bx-star'></i> Avaliar";
+        }
+      }
     });
 
     // Editar perfil
@@ -5534,16 +5891,16 @@ if(!rangeSel || !refreshBtn) return;
     // Mostra feedback de carregamento e garante que não fica "branco"
     rootEl?.classList.add("dp-loading");
     try{
-      $$(".dp-section[data-tab]").forEach((section)=>{
-        const isPublicacoes = String(section.dataset.tab || "").toLowerCase() === "publicacoes";
-        section.style.display = isPublicacoes ? "" : "none";
-        section.classList.toggle("dp-section--hidden", !isPublicacoes);
-        section.setAttribute("aria-hidden", isPublicacoes ? "false" : "true");
+      $$(".dp-tab").forEach((tabBtn)=>{
+        const isSobre = String(tabBtn.dataset.tab || "").toLowerCase() === "sobre";
+        tabBtn.classList.toggle("active", isSobre);
       });
-      const pubGrid = $("#dpGridPublicacoes");
-      if(pubGrid && typeof renderPerfilGridSkeleton === "function"){
-        renderPerfilGridSkeleton(pubGrid, "publicacoes");
-      }
+      $$(".dp-section[data-tab]").forEach((section)=>{
+        const isSobre = String(section.dataset.tab || "").toLowerCase() === "sobre";
+        section.style.display = isSobre ? "" : "none";
+        section.classList.toggle("dp-section--hidden", !isSobre);
+        section.setAttribute("aria-hidden", isSobre ? "false" : "true");
+      });
     }catch(_){}
 
     try{
@@ -5760,6 +6117,7 @@ if(!rangeSel || !refreshBtn) return;
       }
       try{ initMedia(ctx); }catch(e){ console.error(e); }
       try{ initTabs(ctx); }catch(e){ console.error(e); }
+      try{ initValidationPanel(ctx); }catch(e){ console.error(e); }
       try{ initStatsNav(); }catch(e){ console.error(e); }
       try{ initSectionActions(ctx); }catch(e){ console.error(e); }
 

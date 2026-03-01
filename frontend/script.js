@@ -902,7 +902,7 @@ function setScrollLock(locked) {
     const alreadyLocked = root.classList.contains('no-scroll') || body.classList.contains('no-scroll');
 
     if (locked) {
-        // Salva posiÃ§Ã£o atual sÃ³ na transiÃ§Ã£o "destravado -> travado"
+        // Salva posição atual só na transição "destravado -> travado"
         if (!alreadyLocked) {
             try { window.__dokeScrollY = window.scrollY || document.documentElement.scrollTop || 0; } catch (_) { window.__dokeScrollY = 0; }
         }
@@ -939,7 +939,7 @@ function setScrollLock(locked) {
     body.style.overflow = '';
     body.style.overflowY = '';
 
-    // restaura posiÃ§Ã£o no iOS
+    // restaura posição no iOS
     if (isIOS) {
         const y = top ? Math.abs(parseInt(top, 10)) : (Number(window.__dokeScrollY || 0) || 0);
         try { window.scrollTo(0, y || 0); } catch (_) {}
@@ -3993,7 +3993,7 @@ window.atualizarTelaCep = function(payload) {
         else if (cidade && uf) txt = `${cidade} - ${uf}`;
         else if (cidade) txt = cidade;
         else if (cep) txt = `CEP: ${cep}`;
-        else if (hasGeo) txt = 'LocalizaÃ§Ã£o ativa';
+        else if (hasGeo) txt = 'Localização ativa';
         s.innerText = txt;
         s.style.fontWeight = '700';
         s.style.color = 'var(--cor0)';
@@ -6382,7 +6382,7 @@ async function carregarListaProfissionaisReal() {
                     <img src="https://i.pravatar.cc/150?img=33" class="pro-avatar-lg">
                     <span class="pro-name">Seja o Primeiro</span>
                     <span class="pro-job">Cadastre-se Pro</span>
-                    <button class="btn-pro-action" onclick="window.location.href='tornar-profissional.html'">ComeÃ§ar</button>
+                    <button class="btn-pro-action" onclick="window.location.href='tornar-profissional.html'">Começar</button>
                 </div>`;
             return;
         }
@@ -7583,7 +7583,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         };
     }
 
-    // Evita ruÃ­do de 400 em schemas sem colunas snake_case; mantÃ©m variantes camelCase/lowercase.
+    // Evita ruído de 400 em schemas sem colunas snake_case; mantém variantes camelCase/lowercase.
     const qRecebidos = query(collection(db, "pedidos"), where("paraUid", "==", resolvedUid));
     const qRecebidosAlt = query(collection(db, "pedidos"), where("parauid", "==", resolvedUid));
     const qEnviados = query(collection(db, "pedidos"), where("deUid", "==", resolvedUid));
@@ -7628,7 +7628,7 @@ window.monitorarNotificacoesGlobal = function(uid) {
         });
     };
 
-    // Badge no header mobile pode variar entre pÃ¡ginas:
+    // Badge no header mobile pode variar entre páginas:
     // - Algumas usam o shell novo (.doke-mobile-header .doke-icon-btn)
     // - Outras usam o header legado (.navbar-mobile .botoes-direita)
     // Para evitar que a bolinha "suma" ao navegar entre HTMLs, sincronizamos ambos.
@@ -14631,10 +14631,10 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
             <div class="pv-stack-main">
               <div class="pv-head">
                 <div class="pv-title-row">
-                  <h2>Para vocÃª</h2>
-                  <span class="pv-badge">Busca rÃ¡pida</span>
+                  <h2>Para você</h2>
+                  <span class="pv-badge">Busca rápida</span>
                 </div>
-                <div class="pv-sub">Use a busca para encontrar serviÃ§os e profissionais.</div>
+                <div class="pv-sub">Use a busca para encontrar serviços e profissionais.</div>
               </div>
 
                           </div>
@@ -14893,11 +14893,11 @@ function agruparProfissionais(anuncios) {
   }));
 }
 
-// Regras de transiÃ§Ã£o entre "Novos" e "Destaque"
+// Regras de transição entre "Novos" e "Destaque"
 const PRO_RULES = {
-  // Profissional fica em "Novos" somente nesse perÃ­odo (sem avaliaÃ§Ãµes)
+  // Profissional fica em "Novos" somente nesse período (sem avaliações)
   NOVO_MAX_DIAS: 30,
-  // Ao receber a 1Âª avaliaÃ§Ã£o, sai de "Novos" e vai para "Destaque"
+  // Ao receber a 1ª avaliação, sai de "Novos" e vai para "Destaque"
   DESTAQUE_MIN_AVALIACOES: 1
 };
 
@@ -14911,7 +14911,7 @@ function isProfissionalNovo(p, nowMs){
   const n = Number(p?.numAvaliacoes || 0);
   if (n > 0) return false;
   const createdMs = parseDateMs(p?.dataCriacao);
-  // Sem data vÃ¡lida: mantÃ©m como "novo" para nÃ£o sumir injustamente.
+  // Sem data válida: mantém como "novo" para não sumir injustamente.
   if (!createdMs) return true;
   const ageDays = (nowMs - createdMs) / 86400000;
   return ageDays <= PRO_RULES.NOVO_MAX_DIAS;
@@ -14962,7 +14962,7 @@ async function carregarProfissionaisIndex() {
   const profs = agruparProfissionais(anuncios || []);
   const nowMs = Date.now();
 
-  // Destaque = jÃ¡ recebeu avaliaÃ§Ãµes (regra de promoÃ§Ã£o automÃ¡tica)
+  // Destaque = já recebeu avaliações (regra de promoção automática)
   const destaque = profs
     .filter(isProfissionalDestaque)
     .sort((a, b) => {
@@ -14972,7 +14972,7 @@ async function carregarProfissionaisIndex() {
     })
     .slice(0, 10);
 
-  // Novos = sem avaliaÃ§Ã£o e dentro da janela de novos
+  // Novos = sem avaliação e dentro da janela de novos
   const novos = profs
     .filter(p => isProfissionalNovo(p, nowMs))
     .sort((a, b) => new Date(b.dataCriacao || 0) - new Date(a.dataCriacao || 0))
@@ -14985,7 +14985,7 @@ async function carregarProfissionaisIndex() {
         <i class='bx bx-award'></i>
         <div class="pros-empty-text">
           <div class="pros-empty-title">Nenhum profissional em destaque no momento.</div>
-          <div class="pros-empty-sub">Assim que receberem avaliaÃ§Ãµes, eles aparecem aqui.</div>
+          <div class="pros-empty-sub">Assim que receberem avaliações, eles aparecem aqui.</div>
         </div>
         <a class="pros-empty-btn" href="busca.html">Explorar</a>
       </div>
@@ -14997,10 +14997,10 @@ async function carregarProfissionaisIndex() {
       <div class="pros-empty">
         <i class='bx bx-user-plus'></i>
         <div class="pros-empty-text">
-          <div class="pros-empty-title">Ainda nÃ£o hÃ¡ profissionais novos cadastrados.</div>
-          <div class="pros-empty-sub">Sem avaliaÃ§Ãµes nos primeiros ${PRO_RULES.NOVO_MAX_DIAS} dias aparecem aqui.</div>
+          <div class="pros-empty-title">Ainda não há profissionais novos cadastrados.</div>
+          <div class="pros-empty-sub">Sem avaliações nos primeiros ${PRO_RULES.NOVO_MAX_DIAS} dias aparecem aqui.</div>
         </div>
-        <a class="pros-empty-btn" href="tornar-profissional.html">ComeÃ§ar</a>
+        <a class="pros-empty-btn" href="tornar-profissional.html">Começar</a>
       </div>
     `;
   } finally {
@@ -15317,6 +15317,96 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // Bloqueia criacao/publicacao de anuncios para usuario nao profissional.
 document.addEventListener('DOMContentLoaded', function(){
+  const PRO_UPSELL_TITLE = 'Ative seu perfil profissional';
+  const PRO_UPSELL_MESSAGE = 'Para anunciar e receber novos clientes, primeiro ative seu perfil profissional. Leva só alguns minutos e libera todos os recursos de vendas.';
+  function ensureProUpsellStyles(){
+    if (document.getElementById('dokeProUpsellStyles')) return;
+    const css = document.createElement('style');
+    css.id = 'dokeProUpsellStyles';
+    css.textContent = `
+      .doke-pro-upsell-overlay{
+        position: fixed; inset: 0; z-index: 99999;
+        background: rgba(15, 23, 42, .55);
+        backdrop-filter: blur(4px);
+        display: grid; place-items: center; padding: 20px;
+      }
+      .doke-pro-upsell-modal{
+        width: min(680px, 96vw);
+        background: #fff;
+        border-radius: 22px;
+        border: 1px solid #dbe5f0;
+        box-shadow: 0 28px 80px rgba(15,23,42,.30);
+        overflow: hidden;
+      }
+      .doke-pro-upsell-head{
+        padding: 22px 24px 10px;
+      }
+      .doke-pro-upsell-kicker{
+        display:inline-flex; align-items:center; gap:8px;
+        padding: 6px 12px; border-radius: 999px;
+        background:#e7f7f3; color:#0b7768; font-weight:800; font-size:.86rem;
+      }
+      .doke-pro-upsell-title{
+        margin: 12px 0 6px; font-size: 2rem; line-height: 1.1; color:#0f2744; font-weight: 900;
+      }
+      .doke-pro-upsell-text{
+        margin: 0; color:#425466; font-size: 1.16rem; line-height: 1.5; font-weight: 600;
+      }
+      .doke-pro-upsell-actions{
+        margin-top: 18px; padding: 18px 24px 24px;
+        display:flex; align-items:center; justify-content:flex-end; gap:10px;
+        border-top: 1px solid #e8eef5;
+      }
+      .doke-pro-upsell-btn{
+        border:none; border-radius: 12px; padding: 12px 18px; font-weight:800; cursor:pointer;
+      }
+      .doke-pro-upsell-btn.secondary{ background:#eef2f7; color:#334155; }
+      .doke-pro-upsell-btn.primary{ background:#0b7768; color:#fff; }
+      @media (max-width: 640px){
+        .doke-pro-upsell-title{ font-size: 1.55rem; }
+        .doke-pro-upsell-text{ font-size: 1.03rem; }
+        .doke-pro-upsell-actions{ justify-content: stretch; }
+        .doke-pro-upsell-btn{ flex:1; }
+      }
+    `;
+    document.head.appendChild(css);
+  }
+
+  function openProUpsellModal(){
+    ensureProUpsellStyles();
+    const old = document.querySelector('.doke-pro-upsell-overlay');
+    if (old) old.remove();
+    const overlay = document.createElement('div');
+    overlay.className = 'doke-pro-upsell-overlay';
+    overlay.innerHTML = `
+      <div class="doke-pro-upsell-modal" role="dialog" aria-modal="true" aria-label="${PRO_UPSELL_TITLE}">
+        <div class="doke-pro-upsell-head">
+          <span class="doke-pro-upsell-kicker"><i class='bx bx-shield-quarter'></i> Cresça na Doke</span>
+          <h3 class="doke-pro-upsell-title">${PRO_UPSELL_TITLE}</h3>
+          <p class="doke-pro-upsell-text">${PRO_UPSELL_MESSAGE}</p>
+        </div>
+        <div class="doke-pro-upsell-actions">
+          <button type="button" class="doke-pro-upsell-btn secondary" data-action="close">Agora não</button>
+          <button type="button" class="doke-pro-upsell-btn primary" data-action="go">Tornar-se profissional</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (ev) => {
+      const t = ev.target;
+      if (!(t instanceof Element)) return;
+      const actionEl = t.closest('[data-action]');
+      if (t === overlay || (actionEl && actionEl.getAttribute('data-action') === 'close')) {
+        overlay.remove();
+        return;
+      }
+      if (actionEl && actionEl.getAttribute('data-action') === 'go') {
+        window.location.href = 'tornar-profissional.html';
+      }
+    });
+  }
+  window.dokeOpenProUpsellModal = openProUpsellModal;
+
   function getPerfilLocal(){
     try { return JSON.parse(localStorage.getItem('doke_usuario_perfil') || '{}') || {}; }
     catch(_) { return {}; }
@@ -15328,11 +15418,8 @@ document.addEventListener('DOMContentLoaded', function(){
 
   const toUpgrade = function(){
     try{
-      if (typeof window.mostrarToast === 'function') {
-        window.mostrarToast('Para publicar, ative o perfil profissional.', 'info', 'Seja Profissional');
-      }
+      openProUpsellModal();
     }catch(_){}
-    window.location.href = 'tornar-profissional.html';
   };
 
   // Troca links diretos para anunciar em todas as telas.
@@ -15353,7 +15440,18 @@ document.addEventListener('DOMContentLoaded', function(){
     if (!el) return;
     const href = String(el.getAttribute && el.getAttribute('href') || '').toLowerCase();
     const txt = String(el.textContent || '').toLowerCase();
-    const tryPublish = href.includes('anunciar.html') || txt.includes('publicar an?ncio') || txt.includes('publicar anuncio') || txt.includes('anunciar meu servi?o') || txt.includes('anunciar meu servico');
+    const hasAnnounceText =
+      txt.includes('anunciar') ||
+      txt.includes('anuncie') ||
+      txt.includes('publicar anúncio') ||
+      txt.includes('publicar anuncio') ||
+      txt.includes('anunciar meu serviço') ||
+      txt.includes('anunciar meu servico');
+    const tryPublish =
+      href.includes('anunciar.html') ||
+      href.includes('anunciar-negocio.html') ||
+      (href.includes('tornar-profissional.html') && hasAnnounceText) ||
+      hasAnnounceText;
     if (!tryPublish) return;
     ev.preventDefault();
     toUpgrade();

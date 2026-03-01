@@ -62,7 +62,19 @@
     }
   }
 
-  function toast({type='error', title='Algo deu errado', message='Tente novamente.', details=null, ttl=4500}){
+  function toast(input, legacyType, legacyTitle){
+    const normalized = (input && typeof input === 'object' && !Array.isArray(input))
+      ? input
+      : (legacyType && typeof legacyType === 'object' && !Array.isArray(legacyType))
+        ? { ...legacyType, message: String(input ?? legacyType.message ?? '') }
+        : { message: String(input ?? ''), type: legacyType, title: legacyTitle };
+    const {
+      type='error',
+      title='Algo deu errado',
+      message='Tente novamente.',
+      details=null,
+      ttl=4500
+    } = normalized || {};
     ensureUI();
     const t = make('div','doke-toast');
     t.dataset.type = type;

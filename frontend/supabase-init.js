@@ -1,4 +1,4 @@
-﻿/* DOKE â€” Supabase init (global)
+﻿/* DOKE — Supabase init (global)
    ------------------------------------------------------------
    1) Cole aqui o Project URL e a ANON PUBLIC KEY (JWT grande)
       Settings > API > Project URL
@@ -14,8 +14,8 @@
   try { console.log("[DOKE] supabase-init build:", window.__DOKE_SUPABASE_BUILD__); } catch(_e) {}
 
   // Dev CORS helper: algumas allowlists de CORS incluem apenas localhost.
-  // Se vocÃª estiver usando Live Server em 127.0.0.1, redireciona para localhost.
-  // Ativo por padrÃ£o; para desativar, defina window.DOKE_FORCE_LOCALHOST_REDIRECT = false.
+  // Se você estiver usando Live Server em 127.0.0.1, redireciona para localhost.
+  // Ativo por padrão; para desativar, defina window.DOKE_FORCE_LOCALHOST_REDIRECT = false.
   try {
     if (window.DOKE_FORCE_LOCALHOST_REDIRECT !== false && typeof location !== 'undefined' && location.hostname === '127.0.0.1') {
       const to = String(location.href || '').replace('127.0.0.1', 'localhost');
@@ -237,12 +237,12 @@
 
   try {
     // Redirecionamento para proxy em modo "best effort" sem bloquear init.
-    // Isso evita race-condition com scripts que dependem de window.sb logo apÃ³s este arquivo.
+    // Isso evita race-condition com scripts que dependem de window.sb logo após este arquivo.
     maybeRedirectToProxyDevServer().catch(() => {});
   } catch (_e) {}
-  // Evita recriar o cliente em hot-reload / mÃºltiplos scripts
+  // Evita recriar o cliente em hot-reload / múltiplos scripts
   if (window.sb && typeof window.sb.from === "function") {
-    console.log("[DOKE] Supabase jÃ¡ inicializado (global).");
+    console.log("[DOKE] Supabase já inicializado (global).");
     return;
   }
   const DEFAULT_URL = "https://wgbnoqjnvhasapqarltu.supabase.co";
@@ -328,7 +328,7 @@
   }
 
   // Se existir URL/KEY antigos no localStorage (de outro projeto), isso pode gerar CORS e pÃ¡ginas que â€œquebramâ€ sÃ³ quando loga.
-  // Aqui a gente mantÃ©m override apenas se for explÃ­cito (window.DOKE_SUPABASE_URL / window.SUPABASE_URL).
+  // Aqui a gente mantém override apenas se for explícito (window.DOKE_SUPABASE_URL / window.SUPABASE_URL).
   const EXPECTED_REF = (function(){
     try { return (new URL(DEFAULT_URL)).hostname.split(".")[0]; } catch(_e){ return ""; }
   })();
@@ -746,7 +746,7 @@ try {
   let usingLocalProxy = proxyActive;
 
   // Se o devserver local estiver ativo (na origem atual ou em outra porta local),
-  // usa o proxy para eliminar CORS de forma determinÃ­stica em ambiente local.
+  // usa o proxy para eliminar CORS de forma determinística em ambiente local.
   if (proxyActive) {
     try {
       window.DOKE_SUPABASE_PROXY_ENABLED = true;
@@ -967,13 +967,13 @@ const rawKey =
 const keyCandidate = normalizeSupabaseKey(rawKey);
 const key = /^eyJ[a-zA-Z0-9._-]+$/.test(keyCandidate) ? keyCandidate : DEFAULT_KEY;
 
-  // ExpÃµe configuraÃ§Ã£o normalizada para scripts legados.
+  // Expõe configuração normalizada para scripts legados.
   window.SUPABASE_URL = url;
   window.SUPABASE_ANON_KEY = key;
   window.DOKE_SUPABASE_URL = url;
   window.DOKE_SUPABASE_ANON_KEY = key;
 
-  // Higieniza chaves legadas para evitar criaÃ§Ã£o de cliente com URL antiga/corrompida.
+  // Higieniza chaves legadas para evitar criação de cliente com URL antiga/corrompida.
   try {
     const persistedUrl = usingLocalProxy ? DEFAULT_URL : url;
     localStorage.setItem("DOKE_SUPABASE_URL", persistedUrl);
@@ -995,12 +995,12 @@ const key = /^eyJ[a-zA-Z0-9._-]+$/.test(keyCandidate) ? keyCandidate : DEFAULT_K
   function warn(msg){ console.warn("[DOKE]", msg); }
 
   if (!window.supabase || !window.supabase.createClient) {
-    warn("Biblioteca Supabase nÃ£o carregada. Confira o <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'>");
+    warn("Biblioteca Supabase não carregada. Confira o <script src='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2'>");
     return;
   }
 
   if (!/^https?:\/\//i.test(url) || url.includes("YOURPROJECT")) {
-    warn("SUPABASE_URL invÃ¡lida ou nÃ£o configurada. Edite supabase-init.js.");
+    warn("SUPABASE_URL inválida ou não configurada. Edite supabase-init.js.");
   }
 if (!key || key.startsWith("sb_publishable")) {
   warn("Chave incorreta. Use a ANON PUBLIC KEY (JWT grande) do Supabase.");
@@ -1024,12 +1024,12 @@ if (!key || key.startsWith("sb_publishable")) {
       // NUNCA force "Content-Profile" globalmente.
       // Alguns setups de CORS/proxy bloqueiam esse header em requests GET,
       // causando "TypeError: Failed to fetch" (status 0) no supabase-js.
-      // O supabase-js jÃ¡ envia Accept-Profile/Content-Profile apenas quando necessÃ¡rio
+      // O supabase-js já envia Accept-Profile/Content-Profile apenas quando necessário
       // baseado em db.schema.
       auth: {
         persistSession: true,
         storageKey: DOKE_AUTH_STORAGE_KEY,
-        // Evita enxurrada de refresh_token em ambientes com CORS/rede instÃ¡vel.
+        // Evita enxurrada de refresh_token em ambientes com CORS/rede instável.
         autoRefreshToken: true,
         detectSessionInUrl: true,
       }
@@ -1535,8 +1535,8 @@ if (!key || key.startsWith("sb_publishable")) {
         try{ console.info("[DOKE] Auth fallback ativo (signInWithPassword)."); }catch(_e){}
       }catch(_e){}
     })();
-// Garantir que sessÃ£o persistida nÃ£o fique "meio logada":
-// - se o access_token expirou e nÃ£o consegue refresh, limpa e forÃ§a novo login
+// Garantir que sessão persistida não fique "meio logada":
+// - se o access_token expirou e não consegue refresh, limpa e força novo login
 ;(async () => {
   try {
     const { data } = await window.sb.auth.getSession();
@@ -1570,8 +1570,8 @@ if (!key || key.startsWith("sb_publishable")) {
 
 // ============================================================
 // Supabase health check (Auth + REST)
-// - Diagnostica rapidamente casos de 520 (Cloudflare/origem indisponÃ­vel)
-// - Evita que pÃ¡ginas interpretem 520 como "CORS" ou "nÃ£o logado"
+// - Diagnostica rapidamente casos de 520 (Cloudflare/origem indisponível)
+// - Evita que páginas interpretem 520 como "CORS" ou "não logado"
 // ============================================================
 (function(){
   if (window.dokeSupabaseHealth) return;
@@ -1610,7 +1610,7 @@ if (!key || key.startsWith("sb_publishable")) {
         headers: { apikey: key }
       }), timeoutMs || 3500);
       out.authStatus = r.status;
-      out.authOk = r.status >= 200 && r.status < 500; // 5xx = indisponÃ­vel
+      out.authOk = r.status >= 200 && r.status < 500; // 5xx = indisponível
     }catch(e){
       out.authError = String(e?.message || e);
     }
@@ -1631,7 +1631,7 @@ if (!key || key.startsWith("sb_publishable")) {
 
     window.DOKE_SUPABASE_HEALTH = out;
     if(out.restStatus === 520 || (!out.restOk && out.restError)){
-      console.warn('[DOKE] Supabase REST parece indisponÃ­vel (520/erro de rede). Isso NÃƒO Ã© bug de JS/CORS. Verifique se o projeto Supabase estÃ¡ pausado ou com o banco offline.', out);
+      console.warn('[DOKE] Supabase REST parece indisponível (520/erro de rede). Isso NÃO é bug de JS/CORS. Verifique se o projeto Supabase está pausado ou com o banco offline.', out);
     }
     return out;
   };
@@ -1644,7 +1644,7 @@ if (!key || key.startsWith("sb_publishable")) {
   }
 })();
 
-// Evita poluiÃ§Ã£o do console por aborts transitÃ³rios do supabase-js (sem ocultar erros reais de app).
+// Evita poluição do console por aborts transitórios do supabase-js (sem ocultar erros reais de app).
 (function(){
   if (window.__dokeAbortRejectionGuard) return;
   window.__dokeAbortRejectionGuard = true;
@@ -1665,7 +1665,7 @@ if (!key || key.startsWith("sb_publishable")) {
 })();
 
 // ============================================================
-// Legacy Firebase API shims (para nÃ£o quebrar o script.js antigo)
+// Legacy Firebase API shims (para não quebrar o script.js antigo)
 // ============================================================
 (function(){
   try{
@@ -1675,7 +1675,7 @@ if (!key || key.startsWith("sb_publishable")) {
         try{
           const sb = window.sb || window.supabaseClient || window.supabase;
           if(sb && sb.auth){
-            // callback imediato com usuÃ¡rio atual
+            // callback imediato com usuário atual
             sb.auth.getSession()
               .then(({ data })=>{
                 const u = data?.session?.user || null;
@@ -1715,8 +1715,8 @@ if (!key || key.startsWith("sb_publishable")) {
 /* ============================================================
    DOKE - DB Fallback Layer (Supabase-JS -> REST fetch)
    Objetivo: quando supabase-js falhar com "TypeError: Failed to fetch" (status 0),
-   usar PostgREST via fetch (que jÃ¡ estÃ¡ funcionando no seu ambiente).
-   MantÃ©m window.sb.auth intacto.
+   usar PostgREST via fetch (que já está funcionando no seu ambiente).
+   Mantém window.sb.auth intacto.
 ============================================================ */
 (function(){
   const w = window;
@@ -1798,16 +1798,16 @@ if (!key || key.startsWith("sb_publishable")) {
     const { url, anon } = getCfg();
     if(!url || !anon) throw new Error("Supabase URL/ANON KEY ausentes.");
     const token = await getAuthToken();
-    // IMPORTANTE (CORS): evite headers nÃ£o-padrÃ£o (ex.: Accept-Profile/Content-Profile)
-    // porque eles forÃ§am preflight com Access-Control-Request-Headers adicionais e,
-    // em alguns ambientes, o gateway do Supabase nÃ£o responde com allow-headers completo.
-    // Para o schema padrÃ£o "public" nÃ£o precisamos desses headers.
+    // IMPORTANTE (CORS): evite headers não-padrão (ex.: Accept-Profile/Content-Profile)
+    // porque eles forçam preflight com Access-Control-Request-Headers adicionais e,
+    // em alguns ambientes, o gateway do Supabase não responde com allow-headers completo.
+    // Para o schema padrão "public" não precisamos desses headers.
     const headers = {
       apikey: anon,
       Authorization: `Bearer ${token || anon}`,
     };
 
-    // SÃ³ adiciona Content-Type quando existe body (isso jÃ¡ Ã© suficiente para PostgREST)
+    // Só adiciona Content-Type quando existe body (isso já é suficiente para PostgREST)
     if(body && method !== "GET") headers["Content-Type"] = "application/json";
     if(preferReturn) headers["Prefer"] = "return=representation";
     let res;
@@ -1838,7 +1838,7 @@ if (!key || key.startsWith("sb_publishable")) {
     return out;
   }
 
-  // Expor helper simples (pra debug e migraÃ§Ã£o gradual)
+  // Expor helper simples (pra debug e migração gradual)
   w.dokeRest = async function(table, query){
     return restFetch({ table, method:"GET", query }).then(r => {
       if(r.error) throw r.error;
@@ -1851,7 +1851,7 @@ if (!key || key.startsWith("sb_publishable")) {
     let t = (table == null ? "" : String(table)).trim();
     if(!t) return t;
 
-    // corrige mojibake comum: notificaÃ§Ãµes, usuÃ¡rios, etc.
+    // corrige mojibake comum: notificações, usuários, etc.
     t = t.replace(/Ã§/g,'ç').replace(/Ãµ/g,'õ').replace(/Ã¡/g,'á').replace(/Ã£/g,'ã')
          .replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú')
          .replace(/Ã‰/g,'É').replace(/Ã“/g,'Ó').replace(/Ãš/g,'Ú').replace(/Ã‡/g,'Ç');

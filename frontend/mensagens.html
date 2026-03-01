@@ -1254,6 +1254,57 @@
         .btn-voltar-mobile { display: none; }
         body.embed-chat .btn-voltar-mobile { display: none !important; }
 
+        /* Embed no pedidos: ocupar 100% do iframe sem reservar header/sidebar */
+        body.embed-chat{
+            --navbar-height-desktop: 0px !important;
+            --navbar-height-mobile: 0px !important;
+            --sidebar-width: 0px !important;
+            --bottom-nav-height: 0px !important;
+        }
+        body.embed-chat .navbar-desktop,
+        body.embed-chat .navbar-mobile,
+        body.embed-chat .sidebar-icones,
+        body.embed-chat .bottom-nav,
+        body.embed-chat .doke-mobile-header,
+        body.embed-chat #overlay-menu{
+            display: none !important;
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        body.embed-chat .messenger-layout{
+            position: fixed !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            margin: 0 !important;
+            border-left: 0 !important;
+            grid-template-columns: 1fr !important;
+        }
+        body.embed-chat .coluna-lista{
+            display: none !important;
+        }
+        body.embed-chat .coluna-chat{
+            position: relative !important;
+            inset: 0 !important;
+            width: 100% !important;
+            height: 100% !important;
+            transform: none !important;
+        }
+        body.embed-chat #chat-placeholder{
+            display: none !important;
+        }
+        body.embed-chat #box-conversa-real{
+            display: flex !important;
+            height: 100% !important;
+            min-height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        body.embed-chat .chat-header{
+            margin-top: 0 !important;
+            top: 0 !important;
+        }
+
 
         /* Fix flex overflow (texto vertical/colado) */
         .coluna-chat, .coluna-lista, .chat-header, .ip-body { min-width: 0; }
@@ -1942,6 +1993,26 @@
         -webkit-overflow-scrolling: touch;
         margin: 0 auto;
         padding-bottom: max(16px, env(safe-area-inset-bottom));
+    }
+    #modalFinalizarPedido .modal-close-x{
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        border: 1px solid #d7e5f4;
+        background: #ffffff;
+        color: #0f2744;
+        display: inline-grid;
+        place-items: center;
+        font-size: 24px;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 4px 10px rgba(15,23,42,.10);
+    }
+    #modalFinalizarPedido .modal-close-x:hover{
+        background: #f8fbff;
     }
     #modalFinalizarPedido .modal-actions-col{
         flex-shrink: 0;
@@ -3325,17 +3396,35 @@
         }
     };
 
-    window.abrirPerfilUsuario = function(uid, isProfissional){
-        if (!uid) return;
-        if (isProfissional) {
-            if (typeof window.irParaPerfilComContagem === "function") {
-                window.irParaPerfilComContagem(uid);
-            } else {
-                window.location.href = `perfil-profissional.html?uid=${uid}`;
-            }
-            return;
+    window.abrirPerfilUsuario = async function(uid, isProfissional){
+        const uidNorm = String(uid || '').trim();
+        if (!uidNorm) return;
+        let profissional = (typeof isProfissional === 'boolean') ? isProfissional : null;
+        if (profissional === null) {
+            try {
+                const snap = await getDoc(doc(db, "usuarios", uidNorm));
+                if (snap.exists()) {
+                    const d = snap.data() || {};
+                    profissional = !!(d.isProfissional || d.profissional || String(d.tipo || '').toLowerCase() === 'profissional');
+                }
+            } catch (_) {}
         }
-        window.location.href = `perfil-usuario.html?id=${uid}`;
+        if (profissional && typeof window.irParaPerfilComContagem === "function") {
+            try {
+                window.irParaPerfilComContagem(uidNorm);
+                return;
+            } catch (_) {}
+        }
+        const target = profissional
+            ? `perfil-profissional.html?uid=${encodeURIComponent(uidNorm)}`
+            : `perfil-usuario.html?id=${encodeURIComponent(uidNorm)}`;
+        try {
+            if (window.top && window.top !== window && window.top.location) {
+                window.top.location.href = target;
+                return;
+            }
+        } catch (_) {}
+        window.location.href = target;
     };
 
     window.abrirAvaliacaoPedido = function(pedidoId){
@@ -3351,8 +3440,28 @@
             modalSucesso.style.display = 'flex';
             syncChatShellOverlayState();
         } else {
-            window.location.href = `avaliar.html?pedidoId=${pedidoId}`;
+            const target = `avaliar.html?pedidoId=${encodeURIComponent(String(pedidoId))}`;
+            try {
+                if (window.top && window.top !== window && window.top.location) {
+                    window.top.location.href = target;
+                    return;
+                }
+            } catch (_) {}
+            window.location.href = target;
         }
+    };
+
+    window.irAvaliarPedido = function(pedidoId){
+        const id = String(pedidoId || '').trim();
+        if (!id) return;
+        const target = `avaliar.html?pedidoId=${encodeURIComponent(id)}`;
+        try {
+            if (window.top && window.top !== window && window.top.location) {
+                window.top.location.href = target;
+                return;
+            }
+        } catch (_) {}
+        window.location.href = target;
     };
 
     async function checarAvaliacaoPedido(pedidoId){
@@ -3776,6 +3885,39 @@
         if (['aceito','pago'].includes(st)) return 'andamento';
         if (['finalizado','cancelado','recusado'].includes(st)) return 'finalizado';
         return 'pendente';
+    }
+    function normalizePedidoStatus(p){
+        const hasConclusao =
+            !!(p?.dataConclusao || p?.data_conclusao || p?.dataFinalizado || p?.data_finalizado);
+        const hasMidiaFinalizacao =
+            !!(p?.finalizacaoMediaUrl || p?.finalizacaoMediaURL || p?.finalizacaoAntesUrl || p?.finalizacaoDepoisUrl);
+        const ultimaMsg = String(p?.ultimaMensagem || p?.ultimoTexto || '').toLowerCase();
+        if (hasConclusao || hasMidiaFinalizacao || ultimaMsg.includes('finalizado')) return 'finalizado';
+
+        const raw = String(
+            p?.status ||
+            p?.statusPedido ||
+            p?.status_pedido ||
+            p?.pedidoStatus ||
+            p?.pedido_status ||
+            p?.statusPagamento ||
+            p?.status_pagamento ||
+            'pendente'
+        ).trim().toLowerCase();
+        if (raw.includes('finaliz') || raw.includes('conclu')) return 'finalizado';
+        if (raw.includes('cancel')) return 'cancelado';
+        if (raw.includes('recus')) return 'recusado';
+        if (raw.includes('pag')) return 'pago';
+        if (raw.includes('aceit') || raw.includes('andamento')) return 'aceito';
+        if (raw.includes('pend')) return 'pendente';
+        return raw || 'pendente';
+    }
+    function isPedidoAvaliado(p){
+        if (!p || typeof p !== 'object') return false;
+        const raw = (p.avaliado ?? p.pedidoAvaliado ?? p.pedido_avaliado ?? p.jaAvaliado ?? p.ja_avaliado);
+        if (raw === true || raw === 1) return true;
+        const txt = String(raw || '').trim().toLowerCase();
+        return txt === '1' || txt === 'true' || txt === 'sim' || txt === 'yes';
     }
     function renderAgenda(){
         const panel = document.getElementById('agendaPanel');
@@ -5511,7 +5653,8 @@
             actions.innerHTML = '';
             return;
         }
-        const souCliente = p.deUid === currentUserUid;
+        const papel = resolvePedidoParticipation(p, currentUserUid);
+        const souCliente = !!papel.souCliente;
         let msg = '';
         const btns = [];
         if (status === 'pendente') {
@@ -6304,23 +6447,25 @@ window.trocarAba = function(aba) {
         const filtrosConversas = document.getElementById('conversasFilters');
         const viewToggle = document.getElementById('listaViewToggle');
         const agendaPanel = document.getElementById('agendaPanel');
+        const listaPedidos = document.getElementById('lista-pedidos');
+        const listaConversas = document.getElementById('lista-conversas');
         btns.forEach(b => b.classList.remove('active'));
         if (aba === 'pedidos') {
-            btns[0].classList.add('active');
+            if (btns[0]) btns[0].classList.add('active');
             if (viewToggle) viewToggle.style.display = 'flex';
             if (agendaPanel) agendaPanel.style.display = (listaView === 'agenda') ? 'block' : 'none';
-            document.getElementById('lista-pedidos').style.display = (listaView === 'agenda') ? 'none' : 'block';
-            document.getElementById('lista-conversas').style.display = 'none';
+            if (listaPedidos) listaPedidos.style.display = (listaView === 'agenda') ? 'none' : 'block';
+            if (listaConversas) listaConversas.style.display = 'none';
             if (filtros) filtros.style.display = 'flex';
             if (filtrosConversas) filtrosConversas.style.display = 'none';
             carregarListaPedidos();
             abrirChatDeepLink(); 
         } else {
-            btns[1].classList.add('active');
+            if (btns[1]) btns[1].classList.add('active');
             if (viewToggle) viewToggle.style.display = 'none';
             if (agendaPanel) agendaPanel.style.display = 'none';
-            document.getElementById('lista-pedidos').style.display = 'none';
-            document.getElementById('lista-conversas').style.display = 'block';
+            if (listaPedidos) listaPedidos.style.display = 'none';
+            if (listaConversas) listaConversas.style.display = 'block';
             if (filtros) filtros.style.display = 'none';
             if (filtrosConversas) filtrosConversas.style.display = 'flex';
             window.carregarListaConversas();
@@ -7384,8 +7529,27 @@ window.confirmarFinalizacaoPedido = async () => {
 };
     // Fun??es do Modal
     window.irParaAvaliacaoDireta = () => {
+        const fromGlobal = String(window.pedidoIdParaAvaliar || '').trim();
+        const fromChat = String(chatIdAtual || '').trim();
+        let fromQuery = '';
+        try {
+            const params = new URLSearchParams(window.location.search || '');
+            fromQuery = String(params.get('pedidoId') || params.get('chatId') || '').trim();
+        } catch (_) {}
+        const pedidoId = fromGlobal || fromChat || fromQuery;
+        if (!pedidoId) {
+            if (window.dokeAlert) window.dokeAlert("Não foi possível identificar o pedido para avaliação.");
+            return;
+        }
         try { window.fecharModalSucesso(); } catch (_) {}
-        window.location.href = `avaliar.html?pedidoId=${window.pedidoIdParaAvaliar}`;
+        const target = `avaliar.html?pedidoId=${encodeURIComponent(pedidoId)}`;
+        try {
+            if (window.top && window.top !== window && window.top.location) {
+                window.top.location.href = target;
+                return;
+            }
+        } catch (_) {}
+        window.location.href = target;
     };
     window.fecharModalSucesso = () => {
         const modal = document.getElementById('modalSucessoAvaliacao');
@@ -7462,7 +7626,7 @@ window.confirmarFinalizacaoPedido = async () => {
                 const isArquivado = isArquivadoPorUser(p, id);
                 if (listaModo === 'arquivados' && !isArquivado) continue;
                 if (listaModo !== 'arquivados' && isArquivado) continue;
-                const statusRaw = String(p.status || '').toLowerCase();
+                const statusRaw = normalizePedidoStatus(p);
                 const isFinal = ['finalizado','cancelado','recusado'].includes(statusRaw);
                 const isAndamento = ['aceito','pago'].includes(statusRaw);
 
@@ -7470,7 +7634,7 @@ window.confirmarFinalizacaoPedido = async () => {
                 if (pedidosFiltro === 'andamento' && !isAndamento) continue;
                 if (pedidosFiltro === 'finalizado' && !isFinal) continue;
 
-                if (papelReal === 'profissional' && p.status === 'recusado') continue;
+                if (papelReal === 'profissional' && statusRaw === 'recusado') continue;
 
                 const outroUid = (papelReal === 'cliente') ? paraUid : deUid;
                 if (outroUid) userIdsToLoad.add(outroUid);
@@ -7488,26 +7652,27 @@ window.confirmarFinalizacaoPedido = async () => {
                 const { id, p, papelReal, deUid, paraUid, outroUid, isArquivado } = item;
                 const dU = (await getUserCached(outroUid)) || {};
                 if (!matchBusca(dU?.user, p.servicoReferencia, p.mensagemInicial, p.paraNome, p.paraUser, p.deNome, p.deUser)) continue;
+                const statusRaw = normalizePedidoStatus(p);
                 
-                let sT = p.status;
-                if(p.status === 'aceito' && papelReal === 'profissional') sT = "Em andamento";
+                let sT = statusRaw;
+                if(statusRaw === 'aceito' && papelReal === 'profissional') sT = "Em andamento";
                 
                 // Badge Clic?vel (Abre Modal de Garantia)
-                let badgeHtml = (p.status === 'pago') ? `
+                let badgeHtml = (statusRaw === 'pago') ? `
                     <span class="ip-badge" onclick="event.stopPropagation(); abrirModalGarantia()" 
                           title="Clique para saber mais sobre a garantia"
                           style="background:#0b7768; color:white; cursor:pointer; padding:4px 8px; border-radius:4px; font-weight:700; font-size:0.65rem; display:flex; align-items:center; gap:4px; transition:0.2s;">
                         <i class='bx bx-shield-quarter'></i> DINHEIRO RETIDO <i class='bx bx-help-circle'></i>
                     </span>` 
-                    : `<span class="ip-badge badge-${p.status}">${sT.toUpperCase()}</span>`;
+                    : `<span class="ip-badge badge-${statusRaw}">${String(sT || '').toUpperCase()}</span>`;
 
-                let bApagar = (['recusado', 'finalizado', 'cancelado'].includes(p.status)) 
+                let bApagar = (['recusado', 'finalizado', 'cancelado'].includes(statusRaw)) 
                     ? `<i class='bx bx-trash' style="color:#e74c3c; cursor:pointer; font-size:1.1rem;" onclick="event.stopPropagation(); apagarDocumentoPedido('${id}')"></i>` : "";
                 const updatedPedido = p.dataAtualizacao || p.dataPedido || p.createdat || null;
                 const unreadHtml = isNaoLido(updatedPedido, 'pedidos', id) ? '<span class="unread-dot"></span>' : "";
 
                 // Info Saldo (Visual Clean Solicitado)
-                let infoSaldo = (papelReal === 'profissional' && p.status === 'pago') ? `
+                let infoSaldo = (papelReal === 'profissional' && statusRaw === 'pago') ? `
                     <div style="background:#ffffff; padding:12px; border-radius:12px; margin-top:12px; border:1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0,0,0,0.03); display:flex; align-items:center; gap:12px;">
                         <div style="width:38px; height:38px; background:#e0f2f1; border-radius:8px; display:flex; align-items:center; justify-content:center; color:#0b7768;">
                             <i class='bx bx-lock-alt' style="font-size:1.3rem;"></i>
@@ -7520,21 +7685,26 @@ window.confirmarFinalizacaoPedido = async () => {
 
                 // Bot?es de A??o
                 let acoesHtml = "";
-                if (papelReal === 'profissional' && p.status === 'pendente') {
+                if (papelReal === 'profissional' && statusRaw === 'pendente') {
                     acoesHtml = `<div style="display:flex; gap:10px; margin-top:10px;">
                         <button onclick="event.stopPropagation(); prepararRecusa('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#ffebee; color:#e74c3c; font-weight:700; cursor:pointer;">Recusar</button>
                         <button onclick="event.stopPropagation(); aceitarPedidoProfissional('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#e8f5e9; color:#2e7d32; font-weight:700; cursor:pointer;">Aceitar</button>
                     </div>`;
-                } else if (papelReal === 'cliente' && p.status === 'pendente') {
+                } else if (papelReal === 'cliente' && statusRaw === 'pendente') {
                     acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicita??o</button>`;
-                } else if (papelReal === 'cliente' && p.status === 'pago') {
+                } else if (papelReal === 'cliente' && statusRaw === 'pago') {
                      // Bot?o de Conclusão (Design Compacto)
                      acoesHtml = `
                         <button onclick="event.stopPropagation(); liberarPagamento('${id}')" 
                                 style="margin-top:8px; width:fit-content; background:var(--cor0); color:white; border:none; padding:6px 15px; border-radius:20px; font-weight:700; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
                             <i class='bx bx-check'></i> Confirmar Conclusão
                         </button>`;
-                } else if (papelReal === 'profissional' && p.status === 'finalizado') {
+                } else if (papelReal === 'cliente' && statusRaw === 'finalizado') {
+                    const avaliado = isPedidoAvaliado(p);
+                    acoesHtml = avaliado
+                        ? `<div style="margin-top:8px; font-size:0.78rem; color:#166534; font-weight:800;"><i class='bx bx-check-circle'></i> Pedido ja avaliado.</div>`
+                        : `<button onclick="event.stopPropagation(); irAvaliarPedido('${id}')" style="margin-top:8px; width:fit-content; background:#0b7768; color:#fff; border:none; padding:7px 15px; border-radius:20px; font-weight:800; cursor:pointer; font-size:0.8rem; display:flex; align-items:center; gap:6px;"><i class='bx bx-star'></i> Avaliar</button>`;
+                } else if (papelReal === 'profissional' && statusRaw === 'finalizado') {
                     const hasMedia = !!(p.finalizacaoMediaUrl || p.finalizacaoMediaURL);
                     const consent = String(p.portfolioConsentStatus || '').toLowerCase();
                     if (!hasMedia) {
@@ -7553,23 +7723,23 @@ window.confirmarFinalizacaoPedido = async () => {
 
                 // Mensagem curta (cliente/profissional)
                 let subMsg = "";
-                if (p.status === 'pendente') {
+                if (statusRaw === 'pendente') {
                     subMsg = (papelReal === 'cliente')
                         ? '<div class=\"ip-sub\">Aguardando resposta do profissional.</div>'
                         : '<div class=\"ip-sub\">Novo pedido. Analise e aceite para liberar o chat.</div>';
-                } else if (p.status === 'recusado' && papelReal === 'cliente') {
+                } else if (statusRaw === 'recusado' && papelReal === 'cliente') {
                     const motivo = p.motivoRecusa ? ` Motivo: ${escapeHtml(String(p.motivoRecusa).slice(0, 90))}${String(p.motivoRecusa).length > 90 ? '...' : ''}` : '';
                     subMsg = `<div class="ip-sub">Pedido recusado.${motivo}</div>`;
-                } else if (p.status === 'aceito' && papelReal === 'cliente') {
+                } else if (statusRaw === 'aceito' && papelReal === 'cliente') {
                     subMsg = '<div class=\"ip-sub\">Chat liberado. Voc? j? pode negociar com o profissional.</div>';
                 }
 
                 // Card "Pedido em andamento" (diferencia Or?amentos vs Mensagens)
                 let cardAndamento = "";
-                if (['aceito','pago','finalizado'].includes(String(p.status||'').toLowerCase())) {
-                    const pedidoStatusNorm = String(p.status || '').toLowerCase();
+                if (['aceito','pago','finalizado'].includes(statusRaw)) {
+                    const pedidoStatusNorm = statusRaw;
                     const cardHidden = !!andamentoCardHidden[String(id)];
-                    const label = (String(p.status||'').toLowerCase() === 'finalizado') ? 'Servi?o finalizado' : 'Pedido em andamento';
+                    const label = (statusRaw === 'finalizado') ? 'Servi?o finalizado' : 'Pedido em andamento';
                     if (!cardHidden) {
                         const cardCloseBtn = (pedidoStatusNorm === 'aceito')
                             ? `<button class="ip-andamento-close" title="Ocultar card" onclick="event.stopPropagation(); ocultarCardAndamento('${id}')"><i class='bx bx-x'></i></button>`
@@ -7601,15 +7771,15 @@ window.confirmarFinalizacaoPedido = async () => {
                         titulo: p.servicoReferencia || p.titulo || 'Pedido',
                         cliente: dU.user || p.paraUser || p.deUser || '',
                         turno: p.turno || p.turnoPreferido || 'Livre',
-                        statusRaw: p.status || '',
-                        statusLabel: sT || p.status || '',
+                        statusRaw: statusRaw || '',
+                        statusLabel: sT || statusRaw || '',
                         status: getAgendaStatus(p),
                         uidOutro: outroUid || ''
                     });
                 }
 
                 const rowHtml = `
-                    <div class="item-pedido tipo-pedido status-border-${p.status} ${pedidosSelecaoModo ? 'is-select-mode' : ''} ${isSelectedPedido ? 'is-selected' : ''}" data-colecao="pedidos" data-id="${id}" data-outro-uid="${outroUid || ''}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handlePedidoCardClick(event, '${id}', '${outroUid || ''}', '${p.status}')">
+                    <div class="item-pedido tipo-pedido status-border-${statusRaw} ${pedidosSelecaoModo ? 'is-select-mode' : ''} ${isSelectedPedido ? 'is-selected' : ''}" data-colecao="pedidos" data-id="${id}" data-outro-uid="${outroUid || ''}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handlePedidoCardClick(event, '${id}', '${outroUid || ''}', '${statusRaw}')">
                         <div class="ip-header"><span class="tag-orcamento">OR?AMENTO</span><div class="ip-header-actions">${selectMarker}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user">
                             <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
@@ -7623,7 +7793,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         </div>
                     </div>`;
                 htmlOut += rowHtml;
-                sigParts.push([id, p.status, p.dataAtualizacao || p.dataPedido || '', isArquivado ? '1' : '0'].join(':'));
+                sigParts.push([id, statusRaw, p.dataAtualizacao || p.dataPedido || '', isArquivado ? '1' : '0'].join(':'));
             }
             if (!htmlOut.trim()) {
                 htmlOut = `<div style="text-align:center; padding:40px; color:#999;">Nenhum pedido encontrado.</div>`;
@@ -8119,6 +8289,15 @@ window.carregarListaConversas = async function() {
         ]);
     }
 
+    function resolvePedidoParticipation(p, meUid) {
+        const me = String(meUid || '').trim();
+        const deUid = String(getDeUid(p) || '').trim();
+        const paraUid = String(getParaUid(p) || '').trim();
+        const souCliente = !!(me && deUid && deUid === me);
+        const souProfissional = !!(me && paraUid && paraUid === me);
+        return { deUid, paraUid, souCliente, souProfissional };
+    }
+
     const userCache = new Map();
     async function getUserCached(uid) {
         if (!uid) return null;
@@ -8478,6 +8657,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         colecaoAtual = colecao;
         window.chatIdAtual = chatIdAtual;
         window.colecaoAtual = colecaoAtual;
+        const chatAvatarEl = document.getElementById('chatAvatar');
+        const chatNomeEl = document.getElementById('chatNome');
+        const abrirPerfilContato = () => window.abrirPerfilUsuario(uidOutro || chatOutroUidAtual || '', null);
+        if (chatAvatarEl) chatAvatarEl.onclick = abrirPerfilContato;
+        if (chatNomeEl) chatNomeEl.onclick = abrirPerfilContato;
         if (btnC) btnC.style.display = 'none';
         if (btnP) btnP.style.display = 'none';
         if (divAcoesPro) divAcoesPro.style.display = 'none';
@@ -8501,7 +8685,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     const paraUid = getParaUid(p);
                     const prevStatus = statusPedidoAtual;
                     const prevAvaliado = avaliadoPedidoAtual;
-                    statusPedidoAtual = p.status || 'pendente';
+                    const statusNorm = normalizePedidoStatus(p);
+                    statusPedidoAtual = statusNorm;
                     avaliadoPedidoAtual = !!p.avaliado;
                     pedidoAtualData = p;
                     conversaArquivadaAtual = isArquivadoPorUser(p, idDoc);
@@ -8511,7 +8696,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     atualizarContextoChat(p);
                     const disputaModal = document.getElementById('modalDisputa');
                     if (disputaModal && disputaModal.style.display === 'flex') renderDisputaModal();
-                    if (!avaliadoPedidoAtual && String(p.status || '').toLowerCase() === 'finalizado') {
+                    if (!avaliadoPedidoAtual && statusNorm === 'finalizado') {
                         checarAvaliacaoPedido(idDoc);
                     }
                       if (pedidoInfoRenderId !== idDoc) {
@@ -8522,11 +8707,11 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                       }
                     
                     // L?gica de bloqueio do chat
-                    if (p.status === 'pendente') {
+                    if (statusNorm === 'pendente') {
                         chatFooter.style.display = 'none'; 
                         if (currentUserUid === paraUid) mostrarAvisoBloqueio("Pedido em espera. Aceite o pedido para liberar o chat.");
                         else mostrarAvisoBloqueio("Pedido em espera. Aguardando aceite do profissional.");
-                    } else if (['recusado', 'cancelado'].includes(p.status)) {
+                    } else if (['recusado', 'cancelado'].includes(statusNorm)) {
                         chatFooter.style.display = 'none'; 
                         mostrarAvisoBloqueio("Este pedido foi encerrado.");
                     } else {
@@ -8536,15 +8721,20 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
 
                     // Bot?es Header (Finalizar / Aceitar / Recusar)
                     if(containerAcao) {
-                        containerAcao.innerHTML = (deUid === currentUserUid && p.status === 'pago') 
+                        const meUid = String(currentUserUid || '').trim();
+                        const papelPedido = resolvePedidoParticipation(p, meUid);
+                        const deUidNorm = String(papelPedido.deUid || '').trim();
+                        const paraUidNorm = String(papelPedido.paraUid || '').trim();
+                        const souClientePedido = !!papelPedido.souCliente;
+                        containerAcao.innerHTML = (souClientePedido && statusNorm === 'pago')
                             ? `<button class="btn-conclusao-topo" onclick="liberarPagamento('${idDoc}')"><i class='bx bx-check'></i> Finalizar</button>` : "";
                         
-                        if(divAcoesPro) divAcoesPro.style.display = (paraUid === currentUserUid && p.status === 'pendente') ? 'flex' : 'none';
+                        if(divAcoesPro) divAcoesPro.style.display = (paraUidNorm === meUid && statusNorm === 'pendente') ? 'flex' : 'none';
                     }
                     
                     // Bot?es Cobran?a
-                    if(btnC) btnC.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
-                    if(btnP) btnP.style.display = (paraUid === currentUserUid && p.status === 'aceito') ? 'flex' : 'none';
+                    if(btnC) btnC.style.display = (String(paraUid || '').trim() === String(currentUserUid || '').trim() && statusNorm === 'aceito') ? 'flex' : 'none';
+                    if(btnP) btnP.style.display = (String(paraUid || '').trim() === String(currentUserUid || '').trim() && statusNorm === 'aceito') ? 'flex' : 'none';
                     syncChatHeaderLayout();
                   } else {
                       mostrarAvisoBloqueio("Pedido n?o encontrado.");
@@ -8613,7 +8803,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     }
                 });
 
-                const abrirPerfilOutro = () => window.abrirPerfilUsuario(uidOutro, !!d.isProfissional);
+                const abrirPerfilOutro = () => window.abrirPerfilUsuario(uidOutro || chatOutroUidAtual || '', !!d.isProfissional);
                 document.getElementById('chatAvatar').onclick = abrirPerfilOutro;
                 document.getElementById('chatNome').onclick = abrirPerfilOutro;
 
@@ -8943,8 +9133,9 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             // --- CARD FINALIZADO ---
             else if (m.tipo === 'card_finalizado') {
-                const souClientePedido = pedidoAtualData && String(getDeUid(pedidoAtualData) || '') === String(currentUserUid || '');
-                const souProfissionalPedido = pedidoAtualData && String(getParaUid(pedidoAtualData) || '') === String(currentUserUid || '');
+                const papelPedido = resolvePedidoParticipation(pedidoAtualData || {}, currentUserUid);
+                const souClientePedido = !!papelPedido.souCliente;
+                const souProfissionalPedido = !!papelPedido.souProfissional;
                 const titulo = pedidoAvaliado ? "Pedido avaliado com sucesso" : "Pedido finalizado";
                 const subt = pedidoAvaliado
                     ? "Sua avalia??o ajudou a comunidade."
@@ -9009,7 +9200,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             // --- SOLICITACAO DE PORTFOLIO ---
             else if (m.tipo === 'solicitacao_portfolio') {
                 if (latestSolicitacaoPortfolioId && msgId && msgId !== latestSolicitacaoPortfolioId) return;
-                const souClientePedido = pedidoAtualData && String(getDeUid(pedidoAtualData) || '') === String(currentUserUid || '');
+                const papelPedido = resolvePedidoParticipation(pedidoAtualData || {}, currentUserUid);
+                const souClientePedido = !!papelPedido.souCliente;
                 const pedidoConsent = String((pedidoAtualData && pedidoAtualData.portfolioConsentStatus) || '').toLowerCase();
                 const statusMsg = String(m.status || '').toLowerCase();
                 const statusReq = (pedidoConsent && pedidoConsent !== 'pendente')
@@ -9053,7 +9245,8 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             // --- RESPOSTA DA SOLICITACAO DE PORTFOLIO ---
             else if (m.tipo === 'portfolio_consent_result') {
-                const souProfissionalPedido = pedidoAtualData && String(getParaUid(pedidoAtualData) || '') === String(currentUserUid || '');
+                const papelPedido = resolvePedidoParticipation(pedidoAtualData || {}, currentUserUid);
+                const souProfissionalPedido = !!papelPedido.souProfissional;
                 if (!souProfissionalPedido) return;
                 const statusReq = String(m.status || '').toLowerCase();
                 const ok = statusReq === 'aprovado';
@@ -10135,7 +10328,8 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
     function markEmbedMode(){
       try{
         const params = new URLSearchParams(window.location.search || '');
-        const isEmbed = params.get('embed') === '1' || params.get('noshell') === '1' || params.get('from') === 'pedidos';
+        const isIframe = window.self !== window.top;
+        const isEmbed = isIframe || params.get('embed') === '1' || params.get('noshell') === '1' || params.get('from') === 'pedidos';
         if(isEmbed && document.body) document.body.classList.add('embed-chat');
       }catch(_){}
     }

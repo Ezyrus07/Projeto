@@ -25,11 +25,49 @@
 
   function toast(msg, type="info"){
     try{
-      if(typeof window.dokeToast === "function") return window.dokeToast(msg, {type});
+      if(typeof window.dokeToast === "function") return window.dokeToast({ message: String(msg || ""), type });
       if(typeof window.mostrarToast === "function") return window.mostrarToast(msg, type);
     }catch(e){}
     try{ console[type==="error"?"error":"log"]("[DOKE]", msg); }catch(e){}
   }
+
+  function ensureProUpsellModal(){
+    if (typeof window.dokeOpenProUpsellModal === "function") return;
+    window.dokeOpenProUpsellModal = function(){
+      const title = "Ative seu perfil profissional";
+      const msg = "Para anunciar e receber novos clientes, primeiro ative seu perfil profissional. Leva só alguns minutos e libera todos os recursos de vendas.";
+      if (document.querySelector('.doke-pro-upsell-overlay')) return;
+      const overlay = document.createElement("div");
+      overlay.className = "doke-pro-upsell-overlay";
+      overlay.style.cssText = "position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.55);backdrop-filter:blur(4px);display:grid;place-items:center;padding:20px;";
+      overlay.innerHTML = `
+        <div style="width:min(680px,96vw);background:#fff;border-radius:22px;border:1px solid #dbe5f0;box-shadow:0 28px 80px rgba(15,23,42,.30);overflow:hidden;">
+          <div style="padding:22px 24px 10px;">
+            <span style="display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#e7f7f3;color:#0b7768;font-weight:800;font-size:.86rem;"><i class='bx bx-shield-quarter'></i> Cresça na Doke</span>
+            <h3 style="margin:12px 0 6px;font-size:2rem;line-height:1.1;color:#0f2744;font-weight:900;">${title}</h3>
+            <p style="margin:0;color:#425466;font-size:1.16rem;line-height:1.5;font-weight:600;">${msg}</p>
+          </div>
+          <div style="margin-top:18px;padding:18px 24px 24px;display:flex;align-items:center;justify-content:flex-end;gap:10px;border-top:1px solid #e8eef5;">
+            <button type="button" data-action="close" style="border:none;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;background:#eef2f7;color:#334155;">Agora não</button>
+            <button type="button" data-action="go" style="border:none;border-radius:12px;padding:12px 18px;font-weight:800;cursor:pointer;background:#0b7768;color:#fff;">Tornar-se profissional</button>
+          </div>
+        </div>`;
+      document.body.appendChild(overlay);
+      overlay.addEventListener("click", (ev) => {
+        const t = ev.target;
+        if (!(t instanceof Element)) return;
+        const actionEl = t.closest("[data-action]");
+        if (t === overlay || (actionEl && actionEl.getAttribute("data-action") === "close")) {
+          overlay.remove();
+          return;
+        }
+        if (actionEl && actionEl.getAttribute("data-action") === "go") {
+          location.href = "tornar-profissional.html";
+        }
+      });
+    };
+  }
+  ensureProUpsellModal();
 
   function consumeFlashNotice(){
     try{
@@ -42,7 +80,7 @@
       const type = String(payload.type || "info");
       const title = String(payload.title || "");
       if(typeof window.dokeToast === "function"){
-        window.dokeToast(msg, { type, title });
+        window.dokeToast({ message: msg, type, title });
       }else if(typeof window.mostrarToast === "function"){
         window.mostrarToast(msg, type, title);
       }else{
@@ -524,8 +562,10 @@
         }
         if (link.dataset.requiresProfessional === "1") {
           e.preventDefault();
-          toast("Para anunciar, torne-se profissional primeiro.", "info");
-          location.href = "tornar-profissional.html";
+          const msg = "Para anunciar e receber novos clientes, primeiro ative seu perfil profissional. Leva só alguns minutos e libera todos os recursos de vendas.";
+          if (typeof window.dokeOpenProUpsellModal === "function") window.dokeOpenProUpsellModal();
+          else if (typeof window.dokeAlert === "function") window.dokeAlert(msg, "Ative seu perfil profissional");
+          else toast(msg, "info");
         }
       });
     });
@@ -764,8 +804,10 @@
           }
           if (card.dataset.requiresProfessional === "1") {
             e.preventDefault();
-            toast("Para anunciar, torne-se profissional primeiro.", "info");
-            location.href = "tornar-profissional.html";
+            const msg = "Para anunciar e receber novos clientes, primeiro ative seu perfil profissional. Leva só alguns minutos e libera todos os recursos de vendas.";
+            if (typeof window.dokeOpenProUpsellModal === "function") window.dokeOpenProUpsellModal();
+            else if (typeof window.dokeAlert === "function") window.dokeAlert(msg, "Ative seu perfil profissional");
+            else toast(msg, "info");
           }
         });
       });
@@ -775,11 +817,12 @@
       try {
         localStorage.setItem("doke_flash_notice", JSON.stringify({
           type: "info",
-          title: "Conta cliente",
-          message: "Para anunciar, torne-se profissional primeiro."
+          title: "Ative seu perfil profissional",
+          message: "Para anunciar e receber novos clientes, primeiro ative seu perfil profissional. Leva só alguns minutos e libera todos os recursos de vendas."
         }));
       } catch (_e) {}
-      location.replace("tornar-profissional.html");
+      if (typeof window.dokeOpenProUpsellModal === "function") window.dokeOpenProUpsellModal();
+      else location.replace("tornar-profissional.html");
       return;
     }
 
@@ -1540,6 +1583,3 @@
     ensureShell();
   }
 })();
-
-
-
