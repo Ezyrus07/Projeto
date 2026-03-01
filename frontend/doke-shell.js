@@ -181,7 +181,7 @@
     try{
       const body = document.body;
       if(!body) return;
-      body.classList.toggle("doke-auth-pending", !isReady);
+      body.classList.remove("doke-auth-pending");
       body.classList.toggle("doke-auth-ready", !!isReady);
     }catch(_e){}
   }

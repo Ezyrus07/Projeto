@@ -3200,7 +3200,7 @@ function dokeIsShellManagingDesktopAuth() {
 
 window.verificarEstadoLogin = async function() {
     try {
-        document.body?.classList?.add('doke-auth-pending');
+        document.body?.classList?.remove('doke-auth-pending');
     } catch (_e) {}
 
     const perfilSalvo = localStorage.getItem('doke_usuario_perfil');

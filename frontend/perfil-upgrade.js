@@ -4463,7 +4463,38 @@ function ensureTheme(ctx, theme){
 
   function initValidationPanel(ctx){
     const section = document.querySelector('.dp-section[data-tab="validacao"]');
+    const tabBtn = document.querySelector('.dp-tab[data-tab="validacao"]');
+    const hideValidationTab = () => {
+      if(tabBtn) tabBtn.style.display = "none";
+      if(section){
+        section.style.display = "none";
+        section.classList.add("dp-section--hidden");
+        section.setAttribute("aria-hidden", "true");
+      }
+    };
+    const showValidationTab = () => {
+      if(tabBtn) tabBtn.style.display = "";
+      if(section) section.setAttribute("aria-hidden", "true");
+    };
+
+    hideValidationTab();
     if(!section || !ctx?.canEdit) return;
+    if(isProfissionalUsuario(ctx?.target)) return;
+
+    let hasSolicitacao = false;
+    try{
+      const p = JSON.parse(localStorage.getItem("doke_pro_validacao_status") || "null");
+      hasSolicitacao = !!(p && p.status);
+    }catch(_){}
+
+    if(!hasSolicitacao){
+      try{
+        const local = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "null") || {};
+        hasSolicitacao = !!(local.proValidacaoStatus || local.proValidacaoUpdatedAt);
+      }catch(_){}
+    }
+    if(!hasSolicitacao) return;
+    showValidationTab();
 
     section.innerHTML = `
       <div class="dp-sectionHeader">
