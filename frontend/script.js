@@ -307,6 +307,13 @@ function dokeEnsureAuthUserFromCacheSync(opts) {
 }
 
 async function dokeResolveAuthUser() {
+    const forcedLogoutAt = Number(localStorage.getItem('doke_force_logged_out_at') || sessionStorage.getItem('doke_force_logged_out_at') || 0);
+    const forceLogoutActive = window.__dokeLogoutInProgress === true || (Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < 120000);
+    if (forceLogoutActive) {
+        try { dokeApplyCompatAuthUser(null); } catch (_e) {}
+        return null;
+    }
+
     const strictSessionMode = window.DOKE_STRICT_AUTH_SESSION !== false;
     let hasRealtimeAuthClient = false;
 
@@ -3609,16 +3616,29 @@ async function dokeSignOutEverywhere() {
 
 async function dokeSignOutAndGo(targetHref) {
     const nextHref = String(targetHref || "login.html");
+    const fromPath = String(window.location.pathname || "").toLowerCase();
+    window.__dokeLogoutInProgress = true;
+    try { localStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { sessionStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { dokeApplyCompatAuthUser(null); } catch (_e) {}
     try { if (typeof window.dokeAllowSignOut === "function") window.dokeAllowSignOut(30000); } catch (_e) {}
     try { dokeClearLocalAuthCache(); } catch (_e) {}
     try { await dokeSignOutEverywhere(); } catch (_e) {}
     try { dokeClearLocalAuthCache(); } catch (_e) {}
-    try { localStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
-    try { sessionStorage.setItem('doke_force_logged_out_at', String(Date.now())); } catch (_e) {}
+    try { if (typeof window.verificarEstadoLogin === "function") await window.verificarEstadoLogin(); } catch (_e) {}
     try { window.location.replace(nextHref); } catch (_e) { window.location.href = nextHref; }
     setTimeout(() => {
         try { if (!String(window.location.href || '').includes('login.html')) window.location.href = nextHref; } catch (_e) {}
     }, 300);
+    setTimeout(() => {
+        try {
+            const nowPath = String(window.location.pathname || "").toLowerCase();
+            const stillLoggedFlag = localStorage.getItem('usuarioLogado') === 'true';
+            if (nowPath === fromPath || (stillLoggedFlag && !nowPath.includes('login.html'))) {
+                window.location.reload();
+            }
+        } catch (_e) {}
+    }, 900);
 }
 
 window.alternarConta = async function() {
@@ -4544,6 +4564,7 @@ window.realizarLogin = async function(e) {
         localStorage.setItem('doke_usuario_perfil', JSON.stringify(dadosUsuario));
         localStorage.setItem('doke_uid', user.uid);
         try { localStorage.removeItem('doke_force_logged_out_at'); sessionStorage.removeItem('doke_force_logged_out_at'); } catch (_) {}
+        try { window.__dokeLogoutInProgress = false; } catch (_) {}
         try {
             dokeRememberLoggedAccount({
                 uid: user.uid || dadosUsuario.uid || dadosUsuario.id || "",
@@ -5860,6 +5881,15 @@ document.addEventListener("DOMContentLoaded", async function() {
 
     // 8. AUTENTICA??O PERSISTENTE E NOTIFICA??ES
     dokeSubscribeAuthState(async (user) => {
+        const forcedLogoutAt = Number(localStorage.getItem('doke_force_logged_out_at') || sessionStorage.getItem('doke_force_logged_out_at') || 0);
+        const forceLogoutActive = window.__dokeLogoutInProgress === true || (Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < 120000);
+        if (forceLogoutActive) {
+            try { dokeApplyCompatAuthUser(null); } catch (_e) {}
+            try { dokeClearLocalAuthCache(); } catch (_e) {}
+            try { await verificarEstadoLogin(); } catch (_e) {}
+            return;
+        }
+
         if (user) {
             try {
                 const docRef = doc(db, "usuarios", user.uid);
@@ -9683,7 +9713,7 @@ window.abrirModalPublicacao = async function(publicacaoId) {
         mediaBox.innerHTML = `<img src="${item.media_url}" style="max-width:100%; max-height:100%; object-fit:contain;">`;
     }
 
-    const captionText = [item.titulo, item.descricao || item.legenda].filter(Boolean).join(" - ");
+    const captionText = String(item.descricao || item.legenda || item.texto || item.titulo || "").trim();
     const captionDiv = document.getElementById('modalCaption');
     if (captionDiv) {
         if (captionText) {

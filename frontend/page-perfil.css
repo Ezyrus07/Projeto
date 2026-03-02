@@ -3095,3 +3095,69 @@ body[data-page="perfil"] #modalPostDetalhe.ppv5-overlay .ppv5-close{
   align-items: center !important;
   justify-content: center !important;
 }
+/* PATCH 2026-03-01P
+   Perfil: evitar scroll duplo (mantém apenas o scroll da página) */
+html,
+body[data-page="perfil"]{
+  overflow-x: hidden !important;
+}
+
+body[data-page="perfil"]{
+  overflow-y: auto !important;
+}
+
+body[data-page="perfil"] main.dp-wrap,
+body[data-page="perfil"] #dpRoot,
+body[data-page="perfil"] .dp-section{
+  height: auto !important;
+  max-height: none !important;
+  overflow: visible !important;
+}
+
+body[data-page="perfil"] .sidebar-icones{
+  overflow-y: hidden !important;
+}
+
+/* PATCH 2026-03-01Q
+   Perfil mobile: rolagem mais fluida (sem travar em botões/cards) */
+@media (max-width: 1024px){
+  body[data-page="perfil"],
+  body[data-page="perfil"] main.dp-wrap,
+  body[data-page="perfil"] #dpRoot,
+  body[data-page="perfil"] .dp-section,
+  body[data-page="perfil"] .dp-body,
+  body[data-page="perfil"] .dp-grid,
+  body[data-page="perfil"] .dp-item,
+  body[data-page="perfil"] .dp-reelCard,
+  body[data-page="perfil"] .card-premium{
+    touch-action: pan-y !important;
+    overscroll-behavior-y: auto !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-tabs,
+  body[data-page="perfil"] #dpRoot .dp-stats,
+  body[data-page="perfil"] #dpRoot .dp-actionsRow{
+    touch-action: pan-x pan-y !important;
+    -webkit-overflow-scrolling: touch !important;
+    scroll-snap-type: none !important;
+    overscroll-behavior-x: contain !important;
+  }
+
+  body[data-page="perfil"] #dpRoot .dp-actionsRow > button,
+  body[data-page="perfil"] #dpRoot .dp-item,
+  body[data-page="perfil"] #dpRoot .dp-reelCard{
+    touch-action: manipulation !important;
+  }
+
+  /* Reels: evita travar scroll vertical ao tocar no vídeo */
+  body[data-page="perfil"] #dpGridReels .dp-reelCard{
+    touch-action: pan-y !important;
+  }
+
+  body[data-page="perfil"] #dpGridReels .dp-reelCard video,
+  body[data-page="perfil"] #dpGridReels .dp-reelCard .dp-reelMedia,
+  body[data-page="perfil"] #dpGridReels .dp-reelCard .dp-reelMedia *{
+    pointer-events: none !important;
+    touch-action: pan-y !important;
+  }
+}

@@ -1451,6 +1451,32 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
     margin-top: 8px !important;
   }
 }
+
+/* PATCH 2026-03-01N
+   Mobile: manter botão Filtros na mesma linha do Atualizar */
+@media (max-width: 768px){
+  body[data-page="pedidos"] .toolbar-actions{
+    display:flex !important;
+    flex-wrap:nowrap !important;
+    align-items:center !important;
+    gap:6px !important;
+    overflow-x:auto !important;
+    overflow-y:hidden !important;
+    white-space:nowrap !important;
+  }
+
+  body[data-page="pedidos"] .toolbar-actions .btn-ui{
+    flex:0 0 auto !important;
+    min-height:34px !important;
+    padding:0 9px !important;
+    font-size:.78rem !important;
+  }
+
+  body[data-page="pedidos"] #refreshBtn,
+  body[data-page="pedidos"] #filtersBtn{
+    flex:0 0 auto !important;
+  }
+}
 </style>
 </head>
 <body data-page="pedidos">
@@ -1527,7 +1553,6 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
 <div id="bulkInfo">0 pedidos selecionados</div>
 <div class="bulk-actions">
 <button class="btn-ui" id="bulkFinalizeBtn" type="button"><i class="bx bx-check"></i>Finalizar</button>
-<button class="btn-ui" id="bulkArchiveBtn" type="button"><i class="bx bx-archive-in"></i>Arquivar</button>
 <button class="btn-ui" id="bulkClearBtn" type="button"><i class="bx bx-x"></i>Limpar</button>
 </div>
 </div>
@@ -1662,7 +1687,6 @@ body[data-page="pedidos"].chat-split-open #ordersGridWrap{
         bulkBar: document.getElementById('bulkBar'),
         bulkInfo: document.getElementById('bulkInfo'),
         bulkFinalizeBtn: document.getElementById('bulkFinalizeBtn'),
-        bulkArchiveBtn: document.getElementById('bulkArchiveBtn'),
         bulkClearBtn: document.getElementById('bulkClearBtn'),
         contentSplit: document.getElementById('contentSplit'),
         chatDrawer: document.getElementById('chatDrawer'),
@@ -2812,10 +2836,6 @@ function displayHandle(p){
         const chatLiberado = canOpenChat(p);
         const motivoRecusa = String(p.motivoRecusa || '').trim();
         const isRecusado = String(p.status || '').toLowerCase() === 'recusado';
-        const rawNeed = String(p.mensagemInicial || p.descricaoBase || p.servicoReferencia || '').trim();
-        const rawDesc = String(p.descricao || '').trim();
-        const rawTitle = String(p.titulo || '').trim();
-        const needPreview = (rawNeed && rawNeed !== rawDesc && rawNeed !== rawTitle && rawNeed.toLowerCase() !== 'sem detalhes adicionais.') ? rawNeed : '';
         return `
           <article class="card card-pedido ${selected ? 'selected' : ''} ${isActive ? 'chat-active' : ''}" data-id="${esc(p.id)}" data-status="${esc(String(p.status||''))}">
             <div class="card-top">
@@ -2851,7 +2871,6 @@ function displayHandle(p){
 
             <div class="title-row">
               <h3 class="title">${esc(p.titulo)}</h3>
-              ${needPreview ? `<button class="need-info" type="button" aria-label="Ver informacoes do pedido" data-tip="${escAttr(needPreview)}"><i class='bx bx-info-circle'></i></button>` : ``}
             </div>
             ${p.descricao ? `<p class="desc">${esc(p.descricao)}</p>` : ``}
             ${isRecusado && motivoRecusa ? `<p class="recusa-note"><i class='bx bx-error-circle'></i><span>${esc(motivoRecusa)}</span></p>` : ``}
@@ -3452,9 +3471,6 @@ function openInlineChat(p){
           el.bulkFinalizeBtn.disabled = (total === 0);
           el.bulkFinalizeBtn.title = 'A finalizacao so ocorre apos confirmacao do cliente no app dele.';
         }
-        if(el.bulkArchiveBtn){
-          el.bulkArchiveBtn.disabled = (total === 0);
-        }
         if(el.bulkClearBtn){
           el.bulkClearBtn.disabled = (clearable === 0);
           el.bulkClearBtn.title = clearable ? 'Limpar pedidos finalizados ou recusados' : 'Selecione pedidos recusados/finalizados para limpar';
@@ -3470,17 +3486,6 @@ function openInlineChat(p){
       function finalizeSelected(){
         if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
         showToast('A finalizacao depende da confirmacao do cliente na tela dele.');
-      }
-
-      function archiveSelected(){
-        if(!state.selected.size){ showToast('Selecione pelo menos 1 pedido.'); return; }
-        const ids = Array.from(state.selected).map((id) => String(id));
-        addHiddenPedidos(ids);
-        purgePedidosFromLocalCaches(ids);
-        state.pedidos = (state.pedidos || []).filter((p) => !state.selected.has(String(p.id)));
-        state.selected.clear();
-        render();
-        showToast('Pedidos arquivados da lista.');
       }
 
       function clearSelectedDoneOrRejected(){
@@ -3560,7 +3565,6 @@ function openInlineChat(p){
         on(el.sortBtn, 'click', () => { nextSort(); render(); });
         on(el.selectBtn, 'click', () => toggleSelectMode());
         on(el.bulkFinalizeBtn, 'click', finalizeSelected);
-        on(el.bulkArchiveBtn, 'click', archiveSelected);
         on(el.bulkClearBtn, 'click', clearSelectedDoneOrRejected);
         on(el.refreshBtn, 'click', async () => { if(el.refreshBtn){ el.refreshBtn.disabled = true; } await hydrate(true); if(el.refreshBtn){ el.refreshBtn.disabled = false; } showToast('Pedidos atualizados'); });
 

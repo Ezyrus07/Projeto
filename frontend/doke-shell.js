@@ -187,6 +187,10 @@
   }
 
   async function getSessionUser(){
+    const forcedLogoutAt = Number(localStorage.getItem("doke_force_logged_out_at") || sessionStorage.getItem("doke_force_logged_out_at") || 0);
+    const forceLogoutActive = window.__dokeLogoutInProgress === true || (Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < 120000);
+    if (forceLogoutActive) return null;
+
     try{
       const sb = window.sb || window.supabaseClient || window.sbClient || window.supabase;
       if(sb?.auth?.getUser){
@@ -213,6 +217,10 @@
   }
 
     function hydrateProfileFromSession(sessionUser, currentProfile){
+    const forcedLogoutAt = Number(localStorage.getItem("doke_force_logged_out_at") || sessionStorage.getItem("doke_force_logged_out_at") || 0);
+    const forceLogoutActive = window.__dokeLogoutInProgress === true || (Number.isFinite(forcedLogoutAt) && forcedLogoutAt > 0 && (Date.now() - forcedLogoutAt) < 120000);
+    if (forceLogoutActive) return (currentProfile && typeof currentProfile === "object") ? { ...currentProfile } : {};
+
     const p = (currentProfile && typeof currentProfile === "object") ? { ...currentProfile } : {};
     const uid = String(sessionUser?.id || sessionUser?.uid || "").trim();
     const email = String(sessionUser?.email || "").trim();
@@ -366,9 +374,42 @@
   }
 
   async function performShellSignOut(targetHref){
-    await signOutEverywhereFallback();
+    const nextHref = String(targetHref || "login.html");
+    const fromPath = String(window.location.pathname || "").toLowerCase();
+    window.__dokeLogoutInProgress = true;
+    try { localStorage.setItem("doke_force_logged_out_at", String(Date.now())); } catch (_e) {}
+    try { sessionStorage.setItem("doke_force_logged_out_at", String(Date.now())); } catch (_e) {}
+    try {
+      if (window.auth && typeof window.auth === "object") window.auth.currentUser = null;
+      if (typeof window.dokeApplyCompatAuthUser === "function") window.dokeApplyCompatAuthUser(null);
+    } catch (_e) {}
     clearAuthCache();
-    location.href = String(targetHref || "login.html");
+    try { if (typeof window.verificarEstadoLogin === "function") await window.verificarEstadoLogin(); } catch (_e) {}
+
+    try {
+      await Promise.race([
+        signOutEverywhereFallback(),
+        new Promise((resolve) => setTimeout(resolve, 900))
+      ]);
+    } catch (_e) {}
+
+    try { window.location.replace(nextHref); } catch (_e) { window.location.href = nextHref; }
+    setTimeout(() => {
+      try {
+        if (!String(window.location.href || "").includes("login.html")) {
+          window.location.href = nextHref;
+        }
+      } catch (_e) {}
+    }, 350);
+    setTimeout(() => {
+      try {
+        const nowPath = String(window.location.pathname || "").toLowerCase();
+        const stillLoggedFlag = localStorage.getItem("usuarioLogado") === "true";
+        if (nowPath === fromPath || (stillLoggedFlag && !nowPath.includes("login.html"))) {
+          window.location.reload();
+        }
+      } catch (_e) {}
+    }, 950);
     return true;
   }
 

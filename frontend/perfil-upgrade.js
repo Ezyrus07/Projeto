@@ -2640,7 +2640,6 @@ function ensureTheme(ctx, theme){
       card.tabIndex = 0;
       card.dataset.pubId = String(item.id || "");
       const title = stripLinkedAidMarker(item.titulo || item.legenda || "");
-      const desc = stripLinkedAidMarker(item.descricao || (item.titulo ? item.legenda : "") || "");
       card.innerHTML = `
         <div class="dp-itemMedia">${media}</div>
         <div class="dp-itemBody">
@@ -2649,13 +2648,9 @@ function ensureTheme(ctx, theme){
             const f = (ctx && ctx.target) ? (ctx.target.foto || "") : "";
             if(!u && !f) return "";
             const avatar = f ? `<img src="${f}" alt="">` : `<img src="https://i.pravatar.cc/80?u=${encodeURIComponent(String(userId||""))}" alt="">`;
-            const meta = item.created_at || item.data || item.createdAt || item.createdat;
-            const dt = meta ? new Date(meta) : null;
-            const when = dt && !isNaN(dt.getTime()) ? dt.toLocaleDateString("pt-BR") : "";
-            return `<div class="dp-itemAuthor">${avatar}<div><div class="dp-itemUser">@${escapeHtml(u||"usuario")}</div>${when ? `<span class="dp-itemMeta">${when}</span>` : ``}</div></div>`;
+            return `<div class="dp-itemAuthor">${avatar}<div><div class="dp-itemUser">@${escapeHtml(u||"usuario")}</div></div></div>`;
           })()}
           <b class="dp-itemTitle">${escapeHtml(title)}</b>
-          ${desc ? `<p class="dp-itemDesc">${escapeHtml(desc)}</p>` : ``}
         </div>
       `;
       if(canEdit){
