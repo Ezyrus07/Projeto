@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <!-- __DOKE_APP_REDIRECT__ -->
+  <script>(function(){try{var p=new URLSearchParams(location.search);if(p.has('standalone')||p.has('inApp'))return;var file=location.pathname.split('/').pop();var map={"index.html":"#/home","busca.html":"#/search","comunidade.html":"#/comunidades","negocios.html":"#/negocios","pedidos.html":"#/pedidos","notificacoes.html":"#/notificacoes","mensagens.html":"#/mensagens","meuperfil.html":"#/perfil","mais.html":"#/mais"};var r=map[file]||('#/p/'+encodeURIComponent(file));location.replace('app.html'+r);}catch(e){}})();</script>
+
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js?v=20260218v43"></script>
+  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
+  <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Grupo | Doke</title>
+  <meta name="description" content="Area de comunidade da Doke com feed, membros e configuracoes do grupo." />
+  <meta property="og:title" content="Doke - Grupo" />
+  <meta property="og:description" content="Converse com membros, publique no feed e gerencie seu grupo na Doke." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/Imagens/doke-logo.png" />
+  <meta name="theme-color" content="#0b7768" />
+
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" />
+  <link rel="stylesheet" href="style.css?v=20260211v45" />
+  <link rel="stylesheet" href="doke-a11y.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-layout-fix.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-fixes.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-ux.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-shell.css?v=20260212v42" />
+  <link rel="stylesheet" href="doke-responsive.css?v=20260209v24" />
+  <link rel="stylesheet" href="grupo-refeito.css" />
+
+  <script defer src="script.js?v=20260218v60"></script>
+  <script defer src="grupo-refeito.js"></script>
+
+  <style>
+    :root {
+      --grp-bg: #edf2f8;
+      --grp-surface: #ffffff;
+      --grp-line: #e2e8f0;
+      --grp-text: #0f172a;
+      --grp-muted: #64748b;
+      --grp-blue: #2a5f90;
+      --grp-green: #0b7768;
+      --grp-radius: 18px;
+      --grp-shadow: 0 14px 32px rgba(15, 23, 42, 0.08);
+    }
+
+    body[data-page="grupo"] {
+      background: linear-gradient(180deg, #d5e4f3 0, #edf2f8 180px);
+    }
+
+    main.grupo-main {
+      margin-left: 0 !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      padding: 12px 10px calc(90px + env(safe-area-inset-bottom)) !important;
+      box-sizing: border-box;
+    }
+
+    .grupo-page {
+      width: 100%;
+      max-width: 1320px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .grupo-card {
+      background: var(--grp-surface);
+      border: 1px solid var(--grp-line);
+      border-radius: var(--grp-radius);
+      box-shadow: var(--grp-shadow);
+    }
+
+    .grupo-hero {
+      overflow: hidden;
+    }
+
+    .grupo-cover {
+      height: 150px;
+      background:
+        radial-gradient(320px 180px at 15% 20%, rgba(255, 255, 255, 0.22), transparent 70%),
+        linear-gradient(130deg, #1f4d75 0%, #2a5f90 50%, #0b7768 130%);
+      background-size: cover;
+      background-position: center;
+    }
+
+    .grupo-info {
+      padding: 12px;
+      display: grid;
+      grid-template-columns: 64px minmax(0, 1fr);
+      gap: 10px;
+      align-items: end;
+      position: relative;
+    }
+
+    .grupo-avatar {
+      width: 64px;
+      height: 64px;
+      margin-top: -34px;
+      border-radius: 16px;
+      border: 2px solid #fff;
+      background: #dbe5f3;
+      box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      color: #1d2b3a;
+      flex-shrink: 0;
+    }
+
+    .grupo-avatar .initial {
+      font-size: 1.35rem;
+      letter-spacing: 0.02em;
+    }
+
+    .grupo-title-wrap {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .grupo-title {
+      margin: 0;
+      color: var(--grp-text);
+      font-size: 1.2rem;
+      line-height: 1.15;
+      font-weight: 900;
+      word-break: break-word;
+    }
+
+    .grupo-desc {
+      margin: 0;
+      color: var(--grp-muted);
+      font-weight: 700;
+      font-size: 0.9rem;
+      line-height: 1.35;
+      word-break: break-word;
+    }
+
+    .grupo-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .meta-pill {
+      border: 1px solid #d5dfec;
+      background: #f8fbff;
+      color: #3a4a60;
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.76rem;
+      font-weight: 800;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    .grupo-config-btn {
+      position: absolute;
+      right: 12px;
+      top: 12px;
+      min-height: 36px;
+      border: 1px solid #d5dfec;
+      background: #fff;
+      border-radius: 12px;
+      padding: 0 11px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #223247;
+      font-weight: 800;
+      cursor: pointer;
+    }
+
+    .grupo-config-btn i {
+      font-size: 1.1rem;
+      color: var(--grp-blue);
+      line-height: 1;
+    }
+
+    .grupo-layout {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+
+    .grupo-col-main,
+    .grupo-col-side {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .composer-wrap {
+      padding: 12px;
+    }
+
+    .reply-bar {
+      margin-bottom: 10px;
+    }
+
+    .composer-row {
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) 96px;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .composer-icon {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      border: 1px solid #d8e2ef;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--grp-blue);
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .composer-icon i {
+      font-size: 1.1rem;
+      line-height: 1;
+    }
+
+    #postArquivo {
+      display: none;
+    }
+
+    #postTexto {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #d8e2ef;
+      border-radius: 12px;
+      padding: 0 12px;
+      font-size: 0.95rem;
+      font-family: inherit;
+      color: var(--grp-text);
+      outline: none;
+      background: #fff;
+    }
+
+    #postTexto:focus {
+      border-color: #97b6da;
+      box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.12);
+    }
+
+    #btnEnviarPost {
+      min-height: 42px;
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(90deg, var(--grp-green), var(--grp-blue));
+      color: #fff;
+      font-weight: 900;
+      letter-spacing: 0.01em;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    #btnEnviarPost:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .composer-hint {
+      margin-top: 9px;
+      color: var(--grp-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .feed-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--grp-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .feed-title {
+      margin: 0;
+      font-size: 1rem;
+      color: #1d2b3a;
+      font-weight: 900;
+    }
+
+    .feed-sub {
+      color: var(--grp-muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin: 0;
+    }
+
+    .feed-body {
+      padding: 12px;
+      min-height: 220px;
+    }
+
+    .feed-empty {
+      border: 1px dashed #d6e0ec;
+      border-radius: 14px;
+      background: #f7fbff;
+      padding: 14px;
+      color: #617087;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    #grupoFeed {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .side-head {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--grp-line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .side-title {
+      margin: 0;
+      color: #1d2b3a;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .side-sub {
+      margin: 4px 0 0;
+      color: var(--grp-muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .side-btn {
+      min-height: 34px;
+      border: 1px solid #d8e2ef;
+      background: #fff;
+      border-radius: 10px;
+      padding: 0 10px;
+      color: #26435f;
+      font-size: 0.82rem;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .side-btn i {
+      font-size: 1rem;
+      color: var(--grp-blue);
+      line-height: 1;
+    }
+
+    .side-body {
+      padding: 12px;
+    }
+
+    .members-counters {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    .count-box {
+      border: 1px solid #d8e2ef;
+      border-radius: 12px;
+      background: #f8fbff;
+      padding: 9px 10px;
+    }
+
+    .count-box .label {
+      display: block;
+      color: #607087;
+      font-size: 0.74rem;
+      font-weight: 800;
+    }
+
+    .count-box .value {
+      display: block;
+      margin-top: 3px;
+      color: #1d2b3a;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .members-section + .members-section {
+      margin-top: 10px;
+    }
+
+    .members-label {
+      margin: 0 0 8px;
+      color: #1d2b3a;
+      font-size: 0.86rem;
+      font-weight: 900;
+    }
+
+    .member-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .membro-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #fff;
+      padding: 8px;
+    }
+
+    .membro-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .membro-avatar {
+      width: 38px;
+      height: 38px;
+      border-radius: 999px;
+      border: 1px solid #d8e2ef;
+      background: #edf5ff;
+      color: #325176;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 900;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+
+    .membro-avatar img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .membro-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .membro-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .membro-handle {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .requests-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .tab-btn {
+      min-height: 36px;
+      border: 1px solid #d8e2ef;
+      background: #fff;
+      border-radius: 10px;
+      padding: 0 12px;
+      color: #26435f;
+      font-size: 0.84rem;
+      font-weight: 800;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .tab-btn.active {
+      border-color: transparent;
+      background: linear-gradient(90deg, var(--grp-green), var(--grp-blue));
+      color: #fff;
+    }
+
+    .form-input {
+      width: 100%;
+      min-height: 42px;
+      border: 1px solid #d8e2ef;
+      border-radius: 12px;
+      background: #fff;
+      padding: 0 12px;
+      font-size: 0.92rem;
+      font-family: inherit;
+      color: #1d2b3a;
+      outline: none;
+    }
+
+    textarea.form-input {
+      min-height: 110px;
+      padding: 10px 12px;
+      resize: vertical;
+      line-height: 1.35;
+    }
+
+    .btn-submit-modal {
+      min-height: 42px;
+      border: 0;
+      border-radius: 12px;
+      padding: 0 14px;
+      background: linear-gradient(90deg, var(--grp-green), var(--grp-blue));
+      color: #fff;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .cfg-modal {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      background: rgba(2, 6, 23, 0.48);
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+      z-index: 12000;
+    }
+
+    .cfg-panel {
+      width: min(860px, 96vw);
+      max-height: 90vh;
+      overflow: auto;
+      background: #fff;
+      border-radius: 18px;
+      border: 1px solid #e2e8f0;
+      box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22);
+    }
+
+    .cfg-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 14px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .cfg-title {
+      margin: 0;
+      font-size: 1.06rem;
+      color: #1d2b3a;
+      font-weight: 900;
+    }
+
+    .cfg-close {
+      width: 38px;
+      height: 38px;
+      border-radius: 11px;
+      border: 1px solid #d8e2ef;
+      background: #fff;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.2rem;
+      color: #284262;
+      cursor: pointer;
+      line-height: 1;
+    }
+
+    .cfg-tabs {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 12px 14px 0;
+      scrollbar-width: thin;
+    }
+
+    .cfg-tab {
+      min-height: 38px;
+      border: 1px solid #d8e2ef;
+      border-radius: 999px;
+      background: #fff;
+      color: #274260;
+      padding: 0 14px;
+      font-size: 0.85rem;
+      font-weight: 900;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .cfg-tab.active {
+      border-color: transparent;
+      background: linear-gradient(90deg, var(--grp-green), var(--grp-blue));
+      color: #fff;
+    }
+
+    .cfg-section {
+      padding: 14px;
+      display: block;
+    }
+
+    .cfg-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .cfg-field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .cfg-label {
+      margin: 0;
+      color: #334155;
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .cfg-image-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .cfg-image-card {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #f8fbff;
+      padding: 10px;
+    }
+
+    .cfg-preview {
+      width: 100%;
+      height: 130px;
+      border-radius: 12px;
+      border: 1px dashed #c9d8ea;
+      background: #eef4fb;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #627389;
+      font-size: 0.82rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    #previewFotoGrupo {
+      height: 110px;
+    }
+
+    #listaCargos,
+    #listaSilenciados {
+      margin-top: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .cfg-actions {
+      margin-top: 12px;
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    @media (min-width: 760px) {
+      .grupo-page {
+        gap: 14px;
+      }
+
+      .grupo-cover {
+        height: 190px;
+      }
+
+      .grupo-info {
+        grid-template-columns: 74px minmax(0, 1fr);
+        gap: 14px;
+        padding: 14px;
+      }
+
+      .grupo-avatar {
+        width: 74px;
+        height: 74px;
+        margin-top: -40px;
+        border-radius: 18px;
+      }
+
+      .grupo-title {
+        font-size: 1.45rem;
+      }
+
+      .composer-wrap,
+      .feed-body,
+      .side-body {
+        padding: 14px;
+      }
+
+      .feed-head,
+      .side-head {
+        padding: 14px;
+      }
+
+      .cfg-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .cfg-image-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (min-width: 1025px) {
+      main.grupo-main {
+        margin-left: var(--sidebar-width, 0px) !important;
+        padding: 30px 40px 40px !important;
+        width: auto !important;
+        max-width: none !important;
+      }
+
+      .grupo-page { max-width: 1200px; }
+
+
+      .grupo-layout {
+        grid-template-columns: minmax(0, 1fr) 340px;
+        gap: 14px;
+      }
+
+      .grupo-col-side {
+        position: sticky;
+        top: calc(var(--navbar-height-desktop) + 20px);
+      }
+
+      .feed-body {
+        min-height: 360px;
+      }
+    }
+
+    body.doke-shell-active main.grupo-main {
+      margin-left: 0 !important;
+      width: 100% !important;
+      padding-top: 12px !important;
+      padding-left: 10px !important;
+      padding-right: 10px !important;
+      padding-bottom: calc(var(--doke-btm-real, 66px) + 18px + env(safe-area-inset-bottom)) !important;
+    }
+  </style>
+</head>
+
+<body data-page="grupo">
+  <a class="skip-link" href="#grupoFeed">Pular para o conteúdo</a>
+
+  <div class="popup" id="popup">
+    <div class="popup-content">
+      <span class="close-btn" onclick="fecharPopup()">&times;</span>
+      <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
+      <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
+      <p class="criar">
+        Não tem uma conta?
+        <a href="cadastro.html">Criar conta</a>
+      </p>
+    </div>
+  </div>
+
+  <header class="navbar-mobile">
+    <div id="logo-mobile">
+      <a href="index.html">
+        <img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" />
+      </a>
+    </div>
+    <div class="botoes-direita">
+      <a class="entrar" href="login.html">Entrar</a>
+      <a href="login.html">
+      </a>
+    </div>
+  </header>
+  <div id="overlay-menu" onclick="fecharMenuMobile()"></div>
+  <header class="navbar-desktop">
+    <div id="logo-desktop"><a href="projeto.html"><img alt="Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" /></a></div>
+    <nav class="menu">
+      <div class="cep-wrapper">
+        <a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+          <svg fill="currentColor" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
+            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+          </svg>
+          <span id="textoCepSpan">Informe seu CEP</span>
+        </a>
+        <div class="cep-popup" id="boxCep">
+          <p>Digite seu CEP:</p>
+          <div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text" /><button onclick="salvarCep()">OK</button></div>
+        </div>
+      </div>
+      <a href="escolheranuncio.html">Anunciar</a>
+      <a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+      <a href="novidades.html">Novidades</a>
+    </nav>
+    <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
+  </header>
+  <aside class="sidebar-icones">
+    <div id="logo">
+      <a href="index.html">
+        <img alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" src="assets/Imagens/doke-logo.png" />
+      </a>
+    </div>
+    <div class="item">
+      <a href="index.html">
+        <i class="bx bx-home-alt icon azul"></i>
+        <span>Início</span>
+      </a>
+    </div>
+    <div class="item" id="pvSearchSidebarItem">
+      <a aria-label="Pesquisar" class="pv-search-toggle" href="#">
+        <i class="bx bx-search-alt-2 icon azul"></i>
+        <span>Pesquisar</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="negocios.html">
+        <i class="bx bx-store icon verde"></i>
+        <span>Negócios</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="notificacoes.html">
+        <i class="bx bx-bell icon azul"></i>
+        <span>Notificações</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="mensagens.html">
+        <i class="bx bx-message-rounded-dots icon azul"></i>
+        <span>Mensagens</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="pedidos.html">
+        <i class="bx bx-package icon verde"></i>
+        <span>Pedidos</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="comunidade.html">
+        <i class="bx bx-group icon verde"></i>
+        <span>Comunidades</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="#" onclick="irParaMeuPerfil(event)">
+        <i class="bx bx-user icon verde"></i>
+        <span>Perfil</span>
+      </a>
+    </div>
+    <div class="item">
+      <a href="mais.html">
+        <i class="bx bx-menu icon azul"></i>
+        <span>Mais</span>
+      </a>
+    </div>
+  </aside>
+
+  <main class="dp-wrap grupo-main">
+    <div class="grupo-page">
+      <section class="grupo-card grupo-hero">
+        <div class="grupo-cover" id="grupoCover"></div>
+        <div class="grupo-info">
+          <div class="grupo-avatar" id="grupoAvatar"></div>
+
+          <div class="grupo-title-wrap">
+            <h1 class="grupo-title" id="grupoNome">Grupo</h1>
+            <p class="grupo-desc" id="grupoDesc">Carregando grupo...</p>
+            <div class="grupo-meta">
+              <span class="meta-pill" id="grupoTipo">Público</span>
+              <span class="meta-pill" id="grupoMembrosCount">0 membros</span>
+            </div>
+          </div>
+
+          <button class="grupo-config-btn" id="btnConfigGrupo" type="button" style="display: none;">
+            <i class="bx bx-cog"></i>
+            <span>Configurar</span>
+          </button>
+        </div>
+      </section>
+
+      <div class="grupo-layout">
+        <section class="grupo-col-main">
+          <article class="grupo-card composer-wrap">
+            <div class="join-gate" id="joinGate">
+              <div class="join-gate-title" id="joinGateTitle">Entre no grupo</div>
+              <div class="join-gate-sub" id="joinGateSub">Toque para entrar e começar a postar.</div>
+              <button class="join-gate-btn" id="btnJoinGate" type="button">Entrar no grupo</button>
+            </div>
+
+            <div class="reply-bar" id="replyBar" style="display: none;">
+              <div>
+                <div class="reply-bar-title" id="replyBarTitle">Respondendo</div>
+                <div class="reply-bar-preview" id="replyBarPreview"></div>
+              </div>
+              <button class="reply-bar-close" id="btnCloseReply" type="button" aria-label="Cancelar resposta">&times;</button>
+            </div>
+
+            <div class="composer-row">
+              <label class="composer-icon" for="postArquivo" title="Anexar arquivo">
+                <i class="bx bx-paperclip"></i>
+              </label>
+              <input id="postArquivo" type="file" />
+
+              <input type="text" id="postTexto" placeholder="Digite uma mensagem para o grupo..." />
+
+              <button id="btnEnviarPost" type="button">Enviar</button>
+            </div>
+            <div class="composer-hint">Respeite as regras do grupo.</div>
+          </article>
+
+          <article class="grupo-card">
+            <header class="feed-head">
+              <div>
+                <h2 class="feed-title">Feed</h2>
+                <p class="feed-sub">Publicações em tempo real</p>
+              </div>
+            </header>
+
+            <div class="feed-body">
+              <div class="feed-empty" id="feedEmpty">Nenhuma mensagem ainda. Seja o primeiro a publicar.</div>
+              <div id="grupoFeed" aria-live="polite"></div>
+            </div>
+          </article>
+        </section>
+
+        <aside class="grupo-col-side">
+          <article class="grupo-card" id="requestsPane" style="display: none;">
+            <header class="side-head">
+              <div>
+                <h2 class="side-title">Solicitacoes</h2>
+                <p class="side-sub" id="requestsSub">Aguardando verificacao</p>
+              </div>
+              <button class="side-btn" id="btnRefreshSolicitacoes" type="button">
+                <i class="bx bx-refresh"></i>
+                Atualizar
+              </button>
+            </header>
+
+            <div class="side-body">
+              <div class="requests-list" id="listaSolicitacoes"></div>
+            </div>
+          </article>
+
+          <article class="grupo-card">
+            <header class="side-head">
+              <div>
+                <h2 class="side-title">Membros</h2>
+                <p class="side-sub" id="membrosSub">0 no total</p>
+              </div>
+            </header>
+
+            <div class="side-body">
+              <div class="members-counters">
+                <div class="count-box">
+                  <span class="label">Online</span>
+                  <span class="value" id="countOnline">0</span>
+                </div>
+                <div class="count-box">
+                  <span class="label">Offline</span>
+                  <span class="value" id="countOffline">0</span>
+                </div>
+              </div>
+
+              <section class="members-section">
+                <h3 class="members-label">Online</h3>
+                <div class="member-list" id="listaOnline"></div>
+              </section>
+
+              <section class="members-section">
+                <h3 class="members-label">Offline</h3>
+                <div class="member-list" id="listaOffline"></div>
+              </section>
+            </div>
+          </article>
+        </aside>
+      </div>
+    </div>
+  </main>
+
+  <nav class="bottom-nav">
+    <a class="item" href="index.html">
+      <img class="icon azul" src="https://cdn-icons-png.flaticon.com/512/1946/1946436.png" alt="" loading="lazy" decoding="async" />
+      <span>Inicio</span>
+    </a>
+    <a class="item active" href="comunidade.html">
+      <img class="icon verde" src="https://cdn-icons-png.flaticon.com/512/1144/1144760.png" alt="" loading="lazy" decoding="async" />
+      <span>Grupos</span>
+    </a>
+    <a class="item" href="#" onclick="irParaMeuPerfil(event)">
+      <img class="icon verde" src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt="" loading="lazy" decoding="async" />
+      <span>Perfil</span>
+    </a>
+  </nav>
+
+  <div class="cfg-modal" id="modalGrupoConfig" aria-hidden="true" style="display: none;">
+    <div class="cfg-panel" role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
+      <header class="cfg-head">
+        <h2 class="cfg-title" id="cfgTitle">Configurar grupo</h2>
+        <button class="cfg-close" id="btnFecharConfig" type="button" aria-label="Fechar configuracoes">&times;</button>
+      </header>
+
+      <nav class="cfg-tabs">
+        <button class="cfg-tab active" id="tabCfgEditar" type="button">Editar</button>
+        <button class="cfg-tab" id="tabCfgCargos" type="button">Cargos</button>
+        <button class="cfg-tab" id="tabCfgSilenciados" type="button">Silenciados</button>
+      </nav>
+
+      <section class="cfg-section" id="cfgEditar">
+        <div class="cfg-grid">
+          <div class="cfg-field">
+            <p class="cfg-label">Nome do grupo</p>
+            <input class="form-input" id="cfgNome" type="text" placeholder="Nome do grupo" />
+          </div>
+          <div class="cfg-field">
+            <p class="cfg-label">Descrição</p>
+            <input class="form-input" id="cfgDesc" type="text" placeholder="Descrição curta" />
+          </div>
+        </div>
+
+        <div class="cfg-image-grid">
+          <div class="cfg-image-card">
+            <p class="cfg-label">Foto do grupo</p>
+            <div class="cfg-preview" id="previewFotoGrupo">Sem imagem</div>
+            <button class="tab-btn" id="btnTrocarFotoGrupo" type="button">Trocar foto</button>
+            <input id="inputFotoGrupo" type="file" accept="image/*" hidden />
+          </div>
+
+          <div class="cfg-image-card">
+            <p class="cfg-label">Capa do grupo</p>
+            <div class="cfg-preview" id="previewCapaGrupo">Sem imagem</div>
+            <button class="tab-btn" id="btnTrocarCapaGrupo" type="button">Trocar capa</button>
+            <input id="inputCapaGrupo" type="file" accept="image/*" hidden />
+          </div>
+        </div>
+
+        <div class="cfg-actions">
+          <button class="btn-submit-modal" id="btnSalvarGrupo" type="button">Salvar alteracoes</button>
+        </div>
+      </section>
+
+      <section class="cfg-section" id="cfgCargos" style="display: none;">
+        <div class="cfg-grid">
+          <div class="cfg-field">
+            <p class="cfg-label">Nome do cargo</p>
+            <input class="form-input" id="cargoNome" type="text" placeholder="Ex: Moderador" />
+          </div>
+
+          <div class="cfg-field">
+            <p class="cfg-label">Cor (hex)</p>
+            <input class="form-input" id="cargoCor" type="text" placeholder="#2a5f90" />
+          </div>
+        </div>
+
+        <div class="cfg-actions">
+          <button class="btn-submit-modal" id="btnCriarCargo" type="button">Criar cargo</button>
+        </div>
+
+        <div id="listaCargos"></div>
+      </section>
+
+      <section class="cfg-section" id="cfgSilenciados" style="display: none;">
+        <div class="cfg-actions" style="justify-content: flex-start; margin-top: 0;">
+          <button class="side-btn" id="btnRefreshSilenciados" type="button">
+            <i class="bx bx-refresh"></i>
+            Atualizar
+          </button>
+        </div>
+        <div id="listaSilenciados"></div>
+      </section>
+    </div>
+  </div>
+
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js?v=20260217v33"></script>
+  <script defer src="doke-config.js"></script>
+  <script defer src="doke-ux.js"></script>
+  <script src="doke-shell.js?v=20260228v48"></script>
+  <script>
+    (function(){
+      function recoverPageScroll(){
+        try{
+          document.documentElement.classList.remove('no-scroll');
+          document.body && document.body.classList.remove('no-scroll', 'chat-keyboard-open', 'doke-search-open', 'doke-drawer-open', 'doke-menu-open', 'menu-ativo');
+          const sidebar = document.querySelector('.sidebar-icones');
+          if (sidebar) sidebar.classList.remove('menu-aberto');
+          const overlayMenu = document.getElementById('overlay-menu');
+          if (overlayMenu) overlayMenu.style.display = 'none';
+          if (document.body) document.body.style.overflow = '';
+          document.documentElement.style.overflow = '';
+          if (typeof window.updateScrollLock === 'function') window.updateScrollLock();
+        }catch(_){}
+      }
+      window.addEventListener('pageshow', recoverPageScroll);
+      window.addEventListener('focus', recoverPageScroll);
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden) recoverPageScroll();
+      });
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', recoverPageScroll);
+      } else {
+        recoverPageScroll();
+      }
+    })();
+  </script>
+</body>
+</html>

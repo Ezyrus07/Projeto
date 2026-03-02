@@ -1,0 +1,565 @@
+/* DOKE Tablet + Layout Fixes — v20260209v1
+   Objetivo: travar grids no tablet horizontal, centralizar conteúdo, evitar logo duplicada.
+*/
+
+/* ===== Perfil: centralização consistente no tablet (900-1024px) ===== */
+@media (min-width: 900px) and (max-width: 1024px){
+  body[data-page="perfil"] .dp-wrap{
+    max-width: var(--dp-content-width, 1200px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    padding: 22px 18px 40px !important;
+  }
+}
+
+/* ===== Perfil: desktop sempre centralizado considerando sidebar ===== */
+@media (min-width: 1025px){
+  body[data-page="perfil"] main.dp-wrap{
+    width: auto !important;
+    max-width: none !important;
+    margin-left: var(--sidebar-width, 0px) !important;
+    margin-right: 0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    box-sizing: border-box !important;
+    padding-left: clamp(16px, 2vw, 28px) !important;
+    padding-right: clamp(16px, 2vw, 28px) !important;
+  }
+
+  body[data-page="perfil"] #dpRoot{
+    width: min(100%, var(--dp-content-width, 1200px)) !important;
+    max-width: var(--dp-content-width, 1200px) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+}
+
+/* ===== Perfil: Tablet horizontal (4 colunas mídia) ===== */
+@media (min-width: 900px) and (max-width: 1200px){
+  body[data-page="perfil"] #dpGridPublicacoes{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  body[data-page="perfil"] #dpGridReels.dp-grid--reels{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 12px !important;
+  }
+  body[data-page="perfil"] #dpGridPortfolio{
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+  /* Anúncios/serviços: 2 por linha no tablet landscape */
+  body[data-page="perfil"] #dpGridServicos{
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+  }
+}
+
+/* ===== Perfil: Mobile/tablet geral (evita cards gigantes) ===== */
+body[data-page="perfil"] #dpGridPublicacoes .dp-itemMedia,
+body[data-page="perfil"] #dpGridPortfolio .dp-itemMedia{
+  aspect-ratio: 1 / 1 !important;
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+body[data-page="perfil"] .dp-reelMedia{
+  aspect-ratio: 9 / 16 !important;
+  object-fit: cover !important;
+}
+
+/* ===== Header/Sidebar: evitar marca duplicada ===== */
+/* 768+ (desktop base): por padrão, mantém 1 marca visível */
+@media (min-width: 768px) and (max-width: 1023px){
+  /* Tablet retrato: marca no header (logo-desktop), não na sidebar */
+  #logo-desktop{ display: block !important; }
+  .sidebar-icones #logo{ display: none !important; }
+}
+@media (min-width: 1024px){
+  /* Desktop / tablet largo: marca só na sidebar (fecha duplicação) */
+  #logo-desktop{ display: none !important; }
+  .sidebar-icones #logo{ display: block !important; }
+
+  /* Alguns HTMLs acabam renderizando #logo-desktop dentro do header mesmo com sidebar aberta */
+  .navbar-desktop #logo-desktop{ display: none !important; }
+}
+
+/* ===== Centralização: evitar “tudo puxado pra direita” no tablet ===== */
+@media (min-width: 768px) and (max-width: 1200px){
+  .navbar-desktop{ padding: 0 16px !important; }
+  main{ padding: 28px 18px !important; }
+}
+
+/* ===== Grids gerais: impedir overflow lateral em tablet ===== */
+@media (min-width: 768px) and (max-width: 1200px){
+  .dp-grid, .grid, .categorias-grid, .videos-curtos-grid, .publicacoes-grid{
+    min-width: 0;
+  }
+}
+
+/* =========================================================
+   TABLET (iPad/Android) — tratar como "mobile" sem afetar desktop
+   Critério: tela grande + touch (pointer:coarse)
+   ========================================================= */
+
+@media (min-width: 1025px) and (max-width: 1400px) and (pointer: coarse){
+  .navbar-desktop,
+  .sidebar,
+  .sidebar-icones,
+  #sidebar,
+  .menu-lateral,
+  .nav-lateral{ display: none !important; }
+
+  .navbar-mobile{ display: flex !important; }
+  .bottom-nav{ display: flex !important; }
+
+  main{
+    margin-left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+    box-sizing: border-box !important;
+  }
+
+  .secao-busca,
+  .categorias-container,
+  .videos-container,
+  .fotos-container,
+  .anuncio-container,
+  .para-voce-section,
+  .pros-section{
+    max-width: 100% !important;
+    width: 100% !important;
+  }
+
+  body[data-page="home"] #galeria-dinamica{
+    padding: 8px 0 10px !important;
+    gap: 12px !important;
+  }
+  body[data-page="home"] #galeria-dinamica .dp-reelCard,
+  body[data-page="home"] #galeria-dinamica .tiktok-card,
+  body[data-page="home"] #galeria-dinamica .tiktok-card.is-skeleton{
+    width: clamp(160px, calc((100vw - 120px) / 5), 210px) !important;
+    min-width: clamp(160px, calc((100vw - 120px) / 5), 210px) !important;
+    height: clamp(300px, 42vh, 360px) !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 14px !important;
+    padding: 8px 2px 14px !important;
+  }
+  body[data-page="home"] #feed-global-container .feed-publicacao-card{
+    flex: 0 0 clamp(210px, calc((100vw - 140px) / 4), 290px) !important;
+    min-width: clamp(210px, calc((100vw - 140px) / 4), 290px) !important;
+  }
+
+  body[data-page="busca"] .search-layout{ grid-template-columns: 1fr !important; }
+  body[data-page="busca"] .filters-sidebar{
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin-bottom: 14px !important;
+  }
+  body[data-page="busca"] .busca-wrapper,
+  body[data-page="busca"] .results-wrapper{
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  body[data-page="chat"] .coluna-lista{
+    width: 100% !important;
+    height: 100% !important;
+    position: relative !important;
+  }
+  body[data-page="chat"] .coluna-chat{
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: #fff !important;
+    z-index: 9999 !important;
+    transform: translateX(100%) !important;
+    transition: transform .25s ease !important;
+  }
+  body[data-page="chat"].mobile-chat-open .coluna-chat{ transform: translateX(0) !important; }
+  body[data-page="chat"].mobile-chat-open{ overflow: hidden !important; }
+}
+
+/* =========================================================
+   DESKTOP CONTENT-DENSE: mostrar mais itens por seção
+   (Videos curtos + Publicacoes em grade, sem faixa vazia)
+   ========================================================= */
+@media (min-width: 1024px){
+  body[data-page="home"] .videos-container,
+  body[data-page="home"] .fotos-container{
+    padding: 14px 14px 12px !important;
+  }
+
+  body[data-page="home"] #galeria-dinamica,
+  body[data-page="home"] .videos-container .tiktok-scroll-wrapper{
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)) !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    min-height: 0 !important;
+    padding: 6px 0 4px !important;
+    scroll-snap-type: none !important;
+    align-content: start !important;
+  }
+
+  body[data-page="home"] #galeria-dinamica .dp-reelCard,
+  body[data-page="home"] #galeria-dinamica .tiktok-card,
+  body[data-page="home"] .videos-container .tiktok-card,
+  body[data-page="home"] .videos-container .tiktok-card.is-skeleton{
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: initial !important;
+    height: clamp(310px, 34vw, 380px) !important;
+    border-radius: 14px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    display: grid !important;
+    grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)) !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    padding: 6px 0 4px !important;
+    scroll-snap-type: none !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .feed-publicacao-card{
+    width: 100% !important;
+    min-width: 0 !important;
+    max-width: none !important;
+    flex: initial !important;
+  }
+}
+
+/* =========================================================
+   MOBILE COMPACT (override final): Videos/Publicacoes no Home
+   Motivo: este arquivo e carregado por ultimo e precisa manter
+   os cards/botoes compactos em telas pequenas.
+   ========================================================= */
+@media (max-width: 560px){
+  /* Eixo unico para os titulos (h2) no Home */
+  body[data-page="home"] .videos-header-top,
+  body[data-page="home"] .section-feed-title{
+    justify-content: flex-start !important;
+  }
+  body[data-page="home"] #categorias-title,
+  body[data-page="home"] #categorias-title2,
+  body[data-page="home"] .section-feed-title .sec-title,
+  body[data-page="home"] .categorias-container .sec-title,
+  body[data-page="home"] .categorias-container h2,
+  body[data-page="home"] .videos-container .sec-title,
+  body[data-page="home"] .fotos-container .sec-title{
+    display: block !important;
+    width: fit-content !important;
+    max-width: 100% !important;
+    text-align: left !important;
+    margin: 0 !important;
+    margin-left: 8px !important;
+    align-self: flex-start !important;
+  }
+
+  body[data-page="home"] .videos-container,
+  body[data-page="home"] .fotos-container{
+    padding: 8px !important;
+    border-radius: 12px !important;
+    gap: 8px !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-row--inline.is-blue,
+  body[data-page="home"] .fotos-container .sec-head-row--inline.is-green{
+    padding: 4px 8px 2px !important;
+    border-radius: 12px !important;
+    gap: 4px !important;
+    justify-content: flex-start !important;
+    align-items: flex-start !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-left,
+  body[data-page="home"] .fotos-container .sec-head-left{
+    width: 100% !important;
+    justify-content: flex-start !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-row--inline .sec-title,
+  body[data-page="home"] .fotos-container .sec-head-row--inline .sec-title{
+    font-size: 15px !important;
+    line-height: 1.15 !important;
+    margin: 0 !important;
+    text-align: left !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-right .sec-link--solid,
+  body[data-page="home"] .fotos-container .sec-head-right .sec-link--solid{
+    padding: 6px 10px !important;
+    min-height: 34px !important;
+    font-size: 12px !important;
+    border-radius: 999px !important;
+  }
+
+  body[data-page="home"] .videos-container .sec-head-right .carousel-nav,
+  body[data-page="home"] .fotos-container .sec-head-right .carousel-nav{
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    border-radius: 999px !important;
+  }
+
+  /* Mobile: esconder "Ver mais" + setas */
+  body[data-page="home"] .videos-container .sec-head-right,
+  body[data-page="home"] .fotos-container .sec-head-right{
+    display: none !important;
+  }
+
+  body[data-page="home"] #galeria-dinamica,
+  body[data-page="home"] .videos-container .tiktok-scroll-wrapper,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+    gap: 8px !important;
+    padding-top: 4px !important;
+    padding-right: 26px !important;
+    scroll-padding-right: 26px !important;
+  }
+
+  body[data-page="home"] #galeria-dinamica .dp-reelCard,
+  body[data-page="home"] #galeria-dinamica .tiktok-card,
+  body[data-page="home"] .videos-container .tiktok-card,
+  body[data-page="home"] .videos-container .tiktok-card.is-skeleton{
+    flex: 0 0 136px !important;
+    min-width: 136px !important;
+    width: 136px !important;
+    max-width: 136px !important;
+    height: 214px !important;
+    border-radius: 12px !important;
+  }
+
+  body[data-page="home"] .videos-container .tiktok-card .video-ui-layer{
+    padding: 8px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item,
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .feed-publicacao-card{
+    flex: 0 0 146px !important;
+    min-width: 146px !important;
+    width: 146px !important;
+    max-width: 146px !important;
+  }
+
+  body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+    aspect-ratio: 1 / 1.15 !important;
+    min-height: 166px !important;
+  }
+
+  /* Profissionais (Destaque + Novos): cards menores no mobile */
+  body[data-page="home"] .pros-section{
+    padding: 0 8px !important;
+    margin: 14px 0 !important;
+  }
+  body[data-page="home"] .pros-carousel{
+    gap: 8px !important;
+    padding: 2px 0 6px !important;
+  }
+  body[data-page="home"] .pro-card,
+  body[data-page="home"] .pro-card.pro-skel{
+    flex: 0 0 158px !important;
+    min-width: 158px !important;
+    max-width: 158px !important;
+    padding: 10px !important;
+    border-radius: 12px !important;
+  }
+  body[data-page="home"] .pro-avatar{
+    width: 72px !important;
+    height: 72px !important;
+    margin-bottom: 8px !important;
+  }
+  body[data-page="home"] .pro-name{
+    font-size: 0.94rem !important;
+    line-height: 1.15 !important;
+  }
+  body[data-page="home"] .pro-role{
+    font-size: 0.82rem !important;
+    line-height: 1.15 !important;
+    margin-bottom: 6px !important;
+  }
+  body[data-page="home"] .badge-novo,
+  body[data-page="home"] .pro-rating{
+    font-size: 0.74rem !important;
+  }
+  body[data-page="home"] .btn-ver-perfil{
+    margin-top: 6px !important;
+    padding: 7px 10px !important;
+    font-size: 0.84rem !important;
+    border-radius: 9px !important;
+  }
+
+  body[data-page="home"] .pros-empty{
+    padding: 12px 10px !important;
+    border-radius: 12px !important;
+    gap: 8px !important;
+  }
+  body[data-page="home"] .pros-empty i{
+    font-size: 20px !important;
+  }
+  body[data-page="home"] .pros-empty-title{
+    font-size: 0.9rem !important;
+    line-height: 1.2 !important;
+  }
+  body[data-page="home"] .pros-empty-sub{
+    font-size: 0.78rem !important;
+    line-height: 1.2 !important;
+  }
+  body[data-page="home"] .pros-empty-btn{
+    padding: 7px 10px !important;
+    font-size: 0.82rem !important;
+    border-radius: 999px !important;
+  }
+}
+
+/* =========================================================
+   PUBLICACOES MAIS "QUADRADAS" (todas as telas)
+   ========================================================= */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .feed-publicacao-card{
+  border-radius: 12px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  aspect-ratio: 1 / 1 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+}
+
+/* =========================================================
+   PUBLICACOES: reduzir area em branco (todas as telas)
+   ========================================================= */
+body[data-page="home"] .fotos-container{
+  min-height: 0 !important;
+  height: auto !important;
+  padding-bottom: 8px !important;
+  gap: 8px !important;
+}
+
+body[data-page="home"] .fotos-container .section-feed-title,
+body[data-page="home"] .fotos-container .sec-head-row{
+  margin-bottom: 8px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+  min-height: 0 !important;
+  height: auto !important;
+  margin-bottom: 0 !important;
+  padding-bottom: 0 !important;
+  align-content: start !important;
+}
+
+/* =========================================================
+   PUBLICACOES: area branca interna bem menor
+   ========================================================= */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  padding: 8px 10px 8px !important;
+  min-height: 0 !important;
+  gap: 4px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAuthor{
+  margin-bottom: 2px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+  margin: 0 !important;
+  line-height: 1.12 !important;
+  font-size: 0.95rem !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+  margin: 0 !important;
+  line-height: 1.1 !important;
+  font-size: 0.78rem !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* =========================================================
+   PUBLICACOES PADRAO FINAL (realista): 4:5 + rodape curto
+   ========================================================= */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-item,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .pub-skel.dp-item,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .feed-publicacao-card{
+  border-radius: 14px !important;
+  overflow: hidden !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMedia{
+  aspect-ratio: 4 / 5 !important;
+  min-height: 0 !important;
+  border-radius: 0 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemBody{
+  min-height: 72px !important;
+  max-height: 72px !important;
+  height: 72px !important;
+  padding: 8px 10px !important;
+  display: grid !important;
+  grid-template-rows: auto auto !important;
+  row-gap: 3px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemAuthor{
+  margin: 0 !important;
+  min-width: 0 !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemUser{
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 120px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMeta{
+  white-space: nowrap !important;
+  margin-left: 6px !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemTitle{
+  margin: 0 !important;
+  font-size: 0.98rem !important;
+  line-height: 1.1 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 2 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+  margin: 0 !important;
+  font-size: 0.78rem !important;
+  line-height: 1.1 !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 1 !important;
+  -webkit-box-orient: vertical !important;
+  overflow: hidden !important;
+}
+
+/* pedido: remover data e descricao do card */
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemMeta,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid .dp-itemDesc{
+  display: none !important;
+}

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="supabase-init.js?v=20260218v43"></script>
+  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
+  <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Doke</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <meta name="theme-color" content="#0b7768" />
+
+  <!-- Core styles (page-specific CSS is loaded by the router) -->
+  <link rel="stylesheet" href="style.css?v=20260211v45" />
+  <link rel="stylesheet" href="doke-a11y.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-layout-fix.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-fixes.css?v=20260117" />
+  <link rel="stylesheet" href="doke-beforeafter.css?v=20260211v3" />
+  <link rel="stylesheet" href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" />
+  <link rel="stylesheet" href="doke-toast.css" />
+  <link rel="stylesheet" href="doke-alerts.css" />
+  <link rel="stylesheet" href="doke-ux.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-feedpatch.css?v=20260207v26" />
+  <link rel="stylesheet" href="doke-shell.css?v=20260212v42" />
+  <link rel="stylesheet" href="doke-responsive.css?v=20260209v24" />
+  <link rel="stylesheet" href="doke-skeleton.css?v=20260209v1" />
+  <link rel="stylesheet" href="doke-tablet-fix.css?v=20260209v1" />
+  <link rel="stylesheet" href="doke-router.css?v=20260302v1" />
+
+  <script>
+    // Disable old "fade page transition" (we use an app-router shell now).
+    window.__DOKE_DISABLE_PAGE_TRANSITION__ = true;
+    window.__DOKE_USE_APP_ROUTER__ = true;
+  </script>
+
+  <script defer src="doke-beforeafter.js?v=20260211v3"></script>
+  <script src="doke-reco.js?v=20260228v1"></script>
+  <script defer src="script.js?v=20260302v1"></script>
+</head>
+
+<body data-page="app-shell" class="app-shell">
+  <!-- Desktop headers/sidebars remain persistent -->
+  <header class="navbar-mobile">
+    <div id="logo-mobile">
+      <a href="#/home">
+        <img src="assets/Imagens/doke-logo.png" alt="Doke" decoding="async" loading="lazy" />
+      </a>
+    </div>
+    <div class="botoes-direita">
+      <a class="entrar" href="#/p/login.html">Entrar</a>
+    </div>
+  </header>
+
+  <div id="overlay-menu"></div>
+
+  <header class="navbar-desktop">
+    <div id="logo-desktop">
+      <a href="#/home"><img src="assets/Imagens/doke-logo.png" alt="Doke" decoding="async" loading="lazy" /></a>
+    </div>
+    <nav class="menu">
+      <div class="cep-wrapper">
+        <a class="cep" href="#" id="linkCep" onclick="toggleCep(event)">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+            <path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path>
+          </svg>
+          <span id="textoCepSpan">Inserir CEP</span>
+        </a>
+        <div class="cep-popup" id="boxCep">
+          <p>Digite seu CEP:</p>
+          <div class="cep-input-group">
+            <label class="sr-only" for="inputCep">CEP</label>
+            <input id="inputCep" name="inputCep" type="text" maxlength="9" placeholder="00000-000" />
+            <button onclick="salvarCep()">OK</button>
+          </div>
+        </div>
+      </div>
+
+      <a href="#/home">Descobrir</a>
+      <a href="#/negocios">Negócios</a>
+      <a href="#/comunidades">Comunidades <span class="badge-novo1">NOVO</span></a>
+      <a href="#/p/escolheranuncio.html">Anunciar</a>
+      <a href="#/p/novidades.html">Novidades</a>
+    </nav>
+
+    <div class="botoes-direita">
+      <a class="entrar" href="#/p/login.html">Entrar</a>
+    </div>
+  </header>
+
+  <aside class="sidebar-icones">
+    <div id="logo">
+      <a href="#/home">
+        <img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke" decoding="async" loading="lazy" />
+      </a>
+    </div>
+
+    <div class="item" data-nav="home">
+      <a href="#/home"><i class="bx bx-home-alt icon azul"></i><span>Início</span></a>
+    </div>
+    <div class="item" data-nav="search">
+      <a href="#/search"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a>
+    </div>
+    <div class="item" data-nav="negocios">
+      <a href="#/negocios"><i class="bx bx-store icon verde"></i><span>Negócios</span></a>
+    </div>
+    <div class="item" data-nav="notificacoes">
+      <a href="#/notificacoes"><i class="bx bx-bell icon azul"></i><span>Notificações</span></a>
+    </div>
+    <div class="item" data-nav="mensagens">
+      <a href="#/mensagens"><i class="bx bx-message-rounded-dots icon azul"></i><span>Mensagens</span></a>
+    </div>
+    <div class="item" data-nav="pedidos">
+      <a href="#/pedidos"><i class="bx bx-package icon verde"></i><span>Pedidos</span></a>
+    </div>
+    <div class="item" data-nav="comunidades">
+      <a href="#/comunidades"><i class="bx bx-group icon verde"></i><span>Comunidades</span></a>
+    </div>
+    <div class="item" data-nav="perfil">
+      <a href="#/perfil"><i class="bx bx-user icon azul"></i><span>Perfil</span></a>
+    </div>
+    <div class="item" data-nav="mais">
+      <a href="#/mais"><i class="bx bx-dots-horizontal-rounded icon azul"></i><span>Mais</span></a>
+    </div>
+  </aside>
+
+  <!-- App View (only this changes on navigation) -->
+  <!-- IMPORTANT: keep this as a DIV so routed pages can inject their own <main> element
+       (many page CSS selectors target main.* and would break if we only inject innerHTML). -->
+  <div id="app-view">
+    <div style="padding:26px">
+      <div style="display:flex;align-items:center;gap:12px">
+        <span style="width:14px;height:14px;border-radius:50%;border:2px solid rgba(15,23,42,.25);border-top-color:rgba(15,23,42,.75);display:inline-block;animation:dokeSpin .8s linear infinite"></span>
+        <strong style="color:#0f2744">Carregando…</strong>
+      </div>
+      <style>@keyframes dokeSpin{to{transform:rotate(360deg)}}</style>
+    </div>
+  </div>
+
+  <!-- Core scripts -->
+  <script src="doke-toast.js"></script>
+  <script src="doke-alerts.js?v=20260217v33"></script>
+  <script defer="true" src="doke-config.js"></script>
+  <script defer="true" src="doke-ux.js"></script>
+  <script defer src="doke-feedpatch.js"></script>
+  <script src="doke-shell.js?v=20260302v1"></script>
+
+  <!-- Router -->
+  <script defer src="app-router.js?v=20260302v2"></script>
+</body>
+</html>

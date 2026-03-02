@@ -1,0 +1,48 @@
+/* Router cosmetics */
+/*
+  App Shell (estilo X/Twitter): header + sidebar persistem.
+  Muitas páginas antigas aplicavam margin-left/padding para "compensar" sidebar/header.
+  Dentro do app shell isso vira OFFSET DUPLO e quebra o layout.
+  Estas regras neutralizam offsets legados sem mexer nos arquivos de cada página.
+*/
+
+body.app-shell{
+  display:block !important;
+  overflow-x:hidden;
+}
+
+/* No app-shell, o header mobile vem do doke-shell (.doke-mobile-header).
+   Escondemos o header legado (.navbar-mobile) para evitar "skeleton"/duplicação. */
+@media (max-width:1024px){
+  body.app-shell .navbar-mobile{ display:none !important; }
+  body.app-shell #overlay-menu{ display:none !important; }
+}
+
+/* neutraliza offsets comuns (sidebar fixa / wrappers) */
+body.app-shell #app-view main,
+body.app-shell #app-view .main-content,
+body.app-shell #app-view .content,
+body.app-shell #app-view .content-wrapper,
+body.app-shell #app-view .page,
+body.app-shell #app-view .page-content,
+body.app-shell #app-view .container{
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* evita que CSS antigo do body derrube o layout do shell */
+body.app-shell #app-view{
+  position:relative;
+  width:100%;
+}
+
+#app-view.doke-route-loading{
+  opacity:.65;
+  transition:opacity .12s ease;
+  pointer-events:none;
+}
+@media (min-width:768px){
+  #app-view{
+    min-height: calc(100vh - var(--navbar-height-desktop, 70px));
+  }
+}
