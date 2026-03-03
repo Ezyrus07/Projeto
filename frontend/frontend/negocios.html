@@ -1,25 +1,32 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <!-- __DOKE_APP_REDIRECT__ -->
-  <script>(function(){try{var p=new URLSearchParams(location.search);if(p.has('standalone')||p.has('inApp'))return;var file=location.pathname.split('/').pop();var map={"index.html":"#/home","busca.html":"#/search","comunidade.html":"#/comunidades","negocios.html":"#/negocios","pedidos.html":"#/pedidos","notificacoes.html":"#/notificacoes","mensagens.html":"#/mensagens","meuperfil.html":"#/perfil","mais.html":"#/mais"};var r=map[file]||('#/p/'+encodeURIComponent(file));location.replace('app.html'+r);}catch(e){}})();</script>
-
+  <script>
+    (function(){
+      try{
+        var p = new URLSearchParams(location.search || '');
+        if(p.has('standalone') || p.has('inApp')) return;
+        if((location.pathname || '').toLowerCase().endsWith('/app.html') || (location.pathname || '').toLowerCase().endsWith('app.html')) return;
+        var file = ((location.pathname || '').split('/').pop() || '').toLowerCase();
+        var map = {
+          'index.html':'#/home',
+          'busca.html':'#/search',
+          'comunidade.html':'#/comunidades',
+          'negocios.html':'#/negocios',
+          'pedidos.html':'#/pedidos',
+          'notificacoes.html':'#/notificacoes',
+          'mensagens.html':'#/mensagens',
+          'meuperfil.html':'#/perfil',
+          'mais.html':'#/mais'
+        };
+        var hash = map[file] || ('#/p/' + encodeURIComponent(file || 'index.html'));
+        location.replace('app.html' + hash + (location.search || ''));
+      }catch(_e){}
+    })();
+  </script>
     <meta charset="UTF-8">
-    
-<script>
-  (function(){
-    try{
-      const sp=new URLSearchParams(location.search);
-      if(sp.has('standalone')) return;
-      if(location.pathname.endsWith('/app.html') || location.pathname.endsWith('app.html')) return;
-      const target='app.html#/negocios';
-      if(!location.hash || !location.hash.startsWith('#/')) {
-        location.replace(target);
-      }
-    }catch(e){}
-  }());
-</script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Busca de Negócios Locais | Doke</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
@@ -163,24 +170,6 @@
     </style>
 
     
-<script>
-(function(){
-  // Redirect standalone pages into the persistent App Shell (Twitter-like navigation)
-  try{
-    if (location.search && location.search.includes("standalone=1")) return;
-    const file = (location.pathname||"").split("/").pop().toLowerCase();
-    const map = {"index.html": "#/home", "busca.html": "#/search", "comunidade.html": "#/comunidades", "negocios.html": "#/negocios", "pedidos.html": "#/pedidos", "notificacoes.html": "#/notificacoes", "mensagens.html": "#/mensagens", "meuperfil.html": "#/perfil", "mais.html": "#/mais"};
-    const hash = map[file];
-    if(!hash) return;
-    if(file === "app.html") return;
-    // If already inside app shell, do nothing
-    if(String(location.hash||"").startsWith("#/")) return;
-    // Keep querystring (e.g. ?q=)
-    const qs = location.search || "";
-    location.replace("app.html" + hash + (qs ? qs.replace("?", "?") : ""));
-  }catch(e){}
-})();
-</script>
 </head>
 <body data-page="negocios">
 

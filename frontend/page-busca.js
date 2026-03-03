@@ -61,6 +61,9 @@
 
   function onDragStart(ev){
     if(!body.classList.contains('filters-open') || !aside) return;
+    // Se o usuÃ¡rio estiver com o drawer rolado para baixo, nÃ£o iniciamos drag
+    // para nÃ£o brigar com o scroll. (PadrÃ£o de bottom-sheet)
+    if(aside.scrollTop > 0) return;
     dragging = true;
     dragDeltaY = 0;
     dragStartY = ev.clientY || 0;
@@ -96,6 +99,45 @@
     dragHandle.addEventListener('pointerup', onDragEnd);
     dragHandle.addEventListener('pointercancel', onDragEnd);
     dragHandle.addEventListener('lostpointercapture', onDragEnd);
+  }
+
+  // Fallback iOS: alguns cenÃ¡rios nÃ£o disparam PointerEvents corretamente.
+  // Implementa touch drag no handle.
+  let tStartY = 0;
+  let tDragging = false;
+  function tStart(e){
+    if(!body.classList.contains('filters-open') || !aside) return;
+    if(aside.scrollTop > 0) return;
+    const t = e.touches && e.touches[0];
+    if(!t) return;
+    tDragging = true;
+    tStartY = t.clientY;
+    dragDeltaY = 0;
+    aside.style.transition = 'none';
+  }
+  function tMove(e){
+    if(!tDragging || !aside) return;
+    const t = e.touches && e.touches[0];
+    if(!t) return;
+    const dy = Math.max(0, t.clientY - tStartY);
+    dragDeltaY = dy;
+    aside.style.transform = `translateY(${dy}px)`;
+    // evita que o gesto vire scroll da pÃ¡gina
+    e.preventDefault();
+  }
+  function tEnd(){
+    if(!tDragging || !aside) return;
+    tDragging = false;
+    aside.style.transition = '';
+    if(dragDeltaY > 90) close();
+    else aside.style.transform = '';
+    dragDeltaY = 0;
+  }
+  if(dragHandle){
+    dragHandle.addEventListener('touchstart', tStart, { passive: true });
+    dragHandle.addEventListener('touchmove', tMove, { passive: false });
+    dragHandle.addEventListener('touchend', tEnd, { passive: true });
+    dragHandle.addEventListener('touchcancel', tEnd, { passive: true });
   }
 })();
 

@@ -1,30 +1,37 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 
 <html lang="pt-br">
 <head>
   <!-- __DOKE_APP_REDIRECT__ -->
-  <script>(function(){try{var p=new URLSearchParams(location.search);if(p.has('standalone')||p.has('inApp'))return;var file=location.pathname.split('/').pop();var map={"index.html":"#/home","busca.html":"#/search","comunidade.html":"#/comunidades","negocios.html":"#/negocios","pedidos.html":"#/pedidos","notificacoes.html":"#/notificacoes","mensagens.html":"#/mensagens","meuperfil.html":"#/perfil","mais.html":"#/mais"};var r=map[file]||('#/p/'+encodeURIComponent(file));location.replace('app.html'+r);}catch(e){}})();</script>
-
+  <script>
+    (function(){
+      try{
+        var p = new URLSearchParams(location.search || '');
+        if(p.has('standalone') || p.has('inApp')) return;
+        if((location.pathname || '').toLowerCase().endsWith('/app.html') || (location.pathname || '').toLowerCase().endsWith('app.html')) return;
+        var file = ((location.pathname || '').split('/').pop() || '').toLowerCase();
+        var map = {
+          'index.html':'#/home',
+          'busca.html':'#/search',
+          'comunidade.html':'#/comunidades',
+          'negocios.html':'#/negocios',
+          'pedidos.html':'#/pedidos',
+          'notificacoes.html':'#/notificacoes',
+          'mensagens.html':'#/mensagens',
+          'meuperfil.html':'#/perfil',
+          'mais.html':'#/mais'
+        };
+        var hash = map[file] || ('#/p/' + encodeURIComponent(file || 'index.html'));
+        location.replace('app.html' + hash + (location.search || ''));
+      }catch(_e){}
+    })();
+  </script>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="supabase-init.js?v=20260218v43"></script>
 <script src="firebase-compat-supabase.js?v=20260212v25"></script>
 <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 <meta charset="utf-8"/>
-
-<script>
-  (function(){
-    try{
-      const sp=new URLSearchParams(location.search);
-      if(sp.has('standalone')) return;
-      if(location.pathname.endsWith('/app.html') || location.pathname.endsWith('app.html')) return;
-      const target='app.html#/mais';
-      if(!location.hash || !location.hash.startsWith('#/')) {
-        location.replace(target);
-      }
-    }catch(e){}
-  }());
-</script>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
 <title>Configurações | Doke</title>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
@@ -32,6 +39,201 @@
 <link href="doke-a11y.css?v=20260207v21" rel="stylesheet"/>
 <link href="doke-layout-fix.css?v=20260207v21" rel="stylesheet"/>
 <script defer="" src="script.js?v=20260218v60"></script>
+<style>
+        /* ================= VARIÃƒÆ’Ã‚ÂVEIS E RESET ================= */
+        :root {
+            --cor0: #0b7768; /* Verde Principal */
+            --cor1: #737373; /* Cinza Texto */
+            --cor2: #2a5f90; /* Azul TÃƒÆ’Ã‚Â­tulos */
+            --cor3: #f35b5b; /* Vermelho/Alerta */
+            --cor4: #ecedf2; /* Cinza Fundo Claro */
+            --cor-borda: #e0e0e0;
+            --fonte-padrao: 'Poppins', sans-serif;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: var(--fonte-padrao); }
+
+        body {
+            background: linear-gradient(180deg, var(--cor2) 0%, var(--cor4) 200px);
+            min-height: 100vh;
+            display: flex; 
+            flex-direction: row; 
+            overflow-x: hidden;
+        }
+
+        a { text-decoration: none; }
+
+        /* ================= ÃƒÆ’Ã‚ÂREA PRINCIPAL (Direita) ================= */
+        .main-content {
+            flex: 1; 
+            padding: 40px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; 
+        }
+
+        @media (min-width: 1024px) {
+            .main-content {
+                margin-left: 270px; /* Compensa a sidebar fixa */
+            }
+        }
+
+        /* Topo com BotÃƒÆ’Ã‚Â£o Voltar */
+        .page-header {
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 40px;
+        }
+
+        .btn-back {
+            background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.3);
+            width: 40px; height: 40px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-size: 1.5rem; transition: 0.2s;
+        }
+        .btn-back:hover { background: white; color: var(--cor2); }
+        .page-header h1 {
+            color: white; /* Ajustado para branco pois o fundo do topo ÃƒÆ’Ã‚Â© escuro */
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        /* Card do FormulÃƒÆ’Ã‚Â¡rio */
+        .form-card {
+            background: white;
+            width: 100%;
+            max-width: 600px;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+            border: 1px solid #f0f0f0;
+        }
+
+        /* Foto de Perfil Centralizada */
+        .profile-photo-area {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 30px;
+            margin-top: -80px; 
+        }
+
+        .avatar-container {
+            position: relative;
+            width: 110px;
+            height: 110px;
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid white;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            background: #fff;
+        }
+
+        .edit-icon {
+            position: absolute;
+            bottom: 0;
+            right: 0;
+            background: var(--cor0);
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .edit-icon:hover { transform: scale(1.1); }
+
+        .profile-photo-area span {
+            margin-top: 10px;
+            color: var(--cor1);
+            font-size: 0.9rem;
+        }
+
+        /* Inputs */
+        .input-group { margin-bottom: 20px; }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--cor1);
+            font-size: 0.95rem;
+            font-weight: 600;
+        }
+        
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 14px 16px;
+            border: 1px solid #eee;
+            background-color: #fbfbfb;
+            border-radius: 10px;
+            font-size: 1rem;
+            color: #333;
+            outline: none;
+            transition: 0.3s;
+        }
+
+        .input-group input:focus, .input-group select:focus {
+            background-color: #fff;
+            border-color: var(--cor2);
+            box-shadow: 0 0 0 3px rgba(42, 95, 144, 0.1);
+        }
+
+        .input-readonly {
+            background-color: #f0f0f0 !important;
+            color: #888 !important;
+            cursor: default;
+        }
+
+        .btn-salvar {
+            width: 100%;
+            padding: 16px;
+            background: var(--cor0);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .btn-salvar:hover { background-color: #086659; transform: translateY(-2px); }
+
+        /* RESPONSIVIDADE (Celular) */
+        @media (max-width: 768px) {
+            body { flex-direction: column; padding-bottom: 80px; } 
+            
+            .main-content { padding: 20px; margin-left: 0; }
+            .form-card { padding: 25px; box-shadow: none; background: transparent; border: none; }
+            .input-group input { background: white; border: 1px solid #ddd; }
+            
+            .navbar-mobile {
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                padding: 15px 20px;
+                background: white;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+                position: sticky; top: 0; z-index: 99;
+            }
+        }
+    </style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet">
@@ -49,24 +251,6 @@
       window.location.replace('dadospessoais.html');
     }
   } catch(_e) {}
-</script>
-<script>
-(function(){
-  // Redirect standalone pages into the persistent App Shell (Twitter-like navigation)
-  try{
-    if (location.search && location.search.includes("standalone=1")) return;
-    const file = (location.pathname||"").split("/").pop().toLowerCase();
-    const map = {"index.html": "#/home", "busca.html": "#/search", "comunidade.html": "#/comunidades", "negocios.html": "#/negocios", "pedidos.html": "#/pedidos", "notificacoes.html": "#/notificacoes", "mensagens.html": "#/mensagens", "meuperfil.html": "#/perfil", "mais.html": "#/mais"};
-    const hash = map[file];
-    if(!hash) return;
-    if(file === "app.html") return;
-    // If already inside app shell, do nothing
-    if(String(location.hash||"").startsWith("#/")) return;
-    // Keep querystring (e.g. ?q=)
-    const qs = location.search || "";
-    location.replace("app.html" + hash + (qs ? qs.replace("?", "?") : ""));
-  }catch(e){}
-})();
 </script>
 </head>
 <body data-page="mais">
@@ -248,7 +432,7 @@
 </nav>
 <script>
         // Dados Pessoais (Supabase) - carrega do Auth + tabela usuários + validação (tornar-profissional)
-        // Objetivo: o que vocÃƒÆ’ª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
+        // Objetivo: o que vocÃƒÆ’Ã‚ª preencheu no tornar-profissional aparecer aqui, e o nome/user ficarem consistentes.
 
         const safeJSON = (k, fallback = null) => {
             try { return JSON.parse(localStorage.getItem(k) || '') || fallback; } catch { return fallback; }
@@ -306,7 +490,7 @@
         }
 
         async function carregarPerfilReal() {
-            // proteÃƒÆ’§ÃƒÆ’£o simples
+            // proteÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚£o simples
             const logado = localStorage.getItem('usuarioLogado') === 'true' || !!localStorage.getItem('doke_usuario_perfil');
             if (!logado) {
                 window.location.href = 'login.html';
@@ -421,7 +605,7 @@
 
         document.addEventListener('DOMContentLoaded', carregarPerfilReal);
 
-        // FunÃƒÆ’§ÃƒÆ’£o global para salvar (chamada pelo form)
+        // FunÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚£o global para salvar (chamada pelo form)
         window.salvarDados = async function(e) {
             e.preventDefault();
             const btn = document.getElementById('btnSalvar');
@@ -434,11 +618,11 @@
                 const perfilLocal = safeJSON('doke_usuario_perfil', {}) || {};
                 const { data: authData } = await window.sb.auth.getUser();
                 const authUser = authData?.user || null;
-                if (!authUser) throw new Error('SessÃƒÆ’£o expirada. FaÃƒÆ’§a login novamente.');
+                if (!authUser) throw new Error('SessÃƒÆ’Ã‚£o expirada. FaÃƒÆ’Ã‚§a login novamente.');
 
                 const uid = authUser.id;
                 const nome = String(document.getElementById('inputNome')?.value || '').trim().slice(0, 40);
-                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÆ’¡lido (mÃƒÆ’­nimo 2 caracteres).');
+                if (!nome || nome.length < 2) throw new Error('Informe um nome vÃƒÆ’Ã‚¡lido (mÃƒÆ’Ã‚­nimo 2 caracteres).');
                 const telefone = String(document.getElementById('inputTel')?.value || '').trim();
                 const nasc = document.getElementById('inputNasc')?.value || '';
                 const foto = document.getElementById('hiddenFotoBase64')?.value || perfilLocal.foto || '';
@@ -453,7 +637,7 @@
                 };
                 localStorage.setItem('doke_usuario_perfil', JSON.stringify(merged));
 
-                // Melhor esforÃƒÆ’§o: atualiza tabela usuários (se existir colunas)
+                // Melhor esforÃƒÆ’Ã‚§o: atualiza tabela usuários (se existir colunas)
                 const patch = { nome, telefone, data_nascimento: nasc, foto };
                 try {
                     await window.sb
@@ -462,7 +646,7 @@
                         .or(`uid.eq.${uid},id.eq.${uid}`);
                 } catch (_) {}
 
-                // Melhor esforÃƒÆ’§o: espelha no Auth metadata
+                // Melhor esforÃƒÆ’Ã‚§o: espelha no Auth metadata
                 try {
                     await window.sb.auth.updateUser({
                         data: {
@@ -492,7 +676,7 @@
         function previewImage(event) {
             const file = event.target.files[0];
             if(file) {
-                // Tamanho maximo 2MB para nÃƒÆ’£o travar localStorage/Firestore
+                // Tamanho maximo 2MB para nÃƒÆ’Ã‚£o travar localStorage/Firestore
                 if(file.size > 2 * 1024 * 1024) {
                     if (typeof window.dokeAlert === 'function') window.dokeAlert("A imagem é muito grande. Escolha uma menor que 2MB.");
                     else if (typeof window.dokeToast === 'function') window.dokeToast("A imagem é muito grande. Escolha uma menor que 2MB.", { type: 'error' });

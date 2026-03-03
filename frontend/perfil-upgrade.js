@@ -2577,7 +2577,19 @@ function ensureTheme(ctx, theme){
       grid.innerHTML = `<div class="dp-empty">Supabase indisponível (erro 520/servidor offline). Abra <b>diagnostico.html</b> e verifique se o projeto Supabase está pausado.</div>`;
       return;
     }
-    renderPerfilGridSkeleton(grid, "publicacoes");
+    // Evita skeleton "mentiroso" quando o perfil não tem publicações.
+    // Se o empty-state já existe no HTML, mantemos ele e exibimos um loader discreto.
+    if(grid.querySelector('.dp-emptyState')){
+      grid.classList.add('dp-grid--softloading');
+      if(!grid.querySelector('.dp-softLoader')){
+        const l = document.createElement('div');
+        l.className = 'dp-softLoader';
+        l.innerHTML = `<span class="dp-softSpinner" aria-hidden="true"></span><span>Carregando…</span>`;
+        grid.appendChild(l);
+      }
+    }else{
+      renderPerfilGridSkeleton(grid, "publicacoes");
+    }
     const queryResult = await selectRowsByOwnerCompat(client, {
       table: "publicacoes",
       select: "*",
@@ -2620,12 +2632,14 @@ function ensureTheme(ctx, theme){
       dpPubVisibleIds = [];
       dpPubSelectedIds.clear();
       refreshPublicacoesSelectionUI();
+      grid.classList.remove('dp-grid--softloading');
       grid.innerHTML = `<div class="dp-empty">Sem publicações ainda.</div>`;
       return;
     }
     dpPubVisibleIds = data.map((item)=> String(item?.id || "")).filter(Boolean);
     dpPubSelectedIds = new Set(Array.from(dpPubSelectedIds).filter((id)=> dpPubVisibleIds.includes(id)));
     grid.classList.remove("dp-grid--loading");
+    grid.classList.remove('dp-grid--softloading');
     grid.innerHTML = "";
     const canEdit = !!ctx?.canEdit;
     for(const item of data){
@@ -2697,7 +2711,17 @@ function ensureTheme(ctx, theme){
     ensureReelsSelectionControls(ctx || dpReelCtx || null);
     const grid = $("#dpGridReels");
     if(!grid) return;
-    renderPerfilGridSkeleton(grid, "reels");
+    if(grid.querySelector('.dp-emptyState')){
+      grid.classList.add('dp-grid--softloading');
+      if(!grid.querySelector('.dp-softLoader')){
+        const l = document.createElement('div');
+        l.className = 'dp-softLoader';
+        l.innerHTML = `<span class="dp-softSpinner" aria-hidden="true"></span><span>Carregando…</span>`;
+        grid.appendChild(l);
+      }
+    }else{
+      renderPerfilGridSkeleton(grid, "reels");
+    }
     const queryResult = await selectRowsByOwnerCompat(client, {
       table: "videos_curtos",
       select: "*",
@@ -2733,6 +2757,7 @@ function ensureTheme(ctx, theme){
       dpReelVisibleIds = [];
       dpReelSelectedIds.clear();
       refreshReelsSelectionUI();
+      grid.classList.remove('dp-grid--softloading');
       grid.innerHTML = `<div class="dp-empty">Sem videos curtos ainda.</div>`;
       return;
     }
@@ -2740,6 +2765,7 @@ function ensureTheme(ctx, theme){
     dpReelVisibleIds = data.map((item)=> String(item?.id || "")).filter(Boolean);
     dpReelSelectedIds = new Set(Array.from(dpReelSelectedIds).filter((id)=> dpReelVisibleIds.includes(id)));
     grid.classList.remove("dp-grid--loading");
+    grid.classList.remove('dp-grid--softloading');
     grid.innerHTML = "";
     for(const item of data){
       const card = document.createElement("div");
@@ -2796,7 +2822,17 @@ function ensureTheme(ctx, theme){
   async function loadPortfolio(client, profId, ctx){
     const grid = $("#dpGridPortfolio");
     if(!grid) return;
-    renderPerfilGridSkeleton(grid, "portfolio");
+    if(grid.querySelector('.dp-emptyState')){
+      grid.classList.add('dp-grid--softloading');
+      if(!grid.querySelector('.dp-softLoader')){
+        const l = document.createElement('div');
+        l.className = 'dp-softLoader';
+        l.innerHTML = `<span class="dp-softSpinner" aria-hidden="true"></span><span>Carregando…</span>`;
+        grid.appendChild(l);
+      }
+    }else{
+      renderPerfilGridSkeleton(grid, "portfolio");
+    }
     const queryResult = await selectRowsByOwnerCompat(client, {
       table: "portfolio",
       select: "*",
@@ -2826,6 +2862,7 @@ function ensureTheme(ctx, theme){
       return;
     }
     if(!data?.length){
+      grid.classList.remove('dp-grid--softloading');
       grid.innerHTML = `<div class="dp-empty">Sem itens no portfolio ainda.</div>`;
       return;
     }
@@ -2843,6 +2880,7 @@ function ensureTheme(ctx, theme){
     };
 
     grid.classList.remove("dp-grid--loading");
+    grid.classList.remove('dp-grid--softloading');
     grid.innerHTML = "";
     for(const item of data){
       const mediaUrl = String(item.media_url || "").trim();

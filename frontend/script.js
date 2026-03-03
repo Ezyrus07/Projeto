@@ -3248,8 +3248,20 @@ window.verificarEstadoLogin = async function() {
     const uidAuth = String(resolvedUser?.uid || resolvedUser?.id || "").trim();
     const uidCache = String(localStorage.getItem('doke_uid') || "").trim();
     let resolvedUid = uidAuth || uidPerfil || uidCache;
-    let logado = !!resolvedUid || localStorage.getItem('usuarioLogado') === 'true' || !!perfilSalvo || !!resolvedUser;
+
+    // IMPORTANT:
+    // Não considerar "logado" apenas por cache local (doke_usuario_perfil/usuarioLogado).
+    // Isso evita o bug: header mostra avatar, mas página restrita pede login.
+    const hasRealtimeAuth = !!resolvedUser || !!sessionUser || !!(window.auth?.currentUser || window.firebaseAuth?.currentUser);
+    let logado = hasRealtimeAuth;
     if (forceLogoutActive) logado = false;
+
+    // Se existir apenas cache local sem sessão real, limpa o flag para não enganar a UI.
+    if (!logado) {
+        try {
+            localStorage.removeItem('usuarioLogado');
+        } catch (_e) {}
+    }
 
     if (logado && resolvedUid) {
         try {
@@ -6507,7 +6519,7 @@ window.criarNovaComunidade = async function(e) {
             tipo: tipo,
             capa: capaUrl,
             membrosCount: 1,
-            membros: [user.uid], // Voc? entra automaticamente no grupo
+            membros: [user.uid], // Você entra automaticamente no grupo
             dataCriacao: new Date().toISOString()
         });
 
@@ -6572,17 +6584,48 @@ function dokeCommEscapeHtml(value) {
         .replace(/'/g, "&#39;");
 }
 
+
+function dokeCommFixText(value) {
+    let s = String(value ?? "");
+    // Correções pontuais de "mojibake" que aparecem no app
+    const direct = {
+        "Condomï¿½nio": "Condomínio",
+        "CondomÃ­nio": "Condomínio",
+        "PÃºblico": "Público",
+        "NotificaÃ§Ãµes": "Notificações",
+        "Solicita??o": "Solicitação",
+        "N?o": "Não",
+        "Voc?": "Você",
+        "poss?vel": "possível"
+    };
+    if (direct[s]) s = direct[s];
+
+    // Tentativa genérica (latin1 -> utf8) para strings com Ã/Â
+    if (/[ÃÂ]/.test(s)) {
+        try { s = decodeURIComponent(escape(s)); } catch (_e) {}
+    }
+
+    // Outras correções comuns
+    s = s.replaceAll("Solicita??o", "Solicitação")
+         .replaceAll("N?o", "Não")
+         .replaceAll("Voc?", "Você")
+         .replaceAll("poss?vel", "possível");
+
+    return s;
+}
+
+
 function dokeCommNormalizePrivacidade(comm) {
     const boolPrivate = [comm?.privado, comm?.is_private, comm?.private].find(v => typeof v === "boolean");
     if (typeof boolPrivate === "boolean") {
-        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "PÃºblico" };
+        return { isPrivate: boolPrivate, label: boolPrivate ? "Privado" : "Público" };
     }
 
     if (typeof comm?.publico === "boolean") {
-        return { isPrivate: !comm.publico, label: comm.publico ? "PÃºblico" : "Privado" };
+        return { isPrivate: !comm.publico, label: comm.publico ? "Público" : "Privado" };
     }
     if (typeof comm?.publica === "boolean") {
-        return { isPrivate: !comm.publica, label: comm.publica ? "PÃºblico" : "Privado" };
+        return { isPrivate: !comm.publica, label: comm.publica ? "Público" : "Privado" };
     }
 
     const raw = String(comm?.privacidade || comm?.privacy || "").trim();
@@ -6592,7 +6635,7 @@ function dokeCommNormalizePrivacidade(comm) {
         if (s.includes("pub")) return { isPrivate: false, label: raw };
         return { isPrivate: false, label: raw };
     }
-    return { isPrivate: false, label: "PÃºblico" };
+    return { isPrivate: false, label: "Público" };
 }
 
 async function dokeCommHasColumn(client, table, col) {
@@ -6603,7 +6646,7 @@ async function dokeCommHasColumn(client, table, col) {
         const code = String(error.code || "").toUpperCase();
         const status = Number(error.status || error.statusCode || 0);
 
-        // Falha de rede/proxy: n?o assumir que a coluna existe.
+        // Falha de rede/proxy: não assumir que a coluna existe.
         if (
             status >= 500 ||
             msg.includes("failed to fetch") ||
@@ -6614,12 +6657,12 @@ async function dokeCommHasColumn(client, table, col) {
             return false;
         }
 
-        // Sem permiss?o: coluna/tabela podem existir; mant?m true para n?o quebrar schema detect.
+        // Sem permissão: coluna/tabela podem existir; mant?m true para n?o quebrar schema detect.
         if (status === 401 || status === 403) {
             return true;
         }
 
-        // Erros de parse/schema ausente devem ser tratados como "coluna n?o existe".
+        // Erros de parse/schema ausente devem ser tratados como "coluna não existe".
         if (
             status === 400 || status === 404 ||
             code === "42703" || // undefined_column
@@ -6735,7 +6778,7 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
 
     const client = window.supabase || window.supabaseClient || window.sb || null;
     if (!client || typeof client.from !== "function") {
-        if (isPrivate) dokeCommToast("N?o foi poss?vel solicitar entrada agora.");
+        if (isPrivate) dokeCommToast("Não foi possível solicitar entrada agora.");
         else abrirGrupo(grupoId);
         return;
     }
@@ -6785,18 +6828,18 @@ window.acaoComunidadeGrupo = async function(grupoIdEncoded, isPrivate, isMember)
         }
 
         if (isPrivate) {
-            dokeCommToast("Solicita??o de entrada enviada.");
+            dokeCommToast("Solicitação de entrada enviada.");
             await carregarComunidadesGerais();
             return;
         }
 
-        dokeCommToast("Voc? entrou no grupo.");
+        dokeCommToast("Você entrou no grupo.");
         await carregarComunidadesGerais();
         if (window.carregarMeusGrupos) await window.carregarMeusGrupos();
         abrirGrupo(grupoId);
     } catch (e) {
         console.error("[DOKE] Erro ao entrar/solicitar grupo:", e);
-        if (isPrivate) dokeCommToast("N?o foi poss?vel solicitar entrada agora.");
+        if (isPrivate) dokeCommToast("Não foi possível solicitar entrada agora.");
         else abrirGrupo(grupoId);
     }
 };
@@ -6812,9 +6855,9 @@ async function carregarComunidadesGerais() {
 
     const renderCard = (comm, uid, statusByGroupId) => {
         const id = comm.id || comm.comunidade_id || comm.uuid || comm._id;
-        const nome = dokeCommEscapeHtml(comm.nome || comm.titulo || "Comunidade");
-        const descricao = dokeCommEscapeHtml(comm.descricao || "");
-        const tipo = dokeCommEscapeHtml(comm.tipo || comm.tipo_comunidade || "Grupo");
+        const nome = dokeCommEscapeHtml(dokeCommFixText(comm.nome || comm.titulo || "Comunidade"));
+        const descricao = dokeCommEscapeHtml(dokeCommFixText(comm.descricao || ""));
+        const tipo = dokeCommEscapeHtml(dokeCommFixText(comm.tipo || comm.tipo_comunidade || "Grupo"));
         const { isPrivate, label: privacidadeLabel } = dokeCommNormalizePrivacidade(comm);
         const capa = comm.capa_url || comm.capa || comm.imagem_capa || "";
         const thumb = comm.thumb_url || comm.icone_url || "";
@@ -6833,7 +6876,7 @@ async function carregarComunidadesGerais() {
         const capaStyle = capa ? `background-image:url('${safeCapa}')` : `background-image:${fallbackCover()}`;
         const safeId = idStr.replace(/\\/g, "\\\\").replace(/'/g, "\\'");
         const safeIdEncoded = encodeURIComponent(idStr);
-        const safePriv = dokeCommEscapeHtml(privacidadeLabel);
+        const safePriv = dokeCommEscapeHtml(dokeCommFixText(privacidadeLabel));
 
         return `
           <div class="com-card" onclick="abrirGrupo('${safeId}')">

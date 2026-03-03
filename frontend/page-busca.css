@@ -321,11 +321,20 @@ body[data-page="busca"] #feedAnuncios .btn-solicitar{
     bottom: 0 !important;
     width: 100% !important;
     max-width: 100% !important;
+    /*
+      iOS Safari (principalmente com a barra inferior) pode "encolher" o sheet
+      quando usamos somente max-height. ForÃ§amos um height explÃ­cito para o
+      bottom-sheet encostar no rodapÃ© (sem deixar "vazio" embaixo).
+    */
+    height: calc(100dvh - var(--doke-h, 56px) - 8px);
     max-height: calc(100dvh - var(--doke-h, 56px) - 8px);
+    min-height: 60vh;
     z-index: 20040 !important;
     transform: translateY(110%);
     transition: transform .22s ease;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
     background: #ffffff !important;
     border-radius: 18px 18px 0 0;
     padding: 12px 14px !important;
@@ -334,15 +343,10 @@ body[data-page="busca"] #feedAnuncios .btn-solicitar{
     box-shadow: 0 22px 60px rgba(15,23,42,.22);
   }
 
-  body[data-page="busca"] .filters-sidebar::before{
-    content: "";
-    display: block;
-    width: 42px;
-    height: 4px;
-    border-radius: 999px;
-    background: #cbd5e1;
-    margin: 2px auto 12px;
-  }
+  /* O "tracinho" precisa ser clicÃ¡vel/arrastÃ¡vel: usamos um botÃ£o real (handle).
+     O pseudo-elemento Ã© apenas visual e nÃ£o recebe toque no iOS.
+  */
+  body[data-page="busca"] .filters-sidebar::before{ display: none; }
 
   body[data-page="busca"] .filters-drag-handle{
     width: 42px;

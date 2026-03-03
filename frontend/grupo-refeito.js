@@ -588,9 +588,9 @@ function wireRequestActions(rows){
           ${text ? `<div class="text">${escapeHtml(text)}</div>` : ``}
           ${mediaHtml}
           <div class="actions">
-            <button class="btn-act btn-reply" ${canAct ? '' : 'disabled'} title="Responder">â†©ï¸ <span>Responder</span></button>
-            <button class="btn-act btn-react" ${canAct ? '' : 'disabled'} title="Reagir">ðŸ‘ <span>Reagir</span></button>
-            <button class="btn-act btn-del" ${canDelete && canAct ? '' : 'disabled'} title="Excluir">ðŸ—‘ï¸ <span>Excluir</span></button>
+            <button class="btn-act btn-reply" ${canAct ? '' : 'disabled'} title="Responder"><i class="bx bx-reply"></i><span>Responder</span></button>
+            <button class="btn-act btn-react" ${canAct ? '' : 'disabled'} title="Reagir"><i class="bx bx-like"></i><span>Reagir</span></button>
+            <button class="btn-act btn-del" ${canDelete && canAct ? '' : 'disabled'} title="Excluir"><i class="bx bx-trash"></i><span>Excluir</span></button>
           </div>
           <div class="reacts" style="display:none;"></div>
         </div>
@@ -648,7 +648,7 @@ function wireRequestActions(rows){
       });
 
       btnReact?.addEventListener('click', async ()=>{
-        await toggleReaction(postId, 'ðŸ‘');
+        await toggleReaction(postId, '👍');
         await hydrateReactionsForPost(postId);
       });
 
@@ -664,6 +664,22 @@ function wireRequestActions(rows){
   // ------ reactions (table first, then fallback silent) ------
   let reactionsEnabled = false;
   let reactSchema = null;
+
+  const EMOJI_ALIASES = {
+    '👍': ['👍', 'ðŸ‘']
+  };
+
+  function normalizeEmoji(e){
+    const s = String(e || '');
+    if (s === 'ðŸ‘') return '👍';
+    if (s === '👍') return '👍';
+    return s;
+  }
+
+  function aliasesForEmoji(e){
+    const k = normalizeEmoji(e);
+    return EMOJI_ALIASES[k] || [k];
+  }
 
   async function detectReactionsSchema(){
     reactionsEnabled = await tableExists(REACTIONS_TABLE);
@@ -732,6 +748,51 @@ function wireRequestActions(rows){
       fotoCol: await pick(fotoCandidates),
       roleCol: await pick(roleCandidates)
     };
+  }
+
+  async function fetchUserProfiles(uids){
+    const uniq = Array.from(new Set((uids || []).map(u=>String(u||'').trim()).filter(Boolean)));
+    if (!uniq.length) return {};
+
+    const cols = 'id,uid,user,nome,foto,username,name,photo';
+    const map = {};
+
+    const chunk = (arr, size) => {
+      const out = [];
+      for (let i=0; i<arr.length; i+=size) out.push(arr.slice(i, i+size));
+      return out;
+    };
+
+    try{
+      for (const part of chunk(uniq, 100)){
+        // 1) tenta por id
+        const r1 = await client.from('usuarios').select(cols).in('id', part).limit(200);
+        if (!r1?.error && Array.isArray(r1.data)){
+          r1.data.forEach(p=>{
+            if (p?.id) map[String(p.id)] = p;
+            if (p?.uid) map[String(p.uid)] = p;
+          });
+        }
+        // 2) tenta por uid (firebase)
+        const r2 = await client.from('usuarios').select(cols).in('uid', part).limit(200);
+        if (!r2?.error && Array.isArray(r2.data)){
+          r2.data.forEach(p=>{
+            if (p?.id) map[String(p.id)] = p;
+            if (p?.uid) map[String(p.uid)] = p;
+          });
+        }
+      }
+    }catch(e){
+      // best-effort; se RLS bloquear, seguimos com fallback (UID)
+      console.warn('[DOKE] fetchUserProfiles failed', e);
+    }
+    return map;
+  }
+
+  function cleanUsername(u){
+    const s = String(u || '').trim();
+    if (!s) return '';
+    return s.replace(/^@/,'');
   }
 
   function setPreviewBox(el, url, mode){
@@ -812,8 +873,11 @@ function wireRequestActions(rows){
 
   function makeMemberRow(member, isMuted){
     const uid = String(member[memberSchema.userCol] ?? member.user_uid ?? member.user_id ?? '');
-    const name = (memberDisplaySchema?.nameCol ? member[memberDisplaySchema.nameCol] : null) || member.nome || member.user || uid;
-    const foto = (memberDisplaySchema?.fotoCol ? member[memberDisplaySchema.fotoCol] : null) || member.foto || '';
+    const profile = member.__profile || member.profile || {};
+    const profileName = profile.nome || profile.name || profile.full_name || '';
+    const profileUser = cleanUsername(profile.user || profile.username || '');
+    const name = (profileName || (memberDisplaySchema?.nameCol ? member[memberDisplaySchema.nameCol] : null) || member.nome || member.user || (uid===String(currentUid) ? 'Você' : uid));
+    const foto = (profile.foto || profile.photo || (memberDisplaySchema?.fotoCol ? member[memberDisplaySchema.fotoCol] : null) || member.foto || '');
 
     const item = document.createElement('div');
     item.className = 'membro-item';
@@ -851,7 +915,11 @@ function wireRequestActions(rows){
     sub.style.fontWeight='800';
     sub.style.color='#7a8696';
     sub.style.fontSize='0.85rem';
-    sub.textContent = uid === String(currentUid) ? 'Você' : shortUid(uid);
+    sub.textContent = uid === String(currentUid)
+      ? 'Você'
+      : (cleanUsername((member.__profile||member.profile||{}).user || (member.__profile||member.profile||{}).username)
+          ? '@' + cleanUsername((member.__profile||member.profile||{}).user || (member.__profile||member.profile||{}).username)
+          : shortUid(uid));
 
     info.appendChild(nm);
     info.appendChild(sub);
@@ -966,6 +1034,14 @@ function wireRequestActions(rows){
     if (statusCol && !isAdmin){
       visible = rows.filter(r => String(r[statusCol]||'').toLowerCase() !== 'pendente');
     }
+
+    // hidrata perfis (nome/@user/foto) via tabela usuarios
+    const uids = visible.map(r => String(r[userCol] ?? '')).filter(Boolean);
+    const profilesMap = await fetchUserProfiles(uids);
+    visible.forEach(r => {
+      const uid = String(r[userCol] ?? '');
+      r.__profile = profilesMap[uid] || null;
+    });
 
     // determine online: use col 'online' or last_seen within 5min; else treat all online
     const hasOnline = await hasColumn(MEMBERS_TABLE, 'online').catch(()=>false);
@@ -1457,25 +1533,37 @@ function wireRequestActions(rows){
     if (!reactionsEnabled) return;
     const { postIdCol, userCol, emojiCol } = reactSchema;
 
-    // check if exists
+    const norm = normalizeEmoji(emoji);
+    const aliases = aliasesForEmoji(norm);
+
     const { data, error } = await client.from(REACTIONS_TABLE)
-      .select('id')
+      .select('id,' + emojiCol)
       .eq(postIdCol, postId)
       .eq(userCol, currentUid)
-      .eq(emojiCol, emoji)
-      .limit(1);
+      .in(emojiCol, aliases)
+      .limit(50);
 
     if (error){
       console.warn('[REACT] select error', error);
       return;
     }
-    if (data && data[0]){
-      const { error: delErr } = await client.from(REACTIONS_TABLE).delete().eq('id', data[0].id);
-      if (delErr) toast('Não consegui remover reação.');
+
+    // toggle off (remove existing)
+    if (Array.isArray(data) && data.length){
+      const ids = data.map(r=>r.id).filter(Boolean);
+      if (ids.length){
+        const { error: delErr } = await client.from(REACTIONS_TABLE).delete().in('id', ids);
+        if (delErr) toast('Não consegui remover reação.');
+      }
       return;
     }
+
+    // toggle on
     const payload = {};
-    payload[postIdCol]=postId; payload[userCol]=currentUid; payload[emojiCol]=emoji;
+    payload[postIdCol]=postId;
+    payload[userCol]=currentUid;
+    payload[emojiCol]=norm;
+
     const { error: insErr } = await client.from(REACTIONS_TABLE).insert(payload);
     if (insErr) toast('Não consegui reagir.');
   }
@@ -1525,12 +1613,12 @@ function wireRequestActions(rows){
 
     const counts = {};
     reactions.forEach(r=>{
-      const e = r[reactSchema.emojiCol];
+      const e = normalizeEmoji(r[reactSchema.emojiCol]);
       counts[e] = (counts[e]||0)+1;
     });
 
-    const chips = Object.keys(counts).map(e=>{
-      const mine = reactions.some(r=>String(r[reactSchema.userCol])===String(currentUid) && r[reactSchema.emojiCol]===e);
+const chips = Object.keys(counts).map(e=>{
+      const mine = reactions.some(r=>String(r[reactSchema.userCol])===String(currentUid) && normalizeEmoji(r[reactSchema.emojiCol])===e);
       return `<button class="react-chip ${mine?'active':''}" data-emoji="${e}">${e} ${counts[e]}</button>`;
     });
 
