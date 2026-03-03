@@ -43,6 +43,39 @@ window.auth = {
     }
 };
 
+// Shims de compatibilidade com Firebase Auth
+window.getAuth = () => window.auth;
+window.getFirestore = () => window.db;
+window.getStorage = () => window.storage;
+window.signOut = async (authObj) => authObj.signOut();
+
+window.EmailAuthProvider = {
+    credential: (email, password) => ({ email, password })
+};
+
+window.reauthenticateWithCredential = async (user, credential) => {
+    const { error } = await sb.auth.signInWithPassword({
+        email: credential.email,
+        password: credential.password
+    });
+    if (error) throw error;
+    return { user };
+};
+
+window.updatePassword = async (user, newPassword) => {
+    const { error } = await sb.auth.updateUser({ password: newPassword });
+    if (error) throw error;
+};
+
+window.deleteUser = async (user) => {
+    if (sb.auth.admin?.deleteUser) {
+        const { error } = await sb.auth.admin.deleteUser(user.id);
+        if (error) throw error;
+        return;
+    }
+    throw new Error("Exclusão de usuário exige chave de serviço no Supabase.");
+};
+
 // ===== SUPABASE BOOTSTRAP (evita createClient undefined) =====
 (function () {
   // evita executar duas vezes
@@ -90,7 +123,7 @@ window.onAuthStateChanged = (authObj, callback) => {
         
         if (user) {
             // Busca dados extras do usuário no banco
-            const { data: perfil } = await supabase
+            const { data: perfil } = await sb
                 .from('usuarios')
                 .select('*')
                 .eq('uid', user.id)
@@ -172,7 +205,7 @@ window.addDoc = async (colecaoRef, dados) => {
     // O Supabase não tem subcoleções reais, então salvamos na tabela principal com um ID de referência
     // Mas para manter seu código funcionando, vamos simplificar:
     
-    const { data, error } = await supabase
+    const { data, error } = await sb
         .from(tabela)
         .insert(dados)
         .select()
@@ -225,7 +258,7 @@ window.setDoc = async (docRef, dados) => {
     // Garante que o ID esteja no corpo dos dados também
     dadosFinais.id = id; 
 
-    const { error } = await supabase
+    const { error } = await sb
         .from(tabela)
         .upsert(dadosFinais); // upsert = update ou insert
     
@@ -241,9 +274,53 @@ window.updateDoc = async (docRef, dados) => {
     let id = docRef.id;
     
     // APLICA A CORREÇÃO (UID -> ID)
-    const dadosFinais = prepararDadosParaSupabase(dados);
+    let dadosFinais = prepararDadosParaSupabase(dados);
 
-    const { error } = await supabase
+    const precisaRecalcular = Object.values(dadosFinais).some(
+        (valor) => valor && typeof valor === 'object' && valor.__op
+    );
+
+    if (precisaRecalcular) {
+        const { data: existente, error: fetchError } = await sb
+            .from(tabela)
+            .select('*')
+            .eq('id', id)
+            .single();
+
+        if (fetchError) {
+            console.error("Erro ao buscar documento para updateDoc:", fetchError);
+            throw fetchError;
+        }
+
+        const atualizado = { ...dadosFinais };
+
+        Object.entries(dadosFinais).forEach(([campo, valor]) => {
+            if (!valor || typeof valor !== 'object' || !valor.__op) return;
+
+            if (valor.__op === 'increment') {
+                const atual = Number(existente?.[campo] ?? 0);
+                atualizado[campo] = atual + valor.value;
+            }
+
+            if (valor.__op === 'arrayUnion') {
+                const atual = Array.isArray(existente?.[campo]) ? existente[campo] : [];
+                const combinado = [...atual];
+                valor.values.forEach((item) => {
+                    if (!combinado.includes(item)) combinado.push(item);
+                });
+                atualizado[campo] = combinado;
+            }
+
+            if (valor.__op === 'arrayRemove') {
+                const atual = Array.isArray(existente?.[campo]) ? existente[campo] : [];
+                atualizado[campo] = atual.filter((item) => !valor.values.includes(item));
+            }
+        });
+
+        dadosFinais = atualizado;
+    }
+
+    const { error } = await sb
         .from(tabela)
         .update(dadosFinais)
         .eq('id', id); 
@@ -261,7 +338,7 @@ window.addDoc = async (colecaoRef, dados) => {
     // APLICA A CORREÇÃO (UID -> ID)
     const dadosFinais = prepararDadosParaSupabase(dados);
 
-    const { data, error } = await supabase
+    const { data, error } = await sb
         .from(tabela)
         .insert(dadosFinais)
         .select()
@@ -276,7 +353,7 @@ window.addDoc = async (colecaoRef, dados) => {
 
 // deleteDoc (Deletar)
 window.deleteDoc = async (docRef) => {
-    const { error } = await supabase
+    const { error } = await sb
         .from(docRef.table)
         .delete()
         .eq('id', docRef.id);
@@ -288,7 +365,7 @@ window.getDoc = async (docRef) => {
     let tabela = docRef.table;
     let id = docRef.id;
 
-    const { data, error } = await supabase
+    const { data, error } = await sb
         .from(tabela)
         .select('*')
         .or(`id.eq.${id},uid.eq.${id}`) // Tenta achar por ID ou UID
@@ -346,7 +423,9 @@ window.query = (tabela, ...filtros) => {
 window.where = (field, op, value) => ({ type: 'where', field, value });
 window.orderBy = (field, dir = 'asc') => ({ type: 'orderBy', field, asc: dir === 'asc' });
 window.limit = (num) => ({ type: 'limit', value: num });
-window.increment = (num) => num; // Supabase não tem increment atômico fácil via JS client, teria que ser RPC. Por enquanto, retornamos o valor para somar manualmente se possível.
+window.increment = (num) => ({ __op: 'increment', value: num });
+window.arrayUnion = (...values) => ({ __op: 'arrayUnion', values });
+window.arrayRemove = (...values) => ({ __op: 'arrayRemove', values });
 
 // --- STORAGE (UPLOAD) ---
 window.ref = (storage, path) => path;

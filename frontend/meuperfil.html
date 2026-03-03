@@ -990,28 +990,33 @@
     </div>
 </div>
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getFirestore, collection, getDocs, addDoc, setDoc, getDoc, query, where, orderBy, doc, updateDoc, increment, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { getAuth, onAuthStateChanged, signOut, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+<script>
+const {
+    collection,
+    getDocs,
+    addDoc,
+    setDoc,
+    getDoc,
+    query,
+    where,
+    orderBy,
+    doc,
+    updateDoc,
+    increment,
+    deleteDoc,
+    onSnapshot,
+    onAuthStateChanged,
+    signOut,
+    reauthenticateWithCredential,
+    EmailAuthProvider,
+    ref,
+    uploadBytes,
+    getDownloadURL
+} = window;
 
-const firebaseConfig = {
-    apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-    authDomain: "doke-site.firebaseapp.com",
-    projectId: "doke-site",
-    storageBucket: "doke-site.firebasestorage.app",
-    messagingSenderId: "997098339190",
-    appId: "1:997098339190:web:a865b696278be21f069857"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app); 
-const storage = getStorage(app);
-window.db = db;
-window.auth = auth;
-window.storage = storage;
+const db = window.db;
+const auth = window.auth; 
+const storage = window.storage;
 
 // Variáveis Globais
 let userHandleOriginal = ""; 
@@ -1516,7 +1521,8 @@ async function carregarMinhasAvaliacoes(uid) {
         snapshot.forEach(doc => {
             const r = doc.data();
             soma += r.media || r.nota || 0;
-            container.insertAdjacentHTML('beforeend', `<div style="padding:15px; border-bottom:1px solid #eee;"><strong>${r.deNome || 'Cliente'}</strong>: ${r.comentario} (${(r.media||r.nota).toFixed(1)}⭐)</div>`);
+            const comentarioExibido = r.comentarioGeral || r.comentario || "";
+            container.insertAdjacentHTML('beforeend', `<div style="padding:15px; border-bottom:1px solid #eee;"><strong>${r.deNome || 'Cliente'}</strong>: ${comentarioExibido} (${(r.media||r.nota).toFixed(1)}⭐)</div>`);
         });
         
         document.getElementById('minhaNotaGeral').innerText = (soma/total).toFixed(1);

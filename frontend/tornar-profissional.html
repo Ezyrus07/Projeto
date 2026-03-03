@@ -153,9 +153,8 @@
         </form>
     </div>
 
-    <script type="module">
-        import { getFirestore, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-        import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    <script>
+        const { getFirestore, doc, updateDoc, getAuth, onAuthStateChanged } = window;
 
         // --- FUNÇÃO PARA BUSCAR CEP AUTOMÁTICO ---
         window.buscarEndereco = async function() {
@@ -279,16 +278,13 @@
             }
         }
 
-        // No topo do script do tornar-profissional.html
-import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-
-const auth = getAuth();
-onAuthStateChanged(auth, (user) => {
-    if (!user) {
-        alert("Você precisa estar logado para acessar esta página.");
-        window.location.href = "login.html";
-    }
-});
+        const auth = getAuth();
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                alert("Você precisa estar logado para acessar esta página.");
+                window.location.href = "login.html";
+            }
+        });
     </script>
 </body>
 </html>

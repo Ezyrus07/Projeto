@@ -367,21 +367,9 @@
         <a href="meuperfil.html" class="item active"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" class="icon verde"><span>Perfil</span></a>
     </nav>
 
-<script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-
-    const firebaseConfig = {
-        apiKey: "AIzaSyDbUwwj-joyhJ3aJ-tP4WJhGC1wLrwYh60",
-        authDomain: "doke-site.firebaseapp.com",
-        projectId: "doke-site",
-        storageBucket: "doke-site.firebasestorage.app",
-        messagingSenderId: "997098339190",
-        appId: "1:997098339190:web:a865b696278be21f069857"
-    };
-
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+<script>
+    const { doc, getDoc, collection, query, where, getDocs } = window;
+    const db = window.db;
 
     const params = new URLSearchParams(window.location.search);
     const targetUid = params.get('uid');
@@ -529,7 +517,7 @@
             container.insertAdjacentHTML('beforeend', `
                 <div style="background:#fff; padding:15px; border-radius:8px; border:1px solid #eee;">
                     <div style="font-weight:bold; color:#333;">${r.deNome || 'Cliente'} <span style="color:#f1c40f;">★ ${r.nota}</span></div>
-                    <p style="color:#666; margin:5px 0;">${r.comentario}</p>
+                    <p style="color:#666; margin:5px 0;">${r.comentarioGeral || r.comentario || ""}</p>
                 </div>
             `);
         });
