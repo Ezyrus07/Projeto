@@ -3140,6 +3140,25 @@ body[data-page="perfil"] .dp-section{
   overflow: visible !important;
 }
 
+/* Perfil: padroniza scrollbar escura caso algum container interno assuma rolagem */
+body[data-page="perfil"] main.dp-wrap::-webkit-scrollbar,
+body[data-page="perfil"] #dpRoot::-webkit-scrollbar,
+body[data-page="perfil"] .dp-section::-webkit-scrollbar{
+  width: 12px;
+}
+body[data-page="perfil"] main.dp-wrap::-webkit-scrollbar-track,
+body[data-page="perfil"] #dpRoot::-webkit-scrollbar-track,
+body[data-page="perfil"] .dp-section::-webkit-scrollbar-track{
+  background: #2f3339;
+}
+body[data-page="perfil"] main.dp-wrap::-webkit-scrollbar-thumb,
+body[data-page="perfil"] #dpRoot::-webkit-scrollbar-thumb,
+body[data-page="perfil"] .dp-section::-webkit-scrollbar-thumb{
+  background: #646d79;
+  border-radius: 999px;
+  border: 2px solid #2f3339;
+}
+
 body[data-page="perfil"] .sidebar-icones{
   overflow-y: hidden !important;
 }
@@ -3186,4 +3205,23 @@ body[data-page="perfil"] .sidebar-icones{
     pointer-events: none !important;
     touch-action: pan-y !important;
   }
+}
+
+/* PATCH 2026-03-03S
+   Perfil: garante somente scroll da página (sem barra interna lateral) */
+body[data-page="perfil"] main.dp-wrap,
+body[data-page="perfil"] #dpRoot,
+body[data-page="perfil"] .dp-section,
+body[data-page="perfil"] .dp-body{
+  overflow-y: visible !important;
+  height: auto !important;
+  max-height: none !important;
+}
+
+body[data-page="perfil"] main.dp-wrap::-webkit-scrollbar,
+body[data-page="perfil"] #dpRoot::-webkit-scrollbar,
+body[data-page="perfil"] .dp-section::-webkit-scrollbar,
+body[data-page="perfil"] .dp-body::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
 }

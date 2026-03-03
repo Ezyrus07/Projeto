@@ -66,6 +66,7 @@ html {
   min-height: 100%;
   box-sizing: border-box;
   font-size: 16px;
+  scrollbar-gutter: stable;
 }
 
 *, *:before, *:after {
@@ -769,7 +770,7 @@ button, .btn-login, .btn-procurar, .btn-anunciar, .cookie-btn, .entrar, .btn-fil
 
 /* Header auth: reserva espaço e evita conflito "Entrar" x Avatar */
 .navbar-desktop .botoes-direita{
-  min-width: 56px;
+  min-width: 128px;
   justify-content: flex-end;
 }
 .navbar-desktop .botoes-direita .entrar,
@@ -783,6 +784,26 @@ body.doke-auth-pending .navbar-desktop .botoes-direita > *{
 body.doke-auth-ready .navbar-desktop .botoes-direita > *{
   opacity: 1;
   transition: opacity .14s ease;
+}
+
+/* Scrollbar padrão escura e estável em todas as páginas */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar{
+  width: 12px;
+}
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track{
+  background: #2f3339;
+}
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb{
+  background: #646d79;
+  border-radius: 999px;
+  border: 2px solid #2f3339;
+}
+html{
+  scrollbar-color: #646d79 #2f3339;
+  scrollbar-width: auto;
 }
 
 @media (max-width: 1024px){
@@ -14241,4 +14262,77 @@ body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
   #modalPostDetalhe.doke-post-modal .doke-post-footer{
     padding: 10px 12px calc(10px + env(safe-area-inset-bottom)) !important;
   }
+}
+
+/* ============================================================
+   PATCH 2026-03-03R
+   Header estático + scroll único + home sem "afundar"
+   ============================================================ */
+
+/* Evita "pulo" de Entrar -> avatar durante hidratação de auth */
+body.doke-auth-pending .navbar-desktop .botoes-direita{
+  position: relative;
+  min-width: 128px !important;
+}
+body.doke-auth-pending .navbar-desktop .botoes-direita > *{
+  visibility: hidden !important;
+}
+body.doke-auth-pending .navbar-desktop .botoes-direita::after{
+  content: "";
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  border: 1px solid #d5dee9;
+  background: linear-gradient(135deg, #edf2f8 0%, #dfe7f1 100%);
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+}
+body.doke-auth-ready .navbar-desktop .botoes-direita::after{
+  content: none !important;
+}
+
+/* Mantém largura da área direita também no range tablet-desktop */
+@media (min-width: 1025px) and (max-width: 1194px){
+  .navbar-desktop .botoes-direita{
+    min-width: 128px !important;
+  }
+}
+
+/* Remove micro animação que dava sensação de "travada" na troca */
+body.doke-app-page-enter main,
+body.doke-app-page-enter .main-content,
+body.doke-app-page-enter .messenger-layout{
+  animation: none !important;
+}
+
+/* Um único scroll vertical global nas páginas com shell desktop */
+@media (min-width: 1025px){
+  body[data-page="home"] main,
+  body[data-page="perfil"] main.dp-wrap{
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+}
+
+/* Home: evita bloco "afundado" em vídeos/publicações e adiciona movimento suave */
+body[data-page="home"] .videos-container,
+body[data-page="home"] .fotos-container{
+  min-height: 0 !important;
+  height: auto !important;
+}
+body[data-page="home"] #galeria-dinamica,
+body[data-page="home"] #feed-global-container.feed-publicacoes-grid{
+  align-items: flex-start !important;
+  padding-bottom: 4px !important;
+}
+body[data-page="home"] #galeria-dinamica .tiktok-card,
+body[data-page="home"] #feed-global-container .feed-publicacao-card{
+  animation: dokeCardLiftIn .24s ease both;
+}
+@keyframes dokeCardLiftIn{
+  from{ opacity: .01; transform: translateY(6px); }
+  to{ opacity: 1; transform: translateY(0); }
 }

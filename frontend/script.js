@@ -4,7 +4,7 @@
 
 
 // [DOKE] Build tag (cache-buster)
-window.__DOKE_BUILD__ = "20260218v60";
+window.__DOKE_BUILD__ = "20260303v61";
 try { console.log("[DOKE] build:", window.__DOKE_BUILD__); } catch(_e) {}
 
 function dokeApplyAppPageEnter(){
@@ -4997,12 +4997,34 @@ async function dokeMaybeRankFeed(contentType, items, limit){
   }
 }
 
+function dokePostEhValido(item){
+    if (!item || typeof item !== "object") return false;
+    const id = String(item.id || item.post_id || item.publicacao_id || "").trim();
+    if (!id) return false;
+
+    const deletedFlags = [
+        "excluido", "excluida", "deletado", "deletada", "apagado", "apagada",
+        "removido", "removida", "is_deleted", "deleted", "is_deleted_at"
+    ];
+    if (deletedFlags.some((k) => item[k] === true)) return false;
+    if (item.ativo === false || item.publico === false) return false;
+
+    const status = String(item.status || item.estado || "").trim().toLowerCase();
+    if (["excluido", "deletado", "apagado", "inativo", "removido", "bloqueado"].includes(status)) return false;
+    return true;
+}
+
+function dokeSanitizarPublicacoes(lista){
+    if (!Array.isArray(lista)) return [];
+    return lista.filter((item) => dokePostEhValido(item));
+}
+
 async function fetchSupabasePublicacoesFeed() {
     const client = getSupabasePublicClient() || getSupabaseClient();
     const cached = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
-    if (Array.isArray(cached) && cached.length) return cached;
-    if (!client) return cached || [];
-    if (dokeIsSupaTemporarilyDown() && Array.isArray(cached) && cached.length) return cached;
+    const cachedSanitized = dokeSanitizarPublicacoes(cached || []);
+    if (!client) return cachedSanitized;
+    if (dokeIsSupaTemporarilyDown() && cachedSanitized.length) return cachedSanitized;
     try {
         let lastError = null;
         let attempts = 0;
@@ -5037,6 +5059,7 @@ async function fetchSupabasePublicacoesFeed() {
                     out = await dokeMaybeRankFeed("publicacoes", out, 24);
                     dokeClearSupaDown();
                     out = await dokeMaybeRankFeed("publicacoes", out, 24);
+                    out = dokeSanitizarPublicacoes(out);
                     dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, out);
                     return out;
                 }
@@ -5074,9 +5097,10 @@ async function fetchSupabasePublicacoesFeed() {
                         out.tipo = out.tipo || (String(out.video_url || out.videoUrl || "").trim() ? "video" : "foto");
                         return out;
                     }).filter((item) => !!item.id);
+                    const sanitized = dokeSanitizarPublicacoes(normalized);
                     dokeClearSupaDown();
-                    dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, normalized);
-                    return normalized;
+                    dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, sanitized);
+                    return sanitized;
                 }
             } catch (_) {}
         }
@@ -5085,7 +5109,7 @@ async function fetchSupabasePublicacoesFeed() {
         if (dokeLooksLikeNetworkAbort(err)) dokeMarkSupaDown();
         else console.error("Falha critica ao buscar publicacoes:", err);
     }
-    return cached || [];
+    return cachedSanitized;
 }
 
 window.carregarFeedGlobal = async function() {
@@ -5358,6 +5382,8 @@ window.carregarFeedGlobal = async function() {
     for (const entry of feedItems) {
         const src = String(entry?.source || "");
         const item = entry?.data || {};
+        if (src === "supabase" && !dokePostEhValido(item)) continue;
+        if (src.startsWith("firebase") && !dokePostEhValido({ id: entry?.id || item?.id || "", ...item })) continue;
         const mediaCandidate = src.startsWith("firebase")
             ? (item.videoUrl || item.video_url || item.video || item.url_video || item.imagem || item.image_url || item.img || item.thumb || item.capa || "")
             : (item.media_url || item.imagem || item.image_url || item.img || item.video_url || item.videoUrl || item.arquivo_url || item.url || "");
@@ -5499,7 +5525,7 @@ window.carregarFeedGlobal = async function() {
             ? `window.openDetalhesModal('detalhes.html?id=${encodeURIComponent(String(item.id || ""))}')`
             : `abrirModalPublicacao('${entry.id}')`;
         const html = `
-            <div class="feed-publicacao-card dp-item dp-item--clickable" role="button" tabindex="0" onclick="${clickAction}" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
+            <div class="feed-publicacao-card dp-item dp-item--clickable" data-post-id="${escapeHtml(String(entry.id || ""))}" role="button" tabindex="0" onclick="${clickAction}" onkeydown="if(event.key==='Enter'||event.key===' ') this.click()">
                 ${mediaHtml ? `<div class="dp-itemMedia">${mediaHtml}</div>` : ""}
                 <div class="dp-itemBody">
                     ${authorHtml}
@@ -9701,6 +9727,16 @@ window.abrirModalPublicacao = async function(publicacaoId) {
 
     const item = await fetchSupabasePublicacaoById(publicacaoId);
     if (!item) {
+        try {
+            const rawId = String(publicacaoId || "");
+            const escapedId = (window.CSS && typeof window.CSS.escape === "function") ? window.CSS.escape(rawId) : rawId.replace(/["\\]/g, "\\$&");
+            document.querySelectorAll(`.feed-publicacao-card[data-post-id="${escapedId}"]`).forEach((el) => el.remove());
+        } catch (_) {}
+        try {
+            const cacheAtual = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
+            const limpo = (Array.isArray(cacheAtual) ? cacheAtual : []).filter((p) => String(p?.id || "") !== String(publicacaoId || ""));
+            dokeWriteCache(DOKE_CACHE_KEYS.publicacoes, limpo);
+        } catch (_) {}
         document.getElementById('modalMediaContainer').innerHTML = "<div style=\"color:white; text-align:center; padding:40px;\">Publicacao indisponivel.</div>";
         document.getElementById('modalCommentsList').innerHTML = "<p style=\"color:#999; font-size:0.85rem; text-align:center;\">Nao foi possivel carregar esta publicacao.</p>";
         iconLike.style.pointerEvents = 'auto';

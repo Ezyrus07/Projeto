@@ -101,6 +101,22 @@ function send(res, status, body, headers = {}) {
 }
 
 function serveStatic(req, res) {
+  // Normalize legacy/incorrect routes that cause nested shell rendering.
+  try {
+    const rawPath = decodeURIComponent(String(req.url || "/").split("?")[0] || "/");
+    if (rawPath.startsWith("/frontend/frontend/")) {
+      const target = "/frontend/" + rawPath.slice("/frontend/frontend/".length);
+      res.writeHead(302, { Location: target, ...CORS_HEADERS });
+      res.end();
+      return;
+    }
+    if (rawPath === "/frontend/app.html" || rawPath === "/frontend/frontend/app.html") {
+      res.writeHead(302, { Location: "/frontend/index.html", ...CORS_HEADERS });
+      res.end();
+      return;
+    }
+  } catch (_) {}
+
   const rel = safePath(req.url || "/");
   let filePath = path.join(ROOT, rel);
 

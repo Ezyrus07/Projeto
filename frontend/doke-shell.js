@@ -1,5 +1,5 @@
 ﻿(function(){
-  window.__DOKE_SHELL_BUILD__ = "20260228v48";
+  window.__DOKE_SHELL_BUILD__ = "20260303v59";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
@@ -181,7 +181,7 @@
     try{
       const body = document.body;
       if(!body) return;
-      body.classList.remove("doke-auth-pending");
+      body.classList.toggle("doke-auth-pending", !isReady);
       body.classList.toggle("doke-auth-ready", !!isReady);
     }catch(_e){}
   }
@@ -743,6 +743,7 @@
 
     let profile = getProfile();
     const hasLocalAuth = !!profile || hasLocalLoginFlag();
+    if (hasLocalAuth) setShellAuthStateReady(true);
     let sessionUser = null;
     if(profile && (profile.uid || profile.id || profile.email)){
       sessionUser = { id: profile.uid || profile.id || profile.email || "cached_user" };
@@ -1518,6 +1519,57 @@
       const chatRaw = Number(totals.chat);
       const notif = Number.isFinite(notifRaw) ? Math.max(0, Math.trunc(notifRaw)) : null;
       const chat = Number.isFinite(chatRaw) ? Math.max(0, Math.trunc(chatRaw)) : null;
+      const linkMatchesFile = (link, file) => {
+        try{
+          const href = String(link?.getAttribute("href") || "").trim();
+          if(!href) return false;
+          const url = new URL(href, location.href);
+          return String(url.pathname || "").toLowerCase().endsWith("/" + String(file || "").toLowerCase());
+        }catch(_e){
+          return false;
+        }
+      };
+      const applyDesktopSidebar = (file, total, clsName) => {
+        if (total === null) return;
+        const anchors = Array.from(document.querySelectorAll(".sidebar-icones .item a[href]"))
+          .filter((a) => linkMatchesFile(a, file));
+        anchors.forEach((a) => {
+          const host = a.closest(".item") || a;
+          if (!(host instanceof HTMLElement)) return;
+          if (!host.style.position || host.style.position === "static") host.style.position = "relative";
+          let badge = host.querySelector("." + clsName);
+          if (!badge) {
+            badge = document.createElement("span");
+            badge.className = clsName;
+            badge.style.cssText = [
+              "position:absolute",
+              "top:6px",
+              "right:8px",
+              "min-width:18px",
+              "height:18px",
+              "padding:0 5px",
+              "border-radius:999px",
+              "display:none",
+              "align-items:center",
+              "justify-content:center",
+              "background:#ff2e63",
+              "color:#fff",
+              "font-size:10px",
+              "font-weight:800",
+              "border:2px solid #fff",
+              "box-shadow:0 2px 6px rgba(0,0,0,.24)",
+              "z-index:5"
+            ].join(";");
+            host.appendChild(badge);
+          }
+          if (total > 0) {
+            badge.textContent = total > 99 ? "99+" : String(total);
+            badge.style.display = "flex";
+          } else {
+            badge.style.display = "none";
+          }
+        });
+      };
       const applyTo = (href, total) => {
         if (total === null) return;
         document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
@@ -1537,6 +1589,8 @@
       };
       applyTo(PAGES.notif, notif);
       applyTo(PAGES.chat, chat);
+      applyDesktopSidebar(PAGES.notif, notif, "doke-desktop-badge-notif");
+      applyDesktopSidebar(PAGES.chat, chat, "doke-desktop-badge-chat");
     }
 
     try{
@@ -1610,6 +1664,103 @@
     });
   }
 
+  function initDesktopNavPerf(){
+    if (window.__dokeDesktopNavPerfBound) return;
+    window.__dokeDesktopNavPerfBound = true;
+
+    const prefetched = new Set();
+
+    const style = document.createElement("style");
+    style.id = "dokeNavPerfStyle";
+    style.textContent = `
+      body.doke-nav-pending::before{
+        content:"";
+        position:fixed;
+        left:0;
+        top:0;
+        height:3px;
+        width:38%;
+        z-index:2147483647;
+        background:linear-gradient(90deg,#2e68a6,#0b7768);
+        box-shadow:0 0 12px rgba(11,119,104,.35);
+        animation:dokeNavLoad 900ms ease-in-out infinite;
+      }
+      @keyframes dokeNavLoad{
+        0%{ transform:translateX(0); width:24%; }
+        50%{ transform:translateX(115%); width:48%; }
+        100%{ transform:translateX(265%); width:24%; }
+      }
+    `;
+    if(!document.getElementById(style.id)) document.head.appendChild(style);
+
+    function toUrl(href){
+      try { return new URL(String(href || ""), location.href); } catch(_e){ return null; }
+    }
+
+    function isInternalPageUrl(url){
+      if(!url || url.origin !== location.origin) return false;
+      if(url.hash && (url.pathname === location.pathname || (url.pathname + url.search) === (location.pathname + location.search))) return false;
+      const pathname = String(url.pathname || "").toLowerCase();
+      if(!pathname.endsWith(".html")) return false;
+      if(pathname.endsWith("/app.html")) return false;
+      return true;
+    }
+
+    function tryPrefetch(url){
+      const abs = String(url?.toString() || "");
+      if(!abs || prefetched.has(abs)) return;
+      prefetched.add(abs);
+      try{
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = abs;
+        link.as = "document";
+        document.head.appendChild(link);
+      }catch(_e){}
+    }
+
+    function pickAnchorFromEventTarget(target){
+      if(!(target instanceof Element)) return null;
+      const anchor = target.closest("a[href]");
+      if(!(anchor instanceof HTMLAnchorElement)) return null;
+      if(anchor.hasAttribute("download")) return null;
+      const targetAttr = String(anchor.getAttribute("target") || "").trim().toLowerCase();
+      if(targetAttr && targetAttr !== "_self") return null;
+      const href = String(anchor.getAttribute("href") || "").trim();
+      if(!href || href.startsWith("#") || href.startsWith("javascript:")) return null;
+      if(href.startsWith("mailto:") || href.startsWith("tel:")) return null;
+      return anchor;
+    }
+
+    document.addEventListener("mouseover", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      tryPrefetch(url);
+    }, true);
+
+    document.addEventListener("focusin", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      tryPrefetch(url);
+    }, true);
+
+    document.addEventListener("click", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      document.body.classList.add("doke-nav-pending");
+    }, true);
+
+    window.addEventListener("pageshow", () => {
+      document.body.classList.remove("doke-nav-pending");
+    });
+  }
+
   MQ.addEventListener?.("change", ()=>{
     if(MQ.matches) ensureShell();
     else document.body.classList.remove("doke-modal-open");
@@ -1617,10 +1768,12 @@
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", ()=>{
       consumeFlashNotice();
+      initDesktopNavPerf();
       ensureShell();
     });
   }else{
     consumeFlashNotice();
+    initDesktopNavPerf();
     ensureShell();
   }
 })();
