@@ -1394,10 +1394,26 @@
   // -----------------------------
   // Profile rendering
   // -----------------------------
-  function setCover(url){
+  function setCover(url, fallbackUrl){
     const el = $("#dpCover");
     if(!el) return;
-    if(url) el.style.backgroundImage = `url('${url}')`;
+    const primary = String(url || "").trim();
+    const fallback = String(fallbackUrl || "").trim();
+    const apply = (src) => {
+      if(src){
+        el.style.backgroundImage = `url('${src}')`;
+      }else{
+        el.style.backgroundImage = "";
+      }
+    };
+    if(!primary){
+      apply(fallback);
+      return;
+    }
+    const probe = new Image();
+    probe.onload = () => apply(primary);
+    probe.onerror = () => apply(fallback);
+    probe.src = primary;
   }
   function setAvatar(url, fallbackLetter){
     const img = $("#dpAvatarImg");
@@ -5731,8 +5747,9 @@ if(!rangeSel || !refreshBtn) return;
     const lsCover = (ctx.canEdit ? LS.get(`doke_profile_cover_${ctx.targetId}`, null) : null);
     const lsAvatar = (ctx.canEdit ? LS.get(`doke_profile_avatar_${ctx.targetId}`, null) : null);
 
-    setCover(lsCover || coverUrl);
-    setAvatar(lsAvatar || avatarUrl, (u.nome||"U")[0]);
+    const resolvedAvatar = lsAvatar || avatarUrl;
+    setCover(lsCover || coverUrl, resolvedAvatar);
+    setAvatar(resolvedAvatar, (u.nome||"U")[0]);
 
     setText("#dpName", u.nome || "Usuário");
     setText("#dpHandle", (u.user || "usuario"));
