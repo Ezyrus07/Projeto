@@ -18,6 +18,7 @@
   const emptyEl = $('#feedEmpty');
   const inputEl = $('#postTexto');
   const fileEl = $('#postArquivo');
+  const audioInputEl = $('#postAudio');
   const sendBtn = $('#btnEnviarPost');
   const joinGate = $('#joinGate');
   const joinTitle = $('#joinGateTitle');
@@ -27,6 +28,11 @@
   const replyTitle = $('#replyBarTitle');
   const replyPreview = $('#replyBarPreview');
   const replyClose = $('#btnCloseReply');
+  const loadingStateEl = $('#grupoLoadingState');
+  const loadingTextEl = $('#grupoLoadingText');
+  const btnToggleMembers = $('#btnToggleMembers');
+  const btnCloseMembersMobile = $('#btnCloseMembersMobile');
+  const mobileMembersBackdrop = $('#mobileMembersBackdrop');
 
 // Admin: solicitações (grupos privados)
 const requestsPane = $('#requestsPane');
@@ -86,6 +92,9 @@ let cargosCache = [];
 let mutesCache = new Set();
 let memberDisplaySchema = null;
 let groupSchema = null;
+let presenceSchema = { hasOnline: false, hasLastSeen: false };
+let presenceTimer = null;
+const postAuthorCache = Object.create(null);
 
   let client = null;
   let grupoId = null;
@@ -129,6 +138,21 @@ let groupSchema = null;
     setTimeout(()=>t.remove(), 3500);
   }
 
+  function setBootLoading(on, msg){
+    if (!loadingStateEl) return;
+    loadingStateEl.style.display = on ? 'flex' : 'none';
+    if (msg && loadingTextEl) loadingTextEl.textContent = msg;
+  }
+
+  function isMobileViewport(){
+    return window.matchMedia && window.matchMedia('(max-width: 1024px)').matches;
+  }
+
+  function setMobileMembersOpen(open){
+    if (!isMobileViewport()) return;
+    document.body.classList.toggle('mobile-members-open', !!open);
+  }
+
   // ------ schema detection helpers (avoid breaking on camelCase/snake_case) ------
   async function hasColumn(table, col){
     const { error } = await client.from(table).select(col).limit(1);
@@ -161,26 +185,45 @@ let groupSchema = null;
     const communityColCandidates = ['comunidadeId','comunidade_id'];
     const textColCandidates = ['texto','mensagem','conteudo'];
     const authorUidCandidates = ['autorUid','autor_uid','user_uid','userUid','user_id','userId','uid'];
+    const authorNameCandidates = ['autorNome','autor_nome','nome','name'];
     const authorUserCandidates = ['autorUser','autor_user','user','username'];
     const authorFotoCandidates = ['autorFoto','autor_foto','foto','photo','avatar'];
     const createdCandidates = ['created_at','criado_em','data','timestamp'];
+    const mediaUrlCandidates = ['midia_url','media_url','arquivo_url','url'];
+    const mediaTypeCandidates = ['tipo','media_type','tipo_midia'];
+    const replyIdCandidates = ['reply_to_id','replyToId'];
+    const replyUserCandidates = ['reply_to_user','replyToUser'];
+    const replyPreviewCandidates = ['reply_preview','replyPreview'];
 
-    let communityCol=null, textCol=null, authorUidCol=null, authorUserCol=null, authorFotoCol=null, createdCol=null;
+    let communityCol=null, textCol=null, authorUidCol=null, authorNameCol=null, authorUserCol=null, authorFotoCol=null, createdCol=null;
+    let mediaUrlCol=null, mediaTypeCol=null, replyIdCol=null, replyUserCol=null, replyPreviewCol=null;
 
     for (const c of communityColCandidates){ if (await hasColumn(POSTS_TABLE, c)){ communityCol=c; break; } }
     for (const c of textColCandidates){ if (await hasColumn(POSTS_TABLE, c)){ textCol=c; break; } }
     for (const c of authorUidCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorUidCol=c; break; } }
+    for (const c of authorNameCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorNameCol=c; break; } }
     for (const c of authorUserCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorUserCol=c; break; } }
     for (const c of authorFotoCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorFotoCol=c; break; } }
     for (const c of createdCandidates){ if (await hasColumn(POSTS_TABLE, c)){ createdCol=c; break; } }
+    for (const c of mediaUrlCandidates){ if (await hasColumn(POSTS_TABLE, c)){ mediaUrlCol=c; break; } }
+    for (const c of mediaTypeCandidates){ if (await hasColumn(POSTS_TABLE, c)){ mediaTypeCol=c; break; } }
+    for (const c of replyIdCandidates){ if (await hasColumn(POSTS_TABLE, c)){ replyIdCol=c; break; } }
+    for (const c of replyUserCandidates){ if (await hasColumn(POSTS_TABLE, c)){ replyUserCol=c; break; } }
+    for (const c of replyPreviewCandidates){ if (await hasColumn(POSTS_TABLE, c)){ replyPreviewCol=c; break; } }
 
     return {
       communityCol: communityCol || 'comunidadeId',
       textCol: textCol || 'texto',
       authorUidCol: authorUidCol || 'autorUid',
+      authorNameCol: authorNameCol,
       authorUserCol: authorUserCol || 'autorUser',
       authorFotoCol: authorFotoCol || 'autorFoto',
-      createdCol: createdCol || 'created_at'
+      createdCol: createdCol || 'created_at',
+      mediaUrlCol: mediaUrlCol,
+      mediaTypeCol: mediaTypeCol,
+      replyIdCol: replyIdCol,
+      replyUserCol: replyUserCol,
+      replyPreviewCol: replyPreviewCol
     };
   }
 
@@ -417,6 +460,7 @@ function wireRequestActions(rows){
   let memberSchema=null;
   let postsSchema=null;
   let currentUid=null;
+  let memberSeenInList = false;
   let membership = { ok:false, pending:false, row:null };
 
   function setComposerEnabled(enabled){
@@ -459,11 +503,21 @@ function wireRequestActions(rows){
 
     if (error){
       console.warn('[MEMBERS] select error', error);
-      // if cannot select due to RLS, we can't confirm membership -> assume not member
+      // Fallback: se já vimos este uid na listagem de membros, considera membro ativo.
+      if (memberSeenInList){
+        membership.ok = true;
+        membership.pending = false;
+      }
       return membership;
     }
     const row = (data && data[0]) || null;
-    if (!row) return membership;
+    if (!row){
+      if (memberSeenInList){
+        membership.ok = true;
+        membership.pending = false;
+      }
+      return membership;
+    }
 
     membership.row = row;
     membership.ok = true;
@@ -543,20 +597,35 @@ function wireRequestActions(rows){
     }catch(e){ return ''; }
   }
 
+  function cacheAuthorFromPost(p){
+    const uid = String(p[postsSchema.authorUidCol] || p.autorUid || p.autor_uid || '');
+    if (!uid) return;
+    postAuthorCache[uid] = postAuthorCache[uid] || {};
+    const current = postAuthorCache[uid];
+    current.user = cleanUsername(
+      p[postsSchema.authorUserCol] || p.autorUser || p.autor_user || p.user || p.username || current.user || ''
+    );
+    current.nome = (p[postsSchema.authorNameCol] || p.autorNome || p.autor_nome || p.nome || current.nome || '').toString();
+    current.foto = (p[postsSchema.authorFotoCol] || p.autorFoto || p.autor_foto || p.foto || p.photo || current.foto || '').toString();
+  }
+
   function postToHtml(p){
-    const avatar = (p[postsSchema.authorFotoCol] || p.autorFoto || p.autor_foto || p.foto || 'https://i.pravatar.cc/150');
+    cacheAuthorFromPost(p);
+    const authorUid = String(p[postsSchema.authorUidCol] || p.autorUid || p.autor_uid || '');
+    const authorCached = postAuthorCache[authorUid] || {};
+    const avatar = (p[postsSchema.authorFotoCol] || p.autorFoto || p.autor_foto || p.foto || authorCached.foto || 'https://i.pravatar.cc/150');
     const user = (p[postsSchema.authorUserCol] || p.autorUser || p.autor_user || p.user || p.username || 'usuario').toString().replace(/^@/,'');
     const handle = '@' + user;
     const time = fmtTime(p[postsSchema.createdCol] || p.created_at || p.data);
 
     const text = p[postsSchema.textCol] || p.texto || p.mensagem || '';
-    const replyToId = p.reply_to_id || p.replyToId || '';
-    const replyToUser = p.reply_to_user || p.replyToUser || '';
-    const replyPreviewTxt = p.reply_preview || p.replyPreview || '';
+    const replyToId = (postsSchema.replyIdCol ? p[postsSchema.replyIdCol] : null) || p.reply_to_id || p.replyToId || '';
+    const replyToUser = (postsSchema.replyUserCol ? p[postsSchema.replyUserCol] : null) || p.reply_to_user || p.replyToUser || '';
+    const replyPreviewTxt = (postsSchema.replyPreviewCol ? p[postsSchema.replyPreviewCol] : null) || p.reply_preview || p.replyPreview || '';
 
     let mediaHtml = '';
-    const url = p.midia_url || p.media_url || p.arquivo_url || p.url || '';
-    const tipo = (p.tipo || p.media_type || '').toString();
+    const url = (postsSchema.mediaUrlCol ? p[postsSchema.mediaUrlCol] : null) || p.midia_url || p.media_url || p.arquivo_url || p.url || '';
+    const tipo = ((postsSchema.mediaTypeCol ? p[postsSchema.mediaTypeCol] : null) || p.tipo || p.media_type || '').toString();
     if (url){
       if (tipo.includes('image') || /\.(png|jpg|jpeg|webp|gif)$/i.test(url)){
         mediaHtml = `<div class="media"><img src="${url}" alt=""></div>`;
@@ -589,7 +658,7 @@ function wireRequestActions(rows){
           ${mediaHtml}
           <div class="actions">
             <button class="btn-act btn-reply" ${canAct ? '' : 'disabled'} title="Responder"><i class="bx bx-reply"></i><span>Responder</span></button>
-            <button class="btn-act btn-react" ${canAct ? '' : 'disabled'} title="Reagir"><i class="bx bx-like"></i><span>Reagir</span></button>
+            <button class="btn-act btn-react" ${(canAct && reactionsEnabled) ? '' : 'disabled'} title="Reagir"><i class="bx bx-like"></i><span>Reagir</span></button>
             <button class="btn-act btn-del" ${canDelete && canAct ? '' : 'disabled'} title="Excluir"><i class="bx bx-trash"></i><span>Excluir</span></button>
           </div>
           <div class="reacts" style="display:none;"></div>
@@ -648,6 +717,10 @@ function wireRequestActions(rows){
       });
 
       btnReact?.addEventListener('click', async ()=>{
+        if (!reactionsEnabled){
+          toast('Reações indisponíveis. Rode o SQL de atualização.');
+          return;
+        }
         await toggleReaction(postId, '👍');
         await hydrateReactionsForPost(postId);
       });
@@ -763,6 +836,10 @@ function wireRequestActions(rows){
       return out;
     };
 
+    const normalizedUsers = Array.from(new Set(
+      uniq.map((u) => cleanUsername(u)).filter((u) => !!u && !/^[0-9a-f]{6,}(-[0-9a-f-]{4,})?$/i.test(u))
+    ));
+
     try{
       for (const part of chunk(uniq, 100)){
         // 1) tenta por id
@@ -779,6 +856,28 @@ function wireRequestActions(rows){
           r2.data.forEach(p=>{
             if (p?.id) map[String(p.id)] = p;
             if (p?.uid) map[String(p.uid)] = p;
+            if (p?.user) map[String(cleanUsername(p.user))] = p;
+            if (p?.username) map[String(cleanUsername(p.username))] = p;
+          });
+        }
+      }
+      for (const part of chunk(normalizedUsers, 100)){
+        const r3 = await client.from('usuarios').select(cols).in('user', part).limit(200);
+        if (!r3?.error && Array.isArray(r3.data)){
+          r3.data.forEach(p=>{
+            if (p?.id) map[String(p.id)] = p;
+            if (p?.uid) map[String(p.uid)] = p;
+            if (p?.user) map[String(cleanUsername(p.user))] = p;
+            if (p?.username) map[String(cleanUsername(p.username))] = p;
+          });
+        }
+        const r4 = await client.from('usuarios').select(cols).in('username', part).limit(200);
+        if (!r4?.error && Array.isArray(r4.data)){
+          r4.data.forEach(p=>{
+            if (p?.id) map[String(p.id)] = p;
+            if (p?.uid) map[String(p.uid)] = p;
+            if (p?.user) map[String(cleanUsername(p.user))] = p;
+            if (p?.username) map[String(cleanUsername(p.username))] = p;
           });
         }
       }
@@ -873,11 +972,22 @@ function wireRequestActions(rows){
 
   function makeMemberRow(member, isMuted){
     const uid = String(member[memberSchema.userCol] ?? member.user_uid ?? member.user_id ?? '');
+    const cachedFromPosts = postAuthorCache[uid] || {};
     const profile = member.__profile || member.profile || {};
     const profileName = profile.nome || profile.name || profile.full_name || '';
-    const profileUser = cleanUsername(profile.user || profile.username || '');
-    const name = (profileName || (memberDisplaySchema?.nameCol ? member[memberDisplaySchema.nameCol] : null) || member.nome || member.user || (uid===String(currentUid) ? 'Você' : uid));
-    const foto = (profile.foto || profile.photo || (memberDisplaySchema?.fotoCol ? member[memberDisplaySchema.fotoCol] : null) || member.foto || '');
+    const profileUser = cleanUsername(profile.user || profile.username || profile.handle || '');
+    const memberUser = cleanUsername(
+      (member.user || member.username || member.autorUser || member.autor_user || member.handle || '')
+    );
+    const guessedUser = cleanUsername(profileUser || memberUser || '');
+    const isLikelyUid = (v) => /^[0-9a-f]{6,}(-[0-9a-f-]{4,})?$/i.test(String(v || ''));
+    const fallbackName = (memberDisplaySchema?.nameCol ? member[memberDisplaySchema.nameCol] : null) || member.nome || member.name || member.full_name || '';
+    const name = (uid===String(currentUid))
+      ? userName
+      : (profileName || fallbackName || cachedFromPosts.nome || (guessedUser && !isLikelyUid(guessedUser) ? guessedUser : 'Usuário'));
+    const foto = (uid===String(currentUid))
+      ? (userFoto || profile.foto || profile.photo || (memberDisplaySchema?.fotoCol ? member[memberDisplaySchema.fotoCol] : null) || member.foto || member.photo || '')
+      : (profile.foto || profile.photo || cachedFromPosts.foto || (memberDisplaySchema?.fotoCol ? member[memberDisplaySchema.fotoCol] : null) || member.foto || member.photo || '');
 
     const item = document.createElement('div');
     item.className = 'membro-item';
@@ -915,11 +1025,15 @@ function wireRequestActions(rows){
     sub.style.fontWeight='800';
     sub.style.color='#7a8696';
     sub.style.fontSize='0.85rem';
-    sub.textContent = uid === String(currentUid)
-      ? 'Você'
-      : (cleanUsername((member.__profile||member.profile||{}).user || (member.__profile||member.profile||{}).username)
-          ? '@' + cleanUsername((member.__profile||member.profile||{}).user || (member.__profile||member.profile||{}).username)
-          : shortUid(uid));
+    if (uid === String(currentUid)) {
+      sub.textContent = '@' + userHandleRaw;
+    } else if (guessedUser && !isLikelyUid(guessedUser)) {
+      sub.textContent = '@' + guessedUser;
+    } else if (cachedFromPosts.user && !isLikelyUid(cachedFromPosts.user)) {
+      sub.textContent = '@' + cachedFromPosts.user;
+    } else {
+      sub.textContent = shortUid(uid);
+    }
 
     info.appendChild(nm);
     info.appendChild(sub);
@@ -1011,8 +1125,41 @@ function wireRequestActions(rows){
     return item;
   }
 
+  async function detectPresenceColumns(){
+    const hasOnline = await hasColumn(MEMBERS_TABLE, 'online').catch(()=>false);
+    const hasLastSeen = await hasColumn(MEMBERS_TABLE, 'last_seen').catch(()=>false);
+    presenceSchema = { hasOnline, hasLastSeen };
+    return presenceSchema;
+  }
+
+  async function touchPresence(offline=false){
+    try{
+      const { hasOnline, hasLastSeen } = presenceSchema;
+      if (!hasOnline && !hasLastSeen) return;
+      const patch = {};
+      if (hasOnline) patch.online = !offline;
+      if (hasLastSeen) patch.last_seen = new Date().toISOString();
+      const { communityCol, userCol } = memberSchema;
+      await client.from(MEMBERS_TABLE).update(patch).eq(communityCol, grupoId).eq(userCol, String(currentUid));
+    }catch(e){
+      // best effort
+    }
+  }
+
+  function bindPresenceEvents(){
+    if (presenceTimer) clearInterval(presenceTimer);
+    presenceTimer = setInterval(() => { touchPresence(false); }, 45000);
+    window.addEventListener('beforeunload', () => { touchPresence(true); });
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) touchPresence(true);
+      else touchPresence(false);
+    });
+  }
+
   async function loadMembers(){
     if (!listaOnline || !listaOffline) return;
+    listaOnline.innerHTML = '<div style="padding:10px; color:#7a8696; font-weight:800;">Carregando...</div>';
+    listaOffline.innerHTML = '';
 
     memberDisplaySchema = memberDisplaySchema || await detectMemberDisplaySchema();
     await loadMutes(); // update mutesCache
@@ -1037,27 +1184,34 @@ function wireRequestActions(rows){
 
     // hidrata perfis (nome/@user/foto) via tabela usuarios
     const uids = visible.map(r => String(r[userCol] ?? '')).filter(Boolean);
+    memberSeenInList = uids.some((u) => String(u) === String(currentUid));
+    if (memberSeenInList && joinGate && joinGate.style.display !== 'none') {
+      joinGate.style.display = 'none';
+      setComposerEnabled(true);
+    }
     const profilesMap = await fetchUserProfiles(uids);
     visible.forEach(r => {
       const uid = String(r[userCol] ?? '');
-      r.__profile = profilesMap[uid] || null;
+      const maybeUser = cleanUsername(r.user || r.username || r.autorUser || r.autor_user || '');
+      r.__profile = profilesMap[uid] || (maybeUser ? profilesMap[maybeUser] : null) || null;
     });
 
-    // determine online: use col 'online' or last_seen within 5min; else treat all online
-    const hasOnline = await hasColumn(MEMBERS_TABLE, 'online').catch(()=>false);
-    const hasLastSeen = await hasColumn(MEMBERS_TABLE, 'last_seen').catch(()=>false);
+    // determine online: current user always online; outros precisam coluna online/last_seen
+    const hasOnline = !!presenceSchema.hasOnline;
+    const hasLastSeen = !!presenceSchema.hasLastSeen;
 
     const now = Date.now();
     const online=[], offline=[];
     for (const r of visible){
       const uid = String(r[userCol] ?? '');
       const muted = mutesCache.has(uid);
-      let isOn = true;
+      let isOn = uid === String(currentUid);
       if (hasOnline && typeof r.online === 'boolean') isOn = r.online;
       else if (hasLastSeen && r.last_seen){
         const t = new Date(r.last_seen).getTime();
         isOn = isFinite(t) && (now - t) < 5*60*1000;
       }
+      if (uid === String(currentUid)) isOn = true;
       (isOn ? online : offline).push({ r, muted });
     }
 
@@ -1070,6 +1224,8 @@ function wireRequestActions(rows){
     listaOffline.innerHTML = '';
     online.forEach(({r, muted})=> listaOnline.appendChild(makeMemberRow(r, muted)));
     offline.forEach(({r, muted})=> listaOffline.appendChild(makeMemberRow(r, muted)));
+    if (!online.length) listaOnline.innerHTML = '<div style="padding:8px 4px; color:#7a8696; font-weight:800;">Ninguém online agora.</div>';
+    if (!offline.length) listaOffline.innerHTML = '<div style="padding:8px 4px; color:#7a8696; font-weight:800;">Sem usuários offline.</div>';
   }
 
   // ------ cargos ------
@@ -1648,7 +1804,7 @@ const chips = Object.keys(counts).map(e=>{
     if (!membership.ok || membership.pending){
       toast('Entre no grupo para postar.');
       return;
-
+    }
     // muted?
     try{
       if (await isCurrentUserMuted()){
@@ -1656,21 +1812,28 @@ const chips = Object.keys(counts).map(e=>{
         return;
       }
     }catch(e){}
-    }
-    const text = (inputEl.value || '').trim();
-    const file = fileEl.files && fileEl.files[0];
 
-    if (!text && !file) return;
+    const text = (inputEl.value || '').trim();
+    const mediaFile = (fileEl.files && fileEl.files[0]) || (audioInputEl && audioInputEl.files && audioInputEl.files[0]);
+
+    if (!text && !mediaFile) return;
 
     sendBtn.disabled = true;
     try{
       let url = '';
       let tipo = 'texto';
-      if (file){
-        url = await uploadFile(file);
-        tipo = file.type.startsWith('image/') ? 'imagem'
-             : file.type.startsWith('audio/') ? 'audio'
-             : file.type.startsWith('video/') ? 'video' : 'arquivo';
+      if (mediaFile){
+        if (!postsSchema.mediaUrlCol){
+          if (!text){
+            toast('Sua tabela comunidade_posts não tem coluna de mídia. Rode o SQL de atualização.');
+            return;
+          }
+        } else {
+          url = await uploadFile(mediaFile);
+          tipo = mediaFile.type.startsWith('image/') ? 'imagem'
+               : mediaFile.type.startsWith('audio/') ? 'audio'
+               : mediaFile.type.startsWith('video/') ? 'video' : 'arquivo';
+        }
       }
 
       const payload = {};
@@ -1678,22 +1841,25 @@ const chips = Object.keys(counts).map(e=>{
       payload[postsSchema.textCol] = text || null;
       payload[postsSchema.authorUidCol] = currentUid;
 
-      // store only user handle and photo (no full name)
-      payload[postsSchema.authorUserCol] = userHandleRaw;
-      payload[postsSchema.authorFotoCol] = userFoto;
+      if (postsSchema.authorUserCol) payload[postsSchema.authorUserCol] = userHandleRaw;
+      if (postsSchema.authorFotoCol) payload[postsSchema.authorFotoCol] = userFoto;
+      if (postsSchema.authorNameCol) payload[postsSchema.authorNameCol] = userName;
 
       if (url){
-        // try common media columns
-        payload['midia_url'] = url;
-        payload['tipo'] = tipo;
+        payload[postsSchema.mediaUrlCol] = url;
+        if (postsSchema.mediaTypeCol) payload[postsSchema.mediaTypeCol] = tipo;
       }
 
       // reply
       const rid = replyBar.dataset.replyId || '';
-      if (rid){
-        payload['reply_to_id'] = rid;
-        payload['reply_to_user'] = replyTitle.textContent.replace('Respondendo ','').trim();
-        payload['reply_preview'] = replyPreview.textContent || '';
+      if (rid && postsSchema.replyIdCol){
+        payload[postsSchema.replyIdCol] = rid;
+        if (postsSchema.replyUserCol) {
+          payload[postsSchema.replyUserCol] = replyTitle.textContent.replace('Respondendo ','').trim();
+        }
+        if (postsSchema.replyPreviewCol) {
+          payload[postsSchema.replyPreviewCol] = replyPreview.textContent || '';
+        }
       }
 
       const { error } = await client.from(POSTS_TABLE).insert(payload);
@@ -1705,6 +1871,7 @@ const chips = Object.keys(counts).map(e=>{
 
       inputEl.value = '';
       fileEl.value = '';
+      if (audioInputEl) audioInputEl.value = '';
       setReply(null);
 
       await loadPosts(); // simple refresh; realtime may append too
@@ -1733,54 +1900,76 @@ const chips = Object.keys(counts).map(e=>{
       .subscribe();
   }
 
+  function wireMobileMembersPanel(){
+    btnToggleMembers?.addEventListener('click', () => setMobileMembersOpen(true));
+    btnCloseMembersMobile?.addEventListener('click', () => setMobileMembersOpen(false));
+    mobileMembersBackdrop?.addEventListener('click', () => setMobileMembersOpen(false));
+    window.addEventListener('resize', () => {
+      if (!isMobileViewport()) setMobileMembersOpen(false);
+    });
+  }
+
   // ------ init ------
   async function init(){
-    // find groupId
-    const params = new URLSearchParams(location.search);
-    grupoId = params.get('id') || params.get('grupo') || params.get('comunidade') || params.get('comunidadeId');
-    if (!grupoId){
-      toast('Grupo inválido (sem id na URL).');
-      return;
-    }
+    setBootLoading(true, 'Carregando grupo...');
+    try{
+      // find groupId
+      const params = new URLSearchParams(location.search);
+      grupoId = params.get('id') || params.get('grupo') || params.get('comunidade') || params.get('comunidadeId');
+      if (!grupoId){
+        toast('Grupo inválido (sem id na URL).');
+        return;
+      }
 
-    // client
-    client = window.supabase || window.supabaseClient;
-    if (!client){
-      toast('Supabase não inicializado.');
-      return;
-    }
+      // client
+      client = window.supabase || window.supabaseClient;
+      if (!client){
+        toast('Supabase não inicializado.');
+        return;
+      }
 
-    currentUid = await getUid();
+      currentUid = await getUid();
 
     
-// schema
-memberSchema = await detectMembersSchema();
-postsSchema = await detectPostsSchema();
-reactSchema = await detectReactionsSchema();
+      // schema
+      memberSchema = await detectMembersSchema();
+      postsSchema = await detectPostsSchema();
+      reactSchema = await detectReactionsSchema();
+      presenceSchema = await detectPresenceColumns();
 
-// admin / solicitações
-isAdmin = await detectAdmin();
-btnRefreshReq?.addEventListener('click', loadJoinRequests);
-    // header + membros + config
-    await loadGroup();
-    if (btnConfigGrupo) btnConfigGrupo.style.display = isAdmin ? 'inline-flex' : 'none';
-    wireConfigModal();
-    await loadMembers();
+      // admin / solicitações
+      isAdmin = await detectAdmin();
+      btnRefreshReq?.addEventListener('click', loadJoinRequests);
+      wireMobileMembersPanel();
+      // header + membros + config
+      setBootLoading(true, 'Carregando dados do grupo...');
+      await loadGroup();
+      if (btnConfigGrupo) btnConfigGrupo.style.display = isAdmin ? 'inline-flex' : 'none';
+      wireConfigModal();
+      await loadMembers();
+      await touchPresence(false);
+      await loadMembers();
+      bindPresenceEvents();
 
-    // wire UI
-    joinBtn?.addEventListener('click', requestJoin);
-    sendBtn?.addEventListener('click', sendMessage);
-    inputEl?.addEventListener('keydown', (e)=>{ if (e.key==='Enter') sendMessage(); });
-    replyClose?.addEventListener('click', ()=>setReply(null));
+      // wire UI
+      joinBtn?.addEventListener('click', requestJoin);
+      sendBtn?.addEventListener('click', sendMessage);
+      inputEl?.addEventListener('keydown', (e)=>{ if (e.key==='Enter') sendMessage(); });
+      replyClose?.addEventListener('click', ()=>setReply(null));
 
-    await refreshGate();
-    await loadPosts();
-    await loadJoinRequests();
-    setupRealtime();
+      await refreshGate();
+      setBootLoading(true, 'Carregando feed...');
+      await loadPosts();
+      await loadJoinRequests();
+      setupRealtime();
+    }catch(e){
+      console.error('[DOKE] grupo init error', e);
+      toast('Erro ao carregar grupo. Atualize a página.');
+    }finally{
+      setBootLoading(false);
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
   else init();
 })();
-
-

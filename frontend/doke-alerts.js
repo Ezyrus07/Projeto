@@ -1,60 +1,60 @@
-// doke-alerts.js
+﻿// doke-alerts.js
 // Padroniza alertas/toasts, notifica falhas comuns e corrige textos com encoding quebrado.
 (() => {
   const safeStr = (value) => (value == null ? "" : String(value));
   const clamp = (text, size = 240) => (text.length > size ? `${text.slice(0, size - 3)}...` : text);
   const notifyMem = new Map();
-  const BROKEN_RE = /Ãƒ|Ã‚|Ã¢|Ã£|ï¿½|\uFFFD/;
+  const BROKEN_RE = /ÃƒÆ’|Ãƒâ€š|ÃƒÂ¢|ÃƒÂ£|Ã¯Â¿Â½|\uFFFD/;
   const ATTRS_TO_FIX = ["placeholder", "title", "aria-label", "alt"];
   const WORD_FIXES = [
-    [/\bIn[ií]?cio\b/gi, "Início"],
-    [/\bNotifica[cç][oõ]es\b/gi, "Notificações"],
-    [/\bPublica[cç][oõ]es\b/gi, "Publicações"],
-    [/\bpublica[cç][aã]o\b/gi, "publicação"],
-    [/\bAn[uú]ncio\b/gi, "Anúncio"],
-    [/\bV[ií]deos?\b/gi, "Vídeos"],
-    [/\bUsu[aá]rio\b/gi, "Usuário"],
-    [/\bServi[cç]o\b/gi, "Serviço"],
-    [/\bDescri[cç][aã]o\b/gi, "Descrição"],
-    [/\bAvalia[cç][aã]o\b/gi, "Avaliação"],
-    [/\bAvalia[cç][oõ]es\b/gi, "Avaliações"],
-    [/\bN[aã]o\b/gi, "Não"],
-    [/\bFa[cç]a\b/gi, "Faça"],
-    [/\binv[aá]lido\b/gi, "inválido"],
-    [/\bindispon[ií]vel\b/gi, "indisponível"],
-    [/crit\uFFFDrios/gi, "critérios"],
-    [/Crit\uFFFDrios/g, "Critérios"],
-    [/considera\uFFFD\uFFFDes/gi, "considerações"],
-    [/Considera\uFFFD\uFFFDes/g, "Considerações"],
-    [/configura\uFFFD\uFFFDes/gi, "configurações"],
-    [/Configura\uFFFD\uFFFDes/g, "Configurações"],
-    [/informa\uFFFD\uFFFDes/gi, "informações"],
-    [/Informa\uFFFD\uFFFDes/g, "Informações"],
-    [/solicita\uFFFD\uFFFDo/gi, "solicitação"],
-    [/Solicita\uFFFD\uFFFDo/g, "Solicitação"],
-    [/finaliza\uFFFD\uFFFDo/gi, "finalização"],
-    [/Finaliza\uFFFD\uFFFDo/g, "Finalização"],
-    [/cancela\uFFFD\uFFFDo/gi, "cancelação"],
-    [/Cancela\uFFFD\uFFFDo/g, "Cancelação"],
-    [/permiss\uFFFDo/gi, "permissão"],
-    [/Permiss\uFFFDo/g, "Permissão"],
-    [/conex\uFFFDo/gi, "conexão"],
-    [/Conex\uFFFDo/g, "Conexão"],
-    [/op\uFFFD\uFFFDes/gi, "opções"],
-    [/Op\uFFFD\uFFFDes/g, "Opções"],
-    [/opera\uFFFD\uFFFDes/gi, "operações"],
-    [/Opera\uFFFD\uFFFDes/g, "Operações"],
-    [/experi\uFFFDncia/gi, "experiência"],
-    [/aparecer\uFFFDo/gi, "aparecerão"],
-    [/colabora\uFFFD\uFFFDo/gi, "colaboração"],
-    [/observa\uFFFD\uFFFDo/gi, "observação"],
-    [/an\uFFFDnimo/gi, "anônimo"],
-    [/p\uFFFDgina/gi, "página"],
-    [/inser\uFFFD\uFFFDo/gi, "inserção"],
-    [/tamb\uFFFDm/gi, "também"],
-    [/atualiza\uFFFD\uFFFDo/gi, "atualização"],
-    [/m\uFFFDtricas/gi, "métricas"],
-    [/fun\uFFFD\uFFFDo/gi, "função"]
+    [/\bIn[iÃ­]?cio\b/gi, "InÃ­cio"],
+    [/\bNotifica[cÃ§][oÃµ]es\b/gi, "NotificaÃ§Ãµes"],
+    [/\bPublica[cÃ§][oÃµ]es\b/gi, "PublicaÃ§Ãµes"],
+    [/\bpublica[cÃ§][aÃ£]o\b/gi, "publicaÃ§Ã£o"],
+    [/\bAn[uÃº]ncio\b/gi, "AnÃºncio"],
+    [/\bV[iÃ­]deos?\b/gi, "VÃ­deos"],
+    [/\bUsu[aÃ¡]rio\b/gi, "UsuÃ¡rio"],
+    [/\bServi[cÃ§]o\b/gi, "ServiÃ§o"],
+    [/\bDescri[cÃ§][aÃ£]o\b/gi, "DescriÃ§Ã£o"],
+    [/\bAvalia[cÃ§][aÃ£]o\b/gi, "AvaliaÃ§Ã£o"],
+    [/\bAvalia[cÃ§][oÃµ]es\b/gi, "AvaliaÃ§Ãµes"],
+    [/\bN[aÃ£]o\b/gi, "NÃ£o"],
+    [/\bFa[cÃ§]a\b/gi, "FaÃ§a"],
+    [/\binv[aÃ¡]lido\b/gi, "invÃ¡lido"],
+    [/\bindispon[iÃ­]vel\b/gi, "indisponÃ­vel"],
+    [/crit\uFFFDrios/gi, "critÃ©rios"],
+    [/Crit\uFFFDrios/g, "CritÃ©rios"],
+    [/considera\uFFFD\uFFFDes/gi, "consideraÃ§Ãµes"],
+    [/Considera\uFFFD\uFFFDes/g, "ConsideraÃ§Ãµes"],
+    [/configura\uFFFD\uFFFDes/gi, "configuraÃ§Ãµes"],
+    [/Configura\uFFFD\uFFFDes/g, "ConfiguraÃ§Ãµes"],
+    [/informa\uFFFD\uFFFDes/gi, "informaÃ§Ãµes"],
+    [/Informa\uFFFD\uFFFDes/g, "InformaÃ§Ãµes"],
+    [/solicita\uFFFD\uFFFDo/gi, "solicitaÃ§Ã£o"],
+    [/Solicita\uFFFD\uFFFDo/g, "SolicitaÃ§Ã£o"],
+    [/finaliza\uFFFD\uFFFDo/gi, "finalizaÃ§Ã£o"],
+    [/Finaliza\uFFFD\uFFFDo/g, "FinalizaÃ§Ã£o"],
+    [/cancela\uFFFD\uFFFDo/gi, "cancelaÃ§Ã£o"],
+    [/Cancela\uFFFD\uFFFDo/g, "CancelaÃ§Ã£o"],
+    [/permiss\uFFFDo/gi, "permissÃ£o"],
+    [/Permiss\uFFFDo/g, "PermissÃ£o"],
+    [/conex\uFFFDo/gi, "conexÃ£o"],
+    [/Conex\uFFFDo/g, "ConexÃ£o"],
+    [/op\uFFFD\uFFFDes/gi, "opÃ§Ãµes"],
+    [/Op\uFFFD\uFFFDes/g, "OpÃ§Ãµes"],
+    [/opera\uFFFD\uFFFDes/gi, "operaÃ§Ãµes"],
+    [/Opera\uFFFD\uFFFDes/g, "OperaÃ§Ãµes"],
+    [/experi\uFFFDncia/gi, "experiÃªncia"],
+    [/aparecer\uFFFDo/gi, "aparecerÃ£o"],
+    [/colabora\uFFFD\uFFFDo/gi, "colaboraÃ§Ã£o"],
+    [/observa\uFFFD\uFFFDo/gi, "observaÃ§Ã£o"],
+    [/an\uFFFDnimo/gi, "anÃ´nimo"],
+    [/p\uFFFDgina/gi, "pÃ¡gina"],
+    [/inser\uFFFD\uFFFDo/gi, "inserÃ§Ã£o"],
+    [/tamb\uFFFDm/gi, "tambÃ©m"],
+    [/atualiza\uFFFD\uFFFDo/gi, "atualizaÃ§Ã£o"],
+    [/m\uFFFDtricas/gi, "mÃ©tricas"],
+    [/fun\uFFFD\uFFFDo/gi, "funÃ§Ã£o"]
   ];
 
   window.__DOKE_DISABLE_TOAST_GLOBAL_HANDLERS__ = true;
@@ -148,14 +148,31 @@
     bar = document.createElement("div");
     bar.className = "doke-offlineBar";
     bar.textContent = "Você está sem conexão. Algumas ações podem falhar.";
+    bar.style.position = "fixed";
+    bar.style.top = "0";
+    bar.style.left = "0";
+    bar.style.right = "0";
+    bar.style.zIndex = "9999";
+    bar.style.padding = "10px 14px";
+    bar.style.fontSize = "13px";
+    bar.style.background = "rgba(220,53,69,.95)";
+    bar.style.color = "#fff";
+    bar.style.textAlign = "center";
+    bar.style.transform = "translateY(-120%)";
+    bar.style.transition = "transform .25s ease";
     document.body.appendChild(bar);
     return bar;
   }
 
   function updateOnlineUI() {
     const bar = ensureOfflineBar();
-    if (navigator.onLine) bar.classList.remove("is-on");
-    else bar.classList.add("is-on");
+    if (navigator.onLine) {
+      bar.classList.remove("is-on");
+      bar.style.transform = "translateY(-120%)";
+    } else {
+      bar.classList.add("is-on");
+      bar.style.transform = "translateY(0)";
+    }
   }
 
   function isNoiseMessage(msg) {
@@ -167,11 +184,11 @@
 
   function formatStatusMessage(status) {
     const code = Number(status || 0);
-    if (code === 400) return "Consulta inválida (400). Verifique colunas e filtros.";
-    if (code === 401 || code === 403) return "Sem permissão de leitura no banco (policy RLS).";
-    if (code === 404) return "Recurso/rota não encontrado (404).";
-    if (code === 429) return "Muitas requisições. Aguarde alguns segundos.";
-    if (code === 520 || code >= 500) return "Servidor indisponível no momento (5xx/520).";
+    if (code === 400) return "Consulta invÃ¡lida (400). Verifique colunas e filtros.";
+    if (code === 401 || code === 403) return "Sem permissÃ£o de leitura no banco (policy RLS).";
+    if (code === 404) return "Recurso/rota nÃ£o encontrado (404).";
+    if (code === 429) return "Muitas requisiÃ§Ãµes. Aguarde alguns segundos.";
+    if (code === 520 || code >= 500) return "Servidor indisponÃ­vel no momento (5xx/520).";
     if (code === 0) return "Falha de rede ao consultar o banco.";
     return `Falha de carregamento (HTTP ${code || "?"}).`;
   }
@@ -251,11 +268,11 @@
   function brokenScore(text) {
     const input = safeStr(text);
     let score = 0;
-    score += (input.match(/Ãƒ/g) || []).length * 2;
-    score += (input.match(/Ã‚/g) || []).length * 2;
-    score += (input.match(/Ã¢/g) || []).length * 2;
-    score += (input.match(/Ã£/g) || []).length * 2;
-    score += (input.match(/ï¿½/g) || []).length * 3;
+    score += (input.match(/ÃƒÆ’/g) || []).length * 2;
+    score += (input.match(/Ãƒâ€š/g) || []).length * 2;
+    score += (input.match(/ÃƒÂ¢/g) || []).length * 2;
+    score += (input.match(/ÃƒÂ£/g) || []).length * 2;
+    score += (input.match(/Ã¯Â¿Â½/g) || []).length * 3;
     score += (input.match(/\uFFFD/g) || []).length * 4;
     return score;
   }
@@ -381,9 +398,9 @@
       const txt = normalizeText(el.textContent || "").toLowerCase();
       const cls = txt.includes("sucesso") || txt.includes("feito") || txt.includes("enviado")
         ? "doke-alert--success"
-        : txt.includes("erro") || txt.includes("falha") || txt.includes("inválid") || txt.includes("inval")
+        : txt.includes("erro") || txt.includes("falha") || txt.includes("invÃ¡lid") || txt.includes("inval")
           ? "doke-alert--error"
-          : txt.includes("atenção") || txt.includes("atencao") || txt.includes("aviso")
+          : txt.includes("atenÃ§Ã£o") || txt.includes("atencao") || txt.includes("aviso")
             ? "doke-alert--warning"
             : "doke-alert--info";
       el.classList.add(cls);
@@ -395,7 +412,7 @@
             : cls === "doke-alert--success"
               ? "Sucesso"
               : cls === "doke-alert--warning"
-                ? "Atenção"
+                ? "AtenÃ§Ã£o"
                 : "Aviso";
           el.innerHTML = `<div class="doke-alert__title">${title}</div><div class="doke-alert__text">${normalizeText(raw)}</div>`;
         }
@@ -468,12 +485,12 @@
 
   window.addEventListener("online", () => {
     updateOnlineUI();
-    notifyOnce("net:online", { type: "success", title: "Online", message: "Conexão restaurada." }, 3000);
+    notifyOnce("net:online", { type: "success", title: "Online", message: "ConexÃ£o restaurada." }, 3000);
   });
 
   window.addEventListener("offline", () => {
     updateOnlineUI();
-    notifyOnce("net:offline", { type: "warn", title: "Offline", message: "Sem conexão no momento." }, 3000);
+    notifyOnce("net:offline", { type: "warn", title: "Offline", message: "Sem conexÃ£o no momento." }, 3000);
   });
 
   if (document.readyState === "loading") {
@@ -482,3 +499,5 @@
     boot();
   }
 })();
+
+

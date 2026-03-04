@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
+  <link rel="preconnect" href="https://cdn.jsdelivr.net" />
+  <link rel="preconnect" href="https://unpkg.com" />
   <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="supabase-init.js?v=20260218v43"></script>
-  <script src="firebase-compat-supabase.js?v=20260212v25"></script>
-  <script src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="supabase-init.js?v=20260218v43"></script>
+  <script defer src="firebase-compat-supabase.js?v=20260212v25"></script>
+  <script defer src="firebase-auth-compat-supabase.js?v=20260217v12"></script>
 
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,6 +24,7 @@
   <link rel="stylesheet" href="doke-a11y.css?v=20260207v21" />
   <link rel="stylesheet" href="doke-layout-fix.css?v=20260207v21" />
   <link rel="stylesheet" href="doke-fixes.css?v=20260207v21" />
+  <link rel="stylesheet" href="doke-alerts.css?v=20260207v21" />
   <link rel="stylesheet" href="doke-ux.css?v=20260207v21" />
   <link rel="stylesheet" href="doke-shell.css?v=20260212v42" />
   <link rel="stylesheet" href="doke-responsive.css?v=20260209v24" />
@@ -163,16 +166,17 @@
       position: absolute;
       right: 12px;
       top: 12px;
-      min-height: 36px;
+      height: 34px;
       border: 1px solid #d5dfec;
       background: #fff;
-      border-radius: 12px;
-      padding: 0 11px;
+      border-radius: 10px;
+      padding: 0 10px;
       display: inline-flex;
       align-items: center;
       gap: 6px;
       color: #223247;
       font-weight: 800;
+      font-size: 0.9rem;
       cursor: pointer;
     }
 
@@ -207,7 +211,7 @@
 
     .composer-row {
       display: grid;
-      grid-template-columns: 42px minmax(0, 1fr) 96px;
+      grid-template-columns: 42px 42px minmax(0, 1fr) 96px;
       gap: 8px;
       align-items: center;
     }
@@ -234,6 +238,9 @@
     #postArquivo {
       display: none;
     }
+    #postAudio {
+      display: none;
+    }
 
     #postTexto {
       width: 100%;
@@ -254,7 +261,8 @@
     }
 
     #btnEnviarPost {
-      min-height: 42px;
+      height: 42px;
+      width: 42px;
       border: 0;
       border-radius: 12px;
       background: linear-gradient(90deg, var(--grp-green), var(--grp-blue));
@@ -263,6 +271,11 @@
       letter-spacing: 0.01em;
       cursor: pointer;
       white-space: nowrap;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.05rem;
+      padding: 0;
     }
 
     #btnEnviarPost:disabled {
@@ -285,6 +298,15 @@
       justify-content: space-between;
       gap: 10px;
     }
+    .feed-head-actions{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      margin-left:auto;
+    }
+    .mobile-members-btn{
+      display:none;
+    }
 
     .feed-title {
       margin: 0;
@@ -304,6 +326,34 @@
       padding: 12px;
       min-height: 220px;
     }
+    .feed-skeleton {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .feed-skel-item {
+      border: 1px solid #e2e8f0;
+      border-radius: 14px;
+      background: #fff;
+      padding: 10px;
+    }
+    .feed-skel-line {
+      height: 10px;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #edf2f8 0%, #e2e8f0 50%, #edf2f8 100%);
+      background-size: 220% 100%;
+      animation: grpSkel 1.2s linear infinite;
+    }
+    .feed-skel-line + .feed-skel-line {
+      margin-top: 8px;
+    }
+    .feed-skel-line.short {
+      width: 58%;
+    }
+    @keyframes grpSkel {
+      0% { background-position: 220% 0; }
+      100% { background-position: -220% 0; }
+    }
 
     .feed-empty {
       border: 1px dashed #d6e0ec;
@@ -320,6 +370,10 @@
       display: flex;
       flex-direction: column;
       gap: 10px;
+    }
+    #grupoFeed > * {
+      content-visibility: auto;
+      contain-intrinsic-size: 120px;
     }
 
     .side-head {
@@ -369,6 +423,48 @@
     .side-body {
       padding: 12px;
     }
+    .mobile-members-head{
+      display:none;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:10px 12px;
+      border-bottom:1px solid var(--grp-line);
+      background:#fff;
+      border-radius:12px;
+      margin-bottom:8px;
+    }
+    .mobile-members-head .ttl{
+      font-weight:900;
+      color:#1d2b3a;
+    }
+    .mobile-members-backdrop{
+      position:fixed;
+      inset:0;
+      background:rgba(2,6,23,.42);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+      z-index:12990;
+      display:none;
+    }
+    body.mobile-members-open .mobile-members-backdrop{
+      display:block;
+    }
+    .grupo-loading-state{
+      border:1px dashed #c9d8ea;
+      border-radius:14px;
+      background:#f7fbff;
+      color:#49617d;
+      font-weight:800;
+      padding:10px 12px;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .grupo-loading-state i{
+      color:#0b7768;
+      font-size:1rem;
+    }
 
     .members-counters {
       display: grid;
@@ -414,6 +510,10 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
+    }
+    .member-list > * {
+      content-visibility: auto;
+      contain-intrinsic-size: 58px;
     }
 
     .membro-item {
@@ -758,6 +858,39 @@
       }
     }
 
+    @media (max-width: 1024px){
+      .mobile-members-btn{
+        display:inline-flex;
+      }
+      .feed-body{
+        min-height: 58vh;
+      }
+      .grupo-col-side{
+        display:none;
+      }
+      body.mobile-members-open .grupo-col-side{
+        display:flex;
+        position:fixed;
+        left:8px;
+        right:8px;
+        top:calc(var(--navbar-height-mobile) + 8px);
+        bottom:calc(var(--doke-btm-real, 66px) + 10px + env(safe-area-inset-bottom));
+        z-index:13000;
+        overflow:auto;
+        padding:2px;
+      }
+      body.mobile-members-open .mobile-members-head{
+        display:flex;
+      }
+    }
+    @media (max-width: 560px){
+      .composer-row{
+        grid-template-columns: 40px 40px minmax(0, 1fr) 40px;
+      }
+      .grupo-config-btn span{ display:none; }
+      .grupo-config-btn{ width:34px; padding:0; justify-content:center; }
+    }
+
     body.doke-shell-active main.grupo-main {
       margin-left: 0 !important;
       width: 100% !important;
@@ -770,6 +903,7 @@
 </head>
 
 <body data-page="grupo">
+  <div class="mobile-members-backdrop" id="mobileMembersBackdrop"></div>
   <a class="skip-link" href="#grupoFeed">Pular para o conteúdo</a>
 
   <div class="popup" id="popup">
@@ -882,6 +1016,10 @@
 
   <main class="dp-wrap grupo-main">
     <div class="grupo-page">
+      <div class="grupo-loading-state" id="grupoLoadingState" aria-live="polite">
+        <i class="bx bx-loader-alt bx-spin"></i>
+        <span id="grupoLoadingText">Carregando grupo...</span>
+      </div>
       <section class="grupo-card grupo-hero">
         <div class="grupo-cover" id="grupoCover"></div>
         <div class="grupo-info">
@@ -906,7 +1044,7 @@
       <div class="grupo-layout">
         <section class="grupo-col-main">
           <article class="grupo-card composer-wrap">
-            <div class="join-gate" id="joinGate">
+            <div class="join-gate" id="joinGate" style="display: none;">
               <div class="join-gate-title" id="joinGateTitle">Entre no grupo</div>
               <div class="join-gate-sub" id="joinGateSub">Toque para entrar e começar a postar.</div>
               <button class="join-gate-btn" id="btnJoinGate" type="button">Entrar no grupo</button>
@@ -924,11 +1062,18 @@
               <label class="composer-icon" for="postArquivo" title="Anexar arquivo">
                 <i class="bx bx-paperclip"></i>
               </label>
-              <input id="postArquivo" type="file" />
+              <input id="postArquivo" type="file" accept="image/*,video/*,.pdf,.doc,.docx,.zip,.rar" />
+
+              <label class="composer-icon" for="postAudio" title="Áudio">
+                <i class="bx bx-microphone"></i>
+              </label>
+              <input id="postAudio" type="file" accept="audio/*" />
 
               <input type="text" id="postTexto" placeholder="Digite uma mensagem para o grupo..." />
 
-              <button id="btnEnviarPost" type="button">Enviar</button>
+              <button id="btnEnviarPost" type="button" aria-label="Enviar">
+                <i class="bx bxs-send"></i>
+              </button>
             </div>
             <div class="composer-hint">Respeite as regras do grupo.</div>
           </article>
@@ -939,9 +1084,25 @@
                 <h2 class="feed-title">Feed</h2>
                 <p class="feed-sub">Publicações em tempo real</p>
               </div>
+              <div class="feed-head-actions">
+                <button class="side-btn mobile-members-btn" id="btnToggleMembers" type="button">
+                  <i class="bx bx-group"></i>
+                  Membros
+                </button>
+              </div>
             </header>
 
             <div class="feed-body">
+              <div class="feed-skeleton" id="feedSkeleton" aria-hidden="true">
+                <div class="feed-skel-item">
+                  <div class="feed-skel-line"></div>
+                  <div class="feed-skel-line short"></div>
+                </div>
+                <div class="feed-skel-item">
+                  <div class="feed-skel-line"></div>
+                  <div class="feed-skel-line short"></div>
+                </div>
+              </div>
               <div class="feed-empty" id="feedEmpty">Nenhuma mensagem ainda. Seja o primeiro a publicar.</div>
               <div id="grupoFeed" aria-live="polite"></div>
             </div>
@@ -949,6 +1110,10 @@
         </section>
 
         <aside class="grupo-col-side">
+          <div class="mobile-members-head">
+            <span class="ttl">Membros e solicitações</span>
+            <button class="side-btn" id="btnCloseMembersMobile" type="button">Fechar</button>
+          </div>
           <article class="grupo-card" id="requestsPane" style="display: none;">
             <header class="side-head">
               <div>
@@ -1095,11 +1260,52 @@
     </div>
   </div>
 
-  <script src="doke-toast.js"></script>
-  <script src="doke-alerts.js?v=20260217v33"></script>
+  <script defer src="doke-toast.js"></script>
+  <script defer src="doke-alerts.js?v=20260217v33"></script>
   <script defer src="doke-config.js"></script>
   <script defer src="doke-ux.js"></script>
-  <script src="doke-shell.js?v=20260228v48"></script>
+  <script defer src="doke-shell.js?v=20260228v48"></script>
+  <script>
+    (function () {
+      function setupFeedSkeleton() {
+        var skel = document.getElementById('feedSkeleton');
+        var feed = document.getElementById('grupoFeed');
+        var empty = document.getElementById('feedEmpty');
+        if (!skel || !feed) return;
+        var hydrated = false;
+        var hide = function () {
+          if (skel) skel.style.display = 'none';
+        };
+        var sync = function () {
+          if (hydrated) return;
+          var hasPosts = !!feed.firstElementChild;
+          var emptyVisible = !!(empty && empty.textContent && empty.textContent.trim().length);
+          if (hasPosts || emptyVisible) {
+            hydrated = true;
+            hide();
+          }
+        };
+        try {
+          var moFeed = new MutationObserver(sync);
+          moFeed.observe(feed, { childList: true, subtree: true });
+          if (empty) {
+            var moEmpty = new MutationObserver(sync);
+            moEmpty.observe(empty, { childList: true, subtree: true, attributes: true });
+          }
+        } catch (_) {}
+        setTimeout(sync, 120);
+        setTimeout(function () {
+          hydrated = true;
+          hide();
+        }, 3500);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', setupFeedSkeleton);
+      } else {
+        setupFeedSkeleton();
+      }
+    })();
+  </script>
   <script>
     (function(){
       function recoverPageScroll(){

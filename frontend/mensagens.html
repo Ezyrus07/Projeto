@@ -400,6 +400,7 @@
             overscroll-behavior: contain;
         }
         .lista-scroll { padding: 10px 10px 24px; }
+        .lista-scroll { -webkit-overflow-scrolling: touch; }
 
         #lista-pedidos,
         #lista-conversas{
@@ -1198,6 +1199,8 @@
             min-height: 0;
             scrollbar-width: thin;
             scrollbar-color: #94a3b8 #f1f5f9;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-y: contain;
         }
         .doke-chat-loading{
             display:flex;
@@ -1323,6 +1326,7 @@
         .ip-sub { margin: 6px 0 0; color: #64748b; font-size: 0.82rem; line-height: 1.25; }
 
         @media (max-width: 1024px) {
+            body[data-page="chat"]{ overflow: hidden !important; }
             .navbar-desktop { display: none; }
             /* Reserva espa?o para header + bottom-nav (evita barra flutuando e gaps) */
             /* v25 ? evita "gap" entre barra de digitar e bottom-nav */
@@ -1338,6 +1342,8 @@
             #box-conversa-real { height: 100% !important; min-height: 0; }
             .chat-footer { position: sticky; bottom: 0; margin-top: 0; }
             .reply-bar { flex-shrink: 0; }
+            .mensagens-body{ overflow-y: auto !important; min-height: 0 !important; }
+            .lista-scroll{ overflow-y: auto !important; min-height: 0 !important; }
         }
         @media (max-width: 560px){
             .chat-header{ height: auto; padding: 10px 12px; gap: 10px; flex-wrap: wrap; align-content: flex-start; }
@@ -2576,6 +2582,7 @@
 <link href="page-chat.css?v=20260212v38" rel="stylesheet"/>
 <link href="doke-skeleton.css?v=20260209v1" rel="stylesheet"/>
 <link href="doke-tablet-fix.css?v=20260209v1" rel="stylesheet"/>
+<link href="hotfix-20260304.css?v=20260304v5" rel="stylesheet"/>
 </head>
 <body data-page="chat">
 <div class="popup" id="popup">
@@ -2642,9 +2649,9 @@
 </a>
 </div>
 <div class="item">
-<a href="negocios.html">
+<a href="empresas.html">
 <i class="bx bx-store icon verde"></i>
-<span>Negócios</span>
+<span>Empresas</span>
 </a>
 </div>
 <div class="item">
@@ -2653,19 +2660,18 @@
 <span>Notificações</span>
 </a>
 </div>
-<div class="item ativo">
+<div class="item active">
 <a href="mensagens.html">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
 </a>
   </div>
-
-  <div class="item">
-    <a href="pedidos.html">
-      <i class="bx bx-package icon verde"></i>
+<div class="item">
+<a href="pedidos.html">
+<i class="bx bx-package icon verde"></i>
 <span>Pedidos</span>
 </a>
-  </div>
+</div>
 <div class="item">
 <a href="comunidade.html">
 <i class="bx bx-group icon verde"></i>
@@ -8156,8 +8162,16 @@ window.carregarListaConversas = async function() {
                           data.titulo ||
                           data.deNome ||
                           data.de_nome ||
+                          data.denome ||
+                          data.deUser ||
+                          data.de_user ||
+                          data.deuser ||
                           data.paraNome ||
                           data.para_nome ||
+                          data.paranome ||
+                          data.paraUser ||
+                          data.para_user ||
+                          data.parauser ||
                           'Usuário'
                       );
                       const fallbackFotoContato = String(
@@ -8166,7 +8180,9 @@ window.carregarListaConversas = async function() {
                           data.avatar ||
                           data.foto ||
                           data.deFoto ||
+                          data.defoto ||
                           data.paraFoto ||
+                          data.parafoto ||
                           ''
                       );
                       if (!matchBusca(u.user || fallbackNomeContato, lastMsg)) continue;
@@ -10407,6 +10423,32 @@ window.tocarAudio = function(btn, url, audioId, duracaoInformada) {
       trocarAba('conversas');
     }catch(e){}
   });
+</script>
+<script>
+  (function () {
+    function forceChatScrollReady() {
+      try {
+        var chatBody = document.querySelector('.mensagens-body');
+        var listBody = document.querySelector('.lista-scroll');
+        if (chatBody) {
+          chatBody.style.minHeight = '0';
+          chatBody.style.overflowY = 'auto';
+          chatBody.style.overflowX = 'hidden';
+        }
+        if (listBody) {
+          listBody.style.minHeight = '0';
+          listBody.style.overflowY = 'auto';
+          listBody.style.overflowX = 'hidden';
+        }
+      } catch (_) {}
+    }
+    document.addEventListener('DOMContentLoaded', forceChatScrollReady);
+    window.addEventListener('load', forceChatScrollReady);
+    window.addEventListener('pageshow', forceChatScrollReady);
+    requestAnimationFrame(forceChatScrollReady);
+    setTimeout(forceChatScrollReady, 80);
+    setTimeout(forceChatScrollReady, 320);
+  })();
 </script>
 </body>
 </html>
