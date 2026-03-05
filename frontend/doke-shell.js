@@ -756,7 +756,12 @@
       profile = hydrateProfileFromSession(sessionUser, profile);
     }
 
-    const isLogged = !!sessionUser || hasLocalAuth;
+    const isLogged = !!sessionUser;
+    if (!isLogged) {
+      profile = null;
+      try { localStorage.removeItem("usuarioLogado"); } catch (_e) {}
+      try { localStorage.removeItem("doke_uid"); } catch (_e) {}
+    }
     const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);

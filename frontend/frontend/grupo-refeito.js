@@ -153,15 +153,75 @@ const postAuthorCache = Object.create(null);
     document.body.classList.toggle('mobile-members-open', !!open);
   }
 
+  const DOKE_SCHEMA_CACHE_KEY = 'doke_group_schema_cache_v1';
+  const DOKE_SCHEMA_CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+  const dokeSchemaInFlight = new Map();
+
+  function dokeSchemaCacheReadAll(){
+    try{
+      const raw = localStorage.getItem(DOKE_SCHEMA_CACHE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    }catch(_){ return {}; }
+  }
+
+  function dokeSchemaCacheWriteAll(obj){
+    try{ localStorage.setItem(DOKE_SCHEMA_CACHE_KEY, JSON.stringify(obj || {})); }catch(_){}
+  }
+
+  function dokeSchemaCacheGet(key){
+    const all = dokeSchemaCacheReadAll();
+    const hit = all[key];
+    if (!hit) return null;
+    const ts = Number(hit.ts || 0);
+    if (!ts || (Date.now() - ts) > DOKE_SCHEMA_CACHE_TTL_MS) return null;
+    return hit.value;
+  }
+
+  function dokeSchemaCacheSet(key, value){
+    const all = dokeSchemaCacheReadAll();
+    all[key] = { ts: Date.now(), value };
+    dokeSchemaCacheWriteAll(all);
+  }
+
+  async function dokeRunSchemaProbe(key, task){
+    if (dokeSchemaInFlight.has(key)) return dokeSchemaInFlight.get(key);
+    const p = Promise.resolve().then(task).finally(() => {
+      if (dokeSchemaInFlight.get(key) === p) dokeSchemaInFlight.delete(key);
+    });
+    dokeSchemaInFlight.set(key, p);
+    return p;
+  }
+
+  async function pickFirstExisting(table, candidates){
+    const checks = await Promise.all((candidates || []).map(async (c) => ({ c, ok: await hasColumn(table, c) })));
+    for (const c of (candidates || [])){
+      const found = checks.find((x) => x.c === c);
+      if (found?.ok) return c;
+    }
+    return null;
+  }
+
   // ------ schema detection helpers (avoid breaking on camelCase/snake_case) ------
   async function hasColumn(table, col){
-    const { error } = await client.from(table).select(col).limit(1);
-    if (!error) return true;
-    if ((error.message || '').toLowerCase().includes('does not exist')) return false;
-    // Some 400s are "column not found"
-    if ((error.message || '').toLowerCase().includes('could not find')) return false;
-    // If error is RLS/permission, column may still exist.
-    return true;
+    const key = `col:${table}:${col}`;
+    const cached = dokeSchemaCacheGet(key);
+    if (typeof cached === 'boolean') return cached;
+    return dokeRunSchemaProbe(key, async () => {
+      const { error } = await client.from(table).select(col).limit(1);
+      if (!error) {
+        dokeSchemaCacheSet(key, true);
+        return true;
+      }
+      const msg = String(error.message || '').toLowerCase();
+      if (msg.includes('does not exist') || msg.includes('could not find')) {
+        dokeSchemaCacheSet(key, false);
+        return false;
+      }
+      // If error is RLS/permission, column may still exist.
+      dokeSchemaCacheSet(key, true);
+      return true;
+    });
   }
 
   async function detectMembersSchema(){
@@ -170,9 +230,9 @@ const postAuthorCache = Object.create(null);
     const statusColCandidates = ['status','situacao','estado'];
     let communityCol = null, userCol = null, statusCol = null;
 
-    for (const c of communityColCandidates){ if (await hasColumn(MEMBERS_TABLE, c)){ communityCol = c; break; } }
-    for (const c of userColCandidates){ if (await hasColumn(MEMBERS_TABLE, c)){ userCol = c; break; } }
-    for (const c of statusColCandidates){ if (await hasColumn(MEMBERS_TABLE, c)){ statusCol = c; break; } }
+    communityCol = await pickFirstExisting(MEMBERS_TABLE, communityColCandidates);
+    userCol = await pickFirstExisting(MEMBERS_TABLE, userColCandidates);
+    statusCol = await pickFirstExisting(MEMBERS_TABLE, statusColCandidates);
 
     // fallback
     if (!communityCol) communityCol = 'comunidade_id';
@@ -198,18 +258,23 @@ const postAuthorCache = Object.create(null);
     let communityCol=null, textCol=null, authorUidCol=null, authorNameCol=null, authorUserCol=null, authorFotoCol=null, createdCol=null;
     let mediaUrlCol=null, mediaTypeCol=null, replyIdCol=null, replyUserCol=null, replyPreviewCol=null;
 
-    for (const c of communityColCandidates){ if (await hasColumn(POSTS_TABLE, c)){ communityCol=c; break; } }
-    for (const c of textColCandidates){ if (await hasColumn(POSTS_TABLE, c)){ textCol=c; break; } }
-    for (const c of authorUidCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorUidCol=c; break; } }
-    for (const c of authorNameCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorNameCol=c; break; } }
-    for (const c of authorUserCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorUserCol=c; break; } }
-    for (const c of authorFotoCandidates){ if (await hasColumn(POSTS_TABLE, c)){ authorFotoCol=c; break; } }
-    for (const c of createdCandidates){ if (await hasColumn(POSTS_TABLE, c)){ createdCol=c; break; } }
-    for (const c of mediaUrlCandidates){ if (await hasColumn(POSTS_TABLE, c)){ mediaUrlCol=c; break; } }
-    for (const c of mediaTypeCandidates){ if (await hasColumn(POSTS_TABLE, c)){ mediaTypeCol=c; break; } }
-    for (const c of replyIdCandidates){ if (await hasColumn(POSTS_TABLE, c)){ replyIdCol=c; break; } }
-    for (const c of replyUserCandidates){ if (await hasColumn(POSTS_TABLE, c)){ replyUserCol=c; break; } }
-    for (const c of replyPreviewCandidates){ if (await hasColumn(POSTS_TABLE, c)){ replyPreviewCol=c; break; } }
+    [
+      communityCol, textCol, authorUidCol, authorNameCol, authorUserCol, authorFotoCol,
+      createdCol, mediaUrlCol, mediaTypeCol, replyIdCol, replyUserCol, replyPreviewCol
+    ] = await Promise.all([
+      pickFirstExisting(POSTS_TABLE, communityColCandidates),
+      pickFirstExisting(POSTS_TABLE, textColCandidates),
+      pickFirstExisting(POSTS_TABLE, authorUidCandidates),
+      pickFirstExisting(POSTS_TABLE, authorNameCandidates),
+      pickFirstExisting(POSTS_TABLE, authorUserCandidates),
+      pickFirstExisting(POSTS_TABLE, authorFotoCandidates),
+      pickFirstExisting(POSTS_TABLE, createdCandidates),
+      pickFirstExisting(POSTS_TABLE, mediaUrlCandidates),
+      pickFirstExisting(POSTS_TABLE, mediaTypeCandidates),
+      pickFirstExisting(POSTS_TABLE, replyIdCandidates),
+      pickFirstExisting(POSTS_TABLE, replyUserCandidates),
+      pickFirstExisting(POSTS_TABLE, replyPreviewCandidates)
+    ]);
 
     return {
       communityCol: communityCol || 'comunidadeId',
@@ -228,11 +293,23 @@ const postAuthorCache = Object.create(null);
   }
 
   async function tableExists(table){
-    const { error } = await client.from(table).select('*').limit(1);
-    if (!error) return true;
-    const m = (error.message||'').toLowerCase();
-    if (m.includes('does not exist') || m.includes('could not find')) return false;
-    return true; // permission etc
+    const key = `table:${table}`;
+    const cached = dokeSchemaCacheGet(key);
+    if (typeof cached === 'boolean') return cached;
+    return dokeRunSchemaProbe(key, async () => {
+      const { error } = await client.from(table).select('*').limit(1);
+      if (!error) {
+        dokeSchemaCacheSet(key, true);
+        return true;
+      }
+      const m = (error.message||'').toLowerCase();
+      if (m.includes('does not exist') || m.includes('could not find')) {
+        dokeSchemaCacheSet(key, false);
+        return false;
+      }
+      dokeSchemaCacheSet(key, true);
+      return true; // permission etc
+    });
   }
 
   // ------ group privacy ------
@@ -676,7 +753,11 @@ function wireRequestActions(rows){
       .replaceAll("'","&#039;");
   }
 
-  async function loadPosts(limit=40){
+async function loadPosts(limit=40){
+    if (emptyEl) {
+      emptyEl.textContent = 'Carregando mensagens...';
+      emptyEl.style.display = 'block';
+    }
     const { communityCol, createdCol } = postsSchema;
     const { data, error } = await client
       .from(POSTS_TABLE)
@@ -693,6 +774,7 @@ function wireRequestActions(rows){
 
     feedEl.innerHTML = '';
     if (!data || data.length===0){
+      if (emptyEl) emptyEl.textContent = 'Nenhuma mensagem ainda. Seja o primeiro a publicar.';
       emptyEl.style.display='block';
       return;
     }
@@ -762,10 +844,11 @@ function wireRequestActions(rows){
     const userCandidates = ['user_uid','userUid','user_id','userId','uid'];
     const emojiCandidates = ['emoji','reacao','reaction'];
 
-    let postIdCol=null, userCol=null, emojiCol=null;
-    for (const c of postIdCandidates){ if (await hasColumn(REACTIONS_TABLE, c)){ postIdCol=c; break; } }
-    for (const c of userCandidates){ if (await hasColumn(REACTIONS_TABLE, c)){ userCol=c; break; } }
-    for (const c of emojiCandidates){ if (await hasColumn(REACTIONS_TABLE, c)){ emojiCol=c; break; } }
+    const [postIdCol, userCol, emojiCol] = await Promise.all([
+      pickFirstExisting(REACTIONS_TABLE, postIdCandidates),
+      pickFirstExisting(REACTIONS_TABLE, userCandidates),
+      pickFirstExisting(REACTIONS_TABLE, emojiCandidates)
+    ]);
 
     return { postIdCol: postIdCol||'post_id', userCol: userCol||'user_uid', emojiCol: emojiCol||'emoji' };
   }
@@ -784,23 +867,24 @@ function wireRequestActions(rows){
 
     const ownerCandidates = ['donoUid','dono_uid','owner_uid','ownerUid','criado_por','criadoPor','created_by','createdBy','user_uid','userUid','autorUid','autor_uid'];
 
-    const pick = async (cands) => {
-      for (const c of cands){
-        try{
-          if (await hasColumn(GROUPS_TABLE, c)) return c;
-        }catch(e){}
-      }
-      return null;
-    };
+    const [nameCol, descCol, typeCol, avatarCol, coverCol, privateCol, ownerCol] = await Promise.all([
+      pickFirstExisting(GROUPS_TABLE, nameCandidates),
+      pickFirstExisting(GROUPS_TABLE, descCandidates),
+      pickFirstExisting(GROUPS_TABLE, typeCandidates),
+      pickFirstExisting(GROUPS_TABLE, avatarCandidates),
+      pickFirstExisting(GROUPS_TABLE, coverCandidates),
+      pickFirstExisting(GROUPS_TABLE, privateCandidates),
+      pickFirstExisting(GROUPS_TABLE, ownerCandidates)
+    ]);
 
     return {
-      nameCol: await pick(nameCandidates) || 'nome',
-      descCol: await pick(descCandidates) || 'descricao',
-      typeCol: await pick(typeCandidates) || 'tipo',
-      avatarCol: await pick(avatarCandidates),
-      coverCol: await pick(coverCandidates),
-      privateCol: await pick(privateCandidates),
-      ownerCol: await pick(ownerCandidates)
+      nameCol: nameCol || 'nome',
+      descCol: descCol || 'descricao',
+      typeCol: typeCol || 'tipo',
+      avatarCol,
+      coverCol,
+      privateCol,
+      ownerCol
     };
   }
 
@@ -809,18 +893,13 @@ function wireRequestActions(rows){
     const fotoCandidates = ['foto','avatar','photo','foto_url','avatar_url','photo_url'];
     const roleCandidates = ['cargo','cargo_nome','cargoName','role','nivel','cargo_id','cargoId'];
 
-    const pick = async (cands) => {
-      for (const c of cands){
-        try{ if (await hasColumn(MEMBERS_TABLE, c)) return c; }catch(e){}
-      }
-      return null;
-    };
+    const [nameCol, fotoCol, roleCol] = await Promise.all([
+      pickFirstExisting(MEMBERS_TABLE, nameCandidates),
+      pickFirstExisting(MEMBERS_TABLE, fotoCandidates),
+      pickFirstExisting(MEMBERS_TABLE, roleCandidates)
+    ]);
 
-    return {
-      nameCol: await pick(nameCandidates),
-      fotoCol: await pick(fotoCandidates),
-      roleCol: await pick(roleCandidates)
-    };
+    return { nameCol, fotoCol, roleCol };
   }
 
   async function fetchUserProfiles(uids){
@@ -1126,8 +1205,10 @@ function wireRequestActions(rows){
   }
 
   async function detectPresenceColumns(){
-    const hasOnline = await hasColumn(MEMBERS_TABLE, 'online').catch(()=>false);
-    const hasLastSeen = await hasColumn(MEMBERS_TABLE, 'last_seen').catch(()=>false);
+    const [hasOnline, hasLastSeen] = await Promise.all([
+      hasColumn(MEMBERS_TABLE, 'online').catch(()=>false),
+      hasColumn(MEMBERS_TABLE, 'last_seen').catch(()=>false)
+    ]);
     presenceSchema = { hasOnline, hasLastSeen };
     return presenceSchema;
   }
@@ -1911,6 +1992,8 @@ const chips = Object.keys(counts).map(e=>{
 
   // ------ init ------
   async function init(){
+    const perfBoot = window.DokePerf?.start ? window.DokePerf.start('grupo_boot', { href: `${location.pathname || ''}${location.search || ''}` }) : null;
+    let bootError = null;
     setBootLoading(true, 'Carregando grupo...');
     try{
       // find groupId
@@ -1932,10 +2015,18 @@ const chips = Object.keys(counts).map(e=>{
 
     
       // schema
-      memberSchema = await detectMembersSchema();
-      postsSchema = await detectPostsSchema();
-      reactSchema = await detectReactionsSchema();
-      presenceSchema = await detectPresenceColumns();
+      const perfSchema = window.DokePerf?.start ? window.DokePerf.start('grupo_detect_schema', { grupoId }) : null;
+      const [detMembers, detPosts, detReacts, detPresence] = await Promise.all([
+        detectMembersSchema(),
+        detectPostsSchema(),
+        detectReactionsSchema(),
+        detectPresenceColumns()
+      ]);
+      if (window.DokePerf?.end) window.DokePerf.end(perfSchema, { ok: true });
+      memberSchema = detMembers;
+      postsSchema = detPosts;
+      reactSchema = detReacts;
+      presenceSchema = detPresence;
 
       // admin / solicitações
       isAdmin = await detectAdmin();
@@ -1943,12 +2034,13 @@ const chips = Object.keys(counts).map(e=>{
       wireMobileMembersPanel();
       // header + membros + config
       setBootLoading(true, 'Carregando dados do grupo...');
+      const perfGroupData = window.DokePerf?.start ? window.DokePerf.start('grupo_load_data', { grupoId }) : null;
       await loadGroup();
       if (btnConfigGrupo) btnConfigGrupo.style.display = isAdmin ? 'inline-flex' : 'none';
       wireConfigModal();
       await loadMembers();
+      if (window.DokePerf?.end) window.DokePerf.end(perfGroupData, { ok: true });
       await touchPresence(false);
-      await loadMembers();
       bindPresenceEvents();
 
       // wire UI
@@ -1959,14 +2051,18 @@ const chips = Object.keys(counts).map(e=>{
 
       await refreshGate();
       setBootLoading(true, 'Carregando feed...');
+      const perfFeed = window.DokePerf?.start ? window.DokePerf.start('grupo_load_posts', { grupoId }) : null;
       await loadPosts();
-      await loadJoinRequests();
+      if (window.DokePerf?.end) window.DokePerf.end(perfFeed, { ok: true });
+      if (isAdmin) await loadJoinRequests();
       setupRealtime();
     }catch(e){
+      bootError = e;
       console.error('[DOKE] grupo init error', e);
       toast('Erro ao carregar grupo. Atualize a página.');
     }finally{
       setBootLoading(false);
+      if (window.DokePerf?.end) window.DokePerf.end(perfBoot, { ok: !bootError, grupoId: grupoId || null, admin: !!isAdmin, error: bootError ? String(bootError.message || bootError) : null });
     }
   }
 

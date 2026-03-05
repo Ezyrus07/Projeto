@@ -541,6 +541,23 @@
       label.style.color = score <= 1 ? "var(--cor3)" : (score <= 3 ? "#2a5f90" : "var(--cor0)");
     }
 
+
+    function friendlyPasswordError(rawMsg){
+      const msg = String(rawMsg || "").trim();
+      const lower = msg.toLowerCase();
+      if (lower.includes("leaked") || lower.includes("pwned") || lower.includes("compromised")) {
+        return "Nao foi possivel concluir o cadastro: essa senha ja apareceu em vazamentos. Escolha outra senha.";
+      }
+      if (
+        lower.includes("at least") ||
+        lower.includes("minimum") ||
+        lower.includes("weak") ||
+        lower.includes("policy")
+      ) {
+        return "Nao foi possivel concluir o cadastro com essa senha. Use uma senha mais forte (ex.: 10+ caracteres, maiuscula, minuscula, numero e simbolo).";
+      }
+      return msg ? `Nao foi possivel concluir o cadastro com a senha informada. Motivo: ${msg}` : "Nao foi possivel concluir o cadastro com a senha informada. Tente outra senha.";
+    }
     document.getElementById("senha").addEventListener("input", updatePwMeter);
     updatePwMeter();
 
@@ -810,7 +827,7 @@ const novoPerfil = {
         } else if (isMissingColumnError(e) && errMsg.toLowerCase().includes("conta_ativa")) {
           showMsg("err", "Seu banco ainda não tem o campo conta_ativa. Rode o SQL de atualizacao e tente novamente.");
         } else if (errMsg.toLowerCase().includes("password")) {
-          showMsg("err", "Senha inválida ou muito fraca.");
+          showMsg("err", friendlyPasswordError(errMsg));
         } else if (errMsg.toLowerCase().includes("permission") || errMsg.toLowerCase().includes("rls")) {
           showMsg("err", "Permissóo negada. Verifique as políticas (RLS) no Supabase para a tabela 'usuários'.");
         } else if (

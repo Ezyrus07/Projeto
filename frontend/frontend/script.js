@@ -189,6 +189,209 @@ function dokePickSupabaseAuthClient() {
     return null;
 }
 
+function dokeGetInFlightMap() {
+    if (!window.__dokeInFlightReqMap || !(window.__dokeInFlightReqMap instanceof Map)) {
+        window.__dokeInFlightReqMap = new Map();
+    }
+    return window.__dokeInFlightReqMap;
+}
+
+async function dokeRunInFlight(key, task) {
+    const inFlight = dokeGetInFlightMap();
+    const normKey = String(key || "").trim();
+    if (!normKey) return task();
+    if (inFlight.has(normKey)) return inFlight.get(normKey);
+    const p = Promise.resolve().then(task).finally(() => {
+        const current = inFlight.get(normKey);
+        if (current === p) inFlight.delete(normKey);
+    });
+    inFlight.set(normKey, p);
+    return p;
+}
+
+function dokeOptimizeMediaElement(el) {
+    if (!el || el.nodeType !== 1) return;
+    if (el.tagName === "IMG") {
+        const isLogo = !!el.closest(".logo, .brand, .topbar-logo, .sidebar-logo");
+        if (!el.getAttribute("loading") && !isLogo) el.setAttribute("loading", "lazy");
+        if (!el.getAttribute("decoding")) el.setAttribute("decoding", "async");
+        if (!el.getAttribute("fetchpriority") && !isLogo) el.setAttribute("fetchpriority", "low");
+        return;
+    }
+    if (el.tagName === "VIDEO") {
+        if (!el.getAttribute("preload")) el.setAttribute("preload", "metadata");
+        if (!el.hasAttribute("playsinline")) el.setAttribute("playsinline", "");
+    }
+}
+
+function dokeOptimizeMediaTree(root) {
+    if (!root) return;
+    if (root.nodeType === 1) dokeOptimizeMediaElement(root);
+    if (!root.querySelectorAll) return;
+    root.querySelectorAll("img,video").forEach((node) => dokeOptimizeMediaElement(node));
+}
+
+function dokeInstallMediaOptimizer() {
+    if (window.__dokeMediaOptimizerInstalled) return;
+    window.__dokeMediaOptimizerInstalled = true;
+    dokeOptimizeMediaTree(document);
+    if (!("MutationObserver" in window) || !document.body) return;
+    let rafId = 0;
+    const pending = new Set();
+    const flush = () => {
+        rafId = 0;
+        pending.forEach((node) => dokeOptimizeMediaTree(node));
+        pending.clear();
+    };
+    const obs = new MutationObserver((records) => {
+        records.forEach((record) => {
+            record.addedNodes.forEach((node) => {
+                if (node && node.nodeType === 1) pending.add(node);
+            });
+        });
+        if (!rafId) rafId = requestAnimationFrame(flush);
+    });
+    obs.observe(document.body, { childList: true, subtree: true });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => dokeInstallMediaOptimizer(), { once: true });
+} else {
+    dokeInstallMediaOptimizer();
+}
+
+function dokeRunIdle(task, timeoutMs) {
+    const fn = (typeof task === "function") ? task : function(){};
+    const timeout = Number(timeoutMs || 1200);
+    if (typeof window.requestIdleCallback === "function") {
+        return window.requestIdleCallback(() => fn(), { timeout });
+    }
+    return window.setTimeout(fn, Math.min(timeout, 320));
+}
+
+function dokeRunDeferred(task, options) {
+    const opts = options || {};
+    const fn = (typeof task === "function") ? task : function(){};
+    const delay = Math.max(0, Number(opts.delay || 0));
+    const idle = opts.idle !== false;
+    const run = () => {
+        if (idle) return dokeRunIdle(fn, opts.timeout || 1400);
+        return window.setTimeout(fn, 0);
+    };
+    if (delay > 0) return window.setTimeout(run, delay);
+    return run();
+}
+
+function dokePerfInstall() {
+    if (window.DokePerf && window.DokePerf.__installed) return window.DokePerf;
+    const STORAGE_KEY = "doke_perf_metrics_v1";
+    const MAX_ITEMS = 120;
+    const safeNow = () => {
+        try { return (performance && typeof performance.now === "function") ? performance.now() : Date.now(); } catch (_) { return Date.now(); }
+    };
+    const safeRead = () => {
+        try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (_) { return []; }
+    };
+    const safeWrite = (list) => {
+        try { localStorage.setItem(STORAGE_KEY, JSON.stringify((list || []).slice(-MAX_ITEMS))); } catch (_) {}
+    };
+    const push = (name, data) => {
+        const item = {
+            name: String(name || "event"),
+            ts: Date.now(),
+            path: `${location.pathname || ""}${location.search || ""}${location.hash || ""}`,
+            data: data || {}
+        };
+        const list = safeRead();
+        list.push(item);
+        safeWrite(list);
+        try { console.log("[DOKE PERF]", item.name, item.data); } catch (_) {}
+        return item;
+    };
+    const api = {
+        __installed: true,
+        start(name, meta) {
+            return { name: String(name || "task"), t0: safeNow(), meta: meta || {} };
+        },
+        end(token, extra) {
+            if (!token || !token.name) return null;
+            const ms = Math.max(0, Math.round((safeNow() - Number(token.t0 || safeNow())) * 100) / 100);
+            return push(token.name, { ...(token.meta || {}), ...(extra || {}), ms });
+        },
+        event(name, data) { return push(name, data || {}); },
+        getRecent(limit) {
+            const n = Math.max(1, Number(limit || 20));
+            return safeRead().slice(-n);
+        }
+    };
+    window.DokePerf = api;
+
+    if (!window.__dokePerfVitalsInstalled && "PerformanceObserver" in window) {
+        window.__dokePerfVitalsInstalled = true;
+        let clsValue = 0;
+        let lcpValue = 0;
+        let lcpType = "";
+        try {
+            const paintObs = new PerformanceObserver((list) => {
+                list.getEntries().forEach((entry) => {
+                    if (entry.name === "first-contentful-paint") {
+                        api.event("vital_fcp", { ms: Math.round(entry.startTime * 100) / 100 });
+                    }
+                });
+            });
+            paintObs.observe({ type: "paint", buffered: true });
+        } catch (_) {}
+        try {
+            const clsObs = new PerformanceObserver((list) => {
+                list.getEntries().forEach((entry) => {
+                    if (!entry.hadRecentInput) clsValue += Number(entry.value || 0);
+                });
+            });
+            clsObs.observe({ type: "layout-shift", buffered: true });
+        } catch (_) {}
+        try {
+            const lcpObs = new PerformanceObserver((list) => {
+                const entries = list.getEntries();
+                const last = entries[entries.length - 1];
+                if (!last) return;
+                lcpValue = Math.max(lcpValue, Number(last.startTime || 0));
+                lcpType = String(last.element?.tagName || "").toLowerCase();
+            });
+            lcpObs.observe({ type: "largest-contentful-paint", buffered: true });
+        } catch (_) {}
+
+        const flushVitals = () => {
+            if (lcpValue > 0) api.event("vital_lcp", { ms: Math.round(lcpValue * 100) / 100, el: lcpType || "unknown" });
+            if (clsValue > 0) api.event("vital_cls", { value: Math.round(clsValue * 10000) / 10000 });
+            lcpValue = 0;
+            clsValue = 0;
+        };
+        window.addEventListener("pagehide", flushVitals, { once: true });
+        document.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === "hidden") flushVitals();
+        }, { once: true });
+    }
+    return api;
+}
+
+dokePerfInstall();
+window.dokePerfReport = function(limit){
+    try {
+        const rows = window.DokePerf?.getRecent ? window.DokePerf.getRecent(limit || 30) : [];
+        console.table(rows.map((r) => ({
+            when: new Date(r.ts).toLocaleTimeString('pt-BR'),
+            name: r.name,
+            ms: r.data?.ms ?? '',
+            path: r.path
+        })));
+        return rows;
+    } catch (_) { return []; }
+};
+
 // ------------------------------------------------------------
 // Supabase session: avoid concurrent getSession() calls.
 // The SPA shell/router + multiple modules can call getSession()
@@ -4983,6 +5186,35 @@ async function getSupabaseUserRow() {
     return window._dokeSupabaseUserRow;
 }
 
+async function dokeResolveSupabaseActor() {
+    let userRow = null;
+    try {
+        userRow = await getSupabaseUserRow();
+    } catch (_) {
+        userRow = null;
+    }
+    if (userRow?.id) return userRow;
+
+    let authUser = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser || null);
+    if (!authUser) {
+        try { authUser = await dokeResolveAuthUser(); } catch (_) { authUser = null; }
+    }
+    const uid = String(authUser?.uid || authUser?.id || "").trim();
+    if (!uid) return null;
+
+    const perfil = JSON.parse(localStorage.getItem("doke_usuario_perfil") || "{}") || {};
+    const nome = String(perfil.nome || authUser?.user_metadata?.nome || authUser?.email || "").trim();
+    const user = String(perfil.user || authUser?.user_metadata?.user || (nome ? nome.split(" ")[0].toLowerCase() : "")).trim();
+    const foto = String(perfil.foto || authUser?.user_metadata?.foto || authUser?.user_metadata?.avatar_url || "").trim();
+    return {
+        id: uid,
+        uid: uid,
+        nome: nome || "Usuario",
+        user: user ? String(user).replace(/^@/, "") : "usuario",
+        foto: foto || "https://placehold.co/50"
+    };
+}
+
 async function attachSupabaseUsersById(items) {
     const client = getSupabasePublicClient() || getSupabaseClient();
     if (!client || !Array.isArray(items) || items.length === 0) return items;
@@ -5037,6 +5269,7 @@ async function dokeMaybeRankFeed(contentType, items, limit){
 }
 
 async function fetchSupabasePublicacoesFeed() {
+    return dokeRunInFlight("feed:supabase:publicacoes", async () => {
     const client = getSupabasePublicClient() || getSupabaseClient();
     const cached = dokeReadCache(DOKE_CACHE_KEYS.publicacoes, DOKE_CACHE_MAX_AGE_MS);
     if (Array.isArray(cached) && cached.length) return cached;
@@ -5125,6 +5358,7 @@ async function fetchSupabasePublicacoesFeed() {
         else console.error("Falha critica ao buscar publicacoes:", err);
     }
     return cached || [];
+    });
 }
 
 window.carregarFeedGlobal = async function() {
@@ -5288,6 +5522,8 @@ window.carregarFeedGlobal = async function() {
     const container = document.getElementById('feed-global-container');
     if (!container) return;
     if (window.__dokeFeedGlobalLoading) return;
+    const perfFeed = window.DokePerf?.start ? window.DokePerf.start("feed_global_load", { source: "mixed" }) : null;
+    let renderedCount = 0;
     window.__dokeFeedGlobalLoading = true;
     const feedWatchdog = setTimeout(() => {
         try {
@@ -5466,6 +5702,8 @@ window.carregarFeedGlobal = async function() {
             return;
         }
 
+        renderedCount = dedupedFeedItems.length;
+
     dedupedFeedItems.forEach((entry) => {
         if (String(entry.source || "").startsWith("firebase")) {
             const post = entry.data || {};
@@ -5561,6 +5799,7 @@ window.carregarFeedGlobal = async function() {
     } finally {
         clearTimeout(feedWatchdog);
         window.__dokeFeedGlobalLoading = false;
+        if (window.DokePerf?.end) window.DokePerf.end(perfFeed, { rendered: renderedCount });
     }
 }
 
@@ -8981,7 +9220,7 @@ function ensurePostModalStyles() {
   font-size:.72rem; color:#6a7f99; font-weight:700;
 }
 #modalPostDetalhe.ppv5-overlay .ppv5-comments{
-  min-height:0; overflow-y:auto; padding:12px 14px;
+  min-height:0; overflow-y:auto; padding:12px 14px; position:relative;
 }
 #modalPostDetalhe.ppv5-overlay .ppv5-caption,
 #modalPostDetalhe.ppv5-overlay .ppv5-caption-copy{
@@ -8994,6 +9233,64 @@ function ensurePostModalStyles() {
 #modalPostDetalhe.ppv5-overlay .ppv5-comments [style*="color:#999"]{ color:#6b7f98 !important; }
 #modalPostDetalhe.ppv5-overlay .ppv5-comments::-webkit-scrollbar{ width:8px; }
 #modalPostDetalhe.ppv5-overlay .ppv5-comments::-webkit-scrollbar-thumb{ background:#c8d5e8; border-radius:999px; }
+#modalPostDetalhe.ppv5-overlay .ppv5-comments.comments-locked{
+  user-select:none;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments.comments-locked > *:not(.ppv5-comments-lock){
+  filter: blur(2.6px) saturate(.85);
+  opacity: .55;
+  pointer-events:none;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments-lock{
+  position:absolute;
+  inset:0;
+  z-index:6;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  padding:18px;
+  background:linear-gradient(160deg, rgba(232, 241, 252, .78), rgba(206, 227, 247, .62));
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: commentsLockPulse 2.6s ease-in-out infinite;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments-lock .lock-box{
+  max-width: 360px;
+  border:1px solid rgba(148, 176, 209, .45);
+  border-radius:14px;
+  background:rgba(255, 255, 255, .92);
+  color:#17324f;
+  font-weight:700;
+  line-height:1.4;
+  padding:14px 16px;
+  box-shadow:0 10px 24px rgba(25, 57, 94, .2);
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments-lock .lock-box b{
+  display:block;
+  margin-bottom:6px;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments-lock .lock-sub{
+  display:block;
+  margin-bottom:10px;
+  color:#2f4f70;
+  font-weight:600;
+  font-size:.92rem;
+}
+#modalPostDetalhe.ppv5-overlay .ppv5-comments-lock .lock-login-btn{
+  min-height:38px;
+  border:0;
+  border-radius:10px;
+  padding:0 14px;
+  background:linear-gradient(90deg, #2a5f90, #0b7768);
+  color:#fff;
+  font-weight:800;
+  cursor:pointer;
+}
+@keyframes commentsLockPulse{
+  0%, 100% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+}
 #modalPostDetalhe.ppv5-overlay .ppv5-footer{
   border-top:1px solid #e0e8f3; background:#ffffff; padding:10px 14px 12px;
 }
@@ -9071,17 +9368,107 @@ function applyPostModalLayoutRuntime() {
 }
 
 function resetComentariosPostToggle() {
-    const modal = document.getElementById('modalPostDetalhe');
+    const modal = getActivePostModal();
     if (!modal) return;
     modal.classList.remove('comments-hidden');
     const btn = modal.querySelector('.ppv5-toggle');
     if (btn) btn.textContent = 'Esconder comentários';
+    applyCommentsLoginGate();
+}
+
+function getActivePostModal() {
+    const modals = Array.from(document.querySelectorAll('#modalPostDetalhe'));
+    if (!modals.length) return null;
+    const visible = modals.find((m) => m && m.style.display === 'flex');
+    return visible || modals[modals.length - 1];
+}
+
+function isCommentsViewerLoggedIn() {
+    try {
+        if (window.auth?.currentUser?.uid) return true;
+    } catch (_) {}
+    try {
+        const sb = getSupabaseClient();
+        const sess = sb?.auth?.getSession ? sb.auth.getSession : null;
+        if (sess && typeof sess.then === "function") {
+            // handled asynchronously by applyCommentsLoginGate
+        }
+    } catch (_) {}
+    return false;
+}
+
+async function applyCommentsLoginGate() {
+    window.__dokeCommentsGateRun = (window.__dokeCommentsGateRun || 0) + 1;
+    const gateRun = window.__dokeCommentsGateRun;
+    const modal = getActivePostModal();
+    const list = modal?.querySelector("#modalCommentsList");
+    const input = modal?.querySelector("#inputComentarioModal");
+    const sendBtn = input?.parentElement?.querySelector("button");
+    if (!list) return;
+    try {
+        document.querySelectorAll(".ppv5-comments-lock").forEach((el) => {
+            if (!list.contains(el)) el.remove();
+        });
+    } catch (_) {}
+
+    let isLogged = isCommentsViewerLoggedIn();
+    try {
+        const sb = getSupabaseClient();
+        if (sb?.auth?.getSession) {
+            const { data } = await sb.auth.getSession();
+            if (data?.session?.user) isLogged = true;
+        }
+    } catch (_) {}
+    if (gateRun !== window.__dokeCommentsGateRun) return;
+
+    const overlays = Array.from(list.querySelectorAll(".ppv5-comments-lock"));
+    let overlay = overlays[0] || null;
+    if (overlays.length > 1) {
+        overlays.slice(1).forEach((el) => el.remove());
+    }
+    if (!isLogged) {
+        list.classList.add("comments-locked");
+        if (!overlay) {
+            overlay = document.createElement("div");
+            overlay.className = "ppv5-comments-lock";
+            const next = encodeURIComponent(window.location.href || `${location.pathname || ""}${location.search || ""}${location.hash || ""}`);
+            overlay.innerHTML = `<div class="lock-box"><b>Entre para continuar</b><span class="lock-sub">Fa\u00e7a login para ver os coment\u00e1rios e participar da conversa nesta publica\u00e7\u00e3o.</span><button type="button" class="lock-login-btn" onclick="window.location.href='login.html?next=${next}'">Fazer login</button></div>`;
+            list.appendChild(overlay);
+        }
+        if (input) {
+            input.disabled = true;
+            input.placeholder = "Fa\u00e7a login para comentar";
+        }
+        if (sendBtn) sendBtn.disabled = true;
+        return;
+    }
+
+    list.classList.remove("comments-locked");
+    overlays.forEach((el) => el.remove());
+    if (input) {
+        input.disabled = false;
+        input.placeholder = "Adicione um comentario...";
+    }
+    if (sendBtn) sendBtn.disabled = false;
+}
+
+function ensureCommentsGateObserver() {
+    const modal = getActivePostModal();
+    const list = modal?.querySelector("#modalCommentsList");
+    if (!modal || !list || modal.dataset.commentsGateObs === "1") return;
+    modal.dataset.commentsGateObs = "1";
+    try {
+        const obs = new MutationObserver(() => {
+            if (modal.style.display === "flex") applyCommentsLoginGate();
+        });
+        obs.observe(list, { childList: true, subtree: false });
+    } catch (_) {}
 }
 
 function ensureModalPostDetalhe() {
     ensurePostModalStyles();
-    const modalExistente = document.getElementById('modalPostDetalhe');
-    if (modalExistente) modalExistente.remove();
+    const modaisExistentes = Array.from(document.querySelectorAll('#modalPostDetalhe'));
+    if (modaisExistentes.length) modaisExistentes.forEach((m) => m.remove());
     const modalHtml = `
     <div id="modalPostDetalhe" class="ppv5-overlay" onclick="fecharModalPost(event)">
         <button type="button" class="ppv5-close" aria-label="Fechar publicacao" onclick="fecharModalPostForce()">
@@ -9121,6 +9508,7 @@ function ensureModalPostDetalhe() {
         </section>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHtml);
+    ensureCommentsGateObserver();
     applyPostModalLayoutRuntime();
     if (!window.__dokePostModalLayoutBound) {
         window.addEventListener('resize', applyPostModalLayoutRuntime, { passive: true });
@@ -9201,13 +9589,17 @@ window.abrirModalPost = async function(id, colecao) {
     window.currentSupaPublicacaoAuthorId = null;
     window.currentSupaPublicacaoAuthorUid = null;
     const modal = document.getElementById('modalPostDetalhe');
-    const user = auth.currentUser;
+    let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+    if (!user) {
+        try { user = await dokeResolveAuthUser(); } catch (_) { user = null; }
+    }
     
     if(!modal) return;
     
     // 1. Reset Visual e Exibi??o
     resetComentariosPostToggle();
     modal.style.display = 'flex'; 
+    applyCommentsLoginGate();
     applyPostModalLayoutRuntime();
     try{ if (typeof updateScrollLock === 'function') updateScrollLock(); }catch(e){}
     window.currentPostId = id;
@@ -9284,7 +9676,7 @@ window.abrirModalPost = async function(id, colecao) {
         if (btnDel) btnDel.style.display = 'none';
 
         // --- VERIFICA??O DE LIKE ---
-        if (user) {
+        if (user?.uid) {
             await verificarStatusLike(id, colecao, user.uid);
         } else {
             // Se n?o estiver logado, libera o bot?o (para pedir login ao clicar)
@@ -9310,6 +9702,7 @@ async function carregarComentariosNoModal(id, colecao) {
     }
 
     list.innerHTML = `${legendaHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+    applyCommentsLoginGate();
 
     try {
         const q = query(collection(db, colecao, id, "comentarios"), orderBy("data", "asc"));
@@ -9418,6 +9811,7 @@ async function carregarComentariosNoModal(id, colecao) {
 
         if (checks.length) await Promise.all(checks);
         maybeScrollToModalComment();
+        applyCommentsLoginGate();
 
     } catch(e) { console.error(e); }
 }
@@ -9440,6 +9834,10 @@ function maybeScrollToModalComment() {
 }
 
 async function carregarComentariosSupabase(publicacaoId) {
+    const keyPostId = String(publicacaoId || window.currentSupaPublicacaoId || window.currentPostId || "").trim();
+    const keySource = String(window.currentPostSource || "supabase").trim();
+    const cacheKey = `comments:${keySource}:${keyPostId || "unknown"}`;
+    return dokeRunInFlight(cacheKey, async () => {
     const list = document.getElementById('modalCommentsList');
     if (!list) return;
 
@@ -9518,6 +9916,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         </div>`;
         list.insertAdjacentHTML('beforeend', html);
     });
+    });
 }
 
 async function verificarStatusLikeSupabase(publicacaoId) {
@@ -9565,8 +9964,8 @@ async function darLikeModalSupabase() {
     const client = getSupabaseClient();
     if (!client) return alert("Supabase nao configurado.");
 
-    const userRow = await getSupabaseUserRow();
-    if (!userRow) return alert("Fa?a login para curtir.");
+    const userRow = await dokeResolveSupabaseActor();
+    if (!userRow) return alert("Fa\u00e7a login para curtir.");
 
     if (!window.currentSupaPublicacaoId) return;
     if (processandoLike) return;
@@ -10679,8 +11078,11 @@ window.darLikeModal = async function() {
         await darLikeModalSupabase();
         return;
     }
-    const user = auth.currentUser;
-    if (!user) return alert("Fa?a login para curtir.");
+    let user = dokeNormalizeAuthUserCandidate(window.auth?.currentUser || auth?.currentUser);
+    if (!user) {
+        try { user = await dokeResolveAuthUser(); } catch (_) { user = null; }
+    }
+    if (!user) return alert("Fa\u00e7a login para curtir.");
     
     if (!window.currentPostId || !window.currentCollection) return;
     if (processandoLike) return; // Evita clique duplo r?pido
@@ -11314,6 +11716,7 @@ window.irOrcamentoReel = function() {
 async function carregarComentariosReel(reelId) {
     const lista = document.getElementById('listaComentariosReel');
     lista.innerHTML = "";
+    applyCommentsLoginGate();
     
     try {
         const q = query(collection(db, "reels", reelId, "comentarios"), orderBy("data", "desc"));
@@ -11336,6 +11739,7 @@ async function carregarComentariosReel(reelId) {
             lista.insertAdjacentHTML('beforeend', html);
         });
     } catch(e) { console.error(e); }
+    applyCommentsLoginGate();
 }
 
 
@@ -11558,7 +11962,7 @@ window.darLikeReel = async function() {
     if (!icon || !label) return;
 
     const user = auth.currentUser;
-    if (!user) return alert("Faca login para curtir.");
+    if (!user) return alert("Fa\u00e7a login para curtir.");
 
     if (processandoLikeReel) return;
     processandoLikeReel = true;
@@ -11846,17 +12250,15 @@ window.verificarLikeComentario = async function(commentId, parentId, isReply) {
     const btn = getCommentButton("comment-like-btn", commentId, parentId, isReply);
     if (!btn) return;
     const icon = btn.querySelector("i");
-    const user = auth.currentUser;
-    if (!user) {
-        if (icon) icon.className = "bx bx-heart";
-        btn.classList.remove("liked");
-        return;
-    }
 
     if (window.currentPostSource === "supabase") {
         const client = getSupabaseClient();
         const userRow = await getSupabaseUserRow();
-        if (!client || !userRow) return;
+        if (!client || !userRow) {
+            if (icon) icon.className = "bx bx-heart";
+            btn.classList.remove("liked");
+            return;
+        }
         const cfg = getSupabasePostConfig();
         const { data, error } = await client
             .from(cfg.commentLikesTable)
@@ -11868,6 +12270,13 @@ window.verificarLikeComentario = async function(commentId, parentId, isReply) {
         const liked = !!data;
         if (icon) icon.className = liked ? "bx bxs-heart" : "bx bx-heart";
         btn.classList.toggle("liked", liked);
+        return;
+    }
+
+    const user = auth.currentUser;
+    if (!user) {
+        if (icon) icon.className = "bx bx-heart";
+        btn.classList.remove("liked");
         return;
     }
 
@@ -11889,11 +12298,6 @@ window.toggleLikeComentario = async function(commentId, parentId, isReply) {
     if (!btn) return;
     const icon = btn.querySelector("i");
     const countSpan = btn.querySelector("span");
-    const user = auth.currentUser;
-    if (!user) {
-        alert("Faca login para curtir.");
-        return;
-    }
 
     const wasLiked = btn.classList.contains("liked");
     const currentCount = parseInt(countSpan?.innerText || "0", 10) || 0;
@@ -11907,8 +12311,14 @@ window.toggleLikeComentario = async function(commentId, parentId, isReply) {
     try {
         if (window.currentPostSource === "supabase") {
             const client = getSupabaseClient();
-            const userRow = await getSupabaseUserRow();
-            if (!client || !userRow) return;
+            const userRow = await dokeResolveSupabaseActor();
+            if (!client || !userRow) {
+                alert("Fa\u00e7a login para curtir.");
+                btn.classList.toggle("liked", wasLiked);
+                if (icon) icon.className = wasLiked ? "bx bxs-heart" : "bx bx-heart";
+                if (countSpan) countSpan.innerText = currentCount;
+                return;
+            }
             const cfg = getSupabasePostConfig();
             if (liked) {
                 const { error } = await client
@@ -11939,6 +12349,15 @@ window.toggleLikeComentario = async function(commentId, parentId, isReply) {
                     comentarioId: commentId
                 });
             }
+            return;
+        }
+
+        const user = auth.currentUser;
+        if (!user) {
+            alert("Fa\u00e7a login para curtir.");
+            btn.classList.toggle("liked", wasLiked);
+            if (icon) icon.className = wasLiked ? "bx bxs-heart" : "bx bx-heart";
+            if (countSpan) countSpan.innerText = currentCount;
             return;
         }
 
@@ -12757,6 +13176,10 @@ async function postarComentarioSupabase() {
 }
 
 async function carregarComentariosSupabase(publicacaoId) {
+    const keyPostId = String(publicacaoId || window.currentSupaPublicacaoId || window.currentPostId || "").trim();
+    const keySource = String(window.currentPostSource || "supabase").trim();
+    const cacheKey = `comments:${keySource}:${keyPostId || "unknown"}`;
+    return dokeRunInFlight(cacheKey, async () => {
     const list = document.getElementById('modalCommentsList');
     if (!list) return;
 
@@ -12767,6 +13190,7 @@ async function carregarComentariosSupabase(publicacaoId) {
     }
 
     list.innerHTML = `${captionHTML}<div style="padding:10px; text-align:center; color:#999;"><i class="bx bx-loader-alt bx-spin"></i></div>`;
+    applyCommentsLoginGate();
 
     const client = getSupabaseClient();
     if (!client) {
@@ -12812,8 +13236,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         return;
     }
 
-    const user = auth.currentUser;
-    const userRow = user ? await getSupabaseUserRow() : null;
+    const userRow = await dokeResolveSupabaseActor();
     const checks = [];
 
     data.forEach((c) => {
@@ -12895,6 +13318,8 @@ async function carregarComentariosSupabase(publicacaoId) {
     });
 
     if (checks.length) await Promise.all(checks);
+    applyCommentsLoginGate();
+    });
 }
 
 
@@ -14888,17 +15313,17 @@ function buildPvQuickSearchSection(anchorSection, mountEl){
     // para voce + CTA
     buildParaVoceSection();
 
-    // busca viva
-    setupSmartSearch();
-
-    // profissionais: setas + drag + sem corte
-    addProsArrows();
-    addVideosArrows();
-    addPublicacoesArrows();
-
-    // drag no carrossel de categorias tb
-    const catTrack = document.getElementById('categoriesCarousel');
-    if (catTrack) enableDragScroll(catTrack);
+    dokeRunDeferred(() => {
+      // busca viva
+      setupSmartSearch();
+      // profissionais: setas + drag + sem corte
+      addProsArrows();
+      addVideosArrows();
+      addPublicacoesArrows();
+      // drag no carrossel de categorias tb
+      const catTrack = document.getElementById('categoriesCarousel');
+      if (catTrack) enableDragScroll(catTrack);
+    }, { idle: true, timeout: 1200 });
   });
 })();
 /* ==== /DOKE: INDEX ENHANCEMENTS V2 ==== */
@@ -15123,12 +15548,14 @@ async function carregarProfissionaisIndex() {
 /*************************************************
  * INIT
  *************************************************/
-document.addEventListener("DOMContentLoaded", carregarProfissionaisIndex);
+document.addEventListener("DOMContentLoaded", () => {
+  dokeRunDeferred(() => carregarProfissionaisIndex(), { idle: true, delay: 120, timeout: 1800 });
+});
 
 
 // Atualiza o header com bairro/cidade quando dispon?vel
 document.addEventListener('DOMContentLoaded', function(){
-  try{ window.atualizarTelaCep(''); }catch(_e){}
+  dokeRunDeferred(() => { try{ window.atualizarTelaCep(''); }catch(_e){} }, { idle: true, delay: 240, timeout: 1800 });
 });
 
 
@@ -15424,7 +15851,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
 // IG search no menu lateral (global)
 document.addEventListener('DOMContentLoaded', function(){
-  try{ initIgSidebarSearch(); }catch(e){}
+  dokeRunDeferred(() => { try{ initIgSidebarSearch(); }catch(e){} }, { idle: true, delay: 300, timeout: 1800 });
 });
 
 // Bloqueia criacao/publicacao de anuncios para usuario nao profissional.

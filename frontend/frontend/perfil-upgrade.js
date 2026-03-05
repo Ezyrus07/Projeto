@@ -1575,6 +1575,19 @@ function ensureTheme(ctx, theme){
     window.renderPerfilBoxSkeleton = renderPerfilBoxSkeleton;
   }catch(_){}
 
+  function bindPortfolioHelpToggle(){
+    const btn = $("#dpPortfolioHelpBtn");
+    const card = $("#dpPortfolioHelpCard");
+    if(!btn || !card || btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.setAttribute("aria-expanded", "false");
+    btn.addEventListener("click", ()=>{
+      const isHidden = card.style.display === "none" || !card.style.display;
+      card.style.display = isHidden ? "" : "none";
+      btn.setAttribute("aria-expanded", isHidden ? "true" : "false");
+    });
+  }
+
   function roleFromUsuario(usuario){
     return isProfissionalUsuario(usuario) ? "profissional" : "cliente";
   }
@@ -6198,6 +6211,7 @@ if(!rangeSel || !refreshBtn) return;
       }
       try{ initMedia(ctx); }catch(e){ console.error(e); }
       try{ initTabs(ctx); }catch(e){ console.error(e); }
+      try{ bindPortfolioHelpToggle(); }catch(e){ console.error(e); }
       try{ initValidationPanel(ctx); }catch(e){ console.error(e); }
       try{ initStatsNav(); }catch(e){ console.error(e); }
       try{ initSectionActions(ctx); }catch(e){ console.error(e); }
