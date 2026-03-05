@@ -1,5 +1,5 @@
-(function(){
-  window.__DOKE_SHELL_BUILD__ = "20260228v48";
+﻿(function(){
+  window.__DOKE_SHELL_BUILD__ = "20260303v59";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
@@ -9,77 +9,17 @@
     try { document.documentElement.classList.add("doke-no-shell"); } catch(_e) {}
     return;
   }
-
-  // Marca que JS está ativo (usado por CSS para transições leves)
-  try { document.documentElement.classList.add('doke-js'); } catch(_e) {}
-
-  // Navegação mais limpa: fade-out curto ao trocar de página.
-  // (Evita flashes/jumps e deixa a troca de página mais “SaaS”.)
-  function installPageTransition(){
-    if (window.__DOKE_DISABLE_PAGE_TRANSITION__) return;
-    if (window.__DOKE_PAGE_TRANSITION__) return;
-    window.__DOKE_PAGE_TRANSITION__ = true;
-
-    const isInternalNav = (a) => {
-      if(!a || !(a instanceof HTMLAnchorElement)) return false;
-      if(a.target && a.target !== "_self") return false;
-      const href = (a.getAttribute('href') || '').trim();
-      if(!href) return false;
-      if(href.startsWith('#')) return false;
-      if(href.startsWith('mailto:') || href.startsWith('tel:')) return false;
-      if(/^https?:\/\//i.test(href)){
-        try{ return new URL(href, location.href).origin === location.origin; }catch(_e){ return false; }
-      }
-      return true;
-    };
-
-    document.addEventListener('click', (ev) => {
-      const a = ev.target?.closest?.('a');
-      if(!isInternalNav(a)) return;
-      const href = a.getAttribute('href');
-      if(!href) return;
-      // Evita duplicar em cliques rápidos
-      if(document.body.classList.contains('doke-page-leave')) return;
-      // Se for a mesma página, não anima
-      try{
-        const nextUrl = new URL(href, location.href);
-        const curUrl = new URL(location.href);
-        if(nextUrl.pathname === curUrl.pathname && nextUrl.search === curUrl.search) return;
-      }catch(_e){}
-
-      ev.preventDefault();
-      try{ document.body.classList.add('doke-page-leave'); }catch(_e){}
-      // Navega após a animação
-      setTimeout(()=>{ location.href = href; }, 170);
-    }, { capture: true });
-  }
-  const PAGES = (function(){
-    const useRouter = !!window.__DOKE_USE_APP_ROUTER__;
-    if(useRouter){
-      return {
-        home: "#/home",
-        search: "#/search",
-        comunidades: "#/comunidades",
-        negocios: "#/negocios",
-        pedidos: "#/pedidos",
-        perfil: "#/perfil",
-        chat: "#/mensagens",
-        notif: "#/notificacoes",
-        mais: "#/mais"
-      };
-    }
-    return {
-      home: "index.html",
-      search: "busca.html",
-      comunidades: "comunidade.html",
-      negocios: "negocios.html",
-      pedidos: "pedidos.html",
-      perfil: "meuperfil.html",
-      chat: "mensagens.html",
-      notif: "notificacoes.html",
-      mais: "mais.html"
-    };
-  })();
+  const PAGES = {
+    home: "index.html",
+    search: "busca.html",
+    comunidades: "comunidade.html",
+    negocios: "negocios.html",
+    pedidos: "pedidos.html",
+    perfil: "meuperfil.html",
+    chat: "mensagens.html",
+    notif: "notificacoes.html",
+    mais: "mais.html"
+  };
 
   const LOGO_SRC = "assets/Imagens/doke-logo.png";
 
@@ -241,8 +181,26 @@
     try{
       const body = document.body;
       if(!body) return;
+      // Keep header stable: do not render pending placeholders.
       body.classList.remove("doke-auth-pending");
-      body.classList.toggle("doke-auth-ready", !!isReady);
+      body.classList.add("doke-auth-ready");
+      if (isReady) window.__dokeAuthStateHydrated = true;
+    }catch(_e){}
+  }
+
+  function normalizeLegacyAppUrl(){
+    try{
+      try { localStorage.removeItem("doke_enable_pjax"); } catch(_e) {}
+      const file = String(location.pathname.split("/").pop() || "").toLowerCase();
+      if(file !== "app.html") return;
+      const hash = String(location.hash || "");
+      const qs = String(location.search || "");
+      const target = `index.html${qs}${hash}`;
+      if (location.href.includes("/frontend/frontend/")) {
+        location.replace(target);
+        return;
+      }
+      location.replace(target);
     }catch(_e){}
   }
 
@@ -803,6 +761,7 @@
 
     let profile = getProfile();
     const hasLocalAuth = !!profile || hasLocalLoginFlag();
+    if (hasLocalAuth) setShellAuthStateReady(true);
     let sessionUser = null;
     if(profile && (profile.uid || profile.id || profile.email)){
       sessionUser = { id: profile.uid || profile.id || profile.email || "cached_user" };
@@ -1475,7 +1434,7 @@
         return;
       }
       saveRecent(q);
-      if(window.__DOKE_USE_APP_ROUTER__){ location.hash = `${PAGES.search}?q=${encodeURIComponent(q)}`; } else { location.href = `${PAGES.search}?q=${encodeURIComponent(q)}`; }
+      location.href = `${PAGES.search}?q=${encodeURIComponent(q)}`;
     }
 
     function openSearch(){
@@ -1583,6 +1542,57 @@
       const chatRaw = Number(totals.chat);
       const notif = Number.isFinite(notifRaw) ? Math.max(0, Math.trunc(notifRaw)) : null;
       const chat = Number.isFinite(chatRaw) ? Math.max(0, Math.trunc(chatRaw)) : null;
+      const linkMatchesFile = (link, file) => {
+        try{
+          const href = String(link?.getAttribute("href") || "").trim();
+          if(!href) return false;
+          const url = new URL(href, location.href);
+          return String(url.pathname || "").toLowerCase().endsWith("/" + String(file || "").toLowerCase());
+        }catch(_e){
+          return false;
+        }
+      };
+      const applyDesktopSidebar = (file, total, clsName) => {
+        if (total === null) return;
+        const anchors = Array.from(document.querySelectorAll(".sidebar-icones .item a[href]"))
+          .filter((a) => linkMatchesFile(a, file));
+        anchors.forEach((a) => {
+          const host = a.closest(".item") || a;
+          if (!(host instanceof HTMLElement)) return;
+          if (!host.style.position || host.style.position === "static") host.style.position = "relative";
+          let badge = host.querySelector("." + clsName);
+          if (!badge) {
+            badge = document.createElement("span");
+            badge.className = clsName;
+            badge.style.cssText = [
+              "position:absolute",
+              "top:6px",
+              "right:8px",
+              "min-width:18px",
+              "height:18px",
+              "padding:0 5px",
+              "border-radius:999px",
+              "display:none",
+              "align-items:center",
+              "justify-content:center",
+              "background:#ff2e63",
+              "color:#fff",
+              "font-size:10px",
+              "font-weight:800",
+              "border:2px solid #fff",
+              "box-shadow:0 2px 6px rgba(0,0,0,.24)",
+              "z-index:5"
+            ].join(";");
+            host.appendChild(badge);
+          }
+          if (total > 0) {
+            badge.textContent = total > 99 ? "99+" : String(total);
+            badge.style.display = "flex";
+          } else {
+            badge.style.display = "none";
+          }
+        });
+      };
       const applyTo = (href, total) => {
         if (total === null) return;
         document.querySelectorAll(`.doke-mobile-header a.doke-icon-btn[href="${href}"]`).forEach((link) => {
@@ -1602,6 +1612,8 @@
       };
       applyTo(PAGES.notif, notif);
       applyTo(PAGES.chat, chat);
+      applyDesktopSidebar(PAGES.notif, notif, "doke-desktop-badge-notif");
+      applyDesktopSidebar(PAGES.chat, chat, "doke-desktop-badge-chat");
     }
 
     try{
@@ -1675,19 +1687,526 @@
     });
   }
 
+  function initDesktopNavPerf(){
+    if (window.__dokeDesktopNavPerfBound) return;
+    window.__dokeDesktopNavPerfBound = true;
+
+    const prefetched = new Set();
+
+    const style = document.createElement("style");
+    style.id = "dokeNavPerfStyle";
+    style.textContent = `
+      body.doke-nav-pending::before{
+        content:"";
+        position:fixed;
+        left:0;
+        top:0;
+        height:3px;
+        width:38%;
+        z-index:2147483647;
+        background:linear-gradient(90deg,#2e68a6,#0b7768);
+        box-shadow:0 0 12px rgba(11,119,104,.35);
+        animation:dokeNavLoad 900ms ease-in-out infinite;
+      }
+      @keyframes dokeNavLoad{
+        0%{ transform:translateX(0); width:24%; }
+        50%{ transform:translateX(115%); width:48%; }
+        100%{ transform:translateX(265%); width:24%; }
+      }
+    `;
+    if(!document.getElementById(style.id)) document.head.appendChild(style);
+
+    function toUrl(href){
+      try { return new URL(String(href || ""), location.href); } catch(_e){ return null; }
+    }
+
+    function isInternalPageUrl(url){
+      if(!url || url.origin !== location.origin) return false;
+      if(url.hash && (url.pathname === location.pathname || (url.pathname + url.search) === (location.pathname + location.search))) return false;
+      const pathname = String(url.pathname || "").toLowerCase();
+      if(!pathname.endsWith(".html")) return false;
+      if(pathname.endsWith("/app.html")) return false;
+      return true;
+    }
+
+    function tryPrefetch(url){
+      const abs = String(url?.toString() || "");
+      if(!abs || prefetched.has(abs)) return;
+      prefetched.add(abs);
+      try{
+        const link = document.createElement("link");
+        link.rel = "prefetch";
+        link.href = abs;
+        link.as = "document";
+        document.head.appendChild(link);
+      }catch(_e){}
+    }
+
+    function pickAnchorFromEventTarget(target){
+      if(!(target instanceof Element)) return null;
+      const anchor = target.closest("a[href]");
+      if(!(anchor instanceof HTMLAnchorElement)) return null;
+      if(anchor.hasAttribute("download")) return null;
+      const targetAttr = String(anchor.getAttribute("target") || "").trim().toLowerCase();
+      if(targetAttr && targetAttr !== "_self") return null;
+      const href = String(anchor.getAttribute("href") || "").trim();
+      if(!href || href.startsWith("#") || href.startsWith("javascript:")) return null;
+      if(href.startsWith("mailto:") || href.startsWith("tel:")) return null;
+      return anchor;
+    }
+
+    document.addEventListener("mouseover", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      tryPrefetch(url);
+    }, true);
+
+    document.addEventListener("focusin", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      tryPrefetch(url);
+    }, true);
+
+    document.addEventListener("touchstart", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      tryPrefetch(url);
+    }, { capture: true, passive: true });
+
+    document.addEventListener("click", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      document.body.classList.add("doke-nav-pending");
+    }, true);
+
+    window.addEventListener("pageshow", () => {
+      document.body.classList.remove("doke-nav-pending");
+    });
+  }
+
+  function initAppLikeNavigationState(){
+    if (window.__dokeAppLikeNavBound) return;
+    window.__dokeAppLikeNavBound = true;
+
+    const KEY_PREFIX = "doke_scroll_pos_v1:";
+    const LAST_PAGE_KEY = "doke_last_page_v1";
+    const currentPath = `${location.pathname || ""}${location.search || ""}`;
+    const currentKey = `${KEY_PREFIX}${currentPath}`;
+
+    const saveScroll = () => {
+      try {
+        const y = Math.max(0, Math.round(window.scrollY || 0));
+        sessionStorage.setItem(currentKey, String(y));
+        sessionStorage.setItem(LAST_PAGE_KEY, currentPath);
+      } catch(_e){}
+    };
+
+    const restoreScroll = () => {
+      try {
+        if (location.hash && location.hash.length > 1) return;
+        const raw = sessionStorage.getItem(currentKey);
+        if (raw == null) return;
+        const y = Number(raw);
+        if (!Number.isFinite(y) || y <= 0) return;
+        requestAnimationFrame(() => window.scrollTo(0, y));
+      } catch(_e){}
+    };
+
+    window.addEventListener("pagehide", saveScroll);
+    window.addEventListener("beforeunload", saveScroll);
+    window.addEventListener("scroll", () => {
+      try {
+        clearTimeout(window.__dokeSaveScrollTimer);
+        window.__dokeSaveScrollTimer = setTimeout(saveScroll, 140);
+      } catch(_e){}
+    }, { passive: true });
+    window.addEventListener("pageshow", restoreScroll);
+    if (document.readyState === "loading") {
+      document.addEventListener("DOMContentLoaded", restoreScroll, { once: true });
+    } else {
+      restoreScroll();
+    }
+  }
+
+  function warmupCorePages(){
+    if (window.__dokeCorePrefetchDone) return;
+    window.__dokeCorePrefetchDone = true;
+    const net = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    const slow = !!(net && (net.saveData || /2g/.test(String(net.effectiveType || "").toLowerCase())));
+    if (slow) return;
+    const urls = [PAGES.home, PAGES.search, PAGES.chat, PAGES.notif, PAGES.comunidades, PAGES.negocios, PAGES.perfil]
+      .filter(Boolean)
+      .filter((u) => !location.pathname.toLowerCase().endsWith(String(u).toLowerCase()));
+    const run = () => {
+      urls.slice(0, 4).forEach((u) => {
+        try{
+          const abs = new URL(String(u), location.href).toString();
+          const link = document.createElement("link");
+          link.rel = "prefetch";
+          link.as = "document";
+          link.href = abs;
+          document.head.appendChild(link);
+        }catch(_e){}
+      });
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      requestIdleCallback(run, { timeout: 2000 });
+    } else {
+      setTimeout(run, 900);
+    }
+  }
+
+  function normalizeLegacyAppLinks(){
+    const anchors = Array.from(document.querySelectorAll("a[href]"))
+      .filter((a) => a instanceof HTMLAnchorElement);
+    anchors.forEach((a) => {
+      const href = String(a.getAttribute("href") || "").trim();
+      if(!href) return;
+      if(!/app\.html/i.test(href)) return;
+      const mapped = href
+        .replace(/(^|\/)app\.html/i, "$1index.html")
+        .replace(/(^|\/)frontend\/app\.html/i, "$1frontend/index.html")
+        .replace(/(^|\/)frontend\/frontend\/app\.html/i, "$1frontend/index.html");
+      a.setAttribute("href", mapped);
+    });
+  }
+
+  function initPersistentShellNavigation(){
+    if (window.__dokePersistentShellNavBound) return;
+    window.__dokePersistentShellNavBound = true;
+    // Legacy multi-page screens are not fully PJAX-safe yet (many global scripts/styles).
+    // Keep this OFF by default to avoid frozen/unstyled pages while navigating.
+    const optIn = (
+      document.body?.getAttribute("data-doke-pjax") === "1"
+      || String(localStorage.getItem("doke_enable_pjax") || "") === "1"
+    );
+    if (!optIn) {
+      try { document.body.classList.remove("doke-nav-pending"); } catch(_e) {}
+      return;
+    }
+
+    const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html"]);
+    const SCRIPT_SKIP_PARTS = [
+      "/doke-shell.js",
+      "/script.js",
+      "/doke-ux.js",
+      "/doke-config.js",
+      "/doke-toast.js",
+      "/doke-alerts.js",
+      "/doke-feedpatch.js",
+      "/doke-beforeafter.js",
+      "/doke-reco.js",
+      "/supabase-init.js",
+      "/firebase-compat-supabase.js",
+      "/firebase-auth-compat-supabase.js",
+      "/@supabase/supabase-js"
+    ];
+    const STYLE_SKIP_PARTS = [
+      "/style.css",
+      "/doke-a11y.css",
+      "/doke-layout-fix.css",
+      "/doke-fixes.css",
+      "/doke-toast.css",
+      "/doke-alerts.css",
+      "/doke-ux.css",
+      "/doke-feedpatch.css",
+      "/doke-shell.css",
+      "/doke-responsive.css",
+      "/doke-skeleton.css",
+      "/doke-tablet-fix.css",
+      "/boxicons"
+    ];
+    let inflightController = null;
+
+    function toUrl(href){
+      try { return new URL(String(href || ""), location.href); } catch(_e){ return null; }
+    }
+
+    function getCurrentFileName(urlObj){
+      const path = String(urlObj?.pathname || "").toLowerCase();
+      return path.split("/").pop() || "";
+    }
+
+    function isBlockedPath(urlObj){
+      const name = getCurrentFileName(urlObj);
+      return BLOCKED_FILES.has(name);
+    }
+
+    function isInternalHtml(urlObj){
+      if(!urlObj || urlObj.origin !== location.origin) return false;
+      const pathname = String(urlObj.pathname || "").toLowerCase();
+      if(!pathname.endsWith(".html")) return false;
+      if(isBlockedPath(urlObj)) return false;
+      return true;
+    }
+
+    function pickAnchorFromEventTarget(target){
+      if(!(target instanceof Element)) return null;
+      const anchor = target.closest("a[href]");
+      if(!(anchor instanceof HTMLAnchorElement)) return null;
+      if(anchor.hasAttribute("download")) return null;
+      if(anchor.dataset && (anchor.dataset.noPjax === "1" || anchor.dataset.dokeNoPjax === "1")) return null;
+      const targetAttr = String(anchor.getAttribute("target") || "").trim().toLowerCase();
+      if(targetAttr && targetAttr !== "_self") return null;
+      const href = String(anchor.getAttribute("href") || "").trim();
+      if(!href || href.startsWith("#") || href.startsWith("javascript:")) return null;
+      if(href.startsWith("mailto:") || href.startsWith("tel:")) return null;
+      return anchor;
+    }
+
+    function resolveSwapRoot(docLike){
+      if(!docLike) return null;
+      return docLike.querySelector("main")
+        || docLike.querySelector("[data-page-root]")
+        || docLike.querySelector("#app-view > *")
+        || docLike.querySelector(".main-content")
+        || docLike.querySelector(".container > main");
+    }
+
+    function normalizeBodyClasses(nextBodyClass){
+      const body = document.body;
+      if(!body) return;
+      const preserve = Array.from(body.classList).filter((cls) => (
+        cls.startsWith("doke-")
+        || cls === "no-scroll"
+        || cls === "menu-ativo"
+        || cls === "chat-keyboard-open"
+      ));
+      body.className = String(nextBodyClass || "");
+      preserve.forEach((cls) => body.classList.add(cls));
+    }
+
+    function syncBodyState(doc){
+      if(!doc || !doc.body) return;
+      normalizeBodyClasses(doc.body.className);
+      const nextPage = String(doc.body.getAttribute("data-page") || "").trim();
+      if(nextPage) document.body.setAttribute("data-page", nextPage);
+      else document.body.removeAttribute("data-page");
+    }
+
+    function shouldSkipScript(src){
+      const low = String(src || "").toLowerCase();
+      if(!low) return true;
+      return SCRIPT_SKIP_PARTS.some((part) => low.includes(part));
+    }
+
+    function shouldSkipStyle(href){
+      const low = String(href || "").toLowerCase();
+      if(!low) return true;
+      return STYLE_SKIP_PARTS.some((part) => low.includes(part));
+    }
+
+    function cleanupDynamicScripts(){
+      document.querySelectorAll("script[data-doke-pjax-script='1']").forEach((s) => s.remove());
+    }
+
+    function cleanupDynamicHeadAssets(){
+      document.querySelectorAll("link[data-doke-pjax-head='1'], style[data-doke-pjax-head='1']").forEach((n) => n.remove());
+    }
+
+    function appendHeadAsset(node){
+      return new Promise((resolve) => {
+        if (!(node instanceof Element)) { resolve(); return; }
+        if (node.tagName.toLowerCase() === "style") {
+          const style = document.createElement("style");
+          style.dataset.dokePjaxHead = "1";
+          style.textContent = node.textContent || "";
+          document.head.appendChild(style);
+          resolve();
+          return;
+        }
+        if (node.tagName.toLowerCase() === "link") {
+          const rel = String(node.getAttribute("rel") || "").toLowerCase();
+          if (rel !== "stylesheet") { resolve(); return; }
+          const href = String(node.getAttribute("href") || "").trim();
+          if (!href || shouldSkipStyle(href)) { resolve(); return; }
+          const link = document.createElement("link");
+          link.rel = "stylesheet";
+          link.href = toUrl(href)?.toString() || href;
+          link.dataset.dokePjaxHead = "1";
+          link.onload = () => resolve();
+          link.onerror = () => resolve();
+          document.head.appendChild(link);
+          return;
+        }
+        resolve();
+      });
+    }
+
+    async function syncHeadAssets(doc){
+      cleanupDynamicHeadAssets();
+      const nodes = Array.from(doc.querySelectorAll("head style, head link[rel='stylesheet']"));
+      for (const node of nodes) {
+        try { await appendHeadAsset(node); } catch(_e) {}
+      }
+    }
+
+    function appendScriptNode(original){
+      return new Promise((resolve) => {
+        const s = document.createElement("script");
+        s.dataset.dokePjaxScript = "1";
+        if(original.type) s.type = original.type;
+        if(original.noModule) s.noModule = true;
+        if(original.referrerPolicy) s.referrerPolicy = original.referrerPolicy;
+        if(original.crossOrigin) s.crossOrigin = original.crossOrigin;
+        const src = String(original.getAttribute("src") || "").trim();
+        if(src){
+          const abs = toUrl(src)?.toString() || src;
+          s.src = abs;
+          s.async = false;
+          s.onload = () => resolve();
+          s.onerror = () => resolve();
+          document.body.appendChild(s);
+          return;
+        }
+        s.textContent = original.textContent || "";
+        document.body.appendChild(s);
+        resolve();
+      });
+    }
+
+    async function runPageScripts(doc, swappedRoot){
+      cleanupDynamicScripts();
+      const tasks = [];
+      const headScripts = Array.from(doc.querySelectorAll("head script[src]"));
+      headScripts.forEach((scriptEl) => {
+        const src = String(scriptEl.getAttribute("src") || "").trim();
+        if(!src || shouldSkipScript(src)) return;
+        tasks.push(() => appendScriptNode(scriptEl));
+      });
+      const bodyScripts = Array.from(doc.querySelectorAll("body script"));
+      bodyScripts.forEach((scriptEl) => {
+        const src = String(scriptEl.getAttribute("src") || "").trim();
+        if(src){
+          if(shouldSkipScript(src)) return;
+          tasks.push(() => appendScriptNode(scriptEl));
+          return;
+        }
+        if(swappedRoot && swappedRoot.contains(scriptEl)){
+          tasks.push(() => appendScriptNode(scriptEl));
+        }
+      });
+      for(const task of tasks){
+        try { await task(); } catch(_e) {}
+      }
+    }
+
+    function syncPageUrl(urlObj, mode){
+      const href = `${urlObj.pathname}${urlObj.search}${urlObj.hash}`;
+      const state = { __dokePjax: 1, path: `${urlObj.pathname}${urlObj.search}` };
+      if(mode === "replace") history.replaceState(state, "", href);
+      else history.pushState(state, "", href);
+    }
+
+    async function navigateInPlace(urlObj, mode){
+      if(!isInternalHtml(urlObj)) return false;
+      const currentPath = `${location.pathname}${location.search}`;
+      const nextPath = `${urlObj.pathname}${urlObj.search}`;
+      if(currentPath === nextPath && !urlObj.hash) return false;
+      const currentRoot = resolveSwapRoot(document);
+      if(!currentRoot) return false;
+      if (inflightController) {
+        try { inflightController.abort(); } catch(_e) {}
+      }
+      inflightController = new AbortController();
+      document.body.classList.add("doke-nav-pending");
+      try{
+        const res = await fetch(urlObj.toString(), {
+          method: "GET",
+          credentials: "same-origin",
+          headers: {
+            "X-Requested-With": "doke-shell-pjax",
+            "Accept": "text/html"
+          },
+          signal: inflightController.signal
+        });
+        if(!res.ok) throw new Error(`HTTP ${res.status}`);
+        const html = await res.text();
+        const parser = new DOMParser();
+        const nextDoc = parser.parseFromString(html, "text/html");
+        const nextRoot = resolveSwapRoot(nextDoc);
+        if(!nextRoot) throw new Error("Target root not found");
+        await syncHeadAssets(nextDoc);
+
+        const imported = document.importNode(nextRoot, true);
+        currentRoot.replaceWith(imported);
+        syncBodyState(nextDoc);
+        if(nextDoc.title) document.title = nextDoc.title;
+        syncPageUrl(urlObj, mode);
+        window.scrollTo(0, 0);
+        try { sessionStorage.setItem(`doke_scroll_pos_v1:${nextPath}`, "0"); } catch(_e) {}
+        try { window.dispatchEvent(new CustomEvent("doke:page-swapped", { detail: { path: nextPath } })); } catch(_e) {}
+        await runPageScripts(nextDoc, nextRoot);
+        try { window.dispatchEvent(new Event("doke:page-ready")); } catch(_e) {}
+        ensureShell();
+        return true;
+      }catch(err){
+        if(err && err.name === "AbortError") return false;
+        return false;
+      }finally{
+        inflightController = null;
+        document.body.classList.remove("doke-nav-pending");
+      }
+    }
+
+    if(!history.state || !history.state.__dokePjax){
+      try{
+        history.replaceState({ __dokePjax: 1, path: `${location.pathname}${location.search}` }, "", `${location.pathname}${location.search}${location.hash}`);
+      }catch(_e){}
+    }
+
+    document.addEventListener("click", async (ev) => {
+      if(ev.defaultPrevented) return;
+      if(ev.button !== 0) return;
+      if(ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey) return;
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const urlObj = toUrl(a.getAttribute("href"));
+      if(!isInternalHtml(urlObj)) return;
+      ev.preventDefault();
+      const ok = await navigateInPlace(urlObj, "push");
+      if(!ok) location.href = urlObj.toString();
+    }, true);
+
+    window.addEventListener("popstate", async () => {
+      const urlObj = new URL(location.href);
+      if(!isInternalHtml(urlObj)) return;
+      const ok = await navigateInPlace(urlObj, "replace");
+      if(!ok) location.reload();
+    });
+  }
+
   MQ.addEventListener?.("change", ()=>{
     if(MQ.matches) ensureShell();
     else document.body.classList.remove("doke-modal-open");
   });
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", ()=>{
+      normalizeLegacyAppUrl();
       consumeFlashNotice();
-      installPageTransition();
+      initDesktopNavPerf();
+      initAppLikeNavigationState();
+      warmupCorePages();
+      normalizeLegacyAppLinks();
+      initPersistentShellNavigation();
       ensureShell();
     });
   }else{
+    normalizeLegacyAppUrl();
     consumeFlashNotice();
-    installPageTransition();
+    initDesktopNavPerf();
+    initAppLikeNavigationState();
+    warmupCorePages();
+    normalizeLegacyAppLinks();
+    initPersistentShellNavigation();
     ensureShell();
   }
 })();

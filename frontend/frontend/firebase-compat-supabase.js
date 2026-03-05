@@ -268,10 +268,10 @@
 
     // corrige mojibake comum (UTF-8 interpretado como latin1)
     t = t
-      .replace(/notificações/gi,'notificacoes')
-      .replace(/ç/g,'ç').replace(/õ/g,'õ').replace(/á/g,'á').replace(/ã/g,'ã')
-      .replace(/é/g,'é').replace(/í/g,'í').replace(/ó/g,'ó').replace(/ú/g,'ú')
-      .replace(/Ç/g,'Ç').replace(/Ó/g,'Ó').replace(/É/g,'É').replace(/Ú/g,'Ú');
+      .replace(/notificaÃ§Ãµes/gi,'notificacoes')
+      .replace(/Ã§/g,'ç').replace(/Ãµ/g,'õ').replace(/Ã¡/g,'á').replace(/Ã£/g,'ã')
+      .replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú')
+      .replace(/Ã‡/g,'Ç').replace(/Ã“/g,'Ó').replace(/Ã‰/g,'É').replace(/Ãš/g,'Ú');
 
     // remove acentos e símbolos
     try{ t = t.normalize('NFD').replace(/[\u0300-\u036f]/g,''); }catch(_e){}

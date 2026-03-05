@@ -17,6 +17,7 @@
     strictSession: false
   };
   const STRICT_ADMIN_MODE = true;
+  const LOGIN_LOOP_GUARD_KEY = "doke_admin_login_redirect_guard";
 
   const refs = {
     gate: $("#avGate"),
@@ -198,6 +199,83 @@
     }catch(_){}
 
     return null;
+  }
+
+  async function waitForAuthBootstrap(timeoutMs = 2600){
+    const startedAt = Date.now();
+    while((Date.now() - startedAt) < timeoutMs){
+      const sb = sbClient();
+      if(sb?.auth) return true;
+      await new Promise((resolve) => setTimeout(resolve, 80));
+    }
+    return !!sbClient()?.auth;
+  }
+
+  async function resolveAuthUserRobust(){
+    await waitForAuthBootstrap(2600);
+    let user = await resolveAuthUser();
+    if(user?.id) return user;
+
+    try{
+      if(typeof window.dokeRestoreSupabaseSessionFromStorage === "function"){
+        await window.dokeRestoreSupabaseSessionFromStorage({ force: true });
+      }
+    }catch(_){}
+
+    user = await resolveAuthUser();
+    if(user?.id) return user;
+
+    try{
+      const cachedUid = String(localStorage.getItem("doke_uid") || "").trim();
+      const raw = localStorage.getItem("doke_usuario_perfil");
+      const profile = raw ? JSON.parse(raw) : null;
+      const uid = String(profile?.uid || profile?.id || cachedUid || "").trim();
+      if(uid){
+        return {
+          id: uid,
+          uid,
+          email: String(profile?.email || "").trim()
+        };
+      }
+    }catch(_){}
+
+    return null;
+  }
+
+  function shouldSkipLoginRedirect(){
+    try{
+      const raw = sessionStorage.getItem(LOGIN_LOOP_GUARD_KEY);
+      const guard = raw ? JSON.parse(raw) : null;
+      const now = Date.now();
+      if(!guard || typeof guard !== "object") return false;
+      const ts = Number(guard.ts || 0);
+      const count = Number(guard.count || 0);
+      if(!Number.isFinite(ts) || !Number.isFinite(count)) return false;
+      if(now - ts > 25000) return false;
+      return count >= 1;
+    }catch(_){
+      return false;
+    }
+  }
+
+  function markLoginRedirectAttempt(){
+    try{
+      const now = Date.now();
+      const raw = sessionStorage.getItem(LOGIN_LOOP_GUARD_KEY);
+      const prev = raw ? JSON.parse(raw) : null;
+      const prevTs = Number(prev?.ts || 0);
+      const prevCount = Number(prev?.count || 0);
+      const inWindow = Number.isFinite(prevTs) && (now - prevTs) <= 25000;
+      const next = {
+        ts: now,
+        count: inWindow ? (Number.isFinite(prevCount) ? prevCount + 1 : 1) : 1
+      };
+      sessionStorage.setItem(LOGIN_LOOP_GUARD_KEY, JSON.stringify(next));
+    }catch(_){}
+  }
+
+  function clearLoginRedirectGuard(){
+    try{ sessionStorage.removeItem(LOGIN_LOOP_GUARD_KEY); }catch(_){}
   }
 
   async function loadMyProfile(uid){
@@ -627,12 +705,27 @@
       return;
     }
 
-    state.authUser = await resolveAuthUser();
+    state.authUser = await resolveAuthUserRobust();
     if(!state.authUser?.id){
+      if(shouldSkipLoginRedirect()){
+        renderGate(`
+          <b>Sessao nao confirmada</b>
+          <div>Detectamos repeticao de redirecionamento para login. Entre novamente e retorne ao painel.</div>
+          <div style="margin-top:8px;">
+            <a class="av-btn primary" href="login.html?next=${encodeURIComponent((window.location.pathname || "admin-validacoes.html") + (window.location.search || "") + (window.location.hash || ""))}">Fazer login</a>
+          </div>
+        `);
+        setAdminSeal("warn", "Sessao indisponivel (evitado loop de login)");
+        refs.list.innerHTML = "";
+        updateKpis([]);
+        return;
+      }
+      markLoginRedirectAttempt();
       const next = `${window.location.pathname || "admin-validacoes.html"}${window.location.search || ""}${window.location.hash || ""}`;
-      window.location.href = `login.html?next=${encodeURIComponent(next)}`;
+      window.location.href = `login.html?next=${encodeURIComponent(next)}&from=admin`;
       return;
     }
+    clearLoginRedirectGuard();
 
     state.me = await loadMyProfile(state.authUser.id);
     const adminCheck = await verifyAdminSession(state.me);

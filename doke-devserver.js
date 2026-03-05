@@ -104,6 +104,12 @@ function serveStatic(req, res) {
   // Normalize legacy/incorrect routes that cause nested shell rendering.
   try {
     const rawPath = decodeURIComponent(String(req.url || "/").split("?")[0] || "/");
+    if (/^\/[a-z0-9._-]+\.html$/i.test(rawPath) && !rawPath.startsWith("/frontend/")) {
+      const target = "/frontend" + rawPath;
+      res.writeHead(302, { Location: target, ...CORS_HEADERS });
+      res.end();
+      return;
+    }
     if (rawPath.startsWith("/frontend/frontend/")) {
       const target = "/frontend/" + rawPath.slice("/frontend/frontend/".length);
       res.writeHead(302, { Location: target, ...CORS_HEADERS });

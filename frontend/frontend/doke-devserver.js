@@ -313,6 +313,23 @@ function proxyToSupabase(req, res) {
 const server = http.createServer({ maxHeaderSize: 1024 * 1024 }, (req, res) => {
   try {
     const u = new URL(req.url, `http://localhost:${PORT}`);
+    const pathname = decodeURIComponent(u.pathname || "/");
+
+    // Normalize legacy/incorrect routes that cause nested shell rendering.
+    if (/^\/[a-z0-9._-]+\.html$/i.test(pathname) && !pathname.startsWith('/frontend/')) {
+      const target = '/frontend' + pathname;
+      res.writeHead(302, { location: target, ...CORS_HEADERS });
+      return res.end();
+    }
+    if (pathname.startsWith('/frontend/frontend/')) {
+      const target = '/frontend/' + pathname.slice('/frontend/frontend/'.length);
+      res.writeHead(302, { location: target, ...CORS_HEADERS });
+      return res.end();
+    }
+    if (pathname === '/frontend/app.html' || pathname === '/frontend/frontend/app.html') {
+      res.writeHead(302, { location: '/frontend/index.html', ...CORS_HEADERS });
+      return res.end();
+    }
 
     if (req.method === 'OPTIONS') {
       return send(res, 204, '', { 'access-control-max-age': '86400' });
@@ -328,12 +345,12 @@ const server = http.createServer({ maxHeaderSize: 1024 * 1024 }, (req, res) => {
       return res.end(gif);
     }
 
-    if (isProxyPath(u.pathname)) {
+    if (isProxyPath(pathname)) {
       return proxyToSupabase(req, res);
     }
 
     // Static
-    return serveFile(req, res, decodeURIComponent(u.pathname));
+    return serveFile(req, res, pathname);
   } catch (e) {
     send(res, 500, 'Server error: ' + (e && e.message ? e.message : String(e)), { 'content-type': 'text/plain; charset=utf-8' });
   }

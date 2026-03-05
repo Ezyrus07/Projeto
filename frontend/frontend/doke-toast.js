@@ -1,4 +1,4 @@
-(()=>{
+﻿(()=>{
   const make = (tag, cls, html) => { const el=document.createElement(tag); if(cls) el.className=cls; if(html!=null) el.innerHTML=html; return el; };
   let stack;
   let overlay;

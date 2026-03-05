@@ -15,6 +15,19 @@
   --doke-btm-real:66px;
 }
 
+/* Desktop auth-state: never render fake skeleton on header/sidebar actions */
+@media (min-width:1025px){
+  body.doke-auth-pending .navbar-desktop .botoes-direita > *{
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+  }
+  body.doke-auth-pending .navbar-desktop .botoes-direita::after{
+    content: none !important;
+    display: none !important;
+  }
+}
+
 @media (max-width:1024px){
   html, body{ height:100%; max-width:100%; overflow-x:hidden; }
   :root{
@@ -795,67 +808,6 @@
     font-size: 13px;
     padding: 8px 4px;
   }
-}
-
-/* ============================================================
-   Navegação mais “clean” (transição suave entre páginas)
-   - evita jumps visuais ao trocar de página
-   ============================================================ */
-html.doke-js body{
-  transition: opacity .16s ease, filter .16s ease;
-}
-html.doke-js body.doke-page-leave{
-  opacity: 0;
-  filter: blur(1px);
-}
-
-/* ============================================================
-   Skeletons (header + menu lateral)
-   - desliga shimmer nesses pontos (menos poluição visual)
-   - mantém placeholder estático
-   ============================================================ */
-.doke-mobile-header .skeleton::after,
-.doke-mobile-header .skel::after,
-.doke-mobile-header .ui-skeleton::after,
-.doke-drawer .skeleton::after,
-.doke-drawer .skel::after,
-.doke-drawer .ui-skeleton::after,
-header .skeleton::after,
-header .skel::after,
-nav .skeleton::after,
-nav .skel::after{
-  animation: none !important;
-  content: none !important;
-}
-
-.menu-lateral .skeleton::after,
-.menu-lateral .skel::after,
-.sidebar .skeleton::after,
-.sidebar .skel::after,
-.menu .skeleton::after,
-.menu .skel::after{
-  animation: none !important;
-  content: none !important;
-}
-
-.doke-mobile-header .skeleton,
-.doke-mobile-header .skel,
-.doke-drawer .skeleton,
-.doke-drawer .skel,
-header .skeleton,
-header .skel,
-nav .skeleton,
-nav .skel{
-  background: rgba(15,23,42,.06) !important;
-}
-
-.menu-lateral .skeleton,
-.menu-lateral .skel,
-.sidebar .skeleton,
-.sidebar .skel,
-.menu .skeleton,
-.menu .skel{
-  background: rgba(15,23,42,.06) !important;
 }
 
 @media (max-width:600px){

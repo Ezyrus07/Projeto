@@ -61,8 +61,8 @@
 
   function onDragStart(ev){
     if(!body.classList.contains('filters-open') || !aside) return;
-    // Se o usuário estiver com o drawer rolado para baixo, não iniciamos drag
-    // para não brigar com o scroll. (Padrão de bottom-sheet)
+    // Se o usuÃ¡rio estiver com o drawer rolado para baixo, nÃ£o iniciamos drag
+    // para nÃ£o brigar com o scroll. (PadrÃ£o de bottom-sheet)
     if(aside.scrollTop > 0) return;
     dragging = true;
     dragDeltaY = 0;
@@ -101,7 +101,7 @@
     dragHandle.addEventListener('lostpointercapture', onDragEnd);
   }
 
-  // Fallback iOS: alguns cenários não disparam PointerEvents corretamente.
+  // Fallback iOS: alguns cenÃ¡rios nÃ£o disparam PointerEvents corretamente.
   // Implementa touch drag no handle.
   let tStartY = 0;
   let tDragging = false;
@@ -122,7 +122,7 @@
     const dy = Math.max(0, t.clientY - tStartY);
     dragDeltaY = dy;
     aside.style.transform = `translateY(${dy}px)`;
-    // evita que o gesto vire scroll da página
+    // evita que o gesto vire scroll da pÃ¡gina
     e.preventDefault();
   }
   function tEnd(){

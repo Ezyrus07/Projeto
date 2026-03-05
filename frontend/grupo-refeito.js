@@ -753,11 +753,44 @@ function wireRequestActions(rows){
       .replaceAll("'","&#039;");
   }
 
-async function loadPosts(limit=40){
+async function loadPosts(limit=40, opts={}){
+    const cacheKey = `doke_group_posts_cache_v1:${String(grupoId || '')}:${Number(limit || 40)}`;
+    const readCached = () => {
+      try{
+        const raw = sessionStorage.getItem(cacheKey);
+        const parsed = raw ? JSON.parse(raw) : null;
+        if (!parsed || !Array.isArray(parsed.data)) return null;
+        return parsed;
+      }catch(_){ return null; }
+    };
+    const writeCached = (rows) => {
+      try{ sessionStorage.setItem(cacheKey, JSON.stringify({ ts: Date.now(), data: rows || [] })); }catch(_){}
+    };
+    const renderRows = async (rows) => {
+      feedEl.innerHTML = '';
+      if (!rows || rows.length===0){
+        if (emptyEl) emptyEl.textContent = 'Nenhuma mensagem ainda. Seja o primeiro a publicar.';
+        emptyEl.style.display='block';
+        return;
+      }
+      emptyEl.style.display='none';
+      feedEl.insertAdjacentHTML('beforeend', rows.map(postToHtml).join(''));
+      wirePostActions();
+      await hydrateReactionsForVisible();
+    };
+
     if (emptyEl) {
       emptyEl.textContent = 'Carregando mensagens...';
       emptyEl.style.display = 'block';
     }
+
+    const cached = readCached();
+    const cacheFresh = !opts?.force && cached && (Date.now() - Number(cached.ts || 0) < 12000);
+    if (cacheFresh) {
+      await renderRows(cached.data || []);
+      return;
+    }
+
     const { communityCol, createdCol } = postsSchema;
     const { data, error } = await client
       .from(POSTS_TABLE)
@@ -771,17 +804,8 @@ async function loadPosts(limit=40){
       toast('Erro ao carregar feed: ' + (error.message || ''));
       return;
     }
-
-    feedEl.innerHTML = '';
-    if (!data || data.length===0){
-      if (emptyEl) emptyEl.textContent = 'Nenhuma mensagem ainda. Seja o primeiro a publicar.';
-      emptyEl.style.display='block';
-      return;
-    }
-    emptyEl.style.display='none';
-    feedEl.insertAdjacentHTML('beforeend', data.map(postToHtml).join(''));
-    wirePostActions();
-    await hydrateReactionsForVisible();
+    writeCached(data || []);
+    await renderRows(data || []);
   }
 
   function wirePostActions(){
@@ -1312,7 +1336,7 @@ async function loadPosts(limit=40){
   // ------ cargos ------
   async function loadCargos(){
     if (!listaCargos) return;
-    const commCol = (await hasColumn(CARGOS_TABLE, 'comunidade_id')) ? 'comunidade_id' : (await hasColumn(CARGOS_TABLE,'comunidadeId')?'comunidadeId':'comunidade_id');
+    const commCol = await pickFirstExisting(CARGOS_TABLE, ['comunidade_id','comunidadeId']) || 'comunidade_id';
     const { data, error } = await client.from(CARGOS_TABLE).select('*').eq(commCol, grupoId).order('nivel', { ascending: false });
     if (error){
       console.warn('[DOKE] loadCargos error', error);
@@ -1385,14 +1409,20 @@ async function loadPosts(limit=40){
     const nome = (cargoNome.value||'').trim();
     if (!nome){ toast('Digite um nome de cargo.'); return; }
     const cor = (cargoCor?.value||'').trim() || '#2a5f90';
-    const commCol = (await hasColumn(CARGOS_TABLE, 'comunidade_id')) ? 'comunidade_id' : (await hasColumn(CARGOS_TABLE,'comunidadeId')?'comunidadeId':'comunidade_id');
+    const commCol = await pickFirstExisting(CARGOS_TABLE, ['comunidade_id','comunidadeId']) || 'comunidade_id';
     const payload = {};
     payload[commCol] = grupoId;
     payload['nome'] = nome;
-    if (await hasColumn(CARGOS_TABLE,'cor')) payload['cor'] = cor;
-    if (await hasColumn(CARGOS_TABLE,'nivel')) payload['nivel'] = 1;
-    if (await hasColumn(CARGOS_TABLE,'criado_por')) payload['criado_por'] = String(currentUid);
-    if (await hasColumn(CARGOS_TABLE,'criado_em')) payload['criado_em'] = new Date().toISOString();
+    const [hasCor, hasNivel, hasCriadoPor, hasCriadoEm] = await Promise.all([
+      hasColumn(CARGOS_TABLE,'cor'),
+      hasColumn(CARGOS_TABLE,'nivel'),
+      hasColumn(CARGOS_TABLE,'criado_por'),
+      hasColumn(CARGOS_TABLE,'criado_em')
+    ]);
+    if (hasCor) payload['cor'] = cor;
+    if (hasNivel) payload['nivel'] = 1;
+    if (hasCriadoPor) payload['criado_por'] = String(currentUid);
+    if (hasCriadoEm) payload['criado_em'] = new Date().toISOString();
 
     const { error } = await client.from(CARGOS_TABLE).insert(payload);
     if (error){
@@ -1484,10 +1514,7 @@ async function loadPosts(limit=40){
   async function assignCargoToMember(targetUid, cargo){
     // find role column in membros table
     const roleCols = ['cargo_id','cargoId','cargo','cargo_nome','cargoName','role','nivel'];
-    let roleCol = null;
-    for (const c of roleCols){
-      if (await hasColumn(MEMBERS_TABLE, c)){ roleCol=c; break; }
-    }
+    const roleCol = await pickFirstExisting(MEMBERS_TABLE, roleCols);
     if (!roleCol){
       toast('Sua tabela comunidade_membros não tem coluna de cargo. Adicione uma coluna "cargo" ou "cargo_id".');
       return;
@@ -1510,18 +1537,18 @@ async function loadPosts(limit=40){
     const byCandidates = ['criado_por','muted_by','mutedBy','autor_uid','autorUid'];
     const atCandidates = ['criado_em','created_at','createdAt','muted_at','mutedAt'];
 
-    const pick = async (cands) => {
-      for (const c of cands){
-        try{ if (await hasColumn(MUTES_TABLE, c)) return c; }catch(e){}
-      }
-      return null;
-    };
+    const [communityCol, userCol, byCol, atCol] = await Promise.all([
+      pickFirstExisting(MUTES_TABLE, communityColCandidates),
+      pickFirstExisting(MUTES_TABLE, userColCandidates),
+      pickFirstExisting(MUTES_TABLE, byCandidates),
+      pickFirstExisting(MUTES_TABLE, atCandidates)
+    ]);
 
     return {
-      communityCol: await pick(communityColCandidates) || 'comunidade_id',
-      userCol: await pick(userColCandidates) || 'user_uid',
-      byCol: await pick(byCandidates),
-      atCol: await pick(atCandidates)
+      communityCol: communityCol || 'comunidade_id',
+      userCol: userCol || 'user_uid',
+      byCol,
+      atCol
     };
   }
 
@@ -1649,10 +1676,7 @@ async function loadPosts(limit=40){
     const avatarCands = ['foto','avatar','imagem','foto_url','avatar_url','image_url'];
     const coverCands = ['capa','cover','banner','capa_url','cover_url','banner_url'];
     const candidates = (kind==='avatar') ? avatarCands : coverCands;
-    let col = null;
-    for (const c of candidates){
-      if (await hasColumn(GROUPS_TABLE, c)){ col=c; break; }
-    }
+    const col = await pickFirstExisting(GROUPS_TABLE, candidates);
     if (!col){
       toast('A tabela comunidades não tem coluna para ' + (kind==='avatar'?'foto':'capa') + '. Adicione uma coluna (ex: foto/capa).');
       return;
@@ -1955,7 +1979,7 @@ const chips = Object.keys(counts).map(e=>{
       if (audioInputEl) audioInputEl.value = '';
       setReply(null);
 
-      await loadPosts(); // simple refresh; realtime may append too
+      await loadPosts(40, { force: true }); // simple refresh; realtime may append too
     } finally {
       sendBtn.disabled = false;
     }

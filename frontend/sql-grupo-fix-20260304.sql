@@ -17,7 +17,7 @@ alter table if exists public.comunidade_membros
   add column if not exists online boolean default false,
   add column if not exists last_seen timestamptz;
 
--- 3) Tabela de reações (se não existir)
+-- 3) Tabela de reações (se não existir) + normalização de colunas
 create table if not exists public.comunidade_post_reacoes (
   id uuid primary key default gen_random_uuid(),
   post_id text not null,
@@ -25,6 +25,40 @@ create table if not exists public.comunidade_post_reacoes (
   emoji text not null,
   created_at timestamptz not null default now()
 );
+
+alter table if exists public.comunidade_post_reacoes
+  add column if not exists post_id text,
+  add column if not exists user_uid text,
+  add column if not exists emoji text,
+  add column if not exists created_at timestamptz default now();
+
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='comunidade_post_reacoes' and column_name='user_id'
+  ) then
+    execute 'update public.comunidade_post_reacoes set user_uid = coalesce(user_uid, user_id::text) where user_uid is null';
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='comunidade_post_reacoes' and column_name='uid'
+  ) then
+    execute 'update public.comunidade_post_reacoes set user_uid = coalesce(user_uid, uid::text) where user_uid is null';
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='comunidade_post_reacoes' and column_name='userId'
+  ) then
+    execute 'update public.comunidade_post_reacoes set user_uid = coalesce(user_uid, "userId"::text) where user_uid is null';
+  end if;
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='comunidade_post_reacoes' and column_name='userUid'
+  ) then
+    execute 'update public.comunidade_post_reacoes set user_uid = coalesce(user_uid, "userUid"::text) where user_uid is null';
+  end if;
+end $$;
 
 create unique index if not exists uq_comunidade_post_reacoes_unique
   on public.comunidade_post_reacoes (post_id, user_uid, emoji);

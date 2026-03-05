@@ -1,0 +1,143 @@
+:root{ --doke-sidebar-width:88px; --doke-accent:#0a7c6b; --doke-muted:rgba(22,33,44,.62); }
+
+/* Enable compact sidebar */
+body.has-doke-sidebar{ --sidebar-width: var(--doke-sidebar-width); }
+
+.sidebar-icones{
+  width: var(--sidebar-width) !important;
+  min-width: var(--sidebar-width) !important;
+  max-width: var(--sidebar-width) !important;
+  position: fixed !important;
+  left: 0; top: 0;
+  height: 100vh;
+  overflow: auto;
+  background: #fff;
+  border-right: 1px solid rgba(0,0,0,.06);
+  padding: 12px 8px !important;
+  gap: 10px !important;
+  z-index: 999;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Desktop navbar compensation */
+@media (min-width: 901px){
+  .navbar-desktop{
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+  }
+}
+
+/* Logo */
+.sidebar-icones #logo{ display:block !important; width: 100%; text-align:center; }
+.sidebar-icones #logo img{ height: 32px !important; margin: 6px auto 8px !important; }
+
+/* Item */
+.sidebar-icones .item{
+  width: 100%;
+  padding: 8px 6px !important;
+  border-radius: 16px !important;
+  position: relative;
+  display:flex;
+  justify-content:center;
+  background: transparent !important;
+}
+
+.sidebar-icones .item a{
+  width: 100%;
+  display:flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center;
+  gap: 6px !important;
+  text-decoration: none !important;
+}
+
+.sidebar-icones .icon{ width: 22px !important; height: 22px !important; }
+
+/* Labels */
+.sidebar-icones span{
+  display:block !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  line-height: 1.05;
+  text-align:center;
+  color: var(--doke-muted) !important;
+  letter-spacing: .1px;
+}
+
+/* Hover / Active – clean (only active is filled) */
+.sidebar-icones .item:hover{ background: rgba(0,0,0,.04) !important; }
+.sidebar-icones .item.active{
+  background: rgba(10,124,107,.10) !important;
+}
+.sidebar-icones .item.active span{ color: var(--doke-accent) !important; }
+
+/* Active indicator */
+.sidebar-icones .item.active::before{
+  content:"";
+  position:absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 28px;
+  border-radius: 999px;
+  background: var(--doke-accent);
+}
+
+/* Remove heavy “pill” effect from inactive items on very small sidebars */
+@media (max-height: 720px){
+  .sidebar-icones{ gap: 8px !important; }
+  .sidebar-icones .item{ padding: 7px 6px !important; }
+}
+
+/* Layout compensation: many pages hardcode margin-left:270px */
+body.has-doke-sidebar main,
+body.has-doke-sidebar .dp-wrap,
+body.has-doke-sidebar .main,
+body.has-doke-sidebar .main-content,
+body.has-doke-sidebar .content,
+body.has-doke-sidebar .conteudo{
+  margin-left: var(--sidebar-width) !important;
+}
+
+/* Some pages set width based on sidebar */
+body.has-doke-sidebar main{
+  width: calc(100% - var(--sidebar-width)) !important;
+}
+
+/* Mobile: keep bottom-nav, hide sidebar */
+@media (max-width: 900px){
+  .sidebar-icones{ display:none !important; }
+  body.has-doke-sidebar main,
+  body.has-doke-sidebar .dp-wrap,
+  body.has-doke-sidebar .main,
+  body.has-doke-sidebar .main-content,
+  body.has-doke-sidebar .content,
+  body.has-doke-sidebar .conteudo{
+    margin-left: 0 !important;
+    width: 100% !important;
+  }
+  .navbar-desktop{ margin-left:0 !important; width:100% !important; }
+}
+
+
+/* Step7d: cleaner active state */
+.sidebar-icones a, .sidebar-icones .nav-item{
+  border-radius: 14px !important;
+  padding: 10px 6px !important;
+  margin: 6px 8px !important;
+  background: transparent !important;
+}
+.sidebar-icones a.active, .sidebar-icones a.is-active, .sidebar-icones .active{
+  background: rgba(10,124,107,.10) !important;
+}
+.sidebar-icones a.active::before, .sidebar-icones a.is-active::before{
+  content:''; position:absolute; left:4px; top:10px; bottom:10px;
+  width:3px; border-radius:3px; background: var(--doke-accent);
+}
+.sidebar-icones a{ position: relative !important; }
+.sidebar-icones a span, .sidebar-icones a .label{
+  font-size: 11px !important; font-weight: 600 !important; color: rgba(22,33,44,.72) !important;
+}
+.sidebar-icones a.active span, .sidebar-icones a.is-active span{ color: var(--doke-accent) !important; }

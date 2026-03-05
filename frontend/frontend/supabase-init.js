@@ -327,7 +327,7 @@
     return value;
   }
 
-  // Se existir URL/KEY antigos no localStorage (de outro projeto), isso pode gerar CORS e páginas que “quebramâ€ só quando loga.
+  // Se existir URL/KEY antigos no localStorage (de outro projeto), isso pode gerar CORS e pÃ¡ginas que â€œquebramâ€ sÃ³ quando loga.
   // Aqui a gente mantém override apenas se for explícito (window.DOKE_SUPABASE_URL / window.SUPABASE_URL).
   const EXPECTED_REF = (function(){
     try { return (new URL(DEFAULT_URL)).hostname.split(".")[0]; } catch(_e){ return ""; }
@@ -1852,9 +1852,9 @@ if (!key || key.startsWith("sb_publishable")) {
     if(!t) return t;
 
     // corrige mojibake comum: notificações, usuários, etc.
-    t = t.replace(/ç/g,'ç').replace(/õ/g,'õ').replace(/á/g,'á').replace(/ã/g,'ã')
-         .replace(/é/g,'é').replace(/í/g,'í').replace(/ó/g,'ó').replace(/ú/g,'ú')
-         .replace(/É/g,'É').replace(/Ó/g,'Ó').replace(/Ú/g,'Ú').replace(/Ç/g,'Ç');
+    t = t.replace(/Ã§/g,'ç').replace(/Ãµ/g,'õ').replace(/Ã¡/g,'á').replace(/Ã£/g,'ã')
+         .replace(/Ã©/g,'é').replace(/Ã­/g,'í').replace(/Ã³/g,'ó').replace(/Ãº/g,'ú')
+         .replace(/Ã‰/g,'É').replace(/Ã“/g,'Ó').replace(/Ãš/g,'Ú').replace(/Ã‡/g,'Ç');
 
     // remove acentos e caracteres fora do padrão de tabela
     const stripped = t.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -1939,7 +1939,7 @@ function DokeQuery(table){
     return this;
   };
   DokeQuery.prototype.single = function(){ this._single = true; return this; };
-  // maybeSingle(): igual ao single(), mas não trata 0 rows como erro.
+  // maybeSingle(): igual ao single(), mas nÃ£o trata 0 rows como erro.
   DokeQuery.prototype.maybeSingle = function(){ this._single = true; this._maybeSingle = true; return this; };
 
   DokeQuery.prototype.insert = function(payload){
@@ -1981,8 +1981,8 @@ function DokeQuery(table){
 
         if(this._select != null) b = b.select(this._select);
         for(const f of this._filters){
-          // já está em string postgrest, não temos como reaplicar aqui com segurança
-          // então pulamos e deixamos o fallback cuidar se precisar
+          // jÃ¡ estÃ¡ em string postgrest, nÃ£o temos como reaplicar aqui com seguranÃ§a
+          // entÃ£o pulamos e deixamos o fallback cuidar se precisar
         }
         if(this._order){
           const m = this._order.split(".");
@@ -2000,7 +2000,7 @@ function DokeQuery(table){
         if(this._maybeSingle && r && r.error){
           const code = String(r.error.code || '');
           const msg  = String(r.error.message || '');
-          // códigos comuns: PGRST116 (0 rows), ou mensagens equivalentes
+          // cÃ³digos comuns: PGRST116 (0 rows), ou mensagens equivalentes
           if(code === 'PGRST116' || /0\s*rows/i.test(msg) || /JSON object requested, multiple \(or no\) rows returned/i.test(msg)){
             return { data: null, error: null };
           }
@@ -2053,7 +2053,7 @@ function DokeQuery(table){
     try{ console.info("[DOKE] DB fallback ativo (supabase-js -> REST)."); }catch(_e){}
   }
 
-  // patch imediato + reforço após load
+  // patch imediato + reforÃ§o apÃ³s load
   patchClient();
   setTimeout(patchClient, 0);
   setTimeout(patchClient, 1000);

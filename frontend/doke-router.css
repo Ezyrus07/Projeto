@@ -18,22 +18,40 @@ body.app-shell{
   body.app-shell #overlay-menu{ display:none !important; }
 }
 
-/* neutraliza offsets comuns (sidebar fixa / wrappers) */
+/* Neutraliza apenas offsets de sidebar herdados.
+   Nao mexe no padding interno dos containers para nao quebrar alinhamento. */
 body.app-shell #app-view main,
 body.app-shell #app-view .main-content,
 body.app-shell #app-view .content,
 body.app-shell #app-view .content-wrapper,
 body.app-shell #app-view .page,
-body.app-shell #app-view .page-content,
-body.app-shell #app-view .container{
+body.app-shell #app-view .page-content{
   margin-left: 0 !important;
-  padding-left: 0 !important;
 }
 
 /* evita que CSS antigo do body derrube o layout do shell */
 body.app-shell #app-view{
   position:relative;
   width:100%;
+}
+
+@media (min-width:1025px){
+  body.app-shell #app-view{
+    margin-left: var(--sidebar-width, 260px) !important;
+    width: calc(100% - var(--sidebar-width, 260px)) !important;
+    padding-top: var(--navbar-height-desktop, 80px) !important;
+    min-height: calc(100vh - var(--navbar-height-desktop, 80px));
+    box-sizing: border-box;
+    overflow-x: hidden;
+  }
+}
+
+@media (max-width:1024px){
+  body.app-shell #app-view{
+    margin-left: 0 !important;
+    width: 100% !important;
+    padding-top: 0 !important;
+  }
 }
 
 #app-view.doke-route-loading{
