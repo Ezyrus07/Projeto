@@ -1211,7 +1211,22 @@
     };
     if(!client?.auth?.getSession){
       if(options.toast !== false) toast("Sessao indisponivel. Faca login novamente.");
-      redirectToLogin();
+      
+      // Retry a bit to avoid false "logged out" on mobile Safari after navigation.
+      try{
+        const startedAt = Date.now();
+        while((Date.now()-startedAt) < 1400){
+          // If shell already verified or cache indicates logged, don't redirect yet.
+          const lsOk = (localStorage.getItem("usuarioLogado")==="true") || !!localStorage.getItem("doke_uid") || !!localStorage.getItem("doke_usuario_perfil");
+          if (lsOk && window.__DOKE_SHELL_BUILD__) break;
+          try{
+            const retry = await client.auth.getSession().catch(() => ({ data:{session:null}, error:null }));
+            if(retry?.data?.session?.user){ return { ok:true, reason:"retry_ok", session: retry.data.session, user: retry.data.session.user }; }
+          }catch(_e){}
+          await new Promise(r => setTimeout(r, 180));
+        }
+      }catch(_e){}
+redirectToLogin();
       return { ok: false, reason: "no_auth_api", session: null, user: null };
     }
     let session = null;
@@ -1256,7 +1271,20 @@
     }
     if(!session?.user){
       if(options.toast !== false) toast("Sessao expirada. Entre novamente.");
-      redirectToLogin();
+      
+      // Retry before redirect (prevents transient auth miss on iOS).
+      try{
+        const startedAt = Date.now();
+        while((Date.now()-startedAt) < 1400){
+          const retry = await client.auth.getSession().catch(() => ({ data:{session:null}, error:null }));
+          if(retry?.data?.session?.user){
+            session = retry.data.session;
+            return { ok:true, reason:"retry_ok", session, user: session.user };
+          }
+          await new Promise(r => setTimeout(r, 180));
+        }
+      }catch(_e){}
+redirectToLogin();
       return { ok: false, reason: "no_session", session: null, user: null };
     }
     return { ok: true, reason: "", session, user: session.user };

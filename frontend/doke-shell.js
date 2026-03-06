@@ -1,4 +1,4 @@
-﻿(function(){
+(function(){
   window.__DOKE_SHELL_BUILD__ = "20260303v59";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
@@ -753,34 +753,123 @@
     }
   }
 
-  async function ensureShell(){
+  
+
+  // Normaliza o item ativo do menu superior (evita 2 ativos ao mesmo tempo).
+  function normalizeTopMenuActive(){
+    try{
+      const file = String((location.pathname || '').split('/').pop() || '').trim().toLowerCase();
+      const menu = document.querySelector('.navbar-desktop .menu');
+      if(!menu) return;
+
+      const groups = {
+        anunciar: new Set(['escolheranuncio.html','selecionaranuncio.html','anunciar.html','anunciar-negocio.html','editar-anuncio.html']),
+        comunidades: new Set(['comunidade.html','grupo.html']),
+        novidades: new Set(['novidades.html'])
+      };
+
+      let target = file;
+      if (groups.anunciar.has(file)) target = 'escolheranuncio.html';
+      else if (groups.comunidades.has(file)) target = 'comunidade.html';
+      else if (groups.novidades.has(file)) target = 'novidades.html';
+
+      let activated = false;
+      Array.from(menu.querySelectorAll('a[href]')).forEach((a) => {
+        const raw = String(a.getAttribute('href') || '').trim();
+        const href = raw.split('?')[0].trim().replace(/\s+$/,'').toLowerCase();
+        a.classList.remove('active','ativo');
+        a.removeAttribute('aria-current');
+        if (!activated && href && target && href === target) {
+          a.classList.add('active');
+          a.setAttribute('aria-current', 'page');
+          activated = true;
+        }
+      });
+    }catch(_e){}
+  }
+
+  // Carrega um script leve da busca da sidebar em páginas que NÃO usam script.js
+  // (mantém a busca "inline" no menu lateral sem navegar).
+  function ensureSidebarSearchLite(){
+    try{
+      if (window.openDokeSidebarSearch) return;
+      const sidebar = document.querySelector('aside.sidebar-icones, .sidebar-icones');
+      if(!sidebar) return;
+      if (document.querySelector('script[src*="script.js"]')) return;
+      if (document.querySelector('script[src*="doke-sidebar-search-lite.js"]')) return;
+      const s = document.createElement('script');
+      s.src = 'doke-sidebar-search-lite.js?v=20260305v1';
+      s.async = true;
+      document.head.appendChild(s);
+    }catch(_e){}
+  }
+
+  function ensureCompactSidebarMode(){
+    try{
+      const desktop = window.matchMedia("(min-width:1025px)").matches;
+      const body = document.body;
+      if(!body) return;
+      const sidebars = Array.from(document.querySelectorAll("aside.sidebar-icones, .sidebar-icones"));
+      if (sidebars.length > 1){
+        sidebars.slice(1).forEach((el) => { try { el.remove(); } catch(_e){} });
+      }
+      const sidebar = sidebars[0] || null;
+      const cssId = "dokeSidebarCompactCss";
+      let link = document.getElementById(cssId);
+
+      if (desktop && sidebar){
+        body.classList.add("has-doke-sidebar");
+        if (!link){
+          link = document.createElement("link");
+          link.id = cssId;
+          link.rel = "stylesheet";
+          link.href = "doke-sidebar-compact.css?v=20260306v1";
+          document.head.appendChild(link);
+        }
+        return;
+      }
+
+      body.classList.remove("has-doke-sidebar");
+    }catch(_e){}
+  }
+async function ensureShell(){
     setShellAuthStateReady(false);
     const body = document.body;
+    try { ensureCompactSidebarMode(); } catch(_e) {}
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
-
     let profile = getProfile();
     const hasLocalAuth = !!profile || hasLocalLoginFlag();
+    // Keep header stable (no skeleton), but DO NOT trust cache as authenticated.
     if (hasLocalAuth) setShellAuthStateReady(true);
-    let sessionUser = null;
-    if(profile && (profile.uid || profile.id || profile.email)){
-      sessionUser = { id: profile.uid || profile.id || profile.email || "cached_user" };
-    }
-    if(!sessionUser){
-      sessionUser = await getSessionUser();
-      if(sessionUser && !profile) profile = getProfile();
-    }
+
+    // Always verify a real session (Supabase/Firebase) when possible.
+    let sessionUser = await getSessionUser();
+
+    if (sessionUser && !profile) profile = getProfile();
     if (sessionUser) {
       profile = hydrateProfileFromSession(sessionUser, profile);
     }
 
     const isLogged = !!sessionUser;
+
+    // Keep localStorage flags aligned with the verified session.
     if (!isLogged) {
       profile = null;
       try { localStorage.removeItem("usuarioLogado"); } catch (_e) {}
       try { localStorage.removeItem("doke_uid"); } catch (_e) {}
+      try { localStorage.removeItem("doke_usuario_perfil"); } catch (_e) {}
+      try { localStorage.removeItem("perfil_usuario"); } catch (_e) {}
+      try { localStorage.removeItem("doke_usuario_logado"); } catch (_e) {}
+      try { localStorage.removeItem("userLogado"); } catch (_e) {}
+    } else {
+      try { localStorage.setItem("usuarioLogado", "true"); } catch (_e) {}
+      try {
+        const uid = String(profile?.uid || profile?.id || sessionUser?.id || "").trim();
+        if (uid) localStorage.setItem("doke_uid", uid);
+      } catch (_e) {}
     }
-    const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
+const isPro = profile && (profile.isProfissional === true || profile.tipo === "profissional" || profile.role === "profissional");
     const nomePerfil = sanitizePlainText((profile && (profile.user || profile.nome || profile.name)) || (isLogged ? "Minha conta" : "Visitante"));
     const nomePerfilSafe = escapeHtml(nomePerfil);
     const profileHref = isLogged ? PAGES.perfil : "login.html";
@@ -893,6 +982,10 @@
 
     ensureGlobalAuthActions();
     syncClassicDesktopHeader({ isLogged, profile, avatarUrl, isPro });
+    try { normalizeTopMenuActive(); } catch(_e) {}
+    try { ensureSidebarSearchLite(); } catch(_e) {}
+    try { ensureCompactSidebarMode(); } catch(_e) {}
+
     setShellAuthStateReady(true);
 
     if(!MQ.matches) return;
@@ -1692,6 +1785,7 @@
     window.__dokeDesktopNavPerfBound = true;
 
     const prefetched = new Set();
+    const fetchedDocs = new Set();
 
     const style = document.createElement("style");
     style.id = "dokeNavPerfStyle";
@@ -1712,6 +1806,13 @@
         0%{ transform:translateX(0); width:24%; }
         50%{ transform:translateX(115%); width:48%; }
         100%{ transform:translateX(265%); width:24%; }
+      }
+      body.doke-nav-pending main,
+      body.doke-nav-pending .main-content,
+      body.doke-nav-pending .dp-wrap,
+      body.doke-nav-pending .messenger-layout{
+        opacity:.88;
+        transition:opacity .12s ease;
       }
     `;
     if(!document.getElementById(style.id)) document.head.appendChild(style);
@@ -1742,6 +1843,20 @@
       }catch(_e){}
     }
 
+    function warmDocCache(url){
+      const abs = String(url?.toString() || "");
+      if(!abs || fetchedDocs.has(abs)) return;
+      fetchedDocs.add(abs);
+      try{
+        fetch(abs, {
+          method: "GET",
+          credentials: "same-origin",
+          mode: "same-origin",
+          cache: "force-cache"
+        }).catch(() => {});
+      }catch(_e){}
+    }
+
     function pickAnchorFromEventTarget(target){
       if(!(target instanceof Element)) return null;
       const anchor = target.closest("a[href]");
@@ -1761,6 +1876,7 @@
       const url = toUrl(a.getAttribute("href"));
       if(!isInternalPageUrl(url)) return;
       tryPrefetch(url);
+      warmDocCache(url);
     }, true);
 
     document.addEventListener("focusin", (ev) => {
@@ -1769,6 +1885,7 @@
       const url = toUrl(a.getAttribute("href"));
       if(!isInternalPageUrl(url)) return;
       tryPrefetch(url);
+      warmDocCache(url);
     }, true);
 
     document.addEventListener("touchstart", (ev) => {
@@ -1777,6 +1894,16 @@
       const url = toUrl(a.getAttribute("href"));
       if(!isInternalPageUrl(url)) return;
       tryPrefetch(url);
+      warmDocCache(url);
+    }, { capture: true, passive: true });
+
+    document.addEventListener("pointerdown", (ev) => {
+      const a = pickAnchorFromEventTarget(ev.target);
+      if(!a) return;
+      const url = toUrl(a.getAttribute("href"));
+      if(!isInternalPageUrl(url)) return;
+      tryPrefetch(url);
+      warmDocCache(url);
     }, { capture: true, passive: true });
 
     document.addEventListener("click", (ev) => {
@@ -1790,6 +1917,20 @@
     window.addEventListener("pageshow", () => {
       document.body.classList.remove("doke-nav-pending");
     });
+
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(() => {
+        try{
+          document.querySelectorAll(".sidebar-icones a[href], .navbar-desktop a[href], .doke-bottom-nav a[href]")
+            .forEach((a) => {
+              if(!(a instanceof HTMLAnchorElement)) return;
+              const url = toUrl(a.getAttribute("href"));
+              if(!isInternalPageUrl(url)) return;
+              tryPrefetch(url);
+            });
+        }catch(_e){}
+      }, { timeout: 2200 });
+    }
   }
 
   function initAppLikeNavigationState(){
@@ -1882,18 +2023,42 @@
   function initPersistentShellNavigation(){
     if (window.__dokePersistentShellNavBound) return;
     window.__dokePersistentShellNavBound = true;
-    // Legacy multi-page screens are not fully PJAX-safe yet (many global scripts/styles).
-    // Keep this OFF by default to avoid frozen/unstyled pages while navigating.
-    const optIn = (
+    // PJAX global: enabled by default for the whole site, with explicit opt-out.
+    const currentFile = String((location.pathname || "").split("/").pop() || "").toLowerCase();
+    const forcedOff = (
+      document.body?.getAttribute("data-doke-pjax") === "0"
+      || String(localStorage.getItem("doke_disable_pjax") || "") === "1"
+    );
+    const forcedOn = (
       document.body?.getAttribute("data-doke-pjax") === "1"
       || String(localStorage.getItem("doke_enable_pjax") || "") === "1"
     );
-    if (!optIn) {
+    const globalDefaultOn = !forcedOff;
+    const optIn = (
+      forcedOn
+      || globalDefaultOn
+    );
+    if (!optIn || forcedOff) {
       try { document.body.classList.remove("doke-nav-pending"); } catch(_e) {}
       return;
     }
 
-    const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html"]);
+    const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html", "app-beta.html"]);
+    // Pages with heavy runtime/lifecycle where full reload is currently safer.
+    // If doke_enable_pjax=1 is set, this safety list is ignored.
+    const PJAX_UNSAFE_FILES = new Set([
+      "index.html",
+      "comunidade.html",
+      "grupo.html",
+      "mensagens.html",
+      "pedidos.html",
+      "meuperfil.html",
+      "perfil.html",
+      "perfil-usuario.html",
+      "perfil-profissional.html",
+      "perfil-cliente.html",
+      "perfil-empresa.html"
+    ]);
     const SCRIPT_SKIP_PARTS = [
       "/doke-shell.js",
       "/script.js",
@@ -1945,6 +2110,14 @@
       const pathname = String(urlObj.pathname || "").toLowerCase();
       if(!pathname.endsWith(".html")) return false;
       if(isBlockedPath(urlObj)) return false;
+      return true;
+    }
+
+    function isPjaxAllowedUrl(urlObj){
+      if(!isInternalHtml(urlObj)) return false;
+      if (forcedOn) return true;
+      const name = getCurrentFileName(urlObj);
+      if (PJAX_UNSAFE_FILES.has(name)) return false;
       return true;
     }
 
@@ -2107,7 +2280,9 @@
     }
 
     async function navigateInPlace(urlObj, mode){
-      if(!isInternalHtml(urlObj)) return false;
+      if(!isPjaxAllowedUrl(urlObj)) return false;
+      if(BLOCKED_FILES.has(currentFile)) return false;
+      if(!forcedOn && PJAX_UNSAFE_FILES.has(currentFile)) return false;
       const currentPath = `${location.pathname}${location.search}`;
       const nextPath = `${urlObj.pathname}${urlObj.search}`;
       if(currentPath === nextPath && !urlObj.hash) return false;
@@ -2170,7 +2345,7 @@
       const a = pickAnchorFromEventTarget(ev.target);
       if(!a) return;
       const urlObj = toUrl(a.getAttribute("href"));
-      if(!isInternalHtml(urlObj)) return;
+      if(!isPjaxAllowedUrl(urlObj)) return;
       ev.preventDefault();
       const ok = await navigateInPlace(urlObj, "push");
       if(!ok) location.href = urlObj.toString();
@@ -2178,7 +2353,7 @@
 
     window.addEventListener("popstate", async () => {
       const urlObj = new URL(location.href);
-      if(!isInternalHtml(urlObj)) return;
+      if(!isPjaxAllowedUrl(urlObj)) return;
       const ok = await navigateInPlace(urlObj, "replace");
       if(!ok) location.reload();
     });
@@ -2187,6 +2362,7 @@
   MQ.addEventListener?.("change", ()=>{
     if(MQ.matches) ensureShell();
     else document.body.classList.remove("doke-modal-open");
+    try { ensureCompactSidebarMode(); } catch(_e) {}
   });
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", ()=>{

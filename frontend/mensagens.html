@@ -27,9 +27,9 @@
   })();
 </script>
 <title>Mensagens | Doke</title>
-<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." name="description"/>
+<meta content="Converse com profissionais e clientes em um chat rápido e responsivo." name="description"/>
 <meta content="Doke - Chat" property="og:title"/>
-<meta content="Converse com profissionais e clientes em um chat rÃ¡pido e responsivo." property="og:description"/>
+<meta content="Converse com profissionais e clientes em um chat rápido e responsivo." property="og:description"/>
 <meta content="website" property="og:type"/>
 <meta content="assets/Imagens/doke-logo.png" property="og:image"/>
 <meta content="#0b7768" name="theme-color"/>
@@ -40,7 +40,7 @@
 <link href="doke-fixes.css" rel="stylesheet"/>
 <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet"/>
 <script defer="" src="doke-desktop-shell.js?v=20260305v1"></script>
-<!-- script.js?v=20260218v60 removido no chat para evitar conflitos/dobro de listeners (o chat j? tem l?gica pr?pria aqui) -->
+<!-- script.js?v=20260218v60 removido no chat para evitar conflitos/dobro de listeners (o chat já tem l?gica pr?pria aqui) -->
 <style>
         /* =========================================================================
            LAYOUT DE MENSAGERIA PROFISSIONAL (COM HEADER PADRï¿½O)
@@ -1331,7 +1331,7 @@
             .navbar-desktop { display: none; }
             /* Reserva espa?o para header + bottom-nav (evita barra flutuando e gaps) */
             /* v25 ? evita "gap" entre barra de digitar e bottom-nav */
-            .messenger-layout { position: fixed; top: var(--navbar-height-mobile); left: 0; right: 0; bottom: var(--bottom-nav-height); width: auto; height: auto; margin: 0; display: block; border-left: 0; }
+            .messenger-layout { position: fixed; top: var(--navbar-height-mobile); left: 0; right: 0; bottom: calc(var(--bottom-nav-height) + env(safe-area-inset-bottom, 0px)); width: auto; height: auto; margin: 0; display: block; border-left: 0; }
             .coluna-lista { width: 100%; height: 100%; position: relative; }
             .coluna-chat { 
                 position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -1345,6 +1345,10 @@
             .reply-bar { flex-shrink: 0; }
             .mensagens-body{ overflow-y: auto !important; min-height: 0 !important; }
             .lista-scroll{ overflow-y: auto !important; min-height: 0 !important; }
+            /* Mobile scroll/fill fixes (iOS/Safari) */
+            .coluna-chat, #box-conversa-real{ display:flex; flex-direction:column; min-height:0; }
+            .mensagens-body{ flex:1 1 auto !important; min-height:0 !important; overflow-y:auto !important; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; touch-action: pan-y; }
+            .chat-footer{ padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important; }
         }
         @media (max-width: 560px){
             .chat-header{ height: auto; padding: 10px 12px; gap: 10px; flex-wrap: wrap; align-content: flex-start; }
@@ -1388,7 +1392,7 @@
     box-shadow: 0 10px 25px rgba(0,0,0,0.08);
     min-width: 280px;
     max-width: 320px;
-    /* Removido o overflow hidden para n?o cortar o bot?o se ele tiver sombra */
+    /* Removido o overflow hidden para não cortar o bot?o se ele tiver sombra */
     margin: 12px 0;
     border: 1px solid #edf2f7;
     display: flex;
@@ -1431,7 +1435,7 @@
     margin-bottom: 10px;
 }
 
-/* Bot?o ajustado para n?o cortar */
+/* Bot?o ajustado para não cortar */
 .btn-pagar-card {
     width: 100%;
     background: #009688;
@@ -1442,7 +1446,7 @@
     font-weight: 700;
     font-size: 1rem;
     cursor: pointer;
-    box-sizing: border-box; /* Garante que o padding n?o aumente o tamanho real */
+    box-sizing: border-box; /* Garante que o padding não aumente o tamanho real */
 }
 
 /* Efeito de Vidro (Glassmorphism) no Header do Chat */
@@ -1476,15 +1480,13 @@
     border-bottom-left-radius: 4px;
 }
 
-/* ï¿½rea de Mensagens com Fundo Personalizado */
-.mensagens-body {
+/* Área de Mensagens com Fundo Personalizado (visual apenas; sem quebrar o scroll) */
+body[data-page="chat"] .mensagens-body {
     background-color: #f0f2f5;
-    /* Adicionando um padr?o leve de fundo que lembra o WhatsApp */
+    /* Padrão leve estilo WhatsApp */
     background-image: radial-gradient(#d1d1d1 0.5px, transparent 0.5px);
     background-size: 20px 20px;
-    padding: 25px 50px;
 }
-
 /* Customiza??o da Scrollbar para ficar elegante */
 .lista-scroll::-webkit-scrollbar, 
 .mensagens-body::-webkit-scrollbar {
@@ -1552,7 +1554,7 @@
     animation: none !important;
 }
 
-/* Estilo para Pedidos de Or?amento (Verde) */
+/* Estilo para Pedidos de Orçamento (Verde) */
 .tipo-pedido {
     border-left: 5px solid #0b7768 !important;
     background-color: #f0f9f8;
@@ -1584,7 +1586,7 @@
 .tag-orcamento { background: #e0f2f1; color: #0b7768; }
 .tag-papo { background: #e3f2fd; color: #2a5f90; }
 
-/* Card de Or?amento (Verde) */
+/* Card de Orçamento (Verde) */
 .card-orcamento {
     border-left: 5px solid #0b7768 !important;
     background-color: #f0f9f8 !important;
@@ -2326,7 +2328,7 @@
 
 .galeria-conteudo img {
     max-width: 100%;
-    max-height: 85vh; /* Altura m?xima para n?o estourar a tela */
+    max-height: 85vh; /* Altura m?xima para não estourar a tela */
     border-radius: 8px;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
     object-fit: contain;
@@ -2407,7 +2409,7 @@
     opacity: 1;
 }
 
-/* Quando a foto est? selecionada */
+/* Quando a foto está selecionada */
 .thumb-item.ativo {
     opacity: 1;
     border: 2px solid #fff; /* Borda branca igual Webmotors */
@@ -2573,7 +2575,30 @@
     }
     .audio-bubble { min-width: 140px !important; }
 
-    </style>
+    
+
+        /* ===================== DOKE FIXES (20260305v1) ===================== */
+        /* Evita overflow horizontal e duplo scroll no desktop */
+        body[data-page="chat"]{ overflow: hidden !important; }
+        html{ overflow: hidden !important; }
+        .messenger-layout{
+            position: fixed !important;
+            top: var(--navbar-height-desktop, 70px) !important;
+            left: var(--sidebar-width, 92px) !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: auto !important;
+            height: auto !important;
+            margin: 0 !important;
+            overflow: hidden !important;
+        }
+        /* Reserva correta quando não houver sidebar (fallback) */
+        @media (max-width: 1024px){
+            html{ overflow: hidden !important; }
+            body[data-page="chat"]{ overflow: hidden !important; }
+        }
+
+</style>
 <!-- Supabase (UMD) + init + compat (Firestore/Auth) -->
 <link href="doke-toast.css" rel="stylesheet"/>
 <link href="doke-alerts.css" rel="stylesheet"/>
@@ -2592,7 +2617,7 @@
 <p class="titulo">Entre na sua conta para aproveitar todos os recursos! :)</p>
 <a href="login.html" id="btnAuthTopo"><button class="btn-login" onclick="realizarLogin()">Fazer login</button></a>
 <p class="criar">
-                N?o tem uma conta?
+                Não tem uma conta?
                 <a href="cadastro.html">Criar conta</a>
 </p>
 </div>
@@ -2626,7 +2651,7 @@
 </div>
 </div>
 <a href="escolheranuncio.html">Anunciar</a>
-<a href="comunidade.html ">Comunidades <span class="badge-novo1">NOVO</span></a>
+<a href="comunidade.html">Comunidades <span class="badge-novo1">NOVO</span></a>
 <a href="novidades.html">Novidades</a>
 </nav>
 <div class="botoes-direita"><a class="entrar" href="login.html">Entrar</a></div>
@@ -2662,7 +2687,7 @@
 </a>
 </div>
 <div class="item active">
-<a href="mensagens.html">
+<a href="mensagens.html?aba=conversas">
 <i class="bx bx-message-rounded-dots icon azul"></i>
 <span>Mensagens</span>
 </a>
@@ -2873,7 +2898,7 @@
 <i class="bx bx-trash" style="font-size: 30px; color: #e74c3c;"></i>
 </div>
 <h3 style="margin: 0 0 10px 0;">Cancelar Pedido?</h3>
-<p style="color: #666; font-size: 0.95rem;">Tem certeza que deseja remover este pedido pendente? Esta a??o n?o pode ser desfeita.</p>
+<p style="color: #666; font-size: 0.95rem;">Tem certeza que deseja remover este pedido pendente? Esta a??o não pode ser desfeita.</p>
 <div style="display: flex; gap: 12px; margin-top: 25px;">
 <button onclick="fecharCancelConfirm()" style="flex:1; padding:12px; border-radius:10px; border:1px solid #ddd; background:#fff; cursor:pointer; font-weight:600;">Voltar</button>
 <button id="btnConfirmCancelFinal" onclick="confirmarCancelamentoFinal()" style="flex:1; padding:12px; border-radius:10px; border:none; background:#e74c3c; color:#fff; cursor:pointer; font-weight:600;">Sim, Cancelar</button>
@@ -3443,8 +3468,8 @@
     window.abrirAvaliacaoPedido = function(pedidoId){
         if (!pedidoId) return;
         if (avaliadoPedidoAtual) {
-            if (window.dokeAlert) window.dokeAlert("Servi?o j? avaliado.");
-            else alert("Servi?o j? avaliado.");
+            if (window.dokeAlert) window.dokeAlert("Serviço já avaliado.");
+            else alert("Serviço já avaliado.");
             return;
         }
         window.pedidoIdParaAvaliar = pedidoId;
@@ -3707,8 +3732,8 @@
         } catch (e) {
             console.error('Falha ao arquivar pedidos em lote:', e);
             const msg = desarquivar
-                ? 'N?o foi poss?vel desarquivar os pedidos selecionados.'
-                : 'N?o foi poss?vel arquivar os pedidos selecionados.';
+                ? 'Não foi poss?vel desarquivar os pedidos selecionados.'
+                : 'Não foi poss?vel arquivar os pedidos selecionados.';
             window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         }
     };
@@ -3770,8 +3795,8 @@
         } catch (e) {
             console.error('Falha ao arquivar/desarquivar contatos:', e);
             const msg = desarquivar
-                ? 'N?o foi poss?vel desarquivar os contatos selecionados.'
-                : 'N?o foi poss?vel arquivar os contatos selecionados.';
+                ? 'Não foi poss?vel desarquivar os contatos selecionados.'
+                : 'Não foi poss?vel arquivar os contatos selecionados.';
             window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         }
     };
@@ -3821,7 +3846,7 @@
             if (window.dokeToast) window.dokeToast('Contatos exclu?dos da sua lista.');
         } catch (e) {
             console.error('Falha ao excluir contatos selecionados:', e);
-            window.dokeAlert ? window.dokeAlert('N?o foi poss?vel excluir os contatos selecionados.') : alert('N?o foi poss?vel excluir os contatos selecionados.');
+            window.dokeAlert ? window.dokeAlert('Não foi poss?vel excluir os contatos selecionados.') : alert('Não foi poss?vel excluir os contatos selecionados.');
         }
     };
 
@@ -4068,7 +4093,7 @@
         if (t === 'pagamento') return 'Cobran?a';
         if (t === 'card_finalizado') return 'Pedido finalizado';
         if (t === 'card_avaliacao') return 'Avalia??o';
-        if (t === 'solicitacao_portfolio') return 'Solicita??o de portf?lio';
+        if (t === 'solicitacao_portfolio') return 'Solicitação de portf?lio';
         if (t === 'portfolio_consent_result') return 'Resposta de portf?lio';
         if (t === 'portfolio_publicado') return 'Publicado no portf?lio';
         return (texto || '').slice(0, 140);
@@ -4163,7 +4188,7 @@
     }
       function buildReplyHtml(replyTo){
           if (!replyTo) return '';
-          const user = escapeHtml(replyTo.user || 'Usu?rio');
+          const user = escapeHtml(replyTo.user || 'Usuário');
           const preview = escapeHtml(replyTo.preview || '');
           return `<div class="reply-preview"><div class="rp-user">${user}</div><div class="rp-text">${preview}</div></div>`;
       }
@@ -4188,7 +4213,7 @@
           const bubble = host?.classList?.contains('msg-bubble') ? host : host?.querySelector?.('.msg-bubble');
           if (!bubble) return;
           const isMine = bubble.classList.contains('msg-enviada');
-          // Mant?m menu sempre "dentro" da bolha para n?o ser cortado por containers com overflow.
+          // Mant?m menu sempre "dentro" da bolha para não ser cortado por containers com overflow.
           menu.classList.add(isMine ? 'msg-menu-inline-right' : 'msg-menu-inline-left');
       }
       function openMsgMenuById(id, ev){
@@ -4241,7 +4266,7 @@
           };
 
           const getMsgHostFromTarget = (target) => {
-              return target?.closest?.('[id^="msg-"]') || null;
+              return target?.closestá.('[id^="msg-"]') || null;
           };
 
           const getBubbleFromHost = (host) => {
@@ -4368,7 +4393,7 @@
                   console.error('Falha ao marcar como apagada:', e2);
                   addHiddenMsgId(colecaoAtual, chatIdAtual, msgId);
                   carregarMensagens(colecaoAtual, chatIdAtual);
-                  window.dokeAlert ? window.dokeAlert('Mensagem ocultada para voc? (sem permiss?o para apagar no servidor).') : alert('Mensagem ocultada para voc?.');
+                  window.dokeAlert ? window.dokeAlert('Mensagem ocultada para você (sem permiss?o para apagar no servidor).') : alert('Mensagem ocultada para você.');
               }
           }
       };
@@ -4414,7 +4439,7 @@
               ev?.preventDefault?.();
               ev?.stopPropagation?.();
           } catch (_) {}
-          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos j? conclu?dos. A autoriza??o permite usar apenas esta mídia do pedido.';
+          const txt = 'Portf?lio ? a vitrine p?blica do profissional com trabalhos já conclu?dos. A autoriza??o permite usar apenas esta mídia do pedido.';
           if (typeof window.dokeAlert === 'function') window.dokeAlert(txt, 'Portf?lio');
           else alert(txt);
       };
@@ -4464,7 +4489,7 @@
         const descricaoBase = (function(){
             if (p.descricaoBase) return String(p.descricaoBase || '').trim();
             const msg = String(p.mensagemInicial || '');
-            const idx = msg.toLowerCase().indexOf('local do servi?o:');
+            const idx = msg.toLowerCase().indexOf('local do serviço:');
             if (idx === -1) return msg.trim();
             return msg.slice(0, idx).trim();
         })();
@@ -4578,7 +4603,7 @@
             p.respostaRecusa ||
             p.resposta_recusa ||
             '';
-        const texto = motivo ? escapeHtml(motivo) : 'O profissional n?o informou o motivo da recusa.';
+        const texto = motivo ? escapeHtml(motivo) : 'O profissional não informou o motivo da recusa.';
         return `
             <div class="pedido-recusa-card">
                 <div class="pr-title">Pedido recusado</div>
@@ -4595,7 +4620,7 @@
         }
         const userEl = document.getElementById('replyUser');
         const prevEl = document.getElementById('replyPreview');
-        if (userEl) userEl.textContent = `@${replyContext.user || 'Usu?rio'}`;
+        if (userEl) userEl.textContent = `@${replyContext.user || 'Usuário'}`;
         if (prevEl) prevEl.textContent = replyContext.preview || '';
         bar.classList.add('show');
         updateScrollDownButton();
@@ -4885,7 +4910,7 @@
 
     window.ocultarConversaAtual = async function(){
         if (!chatIdAtual || !colecaoAtual) return;
-        if (!await window.dokeConfirm('Ocultar esta conversa? Ela continuar? dispon?vel para o outro usu?rio.', 'Ocultar', 'danger')) return;
+        if (!await window.dokeConfirm('Ocultar esta conversa? Ela continuar? dispon?vel para o outro usuário.', 'Ocultar', 'danger')) return;
         const ref = doc(db, colecaoAtual, chatIdAtual);
         await atualizarArrayUsuario(ref, 'ocultoChatPor', true);
         fecharMenuChat();
@@ -4917,7 +4942,7 @@
 
     window.limparHistoricoLocal = async function(){
         if (!chatIdAtual || !colecaoAtual) return;
-        if (!await window.dokeConfirm('Excluir mensagens apenas para voc?? Isso n?o apaga para o outro usu?rio.', 'Excluir mensagens', 'danger')) return;
+        if (!await window.dokeConfirm('Excluir mensagens apenas para você? Isso não apaga para o outro usuário.', 'Excluir mensagens', 'danger')) return;
         setClearTime(colecaoAtual, chatIdAtual, new Date().toISOString());
         fecharMenuChat();
         atualizarMenuConversa();
@@ -4943,7 +4968,7 @@
 
     window.solicitarReembolso = async function(){
         if (!chatIdAtual || !pedidoAtualData) return;
-        const motivo = await window.dokePrompt('Informe o motivo do reembolso/solicita??o:', 'Ex: servi?o incompleto', 'Solicitar reembolso');
+        const motivo = await window.dokePrompt('Informe o motivo do reembolso/solicitação:', 'Ex: serviço incompleto', 'Solicitar reembolso');
         if (!motivo) return;
         try {
             await addDoc(collection(db, "pedidos", chatIdAtual, "mensagens"), {
@@ -4975,7 +5000,7 @@
         if (pedidoAtualData.paraUid) {
             try { await window.criarNotificacaoPedido(pedidoAtualData.paraUid, 'pedido_reembolso', chatIdAtual); } catch (_) {}
         }
-        window.dokeAlert('Solicita??o enviada. Vamos analisar.');
+        window.dokeAlert('Solicitação enviada. Vamos analisar.');
     };
 
     function getDisputaFromPedido(p){
@@ -5299,7 +5324,7 @@
               bar.classList.add('show');
 
               if (souAlvoSolicitacao && dmSolicitacaoStatusAtual === 'pendente') {
-                  text.textContent = 'Solicita??o de mensagem recebida.';
+                  text.textContent = 'Solicitação de mensagem recebida.';
                   actions.innerHTML = `
                       <button class="primary" onclick="aprovarSolicitacaoMensagem()">Aceitar</button>
                       <button class="danger" onclick="recusarSolicitacaoMensagem()">Recusar</button>
@@ -5309,23 +5334,23 @@
               }
 
               if (!souAlvoSolicitacao && dmSolicitacaoStatusAtual === 'pendente') {
-                  text.textContent = 'Solicita??o enviada. Aguarde aprova??o do profissional.';
-                  actions.innerHTML = `<button onclick="enviarSolicitacaoMensagem()">Reenviar solicita??o</button>`;
-                  setChatInputEnabled(false, 'Aguardando aprova??o da solicita??o de mensagem.');
+                  text.textContent = 'Solicitação enviada. Aguarde aprova??o do profissional.';
+                  actions.innerHTML = `<button onclick="enviarSolicitacaoMensagem()">Reenviar solicitação</button>`;
+                  setChatInputEnabled(false, 'Aguardando aprova??o da solicitação de mensagem.');
                   return;
               }
 
               if (!souAlvoSolicitacao && dmSolicitacaoStatusAtual === 'recusado') {
-                  text.textContent = 'Sua solicita??o de mensagem foi recusada.';
-                  actions.innerHTML = `<button class="primary" onclick="enviarSolicitacaoMensagem()">Enviar nova solicita??o</button>`;
-                  setChatInputEnabled(false, 'Solicita??o recusada. Envie uma nova solicita??o.');
+                  text.textContent = 'Sua solicitação de mensagem foi recusada.';
+                  actions.innerHTML = `<button class="primary" onclick="enviarSolicitacaoMensagem()">Enviar nova solicitação</button>`;
+                  setChatInputEnabled(false, 'Solicitação recusada. Envie uma nova solicitação.');
                   return;
               }
 
               if (!souAlvoSolicitacao && dmSolicitacaoStatusAtual !== 'aprovado') {
-                  text.textContent = 'Este profissional recebe mensagens por solicita??o.';
-                  actions.innerHTML = `<button class="primary" onclick="enviarSolicitacaoMensagem()">Enviar solicita??o</button>`;
-                  setChatInputEnabled(false, 'Envie uma solicita??o para iniciar esta conversa.');
+                  text.textContent = 'Este profissional recebe mensagens por solicitação.';
+                  actions.innerHTML = `<button class="primary" onclick="enviarSolicitacaoMensagem()">Enviar solicitação</button>`;
+                  setChatInputEnabled(false, 'Envie uma solicitação para iniciar esta conversa.');
                   return;
               }
 
@@ -5347,7 +5372,7 @@
           if (amizadeStatusAtual === 'pendente_in') {
               bar.style.display = 'flex';
               bar.classList.add('show');
-              text.textContent = 'Voc? recebeu um pedido de amizade.';
+              text.textContent = 'Você recebeu um pedido de amizade.';
               actions.innerHTML = `
                   <button class="primary" onclick="aceitarPedidoAmizade()">Aceitar</button>
                   <button class="danger" onclick="recusarPedidoAmizade()">Recusar</button>
@@ -5470,15 +5495,15 @@
 
       function getMensagemBloqueioConversa(){
           if (!(dmSolicitacaoAtivaAtual && !dmPodeEnviarAtual)) {
-              return 'N?o foi poss?vel enviar mensagem neste momento.';
+              return 'Não foi poss?vel enviar mensagem neste momento.';
           }
           if (dmSolicitacaoStatusAtual === 'pendente') {
-              return 'Aguardando aprova??o da solicita??o de mensagem.';
+              return 'Aguardando aprova??o da solicitação de mensagem.';
           }
           if (dmSolicitacaoStatusAtual === 'recusado') {
-              return 'Solicita??o de mensagem recusada. Envie uma nova solicita??o.';
+              return 'Solicitação de mensagem recusada. Envie uma nova solicitação.';
           }
-          return 'Este profissional recebe DM apenas por solicita??o.';
+          return 'Este profissional recebe DM apenas por solicitação.';
       }
 
       window.enviarSolicitacaoMensagem = async function(){
@@ -5493,7 +5518,7 @@
                   dmRequestBy: uid,
                   dmRequestTarget: targetUid,
                   dmRequestUpdatedAt: agora,
-                  ultimaMensagem: 'Solicita??o de mensagem enviada',
+                  ultimaMensagem: 'Solicitação de mensagem enviada',
                   dataAtualizacao: agora
               };
               if (dmSolicitacaoStatusAtual !== 'pendente') payload.dmRequestRequestedAt = agora;
@@ -5507,8 +5532,8 @@
               renderContextoConversa();
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
-              console.error('Falha ao enviar solicita??o de mensagem:', e);
-              window.dokeAlert ? window.dokeAlert('N?o foi poss?vel enviar a solicita??o de mensagem.') : alert('N?o foi poss?vel enviar a solicita??o de mensagem.');
+              console.error('Falha ao enviar solicitação de mensagem:', e);
+              window.dokeAlert ? window.dokeAlert('Não foi poss?vel enviar a solicitação de mensagem.') : alert('Não foi poss?vel enviar a solicitação de mensagem.');
           }
       };
 
@@ -5527,7 +5552,7 @@
               renderContextoConversa();
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
-              console.error('Falha ao aprovar solicita??o de mensagem:', e);
+              console.error('Falha ao aprovar solicitação de mensagem:', e);
           }
       };
 
@@ -5546,7 +5571,7 @@
               renderContextoConversa();
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
-              console.error('Falha ao recusar solicita??o de mensagem:', e);
+              console.error('Falha ao recusar solicitação de mensagem:', e);
           }
       }
 
@@ -5595,7 +5620,7 @@
               if (window.carregarListaConversas) window.carregarListaConversas();
           } catch (e) {
               console.error('Falha ao enviar pedido de amizade:', e);
-              window.dokeAlert ? window.dokeAlert('N?o foi poss?vel enviar o pedido de amizade.') : alert('N?o foi poss?vel enviar o pedido de amizade.');
+              window.dokeAlert ? window.dokeAlert('Não foi poss?vel enviar o pedido de amizade.') : alert('Não foi poss?vel enviar o pedido de amizade.');
           }
       };
 
@@ -5675,7 +5700,7 @@
         } else if (status === 'aceito') {
             msg = 'Pedido aceito. Combine detalhes no chat.';
         } else if (status === 'pago') {
-            msg = souCliente ? 'Pagamento em garantia. Finalize quando o servi?o estiver conclu?do.' : '';
+            msg = souCliente ? 'Pagamento em garantia. Finalize quando o serviço estiver conclu?do.' : '';
         } else if (status === 'finalizado') {
             if (souCliente) {
                 msg = p.avaliado ? 'Pedido finalizado e avaliado com sucesso.' : 'Servico finalizado. Sua avaliacao ajuda a comunidade.';
@@ -5713,7 +5738,7 @@
     // 1. SISTEMA DE ALERTAS PERSONALIZADOS (SUBSTITUI NATIVOS)
     // =========================================================================
     
-    // Inje??o de Estilos dos Modais
+    // Injeção de Estilos dos Modais
     const styleModal = document.createElement('style');
     styleModal.innerHTML = `
         .doke-overlay {
@@ -5751,7 +5776,7 @@
     `;
     document.head.appendChild(styleModal);
 
-    // HTML do Modal Gen?rico
+    // HTML do Modal Genérico
     document.addEventListener("DOMContentLoaded", () => {
         initPedidosFilters();
         initConversasFilters();
@@ -5770,7 +5795,7 @@
                     <div class="doke-modal-box">
                         <div class="dm-header">
                             <i id="dmIcon" class='bx' style="font-size: 1.5rem;"></i>
-                            <h3 id="dmTitle" class="dm-title">T?tulo</h3>
+                            <h3 id="dmTitle" class="dm-title">Título</h3>
                         </div>
                         <div class="dm-body">
                             <p id="dmText">Mensagem aqui</p>
@@ -5786,14 +5811,14 @@
         }
     });
 
-    // Fun??es Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
+    // Funções Auxiliares de Promessa (Substitutos de alert/confirm/prompt)
     // IMPORTANT: script.js?v=20260218v60 (defer) tamb?m define window.dokeAlert/Confirm/Prompt.
     // Para evitar conflito (modal some e fica travando a tela), n?s reatribu?mos
     // as fun??es AP?S o DOMContentLoaded, garantindo que esta vers?o seja a final.
     function bindDokeModalAPI(){
         window.dokeAlert = (msg, title = "Aviso") => new Promise(resolve => setupModal(title, msg, 'alert', resolve));
-        window.dokeConfirm = (msg, title = "Confirma??o", type = 'normal') => new Promise(resolve => setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve));
-        window.dokePrompt = (msg, placeholder = "", title = "Informa??o") => new Promise(resolve => setupModal(title, msg, 'prompt', resolve, placeholder));
+        window.dokeConfirm = (msg, title = "Confirmação", type = 'normal') => new Promise(resolve => setupModal(title, msg, type === 'danger' ? 'confirm-danger' : 'confirm', resolve));
+        window.dokePrompt = (msg, placeholder = "", title = "Informação") => new Promise(resolve => setupModal(title, msg, 'prompt', resolve, placeholder));
     }
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', bindDokeModalAPI);
@@ -5818,7 +5843,7 @@
         btnCancel.style.display = 'block';
         btnConfirm.className = 'btn-dm btn-dm-confirm'; // Reset classes
         
-        // ?cones e Cores
+        // Ícones e Cores
         if(type === 'alert') {
             icon.className = 'bx bx-info-circle'; icon.style.color = '#0b7768';
             btnCancel.style.display = 'none';
@@ -5879,16 +5904,16 @@
                             <i class='bx bx-x' style="cursor:pointer; font-size:24px; color:white;" onclick="fecharModalGarantia()"></i>
                         </div>
                         <div class="md-body" style="padding: 30px;">
-                            <h4 style="margin-top:0; color:#0b7768;">Seu dinheiro est? seguro.</h4>
+                            <h4 style="margin-top:0; color:#0b7768;">Seu dinheiro está seguro.</h4>
                             <p style="color:#555; line-height:1.6; font-size:0.95rem;">
-                                O pagamento do cliente j? foi realizado, mas n?o foi enviado diretamente para o profissional.
+                                O pagamento do cliente já foi realizado, mas não foi enviado diretamente para o profissional.
                             </p>
                             <p style="color:#555; line-height:1.6; font-size:0.95rem;">
-                                Ele fica guardado em uma <strong>"Conta Cofre" (Escrow)</strong> da Doke e s? ? liberado automaticamente assim que o servi?o for finalizado com sucesso.
+                                Ele fica guardado em uma <strong>"Conta Cofre" (Escrow)</strong> da Doke e s? ? liberado automaticamente assim que o serviço for finalizado com sucesso.
                             </p>
                             <div style="background:#e0f2f1; padding:15px; border-radius:8px; margin-top:20px; border:1px solid #b2dfdb;">
                                 <i class='bx bx-info-circle' style="color:#00695c;"></i>
-                                <span style="font-size:0.85rem; color:#004d40;">Isso protege voc? contra golpes e servi?os n?o realizados.</span>
+                                <span style="font-size:0.85rem; color:#004d40;">Isso protege você contra golpes e serviços não realizados.</span>
                             </div>
                             <a href="duvida.html" style="display:block; margin-top:20px; text-align:center; color:#0b7768; font-weight:700; text-decoration:none;">
                                 Ler termos completos <i class='bx bx-right-arrow-alt'></i>
@@ -6303,7 +6328,7 @@
         let unreadPedidosCliente = 0;
         let unreadPedidosProf = 0;
         let unreadConvs = 0;
-        const updateChatBadge = () => ensureSidebarBadge('a[href="mensagens.html"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
+        const updateChatBadge = () => ensureSidebarBadge('a[href="mensagens.html"],a[href^="mensagens.html?"]', 'badge-chat-sidebar', unreadPedidosCliente + unreadPedidosProf + unreadConvs);
         let pedidosBadgeTimer = null;
         const refreshUnreadPedidos = async () => {
             try {
@@ -6505,7 +6530,7 @@ window.trocarAba = function(aba) {
     };
 
     window.verDetalhesOrcamento = async function(idPedido) {
-        // Mantido por compatibilidade (abre a p?gina de or?amento)
+        // Mantido por compatibilidade (abre a página de orçamento)
         
 
         const modal = document.getElementById('modalOrcamento');
@@ -6526,7 +6551,7 @@ window.trocarAba = function(aba) {
                 return d ? d.toLocaleDateString('pt-BR') : '';
             };
             const timelineSteps = [
-                { label: 'Solicita??o enviada', done: !!p.dataPedido, date: p.dataPedido },
+                { label: 'Solicitação enviada', done: !!p.dataPedido, date: p.dataPedido },
                 { label: 'Pedido aceito', done: ['aceito','pago','finalizado'].includes(statusNorm), date: p.dataAceite || p.dataAtualizacao },
                 { label: 'Pagamento', done: ['pago','finalizado'].includes(statusNorm), date: p.dataPagamento || p.dataPago },
                 { label: 'Finalizado', done: statusNorm === 'finalizado', date: p.dataConclusao || p.dataFinalizado }
@@ -6575,7 +6600,7 @@ window.trocarAba = function(aba) {
             const descricaoBase = (function(){
                 if (p.descricaoBase) return String(p.descricaoBase || '').trim();
                 const msg = String(p.mensagemInicial || '');
-                const idx = msg.toLowerCase().indexOf('local do servi?o:');
+                const idx = msg.toLowerCase().indexOf('local do serviço:');
                 if (idx === -1) return msg.trim();
                 return msg.slice(0, idx).trim();
             })();
@@ -6596,9 +6621,9 @@ window.trocarAba = function(aba) {
 
             const localTextoFallback = (function(){
                 const msg = String(p.mensagemInicial || '');
-                const idx = msg.toLowerCase().indexOf('local do servi?o:');
+                const idx = msg.toLowerCase().indexOf('local do serviço:');
                 if (idx === -1) return '';
-                return msg.slice(idx + 'local do servi?o:'.length).trim();
+                return msg.slice(idx + 'local do serviço:'.length).trim();
             })();
 
             const formatLocalHtml = (function(){
@@ -6671,14 +6696,14 @@ window.trocarAba = function(aba) {
                 </div>` : "";
 
             const localHtml = formatLocalHtml
-                ? `<div class="md-row"><div class="md-label">Local do servi?o</div><div class="md-value">${formatLocalHtml}</div></div>`
+                ? `<div class="md-row"><div class="md-label">Local do serviço</div><div class="md-value">${formatLocalHtml}</div></div>`
                 : "";
             const dataEspecificaHtml = dataEspecificaFmt
                 ? `<div class="md-row"><div class="md-label">Data espec?fica</div><div class="md-value">${escapeHtml(dataEspecificaFmt)}</div></div>`
                 : "";
 
             body.innerHTML = `
-                <div class="md-row"><div class="md-label">Servi?o</div><div class="md-value">${escapeHtml(p.servicoReferencia || "-")}</div></div>
+                <div class="md-row"><div class="md-label">Serviço</div><div class="md-value">${escapeHtml(p.servicoReferencia || "-")}</div></div>
                 <div class="md-row"><div class="md-label">Descri??o</div><div class="md-value">${escapeHtml(descricaoBase || p.mensagemInicial || "Sem descri??o")}</div></div>
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:15px;" class="md-row">
                     <div><div class="md-label">Prazo</div><div class="md-value">${escapeHtml(p.paraQuando || "A combinar")}</div></div>
@@ -6776,7 +6801,7 @@ window.trocarAba = function(aba) {
             if(!paraUid || !pedidoId) return;
             const perfil = (function(){
                 const p = JSON.parse(localStorage.getItem('doke_usuario_perfil')||'{}');
-                const nome = p.nome || 'Usu?rio';
+                const nome = p.nome || 'Usuário';
                 const raw = p.user || '';
                 const user = raw ? (raw.startsWith('@')? raw : '@'+raw) : '@usuario';
                 return { nome, user, foto: p.foto || 'https://placehold.co/50' };
@@ -7183,7 +7208,7 @@ window.trocarAba = function(aba) {
     };
 
     window.prepararCancelamento = async (id) => {
-        if(!await window.dokeConfirm('Tem certeza que deseja cancelar esta solicita??o?', 'Cancelar', 'danger')) return;
+        if(!await window.dokeConfirm('Tem certeza que deseja cancelar esta solicitação?', 'Cancelar', 'danger')) return;
         try {
             const snap = await getDoc(doc(db, 'pedidos', id));
             const p = snap.exists() ? snap.data() : {};
@@ -7191,7 +7216,7 @@ window.trocarAba = function(aba) {
                 status: 'cancelado'
             });
             await window.criarNotificacaoPedido(p.paraUid, 'pedido_cancelado', id);
-            window.dokeAlert('Solicita??o cancelada.');
+            window.dokeAlert('Solicitação cancelada.');
             carregarListaPedidos();
         } catch (e) { console.error(e); window.dokeAlert('Erro ao cancelar.'); }
     };
@@ -7537,10 +7562,10 @@ window.confirmarFinalizacaoPedido = async () => {
         const msgErro = e && e.message ? String(e.message) : "Falha ao finalizar o pedido.";
         window.dokeAlert(`Erro ao finalizar: ${msgErro}`);
     } finally {
-        if (btn) { btn.disabled = false; btn.innerHTML = "<i class='bx bx-check'></i> Finalizar servi?o"; }
+        if (btn) { btn.disabled = false; btn.innerHTML = "<i class='bx bx-check'></i> Finalizar serviço"; }
     }
 };
-    // Fun??es do Modal
+    // Funções do Modal
     window.irParaAvaliacaoDireta = () => {
         const fromGlobal = String(window.pedidoIdParaAvaliar || '').trim();
         const fromChat = String(chatIdAtual || '').trim();
@@ -7704,7 +7729,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         <button onclick="event.stopPropagation(); aceitarPedidoProfissional('${id}')" style="flex:1; padding:8px; border-radius:8px; border:none; background:#e8f5e9; color:#2e7d32; font-weight:700; cursor:pointer;">Aceitar</button>
                     </div>`;
                 } else if (papelReal === 'cliente' && statusRaw === 'pendente') {
-                    acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicita??o</button>`;
+                    acoesHtml = `<button class="btn-cancelar-discreto" onclick="event.stopPropagation(); prepararCancelamento('${id}')">Cancelar Solicitação</button>`;
                 } else if (papelReal === 'cliente' && statusRaw === 'pago') {
                      // Bot?o de Conclusão (Design Compacto)
                      acoesHtml = `
@@ -7744,15 +7769,15 @@ window.confirmarFinalizacaoPedido = async () => {
                     const motivo = p.motivoRecusa ? ` Motivo: ${escapeHtml(String(p.motivoRecusa).slice(0, 90))}${String(p.motivoRecusa).length > 90 ? '...' : ''}` : '';
                     subMsg = `<div class="ip-sub">Pedido recusado.${motivo}</div>`;
                 } else if (statusRaw === 'aceito' && papelReal === 'cliente') {
-                    subMsg = '<div class=\"ip-sub\">Chat liberado. Voc? j? pode negociar com o profissional.</div>';
+                    subMsg = '<div class=\"ip-sub\">Chat liberado. Você já pode negociar com o profissional.</div>';
                 }
 
-                // Card "Pedido em andamento" (diferencia Or?amentos vs Mensagens)
+                // Card "Pedido em andamento" (diferencia Orçamentos vs Mensagens)
                 let cardAndamento = "";
                 if (['aceito','pago','finalizado'].includes(statusRaw)) {
                     const pedidoStatusNorm = statusRaw;
                     const cardHidden = !!andamentoCardHidden[String(id)];
-                    const label = (statusRaw === 'finalizado') ? 'Servi?o finalizado' : 'Pedido em andamento';
+                    const label = (statusRaw === 'finalizado') ? 'Serviço finalizado' : 'Pedido em andamento';
                     if (!cardHidden) {
                         const cardCloseBtn = (pedidoStatusNorm === 'aceito')
                             ? `<button class="ip-andamento-close" title="Ocultar card" onclick="event.stopPropagation(); ocultarCardAndamento('${id}')"><i class='bx bx-x'></i></button>`
@@ -7765,7 +7790,7 @@ window.confirmarFinalizacaoPedido = async () => {
                             </div>
                             <div class="ip-andamento-content">
                                 <div class="ip-andamento-title">${label}</div>
-                                <div class="ip-andamento-text">As informa??es do or?amento est?o no chat.</div>
+                                <div class="ip-andamento-text">As informa??es do orçamento estáo no chat.</div>
                             </div>
                         </div>`;
                     }
@@ -7796,7 +7821,7 @@ window.confirmarFinalizacaoPedido = async () => {
                         <div class="ip-header"><span class="tag-orcamento">OR?AMENTO</span><div class="ip-header-actions">${selectMarker}${bApagar}${badgeHtml}</div></div>
                         <div class="ip-user">
                             <img src="${dU.foto || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
-                            <span>${dU.user || 'Usu?rio'}</span>
+                            <span>${dU.user || 'Usuário'}</span>
                         </div>
                         <div class="ip-body">
                             <h4>${p.servicoReferencia}</h4>
@@ -7826,7 +7851,7 @@ window.confirmarFinalizacaoPedido = async () => {
             if (container) {
                 replaceListHtmlSmooth(container, `
                     <div style="text-align:center; padding:30px; color:#999;">
-                        N?o foi poss?vel carregar os pedidos.
+                        Não foi poss?vel carregar os pedidos.
                         <button style="margin-top:10px; padding:8px 12px; border-radius:8px; border:1px solid #e2e8f0; background:#fff; cursor:pointer;" onclick="carregarListaPedidos()">Tentar novamente</button>
                     </div>`, 'pedidos:error');
             }
@@ -8149,9 +8174,9 @@ window.carregarListaConversas = async function() {
                       const souAlvoReq = String(meUid || '') === String(reqTarget || '');
                       const souSolicitanteReq = String(meUid || '') === String(reqBy || '');
                       const previewText = reqStatus === 'pendente'
-                          ? (souAlvoReq ? 'Solicita??o de mensagem recebida' : (souSolicitanteReq ? 'Solicita??o de mensagem pendente' : 'Solicita??o de mensagem'))
+                          ? (souAlvoReq ? 'Solicitação de mensagem recebida' : (souSolicitanteReq ? 'Solicitação de mensagem pendente' : 'Solicitação de mensagem'))
                           : (reqStatus === 'recusado'
-                              ? (souSolicitanteReq ? 'Solicita??o recusada' : 'Solicita??o recusada')
+                              ? (souSolicitanteReq ? 'Solicitação recusada' : 'Solicitação recusada')
                               : (lastMsg || 'Toque para conversar'));
                       const u = outroUid ? (userByUid.get(outroUid) || {}) : {};
                       const fallbackNomeContato = String(
@@ -8198,7 +8223,7 @@ window.carregarListaConversas = async function() {
                         <div class="item-conversa ${conversasSelecaoModo ? 'is-select-mode' : ''} ${isSelectedConversa ? 'is-selected' : ''}" data-colecao="conversas" data-id="${it.id}" data-outro-uid="${outroUid || ''}" data-arquivado="${isArquivado ? '1' : '0'}" onclick="handleConversaCardClick(event, '${it.id}', '${outroUid || ''}')">
                           <img src="${u.foto || fallbackFotoContato || 'https://placehold.co/150'}" alt="Avatar" loading="lazy" decoding="async">
                           <div class="ic-info">
-                            <div class="ic-nome">${u.user || fallbackNomeContato || 'Usu?rio'}</div>
+                            <div class="ic-nome">${u.user || fallbackNomeContato || 'Usuário'}</div>
                             <div class="ic-msg">${previewText}</div>
                           </div>
                           <div class="ic-meta">${selectMarker}${unreadHtml}${mutedHtml}</div>
@@ -8219,7 +8244,7 @@ window.carregarListaConversas = async function() {
       };
 
 // Fun??o auxiliar para formatar a data (Coloque fora ou antes do abrirChat)
-// Fun??o auxiliar de data (Mantenha ou adicione se n?o tiver)
+// Fun??o auxiliar de data (Mantenha ou adicione se não tiver)
 // Fun??o auxiliar de data (Mantenha igual a anterior)
     function formatarUltimaVez(dataIso) {
         if (!dataIso) return "Offline";
@@ -8760,13 +8785,13 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     if(btnP) btnP.style.display = (String(paraUid || '').trim() === String(currentUserUid || '').trim() && statusNorm === 'aceito') ? 'flex' : 'none';
                     syncChatHeaderLayout();
                   } else {
-                      mostrarAvisoBloqueio("Pedido n?o encontrado.");
+                      mostrarAvisoBloqueio("Pedido não encontrado.");
                       if (chatFooter) chatFooter.style.display = 'none';
                       syncChatHeaderLayout();
                   }
               }, (err) => {
                   console.warn("Falha ao ouvir pedido:", err);
-                  mostrarAvisoBloqueio("N?o foi poss?vel carregar o pedido.");
+                  mostrarAvisoBloqueio("Não foi poss?vel carregar o pedido.");
                   if (chatFooter) chatFooter.style.display = 'none';
                   syncChatHeaderLayout();
               });
@@ -8837,7 +8862,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                     const ultimaVez = d.ultimaVezOnline ? new Date(d.ultimaVezOnline) : new Date(0);
                     const diffMinutos = (agora - ultimaVez) / 1000 / 60;
 
-                    // L?gica para determinar se est? online (banco diz online E atualizou em menos de 3 min)
+                    // L?gica para determinar se está online (banco diz online E atualizou em menos de 3 min)
                     let isReallyOnline = (d.status === "Online" && diffMinutos < 3);
 
                     if (isReallyOnline) {
@@ -8901,7 +8926,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         // Remove aviso antigo se o texto for diferente (para atualizar de "aguardando" para "aceite" se necess?rio)
         const avisoAntigo = document.getElementById('aviso-bloqueio-chat');
         if (avisoAntigo) {
-            if (avisoAntigo.innerText.includes(texto)) return; // Se for o mesmo texto, n?o faz nada
+            if (avisoAntigo.innerText.includes(texto)) return; // Se for o mesmo texto, não faz nada
             avisoAntigo.remove(); // Se for diferente, remove para criar o novo
         }
 
@@ -9004,7 +9029,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
                 sigValue(m.maxParcelas || m.maxparcelas)
             ].join("|"));
             if (shouldSkipAttachment) return;
-            // Verifica se a mensagem foi enviada por MIM (usu?rio logado)
+            // Verifica se a mensagem foi enviada por MIM (usuário logado)
             const sender = m.senderUid || m.senderuid || m.senderUID || m.sender;
             const souEu = String(sender||'') === String(currentUserUid);
             if (!souEu && currentUserUid) {
@@ -9021,7 +9046,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             const parsedText = extractReplyFromText(m.texto || '');
             const cleanText = parsedText.text;
             const senderUserRaw = m.senderUser || m.sender_user || "";
-            const senderUser = (senderUserRaw || (souEu ? 'Voc?' : 'Usu?rio'));
+            const senderUser = (senderUserRaw || (souEu ? 'Você' : 'Usuário'));
             const msgPreview = getTipoPreview(m.tipo, cleanText || '', m.url || '');
             const enc = (v) => encodeURIComponent(String(v || ""));
             const replyBtn = docSnap.id
@@ -9151,7 +9176,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
             }
             // --- CARD AVALIA??O (AMARELO) ---
             else if (m.tipo === 'card_avaliacao') {
-                // Card amarelo removido (o card com foto de finaliza??o j? cobre essa necessidade)
+                // Card amarelo removido (o card com foto de finaliza??o já cobre essa necessidade)
                 return;
             }
             // --- CARD FINALIZADO ---
@@ -9298,7 +9323,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
               }
               // --- SOLICITA??O DE REEMBOLSO ---
               else if (m.tipo === 'reembolso') {
-                const motivo = m.texto ? escapeHtml(m.texto) : "Solicita??o registrada.";
+                const motivo = m.texto ? escapeHtml(m.texto) : "Solicitação registrada.";
                 htmlParts.push(`
                 <div ${msgIdAttr} style="align-self:center; background:#fee2e2; border:1px solid #fecaca; padding:14px; border-radius:12px; margin:12px 0; text-align:center;">
                     <i class='bx bx-package' style="color:#b91c1c; font-size:1.4rem;"></i>
@@ -9404,7 +9429,7 @@ window.abrirChat = async function(idDoc, uidOutro, nomePadrao, fotoPadrao, colec
         }
         lastSig = nextSig;
         const emptyHtml = clearTs
-            ? `<div style="text-align:center; padding:30px; color:#888;">Hist?rico limpo para voc?. Novas mensagens aparecer?o aqui.</div>`
+            ? `<div style="text-align:center; padding:30px; color:#888;">Hist?rico limpo para você. Novas mensagens aparecer?o aqui.</div>`
             : `<div style="text-align:center; padding:30px; color:#888;">Nenhuma mensagem.</div>`;
         const nextHtml = htmlParts.length ? htmlParts.join("") : emptyHtml;
         container.innerHTML = nextHtml;
@@ -9455,7 +9480,7 @@ window.fecharModalGerarCobranca = function(){
 
 window.gerarPagamento = async function() {
     if (colecaoAtual !== 'pedidos') {
-        const msg = "Cobran?a dispon?vel apenas em pedidos/or?amentos.";
+        const msg = "Cobran?a dispon?vel apenas em pedidos/orçamentos.";
         window.dokeAlert ? window.dokeAlert(msg) : alert(msg);
         return;
     }
@@ -9852,6 +9877,20 @@ window.confirmarGerarCobranca = async function(){
             }
             await window.abrirChat(convo.id, uidOutro, '', '', 'conversas', '');
             if (abaAtual !== 'conversas') trocarAba('conversas');
+      // Se não há deep-link de chat, garante tela inicial (lista + placeholder) sem abrir conversa vazia
+      try{
+        const hasDeepLink =
+          params.has('chatId') || params.has('pedidoId') ||
+          params.has('uid') || params.has('userUid') ||
+          params.has('outroUid') || params.has('peerUid');
+        if(!hasDeepLink){
+          document.body.classList.remove('mobile-chat-open');
+          const ph = document.getElementById('chat-placeholder');
+          const box = document.getElementById('box-conversa-real');
+          if(ph) ph.style.display = 'flex';
+          if(box) box.style.display = 'none';
+        }
+      }catch(_e){}
         } catch (e) {
             console.error('Falha ao abrir conversa por uid:', e);
         }
@@ -9906,7 +9945,7 @@ window.confirmarGerarCobranca = async function(){
             }
             const p = pSnap.data();
 
-            // Descobre o outro usu?rio
+            // Descobre o outro usuário
             const deUid = getDeUid(p);
             const paraUid = getParaUid(p);
             const outroUid = (deUid === meUid) ? paraUid : deUid;
@@ -10035,7 +10074,7 @@ window.iniciarGravacao = async function() {
     }
     // Verifica suporte
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        alert("Seu navegador n?o suporta grava??o de áudio.");
+        alert("Seu navegador não suporta grava??o de áudio.");
         return;
     }
 
@@ -10114,7 +10153,7 @@ window.enviarAudio = function() {
 
         try {
             const user = auth.currentUser;
-            if (!user) throw new Error("Usu?rio n?o logado");
+            if (!user) throw new Error("Usuário não logado");
 
             // Precisa de um chat aberto
             if (!chatIdAtual || !colecaoAtual) {

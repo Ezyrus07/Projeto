@@ -1,4 +1,4 @@
-﻿// ============================================================
+// ============================================================
 // 1. IMPORTA??ES E CONFIGURA??O
 // ============================================================
 
@@ -1653,7 +1653,7 @@ window.verificarNotificacoes = function(uid) {
     const q = query(collection(db, "pedidos"), where("paraUid", "==", uid), where("status", "==", "pendente"));
     onSnapshot(q, (snap) => {
         const qtd = snap.size;
-        document.querySelectorAll('a[href="mensagens.html"]').forEach(link => {
+        document.querySelectorAll('a[href="mensagens.html"], a[href^="mensagens.html?"]').forEach(link => {
             const existing = link.querySelector('.badge-notificacao');
             if(existing) existing.remove();
             if (qtd > 0) {
@@ -3395,6 +3395,30 @@ async function protegerPaginasRestritas() {
     }
 
     if (!estaLogado) {
+        
+        // iOS/Safari and some auth providers can report a transient "no session" right after navigation.
+        // Retry briefly before forcing redirect to login (avoids false negatives when header shows logged).
+        try {
+            const startedAt = Date.now();
+            let ok = false;
+            while ((Date.now() - startedAt) < 1400) {
+                // If shell already verified session, don't redirect.
+                if (window.__DOKE_SHELL_BUILD__ && (localStorage.getItem('usuarioLogado') === 'true' || localStorage.getItem('doke_uid'))) { ok = true; break; }
+                let u = null;
+                try { u = await dokeResolveAuthUser(); } catch (_) { u = null; }
+                if (u) { ok = true; break; }
+                try {
+                    if (window.sb?.auth?.getSession) {
+                        const { data } = await window.sb.auth.getSession();
+                        if (data?.session?.user) { ok = true; break; }
+                    }
+                } catch (_e) {}
+                try { if (window.auth?.currentUser) { ok = true; break; } } catch (_e) {}
+                // small delay
+                await new Promise(r => setTimeout(r, 180));
+            }
+            if (ok) return;
+        } catch (_e) {}
         window.location.href = "login.html";
     }
 }
@@ -7945,8 +7969,13 @@ window.monitorarNotificacoesGlobal = function(uid) {
         box-shadow: 0 2px 4px rgba(0,0,0,0.2);
     `;
 
+    const toHrefSelector = (href) => {
+        if (String(href || '').includes('?')) return `a[href="${href}"]`;
+        return `a[href="${href}"], a[href^="${href}?"]`;
+    };
+
     const syncSidebarBadge = (href, className, total) => {
-        document.querySelectorAll(`a[href="${href}"]`).forEach((link) => {
+        document.querySelectorAll(toHrefSelector(href)).forEach((link) => {
             const parent = link.parentNode?.classList?.contains('item') ? link.parentNode : link;
             if (!parent) return;
             let badge = parent.querySelector(`.${className}`);
@@ -7971,10 +8000,14 @@ window.monitorarNotificacoesGlobal = function(uid) {
     // - Outras usam o header legado (.navbar-mobile .botoes-direita)
     // Para evitar que a bolinha "suma" ao navegar entre HTMLs, sincronizamos ambos.
     const syncShellBadge = (href, total) => {
+        const base = String(href || '');
+        const hrefSelectors = base.includes('?')
+            ? [`a[href="${base}"]`]
+            : [`a[href="${base}"]`, `a[href^="${base}?"]`];
         const selectors = [
-            `.doke-mobile-header a.doke-icon-btn[href="${href}"]`,
-            `.navbar-mobile .botoes-direita a[href="${href}"]`,
-            `.navbar-mobile a[href="${href}"]`
+            ...hrefSelectors.map((s) => `.doke-mobile-header ${s}`),
+            ...hrefSelectors.map((s) => `.navbar-mobile .botoes-direita ${s}`),
+            ...hrefSelectors.map((s) => `.navbar-mobile ${s}`)
         ];
 
         const style = `
@@ -14322,7 +14355,7 @@ async function carregarComentariosSupabase(publicacaoId) {
         <a href="notificacoes.html"><i class='bx bx-bell icon azul'></i><span>Notificações</span></a>
       </div>
       <div class="${itemClass('mensagens.html')}">
-        <a href="mensagens.html"><i class='bx bx-message-rounded-dots icon azul'></i><span>Mensagens</span></a>
+        <a href="mensagens.html?aba=conversas"><i class='bx bx-message-rounded-dots icon azul'></i><span>Mensagens</span></a>
       </div>
       <div class="${itemClass('pedidos.html')}">
         <a href="pedidos.html"><i class='bx bx-package icon verde'></i><span>Pedidos</span></a>
@@ -14802,7 +14835,9 @@ function syncClear(){
 
   // [DOKE] garante inicializacao da busca lateral em qualquer HTML com sidebar,
   // inclusive quando a sidebar e montada depois do DOMContentLoaded.
-  (function bootIgSidebarSearch(){
+    try{ window.__DOKE_SIDEBAR_SEARCH_FULL__ = true; }catch(_e){}
+
+(function bootIgSidebarSearch(){
     let tries = 0;
     const maxTries = 25;
     const run = () => {
