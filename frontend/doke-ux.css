@@ -568,13 +568,10 @@ body[data-page="home"] .pv-hist-chip span{font-weight:900;color:#0f172a;font-siz
   appearance: none;
 }
 
-/* Esconde scrollbar "pílula" (mobile) dentro do painel de pesquisa */
+/* Pesquisa lateral: evita encadeamento de scroll */
 .ig-search-body{
-  scrollbar-width: none;
-  -ms-overflow-style: none;
   overscroll-behavior: contain;
 }
-.ig-search-body::-webkit-scrollbar{ width:0; height:0; }
 
 /* Linhas (recentes / resultados) — padrão Doke */
 .ig-row{
@@ -754,8 +751,25 @@ button[aria-label][class*="Next"]{
 .ig-search-body{
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding-bottom: 12px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(42,95,144,.28) transparent;
+}
+.ig-search-body::-webkit-scrollbar{
+  width: 8px;
+  height: 8px;
+}
+.ig-search-body::-webkit-scrollbar-track{
+  background: transparent;
+}
+.ig-search-body::-webkit-scrollbar-thumb{
+  background: rgba(42,95,144,.26);
+  border-radius: 999px;
+}
+.ig-search-body::-webkit-scrollbar-button{
+  display: none;
 }
 
 .ig-tab{
@@ -790,6 +804,184 @@ button[aria-label][class*="Next"]{
   backdrop-filter: blur(8px);
 }
 
+/* ============================================================
+   DOKE SHELL V2 (DESKTOP) - header novo + centralizacao global
+   ============================================================ */
+@media (min-width: 1025px){
+  :root{
+    --doke-v2-sidebar-compact: 86px;
+    --doke-v2-sidebar-expanded: 224px;
+    --doke-v2-sidebar-search: 316px;
+    --doke-v2-header-h: 74px;
+    --doke-v2-page-max: 1200px;
+    --doke-v2-gutter: clamp(14px, 2.2vw, 28px);
+    --doke-v2-surface: #f7f8fb;
+    --doke-v2-line: rgba(15,23,42,.08);
+    --doke-v2-shadow: 0 2px 8px rgba(15,23,42,.05);
+  }
+
+  body{
+    --sidebar-width: var(--doke-v2-sidebar-compact);
+  }
+  body.doke-sidebar-expanded{
+    --sidebar-width: var(--doke-v2-sidebar-expanded);
+  }
+  body.doke-sidebar-search-open{
+    --sidebar-width: var(--doke-v2-sidebar-search);
+  }
+
+  /* Header novo (padrao em todas as paginas desktop) */
+  .navbar-desktop{
+    position: fixed !important;
+    top: 0 !important;
+    left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    height: var(--doke-v2-header-h) !important;
+    padding: 0 18px !important;
+    background: var(--doke-v2-surface) !important;
+    border-bottom: 1px solid var(--doke-v2-line) !important;
+    box-shadow: var(--doke-v2-shadow) !important;
+    z-index: 1010 !important;
+    transition: none !important;
+  }
+  .navbar-desktop::before{
+    content: "";
+    position: absolute;
+    left: calc(var(--sidebar-width) * -1);
+    top: 0;
+    width: var(--sidebar-width);
+    height: 100%;
+    background: var(--doke-v2-surface);
+    border-bottom: 1px solid var(--doke-v2-line);
+    pointer-events: none;
+  }
+  .navbar-desktop .menu{
+    justify-content: center !important;
+    gap: 14px !important;
+  }
+  .navbar-desktop .menu a,
+  .navbar-desktop .menu .cep{
+    line-height: 1 !important;
+    padding: 8px 10px !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+  }
+  .navbar-desktop .menu a.active,
+  .navbar-desktop .menu a[aria-current="page"]{
+    background: rgba(42,95,144,.08) !important;
+  }
+
+  /* Sidebar e header como um bloco unico */
+  .sidebar-icones{
+    width: var(--sidebar-width) !important;
+    min-width: var(--sidebar-width) !important;
+    max-width: var(--sidebar-width) !important;
+    background: var(--doke-v2-surface) !important;
+    border-right: 1px solid var(--doke-v2-line) !important;
+    box-shadow: none !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    transition: none !important;
+  }
+
+  /* Conteudo centralizado (abrange paginas que usam wrappers diferentes) */
+  main,
+  .dp-wrap,
+  .main-content,
+  .messenger-layout,
+  body > .container,
+  body > .content-wrapper{
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    padding-left: var(--doke-v2-gutter) !important;
+    padding-right: var(--doke-v2-gutter) !important;
+  }
+
+  /* Corrige topo branco "vazio" e alinhamento vertical geral */
+  main,
+  .dp-wrap,
+  .main-content,
+  .messenger-layout,
+  body > .container,
+  body > .content-wrapper{
+    padding-top: calc(var(--doke-v2-header-h) + 16px) !important;
+  }
+
+  main > *:not(script):not(style),
+  .dp-wrap > *:not(script):not(style),
+  .main-content > *:not(script):not(style),
+  .messenger-layout > *:not(script):not(style),
+  body > .container > *:not(script):not(style),
+  body > .content-wrapper > *:not(script):not(style){
+    max-width: var(--doke-v2-page-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  /* remove scroll duplo em desktop */
+  html, body{
+    overflow-y: auto !important;
+  }
+  main,
+  .dp-wrap,
+  .main-content,
+  .messenger-layout,
+  .content-wrapper,
+  .container{
+    overflow-y: visible !important;
+    max-height: none !important;
+    height: auto !important;
+  }
+
+  /* Busca lateral estilo Instagram: largura real + sem recorte */
+  body.doke-sidebar-search-open .sidebar-icones,
+  .sidebar-icones.ig-search-open{
+    width: var(--doke-v2-sidebar-search) !important;
+    min-width: var(--doke-v2-sidebar-search) !important;
+    max-width: var(--doke-v2-sidebar-search) !important;
+    align-items: stretch !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: hidden !important;
+  }
+  .sidebar-icones.ig-search-open .item{
+    width: 100% !important;
+    max-width: none !important;
+    justify-content: flex-start !important;
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+  .sidebar-icones.ig-search-open .item a{
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+  .sidebar-icones.ig-search-open .item span{
+    display: block !important;
+  }
+  .sidebar-icones.ig-search-open .ig-search-screen{
+    left: 0 !important;
+    right: 0 !important;
+    width: auto !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  .sidebar-icones.ig-search-open .ig-search-top,
+  .sidebar-icones.ig-search-open .ig-search-inputwrap,
+  .sidebar-icones.ig-search-open .ig-search-tabs,
+  .sidebar-icones.ig-search-open .ig-recents-head,
+  .sidebar-icones.ig-search-open .ig-recents-list,
+  .sidebar-icones.ig-search-open .ig-search-results{
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
 .ig-recents-head .ig-recents-title{
   font-weight: 800;
   color: rgba(15,23,42,0.92);
@@ -804,8 +996,8 @@ button[aria-label][class*="Next"]{
 }
 
 .ig-recents{
-  height: calc(100% - 176px);
-  overflow:auto;
+  height: auto;
+  overflow: visible;
   padding: 6px 10px 20px;
 }
 
@@ -813,6 +1005,7 @@ button[aria-label][class*="Next"]{
 .ig-recents-list,
 .ig-search-results{
   padding: 6px 10px 18px;
+  overflow: visible;
 }
 
 .ig-recent-row{
@@ -930,8 +1123,8 @@ body[data-page="home"] .pv-inline-search-section--stealth .pv-search.pv-search--
    Sidebar — Boxicons
    ============================================================ */
 .sidebar-icones i.bx.icon{
-  width:28px;height:28px;
-  font-size:28px;
+  width:24px;height:24px;
+  font-size:24px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -939,7 +1132,7 @@ body[data-page="home"] .pv-inline-search-section--stealth .pv-search.pv-search--
 }
 .sidebar-icones i.bx.icon.azul{ color: var(--cor2); }
 .sidebar-icones i.bx.icon.verde{ color: var(--cor0); }
-.sidebar-icones .item:hover i.bx.icon{ transform: translateY(-1px); }
+.sidebar-icones .item:hover i.bx.icon{ transform: none !important; }
 
 /* Empty state actions (usado em busca/resultado) */
 .doke-empty .actions{

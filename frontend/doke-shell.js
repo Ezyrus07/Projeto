@@ -1,5 +1,5 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260303v59";
+  window.__DOKE_SHELL_BUILD__ = "20260306v60";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
@@ -21,7 +21,7 @@
     mais: "mais.html"
   };
 
-  const LOGO_SRC = "assets/Imagens/doke-logo.png";
+  const LOGO_SRC = "assets/Imagens/LOGO_DOKE_D_CROP.png";
 
   function toast(msg, type="info"){
     try{
@@ -361,24 +361,33 @@
   }
 
   function ensureFallbackDropdownBehavior(){
-    if (typeof window.toggleDropdown !== "function") {
-      window.toggleDropdown = function(event){
-        if (event) event.stopPropagation();
-        const target = event?.currentTarget || event?.target;
-        const container = target?.closest ? target.closest(".profile-container") : null;
-        const drop = container ? container.querySelector(".dropdown-profile") : document.getElementById("dropdownPerfil");
-        if(!drop) return;
-        const willOpen = !drop.classList.contains("show");
-        document.querySelectorAll(".dropdown-profile.show").forEach((el) => el.classList.remove("show"));
-        if (willOpen) drop.classList.add("show");
-      };
-    }
+    window.toggleDropdown = function(event){
+      if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+      const target = event?.currentTarget || event?.target || null;
+      const container = target?.closest ? target.closest(".profile-container") : null;
+      const drop = container ? container.querySelector(".dropdown-profile") : document.querySelector(".dropdown-profile");
+      if(!drop) return;
+      const willOpen = !drop.classList.contains("show");
+      document.querySelectorAll(".dropdown-profile.show").forEach((el) => el.classList.remove("show"));
+      if (willOpen) drop.classList.add("show");
+    };
+
     if (window.__dokeShellDropdownFallbackBound) return;
     window.__dokeShellDropdownFallbackBound = true;
     document.addEventListener("click", (ev) => {
-      if (ev.target && ev.target.closest && ev.target.closest(".profile-container")) return;
+      const t = ev.target;
+      if (!(t instanceof Element)) return;
+      const toggle = t.closest(".profile-img-btn, .doke-avatar-btn, [data-action='toggle-profile-menu']");
+      if (toggle) {
+        window.toggleDropdown(ev);
+        return;
+      }
+      if (t.closest(".profile-container")) return;
       document.querySelectorAll(".dropdown-profile.show").forEach((el) => el.classList.remove("show"));
-    });
+    }, true);
   }
 
   function buildSwitchLoginUrl(account){
@@ -628,7 +637,46 @@
         }
       });
     });
-  }function getAvatarUrl(profile){
+  }
+
+  function syncDesktopSidebarProfile(opts){
+    try{
+      const isLogged = !!opts?.isLogged;
+      const profile = (opts?.profile && typeof opts.profile === "object") ? opts.profile : {};
+      const avatarUrl = String(opts?.avatarUrl || "").trim();
+      const isPro = !!opts?.isPro;
+      const nomePerfil = sanitizePlainText(profile.user || profile.nome || profile.name || "Minha conta");
+      const nomePerfilSafe = escapeHtml(nomePerfil || "Minha conta");
+      const profileHref = isPro ? "meuperfil.html" : "perfil-usuario.html";
+      const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
+      const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
+
+      document.querySelectorAll(".doke-sidebar-profile").forEach((box) => {
+        if (!(box instanceof HTMLElement)) return;
+        const avatar = box.querySelector(".doke-sidebar-account-avatar");
+        const nameEl = box.querySelector(".doke-sidebar-account-name");
+        const menu = box.querySelector(".doke-sidebar-account-menu");
+        if (avatar instanceof HTMLImageElement) avatar.src = avatarUrl || "https://i.pravatar.cc/150?img=12";
+        if (nameEl) nameEl.textContent = nomePerfil || "Minha conta";
+        if (menu instanceof HTMLElement) {
+          if (!isLogged) {
+            menu.innerHTML = `<a href="login.html" class="dropdown-item"><i class='bx bx-log-in'></i> Entrar</a>`;
+          } else {
+            menu.innerHTML = `
+              <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
+              <a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
+              ${itemCarteira}
+              <a href="#" onclick="alternarConta()" class="dropdown-item"><i class='bx bx-user-pin'></i> Alternar Conta</a>
+              <a href="${linkAnunciar}" class="dropdown-item"><i class='bx bx-plus-circle'></i> Anunciar</a>
+              <a href="#" onclick="fazerLogout()" class="dropdown-item item-sair"><i class='bx bx-log-out'></i> Sair</a>
+            `;
+          }
+        }
+      });
+    }catch(_e){}
+  }
+
+  function getAvatarUrl(profile){
     if(!profile) return null;
     return profile.foto || profile.avatar || profile.foto_url || profile.fotoPerfil || profile.photoURL || profile.imagem || null;
   }
@@ -653,7 +701,116 @@
     return false;
   }
 
-  function isVisibleModalLayer(el){
+  function getDesktopCurrentFileName(){
+    return String((location.pathname || "").split("/").pop() || "index.html")
+      .split("?")[0]
+      .trim()
+      .toLowerCase();
+  }
+
+  function desktopMenuTargetForDesktopFile(file){
+    const f = String(file || "").toLowerCase();
+    const groups = {
+      anunciar: new Set(["escolheranuncio.html","selecionaranuncio.html","anunciar.html","anunciar-negocio.html","editar-anuncio.html"]),
+      comunidades: new Set(["comunidade.html","grupo.html"]),
+      novidades: new Set(["novidades.html"])
+    };
+    if (groups.anunciar.has(f)) return "escolheranuncio.html";
+    if (groups.comunidades.has(f)) return "comunidade.html";
+    if (groups.novidades.has(f)) return "novidades.html";
+    return f;
+  }
+
+  function ensureUnifiedDesktopChrome(){
+  try{
+    const body = document.body;
+    if (!body) return;
+    if (String(body.getAttribute("data-doke-unified-desktop") || "").toLowerCase() === "off") return;
+    if (!window.matchMedia("(min-width:1025px)").matches) return;
+
+    const file = getDesktopCurrentFileName();
+    const topTarget = desktopMenuTargetForDesktopFile(file);
+    const isActive = (href) => {
+      const h = String(href || "").split("?")[0].trim().toLowerCase();
+      if (h === "mensagens.html") return file === "mensagens.html";
+      return h === file;
+    };
+    const item = (href, icon, cls, label, extraAttr) => `
+      <div class="item ${isActive(href) ? "active" : ""}">
+        <a href="${href}" ${extraAttr || ""}>
+          <i class="bx ${icon} icon ${cls}"></i>
+          <span>${label}</span>
+        </a>
+      </div>
+    `;
+
+    const headerMarkup = `
+<header class="navbar-desktop" data-shell="unified-desktop">
+  <div class="doke-header-left">
+    <div class="cep-wrapper">
+      <a class="cep" href="#" id="linkCep" onclick="toggleCep && toggleCep(event)">
+        <svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg>
+        <span id="textoCepSpan">Localizacao ativa</span>
+      </a>
+      <div class="cep-popup" id="boxCep">
+        <p>Digite seu CEP:</p>
+        <div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"><button onclick="salvarCep && salvarCep()">OK</button></div>
+      </div>
+    </div>
+  </div>
+  <nav class="menu doke-header-menu">
+    <a href="escolheranuncio.html" ${topTarget === "escolheranuncio.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Anunciar</a>
+    <a href="comunidade.html" ${topTarget === "comunidade.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Comunidades <span class="badge-novo1">NOVO</span></a>
+    <a href="novidades.html" ${topTarget === "novidades.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Novidades</a>
+  </nav>
+  <div class="botoes-direita doke-header-right"><a class="entrar" href="login.html">Entrar</a></div>
+</header>`;
+const sidebarMarkup = `
+<aside class="sidebar-icones" data-shell="unified-desktop">
+  <div id="logo"><a href="index.html" aria-label="Doke"><img src="assets/Imagens/LOGO_DOKE_D_CROP.png" alt="Doke"></a></div>
+  ${item("index.html", "bx-home-alt", "azul", "Início")}
+  <div class="item" id="pvSearchSidebarItem"><a href="#" class="pv-search-toggle" aria-label="Pesquisar"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
+  ${item("negocios.html", "bx-store", "verde", "Negócios")}
+  ${item("notificacoes.html", "bx-bell", "azul", "Notificações")}
+  ${item("mensagens.html?aba=conversas", "bx-message-rounded-dots", "azul", "Mensagens")}
+  ${item("pedidos.html", "bx-package", "verde", "Pedidos")}
+  ${item("comunidade.html", "bx-group", "verde", "Comunidades")}
+  <div class="item ${file === "meuperfil.html" ? "active" : ""}"><a href="#" onclick="if(window.irParaMeuPerfil){irParaMeuPerfil(event);}else{location.href='meuperfil.html';} return false;"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
+  ${item("mais.html", "bx-menu", "azul", "Mais")}
+</aside>`;
+
+    document.querySelectorAll("header.navbar-desktop").forEach((el) => {
+      if (el.getAttribute("data-shell") !== "unified-desktop") {
+        try { el.remove(); } catch(_e){}
+      }
+    });
+    document.querySelectorAll("aside.sidebar-icones").forEach((el) => {
+      if (el.getAttribute("data-shell") !== "unified-desktop") {
+        try { el.remove(); } catch(_e){}
+      }
+    });
+
+    if (!document.querySelector('header.navbar-desktop[data-shell="unified-desktop"]')) {
+      const anchor = document.querySelector("#overlay-menu");
+      if (anchor) anchor.insertAdjacentHTML("afterend", headerMarkup);
+      else document.body.insertAdjacentHTML("afterbegin", headerMarkup);
+    }
+
+    if (!document.querySelector('aside.sidebar-icones[data-shell="unified-desktop"]')) {
+      const beforeMain = document.querySelector("main, .dp-wrap, .main-content, .messenger-layout, .content-wrap");
+      if (beforeMain) beforeMain.insertAdjacentHTML("beforebegin", sidebarMarkup);
+      else document.body.insertAdjacentHTML("beforeend", sidebarMarkup);
+    }
+
+    document.querySelectorAll("aside.sidebar-icones #logo img").forEach((img) => {
+      try {
+        img.setAttribute("src", "assets/Imagens/LOGO_DOKE_D_CROP.png");
+        img.setAttribute("alt", "Doke");
+      } catch(_e){}
+    });
+  }catch(_e){}
+}
+function isVisibleModalLayer(el){
     if(!el || !el.isConnected || el.hidden) return false;
     if(el.getAttribute("aria-hidden") === "true") return false;
     let st = null;
@@ -819,22 +976,22 @@
 
       if (desktop && sidebar){
         body.classList.add("has-doke-sidebar");
-        if (!link){
-          link = document.createElement("link");
-          link.id = cssId;
-          link.rel = "stylesheet";
-          link.href = "doke-sidebar-compact.css?v=20260306v1";
-          document.head.appendChild(link);
+        if (link) {
+          try { link.remove(); } catch(_e){}
         }
         return;
       }
 
       body.classList.remove("has-doke-sidebar");
+      if (link) {
+        try { link.remove(); } catch(_e){}
+      }
     }catch(_e){}
   }
 async function ensureShell(){
     setShellAuthStateReady(false);
     const body = document.body;
+    try { ensureUnifiedDesktopChrome(); } catch(_e) {}
     try { ensureCompactSidebarMode(); } catch(_e) {}
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
@@ -982,6 +1139,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
 
     ensureGlobalAuthActions();
     syncClassicDesktopHeader({ isLogged, profile, avatarUrl, isPro });
+    syncDesktopSidebarProfile({ isLogged, profile, avatarUrl, isPro });
     try { normalizeTopMenuActive(); } catch(_e) {}
     try { ensureSidebarSearchLite(); } catch(_e) {}
     try { ensureCompactSidebarMode(); } catch(_e) {}
@@ -2044,20 +2202,13 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     }
 
     const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html", "app-beta.html"]);
-    // Pages with heavy runtime/lifecycle where full reload is currently safer.
-    // If doke_enable_pjax=1 is set, this safety list is ignored.
-    const PJAX_UNSAFE_FILES = new Set([
+    // Pilot gradual: only these pages use persistent shell navigation by default.
+    const PJAX_PILOT_FILES = new Set([
       "index.html",
       "comunidade.html",
-      "grupo.html",
       "mensagens.html",
       "pedidos.html",
-      "meuperfil.html",
-      "perfil.html",
-      "perfil-usuario.html",
-      "perfil-profissional.html",
-      "perfil-cliente.html",
-      "perfil-empresa.html"
+      "meuperfil.html"
     ]);
     const SCRIPT_SKIP_PARTS = [
       "/doke-shell.js",
@@ -2099,6 +2250,9 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       const path = String(urlObj?.pathname || "").toLowerCase();
       return path.split("/").pop() || "";
     }
+    function getLiveCurrentFileName(){
+      try { return getCurrentFileName(new URL(location.href)); } catch(_e) { return currentFile; }
+    }
 
     function isBlockedPath(urlObj){
       const name = getCurrentFileName(urlObj);
@@ -2116,8 +2270,10 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     function isPjaxAllowedUrl(urlObj){
       if(!isInternalHtml(urlObj)) return false;
       if (forcedOn) return true;
+      const liveCurrent = getLiveCurrentFileName();
       const name = getCurrentFileName(urlObj);
-      if (PJAX_UNSAFE_FILES.has(name)) return false;
+      if (!PJAX_PILOT_FILES.has(liveCurrent)) return false;
+      if (!PJAX_PILOT_FILES.has(name)) return false;
       return true;
     }
 
@@ -2278,11 +2434,24 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       if(mode === "replace") history.replaceState(state, "", href);
       else history.pushState(state, "", href);
     }
+    function runRegisteredTeardowns(){
+      const bag = window.__dokePageTeardowns;
+      if(!Array.isArray(bag) || !bag.length) return;
+      const toRun = bag.splice(0, bag.length);
+      toRun.forEach((fn) => { try { if(typeof fn === "function") fn(); } catch(_e){} });
+    }
+    if(typeof window.dokeRegisterTeardown !== "function"){
+      window.dokeRegisterTeardown = function(fn){
+        if(typeof fn !== "function") return;
+        if(!Array.isArray(window.__dokePageTeardowns)) window.__dokePageTeardowns = [];
+        window.__dokePageTeardowns.push(fn);
+      };
+    }
 
     async function navigateInPlace(urlObj, mode){
       if(!isPjaxAllowedUrl(urlObj)) return false;
-      if(BLOCKED_FILES.has(currentFile)) return false;
-      if(!forcedOn && PJAX_UNSAFE_FILES.has(currentFile)) return false;
+      const liveCurrent = getLiveCurrentFileName();
+      if(BLOCKED_FILES.has(liveCurrent)) return false;
       const currentPath = `${location.pathname}${location.search}`;
       const nextPath = `${urlObj.pathname}${urlObj.search}`;
       if(currentPath === nextPath && !urlObj.hash) return false;
@@ -2310,6 +2479,8 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         const nextRoot = resolveSwapRoot(nextDoc);
         if(!nextRoot) throw new Error("Target root not found");
         await syncHeadAssets(nextDoc);
+        try { window.dispatchEvent(new CustomEvent("doke:page-will-swap", { detail: { from: currentPath, to: nextPath } })); } catch(_e) {}
+        runRegisteredTeardowns();
 
         const imported = document.importNode(nextRoot, true);
         currentRoot.replaceWith(imported);

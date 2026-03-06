@@ -14332,6 +14332,7 @@ async function carregarComentariosSupabase(publicacaoId) {
   function normalizeSidebarToIndexModel(){
     const sidebar = document.querySelector('aside.sidebar-icones, aside.sidebar, .sidebar-icones');
     if(!sidebar) return false;
+    if (String(sidebar.getAttribute('data-shell') || '').toLowerCase() === 'unified-desktop') return true;
     if(sidebar.dataset.indexSidebarNormalized === '1') return true;
 
     const current = (window.location.pathname || '').split('/').pop().toLowerCase();
@@ -14340,7 +14341,7 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     sidebar.innerHTML = `
       <div id="logo">
-        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
+        <a href="index.html"><img src="assets/Imagens/LOGO_DOKE_D_CROP.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
       </div>
       <div class="${itemClass('index.html')}">
         <a href="index.html"><i class='bx bx-home-alt icon azul'></i><span>Início</span></a>
@@ -14773,6 +14774,7 @@ function syncClear(){
       try{
         sidebar.classList.add('menu-aberto');
         document.body.classList.add('menu-ativo');
+        document.body.classList.add('doke-sidebar-search-open');
       }catch(e){}
       sidebar.classList.add('ig-search-open');
       setMode(mode); // tamb?m renderiza
@@ -14780,6 +14782,7 @@ function syncClear(){
     }
     function close(){
       sidebar.classList.remove('ig-search-open');
+      try{ document.body.classList.remove('doke-sidebar-search-open'); }catch(e){}
       input.value = '';
       syncClear();
       syncClear();
@@ -16105,4 +16108,102 @@ document.addEventListener('DOMContentLoaded', function(){
       }
     });
   }catch(_){}
+})();
+
+// Sidebar desktop: compacta/expandida com persistencia.
+(function(){
+  const STORAGE_KEY = "doke_sidebar_mode_v1";
+
+  function isDesktop(){
+    return !!(window.matchMedia && window.matchMedia("(min-width: 1025px)").matches);
+  }
+
+  function applyMode(mode){
+    const body = document.body;
+    if (!body) return;
+    if (!isDesktop()){
+      body.classList.remove("doke-sidebar-expanded");
+      return;
+    }
+    body.classList.toggle("doke-sidebar-expanded", mode === "expanded");
+  }
+
+  function readMode(){
+    try{
+      const raw = localStorage.getItem(STORAGE_KEY);
+      return raw === "expanded" ? "expanded" : "compact";
+    }catch(_e){
+      return "compact";
+    }
+  }
+
+  function writeMode(mode){
+    try{
+      localStorage.setItem(STORAGE_KEY, mode === "expanded" ? "expanded" : "compact");
+    }catch(_e){}
+  }
+
+  function syncToggleVisual(btn){
+    if (!(btn instanceof HTMLElement)) return;
+    const expanded = document.body.classList.contains("doke-sidebar-expanded");
+    btn.setAttribute("aria-label", expanded ? "Recolher menu lateral" : "Expandir menu lateral");
+    const lbl = btn.querySelector(".lbl");
+    if (lbl) lbl.textContent = expanded ? "Recolher" : "Expandir";
+    const icon = btn.querySelector("i");
+    if (icon){
+      icon.classList.remove("bx-menu", "bx-chevrons-left", "bx-chevrons-right");
+      icon.classList.add(expanded ? "bx-chevrons-left" : "bx-chevrons-right");
+    }
+  }
+
+  function ensureToggle(){
+    const sidebar = document.querySelector(".sidebar-icones");
+    if (!(sidebar instanceof HTMLElement)) return;
+    let btn = sidebar.querySelector(".doke-sidebar-toggle");
+    if (!(btn instanceof HTMLButtonElement)){
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "doke-sidebar-toggle";
+      btn.innerHTML = "<i class='bx bx-chevrons-right'></i><span class='lbl'>Expandir</span>";
+      const logo = sidebar.querySelector("#logo");
+      if (logo && logo.parentNode === sidebar) sidebar.insertBefore(btn, logo.nextSibling);
+      else sidebar.insertBefore(btn, sidebar.firstChild);
+    }
+    syncToggleVisual(btn);
+    if (btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", function(){
+      const currentExpanded = document.body.classList.contains("doke-sidebar-expanded");
+      const nextMode = currentExpanded ? "compact" : "expanded";
+      applyMode(nextMode);
+      writeMode(nextMode);
+      syncToggleVisual(btn);
+    });
+  }
+
+  function run(){
+    applyMode(readMode());
+    ensureToggle();
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", run, { once: true });
+  else run();
+
+  window.addEventListener("resize", function(){
+    if (!isDesktop()){
+      const body = document.body;
+      if (body) body.classList.remove("doke-sidebar-expanded");
+      return;
+    }
+    applyMode(readMode());
+  });
+})();
+
+// Marca render em iframe para evitar menu/nav duplicados em embeds.
+(function(){
+  try{
+    if (window.self !== window.top) {
+      document.documentElement.classList.add("doke-in-iframe");
+    }
+  }catch(_e){}
 })();

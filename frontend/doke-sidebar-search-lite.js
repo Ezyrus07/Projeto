@@ -146,6 +146,7 @@
 
   function normalizeSidebarToIndexModel(sidebar){
     if(!sidebar) return false;
+    if (String(sidebar.getAttribute('data-shell') || '').toLowerCase() === 'unified-desktop') return true;
     if(sidebar.dataset.indexSidebarNormalized === '1') return true;
 
     const current = String((window.location.pathname || '').split('/').pop() || '').toLowerCase();
@@ -154,7 +155,7 @@
 
     sidebar.innerHTML = `
       <div id="logo">
-        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
+        <a href="index.html"><img src="assets/Imagens/LOGO_DOKE_D_CROP.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
       </div>
       <div class="${itemClass('index.html')}">
         <a href="index.html"><i class='bx bx-home-alt icon azul'></i><span>Inicio</span></a>
@@ -553,12 +554,14 @@
 
     function open(){
       try{ sidebar.classList.add('menu-aberto'); document.body.classList.add('menu-ativo'); }catch(_e){}
+      try{ document.body.classList.add('doke-sidebar-search-open'); }catch(_e){}
       sidebar.classList.add('ig-search-open');
       setMode(mode);
       setTimeout(()=>{ try{ input.focus(); input.select(); }catch(_e){} }, 50);
     }
     function close(){
       sidebar.classList.remove('ig-search-open');
+      try{ document.body.classList.remove('doke-sidebar-search-open'); }catch(_e){}
       input.value = '';
       syncClear();
       resultsEl.innerHTML = '';

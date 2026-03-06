@@ -787,24 +787,36 @@ body.doke-auth-ready .navbar-desktop .botoes-direita > *{
   transition: opacity .14s ease;
 }
 
-/* Scrollbar padrão escura e estável em todas as páginas */
+/* Scrollbar global suave (desktop) */
 html::-webkit-scrollbar,
 body::-webkit-scrollbar{
-  width: 12px;
+  width: 10px;
+  height: 10px;
 }
 html::-webkit-scrollbar-track,
 body::-webkit-scrollbar-track{
-  background: #2f3339;
+  background: rgba(15,23,42,.06);
+  border-radius: 999px;
 }
 html::-webkit-scrollbar-thumb,
 body::-webkit-scrollbar-thumb{
-  background: #646d79;
+  background: rgba(42,95,144,.34);
   border-radius: 999px;
-  border: 2px solid #2f3339;
+  border: 2px solid rgba(255,255,255,.7);
+}
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover{
+  background: rgba(42,95,144,.48);
+}
+html::-webkit-scrollbar-button,
+body::-webkit-scrollbar-button{
+  display: none;
+  width: 0;
+  height: 0;
 }
 html{
-  scrollbar-color: #646d79 #2f3339;
-  scrollbar-width: auto;
+  scrollbar-color: rgba(42,95,144,.44) rgba(15,23,42,.08);
+  scrollbar-width: thin;
 }
 
 @media (max-width: 1024px){
@@ -2026,7 +2038,7 @@ html{
   box-shadow: 0 12px 30px rgba(0,0,0,0.12);
   border: 1px solid rgba(0,0,0,0.08);
   max-height: 360px;
-  overflow-y: auto;
+  overflow: hidden;
   overscroll-behavior: contain;
 }
 
@@ -5051,7 +5063,7 @@ body.dark-mode {
 /* Descriï¿½ï¿½o (Meio) */
 .reel-description-scroll {
     flex: 1;
-    overflow-y: auto;
+    overflow: hidden;
     margin-bottom: 20px;
     padding-right: 5px;
 }
@@ -9911,7 +9923,7 @@ body[data-page="home"] .section-feed-title{margin-top: 28px !important; margin-b
 /* 2) Dropdown da busca: tamanho e estilo consistente */
 .busca-dropdown{
   max-height: 300px;
-  overflow-y: auto;
+  overflow: hidden;
 }
 
 /* Histórico e sugestáes (ordem: histï¿½rico -> sugestáes) */
@@ -9935,13 +9947,18 @@ body[data-page="home"] .section-feed-title{margin-top: 28px !important; margin-b
 #dokeSugestoes .sug-list{
   margin-top: 0;
   max-height: 200px;
-  overflow: auto;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 0;
   scrollbar-gutter: stable;
 }
 
 #dokeSugestoes .sug-list::-webkit-scrollbar{
-  width: 6px;
+  width: 8px;
+  height: 8px;
+}
+#dokeSugestoes .sug-list::-webkit-scrollbar-button{
+  display: none;
 }
 
 #dokeSugestoes .sug-list::-webkit-scrollbar-track{
@@ -14352,11 +14369,402 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
   z-index: 10050;
 }
 
+/* Header desktop: evita qualquer scrollbar interno no topo */
+.navbar-desktop,
+.navbar-desktop .menu,
+.navbar-desktop .botoes-direita,
+.navbar-desktop .profile-container{
+  overflow-y: hidden !important;
+  scrollbar-width: none;
+}
+.navbar-desktop::-webkit-scrollbar,
+.navbar-desktop .menu::-webkit-scrollbar,
+.navbar-desktop .botoes-direita::-webkit-scrollbar,
+.navbar-desktop .profile-container::-webkit-scrollbar{
+  width: 0 !important;
+  height: 0 !important;
+  display: none !important;
+}
+
 /* Sidebar: ícones maiores e alinhados (Boxicons) */
 .sidebar-icones i.icon{
-  font-size: 26px;
+  font-size: 24px;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+/* ===================== DOKE SIDEBAR/LAYOUT UNIFICADO (DESKTOP) ===================== */
+@media (min-width: 1025px){
+  :root{
+    --doke-sidebar-compact: 86px;
+    --doke-sidebar-expanded: 224px;
+    --doke-page-max: 1200px;
+    --doke-page-gutter: clamp(14px, 2.2vw, 28px);
+    --doke-shell-surface: #f7f8fb;
+    --doke-shell-line: rgba(15, 23, 42, .08);
+  }
+
+  body{
+    --sidebar-width: var(--doke-sidebar-compact);
+  }
+
+  body.doke-sidebar-expanded{
+    --sidebar-width: var(--doke-sidebar-expanded);
+  }
+  body.doke-sidebar-search-open{
+    --sidebar-width: 316px;
+  }
+
+  .sidebar-icones{
+    background: var(--doke-shell-surface) !important;
+    border-right: 1px solid var(--doke-shell-line) !important;
+    box-shadow: none !important;
+    width: var(--sidebar-width) !important;
+    min-width: var(--sidebar-width) !important;
+    max-width: var(--sidebar-width) !important;
+    transition: none !important;
+  }
+
+  body:not(.doke-sidebar-expanded) .sidebar-icones{
+    padding-left: 6px !important;
+    padding-right: 6px !important;
+  }
+  body:not(.doke-sidebar-expanded) .sidebar-icones .item{
+    width: 100% !important;
+    max-width: none !important;
+    justify-content: center !important;
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+  body:not(.doke-sidebar-expanded) .sidebar-icones .item a{
+    justify-content: center !important;
+    gap: 0 !important;
+  }
+  body:not(.doke-sidebar-expanded) .sidebar-icones span{
+    display: none !important;
+  }
+
+  body.doke-sidebar-search-open .sidebar-icones .item{
+    width: 90% !important;
+    max-width: 284px !important;
+    justify-content: flex-start !important;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+  body.doke-sidebar-search-open .sidebar-icones .item a{
+    justify-content: flex-start !important;
+    gap: 12px !important;
+  }
+  body.doke-sidebar-search-open .sidebar-icones span{
+    display: block !important;
+  }
+
+  body.doke-sidebar-expanded .sidebar-icones{
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+  }
+  body.doke-sidebar-expanded .sidebar-icones .item{
+    justify-content: flex-start !important;
+    width: 90% !important;
+    max-width: 230px !important;
+  }
+  body.doke-sidebar-expanded .sidebar-icones .item a{
+    justify-content: flex-start !important;
+    gap: 15px !important;
+  }
+  body.doke-sidebar-expanded .sidebar-icones span{
+    display: block !important;
+  }
+
+  .navbar-desktop{
+    position: fixed;
+    top: 0;
+    left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    height: 72px !important;
+    display: grid !important;
+    grid-template-columns: minmax(220px, 1fr) auto minmax(120px, 1fr);
+    align-items: center;
+    gap: 12px;
+    padding: 0 18px !important;
+    background: var(--doke-shell-surface) !important;
+    border-bottom: 1px solid var(--doke-shell-line);
+    box-shadow: 0 1px 6px rgba(15, 23, 42, .05) !important;
+    z-index: 1000;
+  }
+  .navbar-desktop::before{
+    content: "";
+    position: absolute;
+    top: 0;
+    left: calc(var(--sidebar-width) * -1);
+    width: var(--sidebar-width);
+    height: 100%;
+    background: var(--doke-shell-surface);
+    border-bottom: 1px solid var(--doke-shell-line);
+    pointer-events: none;
+  }
+  .navbar-desktop #logo-desktop{ display: none !important; }
+  .navbar-desktop .doke-header-left{
+    min-width: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+  }
+  .navbar-desktop .menu,
+  .navbar-desktop .doke-header-menu{
+    flex: 0 0 auto;
+    justify-content: center !important;
+    gap: 24px !important;
+    min-width: 0;
+  }
+  .navbar-desktop .menu a,
+  .navbar-desktop .menu .cep{
+    height: auto !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"]{
+    display: grid !important;
+    grid-template-columns: minmax(220px,1fr) auto minmax(120px,1fr) !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-left{
+    justify-self: start;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-menu{
+    justify-self: center;
+    align-items: center;
+    display: flex !important;
+    gap: 24px !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-right{
+    justify-self: end;
+  }
+  .navbar-desktop .cep-wrapper{
+    margin-right: 12px !important;
+    height: auto !important;
+  }
+  .navbar-desktop .cep{
+    border: 1px solid rgba(11, 119, 104, .18);
+    border-radius: 999px;
+    padding: 7px 12px !important;
+    background: rgba(11, 119, 104, .05);
+  }
+  .navbar-desktop .botoes-direita,
+  .navbar-desktop .doke-header-right{
+    margin-left: 0 !important;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    min-width: 120px;
+  }
+  .sidebar-icones #logo{
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    margin: 4px 0 6px !important;
+  }
+  .sidebar-icones #logo a{
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: transparent;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: none;
+    overflow: hidden;
+  }
+  .sidebar-icones #logo img{
+    width: 42px !important;
+    height: 42px !important;
+    object-fit: contain !important;
+    object-position: center center !important;
+    display: block !important;
+    margin: 0 !important;
+    transform: none !important;
+  }
+  .sidebar-icones,
+  .sidebar-icones .item,
+  .sidebar-icones .item a,
+  .sidebar-icones .item span,
+  .sidebar-icones i.icon{
+    animation: none !important;
+    transition: none !important;
+  }
+  main,
+  .dp-wrap,
+  .main-content,
+  .messenger-layout,
+  .content-wrap,
+  .content-area{
+    margin-left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    max-width: none !important;
+    padding-left: var(--doke-page-gutter) !important;
+    padding-right: var(--doke-page-gutter) !important;
+    padding-top: calc(72px + 14px) !important;
+    box-sizing: border-box !important;
+  }
+
+  main > *:not(script):not(style),
+  .dp-wrap > *:not(script):not(style),
+  .main-content > *:not(script):not(style),
+  .messenger-layout > *:not(script):not(style),
+  .content-wrap > *:not(script):not(style),
+  .content-area > *:not(script):not(style){
+    max-width: var(--doke-page-max);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Wrappers comuns que ainda tinham deslocamentos próprios */
+  body main > .comm-hero-container,
+  body main > .comm-layout,
+  body main > .wallet-hero-container,
+  body main > .history-container,
+  body main > .notif-container,
+  body main > .ped-container,
+  body main > .orders-page,
+  body main > .content-wrapper,
+  body main > .settings-shell,
+  body main > .settings-main,
+  body main > .main-help,
+  body .main-content > .content-wrapper,
+  body .main-content > .settings-shell{
+    width: min(100%, var(--doke-page-max)) !important;
+    max-width: var(--doke-page-max) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+  }
+
+  .sidebar-icones .doke-sidebar-toggle{
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    border: 1px solid #dbe4ee;
+    background: #fff;
+    color: #244a73;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin: 0 auto 6px;
+  }
+  body.doke-sidebar-expanded .sidebar-icones .doke-sidebar-toggle{
+    width: calc(100% - 18px);
+    justify-content: flex-start;
+    gap: 8px;
+    padding: 0 10px;
+    margin-left: 9px;
+    margin-right: 9px;
+  }
+  .sidebar-icones .doke-sidebar-toggle .lbl{
+    display: none;
+    font-weight: 700;
+    font-size: .9rem;
+  }
+  body.doke-sidebar-expanded .sidebar-icones .doke-sidebar-toggle .lbl{
+    display: inline;
+  }
+}
+
+/* Busca lateral (Instagram): garante painel 100% largo sem clipping */
+@media (min-width: 768px){
+  body.doke-sidebar-search-open .sidebar-icones,
+  .sidebar-icones.ig-search-open{
+    width: 316px !important;
+    min-width: 316px !important;
+    max-width: 316px !important;
+    align-items: stretch !important;
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow: hidden !important;
+  }
+
+  .sidebar-icones.ig-search-open .ig-search-screen{
+    left: 0 !important;
+    right: 0 !important;
+    width: auto !important;
+    min-width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  .sidebar-icones.ig-search-open .ig-search-top,
+  .sidebar-icones.ig-search-open .ig-search-inputwrap,
+  .sidebar-icones.ig-search-open .ig-search-tabs,
+  .sidebar-icones.ig-search-open .ig-recents-head,
+  .sidebar-icones.ig-search-open .ig-recents-list,
+  .sidebar-icones.ig-search-open .ig-search-results{
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* Evita sidebar/navbar antiga em páginas renderizadas dentro de iframe */
+html.doke-in-iframe .sidebar-icones,
+html.doke-in-iframe .navbar-desktop,
+html.doke-in-iframe .navbar-mobile,
+html.doke-in-iframe #overlay-menu{
+  display: none !important;
+}
+html.doke-in-iframe main,
+html.doke-in-iframe .dp-wrap,
+html.doke-in-iframe .main-content,
+html.doke-in-iframe .messenger-layout,
+html.doke-in-iframe .content-wrap,
+html.doke-in-iframe .content-area{
+  margin-left: 0 !important;
+  width: 100% !important;
+  padding-left: clamp(10px, 2vw, 20px) !important;
+  padding-right: clamp(10px, 2vw, 20px) !important;
+}
+
+/* Final lock: header/sidebar desktop padrao em todas as paginas */
+@media (min-width: 1025px){
+  .navbar-desktop[data-shell="unified-desktop"]{
+    left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    height: 72px !important;
+    display: grid !important;
+    grid-template-columns: minmax(240px, 1fr) auto minmax(120px, 1fr) !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 0 20px !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-left{
+    min-width: 240px !important;
+    justify-self: start !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-menu{
+    justify-self: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-right{
+    justify-self: end !important;
+    margin: 0 !important;
+  }
+  .sidebar-icones[data-shell="unified-desktop"] #logo{
+    height: 72px !important;
+    margin: 0 !important;
+    border-bottom: 1px solid var(--doke-shell-line) !important;
+  }
+  .sidebar-icones[data-shell="unified-desktop"] #logo a{
+    width: 62px !important;
+    height: 62px !important;
+    border-radius: 12px !important;
+  }
+  .sidebar-icones[data-shell="unified-desktop"] #logo img{
+    width: 52px !important;
+    height: 52px !important;
+    object-fit: contain !important;
+  }
 }
