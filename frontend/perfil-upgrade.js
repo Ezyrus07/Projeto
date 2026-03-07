@@ -6259,7 +6259,22 @@ if(!rangeSel || !refreshBtn) return;
     }
   }
 
-  document.addEventListener("DOMContentLoaded", init);
+  let __dpInitStarted = false;
+  function bootInit(){
+    if(__dpInitStarted) return;
+    __dpInitStarted = true;
+    Promise.resolve()
+      .then(() => init())
+      .catch((err) => {
+        console.error(err);
+        try { toast("Falha ao iniciar perfil."); } catch(_) {}
+      });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", bootInit, { once: true });
+  } else {
+    bootInit();
+  }
 
 })();
 

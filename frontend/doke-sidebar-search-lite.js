@@ -2,7 +2,7 @@
   // DOKE Sidebar Search (Lite)
   // - Enables "Pesquisar" inline inside the sidebar (no navigation)
   // - Designed for pages that do NOT load script.js (e.g., mensagens.html, pedido.html)
-  // Build: 20260305v1
+  // Build: 20260306v2
 
   if (window.__DOKE_SIDEBAR_SEARCH_LITE__ === true) return;
   window.__DOKE_SIDEBAR_SEARCH_LITE__ = true;
@@ -36,16 +36,22 @@
       .sidebar-icones{ position: relative; }
       .ig-search-screen{ display:none; }
       .sidebar-icones.ig-search-open .item{ display:none !important; }
-      .sidebar-icones.ig-search-open #logo{ display:block !important; }
+      .sidebar-icones.ig-search-open #logo{ display:none !important; }
+      .sidebar-icones.ig-search-open{
+        width: var(--ig-search-width, min(92vw, 320px)) !important;
+        min-width: var(--ig-search-width, min(92vw, 320px)) !important;
+        max-width: var(--ig-search-width, min(92vw, 320px)) !important;
+      }
       .sidebar-icones.ig-search-open .ig-search-screen{
         display:flex; flex-direction:column;
         position:absolute; left:0; right:0; bottom:0;
-        top: var(--ig-search-top, 78px);
+        top: var(--ig-search-top, 56px);
         background: linear-gradient(180deg, rgba(255,255,255,.98) 0%, rgba(244,247,246,.98) 100%);
         border-top: 1px solid rgba(2,6,23,.06);
         z-index: 1100;
         padding: 14px 0 16px;
         overflow: hidden;
+        box-sizing: border-box;
       }
       .ig-search-top{ display:flex; align-items:center; justify-content:space-between; padding: 6px 16px 12px; }
       .ig-search-title{ font-size: 20px; font-weight: 800; letter-spacing: -0.02em; color: #0f172a; }
@@ -155,7 +161,7 @@
 
     sidebar.innerHTML = `
       <div id="logo">
-        <a href="index.html"><img src="assets/Imagens/LOGO_DOKE_D_CROP.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
       </div>
       <div class="${itemClass('index.html')}">
         <a href="index.html"><i class='bx bx-home-alt icon azul'></i><span>Inicio</span></a>
@@ -261,12 +267,12 @@
 
     // compute top offset
     try{
-      const logoEl = sidebar.querySelector('#logo');
-      if(logoEl){
-        const h = (logoEl.getBoundingClientRect && logoEl.getBoundingClientRect().height) || logoEl.offsetHeight || 0;
-        const top = Math.max(64, Math.round(h + 10));
-        sidebar.style.setProperty('--ig-search-top', top + 'px');
-      }
+      const anchorEl = sidebar.querySelector('.doke-sidebar-toggle') || sidebar.querySelector('#logo');
+      const h = anchorEl
+        ? ((anchorEl.getBoundingClientRect && anchorEl.getBoundingClientRect().height) || anchorEl.offsetHeight || 0)
+        : 0;
+      const top = Math.max(56, Math.round(h + 12));
+      sidebar.style.setProperty('--ig-search-top', top + 'px');
     }catch(_e){}
 
     return { item, screen };
@@ -372,6 +378,22 @@
 
     let mode = (readKey(MODE_KEY, ['users'])[0] || 'users');
     if (mode !== 'users' && mode !== 'ads') mode = 'users';
+
+    const syncSearchShellMetrics = () => {
+      try{
+        const anchorEl = sidebar.querySelector('.doke-sidebar-toggle') || sidebar.querySelector('#logo');
+        const h = anchorEl
+          ? ((anchorEl.getBoundingClientRect && anchorEl.getBoundingClientRect().height) || anchorEl.offsetHeight || 0)
+          : 0;
+        const top = Math.max(56, Math.round(h + 12));
+        sidebar.style.setProperty('--ig-search-top', top + 'px');
+      }catch(_e){}
+      try{
+        const raw = Math.min(Math.round((window.innerWidth || 1280) * 0.92), 320);
+        const w = Math.max(280, raw);
+        sidebar.style.setProperty('--ig-search-width', `${w}px`);
+      }catch(_e){}
+    };
 
     function setMode(next){
       mode = next === 'ads' ? 'ads' : 'users';
@@ -553,15 +575,37 @@
     }
 
     function open(){
-      try{ sidebar.classList.add('menu-aberto'); document.body.classList.add('menu-ativo'); }catch(_e){}
+      try{
+        if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches){
+          sidebar.classList.add('menu-aberto');
+          document.body.classList.add('menu-ativo');
+        } else {
+          sidebar.classList.remove('menu-aberto');
+          document.body.classList.remove('menu-ativo');
+        }
+      }catch(_e){}
       try{ document.body.classList.add('doke-sidebar-search-open'); }catch(_e){}
       sidebar.classList.add('ig-search-open');
+      try{
+        const w = Math.max(280, Math.min(Math.round((window.innerWidth || 1280) * 0.92), 320));
+        sidebar.style.width = `${w}px`;
+        sidebar.style.minWidth = `${w}px`;
+        sidebar.style.maxWidth = `${w}px`;
+      }catch(_e){}
+      syncSearchShellMetrics();
       setMode(mode);
       setTimeout(()=>{ try{ input.focus(); input.select(); }catch(_e){} }, 50);
     }
     function close(){
       sidebar.classList.remove('ig-search-open');
+      try{
+        sidebar.style.removeProperty('width');
+        sidebar.style.removeProperty('min-width');
+        sidebar.style.removeProperty('max-width');
+      }catch(_e){}
       try{ document.body.classList.remove('doke-sidebar-search-open'); }catch(_e){}
+      try{ sidebar.classList.remove('menu-aberto'); }catch(_e){}
+      try{ document.body.classList.remove('menu-ativo'); }catch(_e){}
       input.value = '';
       syncClear();
       resultsEl.innerHTML = '';
@@ -603,8 +647,10 @@
         }
       }
     });
+    window.addEventListener('resize', syncSearchShellMetrics, { passive: true });
 
     // initial state
+    syncSearchShellMetrics();
     setMode(mode);
     return true;
   }

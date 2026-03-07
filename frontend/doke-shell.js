@@ -1,5 +1,5 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260306v60";
+  window.__DOKE_SHELL_BUILD__ = "20260306v77";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
@@ -21,7 +21,7 @@
     mais: "mais.html"
   };
 
-  const LOGO_SRC = "assets/Imagens/LOGO_DOKE_D_CROP.png";
+  const LOGO_SRC = "assets/Imagens/doke-logo.png";
 
   function toast(msg, type="info"){
     try{
@@ -747,16 +747,9 @@
     const headerMarkup = `
 <header class="navbar-desktop" data-shell="unified-desktop">
   <div class="doke-header-left">
-    <div class="cep-wrapper">
-      <a class="cep" href="#" id="linkCep" onclick="toggleCep && toggleCep(event)">
-        <svg fill="currentColor" width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg"><path d="M8 16s6-5.686 6-10A6 6 0 0 0 2 6c0 4.314 6 10 6 10zm0-7a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"></path></svg>
-        <span id="textoCepSpan">Localizacao ativa</span>
-      </a>
-      <div class="cep-popup" id="boxCep">
-        <p>Digite seu CEP:</p>
-        <div class="cep-input-group"><label class="sr-only" for="inputCep">CEP</label><input id="inputCep" maxlength="9" name="inputCep" placeholder="00000-000" type="text"><button onclick="salvarCep && salvarCep()">OK</button></div>
-      </div>
-    </div>
+    <a class="doke-header-brand" href="index.html" aria-label="Doke">
+      <img src="assets/Imagens/doke-logo.png" alt="Doke">
+    </a>
   </div>
   <nav class="menu doke-header-menu">
     <a href="escolheranuncio.html" ${topTarget === "escolheranuncio.html" ? "class=\"active\" aria-current=\"page\"" : ""}>Anunciar</a>
@@ -767,15 +760,15 @@
 </header>`;
 const sidebarMarkup = `
 <aside class="sidebar-icones" data-shell="unified-desktop">
-  <div id="logo"><a href="index.html" aria-label="Doke"><img src="assets/Imagens/LOGO_DOKE_D_CROP.png" alt="Doke"></a></div>
+  <div id="logo"><a href="index.html" aria-label="Doke"><img src="assets/Imagens/doke-logo.png" alt="Doke"></a></div>
   ${item("index.html", "bx-home-alt", "azul", "Início")}
-  <div class="item" id="pvSearchSidebarItem"><a href="#" class="pv-search-toggle" aria-label="Pesquisar"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
+  <div class="item ${file === "busca.html" ? "active" : ""}" id="pvSearchSidebarItem"><a href="#" class="pv-search-toggle" aria-label="Pesquisar"><i class="bx bx-search-alt-2 icon azul"></i><span>Pesquisar</span></a></div>
   ${item("negocios.html", "bx-store", "verde", "Negócios")}
   ${item("notificacoes.html", "bx-bell", "azul", "Notificações")}
   ${item("mensagens.html?aba=conversas", "bx-message-rounded-dots", "azul", "Mensagens")}
   ${item("pedidos.html", "bx-package", "verde", "Pedidos")}
   ${item("comunidade.html", "bx-group", "verde", "Comunidades")}
-  <div class="item ${file === "meuperfil.html" ? "active" : ""}"><a href="#" onclick="if(window.irParaMeuPerfil){irParaMeuPerfil(event);}else{location.href='meuperfil.html';} return false;"><i class="bx bx-user icon verde"></i><span>Perfil</span></a></div>
+  ${item("meuperfil.html", "bx-user", "verde", "Perfil")}
   ${item("mais.html", "bx-menu", "azul", "Mais")}
 </aside>`;
 
@@ -802,12 +795,58 @@ const sidebarMarkup = `
       else document.body.insertAdjacentHTML("beforeend", sidebarMarkup);
     }
 
-    document.querySelectorAll("aside.sidebar-icones #logo img").forEach((img) => {
-      try {
-        img.setAttribute("src", "assets/Imagens/LOGO_DOKE_D_CROP.png");
-        img.setAttribute("alt", "Doke");
-      } catch(_e){}
-    });
+    const sidebar = document.querySelector('aside.sidebar-icones[data-shell="unified-desktop"]');
+    if (sidebar) {
+      const getFileFromHref = (href) => {
+        const raw = String(href || "").trim();
+        if (!raw || raw.startsWith("#")) return "";
+        try {
+          const u = new URL(raw, location.href);
+          return String(u.pathname.split("/").pop() || "").toLowerCase();
+        } catch(_e) {
+          return String(raw.split("?")[0].split("/").pop() || "").toLowerCase();
+        }
+      };
+      sidebar.querySelectorAll(".item").forEach((it) => it.classList.remove("active"));
+      let matched = false;
+      sidebar.querySelectorAll(".item a[href]").forEach((a) => {
+        const parent = a.closest(".item");
+        if (!(parent instanceof HTMLElement)) return;
+        const targetFile = getFileFromHref(a.getAttribute("href"));
+        if (!targetFile) return;
+        if (targetFile === file) {
+          parent.classList.add("active");
+          matched = true;
+          return;
+        }
+        if (targetFile === "mensagens.html" && file === "mensagens.html") {
+          parent.classList.add("active");
+          matched = true;
+        }
+      });
+      if (!matched && file === "busca.html") {
+        const searchItem = sidebar.querySelector("#pvSearchSidebarItem");
+        if (searchItem) searchItem.classList.add("active");
+      }
+      if (!matched && file === "index.html") {
+        const homeItem = sidebar.querySelector('.item a[href*="index.html"]')?.closest(".item");
+        if (homeItem) homeItem.classList.add("active");
+      }
+    }
+
+    const header = document.querySelector('header.navbar-desktop[data-shell="unified-desktop"]');
+    if (header) {
+      header.querySelectorAll(".doke-header-menu a").forEach((a) => {
+        const href = String(a.getAttribute("href") || "").split("?")[0].trim().toLowerCase();
+        a.classList.remove("active");
+        a.removeAttribute("aria-current");
+        if (href && href === topTarget) {
+          a.classList.add("active");
+          a.setAttribute("aria-current", "page");
+        }
+      });
+    }
+
   }catch(_e){}
 }
 function isVisibleModalLayer(el){
@@ -955,9 +994,105 @@ function isVisibleModalLayer(el){
       if (document.querySelector('script[src*="script.js"]')) return;
       if (document.querySelector('script[src*="doke-sidebar-search-lite.js"]')) return;
       const s = document.createElement('script');
-      s.src = 'doke-sidebar-search-lite.js?v=20260305v1';
+      s.src = 'doke-sidebar-search-lite.js?v=20260306v2';
       s.async = true;
       document.head.appendChild(s);
+    }catch(_e){}
+  }
+
+  function ensureUnifiedDesktopCssLock(){
+    try{
+      const id = "doke-unified-desktop-lock";
+      let st = document.getElementById(id);
+      if (st) return;
+      st = document.createElement("style");
+      st.id = id;
+      st.textContent = `
+@media (min-width: 1025px){
+  .navbar-desktop[data-shell="unified-desktop"]{
+    left: var(--sidebar-width) !important;
+    width: calc(100% - var(--sidebar-width)) !important;
+    height: 72px !important;
+    display: grid !important;
+    grid-template-columns: 132px 1fr minmax(120px, auto) !important;
+    align-items: center !important;
+    gap: 12px !important;
+    padding: 0 20px !important;
+    box-sizing: border-box !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-left{
+    min-width: 132px !important;
+    justify-self: start !important;
+    justify-content: flex-start !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-menu{
+    justify-self: center !important;
+    justify-content: center !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-right{
+    justify-self: end !important;
+    margin: 0 !important;
+  }
+}
+`;
+      document.head.appendChild(st);
+    }catch(_e){}
+  }
+
+  function forceUnifiedDesktopHeaderLayout(){
+    try{
+      if (!window.matchMedia || !window.matchMedia("(min-width:1025px)").matches) return;
+      const header = document.querySelector('header.navbar-desktop[data-shell="unified-desktop"]');
+      if (!(header instanceof HTMLElement)) return;
+
+      header.style.setProperty("left", "var(--sidebar-width)", "important");
+      header.style.setProperty("width", "calc(100% - var(--sidebar-width))", "important");
+      header.style.setProperty("height", "72px", "important");
+      header.style.setProperty("display", "grid", "important");
+      header.style.setProperty("grid-template-columns", "132px 1fr minmax(120px, auto)", "important");
+      header.style.setProperty("align-items", "center", "important");
+      header.style.setProperty("gap", "12px", "important");
+      header.style.setProperty("padding", "0 20px", "important");
+      header.style.setProperty("box-sizing", "border-box", "important");
+
+      const left = header.querySelector(".doke-header-left");
+      if (left instanceof HTMLElement){
+        left.style.setProperty("min-width", "132px", "important");
+        left.style.setProperty("justify-self", "start", "important");
+        left.style.setProperty("justify-content", "flex-start", "important");
+        left.style.setProperty("display", "flex", "important");
+        left.style.setProperty("align-items", "center", "important");
+      }
+
+      const menu = header.querySelector(".doke-header-menu");
+      if (menu instanceof HTMLElement){
+        menu.style.setProperty("justify-self", "center", "important");
+        menu.style.setProperty("justify-content", "center", "important");
+        menu.style.setProperty("display", "flex", "important");
+        menu.style.setProperty("gap", "24px", "important");
+        menu.style.setProperty("margin", "0", "important");
+        menu.style.setProperty("padding", "0", "important");
+        menu.style.setProperty("transform", "none", "important");
+        menu.querySelectorAll("a").forEach((a) => {
+          if (!(a instanceof HTMLElement)) return;
+          a.style.setProperty("font-family", "\"Poppins\", \"Segoe UI\", sans-serif", "important");
+          a.style.setProperty("font-weight", "600", "important");
+          a.style.setProperty("color", "#5f6670", "important");
+          a.style.setProperty("opacity", "1", "important");
+          a.style.setProperty("letter-spacing", "0", "important");
+        });
+      }
+
+      const right = header.querySelector(".doke-header-right");
+      if (right instanceof HTMLElement){
+        right.style.setProperty("justify-self", "end", "important");
+        right.style.setProperty("margin", "0", "important");
+        right.style.setProperty("display", "flex", "important");
+        right.style.setProperty("align-items", "center", "important");
+      }
     }catch(_e){}
   }
 
@@ -976,6 +1111,7 @@ function isVisibleModalLayer(el){
 
       if (desktop && sidebar){
         body.classList.add("has-doke-sidebar");
+        try { ensureDesktopSidebarToggle(sidebar); } catch(_e){}
         if (link) {
           try { link.remove(); } catch(_e){}
         }
@@ -988,10 +1124,67 @@ function isVisibleModalLayer(el){
       }
     }catch(_e){}
   }
+
+  function ensureDesktopSidebarToggle(sidebar){
+    if(!(sidebar instanceof HTMLElement)) return;
+    const body = document.body;
+    if(!body) return;
+    const STORAGE_KEY = "doke_sidebar_mode_v1";
+
+    const isExpanded = () => body.classList.contains("doke-sidebar-expanded");
+    const readMode = () => {
+      try { return localStorage.getItem(STORAGE_KEY) === "expanded" ? "expanded" : "compact"; }
+      catch(_e){ return "compact"; }
+    };
+    const writeMode = (mode) => {
+      try { localStorage.setItem(STORAGE_KEY, mode === "expanded" ? "expanded" : "compact"); } catch(_e){}
+    };
+    const applyMode = (mode) => {
+      body.classList.toggle("doke-sidebar-expanded", mode === "expanded");
+    };
+    const syncBtn = (btn) => {
+      if(!(btn instanceof HTMLElement)) return;
+      const expanded = isExpanded();
+      const icon = btn.querySelector("i");
+      const lbl = btn.querySelector(".lbl");
+      btn.setAttribute("aria-label", expanded ? "Recolher menu lateral" : "Expandir menu lateral");
+      btn.setAttribute("title", expanded ? "Recolher menu" : "Expandir menu");
+      if(lbl) lbl.textContent = expanded ? "Recolher" : "Expandir";
+      if(icon){
+        icon.classList.remove("bx-chevrons-right", "bx-chevrons-left");
+        icon.classList.add(expanded ? "bx-chevrons-left" : "bx-chevrons-right");
+      }
+    };
+
+    applyMode(readMode());
+
+    sidebar.querySelectorAll(".doke-sidebar-toggle").forEach((el, idx) => {
+      if (idx > 0) { try { el.remove(); } catch(_e){} }
+    });
+    let btn = sidebar.querySelector(".doke-sidebar-toggle");
+    if(!(btn instanceof HTMLButtonElement)){
+      btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "doke-sidebar-toggle";
+      btn.innerHTML = "<i class='bx bx-chevrons-right'></i><span class='lbl'>Expandir</span>";
+      sidebar.insertBefore(btn, sidebar.firstChild);
+    }
+    syncBtn(btn);
+    if(btn.dataset.bound === "1") return;
+    btn.dataset.bound = "1";
+    btn.addEventListener("click", () => {
+      const nextMode = isExpanded() ? "compact" : "expanded";
+      applyMode(nextMode);
+      writeMode(nextMode);
+      syncBtn(btn);
+    });
+  }
 async function ensureShell(){
     setShellAuthStateReady(false);
     const body = document.body;
+    try { ensureUnifiedDesktopCssLock(); } catch(_e) {}
     try { ensureUnifiedDesktopChrome(); } catch(_e) {}
+    try { forceUnifiedDesktopHeaderLayout(); } catch(_e) {}
     try { ensureCompactSidebarMode(); } catch(_e) {}
     const mode = (body && body.getAttribute("data-doke-shell")) || "";
     const force = (mode === "1" || mode === "force");
@@ -2000,6 +2193,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         document.head.appendChild(link);
       }catch(_e){}
     }
+    try { forceUnifiedDesktopHeaderLayout(); } catch(_e) {}
 
     function warmDocCache(url){
       const abs = String(url?.toString() || "");
@@ -2183,41 +2377,21 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     window.__dokePersistentShellNavBound = true;
     // PJAX global: enabled by default for the whole site, with explicit opt-out.
     const currentFile = String((location.pathname || "").split("/").pop() || "").toLowerCase();
-    const forcedOff = (
-      document.body?.getAttribute("data-doke-pjax") === "0"
-      || String(localStorage.getItem("doke_disable_pjax") || "") === "1"
-    );
-    const forcedOn = (
-      document.body?.getAttribute("data-doke-pjax") === "1"
-      || String(localStorage.getItem("doke_enable_pjax") || "") === "1"
-    );
-    const globalDefaultOn = !forcedOff;
-    const optIn = (
-      forcedOn
-      || globalDefaultOn
-    );
-    if (!optIn || forcedOff) {
+    try { localStorage.removeItem("doke_disable_pjax"); } catch(_e){}
+    const forcedOff = (document.body?.getAttribute("data-doke-pjax") === "0");
+    if (forcedOff) {
       try { document.body.classList.remove("doke-nav-pending"); } catch(_e) {}
       return;
     }
 
     const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html", "app-beta.html"]);
-    // Pilot gradual: only these pages use persistent shell navigation by default.
-    const PJAX_PILOT_FILES = new Set([
-      "index.html",
-      "comunidade.html",
-      "mensagens.html",
-      "pedidos.html",
-      "meuperfil.html"
-    ]);
+    // Fallback de estabilidade: essas páginas ainda têm boot legado e quebram com swap parcial.
+    const PJAX_RUNTIME_BLOCKED = new Set(["index.html", "mensagens.html", "pedidos.html", "pedido.html"]);
     const SCRIPT_SKIP_PARTS = [
       "/doke-shell.js",
-      "/script.js",
-      "/doke-ux.js",
       "/doke-config.js",
       "/doke-toast.js",
       "/doke-alerts.js",
-      "/doke-feedpatch.js",
       "/doke-beforeafter.js",
       "/doke-reco.js",
       "/supabase-init.js",
@@ -2269,11 +2443,12 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
 
     function isPjaxAllowedUrl(urlObj){
       if(!isInternalHtml(urlObj)) return false;
-      if (forcedOn) return true;
+      if (window.matchMedia && window.matchMedia("(max-width:1024px)").matches) return false;
       const liveCurrent = getLiveCurrentFileName();
-      const name = getCurrentFileName(urlObj);
-      if (!PJAX_PILOT_FILES.has(liveCurrent)) return false;
-      if (!PJAX_PILOT_FILES.has(name)) return false;
+      if (BLOCKED_FILES.has(liveCurrent)) return false;
+      if (PJAX_RUNTIME_BLOCKED.has(liveCurrent)) return false;
+      const nextName = getCurrentFileName(urlObj);
+      if (PJAX_RUNTIME_BLOCKED.has(nextName)) return false;
       return true;
     }
 
@@ -2321,14 +2496,22 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       else document.body.removeAttribute("data-page");
     }
 
+    function getAssetMatchText(src){
+      const raw = String(src || "").trim();
+      if(!raw) return "";
+      const rawLow = raw.toLowerCase();
+      const pathLow = String(toUrl(raw)?.pathname || "").toLowerCase();
+      return `${rawLow} ${pathLow}`;
+    }
+
     function shouldSkipScript(src){
-      const low = String(src || "").toLowerCase();
+      const low = getAssetMatchText(src);
       if(!low) return true;
       return SCRIPT_SKIP_PARTS.some((part) => low.includes(part));
     }
 
     function shouldSkipStyle(href){
-      const low = String(href || "").toLowerCase();
+      const low = getAssetMatchText(href);
       if(!low) return true;
       return STYLE_SKIP_PARTS.some((part) => low.includes(part));
     }
@@ -2378,7 +2561,50 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       }
     }
 
-    function appendScriptNode(original){
+    function extractCharsetHint(input){
+      const txt = String(input || "");
+      const m = txt.match(/charset\s*=\s*["']?\s*([a-z0-9._-]+)/i);
+      return m ? String(m[1] || "").trim().toLowerCase() : "";
+    }
+
+    function normalizeCharsetName(charset){
+      const c = String(charset || "").trim().toLowerCase();
+      if (!c) return "utf-8";
+      if (c === "utf8") return "utf-8";
+      if (c === "latin1" || c === "iso-8859-1" || c === "iso8859-1" || c === "windows-1252") return "windows-1252";
+      return c;
+    }
+
+    function mojibakeScore(text){
+      const t = String(text || "");
+      if(!t) return 0;
+      const hits = t.match(/Ã.|Â.|�/g);
+      return hits ? hits.length : 0;
+    }
+
+    async function readHtmlResponse(res){
+      const buf = await res.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      const decode = (encoding) => {
+        try { return new TextDecoder(encoding, { fatal: false }).decode(bytes); }
+        catch(_e){ return ""; }
+      };
+      const utf8 = decode("utf-8");
+      const headerCharset = extractCharsetHint(res.headers?.get?.("content-type") || "");
+      const metaCharset = extractCharsetHint(utf8.slice(0, 4096));
+      const hintedCharset = normalizeCharsetName(headerCharset || metaCharset || "utf-8");
+      let html = decode(hintedCharset);
+      if(!html) html = utf8;
+
+      // Fallback anti-mojibake para páginas salvas em ANSI/Windows-1252.
+      if (hintedCharset === "utf-8") {
+        const latin = decode("windows-1252");
+        if (latin && mojibakeScore(latin) < mojibakeScore(html)) html = latin;
+      }
+      return html;
+    }
+
+    function appendScriptNode(original, opts = {}){
       return new Promise((resolve) => {
         const s = document.createElement("script");
         s.dataset.dokePjaxScript = "1";
@@ -2389,6 +2615,16 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         const src = String(original.getAttribute("src") || "").trim();
         if(src){
           const abs = toUrl(src)?.toString() || src;
+          const alreadyLoaded = Array.from(document.querySelectorAll("script[src]")).some((node) => {
+            const existingSrc = String(node.getAttribute("src") || "").trim();
+            if(!existingSrc) return false;
+            const existingAbs = toUrl(existingSrc)?.toString() || existingSrc;
+            return existingAbs === abs;
+          });
+          if (alreadyLoaded) {
+            resolve();
+            return;
+          }
           s.src = abs;
           s.async = false;
           s.onload = () => resolve();
@@ -2396,19 +2632,135 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
           document.body.appendChild(s);
           return;
         }
-        s.textContent = original.textContent || "";
+        const inlineCode = String(original.textContent || "");
+        const wrapInline = opts && opts.wrapInline === false ? false : true;
+        // Some legacy pages (chat/pedidos) depend on globals shared across many inline blocks.
+        s.textContent = wrapInline ? `(function(){\n${inlineCode}\n})();` : inlineCode;
         document.body.appendChild(s);
         resolve();
       });
     }
 
-    async function runPageScripts(doc, swappedRoot){
+    async function runWithRuntimeTracking(executor){
+      const windowTarget = window;
+      const documentTarget = document;
+      const trackedEvents = [];
+      const trackedIntervals = [];
+      const trackedTimeouts = [];
+      const trackedRafs = [];
+
+      const originalWindowAdd = windowTarget.addEventListener;
+      const originalWindowRemove = windowTarget.removeEventListener;
+      const originalDocumentAdd = documentTarget.addEventListener;
+      const originalDocumentRemove = documentTarget.removeEventListener;
+      const originalSetInterval = window.setInterval;
+      const originalClearInterval = window.clearInterval;
+      const originalSetTimeout = window.setTimeout;
+      const originalClearTimeout = window.clearTimeout;
+      const originalRaf = window.requestAnimationFrame;
+      const originalCancelRaf = window.cancelAnimationFrame;
+
+      const trackAdd = (target, type, listener, options) => {
+        if (!target || !type || !listener) return;
+        trackedEvents.push({ target, type, listener, options });
+      };
+      const trackRemove = (target, type, listener) => {
+        if (!target || !type || !listener) return;
+        for (let i = trackedEvents.length - 1; i >= 0; i--) {
+          const e = trackedEvents[i];
+          if (e.target === target && e.type === type && e.listener === listener) {
+            trackedEvents.splice(i, 1);
+            break;
+          }
+        }
+      };
+
+      try{
+        windowTarget.addEventListener = function(type, listener, options){
+          trackAdd(windowTarget, type, listener, options);
+          return originalWindowAdd.call(windowTarget, type, listener, options);
+        };
+        windowTarget.removeEventListener = function(type, listener, options){
+          trackRemove(windowTarget, type, listener);
+          return originalWindowRemove.call(windowTarget, type, listener, options);
+        };
+        documentTarget.addEventListener = function(type, listener, options){
+          trackAdd(documentTarget, type, listener, options);
+          return originalDocumentAdd.call(documentTarget, type, listener, options);
+        };
+        documentTarget.removeEventListener = function(type, listener, options){
+          trackRemove(documentTarget, type, listener);
+          return originalDocumentRemove.call(documentTarget, type, listener, options);
+        };
+        window.setInterval = function(handler, timeout){
+          const id = originalSetInterval.apply(window, arguments);
+          trackedIntervals.push(id);
+          return id;
+        };
+        window.setTimeout = function(handler, timeout){
+          const id = originalSetTimeout.apply(window, arguments);
+          trackedTimeouts.push(id);
+          return id;
+        };
+        if (typeof originalRaf === "function" && typeof originalCancelRaf === "function") {
+          window.requestAnimationFrame = function(callback){
+            const id = originalRaf.call(window, callback);
+            trackedRafs.push(id);
+            return id;
+          };
+        }
+
+        await executor();
+      }finally{
+        windowTarget.addEventListener = originalWindowAdd;
+        windowTarget.removeEventListener = originalWindowRemove;
+        documentTarget.addEventListener = originalDocumentAdd;
+        documentTarget.removeEventListener = originalDocumentRemove;
+        window.setInterval = originalSetInterval;
+        window.clearInterval = originalClearInterval;
+        window.setTimeout = originalSetTimeout;
+        window.clearTimeout = originalClearTimeout;
+        if (typeof originalRaf === "function" && typeof originalCancelRaf === "function") {
+          window.requestAnimationFrame = originalRaf;
+          window.cancelAnimationFrame = originalCancelRaf;
+        }
+
+        trackedEvents.forEach((e) => {
+          window.dokeRegisterTeardown(() => {
+            try { e.target.removeEventListener(e.type, e.listener, e.options); } catch(_e){}
+          });
+        });
+        trackedIntervals.forEach((id) => {
+          window.dokeRegisterTeardown(() => {
+            try { originalClearInterval.call(window, id); } catch(_e){}
+          });
+        });
+        trackedTimeouts.forEach((id) => {
+          window.dokeRegisterTeardown(() => {
+            try { originalClearTimeout.call(window, id); } catch(_e){}
+          });
+        });
+        trackedRafs.forEach((id) => {
+          window.dokeRegisterTeardown(() => {
+            try { originalCancelRaf.call(window, id); } catch(_e){}
+          });
+        });
+      }
+    }
+
+    async function runPageScripts(doc, swappedRoot, targetFile = ""){
       cleanupDynamicScripts();
       const tasks = [];
+      const needsGlobalInline = new Set(["mensagens.html", "pedidos.html", "pedido.html"]);
+      const wrapInline = !needsGlobalInline.has(String(targetFile || "").toLowerCase());
+      const scheduledExternalScripts = new Set();
       const headScripts = Array.from(doc.querySelectorAll("head script[src]"));
       headScripts.forEach((scriptEl) => {
         const src = String(scriptEl.getAttribute("src") || "").trim();
         if(!src || shouldSkipScript(src)) return;
+        const key = String(toUrl(src)?.toString() || src).toLowerCase();
+        if (scheduledExternalScripts.has(key)) return;
+        scheduledExternalScripts.add(key);
         tasks.push(() => appendScriptNode(scriptEl));
       });
       const bodyScripts = Array.from(doc.querySelectorAll("body script"));
@@ -2416,16 +2768,21 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         const src = String(scriptEl.getAttribute("src") || "").trim();
         if(src){
           if(shouldSkipScript(src)) return;
+          const key = String(toUrl(src)?.toString() || src).toLowerCase();
+          if (scheduledExternalScripts.has(key)) return;
+          scheduledExternalScripts.add(key);
           tasks.push(() => appendScriptNode(scriptEl));
           return;
         }
         if(swappedRoot && swappedRoot.contains(scriptEl)){
-          tasks.push(() => appendScriptNode(scriptEl));
+          tasks.push(() => appendScriptNode(scriptEl, { wrapInline }));
         }
       });
-      for(const task of tasks){
-        try { await task(); } catch(_e) {}
-      }
+      await runWithRuntimeTracking(async () => {
+        for(const task of tasks){
+          try { await task(); } catch(_e) {}
+        }
+      });
     }
 
     function syncPageUrl(urlObj, mode){
@@ -2445,6 +2802,37 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         if(typeof fn !== "function") return;
         if(!Array.isArray(window.__dokePageTeardowns)) window.__dokePageTeardowns = [];
         window.__dokePageTeardowns.push(fn);
+      };
+    }
+    if(!window.dokePageRuntime){
+      window.dokePageRuntime = {
+        cleanup(fn){
+          if(typeof fn !== "function") return;
+          window.dokeRegisterTeardown(fn);
+        },
+        on(target, type, handler, options){
+          if(!target || typeof target.addEventListener !== "function" || !type || typeof handler !== "function") return () => {};
+          target.addEventListener(type, handler, options);
+          const off = () => { try { target.removeEventListener(type, handler, options); } catch(_e){} };
+          window.dokeRegisterTeardown(off);
+          return off;
+        },
+        interval(handler, ms){
+          const id = setInterval(handler, ms);
+          window.dokeRegisterTeardown(() => { try { clearInterval(id); } catch(_e){} });
+          return id;
+        },
+        timeout(handler, ms){
+          const id = setTimeout(handler, ms);
+          window.dokeRegisterTeardown(() => { try { clearTimeout(id); } catch(_e){} });
+          return id;
+        },
+        observer(observer){
+          if(observer && typeof observer.disconnect === "function"){
+            window.dokeRegisterTeardown(() => { try { observer.disconnect(); } catch(_e){} });
+          }
+          return observer;
+        }
       };
     }
 
@@ -2473,7 +2861,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
           signal: inflightController.signal
         });
         if(!res.ok) throw new Error(`HTTP ${res.status}`);
-        const html = await res.text();
+        const html = await readHtmlResponse(res);
         const parser = new DOMParser();
         const nextDoc = parser.parseFromString(html, "text/html");
         const nextRoot = resolveSwapRoot(nextDoc);
@@ -2490,7 +2878,12 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
         window.scrollTo(0, 0);
         try { sessionStorage.setItem(`doke_scroll_pos_v1:${nextPath}`, "0"); } catch(_e) {}
         try { window.dispatchEvent(new CustomEvent("doke:page-swapped", { detail: { path: nextPath } })); } catch(_e) {}
-        await runPageScripts(nextDoc, nextRoot);
+        const nextFile = getCurrentFileName(urlObj);
+        await runPageScripts(nextDoc, nextRoot, nextFile);
+        const legacyDomReplayFiles = new Set(["mensagens.html", "pedidos.html", "pedido.html"]);
+        if (legacyDomReplayFiles.has(String(nextFile || "").toLowerCase())) {
+          try { document.dispatchEvent(new Event("DOMContentLoaded")); } catch(_e) {}
+        }
         try { window.dispatchEvent(new Event("doke:page-ready")); } catch(_e) {}
         ensureShell();
         return true;

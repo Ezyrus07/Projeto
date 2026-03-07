@@ -4,17 +4,33 @@
 
   const qs = (sel, root = document) => root.querySelector(sel);
   const qsa = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+  const runtime = window.dokePageRuntime || null;
+  const on = (target, type, handler, options) => {
+    if (!target || typeof target.addEventListener !== 'function' || !type || typeof handler !== 'function') return;
+    if (runtime && typeof runtime.on === 'function') {
+      runtime.on(target, type, handler, options);
+      return;
+    }
+    target.addEventListener(type, handler, options);
+  };
+  const later = (handler, ms) => {
+    if (typeof handler !== 'function') return null;
+    if (runtime && typeof runtime.timeout === 'function') {
+      return runtime.timeout(handler, ms);
+    }
+    return window.setTimeout(handler, ms);
+  };
 
   // ---------- Data (mock/placeholder) ----------
   const CATEGORIAS = [
     { key: 'Todas', icon: 'bx-grid-alt' },
     { key: 'Restaurantes', icon: 'bx-bowl-hot' },
-    { key: 'Cafés', icon: 'bx-coffee-togo' },
+    { key: 'CafÃ©s', icon: 'bx-coffee-togo' },
     { key: 'Mercados', icon: 'bx-store' },
     { key: 'Academias', icon: 'bx-dumbbell' },
     { key: 'Beleza', icon: 'bx-cut' },
     { key: 'Pet', icon: 'bx-dog' },
-    { key: 'Farmácias', icon: 'bx-plus-medical' },
+    { key: 'FarmÃ¡cias', icon: 'bx-plus-medical' },
     { key: 'Oficinas', icon: 'bx-car' },
     { key: 'Moda', icon: 'bx-t-shirt' },
     { key: 'Tecnologia', icon: 'bx-laptop' },
@@ -22,21 +38,21 @@
   ];
 
   const BIZ = [
-    { name: 'Café Central', cat: 'Cafés', rating: 4.8, distance: '1.2 km', aberto: true, entrega: false, cupom: true, tags: ['Brunch', 'Wi‑Fi', 'Pet friendly'] },
-    { name: 'Mercado Nova Era', cat: 'Mercados', rating: 4.6, distance: '2.0 km', aberto: true, entrega: true, cupom: false, tags: ['Entrega rápida', '24h'] },
+    { name: 'CafÃ© Central', cat: 'CafÃ©s', rating: 4.8, distance: '1.2 km', aberto: true, entrega: false, cupom: true, tags: ['Brunch', 'Wiâ€‘Fi', 'Pet friendly'] },
+    { name: 'Mercado Nova Era', cat: 'Mercados', rating: 4.6, distance: '2.0 km', aberto: true, entrega: true, cupom: false, tags: ['Entrega rÃ¡pida', '24h'] },
     { name: 'Sushi & Cia', cat: 'Restaurantes', rating: 4.7, distance: '3.5 km', aberto: false, entrega: true, cupom: true, tags: ['Delivery', 'Combos'] },
-    { name: 'PowerFit', cat: 'Academias', rating: 4.5, distance: '900 m', aberto: true, entrega: false, cupom: false, tags: ['Aula experimental', 'Musculação'] },
+    { name: 'PowerFit', cat: 'Academias', rating: 4.5, distance: '900 m', aberto: true, entrega: false, cupom: false, tags: ['Aula experimental', 'MusculaÃ§Ã£o'] },
     { name: 'Studio Bella', cat: 'Beleza', rating: 4.9, distance: '1.8 km', aberto: true, entrega: false, cupom: true, tags: ['Corte', 'Escova', 'Unhas'] },
-    { name: 'PetHouse', cat: 'Pet', rating: 4.4, distance: '4.1 km', aberto: false, entrega: true, cupom: false, tags: ['Banho & Tosa', 'Rações'] },
-    { name: 'Farmácia Saúde+', cat: 'Farmácias', rating: 4.6, distance: '650 m', aberto: true, entrega: true, cupom: true, tags: ['Entrega', 'Genéricos'] },
-    { name: 'Oficina M3', cat: 'Oficinas', rating: 4.3, distance: '5.2 km', aberto: true, entrega: false, cupom: false, tags: ['Revisão', 'Troca de óleo'] },
+    { name: 'PetHouse', cat: 'Pet', rating: 4.4, distance: '4.1 km', aberto: false, entrega: true, cupom: false, tags: ['Banho & Tosa', 'RaÃ§Ãµes'] },
+    { name: 'FarmÃ¡cia SaÃºde+', cat: 'FarmÃ¡cias', rating: 4.6, distance: '650 m', aberto: true, entrega: true, cupom: true, tags: ['Entrega', 'GenÃ©ricos'] },
+    { name: 'Oficina M3', cat: 'Oficinas', rating: 4.3, distance: '5.2 km', aberto: true, entrega: false, cupom: false, tags: ['RevisÃ£o', 'Troca de Ã³leo'] },
   ];
 
   const VIDEOS = [
-    { title: 'Tour do Café Central', cat: 'Cafés', biz: 'Café Central', seconds: 18 },
+    { title: 'Tour do CafÃ© Central', cat: 'CafÃ©s', biz: 'CafÃ© Central', seconds: 18 },
     { title: 'Fila agora no Mercado', cat: 'Mercados', biz: 'Mercado Nova Era', seconds: 12 },
     { title: 'Sushi saindo do forno', cat: 'Restaurantes', biz: 'Sushi & Cia', seconds: 20 },
-    { title: 'Treino rápido (PowerFit)', cat: 'Academias', biz: 'PowerFit', seconds: 15 },
+    { title: 'Treino rÃ¡pido (PowerFit)', cat: 'Academias', biz: 'PowerFit', seconds: 15 },
     { title: 'Antes e depois (Studio)', cat: 'Beleza', biz: 'Studio Bella', seconds: 22 },
     { title: 'Banho & tosa em 15s', cat: 'Pet', biz: 'PetHouse', seconds: 16 },
   ];
@@ -73,7 +89,7 @@
         </g>
         <text x="80" y="720" fill="#fff" font-size="44" font-family="Inter, Arial" font-weight="800">${safe1}</text>
         <text x="80" y="780" fill="#eaf7f5" font-size="26" font-family="Inter, Arial" font-weight="600">${safe2}</text>
-        <text x="80" y="840" fill="#eaf7f5" font-size="22" font-family="Inter, Arial" opacity="0.9">doke • negócios</text>
+        <text x="80" y="840" fill="#eaf7f5" font-size="22" font-family="Inter, Arial" opacity="0.9">doke â€¢ negÃ³cios</text>
       </svg>
     `.trim();
     return svgDataUri(svg);
@@ -102,12 +118,12 @@
     const step = () => clamp(Math.floor(track.clientWidth * 0.85), 240, 980);
 
     if (prevBtn) {
-      prevBtn.addEventListener('click', () => {
+      on(prevBtn, 'click', () => {
         track.scrollBy({ left: -step(), behavior: 'smooth' });
       });
     }
     if (nextBtn) {
-      nextBtn.addEventListener('click', () => {
+      on(nextBtn, 'click', () => {
         track.scrollBy({ left: step(), behavior: 'smooth' });
       });
     }
@@ -134,14 +150,14 @@
       track.classList.remove('dragging');
     };
 
-    track.addEventListener('mousedown', down);
-    track.addEventListener('mousemove', move);
-    track.addEventListener('mouseleave', up);
-    track.addEventListener('mouseup', up);
+    on(track, 'mousedown', down);
+    on(track, 'mousemove', move);
+    on(track, 'mouseleave', up);
+    on(track, 'mouseup', up);
 
-    track.addEventListener('touchstart', down, { passive: true });
-    track.addEventListener('touchmove', move, { passive: true });
-    track.addEventListener('touchend', up);
+    on(track, 'touchstart', down, { passive: true });
+    on(track, 'touchmove', move, { passive: true });
+    on(track, 'touchend', up);
   }
 
   function slug(s) {
@@ -165,12 +181,12 @@
   function iconByCategory(cat) {
     const map = {
       'Restaurantes': 'bx-bowl-hot',
-      'Cafés': 'bx-coffee-togo',
+      'CafÃ©s': 'bx-coffee-togo',
       'Mercados': 'bx-store',
       'Academias': 'bx-dumbbell',
       'Beleza': 'bx-cut',
       'Pet': 'bx-dog',
-      'Farmácias': 'bx-plus-medical',
+      'FarmÃ¡cias': 'bx-plus-medical',
       'Oficinas': 'bx-car',
       'Moda': 'bx-t-shirt',
       'Tecnologia': 'bx-laptop',
@@ -205,7 +221,7 @@
         </div>
         <div class="cat-name" title="${escapeHtml(c.key)}">${escapeHtml(c.key)}</div>
       `;
-      btn.addEventListener('click', () => setCategoria(c.key));
+      on(btn, 'click', () => setCategoria(c.key));
       track.appendChild(btn);
     });
 
@@ -218,7 +234,7 @@
 
   // ---------- Render: Videos (demo) ----------
   function renderVideos() {
-    const wrap = qs('#galeria-videos-negócios');
+    const wrap = qs('#galeria-videos-negÃ³cios');
     if (!wrap) return;
 
     wrap.innerHTML = '';
@@ -254,16 +270,16 @@
         video: DEMO_VIDEO_URL,
         avatar,
         username: `@${slug(v.biz)}`,
-        desc: `${v.title} • ${v.biz} • ${v.cat}`
+        desc: `${v.title} â€¢ ${v.biz} â€¢ ${v.cat}`
       });
 
-      card.addEventListener('click', (e) => {
-        const isBtn = e.target?.closest?.('.btn-orçamento-card');
+      on(card, 'click', (e) => {
+        const isBtn = e.target?.closest?.('.btn-orÃ§amento-card');
         if (isBtn || e.target?.closest?.('.tiktok-play-btn') || e.target?.closest?.('.video-ui-layer')) {
           open();
         }
       });
-      card.addEventListener('keydown', (e) => {
+      on(card, 'keydown', (e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           open();
@@ -297,7 +313,7 @@
 
     const comments = qs('#listaComentariosReel');
     if (comments) {
-      comments.innerHTML = '<div style="color:#7a8796; padding: 10px 0;">Comentários e curtidas (demo) serão integrados quando conectar os reels de negócios.</div>';
+      comments.innerHTML = '<div style="color:#7a8796; padding: 10px 0;">ComentÃ¡rios e curtidas (demo) serÃ£o integrados quando conectar os reels de negÃ³cios.</div>';
     }
 
     const avatarEl = qs('#reelAvatar');
@@ -323,7 +339,7 @@
   function setCategoria(cat) {
     state.cat = cat;
     const title = qs('#tituloNegocios');
-    if (title) title.textContent = cat === 'Todas' ? 'Negócios em destaque' : `Negócios • ${cat}`;
+    if (title) title.textContent = cat === 'Todas' ? 'NegÃ³cios em destaque' : `NegÃ³cios â€¢ ${cat}`;
 
     const track = qs('#listaCategoriasNegocios');
     if (track) {
@@ -399,9 +415,9 @@
 
         <div class="biz-meta">
           <span class="biz-meta-item biz-meta-star">${star}</span>
-          <span class="biz-meta-sep">•</span>
+          <span class="biz-meta-sep">â€¢</span>
           <span class="biz-meta-item">${escapeHtml(b.distance)}</span>
-          <span class="biz-meta-sep">•</span>
+          <span class="biz-meta-sep">â€¢</span>
           <span class="biz-meta-item">${escapeHtml(b.cat)}</span>
         </div>
 
@@ -414,9 +430,9 @@
       `;
 
       qsa('button', card).forEach((btn) => {
-        btn.addEventListener('click', (e) => {
+        on(btn, 'click', (e) => {
           e.stopPropagation();
-          if (window.dokeToast) window.dokeToast('Função demo — conecte aos perfis/rotas quando integrar o back-end.');
+          if (window.dokeToast) window.dokeToast('FunÃ§Ã£o demo â€” conecte aos perfis/rotas quando integrar o back-end.');
         });
       });
 
@@ -431,12 +447,12 @@
 
   function bindFilters() {
     qsa('.neg-chipbar .chip').forEach((btn) => {
-      btn.addEventListener('click', () => toggleChip(btn.dataset.filter));
+      on(btn, 'click', () => toggleChip(btn.dataset.filter));
     });
 
     const btnClear = qs('#btnLimparFiltros');
     if (btnClear) {
-      btnClear.addEventListener('click', () => {
+      on(btnClear, 'click', () => {
         state.cat = 'Todas';
         state.chips = new Set();
         state.q = '';
@@ -445,7 +461,7 @@
         if (input) input.value = '';
 
         const title = qs('#tituloNegocios');
-        if (title) title.textContent = 'Negócios em destaque';
+        if (title) title.textContent = 'NegÃ³cios em destaque';
 
         qsa('.neg-chipbar .chip').forEach((b) => b.classList.remove('is-active'));
 
@@ -467,18 +483,18 @@
     };
 
     if (input) {
-      input.addEventListener('input', () => {
+      on(input, 'input', () => {
         window.clearTimeout(input.__t);
-        input.__t = window.setTimeout(doSearch, 140);
+        input.__t = later(doSearch, 140);
       });
-      input.addEventListener('keydown', (e) => {
+      on(input, 'keydown', (e) => {
         if (e.key === 'Enter') doSearch();
       });
     }
-    if (btn) btn.addEventListener('click', doSearch);
+    if (btn) on(btn, 'click', doSearch);
 
     const btnProcurar = qs('#btnProcurarNegocios');
-    if (btnProcurar) btnProcurar.addEventListener('click', doSearch);
+    if (btnProcurar) on(btnProcurar, 'click', doSearch);
   }
 
   // ---------- Init ----------
@@ -489,6 +505,6 @@
     applyFilters();
   }
 
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  if (document.readyState === 'loading') on(document, 'DOMContentLoaded', init);
   else init();
 })();

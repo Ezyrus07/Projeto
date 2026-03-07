@@ -14421,7 +14421,7 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
 
   .sidebar-icones{
     background: var(--doke-shell-surface) !important;
-    border-right: 1px solid var(--doke-shell-line) !important;
+    border-right: none !important;
     box-shadow: none !important;
     width: var(--sidebar-width) !important;
     min-width: var(--sidebar-width) !important;
@@ -14487,7 +14487,7 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
     width: calc(100% - var(--sidebar-width)) !important;
     height: 72px !important;
     display: grid !important;
-    grid-template-columns: minmax(220px, 1fr) auto minmax(120px, 1fr);
+    grid-template-columns: 132px 1fr minmax(120px, auto);
     align-items: center;
     gap: 12px;
     padding: 0 18px !important;
@@ -14509,7 +14509,7 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
   }
   .navbar-desktop #logo-desktop{ display: none !important; }
   .navbar-desktop .doke-header-left{
-    min-width: 220px;
+    min-width: 132px;
     display: flex;
     align-items: center;
     justify-content: flex-start;
@@ -14529,10 +14529,20 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
   }
   .navbar-desktop[data-shell="unified-desktop"]{
     display: grid !important;
-    grid-template-columns: minmax(220px,1fr) auto minmax(120px,1fr) !important;
+    grid-template-columns: 132px 1fr minmax(120px,auto) !important;
   }
   .navbar-desktop[data-shell="unified-desktop"] .doke-header-left{
     justify-self: start;
+    justify-content: flex-start !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-brand{
+    display: none !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-header-brand img{
+    width: 64px;
+    height: auto;
+    display: block;
+    object-fit: contain;
   }
   .navbar-desktop[data-shell="unified-desktop"] .doke-header-menu{
     justify-self: center;
@@ -14561,31 +14571,26 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
     justify-content: flex-end;
     min-width: 120px;
   }
-  .sidebar-icones #logo{
+  .sidebar-icones[data-shell="unified-desktop"]{
+    padding-top: 10px !important;
+  }
+  .sidebar-icones[data-shell="unified-desktop"] #logo{
     display: flex !important;
     justify-content: center;
-    align-items: center;
+    width: 100%;
     margin: 4px 0 6px !important;
   }
-  .sidebar-icones #logo a{
-    width: 56px;
-    height: 56px;
-    border-radius: 12px;
-    background: transparent;
+  .sidebar-icones[data-shell="unified-desktop"] #logo a{
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    box-shadow: none;
-    overflow: hidden;
+    text-decoration: none;
   }
-  .sidebar-icones #logo img{
-    width: 42px !important;
-    height: 42px !important;
-    object-fit: contain !important;
-    object-position: center center !important;
+  .sidebar-icones[data-shell="unified-desktop"] #logo img{
+    width: 64px !important;
+    height: auto !important;
     display: block !important;
-    margin: 0 !important;
-    transform: none !important;
+    object-fit: contain !important;
   }
   .sidebar-icones,
   .sidebar-icones .item,
@@ -14642,6 +14647,7 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
   }
 
   .sidebar-icones .doke-sidebar-toggle{
+    display: none !important;
     width: 40px;
     height: 40px;
     border-radius: 12px;
@@ -14653,6 +14659,10 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
     justify-content: center;
     cursor: pointer;
     margin: 0 auto 6px;
+  }
+  body.doke-sidebar-search-open .sidebar-icones .doke-sidebar-toggle,
+  .sidebar-icones.ig-search-open .doke-sidebar-toggle{
+    display: none !important;
   }
   body.doke-sidebar-expanded .sidebar-icones .doke-sidebar-toggle{
     width: calc(100% - 18px);
@@ -14704,6 +14714,36 @@ body[data-page="home"] #feed-global-container .feed-publicacao-card{
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
+  .sidebar-icones.ig-search-open .ig-search-inputwrap{
+    width: calc(100% - 28px) !important;
+    max-width: calc(100% - 28px) !important;
+    margin-left: 14px !important;
+    margin-right: 14px !important;
+  }
+}
+
+/* Busca lateral robusta: evita clipping em larguras/estados mistos */
+body.doke-sidebar-search-open{
+  --sidebar-width: var(--ig-search-width, min(92vw, 320px)) !important;
+}
+.sidebar-icones.ig-search-open{
+  width: var(--ig-search-width, min(92vw, 320px)) !important;
+  min-width: var(--ig-search-width, min(92vw, 320px)) !important;
+  max-width: var(--ig-search-width, min(92vw, 320px)) !important;
+}
+.sidebar-icones.ig-search-open .ig-search-screen{
+  left: 0 !important;
+  right: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow-x: hidden !important;
+}
+.sidebar-icones.ig-search-open .ig-search-inputwrap{
+  width: calc(100% - 28px) !important;
+  max-width: calc(100% - 28px) !important;
+  margin-left: 14px !important;
+  margin-right: 14px !important;
 }
 
 /* Evita sidebar/navbar antiga em páginas renderizadas dentro de iframe */
@@ -14732,14 +14772,15 @@ html.doke-in-iframe .content-area{
     width: calc(100% - var(--sidebar-width)) !important;
     height: 72px !important;
     display: grid !important;
-    grid-template-columns: minmax(240px, 1fr) auto minmax(120px, 1fr) !important;
+    grid-template-columns: 132px 1fr minmax(120px, auto) !important;
     align-items: center !important;
     gap: 12px !important;
     padding: 0 20px !important;
   }
   .navbar-desktop[data-shell="unified-desktop"] .doke-header-left{
-    min-width: 240px !important;
+    min-width: 132px !important;
     justify-self: start !important;
+    justify-content: flex-start !important;
   }
   .navbar-desktop[data-shell="unified-desktop"] .doke-header-menu{
     justify-self: center !important;
@@ -14753,18 +14794,6 @@ html.doke-in-iframe .content-area{
     margin: 0 !important;
   }
   .sidebar-icones[data-shell="unified-desktop"] #logo{
-    height: 72px !important;
-    margin: 0 !important;
-    border-bottom: 1px solid var(--doke-shell-line) !important;
-  }
-  .sidebar-icones[data-shell="unified-desktop"] #logo a{
-    width: 62px !important;
-    height: 62px !important;
-    border-radius: 12px !important;
-  }
-  .sidebar-icones[data-shell="unified-desktop"] #logo img{
-    width: 52px !important;
-    height: 52px !important;
-    object-fit: contain !important;
+    display: flex !important;
   }
 }

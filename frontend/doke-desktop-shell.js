@@ -10,8 +10,9 @@
     );
     if (hasUnified) return;
     const script = document.createElement("script");
-    script.src = "doke-shell.js?v=20260306v60";
+    script.src = "doke-shell.js?v=20260306v77";
     script.defer = true;
     document.head.appendChild(script);
   }catch(_e){}
 })();
+

@@ -5,6 +5,22 @@
 (function(){
   const body = document.body;
   if(!body || body.getAttribute('data-page') !== 'busca') return;
+  const runtime = window.dokePageRuntime || null;
+  const on = (target, type, handler, options) => {
+    if (!target || typeof target.addEventListener !== 'function' || !type || typeof handler !== 'function') return;
+    if (runtime && typeof runtime.on === 'function') {
+      runtime.on(target, type, handler, options);
+      return;
+    }
+    target.addEventListener(type, handler, options);
+  };
+  const raf = (handler) => {
+    if (typeof handler !== 'function') return;
+    const id = requestAnimationFrame(handler);
+    if (runtime && typeof runtime.cleanup === 'function') {
+      runtime.cleanup(() => { try { cancelAnimationFrame(id); } catch(_){} });
+    }
+  };
 
   const btn = document.getElementById('btnOpenFilters');
   const backdrop = document.getElementById('filtersBackdrop');
@@ -19,25 +35,25 @@
     if(aside) aside.style.transform = '';
     // Mantém foco no drawer por acessibilidade simples
     if(aside) aside.setAttribute('tabindex','-1');
-    requestAnimationFrame(()=> aside && aside.focus && aside.focus());
+    raf(()=> aside && aside.focus && aside.focus());
   }
   function close(){
     if(aside) aside.style.transform = '';
     body.classList.remove('filters-open');
   }
 
-  btn && btn.addEventListener('click', ()=> {
+  btn && on(btn, 'click', ()=> {
     body.classList.contains('filters-open') ? close() : open();
   });
 
-  backdrop && backdrop.addEventListener('click', close);
+  backdrop && on(backdrop, 'click', close);
 
-  document.addEventListener('keydown', (e)=>{
+  on(document, 'keydown', (e)=>{
     if(e.key === 'Escape' && body.classList.contains('filters-open')) close();
   });
 
   // Fecha ao clicar fora do drawer
-  document.addEventListener('click', (e)=>{
+  on(document, 'click', (e)=>{
     if(!body.classList.contains('filters-open')) return;
     const t = e.target;
     if(btn && btn.contains(t)) return;
@@ -94,11 +110,11 @@
 
   ensureDragHandle();
   if(dragHandle){
-    dragHandle.addEventListener('pointerdown', onDragStart);
-    dragHandle.addEventListener('pointermove', onDragMove);
-    dragHandle.addEventListener('pointerup', onDragEnd);
-    dragHandle.addEventListener('pointercancel', onDragEnd);
-    dragHandle.addEventListener('lostpointercapture', onDragEnd);
+    on(dragHandle, 'pointerdown', onDragStart);
+    on(dragHandle, 'pointermove', onDragMove);
+    on(dragHandle, 'pointerup', onDragEnd);
+    on(dragHandle, 'pointercancel', onDragEnd);
+    on(dragHandle, 'lostpointercapture', onDragEnd);
   }
 
   // Fallback iOS: alguns cenÃ¡rios nÃ£o disparam PointerEvents corretamente.
@@ -134,11 +150,10 @@
     dragDeltaY = 0;
   }
   if(dragHandle){
-    dragHandle.addEventListener('touchstart', tStart, { passive: true });
-    dragHandle.addEventListener('touchmove', tMove, { passive: false });
-    dragHandle.addEventListener('touchend', tEnd, { passive: true });
-    dragHandle.addEventListener('touchcancel', tEnd, { passive: true });
+    on(dragHandle, 'touchstart', tStart, { passive: true });
+    on(dragHandle, 'touchmove', tMove, { passive: false });
+    on(dragHandle, 'touchend', tEnd, { passive: true });
+    on(dragHandle, 'touchcancel', tEnd, { passive: true });
   }
 })();
-
 

@@ -14341,7 +14341,7 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     sidebar.innerHTML = `
       <div id="logo">
-        <a href="index.html"><img src="assets/Imagens/LOGO_DOKE_D_CROP.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
+        <a href="index.html"><img src="assets/Imagens/doke-logo.png" alt="Logotipo da plataforma Doke" loading="lazy" decoding="async"></a>
       </div>
       <div class="${itemClass('index.html')}">
         <a href="index.html"><i class='bx bx-home-alt icon azul'></i><span>Início</span></a>
@@ -14464,12 +14464,14 @@ async function carregarComentariosSupabase(publicacaoId) {
       `;
       sidebar.appendChild(screen);
 
-      // garante que a tela de pesquisa n?o cubra o logo da Doke
+      // top inicial da busca (logo/toggle)
       try{
+        const toggleEl = sidebar.querySelector('.doke-sidebar-toggle');
         const logoEl = sidebar.querySelector('#logo');
-        if(logoEl){
-          const h = (logoEl.getBoundingClientRect && logoEl.getBoundingClientRect().height) || logoEl.offsetHeight || 0;
-          const top = Math.max(64, Math.round(h + 10));
+        const anchorEl = (toggleEl && toggleEl.offsetHeight) ? toggleEl : logoEl;
+        if(anchorEl){
+          const h = (anchorEl.getBoundingClientRect && anchorEl.getBoundingClientRect().height) || anchorEl.offsetHeight || 0;
+          const top = Math.max(56, Math.round(h + 14));
           sidebar.style.setProperty('--ig-search-top', top + 'px');
         }
       }catch(e){}
@@ -14486,6 +14488,26 @@ async function carregarComentariosSupabase(publicacaoId) {
 
     let mode = (readKey(MODE_KEY, ['users'])[0] || 'users');
     if(mode !== 'users' && mode !== 'ads') mode = 'users';
+
+    function syncSearchShellMetrics(){
+      try{
+        const toggleEl = sidebar.querySelector('.doke-sidebar-toggle');
+        const logoEl = sidebar.querySelector('#logo');
+        const anchorEl = (toggleEl && toggleEl.offsetHeight) ? toggleEl : logoEl;
+        if(anchorEl){
+          const h = (anchorEl.getBoundingClientRect && anchorEl.getBoundingClientRect().height) || anchorEl.offsetHeight || 0;
+          const top = Math.max(56, Math.round(h + 14));
+          sidebar.style.setProperty('--ig-search-top', top + 'px');
+        }else{
+          sidebar.style.setProperty('--ig-search-top', '56px');
+        }
+      }catch(e){}
+      try{
+        const raw = Math.min(Math.round((window.innerWidth || 1280) * 0.92), 320);
+        const w = Math.max(280, raw);
+        sidebar.style.setProperty('--ig-search-width', `${w}px`);
+      }catch(e){}
+    }
 
 function syncClear(){
   try{
@@ -14770,21 +14792,40 @@ function syncClear(){
 
     // open/close
     function open(){
-      // garante menu aberto (caso o usu?rio dispare por atalho)
       try{
-        sidebar.classList.add('menu-aberto');
-        document.body.classList.add('menu-ativo');
+        if (window.matchMedia && window.matchMedia('(max-width: 768px)').matches){
+          sidebar.classList.add('menu-aberto');
+          document.body.classList.add('menu-ativo');
+        } else {
+          sidebar.classList.remove('menu-aberto');
+          document.body.classList.remove('menu-ativo');
+        }
         document.body.classList.add('doke-sidebar-search-open');
       }catch(e){}
       sidebar.classList.add('ig-search-open');
+      try{
+        const w = Math.max(280, Math.min(Math.round((window.innerWidth || 1280) * 0.92), 320));
+        sidebar.style.width = `${w}px`;
+        sidebar.style.minWidth = `${w}px`;
+        sidebar.style.maxWidth = `${w}px`;
+      }catch(_e){}
+      syncSearchShellMetrics();
       setMode(mode); // tamb?m renderiza
       setTimeout(()=>{ try{ input.focus(); input.select(); }catch(e){} }, 50);
     }
     function close(){
       sidebar.classList.remove('ig-search-open');
-      try{ document.body.classList.remove('doke-sidebar-search-open'); }catch(e){}
+      sidebar.classList.remove('menu-aberto');
+      try{
+        sidebar.style.removeProperty('width');
+        sidebar.style.removeProperty('min-width');
+        sidebar.style.removeProperty('max-width');
+      }catch(_e){}
+      try{
+        document.body.classList.remove('doke-sidebar-search-open');
+        document.body.classList.remove('menu-ativo');
+      }catch(e){}
       input.value = '';
-      syncClear();
       syncClear();
       resultsEl.innerHTML = '';
       renderRecents();
@@ -14829,8 +14870,10 @@ function syncClear(){
     document.addEventListener('keydown', (e)=>{
       if(e.key === 'Escape' && sidebar.classList.contains('ig-search-open')) close();
     });
+    window.addEventListener('resize', syncSearchShellMetrics, { passive: true });
 
     // estado inicial
+    syncSearchShellMetrics();
     setMode(mode);
     return true;
   }
@@ -16206,4 +16249,28 @@ document.addEventListener('DOMContentLoaded', function(){
       document.documentElement.classList.add("doke-in-iframe");
     }
   }catch(_e){}
+})();
+
+// Re-hidrata partes críticas após troca de página pelo shell (PJAX).
+(function(){
+  if (window.__dokePjaxReinitBound) return;
+  window.__dokePjaxReinitBound = true;
+
+  function run(){
+    const page = String(document.body?.dataset?.page || "").toLowerCase();
+    try { if (typeof initIgSidebarSearch === "function") initIgSidebarSearch(); } catch (_e) {}
+
+    if (page === "home") {
+      try { if (typeof initHomeEnhancements === "function") initHomeEnhancements(); } catch (_e) {}
+      try { if (document.getElementById("listaCategorias") && typeof window.carregarCategorias === "function") window.carregarCategorias(); } catch (_e) {}
+      try { if (document.getElementById("galeria-dinamica") && typeof window.carregarReelsHome === "function") window.carregarReelsHome(); } catch (_e) {}
+      try { if (document.getElementById("feed-global-container") && typeof window.carregarFeedGlobal === "function") window.carregarFeedGlobal(); } catch (_e) {}
+      try { if (document.getElementById("boxStories") && typeof window.carregarStoriesGlobal === "function") window.carregarStoriesGlobal(); } catch (_e) {}
+      try { if (typeof window.carregarProfissionaisIndex === "function") window.carregarProfissionaisIndex(); } catch (_e) {}
+    }
+  }
+
+  window.addEventListener("doke:page-ready", () => {
+    setTimeout(run, 0);
+  });
 })();
