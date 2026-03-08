@@ -1,4 +1,4 @@
-(function(){
+﻿(function(){
   // Deprecated shell bootstrap kept only for backward compatibility.
   // Unified desktop/mobile chrome is now handled exclusively by doke-shell.js.
   if (window.__DOKE_SHELL_BUILD__) return;
@@ -10,9 +10,10 @@
     );
     if (hasUnified) return;
     const script = document.createElement("script");
-    script.src = "doke-shell.js?v=20260306v77";
+    script.src = "doke-shell.js?v=20260307v93";
     script.defer = true;
     document.head.appendChild(script);
   }catch(_e){}
 })();
+
 

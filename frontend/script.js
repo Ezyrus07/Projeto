@@ -4025,28 +4025,30 @@ if (!window.__dokeProfileDropdownViewportBound) {
     window.addEventListener('scroll', syncOpenProfileDropdown, true);
 }
 
-window.toggleDropdown = function(event) {
-    if (event) event.stopPropagation();
-    const target = event?.currentTarget || event?.target;
-    const container = target ? target.closest('.profile-container') : null;
-    const drop = (container && container.querySelector('.dropdown-profile')) || document.getElementById('dropdownPerfil');
-    if (!drop) return;
+if (!dokeIsShellManagingDesktopAuth()) {
+    window.toggleDropdown = function(event) {
+        if (event) event.stopPropagation();
+        const target = event?.currentTarget || event?.target;
+        const container = target ? target.closest('.profile-container') : null;
+        const drop = (container && container.querySelector('.dropdown-profile')) || document.getElementById('dropdownPerfil');
+        if (!drop) return;
 
-    const anchor = (container && container.querySelector('.profile-img-btn')) || target;
-    const willOpen = !drop.classList.contains('show');
+        const anchor = (container && container.querySelector('.profile-img-btn')) || target;
+        const willOpen = !drop.classList.contains('show');
 
-    closeAllProfileDropdowns(drop);
+        closeAllProfileDropdowns(drop);
 
-    if (!willOpen) {
-        drop.classList.remove('show');
-        clearProfileDropdownInline(drop);
-        window.__dokeProfileDropdownState = null;
-        return;
+        if (!willOpen) {
+            drop.classList.remove('show');
+            clearProfileDropdownInline(drop);
+            window.__dokeProfileDropdownState = null;
+            return;
+        }
+
+        drop.classList.add('show');
+        window.__dokeProfileDropdownState = { drop, anchor };
+        positionProfileDropdown(drop, anchor);
     }
-
-    drop.classList.add('show');
-    window.__dokeProfileDropdownState = { drop, anchor };
-    positionProfileDropdown(drop, anchor);
 }
 
 function sanitizePlainText(value) {
@@ -4655,14 +4657,21 @@ function initHomeEnhancements() {
 }
 
 window.onclick = function(e) {
-    if (!e.target.matches('.profile-img-btn') && !e.target.matches('img')) {
-        closeAllProfileDropdowns();
+    const target = e && e.target;
+    const shellProfileClick = target instanceof Element && (
+        !!target.closest('.doke-shell-profile-container') ||
+        !!target.closest('.doke-shell-profile-menu')
+    );
+    if (!shellProfileClick && !dokeIsShellManagingDesktopAuth()) {
+        if (!target.matches('.profile-img-btn') && !target.matches('img')) {
+            closeAllProfileDropdowns();
+        }
     }
     const p = document.getElementById('boxCep');
     const w = document.querySelector('.cep-wrapper');
     if (p && p.style.display === 'block') {
-        const clickedInsideWrapper = !!(w && w.contains(e.target));
-        const clickedInsidePopup = !!(p && p.contains(e.target));
+        const clickedInsideWrapper = !!(w && w.contains(target));
+        const clickedInsidePopup = !!(p && p.contains(target));
         if (!clickedInsideWrapper && !clickedInsidePopup) p.style.display = 'none';
     }
 }
@@ -15622,6 +15631,7 @@ async function carregarProfissionaisIndex() {
     window.__dokeProsIndexLoading = false;
   }
 }
+window.carregarProfissionaisIndex = carregarProfissionaisIndex;
 
 /*************************************************
  * INIT

@@ -1,12 +1,38 @@
 (function(){
-  window.__DOKE_SHELL_BUILD__ = "20260306v77";
+  window.__DOKE_SHELL_BUILD__ = "20260307v93";
   try { console.log("[DOKE] shell build:", window.__DOKE_SHELL_BUILD__); } catch(_e) {}
   const MQ = window.matchMedia("(max-width:1024px)");
   // Pages where the mobile shell (header/bottom-nav/search overlay) must NOT be injected
   const DOKE_DISABLE_SHELL_PAGES = ["login.html","cadastro.html","senha.html"];
   const __dokeCurrentFile = String((location.pathname||"").split("/").pop()||"").toLowerCase();
+  const __dokeQs = new URLSearchParams(location.search || "");
+  const __dokeAppV2Enabled = (__dokeQs.get("appv2") === "1") || (localStorage.getItem("doke_app_v2") === "1");
+  const __dokeIsV2Frame = (__dokeQs.get("v2frame") === "1") || (__dokeQs.get("embed") === "1") || (__dokeQs.get("noshell") === "1");
+  if (__dokeAppV2Enabled && !__dokeIsV2Frame && __dokeCurrentFile && __dokeCurrentFile !== "index.html" && !DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile)) {
+    try {
+      const routeQs = new URLSearchParams(location.search || "");
+      routeQs.delete("appv2");
+      routeQs.delete("route");
+      const route = `${__dokeCurrentFile}${routeQs.toString() ? `?${routeQs.toString()}` : ""}`;
+      const target = new URL("index.html", location.href);
+      target.searchParams.set("appv2", "1");
+      target.searchParams.set("route", route);
+      location.replace(target.toString());
+      return;
+    } catch (_e) {}
+  }
   if (DOKE_DISABLE_SHELL_PAGES.includes(__dokeCurrentFile)) {
     try { document.documentElement.classList.add("doke-no-shell"); } catch(_e) {}
+    return;
+  }
+  if (__dokeIsV2Frame) {
+    try { document.documentElement.classList.add("doke-no-shell"); } catch(_e) {}
+    return;
+  }
+  // App v2 usa shell/roteador proprios. Evita competir com o shell legado.
+  if (__dokeAppV2Enabled && !__dokeIsV2Frame) {
+    try { document.documentElement.classList.add("doke-appv2-only"); } catch(_e) {}
+    window.__DOKE_LEGACY_SHELL_DISABLED__ = true;
     return;
   }
   const PAGES = {
@@ -361,32 +387,109 @@
   }
 
   function ensureFallbackDropdownBehavior(){
-    window.toggleDropdown = function(event){
+    const closeAllDropdowns = () => {
+      document.querySelectorAll(".dropdown-profile").forEach((el) => {
+        if (!(el instanceof HTMLElement)) return;
+        el.classList.remove("show");
+        el.style.display = "none";
+        el.style.visibility = "hidden";
+        el.style.opacity = "0";
+        el.style.pointerEvents = "none";
+      });
+      document.querySelectorAll(".doke-shell-profile-menu").forEach((el) => {
+        if (!(el instanceof HTMLElement)) return;
+        el.classList.remove("show");
+        el.hidden = true;
+        el.style.display = "none";
+        el.style.visibility = "hidden";
+        el.style.opacity = "0";
+        el.style.pointerEvents = "none";
+      });
+    };
+
+    const placeDropdownForDesktop = (container, drop) => {
+      try{
+        if (!(container instanceof Element) || !(drop instanceof HTMLElement)) return;
+        if (!window.matchMedia || !window.matchMedia("(min-width:1025px)").matches) {
+          drop.style.position = "";
+          drop.style.top = "";
+          drop.style.left = "";
+          drop.style.right = "";
+          drop.style.zIndex = "";
+          drop.style.maxHeight = "";
+          drop.style.overflowY = "";
+          return;
+        }
+        const rect = container.getBoundingClientRect();
+        const desiredTop = Math.round(rect.bottom + 10);
+        const desiredLeft = Math.round(Math.max(8, rect.right - 280));
+        drop.style.position = "fixed";
+        drop.style.top = `${desiredTop}px`;
+        drop.style.left = `${desiredLeft}px`;
+        drop.style.right = "auto";
+        drop.style.zIndex = "2147483647";
+        drop.style.maxHeight = "min(70vh, 520px)";
+        drop.style.overflowY = "auto";
+      }catch(_e){}
+    };
+
+    const toggleFromElement = function(toggleEl, event){
       if (event) {
         event.preventDefault();
         event.stopPropagation();
       }
-      const target = event?.currentTarget || event?.target || null;
-      const container = target?.closest ? target.closest(".profile-container") : null;
-      const drop = container ? container.querySelector(".dropdown-profile") : document.querySelector(".dropdown-profile");
+      const target = toggleEl instanceof Element ? toggleEl : null;
+      const container = target?.closest ? target.closest(".profile-container, .doke-shell-profile-container") : null;
+      const drop = container
+        ? (container.querySelector(".doke-shell-profile-menu") || container.querySelector(".dropdown-profile"))
+        : (document.querySelector(".doke-shell-profile-menu") || document.querySelector(".dropdown-profile"));
       if(!drop) return;
       const willOpen = !drop.classList.contains("show");
-      document.querySelectorAll(".dropdown-profile.show").forEach((el) => el.classList.remove("show"));
-      if (willOpen) drop.classList.add("show");
+      closeAllDropdowns();
+      if (willOpen) {
+        placeDropdownForDesktop(container, drop);
+        drop.classList.add("show");
+        drop.hidden = false;
+        drop.style.display = "block";
+        drop.style.visibility = "visible";
+        drop.style.opacity = "1";
+        drop.style.pointerEvents = "auto";
+      }
     };
+    window.toggleDropdown = function(event){
+      const base = (event?.currentTarget instanceof Element) ? event.currentTarget : ((event?.target instanceof Element) ? event.target : null);
+      toggleFromElement(base, event);
+    };
+    window.dokeShellToggleProfile = function(el, event){
+      toggleFromElement(el instanceof Element ? el : null, event);
+      return false;
+    };
+    if (typeof window.__dokeShellToggleProfileFallback !== "function") {
+      window.__dokeShellToggleProfileFallback = window.dokeShellToggleProfile;
+    }
 
+    document.querySelectorAll(".doke-shell-profile-btn, .profile-img-btn, .doke-avatar-btn, [data-action='toggle-profile-menu']").forEach((btn) => {
+      if (!(btn instanceof Element)) return;
+      if (btn.getAttribute("data-doke-dd-bound") === "1") return;
+      btn.setAttribute("data-doke-dd-bound", "1");
+      btn.addEventListener("click", (ev) => {
+        toggleFromElement(btn, ev);
+      });
+    });
     if (window.__dokeShellDropdownFallbackBound) return;
     window.__dokeShellDropdownFallbackBound = true;
     document.addEventListener("click", (ev) => {
       const t = ev.target;
       if (!(t instanceof Element)) return;
-      const toggle = t.closest(".profile-img-btn, .doke-avatar-btn, [data-action='toggle-profile-menu']");
+      const toggle = t.closest(".doke-shell-profile-btn, .profile-img-btn, .doke-avatar-btn, [data-action='toggle-profile-menu']");
       if (toggle) {
-        window.toggleDropdown(ev);
+        ev.preventDefault();
+        ev.stopPropagation();
+        toggleFromElement(toggle, ev);
         return;
       }
-      if (t.closest(".profile-container")) return;
-      document.querySelectorAll(".dropdown-profile.show").forEach((el) => el.classList.remove("show"));
+      if (t.closest(".dropdown-profile, .doke-shell-profile-menu")) return;
+      closeAllDropdowns();
     }, true);
   }
 
@@ -560,9 +663,11 @@
     const linkAnunciar = isPro ? "anunciar.html" : "tornar-profissional.html";
     const itemCarteira = isPro ? `<a href="carteira.html" class="dropdown-item"><i class='bx bx-wallet'></i> Carteira</a>` : "";
     const buildProfileDropdown = (photo) => `
-      <div class="profile-container">
-        <img src="${photo}" class="profile-img-btn" onclick="toggleDropdown(event)" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">
-        <div id="dropdownPerfil" class="dropdown-profile">
+      <div class="profile-container doke-shell-profile-container">
+        <button type="button" class="doke-shell-profile-btn" onclick="return dokeShellToggleProfile(this, event)" aria-label="Abrir menu de perfil" style="all:unset;cursor:pointer;display:inline-flex;align-items:center;">
+          <img src="${photo}" class="profile-img-btn" alt="Perfil" style="width:40px;height:40px;border-radius:50%;object-fit:cover;cursor:pointer;border:2px solid #ddd;">
+        </button>
+        <div class="doke-shell-profile-menu" hidden>
           <div style="padding: 10px 15px; border-bottom: 1px solid #eee; font-weight: bold; color: var(--cor2);">${nomePerfilSafe}</div>
           <a href="${profileHref}" class="dropdown-item"><i class='bx bx-user-circle'></i> Ver Perfil</a>
           ${itemCarteira}
@@ -1036,6 +1141,42 @@ function isVisibleModalLayer(el){
     justify-self: end !important;
     margin: 0 !important;
   }
+  .navbar-desktop[data-shell="unified-desktop"] .profile-container{
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .dropdown-profile{
+    position: absolute !important;
+    right: 0 !important;
+    top: calc(100% + 10px) !important;
+    z-index: 99999 !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-shell-profile-menu{
+    display: none;
+    position: absolute !important;
+    right: 0 !important;
+    top: calc(100% + 10px) !important;
+    min-width: 220px;
+    background: #fff;
+    border: 1px solid #e7edf5;
+    border-radius: 12px;
+    box-shadow: 0 12px 30px rgba(15,23,42,.18);
+    z-index: 2147483647 !important;
+    overflow: hidden;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .doke-shell-profile-menu.show{
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
+  .navbar-desktop[data-shell="unified-desktop"] .dropdown-profile.show{
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    pointer-events: auto !important;
+  }
 }
 `;
       document.head.appendChild(st);
@@ -1333,6 +1474,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     ensureGlobalAuthActions();
     syncClassicDesktopHeader({ isLogged, profile, avatarUrl, isPro });
     syncDesktopSidebarProfile({ isLogged, profile, avatarUrl, isPro });
+    try { ensureFallbackDropdownBehavior(); } catch(_e) {}
     try { normalizeTopMenuActive(); } catch(_e) {}
     try { ensureSidebarSearchLite(); } catch(_e) {}
     try { ensureCompactSidebarMode(); } catch(_e) {}
@@ -2375,6 +2517,8 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
   function initPersistentShellNavigation(){
     if (window.__dokePersistentShellNavBound) return;
     window.__dokePersistentShellNavBound = true;
+    const DOKE_PJAX_SAFE_MODE = false;
+    if (DOKE_PJAX_SAFE_MODE) return;
     // PJAX global: enabled by default for the whole site, with explicit opt-out.
     const currentFile = String((location.pathname || "").split("/").pop() || "").toLowerCase();
     try { localStorage.removeItem("doke_disable_pjax"); } catch(_e){}
@@ -2385,13 +2529,16 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     }
 
     const BLOCKED_FILES = new Set(["login.html", "cadastro.html", "senha.html", "app.html", "app-beta.html"]);
-    // Fallback de estabilidade: essas páginas ainda têm boot legado e quebram com swap parcial.
-    const PJAX_RUNTIME_BLOCKED = new Set(["index.html", "mensagens.html", "pedidos.html", "pedido.html"]);
+    // Shell persistente habilitado no site inteiro (exceto páginas de auth em BLOCKED_FILES).
+    const PJAX_RUNTIME_BLOCKED = new Set([]);
     const SCRIPT_SKIP_PARTS = [
       "/doke-shell.js",
+      "/script.js",
       "/doke-config.js",
       "/doke-toast.js",
       "/doke-alerts.js",
+      "/doke-ux.js",
+      "/doke-feedpatch.js",
       "/doke-beforeafter.js",
       "/doke-reco.js",
       "/supabase-init.js",
@@ -2469,6 +2616,11 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
     function resolveSwapRoot(docLike){
       if(!docLike) return null;
       return docLike.querySelector("main")
+        || docLike.querySelector("#messengerMaster")
+        || docLike.querySelector(".messenger-layout")
+        || docLike.querySelector(".pedidos-container")
+        || docLike.querySelector(".pedidos-wrap")
+        || docLike.querySelector(".pedido-container")
         || docLike.querySelector("[data-page-root]")
         || docLike.querySelector("#app-view > *")
         || docLike.querySelector(".main-content")
@@ -2774,9 +2926,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
           tasks.push(() => appendScriptNode(scriptEl));
           return;
         }
-        if(swappedRoot && swappedRoot.contains(scriptEl)){
-          tasks.push(() => appendScriptNode(scriptEl, { wrapInline }));
-        }
+        tasks.push(() => appendScriptNode(scriptEl, { wrapInline }));
       });
       await runWithRuntimeTracking(async () => {
         for(const task of tasks){
@@ -2930,6 +3080,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
   });
   if(document.readyState === "loading"){
     document.addEventListener("DOMContentLoaded", ()=>{
+      try { ensureFallbackDropdownBehavior(); } catch(_e) {}
       normalizeLegacyAppUrl();
       consumeFlashNotice();
       initDesktopNavPerf();
@@ -2940,6 +3091,7 @@ const isPro = profile && (profile.isProfissional === true || profile.tipo === "p
       ensureShell();
     });
   }else{
+    try { ensureFallbackDropdownBehavior(); } catch(_e) {}
     normalizeLegacyAppUrl();
     consumeFlashNotice();
     initDesktopNavPerf();
